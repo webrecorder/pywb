@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import re
 import rfc3987
 
@@ -55,7 +57,7 @@ class aurl:
         if not any (f(self, url) for f in [aurl._init_query, aurl._init_replay]):
             raise RequestParseException('Invalid WB Request Url: ' + url)
 
-        matcher = rfc3987.match(self.url, 'URI_reference')
+        matcher = rfc3987.match(self.url, 'IRI_reference')
 
         if not matcher:
             raise RequestParseException('Bad Request Url: ' + self.url)
