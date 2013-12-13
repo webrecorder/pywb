@@ -1,6 +1,6 @@
-#from werkzeug.wrappers import BaseRequest, BaseResponse, CommonRequestDescriptorsMixin, CommonResponseDescriptorsMixin
 
-# WbRequest
+#WB Request and Response
+
 class WbRequest:
     def __init__(self, env):
         self.env = env

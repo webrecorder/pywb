@@ -1,6 +1,7 @@
-import aurl
 import urlparse
 from wbrequestresponse import WbRequest, WbResponse
+from archiveurl import archiveurl
+
 
 # Redirect urls that have 'fallen through' based on the referrer
 # settings
@@ -43,7 +44,7 @@ class ReferRedirect:
             ref_split = urlparse.urlsplit(wbrequest.referrer)
             ref_path = ref_split.path[1:].split('/', 1)
 
-            ref_wb_url = aurl.aurl('/' + ref_path[1])
+            ref_wb_url = archiveurl('/' + ref_path[1])
 
             ref_wb_url.url = urlparse.urljoin(ref_wb_url.url, wbrequest.request_uri[1:])
             ref_wb_url.url = ref_wb_url.url.replace('../', '')

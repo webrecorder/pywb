@@ -1,10 +1,10 @@
 from wbrequestresponse import WbRequest, WbResponse
 from refer_redirect import ReferRedirect
-import aurl
+from archiveurl import archiveurl
 
 class WBHandler:
     def run(self, wbrequest):
-        wburl = aurl.aurl(wbrequest.wb_url)
+        wburl = archiveurl(wbrequest.wb_url)
         return WbResponse.text_response(repr(wburl))
 
 class ArchivalParser:
