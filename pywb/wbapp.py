@@ -1,43 +1,59 @@
-from wbrequestresponse import WbRequest, WbResponse
-from refer_redirect import ReferRedirect
+from wbrequestresponse import WbResponse
 from archiveurl import archiveurl
+from archivalrouter import ArchivalRequestRouter
+import indexreader
+import json
 
 class WBHandler:
     def run(self, wbrequest):
         wburl = archiveurl(wbrequest.wb_url)
         return WbResponse.text_response(repr(wburl))
 
-class ArchivalParser:
-    def __init__(self, mappings, hostpaths=None):
-        self.mappings = mappings
-        self.fallback = ReferRedirect(hostpaths)
+class QueryHandler:
+    def __init__(self):
+        self.cdxserver = indexreader.RemoteCDXServer('http://web.archive.org/cdx/search/cdx')
 
-    def find_handler(self, env):
-        request_uri = env['REQUEST_URI']
+    @staticmethod
+    def get_query_params(wburl):
+        print wburl.type
+        return {
 
-        for key, value in self.mappings.iteritems():
-            if request_uri.startswith(key):
-                env['WB_URL'] = request_uri[len(key)-1:]
-                env['WB_COLL'] = key[1:-1]
-                #print "Found: " + str(value) + " for " + key
-                return value
+            archiveurl.QUERY:
+                {'collapseTime': '10', 'filter': '!statuscode:(500|502|504)', 'limit': '150000'},
 
-        return self.fallback
+            archiveurl.URL_QUERY:
+                {'collapse': 'urlkey', 'matchType': 'prefix', 'showGroupCount': True, 'showUniqCount': True, 'lastSkipTimestamp': True, 'limit': '100',
+                 'fl': 'urlkey,original,timestamp,endtimestamp,groupcount,uniqcount',
+                },
 
-    def handle_request(self, env):
-        handler = self.find_handler(env)
-        return handler.run(WbRequest(env))
+            archiveurl.REPLAY:
+                {'sort': 'closest', 'filter': '!statuscode:(500|502|504)', 'limit': '10', 'closest': wburl.timestamp, 'resolveRevisits': True},
 
-    def handle_exception(self, env, exc):
-        return WbResponse.text_response('Error: ' + str(exc), status = '400 Bad Request')
+            archiveurl.LATEST_REPLAY:
+                {'sort': 'reverse', 'filter': 'statuscode:[23]..', 'limit': '1', 'resolveRevisits': True}
 
-    def handle_not_found(self, env):
-        return WbResponse.text_response('Not Found: ' + env['REQUEST_URI'], status = '404 Not Found')
+        }[wburl.type]
 
+
+    def run(self, wbrequest):
+        wburl = archiveurl(wbrequest.wb_url)
+
+        params = QueryHandler.get_query_params(wburl)
+
+        #parse_cdx = (wburl.mod == 'json')
+        cdxlines = self.cdxserver.load(wburl.url, params)
+
+        return WbResponse.text_stream(cdxlines)
+
+        #if parse_cdx:
+        #    text = str("\n".join(map(str, cdxlines)))
+        #    text = json.dumps(cdxlines, default=lambda o: o.__dict__)
+        #else:
+        #    text = cdxlines
 
 
 ## ===========
-parser = ArchivalParser({'/web/': WBHandler()}, hostpaths = ['http://localhost:9090/'])
+parser = ArchivalRequestRouter({'/web/': QueryHandler()}, hostpaths = ['http://localhost:9090/'])
 ## ===========
 
 

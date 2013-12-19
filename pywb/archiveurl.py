@@ -29,6 +29,15 @@ class archiveurl:
     >>> repr(archiveurl('/*/http://example.com/abc?def=a'))
     "('query', '', '', 'http://example.com/abc?def=a', '/*/http://example.com/abc?def=a')"
 
+    >>> repr(archiveurl('/*/http://example.com/abc?def=a*'))
+    "('url_query', '', '', 'http://example.com/abc?def=a', '/*/http://example.com/abc?def=a*')"
+
+    >>> repr(archiveurl('/json/*/http://example.com/abc?def=a'))
+    "('query', '', 'json', 'http://example.com/abc?def=a', '/json/*/http://example.com/abc?def=a')"
+
+    >>> repr(archiveurl('/timemap-link/2011*/http://example.com/abc?def=a'))
+    "('query', '2011', 'timemap-link', 'http://example.com/abc?def=a', '/timemap-link/2011*/http://example.com/abc?def=a')"
+
 
     # Error Urls
     # ======================
@@ -47,10 +56,11 @@ class archiveurl:
 
     # Regexs
     # ======================
-    QUERY_REGEX = re.compile('^/(\d*)\*/(.*)$')
-    REPLAY_REGEX = re.compile('^/(\d*)([a-z]{2}_)?/?(.*)$')
+    QUERY_REGEX = re.compile('^/?([\w\-:]+)?/(\d*)\*/(.*)$')
+    REPLAY_REGEX = re.compile('^/(\d*)([a-z]+_)?/?(.*)$')
 
     QUERY = 'query'
+    URL_QUERY = 'url_query'
     REPLAY = 'replay'
     LATEST_REPLAY = 'latest_replay'
 
@@ -88,9 +98,14 @@ class archiveurl:
 
         res = query.groups('')
 
-        self.timestamp = res[0]
-        self.url = res[1]
-        self.type = archiveurl.QUERY
+        self.mod = res[0]
+        self.timestamp = res[1]
+        self.url = res[2]
+        if self.url.endswith('*'):
+            self.type = archiveurl.URL_QUERY
+            self.url = self.url[:-1]
+        else:
+            self.type = archiveurl.QUERY
         return True
 
     # Match replay regex
@@ -115,8 +130,17 @@ class archiveurl:
     # Str Representation
     # ====================
     def __str__(self):
-        if self.type == archiveurl.QUERY:
-            return "/*/" + self.url
+        if self.type == archiveurl.QUERY or self.type == archiveurl.URL_QUERY:
+            tsmod = "/"
+            if self.mod:
+                tsmod += self.mod + "/"
+            if self.timestamp:
+                tsmod += self.timestamp
+
+            tsmod += "*/" + self.url
+            if self.type == archiveurl.URL_QUERY:
+                tsmod += "*"
+            return tsmod
         else:
             tsmod = self.timestamp + self.mod
             if len(tsmod) > 0:
