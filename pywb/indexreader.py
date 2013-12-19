@@ -1,5 +1,6 @@
 import urllib
 import urllib2
+import wbexceptions
 
 class RemoteCDXServer:
     """
@@ -27,16 +28,22 @@ class RemoteCDXServer:
         params.update(**kwvalues)
 
         urlparams = urllib.urlencode(params)
-        request = urllib2.Request(self.serverUrl, urlparams)
-        response = urllib2.urlopen(request)
+
+        try:
+            request = urllib2.Request(self.serverUrl, urlparams)
+            response = urllib2.urlopen(request)
+        except urllib2.HTTPError, e:
+            if e.code == 403:
+                exc_msg = e.read()
+                msg = 'Blocked By Robots' if 'Blocked By Robots' in exc_msg else 'Excluded'
+                raise wbexceptions.AccessException(msg)
+            else:
+                raise e
 
         if parse_cdx:
             return map(CDXCaptureResult, response)
         else:
             return response
-
-class InvalidCDXException(Exception):
-    pass
 
 class CDXCaptureResult:
     CDX_FORMATS = [["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","robotflags","length","offset","filename"],

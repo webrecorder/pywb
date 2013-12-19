@@ -3,11 +3,14 @@ from archiveurl import archiveurl
 from archivalrouter import ArchivalRequestRouter
 import indexreader
 import json
+import wbexceptions
+import utils
 
 class WBHandler:
     def run(self, wbrequest):
         wburl = archiveurl(wbrequest.wb_url)
-        return WbResponse.text_response(repr(wburl))
+        wbrequest.parsed_url = wburl
+        return WbResponse.text_stream(str(vars(wburl)))
 
 class QueryHandler:
     def __init__(self):
@@ -15,7 +18,6 @@ class QueryHandler:
 
     @staticmethod
     def get_query_params(wburl):
-        print wburl.type
         return {
 
             archiveurl.QUERY:
@@ -37,23 +39,27 @@ class QueryHandler:
 
     def run(self, wbrequest):
         wburl = archiveurl(wbrequest.wb_url)
+        #wburl = wbresponse.body.parsed_url
 
         params = QueryHandler.get_query_params(wburl)
 
-        #parse_cdx = (wburl.mod == 'json')
         cdxlines = self.cdxserver.load(wburl.url, params)
 
-        return WbResponse.text_stream(cdxlines)
+        cdxlines = utils.peek_iter(cdxlines)
 
-        #if parse_cdx:
-        #    text = str("\n".join(map(str, cdxlines)))
-        #    text = json.dumps(cdxlines, default=lambda o: o.__dict__)
-        #else:
-        #    text = cdxlines
+        if cdxlines is not None:
+            return WbResponse.text_stream(cdxlines)
+
+        raise wbexceptions.NotFoundException('WB Does Not Have Url: ' + wburl.url)
+
 
 
 ## ===========
-parser = ArchivalRequestRouter({'/web/': QueryHandler()}, hostpaths = ['http://localhost:9090/'])
+parser = ArchivalRequestRouter(
+    {'/t1/' : WBHandler(),
+     '/t2/' : QueryHandler()
+    },
+    hostpaths = ['http://localhost:9090/'])
 ## ===========
 
 
@@ -63,13 +69,26 @@ def application(env, start_response):
     try:
         response = parser.handle_request(env)
 
+        if not response:
+            raise wbexceptions.NotFoundException(env['REQUEST_URI'] + ' was not found')
+
     except Exception as e:
         last_exc = e
         import traceback
         traceback.print_exc()
-        response = parser.handle_exception(env, e)
-
-    if not response:
-        response = parser.handle_not_found(env)
+        response = handle_exception(env, e)
 
     return response(env, start_response)
+
+def handle_exception(env, exc):
+    if hasattr(exc, 'status'):
+        status = exc.status()
+    else:
+        status = '400 Bad Request'
+
+    return WbResponse.text_response(status + ' Error: ' + str(exc), status = status)
+
+#def handle_not_found(env):
+#    return WbResponse.text_response('Not Found: ' + env['REQUEST_URI'], status = '404 Not Found')
+
+

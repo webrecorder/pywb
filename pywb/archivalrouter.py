@@ -19,10 +19,4 @@ class ArchivalRequestRouter:
         handler, wbrequest = self.parse_request(env)
         return handler.run(wbrequest)
 
-    def handle_exception(self, env, exc):
-        return WbResponse.text_response('Error: ' + str(exc), status = '400 Bad Request')
-
-    def handle_not_found(self, env):
-        return WbResponse.text_response('Not Found: ' + env['REQUEST_URI'], status = '404 Not Found')
-
 

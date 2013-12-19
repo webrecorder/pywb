@@ -1,4 +1,3 @@
-
 #WB Request and Response
 
 class WbRequest:
@@ -57,8 +56,8 @@ class WbResponse:
         return WbResponse(status, value = [text], headersList = [('Content-Type', 'text/plain')])
 
     @staticmethod
-    def redir_response(location):
-        return WbResponse('302 Redirect', headersList = [('Location', location)])
+    def redir_response(location, status = '302 Redirect'):
+        return WbResponse(status, headersList = [('Location', location)])
 
     def get_header(self, name):
         name_upp = name.upper()
@@ -72,7 +71,12 @@ class WbResponse:
         #    headersList.append((key, value))
 
         start_response(self.status, self.headersList)
-        return self.body
+
+        if hasattr(self.body, '__iter__'):
+            return self.body
+        else:
+            return [str(self.body)]
+
 
     def __repr__(self):
         return str(vars(self))
