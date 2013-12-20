@@ -1,47 +1,28 @@
-from wbrequestresponse import WbResponse
-from archiveurl import archiveurl
-from archivalrouter import ArchivalRequestRouter
 import indexreader
 import json
 import wbexceptions
 import utils
 
+from wbrequestresponse import WbResponse
+from archivalrouter import ArchivalRequestRouter
+
+class EchoEnv:
+    def run(self, wbrequest):
+        return WbResponse.text_response(str(wbrequest.env))
+
 class WBHandler:
     def run(self, wbrequest):
-        wburl = archiveurl(wbrequest.wb_url)
-        wbrequest.parsed_url = wburl
-        return WbResponse.text_stream(str(vars(wburl)))
+        return WbResponse.text_response(str(wbrequest))
 
 class QueryHandler:
     def __init__(self):
         self.cdxserver = indexreader.RemoteCDXServer('http://web.archive.org/cdx/search/cdx')
 
-    @staticmethod
-    def get_query_params(wburl):
-        return {
-
-            archiveurl.QUERY:
-                {'collapseTime': '10', 'filter': '!statuscode:(500|502|504)', 'limit': '150000'},
-
-            archiveurl.URL_QUERY:
-                {'collapse': 'urlkey', 'matchType': 'prefix', 'showGroupCount': True, 'showUniqCount': True, 'lastSkipTimestamp': True, 'limit': '100',
-                 'fl': 'urlkey,original,timestamp,endtimestamp,groupcount,uniqcount',
-                },
-
-            archiveurl.REPLAY:
-                {'sort': 'closest', 'filter': '!statuscode:(500|502|504)', 'limit': '10', 'closest': wburl.timestamp, 'resolveRevisits': True},
-
-            archiveurl.LATEST_REPLAY:
-                {'sort': 'reverse', 'filter': 'statuscode:[23]..', 'limit': '1', 'resolveRevisits': True}
-
-        }[wburl.type]
-
 
     def run(self, wbrequest):
-        wburl = archiveurl(wbrequest.wb_url)
-        #wburl = wbresponse.body.parsed_url
+        wburl = wbrequest.wb_url
 
-        params = QueryHandler.get_query_params(wburl)
+        params = self.cdxserver.getQueryParams(wburl)
 
         cdxlines = self.cdxserver.load(wburl.url, params)
 
@@ -56,8 +37,10 @@ class QueryHandler:
 
 ## ===========
 parser = ArchivalRequestRouter(
-    {'/t1/' : WBHandler(),
-     '/t2/' : QueryHandler()
+    {
+     't0' : EchoEnv(),
+     't1' : WBHandler(),
+     't2' : QueryHandler()
     },
     hostpaths = ['http://localhost:9090/'])
 ## ===========
@@ -67,7 +50,7 @@ def application(env, start_response):
     response = None
 
     try:
-        response = parser.handle_request(env)
+        response = parser.handleRequest(env)
 
         if not response:
             raise wbexceptions.NotFoundException(env['REQUEST_URI'] + ' was not found')
@@ -76,11 +59,11 @@ def application(env, start_response):
         last_exc = e
         import traceback
         traceback.print_exc()
-        response = handle_exception(env, e)
+        response = handleException(env, e)
 
     return response(env, start_response)
 
-def handle_exception(env, exc):
+def handleException(env, exc):
     if hasattr(exc, 'status'):
         status = exc.status()
     else:

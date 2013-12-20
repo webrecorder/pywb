@@ -2,6 +2,8 @@ import urllib
 import urllib2
 import wbexceptions
 
+from wbarchivalurl import ArchivalUrl
+
 class RemoteCDXServer:
     """
     >>> x = cdxserver.load('example.com', parse_cdx = True, limit = '2')
@@ -44,6 +46,27 @@ class RemoteCDXServer:
             return map(CDXCaptureResult, response)
         else:
             return response
+
+    @staticmethod
+    def getQueryParams(wburl):
+        return {
+
+            ArchivalUrl.QUERY:
+                {'collapseTime': '10', 'filter': '!statuscode:(500|502|504)', 'limit': '150000'},
+
+            ArchivalUrl.URL_QUERY:
+                {'collapse': 'urlkey', 'matchType': 'prefix', 'showGroupCount': True, 'showUniqCount': True, 'lastSkipTimestamp': True, 'limit': '100',
+                 'fl': 'urlkey,original,timestamp,endtimestamp,groupcount,uniqcount',
+                },
+
+            ArchivalUrl.REPLAY:
+                {'sort': 'closest', 'filter': '!statuscode:(500|502|504)', 'limit': '10', 'closest': wburl.timestamp, 'resolveRevisits': True},
+
+            ArchivalUrl.LATEST_REPLAY:
+                {'sort': 'reverse', 'filter': 'statuscode:[23]..', 'limit': '1', 'resolveRevisits': True}
+
+        }[wburl.type]
+
 
 class CDXCaptureResult:
     CDX_FORMATS = [["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","robotflags","length","offset","filename"],

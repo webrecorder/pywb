@@ -1,32 +1,79 @@
+from wbarchivalurl import ArchivalUrl
 #WB Request and Response
 
 class WbRequest:
     """
-    >>> WbRequest.prefix_request({'REQUEST_URI': '/save/_embed/example.com/?a=b'}, '/save/')
-    WbRequest(env, '/_embed/example.com/?a=b', 'save')
+    >>> WbRequest.parse({'REQUEST_URI': '/save/_embed/example.com/?a=b'})
+    {'wb_url': ('latest_replay', '', '', 'http://_embed/example.com/?a=b', '/http://_embed/example.com/?a=b'), 'coll': 'save', 'wb_prefix': '/save/', 'request_uri': '/save/_embed/example.com/?a=b'}
+
+    >>> WbRequest.parse({'REQUEST_URI': '/2345/20101024101112im_/example.com/?b=c'})
+    {'wb_url': ('replay', '20101024101112', 'im_', 'http://example.com/?b=c', '/20101024101112im_/http://example.com/?b=c'), 'coll': '2345', 'wb_prefix': '/2345/', 'request_uri': '/2345/20101024101112im_/example.com/?b=c'}
+
+    >>> WbRequest.parse({'REQUEST_URI': '/2010/example.com'})
+    {'wb_url': ('latest_replay', '', '', 'http://example.com', '/http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
+
+    >>> WbRequest.parse({'REQUEST_URI': '../example.com'})
+    {'wb_url': ('latest_replay', '', '', 'http://example.com', '/http://example.com'), 'coll': '', 'wb_prefix': '/', 'request_uri': '../example.com'}
     """
 
-    def __init__(self, env, request_uri = '', wb_url = '', coll = ''):
-        self.env = env
-
- #       if len(wb_url) == 0:
- #           wb_url = request_uri
-
-        setattr(self, 'wb_url', wb_url)
-        setattr(self, 'coll', coll)
-
-        setattr(self, 'request_uri', request_uri)
-        setattr(self, 'referrer', env.get('HTTP_REFERER'))
-
-
     @staticmethod
-    def prefix_request(env, prefix, request_uri = ''):
+    def parse(env, request_uri = ''):
         if not request_uri:
             request_uri = env.get('REQUEST_URI')
-        return WbRequest(env, request_uri, request_uri[len(prefix)-1:], coll = prefix[1:-1])
+
+        parts = request_uri.split('/', 2)
+
+        # Has coll prefix
+        if len(parts) == 3:
+            wb_prefix = '/' + parts[1] + '/'
+            wb_url = '/' + parts[2]
+            coll = parts[1]
+        # No Coll Prefix
+        elif len(parts) == 2:
+            wb_prefix = '/'
+            wb_url = '/' + parts[1]
+            coll = ''
+        else:
+            wb_prefix = '/'
+            wb_url = parts[0]
+            coll = ''
+
+        return WbRequest(env, request_uri, wb_prefix, wb_url, coll)
+
+    def __init__(self, env, request_uri, wb_prefix, wb_url, coll):
+        self.env = env
+
+        self.request_uri = request_uri if request_uri else env.get('REQUEST_URI')
+
+        self.wb_prefix = wb_prefix
+
+        self.wb_url = ArchivalUrl(wb_url)
+
+        self.coll = coll
+
+        self.referrer = env.get('HTTP_REFERER')
+
+        self.is_ajax = self._is_ajax()
+
+
+    def _is_ajax(self):
+        value = self.env.get('HTTP_X_REQUESTED_WITH')
+        if not value:
+            return False
+
+        if value.lower() == 'xmlhttprequest':
+            return True
+
+        if self.referrer and ('ajaxpipe' in self.env.get('QUERY_STRING')):
+            return True
+        return False
+
 
     def __repr__(self):
-        return "WbRequest(env, '" + (self.wb_url) + "', '" + (self.coll) + "')"
+        #return "WbRequest(env, '" + (self.wb_url) + "', '" + (self.coll) + "')"
+        #return str(vars(self))
+        varlist = vars(self)
+        return str({k: varlist[k] for k in ('request_uri', 'wb_prefix', 'wb_url', 'coll')})
 
 
 class WbResponse:
