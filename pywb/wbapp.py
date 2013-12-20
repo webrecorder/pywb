@@ -7,11 +7,11 @@ from wbrequestresponse import WbResponse
 from archivalrouter import ArchivalRequestRouter
 
 class EchoEnv:
-    def run(self, wbrequest):
+    def __call__(self, wbrequest, _):
         return WbResponse.text_response(str(wbrequest.env))
 
 class WBHandler:
-    def run(self, wbrequest):
+    def __call__(self, wbrequest, _):
         return WbResponse.text_response(str(wbrequest))
 
 class QueryHandler:
@@ -19,7 +19,7 @@ class QueryHandler:
         self.cdxserver = indexreader.RemoteCDXServer('http://web.archive.org/cdx/search/cdx')
 
 
-    def run(self, wbrequest):
+    def __call__(self, wbrequest, prev_wbresponse):
         wburl = wbrequest.wb_url
 
         params = self.cdxserver.getQueryParams(wburl)
@@ -38,9 +38,9 @@ class QueryHandler:
 ## ===========
 parser = ArchivalRequestRouter(
     {
-     't0' : EchoEnv(),
-     't1' : WBHandler(),
-     't2' : QueryHandler()
+     't0' : [EchoEnv()],
+     't1' : [WBHandler()],
+     't2' : [QueryHandler()]
     },
     hostpaths = ['http://localhost:9090/'])
 ## ===========

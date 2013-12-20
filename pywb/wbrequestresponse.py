@@ -3,21 +3,21 @@ from wbarchivalurl import ArchivalUrl
 
 class WbRequest:
     """
-    >>> WbRequest.parse({'REQUEST_URI': '/save/_embed/example.com/?a=b'})
+    >>> WbRequest.from_uri('/save/_embed/example.com/?a=b')
     {'wb_url': ('latest_replay', '', '', 'http://_embed/example.com/?a=b', '/http://_embed/example.com/?a=b'), 'coll': 'save', 'wb_prefix': '/save/', 'request_uri': '/save/_embed/example.com/?a=b'}
 
-    >>> WbRequest.parse({'REQUEST_URI': '/2345/20101024101112im_/example.com/?b=c'})
+    >>> WbRequest.from_uri('/2345/20101024101112im_/example.com/?b=c')
     {'wb_url': ('replay', '20101024101112', 'im_', 'http://example.com/?b=c', '/20101024101112im_/http://example.com/?b=c'), 'coll': '2345', 'wb_prefix': '/2345/', 'request_uri': '/2345/20101024101112im_/example.com/?b=c'}
 
-    >>> WbRequest.parse({'REQUEST_URI': '/2010/example.com'})
+    >>> WbRequest.from_uri('/2010/example.com')
     {'wb_url': ('latest_replay', '', '', 'http://example.com', '/http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
 
-    >>> WbRequest.parse({'REQUEST_URI': '../example.com'})
+    >>> WbRequest.from_uri('../example.com')
     {'wb_url': ('latest_replay', '', '', 'http://example.com', '/http://example.com'), 'coll': '', 'wb_prefix': '/', 'request_uri': '../example.com'}
     """
 
     @staticmethod
-    def parse(env, request_uri = ''):
+    def from_uri(request_uri, env = {}):
         if not request_uri:
             request_uri = env.get('REQUEST_URI')
 

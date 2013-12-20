@@ -27,11 +27,19 @@ class ArchivalRequestRouter:
 
                 return handler, req
 
-        return self.fallback, WbRequest(env)
+        return self.fallback, WbRequest.from_uri(request_uri, env)
 
     def handleRequest(self, env):
         handler, wbrequest = self._parseRequest(env)
-        return handler.run(wbrequest)
+        resp = None
+
+        if isinstance(handler, list):
+            for x in handler:
+                resp = x(wbrequest, resp)
+        else:
+            resp = handler(wbrequest, resp)
+
+        return resp
 
     def getPrefix(self, env, rel_prefix):
         if self.abs_path:
@@ -75,7 +83,7 @@ class ReferRedirect:
             self.matchPrefixs = [matchPrefixs]
 
 
-    def run(self, wbrequest):
+    def __call__(self, wbrequest, _):
         if wbrequest.referrer is None:
             return None
 
@@ -109,8 +117,8 @@ if __name__ == "__main__":
         env = {'REQUEST_URI': request_uri, 'HTTP_REFERER': referrer}
 
         redir = ReferRedirect(matchHost)
-        req = WbRequest.parse(env)
-        rep = redir.run(req)
+        req = WbRequest.from_uri(request_uri, env)
+        rep = redir(req, None)
         if not rep:
             return False
 
