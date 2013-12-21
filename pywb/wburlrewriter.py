@@ -8,6 +8,9 @@ class ArchivalUrlRewriter:
     >>> test_rewrite('other.html', '/20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
     'https://web.archive.org/web/20131010/http://example.com/path/other.html'
 
+    >>> test_rewrite('file.js', '/20131010/http://example.com/path/page.html', 'https://web.archive.org/web/', 'js_')
+    'https://web.archive.org/web/20131010js_/http://example.com/path/file.js'
+
     >>> test_rewrite('./other.html', '/20130907*/http://example.com/path/page.html', '/coll/')
     '/coll/20130907*/http://example.com/path/other.html'
 
@@ -30,11 +33,13 @@ class ArchivalUrlRewriter:
         if self.prefix.endswith('/'):
             self.prefix = self.prefix[:-1]
 
-    def rewrite(self, rel_url):
-        if '../' in rel_url:
+    def rewrite(self, rel_url, mod = None):
+        if '../' in rel_url or mod:
             wburl = ArchivalUrl(self.wburl_str)
             wburl.url = urlparse.urljoin(wburl.url, rel_url)
             wburl.url = wburl.url.replace('../', '')
+            if mod is not None:
+                wburl.mod = mod
 
             final_url = self.prefix + str(wburl)
         else:
@@ -45,8 +50,8 @@ class ArchivalUrlRewriter:
 if __name__ == "__main__":
     import doctest
 
-    def test_rewrite(rel_url, base_url, prefix):
+    def test_rewrite(rel_url, base_url, prefix, mod = None):
         rewriter = ArchivalUrlRewriter(base_url, prefix)
-        return rewriter.rewrite(rel_url)
+        return rewriter.rewrite(rel_url, mod)
 
     doctest.testmod()

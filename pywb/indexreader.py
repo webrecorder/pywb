@@ -48,19 +48,19 @@ class RemoteCDXServer:
             return response
 
     @staticmethod
-    def getQueryParams(wburl):
+    def getQueryParams(wburl, limit = '150000', collapseTime = '10', replayClosest = '10'):
         return {
 
             ArchivalUrl.QUERY:
-                {'collapseTime': '10', 'filter': '!statuscode:(500|502|504)', 'limit': '150000'},
+                {'collapseTime': collapseTime, 'filter': '!statuscode:(500|502|504)', 'limit': limit},
 
             ArchivalUrl.URL_QUERY:
-                {'collapse': 'urlkey', 'matchType': 'prefix', 'showGroupCount': True, 'showUniqCount': True, 'lastSkipTimestamp': True, 'limit': '100',
+                {'collapse': 'urlkey', 'matchType': 'prefix', 'showGroupCount': True, 'showUniqCount': True, 'lastSkipTimestamp': True, 'limit': limit,
                  'fl': 'urlkey,original,timestamp,endtimestamp,groupcount,uniqcount',
                 },
 
             ArchivalUrl.REPLAY:
-                {'sort': 'closest', 'filter': '!statuscode:(500|502|504)', 'limit': '10', 'closest': wburl.timestamp, 'resolveRevisits': True},
+                {'sort': 'closest', 'filter': '!statuscode:(500|502|504)', 'limit': replayClosest, 'closest': wburl.timestamp, 'resolveRevisits': True},
 
             ArchivalUrl.LATEST_REPLAY:
                 {'sort': 'reverse', 'filter': 'statuscode:[23]..', 'limit': '1', 'resolveRevisits': True}
@@ -82,7 +82,7 @@ class CDXCaptureResult:
                 cdxformat = i
 
         if not cdxformat:
-            raise InvalidCDXException('unknown %d-field cdx format' % len(fields))
+            raise InvalidCDXException('unknown {0}-field cdx format'.format(len(fields)))
 
         for header, field in zip(cdxformat, fields):
             setattr(self, header, field)
