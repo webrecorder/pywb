@@ -33,6 +33,10 @@ class ArchivalUrlRewriter:
     '/2020/http://example.com/other.html'
       """
 
+    NO_REWRITE_URI_PREFIX = ['javascript:', 'data:', 'mailto:', 'about:']
+
+    PROTOCOLS = ['http://', 'https://', '//', 'mms://', 'rtsp://', 'wais://']
+
     def __init__(self, wburl_str, prefix):
         self.wburl = ArchivalUrl(wburl_str)
         self.prefix = prefix
@@ -40,23 +44,34 @@ class ArchivalUrlRewriter:
         if self.prefix.endswith('/'):
             self.prefix = self.prefix[:-1]
 
-    def rewrite(self, rel_url, mod = None):
+    def rewrite(self, url, mod = None):
+        # if special protocol, no rewriting at all
+        if any (url.startswith(x) for x in ArchivalUrlRewriter.NO_REWRITE_URI_PREFIX):
+            return url
+
         wburl = self.wburl
 
-        # Disable optimization, doesn't work for external links
-        # if relative path or different mod, create rewrite from split up ArchivalUrl
-        #if rel_url.startswith('/') or ('../' in rel_url) or mod:
-        newUrl = urlparse.urljoin(wburl.url, rel_url).replace('../', '')
+        isAbs = any (url.startswith(x) for x in ArchivalUrlRewriter.PROTOCOLS)
 
-        if mod is None:
-            mod = wburl.mod
+        # Optimized rewriter for
+        # -rel urls that don't start with / and  don't contain ../ and no special mod
+        if not (isAbs or mod or url.startswith('/') or ('../' in url)):
+            finalUrl = urlparse.urljoin(self.prefix + wburl.original_url, url)
 
-        final_url = self.prefix + ArchivalUrl.to_str(wburl.type, mod, wburl.timestamp, newUrl)
-        # otherwise, optimize, and join directly with full url
-        #else:
-        #    final_url = urlparse.urljoin(self.prefix + wburl.original_url, rel_url)
+        else:
+            # optimize: join if not absolute url, otherwise just use that
+            if not isAbs:
+                newUrl = urlparse.urljoin(wburl.url, url).replace('../', '')
+            else:
+                newUrl = url
 
-        return final_url
+            if mod is None:
+                mod = wburl.mod
+
+            finalUrl = self.prefix + ArchivalUrl.to_str(wburl.type, mod, wburl.timestamp, newUrl)
+
+        return finalUrl
+
 
     def setBaseUrl(self, newUrl):
         self.wburl.url = newUrl

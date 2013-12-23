@@ -4,9 +4,9 @@ import re
 from HTMLParser import HTMLParser
 from wburlrewriter import ArchivalUrlRewriter
 
-
-
-# create a subclass and override the handler methods
+#=================================================================
+# WBHtml --html parser for custom rewriting, also handlers for script and css
+#=================================================================
 class WBHtml(HTMLParser):
     """
     >>> WBHtml(rewriter).feed('<HTML><A Href="page.html">Text</a></hTmL>')
@@ -77,12 +77,7 @@ class WBHtml(HTMLParser):
         return metaRefresh
     # ===========================
 
-    NO_REWRITE_PREFIX = ['javascript:', 'data:', 'mailto:']
-
     def _rewriteURL(self, value, mod = None):
-        if any (value.startswith(x) for x in WBHtml.NO_REWRITE_PREFIX):
-            return value
-
         return self.rewriter.rewrite(value, mod)
 
 
