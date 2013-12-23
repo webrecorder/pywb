@@ -129,24 +129,28 @@ class ArchivalUrl:
 
     # Str Representation
     # ====================
-    def __str__(self):
-        if self.type == ArchivalUrl.QUERY or self.type == ArchivalUrl.URL_QUERY:
+    @staticmethod
+    def to_str(atype, mod, timestamp, url):
+        if atype == ArchivalUrl.QUERY or atype == ArchivalUrl.URL_QUERY:
             tsmod = "/"
-            if self.mod:
-                tsmod += self.mod + "/"
-            if self.timestamp:
-                tsmod += self.timestamp
+            if mod:
+                tsmod += mod + "/"
+            if timestamp:
+                tsmod += timestamp
 
-            tsmod += "*/" + self.url
-            if self.type == ArchivalUrl.URL_QUERY:
+            tsmod += "*/" + url
+            if atype == ArchivalUrl.URL_QUERY:
                 tsmod += "*"
             return tsmod
         else:
-            tsmod = self.timestamp + self.mod
+            tsmod = timestamp + mod
             if len(tsmod) > 0:
-                return "/" + tsmod + "/" + self.url
+                return "/" + tsmod + "/" + url
             else:
-                return "/" + self.url
+                return "/" + url
+
+    def __str__(self):
+        return ArchivalUrl.to_str(self.type, self.mod, self.timestamp, self.url)
 
     def __repr__(self):
         return str((self.type, self.timestamp, self.mod, self.url, str(self)))
