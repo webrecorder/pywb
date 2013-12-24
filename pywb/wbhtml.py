@@ -3,12 +3,13 @@ import re
 
 from HTMLParser import HTMLParser
 from wburlrewriter import ArchivalUrlRewriter
+from regexmatch import JSRewriter, CSSRewriter
 
 #=================================================================
 # WBHtml --html parser for custom rewriting, also handlers for script and css
 #=================================================================
 class WBHtml(HTMLParser):
-    """
+    r"""
     >>> WBHtml(rewriter).feed('<HTML><A Href="page.html">Text</a></hTmL>')
     <HTML><a href="/web/20131226101010/http://example.com/some/path/page.html">Text</a></html>
 
@@ -20,6 +21,18 @@ class WBHtml(HTMLParser):
 
     >>> WBHtml(rewriter).feed('<META http-equiv="refresh" content="10; URL=/abc/def.html">')
     <meta http-equiv="refresh" content="10; URL=/web/20131226101010/http://example.com/abc/def.html">
+
+    >>> WBHtml(rewriter).feed('<script>window.location = "http://example.com/a/b/c.html"</script>')
+    <script>window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html"</script>
+
+    >>> WBHtml(rewriter).feed('<script>/*<![CDATA[*/window.location = "http://example.com/a/b/c.html;/*]]>*/"</script>')
+    <script>/*<![CDATA[*/window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html;/*]]>*/"</script>
+
+    >>> WBHtml(rewriter).feed('<div style="background: url(\'abc.html\')" onclick="location = \'redirect.html\'"></div>')
+    <div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onclick="WB_wombat_location = 'redirect.html'"></div>
+
+    >>> WBHtml(rewriter).feed('<style>@import "styles.css" .a { font-face: url(\'myfont.ttf\') }</style>')
+    <style>@import "/web/20131226101010/http://example.com/some/path/styles.css" .a { font-face: url('/web/20131226101010/http://example.com/some/path/myfont.ttf') }</style>
     """
 
     REWRITE_TAGS = {
@@ -50,7 +63,7 @@ class WBHtml(HTMLParser):
                     'data-uri' : ''},
     }
 
-    STATE_TAGS = ['head', 'body', 'script', 'style']
+    STATE_TAGS = ['script', 'style']
 
 
     def __init__(self, rewriter, outstream = None):
@@ -59,6 +72,9 @@ class WBHtml(HTMLParser):
         self.rewriter = rewriter
         self._wbParseContext = None
         self.out = outstream if outstream else sys.stdout
+
+        self.jsRewriter = JSRewriter(rewriter.getAbsUrl())
+        self.cssRewriter = CSSRewriter(rewriter)
 
 
     # ===========================
@@ -82,10 +98,10 @@ class WBHtml(HTMLParser):
 
 
     def _rewriteCSS(self, cssContent):
-        return cssContent
+        return self.cssRewriter.replaceAll(cssContent)
 
     def _rewriteScript(self, scriptContent):
-        return scriptContent
+        return self.jsRewriter.replaceAll(scriptContent)
 
     def hasAttr(self, tagAttrs, attr):
         name, value = attr
@@ -95,13 +111,6 @@ class WBHtml(HTMLParser):
         return False
 
     def rewriteTagAttrs(self, tag, tagAttrs, isStartEnd):
-        handler = WBHtml.REWRITE_TAGS.get(tag)
-        if not handler:
-            handler = WBHtml.REWRITE_TAGS.get('')
-
-        if not handler:
-            return False
-
         # special case: base tag
         if (tag == 'base'):
             newBase = tagAttrs.get('href')
@@ -109,8 +118,16 @@ class WBHtml(HTMLParser):
                 self.rewriter.setBaseUrl(newBase[1])
 
         # special case: script or style parse context
-        elif ((tag == 'script') or (tag == 'style')) and (self._wbParseContext == None):
+        elif (tag in WBHtml.STATE_TAGS) and (self._wbParseContext == None):
             self._wbParseContext = tag
+
+        # attr rewriting
+        handler = WBHtml.REWRITE_TAGS.get(tag)
+        if not handler:
+            handler = WBHtml.REWRITE_TAGS.get('')
+
+        if not handler:
+            return False
 
         self.out.write('<' + tag)
 

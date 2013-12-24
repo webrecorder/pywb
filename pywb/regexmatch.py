@@ -1,156 +1,14 @@
 import re
 import sys
+import itertools
+
 from wburlrewriter import ArchivalUrlRewriter
 
-class RegexMatchReplacer:
-    def __init__(self, regexStr):
-        self.regex = re.compile(regexStr)
-
-    def replaceAll(self, string):
-        last = 0
-        result = ''
-        for m in self.regex.finditer(string):
-            start = m.start(1)
-            end = m.end(1)
-            result += string[last:start]
-            result += self.replace(string[start:end], m)
-            last = end
-
-        result += string[last:]
-        return result
-
-    def replace(self, string, m):
-        return string
-
-
-class HttpMatchReplacer(RegexMatchReplacer):
-    HTTP_REGEX = "(https?:\\\\?/\\\\?/[A-Za-z0-9:_@.-]+)"
-
-    def __init__(self, rewriter):
-        RegexMatchReplacer.__init__(self, HttpMatchReplacer.HTTP_REGEX)
-        self.rewriter = rewriter
-
-    def replace(self, string, m):
-        return self.rewriter.rewrite(string)
-
-class CustomMatchReplacer(RegexMatchReplacer):
-    def __init__(self, matchRegex, replaceStr):
-        RegexMatchReplacer.__init__(self, matchRegex)
-        self.replaceStr = replaceStr
-
-    def replace(self, string, m):
-        return self.replaceStr
-
-class Replacers:
+class RegexRewriter:
     """
-    >>> replacer.replaceAll('location = "http://example.com/abc.html"')
-    'WB_wombat_location = "/web/20131010im_/http://example.com/abc.html"'
-
-    >>> replacer.replaceAll('cool_Location = "http://example.com/abc.html"')
-    'cool_Location = "/web/20131010im_/http://example.com/abc.html"'
-
-    >>> replacer.replaceAll('window.location = "http://example.com/abc.html"')
-    'window.WB_wombat_location = "/web/20131010im_/http://example.com/abc.html"'
-    """
-
-    def __init__(self, replacers):
-        self.replacers = replacers
-
-    def replaceAll(self, string):
-        for x in self.replacers:
-            string = x.replaceAll(string)
-
-        return string
-
-replacer = Replacers([HttpMatchReplacer(ArchivalUrlRewriter('/20131010im_/http://abc.com/XYZ/', '/web/')), CustomMatchReplacer('[^\w]?(location|domain)', 'WB_wombat_location')])
-
-# =================================
-arw = ArchivalUrlRewriter('/20131010im_/http://abc.com/XYZ/', '/web/')
-
-
-
-class MultiRegexReplacer:
-    """
-    >>> MultiRegexReplacer().replaceAll('location = "http://example.com/abc.html"', arw)
-    'WB_wombat_location = "/web/20131010im_/http://example.com/abc.html"'
-
-    >>> MultiRegexReplacer().replaceAll('cool_Location = "http://example.com/abc.html"', arw)
-    'cool_Location = "/web/20131010im_/http://example.com/abc.html"'
-
-    >>> MultiRegexReplacer().replaceAll('window.location = "http://example.com/abc.html" document.domain = "anotherdomain.com"', arw)
-    'window.WB_wombat_location = "/web/20131010im_/http://example.com/abc.html" document.WB_wombat_domain = "anotherdomain.com"'
-
-    """
-
-    DEFAULT_RULES = [
-     ('https?:\\\\?/\\\\?/[A-Za-z0-9:_@.-]+', ArchivalUrlRewriter.rewrite),
-     ('location', 'WB_wombat_location'),
-     ('domain', 'WB_wombat_domain'),
-     ('some_func\(\)', '/* \\1 */')
-     ]
-
-    def __init__(self, rules = None):
-        if not rules:
-            rules = MultiRegexReplacer.DEFAULT_RULES
-
-        # Build regexstr, concatenating regex list
-        regexStr = '|'.join(['(' + rx + ')' for rx, op in rules])
-
-        # ensure it's not middle of a word, wrap in non-capture group
-        regexStr = '(?<!\w)(?:' + regexStr + ')'
-
-        self.regex = re.compile(regexStr)
-        self.rules = rules
-
-    def replaceAll(self, string, rewriter):
-        last = 0
-        result = ''
-
-        for m in self.regex.finditer(string):
-
-            groups = m.groups()
-
-            numGroups = len(groups)
-
-            for g, i in zip(groups, range(numGroups)):
-                if g:
-                    break
-
-            # Add 1 as group 0 is always entire match
-            start = m.start(i + 1)
-            end = m.end(i + 1)
-
-            result += string[last:start]
-
-            # i-th rule, 1st index of tuple
-            op = self.rules[i][1]
-
-            if hasattr(op, '__call__'):
-                result += op(rewriter, string[start:end])
-            else:
-                result += str(op)
-
-            last = end
-
-        result += string[last:]
-        return result
-
-
-
-class RxRep:
-    """
-    >>> test_repl('location = "http://example.com/abc.html"')
-    'WB_wombat_location = "/web/20131010im_/http://example.com/abc.html"'
-
-    >>> test_repl('cool_Location = "http://example.com/abc.html"')
-    'cool_Location = "/web/20131010im_/http://example.com/abc.html"'
-
-    >>> test_repl('window.location = "http://example.com/abc.html" document.domain = "anotherdomain.com"')
-    'window.WB_wombat_location = "/web/20131010im_/http://example.com/abc.html" document.WB_wombat_domain = "anotherdomain.com"'
-
-    >>> test_repl('window.location = "http://example.com/abc.html"; some_func(); ')
-    'window.WB_wombat_location = "/web/20131010im_/http://example.com/abc.html"; /*some_func()*/; '
-
+    # Test https->http converter (other tests below in subclasses)
+    >>> RegexRewriter([(RegexRewriter.HTTPX_MATCH_REGEX, RegexRewriter.removeHttps, 0)]).replaceAll('a = https://example.com; b = http://example.com; c = https://some-url/path/https://embedded.example.com')
+    'a = http://example.com; b = http://example.com; c = http://some-url/path/http://embedded.example.com'
     """
 
     @staticmethod
@@ -165,7 +23,11 @@ class RxRep:
     def addPrefix(prefix):
         return lambda string: prefix + string
 
-    HTTP_MATCH_REGEX = 'https?:\\\\?/\\\\?/[A-Za-z0-9:_@.-]+'
+    @staticmethod
+    def archivalRewrite(rewriter):
+        return lambda x: rewriter.rewrite(x)
+
+    HTTPX_MATCH_REGEX = 'https?:\\\\?/\\\\?/[A-Za-z0-9:_@.-]+'
 
     DEFAULT_OP = addPrefix
 
@@ -174,55 +36,145 @@ class RxRep:
         #rules = self.createRules(httpPrefix)
 
         # Build regexstr, concatenating regex list
-        regexStr = '|'.join(['(' + rx + ')' for rx, op in rules])
+        regexStr = '|'.join(['(' + rx + ')' for rx, op, count in rules])
 
         # ensure it's not middle of a word, wrap in non-capture group
         regexStr = '(?<!\w)(?:' + regexStr + ')'
 
-        self.regex = re.compile(regexStr)
+        self.regex = re.compile(regexStr, re.M)
         self.rules = rules
 
     def replaceAll(self, string):
         return self.regex.sub(lambda x: self.replace(x), string)
 
     def replace(self, m):
-        for group, (_, op) in zip(m.groups(), self.rules):
-            if group:
-                # Custom func
-                if not hasattr(op, '__call__'):
-                    op = RxRep.DEFAULT_OP(op)
+        i = 0
+        for _, op, count in self.rules:
+            i += 1
 
-                return op(group)
+            fullM = i
+            while count > 0:
+                i += 1
+                count -= 1
 
-        raise re.error('No Match Found for replacement')
+            if not m.group(i):
+                continue
+
+            # Custom func
+            if not hasattr(op, '__call__'):
+                op = RegexRewriter.DEFAULT_OP(op)
+
+            result = op(m.group(i))
+
+            # if extracting partial match
+            if i != fullM:
+                result = m.string[m.start(fullM):m.start(i)] + result + m.string[m.end(i):m.end(fullM)]
+
+            return result
 
 
-class JSRewriter(RxRep):
+
+class JSRewriter(RegexRewriter):
+    """
+    >>> test_js('location = "http://example.com/abc.html"')
+    'WB_wombat_location = "/web/20131010im_/http://example.com/abc.html"'
+
+    >>> test_js('cool_Location = "http://example.com/abc.html"')
+    'cool_Location = "/web/20131010im_/http://example.com/abc.html"'
+
+    >>> test_js('window.location = "http://example.com/abc.html" document.domain = "anotherdomain.com"')
+    'window.WB_wombat_location = "/web/20131010im_/http://example.com/abc.html" document.WB_wombat_domain = "anotherdomain.com"'
+
+    # custom rules added
+    >>> test_js('window.location = "http://example.com/abc.html"; some_func(); ', [('some_func\(\).*', RegexRewriter.commentOut, 0)])
+    'window.WB_wombat_location = "/web/20131010im_/http://example.com/abc.html"; /*some_func(); */'
+
+    """
+
     def __init__(self, httpPrefix, extra = []):
         rules = self._createRules(httpPrefix)
         rules.extend(extra)
- 
-        RxRep.__init__(self, rules)
+
+        RegexRewriter.__init__(self, rules)
 
 
     def _createRules(self, httpPrefix):
         return [
-             (RxRep.HTTP_MATCH_REGEX, httpPrefix),
-             ('location', 'WB_wombat_'),
-             ('domain', 'WB_wombat_'),
+             (RegexRewriter.HTTPX_MATCH_REGEX, httpPrefix, 0),
+             ('location|domain', 'WB_wombat_', 0),
         ]
 
+
+class CSSRewriter(RegexRewriter):
+    r"""
+    >>> test_css("background: url('/some/path.html')")
+    "background: url('/web/20131010im_/http://example.com/some/path.html')"
+
+    >>> test_css("background: url('../path.html')")
+    "background: url('/web/20131010im_/http://example.com/path.html')"
+
+    >>> test_css("background: url(\"http://domain.com/path.html\")")
+    'background: url("/web/20131010im_/http://domain.com/path.html")'
+
+    >>> test_css("background: url(file.jpeg)")
+    'background: url(/web/20131010im_/http://example.com/file.jpeg)'
+
+    >>> test_css("background: url('')")
+    "background: url('')"
+
+    >>> test_css("background: url (\"weirdpath\')")
+    'background: url ("/web/20131010im_/http://example.com/weirdpath\')'
+
+    >>> test_css("@import   url ('path.css')")
+    "@import   url ('/web/20131010im_/http://example.com/path.css')"
+
+    >>> test_css("@import url('path.css')")
+    "@import url('/web/20131010im_/http://example.com/path.css')"
+
+    >>> test_css("@import ( 'path.css')")
+    "@import ( '/web/20131010im_/http://example.com/path.css')"
+
+    >>> test_css("@import  \"path.css\"")
+    '@import  "/web/20131010im_/http://example.com/path.css"'
+
+    >>> test_css("@import ('../path.css\"")
+    '@import (\'/web/20131010im_/http://example.com/path.css"'
+
+    >>> test_css("@import ('../url.css\"")
+    '@import (\'/web/20131010im_/http://example.com/url.css"'
+
+    >>> test_css("@import (\"url.css\")")
+    '@import ("/web/20131010im_/http://example.com/url.css")'
+
+    """
+
+    def __init__(self, rewriter):
+        rules = self._createRules(rewriter)
+
+        RegexRewriter.__init__(self, rules)
+
+
+    def _createRules(self, rewriter):
+        return [
+             ("url\\s*\\(\\s*[\\\\\"']*([^'\"]+)[\\\\\"']*\\s*\\)", RegexRewriter.archivalRewrite(rewriter), 1),
+             ("@import\\s+(?!url)\\(?\\s*['\"]?(?!url[\\s\\(])([\w.:/\\\\-]+)", RegexRewriter.archivalRewrite(rewriter), 1),
+        ]
 
 
 if __name__ == "__main__":
     import doctest
 
-    extra = [('some_func\(\)', RxRep.commentOut)]
+    rwPrefix = '/web/20131010im_/'
 
-    rxrep = JSRewriter('/web/20131010im_/', extra)
+    arcrw = ArchivalUrlRewriter('/20131010im_/http://example.com/', '/web/')
 
-    def test_repl(string):
-        return rxrep.replaceAll(string)
+    def test_js(string, extra = []):
+        return JSRewriter(rwPrefix, extra).replaceAll(string)
+
+    def test_css(string):
+        return CSSRewriter(arcrw).replaceAll(string)
+
+
 
     doctest.testmod()
 

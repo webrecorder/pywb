@@ -31,7 +31,13 @@ class ArchivalUrlRewriter:
 
     >>> test_rewrite('../../other.html', '/2020/http://example.com/index.html', '')
     '/2020/http://example.com/other.html'
-      """
+
+    >>> test_rewrite('', '/20131010010203/http://example.com/file.html', '/web/')
+    '/web/20131010010203/http://example.com/file.html'
+
+    >>> ArchivalUrlRewriter('/19960708im_/http://domain.example.com/path.txt', '/abc/').getAbsUrl()
+    '/abc/19960708im_/'
+    """
 
     NO_REWRITE_URI_PREFIX = ['javascript:', 'data:', 'mailto:', 'about:']
 
@@ -71,6 +77,9 @@ class ArchivalUrlRewriter:
             finalUrl = self.prefix + ArchivalUrl.to_str(wburl.type, mod, wburl.timestamp, newUrl)
 
         return finalUrl
+
+    def getAbsUrl(self, url = ''):
+        return self.prefix + ArchivalUrl.to_str(self.wburl.type, self.wburl.mod, self.wburl.timestamp, url)
 
 
     def setBaseUrl(self, newUrl):
