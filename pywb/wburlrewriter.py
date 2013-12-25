@@ -41,7 +41,7 @@ class ArchivalUrlRewriter:
 
     NO_REWRITE_URI_PREFIX = ['javascript:', 'data:', 'mailto:', 'about:']
 
-    PROTOCOLS = ['http://', 'https://', '//', 'mms://', 'rtsp://', 'wais://']
+    PROTOCOLS = ['http://', 'https://', '//', 'ftp://', 'mms://', 'rtsp://', 'wais://']
 
     def __init__(self, wburl_str, prefix):
         self.wburl = ArchivalUrl(wburl_str)

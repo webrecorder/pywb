@@ -10,30 +10,38 @@ from regexmatch import JSRewriter, CSSRewriter
 #=================================================================
 class WBHtml(HTMLParser):
     r"""
-    >>> WBHtml(rewriter).feed('<HTML><A Href="page.html">Text</a></hTmL>')
+    >>> parse('<HTML><A Href="page.html">Text</a></hTmL>')
     <HTML><a href="/web/20131226101010/http://example.com/some/path/page.html">Text</a></html>
 
-    >>> WBHtml(rewriter).feed('<body x="y"><img src="../img.gif"/><br/></body>')
+    >>> parse('<body x="y"><img src="../img.gif"/><br/></body>')
     <body x="y"><img src="/web/20131226101010im_/http://example.com/some/img.gif"/><br/></body>
 
-    >>> WBHtml(rewriter).feed('<body x="y"><img src="/img.gif"/><br/></body>')
+    >>> parse('<body x="y"><img src="/img.gif"/><br/></body>')
     <body x="y"><img src="/web/20131226101010im_/http://example.com/img.gif"/><br/></body>
 
-    >>> WBHtml(rewriter).feed('<META http-equiv="refresh" content="10; URL=/abc/def.html">')
+    >>> parse('<META http-equiv="refresh" content="10; URL=/abc/def.html">')
     <meta http-equiv="refresh" content="10; URL=/web/20131226101010/http://example.com/abc/def.html">
 
-    >>> WBHtml(rewriter).feed('<script>window.location = "http://example.com/a/b/c.html"</script>')
+    >>> parse('<script>window.location = "http://example.com/a/b/c.html"</script>')
     <script>window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html"</script>
 
-    >>> WBHtml(rewriter).feed('<script>/*<![CDATA[*/window.location = "http://example.com/a/b/c.html;/*]]>*/"</script>')
+    # Unterminated script tag auto-terminate
+    >>> parse('<script>window.location = "http://example.com/a/b/c.html"</sc>')
+    <script>window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html"</sc></script>
+
+    >>> parse('<script>/*<![CDATA[*/window.location = "http://example.com/a/b/c.html;/*]]>*/"</script>')
     <script>/*<![CDATA[*/window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html;/*]]>*/"</script>
 
-    >>> WBHtml(rewriter).feed('<div style="background: url(\'abc.html\')" onclick="location = \'redirect.html\'"></div>')
+    >>> parse('<div style="background: url(\'abc.html\')" onclick="location = \'redirect.html\'"></div>')
     <div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onclick="WB_wombat_location = 'redirect.html'"></div>
 
-    >>> WBHtml(rewriter).feed('<style>@import "styles.css" .a { font-face: url(\'myfont.ttf\') }</style>')
+    >>> parse('<style>@import "styles.css" .a { font-face: url(\'myfont.ttf\') }</style>')
     <style>@import "/web/20131226101010/http://example.com/some/path/styles.css" .a { font-face: url('/web/20131226101010/http://example.com/some/path/myfont.ttf') }</style>
-    """
+
+    # Unterminated style tag auto-terminate
+    >>> parse('<style>@import url(styles.css)')
+    <style>@import url(/web/20131226101010/http://example.com/some/path/styles.css)</style>
+     """
 
     REWRITE_TAGS = {
         'a':       {'href': ''},
@@ -75,6 +83,14 @@ class WBHtml(HTMLParser):
 
         self.jsRewriter = JSRewriter(rewriter.getAbsUrl())
         self.cssRewriter = CSSRewriter(rewriter)
+
+
+    def close(self):
+        if (self._wbParseContext):
+            self.feed('</' + self._wbParseContext + '>')
+            self._wbParseContext = None
+
+        HTMLParser.close(self)
 
 
     # ===========================
@@ -216,5 +232,10 @@ if __name__ == "__main__":
     import doctest
 
     rewriter = ArchivalUrlRewriter('/20131226101010/http://example.com/some/path/index.html', '/web/')
+
+    def parse(data):
+        parser = WBHtml(rewriter)
+        parser.feed(data)
+        parser.close()
 
     doctest.testmod()

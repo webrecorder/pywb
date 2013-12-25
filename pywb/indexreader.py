@@ -19,7 +19,8 @@ class RemoteCDXServer:
      'statuscode': '200',
      'timestamp': '20020120142510',
      'urlkey': 'com,example)/'}
-    """
+
+   """
 
     def __init__(self, serverUrl):
         self.serverUrl = serverUrl

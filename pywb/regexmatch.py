@@ -148,6 +148,9 @@ class CSSRewriter(RegexRewriter):
 
     """
 
+    CSS_URL_REGEX = "url\\s*\\(\\s*[\\\\\"']*([^'\"]+)[\\\\\"']*\\s*\\)"
+    CSS_IMPORT_NO_URL_REGEX = "@import\\s+(?!url)\\(?\\s*['\"]?(?!url[\\s\\(])([\w.:/\\\\-]+)"
+
     def __init__(self, rewriter):
         rules = self._createRules(rewriter)
 
@@ -156,8 +159,8 @@ class CSSRewriter(RegexRewriter):
 
     def _createRules(self, rewriter):
         return [
-             ("url\\s*\\(\\s*[\\\\\"']*([^'\"]+)[\\\\\"']*\\s*\\)", RegexRewriter.archivalRewrite(rewriter), 1),
-             ("@import\\s+(?!url)\\(?\\s*['\"]?(?!url[\\s\\(])([\w.:/\\\\-]+)", RegexRewriter.archivalRewrite(rewriter), 1),
+             (CSSRewriter.CSS_URL_REGEX, RegexRewriter.archivalRewrite(rewriter), 1),
+             (CSSRewriter.CSS_IMPORT_NO_URL_REGEX, RegexRewriter.archivalRewrite(rewriter), 1),
         ]
 
 
