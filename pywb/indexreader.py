@@ -1,13 +1,14 @@
 import urllib
 import urllib2
 import wbexceptions
+import itertools
 
 from wbarchivalurl import ArchivalUrl
 
 class RemoteCDXServer:
     """
     >>> x = cdxserver.load('example.com', parse_cdx = True, limit = '2')
-    >>> pprint(vars(x[0]))
+    >>> pprint(x[0])
     {'digest': 'HT2DYGA5UKZCPBSFVCV3JOBXGW2G5UUA',
      'filename': 'DJ_crawl2.20020401123359-c/DJ_crawl3.20020120141301.arc.gz',
      'length': '1792',
@@ -20,7 +21,23 @@ class RemoteCDXServer:
      'timestamp': '20020120142510',
      'urlkey': 'com,example)/'}
 
-   """
+    >>> x = cdxserver.load('example.com', parse_cdx = True, params = {'resolveRevisits': True, 'closest': '20131226', 'sort': 'closest', 'limit': '1'})
+    >>> pprint(x[0])
+    {'digest': 'B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A',
+     'filename': 'top_domains-00800-20131210-035838/top_domains-00800-20131210051705-00024.warc.gz',
+     'length': '523',
+     'mimetype': 'warc/revisit',
+     'offset': '247256770',
+     'orig.filename': 'deccanchronicle.com-20130107-023325/IA-FOC-deccanchronicle.com-20130921004125-00000.warc.gz',
+     'orig.length': '529',
+     'orig.offset': '769759',
+     'original': 'http://www.example.com/',
+     'redirect': '-',
+     'robotflags': '-',
+     'statuscode': '-',
+     'timestamp': '20131210052355',
+     'urlkey': 'com,example)/'}
+  """
 
     def __init__(self, serverUrl):
         self.serverUrl = serverUrl
@@ -69,9 +86,22 @@ class RemoteCDXServer:
         }[wburl.type]
 
 
-class CDXCaptureResult:
-    CDX_FORMATS = [["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","robotflags","length","offset","filename"],
-                   ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","offset","filename"]]
+class CDXCaptureResult(dict):
+    CDX_FORMATS = [
+        # CDX 11 Format
+        ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","robotflags","length","offset","filename"],
+
+        # CDX 9 Format
+        ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","offset","filename"],
+
+        # CDX 11 Format + 3 revisit resolve fields
+        ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","robotflags","length","offset","filename",
+         "orig.length","orig.offset","orig.filename"],
+
+        # CDX 9 Format + 3 revisit resolve fields
+        ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","offset","filename",
+         "orig.length","orig.offset","orig.filename"]
+        ]
 
     def __init__(self, cdxline):
         cdxline = cdxline.rstrip()
@@ -83,13 +113,14 @@ class CDXCaptureResult:
                 cdxformat = i
 
         if not cdxformat:
-            raise InvalidCDXException('unknown {0}-field cdx format'.format(len(fields)))
+            raise wbexceptions.InvalidCDXException('unknown {0}-field cdx format'.format(len(fields)))
 
-        for header, field in zip(cdxformat, fields):
-            setattr(self, header, field)
+        for header, field in itertools.izip(cdxformat, fields):
+            self[header] = field
+    #        setattr(self, header, field)
 
-    def __repr__(self):
-        return str(vars(self))
+    #def __repr__(self):
+    #    return str(vars(self))
 
 
 

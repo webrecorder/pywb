@@ -1,4 +1,5 @@
 from wbarchivalurl import ArchivalUrl
+import utils
 #WB Request and Response
 
 class WbRequest:
@@ -106,11 +107,27 @@ class WbResponse:
     def redir_response(location, status = '302 Redirect'):
         return WbResponse(status, headersList = [('Location', location)])
 
+    @staticmethod
+    def stream_response(statusline, headers, stream):
+        def streamGen():
+            try:
+                buff = stream.read()
+                while buff:
+                    yield buff
+                    buff = stream.read()
+            finally:
+                stream.close()
+
+        return WbResponse(statusline, headersList = headers, value = streamGen())
+
+    @staticmethod
+    def better_timestamp_response(wbrequest, newTimestamp):
+        wbrequest.wb_url.timestamp = newTimestamp
+        newUrl = wbrequest.wb_prefix + str(wbrequest.wb_url)[1:]
+        return WbResponse.redir_response(newUrl)
+
     def get_header(self, name):
-        name_upp = name.upper()
-        for value in self.headersList:
-            if (value[0].upper() == name_upp):
-                return value[1]
+        return utils.get_header(self.headersList, name)
 
     def __call__(self, env, start_response):
         #headersList = []
@@ -118,6 +135,12 @@ class WbResponse:
         #    headersList.append((key, value))
 
         start_response(self.status, self.headersList)
+
+        if env['REQUEST_METHOD'] == 'HEAD':
+            if hasattr(self.body, 'close'):
+                self.body.close()
+                return self.body
+            return []
 
         if hasattr(self.body, '__iter__'):
             return self.body

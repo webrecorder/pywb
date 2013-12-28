@@ -37,6 +37,9 @@ class ArchivalUrlRewriter:
 
     >>> ArchivalUrlRewriter('/19960708im_/http://domain.example.com/path.txt', '/abc/').getAbsUrl()
     '/abc/19960708im_/'
+
+    >>> ArchivalUrlRewriter.stripProtocol('https://example.com') == ArchivalUrlRewriter.stripProtocol('http://example.com')
+    True
     """
 
     NO_REWRITE_URI_PREFIX = ['javascript:', 'data:', 'mailto:', 'about:']
@@ -84,6 +87,14 @@ class ArchivalUrlRewriter:
 
     def setBaseUrl(self, newUrl):
         self.wburl.url = newUrl
+
+    @staticmethod
+    def stripProtocol(url):
+        for protocol in ArchivalUrlRewriter.PROTOCOLS:
+            if url.startswith(protocol):
+                return url[len(protocol):]
+
+        return url
 
 if __name__ == "__main__":
     import doctest

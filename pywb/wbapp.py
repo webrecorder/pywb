@@ -1,11 +1,11 @@
-import indexreader
-import json
+from query import QueryHandler
 import wbexceptions
-import utils
 
 from wbrequestresponse import WbResponse
 from archivalrouter import ArchivalRequestRouter
 
+
+## ===========
 class EchoEnv:
     def __call__(self, wbrequest, _):
         return WbResponse.text_response(str(wbrequest.env))
@@ -14,33 +14,20 @@ class WBHandler:
     def __call__(self, wbrequest, _):
         return WbResponse.text_response(str(wbrequest))
 
-class QueryHandler:
-    def __init__(self):
-        self.cdxserver = indexreader.RemoteCDXServer('http://web.archive.org/cdx/search/cdx')
 
+## ===========
+query = QueryHandler()
 
-    def __call__(self, wbrequest, prev_wbresponse):
-        wburl = wbrequest.wb_url
-
-        params = self.cdxserver.getQueryParams(wburl)
-
-        cdxlines = self.cdxserver.load(wburl.url, params)
-
-        cdxlines = utils.peek_iter(cdxlines)
-
-        if cdxlines is not None:
-            return WbResponse.text_stream(cdxlines)
-
-        raise wbexceptions.NotFoundException('WB Does Not Have Url: ' + wburl.url)
-
-
+import testwb
+replay = testwb.createReplay()
 
 ## ===========
 parser = ArchivalRequestRouter(
     {
      't0' : [EchoEnv()],
      't1' : [WBHandler()],
-     't2' : [QueryHandler()]
+     't2' : [query],
+     't3' : [query, replay],
     },
     hostpaths = ['http://localhost:9090/'])
 ## ===========
@@ -62,6 +49,7 @@ def application(env, start_response):
         response = handleException(env, e)
 
     return response(env, start_response)
+
 
 def handleException(env, exc):
     if hasattr(exc, 'status'):
