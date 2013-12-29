@@ -118,7 +118,9 @@ class WbResponse:
             finally:
                 stream.close()
 
-        return WbResponse(statusline, headersList = headers, value = streamGen())
+        response = WbResponse(statusline, headersList = headers, value = streamGen())
+        response._stream = stream
+        return response
 
     @staticmethod
     def better_timestamp_response(wbrequest, newTimestamp):
@@ -139,7 +141,6 @@ class WbResponse:
         if env['REQUEST_METHOD'] == 'HEAD':
             if hasattr(self.body, 'close'):
                 self.body.close()
-                return self.body
             return []
 
         if hasattr(self.body, '__iter__'):

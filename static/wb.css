@@ -1,0 +1,13 @@
+
+#_wayback_banner
+{ 
+  display: block;
+  position: absolute;
+  top: 0px;
+  width: 100%; 
+  border: 1px solid; 
+  background-color: lightYellow; 
+  text-align: center;
+  z-index: 2147483643;
+}
+

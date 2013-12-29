@@ -1,8 +1,32 @@
+import StringIO
+
 import indexreader
 from wbrequestresponse import WbResponse
+from wbarchivalurl import ArchivalUrl
 import utils
+from wburlrewriter import ArchivalUrlRewriter
 
-class ReplayHandler:
+import wbhtml
+import regexmatch
+import wbexceptions
+
+#=================================================================
+class FullHandler:
+    def __init__(self, query, replay):
+        self.query = query
+        self.replay = replay
+
+    def __call__(self, wbrequest, _):
+        query_response = self.query(wbrequest, None)
+
+        if (wbrequest.wb_url.type == ArchivalUrl.QUERY) or (wbrequest.wb_url.type == ArchivalUrl.URL_QUERY):
+            return query_response
+
+        return self.replay(wbrequest, query_response)
+
+
+#=================================================================
+class ReplayHandler(object):
     def __init__(self, resolvers, archiveloader):
         self.resolvers = resolvers
         self.archiveloader = archiveloader
@@ -11,38 +35,45 @@ class ReplayHandler:
         cdxlist = query_response.body
         last_e = None
         first = True
+
         for cdx in cdxlist:
             try:
                 cdx = indexreader.CDXCaptureResult(cdx)
 
-                # First time through, check if do redirect before warc load
-                if first and (cdx['timestamp'] != wbrequest.wb_url.timestamp):
-                    return WbResponse.better_timestamp_response(wbrequest, cdx['timestamp'])
+                # ability to intercept and redirect
+                if first:
+                    self._checkRedir(wbrequest, cdx)
+                    first = False
 
                 response = self.doReplay(cdx, wbrequest)
 
                 if response:
-                    # if a fallback, redirect to exact timestamp!
-                    if not first and (cdx['timestamp'] != wbrequest.wb_url.timestamp):
-                        response.close()
-                        return WbResponse.better_timestamp_response(wbrequest, cdx['timestamp'])
-
+                    response.cdx = cdx
                     return response
 
-                first = False
+            #except wbexceptions.InternalRedirect as ir:
+            #    raise ir
 
-            except Exception, e:
+            except wbexceptions.CaptureException as ce:
                 import traceback
                 traceback.print_exc()
-                last_e = e
+                last_e = ce
                 pass
 
         if last_e:
             raise last_e
+        else:
+            raise wbexceptions.ArchiveLoadFailed()
+
+    def _checkRedir(self, wbrequest, cdx):
+        return None
 
     def _load(self, cdx, revisit = False):
-        prefix = '' if not revisit else 'orig.'
-        return self.archiveloader.load(self.resolveFull(cdx[prefix + 'filename']), cdx[prefix + 'offset'], cdx[prefix + 'length'])
+        if revisit:
+            return self.archiveloader.load(self.resolveFull(cdx['orig.filename']), cdx['orig.offset'], cdx['orig.length'])
+        else:
+            return self.archiveloader.load(self.resolveFull(cdx['filename']), cdx['offset'], cdx['length'])
+
 
     def doReplay(self, cdx, wbrequest):
         hasCurr = (cdx['filename'] != '-')
@@ -75,18 +106,7 @@ class ReplayHandler:
         else:
             raise wbexceptions.CaptureException('Invalid CDX' + cdx)
 
-        # Check for self redirect
-        if headersRecord.statusline.startswith('3'):
-            if self.isSelfRedirect(wbrequest, headersRecord):
-                raise wbexception.CaptureException('Self Redirect: ' + cdx)
-
         return WbResponse.stream_response(headersRecord.statusline, headersRecord.httpHeaders, payloadRecord.stream)
-
-    def isSelfRedirect(self, wbrequest, record):
-        requestUrl = wbrequest.wb_url.url.lower()
-        locationUrl = utils.get_header(record.httpHeaders, 'Location').lower()
-        return requestUrl == locationUrl
-        #ArchivalUrlRewriter.stripProtocol(requestUrl) == ArchivalUrlRewriter.stripProtocol(locationUrl)
 
 
     def resolveFull(self, filename):
@@ -98,6 +118,164 @@ class ReplayHandler:
                 return fullUrl
 
         raise exceptions.UnresolvedArchiveFileException('Archive File Not Found: ' + cdx.filename)
+
+
+#=================================================================
+class RewritingReplayHandler(ReplayHandler):
+
+
+    REWRITE_TYPES = {
+        'html': ('text/html', 'application/xhtml'),
+        'css':  ('text/css'),
+        'js':   ('text/javascript', 'application/javascript', 'application/x-javascript'),
+        'xml':  ('/xml', '+xml', '.xml', '.rss'),
+    }
+
+
+    PROXY_HEADERS = ('content-type', 'content-disposition')
+
+    URL_REWRITE_HEADERS = ('location', 'content-location', 'content-base')
+
+    ENCODING_HEADERS = ('content-encoding', 'transfer-encoding')
+
+
+    def __init__(self, resolvers, archiveloader, headerPrefix = 'X-Archive-Orig-', headInsert = None):
+        ReplayHandler.__init__(self, resolvers, archiveloader)
+        self.headerPrefix = headerPrefix
+        self.headInsert = headInsert
+
+
+    def _canonContentType(self, contentType):
+        for type, mimelist in self.REWRITE_TYPES.iteritems():
+            for mime in mimelist:
+                if mime in contentType:
+                    return type
+
+        return None
+
+
+    def __call__(self, wbrequest, query_response):
+        urlrewriter = ArchivalUrlRewriter(wbrequest.wb_url, wbrequest.wb_prefix)
+        wbrequest.urlrewriter = urlrewriter
+
+        response = ReplayHandler.__call__(self, wbrequest, query_response)
+
+        if response and response.cdx:
+            self._checkRedir(wbrequest, response.cdx)
+
+        # Transparent!
+        if wbrequest.wb_url.mod == 'id_':
+            return response
+
+        contentType = utils.get_header(response.headersList, 'Content-Type')
+
+        canonType = self._canonContentType(contentType)
+
+        (newHeaders, remHeaders) = self._rewriteHeaders(response.headersList, (canonType is not None))
+
+        # binary type, just send through
+        if canonType is None:
+            response.headersList = newHeaders
+            return response
+
+        # Handle text rewriting
+        # TODO: better way to pass this
+        stream = response._stream
+
+        # special case -- need to ungzip the body
+        if (utils.contains_header(remHeaders, ('Content-Encoding', 'gzip'))):
+            stream = archiveloader.LineStream(stream, decomp = zlib.decompressobj(16 + zlib.MAX_WBITS))
+
+        return self._rewriteContent(canonType, urlrewriter, stream, newHeaders, response)
+
+    # TODO: first non-streaming attempt, probably want to stream
+    def _rewriteContent(self, canonType, urlrewriter, stream, newHeaders, origResponse):
+        if canonType == 'html':
+            out = StringIO.StringIO()
+            htmlrewriter = wbhtml.WBHtml(urlrewriter, out, self.headInsert)
+
+            try:
+                buff = stream.read()
+                while buff:
+                    htmlrewriter.feed(buff)
+                    buff = stream.read()
+
+                htmlrewriter.close()
+
+            #except Exception as e:
+            #    print e
+
+            finally:
+                value = [out.getvalue()]
+                out.close()
+
+        else:
+            if canonType == 'css':
+                rewriter = regexmatch.CSSRewriter(urlrewriter)
+            elif canonType == 'js':
+                rewriter = regexmatch.JSRewriter(urlrewriter)
+
+            def gen():
+                try:
+                    buff = stream.read()
+                    while buff:
+                        yield rewriter.replaceAll(buff)
+                        buff = stream.read()
+
+                finally:
+                    stream.close()
+
+            value = gen()
+
+        return WbResponse(status = origResponse.status, headersList = newHeaders, value = value)
+
+
+
+    def _rewriteHeaders(self, headers, stripEncoding = False):
+        newHeaders = []
+        removedHeaders = []
+
+        for (name, value) in headers:
+            lowername = name.lower()
+            if lowername in self.PROXY_HEADERS:
+                newHeaders.append((name, value))
+            elif lowername in self.URL_REWRITE_HEADERS:
+                newHeaders.append((name, urlrewriter.rewrite(value)))
+            elif lowername in self.ENCODING_HEADERS:
+                if stripEncoding:
+                    removedHeaders.append((name, value))
+                else:
+                    newHeaders.append((name, value))
+            else:
+                newHeaders.append((self.headerPrefix + name, value))
+
+        return (newHeaders, removedHeaders)
+
+
+    def _checkRedir(self, wbrequest, cdx):
+        if cdx and (cdx['timestamp'] != wbrequest.wb_url.timestamp):
+            newUrl = wbrequest.urlrewriter.getTimestampUrl(cdx['timestamp'], cdx['original'])
+            raise wbexceptions.InternalRedirect(newUrl)
+            #return WbResponse.better_timestamp_response(wbrequest, cdx['timestamp'])
+
+        return None
+
+
+    def doReplay(self, cdx, wbrequest):
+        wbresponse = ReplayHandler.doReplay(self, cdx, wbrequest)
+
+        # Check for self redirect
+        if wbresponse.status.startswith('3'):
+            if self.isSelfRedirect(wbrequest, wbresponse.headersList):
+                raise wbexceptions.CaptureException('Self Redirect: ' + str(cdx))
+
+        return wbresponse
+
+    def isSelfRedirect(self, wbrequest, httpHeaders):
+        requestUrl = wbrequest.wb_url.url.lower()
+        locationUrl = utils.get_header(httpHeaders, 'Location').lower()
+        #return requestUrl == locationUrl
+        return (ArchivalUrlRewriter.stripProtocol(requestUrl) == ArchivalUrlRewriter.stripProtocol(locationUrl))
 
 
 #======================================

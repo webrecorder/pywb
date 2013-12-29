@@ -38,6 +38,9 @@ class ArchivalUrlRewriter:
     >>> ArchivalUrlRewriter('/19960708im_/http://domain.example.com/path.txt', '/abc/').getAbsUrl()
     '/abc/19960708im_/'
 
+    >>> ArchivalUrlRewriter('/2013id_/example.com/file/path/blah.html', '/123/').getTimestampUrl('20131024')
+    '/123/20131024id_/http://example.com/file/path/blah.html'
+
     >>> ArchivalUrlRewriter.stripProtocol('https://example.com') == ArchivalUrlRewriter.stripProtocol('http://example.com')
     True
     """
@@ -46,8 +49,8 @@ class ArchivalUrlRewriter:
 
     PROTOCOLS = ['http://', 'https://', '//', 'ftp://', 'mms://', 'rtsp://', 'wais://']
 
-    def __init__(self, wburl_str, prefix):
-        self.wburl = ArchivalUrl(wburl_str)
+    def __init__(self, wburl, prefix):
+        self.wburl = wburl if isinstance(wburl, ArchivalUrl) else ArchivalUrl(wburl)
         self.prefix = prefix
 
         if self.prefix.endswith('/'):
@@ -83,6 +86,12 @@ class ArchivalUrlRewriter:
 
     def getAbsUrl(self, url = ''):
         return self.prefix + ArchivalUrl.to_str(self.wburl.type, self.wburl.mod, self.wburl.timestamp, url)
+
+    def getTimestampUrl(self, timestamp, url = None):
+        if not url:
+            url = self.wburl.url
+
+        return self.prefix + ArchivalUrl.to_str(self.wburl.type, self.wburl.mod, timestamp, url)
 
 
     def setBaseUrl(self, newUrl):

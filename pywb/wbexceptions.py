@@ -38,4 +38,15 @@ class InvalidArchiveRecordException(CaptureException):
         super(InvalidArchiveRecordException, self).__init__(msg)
         self.errList = errList
 
+class ArchiveLoadFailed(CaptureException):
+    pass
+
+class InternalRedirect(Exception):
+    def __init__(self, location, status = '302 Internal Redirect'):
+        Exception.__init__(self, 'Redirecting -> ' + location)
+        self.status = status
+        self.httpHeaders = [('Location', location)]
+
+    def status(_):
+        return self.status
 

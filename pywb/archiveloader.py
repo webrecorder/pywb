@@ -15,8 +15,8 @@ class HttpStreamLoader:
         self.hmacDuration = hmacDuration
 
     def load(self, url, offset, length):
-        if length:
-            rangeHeader = 'bytes={0}-{1}'.format(offset, int(offset) + int(length) - 1)
+        if length > 0:
+            rangeHeader = 'bytes={0}-{1}'.format(offset, offset + length - 1)
         else:
             rangeHeader = 'bytes={0}-'.format(offset)
 
@@ -31,7 +31,20 @@ class HttpStreamLoader:
 
 
 #=================================================================
-WBArchiveRecord = collections.namedtuple('WBArchiveRecord', 'parsed, stream, statusline, httpHeaders')
+# Untested, but for completeness
+class FileStreamLoader:
+    def load(self, url, offset, length):
+        if url.startswith('file://'):
+            url = url[len('file://'):]
+
+        afile = open(url, 'rb')
+        afile.seek(offset)
+        return afile
+
+
+
+#=================================================================
+WBArchiveRecord = collections.namedtuple('WBArchiveRecord', 'type, record, stream, statusline, httpHeaders')
 
 #=================================================================
 class ArchiveLoader:
@@ -46,14 +59,17 @@ class ArchiveLoader:
         '.arc':     (hanzo.warctools.ArcRecord,  'arc',  False),
     }
 
-    HTTP_STATUS_REGEX = re.compile('^HTTP/[\d.]+ ((\d+).*)$')
+    HTTP_STATUS_REGEX = re.compile('^HTTP/[\d.]+ (\d+.*)$')
 
     @staticmethod
     def createDefaultLoaders():
         http = HttpStreamLoader()
+        file = FileStreamLoader()
         return {
                 'http': http,
                 'https': http,
+                'file': file,
+                '': file
                }
 
 
@@ -86,10 +102,15 @@ class ArchiveLoader:
         else:
             decomp = None
 
+        try:
+            length = int(length)
+        except:
+            length = -1
 
-        raw = loader.load(url, offset, length)
 
-        reader = LineReader(raw, self.chunkSize, decomp)
+        raw = loader.load(url, long(offset), length)
+
+        reader = LineReader(raw, length, self.chunkSize, decomp)
 
         parser = loaderCls.make_parser()
 
@@ -104,27 +125,33 @@ class ArchiveLoader:
 
 
         if aFormat == 'arc':
-            recType = 'arc-response'
+            recType = 'response'
             empty = (utils.get_header(parsed.headers, 'length') == 0)
         else:
             recType = utils.get_header(parsed.headers, 'WARC-Type')
             empty = (utils.get_header(parsed.headers, 'Content-Length') == '0')
 
-        parsed.recType = recType
-        parsed.aFormat = aFormat
-
+        # special case: empty w/arc record (hopefully a revisit)
         if empty:
-            return WBArchiveRecord(parsed, reader, '400', [])
+            statusline = '204 No Content'
+            headers = []
 
+        # special case: warc records that are not expected to have http headers
+        # attempt to add 200 status and content-type
         elif recType == 'metadata' or recType == 'resource':
+            statusline = '200 OK'
             headers = [('Content-Type', utils.get_header(parsed.headers, 'Content-Type'))]
 
-            return WBArchiveRecord(parsed, reader, '200 OK', headers)
+        # special case: http 0.9 response, no status or headers
+        elif recType == 'response' and (';version=0.9' in utils.get_header(parsed.headers, 'Content-Type')):
+            statusline = '200 OK'
+            headers = []
 
+        # response record: parse HTTP status and headers!
         else:
             (statusline, headers) = self.parseHttpHeaders(reader)
 
-            return WBArchiveRecord(parsed, reader, statusline, headers)
+        return WBArchiveRecord((aFormat, recType), parsed, reader, statusline, headers)
 
 
     def parseHttpHeaders(self, stream):
@@ -153,20 +180,23 @@ class ArchiveLoader:
 
 #=================================================================
 class LineReader:
-    def __init__(self, stream, chunkSize = 1024, decomp = None):
+    def __init__(self, stream, maxLen = 0, chunkSize = 1024, decomp = None):
         self.stream = stream
         self.chunkSize = chunkSize
         self.decomp = decomp
         self.buff = None
-        self.numread = 0
+        self.numRead = 0
+        self.maxLen = maxLen
 
     def _fillbuff(self, chunkSize = None):
         if not chunkSize:
             chunkSize = self.chunkSize
 
         if not self.buff or self.buff.pos >= self.buff.len:
-            data = self.stream.read(chunkSize)
-            self.numread += len(data)
+            toRead =  min(self.maxLen - self.numRead, self.chunkSize) if (self.maxLen > 0) else self.chunkSize
+            data = self.stream.read(toRead)
+            self.numRead += len(data)
+
             if self.decomp:
                 data = self.decomp.decompress(data)
 

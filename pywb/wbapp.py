@@ -1,4 +1,5 @@
 from query import QueryHandler
+from replay import FullHandler
 import wbexceptions
 
 from wbrequestresponse import WbResponse
@@ -19,7 +20,16 @@ class WBHandler:
 query = QueryHandler()
 
 import testwb
-replay = testwb.createReplay()
+
+headInsert = """
+
+<!-- WB Insert -->
+<script src='/static/wb.js'> </script>
+<link rel='stylesheet' href='/static/wb.css'/>
+<!-- End WB Insert -->
+"""
+
+replay = testwb.createReplay(headInsert)
 
 ## ===========
 parser = ArchivalRequestRouter(
@@ -28,6 +38,7 @@ parser = ArchivalRequestRouter(
      't1' : [WBHandler()],
      't2' : [query],
      't3' : [query, replay],
+     'web': FullHandler(query, replay)
     },
     hostpaths = ['http://localhost:9090/'])
 ## ===========
@@ -41,6 +52,9 @@ def application(env, start_response):
 
         if not response:
             raise wbexceptions.NotFoundException(env['REQUEST_URI'] + ' was not found')
+
+    except wbexceptions.InternalRedirect as ir:
+        response = WbResponse(status = ir.status, headersList = ir.httpHeaders)
 
     except Exception as e:
         last_exc = e

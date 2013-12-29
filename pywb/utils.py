@@ -17,6 +17,16 @@ def get_header(headersList, name):
         if (value[0].lower() == nameLower):
             return value[1]
 
+    return None
+
+def contains_header(headersList, seekHeader):
+    header = get_header(headersList, seekHeader[0])
+    if not header:
+        return False
+
+    # see if found header matches value!
+    return (header == seekHeader[1])
+
 class HMACCookieMaker:
     def __init__(self, key, name):
         self.key = key

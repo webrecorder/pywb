@@ -91,8 +91,8 @@ class JSRewriter(RegexRewriter):
 
     """
 
-    def __init__(self, httpPrefix, extra = []):
-        rules = self._createRules(httpPrefix)
+    def __init__(self, rewriter, extra = []):
+        rules = self._createRules(rewriter.getAbsUrl())
         rules.extend(extra)
 
         RegexRewriter.__init__(self, rules)
@@ -167,12 +167,10 @@ class CSSRewriter(RegexRewriter):
 if __name__ == "__main__":
     import doctest
 
-    rwPrefix = '/web/20131010im_/'
-
     arcrw = ArchivalUrlRewriter('/20131010im_/http://example.com/', '/web/')
 
     def test_js(string, extra = []):
-        return JSRewriter(rwPrefix, extra).replaceAll(string)
+        return JSRewriter(arcrw, extra).replaceAll(string)
 
     def test_css(string):
         return CSSRewriter(arcrw).replaceAll(string)
