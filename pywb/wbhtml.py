@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import sys
 import re
 
@@ -24,7 +27,11 @@ class WBHtml(HTMLParser):
 
     >>> parse('<html><head><base href="http://example.com/some/path/index.html"/>')
     <html><head><base href="/web/20131226101010/http://example.com/some/path/index.html"/>
-   
+
+    # Unicode
+    >>> parse('<a href="http://испытание.испытание/">испытание</a>')
+    <a href="/web/20131226101010/http://испытание.испытание/">испытание</a>
+
     # Meta tag
     >>> parse('<META http-equiv="refresh" content="10; URL=/abc/def.html">')
     <meta http-equiv="refresh" content="10; URL=/web/20131226101010/http://example.com/abc/def.html">
@@ -32,6 +39,10 @@ class WBHtml(HTMLParser):
     >>> parse('<meta http-equiv="Content-type" content="text/html; charset=utf-8" />')
     <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
 
+    >>> parse('<META http-equiv="refresh" content>')
+    <meta http-equiv="refresh" content>
+
+    # Script tag
     >>> parse('<script>window.location = "http://example.com/a/b/c.html"</script>')
     <script>window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html"</script>
 
@@ -124,6 +135,9 @@ class WBHtml(HTMLParser):
     META_REFRESH_REGEX = re.compile('^[\\d.]+\\s*;\\s*url\\s*=\\s*(.+?)\\s*$', re.IGNORECASE | re.MULTILINE)
 
     def _rewriteMetaRefresh(self, metaRefresh):
+        if not metaRefresh:
+            return None
+
         m = WBHtml.META_REFRESH_REGEX.match(metaRefresh)
         if not m:
             return metaRefresh
@@ -154,7 +168,6 @@ class WBHtml(HTMLParser):
         return False
 
     def rewriteTagAttrs(self, tag, tagAttrs, isStartEnd):
-        
         # special case: script or style parse context
         if (tag in WBHtml.STATE_TAGS) and (self._wbParseContext == None):
             self._wbParseContext = tag
@@ -178,7 +191,7 @@ class WBHtml(HTMLParser):
             attrName, attrValue = attr
 
             # special case: inline JS/event handler
-            if (attrValue and attrValue.startswith('javascript:')) or attrName.startswith("on"):
+            if (attrValue and attrValue.startswith('javascript:')) or attrName.startswith('on'):
                 attrValue = self._rewriteScript(attrValue)
 
             # special case: inline CSS/style attribute
@@ -199,8 +212,8 @@ class WBHtml(HTMLParser):
                 if rwMod is not None:
                     attrValue = self._rewriteURL(attrValue, rwMod)
 
-            #self.out.write(' {0}="{1}"'.format(attrName, attrValue))
             if attrValue:
+                #self.out.write(' {0}="{1}"'.format(attrName, attrValue))
                 self.out.write(' ' + attrName + '="' + attrValue + '"')
             else:
                 self.out.write(' ' + attrName)
@@ -208,7 +221,7 @@ class WBHtml(HTMLParser):
         self.out.write('/>' if isStartEnd else '>')
 
         # special case: head tag
-        if (self.headInsert) and (self._wbParseContext == None) and (tag == "head"):
+        if (self.headInsert) and (self._wbParseContext == None) and (tag == 'head'):
             self.out.write(self.headInsert)
             self.headInsert = None
 
