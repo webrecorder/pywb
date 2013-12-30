@@ -117,7 +117,7 @@ class ReplayHandler(object):
             if fullUrl:
                 return fullUrl
 
-        raise exceptions.UnresolvedArchiveFileException('Archive File Not Found: ' + cdx.filename)
+        raise wbexceptions.UnresolvedArchiveFileException('Archive File Not Found: ' + filename)
 
 
 #=================================================================
@@ -125,10 +125,10 @@ class RewritingReplayHandler(ReplayHandler):
 
 
     REWRITE_TYPES = {
-        'html': ('text/html', 'application/xhtml'),
-        'css':  ('text/css'),
-        'js':   ('text/javascript', 'application/javascript', 'application/x-javascript'),
-        'xml':  ('/xml', '+xml', '.xml', '.rss'),
+        'html': ['text/html', 'application/xhtml'],
+        'css':  ['text/css'],
+        'js':   ['text/javascript', 'application/javascript', 'application/x-javascript'],
+        'xml':  ['/xml', '+xml', '.xml', '.rss'],
     }
 
 
@@ -145,11 +145,10 @@ class RewritingReplayHandler(ReplayHandler):
         self.headInsert = headInsert
 
 
-    def _canonContentType(self, contentType):
-        for type, mimelist in self.REWRITE_TYPES.iteritems():
-            for mime in mimelist:
-                if mime in contentType:
-                    return type
+    def _textContentType(self, contentType):
+        for ctype, mimelist in self.REWRITE_TYPES.iteritems():
+            if any ((mime in contentType) for mime in mimelist):
+                return ctype
 
         return None
 
@@ -168,13 +167,13 @@ class RewritingReplayHandler(ReplayHandler):
             return response
 
         contentType = utils.get_header(response.headersList, 'Content-Type')
-
-        canonType = self._canonContentType(contentType)
-
-        (newHeaders, remHeaders) = self._rewriteHeaders(response.headersList, (canonType is not None))
+        
+        textType = self._textContentType(contentType) if contentType else None
+        
+        (newHeaders, remHeaders) = self._rewriteHeaders(response.headersList, urlrewriter, textType is not None)
 
         # binary type, just send through
-        if canonType is None:
+        if textType is None:
             response.headersList = newHeaders
             return response
 
@@ -186,19 +185,19 @@ class RewritingReplayHandler(ReplayHandler):
         if (utils.contains_header(remHeaders, ('Content-Encoding', 'gzip'))):
             stream = archiveloader.LineStream(stream, decomp = zlib.decompressobj(16 + zlib.MAX_WBITS))
 
-        return self._rewriteContent(canonType, urlrewriter, stream, newHeaders, response)
+        return self._rewriteContent(textType, urlrewriter, stream, newHeaders, response)
 
     # TODO: first non-streaming attempt, probably want to stream
-    def _rewriteContent(self, canonType, urlrewriter, stream, newHeaders, origResponse):
-        if canonType == 'html':
+    def _rewriteContent(self, textType, urlrewriter, stream, newHeaders, origResponse, encoding = 'utf-8'):
+        if textType == 'html':
             out = StringIO.StringIO()
             htmlrewriter = wbhtml.WBHtml(urlrewriter, out, self.headInsert)
 
             try:
-                buff = stream.read()
+                buff = stream.read()#.decode(encoding)
                 while buff:
                     htmlrewriter.feed(buff)
-                    buff = stream.read()
+                    buff = stream.read()#.decode(encoding)
 
                 htmlrewriter.close()
 
@@ -207,12 +206,13 @@ class RewritingReplayHandler(ReplayHandler):
 
             finally:
                 value = [out.getvalue()]
+                newHeaders.append(('Content-Length', str(len(value[0]))))
                 out.close()
 
         else:
-            if canonType == 'css':
+            if textType == 'css':
                 rewriter = regexmatch.CSSRewriter(urlrewriter)
-            elif canonType == 'js':
+            elif textType == 'js':
                 rewriter = regexmatch.JSRewriter(urlrewriter)
 
             def gen():
@@ -231,7 +231,7 @@ class RewritingReplayHandler(ReplayHandler):
 
 
 
-    def _rewriteHeaders(self, headers, stripEncoding = False):
+    def _rewriteHeaders(self, headers, urlrewriter, stripEncoding = False):
         newHeaders = []
         removedHeaders = []
 

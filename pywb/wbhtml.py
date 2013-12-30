@@ -19,6 +19,13 @@ class WBHtml(HTMLParser):
     >>> parse('<body x="y"><img src="/img.gif"/><br/></body>')
     <body x="y"><img src="/web/20131226101010im_/http://example.com/img.gif"/><br/></body>
 
+    >>> parse('<input "selected"><img src></div>')
+    <input "selected"><img src></div>
+
+    >>> parse('<html><head><base href="http://example.com/some/path/index.html"/>')
+    <html><head><base href="/web/20131226101010/http://example.com/some/path/index.html"/>
+   
+    # Meta tag
     >>> parse('<META http-equiv="refresh" content="10; URL=/abc/def.html">')
     <meta http-equiv="refresh" content="10; URL=/web/20131226101010/http://example.com/abc/def.html">
 
@@ -35,8 +42,8 @@ class WBHtml(HTMLParser):
     >>> parse('<script>/*<![CDATA[*/window.location = "http://example.com/a/b/c.html;/*]]>*/"</script>')
     <script>/*<![CDATA[*/window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html;/*]]>*/"</script>
 
-    >>> parse('<div style="background: url(\'abc.html\')" onclick="location = \'redirect.html\'"></div>')
-    <div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onclick="WB_wombat_location = 'redirect.html'"></div>
+    >>> parse('<div style="background: url(\'abc.html\')" onblah onclick="location = \'redirect.html\'"></div>')
+    <div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onblah onclick="WB_wombat_location = 'redirect.html'"></div>
 
     >>> parse('<style>@import "styles.css" .a { font-face: url(\'myfont.ttf\') }</style>')
     <style>@import "/web/20131226101010/http://example.com/some/path/styles.css" .a { font-face: url('/web/20131226101010/http://example.com/some/path/myfont.ttf') }</style>
@@ -130,14 +137,14 @@ class WBHtml(HTMLParser):
     # ===========================
 
     def _rewriteURL(self, value, mod = None):
-        return self.rewriter.rewrite(value, mod)
+        return self.rewriter.rewrite(value, mod) if value else None
 
 
     def _rewriteCSS(self, cssContent):
-        return self.cssRewriter.replaceAll(cssContent)
+        return self.cssRewriter.replaceAll(cssContent) if cssContent else None
 
     def _rewriteScript(self, scriptContent):
-        return self.jsRewriter.replaceAll(scriptContent)
+        return self.jsRewriter.replaceAll(scriptContent) if scriptContent else None
 
     def hasAttr(self, tagAttrs, attr):
         name, value = attr
@@ -147,14 +154,9 @@ class WBHtml(HTMLParser):
         return False
 
     def rewriteTagAttrs(self, tag, tagAttrs, isStartEnd):
-        # special case: base tag
-        if (tag == 'base'):
-            newBase = tagAttrs.get('href')
-            if newBase:
-                self.rewriter.setBaseUrl(newBase[1])
-
+        
         # special case: script or style parse context
-        elif (tag in WBHtml.STATE_TAGS) and (self._wbParseContext == None):
+        if (tag in WBHtml.STATE_TAGS) and (self._wbParseContext == None):
             self._wbParseContext = tag
 
         # special case: head insertion, non-head tags
@@ -176,7 +178,7 @@ class WBHtml(HTMLParser):
             attrName, attrValue = attr
 
             # special case: inline JS/event handler
-            if attrValue.startswith('javascript:') or attrName.startswith("on"):
+            if (attrValue and attrValue.startswith('javascript:')) or attrName.startswith("on"):
                 attrValue = self._rewriteScript(attrValue)
 
             # special case: inline CSS/style attribute
@@ -189,11 +191,19 @@ class WBHtml(HTMLParser):
                     attrValue = self._rewriteMetaRefresh(attrValue)
 
             else:
+                # special case: base tag
+                if (tag == 'base') and (attrName == 'href') and attrValue:
+                    self.rewriter.setBaseUrl(attrValue)
+
                 rwMod = handler.get(attrName)
                 if rwMod is not None:
                     attrValue = self._rewriteURL(attrValue, rwMod)
 
-            self.out.write(' {0}="{1}"'.format(attrName, attrValue))
+            #self.out.write(' {0}="{1}"'.format(attrName, attrValue))
+            if attrValue:
+                self.out.write(' ' + attrName + '="' + attrValue + '"')
+            else:
+                self.out.write(' ' + attrName)
 
         self.out.write('/>' if isStartEnd else '>')
 

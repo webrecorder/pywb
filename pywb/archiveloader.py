@@ -7,6 +7,7 @@ import urllib2
 import StringIO
 import urlparse
 import collections
+import wbexceptions
 
 #=================================================================
 class HttpStreamLoader:
@@ -143,9 +144,9 @@ class ArchiveLoader:
             headers = [('Content-Type', utils.get_header(parsed.headers, 'Content-Type'))]
 
         # special case: http 0.9 response, no status or headers
-        elif recType == 'response' and (';version=0.9' in utils.get_header(parsed.headers, 'Content-Type')):
-            statusline = '200 OK'
-            headers = []
+        #elif recType == 'response' and (';version=0.9' in utils.get_header(parsed.headers, 'Content-Type')):
+        #    statusline = '200 OK'
+        #    headers = []
 
         # response record: parse HTTP status and headers!
         else:
@@ -202,13 +203,13 @@ class LineReader:
 
             self.buff = StringIO.StringIO(data)
 
-    def read(self):
+    def read(self, length = None):
         self._fillbuff()
-        return self.buff.read()
+        return self.buff.read(length)
 
-    def readline(self):
+    def readline(self, length = None):
         self._fillbuff()
-        return self.buff.readline()
+        return self.buff.readline(length)
 
     def close(self):
         if self.stream:

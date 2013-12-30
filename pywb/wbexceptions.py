@@ -34,7 +34,7 @@ class UnknownLoaderProtocolException(CaptureException):
     pass
 
 class InvalidArchiveRecordException(CaptureException):
-    def __init__(msg, errList = None):
+    def __init__(self, msg, errList = None):
         super(InvalidArchiveRecordException, self).__init__(msg)
         self.errList = errList
 
