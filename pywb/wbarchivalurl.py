@@ -27,6 +27,8 @@ class ArchivalUrl:
     >>> repr(ArchivalUrl('/https://example.com/xyz'))
     "('latest_replay', '', '', 'https://example.com/xyz', '/https://example.com/xyz')"
 
+    >>> repr(ArchivalUrl('/https://example.com/xyz?a=%2f&b=%2E'))
+    "('latest_replay', '', '', 'https://example.com/xyz?a=%2f&b=%2E', '/https://example.com/xyz?a=%2f&b=%2E')"
 
     # Query Urls
     # ======================
@@ -92,7 +94,9 @@ class ArchivalUrl:
         elif not '://' in self.url:
             self.url = ArchivalUrl.DEFAULT_SCHEME + self.url
 
-        matcher = rfc3987.match(self.url, 'IRI')
+        # BUG?: adding upper() because rfc3987 lib rejects lower case %-encoding
+        # %2F is fine, but %2f -- standard supports either
+        matcher = rfc3987.match(self.url.upper(), 'IRI')
 
         if not matcher:
             raise wbexceptions.BadUrlException('Bad Request Url: ' + self.url)

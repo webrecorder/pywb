@@ -112,8 +112,11 @@ class ReplayHandler(object):
 
             # Case 4: if headers record is actually empty (eg empty revisit), then use headers from revisit
             if not headersRecord.httpHeaders:
-                headersRecord.close()
+                headersRecord.stream.close()
                 headersRecord = payloadRecord
+            else:
+                headersRecord.stream.close()
+                
 
             isRevisit = True
 
@@ -221,7 +224,8 @@ class RewritingReplayHandler(ReplayHandler):
             #    print e
 
             finally:
-                value = [out.getvalue().encode(encoding)]
+                content = out.getvalue().encode(encoding)
+                value = [content]
                 newHeaders.append(('Content-Length', str(len(value[0]))))
                 out.close()
 
