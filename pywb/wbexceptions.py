@@ -39,7 +39,13 @@ class InvalidArchiveRecordException(CaptureException):
         self.errList = errList
 
 class ArchiveLoadFailed(CaptureException):
-    pass
+    def __init__(self, filename, reason):
+        super(ArchiveLoadFailed, self).__init__(filename + ':' + str(reason))
+        self.filename = filename
+        self.reason = reason
+
+    def status(_):
+        return '503'
 
 class InternalRedirect(Exception):
     def __init__(self, location, status = '302 Internal Redirect'):

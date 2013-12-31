@@ -17,6 +17,10 @@ class ArchivalUrl:
     >>> repr(ArchivalUrl('/20130102im_/https://example.com'))
     "('replay', '20130102', 'im_', 'https://example.com', '/20130102im_/https://example.com')"
 
+    # Protocol agnostic convert to http
+    >>> repr(ArchivalUrl('/20130102im_///example.com'))
+    "('replay', '20130102', 'im_', 'http://example.com', '/20130102im_/http://example.com')"
+
     >>> repr(ArchivalUrl('/cs_/example.com'))
     "('latest_replay', '', 'cs_', 'http://example.com', '/cs_/http://example.com')"
 
@@ -81,7 +85,11 @@ class ArchivalUrl:
         if len(self.url) == 0:
             raise wbexceptions.RequestParseException('Invalid WB Request Url: ' + url)
 
-        if not self.url.startswith('//') and not '://' in self.url:
+        # protocol agnostic url -> http://
+        if self.url.startswith('//'):
+            self.url = ArchivalUrl.DEFAULT_SCHEME + self.url[2:]
+        # no protocol -> http://
+        elif not '://' in self.url:
             self.url = ArchivalUrl.DEFAULT_SCHEME + self.url
 
         matcher = rfc3987.match(self.url, 'IRI')

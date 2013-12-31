@@ -2,7 +2,7 @@
 #_wayback_banner
 { 
   display: block;
-  position: absolute;
+  position: fixed;
   top: 0px;
   width: 100%; 
   border: 1px solid; 

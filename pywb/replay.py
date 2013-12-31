@@ -1,4 +1,5 @@
 import StringIO
+from urllib2 import URLError
 
 import indexreader
 from wbrequestresponse import WbResponse
@@ -35,6 +36,9 @@ class ReplayHandler(object):
         cdxlist = query_response.body
         last_e = None
         first = True
+        
+        # List of already failed w/arcs
+        failedFiles = []
 
         for cdx in cdxlist:
             try:
@@ -45,14 +49,11 @@ class ReplayHandler(object):
                     self._checkRedir(wbrequest, cdx)
                     first = False
 
-                response = self.doReplay(cdx, wbrequest)
+                response = self.doReplay(cdx, wbrequest, failedFiles)
 
                 if response:
                     response.cdx = cdx
                     return response
-
-            #except wbexceptions.InternalRedirect as ir:
-            #    raise ir
 
             except wbexceptions.CaptureException as ce:
                 import traceback
@@ -63,38 +64,51 @@ class ReplayHandler(object):
         if last_e:
             raise last_e
         else:
-            raise wbexceptions.ArchiveLoadFailed()
+            raise wbexceptions.UnresolvedArchiveFileException()
 
     def _checkRedir(self, wbrequest, cdx):
         return None
 
-    def _load(self, cdx, revisit = False):
+    def _load(self, cdx, revisit, failedFiles):
         if revisit:
-            return self.archiveloader.load(self.resolveFull(cdx['orig.filename']), cdx['orig.offset'], cdx['orig.length'])
+            (filename, offset, length) = (cdx['orig.filename'], cdx['orig.offset'], cdx['orig.length'])
         else:
-            return self.archiveloader.load(self.resolveFull(cdx['filename']), cdx['offset'], cdx['length'])
+            (filename, offset, length) = (cdx['filename'], cdx['offset'], cdx['length'])
+
+        #optimization: if same file already failed this request, don't try again
+        if failedFiles and filename in failedFiles:
+            raise wbexceptions.ArchiveLoadFailed(filename, 'Skipping Already Failed')
+
+        try:
+            return self.archiveloader.load(self.resolveFull(filename), offset, length)
+
+        except URLError as ue:
+            if failedFiles:
+                failedFiles.append(filename)
+
+            raise wbexceptions.ArchiveLoadFailed(filename, ue.reason)
 
 
-    def doReplay(self, cdx, wbrequest):
+    def doReplay(self, cdx, wbrequest, failedFiles):
         hasCurr = (cdx['filename'] != '-')
         hasOrig = (cdx['orig.filename'] != '-')
 
         # Case 1: non-revisit
         if (hasCurr and not hasOrig):
-            headersRecord = self._load(cdx, False)
+            headersRecord = self._load(cdx, False, failedFiles)
             payloadRecord = headersRecord
             isRevisit = False
 
         # Case 2: old-style revisit, load headers from original payload
         elif (not hasCurr and hasOrig):
-            payloadRecord = self._load(cdx, False)
+            payloadRecord = self._load(cdx, False, failedFiles)
             headersRecord = payloadRecord
             isRevisit = True
 
         # Case 3: modern revisit, load headers from curr, payload from original
         elif (hasCurr and hasOrig):
-            headersRecord = self._load(cdx, False)
-            payloadRecord = self._load(cdx, True)
+            headersRecord = self._load(cdx, False, failedFiles)
+            payloadRecord = self._load(cdx, True, failedFiles)
 
             # Case 4: if headers record is actually empty (eg empty revisit), then use headers from revisit
             if not headersRecord.httpHeaders:
@@ -191,13 +205,15 @@ class RewritingReplayHandler(ReplayHandler):
     def _rewriteContent(self, textType, urlrewriter, stream, newHeaders, origResponse, encoding = 'utf-8'):
         if textType == 'html':
             out = StringIO.StringIO()
+            #out = SimpleWriter()
             htmlrewriter = wbhtml.WBHtml(urlrewriter, out, self.headInsert)
 
             try:
-                buff = stream.read()#.decode(encoding)
+                buff = stream.read()
                 while buff:
+                    buff = buff.decode(encoding)
                     htmlrewriter.feed(buff)
-                    buff = stream.read()#.decode(encoding)
+                    buff = stream.read()
 
                 htmlrewriter.close()
 
@@ -205,29 +221,23 @@ class RewritingReplayHandler(ReplayHandler):
             #    print e
 
             finally:
-                value = [out.getvalue()]
+                value = [out.getvalue().encode(encoding)]
                 newHeaders.append(('Content-Length', str(len(value[0]))))
                 out.close()
 
+            return WbResponse(status = origResponse.status, headersList = newHeaders, value = value)
+        
         else:
             if textType == 'css':
                 rewriter = regexmatch.CSSRewriter(urlrewriter)
             elif textType == 'js':
                 rewriter = regexmatch.JSRewriter(urlrewriter)
 
-            def gen():
-                try:
-                    buff = stream.read()
-                    while buff:
-                        yield rewriter.replaceAll(buff)
-                        buff = stream.read()
+            def doRewrite(buff):
+                return rewriter.replaceAll(buff)
 
-                finally:
-                    stream.close()
+            return WbResponse.stream_response(origResponse.status, newHeaders, stream, doRewrite)
 
-            value = gen()
-
-        return WbResponse(status = origResponse.status, headersList = newHeaders, value = value)
 
 
 
@@ -261,8 +271,8 @@ class RewritingReplayHandler(ReplayHandler):
         return None
 
 
-    def doReplay(self, cdx, wbrequest):
-        wbresponse = ReplayHandler.doReplay(self, cdx, wbrequest)
+    def doReplay(self, cdx, wbrequest, failedFiles):
+        wbresponse = ReplayHandler.doReplay(self, cdx, wbrequest, failedFiles)
 
         # Check for self redirect
         if wbresponse.status.startswith('3'):
@@ -286,3 +296,5 @@ def PrefixResolver(prefix, contains):
         return prefix + url if (contains in url) else None
 
     return makeUrl
+
+      

@@ -108,11 +108,13 @@ class WbResponse:
         return WbResponse(status, headersList = [('Location', location)])
 
     @staticmethod
-    def stream_response(statusline, headers, stream):
+    def stream_response(statusline, headers, stream, proc = None):
         def streamGen():
             try:
                 buff = stream.read()
                 while buff:
+                    if proc:
+                        buff = proc(buff)
                     yield buff
                     buff = stream.read()
             finally:

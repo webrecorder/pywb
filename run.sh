@@ -8,4 +8,4 @@ if [ -z "$app" ]; then
   app=wbapp.py
 fi
 
-uwsgi --static-map /static=$mypath/static --http :9090 --wsgi-file $app
+uwsgi --static-map /static=$mypath/static --http :8080 --wsgi-file $app
