@@ -10,37 +10,18 @@ class RemoteCDXServer:
     >>> x = cdxserver.load('example.com', parse_cdx = True, limit = '2')
     >>> pprint(x[0])
     {'digest': 'HT2DYGA5UKZCPBSFVCV3JOBXGW2G5UUA',
-     'filename': 'DJ_crawl2.20020401123359-c/DJ_crawl3.20020120141301.arc.gz',
      'length': '1792',
      'mimetype': 'text/html',
-     'offset': '49482198',
      'original': 'http://example.com:80/',
-     'redirect': '-',
-     'robotflags': '-',
      'statuscode': '200',
      'timestamp': '20020120142510',
      'urlkey': 'com,example)/'}
 
-    >>> x = cdxserver.load('example.com', parse_cdx = True, params = {'resolveRevisits': True, 'closest': '20131226', 'sort': 'closest', 'limit': '1'})
-    >>> pprint(x[0])
-    {'digest': 'B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A',
-     'filename': 'top_domains-00800-20131210-035838/top_domains-00800-20131210051705-00024.warc.gz',
-     'length': '523',
-     'mimetype': 'warc/revisit',
-     'offset': '247256770',
-     'orig.filename': 'deccanchronicle.com-20130107-023325/IA-FOC-deccanchronicle.com-20130921004125-00000.warc.gz',
-     'orig.length': '529',
-     'orig.offset': '769759',
-     'original': 'http://www.example.com/',
-     'redirect': '-',
-     'robotflags': '-',
-     'statuscode': '-',
-     'timestamp': '20131210052355',
-     'urlkey': 'com,example)/'}
-  """
+     """
 
-    def __init__(self, serverUrl):
+    def __init__(self, serverUrl, cookie = None):
         self.serverUrl = serverUrl
+        self.authCookie = cookie
 
     def load(self, url, params = {}, parse_cdx = False, **kwvalues):
         #url is required, must be passed explicitly!
@@ -51,6 +32,10 @@ class RemoteCDXServer:
 
         try:
             request = urllib2.Request(self.serverUrl, urlparams)
+
+            if self.authCookie:
+                request.add_header('Cookie', self.authCookie)
+
             response = urllib2.urlopen(request)
         except urllib2.HTTPError, e:
             if e.code == 403:
@@ -91,6 +76,9 @@ class RemoteCDXServer:
 
 class CDXCaptureResult(dict):
     CDX_FORMATS = [
+        # Public CDX Format
+        ["urlkey","timestamp","original","mimetype","statuscode","digest","length"],
+
         # CDX 11 Format
         ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","robotflags","length","offset","filename"],
 

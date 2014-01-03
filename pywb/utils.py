@@ -1,6 +1,7 @@
 import itertools
 import hmac
 import time
+import zlib
 
 def peek_iter(iterable):
     try:
@@ -11,21 +12,15 @@ def peek_iter(iterable):
     return itertools.chain([first], iterable)
 
 
-def get_header(headersList, name):
-    nameLower = name.lower()
-    for value in headersList:
-        if (value[0].lower() == nameLower):
-            return value[1]
+def split_prefix(key, prefixs):
+    for p in prefixs:
+        if key.startswith(p):
+            plen = len(p)
+            return (key[:plen], key[plen:])
 
-    return None
 
-def contains_header(headersList, seekHeader):
-    header = get_header(headersList, seekHeader[0])
-    if not header:
-        return False
-
-    # see if found header matches value!
-    return (header == seekHeader[1])
+def create_decompressor():
+    return zlib.decompressobj(16 + zlib.MAX_WBITS)
 
 class HMACCookieMaker:
     def __init__(self, key, name):

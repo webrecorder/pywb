@@ -1,5 +1,7 @@
 from wbarchivalurl import ArchivalUrl
 import utils
+
+import pprint
 #WB Request and Response
 
 class WbRequest:
@@ -80,38 +82,36 @@ class WbRequest:
 class WbResponse:
     """
     >>> WbResponse.text_response('Test')
-    {'status': '200 OK', 'body': ['Test'], 'headersList': [('Content-Type', 'text/plain')]}
+    {'body': ['Test'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [('Content-Type', 'text/plain')])}
 
     >>> WbResponse.text_stream(['Test', 'Another'], '404')
-    {'status': '404', 'body': ['Test', 'Another'], 'headersList': [('Content-Type', 'text/plain')]}
+    {'body': ['Test', 'Another'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '404', headers = [('Content-Type', 'text/plain')])}
 
     >>> WbResponse.redir_response('http://example.com/otherfile')
-    {'status': '302 Redirect', 'body': [], 'headersList': [('Location', 'http://example.com/otherfile')]}
-
+    {'body': [], 'status_headers': StatusAndHeaders(protocol = '', statusline = '302 Redirect', headers = [('Location', 'http://example.com/otherfile')])}
     """
 
-    def __init__(self, status, value = [], headersList = []):
-        self.status = status
+    def __init__(self, status_headers, value = []):
+        self.status_headers = status_headers
         self.body = value
-        self.headersList = headersList
 
     @staticmethod
     def text_stream(text, status = '200 OK'):
-        return WbResponse(status, value = text, headersList = [('Content-Type', 'text/plain')])
+        return WbResponse(StatusAndHeaders(status, [('Content-Type', 'text/plain')]), value = text)
 
     @staticmethod
     def text_response(text, status = '200 OK'):
-        return WbResponse(status, value = [text], headersList = [('Content-Type', 'text/plain')])
+        return WbResponse(StatusAndHeaders(status, [('Content-Type', 'text/plain')]), value = [text])
 
     @staticmethod
     def redir_response(location, status = '302 Redirect'):
-        return WbResponse(status, headersList = [('Location', location)])
+        return WbResponse(StatusAndHeaders(status, [('Location', location)]))
 
     @staticmethod
-    def stream_response(statusline, headers, stream, proc = None):
+    def stream_response(status_headers, stream, proc = None, firstBuff = None):
         def streamGen():
             try:
-                buff = stream.read()
+                buff = firstBuff if firstBuff else stream.read()
                 while buff:
                     if proc:
                         buff = proc(buff)
@@ -120,25 +120,12 @@ class WbResponse:
             finally:
                 stream.close()
 
-        response = WbResponse(statusline, headersList = headers, value = streamGen())
+        response = WbResponse(status_headers, value = streamGen())
         response._stream = stream
         return response
 
-    @staticmethod
-    def better_timestamp_response(wbrequest, newTimestamp):
-        wbrequest.wb_url.timestamp = newTimestamp
-        newUrl = wbrequest.wb_prefix + str(wbrequest.wb_url)[1:]
-        return WbResponse.redir_response(newUrl)
-
-    def get_header(self, name):
-        return utils.get_header(self.headersList, name)
-
     def __call__(self, env, start_response):
-        #headersList = []
-        #for key, value in self.headers.iteritems():
-        #    headersList.append((key, value))
-
-        start_response(self.status, self.headersList)
+        start_response(self.status_headers.statusline, self.status_headers.headers)
 
         if env['REQUEST_METHOD'] == 'HEAD':
             if hasattr(self.body, 'close'):
@@ -154,6 +141,28 @@ class WbResponse:
     def __repr__(self):
         return str(vars(self))
 
+
+#=================================================================
+class StatusAndHeaders:
+    def __init__(self, statusline, headers, protocol = ''):
+        self.statusline = statusline
+        self.headers = headers
+        self.protocol = protocol
+
+    def getHeader(self, name):
+        nameLower = name.lower()
+        for value in self.headers:
+            if (value[0].lower() == nameLower):
+                return value[1]
+
+        return None
+
+    def __repr__(self):
+        return "StatusAndHeaders(protocol = '{0}', statusline = '{1}', headers = {2})".format(self.protocol, self.statusline, pprint.pformat(self.headers, indent = 2))
+        #return pprint.pformat(self.__dict__)
+
+    def __eq__(self, other):
+        return self.statusline == other.statusline and self.headers == other.headers and self.protocol == other.protocol
 
 
 if __name__ == "__main__":

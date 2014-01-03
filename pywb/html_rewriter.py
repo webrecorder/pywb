@@ -5,8 +5,8 @@ import sys
 import re
 
 from HTMLParser import HTMLParser
-from wburlrewriter import ArchivalUrlRewriter
-from regexmatch import JSRewriter, CSSRewriter
+from url_rewriter import ArchivalUrlRewriter
+from regex_rewriters import JSRewriter, CSSRewriter
 
 #=================================================================
 # WBHtml --html parser for custom rewriting, also handlers for script and css

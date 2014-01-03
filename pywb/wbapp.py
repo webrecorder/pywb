@@ -2,7 +2,7 @@ from query import QueryHandler
 from replay import FullHandler
 import wbexceptions
 
-from wbrequestresponse import WbResponse
+from wbrequestresponse import WbResponse, StatusAndHeaders
 from archivalrouter import ArchivalRequestRouter
 
 
@@ -17,9 +17,10 @@ class WBHandler:
 
 
 ## ===========
-query = QueryHandler()
 
 import testwb
+
+query = QueryHandler(testwb.createCdxServer())
 
 headInsert = """
 
@@ -54,7 +55,11 @@ def application(env, start_response):
             raise wbexceptions.NotFoundException(env['REQUEST_URI'] + ' was not found')
 
     except wbexceptions.InternalRedirect as ir:
-        response = WbResponse(status = ir.status, headersList = ir.httpHeaders)
+        response = WbResponse(StatusAndHeaders(ir.status, ir.httpHeaders))
+
+    except (wbexceptions.NotFoundException, wbexceptions.AccessException) as e:
+        print "[INFO]: " + str(e)
+        response = handleException(env, e)
 
     except Exception as e:
         last_exc = e

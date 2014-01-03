@@ -2,12 +2,13 @@ import re
 import sys
 import itertools
 
-from wburlrewriter import ArchivalUrlRewriter
+from url_rewriter import ArchivalUrlRewriter
 
+#=================================================================
 class RegexRewriter:
     """
     # Test https->http converter (other tests below in subclasses)
-    >>> RegexRewriter([(RegexRewriter.HTTPX_MATCH_REGEX, RegexRewriter.removeHttps, 0)]).replaceAll('a = https://example.com; b = http://example.com; c = https://some-url/path/https://embedded.example.com')
+    >>> RegexRewriter([(RegexRewriter.HTTPX_MATCH_STR, RegexRewriter.removeHttps, 0)]).replaceAll('a = https://example.com; b = http://example.com; c = https://some-url/path/https://embedded.example.com')
     'a = http://example.com; b = http://example.com; c = http://some-url/path/http://embedded.example.com'
     """
 
@@ -27,7 +28,7 @@ class RegexRewriter:
     def archivalRewrite(rewriter):
         return lambda x: rewriter.rewrite(x)
 
-    HTTPX_MATCH_REGEX = 'https?:\\\\?/\\\\?/[A-Za-z0-9:_@.-]+'
+    HTTPX_MATCH_STR = 'https?:\\\\?/\\\\?/[A-Za-z0-9:_@.-]+'
 
     DEFAULT_OP = addPrefix
 
@@ -43,6 +44,9 @@ class RegexRewriter:
 
         self.regex = re.compile(regexStr, re.M)
         self.rules = rules
+
+    def filter(self, m):
+        return True
 
     def replaceAll(self, string):
         return self.regex.sub(lambda x: self.replace(x), string)
@@ -60,6 +64,10 @@ class RegexRewriter:
             if not m.group(i):
                 continue
 
+            # Optional filter to skip matches
+            if not self.filter(m):
+                return m.group(0)
+
             # Custom func
             if not hasattr(op, '__call__'):
                 op = RegexRewriter.DEFAULT_OP(op)
@@ -74,6 +82,7 @@ class RegexRewriter:
 
 
 
+#=================================================================
 class JSRewriter(RegexRewriter):
     """
     >>> test_js('location = "http://example.com/abc.html"')
@@ -100,11 +109,47 @@ class JSRewriter(RegexRewriter):
 
     def _createRules(self, httpPrefix):
         return [
-             (RegexRewriter.HTTPX_MATCH_REGEX, httpPrefix, 0),
+             (RegexRewriter.HTTPX_MATCH_STR, httpPrefix, 0),
              ('location|domain', 'WB_wombat_', 0),
         ]
 
 
+#=================================================================
+class XMLRewriter(RegexRewriter):
+    """
+    >>> test_xml('<tag xmlns="http://www.example.com/ns" attr="http://example.com"></tag>')
+    '<tag xmlns="http://www.example.com/ns" attr="/web/20131010im_/http://example.com"></tag>'
+
+    >>> test_xml('<tag xmlns:xsi="http://www.example.com/ns" attr=" http://example.com"></tag>')
+    '<tag xmlns:xsi="http://www.example.com/ns" attr=" /web/20131010im_/http://example.com"></tag>'
+
+    >>> test_xml('<tag> http://example.com<other>abchttp://example.com</other></tag>')
+    '<tag> /web/20131010im_/http://example.com<other>abchttp://example.com</other></tag>'
+
+    >>> test_xml('<main>   http://www.example.com/blah</tag> <other xmlns:abcdef= " http://example.com"/> http://example.com </main>')
+    '<main>   /web/20131010im_/http://www.example.com/blah</tag> <other xmlns:abcdef= " http://example.com"/> /web/20131010im_/http://example.com </main>'
+
+    """
+
+    def __init__(self, rewriter, extra = []):
+        rules = self._createRules(rewriter.getAbsUrl())
+
+        RegexRewriter.__init__(self, rules)
+
+    # custom filter to reject 'xmlns' attr
+    def filter(self, m):
+        attr = m.group(1)
+        if attr and attr.startswith('xmlns'):
+            return False
+
+        return True
+
+    def _createRules(self, httpPrefix):
+        return [
+             ('([A-Za-z:]+[\s=]+)?["\'\s]*(' + RegexRewriter.HTTPX_MATCH_STR + ')', httpPrefix, 2),
+        ]
+
+#=================================================================
 class CSSRewriter(RegexRewriter):
     r"""
     >>> test_css("background: url('/some/path.html')")
@@ -171,6 +216,9 @@ if __name__ == "__main__":
 
     def test_js(string, extra = []):
         return JSRewriter(arcrw, extra).replaceAll(string)
+
+    def test_xml(string):
+        return XMLRewriter(arcrw).replaceAll(string)
 
     def test_css(string):
         return CSSRewriter(arcrw).replaceAll(string)

@@ -1,14 +1,18 @@
 import StringIO
 from urllib2 import URLError
+import chardet
+import redis
 
 import indexreader
-from wbrequestresponse import WbResponse
+from wbrequestresponse import WbResponse, StatusAndHeaders
 from wbarchivalurl import ArchivalUrl
 import utils
-from wburlrewriter import ArchivalUrlRewriter
 
-import wbhtml
-import regexmatch
+from url_rewriter import ArchivalUrlRewriter
+from header_rewriter import HeaderRewriter
+import html_rewriter
+import regex_rewriters
+
 import wbexceptions
 
 #=================================================================
@@ -111,19 +115,19 @@ class ReplayHandler(object):
             payloadRecord = self._load(cdx, True, failedFiles)
 
             # Case 4: if headers record is actually empty (eg empty revisit), then use headers from revisit
-            if not headersRecord.httpHeaders:
+            if not headersRecord.status_headers.headers:
                 headersRecord.stream.close()
                 headersRecord = payloadRecord
             else:
                 headersRecord.stream.close()
-                
+
 
             isRevisit = True
 
         else:
             raise wbexceptions.CaptureException('Invalid CDX' + cdx)
 
-        return WbResponse.stream_response(headersRecord.statusline, headersRecord.httpHeaders, payloadRecord.stream)
+        return WbResponse.stream_response(headersRecord.status_headers, payloadRecord.stream)
 
 
     def resolveFull(self, filename):
@@ -140,26 +144,12 @@ class ReplayHandler(object):
 #=================================================================
 class RewritingReplayHandler(ReplayHandler):
 
-
-    REWRITE_TYPES = {
-        'html': ['text/html', 'application/xhtml'],
-        'css':  ['text/css'],
-        'js':   ['text/javascript', 'application/javascript', 'application/x-javascript'],
-        'xml':  ['/xml', '+xml', '.xml', '.rss'],
-    }
-
-
-    PROXY_HEADERS = ('content-type', 'content-disposition')
-
-    URL_REWRITE_HEADERS = ('location', 'content-location', 'content-base')
-
-    ENCODING_HEADERS = ('content-encoding', 'transfer-encoding')
-
-
-    def __init__(self, resolvers, archiveloader, headerPrefix = 'X-Archive-Orig-', headInsert = None):
+    def __init__(self, resolvers, archiveloader, headInsert = None, headerRewriter = None):
         ReplayHandler.__init__(self, resolvers, archiveloader)
-        self.headerPrefix = headerPrefix
         self.headInsert = headInsert
+        if not headerRewriter:
+            headerRewriter = HeaderRewriter()
+        self.headerRewriter = headerRewriter
 
 
     def _textContentType(self, contentType):
@@ -183,88 +173,94 @@ class RewritingReplayHandler(ReplayHandler):
         if wbrequest.wb_url.mod == 'id_':
             return response
 
-        contentType = utils.get_header(response.headersList, 'Content-Type')
-        
-        textType = self._textContentType(contentType) if contentType else None
-        
-        (newHeaders, remHeaders) = self._rewriteHeaders(response.headersList, urlrewriter, textType is not None)
 
-        # binary type, just send through
-        if textType is None:
-            response.headersList = newHeaders
+        rewrittenHeaders = self.headerRewriter.rewrite(response.status_headers, urlrewriter)
+
+        # non-text content type, just send through with rewritten headers
+        if rewrittenHeaders.textType is None:
+            response.status_headers = rewrittenHeaders.status_headers
             return response
 
         # Handle text rewriting
-        # TODO: better way to pass this
+        # TODO: better way to pass this?
         stream = response._stream
 
         # special case -- need to ungzip the body
-        if (utils.contains_header(remHeaders, ('Content-Encoding', 'gzip'))):
-            stream = archiveloader.LineStream(stream, decomp = zlib.decompressobj(16 + zlib.MAX_WBITS))
+        if (rewrittenHeaders.containsRemovedHeader('content-encoding', 'gzip')):
+            stream = archiveloader.LineStream(stream, decomp = utils.create_decompressor())
 
-        return self._rewriteContent(textType, urlrewriter, stream, newHeaders, response)
+        # TODO: is this right?
+        if rewrittenHeaders.charset:
+            encoding = rewrittenHeaders.charset
+            firstBuff = None
+        else:
+            (encoding, firstBuff) = self._detectCharset(stream)
 
-    # TODO: first non-streaming attempt, probably want to stream
-    def _rewriteContent(self, textType, urlrewriter, stream, newHeaders, origResponse, encoding = 'utf-8'):
-        if textType == 'html':
-            out = StringIO.StringIO()
-            #out = SimpleWriter()
-            htmlrewriter = wbhtml.WBHtml(urlrewriter, out, self.headInsert)
+            # if ascii, set to noop encode operation
+            if encoding == 'ascii':
+                encoding = None
+                #encoding = 'utf-8'
 
-            try:
-                buff = stream.read()
-                while buff:
+        # Buffering response for html, streaming for others?
+        if rewrittenHeaders.textType == 'html':
+            return self._rewriteHtml(encoding, urlrewriter, stream, rewrittenHeaders.status_headers, firstBuff)
+        else:
+            return self._rewriteOther(rewrittenHeaders.textType, encoding, urlrewriter, stream, rewrittenHeaders.status_headers, firstBuff)
+
+
+    def _rewriteHtml(self, encoding, urlrewriter, stream, status_headers, firstBuff = None):
+        out = StringIO.StringIO()
+        htmlrewriter = html_rewriter.WBHtml(urlrewriter, out, self.headInsert)
+
+        try:
+            buff = firstBuff if firstBuff else stream.read()
+            while buff:
+                if encoding:
                     buff = buff.decode(encoding)
-                    htmlrewriter.feed(buff)
-                    buff = stream.read()
+                htmlrewriter.feed(buff)
+                buff = stream.read()
 
-                htmlrewriter.close()
+            # Close rewriter if gracefully made it to end
+            htmlrewriter.close()
 
-            #except Exception as e:
-            #    print e
+        finally:
+                content = out.getvalue()
+                if encoding:
+                    content = content.encode(encoding)
 
-            finally:
-                content = out.getvalue().encode(encoding)
                 value = [content]
-                newHeaders.append(('Content-Length', str(len(value[0]))))
+                contentLengthStr = str(len(content))
+                status_headers.headers.append(('Content-Length', contentLengthStr))
                 out.close()
 
-            return WbResponse(status = origResponse.status, headersList = newHeaders, value = value)
-        
-        else:
-            if textType == 'css':
-                rewriter = regexmatch.CSSRewriter(urlrewriter)
-            elif textType == 'js':
-                rewriter = regexmatch.JSRewriter(urlrewriter)
-
-            def doRewrite(buff):
-                return rewriter.replaceAll(buff)
-
-            return WbResponse.stream_response(origResponse.status, newHeaders, stream, doRewrite)
+        return WbResponse(status_headers, value = value)
 
 
+    def _rewriteOther(self, textType, encoding, urlrewriter, stream, status_headers, firstBuff = None):
+        if textType == 'css':
+            rewriter = regex_rewriters.CSSRewriter(urlrewriter)
+        elif textType == 'js':
+            rewriter = regex_rewriters.JSRewriter(urlrewriter)
+        elif textType == 'xml':
+            rewriter = regex_rewriters.XMLRewriter(urlrewriter)
 
 
-    def _rewriteHeaders(self, headers, urlrewriter, stripEncoding = False):
-        newHeaders = []
-        removedHeaders = []
+        def doRewrite(buff):
+            if encoding:
+                buff = buff.decode(encoding)
+            buff = rewriter.replaceAll(buff)
+            if encoding:
+                buff = buff.encode(encoding)
 
-        for (name, value) in headers:
-            lowername = name.lower()
-            if lowername in self.PROXY_HEADERS:
-                newHeaders.append((name, value))
-            elif lowername in self.URL_REWRITE_HEADERS:
-                newHeaders.append((name, urlrewriter.rewrite(value)))
-            elif lowername in self.ENCODING_HEADERS:
-                if stripEncoding:
-                    removedHeaders.append((name, value))
-                else:
-                    newHeaders.append((name, value))
-            else:
-                newHeaders.append((self.headerPrefix + name, value))
+            return buff
 
-        return (newHeaders, removedHeaders)
+        return WbResponse.stream_response(status_headers, stream, doRewrite, firstBuff)
 
+    def _detectCharset(self, stream):
+        buff = stream.read(8192)
+        result = chardet.detect(buff)
+        print "chardet result: " + str(result)
+        return (result['encoding'], buff)
 
     def _checkRedir(self, wbrequest, cdx):
         if cdx and (cdx['timestamp'] != wbrequest.wb_url.timestamp):
@@ -279,15 +275,15 @@ class RewritingReplayHandler(ReplayHandler):
         wbresponse = ReplayHandler.doReplay(self, cdx, wbrequest, failedFiles)
 
         # Check for self redirect
-        if wbresponse.status.startswith('3'):
-            if self.isSelfRedirect(wbrequest, wbresponse.headersList):
+        if wbresponse.status_headers.statusline.startswith('3'):
+            if self.isSelfRedirect(wbrequest, wbresponse.status_headers):
                 raise wbexceptions.CaptureException('Self Redirect: ' + str(cdx))
 
         return wbresponse
 
-    def isSelfRedirect(self, wbrequest, httpHeaders):
+    def isSelfRedirect(self, wbrequest, status_headers):
         requestUrl = wbrequest.wb_url.url.lower()
-        locationUrl = utils.get_header(httpHeaders, 'Location').lower()
+        locationUrl = status_headers.getHeader('Location').lower()
         #return requestUrl == locationUrl
         return (ArchivalUrlRewriter.stripProtocol(requestUrl) == ArchivalUrlRewriter.stripProtocol(locationUrl))
 
@@ -301,4 +297,16 @@ def PrefixResolver(prefix, contains):
 
     return makeUrl
 
-      
+#======================================
+class RedisResolver:
+    def __init__(self, redisUrl, keyPrefix = 'w:'):
+        self.redisUrl = redisUrl
+        self.keyPrefix = keyPrefix
+        self.redis = redis.StrictRedis.from_url(redisUrl)
+
+    def __call__(self, filename):
+        try:
+            return self.redis.hget(self.keyPrefix + filename, 'path')
+        except Exception as e:
+            print e
+            return None

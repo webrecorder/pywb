@@ -1,7 +1,7 @@
 import urlparse
 
 from wbrequestresponse import WbRequest, WbResponse
-from wburlrewriter import ArchivalUrlRewriter
+from url_rewriter import ArchivalUrlRewriter
 
 #=================================================================
 # ArchivalRequestRouter -- route WB requests in archival mode
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         if not rep:
             return False
 
-        return rep.get_header('Location')
+        return rep.status_headers.getHeader('Location')
 
 
     doctest.testmod()

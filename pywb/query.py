@@ -4,8 +4,11 @@ import wbrequestresponse
 import wbexceptions
 
 class QueryHandler:
-    def __init__(self):
-        self.cdxserver = indexreader.RemoteCDXServer('http://web.archive.org/cdx/search/cdx')
+    def __init__(self, cdxserver = None):
+        if not cdxserver:
+            cdxserver = indexreader.RemoteCDXServer('http://web.archive.org/cdx/search/cdx')
+
+        self.cdxserver = cdxserver
 
     def __call__(self, wbrequest, prev_wbresponse):
         wburl = wbrequest.wb_url

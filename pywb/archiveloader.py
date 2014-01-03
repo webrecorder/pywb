@@ -1,16 +1,15 @@
-import hanzo.warctools
-
-import re
+import itertools
 import utils
-import zlib
 import urllib2
 import StringIO
 import urlparse
 import collections
 import wbexceptions
 
+from wbrequestresponse import StatusAndHeaders
+
 #=================================================================
-class HttpStreamLoader:
+class HttpReader:
     def __init__(self, hmac = None, hmacDuration = 30):
         self.hmac = hmac
         self.hmacDuration = hmacDuration
@@ -33,7 +32,7 @@ class HttpStreamLoader:
 
 #=================================================================
 # Untested, but for completeness
-class FileStreamLoader:
+class FileReader:
     def load(self, url, offset, length):
         if url.startswith('file://'):
             url = url[len('file://'):]
@@ -45,27 +44,79 @@ class FileStreamLoader:
 
 
 #=================================================================
-WBArchiveRecord = collections.namedtuple('WBArchiveRecord', 'type, record, stream, statusline, httpHeaders')
+WBArchiveRecord = collections.namedtuple('WBArchiveRecord', 'type, rec_headers, stream, status_headers')
 
 #=================================================================
+
 class ArchiveLoader:
+    """
+    >>> loadTestArchive('example.warc.gz', '333', '1043')
+    (('warc', 'response'),
+     StatusAndHeaders(protocol = 'WARC/1.0', statusline = '', headers = [ ('WARC-Type', 'response'),
+      ('WARC-Record-ID', '<urn:uuid:6d058047-ede2-4a13-be79-90c17c631dd4>'),
+      ('WARC-Date', '2014-01-03T03:03:21Z'),
+      ('Content-Length', '1610'),
+      ('Content-Type', 'application/http; msgtype=response'),
+      ('WARC-Payload-Digest', 'sha1:B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A'),
+      ('WARC-Target-URI', 'http://example.com?example=1'),
+      ('WARC-Warcinfo-ID', '<urn:uuid:fbd6cf0a-6160-4550-b343-12188dc05234>')]),
+     StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Accept-Ranges', 'bytes'),
+      ('Cache-Control', 'max-age=604800'),
+      ('Content-Type', 'text/html'),
+      ('Date', 'Fri, 03 Jan 2014 03:03:21 GMT'),
+      ('Etag', '"359670651"'),
+      ('Expires', 'Fri, 10 Jan 2014 03:03:21 GMT'),
+      ('Last-Modified', 'Fri, 09 Aug 2013 23:54:35 GMT'),
+      ('Server', 'ECS (sjc/4FCE)'),
+      ('X-Cache', 'HIT'),
+      ('x-ec-custom-error', '1'),
+      ('Content-Length', '1270'),
+      ('Connection', 'close')]))
+      
+
+    >>> loadTestArchive('example.warc.gz', '1864', '553')
+    (('warc', 'revisit'),
+     StatusAndHeaders(protocol = 'WARC/1.0', statusline = '', headers = [ ('WARC-Type', 'revisit'),
+      ('WARC-Record-ID', '<urn:uuid:3619f5b0-d967-44be-8f24-762098d427c4>'),
+      ('WARC-Date', '2014-01-03T03:03:41Z'),
+      ('Content-Length', '340'),
+      ('Content-Type', 'application/http; msgtype=response'),
+      ('WARC-Payload-Digest', 'sha1:B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A'),
+      ('WARC-Target-URI', 'http://example.com?example=1'),
+      ('WARC-Warcinfo-ID', '<urn:uuid:fbd6cf0a-6160-4550-b343-12188dc05234>'),
+      ( 'WARC-Profile',
+        'http://netpreserve.org/warc/0.18/revisit/identical-payload-digest'),
+      ('WARC-Refers-To-Target-URI', 'http://example.com?example=1'),
+      ('WARC-Refers-To-Date', '2014-01-03T03:03:21Z')]),
+     StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Accept-Ranges', 'bytes'),
+      ('Cache-Control', 'max-age=604800'),
+      ('Content-Type', 'text/html'),
+      ('Date', 'Fri, 03 Jan 2014 03:03:41 GMT'),
+      ('Etag', '"359670651"'),
+      ('Expires', 'Fri, 10 Jan 2014 03:03:41 GMT'),
+      ('Last-Modified', 'Fri, 09 Aug 2013 23:54:35 GMT'),
+      ('Server', 'ECS (sjc/4FCE)'),
+      ('X-Cache', 'HIT'),
+      ('x-ec-custom-error', '1'),
+      ('Content-Length', '1270'),
+      ('Connection', 'close')]))
+    """
+
     # Standard ARC headers
     ARC_HEADERS = ["uri", "ip-address", "creation-date", "content-type", "length"]
 
     # Since loading a range request, can only determine gzip-ness based on file extension
     FORMAT_MAP = {
-        '.warc.gz': (hanzo.warctools.WarcRecord, 'warc', True),
-        '.arc.gz':  (hanzo.warctools.ArcRecord,  'arc',  True),
-        '.warc':    (hanzo.warctools.WarcRecord, 'warc', False),
-        '.arc':     (hanzo.warctools.ArcRecord,  'arc',  False),
+        '.warc.gz': ('warc', True),
+        '.arc.gz':  ('arc',  True),
+        '.warc':    ('warc', False),
+        '.arc':     ('arc',  False),
     }
-
-    HTTP_STATUS_REGEX = re.compile('^HTTP/[\d.]+ (\d+.*)$')
 
     @staticmethod
     def createDefaultLoaders():
-        http = HttpStreamLoader()
-        file = FileStreamLoader()
+        http = HttpReader()
+        file = FileReader()
         return {
                 'http': http,
                 'https': http,
@@ -78,6 +129,10 @@ class ArchiveLoader:
         self.loaders = loaders if loaders else ArchiveLoader.createDefaultLoaders()
         self.chunkSize = chunkSize
 
+        self.arcParser = ARCHeadersParser(ArchiveLoader.ARC_HEADERS)
+        self.warcParser = StatusAndHeadersParser(['WARC/1.0', 'WARC/0.17', 'WARC/0.18'])
+        self.httpParser = StatusAndHeadersParser(['HTTP/1.0', 'HTTP/1.1'])
+
     def load(self, url, offset, length):
         urlParts = urlparse.urlsplit(url)
 
@@ -86,22 +141,19 @@ class ArchiveLoader:
         except Exception:
             raise wbexceptions.UnknownLoaderProtocolException(url)
 
-        loaderCls = None
+        theFormat = None
 
-        for ext, (loaderCls, aFormat, gzip) in ArchiveLoader.FORMAT_MAP.iteritems():
+        for ext, iformat in ArchiveLoader.FORMAT_MAP.iteritems():
             if url.endswith(ext):
-                loaderCls = loaderCls
-                aFormat = aFormat
-                isGzip = gzip
+                theFormat = iformat
                 break
 
-        if loaderCls is None:
+        if theFormat is None:
             raise wbexceptions.UnknownArchiveFormatException(url)
 
-        if isGzip:
-            decomp = zlib.decompressobj(16+zlib.MAX_WBITS)
-        else:
-            decomp = None
+        (aFormat, isGzip) = theFormat
+
+        decomp = utils.create_decompressor() if isGzip else None
 
         try:
             length = int(length)
@@ -111,73 +163,87 @@ class ArchiveLoader:
 
         raw = loader.load(url, long(offset), length)
 
-        reader = LineReader(raw, length, self.chunkSize, decomp)
-
-        parser = loaderCls.make_parser()
+        stream = LineReader(raw, length, self.chunkSize, decomp)
 
         if aFormat == 'arc':
-            parser.headers = ArchiveLoader.ARC_HEADERS
-
-        (parsed, errors, _) = parser.parse(reader, 0)
-
-        if errors:
-            reader.close()
-            raise wbexceptions.InvalidArchiveRecordException('Error Parsing Record', errors)
-
-
-        if aFormat == 'arc':
+            rec_headers = self.arcParser.parse(stream)
             recType = 'response'
-            empty = (utils.get_header(parsed.headers, 'length') == 0)
-        else:
-            recType = utils.get_header(parsed.headers, 'WARC-Type')
-            empty = (utils.get_header(parsed.headers, 'Content-Length') == '0')
+            empty = (rec_headers.getHeader('length') == 0)
+
+        elif aFormat == 'warc':
+            rec_headers = self.warcParser.parse(stream)
+            recType = rec_headers.getHeader('WARC-Type')
+            empty = (rec_headers.getHeader('Content-Length') == '0')
 
         # special case: empty w/arc record (hopefully a revisit)
         if empty:
-            statusline = '204 No Content'
-            headers = []
+            status_headers = StatusAndHeaders('204 No Content', [])
 
         # special case: warc records that are not expected to have http headers
         # attempt to add 200 status and content-type
         elif recType == 'metadata' or recType == 'resource':
-            statusline = '200 OK'
-            headers = [('Content-Type', utils.get_header(parsed.headers, 'Content-Type'))]
+            status_headers = StatusAndHeaders('200 OK', [('Content-Type', rec_headers.getHeader('Content-Type'))])
 
         # special case: http 0.9 response, no status or headers
-        #elif recType == 'response' and (';version=0.9' in utils.get_header(parsed.headers, 'Content-Type')):
-        #    statusline = '200 OK'
-        #    headers = []
+        #elif recType == 'response':
+        #    contentType = rec_headers.getHeader('Content-Type')
+        #    if contentType and (';version=0.9' in contentType):
+        #        status_headers = StatusAndHeaders('200 OK', [])
 
         # response record: parse HTTP status and headers!
         else:
-            (statusline, headers) = self.parseHttpHeaders(reader)
+            #(statusline, http_headers) = self.parseHttpHeaders(stream)
+            status_headers = self.httpParser.parse(stream)
 
-        return WBArchiveRecord((aFormat, recType), parsed, reader, statusline, headers)
+        return WBArchiveRecord((aFormat, recType), rec_headers, stream, status_headers)
 
 
-    def parseHttpHeaders(self, stream):
-        def nextHeaderLine(stream):
-            return stream.readline().rstrip()
+#=================================================================
+class StatusAndHeadersParser:
+    def __init__(self, statuslist):
+        self.statuslist = statuslist
 
-        line = nextHeaderLine(stream)
-        matched = self.HTTP_STATUS_REGEX.match(line)
+    def parse(self, stream):
+        statusline = stream.readline().rstrip()
 
-        if not matched:
-            raise wbexceptions.InvalidArchiveRecordException('Expected HTTP Status Line, Found: ' + line)
+        protocolStatus = utils.split_prefix(statusline, self.statuslist)
 
-        #status = int(matched.group(2))
-        statusline = matched.group(1)
+        if not protocolStatus:
+            raise wbexceptions.InvalidArchiveRecordException('Expected Status Line, Found: ' + statusline)
+
         headers = []
 
-        line = nextHeaderLine(stream)
-
+        line = stream.readline().rstrip()
         while line and line != '\r\n':
             name, value = line.split(':', 1)
-            value = value.strip()
-            headers.append((name, value))
-            line = nextHeaderLine(stream)
+            header = (name, value.strip())
+            headers.append(header)
+            line = stream.readline().rstrip()
 
-        return (statusline, headers)
+        return StatusAndHeaders(statusline = protocolStatus[1].strip(), headers = headers, protocol = protocolStatus[0])
+
+#=================================================================
+class ARCHeadersParser:
+    def __init__(self, headernames):
+        self.headernames = headernames
+
+
+    def parse(self, stream):
+        headerline = stream.readline().rstrip()
+
+        parts = headerline.split()
+
+        headernames = self.headernames
+
+        if len(parts) != len(headernames):
+            raise wbexceptions.InvalidArchiveRecordException('Wrong # of heaeders, expected arc headers {0}, Found {1}'.format(headernames, parts))
+
+        headers = []
+
+        for name, value in itertools.izip(headernames, parts):
+            headers.append((name, value))
+
+        return StatusAndHeaders(statusline = '', headers = headers, protocol = 'ARC/1.0')
 
 #=================================================================
 class LineReader:
@@ -217,4 +283,19 @@ class LineReader:
             self.stream = None
 
 
+#=================================================================
+if __name__ == "__main__":
+    import doctest
+    import os
+    import pprint
+
+    testloader = ArchiveLoader()
+
+    def loadTestArchive(test_file, offset, length):
+        path = os.path.dirname(os.path.realpath(__file__)) + '/../test/' + test_file
+
+        archive = testloader.load(path, offset, length)
+        pprint.pprint((archive.type, archive.rec_headers, archive.status_headers))
+
+    doctest.testmod()
 
