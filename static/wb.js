@@ -13,6 +13,7 @@ if (window.opener) {
 
 document.WB_wombat_domain = document.domain
 
+
 function initBanner()
 {
     var BANNER_ID = "_wayback_banner";
@@ -24,8 +25,7 @@ function initBanner()
         banner.setAttribute("id", BANNER_ID);
         banner.style.cssText = "display: block; width: 100%; border: 1px solid; background-color: lightYellow; text-align: center";
 
-        //banner.innerHTML = "<img src='http://wbgrp-svc112.us.archive.org:8080/images/logo_WM.png#wb_pass'/>";
-        banner.innerHTML = "PyWb Banner!"
+        banner.innerHTML = "PyWb Test Banner!"
         document.body.insertBefore(banner, document.body.firstChild);
     }
 }
