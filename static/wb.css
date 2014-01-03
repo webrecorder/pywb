@@ -4,7 +4,7 @@
   display: block !important;
   top: 0px !important;
   left: 0px !important;
-  position: relative !important;
+  position: absolute !important;
   padding: 4px !important;
   width: 100% !important;
   font-size: 24px !important;

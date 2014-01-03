@@ -191,9 +191,12 @@ class CSSRewriter(RegexRewriter):
     >>> test_css("@import (\"url.css\")")
     '@import ("/web/20131010im_/http://example.com/url.css")'
 
+    >>> test_css("@import url(/url.css)\n@import  url(/anotherurl.css)\n @import  url(/and_a_third.css)")
+    '@import url(/web/20131010im_/http://example.com/url.css)\n@import  url(/web/20131010im_/http://example.com/anotherurl.css)\n @import  url(/web/20131010im_/http://example.com/and_a_third.css)'
+
     """
 
-    CSS_URL_REGEX = "url\\s*\\(\\s*[\\\\\"']*([^'\"]+)[\\\\\"']*\\s*\\)"
+    CSS_URL_REGEX = "url\\s*\\(\\s*[\\\\\"']*([^)'\"]+)[\\\\\"']*\\s*\\)"
     CSS_IMPORT_NO_URL_REGEX = "@import\\s+(?!url)\\(?\\s*['\"]?(?!url[\\s\\(])([\w.:/\\\\-]+)"
 
     def __init__(self, rewriter):

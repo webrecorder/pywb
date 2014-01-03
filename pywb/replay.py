@@ -196,10 +196,10 @@ class RewritingReplayHandler(ReplayHandler):
         else:
             (encoding, firstBuff) = self._detectCharset(stream)
 
-            # if ascii, set to noop encode operation
+            # if chardet thinks its ascii, use utf-8
             if encoding == 'ascii':
-                encoding = None
-                #encoding = 'utf-8'
+                #encoding = None
+                encoding = 'utf-8'
 
         # Buffering response for html, streaming for others?
         if rewrittenHeaders.textType == 'html':
