@@ -50,6 +50,10 @@ class RemoteCDXServer:
         else:
             return response
 
+    # BUG: Setting replayClosest to high number for now, as cdx server sometimes returns wrong result
+    # with lower values if there are too many captures. Ideally, should be around 10-20
+    # The replayClosest is the max number of cdx lines, so max number of retry attempts that WB will make
+
     @staticmethod
     def getQueryParams(wburl, limit = '150000', collapseTime = '10', replayClosest = '4000'):
         return {

@@ -16,7 +16,7 @@ import regex_rewriters
 import wbexceptions
 
 #=================================================================
-class FullHandler:
+class WBHandler:
     def __init__(self, query, replay):
         self.query = query
         self.replay = replay

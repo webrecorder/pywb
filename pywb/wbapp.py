@@ -1,5 +1,5 @@
 from query import QueryHandler, EchoEnv, EchoRequest
-from replay import FullHandler
+from replay import WBHandler
 import wbexceptions
 import indexreader
 
@@ -19,14 +19,50 @@ headInsert = """
 
 
 ## ===========
+'''
+The below createDefaultWB() function is just a sample/debug which loads publicly accessible cdx data
+
+
+To declare Wayback with one collection, `mycoll`
+and will be accessed by user at:
+
+`http://mywb.example.com:8080/mycoll/`
+
+and will load cdx from cdx server running at:
+
+`http://cdx.example.com/cdx`
+
+and look for warcs at paths:
+
+`http://warcs.example.com/servewarc/` and
+`http://warcs.example.com/anotherpath/`,
+
+one could declare a `createWB()` method as follows:
+
+    def createWB():
+        aloader = archiveloader.ArchiveLoader()
+        query = QueryHandler(indexreader.RemoteCDXServer('http://cdx.example.com/cdx'))
+    
+        prefixes = [replay.PrefixResolver('http://warcs.example.com/servewarc/'),
+                   replay.PrefixResolver('http://warcs.example.com/anotherpath/')]
+    
+        replay = replay.RewritingReplayHandler(resolvers = prefixes, archiveloader = aloader, headInsert = headInsert)
+    
+        return ArchivalRequestRouter(
+        {
+              'mycoll': [WBHandler(query, replay)],
+        },
+        hostpaths = ['http://mywb.example.com:8080/'])
+'''
+## ===========
 def createDefaultWB(headInsert):
     query = QueryHandler(indexreader.RemoteCDXServer('http://web.archive.org/cdx/search/cdx'))
     return ArchivalRequestRouter(
     {
-     'echo' : [EchoEnv()],
-     'req'  : [EchoRequest()],
-     'cdx'  : [query],
-     'web'  : [query],
+     'echo' : [EchoEnv()],     # Just echo the env
+     'req'  : [EchoRequest()], # Echo the WbRequest
+     'cdx'  : [query],         # Query the CDX
+     'web'  : [query],         # Query the CDX
     },
     hostpaths = ['http://localhost:9090/'])
 ## ===========
@@ -36,7 +72,7 @@ try:
     import globalwb
     wbparser = globalwb.createDefaultWB(headInsert)
 except:
-    print " *** Test Wayback Inited *** "
+    print " *** Note: Inited With Sample Wayback *** "
     wbparser = createDefaultWB(headInsert)
 
 
