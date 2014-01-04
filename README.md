@@ -12,6 +12,8 @@ It read records from WARC and ARC files and rewrites them in
 
 `http://<host>/<collection>/<timestamp>/<original url>`
 
+Optionally, custom text may also be inserted into the HTML head, which may render a banner or other overlay.
+
 The Internet Archive Wayback Machine has urls of the form:
 
 `http://web.archive.org/web/20131015120316/http://archive.org/`
@@ -41,7 +43,7 @@ and will be accessed by user at:
 
 `http://mywb.example.com:8080/mycoll/`
 
-and will load cdx from cdx server running at:
+and will load cdx from [cdx server][1] running at:
 
 `http://cdx.example.com/cdx`
 
@@ -57,13 +59,13 @@ one could declare a `createWB()` method as follows:
         query = QueryHandler(indexreader.RemoteCDXServer('http://cdx.example.com/cdx'))
     
         prefixes = [replay.PrefixResolver('http://warcs.example.com/servewarc/'),
-                   replay.PrefixResolver('http://warcs.example.com/anotherpath/')]
+                    replay.PrefixResolver('http://warcs.example.com/anotherpath/')]
     
         replay = replay.RewritingReplayHandler(resolvers = prefixes, archiveloader = aloader, headInsert = headInsert)
     
         return ArchivalRequestRouter(
         {
-              'mycoll': [WBHandler(query, replay)],
+              'mycoll': [replay.WBHandler(query, replay)],
         },
         hostpaths = ['http://mywb.example.com:8080/'])
 
