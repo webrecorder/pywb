@@ -11,7 +11,7 @@ setuptools.setup(name='pywb',
         long_description=open('README.md').read(),
         license='GPL',
         packages=['pywb'],
-        install_requires=['rfc3987', 'chardet', 'redis'],
+        install_requires=['uwsgi', 'rfc3987', 'chardet', 'redis'],
         # test_suite='?',   # not sure how to run doctests here
         zip_safe=False)
 

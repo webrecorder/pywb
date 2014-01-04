@@ -23,8 +23,6 @@ function initBanner()
     if (!banner) {
         banner = document.createElement("wb_div");
         banner.setAttribute("id", BANNER_ID);
-        banner.style.cssText = "display: block; width: 100%; border: 1px solid; background-color: lightYellow; text-align: center";
-
         banner.innerHTML = "PyWb Test Banner!"
         document.body.insertBefore(banner, document.body.firstChild);
     }

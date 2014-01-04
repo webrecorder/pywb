@@ -51,7 +51,7 @@ class RemoteCDXServer:
             return response
 
     @staticmethod
-    def getQueryParams(wburl, limit = '150000', collapseTime = '10', replayClosest = '200'):
+    def getQueryParams(wburl, limit = '150000', collapseTime = '10', replayClosest = '4000'):
         return {
 
             ArchivalUrl.QUERY:

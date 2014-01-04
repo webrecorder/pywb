@@ -24,4 +24,14 @@ class QueryHandler:
 
         raise wbexceptions.NotFoundException('WB Does Not Have Url: ' + wburl.url)
 
+## ===========
+## Simple handlers for debuging
+class EchoEnv:
+    def __call__(self, wbrequest, _):
+        return WbResponse.text_response(str(wbrequest.env))
+
+class EchoRequest:
+    def __call__(self, wbrequest, _):
+        return WbResponse.text_response(str(wbrequest))
+
 

@@ -1,27 +1,14 @@
-from query import QueryHandler
+from query import QueryHandler, EchoEnv, EchoRequest
 from replay import FullHandler
 import wbexceptions
+import indexreader
 
 from wbrequestresponse import WbResponse, StatusAndHeaders
 from archivalrouter import ArchivalRequestRouter
 
 
-## ===========
-class EchoEnv:
-    def __call__(self, wbrequest, _):
-        return WbResponse.text_response(str(wbrequest.env))
-
-class WBHandler:
-    def __call__(self, wbrequest, _):
-        return WbResponse.text_response(str(wbrequest))
-
 
 ## ===========
-
-import testwb
-
-query = QueryHandler(testwb.createCdxServer())
-
 headInsert = """
 
 <!-- WB Insert -->
@@ -30,26 +17,36 @@ headInsert = """
 <!-- End WB Insert -->
 """
 
-replay = testwb.createReplay(headInsert)
 
 ## ===========
-parser = ArchivalRequestRouter(
+def createDefaultWB(headInsert):
+    query = QueryHandler(indexreader.RemoteCDXServer('http://web.archive.org/cdx/search/cdx'))
+    return ArchivalRequestRouter(
     {
-     't0' : [EchoEnv()],
-     't1' : [WBHandler()],
-     't2' : [query],
-     't3' : [query, replay],
-     'web': FullHandler(query, replay)
+     'echo' : [EchoEnv()],
+     'req'  : [EchoRequest()],
+     'cdx'  : [query],
+     'web'  : [query],
     },
     hostpaths = ['http://localhost:9090/'])
 ## ===========
+
+
+try:
+    import globalwb
+    wbparser = globalwb.createDefaultWB(headInsert)
+except:
+    print " *** Test Wayback Inited *** "
+    wbparser = createDefaultWB(headInsert)
+
+
 
 
 def application(env, start_response):
     response = None
 
     try:
-        response = parser.handleRequest(env)
+        response = wbparser.handleRequest(env)
 
         if not response:
             raise wbexceptions.NotFoundException(env['REQUEST_URI'] + ' was not found')
