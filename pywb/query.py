@@ -28,10 +28,10 @@ class QueryHandler:
 ## Simple handlers for debuging
 class EchoEnv:
     def __call__(self, wbrequest, _):
-        return WbResponse.text_response(str(wbrequest.env))
+        return wbrequestresponse.WbResponse.text_response(str(wbrequest.env))
 
 class EchoRequest:
     def __call__(self, wbrequest, _):
-        return WbResponse.text_response(str(wbrequest))
+        return wbrequestresponse.WbResponse.text_response(str(wbrequest))
 
 
