@@ -89,4 +89,7 @@ Quick File Reference
  - `utils.py`, `wbexceptions.py` - Misc util functions and all exceptions
 
 
+ - `static/wb.css`, `static/wb.js` - static JS files, currently inserted into `<head>` and init the PyWb test banner on page load
+
+
   [1]: https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server
