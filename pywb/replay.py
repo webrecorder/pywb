@@ -40,10 +40,12 @@ class ReplayHandler(object):
         cdxlist = query_response.body
         last_e = None
         first = True
-        
+
         # List of already failed w/arcs
         failedFiles = []
 
+        # Iterate over the cdx until find one that works
+        # The cdx should already be sorted in closest-to-timestamp order (from the cdx server)
         for cdx in cdxlist:
             try:
                 cdx = indexreader.CDXCaptureResult(cdx)

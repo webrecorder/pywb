@@ -16,10 +16,10 @@ class RewrittenStatusAndHeaders:
 class HeaderRewriter:
     """
     # Text with charset
-    >>> test_rewrite([('Date', 'Fri, 03 Jan 2014 03:03:21 GMT'), ('Content-Length', '5'), ('Content-Type', 'text/html;charset=utf-8')])
+    >>> test_rewrite([('Date', 'Fri, 03 Jan 2014 03:03:21 GMT'), ('Content-Length', '5'), ('Content-Type', 'text/html;charset=UTF-8')])
     {'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('X-Archive-Orig-Date', 'Fri, 03 Jan 2014 03:03:21 GMT'),
       ('X-Archive-Orig-Content-Length', '5'),
-      ('Content-Type', 'text/html;charset=utf-8')]), 'charset': 'utf-8', 'textType': 'html', 'removedHeaderDict': {}}
+      ('Content-Type', 'text/html;charset=UTF-8')]), 'charset': 'utf-8', 'textType': 'html', 'removedHeaderDict': {}}
 
     # Redirect
     >>> test_rewrite([('Connection', 'close'), ('Location', '/other.html')], '302 Redirect')
@@ -91,7 +91,7 @@ class HeaderRewriter:
         if idx < 0:
             return None
 
-        return contentType[idx + len(CHARSET_TOKEN):]
+        return contentType[idx + len(CHARSET_TOKEN):].lower()
 
     def _rewriteHeaders(self, headers, urlrewriter, contentRewritten = False):
         newHeaders = []
