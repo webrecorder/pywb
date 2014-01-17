@@ -28,6 +28,10 @@ class WBHtml(HTMLParser):
     >>> parse('<html><head><base href="http://example.com/some/path/index.html"/>')
     <html><head><base href="/web/20131226101010/http://example.com/some/path/index.html"/>
 
+    # Don't rewrite anchors
+    >>> parse('<HTML><A Href="#abc">Text</a></hTmL>')
+    <HTML><a href="#abc">Text</a></html>
+
     # Unicode
     >>> parse('<a href="http://испытание.испытание/">испытание</a>')
     <a href="/web/20131226101010/http://испытание.испытание/">испытание</a>
@@ -110,25 +114,17 @@ class WBHtml(HTMLParser):
     HEAD_TAGS = ['html', 'head', 'base', 'link', 'meta', 'title', 'style', 'script', 'object', 'bgsound']
 
 
-    def __init__(self, rewriter, outstream = None, headInsert = None):
+    def __init__(self, rewriter, outstream = None, headInsert = None, jsRewriterClass = JSRewriter, cssRewriterClass = CSSRewriter):
         HTMLParser.__init__(self)
 
         self.rewriter = rewriter
         self._wbParseContext = None
         self.out = outstream if outstream else sys.stdout
 
-        self.jsRewriter = JSRewriter(rewriter)
-        self.cssRewriter = CSSRewriter(rewriter)
+        self.jsRewriter = jsRewriterClass(rewriter)
+        self.cssRewriter = cssRewriterClass(rewriter)
 
         self.headInsert = headInsert
-
-
-    def close(self):
-        if (self._wbParseContext):
-            self.feed('</' + self._wbParseContext + '>')
-            self._wbParseContext = None
-
-        HTMLParser.close(self)
 
 
     # ===========================
@@ -227,6 +223,24 @@ class WBHtml(HTMLParser):
 
         return True
 
+
+    def parseData(self, data):
+        if self._wbParseContext == 'script':
+            data = self._rewriteScript(data)
+        elif self._wbParseContext == 'style':
+            data = self._rewriteCSS(data)
+
+        self.out.write(data)
+
+
+    # HTMLParser overrides below
+    def close(self):
+        if (self._wbParseContext):
+            self.feed('</' + self._wbParseContext + '>')
+            self._wbParseContext = None
+
+        HTMLParser.close(self)
+
     def handle_starttag(self, tag, attrs):
         if not self.rewriteTagAttrs(tag, attrs, False):
             self.out.write(self.get_starttag_text())
@@ -240,14 +254,6 @@ class WBHtml(HTMLParser):
             self._wbParseContext = None
 
         self.out.write('</' + tag + '>')
-
-    def parseData(self, data):
-        if self._wbParseContext == 'script':
-            data = self._rewriteScript(data)
-        elif self._wbParseContext == 'style':
-            data = self._rewriteCSS(data)
-
-        self.out.write(data)
 
     def handle_data(self, data):
         self.parseData(data)

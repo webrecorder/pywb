@@ -4,7 +4,7 @@ import wbexceptions
 import indexreader
 
 from wbrequestresponse import WbResponse, StatusAndHeaders
-from archivalrouter import ArchivalRequestRouter
+from archivalrouter import ArchivalRequestRouter, MatchPrefix
 
 
 
@@ -50,7 +50,7 @@ one could declare a `createWB()` method as follows:
     
         return ArchivalRequestRouter(
         {
-              'mycoll': [WBHandler(query, replay)],
+              MatchPrefix('mycoll', WBHandler(query, replay))
         },
         hostpaths = ['http://mywb.example.com:8080/'])
 '''
@@ -59,10 +59,10 @@ def createDefaultWB(headInsert):
     query = QueryHandler(indexreader.RemoteCDXServer('http://web.archive.org/cdx/search/cdx'))
     return ArchivalRequestRouter(
     {
-     'echo' : [EchoEnv()],     # Just echo the env
-     'req'  : [EchoRequest()], # Echo the WbRequest
-     'cdx'  : [query],         # Query the CDX
-     'web'  : [query],         # Query the CDX
+      MatchPrefix('echo', EchoEnv()),     # Just echo the env
+      MatchPrefix('req',  EchoRequest()), # Echo the WbRequest
+      MatchPrefix('cdx',  query),         # Query the CDX
+      MatchPrefix('web',  query),         # Query the CDX
     },
     hostpaths = ['http://localhost:9090/'])
 ## ===========
@@ -74,6 +74,8 @@ try:
 except:
     print " *** Note: Inited With Sample Wayback *** "
     wbparser = createDefaultWB(headInsert)
+    import traceback
+    traceback.print_exc()
 
 
 
@@ -82,7 +84,7 @@ def application(env, start_response):
     response = None
 
     try:
-        response = wbparser.handleRequest(env)
+        response = wbparser(env)
 
         if not response:
             raise wbexceptions.NotFoundException(env['REQUEST_URI'] + ' was not found')

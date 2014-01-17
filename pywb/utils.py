@@ -2,6 +2,7 @@ import itertools
 import hmac
 import time
 import zlib
+import time
 
 def peek_iter(iterable):
     try:
@@ -21,6 +22,7 @@ def split_prefix(key, prefixs):
 
 def create_decompressor():
     return zlib.decompressobj(16 + zlib.MAX_WBITS)
+
 
 class HMACCookieMaker:
     def __init__(self, key, name):
@@ -48,5 +50,20 @@ class HMACCookieMaker:
 
         #return cookie + hexdigest
 
+
+# Adapted from example at
+class PerfTimer:
+    def __init__(self, perfdict, name):
+        self.perfdict = perfdict
+        self.name = name
+
+    def __enter__(self):
+        self.start = time.clock()
+        return self
+
+    def __exit__(self, *args):
+        self.end = time.clock()
+        if self.perfdict is not None:
+            self.perfdict[self.name] = str(self.end - self.start)
 
 

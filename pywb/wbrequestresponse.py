@@ -17,10 +17,19 @@ class WbRequest:
 
     >>> WbRequest.from_uri('../example.com')
     {'wb_url': ('latest_replay', '', '', 'http://example.com', '/http://example.com'), 'coll': '', 'wb_prefix': '/', 'request_uri': '../example.com'}
+
+    # Abs path
+    >>> WbRequest.from_uri('/2010/example.com', {'wsgi.url_scheme': 'https', 'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
+    {'wb_url': ('latest_replay', '', '', 'http://example.com', '/http://example.com'), 'coll': '2010', 'wb_prefix': 'https://localhost:8080/2010/', 'request_uri': '/2010/example.com'}
+
+    # No Scheme, so stick to relative
+    >>> WbRequest.from_uri('/2010/example.com', {'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
+    {'wb_url': ('latest_replay', '', '', 'http://example.com', '/http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
+
     """
 
     @staticmethod
-    def from_uri(request_uri, env = {}):
+    def from_uri(request_uri, env = {}, use_abs_prefix = False):
         if not request_uri:
             request_uri = env.get('REQUEST_URI')
 
@@ -41,14 +50,23 @@ class WbRequest:
             wb_url = parts[0]
             coll = ''
 
-        return WbRequest(env, request_uri, wb_prefix, wb_url, coll)
+        return WbRequest(env, request_uri, wb_prefix, wb_url, coll, use_abs_prefix)
 
-    def __init__(self, env, request_uri, wb_prefix, wb_url, coll):
+
+    @staticmethod
+    def makeAbsPrefix(env, rel_prefix):
+        try:
+            return env['wsgi.url_scheme'] + '://' + env['HTTP_HOST'] + rel_prefix
+        except KeyError:
+            return rel_prefix
+
+
+    def __init__(self, env, request_uri, wb_prefix, wb_url, coll, use_abs_prefix = False):
         self.env = env
 
         self.request_uri = request_uri if request_uri else env.get('REQUEST_URI')
 
-        self.wb_prefix = wb_prefix
+        self.wb_prefix = wb_prefix if not use_abs_prefix else WbRequest.makeAbsPrefix(env, wb_prefix)
 
         self.wb_url = ArchivalUrl(wb_url)
 
@@ -57,6 +75,11 @@ class WbRequest:
         self.referrer = env.get('HTTP_REFERER')
 
         self.is_ajax = self._is_ajax()
+
+        self.customParams = {}
+
+        # PERF
+        env['X_PERF'] = {}
 
 
     def _is_ajax(self):
@@ -125,6 +148,13 @@ class WbResponse:
         return response
 
     def __call__(self, env, start_response):
+
+        # PERF
+        perfstats = env.get('X_PERF')
+        if perfstats:
+            self.status_headers.headers.append(('X-Archive-Perf-Stats', str(perfstats)))
+
+
         start_response(self.status_headers.statusline, self.status_headers.headers)
 
         if env['REQUEST_METHOD'] == 'HEAD':

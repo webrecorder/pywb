@@ -35,6 +35,12 @@ class ArchivalUrlRewriter:
     >>> test_rewrite('', '/20131010010203/http://example.com/file.html', '/web/')
     '/web/20131010010203/http://example.com/file.html'
 
+    >>> test_rewrite('#anchor', '/20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
+    '#anchor'
+
+    >>> test_rewrite('mailto:example@example.com', '/20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
+    'mailto:example@example.com'
+
     >>> ArchivalUrlRewriter('/19960708im_/http://domain.example.com/path.txt', '/abc/').getAbsUrl()
     '/abc/19960708im_/'
 
@@ -45,7 +51,7 @@ class ArchivalUrlRewriter:
     True
     """
 
-    NO_REWRITE_URI_PREFIX = ['javascript:', 'data:', 'mailto:', 'about:']
+    NO_REWRITE_URI_PREFIX = ['#', 'javascript:', 'data:', 'mailto:', 'about:']
 
     PROTOCOLS = ['http://', 'https://', '//', 'ftp://', 'mms://', 'rtsp://', 'wais://']
 

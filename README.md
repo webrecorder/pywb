@@ -65,7 +65,7 @@ one could declare a `createWB()` method as follows:
     
         return ArchivalRequestRouter(
         {
-              'mycoll': [replay.WBHandler(query, replay)],
+              MatchPrefix('mycoll': replay.WBHandler(query, replay)),
         },
         hostpaths = ['http://mywb.example.com:8080/'])
 
@@ -73,7 +73,7 @@ one could declare a `createWB()` method as follows:
 Quick File Reference
 --------------------
 
- - `archivalrouter.py`- Archival mode routing and referer fallback
+ - `archivalrouter.py`- Archival mode routing and referer fallback, include MatchPrefix and MatchRegex
 
  - `archiveloader.py` - IO for loading W/ARC data
 

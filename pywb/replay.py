@@ -21,13 +21,15 @@ class WBHandler:
         self.query = query
         self.replay = replay
 
-    def __call__(self, wbrequest, _):
-        query_response = self.query(wbrequest, None)
+    def __call__(self, wbrequest):
+        with utils.PerfTimer(wbrequest.env.get('X_PERF'), 'query') as t:
+            query_response = self.query(wbrequest)
 
         if (wbrequest.wb_url.type == ArchivalUrl.QUERY) or (wbrequest.wb_url.type == ArchivalUrl.URL_QUERY):
             return query_response
 
-        return self.replay(wbrequest, query_response)
+        with utils.PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
+            return self.replay(wbrequest, query_response)
 
 
 #=================================================================

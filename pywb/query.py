@@ -10,10 +10,14 @@ class QueryHandler:
 
         self.cdxserver = cdxserver
 
-    def __call__(self, wbrequest, prev_wbresponse):
+    def __call__(self, wbrequest):
         wburl = wbrequest.wb_url
 
+        # init standard params
         params = self.cdxserver.getQueryParams(wburl)
+
+        # add any custom params from the request
+        params.update(wbrequest.customParams)
 
         cdxlines = self.cdxserver.load(wburl.url, params)
 
@@ -27,11 +31,11 @@ class QueryHandler:
 ## ===========
 ## Simple handlers for debuging
 class EchoEnv:
-    def __call__(self, wbrequest, _):
+    def __call__(self, wbrequest):
         return wbrequestresponse.WbResponse.text_response(str(wbrequest.env))
 
 class EchoRequest:
-    def __call__(self, wbrequest, _):
+    def __call__(self, wbrequest):
         return wbrequestresponse.WbResponse.text_response(str(wbrequest))
 
 
