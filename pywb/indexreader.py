@@ -2,6 +2,7 @@ import urllib
 import urllib2
 import wbexceptions
 import itertools
+from collections import OrderedDict
 
 from wbarchivalurl import ArchivalUrl
 
@@ -78,7 +79,7 @@ class RemoteCDXServer:
         }[wburl.type]
 
 
-class CDXCaptureResult(dict):
+class CDXCaptureResult(OrderedDict):
     CDX_FORMATS = [
         # Public CDX Format
         ["urlkey","timestamp","original","mimetype","statuscode","digest","length"],
@@ -99,6 +100,8 @@ class CDXCaptureResult(dict):
         ]
 
     def __init__(self, cdxline):
+        OrderedDict.__init__(self)
+
         cdxline = cdxline.rstrip()
         fields = cdxline.split(' ')
 

@@ -119,12 +119,12 @@ class WbResponse:
         self.body = value
 
     @staticmethod
-    def text_stream(text, status = '200 OK'):
-        return WbResponse(StatusAndHeaders(status, [('Content-Type', 'text/plain')]), value = text)
+    def text_stream(text, status = '200 OK', content_type = 'text/plain'):
+        return WbResponse(StatusAndHeaders(status, [('Content-Type', content_type)]), value = text)
 
     @staticmethod
-    def text_response(text, status = '200 OK'):
-        return WbResponse(StatusAndHeaders(status, [('Content-Type', 'text/plain')]), value = [text])
+    def text_response(text, status = '200 OK', content_type = 'text/plain'):
+        return WbResponse(StatusAndHeaders(status, [('Content-Type', content_type)]), value = [text])
 
     @staticmethod
     def redir_response(location, status = '302 Redirect'):

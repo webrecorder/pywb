@@ -3,6 +3,8 @@ import utils
 import wbrequestresponse
 import wbexceptions
 
+from jinja2 import Environment, FileSystemLoader
+
 class QueryHandler:
     def __init__(self, cdxserver = None):
         if not cdxserver:
@@ -23,13 +25,50 @@ class QueryHandler:
 
         cdxlines = utils.peek_iter(cdxlines)
 
-        if cdxlines is not None:
-            return wbrequestresponse.WbResponse.text_stream(cdxlines)
+        if cdxlines is None:
+            raise wbexceptions.NotFoundException('WB Does Not Have Url: ' + wburl.url)
 
-        raise wbexceptions.NotFoundException('WB Does Not Have Url: ' + wburl.url)
+        cdxlines = self.filterCdx(wbrequest, cdxlines)
+
+        # Output raw cdx stream
+        return wbrequestresponse.WbResponse.text_stream(cdxlines)
+
+    def filterCdx(self, wbrequest, cdxlines):
+        # Subclasses may wrap cdxlines iterator in a filter
+        return cdxlines
+
+
+class J2QueryRenderer:
+    def __init__(self, template_dir, template_file):
+        self.template_file = template_file
+
+        self.jinja_env = Environment(loader = FileSystemLoader(template_dir), trim_blocks = True)
+
+    def __call__(self, wbrequest, query_response):
+        cdxlines = query_response.body
+
+        def parse_cdx():
+            for cdx in cdxlines:
+                try:
+                    cdx = indexreader.CDXCaptureResult(cdx)
+                    yield cdx
+
+                except wbexceptions.InvalidCDXException:
+                    import traceback
+                    traceback.print_exc()
+                    pass
+
+
+        template = self.jinja_env.get_template(self.template_file)
+        response = template.render(cdxlines = parse_cdx(),
+                                   url = wbrequest.wb_url.url,
+                                   prefix = wbrequest.wb_prefix)
+
+        return wbrequestresponse.WbResponse.text_response(str(response), content_type = 'text/html')
+
 
 ## ===========
-## Simple handlers for debuging
+## Simple handlers for debugging
 class EchoEnv:
     def __call__(self, wbrequest):
         return wbrequestresponse.WbResponse.text_response(str(wbrequest.env))
