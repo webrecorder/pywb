@@ -19,7 +19,8 @@ class QueryHandler:
         params = self.cdxserver.getQueryParams(wburl)
 
         # add any custom params from the request
-        params.update(wbrequest.customParams)
+        if wbrequest.queryFilter:
+            params['filter'] = wbrequest.queryFilter
 
         cdxlines = self.cdxserver.load(wburl.url, params)
 

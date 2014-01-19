@@ -3,6 +3,8 @@ import hmac
 import time
 import zlib
 import time
+import datetime
+import re
 
 def peek_iter(iterable):
     try:
@@ -66,4 +68,48 @@ class PerfTimer:
         if self.perfdict is not None:
             self.perfdict[self.name] = str(self.end - self.start)
 
+
+DATE_TIMESPLIT = re.compile('[^\d]')
+
+def iso_date_to_datetime(string):
+    """
+    >>> iso_date_to_datetime('2013-12-26T10:11:12Z')
+    datetime.datetime(2013, 12, 26, 10, 11, 12)
+
+    >>> iso_date_to_datetime('2013-12-26T10:11:12Z')
+    datetime.datetime(2013, 12, 26, 10, 11, 12)
+     """
+
+    nums = DATE_TIMESPLIT.split(string)
+    if nums[-1] == '':
+        nums = nums[:-1]
+
+    dt = datetime.datetime(*map(int, nums))
+    return dt
+
+def datetime_to_timestamp(dt):
+    """
+    >>> datetime_to_timestamp(datetime.datetime(2013, 12, 26, 10, 11, 12))
+    '20131226101112'
+    """
+
+    return dt.strftime('%Y%m%d%H%M%S')
+
+def iso_date_to_timestamp(string):
+    """
+    >>> iso_date_to_timestamp('2013-12-26T10:11:12Z')
+    '20131226101112'
+
+    >>> iso_date_to_timestamp('2013-12-26T10:11:12')
+    '20131226101112'
+     """
+
+    return datetime_to_timestamp(iso_date_to_datetime(string))
+
+
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
 

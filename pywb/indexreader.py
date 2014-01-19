@@ -29,7 +29,7 @@ class RemoteCDXServer:
         params['url'] = url
         params.update(**kwvalues)
 
-        urlparams = urllib.urlencode(params)
+        urlparams = urllib.urlencode(params, True)
 
         try:
             request = urllib2.Request(self.serverUrl, urlparams)

@@ -76,7 +76,7 @@ class WbRequest:
 
         self.is_ajax = self._is_ajax()
 
-        self.customParams = {}
+        self.queryFilter = []
 
         # PERF
         env['X_PERF'] = {}

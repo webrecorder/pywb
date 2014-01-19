@@ -2,6 +2,7 @@ import StringIO
 from urllib2 import URLError
 import chardet
 import redis
+import copy
 
 import indexreader
 from wbrequestresponse import WbResponse, StatusAndHeaders
@@ -30,7 +31,7 @@ class WBHandler:
             return self.htmlquery(wbrequest, query_response) if self.htmlquery else query_response
 
         with utils.PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
-            return self.replay(wbrequest, query_response)
+            return self.replay(wbrequest, query_response, self.query)
 
 
 #=================================================================
@@ -39,7 +40,7 @@ class ReplayHandler(object):
         self.resolvers = resolvers
         self.archiveloader = archiveloader
 
-    def __call__(self, wbrequest, query_response):
+    def __call__(self, wbrequest, query_response, query):
         cdxlist = query_response.body
         last_e = None
         first = True
@@ -58,7 +59,7 @@ class ReplayHandler(object):
                     self._checkRedir(wbrequest, cdx)
                     first = False
 
-                response = self.doReplay(cdx, wbrequest, failedFiles)
+                response = self.doReplay(cdx, wbrequest, query, failedFiles)
 
                 if response:
                     response.cdx = cdx
@@ -98,7 +99,7 @@ class ReplayHandler(object):
             raise wbexceptions.ArchiveLoadFailed(filename, ue.reason)
 
 
-    def doReplay(self, cdx, wbrequest, failedFiles):
+    def doReplay(self, cdx, wbrequest, query, failedFiles):
         hasCurr = (cdx['filename'] != '-')
         hasOrig = (cdx['orig.filename'] != '-')
 
@@ -130,9 +131,57 @@ class ReplayHandler(object):
             isRevisit = True
 
         else:
-            raise wbexceptions.CaptureException('Invalid CDX' + cdx)
+            raise wbexceptions.CaptureException('Invalid CDX' + str(cdx))
+
+        # special cases: if mimetype is still warc/revisit.. need to look further
+        if cdx['mimetype'] == 'warc/revisit':
+            payloadRecord = self._load_different_url_payload(wbrequest, query, cdx, headersRecord, failedFiles)
 
         return WbResponse.stream_response(headersRecord.status_headers, payloadRecord.stream)
+
+
+
+    # Handle the case where a duplicate of a capture with same digest exists at a different url
+    # Must query the index at that url filtering by matching digest
+    # Raise exception if no matches found
+    def _load_different_url_payload(self, wbrequest, query, cdx, headersRecord, failedFiles):
+        ref_target_uri = headersRecord.rec_headers.getHeader('WARC-Refers-To-Target-URI')
+
+        # Case 5: unresolved revisit error, if refers to target uri not present or same as the current uri
+        if not ref_target_uri or (ref_target_uri == headersRecord.rec_headers.getHeader('WARC-Target-URI')):
+            raise wbexceptions.CaptureException('Missing Revisit Original' + str(cdx))
+
+        # Case 6: url-agnostic revisit with different original url (either same or different date)
+        ref_target_date = headersRecord.rec_headers.getHeader('WARC-Refers-To-Date')
+
+        if not ref_target_date:
+            ref_target_date = cdx['timestamp']
+        else:
+            ref_target_date = utils.iso_date_to_timestamp(ref_target_date)
+
+        # clone WbRequest
+        orig_wbreq = copy.copy(wbrequest)
+        orig_wbreq.wb_url = copy.copy(orig_wbreq.wb_url)
+
+        orig_wbreq.wb_url.url = ref_target_uri
+        orig_wbreq.wb_url.timestamp = ref_target_date
+
+        # Must also match digest
+        orig_wbreq.queryFilter.append('digest:' + cdx['digest'])
+
+        orig_cdxlines = query(orig_wbreq).body
+
+        for cdx in orig_cdxlines:
+            try:
+                cdx = indexreader.CDXCaptureResult(cdx)
+                #print cdx
+                payloadRecord = self._load(cdx, False, failedFiles)
+                return payloadRecord
+
+            except wbexceptions.CaptureException as e:
+                pass
+
+        raise wbexceptions.CaptureException('Original for revisit could not be loaded')
 
 
     def resolveFull(self, filename):
@@ -165,11 +214,11 @@ class RewritingReplayHandler(ReplayHandler):
         return None
 
 
-    def __call__(self, wbrequest, query_response):
+    def __call__(self, wbrequest, query_response, query):
         urlrewriter = ArchivalUrlRewriter(wbrequest.wb_url, wbrequest.wb_prefix)
         wbrequest.urlrewriter = urlrewriter
 
-        response = ReplayHandler.__call__(self, wbrequest, query_response)
+        response = ReplayHandler.__call__(self, wbrequest, query_response, query)
 
         if response and response.cdx:
             self._checkRedir(wbrequest, response.cdx)
@@ -276,8 +325,8 @@ class RewritingReplayHandler(ReplayHandler):
         return None
 
 
-    def doReplay(self, cdx, wbrequest, failedFiles):
-        wbresponse = ReplayHandler.doReplay(self, cdx, wbrequest, failedFiles)
+    def doReplay(self, cdx, wbrequest, query, failedFiles):
+        wbresponse = ReplayHandler.doReplay(self, cdx, wbrequest, query, failedFiles)
 
         # Check for self redirect
         if wbresponse.status_headers.statusline.startswith('3'):
