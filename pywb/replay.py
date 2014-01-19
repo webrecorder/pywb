@@ -3,7 +3,7 @@ from urllib2 import URLError
 import chardet
 import redis
 
-import indexreader
+import indexreader, archiveloader
 from wbrequestresponse import WbResponse, StatusAndHeaders
 from wbarchivalurl import ArchivalUrl
 import utils
@@ -100,7 +100,7 @@ class ReplayHandler(object):
 
     def doReplay(self, cdx, wbrequest, failedFiles):
         hasCurr = (cdx['filename'] != '-')
-        hasOrig = (cdx['orig.filename'] != '-')
+        hasOrig = (cdx.get('orig.filename','-') != '-')
 
         # Case 1: non-revisit
         if (hasCurr and not hasOrig):
@@ -190,9 +190,13 @@ class RewritingReplayHandler(ReplayHandler):
         # TODO: better way to pass this?
         stream = response._stream
 
+        # handle transfer-encoding: chunked
+        if (rewrittenHeaders.containsRemovedHeader('transfer-encoding', 'chunked')):
+            stream = archiveloader.ChunkedLineReader(stream)
+
         # special case -- need to ungzip the body
         if (rewrittenHeaders.containsRemovedHeader('content-encoding', 'gzip')):
-            stream = archiveloader.LineStream(stream, decomp = utils.create_decompressor())
+            stream = archiveloader.LineReader(stream, decomp = utils.create_decompressor())
 
         # TODO: is this right?
         if rewrittenHeaders.charset:
@@ -221,7 +225,19 @@ class RewritingReplayHandler(ReplayHandler):
             buff = firstBuff if firstBuff else stream.read()
             while buff:
                 if encoding:
-                    buff = buff.decode(encoding)
+                    try:
+                        buff = buff.decode(encoding)
+                    except UnicodeDecodeError, e:
+                        # chunk may have cut apart unicode bytes -- add 1-3 bytes and retry
+                        for i in range(3):
+                            buff += stream.read(1)
+                            try:
+                                buff = buff.decode(encoding)
+                                break
+                            except UnicodeDecodeError:
+                                pass
+                        else:
+                            raise
                 htmlrewriter.feed(buff)
                 buff = stream.read()
 
