@@ -282,6 +282,33 @@ class LineReader:
             self.stream.close()
             self.stream = None
 
+class ChunkedLineReader(LineReader):
+    allChunksRead = False
+
+    def _fillbuff(self, chunkSize = None):
+        if self.allChunksRead:
+            return
+
+        if not self.buff or self.buff.pos >= self.buff.len:
+            lengthHeader = self.stream.readline()
+            chunkSize = int(lengthHeader.strip().split(';')[0], 16)
+            data = ''
+            if chunkSize:
+                while len(data) < chunkSize:
+                    newData = self.stream.read(chunkSize - len(data))
+                    if not newData:
+                        raise Exception("Error reading chunked data: ran out of data before end of chunk.")
+                    data += newData
+                clrf = self.stream.read(2)
+                if clrf != '\r\n':
+                    raise Exception("Error reading chunked data: end of chunk not found where expected.")
+                if self.decomp:
+                    data = self.decomp.decompress(data)
+            else:
+                self.allChunksRead = True
+                data = ''
+
+            self.buff = StringIO.StringIO(data)
 
 #=================================================================
 if __name__ == "__main__":
