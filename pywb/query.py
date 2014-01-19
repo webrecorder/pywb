@@ -19,6 +19,9 @@ class QueryHandler:
         params = self.cdxserver.getQueryParams(wburl)
 
         # add any custom params from the request
+        params.update(wbrequest.customParams)
+
+        # add search filters
         if wbrequest.queryFilter:
             params['filter'] = wbrequest.queryFilter
 
