@@ -107,6 +107,14 @@ def iso_date_to_timestamp(string):
     return datetime_to_timestamp(iso_date_to_datetime(string))
 
 
+# adapted from wsgiref.request_uri, but doesn't include domain name and allows ':' in url
+def request_uri(environ, include_query=1):
+    """Return the requested path, optionally including the query string"""
+    from urllib import quote
+    url = quote(environ.get('SCRIPT_NAME', '')+environ.get('PATH_INFO',''),safe='/;=,:')
+    if include_query and environ.get('QUERY_STRING'):
+        url += '?' + environ['QUERY_STRING']
+    return url
 
 
 if __name__ == "__main__":

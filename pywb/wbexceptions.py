@@ -1,28 +1,28 @@
 
 class RequestParseException(Exception):
     def status(_):
-        return '400'
+        return '400 Bad Request'
 
 class BadUrlException(Exception):
     def status(_):
-        return '400'
+        return '400 Bad Request'
 
 class AccessException(Exception):
     def status(_):
-        return '403'
+        return '403 Forbidden'
 
 class InvalidCDXException(Exception):
     def status(_):
-        return '500'
+        return '500 Internal Server Error'
 
 class NotFoundException(Exception):
     def status(_):
-        return '404'
+        return '404 Not Found'
 
 # Exceptions that effect a specific capture and result in a retry
 class CaptureException(Exception):
     def status(_):
-        return '500'
+        return '500 Internal Server Error'
 
 class UnresolvedArchiveFileException(CaptureException):
     pass
@@ -45,7 +45,7 @@ class ArchiveLoadFailed(CaptureException):
         self.reason = reason
 
     def status(_):
-        return '503'
+        return '503 Service Unavailable'
 
 class InternalRedirect(Exception):
     def __init__(self, location, status = '302 Internal Redirect'):
@@ -53,6 +53,6 @@ class InternalRedirect(Exception):
         self.status = status
         self.httpHeaders = [('Location', location)]
 
-    def status(_):
+    def status(self):
         return self.status
 
