@@ -198,12 +198,13 @@ class ReplayHandler(object):
 #=================================================================
 class RewritingReplayHandler(ReplayHandler):
 
-    def __init__(self, resolvers, archiveloader, headInsert = None, headerRewriter = None):
+    def __init__(self, resolvers, archiveloader, headInsert = None, headerRewriter = None, redir_to_exact = True):
         ReplayHandler.__init__(self, resolvers, archiveloader)
         self.headInsert = headInsert
         if not headerRewriter:
             headerRewriter = HeaderRewriter()
         self.headerRewriter = headerRewriter
+        self.redir_to_exact = redir_to_exact
 
 
     def _textContentType(self, contentType):
@@ -333,7 +334,7 @@ class RewritingReplayHandler(ReplayHandler):
         return (result['encoding'], buff)
 
     def _checkRedir(self, wbrequest, cdx):
-        if cdx and (cdx['timestamp'] != wbrequest.wb_url.timestamp):
+        if self.redir_to_exact and cdx and (cdx['timestamp'] != wbrequest.wb_url.timestamp):
             newUrl = wbrequest.urlrewriter.getTimestampUrl(cdx['timestamp'], cdx['original'])
             raise wbexceptions.InternalRedirect(newUrl)
             #return WbResponse.better_timestamp_response(wbrequest, cdx['timestamp'])

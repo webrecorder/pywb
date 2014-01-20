@@ -5,7 +5,7 @@ import wbexceptions
 import indexreader
 
 from wbrequestresponse import WbResponse, StatusAndHeaders
-from archivalrouter import ArchivalRequestRouter, MatchPrefix
+from archivalrouter import ArchivalRequestRouter, Route
 
 ## ===========
 headInsert = """
@@ -49,7 +49,7 @@ one could declare a `createWB()` method as follows:
     
         return ArchivalRequestRouter(
         {
-              MatchPrefix('mycoll', WBHandler(query, replay))
+              Route('mycoll', WBHandler(query, replay))
         },
         hostpaths = ['http://mywb.example.com:8080/'])
 '''
@@ -58,10 +58,10 @@ def createDefaultWB(headInsert):
     query = QueryHandler(indexreader.RemoteCDXServer('http://web.archive.org/cdx/search/cdx'))
     return ArchivalRequestRouter(
     {
-      MatchPrefix('echo', EchoEnv()),     # Just echo the env
-      MatchPrefix('req',  EchoRequest()), # Echo the WbRequest
-      MatchPrefix('cdx',  query),         # Query the CDX
-      MatchPrefix('web',  query),         # Query the CDX
+      Route('echo', EchoEnv()),     # Just echo the env
+      Route('req',  EchoRequest()), # Echo the WbRequest
+      Route('cdx',  query),         # Query the CDX
+      Route('web',  query),         # Query the CDX
     },
     hostpaths = ['http://localhost:9090/'])
 ## ===========

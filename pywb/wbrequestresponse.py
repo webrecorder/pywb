@@ -78,6 +78,8 @@ class WbRequest:
 
         self.queryFilter = []
 
+        self.customParams = {}
+
         # PERF
         env['X_PERF'] = {}
 

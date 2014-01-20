@@ -28,51 +28,12 @@ class ArchivalRequestRouter:
 
 
 
-#=================================================================
-# Route by matching prefix -- deprecated, as MatchRegex
-# also supports the same
-#=================================================================
-
-class MatchPrefix:
-    def __init__(self, prefix, handler):
-        self.prefix = '/' + prefix + '/' if prefix else '/'
-        self.coll = prefix
-        self.handler = handler
-
-
-    def __call__(self, env, useAbsPrefix, archivalurl_class):
-        request_uri =  env['REL_REQUEST_URI']
-        if not request_uri.startswith(self.prefix):
-            return None
-
-        if self.coll:
-            wb_prefix = env['SCRIPT_NAME'] + self.prefix
-            wb_url = request_uri[len(self.coll) + 1:]
-        else:
-            wb_prefix = env['SCRIPT_NAME'] + self.prefix
-            wb_url = request_uri
-
-        wbrequest = WbRequest(env,
-                              request_uri = request_uri,
-                              coll = self.coll,
-                              wb_url = wb_url,
-                              wb_prefix = wb_prefix,
-                              use_abs_prefix = useAbsPrefix,
-                              archivalurl_class = archivalurl_class)
-
-        return self._handleRequest(wbrequest)
-
-
-    def _handleRequest(self, wbrequest):
-        return self.handler(wbrequest)
-
-
 
 #=================================================================
-# Route by matching regex of request uri (excluding first '/')
-# May be a fixed prefix
+# Route by matching regex (or fixed prefix)
+# of request uri (excluding first '/')
 #=================================================================
-class MatchRegex:
+class Route:
     def __init__(self, regex, handler, coll_group = 0):
         self.regex = re.compile(regex)
         self.handler = handler

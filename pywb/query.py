@@ -18,9 +18,12 @@ class QueryHandler:
         # init standard params
         params = self.cdxserver.getQueryParams(wburl)
 
-        # add any custom params from the request
+        # add any custom filter from the request
         if wbrequest.queryFilter:
             params['filter'] = wbrequest.queryFilter
+
+        if wbrequest.customParams:
+            params.update(wbrequest.customParams)
 
         cdxlines = self.cdxserver.load(wburl.url, params)
 
