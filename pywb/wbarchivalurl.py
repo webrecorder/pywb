@@ -81,7 +81,7 @@ class ArchivalUrl:
         self.timestamp = ''
         self.mod = ''
 
-        if not any (f(self, url) for f in [ArchivalUrl._init_query, ArchivalUrl._init_replay]):
+        if not any (f(url) for f in [self._init_query, self._init_replay]):
             raise wbexceptions.RequestParseException('Invalid WB Request Url: ' + url)
 
         if len(self.url) == 0:
@@ -89,10 +89,10 @@ class ArchivalUrl:
 
         # protocol agnostic url -> http://
         if self.url.startswith('//'):
-            self.url = ArchivalUrl.DEFAULT_SCHEME + self.url[2:]
+            self.url = self.DEFAULT_SCHEME + self.url[2:]
         # no protocol -> http://
         elif not '://' in self.url:
-            self.url = ArchivalUrl.DEFAULT_SCHEME + self.url
+            self.url = self.DEFAULT_SCHEME + self.url
 
         # BUG?: adding upper() because rfc3987 lib rejects lower case %-encoding
         # %2F is fine, but %2f -- standard supports either
@@ -104,7 +104,7 @@ class ArchivalUrl:
     # Match query regex
     # ======================
     def _init_query(self, url):
-        query = ArchivalUrl.QUERY_REGEX.match(url)
+        query = self.QUERY_REGEX.match(url)
         if not query:
             return None
 
@@ -114,16 +114,16 @@ class ArchivalUrl:
         self.timestamp = res[1]
         self.url = res[2]
         if self.url.endswith('*'):
-            self.type = ArchivalUrl.URL_QUERY
+            self.type = self.URL_QUERY
             self.url = self.url[:-1]
         else:
-            self.type = ArchivalUrl.QUERY
+            self.type = self.QUERY
         return True
 
     # Match replay regex
     # ======================
     def _init_replay(self, url):
-        replay = ArchivalUrl.REPLAY_REGEX.match(url)
+        replay = self.REPLAY_REGEX.match(url)
         if not replay:
             return None
 
@@ -133,17 +133,21 @@ class ArchivalUrl:
         self.mod = res[1]
         self.url = res[2]
         if self.timestamp:
-            self.type = ArchivalUrl.REPLAY
+            self.type = self.REPLAY
         else:
-            self.type = ArchivalUrl.LATEST_REPLAY
+            self.type = self.LATEST_REPLAY
 
         return True
 
     # Str Representation
     # ====================
-    @staticmethod
-    def to_str(atype, mod, timestamp, url):
-        if atype == ArchivalUrl.QUERY or atype == ArchivalUrl.URL_QUERY:
+    def to_str(self, **overrides):
+        atype = overrides['type'] if 'type' in overrides else self.type
+        mod = overrides['mod'] if 'mod' in overrides else self.mod
+        timestamp = overrides['timestamp'] if 'timestamp' in overrides else self.timestamp
+        url = overrides['url'] if 'url' in overrides else self.url
+
+        if atype == self.QUERY or atype == self.URL_QUERY:
             tsmod = "/"
             if mod:
                 tsmod += mod + "/"
@@ -151,7 +155,7 @@ class ArchivalUrl:
                 tsmod += timestamp
 
             tsmod += "*/" + url
-            if atype == ArchivalUrl.URL_QUERY:
+            if atype == self.URL_QUERY:
                 tsmod += "*"
             return tsmod
         else:
@@ -162,7 +166,7 @@ class ArchivalUrl:
                 return "/" + url
 
     def __str__(self):
-        return self.to_str(self.type, self.mod, self.timestamp, self.url)
+        return self.to_str()
 
     def __repr__(self):
         return str((self.type, self.timestamp, self.mod, self.url, str(self)))

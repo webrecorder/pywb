@@ -58,6 +58,7 @@ class ArchivalUrlRewriter:
     def __init__(self, wburl, prefix):
         self.wburl = wburl if isinstance(wburl, ArchivalUrl) else ArchivalUrl(wburl)
         self.prefix = prefix
+        self.archivalurl_class = self.wburl.__class__
 
         if self.prefix.endswith('/'):
             self.prefix = self.prefix[:-1]
@@ -86,18 +87,18 @@ class ArchivalUrlRewriter:
             if mod is None:
                 mod = wburl.mod
 
-            finalUrl = self.prefix + ArchivalUrl.to_str(wburl.type, mod, wburl.timestamp, newUrl)
+            finalUrl = self.prefix + wburl.to_str(mod=mod, url=newUrl)
 
         return finalUrl
 
     def getAbsUrl(self, url = ''):
-        return self.prefix + ArchivalUrl.to_str(self.wburl.type, self.wburl.mod, self.wburl.timestamp, url)
+        return self.prefix + self.wburl.to_str(url=url)
 
     def getTimestampUrl(self, timestamp, url = None):
-        if not url:
+        if url is None:
             url = self.wburl.url
 
-        return self.prefix + ArchivalUrl.to_str(self.wburl.type, self.wburl.mod, timestamp, url)
+        return self.prefix + self.wburl.to_str(timestamp=timestamp, url=url)
 
 
     def setBaseUrl(self, newUrl):
