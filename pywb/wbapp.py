@@ -1,3 +1,4 @@
+from utils import request_uri
 from query import QueryHandler, EchoEnv, EchoRequest
 from replay import WBHandler
 import wbexceptions
@@ -81,6 +82,7 @@ except:
 
 
 def application(env, start_response):
+    env['REQUEST_URI'] = request_uri(env)
     response = None
 
     try:
