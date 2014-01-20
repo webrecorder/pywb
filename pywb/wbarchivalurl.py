@@ -162,7 +162,7 @@ class ArchivalUrl:
                 return "/" + url
 
     def __str__(self):
-        return ArchivalUrl.to_str(self.type, self.mod, self.timestamp, self.url)
+        return self.to_str(self.type, self.mod, self.timestamp, self.url)
 
     def __repr__(self):
         return str((self.type, self.timestamp, self.mod, self.url, str(self)))

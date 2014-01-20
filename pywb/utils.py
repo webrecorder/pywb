@@ -110,21 +110,21 @@ def iso_date_to_timestamp(string):
 # adapted -from wsgiref.request_uri, but doesn't include domain name and allows all characters
 # allowed in the path segment according to: http://tools.ietf.org/html/rfc3986#section-3.3
 # explained here: http://stackoverflow.com/questions/4669692/valid-characters-for-directory-part-of-a-url-for-short-links
-def request_uri(environ, include_query=1):
+def rel_request_uri(environ, include_query=1):
     """
     Return the requested path, optionally including the query string
 
     # Simple test:
-    >>> request_uri({'PATH_INFO': '/web/example.com'})
+    >>> rel_request_uri({'PATH_INFO': '/web/example.com'})
     '/web/example.com'
 
     # Test all unecoded special chars and double-quote
     # (double-quote must be encoded but not single quote)
-    >>> request_uri({'PATH_INFO': "/web/example.com/0~!+$&'()*+,;=:\\\""})
+    >>> rel_request_uri({'PATH_INFO': "/web/example.com/0~!+$&'()*+,;=:\\\""})
     "/web/example.com/0~!+$&'()*+,;=:%22"
     """
     from urllib import quote
-    url = quote(environ.get('SCRIPT_NAME', '') + environ.get('PATH_INFO',''), safe='/~!$&\'()*+,;=:@')
+    url = quote(environ.get('PATH_INFO',''), safe='/~!$&\'()*+,;=:@')
     if include_query and environ.get('QUERY_STRING'):
         url += '?' + environ['QUERY_STRING']
 

@@ -1,4 +1,4 @@
-from utils import request_uri
+from utils import rel_request_uri
 from query import QueryHandler, EchoEnv, EchoRequest
 from replay import WBHandler
 import wbexceptions
@@ -6,8 +6,6 @@ import indexreader
 
 from wbrequestresponse import WbResponse, StatusAndHeaders
 from archivalrouter import ArchivalRequestRouter, MatchPrefix
-
-
 
 ## ===========
 headInsert = """
@@ -82,8 +80,11 @@ except:
 
 
 def application(env, start_response):
-    if not env.get('REQUEST_URI'):
-        env['REQUEST_URI'] = request_uri(env)
+
+    if env.get('SCRIPT_NAME') or not env.get('REQUEST_URI'):
+        env['REL_REQUEST_URI'] = rel_request_uri(env)
+    else:
+        env['REL_REQUEST_URI'] = env['REQUEST_URI']
 
     response = None
 
@@ -91,7 +92,7 @@ def application(env, start_response):
         response = wbparser(env)
 
         if not response:
-            raise wbexceptions.NotFoundException(env['REQUEST_URI'] + ' was not found')
+            raise wbexceptions.NotFoundException(env['REL_REQUEST_URI'] + ' was not found')
 
     except wbexceptions.InternalRedirect as ir:
         response = WbResponse(StatusAndHeaders(ir.status, ir.httpHeaders))
@@ -116,8 +117,5 @@ def handleException(env, exc):
         status = '400 Bad Request'
 
     return WbResponse.text_response(status + ' Error: ' + str(exc), status = status)
-
-#def handle_not_found(env):
-#    return WbResponse.text_response('Not Found: ' + env['REQUEST_URI'], status = '404 Not Found')
 
 

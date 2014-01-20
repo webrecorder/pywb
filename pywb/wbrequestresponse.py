@@ -31,7 +31,7 @@ class WbRequest:
     @staticmethod
     def from_uri(request_uri, env = {}, use_abs_prefix = False):
         if not request_uri:
-            request_uri = env.get('REQUEST_URI')
+            request_uri = env.get('REL_REQUEST_URI')
 
         parts = request_uri.split('/', 2)
 
@@ -61,14 +61,14 @@ class WbRequest:
             return rel_prefix
 
 
-    def __init__(self, env, request_uri, wb_prefix, wb_url, coll, use_abs_prefix = False):
+    def __init__(self, env, request_uri, wb_prefix, wb_url, coll, use_abs_prefix = False, archivalurl_class = ArchivalUrl):
         self.env = env
 
-        self.request_uri = request_uri if request_uri else env.get('REQUEST_URI')
+        self.request_uri = request_uri if request_uri else env.get('REL_REQUEST_URI')
 
         self.wb_prefix = wb_prefix if not use_abs_prefix else WbRequest.makeAbsPrefix(env, wb_prefix)
 
-        self.wb_url = ArchivalUrl(wb_url)
+        self.wb_url = archivalurl_class(wb_url)
 
         self.coll = coll
 

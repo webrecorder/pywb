@@ -3,51 +3,62 @@ import re
 
 from wbrequestresponse import WbRequest, WbResponse
 from url_rewriter import ArchivalUrlRewriter
+from wbarchivalurl import ArchivalUrl
 
 #=================================================================
 # ArchivalRequestRouter -- route WB requests in archival mode
 #=================================================================
 class ArchivalRequestRouter:
-    def __init__(self, handlers, hostpaths = None, abs_path = True):
+    def __init__(self, handlers, hostpaths = None, abs_path = True, archivalurl_class = ArchivalUrl):
         self.handlers = handlers
         self.fallback = ReferRedirect(hostpaths)
         self.abs_path = abs_path
+        self.archivalurl_class = archivalurl_class
 
     def __call__(self, env):
         for handler in self.handlers:
-            result = handler(env, self.abs_path)
+            result = handler(env, self.abs_path, self.archivalurl_class)
             if result:
                 return result
 
         if not self.fallback:
             return None
 
-        return self.fallback(WbRequest.from_uri(None, env), self.abs_path)
+        return self.fallback(WbRequest.from_uri(None, env))
+
 
 
 #=================================================================
-# Route by matching prefix
+# Route by matching prefix -- deprecated, as MatchRegex
+# also supports the same
 #=================================================================
 
 class MatchPrefix:
     def __init__(self, prefix, handler):
-        self.prefix = '/' + prefix + '/'
+        self.prefix = '/' + prefix + '/' if prefix else '/'
         self.coll = prefix
         self.handler = handler
 
 
-    def __call__(self, env, useAbsPrefix):
-        request_uri =  env['REQUEST_URI']
+    def __call__(self, env, useAbsPrefix, archivalurl_class):
+        request_uri =  env['REL_REQUEST_URI']
         if not request_uri.startswith(self.prefix):
             return None
 
+        if self.coll:
+            wb_prefix = env['SCRIPT_NAME'] + self.prefix
+            wb_url = request_uri[len(self.coll) + 1:]
+        else:
+            wb_prefix = env['SCRIPT_NAME'] + self.prefix
+            wb_url = request_uri
 
         wbrequest = WbRequest(env,
                               request_uri = request_uri,
                               coll = self.coll,
-                              wb_url = request_uri[len(self.coll) + 1:],
-                              wb_prefix = self.prefix,
-                              use_abs_prefix = useAbsPrefix)
+                              wb_url = wb_url,
+                              wb_prefix = wb_prefix,
+                              use_abs_prefix = useAbsPrefix,
+                              archivalurl_class = archivalurl_class)
 
         return self._handleRequest(wbrequest)
 
@@ -59,34 +70,52 @@ class MatchPrefix:
 
 #=================================================================
 # Route by matching regex of request uri (excluding first '/')
+# May be a fixed prefix
 #=================================================================
 class MatchRegex:
-    def __init__(self, regex, handler):
+    def __init__(self, regex, handler, coll_group = 0):
         self.regex = re.compile(regex)
         self.handler = handler
+        # collection id from regex group (default 0)
+        self.coll_group = coll_group
 
 
-    def __call__(self, env, useAbsPrefix):
-        request_uri =  env['REQUEST_URI']
+    def __call__(self, env, useAbsPrefix, archivalurl_class):
+        request_uri =  env['REL_REQUEST_URI']
         matcher = self.regex.match(request_uri[1:])
         if not matcher:
             return None
 
         rel_prefix = matcher.group(0)
+
+        if rel_prefix:
+            wb_prefix = env['SCRIPT_NAME'] + '/' + rel_prefix + '/'
+            wb_url = request_uri[len(rel_prefix) + 1:] # remove the '/' + rel_prefix part of uri
+        else:
+            wb_prefix = env['SCRIPT_NAME'] + '/'
+            wb_url = request_uri # the request_uri is the wb_url, since no coll
+
+        coll = matcher.group(self.coll_group)
+
         wbrequest = WbRequest(env,
                               request_uri = request_uri,
-                              coll = matcher.group(1),
-                              wb_url = request_uri[len(rel_prefix) + 1:],
-                              wb_prefix = '/' + rel_prefix + '/',
-                              use_abs_prefix = useAbsPrefix)
+                              coll = coll,
+                              wb_url = wb_url,
+                              wb_prefix = wb_prefix,
+                              use_abs_prefix = useAbsPrefix,
+                              archivalurl_class = archivalurl_class)
+
 
         # Allow for setup of additional filters
         self._addFilters(wbrequest, matcher)
 
-        return self.handler(wbrequest)
+        return self._handleRequest(wbrequest)
 
     def _addFilters(self, wbrequest, matcher):
         pass
+
+    def _handleRequest(self, wbrequest):
+        return self.handler(wbrequest)
 
 
 #=================================================================
@@ -121,7 +150,7 @@ class ReferRedirect:
             self.matchPrefixs = [matchPrefixs]
 
 
-    def __call__(self, wbrequest, abs_path):
+    def __call__(self, wbrequest):
         if wbrequest.referrer is None:
             return None
 
@@ -152,11 +181,11 @@ if __name__ == "__main__":
     import doctest
 
     def test_redir(matchHost, request_uri, referrer):
-        env = {'REQUEST_URI': request_uri, 'HTTP_REFERER': referrer}
+        env = {'REL_REQUEST_URI': request_uri, 'HTTP_REFERER': referrer}
 
         redir = ReferRedirect(matchHost)
         req = WbRequest.from_uri(request_uri, env)
-        rep = redir(req, None)
+        rep = redir(req)
         if not rep:
             return False
 
