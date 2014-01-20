@@ -82,7 +82,9 @@ except:
 
 
 def application(env, start_response):
-    env['REQUEST_URI'] = request_uri(env)
+    if not env.get('REQUEST_URI'):
+        env['REQUEST_URI'] = request_uri(env)
+
     response = None
 
     try:
