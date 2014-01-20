@@ -27,7 +27,7 @@ class WBHandler:
         with utils.PerfTimer(wbrequest.env.get('X_PERF'), 'query') as t:
             query_response = self.query(wbrequest)
 
-        if (wbrequest.wb_url.type == ArchivalUrl.QUERY) or (wbrequest.wb_url.type == ArchivalUrl.URL_QUERY):
+        if (wbrequest.wb_url.type == wbrequest.wb_url.QUERY) or (wbrequest.wb_url.type == wbrequest.wb_url.URL_QUERY):
             return self.htmlquery(wbrequest, query_response) if self.htmlquery else query_response
 
         with utils.PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:

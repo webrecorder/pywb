@@ -59,21 +59,21 @@ class RemoteCDXServer:
     def getQueryParams(wburl, limit = '150000', collapseTime = '10', replayClosest = '4000'):
         return {
 
-            ArchivalUrl.QUERY:
+            wburl.QUERY:
                 {'collapseTime': collapseTime, 'filter': '!statuscode:(500|502|504)', 'limit': limit},
 
-            ArchivalUrl.URL_QUERY:
+            wburl.URL_QUERY:
                 {'collapse': 'urlkey', 'matchType': 'prefix', 'showGroupCount': True, 'showUniqCount': True, 'lastSkipTimestamp': True, 'limit': limit,
                  'fl': 'urlkey,original,timestamp,endtimestamp,groupcount,uniqcount',
                 },
 
-            ArchivalUrl.REPLAY:
+            wburl.REPLAY:
                 {'sort': 'closest', 'filter': '!statuscode:(500|502|504)', 'limit': replayClosest, 'closest': wburl.timestamp, 'resolveRevisits': True},
 
             # BUG: resolveRevisits currently doesn't work for this type of query
             # This is not an issue in archival mode, as there is a redirect to the actual timestamp query
             # but may be an issue in proxy mode
-            ArchivalUrl.LATEST_REPLAY:
+            wburl.LATEST_REPLAY:
                 {'sort': 'reverse', 'filter': 'statuscode:[23]..', 'limit': '1', 'resolveRevisits': True}
 
         }[wburl.type]
