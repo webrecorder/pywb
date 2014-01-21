@@ -103,39 +103,38 @@ class ReplayHandler(object):
         hasCurr = (cdx['filename'] != '-')
         hasOrig = (cdx.get('orig.filename','-') != '-')
 
-        # Case 1: non-revisit
-        if (hasCurr and not hasOrig):
-            headersRecord = self._load(cdx, False, failedFiles)
+        # load headers record from cdx['filename'] unless it is '-' (rare)
+        headersRecord = self._load(cdx, False, failedFiles) if hasCurr else None
+
+        # two index lookups
+        # Case 1: if mimetype is still warc/revisit
+        if cdx['mimetype'] == 'warc/revisit' and headersRecord:
+            payloadRecord = self._load_different_url_payload(wbrequest, query, cdx, headersRecord, failedFiles)
+
+        # single lookup cases
+        # case 2: non-revisit
+        elif (hasCurr and not hasOrig):
             payloadRecord = headersRecord
-            isRevisit = False
 
-        # Case 2: old-style revisit, load headers from original payload
-        elif (not hasCurr and hasOrig):
-            payloadRecord = self._load(cdx, False, failedFiles)
-            headersRecord = payloadRecord
-            isRevisit = True
-
-        # Case 3: modern revisit, load headers from curr, payload from original
-        elif (hasCurr and hasOrig):
-            headersRecord = self._load(cdx, False, failedFiles)
+        # case 3: identical url revisit, load payload from orig.filename
+        elif (hasOrig):
             payloadRecord = self._load(cdx, True, failedFiles)
 
-            # Case 4: if headers record is actually empty (eg empty revisit), then use headers from revisit
+        # special case: set header to payload if old-style revisit with missing header
+        if not headersRecord:
+            headersRecord = payloadRecord
+        elif headersRecord != payloadRecord:
+            # close remainder of stream as this record only used for (already parsed) headers
+            headersRecord.stream.close()
+
+            # special case: check if headers record is actually empty (eg empty revisit), then use headers from revisit
             if not headersRecord.status_headers.headers:
-                headersRecord.stream.close()
                 headersRecord = payloadRecord
-            else:
-                headersRecord.stream.close()
 
 
-            isRevisit = True
-
-        else:
+        if not headersRecord or not payloadRecord:
             raise wbexceptions.CaptureException('Invalid CDX' + str(cdx))
 
-        # special cases: if mimetype is still warc/revisit.. need to look further
-        if cdx['mimetype'] == 'warc/revisit':
-            payloadRecord = self._load_different_url_payload(wbrequest, query, cdx, headersRecord, failedFiles)
 
         return WbResponse.stream_response(headersRecord.status_headers, payloadRecord.stream)
 
@@ -147,11 +146,10 @@ class ReplayHandler(object):
     def _load_different_url_payload(self, wbrequest, query, cdx, headersRecord, failedFiles):
         ref_target_uri = headersRecord.rec_headers.getHeader('WARC-Refers-To-Target-URI')
 
-        # Case 5: unresolved revisit error, if refers to target uri not present or same as the current uri
+        # Check for unresolved revisit error, if refers to target uri not present or same as the current url
         if not ref_target_uri or (ref_target_uri == headersRecord.rec_headers.getHeader('WARC-Target-URI')):
             raise wbexceptions.CaptureException('Missing Revisit Original' + str(cdx))
 
-        # Case 6: url-agnostic revisit with different original url (either same or different date)
         ref_target_date = headersRecord.rec_headers.getHeader('WARC-Refers-To-Date')
 
         if not ref_target_date:
