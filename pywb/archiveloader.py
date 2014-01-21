@@ -262,12 +262,16 @@ class LineReader:
         if not self.buff or self.buff.pos >= self.buff.len:
             toRead =  min(self.maxLen - self.numRead, self.chunkSize) if (self.maxLen > 0) else self.chunkSize
             data = self.stream.read(toRead)
-            self.numRead += len(data)
+            self._process_read(data)
 
-            if self.decomp:
-                data = self.decomp.decompress(data)
+    def _process_read(self, data):
+       self.numRead += len(data)
 
-            self.buff = StringIO.StringIO(data)
+       if self.decomp:
+           data = self.decomp.decompress(data)
+
+       self.buff = StringIO.StringIO(data)
+
 
     def read(self, length = None):
         self._fillbuff()
@@ -282,16 +286,31 @@ class LineReader:
             self.stream.close()
             self.stream = None
 
+
 class ChunkedLineReader(LineReader):
     allChunksRead = False
+    notChunked = False
 
     def _fillbuff(self, chunkSize = None):
+        if self.notChunked:
+            LineReader._fillbuff(self, chunkSize)
+
         if self.allChunksRead:
             return
 
         if not self.buff or self.buff.pos >= self.buff.len:
-            lengthHeader = self.stream.readline()
-            chunkSize = int(lengthHeader.strip().split(';')[0], 16)
+            lengthHeader = self.stream.readline(64)
+
+            # It's possible that non-chunked data is set with a Transfer-Encoding: chunked
+            # to handle this, if its not possible to decode it the chunk, then treat this as a regular LineReader
+            try:
+                chunkSize = int(lengthHeader.strip().split(';')[0], 16)
+            except Exception:
+                # can't parse the lengthHeader, treat this as non-chunk encoded from here on
+                self._process_read(lengthHeader)
+                self.notChunked = True
+                return
+
             data = ''
             if chunkSize:
                 while len(data) < chunkSize:
@@ -309,6 +328,7 @@ class ChunkedLineReader(LineReader):
                 data = ''
 
             self.buff = StringIO.StringIO(data)
+
 
 #=================================================================
 if __name__ == "__main__":
