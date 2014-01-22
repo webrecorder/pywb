@@ -265,12 +265,12 @@ class LineReader:
             self._process_read(data)
 
     def _process_read(self, data):
-       self.numRead += len(data)
+        self.numRead += len(data)
 
-       if self.decomp:
-           data = self.decomp.decompress(data)
+        if self.decomp and data:
+            data = self.decomp.decompress(data)
 
-       self.buff = StringIO.StringIO(data)
+        self.buff = StringIO.StringIO(data)
 
 
     def read(self, length = None):
@@ -287,47 +287,88 @@ class LineReader:
             self.stream = None
 
 
+class ChunkedDataException(Exception):
+    pass
+
+
 class ChunkedLineReader(LineReader):
+    r"""
+    Properly formatted chunked data:
+    >>> c=ChunkedLineReader(StringIO.StringIO("4\r\n1234\r\n0\r\n\r\n")); c.read()+c.read()
+    '1234'
+
+    Non-chunked data:
+    >>> ChunkedLineReader(StringIO.StringIO("xyz123!@#")).read()
+    'xyz123!@#'
+
+    Starts like chunked data, but isn't:
+    >>> c=ChunkedLineReader(StringIO.StringIO("1\r\nxyz123!@#")); c.read()+c.read()
+    '1\r\nx123!@#'
+
+    Chunked data cut off part way through:
+    >>> c=ChunkedLineReader(StringIO.StringIO("4\r\n1234\r\n4\r\n12"));c.read()+c.read()
+    '123412'
+    """
+
     allChunksRead = False
     notChunked = False
+    raiseChunkedDataExceptions = False # if False, we'll use best-guess fallback for parse errors
 
     def _fillbuff(self, chunkSize = None):
         if self.notChunked:
-            LineReader._fillbuff(self, chunkSize)
+            return LineReader._fillbuff(self, chunkSize)
 
         if self.allChunksRead:
             return
 
         if not self.buff or self.buff.pos >= self.buff.len:
             lengthHeader = self.stream.readline(64)
-
-            # It's possible that non-chunked data is set with a Transfer-Encoding: chunked
-            # to handle this, if its not possible to decode it the chunk, then treat this as a regular LineReader
-            try:
-                chunkSize = int(lengthHeader.strip().split(';')[0], 16)
-            except Exception:
-                # can't parse the lengthHeader, treat this as non-chunk encoded from here on
-                self._process_read(lengthHeader)
-                self.notChunked = True
-                return
-
             data = ''
-            if chunkSize:
-                while len(data) < chunkSize:
-                    newData = self.stream.read(chunkSize - len(data))
-                    if not newData:
-                        raise Exception("Error reading chunked data: ran out of data before end of chunk.")
-                    data += newData
-                clrf = self.stream.read(2)
-                if clrf != '\r\n':
-                    raise Exception("Error reading chunked data: end of chunk not found where expected.")
-                if self.decomp:
-                    data = self.decomp.decompress(data)
-            else:
-                self.allChunksRead = True
-                data = ''
 
-            self.buff = StringIO.StringIO(data)
+            try:
+                # decode length header
+                try:
+                    chunkSize = int(lengthHeader.strip().split(';')[0], 16)
+                except ValueError:
+                    raise ChunkedDataException("Couldn't decode length header '%s'" % lengthHeader)
+
+                if chunkSize:
+                    # read chunk
+                    while len(data) < chunkSize:
+                        newData = self.stream.read(chunkSize - len(data))
+
+                        # if we unexpectedly run out of data, either raise an exception or just stop reading, assuming file was cut off
+                        if not newData:
+                            if self.raiseChunkedDataExceptions:
+                                raise ChunkedDataException("Ran out of data before end of chunk")
+                            else:
+                                chunkSize = len(data)
+                                self.allChunksRead = True
+
+                        data += newData
+
+                    # if we successfully read a block without running out, it should end in \r\n
+                    if not self.allChunksRead:
+                        clrf = self.stream.read(2)
+                        if clrf != '\r\n':
+                            raise ChunkedDataException("Chunk terminator not found.")
+
+                    if self.decomp:
+                        data = self.decomp.decompress(data)
+                else:
+                    # chunkSize 0 indicates end of file
+                    self.allChunksRead = True
+                    data = ''
+
+                self._process_read(data)
+            except ChunkedDataException:
+                if self.raiseChunkedDataExceptions:
+                    raise
+                # Can't parse the data as chunked.
+                # It's possible that non-chunked data is set with a Transfer-Encoding: chunked
+                # Treat this as non-chunk encoded from here on
+                self._process_read(lengthHeader+data)
+                self.notChunked = True
 
 
 #=================================================================
