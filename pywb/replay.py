@@ -204,6 +204,9 @@ class RewritingReplayHandler(ReplayHandler):
         self.headerRewriter = headerRewriter
         self.redir_to_exact = redir_to_exact
 
+        # buffer or stream rewritten response
+        self.buffer_response = False
+
 
     def _textContentType(self, contentType):
         for ctype, mimelist in self.REWRITE_TYPES.iteritems():
@@ -259,77 +262,104 @@ class RewritingReplayHandler(ReplayHandler):
                 encoding = 'utf-8'
 
         # Buffering response for html, streaming for others?
-        if rewrittenHeaders.textType == 'html':
-            return self._rewriteHtml(encoding, urlrewriter, stream, rewrittenHeaders.status_headers, firstBuff)
-        else:
-            return self._rewriteOther(rewrittenHeaders.textType, encoding, urlrewriter, stream, rewrittenHeaders.status_headers, firstBuff)
+        #if rewrittenHeaders.textType == 'html':
+        #    return self._rewriteHtml(encoding, urlrewriter, stream, rewrittenHeaders.status_headers, firstBuff)
+        #else:
+        #    return self._rewriteOther(rewrittenHeaders.textType, encoding, urlrewriter, stream, rewrittenHeaders.status_headers, firstBuff)
 
+        textType = rewrittenHeaders.textType
+        status_headers = rewrittenHeaders.status_headers
 
-    def _rewriteHtml(self, encoding, urlrewriter, stream, status_headers, firstBuff = None):
-        out = StringIO.StringIO()
-        htmlrewriter = html_rewriter.WBHtml(urlrewriter, out, self.headInsert)
-
-        try:
-            buff = firstBuff if firstBuff else stream.read()
-            while buff:
-                if encoding:
-                    try:
-                        buff = buff.decode(encoding)
-                    except UnicodeDecodeError, e:
-                        # chunk may have cut apart unicode bytes -- add 1-3 bytes and retry
-                        for i in range(3):
-                            buff += stream.read(1)
-                            try:
-                                buff = buff.decode(encoding)
-                                break
-                            except UnicodeDecodeError:
-                                pass
-                        else:
-                            raise
-                htmlrewriter.feed(buff)
-                buff = stream.read()
-
-            # Close rewriter if gracefully made it to end
-            htmlrewriter.close()
-
-        finally:
-                content = out.getvalue()
-                if encoding:
-                    content = content.encode(encoding)
-
-                value = [content]
-                contentLengthStr = str(len(content))
-                status_headers.headers.append(('Content-Length', contentLengthStr))
-                out.close()
-
-        return WbResponse(status_headers, value = value)
-
-
-    def _rewriteOther(self, textType, encoding, urlrewriter, stream, status_headers, firstBuff = None):
-        if textType == 'css':
+        if textType == 'html':
+            rewriter = html_rewriter.WBHtml(urlrewriter, outstream = None, headInsert = self.headInsert)
+        elif textType == 'css':
             rewriter = regex_rewriters.CSSRewriter(urlrewriter)
         elif textType == 'js':
             rewriter = regex_rewriters.JSRewriter(urlrewriter)
         elif textType == 'xml':
             rewriter = regex_rewriters.XMLRewriter(urlrewriter)
+        else:
+            raise Exception('Unknown Text Type for Rewrite: ' + textType)
 
 
+        if self.buffer_response:
+            return self._buffer_rewrite_response(rewriter, encoding, stream, status_headers, firstBuff)
+        else:
+            return self._stream_rewrite_response(rewriter, encoding, stream, status_headers, firstBuff)
+
+
+    # Buffer rewrite response, and serve with full Content-Length
+    def _buffer_rewrite_response(self, rewriter, encoding, stream, status_headers, firstBuff = None):
+        out = StringIO.StringIO()
+
+        try:
+            buff = firstBuff if firstBuff else stream.read()
+            while buff:
+                if encoding:
+                    buff = self._decodeBuff(buff, stream, encoding)
+
+                out.write(rewriter.rewrite(buff))
+                buff = stream.read()
+
+            # Close rewriter if gracefully made it to end
+            rewriter.close()
+
+        finally:
+            content = out.getvalue()
+
+            if encoding:
+                content = content.encode(encoding)
+
+            value = [content]
+            contentLengthStr = str(len(content))
+            status_headers.headers.append(('Content-Length', contentLengthStr))
+            out.close()
+
+        return WbResponse(status_headers, value = value)
+
+    # Stream rewrite response from record (no Content-Length), may even be chunked by front-end
+    def _stream_rewrite_response(self, rewriter, encoding, stream, status_headers, firstBuff = None):
         def doRewrite(buff):
             if encoding:
-                buff = buff.decode(encoding)
-            buff = rewriter.replaceAll(buff)
+                buff = self._decodeBuff(buff, stream, encoding)
+
+            buff = rewriter.rewrite(buff)
+
             if encoding:
                 buff = buff.encode(encoding)
 
             return buff
 
-        return WbResponse.stream_response(status_headers, stream, doRewrite, firstBuff)
+        def doFinish():
+            return rewriter.close()
+
+        return WbResponse.stream_response(status_headers, stream, rewrite_func = doRewrite, final_read_func = doFinish, first_buff = firstBuff)
+
+
+    def _decodeBuff(self, buff, stream, encoding):
+        try:
+            buff = buff.decode(encoding)
+        except UnicodeDecodeError, e:
+            # chunk may have cut apart unicode bytes -- add 1-3 bytes and retry
+            for i in range(3):
+                buff += stream.read(1)
+                try:
+                    buff = buff.decode(encoding)
+                    break
+                except UnicodeDecodeError:
+                    pass
+            else:
+                raise
+
+        return buff
+
 
     def _detectCharset(self, stream):
         buff = stream.read(8192)
         result = chardet.detect(buff)
         print "chardet result: " + str(result)
         return (result['encoding'], buff)
+
 
     def _checkRedir(self, wbrequest, cdx):
         if self.redir_to_exact and cdx and (cdx['timestamp'] != wbrequest.wb_url.timestamp):

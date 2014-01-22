@@ -133,15 +133,22 @@ class WbResponse:
         return WbResponse(StatusAndHeaders(status, [('Location', location)]))
 
     @staticmethod
-    def stream_response(status_headers, stream, proc = None, firstBuff = None):
+    def stream_response(status_headers, stream, rewrite_func = None, final_read_func = None, first_buff = None):
         def streamGen():
             try:
-                buff = firstBuff if firstBuff else stream.read()
+                buff = first_buff if first_buff else stream.read()
                 while buff:
-                    if proc:
-                        buff = proc(buff)
+                    if rewrite_func:
+                        buff = rewrite_func(buff)
                     yield buff
                     buff = stream.read()
+
+                # For adding a tail/handling final buffer
+                if final_read_func:
+                    buff = final_read_func()
+                    if buff:
+                        yield buff
+
             finally:
                 stream.close()
 

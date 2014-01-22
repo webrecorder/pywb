@@ -113,16 +113,23 @@ class WBHtml(HTMLParser):
 
     HEAD_TAGS = ['html', 'head', 'base', 'link', 'meta', 'title', 'style', 'script', 'object', 'bgsound']
 
+    class AccumBuff:
+        def __init__(self):
+            self.buff = ''
 
-    def __init__(self, rewriter, outstream = None, headInsert = None, jsRewriterClass = JSRewriter, cssRewriterClass = CSSRewriter):
+        def write(self, string):
+            self.buff += string
+
+
+    def __init__(self, url_rewriter, outstream = None, headInsert = None, jsRewriterClass = JSRewriter, cssRewriterClass = CSSRewriter):
         HTMLParser.__init__(self)
 
-        self.rewriter = rewriter
+        self.url_rewriter = url_rewriter
         self._wbParseContext = None
-        self.out = outstream if outstream else sys.stdout
+        self.out = outstream if outstream else WBHtml.AccumBuff()
 
-        self.jsRewriter = jsRewriterClass(rewriter)
-        self.cssRewriter = cssRewriterClass(rewriter)
+        self.jsRewriter = jsRewriterClass(url_rewriter)
+        self.cssRewriter = cssRewriterClass(url_rewriter)
 
         self.headInsert = headInsert
 
@@ -147,14 +154,14 @@ class WBHtml(HTMLParser):
     # ===========================
 
     def _rewriteURL(self, value, mod = None):
-        return self.rewriter.rewrite(value, mod) if value else None
+        return self.url_rewriter.rewrite(value, mod) if value else None
 
 
     def _rewriteCSS(self, cssContent):
-        return self.cssRewriter.replaceAll(cssContent) if cssContent else None
+        return self.cssRewriter.rewrite(cssContent) if cssContent else None
 
     def _rewriteScript(self, scriptContent):
-        return self.jsRewriter.replaceAll(scriptContent) if scriptContent else None
+        return self.jsRewriter.rewrite(scriptContent) if scriptContent else None
 
     def hasAttr(self, tagAttrs, attr):
         name, value = attr
@@ -202,7 +209,7 @@ class WBHtml(HTMLParser):
             else:
                 # special case: base tag
                 if (tag == 'base') and (attrName == 'href') and attrValue:
-                    self.rewriter.setBaseUrl(attrValue)
+                    self.url_rewriter.setBaseUrl(attrValue)
 
                 rwMod = handler.get(attrName)
                 if rwMod is not None:
@@ -232,14 +239,28 @@ class WBHtml(HTMLParser):
 
         self.out.write(data)
 
+    def rewrite(self, string):
+        if not self.out:
+            self.out = WBHtml.AccumBuff()
+
+        self.feed(string)
+
+        result = self.out.buff
+        # Clear buffer to create new one for next rewrite()
+        self.out = None
+
+        return result
 
     # HTMLParser overrides below
     def close(self):
         if (self._wbParseContext):
-            self.feed('</' + self._wbParseContext + '>')
+            result = self.rewrite('</' + self._wbParseContext + '>')
             self._wbParseContext = None
+        else:
+            result = ''
 
         HTMLParser.close(self)
+        return result
 
     def handle_starttag(self, tag, attrs):
         if not self.rewriteTagAttrs(tag, attrs, False):
@@ -291,11 +312,12 @@ class WBHtml(HTMLParser):
 if __name__ == "__main__":
     import doctest
 
-    rewriter = ArchivalUrlRewriter('/20131226101010/http://example.com/some/path/index.html', '/web/')
+    url_rewriter = ArchivalUrlRewriter('/20131226101010/http://example.com/some/path/index.html', '/web/')
 
     def parse(data, headInsert = None):
-        parser = WBHtml(rewriter, headInsert = headInsert)
-        parser.feed(data)
-        parser.close()
+        parser = WBHtml(url_rewriter, headInsert = headInsert)
+        print parser.rewrite(data) + parser.close()
 
     doctest.testmod()
+
+

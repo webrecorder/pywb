@@ -8,7 +8,7 @@ from url_rewriter import ArchivalUrlRewriter
 class RegexRewriter:
     """
     # Test https->http converter (other tests below in subclasses)
-    >>> RegexRewriter([(RegexRewriter.HTTPX_MATCH_STR, RegexRewriter.removeHttps, 0)]).replaceAll('a = https://example.com; b = http://example.com; c = https://some-url/path/https://embedded.example.com')
+    >>> RegexRewriter([(RegexRewriter.HTTPX_MATCH_STR, RegexRewriter.removeHttps, 0)]).rewrite('a = https://example.com; b = http://example.com; c = https://some-url/path/https://embedded.example.com')
     'a = http://example.com; b = http://example.com; c = http://some-url/path/http://embedded.example.com'
     """
 
@@ -48,8 +48,11 @@ class RegexRewriter:
     def filter(self, m):
         return True
 
-    def replaceAll(self, string):
+    def rewrite(self, string):
         return self.regex.sub(lambda x: self.replace(x), string)
+
+    def close(self):
+        return ''
 
     def replace(self, m):
         i = 0
@@ -218,13 +221,13 @@ if __name__ == "__main__":
     arcrw = ArchivalUrlRewriter('/20131010im_/http://example.com/', '/web/')
 
     def test_js(string, extra = []):
-        return JSRewriter(arcrw, extra).replaceAll(string)
+        return JSRewriter(arcrw, extra).rewrite(string)
 
     def test_xml(string):
-        return XMLRewriter(arcrw).replaceAll(string)
+        return XMLRewriter(arcrw).rewrite(string)
 
     def test_css(string):
-        return CSSRewriter(arcrw).replaceAll(string)
+        return CSSRewriter(arcrw).rewrite(string)
 
 
 
