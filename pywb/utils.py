@@ -131,7 +131,20 @@ def rel_request_uri(environ, include_query=1):
     return url
 
 
-if __name__ == "__main__":
+
+#============================================
+# Support for bulk doctest testing via nose
+# nosetests --with-doctest
+
+import sys
+is_in_nose = sys.argv[0].endswith('nosetests')
+
+def enable_doctests():
+    return is_in_nose
+
+#============================================
+
+if __name__ == "__main__" or enable_doctests():
     import doctest
     doctest.testmod()
 

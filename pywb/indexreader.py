@@ -9,16 +9,15 @@ from wbarchivalurl import ArchivalUrl
 class RemoteCDXServer:
     """
     >>> x = cdxserver.load('example.com', parse_cdx = True, limit = '2')
-    >>> pprint(x[0])
-    {'digest': 'HT2DYGA5UKZCPBSFVCV3JOBXGW2G5UUA',
-     'length': '1792',
-     'mimetype': 'text/html',
-     'original': 'http://example.com:80/',
-     'statuscode': '200',
-     'timestamp': '20020120142510',
-     'urlkey': 'com,example)/'}
-
-     """
+    >>> pprint(x[0].items())
+    [('urlkey', 'com,example)/'),
+     ('timestamp', '20020120142510'),
+     ('original', 'http://example.com:80/'),
+     ('mimetype', 'text/html'),
+     ('statuscode', '200'),
+     ('digest', 'HT2DYGA5UKZCPBSFVCV3JOBXGW2G5UUA'),
+     ('length', '1792')]
+    """
 
     def __init__(self, serverUrl, cookie = None):
         self.serverUrl = serverUrl
@@ -124,11 +123,11 @@ class CDXCaptureResult(OrderedDict):
 
 # Testing
 
-
-if __name__ == "__main__":
-    import doctest
+import utils
+if __name__ == "__main__" or utils.enable_doctests():
     from pprint import pprint
 
     cdxserver = RemoteCDXServer('http://web.archive.org/cdx/search/cdx')
 
+    import doctest
     doctest.testmod()

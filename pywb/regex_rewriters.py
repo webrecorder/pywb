@@ -214,10 +214,8 @@ class CSSRewriter(RegexRewriter):
              (CSSRewriter.CSS_IMPORT_NO_URL_REGEX, RegexRewriter.archivalRewrite(rewriter), 1),
         ]
 
-
-if __name__ == "__main__":
-    import doctest
-
+import utils
+if __name__ == "__main__" or utils.enable_doctests():
     arcrw = ArchivalUrlRewriter('/20131010im_/http://example.com/', '/web/')
 
     def test_js(string, extra = []):
@@ -230,7 +228,7 @@ if __name__ == "__main__":
         return CSSRewriter(arcrw).rewrite(string)
 
 
-
+    import doctest
     doctest.testmod()
 
 

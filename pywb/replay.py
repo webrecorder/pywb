@@ -196,7 +196,7 @@ class ReplayHandler(object):
 #=================================================================
 class RewritingReplayHandler(ReplayHandler):
 
-    def __init__(self, resolvers, archiveloader, headInsert = None, headerRewriter = None, redir_to_exact = True):
+    def __init__(self, resolvers, archiveloader, headInsert = None, headerRewriter = None, redir_to_exact = True, buffer_response = False):
         ReplayHandler.__init__(self, resolvers, archiveloader)
         self.headInsert = headInsert
         if not headerRewriter:
@@ -205,7 +205,7 @@ class RewritingReplayHandler(ReplayHandler):
         self.redir_to_exact = redir_to_exact
 
         # buffer or stream rewritten response
-        self.buffer_response = False
+        self.buffer_response = buffer_response
 
 
     def _textContentType(self, contentType):

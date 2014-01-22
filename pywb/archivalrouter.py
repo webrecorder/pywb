@@ -138,8 +138,9 @@ class ReferRedirect:
 
         return WbResponse.redir_response(final_url)
 
-if __name__ == "__main__":
-    import doctest
+
+import utils
+if __name__ == "__main__" or utils.enable_doctests():
 
     def test_redir(matchHost, request_uri, referrer):
         env = {'REL_REQUEST_URI': request_uri, 'HTTP_REFERER': referrer}
@@ -153,6 +154,7 @@ if __name__ == "__main__":
         return rep.status_headers.getHeader('Location')
 
 
+    import doctest
     doctest.testmod()
 
 

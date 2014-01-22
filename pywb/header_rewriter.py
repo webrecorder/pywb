@@ -115,8 +115,8 @@ class HeaderRewriter:
 
         return (newHeaders, removedHeaderDict)
 
-if __name__ == "__main__":
-    import doctest
+import utils
+if __name__ == "__main__" or utils.enable_doctests():
     import os
     import pprint
     import url_rewriter
@@ -129,5 +129,6 @@ if __name__ == "__main__":
         rewritten = headerrewriter.rewrite(StatusAndHeaders(status, headers), urlrewriter)
         return vars(rewritten)
 
+    import doctest
     doctest.testmod()
 

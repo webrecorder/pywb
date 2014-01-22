@@ -3,6 +3,7 @@ import urlparse
 
 from wbarchivalurl import ArchivalUrl
 
+
 class ArchivalUrlRewriter:
     """
     >>> test_rewrite('other.html', '/20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
@@ -112,11 +113,15 @@ class ArchivalUrlRewriter:
 
         return url
 
-if __name__ == "__main__":
-    import doctest
 
+import utils
+if __name__ == "__main__" or utils.enable_doctests():
     def test_rewrite(rel_url, base_url, prefix, mod = None):
         rewriter = ArchivalUrlRewriter(base_url, prefix)
         return rewriter.rewrite(rel_url, mod)
 
+    import doctest
     doctest.testmod()
+
+
+

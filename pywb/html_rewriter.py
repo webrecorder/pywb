@@ -309,8 +309,8 @@ class WBHtml(HTMLParser):
 #print
 #parser.feed(instr)
 #print
-if __name__ == "__main__":
-    import doctest
+import utils
+if __name__ == "__main__" or utils.enable_doctests():
 
     url_rewriter = ArchivalUrlRewriter('/20131226101010/http://example.com/some/path/index.html', '/web/')
 
@@ -318,6 +318,7 @@ if __name__ == "__main__":
         parser = WBHtml(url_rewriter, headInsert = headInsert)
         print parser.rewrite(data) + parser.close()
 
+    import doctest
     doctest.testmod()
 
 

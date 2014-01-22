@@ -372,8 +372,8 @@ class ChunkedLineReader(LineReader):
 
 
 #=================================================================
-if __name__ == "__main__":
-    import doctest
+import utils
+if __name__ == "__main__" or utils.enable_doctests():
     import os
     import pprint
 
@@ -385,5 +385,6 @@ if __name__ == "__main__":
         archive = testloader.load(path, offset, length)
         pprint.pprint((archive.type, archive.rec_headers, archive.status_headers))
 
+    import doctest
     doctest.testmod()
 
