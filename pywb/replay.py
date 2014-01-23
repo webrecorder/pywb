@@ -1,7 +1,6 @@
 import StringIO
 from urllib2 import URLError
 import chardet
-import redis
 import copy
 
 import indexreader, archiveloader
@@ -89,14 +88,30 @@ class ReplayHandler(object):
         if failedFiles and filename in failedFiles:
             raise wbexceptions.ArchiveLoadFailed(filename, 'Skipping Already Failed')
 
-        try:
-            return self.archiveloader.load(self.resolveFull(filename), offset, length)
+        any_found = False
+        last_exc = None
+        for resolver in self.resolvers:
+            possible_paths = resolver(filename)
 
-        except URLError as ue:
-            if failedFiles:
-                failedFiles.append(filename)
+            if possible_paths:
+                for path in possible_paths:
+                    any_found = True
+                    try:
+                        return self.archiveloader.load(path, offset, length)
 
-            raise wbexceptions.ArchiveLoadFailed(filename, ue.reason)
+                    except URLError as ue:
+                        last_exc = ue
+                        print last_exc
+                        pass
+
+        # Unsuccessful if reached here
+        if failedFiles:
+           failedFiles.append(filename)
+
+        if not any_found:
+            raise wbexceptions.UnresolvedArchiveFileException('Archive File Not Found: ' + filename)
+        else:
+            raise wbexceptions.ArchiveLoadFailed(filename, last_exc.reason if last_exc else '')
 
 
     def doReplay(self, cdx, wbrequest, query, failedFiles):
@@ -399,25 +414,4 @@ class RewritingReplayHandler(ReplayHandler):
         return (ArchivalUrlRewriter.stripProtocol(requestUrl) == ArchivalUrlRewriter.stripProtocol(locationUrl))
 
 
-#======================================
-# PrefixResolver - convert cdx file entry to url with prefix if url contains specified string
-#======================================
-def PrefixResolver(prefix, contains):
-    def makeUrl(url):
-        return prefix + url if (contains in url) else None
 
-    return makeUrl
-
-#======================================
-class RedisResolver:
-    def __init__(self, redisUrl, keyPrefix = 'w:'):
-        self.redisUrl = redisUrl
-        self.keyPrefix = keyPrefix
-        self.redis = redis.StrictRedis.from_url(redisUrl)
-
-    def __call__(self, filename):
-        try:
-            return self.redis.hget(self.keyPrefix + filename, 'path')
-        except Exception as e:
-            print e
-            return None

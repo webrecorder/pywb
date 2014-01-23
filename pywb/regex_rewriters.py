@@ -28,6 +28,10 @@ class RegexRewriter:
     def archivalRewrite(rewriter):
         return lambda x: rewriter.rewrite(x)
 
+    @staticmethod
+    def replacer(string):
+        return lambda x: string 
+
     HTTPX_MATCH_STR = 'https?:\\\\?/\\\\?/[A-Za-z0-9:_@.-]+'
 
     DEFAULT_OP = addPrefix
@@ -97,6 +101,9 @@ class JSRewriter(RegexRewriter):
     >>> test_js('window.location = "http://example.com/abc.html" document.domain = "anotherdomain.com"')
     'window.WB_wombat_location = "/web/20131010im_/http://example.com/abc.html" document.WB_wombat_domain = "anotherdomain.com"'
 
+    >>> test_js('document_domain = "anotherdomain.com"; window.document.domain = "example.com"')
+    'document_domain = "anotherdomain.com"; window.document.WB_wombat_domain = "example.com"'
+
     # custom rules added
     >>> test_js('window.location = "http://example.com/abc.html"; some_func(); ', [('some_func\(\).*', RegexRewriter.commentOut, 0)])
     'window.WB_wombat_location = "/web/20131010im_/http://example.com/abc.html"; /*some_func(); */'
@@ -113,7 +120,8 @@ class JSRewriter(RegexRewriter):
     def _createRules(self, httpPrefix):
         return [
              (RegexRewriter.HTTPX_MATCH_STR, httpPrefix, 0),
-             ('location|domain', 'WB_wombat_', 0),
+             ('location', 'WB_wombat_', 0),
+             ('(?<=document\.)domain', 'WB_wombat_', 0),
         ]
 
 

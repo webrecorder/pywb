@@ -28,6 +28,9 @@ class WBHtml(HTMLParser):
     >>> parse('<html><head><base href="http://example.com/some/path/index.html"/>')
     <html><head><base href="/web/20131226101010/http://example.com/some/path/index.html"/>
 
+    >>> parse('<a href="">&rsaquo; &nbsp; &#62;</div>')
+    <a href>&rsaquo; &nbsp; &#62;</div>
+
     # Don't rewrite anchors
     >>> parse('<HTML><A Href="#abc">Text</a></hTmL>')
     <HTML><a href="#abc">Text</a></html>
@@ -215,7 +218,7 @@ class WBHtml(HTMLParser):
                 if rwMod is not None:
                     attrValue = self._rewriteURL(attrValue, rwMod)
 
-            if attrValue:
+            if attrValue is not None:
                 #self.out.write(' {0}="{1}"'.format(attrName, attrValue))
                 self.out.write(' ' + attrName + '="' + attrValue + '"')
             else:
@@ -280,10 +283,10 @@ class WBHtml(HTMLParser):
         self.parseData(data)
 
     def handle_entityref(self, data):
-        self.out.write('&' + data)
+        self.out.write('&' + data + ';')
 
     def handle_charref(self, data):
-        self.out.write('&#' + data)
+        self.out.write('&#' + data + ';')
 
     def handle_comment(self, data):
         self.out.write('<!--')
