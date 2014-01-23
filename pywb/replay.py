@@ -136,7 +136,9 @@ class ReplayHandler(object):
             raise wbexceptions.CaptureException('Invalid CDX' + str(cdx))
 
 
-        return WbResponse.stream_response(headersRecord.status_headers, payloadRecord.stream)
+        response = WbResponse(headersRecord.status_headers, self.create_stream_gen(payloadRecord.stream))
+        response._stream = payloadRecord.stream
+        return response
 
 
 
@@ -191,6 +193,26 @@ class ReplayHandler(object):
                 return fullUrl
 
         raise wbexceptions.UnresolvedArchiveFileException('Archive File Not Found: ' + filename)
+
+    # Create a generator reading from a stream, with optional rewriting and final read call
+    @staticmethod
+    def create_stream_gen(stream, rewrite_func = None, final_read_func = None, first_buff = None):
+        try:
+            buff = first_buff if first_buff else stream.read()
+            while buff:
+                if rewrite_func:
+                    buff = rewrite_func(buff)
+                yield buff
+                buff = stream.read()
+
+            # For adding a tail/handling final buffer
+            if final_read_func:
+                buff = final_read_func()
+                if buff:
+                    yield buff
+
+        finally:
+            stream.close()
 
 
 #=================================================================
@@ -252,9 +274,9 @@ class RewritingReplayHandler(ReplayHandler):
         # TODO: is this right?
         if rewrittenHeaders.charset:
             encoding = rewrittenHeaders.charset
-            firstBuff = None
+            first_buff = None
         else:
-            (encoding, firstBuff) = self._detectCharset(stream)
+            (encoding, first_buff) = self._detectCharset(stream)
 
             # if chardet thinks its ascii, use utf-8
             if encoding == 'ascii':
@@ -281,44 +303,34 @@ class RewritingReplayHandler(ReplayHandler):
         else:
             raise Exception('Unknown Text Type for Rewrite: ' + textType)
 
+        # Create generator for response
+        response_gen = self._create_rewrite_stream(rewriter, encoding, stream, first_buff)
 
         if self.buffer_response:
-            return self._buffer_rewrite_response(rewriter, encoding, stream, status_headers, firstBuff)
+            return self._create_buffer_response(status_headers, response_gen)
         else:
-            return self._stream_rewrite_response(rewriter, encoding, stream, status_headers, firstBuff)
+            return WbResponse(status_headers, value = response_gen)
 
 
-    # Buffer rewrite response, and serve with full Content-Length
-    def _buffer_rewrite_response(self, rewriter, encoding, stream, status_headers, firstBuff = None):
+    # Buffer rewrite generator and return a response from a string
+    def _create_buffer_response(self, status_headers, generator):
         out = StringIO.StringIO()
 
         try:
-            buff = firstBuff if firstBuff else stream.read()
-            while buff:
-                if encoding:
-                    buff = self._decodeBuff(buff, stream, encoding)
-
-                out.write(rewriter.rewrite(buff))
-                buff = stream.read()
-
-            # Close rewriter if gracefully made it to end
-            rewriter.close()
+            for buff in generator:
+                out.write(buff)
 
         finally:
             content = out.getvalue()
 
-            if encoding:
-                content = content.encode(encoding)
-
-            value = [content]
             contentLengthStr = str(len(content))
             status_headers.headers.append(('Content-Length', contentLengthStr))
             out.close()
 
-        return WbResponse(status_headers, value = value)
+        return WbResponse(status_headers, value = [content])
 
-    # Stream rewrite response from record (no Content-Length), may even be chunked by front-end
-    def _stream_rewrite_response(self, rewriter, encoding, stream, status_headers, firstBuff = None):
+    # Create rewrite response from record (no Content-Length), may even be chunked by front-end
+    def _create_rewrite_stream(self, rewriter, encoding, stream, first_buff = None):
         def doRewrite(buff):
             if encoding:
                 buff = self._decodeBuff(buff, stream, encoding)
@@ -333,7 +345,7 @@ class RewritingReplayHandler(ReplayHandler):
         def doFinish():
             return rewriter.close()
 
-        return WbResponse.stream_response(status_headers, stream, rewrite_func = doRewrite, final_read_func = doFinish, first_buff = firstBuff)
+        return self.create_stream_gen(stream, rewrite_func = doRewrite, final_read_func = doFinish, first_buff = first_buff)
 
 
     def _decodeBuff(self, buff, stream, encoding):

@@ -132,29 +132,6 @@ class WbResponse:
     def redir_response(location, status = '302 Redirect'):
         return WbResponse(StatusAndHeaders(status, [('Location', location)]))
 
-    @staticmethod
-    def stream_response(status_headers, stream, rewrite_func = None, final_read_func = None, first_buff = None):
-        def streamGen():
-            try:
-                buff = first_buff if first_buff else stream.read()
-                while buff:
-                    if rewrite_func:
-                        buff = rewrite_func(buff)
-                    yield buff
-                    buff = stream.read()
-
-                # For adding a tail/handling final buffer
-                if final_read_func:
-                    buff = final_read_func()
-                    if buff:
-                        yield buff
-
-            finally:
-                stream.close()
-
-        response = WbResponse(status_headers, value = streamGen())
-        response._stream = stream
-        return response
 
     def __call__(self, env, start_response):
 
