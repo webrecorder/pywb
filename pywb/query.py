@@ -73,11 +73,11 @@ class J2QueryRenderer:
 
 ## ===========
 ## Simple handlers for debugging
-class EchoEnv:
+class DebugEchoEnv:
     def __call__(self, wbrequest):
         return wbrequestresponse.WbResponse.text_response(str(wbrequest.env))
 
-class EchoRequest:
+class DebugEchoRequest:
     def __call__(self, wbrequest):
         return wbrequestresponse.WbResponse.text_response(str(wbrequest))
 

@@ -1,9 +1,9 @@
 import redis
-import pycdx_server.binsearch as binsearch
+import binsearch
 #======================================
 # PrefixResolver - convert cdx file entry to url with prefix if url contains specified string
 #======================================
-def PrefixResolver(prefix, contains):
+def PrefixResolver(prefix, contains = ''):
     def makeUrl(url):
         return [prefix + url] if (contains in url) else []
 
