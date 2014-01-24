@@ -124,8 +124,11 @@ if __name__ == "__main__":
 
 
 #=================================================================
-import globalwb
-application = create_wb_app(globalwb.create_global_wb(default_head_insert))
+try:
+    import globalwb
+    application = create_wb_app(globalwb.create_global_wb(default_head_insert))
+except ImportError as e:
+    application = create_wb_app(sample_wb_settings())
 #=================================================================
 
 
