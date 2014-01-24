@@ -11,14 +11,15 @@ def PrefixResolver(prefix, contains = ''):
 
 #======================================
 class RedisResolver:
-    def __init__(self, redisUrl, keyPrefix = 'w:'):
-        self.redisUrl = redisUrl
-        self.keyPrefix = keyPrefix
-        self.redis = redis.StrictRedis.from_url(redisUrl)
+    def __init__(self, redis_url, key_prefix = 'w:'):
+        self.redis_url = redis_url
+        self.key_prefix = key_prefix
+        self.redis = redis.StrictRedis.from_url(redis_url)
 
     def __call__(self, filename):
         try:
-            return [self.redis.hget(self.keyPrefix + filename, 'path')]
+            redis_val = self.redis.hget(self.key_prefix + filename, 'path')
+            return [redis_val] if redis_val else None
         except Exception as e:
             print e
             return None

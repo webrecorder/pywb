@@ -1,7 +1,12 @@
-from utils import rel_request_uri
+import utils
 import wbexceptions
 
 from wbrequestresponse import WbResponse, StatusAndHeaders
+
+import os
+import importlib
+import logging
+
 
 ## ===========
 default_head_insert = """
@@ -79,7 +84,7 @@ def create_wb_app(wb_router):
     # Top-level wsgi application
     def application(env, start_response):
         if env.get('SCRIPT_NAME') or not env.get('REQUEST_URI'):
-            env['REL_REQUEST_URI'] = rel_request_uri(env)
+            env['REL_REQUEST_URI'] = utils.rel_request_uri(env)
         else:
             env['REL_REQUEST_URI'] = env['REQUEST_URI']
 
@@ -95,7 +100,7 @@ def create_wb_app(wb_router):
             response = WbResponse(StatusAndHeaders(ir.status, ir.httpHeaders))
 
         except (wbexceptions.NotFoundException, wbexceptions.AccessException) as e:
-            print "[INFO]: " + str(e)
+            logging.info(str(e))
             response = handle_exception(env, e)
 
         except Exception as e:
@@ -119,18 +124,32 @@ def handle_exception(env, exc):
     return WbResponse.text_response(status + ' Error: ' + str(exc), status = status)
 
 
-if __name__ == "__main__":
-    app = create_wb_app(sample_wb_settings())
+#=================================================================
+def main():
+    try:
+        # Attempt to load real settings from globalwb module
+        logging.basicConfig(format = '%(asctime)s: [%(levelname)s]: %(message)s', level = logging.DEBUG)
 
+        config_name = os.environ.get('PYWB_CONFIG')
+
+        if not config_name:
+            config_name = 'pywb_init'
+            logging.info('PYWB_CONFIG not specified, attempting to load config from default module {0}'.format(config_name))
+
+        module = importlib.import_module(config_name)
+
+        app = create_wb_app(module.pywb_config(default_head_insert))
+        logging.info('\n\n*** pywb inited with settings from {0}.pywb_config()!\n'.format(config_name))
+        return app
+
+    except Exception as e:
+        # Otherwise, start with the sample settings
+        logging.exception('\n\n*** pywb could not init with settings from {0}.pywb_config()!\n'.format(config_name))
+        raise e
 
 #=================================================================
-try:
-    # Attempt to load real settings from globalwb module
-    import globalwb
-    application = create_wb_app(globalwb.create_global_wb(default_head_insert))
-except ImportError as e:
-    # Otherwise, start with the sample settings
+if __name__ == "__main__" or utils.enable_doctests():
+    # Test sample settings
     application = create_wb_app(sample_wb_settings())
-#=================================================================
-
-
+else:
+    application = main()

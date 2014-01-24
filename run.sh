@@ -2,17 +2,23 @@
 
 mypath=$(cd `dirname $0` && pwd)
 
-app=$2
-#cd $mypath/pywb
-if [ -z "$app" ]; then
-  app=pywb.wbapp
-fi
+# Setup init module
+export 'PYWB_CONFIG=globalwb'
+
+app="pywb.wbapp"
+
+params="--static-map /static=$mypath/static --http-socket :8080 -b 65536"
 
 if [ -z "$1" ]; then
   # Standard root config
-  uwsgi --static-map /static=$mypath/static --http-socket :8080 -b 65536 --wsgi $app
+  params="$params --wsgi pywb.wbapp"
 else
-  # Test on non-root mount
-  uwsgi --static-map /static=$mypath/static --http-socket :8080 --mount "$1=$app" --no-default-app --manage-script-name
+  # run with --mount 
+  # requires a file not a package, so creating a mount_run.py to load the package
+  echo "#!/bin/python\n" > $mypath/mount_run.py
+  echo "import $app\napplication = $app.application" >> $mypath/mount_run.py
+  params="$params --mount $1=mount_run.py --no-default-app --manage-script-name"
 fi
+
+uwsgi $params
 

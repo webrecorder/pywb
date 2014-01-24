@@ -23,7 +23,8 @@ function initBanner()
     if (!banner) {
         banner = document.createElement("wb_div");
         banner.setAttribute("id", BANNER_ID);
-        banner.innerHTML = "PyWb Test Banner!"
+	banner.setAttribute("lang", "en");
+        banner.innerHTML = "PyWb Archived Content"
         document.body.insertBefore(banner, document.body.firstChild);
     }
 }
