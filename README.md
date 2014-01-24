@@ -63,22 +63,51 @@ and look for warcs at paths:
 `http://warcs.example.com/servewarc/` and
 `http://warcs.example.com/anotherpath/`,
 
-one could declare a `createWB()` method as follows:
+one could declare a sample config as follows:
 
-    def createWB():
-        aloader = archiveloader.ArchiveLoader()
-        query = QueryHandler(indexreader.RemoteCDXServer('http://cdx.example.com/cdx'))
-    
-        prefixes = [replay.PrefixResolver('http://warcs.example.com/servewarc/'),
-                    replay.PrefixResolver('http://warcs.example.com/anotherpath/')]
-    
-        replay = replay.RewritingReplayHandler(resolvers = prefixes, archiveloader = aloader, headInsert = headInsert)
-    
-        return ArchivalRequestRouter(
+```
+def sample_wb_settings():
+    import archiveloader
+    import query, indexreader
+    import replay, replay_resolvers
+    from archivalrouter import ArchivalRequestRouter, Route
+
+
+    # Standard loader which supports WARC/ARC files
+    aloader = archiveloader.ArchiveLoader()
+
+    # Source for cdx source
+    query_h = query.QueryHandler(indexreader.RemoteCDXServer('http://cdx.example.com/cdx'))
+
+    # Loads warcs specified in cdx from these locations
+    prefixes = [replay_resolvers.PrefixResolver('http://warcs.example.com/servewarc/'),
+                replay_resolvers.PrefixResolver('http://warcs.example.com/anotherpath/')]
+
+    # Create rewriting replay handler to rewrite records
+    replayer = replay.RewritingReplayHandler(resolvers = prefixes, archiveloader = aloader, headInsert = default_head_insert)
+
+    # Create Jinja2 based html query renderer
+    htmlquery = query.J2QueryRenderer('./ui/', 'query.html')
+
+    # Handler which combins query, replayer, and html_query
+    wb_handler = replay.WBHandler(query_h, replayer, htmlquery = htmlquery)
+
+    # Finally, create wb router
+    return ArchivalRequestRouter(
         {
-              Route('mycoll': replay.WBHandler(query, replay)),
+            Route('echo_req', query.DebugEchoRequest()), # Debug ex: just echo parsed request
+            Route('mycoll',   wb_handler)
         },
+        # Specify hostnames that pywb will be running on
+        # This will help catch occasionally missed rewrites that fall-through to the host
+        # (See archivalrouter.ReferRedirect)
         hostpaths = ['http://mywb.example.com:8080/'])
+```
+
+The final wsgi application is than created by calling:
+
+
+`application = create_wb_app(sample_wb_settings())`
 
 
 Quick File Reference

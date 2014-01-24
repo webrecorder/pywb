@@ -125,9 +125,11 @@ if __name__ == "__main__":
 
 #=================================================================
 try:
+    # Attempt to load real settings from globalwb module
     import globalwb
     application = create_wb_app(globalwb.create_global_wb(default_head_insert))
 except ImportError as e:
+    # Otherwise, start with the sample settings
     application = create_wb_app(sample_wb_settings())
 #=================================================================
 
