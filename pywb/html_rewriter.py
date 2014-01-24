@@ -23,13 +23,14 @@ class WBHtml(HTMLParser):
     <body x="y"><img src="/web/20131226101010im_/http://example.com/img.gif"/><br/></body>
 
     >>> parse('<input "selected"><img src></div>')
-    <input "selected"><img src></div>
+    <input "selected"=""><img src=""></div>
 
     >>> parse('<html><head><base href="http://example.com/some/path/index.html"/>')
     <html><head><base href="/web/20131226101010/http://example.com/some/path/index.html"/>
 
+    # HTML Entities
     >>> parse('<a href="">&rsaquo; &nbsp; &#62;</div>')
-    <a href>&rsaquo; &nbsp; &#62;</div>
+    <a href="">&rsaquo; &nbsp; &#62;</div>
 
     # Don't rewrite anchors
     >>> parse('<HTML><A Href="#abc">Text</a></hTmL>')
@@ -47,7 +48,7 @@ class WBHtml(HTMLParser):
     <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
 
     >>> parse('<META http-equiv="refresh" content>')
-    <meta http-equiv="refresh" content>
+    <meta http-equiv="refresh" content="">
 
     # Script tag
     >>> parse('<script>window.location = "http://example.com/a/b/c.html"</script>')
@@ -61,7 +62,7 @@ class WBHtml(HTMLParser):
     <script>/*<![CDATA[*/window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html;/*]]>*/"</script>
 
     >>> parse('<div style="background: url(\'abc.html\')" onblah onclick="location = \'redirect.html\'"></div>')
-    <div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onblah onclick="WB_wombat_location = 'redirect.html'"></div>
+    <div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onblah="" onclick="WB_wombat_location = 'redirect.html'"></div>
 
     >>> parse('<style>@import "styles.css" .a { font-face: url(\'myfont.ttf\') }</style>')
     <style>@import "/web/20131226101010/http://example.com/some/path/styles.css" .a { font-face: url('/web/20131226101010/http://example.com/some/path/myfont.ttf') }</style>
@@ -218,11 +219,12 @@ class WBHtml(HTMLParser):
                 if rwMod is not None:
                     attrValue = self._rewriteURL(attrValue, rwMod)
 
-            if attrValue is not None:
-                #self.out.write(' {0}="{1}"'.format(attrName, attrValue))
+            # parser doesn't differentiate between 'attr=""' and just 'attr'
+            # 'attr=""' is more common, so use that form
+            if attrValue:
                 self.out.write(' ' + attrName + '="' + attrValue + '"')
             else:
-                self.out.write(' ' + attrName)
+                self.out.write(' ' + attrName + '=""')
 
         self.out.write('/>' if isStartEnd else '>')
 
