@@ -102,6 +102,15 @@ class ReferRedirect:
 
     >>> test_redir('http://example:8080/', '/other.html', 'http://localhost:8080/coll/20131010/http://example.com/path/page.html')
     False
+
+    # With custom SCRIPT_NAME
+    >>> test_redir('http://localhost:8080/', '/../other.html', 'http://localhost:8080/extra/coll/20131010/http://example.com/path/page.html', '/extra')
+    'http://localhost:8080/extra/coll/20131010/http://example.com/other.html'
+
+    # With custom SCRIPT_NAME, bad match
+    >>> test_redir('http://localhost:8080/', '/../other.html', 'http://localhost:8080/extra/coll/20131010/http://example.com/path/page.html', '/extr')
+    False
+
     """
 
     def __init__(self, matchPrefixs):
@@ -120,9 +129,20 @@ class ReferRedirect:
 
         try:
             ref_split = urlparse.urlsplit(wbrequest.referrer)
-            ref_path = ref_split.path[1:].split('/', 1)
 
-            rewriter = ArchivalUrlRewriter('/' + ref_path[1], '/' + ref_path[0])
+            path = ref_split.path
+            script_name = wbrequest.env['SCRIPT_NAME']
+
+            if not path.startswith(script_name):
+                return None
+
+            ref_path = path[len(script_name) + 1:].split('/', 1)
+
+            # No match on any exception
+            try:
+                rewriter = ArchivalUrlRewriter('/' + ref_path[1], script_name + '/' + ref_path[0])
+            except Exception:
+                return None
 
             rel_request_uri = wbrequest.request_uri[1:]
 
@@ -142,8 +162,8 @@ class ReferRedirect:
 import utils
 if __name__ == "__main__" or utils.enable_doctests():
 
-    def test_redir(matchHost, request_uri, referrer):
-        env = {'REL_REQUEST_URI': request_uri, 'HTTP_REFERER': referrer}
+    def test_redir(matchHost, request_uri, referrer, script_name = ''):
+        env = {'REL_REQUEST_URI': request_uri, 'HTTP_REFERER': referrer, 'SCRIPT_NAME': script_name}
 
         redir = ReferRedirect(matchHost)
         req = WbRequest.from_uri(request_uri, env)
