@@ -1,7 +1,11 @@
-PyWb 0.0.1
-==========
+PyWb 0.1 Alpha
+==============
 
-Python implementation of Wayback Machine replay.
+[![Build Status](https://travis-ci.org/ikreymer/pywb.png?branch=master)](https://travis-ci.org/ikreymer/pywb)
+
+Python re-implementation of the Wayback Machine archival web replay.
+
+(It is not currently deployed on archive.org)
 
 Currently, this module handles the replay and routing components.
 
@@ -12,13 +16,20 @@ It read records from WARC and ARC files and rewrites them in
 
 `http://<host>/<collection>/<timestamp>/<original url>`
 
-Optionally, custom text may also be inserted into the HTML head, which may render a banner or other overlay.
 
-The Internet Archive Wayback Machine has urls of the form:
+Ex: The [Internet Archive Wayback Machine][2] has urls of the form:
 
 `http://web.archive.org/web/20131015120316/http://archive.org/`
 
+
+The goal is to render archived content as accurately as possible, rewriting what is needed to generate an accurate
+playback experience. 
+
+There is a placeholder for a information banner that can be inserted.
+
 Note: The module consumes a CDX stream, currently produced by the [wayback-cdx-server][1] and does not read the CDX index files itself.
+
+Native support for reading CDX is in the works.
 
 
 ### Installation/Reqs
@@ -95,3 +106,4 @@ Quick File Reference
 
 
   [1]: https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server
+  [2]: https://archive.org/web/
