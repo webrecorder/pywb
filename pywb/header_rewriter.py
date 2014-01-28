@@ -36,6 +36,9 @@ class HeaderRewriter:
     {'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('Content-Length', '200000'),
       ('Content-Type', 'image/png'),
       ('X-Archive-Orig-Cookie', 'blah'),
+      ('Content-Encoding', 'gzip')]), 'charset': None, 'textType': None, 'removedHeaderDict': {'transfer-encoding': 'chunked'}}
+
+    Removing Transfer-Encoding always, Was:
       ('Content-Encoding', 'gzip'),
       ('Transfer-Encoding', 'chunked')]), 'charset': None, 'textType': None, 'removedHeaderDict': {}}
 
@@ -50,13 +53,15 @@ class HeaderRewriter:
     }
 
 
-    PROXY_HEADERS = ('content-type', 'content-disposition')
+    PROXY_HEADERS = ['content-type', 'content-disposition']
 
-    URL_REWRITE_HEADERS = ('location', 'content-location', 'content-base')
+    URL_REWRITE_HEADERS = ['location', 'content-location', 'content-base']
 
-    ENCODING_HEADERS = ('content-encoding', 'transfer-encoding')
+    ENCODING_HEADERS = ['content-encoding']
 
-    PROXY_NO_REWRITE_HEADERS = ('content-length')
+    REMOVE_HEADERS = ['transfer-encoding']
+
+    PROXY_NO_REWRITE_HEADERS = ['content-length']
 
     def __init__(self, headerPrefix = 'X-Archive-Orig-'):
         self.headerPrefix = headerPrefix
@@ -108,6 +113,8 @@ class HeaderRewriter:
                     removedHeaderDict[lowername] = value
                 else:
                     newHeaders.append((name, value))
+            elif lowername in self.REMOVE_HEADERS:
+                    removedHeaderDict[lowername] = value
             elif lowername in self.PROXY_NO_REWRITE_HEADERS and not contentRewritten:
                 newHeaders.append((name, value))
             else:

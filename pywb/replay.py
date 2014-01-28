@@ -292,7 +292,7 @@ class RewritingReplayHandler(ReplayHandler):
         if rewrittenHeaders.textType is None:
             response.status_headers = rewrittenHeaders.status_headers
 
-            if fix_chunk:
+            if de_chunk:
                 response.body = self.create_stream_gen(stream)
 
             return response
