@@ -1,0 +1,13 @@
+ CDX N b a m s k r M S V g
+com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz
+com,example)/ 20140127171251 http://example.com warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 11875 dupes.warc.gz
+org,iana)/ 20140127171238 http://iana.org unk 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 343 1858 dupes.warc.gz
+org,iana)/ 20140127171238 http://www.iana.org/ warc/revisit - OSSAPWJ23L56IYVRW3GFEAR4MCJMGPTB - - 536 2678 dupes.warc.gz
+org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140127171240 http://www.iana.org/_css/2013.1/fonts/OpenSans-Bold.ttf warc/revisit - YFUR5ALIWJMWV6FAAFRLVRQNXZQF5HRW - - 556 10826 dupes.warc.gz
+org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140127171240 http://www.iana.org/_css/2013.1/fonts/OpenSans-Regular.ttf warc/revisit - GVSO2C2TMPPVZ4TXYFXAY27NYWTIEIL7 - - 540 9793 dupes.warc.gz
+org,iana)/_css/2013.1/print.css 20140127171239 http://www.iana.org/_css/2013.1/print.css warc/revisit - VNBXHMUNWJQC5OWWGZ3X7GM5C7X6ZAB4 - - 537 6684 dupes.warc.gz
+org,iana)/_css/2013.1/screen.css 20140127171239 http://www.iana.org/_css/2013.1/screen.css warc/revisit - BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 541 4630 dupes.warc.gz
+org,iana)/_img/2013.1/iana-logo-homepage.png 20140127171240 http://www.iana.org/_img/2013.1/iana-logo-homepage.png warc/revisit - GCW2GM3SIMHEIQYZX25MLSRYVWUCZ7OK - - 549 8750 dupes.warc.gz
+org,iana)/_img/2013.1/icann-logo.svg 20140127171239 http://www.iana.org/_img/2013.1/icann-logo.svg warc/revisit - HGRZHOH73EFQQWBYWBSOIV2UU5JDTSGJ - - 549 7709 dupes.warc.gz
+org,iana)/_js/2013.1/iana.js 20140127171239 http://www.iana.org/_js/2013.1/iana.js application/x-javascript 200 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 457 3696 dupes.warc.gz
+org,iana)/_js/2013.1/jquery.js 20140127171239 http://www.iana.org/_js/2013.1/jquery.js warc/revisit - AAW2RS7JB7HTF666XNZDQYJFA6PDQBPO - - 547 5658 dupes.warc.gz

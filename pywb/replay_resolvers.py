@@ -7,6 +7,7 @@ def PrefixResolver(prefix, contains = ''):
     def makeUrl(url):
         return [prefix + url] if (contains in url) else []
 
+    print "prefix: " + prefix + " contains: " + contains
     return makeUrl
 
 #======================================
@@ -30,13 +31,13 @@ class PathIndexResolver:
         self.reader = binsearch.FileReader(pathindex_file)
 
     def __call__(self, filename):
-        result = binsearch.iter_exact(self.reader, filename)
+        result = binsearch.iter_exact(self.reader, filename, '\t')
 
         def gen_list(result):
             for pathline in result:
                 path = pathline.split('\t')
                 if len(path) == 2:
-                    yield path[1].rstrip()
+                    yield path[1]
 
         return gen_list(result)
 

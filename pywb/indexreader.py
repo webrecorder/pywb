@@ -114,10 +114,22 @@ class CDXCaptureResult(OrderedDict):
 
         for header, field in itertools.izip(cdxformat, fields):
             self[header] = field
-    #        setattr(self, header, field)
 
-    #def __repr__(self):
-    #    return str(vars(self))
+        self.cdxline = cdxline
+
+    def __setitem__(self, key, value):
+        OrderedDict.__setitem__(self, key, value)
+
+        # force regen on next __str__ call
+        self.cdxline = None
+
+
+    def __str__(self):
+        if self.cdxline:
+            return self.cdxline
+
+        li = itertools.imap(lambda (n, val): val, self.items())
+        return ' '.join(li)
 
 
 
