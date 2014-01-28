@@ -38,45 +38,6 @@ and look for warcs at paths:
 one could declare a `sample_wb_settings()` method as follows
 '''
 
-# TODO: simplify this!!
-
-def sample_wb_settings():
-    import archiveloader
-    import query, indexreader
-    import replay, replay_resolvers
-    from archivalrouter import ArchivalRequestRouter, Route
-
-
-    # Standard loader which supports WARC/ARC files
-    aloader = archiveloader.ArchiveLoader()
-
-    # Source for cdx source
-    query_h = query.QueryHandler(indexreader.RemoteCDXServer('http://cdx.example.com/cdx'))
-
-    # Loads warcs specified in cdx from these locations
-    prefixes = [replay_resolvers.PrefixResolver('http://warcs.example.com/servewarc/'),
-                replay_resolvers.PrefixResolver('http://warcs.example.com/anotherpath/')]
-
-    # Create rewriting replay handler to rewrite records
-    replayer = replay.RewritingReplayHandler(resolvers = prefixes, archiveloader = aloader, headInsert = default_head_insert)
-
-    # Create Jinja2 based html query renderer
-    htmlquery = query.J2QueryRenderer('./ui/', 'query.html')
-
-    # Handler which combins query, replayer, and html_query
-    wb_handler = replay.WBHandler(query_h, replayer, htmlquery = htmlquery)
-
-    # Finally, create wb router
-    return ArchivalRequestRouter(
-        {
-            Route('echo_req', query.DebugEchoRequest()), # Debug ex: just echo parsed request
-            Route('mycoll',   wb_handler)
-        },
-        # Specify hostnames that pywb will be running on
-        # This will help catch occasionally missed rewrites that fall-through to the host
-        # (See archivalrouter.ReferRedirect)
-        hostpaths = ['http://mywb.example.com:8080/'])
-
 
 
 def create_wb_app(wb_router):
@@ -94,7 +55,7 @@ def create_wb_app(wb_router):
             response = wb_router(env)
 
             if not response:
-                raise wbexceptions.NotFoundException(env['REL_REQUEST_URI'] + ' was not found')
+                raise wbexceptions.NotFoundException('No handler for "{0}"'.format(env['REL_REQUEST_URI']))
 
         except wbexceptions.InternalRedirect as ir:
             response = WbResponse(StatusAndHeaders(ir.status, ir.httpHeaders))
@@ -133,23 +94,26 @@ def main():
         config_name = os.environ.get('PYWB_CONFIG')
 
         if not config_name:
-            config_name = 'pywb_init'
-            logging.info('PYWB_CONFIG not specified, attempting to load config from default module {0}'.format(config_name))
+            config_name = 'pywb.pywb_init'
+            logging.info('PYWB_CONFIG not specified, loading default settings from module "{0}"'.format(config_name))
+            logging.info('')
 
         module = importlib.import_module(config_name)
 
         app = create_wb_app(module.pywb_config(default_head_insert))
-        logging.info('\n\n*** pywb inited with settings from {0}.pywb_config()!\n'.format(config_name))
+        logging.info('')
+        logging.info('*** pywb inited with settings from {0}.pywb_config()!\n'.format(config_name))
         return app
 
     except Exception as e:
         # Otherwise, start with the sample settings
-        logging.exception('\n\n*** pywb could not init with settings from {0}.pywb_config()!\n'.format(config_name))
+        logging.exception('*** pywb could not init with settings from {0}.pywb_config()!\n'.format(config_name))
         raise e
 
 #=================================================================
 if __name__ == "__main__" or utils.enable_doctests():
+    import pywb_init
     # Test sample settings
-    application = create_wb_app(sample_wb_settings())
+    application = create_wb_app(pywb_init.pywb_config(default_head_insert))
 else:
     application = main()

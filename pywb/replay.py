@@ -27,7 +27,10 @@ class WBHandler:
             query_response = self.query(wbrequest)
 
         if (wbrequest.wb_url.type == wbrequest.wb_url.QUERY) or (wbrequest.wb_url.type == wbrequest.wb_url.URL_QUERY):
-            return self.htmlquery(wbrequest, query_response) if self.htmlquery else query_response
+            if wbrequest.wb_url.mod == 'text' or not self.htmlquery:
+                return query_response
+            else:
+                return self.htmlquery(wbrequest, query_response)
 
         with utils.PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
             return self.replay(wbrequest, query_response, self.query)
@@ -262,25 +265,39 @@ class RewritingReplayHandler(ReplayHandler):
         if response and response.cdx:
             self._checkRedir(wbrequest, response.cdx)
 
-        # Transparent!
-        if wbrequest.wb_url.mod == 'id_':
-            return response
-
-
         rewrittenHeaders = self.headerRewriter.rewrite(response.status_headers, urlrewriter)
 
-        # non-text content type, just send through with rewritten headers
-        if rewrittenHeaders.textType is None:
-            response.status_headers = rewrittenHeaders.status_headers
-            return response
-
-        # Handle text rewriting
         # TODO: better way to pass this?
         stream = response._stream
+
+        # de_chunking in case chunk encoding is broken
+        # TODO: investigate further
+        de_chunk = False
 
         # handle transfer-encoding: chunked
         if (rewrittenHeaders.containsRemovedHeader('transfer-encoding', 'chunked')):
             stream = archiveloader.ChunkedLineReader(stream)
+            de_chunk = True
+
+        # Transparent, though still may need to dechunk
+        if wbrequest.wb_url.mod == 'id_':
+            if de_chunk:
+                response.status_headers.remove_header('transfer-encoding')
+                response.body = self.create_stream_gen(stream)
+
+            return response
+
+        # non-text content type, just send through with rewritten headers
+        # but may need to dechunk
+        if rewrittenHeaders.textType is None:
+            response.status_headers = rewrittenHeaders.status_headers
+
+            if fix_chunk:
+                response.body = self.create_stream_gen(stream)
+
+            return response
+
+        # Handle text rewriting
 
         # special case -- need to ungzip the body
         if (rewrittenHeaders.containsRemovedHeader('content-encoding', 'gzip')):

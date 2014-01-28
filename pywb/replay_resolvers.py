@@ -7,7 +7,7 @@ def PrefixResolver(prefix, contains = ''):
     def makeUrl(url):
         return [prefix + url] if (contains in url) else []
 
-    print "prefix: " + prefix + " contains: " + contains
+    #print "prefix: " + prefix + " contains: " + contains
     return makeUrl
 
 #======================================

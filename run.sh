@@ -3,7 +3,7 @@
 mypath=$(cd `dirname $0` && pwd)
 
 # Setup init module
-export 'PYWB_CONFIG=globalwb'
+#export 'PYWB_CONFIG=globalwb'
 
 app="pywb.wbapp"
 

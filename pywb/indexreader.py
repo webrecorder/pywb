@@ -2,10 +2,68 @@ import urllib
 import urllib2
 import wbexceptions
 import itertools
+import surt
 from collections import OrderedDict
 
 from wbarchivalurl import ArchivalUrl
 
+import binsearch
+import cdxserve
+import logging
+import os
+
+#=================================================================
+class LocalCDXServer:
+    def __init__(self, sources):
+        self.sources = []
+
+        for src in sources:
+            if os.path.isdir(src):
+                for file in os.listdir(src):
+                    if file.endswith('.cdx'):
+                        full = src + file
+                        logging.info('Adding CDX: ' + full)
+                        self.sources.append(full)
+            else:
+                logging.info('Adding CDX: ' + src)
+                self.sources.append(src)
+
+
+    @staticmethod
+    def getQueryParams(wburl, limit = 150000, collapse_time = None, replay_closest = 10):
+        return {
+
+            wburl.QUERY:
+                {'collapse_time': collapse_time, 'filter': '!statuscode:(500|502|504)', 'limit': limit},
+
+            wburl.URL_QUERY:
+                {},
+#                raise Exception('Not Yet Implemented')
+#                {'collapse': 'urlkey', 'matchType': 'prefix', 'showGroupCount': True, 'showUniqCount': True, 'lastSkipTimestamp': True, 'limit': limit,
+#                 'fl': 'urlkey,original,timestamp,endtimestamp,groupcount,uniqcount',
+#                },
+
+            wburl.REPLAY:
+                {'filter': '!statuscode:(500|502|504)', 'limit': replay_closest, 'closest_to': wburl.timestamp, 'resolve_revisits': True},
+
+           wburl.LATEST_REPLAY:
+                {'reverse': True, 'filter': 'statuscode:[23]..', 'limit': '1', 'resolve_revisits': True}
+
+        }[wburl.type]
+
+
+    def load(self, url, params):
+
+        # convert to surt
+        key = surt.surt(url)
+        match_func = binsearch.iter_exact
+
+        print key + ' ' + urllib.urlencode(params, True)
+
+        return cdxserve.cdx_serve(key, params, self.sources, match_func)
+
+
+#=================================================================
 class RemoteCDXServer:
     """
     >>> x = cdxserver.load('example.com', parse_cdx = True, limit = '2')

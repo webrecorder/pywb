@@ -7,16 +7,60 @@ import re
 from heapq import merge
 from collections import deque
 
-class LocalCDXServer:
-    def __init__(sources):
-        self.sources = sources
-
-    pass
 
 
+#=================================================================
+def cdx_text_out(cdx, fields):
+    if not fields:
+        return str(cdx)
+    else:
+        return ' '.join(map(lambda x: cdx[x], fields.split(',')))
+
+
+#=================================================================
+def cdx_serve(key, params, sources, match_func = binsearch.iter_exact):
+    cdx_iter = merge_sort_streams(sources, key, match_func)
+
+    cdx_iter = make_cdx_iter(cdx_iter)
+
+    resolve_revisits = params.get('resolve_revisits', False)
+    if resolve_revisits:
+        cdx_iter = cdx_resolve_revisits(cdx_iter)
+
+    filters = params.get('filters', None)
+    if filters:
+        cdx_iter = cdx_filter(cdx_iter, filters)
+
+    collapse_time = params.get('collapse_time', None)
+    if collapse_time:
+        cdx_iter = cdx_collapse_time_status(cdx_iter, collapse_time)
+
+    limit = int(params.get('limit', 1000000))
+
+    reverse = params.get('reverse', False)
+    if reverse:
+        cdx_iter = cdx_reverse(cdx_iter, limit)
+
+    closest_to = params.get('closest_to', None)
+    if closest_to:
+        cdx_iter = cdx_sort_closest(closest_to, cdx_iter, limit)
+
+    if limit:
+        cdx_iter = cdx_limit(cdx_iter, limit)
+
+
+    def write_cdx(fields):
+        for cdx in cdx_iter:
+            yield cdx_text_out(cdx, fields) + '\n'
+
+    return write_cdx(params.get('fields'))
+
+
+#=================================================================
+# merge multiple cdx streams
 def merge_sort_streams(sources, key, iter_func):
     """
-    >>> test_cdx(key = 'org,iana)/', sources = ['dupes.cdx', 'iana.cdx'])
+    >>> test_cdx(key = 'org,iana)/', sources = [test_dir + 'dupes.cdx', test_dir + 'iana.cdx'])
     org,iana)/ 20140126200624 http://www.iana.org/ text/html 200 OSSAPWJ23L56IYVRW3GFEAR4MCJMGPTB - - 2258 334 iana.warc.gz
     org,iana)/ 20140127171238 http://iana.org unk 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 343 1858 dupes.warc.gz
     org,iana)/ 20140127171238 http://www.iana.org/ warc/revisit - OSSAPWJ23L56IYVRW3GFEAR4MCJMGPTB - - 536 2678 dupes.warc.gz
@@ -137,28 +181,30 @@ def cdx_filter(cdx_iter, filter_strings):
 
 
 #=================================================================
-# sort cdx by closest to timestamp
-def cdx_collapse_time(cdx_iter, timelen = 10):
+# collapse by timestamp and status code
+def cdx_collapse_time_status(cdx_iter, timelen = 10):
     """
+    # unresolved revisits, different statuscode results in an extra repeat
     >>> test_cdx(key = 'org,iana)/_css/2013.1/screen.css', collapse_time = 11)
     org,iana)/_css/2013.1/screen.css 20140126200625 http://www.iana.org/_css/2013.1/screen.css text/css 200 BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 8754 41238 iana.warc.gz
+    org,iana)/_css/2013.1/screen.css 20140126200653 http://www.iana.org/_css/2013.1/screen.css warc/revisit - BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 533 328367 iana.warc.gz
     org,iana)/_css/2013.1/screen.css 20140126201054 http://www.iana.org/_css/2013.1/screen.css warc/revisit - BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 543 706476 iana.warc.gz
 
-
+    # resolved revisits
     >>> test_cdx(key = 'org,iana)/_css/2013.1/screen.css', collapse_time = 11, resolve_revisits = True)
     org,iana)/_css/2013.1/screen.css 20140126200625 http://www.iana.org/_css/2013.1/screen.css text/css 200 BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 8754 41238 iana.warc.gz - - -
     org,iana)/_css/2013.1/screen.css 20140126201054 http://www.iana.org/_css/2013.1/screen.css text/css 200 BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 543 706476 iana.warc.gz 8754 41238 iana.warc.gz
 
     """
 
-    last_dedup_time = None
+    last_token = None
 
     for cdx in cdx_iter:
-        curr_dedup_time = cdx['timestamp'][:timelen]
+        curr_token = (cdx['timestamp'][:timelen], cdx['statuscode'])
 
         # yield if last_dedup_time is diff, otherwise skip
-        if curr_dedup_time != last_dedup_time:
-            last_dedup_time = curr_dedup_time
+        if curr_token != last_token:
+            last_token = curr_token
             yield cdx
 
 
@@ -167,7 +213,7 @@ def cdx_collapse_time(cdx_iter, timelen = 10):
 # sort CDXCaptureResult by closest to timestamp
 def cdx_sort_closest(closest, cdx_iter, limit = 10):
     """
-    >>> test_cdx(closest_to = '20140126200826', key = 'org,iana)/_css/2013.1/fonts/opensans-bold.ttf', timestamp_only = True)
+    >>> test_cdx(closest_to = '20140126200826', key = 'org,iana)/_css/2013.1/fonts/opensans-bold.ttf', fields = 'timestamp', limit = 10)
     20140126200826
     20140126200816
     20140126200805
@@ -179,16 +225,25 @@ def cdx_sort_closest(closest, cdx_iter, limit = 10):
     20140126200654
     20140126200625
 
+    >>> test_cdx(closest_to = '20140126201306', key = 'org,iana)/dnssec', resolve_revisits = True, sources = [test_dir + 'dupes.cdx', test_dir + 'iana.cdx'])
+    org,iana)/dnssec 20140126201306 http://www.iana.org/dnssec text/html 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 442 772827 iana.warc.gz - - -
+    org,iana)/dnssec 20140126201307 https://www.iana.org/dnssec text/html 200 PHLRSX73EV3WSZRFXMWDO6BRKTVUSASI - - 2278 773766 iana.warc.gz - - -
+
+
+    >>> test_cdx(closest_to = '20140126201307', key = 'org,iana)/dnssec', resolve_revisits = True)
+    org,iana)/dnssec 20140126201307 https://www.iana.org/dnssec text/html 200 PHLRSX73EV3WSZRFXMWDO6BRKTVUSASI - - 2278 773766 iana.warc.gz - - -
+    org,iana)/dnssec 20140126201306 http://www.iana.org/dnssec text/html 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 442 772827 iana.warc.gz - - -
+
     # equal dist prefer earlier
-    >>> test_cdx(closest_to = '20140126200700', key = 'org,iana)/_css/2013.1/fonts/opensans-bold.ttf', resolve_revisits = True, timestamp_only = False, limit = 2)
+    >>> test_cdx(closest_to = '20140126200700', key = 'org,iana)/_css/2013.1/fonts/opensans-bold.ttf', resolve_revisits = True, limit = 2)
     org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200654 http://www.iana.org/_css/2013.1/fonts/OpenSans-Bold.ttf application/octet-stream 200 YFUR5ALIWJMWV6FAAFRLVRQNXZQF5HRW - - 548 482544 iana.warc.gz 117166 198285 iana.warc.gz
     org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200706 http://www.iana.org/_css/2013.1/fonts/OpenSans-Bold.ttf application/octet-stream 200 YFUR5ALIWJMWV6FAAFRLVRQNXZQF5HRW - - 552 495230 iana.warc.gz 117166 198285 iana.warc.gz
 
-    >>> test_cdx(closest_to = '20140126200659', key = 'org,iana)/_css/2013.1/fonts/opensans-bold.ttf', resolve_revisits = True, timestamp_only = True, limit = 2)
+    >>> test_cdx(closest_to = '20140126200659', key = 'org,iana)/_css/2013.1/fonts/opensans-bold.ttf', resolve_revisits = True, limit = 2, fields = 'timestamp')
     20140126200654
     20140126200706
 
-    >>> test_cdx(closest_to = '20140126200701', key = 'org,iana)/_css/2013.1/fonts/opensans-bold.ttf', resolve_revisits = True, timestamp_only = True, limit = 2)
+    >>> test_cdx(closest_to = '20140126200701', key = 'org,iana)/_css/2013.1/fonts/opensans-bold.ttf', resolve_revisits = True, limit = 2, fields = 'timestamp')
     20140126200706
     20140126200654
 
@@ -272,54 +327,13 @@ def cdx_resolve_revisits(cdx_iter):
 import utils
 if __name__ == "__main__" or utils.enable_doctests():
     import os
+    import sys
 
     test_dir = os.path.dirname(os.path.realpath(__file__)) + '/../test/'
 
-    def create_test_cdx(test_file):
-        path = os.path.dirname(os.path.realpath(__file__)) + '/../test/' + test_file
-        return binsearch.FileReader(path)
-
-    def wrap_test_path(filenames):
-        return map(lambda x: test_dir + x, filenames)
-
-    test_cdx_iter = create_test_cdx('iana.cdx')
-
-    def test_cdx(key,
-                 closest_to = None,
-                 limit = 10,
-                 collapse_time = None,
-                 timestamp_only = False,
-                 resolve_revisits = False,
-                 reverse = False,
-                 filters = None,
-                 sources = ['iana.cdx'],
-                 match_func = binsearch.iter_exact):
-
-        cdx_iter = merge_sort_streams(wrap_test_path(sources), key, match_func)
-
-        cdx_iter = make_cdx_iter(cdx_iter)
-
-        if resolve_revisits:
-            cdx_iter = cdx_resolve_revisits(cdx_iter)
-
-        if filters:
-            cdx_iter = cdx_filter(cdx_iter, filters)
-
-        if collapse_time:
-            cdx_iter = cdx_collapse_time(cdx_iter, collapse_time)
-
-        if reverse:
-            cdx_iter = cdx_reverse(cdx_iter, limit)
-
-        if closest_to:
-            cdx_iter = cdx_sort_closest(closest_to, cdx_iter, limit)
-
-        if limit:
-            cdx_iter = cdx_limit(cdx_iter, limit)
-
-        for cdx in cdx_iter:
-            print cdx['timestamp'] if timestamp_only else cdx
-
+    def test_cdx(key, match_func = binsearch.iter_exact, sources = [test_dir + 'iana.cdx'], **kwparams):
+        for x in cdx_serve(key, kwparams, sources, match_func):
+            sys.stdout.write(x)
 
 
     import doctest

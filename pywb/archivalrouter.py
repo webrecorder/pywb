@@ -34,8 +34,13 @@ class ArchivalRequestRouter:
 # of request uri (excluding first '/')
 #=================================================================
 class Route:
-    def __init__(self, regex, handler, coll_group = 0):
-        self.regex = re.compile(regex)
+
+    # match upto next slash
+    SLASH_LOOKAHEAD ='(?=/)'
+
+
+    def __init__(self, regex, handler, coll_group = 0, lookahead = SLASH_LOOKAHEAD):
+        self.regex = re.compile(regex + lookahead)
         self.handler = handler
         # collection id from regex group (default 0)
         self.coll_group = coll_group

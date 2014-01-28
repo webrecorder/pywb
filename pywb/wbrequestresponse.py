@@ -171,7 +171,12 @@ class StatusAndHeaders:
             if (value[0].lower() == nameLower):
                 return value[1]
 
-        return None
+    def remove_header(self, name):
+        nameLower = name.lower()
+        for x in xrange(len(self.headers) - 1, -1, -1):
+            if self.headers[x][0].lower() == nameLower:
+                del self.headers[x]
+                break
 
     def __repr__(self):
         return "StatusAndHeaders(protocol = '{0}', statusline = '{1}', headers = {2})".format(self.protocol, self.statusline, pprint.pformat(self.headers, indent = 2))
