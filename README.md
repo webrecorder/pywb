@@ -3,21 +3,19 @@ PyWb 0.1 Beta
 
 [![Build Status](https://travis-ci.org/ikreymer/pywb.png?branch=master)](https://travis-ci.org/ikreymer/pywb)
 
-pywb is a Python implementation of the Wayback Machine software.
+pywb is a Python re-implementation of the Wayback Machine software.
 
-Some goals are to:
+The goal is to provide a brand new, clean implementation of Wayback.
 
-* Provide the best possible playback of archival web content (usually in WARC or ARC files)
+This involves playing back archival web content (usually in WARC or ARC files) as best or accurately
+as possible, in straightforward by highly customizable way.
 
-* Be highly customizable in rewriting content to provide best possible playback experience
-
-* Provide a pluggable, optional ui
-
-* Be easy to deploy and hack
+It should be easy to deploy and hack!
 
 
+### Wayback Machine
 
-The Wayback Machine usually serves archival content in the following form:
+A typical Wayback Machine serves archival content in the following form:
 
 `http://<host>/<collection>/<timestamp>/<original url>`
 
@@ -57,10 +55,22 @@ To start a pywb with sample data
 
 - Install with `python setup.py install`
 
-- Run Start with `run.sh`
+- Run pywb by via script `run.sh`
 
-- Set your browser to `localhost:8080/pywb/example.com` or `localhost:8080/pywb/iana.org`
-  to see pywb rendering the sample archive data
+- Test following pages in a browser:
+
+A recent captures of these sites is included in the sample_archive:
+
+* [http://localhost:8080/pywb/example.com](http://localhost:8080/pywb/example.com)
+
+* [http://localhost:8080/pywb/iana.org](http://localhost:8080/pywb/iana.org)
+
+Capture Listings:
+
+* [http://localhost:8080/pywb/*/example.com](http://localhost:8080/pywb/*/example.com)
+
+* [http://localhost:8080/pywb/*/iana.org](http://localhost:8080/pywb/*/iana.org)
+
 
 
 ### Sample Setup
@@ -94,9 +104,35 @@ hostpaths: ['http://localhost:8080/']
 
 
 
-The `PYWB_CONFIG` env can be used to set a different file
-The `PYWB_CONFIG_MODULE` env variable can be used to set a different init module
+
+* The `PYWB_CONFIG` env can be used to set a different file.
+
+* The `PYWB_CONFIG_MODULE` env variable can be used to set a different init module
+
 See `run.sh` for more details
+
+
+### Running with Existing CDX/WARCs
+
+If you have existing warc and cdx files, you can adjust the `index_paths` and `archive_paths` to point to
+the location of those files.
+
+#### SURT
+
+By default, pywb expects the cdx files to be Sort-Friendly-Url-Transform (SURT) ordering. This is an ordering
+that transforms: `example.com` -> `com,example)/` to faciliate better search. It is recommended for future indexing.
+
+However, non-SURT ordered cdx indexs will work as well, but be sure to specify
+
+`surt_ordered: False` in the [config.yaml](config.yaml)
+
+
+### Generating new CDX
+
+TODO
+
+
+
 
 
 
