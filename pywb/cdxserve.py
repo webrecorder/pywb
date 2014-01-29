@@ -48,6 +48,9 @@ def cdx_serve(key, params, sources, match_func = binsearch.iter_exact):
     if limit:
         cdx_iter = cdx_limit(cdx_iter, limit)
 
+    # output raw cdx objects
+    if params.get('output') == 'raw':
+        return cdx_iter
 
     def write_cdx(fields):
         for cdx in cdx_iter:

@@ -1,14 +1,11 @@
 <body>
-  <b><span id="count"></span>&nbsp;Captures of {{ url }}</b>
+  <b>{{ cdx_lines | length  }} captures of {{ url }}</b>
   <table id="captures">
-  {% for cdx in cdxlines %}
+  {% for cdx in cdx_lines %}
   <tr>
     <td><a href="{{ prefix}}{{ cdx.timestamp }}/{{ url }}">{{ cdx.timestamp }}</a></td>
     <td><a href="https://archive.org/details/{{ cdx['filename'] }}">{{ cdx['filename'] }}</a></td>
   </tr>
   {% endfor %}
   </table>
-  <script>
-document.getElementById("count").innerHTML = document.getElementById("captures").getElementsByTagName("tr").length
- </script>
 </body>
