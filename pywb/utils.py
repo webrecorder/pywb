@@ -168,6 +168,7 @@ def timestamp_to_sec(string):
 
     return calendar.timegm(timestamp_to_datetime(string))
 
+#=================================================================
 # adapted -from wsgiref.request_uri, but doesn't include domain name and allows all characters
 # allowed in the path segment according to: http://tools.ietf.org/html/rfc3986#section-3.3
 # explained here: http://stackoverflow.com/questions/4669692/valid-characters-for-directory-part-of-a-url-for-short-links
@@ -193,7 +194,36 @@ def rel_request_uri(environ, include_query=1):
 
 
 
-#============================================
+#=================================================================
+def unsurt(surt):
+    """
+    # Simple surt
+    >>> unsurt('com,example)/')
+    'example.com)/'
+
+    # Broken surt
+    >>> unsurt('com,example)')
+    'com,example)'
+
+    # Long surt
+    >>> unsurt('suffix,domain,sub,subsub,another,subdomain)/path/file/index.html?a=b?c=)/')
+    'subdomain.another.subsub.sub.domain.suffix)/path/file/index.html?a=b?c=)/'
+    """
+
+    try:
+        index = surt.index(')/')
+        parts = surt[0:index].split(',')
+        parts.reverse()
+        host = '.'.join(parts)
+        host += surt[index:]
+        return host
+
+    except ValueError:
+        # May not be a valid surt
+        return surt
+
+
+#=================================================================
 # Support for bulk doctest testing via nose
 # nosetests --with-doctest
 
@@ -207,7 +237,7 @@ def test_data_dir():
     import os
     return os.path.dirname(os.path.realpath(__file__)) + '/../sample_archive/'
 
-#============================================
+#=================================================================
 
 if __name__ == "__main__" or enable_doctests():
     import doctest

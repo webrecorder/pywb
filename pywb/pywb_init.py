@@ -88,11 +88,14 @@ def pywb_config(config_file = None):
 
 
 
-def yaml_parse_index_loader(index_config):
+def yaml_parse_index_loader(config):
+    index_config = config['index_paths']
+    surt_ordered = config.get('surt_ordered', True)
+
     # support mixed cdx streams and remote servers?
     # for now, list implies local sources
     if isinstance(index_config, list):
-        return indexreader.LocalCDXServer(index_config)
+        return indexreader.LocalCDXServer(index_config, surt_ordered)
 
     if isinstance(index_config, str):
         uri = index_config
@@ -139,7 +142,7 @@ def yaml_parse_route(config):
 
     archive_loader = archiveloader.ArchiveLoader()
 
-    index_loader = yaml_parse_index_loader(config['index_paths'])
+    index_loader = yaml_parse_index_loader(config)
 
     archive_resolvers = map(replay_resolvers.make_best_resolver, config['archive_paths'])
 

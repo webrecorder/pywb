@@ -64,8 +64,10 @@ class LocalCDXServer(IndexReader):
 
     """
 
-    def __init__(self, sources):
+    def __init__(self, sources, surt_ordered = True):
         self.sources = []
+        self.surt_ordered = surt_ordered
+        logging.info('CDX Surt-Ordered? ' + str(surt_ordered))
 
         for src in sources:
             if os.path.isdir(src):
@@ -80,8 +82,13 @@ class LocalCDXServer(IndexReader):
 
 
     def load_cdx(self, url, params = {}, parsed_cdx = True, **kwvalues):
-        # convert to surt
+        # canonicalize to surt (canonicalization is part of surt conversion)
         key = surt.surt(url)
+
+        # if not surt, unsurt the surt to get canonicalized non-surt url
+        if not self.surt_ordered:
+            key = utils.unsurt(key)
+
         match_func = binsearch.iter_exact
 
         params.update(**kwvalues)

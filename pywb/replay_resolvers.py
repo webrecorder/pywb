@@ -8,12 +8,13 @@ import logging
 #======================================
 # PrefixResolver - convert cdx file entry to url with prefix if url contains specified string
 #======================================
-def PrefixResolver(prefix, contains = ''):
-    def makeUrl(url):
-        return [prefix + url] if (contains in url) else []
+class PrefixResolver:
+    def __init__(self, prefix, contains = ''):
+        self.prefix = prefix
+        self.contains = contains
 
-    #print "prefix: " + prefix + " contains: " + contains
-    return makeUrl
+    def __call__(self, filename):
+        return [self.prefix + filename] if (self.contains in url) else []
 
 #======================================
 class RedisResolver:
@@ -50,6 +51,23 @@ class PathIndexResolver:
 #TODO: more options (remote files, contains param, etc..)
 # find best resolver given the path
 def make_best_resolver(path):
+    """
+    # http path
+    >>> class_name(make_best_resolver('http://myhost.example.com/warcs/'))
+    'PrefixResolver'
+
+    # redis path
+    >>> class_name(make_best_resolver('redis://myhost.example.com:1234/1'))
+    'RedisResolver'
+
+    # a file
+    >>> class_name(make_best_resolver('file://' + os.path.realpath(__file__)))
+    'PathIndexResolver'
+
+    # a dir
+    >>> class_name(make_best_resolver('file://' + os.path.dirname(os.path.realpath(__file__))))
+    'PrefixResolver'
+    """
     url_parts = urlparse.urlsplit(path)
 
     if url_parts.scheme == 'redis':
@@ -68,4 +86,13 @@ def make_best_resolver(path):
         logging.info('Adding Archive Path Source: ' + path)
         return PrefixResolver(path)
 
+import utils
+#=================================================================
+if __name__ == "__main__" or utils.enable_doctests():
+
+    def class_name(obj):
+        return obj.__class__.__name__
+
+    import doctest
+    doctest.testmod()
 
