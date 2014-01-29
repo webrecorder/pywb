@@ -231,11 +231,11 @@ class RewritingReplayView(ReplayView):
         return None
 
 
-    def __call__(self, wbrequest, index, cdx_reader):
+    def __call__(self, wbrequest, cdx_list, cdx_reader):
         urlrewriter = UrlRewriter(wbrequest.wb_url, wbrequest.wb_prefix)
         wbrequest.urlrewriter = urlrewriter
 
-        response = ReplayView.__call__(self, wbrequest, index, cdx_reader)
+        response = ReplayView.__call__(self, wbrequest, cdx_list, cdx_reader)
 
         if response and response.cdx:
             self._check_redir(wbrequest, response.cdx)
@@ -300,7 +300,13 @@ class RewritingReplayView(ReplayView):
         status_headers = rewritten_headers.status_headers
 
         if text_type == 'html':
-            rewriter = html_rewriter.HTMLRewriter(urlrewriter, outstream = None, head_insert = self.head_insert)
+            # Support head_insert func
+            if hasattr(self.head_insert, '__call__'):
+                head_insert_str = self.head_insert(wbrequest, response.cdx)
+            else:
+                head_insert_str = str(self.head_insert)
+
+            rewriter = html_rewriter.HTMLRewriter(urlrewriter, outstream = None, head_insert = head_insert_str)
         elif text_type == 'css':
             rewriter = regex_rewriters.CSSRewriter(urlrewriter)
         elif text_type == 'js':

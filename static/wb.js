@@ -24,7 +24,13 @@ function initBanner()
         banner = document.createElement("wb_div");
         banner.setAttribute("id", BANNER_ID);
 	banner.setAttribute("lang", "en");
-        banner.innerHTML = "PyWb Archived Content"
+
+        text = "Archived Content";
+        if (wbinfo && wbinfo.capture_str) {
+            text += " from <b>" + wbinfo.capture_str + "</b>";
+        }
+        banner.innerHTML = text;
+
         document.body.insertBefore(banner, document.body.firstChild);
     }
 }

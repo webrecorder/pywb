@@ -8,15 +8,6 @@ import importlib
 import logging
 
 
-## ===========
-default_head_insert = """
-
-<!-- WB Insert -->
-<script src='/static/wb.js'> </script>
-<link rel='stylesheet' href='/static/wb.css'/>
-<!-- End WB Insert -->
-"""
-
 
 ## ===========
 '''
@@ -100,7 +91,7 @@ def main():
 
         module = importlib.import_module(config_name)
 
-        app = create_wb_app(module.pywb_config(default_head_insert))
+        app = create_wb_app(module.pywb_config())
         logging.info('')
         logging.info('*** pywb inited with settings from {0}.pywb_config()!\n'.format(config_name))
         return app
@@ -114,6 +105,6 @@ def main():
 if __name__ == "__main__" or utils.enable_doctests():
     import pywb_init
     # Test sample settings
-    application = create_wb_app(pywb_init.pywb_config(default_head_insert))
+    application = create_wb_app(pywb_init.pywb_config())
 else:
     application = main()

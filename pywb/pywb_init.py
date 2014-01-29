@@ -9,7 +9,16 @@ from archivalrouter import ArchivalRequestRouter, Route
 import os
 
 
-def pywb_config(head_insert = ''):
+## ===========
+default_head_insert = """
+
+<!-- WB Insert -->
+<script src='/static/wb.js'> </script>
+<link rel='stylesheet' href='/static/wb.css'/>
+<!-- End WB Insert -->
+"""
+
+def pywb_config():
     # Current test dir
     test_dir = os.path.dirname(os.path.realpath(__file__)) + '/../test/'
 
@@ -23,6 +32,9 @@ def pywb_config(head_insert = ''):
 
     # Loads warcs specified in cdx from these locations
     prefixes = [replay_resolvers.PrefixResolver(test_dir)]
+
+    # Jinja2 head insert
+    head_insert = views.J2HeadInsertView('./ui/', 'head_insert.html')
 
     # Create rewriting replay handler to rewrite records
     replayer = replay_views.RewritingReplayView(resolvers = prefixes, archiveloader = aloader, head_insert = head_insert, buffer_response = True)
