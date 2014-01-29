@@ -184,3 +184,7 @@ The directions are for running in a shell:
 
 
   [1]: https://archive.org/web/
+  [2]: http://localhost:8080/pywb/example.com
+  [3]: http://localhost:8080/pywb/*/example.com
+  [4]: http://localhost:8080/pywb/iana.org
+  [5]: http://localhost:8080/pywb/*/iana.org
