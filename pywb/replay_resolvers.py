@@ -1,5 +1,10 @@
 import redis
 import binsearch
+
+import urlparse
+import os
+import logging
+
 #======================================
 # PrefixResolver - convert cdx file entry to url with prefix if url contains specified string
 #======================================
@@ -40,4 +45,27 @@ class PathIndexResolver:
                     yield path[1]
 
         return gen_list(result)
+
+
+#TODO: more options (remote files, contains param, etc..)
+# find best resolver given the path
+def make_best_resolver(path):
+    url_parts = urlparse.urlsplit(path)
+
+    if url_parts.scheme == 'redis':
+        logging.info('Adding Redis Index: ' + path)
+        return RedisResolver(path)
+
+    if url_parts.scheme == 'file':
+        path = url_parts.path
+
+    if os.path.isfile(path):
+        logging.info('Adding Path Index: ' + path)
+        return PathIndexResolver(path)
+
+    # non-file paths always treated as prefix for now
+    else:
+        logging.info('Adding Archive Path Source: ' + path)
+        return PrefixResolver(path)
+
 

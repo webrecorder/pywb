@@ -2,8 +2,13 @@
 
 mypath=$(cd `dirname $0` && pwd)
 
-# Setup init module
-#export 'PYWB_CONFIG=globalwb'
+# Set a different config file
+#export 'PYWB_CONFIG=myconfig.yaml'
+
+# Set alternate init module
+# The modules pywb_config()
+# ex: my_pywb.pywb_config()
+#export 'PYWB_CONFIG=my_pywb'
 
 app="pywb.wbapp"
 

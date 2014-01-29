@@ -1,17 +1,67 @@
+# pywb config file
+# ========================================
+#
+# Settings for each route are defined below
+# Each route may be an archival collection or other handler
+#
 routes:
-    pywb:
-        index_paths:
-            - ./sample_archive/cdx/
+      # route name (eg /pywb)
+    - name: pywb
 
-        archive_paths:
-            - ./sample_archive/warcs/
+      # list of paths to search cdx files
+      #  * local .cdx file
+      #  * local dir, will include all .cdx files in dir
+      #
+      # or a string value indicating remote http cdx server
+      index_paths:
+          - ./sample_archive/cdx/
 
-        head_insert_template: ./ui/head_insert.html
+      # indicate if cdx files are sorted by SURT keys -- eg: com,example)/
+      # SURT keys are recommended for future indices, but non-SURT cdxs
+      # are also supported
+      #
+      #   * Set to true if cdxs start with surts: com,example)/
+      #   * Set to false if cdx start with urls: example.com)/
+      surt_ordered: True
 
-        html_query_template: ./ui/query.html
+      # list of paths prefixes for pywb look to 'resolve'  WARC and ARC filenames
+      # in the cdx to their absolute path
+      #
+      # if path is:
+      #   * local dir, use path as prefix
+      #   * local file, lookup prefix in tab-delimited sorted index
+      #   * http:// path, use path as remote prefix
+      #   * redis:// path, use redis to lookup full path for w:<warc> as key
+
+      archive_paths:
+          - ./sample_archive/warcs/
+
+      # ui: optional Jinja2 template to insert into <head> of each replay
+      head_insert_html_template: ./ui/head_insert.html
+
+      # ui: optional text to directly insert into <head>
+      # only loaded if ui_head_insert_template_file is not specified
+      
+      #head_insert_text: <script src='example.js'></script>
 
 
-hostpaths: http://localhost:8080/
+      # ui: optional Jinja2 template to use for 'calendar' query,
+      # eg, a listing of captures  in response to a ../*/<url>
+      #
+      # may be a simple listing or a more complex 'calendar' UI
+      # if omitted, the capture listing lists raw index
+      calendar_html_template: ./ui/query.html
+
+
+# list of host names that pywb will be running from to detect
+# 'fallthrough' requests based on referrer
+#
+# eg: an incorrect request for http://localhost:8080/image.gif with a referrer
+# of http://localhost:8080/pywb/index.html, pywb can correctly redirect
+# to http://localhost:8080/pywb/image.gif
+#
+
+hostpaths: ['http://localhost:8080/']
 
 
 

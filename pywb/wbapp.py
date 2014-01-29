@@ -84,18 +84,16 @@ def main():
         # Attempt to load real settings from globalwb module
         logging.basicConfig(format = '%(asctime)s: [%(levelname)s]: %(message)s', level = logging.DEBUG)
 
-        config_name = os.environ.get('PYWB_CONFIG')
+        config_name = os.environ.get('PYWB_CONFIG_MODULE')
 
         if not config_name:
             config_name = 'pywb.pywb_init'
-            logging.info('PYWB_CONFIG not specified, loading default settings from module "{0}"'.format(config_name))
+            logging.info('Loading from default config module "{0}"'.format(config_name))
             logging.info('')
 
         module = importlib.import_module(config_name)
 
-        config_file = DEFAULT_CONFIG_FILE
-
-        app = create_wb_app(module.pywb_config(config_file))
+        app = create_wb_app(module.pywb_config())
         logging.info('')
         logging.info('*** pywb inited with settings from {0}.pywb_config()!\n'.format(config_name))
         return app
@@ -107,8 +105,6 @@ def main():
 
 #=================================================================
 if __name__ == "__main__" or utils.enable_doctests():
-    import pywb_init
-    # Test sample settings
-    application = create_wb_app(pywb_init.pywb_config('../' + DEFAULT_CONFIG_FILE))
+    pass
 else:
     application = main()

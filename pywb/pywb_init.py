@@ -11,16 +11,18 @@ import yaml
 import utils
 import logging
 
-## ===========
-default_head_insert = """
+#=================================================================
+## Reference non-YAML config
+#=================================================================
+def pywb_config_manual():
+    default_head_insert = """
 
-<!-- WB Insert -->
-<script src='/static/wb.js'> </script>
-<link rel='stylesheet' href='/static/wb.css'/>
-<!-- End WB Insert -->
-"""
+    <!-- WB Insert -->
+    <script src='/static/wb.js'> </script>
+    <link rel='stylesheet' href='/static/wb.css'/>
+    <!-- End WB Insert -->
+    """
 
-def pywb_config2():
     # Current test dir
     #test_dir = utils.test_data_dir()
     test_dir = './sample_archive/'
@@ -64,19 +66,26 @@ def pywb_config2():
         hostpaths = ['http://localhost:8080/'])
 
 
-def pywb_config(filename = './pywb/config.yaml'):
-    config = yaml.load(open(filename))
 
-    routes = map(yaml_parse_route, config['routes'].iteritems())
+#=================================================================
+# YAML config loader
+#=================================================================
+DEFAULT_CONFIG_FILE = 'config.yaml'
+
+
+def pywb_config(config_file = None):
+    if not config_file:
+        config_file = os.environ.get('PYWB_CONFIG', DEFAULT_CONFIG_FILE)
+
+    config = yaml.load(open(config_file))
+
+    routes = map(yaml_parse_route, config['routes'])
 
     hostpaths = config.get('hostpaths', ['http://localhost:8080/'])
 
     return ArchivalRequestRouter(routes, hostpaths)
 
 
-
-def yaml_parse_route((route_name, handler_def)):
-    return Route(route_name, yaml_parse_handler(handler_def))
 
 
 def yaml_parse_index_loader(index_config):
@@ -101,60 +110,56 @@ def yaml_parse_index_loader(index_config):
         return indexreader.LocalCDXServer([uri])
 
 
-def yaml_parse_archive_resolvers(archive_paths):
-
-    #TODO: more options (remote files, contains param, etc..)
-    def make_resolver(path):
-        if path.startswith('redis://'):
-            return replay_resolvers.RedisResolver(path)
-        elif os.path.isfile(path):
-            return replay_resolvers.PathIndexResolver(path)
-        else:
-            logging.info('Adding Archive Source: ' + path)
-            return replay_resolvers.PrefixResolver(path)
-
-    return map(make_resolver, archive_paths)
-
-def yaml_parse_head_insert(handler_def):
+def yaml_parse_head_insert(config):
     # First, try a template file
-    head_insert_file = handler_def.get('head_insert_template')
+    head_insert_file = config.get('head_insert_html_template')
     if head_insert_file:
         logging.info('Adding Head-Insert Template: ' + head_insert_file)
         return views.J2HeadInsertView(head_insert_file)
 
     # Then, static head_insert text
-    head_insert_text = handler_def.get('head_insert_text', '')
+    head_insert_text = config.get('head_insert_text', '')
     logging.info('Adding Head-Insert Text: ' + head_insert_text) 
     return head_insert_text
 
 
-def yaml_parse_handler(handler_def):
-    archive_loader = archiveloader.ArchiveLoader()
-
-    index_loader = yaml_parse_index_loader(handler_def['index_paths'])
-
-    archive_resolvers = yaml_parse_archive_resolvers(handler_def['archive_paths'])
-
-    head_insert = yaml_parse_head_insert(handler_def)
-
-    replayer = replay_views.RewritingReplayView(resolvers = archive_resolvers,
-                                                archiveloader = archive_loader,
-                                                head_insert = head_insert,
-                                                buffer_response = handler_def.get('buffer_response', False))
-
-    html_view_file = handler_def.get('html_query_template')
+def yaml_parse_calendar_view(config):
+    html_view_file = config.get('calendar_html_template')
     if html_view_file:
         logging.info('Adding HTML Calendar Template: ' + html_view_file)
     else:
         logging.info('No HTML Calendar View Present')
 
-    html_view = views.J2QueryView(html_view_file) if html_view_file else None
+    return views.J2QueryView(html_view_file) if html_view_file else None
+
+
+
+def yaml_parse_route(config):
+    name = config['name']
+
+    archive_loader = archiveloader.ArchiveLoader()
+
+    index_loader = yaml_parse_index_loader(config['index_paths'])
+
+    archive_resolvers = map(replay_resolvers.make_best_resolver, config['archive_paths'])
+
+    head_insert = yaml_parse_head_insert(config)
+
+    replayer = replay_views.RewritingReplayView(resolvers = archive_resolvers,
+                                                archiveloader = archive_loader,
+                                                head_insert = head_insert,
+                                                buffer_response = config.get('buffer_response', False))
+
+    html_view = yaml_parse_calendar_view(config)
 
     wb_handler = handlers.WBHandler(index_loader, replayer, html_view)
-    return wb_handler
+
+    return Route(name, wb_handler)
+
 
 if __name__ == "__main__" or utils.enable_doctests():
-    pass
-    #print pywb_config('config.yaml')
+    # Just test for execution for now
+    pywb_config(os.path.dirname(os.path.realpath(__file__)) + '/../config.yaml')
+    pywb_config_manual()
 
 
