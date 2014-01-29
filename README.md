@@ -55,12 +55,10 @@ To start a pywb with sample data
 
 2. Install with `python setup.py install`
 
-3. Run pywb by via script `run.sh` (script currently assumes a default python and uwsgi install)
+3. Run pywb by via script `run.sh` (script currently assumes a default python and uwsgi install, feel free to edit as needed)
  
-4. Test pywb in your browser!
+4. Test pywb in your browser!  (pywb is set to run on port 8080 by default.)
 
-
-pywb is set to run on port 8080 by default.
 
 If everything worked, the following pages should be loading (served from *sample_archive* dir):
 
@@ -186,12 +184,12 @@ The directions are for running in a shell:
 
 * For additional/up-to-date configuration details, consult the current [config.yaml](config.yaml)
 
-* The [wiki](./wiki/) will have additional technical documentation about various aspects of pywb
+* The [wiki](../pywb/wiki/) will have additional technical documentation about various aspects of pywb
 
 ### Contributions
 
 You are encouraged to fork and contribute to this project to improve web archiving replay
 
-Please take a look at list of current [issues](./issues) and feel free to open new ones
+Please take a look at list of current [issues](../pwyb/issues) and feel free to open new ones
 
 
