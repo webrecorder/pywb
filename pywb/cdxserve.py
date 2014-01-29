@@ -332,7 +332,7 @@ if __name__ == "__main__" or utils.enable_doctests():
     import os
     import sys
 
-    test_dir = os.path.dirname(os.path.realpath(__file__)) + '/../test/'
+    test_dir = utils.test_data_dir() + 'cdx/'
 
     def test_cdx(key, match_func = binsearch.iter_exact, sources = [test_dir + 'iana.cdx'], **kwparams):
         for x in cdx_serve(key, kwparams, sources, match_func):

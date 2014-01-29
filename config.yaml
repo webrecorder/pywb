@@ -1,0 +1,18 @@
+routes:
+    pywb:
+        index_paths:
+            - ./sample_archive/cdx/
+
+        archive_paths:
+            - ./sample_archive/warcs/
+
+        head_insert_template: ./ui/head_insert.html
+
+        html_query_template: ./ui/query.html
+
+
+hostpaths: http://localhost:8080/
+
+
+
+

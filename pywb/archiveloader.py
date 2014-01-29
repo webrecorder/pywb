@@ -380,7 +380,7 @@ if __name__ == "__main__" or utils.enable_doctests():
     testloader = ArchiveLoader()
 
     def load_test_archive(test_file, offset, length):
-        path = os.path.dirname(os.path.realpath(__file__)) + '/../test/' + test_file
+        path = utils.test_data_dir() + 'warcs/' + test_file
 
         archive = testloader.load(path, offset, length)
         pprint.pprint((archive.type, archive.rec_headers, archive.status_headers))

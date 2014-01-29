@@ -127,7 +127,7 @@ import utils
 if __name__ == "__main__" or utils.enable_doctests():
 
     def create_test_cdx(test_file):
-        path = os.path.dirname(os.path.realpath(__file__)) + '/../test/' + test_file
+        path = utils.test_data_dir() + 'cdx/' + test_file
         return FileReader(path)
 
     test_cdx = create_test_cdx('iana.cdx')

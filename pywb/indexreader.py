@@ -251,7 +251,7 @@ import utils
 if __name__ == "__main__" or utils.enable_doctests():
     from pprint import pprint
 
-    test_dir = os.path.dirname(os.path.realpath(__file__)) + '/../test/'
+    test_dir = utils.test_data_dir() + 'cdx/'
 
     import doctest
     doctest.testmod()

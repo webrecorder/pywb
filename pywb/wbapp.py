@@ -77,6 +77,8 @@ def handle_exception(env, exc):
 
 
 #=================================================================
+DEFAULT_CONFIG_FILE = 'config.yaml'
+
 def main():
     try:
         # Attempt to load real settings from globalwb module
@@ -91,7 +93,9 @@ def main():
 
         module = importlib.import_module(config_name)
 
-        app = create_wb_app(module.pywb_config())
+        config_file = DEFAULT_CONFIG_FILE
+
+        app = create_wb_app(module.pywb_config(config_file))
         logging.info('')
         logging.info('*** pywb inited with settings from {0}.pywb_config()!\n'.format(config_name))
         return app
@@ -105,6 +109,6 @@ def main():
 if __name__ == "__main__" or utils.enable_doctests():
     import pywb_init
     # Test sample settings
-    application = create_wb_app(pywb_init.pywb_config())
+    application = create_wb_app(pywb_init.pywb_config('../' + DEFAULT_CONFIG_FILE))
 else:
     application = main()

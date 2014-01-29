@@ -4,6 +4,7 @@ import wbrequestresponse
 import wbexceptions
 import time
 
+from os import path
 from itertools import imap
 from jinja2 import Environment, FileSystemLoader
 
@@ -16,7 +17,9 @@ class TextQueryView:
 
 #=================================================================
 class J2QueryView:
-    def __init__(self, template_dir, template_file, buffer_index = True):
+    def __init__(self, filename, buffer_index = True):
+        template_dir, template_file = path.split(filename)
+
         self.template_file = template_file
         self.buffer_index = buffer_index
 
@@ -41,7 +44,8 @@ class J2QueryView:
 # Render the head insert (eg. banner)
 #=================================================================
 class J2HeadInsertView:
-    def __init__(self, template_dir, template_file, buffer_index = True):
+    def __init__(self, filename, buffer_index = True):
+        template_dir, template_file = path.split(filename)
         self.template_file = template_file
 
         self.jinja_env = make_jinja_env(template_dir)

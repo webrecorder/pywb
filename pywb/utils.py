@@ -203,6 +203,10 @@ is_in_nose = sys.argv[0].endswith('nosetests')
 def enable_doctests():
     return is_in_nose
 
+def test_data_dir():
+    import os
+    return os.path.dirname(os.path.realpath(__file__)) + '/../sample_archive/'
+
 #============================================
 
 if __name__ == "__main__" or enable_doctests():
