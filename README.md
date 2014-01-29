@@ -20,7 +20,7 @@ A typical Wayback Machine serves archival content in the following form:
 `http://<host>/<collection>/<timestamp>/<original url>`
 
 
-Ex: The [Internet Archive Wayback Machine][1] has urls of the form:
+Ex: The [Internet Archive Wayback Machine](https//archive.org/web/) has urls of the form:
 
 `http://web.archive.org/web/20131015120316/http://archive.org/`
 
@@ -62,13 +62,12 @@ To start a pywb with sample data
 
 pywb is set to run on port 8080 by default.
 
-If everything worked, the following pages should be loading (served from /sample_archive):
+If everything worked, the following pages should be loading (served from *sample_archive* dir):
 
 | Original Url       | Latest Capture  | List of All Captures    |
 | -------------      | -------------   | ----------------------- |         
-| `http://example.com` | [http://localhost:8080/pywb/example.com] | [http://localhost:8080/pywb/*/example.com] |
-| `http://iana.org`    | [http://localhost:8080/pywb/iana.org] | [http://localhost:8080/pywb/*/iana.org] |
-
+| `http://example.com` | [http://localhost:8080/pywb/example.com](http://localhost:8080/pywb/example.com) | [http://localhost:8080/pywb/*/example.com](http://localhost:8080/pywb/*/example.com) |
+| `http://iana.org`    | [http://localhost:8080/pywb/iana.org](http://localhost:8080/pywb/iana.org) | [http://localhost:8080/pywb/*/iana.org](http://localhost:8080/pywb/*/iana.org) |
 
 
 ### Sample Setup
@@ -135,13 +134,16 @@ Non-SURT ordered cdx indexs will work as well, but be sure to specify:
 
 ### Creating CDX from WARCs
 
-If you have warc files without cdxs, the following steps can be taken to create the indexs
+If you have warc files without cdxs, the following steps can be taken to create the indexs.
 
-cdx indexs are a plain text file sorted format for the contents of one or more WARC/ARC files.
+cdx indexs are sorted plain text files indexing the contents of archival records in one or more WARC/ARC files.
+
+(The cdx_writer tool creates SURT ordered keys by default)
 
 pywb does not currently generate indexs automatically, but this may be added in the future.
 
 For production purposes, it is recommended that the cdx indexs be generated ahead of time.
+
 
 ** Note: these recommendations are subject to change as the external libraries are being cleaned up **
 
@@ -154,7 +156,7 @@ The directions are for running in a shell:
 
 3. Copy **cdx_writer.py** from `CDX_Writer` into **warctools/hanzo** in `warctools`
 
-4. Ensure sort order set to byte-order `export LC_ALL=C`
+4. Ensure sort order set to byte-order `export LC_ALL=C` to ensure proper sorting.
 
 5. From the directory of the warc(s), run `<FULL PATH>/warctools/hanzo/cdx_writer mypath/warcs/mywarc.gz | sort > mypath/cdx/mywarc.cdx` 
 
@@ -180,11 +182,16 @@ The directions are for running in a shell:
    In the yaml config, set `index_paths` to point to `mypath/merged_cdx/merged_1.cdx`
 
 
+### Additional Documentation
+
+* For additional/up-to-date configuration details, consult the current [config.yaml](config.yaml)
+
+* The [wiki](./wiki/) will have additional technical documentation about various aspects of pywb
+
+### Contributions
+
+You are encouraged to fork and contribute to this project to improve web archiving replay
+
+Please take a look at list of current [issues](./issues) and feel free to open new ones
 
 
-
-  [1]: https://archive.org/web/
-  [2]: http://localhost:8080/pywb/example.com
-  [3]: http://localhost:8080/pywb/*/example.com
-  [4]: http://localhost:8080/pywb/iana.org
-  [5]: http://localhost:8080/pywb/*/iana.org

@@ -1,11 +1,17 @@
 <body>
-  <b>{{ cdx_lines | length  }} captures of {{ url }}</b>
-  <table id="captures">
-  {% for cdx in cdx_lines %}
-  <tr>
-    <td><a href="{{ prefix}}{{ cdx.timestamp }}/{{ url }}">{{ cdx.timestamp }}</a></td>
-    <td><a href="https://archive.org/details/{{ cdx['filename'] }}">{{ cdx['filename'] }}</a></td>
-  </tr>
-  {% endfor %}
+  <h2>pywb Sample Calendar Results</h2>
+  <b>{{ cdx_lines | length }}</b> captures of <b>{{ url }}</b>
+  <table id="captures" style="border-spacing: 10px;">
+    <tr>
+      <th>Capture</th>
+      <th>Archive File</th>
+    </tr>
+    {% for cdx in cdx_lines %}
+    <tr style="{{ 'font-weight: bold' if cdx['mimetype'] != 'warc/revisit' else '' }}">
+      <td><a href="{{ prefix }}{{ cdx.timestamp }}/{{ url }}">{{ cdx['timestamp'] | format_ts('%a, %b %d %Y %H:%M:%S') }}</a></td>
+      <td>{{ cdx['filename'] }}</td>
+    </tr>
+    {% endfor %}
   </table>
+  <i><b>* Unique captures are bold.</b><br/>* Other captures are duplicates of a previous capture.</i>
 </body>
