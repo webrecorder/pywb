@@ -36,14 +36,3 @@ class J2QueryView:
         return wbrequestresponse.WbResponse.text_response(str(response), content_type = 'text/html')
 
 
-#=================================================================
-class DebugEchoView:
-    def __call__(self, wbrequest):
-        return wbrequestresponse.WbResponse.text_response(str(wbrequest.env))
-
-#=================================================================
-class DebugEchoView:
-    def __call__(self, wbrequest):
-        return wbrequestresponse.WbResponse.text_response(str(wbrequest))
-
-

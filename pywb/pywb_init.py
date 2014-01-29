@@ -1,7 +1,8 @@
 import archiveloader
 import views
+import handlers
 import indexreader
-import replay
+import replay_views
 import replay_resolvers
 import cdxserve
 from archivalrouter import ArchivalRequestRouter, Route
@@ -24,19 +25,23 @@ def pywb_config(head_insert = ''):
     prefixes = [replay_resolvers.PrefixResolver(test_dir)]
 
     # Create rewriting replay handler to rewrite records
-    replayer = replay.RewritingReplayHandler(resolvers = prefixes, archiveloader = aloader, headInsert = head_insert, buffer_response = True)
+    replayer = replay_views.RewritingReplayView(resolvers = prefixes, archiveloader = aloader, headInsert = head_insert, buffer_response = True)
 
     # Create Jinja2 based html query view
     html_view = views.J2QueryView('./ui/', 'query.html')
 
     # WB handler which uses the index reader, replayer, and html_view
-    wb_handler = replay.WBHandler(indexs, replayer, html_view)
+    wb_handler = handlers.WBHandler(indexs, replayer, html_view)
+
+    # cdx handler
+    cdx_handler = handlers.CDXHandler(indexs)
 
     # Finally, create wb router
     return ArchivalRequestRouter(
         {
-            Route('echo_req', views.DebugEchoView()), # Debug ex: just echo parsed request
+            Route('echo_req', handlers.DebugEchoHandler()), # Debug ex: just echo parsed request
             Route('pywb',   wb_handler),
+            Route('cdx', cdx_handler),
         },
         # Specify hostnames that pywb will be running on
         # This will help catch occasionally missed rewrites that fall-through to the host

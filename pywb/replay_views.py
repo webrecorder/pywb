@@ -5,7 +5,6 @@ import copy
 import itertools
 
 import archiveloader
-import views
 from wbrequestresponse import WbResponse, StatusAndHeaders
 from wbarchivalurl import ArchivalUrl
 import utils
@@ -17,34 +16,9 @@ import regex_rewriters
 
 import wbexceptions
 
-#=================================================================
-class WBHandler:
-    def __init__(self, cdx_reader, replay, html_view = None):
-        self.cdx_reader = cdx_reader
-        self.replay = replay
-        self.html_view = html_view
-        self.text_view = views.TextQueryView()
-
-    def __call__(self, wbrequest):
-        with utils.PerfTimer(wbrequest.env.get('X_PERF'), 'query') as t:
-            cdx_lines = self.cdx_reader.load_for_request(wbrequest, parsed_cdx = True)
-
-        # new special modifier to always show cdx index
-        if wbrequest.wb_url.mod == 'cdx_':
-            return self.text_view(wbrequest, cdx_lines)
-
-        if (wbrequest.wb_url.type == wbrequest.wb_url.QUERY) or (wbrequest.wb_url.type == wbrequest.wb_url.URL_QUERY):
-            if not self.html_view:
-                return self.text_view(wbrequest, cdx_lines)
-            else:
-                return self.html_view(wbrequest, cdx_lines)
-
-        with utils.PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
-            return self.replay(wbrequest, cdx_lines, self.cdx_reader)
-
 
 #=================================================================
-class ReplayHandler(object):
+class ReplayView:
     def __init__(self, resolvers, archiveloader):
         self.resolvers = resolvers
         self.loader = archiveloader
@@ -238,10 +212,10 @@ class ReplayHandler(object):
 
 
 #=================================================================
-class RewritingReplayHandler(ReplayHandler):
+class RewritingReplayView(ReplayView):
 
     def __init__(self, resolvers, archiveloader, headInsert = None, headerRewriter = None, redir_to_exact = True, buffer_response = False):
-        ReplayHandler.__init__(self, resolvers, archiveloader)
+        ReplayView.__init__(self, resolvers, archiveloader)
         self.headInsert = headInsert
         if not headerRewriter:
             headerRewriter = HeaderRewriter()
@@ -264,7 +238,7 @@ class RewritingReplayHandler(ReplayHandler):
         urlrewriter = ArchivalUrlRewriter(wbrequest.wb_url, wbrequest.wb_prefix)
         wbrequest.urlrewriter = urlrewriter
 
-        response = ReplayHandler.__call__(self, wbrequest, index, cdx_reader)
+        response = ReplayView.__call__(self, wbrequest, index, cdx_reader)
 
         if response and response.cdx:
             self._checkRedir(wbrequest, response.cdx)
@@ -419,7 +393,7 @@ class RewritingReplayHandler(ReplayHandler):
 
 
     def doReplay(self, cdx, wbrequest, index, failedFiles):
-        wbresponse = ReplayHandler.doReplay(self, cdx, wbrequest, index, failedFiles)
+        wbresponse = ReplayView.doReplay(self, cdx, wbrequest, index, failedFiles)
 
         # Check for self redirect
         if wbresponse.status_headers.statusline.startswith('3'):
