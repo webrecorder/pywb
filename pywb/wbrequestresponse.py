@@ -1,4 +1,4 @@
-from wbarchivalurl import ArchivalUrl
+from wburl import WbUrl
 import utils
 
 import pprint
@@ -54,19 +54,19 @@ class WbRequest:
 
 
     @staticmethod
-    def makeAbsPrefix(env, rel_prefix):
+    def make_abs_prefix(env, rel_prefix):
         try:
             return env['wsgi.url_scheme'] + '://' + env['HTTP_HOST'] + rel_prefix
         except KeyError:
             return rel_prefix
 
 
-    def __init__(self, env, request_uri, wb_prefix, wb_url, coll, use_abs_prefix = False, archivalurl_class = ArchivalUrl):
+    def __init__(self, env, request_uri, wb_prefix, wb_url, coll, use_abs_prefix = False, archivalurl_class = WbUrl):
         self.env = env
 
         self.request_uri = request_uri if request_uri else env.get('REL_REQUEST_URI')
 
-        self.wb_prefix = wb_prefix if not use_abs_prefix else WbRequest.makeAbsPrefix(env, wb_prefix)
+        self.wb_prefix = wb_prefix if not use_abs_prefix else WbRequest.make_abs_prefix(env, wb_prefix)
 
         self.wb_url = archivalurl_class(wb_url)
 
@@ -76,9 +76,9 @@ class WbRequest:
 
         self.is_ajax = self._is_ajax()
 
-        self.queryFilter = []
+        self.query_filter = []
 
-        self.customParams = {}
+        self.custom_params = {}
 
         # PERF
         env['X_PERF'] = {}
@@ -165,16 +165,16 @@ class StatusAndHeaders:
         self.headers = headers
         self.protocol = protocol
 
-    def getHeader(self, name):
-        nameLower = name.lower()
+    def get_header(self, name):
+        name_lower = name.lower()
         for value in self.headers:
-            if (value[0].lower() == nameLower):
+            if (value[0].lower() == name_lower):
                 return value[1]
 
     def remove_header(self, name):
-        nameLower = name.lower()
+        name_lower = name.lower()
         for x in xrange(len(self.headers) - 1, -1, -1):
-            if self.headers[x][0].lower() == nameLower:
+            if self.headers[x][0].lower() == name_lower:
                 del self.headers[x]
                 break
 

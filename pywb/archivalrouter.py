@@ -2,14 +2,14 @@ import urlparse
 import re
 
 from wbrequestresponse import WbRequest, WbResponse
-from url_rewriter import ArchivalUrlRewriter
-from wbarchivalurl import ArchivalUrl
+from url_rewriter import UrlRewriter
+from wburl import WbUrl
 
 #=================================================================
 # ArchivalRequestRouter -- route WB requests in archival mode
 #=================================================================
 class ArchivalRequestRouter:
-    def __init__(self, handlers, hostpaths = None, abs_path = True, archivalurl_class = ArchivalUrl):
+    def __init__(self, handlers, hostpaths = None, abs_path = True, archivalurl_class = WbUrl):
         self.handlers = handlers
         self.fallback = ReferRedirect(hostpaths)
         self.abs_path = abs_path
@@ -46,7 +46,7 @@ class Route:
         self.coll_group = coll_group
 
 
-    def __call__(self, env, useAbsPrefix, archivalurl_class):
+    def __call__(self, env, use_abs_prefix, archivalurl_class):
         request_uri =  env['REL_REQUEST_URI']
         matcher = self.regex.match(request_uri[1:])
         if not matcher:
@@ -68,19 +68,19 @@ class Route:
                               coll = coll,
                               wb_url = wb_url,
                               wb_prefix = wb_prefix,
-                              use_abs_prefix = useAbsPrefix,
+                              use_abs_prefix = use_abs_prefix,
                               archivalurl_class = archivalurl_class)
 
 
         # Allow for setup of additional filters
-        self._addFilters(wbrequest, matcher)
+        self._add_filters(wbrequest, matcher)
 
-        return self._handleRequest(wbrequest)
+        return self._handle_request(wbrequest)
 
-    def _addFilters(self, wbrequest, matcher):
+    def _add_filters(self, wbrequest, matcher):
         pass
 
-    def _handleRequest(self, wbrequest):
+    def _handle_request(self, wbrequest):
         return self.handler(wbrequest)
 
 
@@ -90,10 +90,10 @@ class Route:
 class ReferRedirect:
 
     """
-    >>> ReferRedirect('http://localhost:8080/').matchPrefixs
+    >>> ReferRedirect('http://localhost:8080/').match_prefixs
     ['http://localhost:8080/']
 
-    >>> ReferRedirect(['http://example:9090/']).matchPrefixs
+    >>> ReferRedirect(['http://example:9090/']).match_prefixs
     ['http://example:9090/']
 
     >>> test_redir('http://localhost:8080/', '/other.html', 'http://localhost:8080/coll/20131010/http://example.com/path/page.html')
@@ -118,18 +118,18 @@ class ReferRedirect:
 
     """
 
-    def __init__(self, matchPrefixs):
-        if isinstance(matchPrefixs, list):
-            self.matchPrefixs = matchPrefixs
+    def __init__(self, match_prefixs):
+        if isinstance(match_prefixs, list):
+            self.match_prefixs = match_prefixs
         else:
-            self.matchPrefixs = [matchPrefixs]
+            self.match_prefixs = [match_prefixs]
 
 
     def __call__(self, wbrequest):
         if wbrequest.referrer is None:
             return None
 
-        if not any (wbrequest.referrer.startswith(i) for i in self.matchPrefixs):
+        if not any (wbrequest.referrer.startswith(i) for i in self.match_prefixs):
             return None
 
         try:
@@ -145,7 +145,7 @@ class ReferRedirect:
 
             # No match on any exception
             try:
-                rewriter = ArchivalUrlRewriter('/' + ref_path[1], script_name + '/' + ref_path[0])
+                rewriter = UrlRewriter('/' + ref_path[1], script_name + '/' + ref_path[0])
             except Exception:
                 return None
 
@@ -167,16 +167,16 @@ class ReferRedirect:
 import utils
 if __name__ == "__main__" or utils.enable_doctests():
 
-    def test_redir(matchHost, request_uri, referrer, script_name = ''):
+    def test_redir(match_host, request_uri, referrer, script_name = ''):
         env = {'REL_REQUEST_URI': request_uri, 'HTTP_REFERER': referrer, 'SCRIPT_NAME': script_name}
 
-        redir = ReferRedirect(matchHost)
+        redir = ReferRedirect(match_host)
         req = WbRequest.from_uri(request_uri, env)
         rep = redir(req)
         if not rep:
             return False
 
-        return rep.status_headers.getHeader('Location')
+        return rep.status_headers.get_header('Location')
 
 
     import doctest

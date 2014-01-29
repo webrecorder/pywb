@@ -2,14 +2,14 @@ from wbrequestresponse import StatusAndHeaders
 
 #=================================================================
 class RewrittenStatusAndHeaders:
-    def __init__(self, statusline, headers, removedHeaderDict, textType, charset):
+    def __init__(self, statusline, headers, removed_header_dict, text_type, charset):
         self.status_headers = StatusAndHeaders(statusline, headers)
-        self.removedHeaderDict = removedHeaderDict
-        self.textType = textType
+        self.removed_header_dict = removed_header_dict
+        self.text_type = text_type
         self.charset = charset
 
-    def containsRemovedHeader(self, name, value):
-        return self.removedHeaderDict.get(name) == value
+    def contains_removed_header(self, name, value):
+        return self.removed_header_dict.get(name) == value
 
 
 #=================================================================
@@ -17,30 +17,30 @@ class HeaderRewriter:
     """
     # Text with charset
     >>> test_rewrite([('Date', 'Fri, 03 Jan 2014 03:03:21 GMT'), ('Content-Length', '5'), ('Content-Type', 'text/html;charset=UTF-8')])
-    {'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('X-Archive-Orig-Date', 'Fri, 03 Jan 2014 03:03:21 GMT'),
+    {'text_type': 'html', 'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('X-Archive-Orig-Date', 'Fri, 03 Jan 2014 03:03:21 GMT'),
       ('X-Archive-Orig-Content-Length', '5'),
-      ('Content-Type', 'text/html;charset=UTF-8')]), 'charset': 'utf-8', 'textType': 'html', 'removedHeaderDict': {}}
+      ('Content-Type', 'text/html;charset=UTF-8')]), 'removed_header_dict': {}, 'charset': 'utf-8'}
 
     # Redirect
     >>> test_rewrite([('Connection', 'close'), ('Location', '/other.html')], '302 Redirect')
-    {'status_headers': StatusAndHeaders(protocol = '', statusline = '302 Redirect', headers = [ ('X-Archive-Orig-Connection', 'close'),
-      ('Location', '/web/20131226101010/http://example.com/other.html')]), 'charset': None, 'textType': None, 'removedHeaderDict': {}}
+    {'text_type': None, 'status_headers': StatusAndHeaders(protocol = '', statusline = '302 Redirect', headers = [ ('X-Archive-Orig-Connection', 'close'),
+      ('Location', '/web/20131226101010/http://example.com/other.html')]), 'removed_header_dict': {}, 'charset': None}
 
     # gzip
     >>> test_rewrite([('Content-Length', '199999'), ('Content-Type', 'text/javascript'), ('Content-Encoding', 'gzip'), ('Transfer-Encoding', 'chunked')])
-    {'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('X-Archive-Orig-Content-Length', '199999'),
-      ('Content-Type', 'text/javascript')]), 'charset': None, 'textType': 'js', 'removedHeaderDict': {'transfer-encoding': 'chunked', 'content-encoding': 'gzip'}}
+    {'text_type': 'js', 'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('X-Archive-Orig-Content-Length', '199999'),
+      ('Content-Type', 'text/javascript')]), 'removed_header_dict': {'transfer-encoding': 'chunked', 'content-encoding': 'gzip'}, 'charset': None}
 
     # Binary
     >>> test_rewrite([('Content-Length', '200000'), ('Content-Type', 'image/png'), ('Cookie', 'blah'), ('Content-Encoding', 'gzip'), ('Transfer-Encoding', 'chunked')])
-    {'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('Content-Length', '200000'),
+    {'text_type': None, 'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('Content-Length', '200000'),
       ('Content-Type', 'image/png'),
       ('X-Archive-Orig-Cookie', 'blah'),
-      ('Content-Encoding', 'gzip')]), 'charset': None, 'textType': None, 'removedHeaderDict': {'transfer-encoding': 'chunked'}}
+      ('Content-Encoding', 'gzip')]), 'removed_header_dict': {'transfer-encoding': 'chunked'}, 'charset': None}
 
     Removing Transfer-Encoding always, Was:
       ('Content-Encoding', 'gzip'),
-      ('Transfer-Encoding', 'chunked')]), 'charset': None, 'textType': None, 'removedHeaderDict': {}}
+      ('Transfer-Encoding', 'chunked')]), 'charset': None, 'text_type': None, 'removed_header_dict': {}}
 
     """
 
@@ -63,64 +63,64 @@ class HeaderRewriter:
 
     PROXY_NO_REWRITE_HEADERS = ['content-length']
 
-    def __init__(self, headerPrefix = 'X-Archive-Orig-'):
-        self.headerPrefix = headerPrefix
+    def __init__(self, header_prefix = 'X-Archive-Orig-'):
+        self.header_prefix = header_prefix
 
     def rewrite(self, status_headers, urlrewriter):
-        contentType = status_headers.getHeader('Content-Type')
-        textType = None
+        content_type = status_headers.get_header('Content-Type')
+        text_type = None
         charset = None
-        stripEncoding = False
+        strip_encoding = False
 
-        if contentType:
-            textType = self._extractTextType(contentType)
-            if textType:
-                charset = self._extractCharSet(contentType)
-                stripEncoding = True
+        if content_type:
+            text_type = self._extract_text_type(content_type)
+            if text_type:
+                charset = self._extract_char_set(content_type)
+                strip_encoding = True
 
-        (newHeaders, removedHeaderDict) = self._rewriteHeaders(status_headers.headers, urlrewriter, stripEncoding)
+        (new_headers, removed_header_dict) = self._rewrite_headers(status_headers.headers, urlrewriter, strip_encoding)
 
-        return RewrittenStatusAndHeaders(status_headers.statusline, newHeaders, removedHeaderDict, textType, charset)
+        return RewrittenStatusAndHeaders(status_headers.statusline, new_headers, removed_header_dict, text_type, charset)
 
 
-    def _extractTextType(self, contentType):
+    def _extract_text_type(self, content_type):
         for ctype, mimelist in self.REWRITE_TYPES.iteritems():
-            if any ((mime in contentType) for mime in mimelist):
+            if any ((mime in content_type) for mime in mimelist):
                 return ctype
 
         return None
 
-    def _extractCharSet(self, contentType):
+    def _extract_char_set(self, content_type):
         CHARSET_TOKEN = 'charset='
-        idx = contentType.find(CHARSET_TOKEN)
+        idx = content_type.find(CHARSET_TOKEN)
         if idx < 0:
             return None
 
-        return contentType[idx + len(CHARSET_TOKEN):].lower()
+        return content_type[idx + len(CHARSET_TOKEN):].lower()
 
-    def _rewriteHeaders(self, headers, urlrewriter, contentRewritten = False):
-        newHeaders = []
-        removedHeaderDict = {}
+    def _rewrite_headers(self, headers, urlrewriter, content_rewritten = False):
+        new_headers = []
+        removed_header_dict = {}
 
         for (name, value) in headers:
             lowername = name.lower()
             if lowername in self.PROXY_HEADERS:
-                newHeaders.append((name, value))
+                new_headers.append((name, value))
             elif lowername in self.URL_REWRITE_HEADERS:
-                newHeaders.append((name, urlrewriter.rewrite(value)))
+                new_headers.append((name, urlrewriter.rewrite(value)))
             elif lowername in self.ENCODING_HEADERS:
-                if contentRewritten:
-                    removedHeaderDict[lowername] = value
+                if content_rewritten:
+                    removed_header_dict[lowername] = value
                 else:
-                    newHeaders.append((name, value))
+                    new_headers.append((name, value))
             elif lowername in self.REMOVE_HEADERS:
-                    removedHeaderDict[lowername] = value
-            elif lowername in self.PROXY_NO_REWRITE_HEADERS and not contentRewritten:
-                newHeaders.append((name, value))
+                    removed_header_dict[lowername] = value
+            elif lowername in self.PROXY_NO_REWRITE_HEADERS and not content_rewritten:
+                new_headers.append((name, value))
             else:
-                newHeaders.append((self.headerPrefix + name, value))
+                new_headers.append((self.header_prefix + name, value))
 
-        return (newHeaders, removedHeaderDict)
+        return (new_headers, removed_header_dict)
 
 import utils
 if __name__ == "__main__" or utils.enable_doctests():
@@ -128,7 +128,7 @@ if __name__ == "__main__" or utils.enable_doctests():
     import pprint
     import url_rewriter
 
-    urlrewriter = url_rewriter.ArchivalUrlRewriter('/20131226101010/http://example.com/some/path/index.html', '/web/')
+    urlrewriter = url_rewriter.UrlRewriter('/20131226101010/http://example.com/some/path/index.html', '/web/')
 
     headerrewriter = HeaderRewriter()
 

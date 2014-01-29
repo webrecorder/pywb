@@ -6,8 +6,6 @@ import wbrequestresponse
 import surt
 from collections import OrderedDict
 
-from wbarchivalurl import ArchivalUrl
-
 import binsearch
 import cdxserve
 import logging
@@ -22,11 +20,11 @@ class IndexReader:
         params = self.get_query_params(wburl)
 
         # add any custom filter from the request
-        if wbrequest.queryFilter:
-            params['filter'] = wbrequest.queryFilter
+        if wbrequest.query_filter:
+            params['filter'] = wbrequest.query_filter
 
-        if wbrequest.customParams:
-            params.update(wbrequest.customParams)
+        if wbrequest.custom_params:
+            params.update(wbrequest.custom_params)
 
         cdxlines = self.load_cdx(wburl.url, params, parsed_cdx)
 
@@ -133,9 +131,9 @@ class RemoteCDXServer(IndexReader):
      ('length', '1792')]
     """
 
-    def __init__(self, serverUrl, cookie = None):
-        self.serverUrl = serverUrl
-        self.authCookie = cookie
+    def __init__(self, server_url, cookie = None):
+        self.server_url = server_url
+        self.auth_cookie = cookie
 
     def load_cdx(self, url, params = {}, parsed_cdx = True, **kwvalues):
         #url is required, must be passed explicitly!
@@ -145,10 +143,10 @@ class RemoteCDXServer(IndexReader):
         urlparams = urllib.urlencode(params, True)
 
         try:
-            request = urllib2.Request(self.serverUrl, urlparams)
+            request = urllib2.Request(self.server_url, urlparams)
 
-            if self.authCookie:
-                request.add_header('Cookie', self.authCookie)
+            if self.auth_cookie:
+                request.add_header('Cookie', self.auth_cookie)
 
             response = urllib2.urlopen(request)
         except urllib2.HTTPError, e:
@@ -168,7 +166,7 @@ class RemoteCDXServer(IndexReader):
     # with lower values if there are too many captures. Ideally, should be around 10-20
     # The replayClosest is the max number of cdx lines, so max number of retry attempts that WB will make
 
-    def get_query_params(self, wburl, limit = '150000', collapseTime = '10', replayClosest = '4000'):
+    def get_query_params(self, wburl, limit = '150000', collapse_time = '10', replay_closest = '4000'):
         return {
 
             wburl.QUERY:

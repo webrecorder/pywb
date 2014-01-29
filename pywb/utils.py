@@ -36,19 +36,19 @@ class HMACCookieMaker:
         self.name = name
 
 
-    def __call__(self, duration, extraId = ''):
+    def __call__(self, duration, extra_id = ''):
         expire = str(long(time.time() + duration))
 
-        if extraId:
-            msg = extraId + '-' + expire
+        if extra_id:
+            msg = extra_id + '-' + expire
         else:
             msg = expire
 
         hmacdigest = hmac.new(self.key, msg)
         hexdigest = hmacdigest.hexdigest()
 
-        if extraId:
-            cookie = '{0}-{1}={2}-{3}'.format(self.name, extraId, expire, hexdigest)
+        if extra_id:
+            cookie = '{0}-{1}={2}-{3}'.format(self.name, extra_id, expire, hexdigest)
         else:
             cookie = '{0}={1}-{2}'.format(self.name, expire, hexdigest)
 

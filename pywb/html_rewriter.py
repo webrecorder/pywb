@@ -5,13 +5,13 @@ import sys
 import re
 
 from HTMLParser import HTMLParser
-from url_rewriter import ArchivalUrlRewriter
+from url_rewriter import UrlRewriter
 from regex_rewriters import JSRewriter, CSSRewriter
 
 #=================================================================
-# WBHtml --html parser for custom rewriting, also handlers for script and css
+# HTMLRewriter -- html parser for custom rewriting, also handlers for script and css
 #=================================================================
-class WBHtml(HTMLParser):
+class HTMLRewriter(HTMLParser):
     r"""
     >>> parse('<HTML><A Href="page.html">Text</a></hTmL>')
     <HTML><a href="/web/20131226101010/http://example.com/some/path/page.html">Text</a></html>
@@ -72,13 +72,13 @@ class WBHtml(HTMLParser):
     <style>@import url(/web/20131226101010/http://example.com/some/path/styles.css)</style>
 
     # Head Insertion
-    >>> parse('<html><head><script src="other.js"></script></head><body>Test</body></html>', headInsert = '<script src="cool.js"></script>')
+    >>> parse('<html><head><script src="other.js"></script></head><body>Test</body></html>', head_insert = '<script src="cool.js"></script>')
     <html><head><script src="cool.js"></script><script src="/web/20131226101010js_/http://example.com/some/path/other.js"></script></head><body>Test</body></html>
 
-    >>> parse('<body><div>SomeTest</div>', headInsert = '/* Insert */')
+    >>> parse('<body><div>SomeTest</div>', head_insert = '/* Insert */')
     /* Insert */<body><div>SomeTest</div>
 
-    >>> parse('<link href="abc.txt"><div>SomeTest</div>', headInsert = '<script>load_stuff();</script>')
+    >>> parse('<link href="abc.txt"><div>SomeTest</div>', head_insert = '<script>load_stuff();</script>')
     <link href="/web/20131226101010oe_/http://example.com/some/path/abc.txt"><script>load_stuff();</script><div>SomeTest</div>
 
     """
@@ -125,128 +125,128 @@ class WBHtml(HTMLParser):
             self.buff += string
 
 
-    def __init__(self, url_rewriter, outstream = None, headInsert = None, jsRewriterClass = JSRewriter, cssRewriterClass = CSSRewriter):
+    def __init__(self, url_rewriter, outstream = None, head_insert = None, js_rewriter_class = JSRewriter, css_rewriter_class = CSSRewriter):
         HTMLParser.__init__(self)
 
         self.url_rewriter = url_rewriter
-        self._wbParseContext = None
-        self.out = outstream if outstream else WBHtml.AccumBuff()
+        self._wb_parse_context = None
+        self.out = outstream if outstream else self.AccumBuff()
 
-        self.jsRewriter = jsRewriterClass(url_rewriter)
-        self.cssRewriter = cssRewriterClass(url_rewriter)
+        self.js_rewriter = js_rewriter_class(url_rewriter)
+        self.css_rewriter = css_rewriter_class(url_rewriter)
 
-        self.headInsert = headInsert
+        self.head_insert = head_insert
 
 
     # ===========================
     META_REFRESH_REGEX = re.compile('^[\\d.]+\\s*;\\s*url\\s*=\\s*(.+?)\\s*$', re.IGNORECASE | re.MULTILINE)
 
-    def _rewriteMetaRefresh(self, metaRefresh):
-        if not metaRefresh:
+    def _rewrite_meta_refresh(self, meta_refresh):
+        if not meta_refresh:
             return None
 
-        m = WBHtml.META_REFRESH_REGEX.match(metaRefresh)
+        m = self.META_REFRESH_REGEX.match(meta_refresh)
         if not m:
-            return metaRefresh
+            return meta_refresh
 
         try:
-            metaRefresh = metaRefresh[:m.start(1)] + self._rewriteURL(m.group(1)) + metaRefresh[m.end(1):]
+            meta_refresh = meta_refresh[:m.start(1)] + self._rewrite_url(m.group(1)) + meta_refresh[m.end(1):]
         except Exception:
             pass
 
-        return metaRefresh
+        return meta_refresh
     # ===========================
 
-    def _rewriteURL(self, value, mod = None):
+    def _rewrite_url(self, value, mod = None):
         return self.url_rewriter.rewrite(value, mod) if value else None
 
 
-    def _rewriteCSS(self, cssContent):
-        return self.cssRewriter.rewrite(cssContent) if cssContent else None
+    def _rewrite_css(self, css_content):
+        return self.css_rewriter.rewrite(css_content) if css_content else None
 
-    def _rewriteScript(self, scriptContent):
-        return self.jsRewriter.rewrite(scriptContent) if scriptContent else None
+    def _rewrite_script(self, script_content):
+        return self.js_rewriter.rewrite(script_content) if script_content else None
 
-    def hasAttr(self, tagAttrs, attr):
+    def has_attr(self, tag_attrs, attr):
         name, value = attr
-        for attrName, attrValue in tagAttrs:
-            if attrName == name:
-                return value.lower() == attrValue.lower()
+        for attr_name, attr_value in tag_attrs:
+            if attr_name == name:
+                return value.lower() == attr_value.lower()
         return False
 
-    def rewriteTagAttrs(self, tag, tagAttrs, isStartEnd):
+    def rewrite_tag_attrs(self, tag, tag_attrs, is_start_end):
         # special case: script or style parse context
-        if (tag in WBHtml.STATE_TAGS) and (self._wbParseContext == None):
-            self._wbParseContext = tag
+        if (tag in self.STATE_TAGS) and (self._wb_parse_context == None):
+            self._wb_parse_context = tag
 
         # special case: head insertion, non-head tags
-        elif (self.headInsert and (self._wbParseContext == None) and (tag not in WBHtml.HEAD_TAGS)):
-            self.out.write(self.headInsert)
-            self.headInsert = None
+        elif (self.head_insert and (self._wb_parse_context == None) and (tag not in self.HEAD_TAGS)):
+            self.out.write(self.head_insert)
+            self.head_insert = None
 
         # attr rewriting
-        handler = WBHtml.REWRITE_TAGS.get(tag)
+        handler = self.REWRITE_TAGS.get(tag)
         if not handler:
-            handler = WBHtml.REWRITE_TAGS.get('')
+            handler = self.REWRITE_TAGS.get('')
 
         if not handler:
             return False
 
         self.out.write('<' + tag)
 
-        for attr in tagAttrs:
-            attrName, attrValue = attr
+        for attr in tag_attrs:
+            attr_name, attr_value = attr
 
             # special case: inline JS/event handler
-            if (attrValue and attrValue.startswith('javascript:')) or attrName.startswith('on'):
-                attrValue = self._rewriteScript(attrValue)
+            if (attr_value and attr_value.startswith('javascript:')) or attr_name.startswith('on'):
+                attr_value = self._rewrite_script(attr_value)
 
             # special case: inline CSS/style attribute
-            elif attrName == 'style':
-                attrValue = self._rewriteCSS(attrValue)
+            elif attr_name == 'style':
+                attr_value = self._rewrite_css(attr_value)
 
             # special case: meta tag
-            elif (tag == 'meta') and (attrName == 'content'):
-                if self.hasAttr(tagAttrs, ('http-equiv', 'refresh')):
-                    attrValue = self._rewriteMetaRefresh(attrValue)
+            elif (tag == 'meta') and (attr_name == 'content'):
+                if self.has_attr(tag_attrs, ('http-equiv', 'refresh')):
+                    attr_value = self._rewrite_meta_refresh(attr_value)
 
             else:
                 # special case: base tag
-                if (tag == 'base') and (attrName == 'href') and attrValue:
-                    self.url_rewriter.setBaseUrl(attrValue)
+                if (tag == 'base') and (attr_name == 'href') and attr_value:
+                    self.url_rewriter.set_base_url(attr_value)
 
-                rwMod = handler.get(attrName)
-                if rwMod is not None:
-                    attrValue = self._rewriteURL(attrValue, rwMod)
+                rw_mod = handler.get(attr_name)
+                if rw_mod is not None:
+                    attr_value = self._rewrite_url(attr_value, rw_mod)
 
             # parser doesn't differentiate between 'attr=""' and just 'attr'
             # 'attr=""' is more common, so use that form
-            if attrValue:
-                self.out.write(' ' + attrName + '="' + attrValue + '"')
+            if attr_value:
+                self.out.write(' ' + attr_name + '="' + attr_value + '"')
             else:
-                self.out.write(' ' + attrName + '=""')
+                self.out.write(' ' + attr_name + '=""')
 
-        self.out.write('/>' if isStartEnd else '>')
+        self.out.write('/>' if is_start_end else '>')
 
         # special case: head tag
-        if (self.headInsert) and (self._wbParseContext == None) and (tag == 'head'):
-            self.out.write(self.headInsert)
-            self.headInsert = None
+        if (self.head_insert) and (self._wb_parse_context == None) and (tag == 'head'):
+            self.out.write(self.head_insert)
+            self.head_insert = None
 
         return True
 
 
-    def parseData(self, data):
-        if self._wbParseContext == 'script':
-            data = self._rewriteScript(data)
-        elif self._wbParseContext == 'style':
-            data = self._rewriteCSS(data)
+    def parse_data(self, data):
+        if self._wb_parse_context == 'script':
+            data = self._rewrite_script(data)
+        elif self._wb_parse_context == 'style':
+            data = self._rewrite_css(data)
 
         self.out.write(data)
 
     def rewrite(self, string):
         if not self.out:
-            self.out = WBHtml.AccumBuff()
+            self.out = self.AccumBuff()
 
         self.feed(string)
 
@@ -258,9 +258,9 @@ class WBHtml(HTMLParser):
 
     # HTMLParser overrides below
     def close(self):
-        if (self._wbParseContext):
-            result = self.rewrite('</' + self._wbParseContext + '>')
-            self._wbParseContext = None
+        if (self._wb_parse_context):
+            result = self.rewrite('</' + self._wb_parse_context + '>')
+            self._wb_parse_context = None
         else:
             result = ''
 
@@ -268,21 +268,21 @@ class WBHtml(HTMLParser):
         return result
 
     def handle_starttag(self, tag, attrs):
-        if not self.rewriteTagAttrs(tag, attrs, False):
+        if not self.rewrite_tag_attrs(tag, attrs, False):
             self.out.write(self.get_starttag_text())
 
     def handle_startendtag(self, tag, attrs):
-        if not self.rewriteTagAttrs(tag, attrs, True):
+        if not self.rewrite_tag_attrs(tag, attrs, True):
             self.out.write(self.get_starttag_text())
 
     def handle_endtag(self, tag):
-        if (tag == self._wbParseContext):
-            self._wbParseContext = None
+        if (tag == self._wb_parse_context):
+            self._wb_parse_context = None
 
         self.out.write('</' + tag + '>')
 
     def handle_data(self, data):
-        self.parseData(data)
+        self.parse_data(data)
 
     def handle_entityref(self, data):
         self.out.write('&' + data + ';')
@@ -292,7 +292,7 @@ class WBHtml(HTMLParser):
 
     def handle_comment(self, data):
         self.out.write('<!--')
-        self.parseData(data)
+        self.parse_data(data)
         self.out.write('-->')
 
     def handle_decl(self, data):
@@ -303,24 +303,17 @@ class WBHtml(HTMLParser):
 
     def unknown_decl(self, data):
         self.out.write('<![')
-        self.parseData(data)
+        self.parse_data(data)
         self.out.write(']>')
 
 
-# instantiate the parser and fed it some HTML
-#parser = WBHtml()
-#instr = '<HTML X=\'a\' B=\'234\' some="other"><a href="Test"><BR/><head><title>Test</title></head>\n<body><h1>Parse me!</h1></body></HTML>'
-#print instr
-#print
-#parser.feed(instr)
-#print
 import utils
 if __name__ == "__main__" or utils.enable_doctests():
 
-    url_rewriter = ArchivalUrlRewriter('/20131226101010/http://example.com/some/path/index.html', '/web/')
+    url_rewriter = UrlRewriter('/20131226101010/http://example.com/some/path/index.html', '/web/')
 
-    def parse(data, headInsert = None):
-        parser = WBHtml(url_rewriter, headInsert = headInsert)
+    def parse(data, head_insert = None):
+        parser = HTMLRewriter(url_rewriter, head_insert = head_insert)
         print parser.rewrite(data) + parser.close()
 
     import doctest

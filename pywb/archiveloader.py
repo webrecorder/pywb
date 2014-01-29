@@ -10,21 +10,21 @@ from wbrequestresponse import StatusAndHeaders
 
 #=================================================================
 class HttpReader:
-    def __init__(self, hmac = None, hmacDuration = 30):
+    def __init__(self, hmac = None, hmac_duration = 30):
         self.hmac = hmac
-        self.hmacDuration = hmacDuration
+        self.hmac_duration = hmac_duration
 
     def load(self, url, offset, length):
         if length > 0:
-            rangeHeader = 'bytes={0}-{1}'.format(offset, offset + length - 1)
+            range_header = 'bytes={0}-{1}'.format(offset, offset + length - 1)
         else:
-            rangeHeader = 'bytes={0}-'.format(offset)
+            range_header = 'bytes={0}-'.format(offset)
 
         headers = {}
-        headers['Range'] = rangeHeader
+        headers['Range'] = range_header
 
         if self.hmac:
-            headers['Cookie'] = self.hmac(self.hmacDuration)
+            headers['Cookie'] = self.hmac(self.hmac_duration)
 
         request = urllib2.Request(url, headers = headers)
         return urllib2.urlopen(request)
@@ -50,7 +50,7 @@ WBArchiveRecord = collections.namedtuple('WBArchiveRecord', 'type, rec_headers, 
 
 class ArchiveLoader:
     """
-    >>> loadTestArchive('example.warc.gz', '333', '1043')
+    >>> load_test_archive('example.warc.gz', '333', '1043')
     (('warc', 'response'),
      StatusAndHeaders(protocol = 'WARC/1.0', statusline = '', headers = [ ('WARC-Type', 'response'),
       ('WARC-Record-ID', '<urn:uuid:6d058047-ede2-4a13-be79-90c17c631dd4>'),
@@ -74,7 +74,7 @@ class ArchiveLoader:
       ('Connection', 'close')]))
       
 
-    >>> loadTestArchive('example.warc.gz', '1864', '553')
+    >>> load_test_archive('example.warc.gz', '1864', '553')
     (('warc', 'revisit'),
      StatusAndHeaders(protocol = 'WARC/1.0', statusline = '', headers = [ ('WARC-Type', 'revisit'),
       ('WARC-Record-ID', '<urn:uuid:3619f5b0-d967-44be-8f24-762098d427c4>'),
@@ -114,7 +114,7 @@ class ArchiveLoader:
     }
 
     @staticmethod
-    def createDefaultLoaders():
+    def create_default_loaders():
         http = HttpReader()
         file = FileReader()
         return {
@@ -125,35 +125,35 @@ class ArchiveLoader:
                }
 
 
-    def __init__(self, loaders = {}, chunkSize = 8192):
-        self.loaders = loaders if loaders else ArchiveLoader.createDefaultLoaders()
-        self.chunkSize = chunkSize
+    def __init__(self, loaders = {}, chunk_size = 8192):
+        self.loaders = loaders if loaders else ArchiveLoader.create_default_loaders()
+        self.chunk_size = chunk_size
 
-        self.arcParser = ARCHeadersParser(ArchiveLoader.ARC_HEADERS)
-        self.warcParser = StatusAndHeadersParser(['WARC/1.0', 'WARC/0.17', 'WARC/0.18'])
-        self.httpParser = StatusAndHeadersParser(['HTTP/1.0', 'HTTP/1.1'])
+        self.arc_parser = ARCHeadersParser(ArchiveLoader.ARC_HEADERS)
+        self.warc_parser = StatusAndHeadersParser(['WARC/1.0', 'WARC/0.17', 'WARC/0.18'])
+        self.http_parser = StatusAndHeadersParser(['HTTP/1.0', 'HTTP/1.1'])
 
     def load(self, url, offset, length):
-        urlParts = urlparse.urlsplit(url)
+        url_parts = urlparse.urlsplit(url)
 
         try:
-            loader = self.loaders.get(urlParts.scheme)
+            loader = self.loaders.get(url_parts.scheme)
         except Exception:
             raise wbexceptions.UnknownLoaderProtocolException(url)
 
-        theFormat = None
+        the_format = None
 
         for ext, iformat in ArchiveLoader.FORMAT_MAP.iteritems():
             if url.endswith(ext):
-                theFormat = iformat
+                the_format = iformat
                 break
 
-        if theFormat is None:
+        if the_format is None:
             raise wbexceptions.UnknownArchiveFormatException(url)
 
-        (aFormat, isGzip) = theFormat
+        (a_format, is_gzip) = the_format
 
-        decomp = utils.create_decompressor() if isGzip else None
+        decomp = utils.create_decompressor() if is_gzip else None
 
         try:
             length = int(length)
@@ -163,17 +163,17 @@ class ArchiveLoader:
 
         raw = loader.load(url, long(offset), length)
 
-        stream = LineReader(raw, length, self.chunkSize, decomp)
+        stream = LineReader(raw, length, self.chunk_size, decomp)
 
-        if aFormat == 'arc':
-            rec_headers = self.arcParser.parse(stream)
-            recType = 'response'
-            empty = (rec_headers.getHeader('length') == 0)
+        if a_format == 'arc':
+            rec_headers = self.arc_parser.parse(stream)
+            rec_type = 'response'
+            empty = (rec_headers.get_header('length') == 0)
 
-        elif aFormat == 'warc':
-            rec_headers = self.warcParser.parse(stream)
-            recType = rec_headers.getHeader('WARC-Type')
-            empty = (rec_headers.getHeader('Content-Length') == '0')
+        elif a_format == 'warc':
+            rec_headers = self.warc_parser.parse(stream)
+            rec_type = rec_headers.get_header('WARC-Type')
+            empty = (rec_headers.get_header('Content-Length') == '0')
 
         # special case: empty w/arc record (hopefully a revisit)
         if empty:
@@ -181,21 +181,21 @@ class ArchiveLoader:
 
         # special case: warc records that are not expected to have http headers
         # attempt to add 200 status and content-type
-        elif recType == 'metadata' or recType == 'resource':
-            status_headers = StatusAndHeaders('200 OK', [('Content-Type', rec_headers.getHeader('Content-Type'))])
+        elif rec_type == 'metadata' or rec_type == 'resource':
+            status_headers = StatusAndHeaders('200 OK', [('Content-Type', rec_headers.get_header('Content-Type'))])
 
         # special case: http 0.9 response, no status or headers
-        #elif recType == 'response':
-        #    contentType = rec_headers.getHeader('Content-Type')
-        #    if contentType and (';version=0.9' in contentType):
+        #elif rec_type == 'response':
+        #    content_type = rec_headers.get_header('Content-Type')
+        #    if content_type and (';version=0.9' in content_type):
         #        status_headers = StatusAndHeaders('200 OK', [])
 
         # response record: parse HTTP status and headers!
         else:
-            #(statusline, http_headers) = self.parseHttpHeaders(stream)
-            status_headers = self.httpParser.parse(stream)
+            #(statusline, http_headers) = self.parse_http_headers(stream)
+            status_headers = self.http_parser.parse(stream)
 
-        return WBArchiveRecord((aFormat, recType), rec_headers, stream, status_headers)
+        return WBArchiveRecord((a_format, rec_type), rec_headers, stream, status_headers)
 
 
 #=================================================================
@@ -206,9 +206,9 @@ class StatusAndHeadersParser:
     def parse(self, stream):
         statusline = stream.readline().rstrip()
 
-        protocolStatus = utils.split_prefix(statusline, self.statuslist)
+        protocol_status = utils.split_prefix(statusline, self.statuslist)
 
-        if not protocolStatus:
+        if not protocol_status:
             raise wbexceptions.InvalidArchiveRecordException('Expected Status Line, Found: ' + statusline)
 
         headers = []
@@ -220,7 +220,7 @@ class StatusAndHeadersParser:
             headers.append(header)
             line = stream.readline().rstrip()
 
-        return StatusAndHeaders(statusline = protocolStatus[1].strip(), headers = headers, protocol = protocolStatus[0])
+        return StatusAndHeaders(statusline = protocol_status[1].strip(), headers = headers, protocol = protocol_status[0])
 
 #=================================================================
 class ARCHeadersParser:
@@ -247,25 +247,25 @@ class ARCHeadersParser:
 
 #=================================================================
 class LineReader:
-    def __init__(self, stream, maxLen = 0, chunkSize = 1024, decomp = None):
+    def __init__(self, stream, max_len = 0, chunk_size = 1024, decomp = None):
         self.stream = stream
-        self.chunkSize = chunkSize
+        self.chunk_size = chunk_size
         self.decomp = decomp
         self.buff = None
-        self.numRead = 0
-        self.maxLen = maxLen
+        self.num_read = 0
+        self.max_len = max_len
 
-    def _fillbuff(self, chunkSize = None):
-        if not chunkSize:
-            chunkSize = self.chunkSize
+    def _fillbuff(self, chunk_size = None):
+        if not chunk_size:
+            chunk_size = self.chunk_size
 
         if not self.buff or self.buff.pos >= self.buff.len:
-            toRead =  min(self.maxLen - self.numRead, self.chunkSize) if (self.maxLen > 0) else self.chunkSize
-            data = self.stream.read(toRead)
+            to_read =  min(self.max_len - self.num_read, self.chunk_size) if (self.max_len > 0) else self.chunk_size
+            data = self.stream.read(to_read)
             self._process_read(data)
 
     def _process_read(self, data):
-        self.numRead += len(data)
+        self.num_read += len(data)
 
         if self.decomp and data:
             data = self.decomp.decompress(data)
@@ -310,45 +310,45 @@ class ChunkedLineReader(LineReader):
     '123412'
     """
 
-    allChunksRead = False
-    notChunked = False
-    raiseChunkedDataExceptions = False # if False, we'll use best-guess fallback for parse errors
+    all_chunks_read = False
+    not_chunked = False
+    raise_chunked_data_exceptions = False # if False, we'll use best-guess fallback for parse errors
 
-    def _fillbuff(self, chunkSize = None):
-        if self.notChunked:
-            return LineReader._fillbuff(self, chunkSize)
+    def _fillbuff(self, chunk_size = None):
+        if self.not_chunked:
+            return LineReader._fillbuff(self, chunk_size)
 
-        if self.allChunksRead:
+        if self.all_chunks_read:
             return
 
         if not self.buff or self.buff.pos >= self.buff.len:
-            lengthHeader = self.stream.readline(64)
+            length_header = self.stream.readline(64)
             data = ''
 
             try:
                 # decode length header
                 try:
-                    chunkSize = int(lengthHeader.strip().split(';')[0], 16)
+                    chunk_size = int(length_header.strip().split(';')[0], 16)
                 except ValueError:
-                    raise ChunkedDataException("Couldn't decode length header '%s'" % lengthHeader)
+                    raise ChunkedDataException("Couldn't decode length header '%s'" % length_header)
 
-                if chunkSize:
+                if chunk_size:
                     # read chunk
-                    while len(data) < chunkSize:
-                        newData = self.stream.read(chunkSize - len(data))
+                    while len(data) < chunk_size:
+                        new_data = self.stream.read(chunk_size - len(data))
 
                         # if we unexpectedly run out of data, either raise an exception or just stop reading, assuming file was cut off
-                        if not newData:
-                            if self.raiseChunkedDataExceptions:
+                        if not new_data:
+                            if self.raise_chunked_data_exceptions:
                                 raise ChunkedDataException("Ran out of data before end of chunk")
                             else:
-                                chunkSize = len(data)
-                                self.allChunksRead = True
+                                chunk_size = len(data)
+                                self.all_chunks_read = True
 
-                        data += newData
+                        data += new_data
 
                     # if we successfully read a block without running out, it should end in \r\n
-                    if not self.allChunksRead:
+                    if not self.all_chunks_read:
                         clrf = self.stream.read(2)
                         if clrf != '\r\n':
                             raise ChunkedDataException("Chunk terminator not found.")
@@ -356,19 +356,19 @@ class ChunkedLineReader(LineReader):
                     if self.decomp:
                         data = self.decomp.decompress(data)
                 else:
-                    # chunkSize 0 indicates end of file
-                    self.allChunksRead = True
+                    # chunk_size 0 indicates end of file
+                    self.all_chunks_read = True
                     data = ''
 
                 self._process_read(data)
             except ChunkedDataException:
-                if self.raiseChunkedDataExceptions:
+                if self.raise_chunked_data_exceptions:
                     raise
                 # Can't parse the data as chunked.
                 # It's possible that non-chunked data is set with a Transfer-Encoding: chunked
                 # Treat this as non-chunk encoded from here on
-                self._process_read(lengthHeader+data)
-                self.notChunked = True
+                self._process_read(length_header + data)
+                self.not_chunked = True
 
 
 #=================================================================
@@ -379,7 +379,7 @@ if __name__ == "__main__" or utils.enable_doctests():
 
     testloader = ArchiveLoader()
 
-    def loadTestArchive(test_file, offset, length):
+    def load_test_archive(test_file, offset, length):
         path = os.path.dirname(os.path.realpath(__file__)) + '/../test/' + test_file
 
         archive = testloader.load(path, offset, length)

@@ -2,30 +2,30 @@ import re
 import sys
 import itertools
 
-from url_rewriter import ArchivalUrlRewriter
+from url_rewriter import UrlRewriter
 
 #=================================================================
 class RegexRewriter:
     """
     # Test https->http converter (other tests below in subclasses)
-    >>> RegexRewriter([(RegexRewriter.HTTPX_MATCH_STR, RegexRewriter.removeHttps, 0)]).rewrite('a = https://example.com; b = http://example.com; c = https://some-url/path/https://embedded.example.com')
+    >>> RegexRewriter([(RegexRewriter.HTTPX_MATCH_STR, RegexRewriter.remove_https, 0)]).rewrite('a = https://example.com; b = http://example.com; c = https://some-url/path/https://embedded.example.com')
     'a = http://example.com; b = http://example.com; c = http://some-url/path/http://embedded.example.com'
     """
 
     @staticmethod
-    def commentOut(string):
+    def comment_out(string):
         return '/*' + string + '*/'
 
     @staticmethod
-    def removeHttps(string):
+    def remove_https(string):
         return string.replace("https", "http")
 
     @staticmethod
-    def addPrefix(prefix):
+    def add_prefix(prefix):
         return lambda string: prefix + string
 
     @staticmethod
-    def archivalRewrite(rewriter):
+    def archival_rewrite(rewriter):
         return lambda x: rewriter.rewrite(x)
 
     @staticmethod
@@ -34,19 +34,19 @@ class RegexRewriter:
 
     HTTPX_MATCH_STR = 'https?:\\\\?/\\\\?/[A-Za-z0-9:_@.-]+'
 
-    DEFAULT_OP = addPrefix
+    DEFAULT_OP = add_prefix
 
 
     def __init__(self, rules):
-        #rules = self.createRules(httpPrefix)
+        #rules = self.create_rules(http_prefix)
 
         # Build regexstr, concatenating regex list
-        regexStr = '|'.join(['(' + rx + ')' for rx, op, count in rules])
+        regex_str = '|'.join(['(' + rx + ')' for rx, op, count in rules])
 
         # ensure it's not middle of a word, wrap in non-capture group
-        regexStr = '(?<!\w)(?:' + regexStr + ')'
+        regex_str = '(?<!\w)(?:' + regex_str + ')'
 
-        self.regex = re.compile(regexStr, re.M)
+        self.regex = re.compile(regex_str, re.M)
         self.rules = rules
 
     def filter(self, m):
@@ -63,7 +63,7 @@ class RegexRewriter:
         for _, op, count in self.rules:
             i += 1
 
-            fullM = i
+            full_m = i
             while count > 0:
                 i += 1
                 count -= 1
@@ -82,8 +82,8 @@ class RegexRewriter:
             result = op(m.group(i))
 
             # if extracting partial match
-            if i != fullM:
-                result = m.string[m.start(fullM):m.start(i)] + result + m.string[m.end(i):m.end(fullM)]
+            if i != full_m:
+                result = m.string[m.start(full_m):m.start(i)] + result + m.string[m.end(i):m.end(full_m)]
 
             return result
 
@@ -105,21 +105,21 @@ class JSRewriter(RegexRewriter):
     'document_domain = "anotherdomain.com"; window.document.WB_wombat_domain = "example.com"'
 
     # custom rules added
-    >>> test_js('window.location = "http://example.com/abc.html"; some_func(); ', [('some_func\(\).*', RegexRewriter.commentOut, 0)])
+    >>> test_js('window.location = "http://example.com/abc.html"; some_func(); ', [('some_func\(\).*', RegexRewriter.comment_out, 0)])
     'window.WB_wombat_location = "/web/20131010im_/http://example.com/abc.html"; /*some_func(); */'
 
     """
 
     def __init__(self, rewriter, extra = []):
-        rules = self._createRules(rewriter.getAbsUrl())
+        rules = self._create_rules(rewriter.get_abs_url())
         rules.extend(extra)
 
         RegexRewriter.__init__(self, rules)
 
 
-    def _createRules(self, httpPrefix):
+    def _create_rules(self, http_prefix):
         return [
-             (RegexRewriter.HTTPX_MATCH_STR, httpPrefix, 0),
+             (RegexRewriter.HTTPX_MATCH_STR, http_prefix, 0),
              ('location', 'WB_wombat_', 0),
              ('(?<=document\.)domain', 'WB_wombat_', 0),
         ]
@@ -143,7 +143,7 @@ class XMLRewriter(RegexRewriter):
     """
 
     def __init__(self, rewriter, extra = []):
-        rules = self._createRules(rewriter.getAbsUrl())
+        rules = self._create_rules(rewriter.get_abs_url())
 
         RegexRewriter.__init__(self, rules)
 
@@ -155,9 +155,9 @@ class XMLRewriter(RegexRewriter):
 
         return True
 
-    def _createRules(self, httpPrefix):
+    def _create_rules(self, http_prefix):
         return [
-             ('([A-Za-z:]+[\s=]+)?["\'\s]*(' + RegexRewriter.HTTPX_MATCH_STR + ')', httpPrefix, 2),
+             ('([A-Za-z:]+[\s=]+)?["\'\s]*(' + RegexRewriter.HTTPX_MATCH_STR + ')', http_prefix, 2),
         ]
 
 #=================================================================
@@ -211,20 +211,20 @@ class CSSRewriter(RegexRewriter):
     CSS_IMPORT_NO_URL_REGEX = "@import\\s+(?!url)\\(?\\s*['\"]?(?!url[\\s\\(])([\w.:/\\\\-]+)"
 
     def __init__(self, rewriter):
-        rules = self._createRules(rewriter)
+        rules = self._create_rules(rewriter)
 
         RegexRewriter.__init__(self, rules)
 
 
-    def _createRules(self, rewriter):
+    def _create_rules(self, rewriter):
         return [
-             (CSSRewriter.CSS_URL_REGEX, RegexRewriter.archivalRewrite(rewriter), 1),
-             (CSSRewriter.CSS_IMPORT_NO_URL_REGEX, RegexRewriter.archivalRewrite(rewriter), 1),
+             (CSSRewriter.CSS_URL_REGEX, RegexRewriter.archival_rewrite(rewriter), 1),
+             (CSSRewriter.CSS_IMPORT_NO_URL_REGEX, RegexRewriter.archival_rewrite(rewriter), 1),
         ]
 
 import utils
 if __name__ == "__main__" or utils.enable_doctests():
-    arcrw = ArchivalUrlRewriter('/20131010im_/http://example.com/', '/web/')
+    arcrw = UrlRewriter('/20131010im_/http://example.com/', '/web/')
 
     def test_js(string, extra = []):
         return JSRewriter(arcrw, extra).rewrite(string)

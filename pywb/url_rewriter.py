@@ -1,10 +1,10 @@
 import copy
 import urlparse
 
-from wbarchivalurl import ArchivalUrl
+from wburl import WbUrl
 
 
-class ArchivalUrlRewriter:
+class UrlRewriter:
     """
     >>> test_rewrite('other.html', '/20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
     'https://web.archive.org/web/20131010/http://example.com/path/other.html'
@@ -42,13 +42,13 @@ class ArchivalUrlRewriter:
     >>> test_rewrite('mailto:example@example.com', '/20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
     'mailto:example@example.com'
 
-    >>> ArchivalUrlRewriter('/19960708im_/http://domain.example.com/path.txt', '/abc/').getAbsUrl()
+    >>> UrlRewriter('/19960708im_/http://domain.example.com/path.txt', '/abc/').get_abs_url()
     '/abc/19960708im_/'
 
-    >>> ArchivalUrlRewriter('/2013id_/example.com/file/path/blah.html', '/123/').getTimestampUrl('20131024')
+    >>> UrlRewriter('/2013id_/example.com/file/path/blah.html', '/123/').get_timestamp_url('20131024')
     '/123/20131024id_/http://example.com/file/path/blah.html'
 
-    >>> ArchivalUrlRewriter.stripProtocol('https://example.com') == ArchivalUrlRewriter.stripProtocol('http://example.com')
+    >>> UrlRewriter.strip_protocol('https://example.com') == UrlRewriter.strip_protocol('http://example.com')
     True
     """
 
@@ -57,7 +57,7 @@ class ArchivalUrlRewriter:
     PROTOCOLS = ['http://', 'https://', '//', 'ftp://', 'mms://', 'rtsp://', 'wais://']
 
     def __init__(self, wburl, prefix):
-        self.wburl = wburl if isinstance(wburl, ArchivalUrl) else ArchivalUrl(wburl)
+        self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
         self.prefix = prefix
         self.archivalurl_class = self.wburl.__class__
 
@@ -66,12 +66,12 @@ class ArchivalUrlRewriter:
 
     def rewrite(self, url, mod = None):
         # if special protocol, no rewriting at all
-        if any (url.startswith(x) for x in ArchivalUrlRewriter.NO_REWRITE_URI_PREFIX):
+        if any (url.startswith(x) for x in self.NO_REWRITE_URI_PREFIX):
             return url
 
         wburl = self.wburl
 
-        isAbs = any (url.startswith(x) for x in ArchivalUrlRewriter.PROTOCOLS)
+        isAbs = any (url.startswith(x) for x in self.PROTOCOLS)
 
         # Optimized rewriter for
         # -rel urls that don't start with / and  don't contain ../ and no special mod
@@ -92,22 +92,22 @@ class ArchivalUrlRewriter:
 
         return finalUrl
 
-    def getAbsUrl(self, url = ''):
+    def get_abs_url(self, url = ''):
         return self.prefix + self.wburl.to_str(url=url)
 
-    def getTimestampUrl(self, timestamp, url = None):
+    def get_timestamp_url(self, timestamp, url = None):
         if url is None:
             url = self.wburl.url
 
         return self.prefix + self.wburl.to_str(timestamp=timestamp, url=url)
 
 
-    def setBaseUrl(self, newUrl):
+    def set_base_url(self, newUrl):
         self.wburl.url = newUrl
 
     @staticmethod
-    def stripProtocol(url):
-        for protocol in ArchivalUrlRewriter.PROTOCOLS:
+    def strip_protocol(url):
+        for protocol in UrlRewriter.PROTOCOLS:
             if url.startswith(protocol):
                 return url[len(protocol):]
 
@@ -117,7 +117,7 @@ class ArchivalUrlRewriter:
 import utils
 if __name__ == "__main__" or utils.enable_doctests():
     def test_rewrite(rel_url, base_url, prefix, mod = None):
-        rewriter = ArchivalUrlRewriter(base_url, prefix)
+        rewriter = UrlRewriter(base_url, prefix)
         return rewriter.rewrite(rel_url, mod)
 
     import doctest

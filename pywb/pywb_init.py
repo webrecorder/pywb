@@ -25,7 +25,7 @@ def pywb_config(head_insert = ''):
     prefixes = [replay_resolvers.PrefixResolver(test_dir)]
 
     # Create rewriting replay handler to rewrite records
-    replayer = replay_views.RewritingReplayView(resolvers = prefixes, archiveloader = aloader, headInsert = head_insert, buffer_response = True)
+    replayer = replay_views.RewritingReplayView(resolvers = prefixes, archiveloader = aloader, head_insert = head_insert, buffer_response = True)
 
     # Create Jinja2 based html query view
     html_view = views.J2QueryView('./ui/', 'query.html')
