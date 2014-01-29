@@ -14,7 +14,7 @@ class PrefixResolver:
         self.contains = contains
 
     def __call__(self, filename):
-        return [self.prefix + filename] if (self.contains in url) else []
+        return [self.prefix + filename] if (self.contains in filename) else []
 
 #======================================
 class RedisResolver:

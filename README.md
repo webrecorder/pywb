@@ -103,31 +103,36 @@ hostpaths: ['http://localhost:8080/']
 (Refer to [full version of config.yaml](config.yaml) for additional documentation)
 
 
+The init path can be customized further:
 
 
-* The `PYWB_CONFIG` env can be used to set a different file.
+* The `PYWB_CONFIG` env can be used to set a different yaml file.
 
-* The `PYWB_CONFIG_MODULE` env variable can be used to set a different init module
+* The `PYWB_CONFIG_MODULE` env variable can be used to set a different init module, for implementing a custom init
+
+(or for extensions not yet supported via yaml)
+
 
 See `run.sh` for more details
 
 
 ### Running with Existing CDX/WARCs
 
-If you have existing warc and cdx files, you can adjust the `index_paths` and `archive_paths` to point to
+If you have existing .warc/.arc and .cdx files, you can adjust the `index_paths` and `archive_paths` to point to
 the location of those files.
 
 #### SURT
 
-By default, pywb expects the cdx files to be Sort-Friendly-Url-Transform (SURT) ordering. This is an ordering
-that transforms: `example.com` -> `com,example)/` to faciliate better search. It is recommended for future indexing.
+By default, pywb expects the cdx files to be Sort-Friendly-Url-Transform (SURT) ordering. 
+This is an ordering that transforms: `example.com` -> `com,example)/` to faciliate better search. 
+It is recommended for future indexing, but is not required.
 
-However, non-SURT ordered cdx indexs will work as well, but be sure to specify
+Non-SURT ordered cdx indexs will work as well, but be sure to specify:
 
 `surt_ordered: False` in the [config.yaml](config.yaml)
 
 
-### Generating new CDX
+### Creating CDX from WARCs
 
 TODO
 
