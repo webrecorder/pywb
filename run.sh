@@ -25,5 +25,13 @@ else
   params="$params --mount $1=mount_run.py --no-default-app --manage-script-name"
 fi
 
-uwsgi $params
+osx_uwsgi_path="/System/Library/Frameworks/Python.framework/Versions/2.7/bin/uwsgi"
+
+if [ -e "$osx_uwsgi_path" ]; then
+  uwsgi=$osx_uwsgi_path
+else
+  uwsgi="uwsgi"
+fi
+
+$uwsgi $params
 
