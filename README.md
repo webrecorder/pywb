@@ -1,138 +1,104 @@
-PyWb 0.1 Alpha
+PyWb 0.1 Beta
 ==============
 
 [![Build Status](https://travis-ci.org/ikreymer/pywb.png?branch=master)](https://travis-ci.org/ikreymer/pywb)
 
-Python re-implementation of the Wayback Machine archival web replay.
+pywb is a Python implementation of the Wayback Machine software.
 
-(It is not currently deployed on archive.org)
+Some goals are to:
 
-Currently, this module handles the replay and routing components.
+* Provide the best possible playback of archival web content (usually in WARC or ARC files)
 
-(The calendar page/query is just a raw CDX stream at the moment)
+* Be highly customizable in rewriting content to provide best possible playback experience
 
-It read records from WARC and ARC files and rewrites them in
-'archival url' format like:
+* Provide a pluggable, optional ui
+
+* Be easy to deploy and hack
+
+
+
+The Wayback Machine usually serves archival content in the following form:
 
 `http://<host>/<collection>/<timestamp>/<original url>`
 
 
-Ex: The [Internet Archive Wayback Machine][2] has urls of the form:
+Ex: The [Internet Archive Wayback Machine][1] has urls of the form:
 
 `http://web.archive.org/web/20131015120316/http://archive.org/`
 
 
-The goal is to render archived content as accurately as possible, rewriting what is needed to generate an accurate
-playback experience. 
+A listing of archived content, often in calendar form, is available when a `*` is used instead of timestamp.
 
-There is a placeholder for a information banner that can be inserted.
-
-Note: The module consumes a CDX stream, currently produced by the [wayback-cdx-server][1] and does not read the CDX index files itself.
-
-Native support for reading CDX is in the works.
+pywb uses this interface as a starting point.
 
 
-### Installation/Reqs
+### Requirements
 
-Currently only supports Python 2.7.x
+pywb currently works best with 2.7.x
+It should run in a standard WSGI container, although currently
+tested primarily with uWSGI 1.9 and 2.0
 
-`python setup.py install`
-
-(Tested under 2.7.3 with uWSGI 1.9.20)
-
-Start with `run.sh`
+Support for other versions of Python 3 is planned.
 
 
+### Installation
 
-Sample Setup
-------------
+pywb comes with sample archived content, also used
+for unit testing the app.
 
-The main driver is wbapp.py and contains a sample WB declaration.
+The data can be found in `sample_archive` and contains
+`warc` and `cdx` files. The sample archive contains
+recent captures from `http://example.com` and `http://iana.org`
 
-To declare Wayback with one collection, `mycoll`
-and will be accessed by user at:
 
-`http://mywb.example.com:8080/mycoll/`
+To start a pywb with sample data
 
-and will load cdx from [cdx server][1] running at:
+- Clone this repo
 
-`http://cdx.example.com/cdx`
+- Install with `python setup.py install`
 
-and look for warcs at paths:
+- Run Start with `run.sh`
 
-`http://warcs.example.com/servewarc/` and
-`http://warcs.example.com/anotherpath/`,
+- Set your browser to `localhost:8080/pywb/example.com` or `localhost:8080/pywb/iana.org`
+  to see pywb rendering the sample archive data
 
-one could declare a sample config as follows:
+
+### Sample Setup
+
+pywb is currently configurable via yaml.
+
+The simplest [config.yaml](config.yaml) is roughly as follows:
+
+``` yaml
+
+routes:
+    - name: pywb
+
+     index_paths:
+          - ./sample_archive/cdx/
+
+     archive_paths:
+          - ./sample_archive/warcs/
+
+     head_insert_html_template: ./ui/head_insert.html
+
+     calendar_html_template: ./ui/query.html
+
+
+hostpaths: ['http://localhost:8080/']
 
 ```
-def sample_wb_settings():
-    import archiveloader
-    import query, indexreader
-    import replay, replay_resolvers
-    from archivalrouter import ArchivalRequestRouter, Route
 
 
-    # Standard loader which supports WARC/ARC files
-    aloader = archiveloader.ArchiveLoader()
-
-    # Source for cdx source
-    query_h = query.QueryHandler(indexreader.RemoteCDXServer('http://cdx.example.com/cdx'))
-
-    # Loads warcs specified in cdx from these locations
-    prefixes = [replay_resolvers.PrefixResolver('http://warcs.example.com/servewarc/'),
-                replay_resolvers.PrefixResolver('http://warcs.example.com/anotherpath/')]
-
-    # Create rewriting replay handler to rewrite records
-    replayer = replay.RewritingReplayHandler(resolvers = prefixes, archiveloader = aloader, headInsert = default_head_insert)
-
-    # Create Jinja2 based html query renderer
-    htmlquery = query.J2QueryRenderer('./ui/', 'query.html')
-
-    # Handler which combins query, replayer, and html_query
-    wb_handler = replay.WBHandler(query_h, replayer, htmlquery = htmlquery)
-
-    # Finally, create wb router
-    return ArchivalRequestRouter(
-        {
-            Route('echo_req', query.DebugEchoRequest()), # Debug ex: just echo parsed request
-            Route('mycoll',   wb_handler)
-        },
-        # Specify hostnames that pywb will be running on
-        # This will help catch occasionally missed rewrites that fall-through to the host
-        # (See archivalrouter.ReferRedirect)
-        hostpaths = ['http://mywb.example.com:8080/'])
-```
-
-The final wsgi application is than created by calling:
+(Refer to [full version of config.yaml](config.yaml) for additional documentation)
 
 
-`application = create_wb_app(sample_wb_settings())`
+
+The `PYWB_CONFIG` env can be used to set a different file
+The `PYWB_CONFIG_MODULE` env variable can be used to set a different init module
+See `run.sh` for more details
 
 
-Quick File Reference
---------------------
-
- - `archivalrouter.py`- Archival mode routing by regex and fallback based on referrer
-
- - `archiveloader.py` - IO for loading W/ARC data
-
- - `indexreader.py`,`query.py` - CDX reading (from remote cdx server)
-   and parsing cdx
-
- - `wbarchivalurl.py` - representation of the 'archival url' eg: `/<collection>/<timestamp>/<original url>` form
-
- - `url_rewriter.py`, `header_rewriter.py`, `html_rewriter.py`,`regex_rewriter.py`- Various types of for rewriters. The urlrewriter converts url -> archival url, and is used by all the others. JS/CSS/XML are rewritten via regexs.
- 
- - `wbrequestresponse.py` - Wrappers for request and response for WSGI, and wrapping status and headers
- 
- - `replay.py` - drives the replay from archival content, either transparently or with rewriting
-
- - `utils.py`, `wbexceptions.py` - Misc util functions and all exceptions
 
 
- - `static/wb.css`, `static/wb.js` - static JS files, currently inserted into `<head>` and init the PyWb test banner on page load
-
-
-  [1]: https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server
-  [2]: https://archive.org/web/
+  [1]: https://archive.org/web/
