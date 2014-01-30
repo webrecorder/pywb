@@ -25,7 +25,7 @@ function initBanner()
         banner.setAttribute("id", BANNER_ID);
 	banner.setAttribute("lang", "en");
 
-        text = "Archived Content";
+        text = "This is an archived page ";
         if (wbinfo && wbinfo.capture_str) {
             text += " from <b>" + wbinfo.capture_str + "</b>";
         }

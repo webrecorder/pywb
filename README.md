@@ -67,6 +67,15 @@ If everything worked, the following pages should be loading (served from *sample
 | `http://example.com` | [http://localhost:8080/pywb/example.com](http://localhost:8080/pywb/example.com) | [http://localhost:8080/pywb/*/example.com](http://localhost:8080/pywb/*/example.com) |
 | `http://iana.org`    | [http://localhost:8080/pywb/iana.org](http://localhost:8080/pywb/iana.org) | [http://localhost:8080/pywb/*/iana.org](http://localhost:8080/pywb/*/iana.org) |
 
+### Automated Tests
+
+Currently pywb consists of numerous doctests against the sample archive.
+Additional testing is in the works.
+
+The current set of tests can be run with Nose:
+
+`nosetests --with-doctest`
+
 
 ### Sample Setup
 
