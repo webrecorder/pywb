@@ -52,6 +52,9 @@ routes:
       # if omitted, the capture listing lists raw index
       calendar_html_template: ./ui/query.html
 
+      # ui: optional Jinja2 template to use for 'search' page
+      # this page is displayed when no search url is entered
+      search_html_template: ./ui/search.html
 
 # list of host names that pywb will be running from to detect
 # 'fallthrough' requests based on referrer
@@ -63,6 +66,13 @@ routes:
 
 hostpaths: ['http://localhost:8080/']
 
+# ui: optional Jinja2 template for home page
+# if no other route is set to home page, this template will
+# be rendered at /, /index.htm and /index.html
+home_html_template: ./ui/index.html
 
 
+# ui: optional Jinja2 template for rendering any errors
+# the error page may print a detailed error message
+error_html_template: ./ui/error.html
 

@@ -1,26 +1,33 @@
 
-class RequestParseException(Exception):
+class WbException(Exception):
+    pass
+
+class RequestParseException(WbException):
+    def __init__(self, string, to_parse):
+        WbException.__init__(self, string + to_parse)
+        self.to_parse = to_parse
+
     def status(_):
         return '400 Bad Request'
 
-class BadUrlException(Exception):
+class BadUrlException(WbException):
     def status(_):
         return '400 Bad Request'
 
-class AccessException(Exception):
+class AccessException(WbException):
     def status(_):
         return '403 Forbidden'
 
-class InvalidCDXException(Exception):
+class InvalidCDXException(WbException):
     def status(_):
         return '500 Internal Server Error'
 
-class NotFoundException(Exception):
+class NotFoundException(WbException):
     def status(_):
         return '404 Not Found'
 
 # Exceptions that effect a specific capture and result in a retry
-class CaptureException(Exception):
+class CaptureException(WbException):
     def status(_):
         return '500 Internal Server Error'
 
@@ -47,9 +54,9 @@ class ArchiveLoadFailed(CaptureException):
     def status(_):
         return '503 Service Unavailable'
 
-class InternalRedirect(Exception):
+class InternalRedirect(WbException):
     def __init__(self, location, status = '302 Internal Redirect'):
-        Exception.__init__(self, 'Redirecting -> ' + location)
+        WbException.__init__(self, 'Redirecting -> ' + location)
         self.status = status
         self.httpHeaders = [('Location', location)]
 

@@ -68,7 +68,14 @@ class WbRequest:
 
         self.wb_prefix = wb_prefix if not use_abs_prefix else WbRequest.make_abs_prefix(env, wb_prefix)
 
-        self.wb_url = archivalurl_class(wb_url)
+        # wb_url present and not root page
+        if wb_url != '/' and wb_url != '' and archivalurl_class:
+            self.wb_url_str = wb_url
+            self.wb_url = archivalurl_class(wb_url)
+        else:
+        # no wb_url, just store blank
+            self.wb_url_str = '/'
+            self.wb_url = None
 
         self.coll = coll
 

@@ -82,10 +82,10 @@ class WbUrl:
         self.mod = ''
 
         if not any (f(url) for f in [self._init_query, self._init_replay]):
-            raise wbexceptions.RequestParseException('Invalid WB Request Url: ' + url)
+            raise wbexceptions.RequestParseException('Invalid WB Request Url: ', url)
 
         if len(self.url) == 0:
-            raise wbexceptions.RequestParseException('Invalid WB Request Url: ' + url)
+            raise wbexceptions.RequestParseException('Invalid WB Request Url: ', url)
 
         # protocol agnostic url -> http://
         if self.url.startswith('//'):

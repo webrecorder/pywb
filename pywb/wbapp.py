@@ -8,29 +8,6 @@ import importlib
 import logging
 
 
-
-## ===========
-'''
-
-To declare Wayback with one collection, `mycoll`
-and will be accessed by user at:
-
-`http://mywb.example.com:8080/mycoll/`
-
-and will load cdx from cdx server running at:
-
-`http://cdx.example.com/cdx`
-
-and look for warcs at paths:
-
-`http://warcs.example.com/servewarc/` and
-`http://warcs.example.com/anotherpath/`,
-
-one could declare a `sample_wb_settings()` method as follows
-'''
-
-
-
 def create_wb_app(wb_router):
 
     # Top-level wsgi application
@@ -52,14 +29,13 @@ def create_wb_app(wb_router):
             response = WbResponse(StatusAndHeaders(ir.status, ir.httpHeaders))
 
         except (wbexceptions.NotFoundException, wbexceptions.AccessException) as e:
-            logging.info(str(e))
-            response = handle_exception(env, e)
+            response = handle_exception(env, wb_router.errorpage, e, False)
+
+        except wbexceptions.WbException as wbe:
+            response = handle_exception(env, wb_router.errorpage, wbe, False)
 
         except Exception as e:
-            last_exc = e
-            import traceback
-            traceback.print_exc()
-            response = handle_exception(env, e)
+            response = handle_exception(env, wb_router.errorpage, e, True)
 
         return response(env, start_response)
 
@@ -67,13 +43,25 @@ def create_wb_app(wb_router):
     return application
 
 
-def handle_exception(env, exc):
+def handle_exception(env, errorpage, exc, print_trace):
     if hasattr(exc, 'status'):
         status = exc.status()
     else:
         status = '400 Bad Request'
 
-    return WbResponse.text_response(status + ' Error: ' + str(exc), status = status)
+    if print_trace:
+        import traceback
+        err_details = traceback.format_exc(exc)
+        print err_details
+    else:
+        logging.info(str(exc))
+        err_details = None
+
+    if errorpage:
+        import traceback
+        return errorpage.render_response(err_msg = str(exc), err_details = err_details)
+    else:
+        return WbResponse.text_response(status + ' Error: ' + str(exc), status = status)
 
 
 #=================================================================

@@ -114,6 +114,9 @@ def cdx_reverse(cdx_iter, limit):
 
     >>> test_cdx('org,iana)/_js/2013.1/jquery.js', reverse = True, resolve_revisits = True, limit = 1)
     org,iana)/_js/2013.1/jquery.js 20140126201307 https://www.iana.org/_js/2013.1/jquery.js application/x-javascript 200 AAW2RS7JB7HTF666XNZDQYJFA6PDQBPO - - 543 778507 iana.warc.gz 33449 7311 iana.warc.gz
+
+    # no match, single result
+    >>> test_cdx('org,iana)/dont_have_this', reverse = True, resolve_revisits = True, limit = 1)
     """
 
     # optimize for single last
@@ -123,7 +126,7 @@ def cdx_reverse(cdx_iter, limit):
         for cdx in cdx_iter:
             last = cdx
 
-        return [last]
+        return [last] if last else []
 
     reverse_cdxs = deque(maxlen = limit)
 

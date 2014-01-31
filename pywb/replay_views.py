@@ -210,12 +210,15 @@ class ReplayView:
             stream.close()
 
 
+    def __str__(self):
+        return 'find archive files from ' + str(self.resolvers)
+
 #=================================================================
 class RewritingReplayView(ReplayView):
 
-    def __init__(self, resolvers, archiveloader, head_insert = None, header_rewriter = None, redir_to_exact = True, buffer_response = False):
+    def __init__(self, resolvers, archiveloader, head_insert_view = None, header_rewriter = None, redir_to_exact = True, buffer_response = False):
         ReplayView.__init__(self, resolvers, archiveloader)
-        self.head_insert = head_insert
+        self.head_insert_view = head_insert_view
         self.header_rewriter = header_rewriter if header_rewriter else HeaderRewriter()
         self.redir_to_exact = redir_to_exact
 
@@ -300,12 +303,7 @@ class RewritingReplayView(ReplayView):
         status_headers = rewritten_headers.status_headers
 
         if text_type == 'html':
-            # Support head_insert func
-            if hasattr(self.head_insert, '__call__'):
-                head_insert_str = self.head_insert(wbrequest, response.cdx)
-            else:
-                head_insert_str = str(self.head_insert)
-
+            head_insert_str = self.head_insert_view.render_to_string(wbrequest = wbrequest, cdx = response.cdx) if self.head_insert_view else None
             rewriter = html_rewriter.HTMLRewriter(urlrewriter, outstream = None, head_insert = head_insert_str)
         elif text_type == 'css':
             rewriter = regex_rewriters.CSSRewriter(urlrewriter)

@@ -1,5 +1,6 @@
 import urlparse
 import re
+import wbexceptions
 
 from wbrequestresponse import WbRequest, WbResponse
 from url_rewriter import UrlRewriter
@@ -9,17 +10,24 @@ from wburl import WbUrl
 # ArchivalRequestRouter -- route WB requests in archival mode
 #=================================================================
 class ArchivalRequestRouter:
-    def __init__(self, handlers, hostpaths = None, abs_path = True, archivalurl_class = WbUrl):
-        self.handlers = handlers
+    def __init__(self, routes, hostpaths = None, abs_path = True, archivalurl_class = WbUrl, homepage = None, errorpage = None):
+        self.routes = routes
         self.fallback = ReferRedirect(hostpaths)
         self.abs_path = abs_path
         self.archivalurl_class = archivalurl_class
 
+        self.homepage = homepage
+        self.errorpage = errorpage
+
     def __call__(self, env):
-        for handler in self.handlers:
-            result = handler(env, self.abs_path, self.archivalurl_class)
+        for route in self.routes:
+            result = route(env, self.abs_path, self.archivalurl_class)
             if result:
                 return result
+
+        # Home Page
+        if env['REL_REQUEST_URI'] in ['/', '/index.html', '/index.htm']:
+            return self.render_homepage()
 
         if not self.fallback:
             return None
@@ -27,7 +35,14 @@ class ArchivalRequestRouter:
         return self.fallback(WbRequest.from_uri(None, env))
 
 
-
+    def render_homepage(self):
+        # render the homepage!
+        if self.homepage:
+            return self.homepage.render_response(routes = self.routes)
+        else:
+            # default home page template
+            text = '\n'.join(map(str, self.routes))
+            return WbResponse.text_response(text)
 
 #=================================================================
 # Route by matching regex (or fixed prefix)
@@ -36,10 +51,11 @@ class ArchivalRequestRouter:
 class Route:
 
     # match upto next slash
-    SLASH_LOOKAHEAD ='(?=/)'
+    SLASH_LOOKAHEAD ='(?=/|$)'
 
 
     def __init__(self, regex, handler, coll_group = 0, lookahead = SLASH_LOOKAHEAD):
+        self.path = regex
         self.regex = re.compile(regex + lookahead)
         self.handler = handler
         # collection id from regex group (default 0)
@@ -82,6 +98,10 @@ class Route:
 
     def _handle_request(self, wbrequest):
         return self.handler(wbrequest)
+
+    def __str__(self):
+        #return '* ' + self.regex_str + ' => ' + str(self.handler)
+        return str(self.handler)
 
 
 #=================================================================

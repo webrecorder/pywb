@@ -27,6 +27,8 @@ Ex: The [Internet Archive Wayback Machine](https//archive.org/web/) has urls of 
 
 A listing of archived content, often in calendar form, is available when a `*` is used instead of timestamp.
 
+The Wayback Machine uses an html parser to rewrite relative and absolute links, as well as absolute links found in javascript, css and some xml.
+
 pywb uses this interface as a starting point.
 
 
@@ -36,7 +38,7 @@ pywb currently works best with 2.7.x
 It should run in a standard WSGI container, although currently
 tested primarily with uWSGI 1.9 and 2.0
 
-Support for other versions of Python 3 is planned.
+Support for Python 3 is planned.
 
 
 ### Installation

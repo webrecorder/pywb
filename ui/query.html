@@ -4,14 +4,20 @@
   <table id="captures" style="border-spacing: 10px;">
     <tr>
       <th>Capture</th>
+      <th>Status</th>
+      <th>Original Url</th>
       <th>Archive File</th>
     </tr>
-    {% for cdx in cdx_lines %}
+    {% for cdx in cdx_lines  %}
     <tr style="{{ 'font-weight: bold' if cdx['mimetype'] != 'warc/revisit' else '' }}">
-      <td><a href="{{ prefix }}{{ cdx.timestamp }}/{{ url }}">{{ cdx['timestamp'] | format_ts('%a, %b %d %Y %H:%M:%S') }}</a></td>
+      <td><a href="{{ prefix }}{{ cdx.timestamp }}/{{ url }}">{{ cdx['timestamp'] | format_ts}}</a></td>
       <td>{{ cdx['filename'] }}</td>
+      <td>{{ cdx['statuscode'] }}</td>
+      <td>{{ cdx['originalurl'] }}</td>
     </tr>
     {% endfor %}
   </table>
-  <i><b>* Unique captures are bold.</b><br/>* Other captures are duplicates of a previous capture.</i>
+  <p>
+  <i><b>* Unique captures are bold.</b> Other captures are duplicates of a previous capture.</i>
+  </p>
 </body>

@@ -10,63 +10,72 @@ from jinja2 import Environment, FileSystemLoader
 
 
 #=================================================================
-class TextQueryView:
-    def __call__(self, wbrequest, cdx_lines):
+class StaticTextView:
+    def __init__(self, text):
+        self.text = text
+
+    def render_to_string(self, **kwargs):
+        return self.text
+
+    def render_response(self, **kwargs):
+        return wbrequestresponse.WbResponse.text_stream(self.text)
+
+#=================================================================
+class J2TemplateView:
+    def __init__(self, filename):
+        template_dir, template_file = path.split(filename)
+
+        self.template_file = template_file
+
+        self.jinja_env = self.make_jinja_env(template_dir)
+
+
+    def make_jinja_env(self, template_dir):
+        jinja_env = Environment(loader = FileSystemLoader(template_dir), trim_blocks = True)
+        jinja_env.filters['format_ts'] = J2TemplateView.format_ts
+        return jinja_env
+
+    def render_to_string(self, **kwargs):
+        template = self.jinja_env.get_template(self.template_file)
+
+        template_result = template.render(**kwargs)
+
+        return template_result
+
+    def render_response(self, **kwargs):
+        template_result = self.render_to_string(**kwargs)
+        return wbrequestresponse.WbResponse.text_response(str(template_result), content_type = 'text/html; charset=utf-8')
+
+
+    # Filters
+    @staticmethod
+    def format_ts(value, format='%a, %b %d %Y %H:%M:%S'):
+        value = utils.timestamp_to_datetime(value)
+        return time.strftime(format, value)
+
+
+
+
+# cdx index view
+
+#=================================================================
+# html captures 'calendar' view
+#=================================================================
+class J2HtmlCapturesView(J2TemplateView):
+    def render_response(self, wbrequest, cdx_lines):
+        return J2TemplateView.render_response(self,
+                                    cdx_lines = list(cdx_lines),
+                                    url = wbrequest.wb_url.url,
+                                    prefix = wbrequest.wb_prefix)
+
+
+#=================================================================
+# stream raw cdx text
+#=================================================================
+class TextCapturesView:
+    def render_response(self, wbrequest, cdx_lines):
         cdx_lines = imap(lambda x: str(x) + '\n', cdx_lines)
         return wbrequestresponse.WbResponse.text_stream(cdx_lines)
 
-#=================================================================
-class J2QueryView:
-    def __init__(self, filename, buffer_index = True):
-        template_dir, template_file = path.split(filename)
-
-        self.template_file = template_file
-        self.buffer_index = buffer_index
-
-        self.jinja_env = make_jinja_env(template_dir)
 
 
-    def __call__(self, wbrequest, cdx_lines):
-        template = self.jinja_env.get_template(self.template_file)
-
-        # buffer/convert to list so we have length available for template
-        if self.buffer_index:
-            cdx_lines = list(cdx_lines)
-
-        response = template.render(cdx_lines = cdx_lines,
-                                   url = wbrequest.wb_url.url,
-                                   prefix = wbrequest.wb_prefix)
-
-        return wbrequestresponse.WbResponse.text_response(str(response), content_type = 'text/html')
-
-
-#=================================================================
-# Render the head insert (eg. banner)
-#=================================================================
-class J2HeadInsertView:
-    def __init__(self, filename, buffer_index = True):
-        template_dir, template_file = path.split(filename)
-        self.template_file = template_file
-
-        self.jinja_env = make_jinja_env(template_dir)
-
-
-    def __call__(self, wbrequest, cdx):
-        template = self.jinja_env.get_template(self.template_file)
-
-
-        return template.render(wbrequest = wbrequest,cdx = cdx)
-
-
-
-#=================================================================
-# Jinja funcs
-def make_jinja_env(template_dir):
-    jinja_env = Environment(loader = FileSystemLoader(template_dir), trim_blocks = True)
-    jinja_env.filters['format_ts'] = format_ts
-    return jinja_env
-
-# Filters
-def format_ts(value, format='%H:%M / %d-%m-%Y'):
-    value = utils.timestamp_to_datetime(value)
-    return time.strftime(format, value)

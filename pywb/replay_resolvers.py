@@ -16,6 +16,13 @@ class PrefixResolver:
     def __call__(self, filename):
         return [self.prefix + filename] if (self.contains in filename) else []
 
+    def __repr__(self):
+        if self.contains:
+            return "PrefixResolver('{0}', contains = '{1}')".format(self.prefix, self.contains)
+        else:
+            return "PrefixResolver('{0}')".format(self.prefix)
+
+
 #======================================
 class RedisResolver:
     def __init__(self, redis_url, key_prefix = 'w:'):
@@ -31,9 +38,14 @@ class RedisResolver:
             print e
             return None
 
+    def __repr__(self):
+        return "RedisResolver('{0}')".format(self.redis_url)
+
+
 #======================================
 class PathIndexResolver:
     def __init__(self, pathindex_file):
+        self.pathindex_file = pathindex_file
         self.reader = binsearch.FileReader(pathindex_file)
 
     def __call__(self, filename):
@@ -47,27 +59,32 @@ class PathIndexResolver:
 
         return gen_list(result)
 
+    def __repr__(self):
+        return "PathIndexResolver('{0}')".format(self.pathindex_file)
+
 
 #TODO: more options (remote files, contains param, etc..)
 # find best resolver given the path
 def make_best_resolver(path):
     """
     # http path
-    >>> class_name(make_best_resolver('http://myhost.example.com/warcs/'))
-    'PrefixResolver'
+    >>> make_best_resolver('http://myhost.example.com/warcs/')
+    PrefixResolver('http://myhost.example.com/warcs/')
 
     # redis path
-    >>> class_name(make_best_resolver('redis://myhost.example.com:1234/1'))
-    'RedisResolver'
+    >>> make_best_resolver('redis://myhost.example.com:1234/1')
+    RedisResolver('redis://myhost.example.com:1234/1')
 
     # a file
-    >>> class_name(make_best_resolver('file://' + os.path.realpath(__file__)))
-    'PathIndexResolver'
+    >>> make_best_resolver('file://' + os.path.dirname(os.path.realpath(__file__)) + '/replay_resolvers.py')
+    PathIndexResolver('/home/ilya/workspace/pywb/pywb/replay_resolvers.py')
 
     # a dir
-    >>> class_name(make_best_resolver('file://' + os.path.dirname(os.path.realpath(__file__))))
-    'PrefixResolver'
+    >>> make_best_resolver('file://' + os.path.dirname(os.path.realpath(__file__)))
+    PrefixResolver('/home/ilya/workspace/pywb/pywb')
+
     """
+
     url_parts = urlparse.urlsplit(path)
 
     if url_parts.scheme == 'redis':
@@ -89,9 +106,6 @@ def make_best_resolver(path):
 import utils
 #=================================================================
 if __name__ == "__main__" or utils.enable_doctests():
-
-    def class_name(obj):
-        return obj.__class__.__name__
 
     import doctest
     doctest.testmod()

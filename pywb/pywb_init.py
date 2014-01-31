@@ -39,13 +39,13 @@ def pywb_config_manual():
     prefixes = [replay_resolvers.PrefixResolver(test_dir + 'warcs/')]
 
     # Jinja2 head insert
-    head_insert = views.J2HeadInsertView('./ui/head_insert.html')
+    head_insert = views.J2TemplateView('./ui/head_insert.html')
 
     # Create rewriting replay handler to rewrite records
-    replayer = replay_views.RewritingReplayView(resolvers = prefixes, archiveloader = aloader, head_insert = head_insert, buffer_response = True)
+    replayer = replay_views.RewritingReplayView(resolvers = prefixes, archiveloader = aloader, head_insert_view = head_insert, buffer_response = True)
 
     # Create Jinja2 based html query view
-    html_view = views.J2QueryView('./ui/query.html')
+    html_view = views.J2HtmlCapturesView('./ui/query.html')
 
     # WB handler which uses the index reader, replayer, and html_view
     wb_handler = handlers.WBHandler(indexs, replayer, html_view)
@@ -81,10 +81,20 @@ def pywb_config(config_file = None):
 
     routes = map(yaml_parse_route, config['routes'])
 
+    homepage = yaml_load_template(config, 'home_html_template', 'Home Page Template')
+    errorpage = yaml_load_template(config, 'error_html_template', 'Error Page Template')
+
     hostpaths = config.get('hostpaths', ['http://localhost:8080/'])
 
-    return ArchivalRequestRouter(routes, hostpaths)
+    return ArchivalRequestRouter(routes, hostpaths, homepage = homepage, errorpage = errorpage)
 
+
+def yaml_load_template(config, name, desc = None):
+    file = config.get(name)
+    if file:
+        logging.info('Adding {0}: {1}'.format(desc if desc else name, file))
+        file = views.J2TemplateView(file)
+    return file
 
 
 
@@ -113,17 +123,19 @@ def yaml_parse_index_loader(config):
         return indexreader.LocalCDXServer([uri])
 
 
+
+
 def yaml_parse_head_insert(config):
     # First, try a template file
     head_insert_file = config.get('head_insert_html_template')
     if head_insert_file:
         logging.info('Adding Head-Insert Template: ' + head_insert_file)
-        return views.J2HeadInsertView(head_insert_file)
+        return views.J2TemplateView(head_insert_file)
 
     # Then, static head_insert text
     head_insert_text = config.get('head_insert_text', '')
-    logging.info('Adding Head-Insert Text: ' + head_insert_text) 
-    return head_insert_text
+    logging.info('Adding Head-Insert Text: ' + head_insert_text)
+    return views.StaticTextView(head_insert_text)
 
 
 def yaml_parse_calendar_view(config):
@@ -133,7 +145,7 @@ def yaml_parse_calendar_view(config):
     else:
         logging.info('No HTML Calendar View Present')
 
-    return views.J2QueryView(html_view_file) if html_view_file else None
+    return views.J2HtmlCapturesView(html_view_file) if html_view_file else None
 
 
 
@@ -150,12 +162,14 @@ def yaml_parse_route(config):
 
     replayer = replay_views.RewritingReplayView(resolvers = archive_resolvers,
                                                 archiveloader = archive_loader,
-                                                head_insert = head_insert,
+                                                head_insert_view = head_insert,
                                                 buffer_response = config.get('buffer_response', False))
 
     html_view = yaml_parse_calendar_view(config)
 
-    wb_handler = handlers.WBHandler(index_loader, replayer, html_view)
+    searchpage = yaml_load_template(config, 'search_html_template', 'Search Page Template')
+
+    wb_handler = handlers.WBHandler(index_loader, replayer, html_view, searchpage = searchpage)
 
     return Route(name, wb_handler)
 

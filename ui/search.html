@@ -1,0 +1,6 @@
+<h2>pywb Search Page</h2>
+Search Archived Content: 
+<form onsubmit="url = document.getElementById('search').value; if (url != '') { document.location.href = '{{ wbrequest.wb_prefix }}' + '*/' + url; } return false;">
+<input id="search" name="search" placeholder="Enter url to search"/>
+<button type="submit">Search</button>
+</form>

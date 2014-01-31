@@ -83,7 +83,10 @@ class LocalCDXServer(IndexReader):
 
     def load_cdx(self, url, params = {}, parsed_cdx = True, **kwvalues):
         # canonicalize to surt (canonicalization is part of surt conversion)
-        key = surt.surt(url)
+        try:
+            key = surt.surt(url)
+        except Exception as e:
+            raise wbexceptions.BadUrlException('Bad Request Url: ' + url)
 
         # if not surt, unsurt the surt to get canonicalized non-surt url
         if not self.surt_ordered:
@@ -121,6 +124,10 @@ class LocalCDXServer(IndexReader):
                 {'reverse': True, 'filter': 'statuscode:[23]..', 'limit': '1', 'resolve_revisits': True}
 
         }[wburl.type]
+
+
+    def __str__(self):
+        return 'load cdx indexes from ' + str(self.sources)
 
 
 
@@ -194,6 +201,10 @@ class RemoteCDXServer(IndexReader):
                 {'sort': 'reverse', 'filter': 'statuscode:[23]..', 'limit': '1', 'resolveRevisits': True}
 
         }[wburl.type]
+
+
+    def __str__(self):
+        return 'server cdx from ' + self.server_url
 
 
 #=================================================================

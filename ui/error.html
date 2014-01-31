@@ -1,0 +1,11 @@
+<h2>Pywb Error</h2>
+<b>{{ err_msg }}</b>
+
+{% if err_details %}
+<p>Error Details:</p>
+<p>
+<pre>
+{{ err_details }}
+</pre>
+</p>
+{% endif %}
