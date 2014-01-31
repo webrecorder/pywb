@@ -76,12 +76,12 @@ def make_best_resolver(path):
     RedisResolver('redis://myhost.example.com:1234/1')
 
     # a file
-    >>> make_best_resolver('file://' + os.path.dirname(os.path.realpath(__file__)) + '/replay_resolvers.py')
-    PathIndexResolver('/home/ilya/workspace/pywb/pywb/replay_resolvers.py')
+    >>> class_name(make_best_resolver('file://' + os.path.realpath(__file__)))
+    'PathIndexResolver'
 
     # a dir
-    >>> make_best_resolver('file://' + os.path.dirname(os.path.realpath(__file__)))
-    PrefixResolver('/home/ilya/workspace/pywb/pywb')
+    >>> class_name(make_best_resolver('file://' + os.path.dirname(os.path.realpath(__file__))))
+    'PrefixResolver'
 
     """
 
@@ -106,6 +106,9 @@ def make_best_resolver(path):
 import utils
 #=================================================================
 if __name__ == "__main__" or utils.enable_doctests():
+
+    def class_name(obj):
+         return obj.__class__.__name__
 
     import doctest
     doctest.testmod()
