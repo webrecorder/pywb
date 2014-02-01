@@ -105,7 +105,11 @@ def yaml_parse_index_loader(config):
     # support mixed cdx streams and remote servers?
     # for now, list implies local sources
     if isinstance(index_config, list):
-        return indexreader.LocalCDXServer(index_config, surt_ordered)
+        if len(index_config) > 1:
+            return indexreader.LocalCDXServer(index_config, surt_ordered)
+        else:
+            # treat as non-list
+            index_config = index_config[0]
 
     if isinstance(index_config, str):
         uri = index_config
@@ -151,10 +155,21 @@ def yaml_parse_calendar_view(config):
 
 def yaml_parse_route(config):
     name = config['name']
+    type = config.get('type', 'wb')
+
+    if type == 'echo_env':
+        return Route(name, handlers.DebugEchoEnvHandler())
+
+    if type == 'echo_req':
+        return Route(name, handlers.DebugEchoHandler())
 
     archive_loader = archiveloader.ArchiveLoader()
 
     index_loader = yaml_parse_index_loader(config)
+
+    if type == 'cdx':
+        handler = handlers.CDXHandler(index_loader)
+        return Route(name, handler)
 
     archive_resolvers = map(replay_resolvers.make_best_resolver, config['archive_paths'])
 

@@ -56,6 +56,26 @@ routes:
       # this page is displayed when no search url is entered
       search_html_template: ./ui/search.html
 
+    # Sample Debug Handlers (subject to change)
+    # Echo Request
+    - name: echo_req
+
+      type: echo_req
+
+    # Echo WSGI Env
+    - name: echo_env
+
+      type: echo_env
+
+    # CDX Server
+    - name: cdx
+
+      index_paths: ['./sample_archive/cdx/']
+
+      type: 'cdx'
+
+
+
 # list of host names that pywb will be running from to detect
 # 'fallthrough' requests based on referrer
 #

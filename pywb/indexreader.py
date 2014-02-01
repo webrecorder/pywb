@@ -176,6 +176,11 @@ class RemoteCDXServer(IndexReader):
         else:
             return response
 
+
+    # Note: this params are designed to make pywb compatible with the original Java wayback-cdx-server API:
+    # https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server
+    # Soon, this will be switched over to support the native pywb cdx server
+
     # BUG: Setting replayClosest to high number for now, as cdx server sometimes returns wrong result
     # with lower values if there are too many captures. Ideally, should be around 10-20
     # The replayClosest is the max number of cdx lines, so max number of retry attempts that WB will make

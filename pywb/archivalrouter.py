@@ -10,18 +10,17 @@ from wburl import WbUrl
 # ArchivalRequestRouter -- route WB requests in archival mode
 #=================================================================
 class ArchivalRequestRouter:
-    def __init__(self, routes, hostpaths = None, abs_path = True, archivalurl_class = WbUrl, homepage = None, errorpage = None):
+    def __init__(self, routes, hostpaths = None, abs_path = True, homepage = None, errorpage = None):
         self.routes = routes
         self.fallback = ReferRedirect(hostpaths)
         self.abs_path = abs_path
-        self.archivalurl_class = archivalurl_class
 
         self.homepage = homepage
         self.errorpage = errorpage
 
     def __call__(self, env):
         for route in self.routes:
-            result = route(env, self.abs_path, self.archivalurl_class)
+            result = route(env, self.abs_path)
             if result:
                 return result
 
@@ -51,7 +50,7 @@ class ArchivalRequestRouter:
 class Route:
 
     # match upto next slash
-    SLASH_LOOKAHEAD ='(?=/|$)'
+    SLASH_LOOKAHEAD ='(?=/|$|\?)'
 
 
     def __init__(self, regex, handler, coll_group = 0, lookahead = SLASH_LOOKAHEAD):
@@ -62,7 +61,7 @@ class Route:
         self.coll_group = coll_group
 
 
-    def __call__(self, env, use_abs_prefix, archivalurl_class):
+    def __call__(self, env, use_abs_prefix):
         request_uri =  env['REL_REQUEST_URI']
         matcher = self.regex.match(request_uri[1:])
         if not matcher:
@@ -85,7 +84,7 @@ class Route:
                               wb_url = wb_url,
                               wb_prefix = wb_prefix,
                               use_abs_prefix = use_abs_prefix,
-                              archivalurl_class = archivalurl_class)
+                              wburl_class = self.handler.get_wburl_type())
 
 
         # Allow for setup of additional filters

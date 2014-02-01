@@ -3,11 +3,20 @@ import utils
 import urlparse
 
 from wbrequestresponse import WbResponse
+from wburl import WbUrl
+from wbexceptions import WbException
+
+
+class BaseHandler:
+    @staticmethod
+    def get_wburl_type():
+        return WbUrl
+
 
 #=================================================================
 # Standard WB Handler
 #=================================================================
-class WBHandler:
+class WBHandler(BaseHandler):
     def __init__(self, cdx_reader, replay, capturespage = None, searchpage = None):
         self.cdx_reader = cdx_reader
         self.replay = replay
@@ -44,6 +53,7 @@ class WBHandler:
             return WbResponse.text_response('No Lookup Url Specified')
 
 
+
     def __str__(self):
         return 'WBHandler: ' + str(self.cdx_reader) + ', ' + str(self.replay)
 
@@ -52,39 +62,43 @@ class WBHandler:
 #=================================================================
 # CDX-Server Handler -- pass all params to cdx server
 #=================================================================
-class CDXHandler:
+class CDXHandler(BaseHandler):
     def __init__(self, cdx_reader, view = None):
         self.cdx_reader = cdx_reader
         self.view = view if view else views.TextCapturesView()
 
     def __call__(self, wbrequest):
-        url = wbrequest.wb_url.url
+        #url = wbrequest.wb_url.url
 
         # use url= param to get actual url
         params = urlparse.parse_qs(wbrequest.env['QUERY_STRING'])
 
         url = params.get('url')
         if not url:
-            raise Exception('Must specify a url= param to query cdx server')
+            raise WbException('Must specify a url= param to query cdx server')
 
         url = url[0]
 
         cdx_lines = self.cdx_reader.load_cdx(url, params, parsed_cdx = False)
 
-        return self.view(wbrequest, cdx_lines)
+        return self.view.render_response(wbrequest, cdx_lines)
 
+
+    @staticmethod
+    def get_wburl_type():
+        return None
 
 #=================================================================
 # Debug Handlers
 #=================================================================
-class DebugEchoEnvHandler:
+class DebugEchoEnvHandler(BaseHandler):
     def __call__(self, wbrequest):
-        return wbrequestresponse.WbResponse.text_response(str(wbrequest.env))
+        return WbResponse.text_response(str(wbrequest.env))
 
 #=================================================================
-class DebugEchoHandler:
+class DebugEchoHandler(BaseHandler):
     def __call__(self, wbrequest):
-        return wbrequestresponse.WbResponse.text_response(str(wbrequest))
+        return WbResponse.text_response(str(wbrequest))
 
 
 

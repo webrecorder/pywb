@@ -61,7 +61,7 @@ class WbRequest:
             return rel_prefix
 
 
-    def __init__(self, env, request_uri, wb_prefix, wb_url, coll, use_abs_prefix = False, archivalurl_class = WbUrl):
+    def __init__(self, env, request_uri, wb_prefix, wb_url, coll, use_abs_prefix = False, wburl_class = WbUrl):
         self.env = env
 
         self.request_uri = request_uri if request_uri else env.get('REL_REQUEST_URI')
@@ -69,9 +69,9 @@ class WbRequest:
         self.wb_prefix = wb_prefix if not use_abs_prefix else WbRequest.make_abs_prefix(env, wb_prefix)
 
         # wb_url present and not root page
-        if wb_url != '/' and wb_url != '' and archivalurl_class:
+        if wb_url != '/' and wb_url != '' and wburl_class:
             self.wb_url_str = wb_url
-            self.wb_url = archivalurl_class(wb_url)
+            self.wb_url = wburl_class(wb_url)
         else:
         # no wb_url, just store blank
             self.wb_url_str = '/'
