@@ -172,9 +172,9 @@ class RemoteCDXServer(IndexReader):
                 raise e
 
         if parsed_cdx:
-            return map(CDXCaptureResult, response)
+            return (CDXCaptureResult(r) for r in response)
         else:
-            return response
+            return iter(response)
 
     # BUG: Setting replayClosest to high number for now, as cdx server sometimes returns wrong result
     # with lower values if there are too many captures. Ideally, should be around 10-20
@@ -184,7 +184,7 @@ class RemoteCDXServer(IndexReader):
         return {
 
             wburl.QUERY:
-                {'collapseTime': collapseTime, 'filter': '!statuscode:(500|502|504)', 'limit': limit},
+                {'collapseTime': collapse_time, 'filter': '!statuscode:(500|502|504)', 'limit': limit},
 
             wburl.URL_QUERY:
                 {'collapse': 'urlkey', 'matchType': 'prefix', 'showGroupCount': True, 'showUniqCount': True, 'lastSkipTimestamp': True, 'limit': limit,
@@ -192,7 +192,7 @@ class RemoteCDXServer(IndexReader):
                 },
 
             wburl.REPLAY:
-                {'sort': 'closest', 'filter': '!statuscode:(500|502|504)', 'limit': replayClosest, 'closest': wburl.timestamp, 'resolveRevisits': True},
+                {'sort': 'closest', 'filter': '!statuscode:(500|502|504)', 'limit': replay_closest, 'closest': wburl.timestamp, 'resolveRevisits': True},
 
             # BUG: resolveRevisits currently doesn't work for this type of query
             # This is not an issue in archival mode, as there is a redirect to the actual timestamp query
