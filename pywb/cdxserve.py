@@ -27,7 +27,7 @@ def cdx_serve(key, params, sources, match_func = binsearch.iter_exact):
     if resolve_revisits:
         cdx_iter = cdx_resolve_revisits(cdx_iter)
 
-    filters = params.get('filters', None)
+    filters = params.get('filter', None)
     if filters:
         cdx_iter = cdx_filter(cdx_iter, filters)
 
@@ -141,7 +141,7 @@ def cdx_reverse(cdx_iter, limit):
 # apply filter to cdx[field]
 def cdx_filter(cdx_iter, filter_strings):
     """
-    >>> test_cdx(key = 'org,iana)/domains', match_func = binsearch.iter_prefix, filters = ['mimetype:text/html'])
+    >>> test_cdx(key = 'org,iana)/domains', match_func = binsearch.iter_prefix, filter = ['mimetype:text/html'])
     org,iana)/domains 20140126200825 http://www.iana.org/domains text/html 200 7UPSCLNWNZP33LGW6OJGSF2Y4CDG4ES7 - - 2912 610534 iana.warc.gz
     org,iana)/domains/arpa 20140126201248 http://www.iana.org/domains/arpa text/html 200 QOFZZRN6JIKAL2JRL6ZC2VVG42SPKGHT - - 2939 759039 iana.warc.gz
     org,iana)/domains/idn-tables 20140126201127 http://www.iana.org/domains/idn-tables text/html 200 HNCUFTJMOQOGAEY6T56KVC3T7TVLKGEW - - 8118 715878 iana.warc.gz
@@ -151,7 +151,15 @@ def cdx_filter(cdx_iter, filter_strings):
     org,iana)/domains/root/db 20140126200927 http://www.iana.org/domains/root/db/ text/html 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 446 671278 iana.warc.gz
     org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db text/html 200 DHXA725IW5VJJFRTWBQT6BEZKRE7H57S - - 18365 672225 iana.warc.gz
     org,iana)/domains/root/servers 20140126201227 http://www.iana.org/domains/root/servers text/html 200 AFW34N3S4NK2RJ6QWMVPB5E2AIUETAHU - - 3137 733840 iana.warc.gz
+
+
+    >>> test_cdx(key = 'org,iana)/_css/2013.1/screen.css', filter = 'statuscode:200')
+    org,iana)/_css/2013.1/screen.css 20140126200625 http://www.iana.org/_css/2013.1/screen.css text/css 200 BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 8754 41238 iana.warc.gz
     """
+
+    # Support single strings as well
+    if isinstance(filter_strings, str):
+        filter_strings = [filter_strings]
 
     filters = []
 
@@ -197,11 +205,13 @@ def cdx_collapse_time_status(cdx_iter, timelen = 10):
     org,iana)/_css/2013.1/screen.css 20140126201054 http://www.iana.org/_css/2013.1/screen.css warc/revisit - BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 543 706476 iana.warc.gz
 
     # resolved revisits
-    >>> test_cdx(key = 'org,iana)/_css/2013.1/screen.css', collapse_time = 11, resolve_revisits = True)
+    >>> test_cdx(key = 'org,iana)/_css/2013.1/screen.css', collapse_time = '11', resolve_revisits = True)
     org,iana)/_css/2013.1/screen.css 20140126200625 http://www.iana.org/_css/2013.1/screen.css text/css 200 BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 8754 41238 iana.warc.gz - - -
     org,iana)/_css/2013.1/screen.css 20140126201054 http://www.iana.org/_css/2013.1/screen.css text/css 200 BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 543 706476 iana.warc.gz 8754 41238 iana.warc.gz
 
     """
+
+    timelen = int(timelen)
 
     last_token = None
 

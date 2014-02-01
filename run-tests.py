@@ -1,6 +1,6 @@
 import webtest
 import pywb.pywb_init
-
+from pywb.indexreader import CDXCaptureResult
 
 class TestWb:
     def setup(self):
@@ -73,6 +73,27 @@ class TestWb:
         assert 'Mon, Jan 27 2014 17:12:51' in resp.body
         assert '/pywb/20140127171251/http://www.iana.org/domains/example' in resp.body
 
+    def test_cdx_server_filters(self):
+        resp = self.testapp.get('/cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mimetype:warc/revisit&filter=filename:dupes.warc.gz')
+        self._assert_basic_text(resp)
+        actual_len = len(resp.body.rstrip().split('\n'))
+        assert actual_len == 1, actual_len
+
+    def test_cdx_server_advanced(self):
+        # combine collapsing, reversing and revisit resolving
+        resp = self.testapp.get('/cdx?url=http://www.iana.org/_css/2013.1/print.css&collapse_time=11&resolve_revisits=true&reverse=true')
+
+        # convert back to CDXCaptureResult
+        cdxs = map(CDXCaptureResult, resp.body.rstrip().split('\n'))
+        assert len(cdxs) == 3, len(cdxs)
+
+        # verify timestamps
+        timestamps = map(lambda cdx: cdx['timestamp'], cdxs)
+        assert timestamps == ['20140127171239', '20140126201054', '20140126200625']
+
+        # verify orig filenames (2 revisits, one non)
+        origfilenames = map(lambda cdx: cdx['orig.filename'], cdxs)
+        assert origfilenames == ['iana.warc.gz', 'iana.warc.gz', '-']
 
 
     def test_error(self):
@@ -81,12 +102,3 @@ class TestWb:
         assert 'Bad Request Url: http://?abc' in resp.body
 
 
-
-
-def run():
-    test = TestWb()
-    test.setup()
-    test.test_root()
-
-
-#run()

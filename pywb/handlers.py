@@ -73,11 +73,16 @@ class CDXHandler(BaseHandler):
         # use url= param to get actual url
         params = urlparse.parse_qs(wbrequest.env['QUERY_STRING'])
 
+        # parse_qs produces arrays for single values
+        # cdxreader expects singleton params for all except filters, so convert here
+        # use first value of the list
+        for name, val in params.iteritems():
+            if name != 'filter':
+                params[name] = val[0]
+
         url = params.get('url')
         if not url:
             raise WbException('Must specify a url= param to query cdx server')
-
-        url = url[0]
 
         cdx_lines = self.cdx_reader.load_cdx(url, params, parsed_cdx = False)
 
