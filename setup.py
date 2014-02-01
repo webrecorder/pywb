@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim: set sw=4 et:
 
-import setuptools 
+import setuptools
 
 setuptools.setup(name='pywb',
         version='0.1',
@@ -12,6 +12,6 @@ setuptools.setup(name='pywb',
         license='GPL',
         packages=['pywb'],
         install_requires=['uwsgi', 'rfc3987', 'chardet', 'redis', 'jinja2', 'surt', 'pyyaml', 'WebTest'],
-        tests_require['WebTest', 'pytest'],
+        tests_require=['WebTest', 'pytest'],
         zip_safe=False)
 
