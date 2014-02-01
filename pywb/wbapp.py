@@ -59,7 +59,7 @@ def handle_exception(env, errorpage, exc, print_trace):
 
     if errorpage:
         import traceback
-        return errorpage.render_response(err_msg = str(exc), err_details = err_details)
+        return errorpage.render_response(err_msg = str(exc), err_details = err_details, status = status)
     else:
         return WbResponse.text_response(status + ' Error: ' + str(exc), status = status)
 
@@ -69,12 +69,13 @@ DEFAULT_CONFIG_FILE = 'config.yaml'
 
 def main():
     try:
-        # Attempt to load real settings from globalwb module
         logging.basicConfig(format = '%(asctime)s: [%(levelname)s]: %(message)s', level = logging.DEBUG)
 
+        # see if there's a custom init module
         config_name = os.environ.get('PYWB_CONFIG_MODULE')
 
         if not config_name:
+            # use default module
             config_name = 'pywb.pywb_init'
             logging.info('Loading from default config module "{0}"'.format(config_name))
             logging.info('')
@@ -87,7 +88,6 @@ def main():
         return app
 
     except Exception as e:
-        # Otherwise, start with the sample settings
         logging.exception('*** pywb could not init with settings from {0}.pywb_config()!\n'.format(config_name))
         raise e
 

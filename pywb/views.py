@@ -44,7 +44,8 @@ class J2TemplateView:
 
     def render_response(self, **kwargs):
         template_result = self.render_to_string(**kwargs)
-        return wbrequestresponse.WbResponse.text_response(str(template_result), content_type = 'text/html; charset=utf-8')
+        status = kwargs.get('status', '200 OK')
+        return wbrequestresponse.WbResponse.text_response(str(template_result), status = status, content_type = 'text/html; charset=utf-8')
 
 
     # Filters
@@ -74,7 +75,12 @@ class J2HtmlCapturesView(J2TemplateView):
 #=================================================================
 class TextCapturesView:
     def render_response(self, wbrequest, cdx_lines):
-        cdx_lines = imap(lambda x: str(x) + '\n', cdx_lines)
+        def to_str(cdx):
+            cdx = str(cdx)
+            if not cdx.endswith('\n'):
+                cdx += '\n'
+            return cdx
+        cdx_lines = imap(to_str, cdx_lines)
         return wbrequestresponse.WbResponse.text_stream(cdx_lines)
 
 
