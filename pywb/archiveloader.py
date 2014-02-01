@@ -9,7 +9,10 @@ import wbexceptions
 from wbrequestresponse import StatusAndHeaders
 
 #=================================================================
-class HttpReader:
+# load a reader from http
+#=================================================================
+
+class HttpLoader:
     def __init__(self, hmac = None, hmac_duration = 30):
         self.hmac = hmac
         self.hmac_duration = hmac_duration
@@ -31,16 +34,67 @@ class HttpReader:
 
 
 #=================================================================
-# Untested, but for completeness
-class FileReader:
+# load a reader from local filesystem
+#=================================================================
+class FileLoader:
+    """
+    # Ensure attempt to read more than 100 bytes, only reads 100 bytes
+    >>> len(FileLoader().load(utils.test_data_dir() + 'warcs/iana.warc.gz', 0, 100).read('400'))
+    100
+
+    """
+
     def load(self, url, offset, length):
         if url.startswith('file://'):
             url = url[len('file://'):]
 
         afile = open(url, 'rb')
         afile.seek(offset)
-        return afile
 
+        if length > 0:
+            return LimitReader(afile, length)
+        else:
+            return afile
+
+#=================================================================
+# A reader which will not read past the specified limit
+#=================================================================
+class LimitReader:
+    """
+    >>> LimitReader(StringIO.StringIO('abcdefghjiklmnopqrstuvwxyz'), 10).read(26)
+    'abcdefghji'
+
+    >>> LimitReader(StringIO.StringIO('abcdefghjiklmnopqrstuvwxyz'), 8).readline(26)
+    'abcdefgh'
+
+    >>> test_multiple_reads(LimitReader(StringIO.StringIO('abcdefghjiklmnopqrstuvwxyz'), 10), [2, 2, 20])
+    'efghji'
+
+    """
+
+    def __init__(self, stream, limit):
+        self.stream = stream
+        self.limit = limit
+
+        if not self.limit:
+            self.limit = 1
+
+
+    def read(self, length = None):
+        length = min(length, self.limit) if length else self.limit
+        buff = self.stream.read(length)
+        self.limit -= len(buff)
+        return buff
+
+
+    def readline(self, length = None):
+        length = min(length, self.limit) if length else self.limit
+        buff = self.stream.readline(length)
+        self.limit -= len(buff)
+        return buff
+
+    def close(self):
+        self.stream.close()
 
 
 #=================================================================
@@ -115,8 +169,8 @@ class ArchiveLoader:
 
     @staticmethod
     def create_default_loaders():
-        http = HttpReader()
-        file = FileReader()
+        http = HttpLoader()
+        file = FileLoader()
         return {
                 'http': http,
                 'https': http,
@@ -384,6 +438,12 @@ if __name__ == "__main__" or utils.enable_doctests():
 
         archive = testloader.load(path, offset, length)
         pprint.pprint((archive.type, archive.rec_headers, archive.status_headers))
+
+    def test_multiple_reads(reader, inc_reads):
+        result = None
+        for x in inc_reads:
+            result = reader.read(x)
+        return result
 
     import doctest
     doctest.testmod()
