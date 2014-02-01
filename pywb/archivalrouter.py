@@ -72,7 +72,7 @@ class Route:
 
         if rel_prefix:
             wb_prefix = env['SCRIPT_NAME'] + '/' + rel_prefix + '/'
-            wb_url = request_uri[len(rel_prefix) + 1:] # remove the '/' + rel_prefix part of uri
+            wb_url = request_uri[len(rel_prefix) + 2:] # remove the '/' + rel_prefix part of uri
         else:
             wb_prefix = env['SCRIPT_NAME'] + '/'
             wb_url = request_uri # the request_uri is the wb_url, since no coll
