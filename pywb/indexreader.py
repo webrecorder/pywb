@@ -135,7 +135,7 @@ class LocalCDXServer(IndexReader):
 class RemoteCDXServer(IndexReader):
     """
     >>> x = RemoteCDXServer('http://web.archive.org/cdx/search/cdx').load_cdx('example.com', parsed_cdx = True, limit = '2')
-    >>> pprint(x[0].items())
+    >>> pprint(x.next().items())
     [('urlkey', 'com,example)/'),
      ('timestamp', '20020120142510'),
      ('original', 'http://example.com:80/'),
@@ -172,9 +172,9 @@ class RemoteCDXServer(IndexReader):
                 raise e
 
         if parsed_cdx:
-            return map(CDXCaptureResult, response)
+            return (CDXCaptureResult(cdx) for cdx in response)
         else:
-            return response
+            return iter(response)
 
 
     # Note: this params are designed to make pywb compatible with the original Java wayback-cdx-server API:
@@ -189,7 +189,7 @@ class RemoteCDXServer(IndexReader):
         return {
 
             wburl.QUERY:
-                {'collapseTime': collapseTime, 'filter': '!statuscode:(500|502|504)', 'limit': limit},
+                {'collapseTime': collapse_time, 'filter': '!statuscode:(500|502|504)', 'limit': limit},
 
             wburl.URL_QUERY:
                 {'collapse': 'urlkey', 'matchType': 'prefix', 'showGroupCount': True, 'showUniqCount': True, 'lastSkipTimestamp': True, 'limit': limit,
@@ -197,7 +197,7 @@ class RemoteCDXServer(IndexReader):
                 },
 
             wburl.REPLAY:
-                {'sort': 'closest', 'filter': '!statuscode:(500|502|504)', 'limit': replayClosest, 'closest': wburl.timestamp, 'resolveRevisits': True},
+                {'sort': 'closest', 'filter': '!statuscode:(500|502|504)', 'limit': replay_closest, 'closest': wburl.timestamp, 'resolveRevisits': True},
 
             # BUG: resolveRevisits currently doesn't work for this type of query
             # This is not an issue in archival mode, as there is a redirect to the actual timestamp query
