@@ -12,6 +12,6 @@ setuptools.setup(name='pywb',
         license='GPL',
         packages=['pywb'],
         install_requires=['uwsgi', 'rfc3987', 'chardet', 'redis', 'jinja2', 'surt', 'pyyaml', 'WebTest'],
-        # test_suite='?',   # not sure how to run doctests here
+        tests_require['WebTest', 'pytest'],
         zip_safe=False)
 

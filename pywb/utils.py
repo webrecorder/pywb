@@ -224,14 +224,16 @@ def unsurt(surt):
 
 
 #=================================================================
-# Support for bulk doctest testing via nose
+# Support for bulk doctest testing via nose or py.test
 # nosetests --with-doctest
+# py.test --doctest_modules
 
 import sys
-is_in_nose = sys.argv[0].endswith('nosetests')
+is_in_testtool = any(sys.argv[0].endswith(tool) for tool in ['py.test', 'nosetests'])
 
 def enable_doctests():
-    return is_in_nose
+    return is_in_testtool
+
 
 def test_data_dir():
     import os
