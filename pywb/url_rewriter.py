@@ -6,46 +6,49 @@ from wburl import WbUrl
 
 class UrlRewriter:
     """
-    >>> test_rewrite('other.html', '/20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
+    >>> test_rewrite('other.html', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
     'https://web.archive.org/web/20131010/http://example.com/path/other.html'
 
-    >>> test_rewrite('file.js', '/20131010/http://example.com/path/page.html', 'https://web.archive.org/web/', 'js_')
+    >>> test_rewrite('file.js', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/', 'js_')
     'https://web.archive.org/web/20131010js_/http://example.com/path/file.js'
 
-    >>> test_rewrite('./other.html', '/20130907*/http://example.com/path/page.html', '/coll/')
+    >>> test_rewrite('/other.html', '20130907*/http://example.com/path/page.html', '/coll/')
+    '/coll/20130907*/http://example.com/other.html'
+
+    >>> test_rewrite('./other.html', '20130907*/http://example.com/path/page.html', '/coll/')
     '/coll/20130907*/http://example.com/path/other.html'
 
-    >>> test_rewrite('../other.html', '/20131112im_/http://example.com/path/page.html', '/coll/')
+    >>> test_rewrite('../other.html', '20131112im_/http://example.com/path/page.html', '/coll/')
     '/coll/20131112im_/http://example.com/other.html'
 
-    >>> test_rewrite('../../other.html', '/*/http://example.com/index.html', 'localhost:8080/')
+    >>> test_rewrite('../../other.html', '*/http://example.com/index.html', 'localhost:8080/')
     'localhost:8080/*/http://example.com/other.html'
 
-    >>> test_rewrite('path/../../other.html', '/*/http://example.com/index.html', 'localhost:8080/')
+    >>> test_rewrite('path/../../other.html', '*/http://example.com/index.html', 'localhost:8080/')
     'localhost:8080/*/http://example.com/other.html'
 
-    >>> test_rewrite('http://some-other-site.com', '/20101226101112/http://example.com/index.html', 'localhost:8080/')
+    >>> test_rewrite('http://some-other-site.com', '20101226101112/http://example.com/index.html', 'localhost:8080/')
     'localhost:8080/20101226101112/http://some-other-site.com'
 
-    >>> test_rewrite('../../other.html', '/2020/http://example.com/index.html', '/')
+    >>> test_rewrite('../../other.html', '2020/http://example.com/index.html', '/')
     '/2020/http://example.com/other.html'
 
-    >>> test_rewrite('../../other.html', '/2020/http://example.com/index.html', '')
-    '/2020/http://example.com/other.html'
+    >>> test_rewrite('../../other.html', '2020/http://example.com/index.html', '')
+    '2020/http://example.com/other.html'
 
-    >>> test_rewrite('', '/20131010010203/http://example.com/file.html', '/web/')
+    >>> test_rewrite('', '20131010010203/http://example.com/file.html', '/web/')
     '/web/20131010010203/http://example.com/file.html'
 
-    >>> test_rewrite('#anchor', '/20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
+    >>> test_rewrite('#anchor', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
     '#anchor'
 
-    >>> test_rewrite('mailto:example@example.com', '/20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
+    >>> test_rewrite('mailto:example@example.com', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
     'mailto:example@example.com'
 
-    >>> UrlRewriter('/19960708im_/http://domain.example.com/path.txt', '/abc/').get_abs_url()
+    >>> UrlRewriter('19960708im_/http://domain.example.com/path.txt', '/abc/').get_abs_url()
     '/abc/19960708im_/'
 
-    >>> UrlRewriter('/2013id_/example.com/file/path/blah.html', '/123/').get_timestamp_url('20131024')
+    >>> UrlRewriter('2013id_/example.com/file/path/blah.html', '/123/').get_timestamp_url('20131024')
     '/123/20131024id_/http://example.com/file/path/blah.html'
 
     >>> UrlRewriter.strip_protocol('https://example.com') == UrlRewriter.strip_protocol('http://example.com')
@@ -61,8 +64,8 @@ class UrlRewriter:
         self.prefix = prefix
         self.archivalurl_class = self.wburl.__class__
 
-        if self.prefix.endswith('/'):
-            self.prefix = self.prefix[:-1]
+        #if self.prefix.endswith('/'):
+        #    self.prefix = self.prefix[:-1]
 
     def rewrite(self, url, mod = None):
         # if special protocol, no rewriting at all

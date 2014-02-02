@@ -224,7 +224,7 @@ class CSSRewriter(RegexRewriter):
 
 import utils
 if __name__ == "__main__" or utils.enable_doctests():
-    arcrw = UrlRewriter('/20131010im_/http://example.com/', '/web/')
+    arcrw = UrlRewriter('20131010im_/http://example.com/', '/web/')
 
     def test_js(string, extra = []):
         return JSRewriter(arcrw, extra).rewrite(string)

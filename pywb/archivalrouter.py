@@ -48,12 +48,25 @@ class ArchivalRequestRouter:
 # of request uri (excluding first '/')
 #=================================================================
 class Route:
+    """
+    # route with relative path
+    >>> Route('web', handlers.BaseHandler())({'REL_REQUEST_URI': '/web/test.example.com', 'SCRIPT_NAME': ''}, False)
+    {'wb_url': ('latest_replay', '', '', 'http://test.example.com', 'http://test.example.com'), 'coll': 'web', 'wb_prefix': '/web/', 'request_uri': '/web/test.example.com'}
 
-    # match upto next slash
-    SLASH_LOOKAHEAD ='(?=/|$|\?)'
+    # route with absolute path, running at script /my_pywb
+    >>> Route('web', handlers.BaseHandler())({'REL_REQUEST_URI': '/web/2013im_/test.example.com', 'SCRIPT_NAME': '/my_pywb', 'HTTP_HOST': 'localhost:8081', 'wsgi.url_scheme': 'https'}, True)
+    {'wb_url': ('replay', '2013', 'im_', 'http://test.example.com', '2013im_/http://test.example.com'), 'coll': 'web', 'wb_prefix': 'https://localhost:8081/my_pywb/web/', 'request_uri': '/web/2013im_/test.example.com'}
 
 
-    def __init__(self, regex, handler, coll_group = 0, lookahead = SLASH_LOOKAHEAD):
+    # not matching route -- skipped
+    >>> Route('web', handlers.BaseHandler())({'REL_REQUEST_URI': '/other/test.example.com', 'SCRIPT_NAME': ''}, False)
+    """
+
+    # match upto next / or ? or end
+    SLASH_QUERY_LOOKAHEAD ='(?=/|$|\?)'
+
+
+    def __init__(self, regex, handler, coll_group = 0, lookahead = SLASH_QUERY_LOOKAHEAD):
         self.path = regex
         self.regex = re.compile(regex + lookahead)
         self.handler = handler
@@ -71,17 +84,17 @@ class Route:
 
         if rel_prefix:
             wb_prefix = env['SCRIPT_NAME'] + '/' + rel_prefix + '/'
-            wb_url = request_uri[len(rel_prefix) + 1:] # remove the '/' + rel_prefix part of uri
+            wb_url_str = request_uri[len(rel_prefix) + 2:] # remove the '/' + rel_prefix part of uri
         else:
             wb_prefix = env['SCRIPT_NAME'] + '/'
-            wb_url = request_uri # the request_uri is the wb_url, since no coll
+            wb_url_str = request_uri[1:] # the request_uri is the wb_url, since no coll
 
         coll = matcher.group(self.coll_group)
 
         wbrequest = WbRequest(env,
                               request_uri = request_uri,
                               coll = coll,
-                              wb_url = wb_url,
+                              wb_url_str = wb_url_str,
                               wb_prefix = wb_prefix,
                               use_abs_prefix = use_abs_prefix,
                               wburl_class = self.handler.get_wburl_type())
@@ -164,7 +177,7 @@ class ReferRedirect:
 
             # No match on any exception
             try:
-                rewriter = UrlRewriter('/' + ref_path[1], script_name + '/' + ref_path[0])
+                rewriter = UrlRewriter(ref_path[1], script_name + '/' + ref_path[0] + '/')
             except Exception:
                 return None
 
@@ -185,6 +198,8 @@ class ReferRedirect:
 
 import utils
 if __name__ == "__main__" or utils.enable_doctests():
+
+    import handlers
 
     def test_redir(match_host, request_uri, referrer, script_name = ''):
         env = {'REL_REQUEST_URI': request_uri, 'HTTP_REFERER': referrer, 'SCRIPT_NAME': script_name}

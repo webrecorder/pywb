@@ -7,24 +7,24 @@ import pprint
 class WbRequest:
     """
     >>> WbRequest.from_uri('/save/_embed/example.com/?a=b')
-    {'wb_url': ('latest_replay', '', '', 'http://_embed/example.com/?a=b', '/http://_embed/example.com/?a=b'), 'coll': 'save', 'wb_prefix': '/save/', 'request_uri': '/save/_embed/example.com/?a=b'}
+    {'wb_url': ('latest_replay', '', '', 'http://_embed/example.com/?a=b', 'http://_embed/example.com/?a=b'), 'coll': 'save', 'wb_prefix': '/save/', 'request_uri': '/save/_embed/example.com/?a=b'}
 
     >>> WbRequest.from_uri('/2345/20101024101112im_/example.com/?b=c')
-    {'wb_url': ('replay', '20101024101112', 'im_', 'http://example.com/?b=c', '/20101024101112im_/http://example.com/?b=c'), 'coll': '2345', 'wb_prefix': '/2345/', 'request_uri': '/2345/20101024101112im_/example.com/?b=c'}
+    {'wb_url': ('replay', '20101024101112', 'im_', 'http://example.com/?b=c', '20101024101112im_/http://example.com/?b=c'), 'coll': '2345', 'wb_prefix': '/2345/', 'request_uri': '/2345/20101024101112im_/example.com/?b=c'}
 
     >>> WbRequest.from_uri('/2010/example.com')
-    {'wb_url': ('latest_replay', '', '', 'http://example.com', '/http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
+    {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
 
     >>> WbRequest.from_uri('../example.com')
-    {'wb_url': ('latest_replay', '', '', 'http://example.com', '/http://example.com'), 'coll': '', 'wb_prefix': '/', 'request_uri': '../example.com'}
+    {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '', 'wb_prefix': '/', 'request_uri': '../example.com'}
 
     # Abs path
     >>> WbRequest.from_uri('/2010/example.com', {'wsgi.url_scheme': 'https', 'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
-    {'wb_url': ('latest_replay', '', '', 'http://example.com', '/http://example.com'), 'coll': '2010', 'wb_prefix': 'https://localhost:8080/2010/', 'request_uri': '/2010/example.com'}
+    {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': 'https://localhost:8080/2010/', 'request_uri': '/2010/example.com'}
 
     # No Scheme, so stick to relative
     >>> WbRequest.from_uri('/2010/example.com', {'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
-    {'wb_url': ('latest_replay', '', '', 'http://example.com', '/http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
+    {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
 
     """
 
@@ -38,19 +38,19 @@ class WbRequest:
         # Has coll prefix
         if len(parts) == 3:
             wb_prefix = '/' + parts[1] + '/'
-            wb_url = '/' + parts[2]
+            wb_url_str = parts[2]
             coll = parts[1]
         # No Coll Prefix
         elif len(parts) == 2:
             wb_prefix = '/'
-            wb_url = '/' + parts[1]
+            wb_url_str = parts[1]
             coll = ''
         else:
             wb_prefix = '/'
-            wb_url = parts[0]
+            wb_url_str = parts[0]
             coll = ''
 
-        return WbRequest(env, request_uri, wb_prefix, wb_url, coll, use_abs_prefix)
+        return WbRequest(env, request_uri, wb_prefix, wb_url_str, coll, use_abs_prefix)
 
 
     @staticmethod
@@ -61,7 +61,7 @@ class WbRequest:
             return rel_prefix
 
 
-    def __init__(self, env, request_uri, wb_prefix, wb_url, coll, use_abs_prefix = False, wburl_class = WbUrl):
+    def __init__(self, env, request_uri, wb_prefix, wb_url_str, coll, use_abs_prefix = False, wburl_class = WbUrl):
         self.env = env
 
         self.request_uri = request_uri if request_uri else env.get('REL_REQUEST_URI')
@@ -69,9 +69,9 @@ class WbRequest:
         self.wb_prefix = wb_prefix if not use_abs_prefix else WbRequest.make_abs_prefix(env, wb_prefix)
 
         # wb_url present and not root page
-        if wb_url != '/' and wb_url != '' and wburl_class:
-            self.wb_url_str = wb_url
-            self.wb_url = wburl_class(wb_url)
+        if wb_url_str != '/' and wb_url_str != '' and wburl_class:
+            self.wb_url_str = wb_url_str
+            self.wb_url = wburl_class(wb_url_str)
         else:
         # no wb_url, just store blank
             self.wb_url_str = '/'

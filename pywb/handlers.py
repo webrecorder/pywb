@@ -12,6 +12,8 @@ class BaseHandler:
     def get_wburl_type():
         return WbUrl
 
+    def __call__(self, wbrequest):
+        return wbrequest
 
 #=================================================================
 # Standard WB Handler
