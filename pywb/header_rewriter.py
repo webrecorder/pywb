@@ -128,7 +128,7 @@ if __name__ == "__main__" or utils.enable_doctests():
     import pprint
     import url_rewriter
 
-    urlrewriter = url_rewriter.UrlRewriter('/20131226101010/http://example.com/some/path/index.html', '/web/')
+    urlrewriter = url_rewriter.UrlRewriter('20131226101010/http://example.com/some/path/index.html', '/web/')
 
     headerrewriter = HeaderRewriter()
 

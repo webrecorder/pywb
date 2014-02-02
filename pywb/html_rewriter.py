@@ -310,7 +310,7 @@ class HTMLRewriter(HTMLParser):
 import utils
 if __name__ == "__main__" or utils.enable_doctests():
 
-    url_rewriter = UrlRewriter('/20131226101010/http://example.com/some/path/index.html', '/web/')
+    url_rewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html', '/web/')
 
     def parse(data, head_insert = None):
         parser = HTMLRewriter(url_rewriter, head_insert = head_insert)
