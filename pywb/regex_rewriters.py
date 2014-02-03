@@ -30,9 +30,9 @@ class RegexRewriter:
 
     @staticmethod
     def replacer(string):
-        return lambda x: string 
+        return lambda x: string
 
-    HTTPX_MATCH_STR = 'https?:\\\\?/\\\\?/[A-Za-z0-9:_@.-]+'
+    HTTPX_MATCH_STR = r'https?:\\?/\\?/[A-Za-z0-9:_@.-]+'
 
     DEFAULT_OP = add_prefix
 
@@ -95,6 +95,18 @@ class JSRewriter(RegexRewriter):
     >>> test_js('location = "http://example.com/abc.html"')
     'WB_wombat_location = "/web/20131010im_/http://example.com/abc.html"'
 
+    >>> test_js(r'location = "http:\/\/example.com/abc.html"')
+    'WB_wombat_location = "/web/20131010im_/http:\\\\/\\\\/example.com/abc.html"'
+
+    >>> test_js(r'location = "http:\\/\\/example.com/abc.html"')
+    'WB_wombat_location = "/web/20131010im_/http:\\\\/\\\\/example.com/abc.html"'
+
+    >>> test_js(r'location = /http:\/\/example.com/abc.html/')
+    'WB_wombat_location = /http:\\\\/\\\\/example.com/abc.html/'
+
+    >>> test_js('"/location" == some_location_val; locations = location;')
+    '"/location" == some_location_val; locations = WB_wombat_location;'
+
     >>> test_js('cool_Location = "http://example.com/abc.html"')
     'cool_Location = "/web/20131010im_/http://example.com/abc.html"'
 
@@ -119,9 +131,9 @@ class JSRewriter(RegexRewriter):
 
     def _create_rules(self, http_prefix):
         return [
-             (RegexRewriter.HTTPX_MATCH_STR, http_prefix, 0),
-             ('location', 'WB_wombat_', 0),
-             ('(?<=document\.)domain', 'WB_wombat_', 0),
+             (r'(?<!/)\b' + RegexRewriter.HTTPX_MATCH_STR, http_prefix, 0),
+             (r'(?<!/)\blocation\b', 'WB_wombat_', 0),
+             (r'(?<=document\.)domain', 'WB_wombat_', 0),
         ]
 
 

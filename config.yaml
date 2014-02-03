@@ -1,80 +1,56 @@
 # pywb config file
 # ========================================
 #
-# Settings for each route are defined below
-# Each route may be an archival collection or other handler
+# Settings for each collection
+
+collections:
+    # <name>: <cdx_path>
+    # collection will be accessed via /<name>
+    # <cdx_path> is a string or list of:
+    #  - string or list of one or more local .cdx file
+    #  - string or list of one or more local dirs with .cdx files
+    #  - a string value indicating remote http cdx server
+    pywb: ./sample_archive/cdx/
+
+# indicate if cdx files are sorted by SURT keys -- eg: com,example)/
+# SURT keys are recommended for future indices, but non-SURT cdxs
+# are also supported
 #
-routes:
-      # route name (eg /pywb)
-    - name: pywb
+#   * Set to true if cdxs start with surts: com,example)/
+#   * Set to false if cdx start with urls: example.com)/
+surt_ordered: true
 
-      # list of paths to search cdx files
-      #  * local .cdx file
-      #  * local dir, will include all .cdx files in dir
-      #
-      # or a string value indicating remote http cdx server
-      index_paths:
-          - ./sample_archive/cdx/
+# list of paths prefixes for pywb look to 'resolve'  WARC and ARC filenames
+# in the cdx to their absolute path
+#
+# if path is:
+#   * local dir, use path as prefix
+#   * local file, lookup prefix in tab-delimited sorted index
+#   * http:// path, use path as remote prefix
+#   * redis:// path, use redis to lookup full path for w:<warc> as key
 
-      # indicate if cdx files are sorted by SURT keys -- eg: com,example)/
-      # SURT keys are recommended for future indices, but non-SURT cdxs
-      # are also supported
-      #
-      #   * Set to true if cdxs start with surts: com,example)/
-      #   * Set to false if cdx start with urls: example.com)/
-      surt_ordered: True
+archive_paths: ./sample_archive/warcs/
 
-      # list of paths prefixes for pywb look to 'resolve'  WARC and ARC filenames
-      # in the cdx to their absolute path
-      #
-      # if path is:
-      #   * local dir, use path as prefix
-      #   * local file, lookup prefix in tab-delimited sorted index
-      #   * http:// path, use path as remote prefix
-      #   * redis:// path, use redis to lookup full path for w:<warc> as key
+# ui: optional Jinja2 template to insert into <head> of each replay
+head_insert_html: ./ui/head_insert.html
 
-      archive_paths:
-          - ./sample_archive/warcs/
+# ui: optional text to directly insert into <head>
+# only loaded if ui_head_insert_template_file is not specified
 
-      # ui: optional Jinja2 template to insert into <head> of each replay
-      head_insert_html_template: ./ui/head_insert.html
+#head_insert_text: <script src='example.js'></script>
 
-      # ui: optional text to directly insert into <head>
-      # only loaded if ui_head_insert_template_file is not specified
-      
-      #head_insert_text: <script src='example.js'></script>
+#static_path: /static2/
 
+# ui: optional Jinja2 template to use for 'calendar' query,
+# eg, a listing of captures  in response to a ../*/<url>
+#
+# may be a simple listing or a more complex 'calendar' UI
+# if omitted, the capture listing lists raw index
+query_html: ./ui/query.html
 
-      # ui: optional Jinja2 template to use for 'calendar' query,
-      # eg, a listing of captures  in response to a ../*/<url>
-      #
-      # may be a simple listing or a more complex 'calendar' UI
-      # if omitted, the capture listing lists raw index
-      calendar_html_template: ./ui/query.html
-
-      # ui: optional Jinja2 template to use for 'search' page
-      # this page is displayed when no search url is entered
-      search_html_template: ./ui/search.html
-
-    # Sample Debug Handlers (subject to change)
-    # Echo Request
-    - name: echo_req
-
-      type: echo_req
-
-    # Echo WSGI Env
-    - name: echo_env
-
-      type: echo_env
-
-    # CDX Server
-    - name: cdx
-
-      index_paths: ['./sample_archive/cdx/']
-
-      type: 'cdx'
-
-
+# ui: optional Jinja2 template to use for 'search' page
+# this page is displayed when no search url is entered
+search_html: ./ui/search.html
 
 # list of host names that pywb will be running from to detect
 # 'fallthrough' requests based on referrer
@@ -89,10 +65,10 @@ hostpaths: ['http://localhost:8080/']
 # ui: optional Jinja2 template for home page
 # if no other route is set to home page, this template will
 # be rendered at /, /index.htm and /index.html
-home_html_template: ./ui/index.html
+home_html: ./ui/index.html
 
 
 # ui: optional Jinja2 template for rendering any errors
 # the error page may print a detailed error message
-error_html_template: ./ui/error.html
+error_html: ./ui/error.html
 

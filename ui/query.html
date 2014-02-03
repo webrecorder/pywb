@@ -11,9 +11,9 @@
     {% for cdx in cdx_lines  %}
     <tr style="{{ 'font-weight: bold' if cdx['mimetype'] != 'warc/revisit' else '' }}">
       <td><a href="{{ prefix }}{{ cdx.timestamp }}/{{ url }}">{{ cdx['timestamp'] | format_ts}}</a></td>
-      <td>{{ cdx['filename'] }}</td>
       <td>{{ cdx['statuscode'] }}</td>
-      <td>{{ cdx['originalurl'] }}</td>
+      <td>{{ cdx['original'] }}</td>
+      <td>{{ cdx['filename'] }}</td>
     </tr>
     {% endfor %}
   </table>

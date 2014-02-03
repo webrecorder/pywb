@@ -44,6 +44,32 @@ class IndexReader:
     def load_cdx(self, url, params = {}, parsed_cdx = True):
         raise NotImplementedError('Override in subclasses')
 
+    @staticmethod
+    def make_best_cdx_source(paths, **config):
+        # may be a string or list
+        surt_ordered = config.get('surt_ordered', True)
+
+        # support mixed cdx streams and remote servers?
+        # for now, list implies local sources
+        if isinstance(paths, list):
+            if len(paths) > 1:
+                return LocalCDXServer(paths, surt_ordered)
+            else:
+                # treat as non-list
+                paths = paths[0]
+
+        # a single uri
+        uri = paths
+
+        # Check for remote cdx server
+        if (uri.startswith('http://') or uri.startswith('https://')) and not uri.endswith('.cdx'):
+            cookie = config.get('cookie', None)
+            return RemoteCDXServer(uri, cookie = cookie)
+        else:
+            return LocalCDXServer([uri], surt_ordered)
+
+
+
 
 #=================================================================
 class LocalCDXServer(IndexReader):

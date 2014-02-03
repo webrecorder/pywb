@@ -10,13 +10,13 @@ from wburl import WbUrl
 # ArchivalRequestRouter -- route WB requests in archival mode
 #=================================================================
 class ArchivalRequestRouter:
-    def __init__(self, routes, hostpaths = None, abs_path = True, homepage = None, errorpage = None):
+    def __init__(self, routes, hostpaths = None, abs_path = True, home_view = None, error_view = None):
         self.routes = routes
         self.fallback = ReferRedirect(hostpaths)
         self.abs_path = abs_path
 
-        self.homepage = homepage
-        self.errorpage = errorpage
+        self.home_view = home_view
+        self.error_view = error_view
 
     def __call__(self, env):
         for route in self.routes:
@@ -26,7 +26,7 @@ class ArchivalRequestRouter:
 
         # Home Page
         if env['REL_REQUEST_URI'] in ['/', '/index.html', '/index.htm']:
-            return self.render_homepage()
+            return self.render_home_page()
 
         if not self.fallback:
             return None
@@ -34,10 +34,10 @@ class ArchivalRequestRouter:
         return self.fallback(WbRequest.from_uri(None, env))
 
 
-    def render_homepage(self):
+    def render_home_page(self):
         # render the homepage!
-        if self.homepage:
-            return self.homepage.render_response(routes = self.routes)
+        if self.home_view:
+            return self.home_view.render_response(routes = self.routes)
         else:
             # default home page template
             text = '\n'.join(map(str, self.routes))

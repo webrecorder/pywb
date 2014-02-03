@@ -8,6 +8,8 @@ import importlib
 import logging
 
 
+
+#=================================================================
 def create_wb_app(wb_router):
 
     # Top-level wsgi application
@@ -29,13 +31,13 @@ def create_wb_app(wb_router):
             response = WbResponse(StatusAndHeaders(ir.status, ir.httpHeaders))
 
         except (wbexceptions.NotFoundException, wbexceptions.AccessException) as e:
-            response = handle_exception(env, wb_router.errorpage, e, False)
+            response = handle_exception(env, wb_router.error_view, e, False)
 
         except wbexceptions.WbException as wbe:
-            response = handle_exception(env, wb_router.errorpage, wbe, False)
+            response = handle_exception(env, wb_router.error_view, wbe, False)
 
         except Exception as e:
-            response = handle_exception(env, wb_router.errorpage, e, True)
+            response = handle_exception(env, wb_router.error_view, e, True)
 
         return response(env, start_response)
 
@@ -43,7 +45,7 @@ def create_wb_app(wb_router):
     return application
 
 
-def handle_exception(env, errorpage, exc, print_trace):
+def handle_exception(env, error_view, exc, print_trace):
     if hasattr(exc, 'status'):
         status = exc.status()
     else:
@@ -57,9 +59,9 @@ def handle_exception(env, errorpage, exc, print_trace):
         logging.info(str(exc))
         err_details = None
 
-    if errorpage:
+    if error_view:
         import traceback
-        return errorpage.render_response(err_msg = str(exc), err_details = err_details, status = status)
+        return error_view.render_response(err_msg = str(exc), err_details = err_details, status = status)
     else:
         return WbResponse.text_response(status + ' Error: ' + str(exc), status = status)
 

@@ -7,10 +7,10 @@ pywb is a Python re-implementation of the Wayback Machine software.
 
 The goal is to provide a brand new, clean implementation of Wayback.
 
-This involves playing back archival web content (usually in WARC or ARC files) as best or accurately
-as possible, in straightforward by highly customizable way.
+The focus is to focus on providing the best/accurate replay of archival web content (usually in WARC or ARC files),
+and new ways of handling dynamic and difficult content.
 
-It should be easy to deploy and hack!
+pywb should also be easy to deploy and modify!
 
 
 ### Wayback Machine
@@ -72,9 +72,16 @@ If everything worked, the following pages should be loading (served from *sample
 ### Automated Tests
 
 Currently pywb consists of numerous doctests against the sample archive.
-Additional testing is in the works.
 
-The current set of tests can be run with Nose:
+The `run-tests.py` file currently contains a few basic integration tests against the default config.
+
+
+The current set of tests can be run with py.test:
+
+`py.test run-tests.py ./pywb/ --doctest-modules`
+
+
+or with Nose:
 
 `nosetests --with-doctest`
 
@@ -85,31 +92,21 @@ pywb is configurable via yaml.
 
 The simplest [config.yaml](config.yaml) is roughly as follows:
 
-``` yaml
+```yaml
 
-routes:
-    - name: pywb
-
-     index_paths:
-          - ./sample_archive/cdx/
-
-     archive_paths:
-          - ./sample_archive/warcs/
-
-     head_insert_html_template: ./ui/head_insert.html
-
-     calendar_html_template: ./ui/query.html
+collections:
+   pywb: ./sample_archive/cdx/
 
 
-hostpaths: ['http://localhost:8080/']
+archive_paths: ./sample_archive/warcs/
 
 ```
 
-The optional ui elements, the query/calendar and header insert are specifyable via html/Jinja2 templates.
+This sets up pywb with a single route for collection /pywb
 
 
-(Refer to [full version of config.yaml](config.yaml) for additional documentation)
-
+(The [full version of config.yaml](config.yaml) contains additional documentation and specifies
+all the optional properties, such as ui filenames for Jinja2/html template files.)
 
 
 For more advanced use, the pywb init path can be customized further:

@@ -18,11 +18,12 @@ import wbexceptions
 
 #=================================================================
 class ReplayView:
-    def __init__(self, resolvers, archiveloader):
+    def __init__(self, resolvers, loader = None):
         self.resolvers = resolvers
-        self.loader = archiveloader
+        self.loader = loader if loader else archiveloader.ArchiveLoader()
 
-    def __call__(self, wbrequest, cdx_lines, cdx_reader):
+
+    def __call__(self, wbrequest, cdx_lines, cdx_reader, static_path):
         last_e = None
         first = True
 
@@ -33,16 +34,15 @@ class ReplayView:
         # The cdx should already be sorted in closest-to-timestamp order (from the cdx server)
         for cdx in cdx_lines:
             try:
-                # ability to intercept and redirect
+                # optimize: can detect if redirect is needed just from the cdx, no need to load w/arc data
                 if first:
-                    self._check_redir(wbrequest, cdx)
+                    self._redirect_if_needed(wbrequest, cdx)
                     first = False
 
-                response = self.do_replay(cdx, wbrequest, cdx_reader, failed_files)
+                (cdx, status_headers, stream) = self.resolve_headers_and_payload(cdx, wbrequest, cdx_reader, failed_files)
 
-                if response:
-                    response.cdx = cdx
-                    return response
+                return self.make_response(wbrequest, cdx, status_headers, stream, static_path)
+
 
             except wbexceptions.CaptureException as ce:
                 import traceback
@@ -55,8 +55,12 @@ class ReplayView:
         else:
             raise wbexceptions.UnresolvedArchiveFileException()
 
-    def _check_redir(self, wbrequest, cdx):
-        return None
+
+    # callback to issue a redirect to another request
+    # subclasses may provide custom logic
+    def _redirect_if_needed(self, wbrequest, cdx):
+        pass
+
 
     def _load(self, cdx, revisit, failed_files):
         if revisit:
@@ -94,7 +98,7 @@ class ReplayView:
             raise wbexceptions.ArchiveLoadFailed(filename, last_exc.reason if last_exc else '')
 
 
-    def do_replay(self, cdx, wbrequest, cdx_reader, failed_files):
+    def resolve_headers_and_payload(self, cdx, wbrequest, cdx_reader, failed_files):
         has_curr = (cdx['filename'] != '-')
         has_orig = (cdx.get('orig.filename','-') != '-')
 
@@ -131,10 +135,20 @@ class ReplayView:
             raise wbexceptions.CaptureException('Invalid CDX' + str(cdx))
 
 
-        response = WbResponse(headers_record.status_headers, self.create_stream_gen(payload_record.stream))
-        response._stream = payload_record.stream
-        return response
+        #response = WbResponse(headers_record.status_headers, self.create_stream_gen(payload_record.stream))
+        #response._stream = payload_record.stream
+        return (cdx, headers_record.status_headers, payload_record.stream)
 
+
+    # done here! just return response
+    # subclasses make override to do additional processing
+    def make_response(self, wbrequest, cdx, status_headers, stream, static_path):
+        return self.create_stream_response(status_headers, stream)
+
+
+    # create response from headers and wrapping stream in generator
+    def create_stream_response(self, status_headers, stream):
+        return WbResponse(status_headers, self.create_stream_gen(stream))
 
 
     # Handle the case where a duplicate of a capture with same digest exists at a different url
@@ -189,6 +203,7 @@ class ReplayView:
 
         raise wbexceptions.UnresolvedArchiveFileException('Archive File Not Found: ' + filename)
 
+
     # Create a generator reading from a stream, with optional rewriting and final read call
     @staticmethod
     def create_stream_gen(stream, rewrite_func = None, final_read_func = None, first_buff = None):
@@ -216,14 +231,15 @@ class ReplayView:
 #=================================================================
 class RewritingReplayView(ReplayView):
 
-    def __init__(self, resolvers, archiveloader, head_insert_view = None, header_rewriter = None, redir_to_exact = True, buffer_response = False):
-        ReplayView.__init__(self, resolvers, archiveloader)
+    def __init__(self, resolvers, loader = None, head_insert_view = None, header_rewriter = None, redir_to_exact = True, buffer_response = False):
+        ReplayView.__init__(self, resolvers, loader)
         self.head_insert_view = head_insert_view
         self.header_rewriter = header_rewriter if header_rewriter else HeaderRewriter()
         self.redir_to_exact = redir_to_exact
 
         # buffer or stream rewritten response
         self.buffer_response = buffer_response
+
 
 
     def _text_content_type(self, content_type):
@@ -234,19 +250,16 @@ class RewritingReplayView(ReplayView):
         return None
 
 
-    def __call__(self, wbrequest, cdx_list, cdx_reader):
-        urlrewriter = UrlRewriter(wbrequest.wb_url, wbrequest.wb_prefix)
-        wbrequest.urlrewriter = urlrewriter
+    def make_response(self, wbrequest, cdx, status_headers, stream, static_path):
+        # check and reject self-redirect
+        self._reject_self_redirect(wbrequest, cdx, status_headers)
 
-        response = ReplayView.__call__(self, wbrequest, cdx_list, cdx_reader)
+        # check if redir is needed
+        self._redirect_if_needed(wbrequest, cdx)
 
-        if response and response.cdx:
-            self._check_redir(wbrequest, response.cdx)
+        urlrewriter = wbrequest.urlrewriter
 
-        rewritten_headers = self.header_rewriter.rewrite(response.status_headers, urlrewriter)
-
-        # TODO: better way to pass this?
-        stream = response._stream
+        rewritten_headers = self.header_rewriter.rewrite(status_headers, urlrewriter)
 
         # de_chunking in case chunk encoding is broken
         # TODO: investigate further
@@ -257,23 +270,19 @@ class RewritingReplayView(ReplayView):
             stream = archiveloader.ChunkedLineReader(stream)
             de_chunk = True
 
-        # Transparent, though still may need to dechunk
+        # transparent, though still may need to dechunk
         if wbrequest.wb_url.mod == 'id_':
             if de_chunk:
-                response.status_headers.remove_header('transfer-encoding')
-                response.body = self.create_stream_gen(stream)
+                status_headers.remove_header('transfer-encoding')
 
-            return response
+            return self.create_stream_response(status_headers, stream)
 
         # non-text content type, just send through with rewritten headers
         # but may need to dechunk
         if rewritten_headers.text_type is None:
-            response.status_headers = rewritten_headers.status_headers
+            status_headers = rewritten_headers.status_headers
 
-            if de_chunk:
-                response.body = self.create_stream_gen(stream)
-
-            return response
+            return self.create_stream_response(status_headers, stream)
 
         # Handle text rewriting
 
@@ -303,7 +312,7 @@ class RewritingReplayView(ReplayView):
         status_headers = rewritten_headers.status_headers
 
         if text_type == 'html':
-            head_insert_str = self.head_insert_view.render_to_string(wbrequest = wbrequest, cdx = response.cdx) if self.head_insert_view else None
+            head_insert_str = self.head_insert_view.render_to_string(wbrequest = wbrequest, cdx = cdx, static_path = static_path) if self.head_insert_view else None
             rewriter = html_rewriter.HTMLRewriter(urlrewriter, outstream = None, head_insert = head_insert_str)
         elif text_type == 'css':
             rewriter = regex_rewriters.CSSRewriter(urlrewriter)
@@ -384,30 +393,22 @@ class RewritingReplayView(ReplayView):
         return (result['encoding'], buff)
 
 
-    def _check_redir(self, wbrequest, cdx):
-        if self.redir_to_exact and cdx and (cdx['timestamp'] != wbrequest.wb_url.timestamp):
+    def _redirect_if_needed(self, wbrequest, cdx):
+        is_proxy = wbrequest.is_proxy
+        if self.redir_to_exact and not is_proxy and cdx and (cdx['timestamp'] != wbrequest.wb_url.timestamp):
             new_url = wbrequest.urlrewriter.get_timestamp_url(cdx['timestamp'], cdx['original'])
             raise wbexceptions.InternalRedirect(new_url)
-            #return WbResponse.better_timestamp_response(wbrequest, cdx['timestamp'])
 
         return None
 
 
-    def do_replay(self, cdx, wbrequest, index, failed_files):
-        wbresponse = ReplayView.do_replay(self, cdx, wbrequest, index, failed_files)
+    def _reject_self_redirect(self, wbrequest, cdx, status_headers):
+        if status_headers.statusline.startswith('3'):
+            request_url = wbrequest.wb_url.url.lower()
+            location_url = status_headers.get_header('Location').lower()
 
-        # Check for self redirect
-        if wbresponse.status_headers.statusline.startswith('3'):
-            if self.is_self_redirect(wbrequest, wbresponse.status_headers):
+            #TODO: canonicalize before testing?
+            if (UrlRewriter.strip_protocol(request_url) == UrlRewriter.strip_protocol(location_url)):
                 raise wbexceptions.CaptureException('Self Redirect: ' + str(cdx))
-
-        return wbresponse
-
-    def is_self_redirect(self, wbrequest, status_headers):
-        request_url = wbrequest.wb_url.url.lower()
-        location_url = status_headers.get_header('Location').lower()
-        #return request_url == location_url
-        return (UrlRewriter.strip_protocol(request_url) == UrlRewriter.strip_protocol(location_url))
-
 
 

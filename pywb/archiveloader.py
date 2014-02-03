@@ -126,7 +126,7 @@ class ArchiveLoader:
       ('x-ec-custom-error', '1'),
       ('Content-Length', '1270'),
       ('Connection', 'close')]))
-      
+
 
     >>> load_test_archive('example.warc.gz', '1864', '553')
     (('warc', 'revisit'),
@@ -168,8 +168,8 @@ class ArchiveLoader:
     }
 
     @staticmethod
-    def create_default_loaders():
-        http = HttpLoader()
+    def create_default_loaders(hmac = None):
+        http = HttpLoader(hmac)
         file = FileLoader()
         return {
                 'http': http,
@@ -179,8 +179,8 @@ class ArchiveLoader:
                }
 
 
-    def __init__(self, loaders = {}, chunk_size = 8192):
-        self.loaders = loaders if loaders else ArchiveLoader.create_default_loaders()
+    def __init__(self, loaders = {}, hmac = None, chunk_size = 8192):
+        self.loaders = loaders if loaders else ArchiveLoader.create_default_loaders(hmac)
         self.chunk_size = chunk_size
 
         self.arc_parser = ARCHeadersParser(ArchiveLoader.ARC_HEADERS)

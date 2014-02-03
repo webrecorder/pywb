@@ -1,4 +1,6 @@
 from wburl import WbUrl
+from url_rewriter import UrlRewriter
+
 import utils
 
 import pprint
@@ -61,7 +63,12 @@ class WbRequest:
             return rel_prefix
 
 
-    def __init__(self, env, request_uri, wb_prefix, wb_url_str, coll, use_abs_prefix = False, wburl_class = WbUrl):
+    def __init__(self, env, request_uri, wb_prefix, wb_url_str, coll,
+                 use_abs_prefix = False,
+                 wburl_class = WbUrl,
+                 url_rewriter_class = UrlRewriter,
+                 is_proxy = False):
+
         self.env = env
 
         self.request_uri = request_uri if request_uri else env.get('REL_REQUEST_URI')
@@ -72,10 +79,12 @@ class WbRequest:
         if wb_url_str != '/' and wb_url_str != '' and wburl_class:
             self.wb_url_str = wb_url_str
             self.wb_url = wburl_class(wb_url_str)
+            self.urlrewriter = url_rewriter_class(self.wb_url, self.wb_prefix)
         else:
         # no wb_url, just store blank
             self.wb_url_str = '/'
             self.wb_url = None
+            self.urlrewriter = None
 
         self.coll = coll
 
@@ -84,6 +93,8 @@ class WbRequest:
         self.is_ajax = self._is_ajax()
 
         self.query_filter = []
+
+        self.is_proxy = is_proxy
 
         self.custom_params = {}
 

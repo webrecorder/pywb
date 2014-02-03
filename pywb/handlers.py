@@ -19,19 +19,22 @@ class BaseHandler:
 # Standard WB Handler
 #=================================================================
 class WBHandler(BaseHandler):
-    def __init__(self, cdx_reader, replay, capturespage = None, searchpage = None):
+    def __init__(self, cdx_reader, replay, html_view = None, search_view = None, static_path = '/static/'):
         self.cdx_reader = cdx_reader
         self.replay = replay
 
         self.text_view = views.TextCapturesView()
-        self.html_view = capturespage
-        self.searchpage = searchpage
+
+        self.html_view = html_view
+        self.search_view = search_view
+
+        self.static_path = static_path
 
 
     def __call__(self, wbrequest):
 
         if wbrequest.wb_url_str == '/':
-            return self.render_searchpage(wbrequest)
+            return self.render_search_page(wbrequest)
 
         with utils.PerfTimer(wbrequest.env.get('X_PERF'), 'query') as t:
             cdx_lines = self.cdx_reader.load_for_request(wbrequest, parsed_cdx = True)
@@ -45,21 +48,18 @@ class WBHandler(BaseHandler):
             return query_view.render_response(wbrequest, cdx_lines)
 
         with utils.PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
-            return self.replay(wbrequest, cdx_lines, self.cdx_reader)
+            return self.replay(wbrequest, cdx_lines, self.cdx_reader, self.static_path)
 
 
-    def render_searchpage(self, wbrequest):
-        if self.searchpage:
-            return self.searchpage.render_response(wbrequest = wbrequest)
+    def render_search_page(self, wbrequest):
+        if self.search_view:
+            return self.search_view.render_response(wbrequest = wbrequest)
         else:
             return WbResponse.text_response('No Lookup Url Specified')
 
 
-
     def __str__(self):
         return 'WBHandler: ' + str(self.cdx_reader) + ', ' + str(self.replay)
-
-
 
 #=================================================================
 # CDX-Server Handler -- pass all params to cdx server

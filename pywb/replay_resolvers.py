@@ -9,9 +9,9 @@ import logging
 # PrefixResolver - convert cdx file entry to url with prefix if url contains specified string
 #======================================
 class PrefixResolver:
-    def __init__(self, prefix, contains = ''):
+    def __init__(self, prefix, contains):
         self.prefix = prefix
-        self.contains = contains
+        self.contains = contains if contains else ''
 
     def __call__(self, filename):
         return [self.prefix + filename] if (self.contains in filename) else []
@@ -25,9 +25,9 @@ class PrefixResolver:
 
 #======================================
 class RedisResolver:
-    def __init__(self, redis_url, key_prefix = 'w:'):
+    def __init__(self, redis_url, key_prefix = None):
         self.redis_url = redis_url
-        self.key_prefix = key_prefix
+        self.key_prefix = key_prefix if key_prefix else 'w:'
         self.redis = redis.StrictRedis.from_url(redis_url)
 
     def __call__(self, filename):
@@ -65,11 +65,15 @@ class PathIndexResolver:
 
 #TODO: more options (remote files, contains param, etc..)
 # find best resolver given the path
-def make_best_resolver(path):
+def make_best_resolver(param):
     """
     # http path
     >>> make_best_resolver('http://myhost.example.com/warcs/')
     PrefixResolver('http://myhost.example.com/warcs/')
+
+    # http path w/ contains param
+    >>> make_best_resolver(('http://myhost.example.com/warcs/', '/'))
+    PrefixResolver('http://myhost.example.com/warcs/', contains = '/')
 
     # redis path
     >>> make_best_resolver('redis://myhost.example.com:1234/1')
@@ -85,11 +89,18 @@ def make_best_resolver(path):
 
     """
 
+    if isinstance(param, tuple):
+        path = param[0]
+        arg = param[1]
+    else:
+        path = param
+        arg = None
+
     url_parts = urlparse.urlsplit(path)
 
     if url_parts.scheme == 'redis':
         logging.info('Adding Redis Index: ' + path)
-        return RedisResolver(path)
+        return RedisResolver(path, arg)
 
     if url_parts.scheme == 'file':
         path = url_parts.path
@@ -101,7 +112,17 @@ def make_best_resolver(path):
     # non-file paths always treated as prefix for now
     else:
         logging.info('Adding Archive Path Source: ' + path)
-        return PrefixResolver(path)
+        return PrefixResolver(path, arg)
+
+
+#=================================================================
+def make_best_resolvers(*paths):
+    """
+    >>> make_best_resolvers('http://myhost.example.com/warcs/', 'redis://myhost.example.com:1234/1')
+    [PrefixResolver('http://myhost.example.com/warcs/'), RedisResolver('redis://myhost.example.com:1234/1')]
+    """
+    return map(make_best_resolver, paths)
+
 
 import utils
 #=================================================================

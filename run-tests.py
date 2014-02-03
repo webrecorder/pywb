@@ -5,8 +5,8 @@ from pywb.indexreader import CDXCaptureResult
 class TestWb:
     def setup(self):
         import pywb.wbapp
-        #self.testapp = webtest.TestApp(pywb.wbapp.application)
-        self.app = pywb.wbapp.create_wb_app(pywb.pywb_init.pywb_config())
+        #self.app = pywb.wbapp.create_wb_app(pywb.pywb_init.pywb_config())
+        self.app = pywb.wbapp.create_wb_app(pywb.pywb_init.pywb_config_manual())
         self.testapp = webtest.TestApp(self.app)
 
     def _assert_basic_html(self, resp):
@@ -74,14 +74,14 @@ class TestWb:
         assert '/pywb/20140127171251/http://www.iana.org/domains/example' in resp.body
 
     def test_cdx_server_filters(self):
-        resp = self.testapp.get('/cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mimetype:warc/revisit&filter=filename:dupes.warc.gz')
+        resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mimetype:warc/revisit&filter=filename:dupes.warc.gz')
         self._assert_basic_text(resp)
         actual_len = len(resp.body.rstrip().split('\n'))
         assert actual_len == 1, actual_len
 
     def test_cdx_server_advanced(self):
         # combine collapsing, reversing and revisit resolving
-        resp = self.testapp.get('/cdx?url=http://www.iana.org/_css/2013.1/print.css&collapse_time=11&resolve_revisits=true&reverse=true')
+        resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/print.css&collapse_time=11&resolve_revisits=true&reverse=true')
 
         # convert back to CDXCaptureResult
         cdxs = map(CDXCaptureResult, resp.body.rstrip().split('\n'))
