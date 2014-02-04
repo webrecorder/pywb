@@ -58,16 +58,18 @@ To start a pywb with sample data
 2. Install with `python setup.py install`
 
 3. Run pywb by via script `run.sh` (script currently assumes a default python and uwsgi install, feel free to edit as needed)
- 
+
 4. Test pywb in your browser!  (pywb is set to run on port 8080 by default.)
 
 
 If everything worked, the following pages should be loading (served from *sample_archive* dir):
 
 | Original Url       | Latest Capture  | List of All Captures    |
-| -------------      | -------------   | ----------------------- |         
+| -------------      | -------------   | ----------------------- |
 | `http://example.com` | [http://localhost:8080/pywb/example.com](http://localhost:8080/pywb/example.com) | [http://localhost:8080/pywb/*/example.com](http://localhost:8080/pywb/*/example.com) |
 | `http://iana.org`    | [http://localhost:8080/pywb/iana.org](http://localhost:8080/pywb/iana.org) | [http://localhost:8080/pywb/*/iana.org](http://localhost:8080/pywb/*/iana.org) |
+
+
 
 ### Automated Tests
 
@@ -129,8 +131,8 @@ the location of those files.
 
 #### SURT
 
-By default, pywb expects the cdx files to be Sort-Friendly-Url-Transform (SURT) ordering. 
-This is an ordering that transforms: `example.com` -> `com,example)/` to faciliate better search. 
+By default, pywb expects the cdx files to be Sort-Friendly-Url-Transform (SURT) ordering.
+This is an ordering that transforms: `example.com` -> `com,example)/` to faciliate better search.
 It is recommended for future indexing, but is not required.
 
 Non-SURT ordered cdx indexs will work as well, but be sure to specify:
@@ -164,7 +166,7 @@ The directions are for running in a shell:
 
 4. Ensure sort order set to byte-order `export LC_ALL=C` to ensure proper sorting.
 
-5. From the directory of the warc(s), run `<FULL PATH>/warctools/hanzo/cdx_writer mypath/warcs/mywarc.gz | sort > mypath/cdx/mywarc.cdx` 
+5. From the directory of the warc(s), run `<FULL PATH>/warctools/hanzo/cdx_writer mypath/warcs/mywarc.gz | sort > mypath/cdx/mywarc.cdx`
 
    This will create a sorted `mywarc.cdx` for `mywarc.gz`. Then point `pywb` to the `mypath/warcs` and `mypath/cdx` directories in the yaml config.
 
