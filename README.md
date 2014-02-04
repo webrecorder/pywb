@@ -74,7 +74,7 @@ If everything worked, the following pages should be loading (served from *sample
 
 pywb comes with a Vagrantfile to help you set up a VM quickly for testing.
 If you have [Vagrant](http://www.vagrantup.com/) and [VirtualBox](https://www.virtualbox.org/)
-set up, then you can start a test instance of pywb like so:
+installed, then you can start a test instance of pywb like so:
 
 ```bash
 git clone https://github.com/ikreymer/pywb.git
@@ -82,13 +82,13 @@ cd pywb
 vagrant up
 ```
 
-After all the components of pywb are installed, the uwsgi server will start and you should see:
+After pywb and all its dependencies are installed, the uwsgi server will start up and you should see:
 
 ```
 spawned uWSGI worker 1 (and the only) (pid: 123, cores: 1)
 ```
 
-At this point, you can open a web browser and navigate to http://localhost:8080 for testing.
+At this point, you can open a web browser and navigate to `http://localhost:8080` for testing.
 
 
 ### Automated Tests
