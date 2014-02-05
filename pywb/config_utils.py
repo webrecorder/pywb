@@ -4,7 +4,6 @@ import handlers
 import indexreader
 import replay_views
 import replay_resolvers
-from archivalrouter import ArchivalRequestRouter, Route
 import logging
 
 

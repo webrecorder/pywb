@@ -31,26 +31,32 @@ surt_ordered: true
 
 archive_paths: ./sample_archive/warcs/
 
-# ui: optional Jinja2 template to insert into <head> of each replay
+# ==== Optional UI: HTML/Jinja2 Templates ====
+
+# template for <head> insert into replayed html content
 head_insert_html: ./ui/head_insert.html
 
-# ui: optional text to directly insert into <head>
-# only loaded if ui_head_insert_template_file is not specified
-
-#head_insert_text: <script src='example.js'></script>
-
-#static_path: /static2/
-
-# ui: optional Jinja2 template to use for 'calendar' query,
+# template to for 'calendar' query,
 # eg, a listing of captures  in response to a ../*/<url>
 #
 # may be a simple listing or a more complex 'calendar' UI
-# if omitted, the capture listing lists raw index
+# if omitted, will list raw cdx in plain text
 query_html: ./ui/query.html
 
-# ui: optional Jinja2 template to use for 'search' page
-# this page is displayed when no search url is entered
+# template for search page, which is displayed when no search url is entered
+# in a collection
 search_html: ./ui/search.html
+
+# template for home page.
+# if no other route is set, this will be rendered at /, /index.htm and /index.html
+home_html: ./ui/index.html
+
+
+# error page temlpate for may formatting error message and details
+# if omitted, a text response is returned
+error_html: ./ui/error.html
+
+# ==== Other Paths ====
 
 # list of host names that pywb will be running from to detect
 # 'fallthrough' requests based on referrer
@@ -62,13 +68,12 @@ search_html: ./ui/search.html
 
 hostpaths: ['http://localhost:8080/']
 
-# ui: optional Jinja2 template for home page
-# if no other route is set to home page, this template will
-# be rendered at /, /index.htm and /index.html
-home_html: ./ui/index.html
+# Custom path for serving html content
+# Default is  hostname[0] + '/static/'
+#static_path: /static/
 
+# ==== New / Experimental Settings ====
+# Not yet production ready -- used primarily for testing
 
-# ui: optional Jinja2 template for rendering any errors
-# the error page may print a detailed error message
-error_html: ./ui/error.html
-
+# enable cdx server api for querying cdx directly (experimental)
+enable_cdx_api: false

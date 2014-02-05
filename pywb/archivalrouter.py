@@ -7,9 +7,9 @@ from url_rewriter import UrlRewriter
 from wburl import WbUrl
 
 #=================================================================
-# ArchivalRequestRouter -- route WB requests in archival mode
+# ArchivalRouter -- route WB requests in archival mode
 #=================================================================
-class ArchivalRequestRouter:
+class ArchivalRouter:
     def __init__(self, routes, hostpaths = None, abs_path = True, home_view = None, error_view = None):
         self.routes = routes
         self.fallback = ReferRedirect(hostpaths)

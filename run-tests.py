@@ -3,10 +3,12 @@ import pywb.pywb_init
 from pywb.indexreader import CDXCaptureResult
 
 class TestWb:
+    TEST_CONFIG = 'test_config.yaml'
+
     def setup(self):
         import pywb.wbapp
         #self.app = pywb.wbapp.create_wb_app(pywb.pywb_init.pywb_config())
-        self.app = pywb.wbapp.create_wb_app(pywb.pywb_init.pywb_config_manual())
+        self.app = pywb.wbapp.create_wb_app(pywb.pywb_init.pywb_config(self.TEST_CONFIG))
         self.testapp = webtest.TestApp(self.app)
 
     def _assert_basic_html(self, resp):

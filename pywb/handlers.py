@@ -95,6 +95,9 @@ class CDXHandler(BaseHandler):
     def get_wburl_type():
         return None
 
+    def __str__(self):
+        return 'CDX Server: ' + str(self.cdx_reader)
+
 #=================================================================
 # Debug Handlers
 #=================================================================
