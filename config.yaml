@@ -75,5 +75,8 @@ hostpaths: ['http://localhost:8080/']
 # ==== New / Experimental Settings ====
 # Not yet production ready -- used primarily for testing
 
+# Enable simple http proxy mode
+enable_http_proxy: false
+
 # enable cdx server api for querying cdx directly (experimental)
 enable_cdx_api: false

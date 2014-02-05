@@ -5,7 +5,7 @@ import os
 import yaml
 import config_utils
 import logging
-
+import proxy
 
 #=================================================================
 ## Reference non-YAML config
@@ -54,9 +54,14 @@ def pywb_config_manual(config = {}):
     if config.get('debug_echo_req', False):
         routes.append(archivalrouter.Route('echo_req', handlers.DebugEchoHandler()))
 
+    # Check for new proxy mode!
+    if config.get('enable_http_proxy', False):
+        router = proxy.ProxyArchivalRouter
+    else:
+        router = archivalrouter.ArchivalRouter
 
     # Finally, create wb router
-    return archivalrouter.ArchivalRouter(
+    return router(
         routes,
         # Specify hostnames that pywb will be running on
         # This will help catch occasionally missed rewrites that fall-through to the host

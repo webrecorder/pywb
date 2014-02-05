@@ -75,6 +75,15 @@ class TestWb:
         assert 'Mon, Jan 27 2014 17:12:51' in resp.body
         assert '/pywb/20140127171251/http://www.iana.org/domains/example' in resp.body
 
+    # XX: Doesn't work as webtest does not support proxy mode
+    # need a way to test
+    #def test_proxy_replay(self):
+        #resp = self.testapp.get('http://www.iana.org/domains/idn-tables')
+        #self._assert_basic_html(resp)
+
+        #assert 'Sun, Jan 26 2014 20:11:27' in resp.body
+        #assert 'wb.js' in resp.body
+
     def test_cdx_server_filters(self):
         resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mimetype:warc/revisit&filter=filename:dupes.warc.gz')
         self._assert_basic_text(resp)
@@ -102,5 +111,3 @@ class TestWb:
         resp = self.testapp.get('/pywb/?abc', status = 400)
         assert resp.status_int == 400
         assert 'Bad Request Url: http://?abc' in resp.body
-
-
