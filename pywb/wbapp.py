@@ -89,9 +89,9 @@ def main():
         logging.info('*** pywb inited with settings from {0}.pywb_config()!\n'.format(config_name))
         return app
 
-    except Exception as e:
+    except Exception:
         logging.exception('*** pywb could not init with settings from {0}.pywb_config()!\n'.format(config_name))
-        raise e
+        raise
 
 #=================================================================
 if __name__ == "__main__" or utils.enable_doctests():

@@ -164,34 +164,30 @@ class ReferRedirect:
         if not any (wbrequest.referrer.startswith(i) for i in self.match_prefixs):
             return None
 
+        ref_split = urlparse.urlsplit(wbrequest.referrer)
+
+        path = ref_split.path
+        script_name = wbrequest.env['SCRIPT_NAME']
+
+        if not path.startswith(script_name):
+            return None
+
+        ref_path = path[len(script_name) + 1:].split('/', 1)
+
+        # No match on any exception
         try:
-            ref_split = urlparse.urlsplit(wbrequest.referrer)
+            rewriter = UrlRewriter(ref_path[1], script_name + '/' + ref_path[0] + '/')
+        except Exception:
+            return None
 
-            path = ref_split.path
-            script_name = wbrequest.env['SCRIPT_NAME']
+        rel_request_uri = wbrequest.request_uri[1:]
 
-            if not path.startswith(script_name):
-                return None
+        #ref_wb_url = archiveurl('/' + ref_path[1])
+        #ref_wb_url.url = urlparse.urljoin(ref_wb_url.url, wbrequest.request_uri[1:])
+        #ref_wb_url.url = ref_wb_url.url.replace('../', '')
 
-            ref_path = path[len(script_name) + 1:].split('/', 1)
-
-            # No match on any exception
-            try:
-                rewriter = UrlRewriter(ref_path[1], script_name + '/' + ref_path[0] + '/')
-            except Exception:
-                return None
-
-            rel_request_uri = wbrequest.request_uri[1:]
-
-            #ref_wb_url = archiveurl('/' + ref_path[1])
-            #ref_wb_url.url = urlparse.urljoin(ref_wb_url.url, wbrequest.request_uri[1:])
-            #ref_wb_url.url = ref_wb_url.url.replace('../', '')
-
-            #final_url = urlparse.urlunsplit((ref_split.scheme, ref_split.netloc, ref_path[0] + str(ref_wb_url), '', ''))
-            final_url = urlparse.urlunsplit((ref_split.scheme, ref_split.netloc, rewriter.rewrite(rel_request_uri), '', ''))
-
-        except Exception as e:
-            raise e
+        #final_url = urlparse.urlunsplit((ref_split.scheme, ref_split.netloc, ref_path[0] + str(ref_wb_url), '', ''))
+        final_url = urlparse.urlunsplit((ref_split.scheme, ref_split.netloc, rewriter.rewrite(rel_request_uri), '', ''))
 
         return WbResponse.redir_response(final_url)
 

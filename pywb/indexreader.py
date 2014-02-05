@@ -195,7 +195,7 @@ class RemoteCDXServer(IndexReader):
                 msg = 'Blocked By Robots' if 'Blocked By Robots' in exc_msg else 'Excluded'
                 raise wbexceptions.AccessException(msg)
             else:
-                raise e
+                raise
 
         if parsed_cdx:
             return (CDXCaptureResult(cdx) for cdx in response)
