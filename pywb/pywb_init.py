@@ -20,32 +20,34 @@ def pywb_config_manual(config = {}):
     collections = config.get('collections', {'pywb': './sample_archive/cdx/'})
 
     for name, value in collections.iteritems():
+        route_config = config
+
         if isinstance(value, dict):
             # if a dict, extend with base properies
             index_paths = value['index_paths']
-            value.extend(config)
-            config = value
+            value.update(route_config)
+            route_config = value
         else:
             index_paths = str(value)
 
         cdx_source = indexreader.IndexReader.make_best_cdx_source(index_paths, **config)
 
         # cdx query handler
-        if config.get('enable_cdx_api', False):
+        if route_config.get('enable_cdx_api', False):
             routes.append(archivalrouter.Route(name + '-cdx', handlers.CDXHandler(cdx_source)))
 
         wb_handler = config_utils.create_wb_handler(
             cdx_source = cdx_source,
-            archive_paths = config.get('archive_paths', './sample_archive/warcs/'),
-            head_html = config.get('head_insert_html'),
-            query_html = config.get('query_html'),
-            search_html = config.get('search_html'),
-            static_path = config.get('static_path', hostpaths[0] + 'static/')
+            archive_paths = route_config.get('archive_paths', './sample_archive/warcs/'),
+            head_html = route_config.get('head_insert_html'),
+            query_html = route_config.get('query_html'),
+            search_html = route_config.get('search_html'),
+            static_path = route_config.get('static_path', hostpaths[0] + 'static/')
         )
 
         logging.info('Adding Collection: ' + name)
 
-        routes.append(archivalrouter.Route(name, wb_handler))
+        routes.append(archivalrouter.Route(name, wb_handler, filters = route_config.get('filters', [])))
 
 
     if config.get('debug_echo_env', False):

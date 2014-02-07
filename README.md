@@ -88,12 +88,12 @@ After pywb and all its dependencies are installed, the uwsgi server will start u
 spawned uWSGI worker 1 (and the only) (pid: 123, cores: 1)
 ```
 
-At this point, you can open a web browser and navigate to `http://localhost:8080` for testing.
+At this point, you can open a web browser and navigate to the examples above for testing.
 
 
 ### Automated Tests
 
-Currently pywb consists of numerous doctests against the sample archive.
+Currently pywb includes numerous doctests which test rewriting and loading of data from the sample archive.
 
 The `run-tests.py` file currently contains a few basic integration tests against the default config.
 
@@ -203,7 +203,7 @@ The directions are for running in a shell:
    sort -m mypath/cdx/*.cdx | sort -c > mypath/merged_cdx/merge_1.cdx
    ```
 
-   (The merged cdx will start with several ` CDX` headers due to the merge. These headers indicate cdx format and should be all the same!
+   (The merged cdx will start with several ` CDX` headers due to the merge. These headers indicate the cdx format and should be all the same!
     They are always first and pywb ignores them)
 
 

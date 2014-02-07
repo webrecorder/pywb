@@ -12,6 +12,10 @@ collections:
     #  - a string value indicating remote http cdx server
     pywb: ./sample_archive/cdx/
 
+    # ex with filtering: filter CDX lines by filename starting with 'dupe'
+    pywb-filt: {'index_paths': './sample_archive/cdx/', 'filters': ['filename:dupe*']}
+
+
 # indicate if cdx files are sorted by SURT keys -- eg: com,example)/
 # SURT keys are recommended for future indices, but non-SURT cdxs
 # are also supported

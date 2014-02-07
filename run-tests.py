@@ -37,6 +37,19 @@ class TestWb:
         # 3 Captures + header
         assert len(resp.html.find_all('tr')) == 4
 
+    def test_calendar_query_filtered(self):
+        # unfiltered collection
+        resp = self.testapp.get('/pywb/*/http://www.iana.org/_css/2013.1/screen.css')
+        self._assert_basic_html(resp)
+        # 17 Captures + header
+        assert len(resp.html.find_all('tr')) == 18
+
+        # filtered collection
+        resp = self.testapp.get('/pywb-filt/*/http://www.iana.org/_css/2013.1/screen.css')
+        self._assert_basic_html(resp)
+        # 1 Capture (filtered) + header
+        assert len(resp.html.find_all('tr')) == 2
+
     def test_cdx_query(self):
         resp = self.testapp.get('/pywb/cdx_/*/http://www.iana.org/')
         self._assert_basic_text(resp)
