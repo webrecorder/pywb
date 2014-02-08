@@ -88,7 +88,14 @@ class TestWb:
         assert 'Mon, Jan 27 2014 17:12:51' in resp.body
         assert '/pywb/20140127171251/http://www.iana.org/domains/example' in resp.body
 
-    # XX: Doesn't work as webtest does not support proxy mode
+    def test_static_content(self):
+        resp = self.testapp.get('/test-static/wb.css')
+        assert resp.status_int == 200
+        assert resp.content_type == 'text/css'
+        assert resp.content_length > 0
+
+
+     # XX: Doesn't work as webtest does not support proxy mode
     # need a way to test
     #def test_proxy_replay(self):
         #resp = self.testapp.get('http://www.iana.org/domains/idn-tables')

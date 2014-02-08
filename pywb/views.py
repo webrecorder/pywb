@@ -6,7 +6,7 @@ import time
 
 from os import path
 from itertools import imap
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, PackageLoader
 
 
 #=================================================================
@@ -31,7 +31,12 @@ class J2TemplateView:
 
 
     def make_jinja_env(self, template_dir):
-        jinja_env = Environment(loader = FileSystemLoader(template_dir), trim_blocks = True)
+        if template_dir.startswith('.') or template_dir.startswith('file://'):
+            loader = FileSystemLoader(template_dir)
+        else:
+            loader = PackageLoader(__package__, template_dir)
+
+        jinja_env = Environment(loader = loader, trim_blocks = True)
         jinja_env.filters['format_ts'] = J2TemplateView.format_ts
         return jinja_env
 

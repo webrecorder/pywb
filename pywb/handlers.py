@@ -4,7 +4,10 @@ import urlparse
 
 from wbrequestresponse import WbResponse
 from wburl import WbUrl
-from wbexceptions import WbException
+from wbexceptions import WbException, NotFoundException
+
+import pkgutil
+import mimetypes
 
 
 class BaseHandler:
@@ -97,6 +100,46 @@ class CDXHandler(BaseHandler):
 
     def __str__(self):
         return 'CDX Server: ' + str(self.cdx_reader)
+
+
+#=================================================================
+# Static Content Handler
+#=================================================================
+class StaticHandler(BaseHandler):
+    def __init__(self, static_path, pkg = __package__):
+        mimetypes.init()
+
+        self.static_path = static_path
+        self.pkg = pkg
+
+    def __call__(self, wbrequest):
+        full_path = self.static_path + wbrequest.wb_url_str
+
+        try:
+            if full_path.startswith('.') or full_path.startswith('file://'):
+                data = open(full_path, 'rb')
+            else:
+                data = pkgutil.get_data(self.pkg, full_path)
+
+            if 'wsgi.file_wrapper' in wbrequest.env:
+                reader = wbrequest.env['wsgi.file_wrapper'](data)
+            else:
+                reader = iter(lambda: data.read(), '')
+
+            content_type, _ = mimetypes.guess_type(full_path)
+
+            return WbResponse.text_stream(data, content_type = content_type)
+
+        except IOError:
+            raise NotFoundException('Static File Not Found: ' + wbrequest.wb_url_str)
+
+    @staticmethod
+    def get_wburl_type():
+        return None
+
+    def __str__(self):
+        return 'Static files from ' + self.static_path
+
 
 #=================================================================
 # Debug Handlers

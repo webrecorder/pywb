@@ -38,27 +38,27 @@ archive_paths: ./sample_archive/warcs/
 # ==== Optional UI: HTML/Jinja2 Templates ====
 
 # template for <head> insert into replayed html content
-head_insert_html: ./ui/head_insert.html
+head_insert_html: ui/head_insert.html
 
 # template to for 'calendar' query,
 # eg, a listing of captures  in response to a ../*/<url>
 #
 # may be a simple listing or a more complex 'calendar' UI
 # if omitted, will list raw cdx in plain text
-query_html: ./ui/query.html
+query_html: ui/query.html
 
 # template for search page, which is displayed when no search url is entered
 # in a collection
-search_html: ./ui/search.html
+search_html: ui/search.html
 
 # template for home page.
 # if no other route is set, this will be rendered at /, /index.htm and /index.html
-home_html: ./ui/index.html
+home_html: ui/index.html
 
 
 # error page temlpate for may formatting error message and details
 # if omitted, a text response is returned
-error_html: ./ui/error.html
+error_html: ui/error.html
 
 # ==== Other Paths ====
 
@@ -70,11 +70,13 @@ error_html: ./ui/error.html
 # to http://localhost:8080/pywb/image.gif
 #
 
-hostpaths: ['http://localhost:8080/']
+#hostpaths: ['http://localhost:8080/']
 
-# Custom path for serving html content
-# Default is  hostname[0] + '/static/'
-#static_path: /static/
+# List of route names:
+# <route>: <package or file path>
+static_routes:
+          test-static: static/
+
 
 # ==== New / Experimental Settings ====
 # Not yet production ready -- used primarily for testing

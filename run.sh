@@ -12,7 +12,8 @@ mypath=$(cd `dirname $0` && pwd)
 
 app="pywb.wbapp"
 
-params="--static-map /static=$mypath/static --http-socket :8080 -b 65536"
+params="--http-socket :8080 -b 65536"
+#params="--static-map /static=$mypath/static --http-socket :8080 -b 65536"
 
 if [ -z "$1" ]; then
     # Standard root config

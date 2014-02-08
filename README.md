@@ -151,7 +151,7 @@ the location of those files.
 
 #### SURT
 
-By default, pywb expects the cdx files to be Sort-Friendly-Url-Transform (SURT) ordering.
+By default, pywb expects the cdx files to be Sort-friendly URL Reordering Transform (SURT) ordering.
 This is an ordering that transforms: `example.com` -> `com,example)/` to faciliate better search.
 It is recommended for future indexing, but is not required.
 

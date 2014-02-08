@@ -8,6 +8,14 @@ import logging
 import proxy
 
 #=================================================================
+DEFAULT_HEAD_INSERT = 'ui/head_insert.html'
+DEFAULT_QUERY = 'ui/query.html'
+DEFAULT_SEARCH = 'ui/search.html'
+DEFAULT_INDEX = 'ui/index.html'
+DEFAULT_ERROR = 'ui/error.html'
+
+
+#=================================================================
 ## Reference non-YAML config
 #=================================================================
 def pywb_config_manual(config = {}):
@@ -39,10 +47,11 @@ def pywb_config_manual(config = {}):
         wb_handler = config_utils.create_wb_handler(
             cdx_source = cdx_source,
             archive_paths = route_config.get('archive_paths', './sample_archive/warcs/'),
-            head_html = route_config.get('head_insert_html'),
-            query_html = route_config.get('query_html'),
-            search_html = route_config.get('search_html'),
-            static_path = route_config.get('static_path', hostpaths[0] + 'static/')
+            head_html = route_config.get('head_insert_html', DEFAULT_HEAD_INSERT),
+            query_html = route_config.get('query_html', DEFAULT_QUERY),
+            search_html = route_config.get('search_html', DEFAULT_SEARCH),
+
+            static_path = hostpaths[0] + route_config.get('static_path', 'static/')
         )
 
         logging.info('Adding Collection: ' + name)
@@ -55,6 +64,12 @@ def pywb_config_manual(config = {}):
 
     if config.get('debug_echo_req', False):
         routes.append(archivalrouter.Route('echo_req', handlers.DebugEchoHandler()))
+
+
+    static_routes = config.get('static_routes', {'static': 'static/'})
+
+    for static_name, static_path in static_routes.iteritems():
+        routes.append(archivalrouter.Route(static_name, handlers.StaticHandler(static_path)))
 
     # Check for new proxy mode!
     if config.get('enable_http_proxy', False):
@@ -70,8 +85,8 @@ def pywb_config_manual(config = {}):
         # (See archivalrouter.ReferRedirect)
         hostpaths = hostpaths,
 
-        home_view = config_utils.load_template_file(config.get('home_html'), 'Home Page'),
-        error_view = config_utils.load_template_file(config.get('error_html'), 'Error Page')
+        home_view = config_utils.load_template_file(config.get('home_html', DEFAULT_INDEX), 'Home Page'),
+        error_view = config_utils.load_template_file(config.get('error_html', DEFAULT_ERROR), 'Error Page')
     )
 
 
