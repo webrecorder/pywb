@@ -52,19 +52,21 @@ class WbRequest:
             wb_url_str = parts[0]
             coll = ''
 
-        return WbRequest(env, request_uri, wb_prefix, wb_url_str, coll, use_abs_prefix)
+        host_prefix = WbRequest.make_host_prefix(env) if use_abs_prefix else ''
+
+        return WbRequest(env, request_uri, wb_prefix, wb_url_str, coll, host_prefix = host_prefix)
 
 
     @staticmethod
-    def make_abs_prefix(env, rel_prefix):
+    def make_host_prefix(env):
         try:
-            return env['wsgi.url_scheme'] + '://' + env['HTTP_HOST'] + rel_prefix
+            return env['wsgi.url_scheme'] + '://' + env['HTTP_HOST']
         except KeyError:
-            return rel_prefix
+            return ''
 
 
     def __init__(self, env, request_uri, wb_prefix, wb_url_str, coll,
-                 use_abs_prefix = False,
+                 host_prefix = '',
                  wburl_class = WbUrl,
                  url_rewriter_class = UrlRewriter,
                  is_proxy = False):
@@ -73,7 +75,9 @@ class WbRequest:
 
         self.request_uri = request_uri if request_uri else env.get('REL_REQUEST_URI')
 
-        self.wb_prefix = wb_prefix if not use_abs_prefix else WbRequest.make_abs_prefix(env, wb_prefix)
+        self.host_prefix = host_prefix
+
+        self.wb_prefix = host_prefix + wb_prefix
 
         if not wb_url_str:
             wb_url_str = '/'

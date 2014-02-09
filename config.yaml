@@ -74,18 +74,22 @@ archive_paths: ./sample_archive/warcs/
 # to http://localhost:8080/pywb/image.gif
 #
 
-#hostpaths: ['http://localhost:8080/']
+#hostpaths: ['http://localhost:8080']
+
+# Rewrite urls with absolute paths instead of relative
+#absoulte_paths: true
 
 # List of route names:
 # <route>: <package or file path>
+# default route static/default for pywb defaults
 static_routes:
-          static: static/
+          static/default: static/
 
 # ==== New / Experimental Settings ====
 # Not yet production ready -- used primarily for testing
 
 # Enable simple http proxy mode
-#enable_http_proxy: false
+enable_http_proxy: true
 
 # enable cdx server api for querying cdx directly (experimental)
 #enable_cdx_api: false

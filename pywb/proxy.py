@@ -46,10 +46,10 @@ class ProxyRouter:
 
         wbrequest = WbRequest(env,
                               request_uri = url,
-                              coll = '',
                               wb_url_str = url,
                               wb_prefix = '',
-                              use_abs_prefix = False,
+                              coll = '',
+                              host_prefix = self.hostpaths[0],
                               wburl_class = self.handler.get_wburl_type(),
                               url_rewriter_class = ProxyHttpsUrlRewriter,
                               is_proxy = True)

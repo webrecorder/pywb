@@ -22,7 +22,7 @@ class BaseHandler:
 # Standard WB Handler
 #=================================================================
 class WBHandler(BaseHandler):
-    def __init__(self, cdx_reader, replay, html_view = None, search_view = None, static_path = '/static/'):
+    def __init__(self, cdx_reader, replay, html_view = None, search_view = None):
         self.cdx_reader = cdx_reader
         self.replay = replay
 
@@ -30,8 +30,6 @@ class WBHandler(BaseHandler):
 
         self.html_view = html_view
         self.search_view = search_view
-
-        self.static_path = static_path
 
 
     def __call__(self, wbrequest):
@@ -51,7 +49,7 @@ class WBHandler(BaseHandler):
             return query_view.render_response(wbrequest, cdx_lines)
 
         with utils.PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
-            return self.replay(wbrequest, cdx_lines, self.cdx_reader, self.static_path)
+            return self.replay(wbrequest, cdx_lines, self.cdx_reader)
 
 
     def render_search_page(self, wbrequest):

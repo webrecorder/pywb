@@ -70,12 +70,15 @@ error_html: ui/error.html
 # to http://localhost:8080/pywb/image.gif
 #
 
-#hostpaths: ['http://localhost:8080/']
+#hostpaths: ['http://localhost:8080']
+
+# Rewrite urls with absolute paths instead of relative
+absoulte_paths: true
 
 # List of route names:
 # <route>: <package or file path>
 static_routes:
-          test-static: static/
+          static/test/route: static/
 
 
 # ==== New / Experimental Settings ====

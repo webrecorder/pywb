@@ -23,7 +23,7 @@ class ReplayView:
         self.loader = loader if loader else archiveloader.ArchiveLoader()
 
 
-    def __call__(self, wbrequest, cdx_lines, cdx_reader, static_path):
+    def __call__(self, wbrequest, cdx_lines, cdx_reader):
         last_e = None
         first = True
 
@@ -41,7 +41,7 @@ class ReplayView:
 
                 (cdx, status_headers, stream) = self.resolve_headers_and_payload(cdx, wbrequest, cdx_reader, failed_files)
 
-                return self.make_response(wbrequest, cdx, status_headers, stream, static_path)
+                return self.make_response(wbrequest, cdx, status_headers, stream)
 
 
             except wbexceptions.CaptureException as ce:
@@ -142,7 +142,7 @@ class ReplayView:
 
     # done here! just return response
     # subclasses make override to do additional processing
-    def make_response(self, wbrequest, cdx, status_headers, stream, static_path):
+    def make_response(self, wbrequest, cdx, status_headers, stream):
         return self.create_stream_response(status_headers, stream)
 
 
@@ -250,7 +250,7 @@ class RewritingReplayView(ReplayView):
         return None
 
 
-    def make_response(self, wbrequest, cdx, status_headers, stream, static_path):
+    def make_response(self, wbrequest, cdx, status_headers, stream):
         # check and reject self-redirect
         self._reject_self_redirect(wbrequest, cdx, status_headers)
 
@@ -312,7 +312,7 @@ class RewritingReplayView(ReplayView):
         status_headers = rewritten_headers.status_headers
 
         if text_type == 'html':
-            head_insert_str = self.head_insert_view.render_to_string(wbrequest = wbrequest, cdx = cdx, static_path = static_path) if self.head_insert_view else None
+            head_insert_str = self.head_insert_view.render_to_string(wbrequest = wbrequest, cdx = cdx) if self.head_insert_view else None
             rewriter = html_rewriter.HTMLRewriter(urlrewriter, outstream = None, head_insert = head_insert_str)
         elif text_type == 'css':
             rewriter = regex_rewriters.CSSRewriter(urlrewriter)

@@ -22,7 +22,7 @@ def pywb_config_manual(config = {}):
 
     routes = []
 
-    hostpaths = config.get('hostpaths', ['http://localhost:8080/'])
+    hostpaths = config.get('hostpaths', ['http://localhost:8080'])
 
     # collections based on cdx source
     collections = config.get('collections', {'pywb': './sample_archive/cdx/'})
@@ -40,23 +40,27 @@ def pywb_config_manual(config = {}):
 
         cdx_source = indexreader.IndexReader.make_best_cdx_source(index_paths, **config)
 
-        # cdx query handler
-        if route_config.get('enable_cdx_api', False):
-            routes.append(archivalrouter.Route(name + '-cdx', handlers.CDXHandler(cdx_source)))
-
         wb_handler = config_utils.create_wb_handler(
             cdx_source = cdx_source,
             archive_paths = route_config.get('archive_paths', './sample_archive/warcs/'),
             head_html = route_config.get('head_insert_html', DEFAULT_HEAD_INSERT),
             query_html = route_config.get('query_html', DEFAULT_QUERY),
             search_html = route_config.get('search_html', DEFAULT_SEARCH),
-
-            static_path = hostpaths[0] + route_config.get('static_path', 'static/')
         )
 
         logging.info('Adding Collection: ' + name)
 
-        routes.append(archivalrouter.Route(name, wb_handler, filters = route_config.get('filters', [])))
+        route_class = route_config.get('route_class', None)
+        if route_class:
+            route_class = config_utils.load_class(route_class)
+        else:
+            route_class = archivalrouter.Route
+
+        routes.append(route_class(name, wb_handler, filters = route_config.get('filters', [])))
+
+        # cdx query handler
+        if route_config.get('enable_cdx_api', False):
+            routes.append(archivalrouter.Route(name + '-cdx', handlers.CDXHandler(cdx_source)))
 
 
     if config.get('debug_echo_env', False):
@@ -66,7 +70,7 @@ def pywb_config_manual(config = {}):
         routes.append(archivalrouter.Route('echo_req', handlers.DebugEchoHandler()))
 
 
-    static_routes = config.get('static_routes', {'static': 'static/'})
+    static_routes = config.get('static_routes', {'static/default': 'static/'})
 
     for static_name, static_path in static_routes.iteritems():
         routes.append(archivalrouter.Route(static_name, handlers.StaticHandler(static_path)))
@@ -84,6 +88,8 @@ def pywb_config_manual(config = {}):
         # This will help catch occasionally missed rewrites that fall-through to the host
         # (See archivalrouter.ReferRedirect)
         hostpaths = hostpaths,
+
+        abs_path = config.get('absolute_paths', True),
 
         home_view = config_utils.load_template_file(config.get('home_html', DEFAULT_INDEX), 'Home Page'),
         error_view = config_utils.load_template_file(config.get('error_html', DEFAULT_ERROR), 'Error Page')

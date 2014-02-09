@@ -88,21 +88,51 @@ class TestWb:
         assert 'Mon, Jan 27 2014 17:12:51' in resp.body
         assert '/pywb/20140127171251/http://www.iana.org/domains/example' in resp.body
 
+    def test_redirect_relative_3(self):
+        # first two requests should result in same redirect
+        target = 'http://localhost:8080/pywb/2014/http://iana.org/_css/2013.1/screen.css'
+
+        # without timestamp
+        resp = self.testapp.get('/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014/http://iana.org/')])
+        assert resp.status_int == 302
+        assert resp.headers['Location'] == target, resp.headers['Location']
+
+        # with timestamp
+        resp = self.testapp.get('/2014/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014/http://iana.org/')])
+        assert resp.status_int == 302
+        assert resp.headers['Location'] == target, resp.headers['Location']
+
+
+        resp = resp.follow()
+        assert resp.status_int == 302
+        assert resp.headers['Location'].endswith('/pywb/20140127171239/http://www.iana.org/_css/2013.1/screen.css')
+
+        resp = resp.follow()
+        assert resp.status_int == 200
+        assert resp.content_type == 'text/css'
+
+
     def test_static_content(self):
-        resp = self.testapp.get('/test-static/wb.css')
+        resp = self.testapp.get('/static/test/route/wb.css')
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
         assert resp.content_length > 0
 
 
-     # XX: Doesn't work as webtest does not support proxy mode
-    # need a way to test
-    #def test_proxy_replay(self):
-        #resp = self.testapp.get('http://www.iana.org/domains/idn-tables')
-        #self._assert_basic_html(resp)
+    # 'Simulating' proxy by settings REQUEST_URI explicitly to http:// url and no SCRIPT_NAME
+    # would be nice to be able to test proxy more
+    def test_proxy_replay(self):
+        resp = self.testapp.get('/x-ignore-this-x', extra_environ = dict(REQUEST_URI = 'http://www.iana.org/domains/idn-tables', SCRIPT_NAME = ''))
+        self._assert_basic_html(resp)
 
-        #assert 'Sun, Jan 26 2014 20:11:27' in resp.body
-        #assert 'wb.js' in resp.body
+        assert 'Sun, Jan 26 2014 20:11:27' in resp.body
+        assert 'wb.js' in resp.body
+
+    def test_proxy_pac(self):
+        resp = self.testapp.get('/proxy.pac', extra_environ = dict(SERVER_NAME='pywb-proxy', SERVER_PORT='8080'))
+        assert resp.content_type == 'application/x-ns-proxy-autoconfig'
+        assert '"PROXY pywb-proxy:8080"' in resp.body
+        assert '"localhost"' in resp.body
 
     def test_cdx_server_filters(self):
         resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mimetype:warc/revisit&filter=filename:dupes.warc.gz')

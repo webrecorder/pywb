@@ -42,10 +42,22 @@ def create_wb_handler(**config):
         html_view = load_template_file(config.get('query_html'), 'Captures Page', views.J2HtmlCapturesView),
 
         search_view = load_template_file(config.get('search_html'), 'Search Page'),
-
-        static_path = config.get('static_path'),
     )
 
     return wb_handler
 
+
+#=================================================================
+def load_class(name):
+    result = name.rsplit('.', 1)
+
+    if len(result) == 1:
+        modname == ''
+        klass = result[0]
+    else:
+        modname = result[0]
+        klass = result[1]
+
+    mod =  __import__(modname, fromlist=[klass])
+    return getattr(mod, klass)
 

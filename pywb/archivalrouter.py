@@ -73,6 +73,7 @@ class Route:
         # collection id from regex group (default 0)
         self.coll_group = coll_group
         self.filters = filters
+        self._custom_init()
 
 
     def __call__(self, env, use_abs_prefix):
@@ -94,10 +95,10 @@ class Route:
 
         wbrequest = WbRequest(env,
                               request_uri = request_uri,
-                              coll = coll,
                               wb_url_str = wb_url_str,
                               wb_prefix = wb_prefix,
-                              use_abs_prefix = use_abs_prefix,
+                              coll = coll,
+                              host_prefix = WbRequest.make_host_prefix(env) if use_abs_prefix else '',
                               wburl_class = self.handler.get_wburl_type())
 
 
@@ -110,6 +111,9 @@ class Route:
         for filter in self.filters:
             last_grp = len(matcher.groups())
             wbrequest.query_filter.append(filter.format(matcher.group(last_grp)))
+
+    def _custom_init(self):
+        pass
 
     def _handle_request(self, wbrequest):
         return self.handler(wbrequest)
@@ -140,11 +144,23 @@ class ReferRedirect:
     >>> test_redir('http://localhost:8080/', '/../../other.html', 'http://localhost:8080/coll/20131010/http://example.com/index.html')
     'http://localhost:8080/coll/20131010/http://example.com/other.html'
 
+    # With timestamp included
+    >>> test_redir('http://localhost:8080/', '/20131010/other.html', 'http://localhost:8080/coll/20131010/http://example.com/index.html')
+    'http://localhost:8080/coll/20131010/http://example.com/other.html'
+
+    # With timestamp included
+    >>> test_redir('http://localhost:8080/', '/20131010/path/other.html', 'http://localhost:8080/coll/20131010/http://example.com/some/index.html')
+    'http://localhost:8080/coll/20131010/http://example.com/path/other.html'
+
     >>> test_redir('http://example:8080/', '/other.html', 'http://localhost:8080/coll/20131010/http://example.com/path/page.html')
     False
 
     # With custom SCRIPT_NAME
     >>> test_redir('http://localhost:8080/', '/../other.html', 'http://localhost:8080/extra/coll/20131010/http://example.com/path/page.html', '/extra')
+    'http://localhost:8080/extra/coll/20131010/http://example.com/other.html'
+
+    # With custom SCRIPT_NAME + timestamp
+    >>> test_redir('http://localhost:8080/', '/20131010/other.html', 'http://localhost:8080/extra/coll/20131010/http://example.com/path/page.html', '/extra')
     'http://localhost:8080/extra/coll/20131010/http://example.com/other.html'
 
     # With custom SCRIPT_NAME, bad match
@@ -185,11 +201,14 @@ class ReferRedirect:
 
         rel_request_uri = wbrequest.request_uri[1:]
 
-        #ref_wb_url = archiveurl('/' + ref_path[1])
-        #ref_wb_url.url = urlparse.urljoin(ref_wb_url.url, wbrequest.request_uri[1:])
-        #ref_wb_url.url = ref_wb_url.url.replace('../', '')
+        timestamp_path = rewriter.wburl.timestamp + '/'
 
-        #final_url = urlparse.urlunsplit((ref_split.scheme, ref_split.netloc, ref_path[0] + str(ref_wb_url), '', ''))
+        # check if timestamp is already part of the path
+        if rel_request_uri.startswith(timestamp_path):
+            # remove timestamp but leave / to make host relative url
+            # 2013/path.html -> /path.html
+            rel_request_uri = rel_request_uri[len(timestamp_path) - 1:]
+
         final_url = urlparse.urlunsplit((ref_split.scheme, ref_split.netloc, rewriter.rewrite(rel_request_uri), '', ''))
 
         return WbResponse.redir_response(final_url)

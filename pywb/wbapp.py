@@ -19,6 +19,8 @@ def create_wb_app(wb_router):
         else:
             env['REL_REQUEST_URI'] = env['REQUEST_URI']
 
+        print env['REL_REQUEST_URI']
+
         response = None
 
         try:

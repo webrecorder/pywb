@@ -3,6 +3,6 @@
 wbinfo = {}
 wbinfo.capture_str = "{{ cdx['timestamp'] | format_ts }}";
 </script>
-<script src='{{ static_path }}wb.js'> </script>
-<link rel='stylesheet' href='{{ static_path }}wb.css'/>
+<script src='{{ wbrequest.host_prefix }}/static/default/wb.js'> </script>
+<link rel='stylesheet' href='{{ wbrequest.host_prefix }}/static/default/wb.css'/>
 <!-- End WB Insert -->
