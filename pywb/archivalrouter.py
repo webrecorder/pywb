@@ -135,8 +135,8 @@ class ReferRedirect:
     >>> ReferRedirect(['http://example:9090/']).match_prefixs
     ['http://example:9090/']
 
-    >>> test_redir('http://localhost:8080/', '/other.html', 'http://localhost:8080/coll/20131010/http://example.com/path/page.html')
-    'http://localhost:8080/coll/20131010/http://example.com/path/other.html'
+    >>> test_redir('http://localhost:8080/', '/diff_path/other.html', 'http://localhost:8080/coll/20131010/http://example.com/path/page.html')
+    'http://localhost:8080/coll/20131010/http://example.com/diff_path/other.html'
 
     >>> test_redir('http://localhost:8080/', '/../other.html', 'http://localhost:8080/coll/20131010/http://example.com/path/page.html')
     'http://localhost:8080/coll/20131010/http://example.com/other.html'
@@ -146,7 +146,7 @@ class ReferRedirect:
 
     # Custom collection
     >>> test_redir('http://localhost:8080/', '/other.html', 'http://localhost:8080/complex/123/20131010/http://example.com/path/page.html', coll='complex/123')
-    'http://localhost:8080/complex/123/20131010/http://example.com/path/other.html'
+    'http://localhost:8080/complex/123/20131010/http://example.com/other.html'
 
     # With timestamp included
     >>> test_redir('http://localhost:8080/', '/20131010/other.html', 'http://localhost:8080/coll/20131010/http://example.com/index.html')
@@ -159,6 +159,10 @@ class ReferRedirect:
     # Wrong Host
     >>> test_redir('http://example:8080/', '/other.html', 'http://localhost:8080/coll/20131010/http://example.com/path/page.html')
     False
+
+    # Right Host
+    >>> test_redir('http://localhost:8080/', '/other.html', 'http://example.com:8080/coll/20131010/http://example.com/path/page.html', http_host = 'example.com:8080')
+    'http://example.com:8080/coll/20131010/http://example.com/other.html'
 
     # With custom SCRIPT_NAME
     >>> test_redir('http://localhost:8080/', '/../other.html', 'http://localhost:8080/extra/coll/20131010/http://example.com/path/page.html', '/extra')
@@ -188,12 +192,13 @@ class ReferRedirect:
         if referrer is None:
             return None
 
-        # ensure referrer starts with one of allowed hosts
-        if not any (referrer.startswith(i) for i in self.match_prefixs):
-            return None
-
         # get referrer path name
         ref_split = urlparse.urlsplit(referrer)
+
+        # ensure referrer starts with one of allowed hosts
+        if not any (referrer.startswith(i) for i in self.match_prefixs):
+            if ref_split.netloc != env.get('HTTP_HOST'):
+                return None
 
         path = ref_split.path
 
@@ -222,9 +227,9 @@ class ReferRedirect:
 
         rewriter = ref_request.urlrewriter
 
-        rel_request_uri = env['REL_REQUEST_URI'][1:]
+        rel_request_uri = env['REL_REQUEST_URI']
 
-        timestamp_path = rewriter.wburl.timestamp + '/'
+        timestamp_path = '/' + rewriter.wburl.timestamp + '/'
 
         # check if timestamp is already part of the path
         if rel_request_uri.startswith(timestamp_path):
@@ -242,8 +247,12 @@ if __name__ == "__main__" or utils.enable_doctests():
 
     import handlers
 
-    def test_redir(match_host, request_uri, referrer, script_name = '', coll = 'coll'):
+    def test_redir(match_host, request_uri, referrer, script_name = '', coll = 'coll', http_host = None):
         env = {'REL_REQUEST_URI': request_uri, 'HTTP_REFERER': referrer, 'SCRIPT_NAME': script_name}
+
+        if http_host:
+            env['HTTP_HOST'] = http_host
+
         routes = [Route(coll, handlers.BaseHandler())]
 
         redir = ReferRedirect(match_host)
