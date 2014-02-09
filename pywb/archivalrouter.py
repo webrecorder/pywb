@@ -66,14 +66,13 @@ class Route:
     SLASH_QUERY_LOOKAHEAD ='(?=/|$|\?)'
 
 
-    def __init__(self, regex, handler, coll_group = 0, filters = [], lookahead = SLASH_QUERY_LOOKAHEAD):
+    def __init__(self, regex, handler, coll_group = 0, config = {}, lookahead = SLASH_QUERY_LOOKAHEAD):
         self.path = regex
         self.regex = re.compile(regex + lookahead)
         self.handler = handler
         # collection id from regex group (default 0)
         self.coll_group = coll_group
-        self.filters = filters
-        self._custom_init()
+        self._custom_init(config)
 
 
     def __call__(self, env, use_abs_prefix):
@@ -102,18 +101,18 @@ class Route:
                               wburl_class = self.handler.get_wburl_type())
 
 
-        # Allow for setup of additional filters
-        self._add_filters(wbrequest, matcher)
+        # Allow for applying of additional filters
+        self._apply_filters(wbrequest, matcher)
 
         return self._handle_request(wbrequest)
 
-    def _add_filters(self, wbrequest, matcher):
+    def _apply_filters(self, wbrequest, matcher):
         for filter in self.filters:
             last_grp = len(matcher.groups())
             wbrequest.query_filter.append(filter.format(matcher.group(last_grp)))
 
-    def _custom_init(self):
-        pass
+    def _custom_init(self, config):
+        self.filters = config.get('filters', [])
 
     def _handle_request(self, wbrequest):
         return self.handler(wbrequest)

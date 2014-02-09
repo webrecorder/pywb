@@ -56,7 +56,7 @@ def pywb_config_manual(config = {}):
         else:
             route_class = archivalrouter.Route
 
-        routes.append(route_class(name, wb_handler, filters = route_config.get('filters', [])))
+        routes.append(route_class(name, wb_handler, config = route_config))
 
         # cdx query handler
         if route_config.get('enable_cdx_api', False):
