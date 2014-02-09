@@ -28,10 +28,7 @@ class ArchivalRouter:
         if env['REL_REQUEST_URI'] in ['/', '/index.html', '/index.htm']:
             return self.render_home_page()
 
-        if not self.fallback:
-            return None
-
-        return self.fallback(WbRequest.from_uri(None, env))
+        return self.fallback(env, self.routes) if self.fallback else None
 
 
     def render_home_page(self):
@@ -76,7 +73,13 @@ class Route:
 
 
     def __call__(self, env, use_abs_prefix):
-        request_uri =  env['REL_REQUEST_URI']
+        wbrequest = self.parse_request(env, use_abs_prefix)
+        return self.handler(wbrequest) if wbrequest else None
+
+    def parse_request(self, env, use_abs_prefix, request_uri = None):
+        if not request_uri:
+            request_uri = env['REL_REQUEST_URI']
+
         matcher = self.regex.match(request_uri[1:])
         if not matcher:
             return None
@@ -104,7 +107,8 @@ class Route:
         # Allow for applying of additional filters
         self._apply_filters(wbrequest, matcher)
 
-        return self._handle_request(wbrequest)
+        return wbrequest
+
 
     def _apply_filters(self, wbrequest, matcher):
         for filter in self.filters:
@@ -113,9 +117,6 @@ class Route:
 
     def _custom_init(self, config):
         self.filters = config.get('filters', [])
-
-    def _handle_request(self, wbrequest):
-        return self.handler(wbrequest)
 
     def __str__(self):
         #return '* ' + self.regex_str + ' => ' + str(self.handler)
@@ -143,6 +144,10 @@ class ReferRedirect:
     >>> test_redir('http://localhost:8080/', '/../../other.html', 'http://localhost:8080/coll/20131010/http://example.com/index.html')
     'http://localhost:8080/coll/20131010/http://example.com/other.html'
 
+    # Custom collection
+    >>> test_redir('http://localhost:8080/', '/other.html', 'http://localhost:8080/complex/123/20131010/http://example.com/path/page.html', coll='complex/123')
+    'http://localhost:8080/complex/123/20131010/http://example.com/path/other.html'
+
     # With timestamp included
     >>> test_redir('http://localhost:8080/', '/20131010/other.html', 'http://localhost:8080/coll/20131010/http://example.com/index.html')
     'http://localhost:8080/coll/20131010/http://example.com/other.html'
@@ -151,6 +156,7 @@ class ReferRedirect:
     >>> test_redir('http://localhost:8080/', '/20131010/path/other.html', 'http://localhost:8080/coll/20131010/http://example.com/some/index.html')
     'http://localhost:8080/coll/20131010/http://example.com/path/other.html'
 
+    # Wrong Host
     >>> test_redir('http://example:8080/', '/other.html', 'http://localhost:8080/coll/20131010/http://example.com/path/page.html')
     False
 
@@ -175,30 +181,48 @@ class ReferRedirect:
             self.match_prefixs = [match_prefixs]
 
 
-    def __call__(self, wbrequest):
-        if wbrequest.referrer is None:
+    def __call__(self, env, routes):
+        referrer = env.get('HTTP_REFERER')
+
+        # ensure there is a referrer
+        if referrer is None:
             return None
 
-        if not any (wbrequest.referrer.startswith(i) for i in self.match_prefixs):
+        # ensure referrer starts with one of allowed hosts
+        if not any (referrer.startswith(i) for i in self.match_prefixs):
             return None
 
-        ref_split = urlparse.urlsplit(wbrequest.referrer)
+        # get referrer path name
+        ref_split = urlparse.urlsplit(referrer)
 
         path = ref_split.path
-        script_name = wbrequest.env['SCRIPT_NAME']
 
-        if not path.startswith(script_name):
+        app_path = env['SCRIPT_NAME']
+
+        if app_path:
+            # must start with current app name, if not root
+            if not path.startswith(app_path):
+                 return None
+
+            path = path[len(app_path):]
+
+
+        for route in routes:
+            ref_request = route.parse_request(env, False, request_uri = path)
+            if ref_request:
+                break
+
+        # must have matched one of the routes
+        if not ref_request:
             return None
 
-        ref_path = path[len(script_name) + 1:].split('/', 1)
-
-        # No match on any exception
-        try:
-            rewriter = UrlRewriter(ref_path[1], script_name + '/' + ref_path[0] + '/')
-        except Exception:
+        # must have a rewriter
+        if not ref_request.urlrewriter:
             return None
 
-        rel_request_uri = wbrequest.request_uri[1:]
+        rewriter = ref_request.urlrewriter
+
+        rel_request_uri = env['REL_REQUEST_URI'][1:]
 
         timestamp_path = rewriter.wburl.timestamp + '/'
 
@@ -218,12 +242,13 @@ if __name__ == "__main__" or utils.enable_doctests():
 
     import handlers
 
-    def test_redir(match_host, request_uri, referrer, script_name = ''):
+    def test_redir(match_host, request_uri, referrer, script_name = '', coll = 'coll'):
         env = {'REL_REQUEST_URI': request_uri, 'HTTP_REFERER': referrer, 'SCRIPT_NAME': script_name}
+        routes = [Route(coll, handlers.BaseHandler())]
 
         redir = ReferRedirect(match_host)
-        req = WbRequest.from_uri(request_uri, env)
-        rep = redir(req)
+        #req = WbRequest.from_uri(request_uri, env)
+        rep = redir(env, routes)
         if not rep:
             return False
 

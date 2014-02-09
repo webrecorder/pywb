@@ -3,6 +3,7 @@ import utils
 import wbrequestresponse
 import wbexceptions
 import time
+import urlparse
 
 from os import path
 from itertools import imap
@@ -38,6 +39,7 @@ class J2TemplateView:
 
         jinja_env = Environment(loader = loader, trim_blocks = True)
         jinja_env.filters['format_ts'] = J2TemplateView.format_ts
+        jinja_env.filters['host'] = J2TemplateView.get_host
         return jinja_env
 
     def render_to_string(self, **kwargs):
@@ -59,6 +61,9 @@ class J2TemplateView:
         value = utils.timestamp_to_datetime(value)
         return time.strftime(format, value)
 
+    @staticmethod
+    def get_host(url):
+        return urlparse.urlsplit(url).netloc
 
 
 

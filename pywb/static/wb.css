@@ -1,18 +1,19 @@
 
 #_wayback_banner
 { 
-  display: block !important;
-  top: 0px !important;
-  left: 0px !important;
-  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
-  position: inherit !important;
-  padding: 4px !important;
-  width: 100% !important;
-  font-size: 24px !important;
-  border: 1px solid !important; 
-  background-color: lightYellow !important; 
-  color: black !important;
-  text-align: center !important;
-  z-index: 2147483643 !important;
+    display: block !important;
+    top: 0px !important;
+    left: 0px !important;
+    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+    position: absolute !important;
+    padding: 4px !important;
+    width: 100% !important;
+    font-size: 24px !important;
+    border: 1px solid !important; 
+    background-color: lightYellow !important; 
+    color: black !important;
+    text-align: center !important;
+    z-index: 2147483643 !important;
+    line-height: normal !important;
 }
 

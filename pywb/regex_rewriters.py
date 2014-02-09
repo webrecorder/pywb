@@ -34,6 +34,8 @@ class RegexRewriter:
 
     HTTPX_MATCH_STR = r'https?:\\?/\\?/[A-Za-z0-9:_@.-]+'
 
+
+
     DEFAULT_OP = add_prefix
 
 
@@ -101,6 +103,12 @@ class JSRewriter(RegexRewriter):
     >>> test_js(r'location = "http:\\/\\/example.com/abc.html"')
     'WB_wombat_location = "/web/20131010im_/http:\\\\/\\\\/example.com/abc.html"'
 
+    >>> test_js(r"location = 'http://example.com/abc.html/'")
+    "WB_wombat_location = '/web/20131010im_/http://example.com/abc.html/'"
+
+    >>> test_js(r'location = http://example.com/abc.html/')
+    'WB_wombat_location = http://example.com/abc.html/'
+
     >>> test_js(r'location = /http:\/\/example.com/abc.html/')
     'WB_wombat_location = /http:\\\\/\\\\/example.com/abc.html/'
 
@@ -120,7 +128,13 @@ class JSRewriter(RegexRewriter):
     >>> test_js('window.location = "http://example.com/abc.html"; some_func(); ', [('some_func\(\).*', RegexRewriter.comment_out, 0)])
     'window.WB_wombat_location = "/web/20131010im_/http://example.com/abc.html"; /*some_func(); */'
 
+    # scheme-agnostic
+    >>> test_js('cool_Location = "//example.com/abc.html" //comment')
+    'cool_Location = "/web/20131010im_///example.com/abc.html" //comment'
+
     """
+
+    JS_HTTPX = r'(?<="|\')(?:https?:)?\\?/\\?/[A-Za-z0-9:_@.-]+'
 
     def __init__(self, rewriter, extra = []):
         rules = self._create_rules(rewriter.get_abs_url())
@@ -131,7 +145,7 @@ class JSRewriter(RegexRewriter):
 
     def _create_rules(self, http_prefix):
         return [
-             (r'(?<!/)\b' + RegexRewriter.HTTPX_MATCH_STR, http_prefix, 0),
+             (self.JS_HTTPX, http_prefix, 0),
              (r'(?<!/)\blocation\b', 'WB_wombat_', 0),
              (r'(?<=document\.)domain', 'WB_wombat_', 0),
         ]
