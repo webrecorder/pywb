@@ -18,9 +18,10 @@ import wbexceptions
 
 #=================================================================
 class ReplayView:
-    def __init__(self, resolvers, loader = None):
+    def __init__(self, resolvers, loader = None, reporter = None):
         self.resolvers = resolvers
         self.loader = loader if loader else archiveloader.ArchiveLoader()
+        self._reporter = reporter
 
 
     def __call__(self, wbrequest, cdx_lines, cdx_reader):
@@ -41,7 +42,13 @@ class ReplayView:
 
                 (cdx, status_headers, stream) = self.resolve_headers_and_payload(cdx, wbrequest, cdx_reader, failed_files)
 
-                return self.make_response(wbrequest, cdx, status_headers, stream)
+                response = self.make_response(wbrequest, cdx, status_headers, stream)
+
+                # notify reporter callback, if any
+                if self._reporter:
+                    self._reporter(wbrequest, cdx, response)
+
+                return response
 
 
             except wbexceptions.CaptureException as ce:
@@ -83,7 +90,7 @@ class ReplayView:
                     try:
                         return self.loader.load(path, offset, length)
 
-                    except URLError as ue:
+                    except Exception as ue:
                         last_exc = ue
                         print last_exc
                         pass
@@ -231,15 +238,14 @@ class ReplayView:
 #=================================================================
 class RewritingReplayView(ReplayView):
 
-    def __init__(self, resolvers, loader = None, head_insert_view = None, header_rewriter = None, redir_to_exact = True, buffer_response = False):
-        ReplayView.__init__(self, resolvers, loader)
+    def __init__(self, resolvers, loader = None, head_insert_view = None, header_rewriter = None, redir_to_exact = True, buffer_response = False, reporter = None):
+        ReplayView.__init__(self, resolvers, loader, reporter)
         self.head_insert_view = head_insert_view
         self.header_rewriter = header_rewriter if header_rewriter else HeaderRewriter()
         self.redir_to_exact = redir_to_exact
 
         # buffer or stream rewritten response
         self.buffer_response = buffer_response
-
 
 
     def _text_content_type(self, content_type):
@@ -410,5 +416,4 @@ class RewritingReplayView(ReplayView):
             #TODO: canonicalize before testing?
             if (UrlRewriter.strip_protocol(request_url) == UrlRewriter.strip_protocol(location_url)):
                 raise wbexceptions.CaptureException('Self Redirect: ' + str(cdx))
-
 

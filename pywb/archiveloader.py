@@ -190,9 +190,8 @@ class ArchiveLoader:
     def load(self, url, offset, length):
         url_parts = urlparse.urlsplit(url)
 
-        try:
-            loader = self.loaders.get(url_parts.scheme)
-        except Exception:
+        loader = self.loaders.get(url_parts.scheme)
+        if not loader:
             raise wbexceptions.UnknownLoaderProtocolException(url)
 
         the_format = None
@@ -319,11 +318,18 @@ class LineReader:
             self._process_read(data)
 
     def _process_read(self, data):
-        self.num_read += len(data)
-
         if self.decomp and data:
-            data = self.decomp.decompress(data)
+            try:
+                data = self.decomp.decompress(data)
+            except Exception:
+                # if first read attempt, assume non-gzipped stream
+                if self.num_read == 0:
+                    self.decomp = False
+                # otherwise (partly decompressed), something is wrong
+                else:
+                    raise
 
+        self.num_read += len(data)
         self.buff = StringIO.StringIO(data)
 
 

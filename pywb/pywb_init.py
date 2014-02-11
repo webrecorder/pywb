@@ -8,24 +8,45 @@ import logging
 import proxy
 
 #=================================================================
-DEFAULT_HEAD_INSERT = 'ui/head_insert.html'
-DEFAULT_QUERY = 'ui/query.html'
-DEFAULT_SEARCH = 'ui/search.html'
-DEFAULT_INDEX = 'ui/index.html'
-DEFAULT_ERROR = 'ui/error.html'
+DEFAULTS = {
+    'hostpaths':  ['http://localhost:8080'],
+    'collections': {'pywb': './sample_archive/cdx/'},
+    'archive_paths': './sample_archive/warcs/',
+
+    'head_insert_html': 'ui/head_insert.html',
+    'query_html': 'ui/query.html',
+    'search_html': 'ui/search.html',
+    'home_html': 'ui/index.html',
+    'error_html': 'ui/error.html',
+
+    'static_routes': {'static/default': 'static/'},
+}
+
+class DictChain:
+    def __init__(self, *dicts):
+        self.dicts = dicts
+
+    def get(self, key, default_val=None):
+        for d in self.dicts:
+            val = d.get(key)
+            if val:
+                return val
+        return default_val
 
 
 #=================================================================
 ## Reference non-YAML config
 #=================================================================
-def pywb_config_manual(config = {}):
+def pywb_config_manual(passed_config = {}):
+
+    config = DictChain(passed_config, DEFAULTS)
 
     routes = []
 
-    hostpaths = config.get('hostpaths', ['http://localhost:8080'])
+    hostpaths = config.get('hostpaths')
 
     # collections based on cdx source
-    collections = config.get('collections', {'pywb': './sample_archive/cdx/'})
+    collections = config.get('collections')
 
     for name, value in collections.iteritems():
         route_config = config
@@ -33,28 +54,21 @@ def pywb_config_manual(config = {}):
         if isinstance(value, dict):
             # if a dict, extend with base properies
             index_paths = value['index_paths']
-            value.update(route_config)
-            route_config = value
+            route_config = DictChain(value, config)
         else:
             index_paths = str(value)
 
-        cdx_source = indexreader.IndexReader.make_best_cdx_source(index_paths, **config)
+        cdx_source = indexreader.IndexReader.make_best_cdx_source(index_paths, route_config)
+
 
         wb_handler = config_utils.create_wb_handler(
             cdx_source = cdx_source,
-            archive_paths = route_config.get('archive_paths', './sample_archive/warcs/'),
-            head_html = route_config.get('head_insert_html', DEFAULT_HEAD_INSERT),
-            query_html = route_config.get('query_html', DEFAULT_QUERY),
-            search_html = route_config.get('search_html', DEFAULT_SEARCH),
+            config = route_config,
         )
 
         logging.info('Adding Collection: ' + name)
 
-        route_class = route_config.get('route_class', None)
-        if route_class:
-            route_class = config_utils.load_class(route_class)
-        else:
-            route_class = archivalrouter.Route
+        route_class = route_config.get('route_class', archivalrouter.Route)
 
         routes.append(route_class(name, wb_handler, config = route_config))
 
@@ -70,7 +84,7 @@ def pywb_config_manual(config = {}):
         routes.append(archivalrouter.Route('echo_req', handlers.DebugEchoHandler()))
 
 
-    static_routes = config.get('static_routes', {'static/default': 'static/'})
+    static_routes = config.get('static_routes')
 
     for static_name, static_path in static_routes.iteritems():
         routes.append(archivalrouter.Route(static_name, handlers.StaticHandler(static_path)))
@@ -91,8 +105,8 @@ def pywb_config_manual(config = {}):
 
         abs_path = config.get('absolute_paths', True),
 
-        home_view = config_utils.load_template_file(config.get('home_html', DEFAULT_INDEX), 'Home Page'),
-        error_view = config_utils.load_template_file(config.get('error_html', DEFAULT_ERROR), 'Error Page')
+        home_view = config_utils.load_template_file(config.get('home_html'), 'Home Page'),
+        error_view = config_utils.load_template_file(config.get('error_html'), 'Error Page')
     )
 
 

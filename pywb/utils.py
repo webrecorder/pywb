@@ -1,5 +1,4 @@
 import itertools
-import hmac
 import time
 import zlib
 import time
@@ -25,36 +24,6 @@ def split_prefix(key, prefixs):
 
 def create_decompressor():
     return zlib.decompressobj(16 + zlib.MAX_WBITS)
-
-#=================================================================
-# Cookie Signing
-#=================================================================
-
-class HMACCookieMaker:
-    def __init__(self, key, name):
-        self.key = key
-        self.name = name
-
-
-    def __call__(self, duration, extra_id = ''):
-        expire = str(long(time.time() + duration))
-
-        if extra_id:
-            msg = extra_id + '-' + expire
-        else:
-            msg = expire
-
-        hmacdigest = hmac.new(self.key, msg)
-        hexdigest = hmacdigest.hexdigest()
-
-        if extra_id:
-            cookie = '{0}-{1}={2}-{3}'.format(self.name, extra_id, expire, hexdigest)
-        else:
-            cookie = '{0}={1}-{2}'.format(self.name, expire, hexdigest)
-
-        return cookie
-
-        #return cookie + hexdigest
 
 
 #=================================================================

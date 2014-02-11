@@ -45,7 +45,7 @@ class IndexReader:
         raise NotImplementedError('Override in subclasses')
 
     @staticmethod
-    def make_best_cdx_source(paths, **config):
+    def make_best_cdx_source(paths, config):
         # may be a string or list
         surt_ordered = config.get('surt_ordered', True)
 

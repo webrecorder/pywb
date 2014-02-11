@@ -33,7 +33,7 @@ surt_ordered: true
 #   * http:// path, use path as remote prefix
 #   * redis:// path, use redis to lookup full path for w:<warc> as key
 
-archive_paths: ./sample_archive/warcs/
+archive_paths: ['./invalid/path/to/ignore/', './sample_archive/warcs/']
 
 # ==== Optional UI: HTML/Jinja2 Templates ====
 
@@ -89,3 +89,7 @@ enable_http_proxy: true
 
 # enable cdx server api for querying cdx directly (experimental)
 enable_cdx_api: true
+
+# optional reporter callback func
+# if set, called with request and cdx object
+reporter_func: pywb.run-tests.print_reporter

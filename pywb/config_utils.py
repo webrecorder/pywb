@@ -5,7 +5,8 @@ import indexreader
 import replay_views
 import replay_resolvers
 import logging
-
+import hmac
+import time
 
 #=================================================================
 # Config Loading
@@ -17,25 +18,55 @@ def load_template_file(file, desc = None, view_class = views.J2TemplateView):
 
     return file
 
+#=================================================================
+# Cookie Signing
+#=================================================================
+
+class HMACCookieMaker:
+    def __init__(self, key, name):
+        self.key = key
+        self.name = name
+
+    def __call__(self, duration, extra_id = ''):
+        expire = str(long(time.time() + duration))
+
+        if extra_id:
+            msg = extra_id + '-' + expire
+        else:
+            msg = expire
+
+        hmacdigest = hmac.new(self.key, msg)
+        hexdigest = hmacdigest.hexdigest()
+
+        if extra_id:
+            cookie = '{0}-{1}={2}-{3}'.format(self.name, extra_id, expire, hexdigest)
+        else:
+            cookie = '{0}={1}-{2}'.format(self.name, expire, hexdigest)
+
+        return cookie
+
 
 #=================================================================
-def create_wb_handler(**config):
+def create_wb_handler(cdx_source, config):
+
     replayer = replay_views.RewritingReplayView(
 
         resolvers = replay_resolvers.make_best_resolvers(config.get('archive_paths')),
 
-        loader = archiveloader.ArchiveLoader(hmac = config.get('hmac', None)),
+        loader = archiveloader.ArchiveLoader(hmac = config.get('hmac')),
 
-        head_insert_view = load_template_file(config.get('head_html'), 'Head Insert'),
+        head_insert_view = load_template_file(config.get('head_insert_html'), 'Head Insert'),
 
         buffer_response = config.get('buffer_response', True),
 
         redir_to_exact = config.get('redir_to_exact', True),
+
+        reporter = config.get('reporter')
     )
 
 
     wb_handler = handlers.WBHandler(
-        config['cdx_source'],
+        cdx_source,
 
         replayer,
 
@@ -45,19 +76,4 @@ def create_wb_handler(**config):
     )
 
     return wb_handler
-
-
-#=================================================================
-def load_class(name):
-    result = name.rsplit('.', 1)
-
-    if len(result) == 1:
-        modname == ''
-        klass = result[0]
-    else:
-        modname = result[0]
-        klass = result[1]
-
-    mod =  __import__(modname, fromlist=[klass])
-    return getattr(mod, klass)
 

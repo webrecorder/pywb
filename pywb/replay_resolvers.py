@@ -72,7 +72,7 @@ def make_best_resolver(param):
     PrefixResolver('http://myhost.example.com/warcs/')
 
     # http path w/ contains param
-    >>> make_best_resolver(('http://myhost.example.com/warcs/', '/'))
+    >>> make_best_resolver(['http://myhost.example.com/warcs/', '/'])
     PrefixResolver('http://myhost.example.com/warcs/', contains = '/')
 
     # redis path
@@ -89,7 +89,7 @@ def make_best_resolver(param):
 
     """
 
-    if isinstance(param, tuple):
+    if isinstance(param, list):
         path = param[0]
         arg = param[1]
     else:
@@ -116,12 +116,15 @@ def make_best_resolver(param):
 
 
 #=================================================================
-def make_best_resolvers(*paths):
+def make_best_resolvers(paths):
     """
-    >>> make_best_resolvers('http://myhost.example.com/warcs/', 'redis://myhost.example.com:1234/1')
+    >>> make_best_resolvers(['http://myhost.example.com/warcs/', 'redis://myhost.example.com:1234/1'])
     [PrefixResolver('http://myhost.example.com/warcs/'), RedisResolver('redis://myhost.example.com:1234/1')]
     """
-    return map(make_best_resolver, paths)
+    if hasattr(paths, '__iter__'):
+        return map(make_best_resolver, paths)
+    else:
+        return [make_best_resolver(paths)]
 
 
 import utils
