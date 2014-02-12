@@ -1,15 +1,13 @@
 import urllib
 import urllib2
 import wbexceptions
-import itertools
 import wbrequestresponse
-import surt
 from collections import OrderedDict
 
-import binsearch
-import cdxserve
+from cdxserver.cdxserver import CDXServer, CDXException
+from cdxserver.cdxobject import CDXObject
+
 import logging
-import os
 
 #=================================================================
 class IndexReader:
@@ -26,7 +24,13 @@ class IndexReader:
         if wbrequest.custom_params:
             params.update(wbrequest.custom_params)
 
-        cdxlines = self.load_cdx(wburl.url, params, parsed_cdx)
+        #params['url'] = wburl.url
+        output = 'raw' if parsed_cdx else 'text'
+
+        try:
+            cdxlines = self.load_cdx(url = wburl.url, output = output, **params)
+        except CDXException:
+            raise wbexceptions.BadUrlException('Bad Request Url: ' + wburl.url)
 
         cdxlines = utils.peek_iter(cdxlines)
 
@@ -53,7 +57,7 @@ class IndexReader:
         # for now, list implies local sources
         if isinstance(paths, list):
             if len(paths) > 1:
-                return LocalCDXServer(paths, surt_ordered)
+                return EmbeddedCDXServer(paths, surt_ordered)
             else:
                 # treat as non-list
                 paths = paths[0]
@@ -66,66 +70,13 @@ class IndexReader:
             cookie = config.get('cookie', None)
             return RemoteCDXServer(uri, cookie = cookie)
         else:
-            return LocalCDXServer([uri], surt_ordered)
+            return EmbeddedCDXServer([uri], surt_ordered)
 
 
 
 
 #=================================================================
-class LocalCDXServer(IndexReader):
-    """
-    >>> x = LocalCDXServer([test_dir]).load_cdx('example.com', parsed_cdx = True, limit = 1)
-    >>> pprint(x.next().items())
-    [('urlkey', 'com,example)/'),
-     ('timestamp', '20140127171200'),
-     ('original', 'http://example.com'),
-     ('mimetype', 'text/html'),
-     ('statuscode', '200'),
-     ('digest', 'B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A'),
-     ('redirect', '-'),
-     ('robotflags', '-'),
-     ('length', '1046'),
-     ('offset', '334'),
-     ('filename', 'dupes.warc.gz')]
-
-    """
-
-    def __init__(self, sources, surt_ordered = True):
-        self.sources = []
-        self.surt_ordered = surt_ordered
-        logging.info('CDX Surt-Ordered? ' + str(surt_ordered))
-
-        for src in sources:
-            if os.path.isdir(src):
-                for file in os.listdir(src):
-                    if file.endswith('.cdx'):
-                        full = src + file
-                        logging.info('Adding CDX: ' + full)
-                        self.sources.append(full)
-            else:
-                logging.info('Adding CDX: ' + src)
-                self.sources.append(src)
-
-
-    def load_cdx(self, url, params = {}, parsed_cdx = True, **kwvalues):
-        # canonicalize to surt (canonicalization is part of surt conversion)
-        try:
-            key = surt.surt(url)
-        except Exception as e:
-            raise wbexceptions.BadUrlException('Bad Request Url: ' + url)
-
-        # if not surt, unsurt the surt to get canonicalized non-surt url
-        if not self.surt_ordered:
-            key = utils.unsurt(key)
-
-        match_func = binsearch.iter_exact
-
-        params.update(**kwvalues)
-        params['output'] = 'raw' if parsed_cdx else 'text'
-
-        return cdxserve.cdx_serve(key, params, self.sources, match_func)
-
-
+class EmbeddedCDXServer(CDXServer, IndexReader):
     def get_query_params(self, wburl, limit = 150000, collapse_time = None, replay_closest = 10):
 
         if wburl.type == wburl.URL_QUERY:
@@ -198,7 +149,7 @@ class RemoteCDXServer(IndexReader):
                 raise
 
         if parsed_cdx:
-            return (CDXCaptureResult(cdx) for cdx in response)
+            return (CDXObject(cdx) for cdx in response)
         else:
             return iter(response)
 
@@ -236,62 +187,6 @@ class RemoteCDXServer(IndexReader):
 
     def __str__(self):
         return 'server cdx from ' + self.server_url
-
-
-#=================================================================
-class CDXCaptureResult(OrderedDict):
-    CDX_FORMATS = [
-        # Public CDX Format
-        ["urlkey","timestamp","original","mimetype","statuscode","digest","length"],
-
-        # CDX 11 Format
-        ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","robotflags","length","offset","filename"],
-
-        # CDX 9 Format
-        ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","offset","filename"],
-
-        # CDX 11 Format + 3 revisit resolve fields
-        ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","robotflags","length","offset","filename",
-         "orig.length","orig.offset","orig.filename"],
-
-        # CDX 9 Format + 3 revisit resolve fields
-        ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","offset","filename",
-         "orig.length","orig.offset","orig.filename"]
-        ]
-
-    def __init__(self, cdxline):
-        OrderedDict.__init__(self)
-
-        cdxline = cdxline.rstrip()
-        fields = cdxline.split(' ')
-
-        cdxformat = None
-        for i in CDXCaptureResult.CDX_FORMATS:
-            if len(i) == len(fields):
-                cdxformat = i
-
-        if not cdxformat:
-            raise wbexceptions.InvalidCDXException('unknown {0}-field cdx format'.format(len(fields)))
-
-        for header, field in itertools.izip(cdxformat, fields):
-            self[header] = field
-
-        self.cdxline = cdxline
-
-    def __setitem__(self, key, value):
-        OrderedDict.__setitem__(self, key, value)
-
-        # force regen on next __str__ call
-        self.cdxline = None
-
-
-    def __str__(self):
-        if self.cdxline:
-            return self.cdxline
-
-        li = itertools.imap(lambda (n, val): val, self.items())
-        return ' '.join(li)
-
 
 
 # Testing

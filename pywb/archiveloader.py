@@ -13,6 +13,9 @@ from wbrequestresponse import StatusAndHeaders
 #=================================================================
 
 class HttpLoader:
+    """
+    Load content over http with range request and optional signature
+    """
     def __init__(self, hmac = None, hmac_duration = 30):
         self.hmac = hmac
         self.hmac_duration = hmac_duration
@@ -38,6 +41,8 @@ class HttpLoader:
 #=================================================================
 class FileLoader:
     """
+    Load content from local file-system
+
     # Ensure attempt to read more than 100 bytes, only reads 100 bytes
     >>> len(FileLoader().load(utils.test_data_dir() + 'warcs/iana.warc.gz', 0, 100).read('400'))
     100

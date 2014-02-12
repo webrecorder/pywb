@@ -1,5 +1,5 @@
 import redis
-import binsearch
+import binsearch.binsearch
 
 import urlparse
 import os
@@ -46,10 +46,10 @@ class RedisResolver:
 class PathIndexResolver:
     def __init__(self, pathindex_file):
         self.pathindex_file = pathindex_file
-        self.reader = binsearch.FileReader(pathindex_file)
+        self.reader = binsearch.binsearch.FileReader(pathindex_file)
 
     def __call__(self, filename):
-        result = binsearch.iter_exact(self.reader, filename, '\t')
+        result = binsearch.binsearch.iter_exact(self.reader, filename, '\t')
 
         def gen_list(result):
             for pathline in result:

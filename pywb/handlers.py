@@ -66,28 +66,12 @@ class WBHandler(BaseHandler):
 # CDX-Server Handler -- pass all params to cdx server
 #=================================================================
 class CDXHandler(BaseHandler):
-    def __init__(self, cdx_reader, view = None):
-        self.cdx_reader = cdx_reader
+    def __init__(self, cdx_server, view = None):
+        self.cdx_server = cdx_server
         self.view = view if view else views.TextCapturesView()
 
     def __call__(self, wbrequest):
-        #url = wbrequest.wb_url.url
-
-        # use url= param to get actual url
-        params = urlparse.parse_qs(wbrequest.env['QUERY_STRING'])
-
-        # parse_qs produces arrays for single values
-        # cdxreader expects singleton params for all except filters, so convert here
-        # use first value of the list
-        for name, val in params.iteritems():
-            if name != 'filter':
-                params[name] = val[0]
-
-        url = params.get('url')
-        if not url:
-            raise WbException('Must specify a url= param to query cdx server')
-
-        cdx_lines = self.cdx_reader.load_cdx(url, params, parsed_cdx = False)
+        cdx_lines = self.cdx_server.load_cdx_from_request(wbrequest.env)
 
         return self.view.render_response(wbrequest, cdx_lines)
 
@@ -97,7 +81,7 @@ class CDXHandler(BaseHandler):
         return None
 
     def __str__(self):
-        return 'CDX Server: ' + str(self.cdx_reader)
+        return 'CDX Server: ' + str(self.cdx_server)
 
 
 #=================================================================

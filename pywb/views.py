@@ -1,9 +1,9 @@
-import indexreader
-import utils
+import cdxserver.timeutils as timeutils
+
 import wbrequestresponse
 import wbexceptions
-import time
 import urlparse
+import time
 
 from os import path
 from itertools import imap
@@ -58,7 +58,7 @@ class J2TemplateView:
     # Filters
     @staticmethod
     def format_ts(value, format='%a, %b %d %Y %H:%M:%S'):
-        value = utils.timestamp_to_datetime(value)
+        value = timeutils.timestamp_to_datetime(value)
         return time.strftime(format, value)
 
     @staticmethod

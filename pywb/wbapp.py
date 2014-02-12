@@ -2,6 +2,7 @@ import utils
 import wbexceptions
 
 from wbrequestresponse import WbResponse, StatusAndHeaders
+from cdxserver.cdxserver import CDXException
 
 import os
 import importlib
@@ -33,7 +34,7 @@ def create_wb_app(wb_router):
         except (wbexceptions.NotFoundException, wbexceptions.AccessException) as e:
             response = handle_exception(env, wb_router.error_view, e, False)
 
-        except wbexceptions.WbException as wbe:
+        except (wbexceptions.WbException, CDXException) as wbe:
             response = handle_exception(env, wb_router.error_view, wbe, False)
 
         except Exception as e:

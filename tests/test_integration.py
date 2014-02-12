@@ -1,14 +1,14 @@
 import webtest
-import pywb.pywb_init
-from pywb.indexreader import CDXCaptureResult
+from ..pywb.pywb_init import pywb_config
+from ..pywb.wbapp import create_wb_app
+from ..pywb.cdxserver.cdxobject import CDXObject
 
 class TestWb:
     TEST_CONFIG = 'test_config.yaml'
 
     def setup(self):
-        import pywb.wbapp
         #self.app = pywb.wbapp.create_wb_app(pywb.pywb_init.pywb_config())
-        self.app = pywb.wbapp.create_wb_app(pywb.pywb_init.pywb_config(self.TEST_CONFIG))
+        self.app = create_wb_app(pywb_config(self.TEST_CONFIG))
         self.testapp = webtest.TestApp(self.app)
 
     def _assert_basic_html(self, resp):
@@ -144,8 +144,8 @@ class TestWb:
         # combine collapsing, reversing and revisit resolving
         resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/print.css&collapse_time=11&resolve_revisits=true&reverse=true')
 
-        # convert back to CDXCaptureResult
-        cdxs = map(CDXCaptureResult, resp.body.rstrip().split('\n'))
+        # convert back to CDXObject
+        cdxs = map(CDXObject, resp.body.rstrip().split('\n'))
         assert len(cdxs) == 3, len(cdxs)
 
         # verify timestamps

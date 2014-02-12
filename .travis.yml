@@ -6,4 +6,5 @@ install:
   - "python setup.py -q install"
 # command to run tests
 #script: nosetests --with-doctest
-script: py.test run-tests.py ./pywb/ --doctest-modules --ignore=setup.py
+#script: py.test run-tests.py ./pywb/ --doctest-modules --ignore=setup.py
+script: py.test -v --doctest-module ./tests/*.py ./pywb/
