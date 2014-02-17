@@ -1,11 +1,14 @@
-PyWb 0.1 Beta
+PyWb 0.2 Beta
 ==============
 
 [![Build Status](https://travis-ci.org/ikreymer/pywb.png?branch=master)](https://travis-ci.org/ikreymer/pywb)
 
 pywb is a Python re-implementation of the Wayback Machine software.
 
-The goal is to provide a brand new, clean implementation of Wayback.
+The goal is to provide a brand new, clean implementation of the Wayback Machine.
+
+The 0.2 architecture includes a seperation of the project into distinct packages, which have
+their own tests and may be used seperately if needed.
 
 The focus is to focus on providing the best/accurate replay of archival web content (usually in WARC or ARC files),
 and new ways of handling dynamic and difficult content.
@@ -93,19 +96,17 @@ At this point, you can open a web browser and navigate to the examples above for
 
 ### Automated Tests
 
-Currently pywb includes numerous doctests which test rewriting and loading of data from the sample archive.
+Currently pywb includes a full (and growing) suite of tests.
 
-The `run-tests.py` file currently contains a few basic integration tests against the default config.
-
-
-The current set of tests can be run with py.test:
-
-`py.test run-tests.py ./pywb/ --doctest-modules`
+Top level integration tests can be found in the `tests/` directory,
+and each subpackage also contains doctests and unit tests.
 
 
-or with Nose:
+The full set of tests can be run by executing:
 
-`nosetests --with-doctest`
+`python run-tests.py`
+
+which will run the tests using py.test
 
 
 ### Sample Setup
