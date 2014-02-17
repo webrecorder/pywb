@@ -6,16 +6,13 @@ from wbexceptions import NotFoundException
 from itertools import chain
 from pprint import pprint
 
-from pywb.cdx.cdxserver import CDXServer, CDXException
+from pywb.cdx.cdxserver import create_cdx_server, CDXException
 from pywb.cdx.cdxobject import CDXObject
 
 #=================================================================
 class IndexReader(object):
     def __init__(self, config):
-        if isinstance(config, str):
-            self.cdx_server = CDXServer(config)
-        else:
-            self.cdx_server = CDXServer.create_from_config(config)
+        self.cdx_server = create_cdx_server(config)
 
     def load_for_request(self, wbrequest):
         wburl = wbrequest.wb_url
@@ -76,12 +73,3 @@ class IndexReader(object):
             return None
 
         return chain([first], iterable)
-
-#=================================================================
-class RemoteCDXServer(IndexReader):
-    def __init__(self, remote_url, cookie=None):
-        self.remote = RemoteCDXSource(remote_url=remote_url, cookie=cookie, proxy_all=True)
-        self.cdx_server = CDXServer(self.remote)
-
-    #def load_cdx(self, **params):
-        #return remote.load_cdx(**params)

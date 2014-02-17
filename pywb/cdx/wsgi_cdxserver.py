@@ -1,38 +1,42 @@
-from cdxserver import CDXServer
+from cdxserver import create_cdx_server, extract_params_from_wsgi_env
+from pywb import get_test_dir
+
 import logging
 import os
 import yaml
 import pkgutil
 
 #=================================================================
-TEST_CDX_DIR = os.path.dirname(os.path.realpath(__file__)) + '/../sample_data/'
-
 CONFIG_FILE = 'config.yaml'
 
 DEFAULT_PORT = 8080
 
+config = None
 if __package__:
-    config = pkgutil.get_data(__package__, CONFIG_FILE)
-    config = yaml.load(config)
-else:
-    config = None
+    try:
+        config = pkgutil.get_data(__package__, CONFIG_FILE)
+        config = yaml.load(config)
+    except:
+        pass
 
 
 #=================================================================
-def main():
+def main(paths=None):
     logging.basicConfig(format='%(asctime)s: [%(levelname)s]: %(message)s',
                         level=logging.DEBUG)
 
-    cdx_config = config.get('index_paths') if config else None
+    if not paths:
+        if config:
+            paths = config
+        else:
+            paths = get_test_dir() + 'cdx/'
 
-    if not cdx_config:
-        cdx_config = [TEST_CDX_DIR]
-
-    cdxserver = CDXServer(cdx_config)
+    cdxserver = create_cdx_server(paths)
 
     def application(env, start_response):
         try:
-            response = cdxserver.load_cdx_from_request(env)
+            params = extract_params_from_wsgi_env(env)
+            response = cdxserver.load_cdx(**params)
             start_response('200 OK', [('Content-Type', 'text/plain')])
 
             response = list(response)

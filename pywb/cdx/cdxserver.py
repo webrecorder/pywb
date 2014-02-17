@@ -7,6 +7,7 @@ import os
 import urlparse
 
 from cdxsource import CDXSource, CDXFile, RemoteCDXSource
+from cdxobject import CDXObject
 
 
 #=================================================================
@@ -22,70 +23,22 @@ class AccessException(CDXException):
 
 
 #=================================================================
-class CDXServer:
+class CDXServer(object):
     """
     Top-level cdx server object which maintains a list of cdx sources,
     responds to queries and dispatches to the cdx ops for processing
     """
 
-    @staticmethod
-    def create_from_config(config):
-        paths = config.get('index_paths')
-        surt_ordered = config.get('surt_ordered', True)
-        return CDXServer(paths, surt_ordered)
-
-    def __init__(self, sources, surt_ordered=True):
-        self.sources = []
+    def __init__(self, paths, surt_ordered=True):
+        self.sources = create_cdx_sources(paths)
         self.surt_ordered = surt_ordered
-
-        logging.debug('CDX Surt-Ordered? ' + str(surt_ordered))
-
-        if not isinstance(sources, list):
-            sources = [sources]
-
-        for src in sources:
-            if isinstance(src, CDXSource):
-                self.add_cdx_source(src)
-            elif isinstance(src, str):
-                if os.path.isdir(src):
-                    for file in os.listdir(src):
-                        self.add_cdx_source(src + file)
-                else:
-                    self.add_cdx_source(src)
-
-        if len(self.sources) == 0:
-            logging.exception('No CDX Sources Found from: ' + str(sources))
-
-    def add_cdx_source(self, source):
-        if not isinstance(source, CDXSource):
-            source = self.create_cdx_source(source)
-            if not source:
-                return
-
-        logging.debug('Adding CDX Source: ' + str(source))
-        self.sources.append(source)
-
-    @staticmethod
-    def create_cdx_source(filename):
-        if filename.startswith('http://') or filename.startswith('https://'):
-            return RemoteCDXSource(filename)
-
-        if filename.endswith('.cdx'):
-            return CDXFile(filename)
-
-        return None
-        #TODO: support zipnum
-        #elif filename.endswith('.summary')
-        #    return ZipNumCDXSource(filename)
-        #elif filename.startswith('redis://')
-        #    return RedisCDXSource(filename)
 
     def load_cdx(self, **params):
         # if key not set, assume 'url' is set and needs canonicalization
         if not params.get('key'):
             params['key'] = self._canonicalize(params)
 
-        self._convert_old_style(params)
+        convert_old_style_params(params)
 
         return cdx_load(self.sources, params)
 
@@ -112,43 +65,145 @@ class CDXServer:
 
         return key
 
-    def _convert_old_style(self, params):
-        """
-        Convert old-style CDX Server param semantics
-        """
-        collapse_time = params.get('collapseTime')
-        if collapse_time:
-            params['collapse_time'] = collapse_time
+    def __str__(self):
+        return 'CDX server serving from ' + str(self.sources)
 
-        resolve_revisits = params.get('resolveRevisits')
-        if resolve_revisits:
-            params['resolve_revisits'] = resolve_revisits
 
-        if params.get('sort') == 'reverse':
-            params['reverse'] = True
+#=================================================================
+class RemoteCDXServer(object):
+    """
+    A special cdx server that uses a single RemoteCDXSource
+    It simply proxies the query params to the remote source
+    and performs no local processing/filtering
+    """
+    def __init__(self, source):
+        if isinstance(source, RemoteCDXSource):
+            self.source = source
+        elif (isinstance(source, str) and
+              any(source.startswith(x) for x in ['http://', 'https://'])):
+            self.source = RemoteCDXSource(source)
+        else:
+            raise Exception('Invalid remote cdx source: ' + str(source))
 
-    def load_cdx_from_request(self, env):
-        #url = wbrequest.wb_url.url
-
-        # use url= param to get actual url
-        params = urlparse.parse_qs(env['QUERY_STRING'])
-
-        if not 'output' in params:
-            params['output'] = 'text'
-
-        # parse_qs produces arrays for single values
-        # cdx processing expects singleton params for all params,
-        # except filters, so convert here
-        # use first value of the list
-        for name, val in params.iteritems():
-            if name != 'filter':
-                params[name] = val[0]
-
-        cdx_lines = self.load_cdx(**params)
-        return cdx_lines
+    def load_cdx(self, **params):
+        remote_iter = remote.load_cdx(**params)
+        # if need raw, convert to raw format here
+        if params.get('output') == 'raw':
+            return (CDXObject(cdx) for cdx in remote_iter)
+        else:
+            return remote_iter
 
     def __str__(self):
-        return 'load cdx indexes from ' + str(self.sources)
+        return 'Remote CDX server serving from ' + str(self.sources[0])
+
+
+#=================================================================
+def create_cdx_server(config):
+    if hasattr(config, 'get'):
+        paths = config.get('index_paths')
+        surt_ordered = config.get('surt_ordered', True)
+    else:
+        paths = config
+        surt_ordered = True
+
+    logging.debug('CDX Surt-Ordered? ' + str(surt_ordered))
+
+    if (isinstance(paths, str) and
+        any(paths.startswith(x) for x in ['http://', 'https://'])):
+        return RemoteCDXServer(paths)
+    else:
+        return CDXServer(paths)
+
+
+#=================================================================
+def create_cdx_sources(paths):
+    sources = []
+
+    if not isinstance(paths, list):
+        paths = [paths]
+
+    for path in paths:
+        if isinstance(path, CDXSource):
+            add_cdx_source(sources, path)
+        elif isinstance(path, str):
+            if os.path.isdir(path):
+                for file in os.listdir(path):
+                    add_cdx_source(sources, path + file)
+            else:
+                add_cdx_source(sources, path)
+
+    if len(sources) == 0:
+        logging.exception('No CDX Sources Found from: ' + str(sources))
+
+    return sources
+
+
+#=================================================================
+def add_cdx_source(sources, source):
+    if not isinstance(source, CDXSource):
+        source = create_cdx_source(source)
+        if not source:
+            return
+
+    logging.debug('Adding CDX Source: ' + str(source))
+    sources.append(source)
+
+
+#=================================================================
+def create_cdx_source(filename):
+    if filename.startswith('http://') or filename.startswith('https://'):
+        return RemoteCDXSource(filename)
+
+    if filename.endswith('.cdx'):
+        return CDXFile(filename)
+
+    return None
+    #TODO: support zipnum
+    #elif filename.endswith('.summary')
+    #    return ZipNumCDXSource(filename)
+    #elif filename.startswith('redis://')
+    #    return RedisCDXSource(filename)
+
+
+#=================================================================
+def convert_old_style_params(params):
+    """
+    Convert old-style CDX Server param semantics
+    """
+    collapse_time = params.get('collapseTime')
+    if collapse_time:
+        params['collapse_time'] = collapse_time
+
+    resolve_revisits = params.get('resolveRevisits')
+    if resolve_revisits:
+        params['resolve_revisits'] = resolve_revisits
+
+    if params.get('sort') == 'reverse':
+        params['reverse'] = True
+
+    return params
+
+
+#=================================================================
+def extract_params_from_wsgi_env(env):
+    """ utility function to extract params from the query
+    string of a WSGI environment dictionary
+    """
+    # use url= param to get actual url
+    params = urlparse.parse_qs(env['QUERY_STRING'])
+
+    if not 'output' in params:
+        params['output'] = 'text'
+
+    # parse_qs produces arrays for single values
+    # cdx processing expects singleton params for all params,
+    # except filters, so convert here
+    # use first value of the list
+    for name, val in params.iteritems():
+        if name != 'filter':
+            params[name] = val[0]
+
+    return params
 
 
 #=================================================================
