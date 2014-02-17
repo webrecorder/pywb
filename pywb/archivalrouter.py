@@ -1,6 +1,5 @@
 import urlparse
 import re
-import wbexceptions
 
 from wbrequestresponse import WbRequest, WbResponse
 from pywb.rewrite.url_rewriter import UrlRewriter

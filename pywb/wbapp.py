@@ -1,7 +1,8 @@
-import wbexceptions
-
+from wbexceptions import WbException, NotFoundException, InternalRedirect
 from wbrequestresponse import WbResponse, StatusAndHeaders
+
 from pywb.cdx.cdxserver import CDXException
+from pywb.warc.recordloader import ArchiveLoadFailed
 
 import os
 import importlib
@@ -49,16 +50,13 @@ def create_wb_app(wb_router):
             response = wb_router(env)
 
             if not response:
-                raise wbexceptions.NotFoundException('No handler for "{0}"'.format(env['REL_REQUEST_URI']))
+                raise NotFoundException('No handler for "{0}"'.format(env['REL_REQUEST_URI']))
 
-        except wbexceptions.InternalRedirect as ir:
+        except InternalRedirect as ir:
             response = WbResponse(StatusAndHeaders(ir.status, ir.httpHeaders))
 
-        except (wbexceptions.NotFoundException, wbexceptions.AccessException) as e:
+        except (WbException, CDXException, ArchiveLoadFailed) as e:
             response = handle_exception(env, wb_router.error_view, e, False)
-
-        except (wbexceptions.WbException, CDXException) as wbe:
-            response = handle_exception(env, wb_router.error_view, wbe, False)
 
         except Exception as e:
             response = handle_exception(env, wb_router.error_view, e, True)

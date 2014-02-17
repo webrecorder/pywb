@@ -160,7 +160,7 @@ class TestWb:
     def test_error(self):
         resp = self.testapp.get('/pywb/?abc', status = 400)
         assert resp.status_int == 400
-        assert 'Bad Request Url: http://?abc' in resp.body
+        assert 'Invalid Url: http://?abc' in resp.body
 
 # Reporter callback for replay view
 def print_reporter(wbrequest, cdx, response):

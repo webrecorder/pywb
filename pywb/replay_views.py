@@ -4,7 +4,8 @@ from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.utils.bufferedreaders import ChunkedDataReader
 from wbrequestresponse import WbResponse
 
-import wbexceptions
+from wbexceptions import CaptureException, InternalRedirect
+from pywb.warc.recordloader import ArchiveLoadFailed
 
 
 #=================================================================
@@ -64,7 +65,7 @@ class ReplayView:
                 return response
 
 
-            except wbexceptions.CaptureException as ce:
+            except (CaptureException, ArchiveLoadFailed) as ce:
                 import traceback
                 traceback.print_exc()
                 last_e = ce
@@ -73,7 +74,7 @@ class ReplayView:
         if last_e:
             raise last_e
         else:
-            raise wbexceptions.UnresolvedArchiveFileException()
+            raise WbException('No Content Loaded for: ' + wbrequest.wb_url)
 
     @staticmethod
     def stream_to_iter(stream):
@@ -141,7 +142,7 @@ class ReplayView:
     def _redirect_if_needed(self, wbrequest, cdx):
         if self.redir_to_exact and not wbrequest.is_proxy and cdx and (cdx['timestamp'] != wbrequest.wb_url.timestamp):
             new_url = wbrequest.urlrewriter.get_timestamp_url(cdx['timestamp'], cdx['original'])
-            raise wbexceptions.InternalRedirect(new_url)
+            raise InternalRedirect(new_url)
 
         return None
 
@@ -153,5 +154,5 @@ class ReplayView:
 
             #TODO: canonicalize before testing?
             if (UrlRewriter.strip_protocol(request_url) == UrlRewriter.strip_protocol(location_url)):
-                raise wbexceptions.CaptureException('Self Redirect: ' + str(cdx))
+                raise CaptureException('Self Redirect: ' + str(cdx))
 

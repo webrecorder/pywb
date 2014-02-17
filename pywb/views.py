@@ -1,7 +1,6 @@
 import pywb.utils.timeutils as timeutils
 
 import wbrequestresponse
-import wbexceptions
 import urlparse
 import time
 

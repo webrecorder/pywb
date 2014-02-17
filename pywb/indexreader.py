@@ -1,6 +1,7 @@
 import urllib
 import urllib2
-import wbexceptions
+
+from wbexceptions import NotFoundException
 
 from itertools import chain
 from pprint import pprint
@@ -30,15 +31,13 @@ class IndexReader(object):
             params.update(wbrequest.custom_params)
 
         params['url'] = wburl.url
-        try:
-            cdxlines = self.load_cdx(output='raw', **params)
-        except CDXException:
-            raise wbexceptions.BadUrlException('Bad Request Url: ' + wburl.url)
+
+        cdxlines = self.load_cdx(output='raw', **params)
 
         cdxlines = self.peek_iter(cdxlines)
 
         if cdxlines is None:
-            raise wbexceptions.NotFoundException('WB Does Not Have Url: ' + wburl.url)
+            raise NotFoundException('No Captures found for: ' + wburl.url)
 
         return cdxlines
 
