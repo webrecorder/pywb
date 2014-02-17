@@ -122,6 +122,10 @@ def cdx_filter(cdx_iter, filter_strings):
             if self.invert:
                 string = string[1:]
 
+            self.exact = string.startswith('=')
+            if self.exact:
+                string = string[1:]
+
             parts = string.split(':', 1)
             # no field set, apply filter to entire cdx
             if len(parts) == 1:
@@ -131,11 +135,17 @@ def cdx_filter(cdx_iter, filter_strings):
                 self.field = parts[0]
                 string = parts[1]
 
-            self.regex = re.compile(string)
+            if self.exact:
+                self.exact_str = string
+            else:
+                self.regex = re.compile(string)
 
         def __call__(self, cdx):
             val = cdx[self.field] if self.field else str(cdx)
-            matched = self.regex.match(val) is not None
+            if self.exact:
+                matched = (self.exact_str == val)
+            else:
+                matched = self.regex.match(val) is not None
             return matched ^ self.invert
 
     filters = map(Filter, filter_strings)

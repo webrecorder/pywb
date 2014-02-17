@@ -27,7 +27,7 @@ org,iana)/_js/2013.1/jquery.js 20140126201307 https://www.iana.org/_js/2013.1/jq
 >>> cdx_ops_test('http://iana.org/dont_have_this', reverse = True, resolve_revisits = True, limit = 2)
 
 
-# Filter cdx
+# Filter cdx (default: regex)
 >>> cdx_ops_test(url = 'http://iana.org/domains', match_type = 'prefix', filter = ['mimetype:text/html'])
 org,iana)/domains 20140126200825 http://www.iana.org/domains text/html 200 7UPSCLNWNZP33LGW6OJGSF2Y4CDG4ES7 - - 2912 610534 iana.warc.gz
 org,iana)/domains/arpa 20140126201248 http://www.iana.org/domains/arpa text/html 200 QOFZZRN6JIKAL2JRL6ZC2VVG42SPKGHT - - 2939 759039 iana.warc.gz
@@ -39,10 +39,18 @@ org,iana)/domains/root/db 20140126200927 http://www.iana.org/domains/root/db/ te
 org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db text/html 200 DHXA725IW5VJJFRTWBQT6BEZKRE7H57S - - 18365 672225 iana.warc.gz
 org,iana)/domains/root/servers 20140126201227 http://www.iana.org/domains/root/servers text/html 200 AFW34N3S4NK2RJ6QWMVPB5E2AIUETAHU - - 3137 733840 iana.warc.gz
 
-
 >>> cdx_ops_test(url = 'http://iana.org/_css/2013.1/screen.css', filter = 'statuscode:200')
 org,iana)/_css/2013.1/screen.css 20140126200625 http://www.iana.org/_css/2013.1/screen.css text/css 200 BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 8754 41238 iana.warc.gz
 
+# Filter exact
+>>> cdx_ops_test(url = 'http://example.com', sources = [test_cdx_dir], match_type = 'prefix', filter = '=urlkey:com,example)/?example=1')
+com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 333 example.warc.gz
+com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 1864 example.warc.gz
+
+# Filter exact invert
+>>> cdx_ops_test(url = 'http://example.com', sources = [test_cdx_dir], match_type = 'prefix', filter = '!=urlkey:com,example)/?example=1')
+com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz
+com,example)/ 20140127171251 http://example.com warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 11875 dupes.warc.gz
 
 # Collapse by timestamp
 # unresolved revisits, different statuscode results in an extra repeat
