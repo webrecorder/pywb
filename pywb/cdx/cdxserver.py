@@ -86,7 +86,7 @@ class RemoteCDXServer(object):
             raise Exception('Invalid remote cdx source: ' + str(source))
 
     def load_cdx(self, **params):
-        remote_iter = remote.load_cdx(**params)
+        remote_iter = self.source.load_cdx(params)
         # if need raw, convert to raw format here
         if params.get('output') == 'raw':
             return (CDXObject(cdx) for cdx in remote_iter)

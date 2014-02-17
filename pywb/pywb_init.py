@@ -1,8 +1,8 @@
 import handlers
-import indexreader
 import archivalrouter
 import config_utils
 import proxy
+from indexreader import IndexReader
 
 import os
 import yaml
@@ -52,10 +52,10 @@ def pywb_config_manual(passed_config = {}):
     for name, value in collections.iteritems():
         if isinstance(value, str):
             route_config = config
-            cdx_server = indexreader.IndexReader(value)
+            cdx_server = IndexReader(value)
         else:
             route_config = DictChain(value, config)
-            cdx_server = indexreader.IndexReader(route_config)
+            cdx_server = IndexReader(route_config)
 
 
         wb_handler = config_utils.create_wb_handler(

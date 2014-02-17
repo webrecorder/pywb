@@ -145,19 +145,17 @@ StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Acc
 
 # Invalid WARC Offset
 >>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 1860 example.warc.gz 1043 333 example.warc.gz')
-Traceback (most recent call last):
-ArchiveLoadFailed: example.warc.gz:StatusAndHeadersParserException
+Exception: ArchiveLoadFailed
+
 
 # Invalid ARC Offset
 >>> load_from_cdx_test('com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 332 example.warc.gz')
-Traceback (most recent call last):
-ArchiveLoadFailed: example.warc.gz:StatusAndHeadersParserException
+Exception: ArchiveLoadFailed
 
 
 # Error Expected with revisit -- invalid offset on original
 >>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 1864 example.warc.gz 1043 330 example.warc.gz')
-Traceback (most recent call last):
-ArchiveLoadFailed: example.warc.gz:StatusAndHeadersParserException
+Exception: ArchiveLoadFailed
 
 """
 
@@ -189,11 +187,11 @@ def load_test_archive(test_file, offset, length):
 def load_from_cdx_test(cdx):
     resolve_loader = ResolvingLoader(test_warc_dir)
     cdx = CDXObject(cdx)
-    (headers, stream) = resolve_loader.resolve_headers_and_payload(cdx, None)
-    print headers
-    sys.stdout.write(stream.readline())
-    sys.stdout.write(stream.readline())
-
-
-
+    try:
+        (headers, stream) = resolve_loader.resolve_headers_and_payload(cdx, None)
+        print headers
+        sys.stdout.write(stream.readline())
+        sys.stdout.write(stream.readline())
+    except Exception as e:
+        print 'Exception: ' + e.__class__.__name__
 

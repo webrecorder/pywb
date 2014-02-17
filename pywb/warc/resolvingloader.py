@@ -94,6 +94,7 @@ class ResolvingLoader:
 
         any_found = False
         last_exc = None
+        last_traceback = None
         for resolver in self.path_resolvers:
             possible_paths = resolver(filename)
 
@@ -105,17 +106,20 @@ class ResolvingLoader:
 
                     except Exception as ue:
                         last_exc = ue
+                        import sys
+                        last_traceback = sys.exc_info()[2]
 
         # Unsuccessful if reached here
         if failed_files:
             failed_files.append(filename)
 
         if last_exc:
-            msg = str(last_exc.__class__.__name__)
+            #msg = str(last_exc.__class__.__name__)
+            msg = str(last_exc)
         else:
             msg = 'Archive File Not Found'
 
-        raise ArchiveLoadFailed(msg, filename)
+        raise ArchiveLoadFailed(msg, filename), None, last_traceback
 
     def _load_different_url_payload(self, cdx, headers_record, failed_files):
         """
@@ -147,12 +151,13 @@ class ResolvingLoader:
             ref_target_date = iso_date_to_timestamp(ref_target_date)
 
         orig_cdx_lines = self.load_cdx_for_dupe(ref_target_uri,
-                                                ref_target_date, digest)
+                                                ref_target_date,
+                                                cdx['digest'])
 
         for cdx in orig_cdx_lines:
             try:
-                payload_record = self._load_and_resolve(cdx, False,
-                                                        failed_files)
+                payload_record = self._resolve_path_load(cdx, False,
+                                                         failed_files)
                 return payload_record
 
             except ArchiveLoadFailed as e:
@@ -160,7 +165,7 @@ class ResolvingLoader:
 
         raise ArchiveLoadFailed('Original for revisit could not be loaded')
 
-    def load_cdx_for_dupe(url, timestamp, digest):
+    def load_cdx_for_dupe(self, url, timestamp, digest):
         """
         If a cdx_server is available, return response from server,
         otherwise empty list
@@ -169,8 +174,8 @@ class ResolvingLoader:
             return []
 
         params = {'url': url,
-                  'closest': closest,
+                  'closest': timestamp,
                   'filter': 'digest:' + digest,
                   'output': 'raw'}
 
-        return self.cdx_server.load_cdx(params)
+        return self.cdx_server.load_cdx(**params)

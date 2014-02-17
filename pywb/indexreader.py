@@ -11,6 +11,13 @@ from pywb.cdx.cdxobject import CDXObject
 
 #=================================================================
 class IndexReader(object):
+    """
+    Main interface for reading index (currently only CDX) from a
+    source server (currenlt a cdx server)
+
+    Creates an appropriate query based on wbrequest type info
+    """
+
     def __init__(self, config):
         self.cdx_server = create_cdx_server(config)
 
