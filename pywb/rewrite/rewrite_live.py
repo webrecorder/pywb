@@ -1,0 +1,68 @@
+import urllib2
+import os
+import sys
+import datetime
+
+from pywb.utils.timeutils import datetime_to_timestamp
+from pywb.utils.statusandheaders import StatusAndHeaders
+from pywb.rewrite.url_rewriter import UrlRewriter
+from pywb.rewrite.rewrite_content import RewriteContent
+
+"""
+Fetch a url from live web and apply rewriting rules
+"""
+
+#=================================================================
+def get_status_and_stream(url):
+    resp = urllib2.urlopen(url)
+
+    headers = []
+    for name, value in resp.info().dict.iteritems():
+        headers.append((name, value))
+
+    status_headers = StatusAndHeaders('200 OK', headers)
+    stream = resp
+
+    return (status_headers, stream)
+
+#=================================================================
+def get_rewritten(url, urlrewriter):
+    (status_headers, stream) = get_status_and_stream(url)
+
+    status_headers, gen = RewriteContent().rewrite_content(urlrewriter, status_headers, stream)
+
+    buff = ''
+    for x in gen:
+        buff += x
+
+    return (status_headers, buff)
+
+#=================================================================
+def main():
+    if len(sys.argv) < 2:
+        print 'Usage: {0} url-to-fetch [wb-url-target] [extra-prefix]'.format(sys.argv[0])
+        exit(1)
+    else:
+        url = sys.argv[1]
+
+    if len(sys.argv) >= 3:
+        wburl_str = sys.argv[2]
+        if wburl_str.startswith('/'):
+            wburl_str = wburl_str[1:]
+
+        prefix, wburl_str = wburl_str.split('/', 1)
+        prefix = '/' + prefix + '/'
+    else:
+        wburl_str = datetime_to_timestamp(datetime.datetime.now()) + '/http://example.com/path/sample.html'
+        prefix = '/pywb_rewrite/'
+
+    urlrewriter = UrlRewriter(wburl_str, prefix)
+
+    status_headers, buff = get_rewritten(url, urlrewriter)
+
+    sys.stdout.write(buff)
+
+
+#=================================================================
+if __name__ == "__main__":
+    main()

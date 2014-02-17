@@ -1,8 +1,7 @@
-import utils
 import wbexceptions
 
 from wbrequestresponse import WbResponse, StatusAndHeaders
-from cdxserver.cdxserver import CDXException
+from pywb.cdx.cdxserver import CDXException
 
 import os
 import importlib
@@ -11,12 +10,36 @@ import logging
 
 
 #=================================================================
+# adapted -from wsgiref.request_uri, but doesn't include domain name and allows all characters
+# allowed in the path segment according to: http://tools.ietf.org/html/rfc3986#section-3.3
+# explained here: http://stackoverflow.com/questions/4669692/valid-characters-for-directory-part-of-a-url-for-short-links
+def rel_request_uri(environ, include_query=1):
+    """
+    Return the requested path, optionally including the query string
+
+    # Simple test:
+    >>> rel_request_uri({'PATH_INFO': '/web/example.com'})
+    '/web/example.com'
+
+    # Test all unecoded special chars and double-quote
+    # (double-quote must be encoded but not single quote)
+    >>> rel_request_uri({'PATH_INFO': "/web/example.com/0~!+$&'()*+,;=:\\\""})
+    "/web/example.com/0~!+$&'()*+,;=:%22"
+    """
+    from urllib import quote
+    url = quote(environ.get('PATH_INFO',''), safe='/~!$&\'()*+,;=:@')
+    if include_query and environ.get('QUERY_STRING'):
+        url += '?' + environ['QUERY_STRING']
+
+    return url
+
+#=================================================================
 def create_wb_app(wb_router):
 
     # Top-level wsgi application
     def application(env, start_response):
         if env.get('SCRIPT_NAME') or not env.get('REQUEST_URI'):
-            env['REL_REQUEST_URI'] = utils.rel_request_uri(env)
+            env['REL_REQUEST_URI'] = rel_request_uri(env)
         else:
             env['REL_REQUEST_URI'] = env['REQUEST_URI']
 
@@ -95,7 +118,7 @@ def main():
         raise
 
 #=================================================================
-if __name__ == "__main__" or utils.enable_doctests():
+if __name__ == "__main__":
     pass
 else:
     application = main()

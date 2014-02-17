@@ -1,17 +1,22 @@
 import urllib
 import urllib2
 import wbexceptions
-import wbrequestresponse
-from collections import OrderedDict
 
-from cdxserver.cdxserver import CDXServer, CDXException
-from cdxserver.cdxobject import CDXObject
+from itertools import chain
+from pprint import pprint
 
-import logging
+from pywb.cdx.cdxserver import CDXServer, CDXException
+from pywb.cdx.cdxobject import CDXObject
 
 #=================================================================
-class IndexReader:
-    def load_for_request(self, wbrequest, parsed_cdx = True):
+class IndexReader(object):
+    def __init__(self, config):
+        if isinstance(config, str):
+            self.cdx_server = CDXServer(config)
+        else:
+            self.cdx_server = CDXServer.create_from_config(config)
+
+    def load_for_request(self, wbrequest):
         wburl = wbrequest.wb_url
 
         # init standard params
@@ -24,147 +29,27 @@ class IndexReader:
         if wbrequest.custom_params:
             params.update(wbrequest.custom_params)
 
-        #params['url'] = wburl.url
-        output = 'raw' if parsed_cdx else 'text'
-
+        params['url'] = wburl.url
         try:
-            cdxlines = self.load_cdx(url = wburl.url, output = output, **params)
+            cdxlines = self.load_cdx(output='raw', **params)
         except CDXException:
             raise wbexceptions.BadUrlException('Bad Request Url: ' + wburl.url)
 
-        cdxlines = utils.peek_iter(cdxlines)
+        cdxlines = self.peek_iter(cdxlines)
 
         if cdxlines is None:
             raise wbexceptions.NotFoundException('WB Does Not Have Url: ' + wburl.url)
 
-        cdxlines = self.filter_cdx(wbrequest, cdxlines)
-
         return cdxlines
 
-    def filter_cdx(self, wbrequest, cdxlines):
-        # Subclasses may wrap cdxlines iterator in a filter
-        return cdxlines
+    def load_cdx(self, **params):
+        return self.cdx_server.load_cdx(**params)
 
-    def load_cdx(self, url, params = {}, parsed_cdx = True):
-        raise NotImplementedError('Override in subclasses')
-
-    @staticmethod
-    def make_best_cdx_source(paths, config):
-        # may be a string or list
-        surt_ordered = config.get('surt_ordered', True)
-
-        # support mixed cdx streams and remote servers?
-        # for now, list implies local sources
-        if isinstance(paths, list):
-            if len(paths) > 1:
-                return EmbeddedCDXServer(paths, surt_ordered)
-            else:
-                # treat as non-list
-                paths = paths[0]
-
-        # a single uri
-        uri = paths
-
-        # Check for remote cdx server
-        if (uri.startswith('http://') or uri.startswith('https://')) and not uri.endswith('.cdx'):
-            cookie = config.get('cookie', None)
-            return RemoteCDXServer(uri, cookie = cookie)
-        else:
-            return EmbeddedCDXServer([uri], surt_ordered)
-
-
-
-
-#=================================================================
-class EmbeddedCDXServer(CDXServer, IndexReader):
     def get_query_params(self, wburl, limit = 150000, collapse_time = None, replay_closest = 10):
-
         if wburl.type == wburl.URL_QUERY:
             raise NotImplementedError('Url Query Not Yet Supported')
 
         return {
-
-            wburl.QUERY:
-                {'collapse_time': collapse_time, 'filter': '!statuscode:(500|502|504)', 'limit': limit},
-
-            wburl.URL_QUERY:
-                {},
-#                raise Exception('Not Yet Implemented')
-#                {'collapse': 'urlkey', 'matchType': 'prefix', 'showGroupCount': True, 'showUniqCount': True, 'lastSkipTimestamp': True, 'limit': limit,
-#                 'fl': 'urlkey,original,timestamp,endtimestamp,groupcount,uniqcount',
-#                },
-
-            wburl.REPLAY:
-                {'filter': '!statuscode:(500|502|504)', 'limit': replay_closest, 'closest_to': wburl.timestamp, 'resolve_revisits': True},
-
-           wburl.LATEST_REPLAY:
-                {'reverse': True, 'filter': 'statuscode:[23]..', 'limit': '1', 'resolve_revisits': True}
-
-        }[wburl.type]
-
-
-    def __str__(self):
-        return 'load cdx indexes from ' + str(self.sources)
-
-
-
-#=================================================================
-class RemoteCDXServer(IndexReader):
-    """
-    >>> x = RemoteCDXServer('http://web.archive.org/cdx/search/cdx').load_cdx('example.com', parsed_cdx = True, limit = '2')
-    >>> pprint(x.next().items())
-    [('urlkey', 'com,example)/'),
-     ('timestamp', '20020120142510'),
-     ('original', 'http://example.com:80/'),
-     ('mimetype', 'text/html'),
-     ('statuscode', '200'),
-     ('digest', 'HT2DYGA5UKZCPBSFVCV3JOBXGW2G5UUA'),
-     ('length', '1792')]
-    """
-
-    def __init__(self, server_url, cookie = None):
-        self.server_url = server_url
-        self.auth_cookie = cookie
-
-    def load_cdx(self, url, params = {}, parsed_cdx = True, **kwvalues):
-        #url is required, must be passed explicitly!
-        params['url'] = url
-        params.update(**kwvalues)
-
-        urlparams = urllib.urlencode(params, True)
-
-        try:
-            request = urllib2.Request(self.server_url, urlparams)
-
-            if self.auth_cookie:
-                request.add_header('Cookie', self.auth_cookie)
-
-            response = urllib2.urlopen(request)
-        except urllib2.HTTPError, e:
-            if e.code == 403:
-                exc_msg = e.read()
-                msg = 'Blocked By Robots' if 'Blocked By Robots' in exc_msg else 'Excluded'
-                raise wbexceptions.AccessException(msg)
-            else:
-                raise
-
-        if parsed_cdx:
-            return (CDXObject(cdx) for cdx in response)
-        else:
-            return iter(response)
-
-
-    # Note: this params are designed to make pywb compatible with the original Java wayback-cdx-server API:
-    # https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server
-    # Soon, this will be switched over to support the native pywb cdx server
-
-    # BUG: Setting replayClosest to high number for now, as cdx server sometimes returns wrong result
-    # with lower values if there are too many captures. Ideally, should be around 10-20
-    # The replayClosest is the max number of cdx lines, so max number of retry attempts that WB will make
-
-    def get_query_params(self, wburl, limit = '150000', collapse_time = '10', replay_closest = '4000'):
-        return {
-
             wburl.QUERY:
                 {'collapseTime': collapse_time, 'filter': '!statuscode:(500|502|504)', 'limit': limit},
 
@@ -184,18 +69,20 @@ class RemoteCDXServer(IndexReader):
 
         }[wburl.type]
 
+    @staticmethod
+    def peek_iter(iterable):
+        try:
+            first = next(iterable)
+        except StopIteration:
+            return None
 
-    def __str__(self):
-        return 'server cdx from ' + self.server_url
+        return chain([first], iterable)
 
+#=================================================================
+class RemoteCDXServer(IndexReader):
+    def __init__(self, remote_url, cookie=None):
+        self.remote = RemoteCDXSource(remote_url=remote_url, cookie=cookie, proxy_all=True)
+        self.cdx_server = CDXServer(self.remote)
 
-# Testing
-
-import utils
-if __name__ == "__main__" or utils.enable_doctests():
-    from pprint import pprint
-
-    test_dir = utils.test_data_dir() + 'cdx/'
-
-    import doctest
-    doctest.testmod()
+    #def load_cdx(self, **params):
+        #return remote.load_cdx(**params)

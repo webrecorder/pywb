@@ -1,13 +1,12 @@
-import views
-import utils
 import urlparse
-
-from wbrequestresponse import WbResponse
-from wburl import WbUrl
-from wbexceptions import WbException, NotFoundException
-
 import pkgutil
 import mimetypes
+import time
+
+from pywb.rewrite.wburl import WbUrl
+from wbrequestresponse import WbResponse
+from wbexceptions import WbException, NotFoundException
+from views import TextCapturesView
 
 
 class BaseHandler:
@@ -22,23 +21,22 @@ class BaseHandler:
 # Standard WB Handler
 #=================================================================
 class WBHandler(BaseHandler):
-    def __init__(self, cdx_reader, replay, html_view = None, search_view = None):
-        self.cdx_reader = cdx_reader
+    def __init__(self, index_reader, replay, html_view = None, search_view = None):
+        self.index_reader = index_reader
         self.replay = replay
 
-        self.text_view = views.TextCapturesView()
+        self.text_view = TextCapturesView()
 
         self.html_view = html_view
         self.search_view = search_view
 
 
     def __call__(self, wbrequest):
-
         if wbrequest.wb_url_str == '/':
             return self.render_search_page(wbrequest)
 
-        with utils.PerfTimer(wbrequest.env.get('X_PERF'), 'query') as t:
-            cdx_lines = self.cdx_reader.load_for_request(wbrequest, parsed_cdx = True)
+        with PerfTimer(wbrequest.env.get('X_PERF'), 'query') as t:
+            cdx_lines = self.index_reader.load_for_request(wbrequest)
 
         # new special modifier to always show cdx index
         if wbrequest.wb_url.mod == 'cdx_':
@@ -48,8 +46,8 @@ class WBHandler(BaseHandler):
             query_view = self.html_view if self.html_view else self.text_view
             return query_view.render_response(wbrequest, cdx_lines)
 
-        with utils.PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
-            return self.replay(wbrequest, cdx_lines, self.cdx_reader)
+        with PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
+            return self.replay(wbrequest, cdx_lines)
 
 
     def render_search_page(self, wbrequest):
@@ -60,18 +58,18 @@ class WBHandler(BaseHandler):
 
 
     def __str__(self):
-        return 'WBHandler: ' + str(self.cdx_reader) + ', ' + str(self.replay)
+        return 'WBHandler: ' + str(self.index_reader) + ', ' + str(self.replay)
 
 #=================================================================
 # CDX-Server Handler -- pass all params to cdx server
 #=================================================================
 class CDXHandler(BaseHandler):
-    def __init__(self, cdx_server, view = None):
-        self.cdx_server = cdx_server
-        self.view = view if view else views.TextCapturesView()
+    def __init__(self, index_reader, view = None):
+        self.index_reader = index_reader
+        self.view = view if view else TextCapturesView()
 
     def __call__(self, wbrequest):
-        cdx_lines = self.cdx_server.load_cdx_from_request(wbrequest.env)
+        cdx_lines = self.index_reader.cdx_server.load_cdx_from_request(wbrequest.env)
 
         return self.view.render_response(wbrequest, cdx_lines)
 
@@ -81,7 +79,7 @@ class CDXHandler(BaseHandler):
         return None
 
     def __str__(self):
-        return 'CDX Server: ' + str(self.cdx_server)
+        return 'Index Reader: ' + str(self.index_reader)
 
 
 #=================================================================
@@ -135,5 +133,20 @@ class DebugEchoHandler(BaseHandler):
     def __call__(self, wbrequest):
         return WbResponse.text_response(str(wbrequest))
 
+
+#=================================================================
+class PerfTimer:
+    def __init__(self, perfdict, name):
+        self.perfdict = perfdict
+        self.name = name
+
+    def __enter__(self):
+        self.start = time.clock()
+        return self
+
+    def __exit__(self, *args):
+        self.end = time.clock()
+        if self.perfdict is not None:
+            self.perfdict[self.name] = str(self.end - self.start)
 
 

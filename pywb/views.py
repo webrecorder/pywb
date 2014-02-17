@@ -1,4 +1,4 @@
-import cdxserver.timeutils as timeutils
+import pywb.utils.timeutils as timeutils
 
 import wbrequestresponse
 import wbexceptions

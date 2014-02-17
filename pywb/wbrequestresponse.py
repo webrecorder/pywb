@@ -1,7 +1,6 @@
-from wburl import WbUrl
-from url_rewriter import UrlRewriter
-
-import utils
+from pywb.rewrite.wburl import WbUrl
+from pywb.rewrite.url_rewriter import UrlRewriter
+from pywb.utils.statusandheaders import StatusAndHeaders
 
 import pprint
 #WB Request and Response
@@ -181,35 +180,6 @@ class WbResponse:
 
     def __repr__(self):
         return str(vars(self))
-
-
-#=================================================================
-class StatusAndHeaders:
-    def __init__(self, statusline, headers, protocol = ''):
-        self.statusline = statusline
-        self.headers = headers
-        self.protocol = protocol
-
-    def get_header(self, name):
-        name_lower = name.lower()
-        for value in self.headers:
-            if (value[0].lower() == name_lower):
-                return value[1]
-
-    def remove_header(self, name):
-        name_lower = name.lower()
-        for x in xrange(len(self.headers) - 1, -1, -1):
-            if self.headers[x][0].lower() == name_lower:
-                del self.headers[x]
-                break
-
-    def __repr__(self):
-        return "StatusAndHeaders(protocol = '{0}', statusline = '{1}', headers = {2})".format(self.protocol, self.statusline, pprint.pformat(self.headers, indent = 2))
-        #return pprint.pformat(self.__dict__)
-
-    def __eq__(self, other):
-        return self.statusline == other.statusline and self.headers == other.headers and self.protocol == other.protocol
-
 
 if __name__ == "__main__":
     import doctest

@@ -1,59 +1,34 @@
-import archiveloader
 import views
 import handlers
-import indexreader
 import replay_views
-import replay_resolvers
 import logging
-import hmac
-import time
+
+from pywb.warc.recordloader import ArcWarcRecordLoader
+from pywb.warc.resolvingloader import ResolvingLoader
+from pywb.rewrite.rewrite_content import RewriteContent
 
 #=================================================================
 # Config Loading
 #=================================================================
 def load_template_file(file, desc = None, view_class = views.J2TemplateView):
     if file:
-        logging.info('Adding {0}: {1}'.format(desc if desc else name, file))
+        logging.debug('Adding {0}: {1}'.format(desc if desc else name, file))
         file = view_class(file)
 
     return file
 
 #=================================================================
-# Cookie Signing
-#=================================================================
+def create_wb_handler(cdx_server, config):
 
-class HMACCookieMaker:
-    def __init__(self, key, name):
-        self.key = key
-        self.name = name
+    record_loader = ArcWarcRecordLoader(cookie_maker = config.get('cookie_maker'))
+    paths = config.get('archive_paths')
 
-    def __call__(self, duration, extra_id = ''):
-        expire = str(long(time.time() + duration))
+    resolving_loader = ResolvingLoader(paths = paths, cdx_server = cdx_server, record_loader = record_loader)
 
-        if extra_id:
-            msg = extra_id + '-' + expire
-        else:
-            msg = expire
+    replayer = replay_views.ReplayView(
+        content_loader = resolving_loader,
 
-        hmacdigest = hmac.new(self.key, msg)
-        hexdigest = hmacdigest.hexdigest()
-
-        if extra_id:
-            cookie = '{0}-{1}={2}-{3}'.format(self.name, extra_id, expire, hexdigest)
-        else:
-            cookie = '{0}={1}-{2}'.format(self.name, expire, hexdigest)
-
-        return cookie
-
-
-#=================================================================
-def create_wb_handler(cdx_source, config):
-
-    replayer = replay_views.RewritingReplayView(
-
-        resolvers = replay_resolvers.make_best_resolvers(config.get('archive_paths')),
-
-        loader = archiveloader.ArchiveLoader(hmac = config.get('hmac')),
+        content_rewriter = RewriteContent(),
 
         head_insert_view = load_template_file(config.get('head_insert_html'), 'Head Insert'),
 
@@ -66,7 +41,7 @@ def create_wb_handler(cdx_source, config):
 
 
     wb_handler = handlers.WBHandler(
-        cdx_source,
+        cdx_server,
 
         replayer,
 

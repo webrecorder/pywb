@@ -1,25 +1,31 @@
 from collections import OrderedDict
 import itertools
 
+
 #=================================================================
 class CDXObject(OrderedDict):
     CDX_FORMATS = [
         # Public CDX Format
-        ["urlkey","timestamp","original","mimetype","statuscode","digest","length"],
+        ["urlkey", "timestamp", "original", "mimetype", "statuscode",
+         "digest", "length"],
 
         # CDX 11 Format
-        ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","robotflags","length","offset","filename"],
+        ["urlkey", "timestamp", "original", "mimetype", "statuscode",
+         "digest", "redirect", "robotflags", "length", "offset", "filename"],
 
         # CDX 9 Format
-        ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","offset","filename"],
+        ["urlkey", "timestamp", "original", "mimetype", "statuscode",
+         "digest", "redirect", "offset", "filename"],
 
         # CDX 11 Format + 3 revisit resolve fields
-        ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","robotflags","length","offset","filename",
-         "orig.length","orig.offset","orig.filename"],
+        ["urlkey", "timestamp", "original", "mimetype", "statuscode",
+         "digest", "redirect", "robotflags", "length", "offset", "filename",
+         "orig.length", "orig.offset", "orig.filename"],
 
         # CDX 9 Format + 3 revisit resolve fields
-        ["urlkey","timestamp","original","mimetype","statuscode","digest","redirect","offset","filename",
-         "orig.length","orig.offset","orig.filename"]
+        ["urlkey", "timestamp", "original", "mimetype", "statuscode",
+         "digest", "redirect", "offset", "filename",
+         "orig.length", "orig.offset", "orig.filename"]
         ]
 
     def __init__(self, cdxline):
@@ -53,5 +59,3 @@ class CDXObject(OrderedDict):
 
         li = itertools.imap(lambda (n, val): val, self.items())
         return ' '.join(li)
-
-

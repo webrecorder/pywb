@@ -1,15 +1,12 @@
 from cdxobject import CDXObject
+from pywb.utils.timeutils import timestamp_to_sec
 
-from ..binsearch.binsearch import iter_exact, iter_prefix, FileReader
-
-import timeutils
 import bisect
 import itertools
 import re
 
 from heapq import merge
 from collections import deque
-
 
 
 #=================================================================
@@ -26,30 +23,31 @@ def cdx_load(sources, params):
 
     cdx_iter = make_cdx_iter(cdx_iter)
 
-    resolve_revisits = params.get('resolve_revisits', False)
-    if resolve_revisits:
-        cdx_iter = cdx_resolve_revisits(cdx_iter)
+    if not params.get('proxy_all'):
+        resolve_revisits = params.get('resolve_revisits', False)
+        if resolve_revisits:
+            cdx_iter = cdx_resolve_revisits(cdx_iter)
 
-    filters = params.get('filter', None)
-    if filters:
-        cdx_iter = cdx_filter(cdx_iter, filters)
+        filters = params.get('filter', None)
+        if filters:
+            cdx_iter = cdx_filter(cdx_iter, filters)
 
-    collapse_time = params.get('collapse_time', None)
-    if collapse_time:
-        cdx_iter = cdx_collapse_time_status(cdx_iter, collapse_time)
+        collapse_time = params.get('collapse_time', None)
+        if collapse_time:
+            cdx_iter = cdx_collapse_time_status(cdx_iter, collapse_time)
 
-    limit = int(params.get('limit', 1000000))
+        limit = int(params.get('limit', 1000000))
 
-    reverse = params.get('reverse', False)
-    if reverse:
-        cdx_iter = cdx_reverse(cdx_iter, limit)
+        reverse = params.get('reverse', False)
+        if reverse:
+            cdx_iter = cdx_reverse(cdx_iter, limit)
 
-    closest_to = params.get('closest_to', None)
-    if closest_to:
-        cdx_iter = cdx_sort_closest(closest_to, cdx_iter, limit)
+        closest_to = params.get('closest', None)
+        if closest_to:
+            cdx_iter = cdx_sort_closest(closest_to, cdx_iter, limit)
 
-    if limit:
-        cdx_iter = cdx_limit(cdx_iter, limit)
+        if limit:
+            cdx_iter = cdx_limit(cdx_iter, limit)
 
     # output raw cdx objects
     if params.get('output') == 'raw':
@@ -72,6 +70,7 @@ def load_cdx_streams(sources, params):
     source_iters = map(lambda src: src.load_cdx(params), sources)
     merged_stream = merge(*(source_iters))
     return merged_stream
+
 
 #=================================================================
 # convert text cdx stream to CDXObject
@@ -98,7 +97,7 @@ def cdx_reverse(cdx_iter, limit):
 
         return [last] if last else []
 
-    reverse_cdxs = deque(maxlen = limit)
+    reverse_cdxs = deque(maxlen=limit)
 
     for cdx in cdx_iter:
         reverse_cdxs.appendleft(cdx)
@@ -142,14 +141,13 @@ def cdx_filter(cdx_iter, filter_strings):
     filters = map(Filter, filter_strings)
 
     for cdx in cdx_iter:
-        if all (x(cdx) for x in filters):
+        if all(x(cdx) for x in filters):
             yield cdx
-
 
 
 #=================================================================
 # collapse by timestamp and status code
-def cdx_collapse_time_status(cdx_iter, timelen = 10):
+def cdx_collapse_time_status(cdx_iter, timelen=10):
     timelen = int(timelen)
 
     last_token = None
@@ -163,16 +161,15 @@ def cdx_collapse_time_status(cdx_iter, timelen = 10):
             yield cdx
 
 
-
 #=================================================================
 # sort CDXCaptureResult by closest to timestamp
-def cdx_sort_closest(closest, cdx_iter, limit = 10):
+def cdx_sort_closest(closest, cdx_iter, limit=10):
     closest_cdx = []
 
-    closest_sec = timeutils.timestamp_to_sec(closest)
+    closest_sec = timestamp_to_sec(closest)
 
     for cdx in cdx_iter:
-        sec = timeutils.timestamp_to_sec(cdx['timestamp'])
+        sec = timestamp_to_sec(cdx['timestamp'])
         key = abs(closest_sec - sec)
 
         # create tuple to sort by key
@@ -186,9 +183,7 @@ def cdx_sort_closest(closest, cdx_iter, limit = 10):
         if len(closest_cdx) > limit:
             closest_cdx.pop()
 
-
     return itertools.imap(lambda x: x[1], closest_cdx)
-
 
 
 #=================================================================
@@ -197,11 +192,13 @@ def cdx_sort_closest(closest, cdx_iter, limit = 10):
 # Fields to append from cdx original to revisit
 ORIG_TUPLE = ['length', 'offset', 'filename']
 
+
 def cdx_resolve_revisits(cdx_iter):
     originals = {}
 
     for cdx in cdx_iter:
-        is_revisit = (cdx['mimetype'] == 'warc/revisit') or (cdx['filename'] == '-')
+        is_revisit = ((cdx['mimetype'] == 'warc/revisit') or
+                      (cdx['filename'] == '-'))
 
         digest = cdx['digest']
 
@@ -209,7 +206,6 @@ def cdx_resolve_revisits(cdx_iter):
 
         if not original_cdx and not is_revisit:
             originals[digest] = cdx
-
 
         if original_cdx and is_revisit:
             fill_orig = lambda field: original_cdx[field]
@@ -224,5 +220,3 @@ def cdx_resolve_revisits(cdx_iter):
             cdx['orig.' + field] = fill_orig(field)
 
         yield cdx
-
-

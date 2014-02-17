@@ -1,0 +1,176 @@
+from pywb.utils.timeutils import iso_date_to_timestamp
+from recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
+from pathresolvers import make_best_resolvers
+
+
+#=================================================================
+class ResolvingLoader:
+    def __init__(self, paths, record_loader=ArcWarcRecordLoader(),
+                 cdx_server=None):
+
+        self.path_resolvers = make_best_resolvers(paths)
+        self.record_loader = record_loader
+        self.cdx_server = cdx_server
+
+    def resolve_headers_and_payload(self, cdx, failed_files):
+        """
+        Resolve headers and payload for a given capture
+        In the simple case, headers and payload are in the same record.
+        In the case of revisit records, the payload and headers may be in
+        different records.
+
+        If the original has already been found, lookup original using
+        orig. fields in cdx dict.
+        Otherwise, call _load_different_url_payload() to get cdx index
+        from a different url to find the original record.
+        """
+        has_curr = (cdx['filename'] != '-')
+        has_orig = (cdx.get('orig.filename', '-') != '-')
+
+        # load headers record from cdx['filename'] unless it is '-' (rare)
+        headers_record = None
+        if has_curr:
+            headers_record = self._resolve_path_load(cdx, False, failed_files)
+
+        # two index lookups
+        # Case 1: if mimetype is still warc/revisit
+        if cdx['mimetype'] == 'warc/revisit' and headers_record:
+            payload_record = self._load_different_url_payload(cdx,
+                                                              headers_record,
+                                                              failed_files)
+
+        # single lookup cases
+        # case 2: non-revisit
+        elif (has_curr and not has_orig):
+            payload_record = headers_record
+
+        # case 3: identical url revisit, load payload from orig.filename
+        elif (has_orig):
+            payload_record = self._resolve_path_load(cdx, True, failed_files)
+
+        # special case: set header to payload if old-style revisit
+        # with missing header
+        if not headers_record:
+            headers_record = payload_record
+        elif headers_record != payload_record:
+            # close remainder of stream as this record only used for
+            # (already parsed) headers
+            headers_record.stream.close()
+
+            # special case: check if headers record is actually empty
+            # (eg empty revisit), then use headers from revisit
+            if not headers_record.status_headers.headers:
+                headers_record = payload_record
+
+        if not headers_record or not payload_record:
+            raise ArchiveLoadFailed('Could not load ' + str(cdx))
+
+        return (headers_record.status_headers, payload_record.stream)
+
+    def _resolve_path_load(self, cdx, is_original, failed_files):
+        """
+        Load specific record based on filename, offset and length
+        fields in the cdx.
+        If original=True, use the orig.* fields for the cdx
+
+        Resolve the filename to full path using specified path resolvers
+
+        If failed_files list provided, keep track of failed resolve attempts
+        """
+
+        if is_original:
+            (filename, offset, length) = (cdx['orig.filename'],
+                                          cdx['orig.offset'],
+                                          cdx['orig.length'])
+        else:
+            (filename, offset, length) = (cdx['filename'],
+                                          cdx['offset'],
+                                          cdx['length'])
+
+        # optimization: if same file already failed this request,
+        # don't try again
+        if failed_files and filename in failed_files:
+            raise ArchiveLoadFailed('Skipping Already Failed', filename)
+
+        any_found = False
+        last_exc = None
+        for resolver in self.path_resolvers:
+            possible_paths = resolver(filename)
+
+            if possible_paths:
+                for path in possible_paths:
+                    any_found = True
+                    try:
+                        return self.record_loader.load(path, offset, length)
+
+                    except Exception as ue:
+                        last_exc = ue
+
+        # Unsuccessful if reached here
+        if failed_files:
+            failed_files.append(filename)
+
+        if last_exc:
+            msg = str(last_exc.__class__.__name__)
+        else:
+            msg = 'Archive File Not Found'
+
+        raise ArchiveLoadFailed(msg, filename)
+
+    def _load_different_url_payload(self, cdx, headers_record, failed_files):
+        """
+        Handle the case where a duplicate of a capture with same digest
+        exists at a different url.
+
+        If a cdx_server is provided, a query is made for matching
+        url, timestamp and digest.
+
+        Raise exception if no matches found.
+        """
+
+        ref_target_uri = (headers_record.rec_headers.
+                          get_header('WARC-Refers-To-Target-URI'))
+
+        target_uri = headers_record.rec_headers.get_header('WARC-Target-URI')
+
+        # Check for unresolved revisit error,
+        # if refers to target uri not present or same as the current url
+        if not ref_target_uri or (ref_target_uri == target_uri):
+            raise ArchiveLoadFailed('Missing Revisit Original')
+
+        ref_target_date = (headers_record.rec_headers.
+                           get_header('WARC-Refers-To-Date'))
+
+        if not ref_target_date:
+            ref_target_date = cdx['timestamp']
+        else:
+            ref_target_date = iso_date_to_timestamp(ref_target_date)
+
+        orig_cdx_lines = self.load_cdx_for_dupe(ref_target_uri,
+                                                ref_target_date, digest)
+
+        for cdx in orig_cdx_lines:
+            try:
+                payload_record = self._load_and_resolve(cdx, False,
+                                                        failed_files)
+                return payload_record
+
+            except ArchiveLoadFailed as e:
+                pass
+
+        raise ArchiveLoadFailed('Original for revisit could not be loaded')
+
+    def load_cdx_for_dupe(url, timestamp, digest):
+        """
+        If a cdx_server is available, return response from server,
+        otherwise empty list
+        """
+        if not self.cdx_server:
+            return []
+
+        params = {'url': url,
+                  'closest': closest,
+                  'filter': 'digest:' + digest,
+                  'output': 'raw'}
+
+        return self.cdx_server.load_cdx(params)

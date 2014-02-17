@@ -3,9 +3,38 @@
 import re
 import rfc3987
 
-import wbexceptions
-
 # WbUrl : wb archival url representation for WB
+"""
+WbUrl represents the standard wayback archival url format.
+A regular url is a subset of the WbUrl (latest replay).
+
+The WbUrl expresses the common interface for interacting
+with the wayback machine.
+
+There WbUrl may represent one of the following forms:
+
+query form: [/modifier]/[timestamp][-end_timestamp]*/<url>
+
+modifier, timestamp and end_timestamp are optional
+
+*/example.com
+20101112030201*/http://example.com
+2009-2015*/http://example.com
+/cdx/*/http://example.com
+
+url query form: used to indicate query across urls
+same as query form but with a final *
+*/example.com*
+20101112030201*/http://example.com*
+
+
+replay form:
+20101112030201/http://example.com
+20101112030201im_/http://example.com
+
+latest_replay: (no timestamp)
+http://example.com
+"""
 
 class WbUrl:
     """
@@ -38,6 +67,13 @@ class WbUrl:
     >>> repr(WbUrl('*/http://example.com/abc?def=a*'))
     "('url_query', '', '', 'http://example.com/abc?def=a', '*/http://example.com/abc?def=a*')"
 
+    >>> repr(WbUrl('2010*/http://example.com/abc?def=a'))
+    "('query', '2010', '', 'http://example.com/abc?def=a', '2010*/http://example.com/abc?def=a')"
+
+    # timestamp range query
+    >>> repr(WbUrl('2009-2015*/http://example.com/abc?def=a'))
+    "('query', '2009', '', 'http://example.com/abc?def=a', '2009-2015*/http://example.com/abc?def=a')"
+
     >>> repr(WbUrl('json/*/http://example.com/abc?def=a'))
     "('query', '', 'json', 'http://example.com/abc?def=a', 'json/*/http://example.com/abc?def=a')"
 
@@ -59,16 +95,16 @@ class WbUrl:
     # ======================
     >>> x = WbUrl('/#$%#/')
     Traceback (most recent call last):
-    BadUrlException: Bad Request Url: http://#$%#/
+    Exception: Bad Request Url: http://#$%#/
 
     >>> x = WbUrl('/http://example.com:abc/')
     Traceback (most recent call last):
-    BadUrlException: Bad Request Url: http://example.com:abc/
+    Exception: Bad Request Url: http://example.com:abc/
     """
 
     # Regexs
     # ======================
-    QUERY_REGEX = re.compile('^(?:([\w\-:]+)/)?(\d*)\*/?(.*)$')
+    QUERY_REGEX = re.compile('^(?:([\w\-:]+)/)?(\d*)(?:-(\d+))?\*/?(.*)$')
     REPLAY_REGEX = re.compile('^(\d*)([a-z]+_)?/{0,3}(.*)$')
 
     QUERY = 'query'
@@ -85,13 +121,14 @@ class WbUrl:
         self.type = None
         self.url = ''
         self.timestamp = ''
+        self.end_timestamp = ''
         self.mod = ''
 
         if not any (f(url) for f in [self._init_query, self._init_replay]):
-            raise wbexceptions.RequestParseException('Invalid WB Request Url: ', url)
+            raise Exception('Invalid WbUrl: ', url)
 
         if len(self.url) == 0:
-            raise wbexceptions.RequestParseException('Invalid WB Request Url: ', url)
+            raise Exception('Invalid WbUrl: ', url)
 
         # protocol agnostic url -> http://
         #if self.url.startswith('//'):
@@ -105,7 +142,7 @@ class WbUrl:
         matcher = rfc3987.match(self.url.upper(), 'IRI')
 
         if not matcher:
-            raise wbexceptions.BadUrlException('Bad Request Url: ' + self.url)
+            raise Exception('Bad Request Url: ' + self.url)
 
     # Match query regex
     # ======================
@@ -118,7 +155,8 @@ class WbUrl:
 
         self.mod = res[0]
         self.timestamp = res[1]
-        self.url = res[2]
+        self.end_timestamp = res[2]
+        self.url = res[3]
         if self.url.endswith('*'):
             self.type = self.URL_QUERY
             self.url = self.url[:-1]
@@ -151,6 +189,7 @@ class WbUrl:
         atype = overrides['type'] if 'type' in overrides else self.type
         mod = overrides['mod'] if 'mod' in overrides else self.mod
         timestamp = overrides['timestamp'] if 'timestamp' in overrides else self.timestamp
+        end_timestamp = overrides['end_timestamp'] if 'end_timestamp' in overrides else self.end_timestamp
         url = overrides['url'] if 'url' in overrides else self.url
 
         if atype == self.QUERY or atype == self.URL_QUERY:
@@ -159,6 +198,8 @@ class WbUrl:
                 tsmod += mod + "/"
             if timestamp:
                 tsmod += timestamp
+            if end_timestamp:
+                tsmod += '-' + end_timestamp
 
             tsmod += "*/" + url
             if atype == self.URL_QUERY:

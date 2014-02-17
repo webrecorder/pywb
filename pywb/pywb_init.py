@@ -1,11 +1,12 @@
 import handlers
 import indexreader
 import archivalrouter
+import config_utils
+import proxy
+
 import os
 import yaml
-import config_utils
 import logging
-import proxy
 
 #=================================================================
 DEFAULTS = {
@@ -49,24 +50,20 @@ def pywb_config_manual(passed_config = {}):
     collections = config.get('collections')
 
     for name, value in collections.iteritems():
-        route_config = config
-
-        if isinstance(value, dict):
-            # if a dict, extend with base properies
-            index_paths = value['index_paths']
-            route_config = DictChain(value, config)
+        if isinstance(value, str):
+            route_config = config
+            cdx_server = indexreader.IndexReader(value)
         else:
-            index_paths = str(value)
-
-        cdx_source = indexreader.IndexReader.make_best_cdx_source(index_paths, route_config)
+            route_config = DictChain(value, config)
+            cdx_server = indexreader.IndexReader(route_config)
 
 
         wb_handler = config_utils.create_wb_handler(
-            cdx_source = cdx_source,
+            cdx_server = cdx_server,
             config = route_config,
         )
 
-        logging.info('Adding Collection: ' + name)
+        logging.debug('Adding Collection: ' + name)
 
         route_class = route_config.get('route_class', archivalrouter.Route)
 
@@ -74,7 +71,7 @@ def pywb_config_manual(passed_config = {}):
 
         # cdx query handler
         if route_config.get('enable_cdx_api', False):
-            routes.append(archivalrouter.Route(name + '-cdx', handlers.CDXHandler(cdx_source)))
+            routes.append(archivalrouter.Route(name + '-cdx', handlers.CDXHandler(cdx_server)))
 
 
     if config.get('debug_echo_env', False):
@@ -124,12 +121,4 @@ def pywb_config(config_file = None):
     config = yaml.load(open(config_file))
 
     return pywb_config_manual(config)
-
-
-import utils
-if __name__ == "__main__" or utils.enable_doctests():
-    # Just test for execution for now
-    #pywb_config(os.path.dirname(os.path.realpath(__file__)) + '/../config.yaml')
-    pywb_config_manual()
-
 

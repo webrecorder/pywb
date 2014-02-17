@@ -6,43 +6,43 @@ from wburl import WbUrl
 
 class UrlRewriter:
     """
-    >>> test_rewrite('other.html', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
+    >>> do_rewrite('other.html', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
     'https://web.archive.org/web/20131010/http://example.com/path/other.html'
 
-    >>> test_rewrite('file.js', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/', 'js_')
+    >>> do_rewrite('file.js', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/', 'js_')
     'https://web.archive.org/web/20131010js_/http://example.com/path/file.js'
 
-    >>> test_rewrite('/other.html', '20130907*/http://example.com/path/page.html', '/coll/')
+    >>> do_rewrite('/other.html', '20130907*/http://example.com/path/page.html', '/coll/')
     '/coll/20130907*/http://example.com/other.html'
 
-    >>> test_rewrite('./other.html', '20130907*/http://example.com/path/page.html', '/coll/')
+    >>> do_rewrite('./other.html', '20130907*/http://example.com/path/page.html', '/coll/')
     '/coll/20130907*/http://example.com/path/other.html'
 
-    >>> test_rewrite('../other.html', '20131112im_/http://example.com/path/page.html', '/coll/')
+    >>> do_rewrite('../other.html', '20131112im_/http://example.com/path/page.html', '/coll/')
     '/coll/20131112im_/http://example.com/other.html'
 
-    >>> test_rewrite('../../other.html', '*/http://example.com/index.html', 'localhost:8080/')
+    >>> do_rewrite('../../other.html', '*/http://example.com/index.html', 'localhost:8080/')
     'localhost:8080/*/http://example.com/other.html'
 
-    >>> test_rewrite('path/../../other.html', '*/http://example.com/index.html', 'localhost:8080/')
+    >>> do_rewrite('path/../../other.html', '*/http://example.com/index.html', 'localhost:8080/')
     'localhost:8080/*/http://example.com/other.html'
 
-    >>> test_rewrite('http://some-other-site.com', '20101226101112/http://example.com/index.html', 'localhost:8080/')
+    >>> do_rewrite('http://some-other-site.com', '20101226101112/http://example.com/index.html', 'localhost:8080/')
     'localhost:8080/20101226101112/http://some-other-site.com'
 
-    >>> test_rewrite('../../other.html', '2020/http://example.com/index.html', '/')
+    >>> do_rewrite('../../other.html', '2020/http://example.com/index.html', '/')
     '/2020/http://example.com/other.html'
 
-    >>> test_rewrite('../../other.html', '2020/http://example.com/index.html', '')
+    >>> do_rewrite('../../other.html', '2020/http://example.com/index.html', '')
     '2020/http://example.com/other.html'
 
-    >>> test_rewrite('', '20131010010203/http://example.com/file.html', '/web/')
+    >>> do_rewrite('', '20131010010203/http://example.com/file.html', '/web/')
     '/web/20131010010203/http://example.com/file.html'
 
-    >>> test_rewrite('#anchor', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
+    >>> do_rewrite('#anchor', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
     '#anchor'
 
-    >>> test_rewrite('mailto:example@example.com', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
+    >>> do_rewrite('mailto:example@example.com', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
     'mailto:example@example.com'
 
     >>> UrlRewriter('19960708im_/http://domain.example.com/path.txt', '/abc/').get_abs_url()
@@ -62,7 +62,6 @@ class UrlRewriter:
     def __init__(self, wburl, prefix):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
         self.prefix = prefix
-        self.archivalurl_class = self.wburl.__class__
 
         #if self.prefix.endswith('/'):
         #    self.prefix = self.prefix[:-1]
@@ -74,7 +73,7 @@ class UrlRewriter:
 
         wburl = self.wburl
 
-        isAbs = any (url.startswith(x) for x in self.PROTOCOLS)
+        isAbs = any(url.startswith(x) for x in self.PROTOCOLS)
 
         # Optimized rewriter for
         # -rel urls that don't start with / and  don't contain ../ and no special mod
@@ -117,12 +116,11 @@ class UrlRewriter:
         return url
 
 
-import utils
-if __name__ == "__main__" or utils.enable_doctests():
-    def test_rewrite(rel_url, base_url, prefix, mod = None):
-        rewriter = UrlRewriter(base_url, prefix)
-        return rewriter.rewrite(rel_url, mod)
+def do_rewrite(rel_url, base_url, prefix, mod = None):
+    rewriter = UrlRewriter(base_url, prefix)
+    return rewriter.rewrite(rel_url, mod)
 
+if __name__ == "__main__":
     import doctest
     doctest.testmod()
 
