@@ -92,4 +92,8 @@ static_routes:
 enable_http_proxy: true
 
 # enable cdx server api for querying cdx directly (experimental)
-#enable_cdx_api: false
+enable_cdx_api: true
+
+# custom rules for domain specific matching
+# set to false to disable
+#domain_specific_rules: rules.yaml

@@ -1,82 +1,103 @@
-import surt
-from cdxops import cdx_load
+from canonicalize import UrlCanonicalizer
 
-import itertools
+from cdxops import cdx_load
+from cdxsource import CDXSource, CDXFile, RemoteCDXSource
+from cdxobject import CDXObject, CaptureNotFoundException, CDXException
+from cdxdomainspecific import load_domain_specific_cdx_rules
+
+from itertools import chain
 import logging
 import os
 import urlparse
 
-from cdxsource import CDXSource, CDXFile, RemoteCDXSource
-from cdxobject import CDXObject
+
+#=================================================================
+class BaseCDXServer(object):
+    def __init__(self, url_canon=None, fuzzy_query=None):
+        self.url_canon = url_canon if url_canon else UrlCanonicalizer()
+        self.fuzzy_query = fuzzy_query
+
+    def _check_cdx_iter(self, cdx_iter, params):
+        """ Check cdx iter semantics
+        If iter is empty (no matches), check if fuzzy matching
+        is allowed, and try it -- otherwise,
+        throw CaptureNotFoundException
+        """
+
+        cdx_iter = self.peek_iter(cdx_iter)
+
+        if cdx_iter:
+            return cdx_iter
+
+        url = params['url']
+
+        if self.fuzzy_query and params.get('allow_fuzzy'):
+            if not 'key' in params:
+                params['key'] = self.url_canon(url)
+
+            params = self.fuzzy_query(params)
+            if params:
+                params['allow_fuzzy'] = False
+                return self.load_cdx(**params)
+
+        msg = 'No Captures found for: ' + url
+        raise CaptureNotFoundException(msg)
+
+    def load_cdx(self, **params):
+        raise NotImplementedError('Implement in subclass')
+
+    @staticmethod
+    def peek_iter(iterable):
+        try:
+            first = next(iterable)
+        except StopIteration:
+            return None
+
+        return chain([first], iterable)
 
 
 #=================================================================
-class CDXException(Exception):
-    def status(self):
-        return '400 Bad Request'
-
-
-#=================================================================
-class AccessException(CDXException):
-    def status(self):
-        return '403 Bad Request'
-
-
-#=================================================================
-class CDXServer(object):
+class CDXServer(BaseCDXServer):
     """
     Top-level cdx server object which maintains a list of cdx sources,
     responds to queries and dispatches to the cdx ops for processing
     """
 
-    def __init__(self, paths, surt_ordered=True):
+    def __init__(self, paths, url_canon=None, fuzzy_query=None):
+        super(CDXServer, self).__init__(url_canon, fuzzy_query)
         self.sources = create_cdx_sources(paths)
-        self.surt_ordered = surt_ordered
 
     def load_cdx(self, **params):
         # if key not set, assume 'url' is set and needs canonicalization
         if not params.get('key'):
-            params['key'] = self._canonicalize(params)
+            try:
+                url = params['url']
+            except KeyError:
+                msg = 'A url= param must be specified to query the cdx server'
+                raise CDXException(msg)
+
+            params['key'] = self.url_canon(url)
 
         convert_old_style_params(params)
 
-        return cdx_load(self.sources, params)
+        cdx_iter = cdx_load(self.sources, params)
 
-    def _canonicalize(self, params):
-        """
-        Canonicalize url and convert to surt
-        If no surt-mode, convert back to url form
-        as surt conversion is currently part of canonicalization
-        """
-        try:
-            url = params['url']
-        except KeyError:
-            msg = 'A url= param must be specified to query the cdx server'
-            raise CDXException(msg)
-
-        try:
-            key = surt.surt(url)
-        except Exception as e:
-            raise CDXException('Invalid Url: ' + url)
-
-        # if not surt, unsurt the surt to get canonicalized non-surt url
-        if not self.surt_ordered:
-            key = unsurt(key)
-
-        return key
+        return self._check_cdx_iter(cdx_iter, params)
 
     def __str__(self):
         return 'CDX server serving from ' + str(self.sources)
 
 
 #=================================================================
-class RemoteCDXServer(object):
+class RemoteCDXServer(BaseCDXServer):
     """
     A special cdx server that uses a single RemoteCDXSource
     It simply proxies the query params to the remote source
     and performs no local processing/filtering
     """
-    def __init__(self, source):
+    def __init__(self, source, url_canon=None, fuzzy_query=None):
+        super(RemoteCDXServer, self).__init__(url_canon, fuzzy_query)
+
         if isinstance(source, RemoteCDXSource):
             self.source = source
         elif (isinstance(source, str) and
@@ -87,18 +108,19 @@ class RemoteCDXServer(object):
 
     def load_cdx(self, **params):
         remote_iter = self.source.load_cdx(params)
+
         # if need raw, convert to raw format here
         if params.get('output') == 'raw':
-            return (CDXObject(cdx) for cdx in remote_iter)
-        else:
-            return remote_iter
+            remote_iter = (CDXObject(cdx) for cdx in remote_iter)
+
+        return self._check_cdx_iter(remote_iter, params)
 
     def __str__(self):
         return 'Remote CDX server serving from ' + str(self.sources[0])
 
 
 #=================================================================
-def create_cdx_server(config):
+def create_cdx_server(config, ds_rules_file=None):
     if hasattr(config, 'get'):
         paths = config.get('index_paths')
         surt_ordered = config.get('surt_ordered', True)
@@ -108,11 +130,22 @@ def create_cdx_server(config):
 
     logging.debug('CDX Surt-Ordered? ' + str(surt_ordered))
 
+    if ds_rules_file:
+        canon, fuzzy = load_domain_specific_cdx_rules(ds_rules_file,
+                                                      surt_ordered)
+    else:
+        canon, fuzzy = None, None
+
+    if not canon:
+        canon = UrlCanonicalizer(surt_ordered)
+
     if (isinstance(paths, str) and
         any(paths.startswith(x) for x in ['http://', 'https://'])):
-        return RemoteCDXServer(paths)
+        server_cls = RemoteCDXServer
     else:
-        return CDXServer(paths)
+        server_cls = CDXServer
+
+    return server_cls(paths, url_canon=canon, fuzzy_query=fuzzy)
 
 
 #=================================================================
@@ -170,13 +203,17 @@ def convert_old_style_params(params):
     """
     Convert old-style CDX Server param semantics
     """
-    collapse_time = params.get('collapseTime')
-    if collapse_time:
-        params['collapse_time'] = collapse_time
+    param = params.get('collapseTime')
+    if param:
+        params['collapse_time'] = param
 
-    resolve_revisits = params.get('resolveRevisits')
-    if resolve_revisits:
-        params['resolve_revisits'] = resolve_revisits
+    param = params.get('matchType')
+    if param:
+        params['match_type'] = param
+
+    param = params.get('resolveRevisits')
+    if param:
+        params['resolve_revisits'] = param
 
     if params.get('sort') == 'reverse':
         params['reverse'] = True
@@ -204,38 +241,3 @@ def extract_params_from_wsgi_env(env):
             params[name] = val[0]
 
     return params
-
-
-#=================================================================
-def unsurt(surt):
-    """
-    # Simple surt
-    >>> unsurt('com,example)/')
-    'example.com)/'
-
-    # Broken surt
-    >>> unsurt('com,example)')
-    'com,example)'
-
-    # Long surt
-    >>> unsurt('suffix,domain,sub,subsub,another,subdomain)/path/file/\
-index.html?a=b?c=)/')
-    'subdomain.another.subsub.sub.domain.suffix)/path/file/index.html?a=b?c=)/'
-    """
-
-    try:
-        index = surt.index(')/')
-        parts = surt[0:index].split(',')
-        parts.reverse()
-        host = '.'.join(parts)
-        host += surt[index:]
-        return host
-
-    except ValueError:
-        # May not be a valid surt
-        return surt
-
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

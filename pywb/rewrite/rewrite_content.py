@@ -54,8 +54,7 @@ class RewriteContent:
         # =========================================================================
         # special case -- need to ungzip the body
         if (rewritten_headers.contains_removed_header('content-encoding', 'gzip')):
-            stream = BufferedReader(stream, 'gzip')
-
+            stream = BufferedReader(stream, decomp_type='gzip')
 
         if rewritten_headers.charset:
             encoding = rewritten_headers.charset

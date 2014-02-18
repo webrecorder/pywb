@@ -50,6 +50,13 @@ class TestWb:
         # 1 Capture (filtered) + header
         assert len(resp.html.find_all('tr')) == 2
 
+    def test_calendar_query_fuzzy_match(self):
+        # fuzzy match removing _= according to standard rules.yaml
+        resp = self.testapp.get('/pywb/*/http://www.iana.org/_css/2013.1/screen.css?_=3141592653')
+        self._assert_basic_html(resp)
+        # 17 Captures + header
+        assert len(resp.html.find_all('tr')) == 18
+
     def test_cdx_query(self):
         resp = self.testapp.get('/pywb/cdx_/*/http://www.iana.org/')
         self._assert_basic_text(resp)

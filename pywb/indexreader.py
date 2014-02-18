@@ -1,13 +1,7 @@
 import urllib
 import urllib2
 
-from wbexceptions import NotFoundException
-
-from itertools import chain
-from pprint import pprint
-
-from pywb.cdx.cdxserver import create_cdx_server, CDXException
-from pywb.cdx.cdxobject import CDXObject
+from pywb.cdx.cdxserver import create_cdx_server
 
 #=================================================================
 class IndexReader(object):
@@ -18,8 +12,8 @@ class IndexReader(object):
     Creates an appropriate query based on wbrequest type info
     """
 
-    def __init__(self, config):
-        self.cdx_server = create_cdx_server(config)
+    def __init__(self, config, ds_rules_file=None):
+        self.cdx_server = create_cdx_server(config, ds_rules_file)
 
     def load_for_request(self, wbrequest):
         wburl = wbrequest.wb_url
@@ -29,19 +23,14 @@ class IndexReader(object):
 
         # add any custom filter from the request
         if wbrequest.query_filter:
-            params['filter'] = wbrequest.query_filter
+            params['filter'].extend(wbrequest.query_filter)
 
         if wbrequest.custom_params:
             params.update(wbrequest.custom_params)
 
-        params['url'] = wburl.url
+        params['allow_fuzzy'] = True
 
-        cdxlines = self.load_cdx(output='raw', **params)
-
-        cdxlines = self.peek_iter(cdxlines)
-
-        if cdxlines is None:
-            raise NotFoundException('No Captures found for: ' + wburl.url)
+        cdxlines = self.load_cdx(url=wburl.url, output='raw', **params)
 
         return cdxlines
 
@@ -54,7 +43,7 @@ class IndexReader(object):
 
         return {
             wburl.QUERY:
-                {'collapseTime': collapse_time, 'filter': '!statuscode:(500|502|504)', 'limit': limit},
+                {'collapseTime': collapse_time, 'filter': ['!statuscode:(500|502|504)'], 'limit': limit},
 
             wburl.URL_QUERY:
                 {'collapse': 'urlkey', 'matchType': 'prefix', 'showGroupCount': True, 'showUniqCount': True, 'lastSkipTimestamp': True, 'limit': limit,
@@ -62,21 +51,12 @@ class IndexReader(object):
                 },
 
             wburl.REPLAY:
-                {'sort': 'closest', 'filter': '!statuscode:(500|502|504)', 'limit': replay_closest, 'closest': wburl.timestamp, 'resolveRevisits': True},
+                {'sort': 'closest', 'filter': ['!statuscode:(500|502|504)'], 'limit': replay_closest, 'closest': wburl.timestamp, 'resolveRevisits': True},
 
             # BUG: resolveRevisits currently doesn't work for this type of query
             # This is not an issue in archival mode, as there is a redirect to the actual timestamp query
             # but may be an issue in proxy mode
             wburl.LATEST_REPLAY:
-                {'sort': 'reverse', 'filter': 'statuscode:[23]..', 'limit': '1', 'resolveRevisits': True}
+                {'sort': 'reverse', 'filter': ['statuscode:[23]..'], 'limit': '1', 'resolveRevisits': True}
 
         }[wburl.type]
-
-    @staticmethod
-    def peek_iter(iterable):
-        try:
-            first = next(iterable)
-        except StopIteration:
-            return None
-
-        return chain([first], iterable)

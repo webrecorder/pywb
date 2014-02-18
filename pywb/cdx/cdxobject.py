@@ -3,6 +3,24 @@ import itertools
 
 
 #=================================================================
+class CDXException(Exception):
+    def status(self):
+        return '400 Bad Request'
+
+
+#=================================================================
+class CaptureNotFoundException(CDXException):
+    def status(self):
+        return '404 Not Found'
+
+
+#=================================================================
+class AccessException(CDXException):
+    def status(self):
+        return '403 Access Denied'
+
+
+#=================================================================
 class CDXObject(OrderedDict):
     CDX_FORMATS = [
         # Public CDX Format

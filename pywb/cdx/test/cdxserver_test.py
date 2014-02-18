@@ -25,6 +25,8 @@ org,iana)/_js/2013.1/jquery.js 20140126201307 https://www.iana.org/_js/2013.1/jq
 
 # No matching results
 >>> cdx_ops_test('http://iana.org/dont_have_this', reverse = True, resolve_revisits = True, limit = 2)
+Traceback (most recent call last):
+CaptureNotFoundException: No Captures found for: http://iana.org/dont_have_this
 
 
 # Filter cdx (default: regex)

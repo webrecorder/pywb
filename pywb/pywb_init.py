@@ -21,6 +21,8 @@ DEFAULTS = {
     'error_html': 'ui/error.html',
 
     'static_routes': {'static/default': 'static/'},
+
+    'domain_specific_rules': 'rules.yaml',
 }
 
 class DictChain:
@@ -30,7 +32,7 @@ class DictChain:
     def get(self, key, default_val=None):
         for d in self.dicts:
             val = d.get(key)
-            if val:
+            if val is not None:
                 return val
         return default_val
 
@@ -52,11 +54,13 @@ def pywb_config_manual(passed_config = {}):
     for name, value in collections.iteritems():
         if isinstance(value, str):
             route_config = config
-            cdx_server = IndexReader(value)
+            cdx_config = value
         else:
             route_config = DictChain(value, config)
-            cdx_server = IndexReader(route_config)
+            cdx_config = route_config
 
+        ds_rules = route_config.get('domain_specific_rules', None)
+        cdx_server = IndexReader(cdx_config, ds_rules)
 
         wb_handler = config_utils.create_wb_handler(
             cdx_server = cdx_server,
@@ -118,7 +122,8 @@ def pywb_config(config_file = None):
     if not config_file:
         config_file = os.environ.get('PYWB_CONFIG', DEFAULT_CONFIG_FILE)
 
-    config = yaml.load(open(config_file))
+    with open(config_file) as fh:
+        config = yaml.load(fh)
 
     return pywb_config_manual(config)
 

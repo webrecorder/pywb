@@ -1,14 +1,15 @@
 
+
 class WbException(Exception):
     pass
 
 class NotFoundException(WbException):
-    def status(_):
+    def status(self):
         return '404 Not Found'
 
 # Exceptions that effect a specific capture and result in a retry
 class CaptureException(WbException):
-    def status(_):
+    def status(self):
         return '500 Internal Server Error'
 
 class InternalRedirect(WbException):
