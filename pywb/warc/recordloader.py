@@ -4,6 +4,7 @@ import collections
 
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.statusandheaders import StatusAndHeadersParser
+from pywb.utils.statusandheaders import StatusAndHeadersParserException
 
 from pywb.utils.loaders import FileLoader, HttpLoader
 from pywb.utils.bufferedreaders import BufferedReader
@@ -30,17 +31,6 @@ class ArcWarcRecordLoader:
     # Standard ARC headers
     ARC_HEADERS = ["uri", "ip-address", "creation-date",
                    "content-type", "length"]
-
-    # Since loading a range request,
-    # can only determine gzip-ness based on file extension
-    # (BufferedReader will however default to non-gzip if
-    # decompression fails)
-    FORMAT_MAP = {
-        '.warc.gz': ('warc', True),
-        '.arc.gz':  ('arc',  True),
-        '.warc':    ('warc', False),
-        '.arc':     ('arc',  False),
-    }
 
     @staticmethod
     def create_default_loaders(cookie_maker=None):
@@ -74,21 +64,6 @@ class ArcWarcRecordLoader:
         if not loader:
             raise ArchiveLoadFailed('Unknown Protocol', url)
 
-        the_format = None
-
-        for ext, iformat in self.FORMAT_MAP.iteritems():
-            if url.endswith(ext):
-                the_format = iformat
-                break
-
-        if the_format is None:
-            raise ArchiveLoadFailed('Unknown file format', url)
-
-        (a_format, is_gzip) = the_format
-
-        #decomp = utils.create_decompressor() if is_gzip else None
-        decomp_type = 'gzip' if is_gzip else None
-
         try:
             length = int(length)
         except:
@@ -96,15 +71,17 @@ class ArcWarcRecordLoader:
 
         raw = loader.load(url, long(offset), length)
 
+        decomp_type = 'gzip'
+
         stream = BufferedReader(raw, length, self.chunk_size, decomp_type)
 
-        if a_format == 'arc':
-            rec_headers = self.arc_parser.parse(stream)
+        (the_format, rec_headers) = self._load_headers(stream)
+
+        if the_format == 'arc':
             rec_type = 'response'
             empty = (rec_headers.get_header('length') == 0)
 
-        elif a_format == 'warc':
-            rec_headers = self.warc_parser.parse(stream)
+        elif the_format == 'warc':
             rec_type = rec_headers.get_header('WARC-Type')
             empty = (rec_headers.get_header('Content-Length') == '0')
 
@@ -131,8 +108,32 @@ class ArcWarcRecordLoader:
             #(statusline, http_headers) = self.parse_http_headers(stream)
             status_headers = self.http_parser.parse(stream)
 
-        return ArcWarcRecord((a_format, rec_type),
+        return ArcWarcRecord((the_format, rec_type),
                              rec_headers, stream, status_headers)
+
+    def _load_headers(self, stream):
+        """
+        Try parsing record as WARC, then try parsing as ARC.
+        if neither one succeeds, we're out of luck.
+        """
+
+        statusline = None
+
+        # try as warc first
+        try:
+            rec_headers = self.warc_parser.parse(stream)
+            return 'warc', rec_headers
+        except StatusAndHeadersParserException as se:
+            statusline = se.statusline
+            pass
+
+        # now try as arc
+        try:
+            rec_headers = self.arc_parser.parse(stream, statusline)
+            return 'arc', rec_headers
+        except StatusAndHeadersParserException as se:
+            msg = 'Unknown archive format, first line: ' + se.statusline
+            raise ArchiveLoadFailed(msg)
 
 
 #=================================================================
@@ -140,8 +141,11 @@ class ARCHeadersParser:
     def __init__(self, headernames):
         self.headernames = headernames
 
-    def parse(self, stream):
-        headerline = stream.readline().rstrip()
+    def parse(self, stream, headerline=None):
+
+        # if headerline passed in, use that
+        if not headerline:
+            headerline = stream.readline().rstrip()
 
         parts = headerline.split()
 
@@ -149,7 +153,8 @@ class ARCHeadersParser:
 
         if len(parts) != len(headernames):
             msg = 'Wrong # of headers, expected arc headers {0}, Found {1}'
-            raise ArchiveLoadFailed(msg.format(headernames, parts))
+            msg = msg.format(headernames, parts)
+            raise StatusAndHeadersParserException(msg, headernames)
 
         headers = []
 

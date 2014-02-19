@@ -2,7 +2,7 @@
 """
 Test loading different types of records from a variety of formats
 
-# Load response record from WARC
+# Load response record from compressed WARC
 >>> load_test_archive('example.warc.gz', '333', '1043')
 (('warc', 'response'),
  StatusAndHeaders(protocol = 'WARC/1.0', statusline = '', headers = [ ('WARC-Type', 'response'),
@@ -26,7 +26,7 @@ Test loading different types of records from a variety of formats
   ('Content-Length', '1270'),
   ('Connection', 'close')]))
 
-# Load revisit record from WARC
+# Load revisit record from compressed WARC
 >>> load_test_archive('example.warc.gz', '1864', '553')
 (('warc', 'revisit'),
  StatusAndHeaders(protocol = 'WARC/1.0', statusline = '', headers = [ ('WARC-Type', 'revisit'),
@@ -59,7 +59,7 @@ Test loading different types of records from a variety of formats
 # Print parsed http headers + 2 lines of content
 # ==============================================================================
 
-# Test loading from ARC based on cdx line
+# Test loading from compressed ARC based on cdx line
 >>> load_from_cdx_test('com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 856 171 example.arc.gz')
 StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Accept-Ranges', 'bytes'),
   ('Cache-Control', 'max-age=604800'),
@@ -75,6 +75,7 @@ StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Acc
 <!doctype html>
 <html>
 
+# Uncompressed arc
 >>> load_from_cdx_test('com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1656 151 example.arc')
 StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Accept-Ranges', 'bytes'),
   ('Cache-Control', 'max-age=604800'),
@@ -91,8 +92,25 @@ StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Acc
 <html>
 
 
-# Test loading from WARC based on cdx line
+# Test loading from compressed WARC based on cdx line
 >>> load_from_cdx_test('com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 333 example.warc.gz')
+StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Accept-Ranges', 'bytes'),
+  ('Cache-Control', 'max-age=604800'),
+  ('Content-Type', 'text/html'),
+  ('Date', 'Fri, 03 Jan 2014 03:03:21 GMT'),
+  ('Etag', '"359670651"'),
+  ('Expires', 'Fri, 10 Jan 2014 03:03:21 GMT'),
+  ('Last-Modified', 'Fri, 09 Aug 2013 23:54:35 GMT'),
+  ('Server', 'ECS (sjc/4FCE)'),
+  ('X-Cache', 'HIT'),
+  ('x-ec-custom-error', '1'),
+  ('Content-Length', '1270'),
+  ('Connection', 'close')])
+<!doctype html>
+<html>
+
+# Uncompressed WARC
+>>> load_from_cdx_test('com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1987 460 example.warc')
 StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Accept-Ranges', 'bytes'),
   ('Cache-Control', 'max-age=604800'),
   ('Content-Type', 'text/html'),

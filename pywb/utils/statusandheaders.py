@@ -72,7 +72,7 @@ class StatusAndHeadersParser(object):
 
         if not protocol_status:
             msg = 'Expected Status Line - Found: ' + statusline
-            raise StatusAndHeadersParserException(msg)
+            raise StatusAndHeadersParserException(msg, statusline)
 
         headers = []
 
@@ -104,4 +104,7 @@ class StatusAndHeadersParserException(Exception):
     """
     status + headers parsing exception
     """
-    pass
+    def __init__(self, msg, statusline):
+        super(StatusAndHeadersParserException, self).__init__(msg)
+        self.statusline = statusline
+
