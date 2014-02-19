@@ -1,16 +1,17 @@
-## PyWb Utils v0.2 ##
+### pywb.utils
 
-[![Build Status](https://travis-ci.org/ikreymer/pywb_utils.png?branch=master)](https://travis-ci.org/ikreymer/pywb_utils)
-
-This is a standalone module contains a variety of utils used by pywb wayback tool suite.
-
-`python run-tests.py` will run all tests
+This package contains a utils used by pywb wayback tool suite.
 
 #### Modules
 
-[binsearch.py](pywb_utils/binsearch.py) -- Binary search implementation over text files
+* [binsearch.py](pywb.utils/binsearch.py) -- Binary search implementation over text files
 
-[loaders.py](pywb_utils/loaders.py) -- Loading abstraction for http, local file system, as well as buffered and seekable file readers
+* [loaders.py](pywb.utils/loaders.py) -- Loading abstraction for loading via http or local file system.
 
-[timeutils.py](pywb_utils/timeutils.py) -- Utility functions for converting between standard datetime formats 14-digit timestamp
+* [bufferedreaders.py](pywb.utils/bufferedreaders.py) -- Buffering wrappers for file-like object, also provide gzip decompression and
+de-chunking facilities.
+
+* [statusandheaders.py](pywb.utils/statusandheaders.py) -- Represent http status line + headers and parsing them out from a stream
+
+* [timeutils.py](pywb.utils/timeutils.py) -- Utility functions for converting between standard datetime formats 14-digit timestamp
 

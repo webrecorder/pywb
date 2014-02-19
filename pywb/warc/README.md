@@ -1,6 +1,4 @@
-## PyWb Warc v0.2
-
-[![Build Status](https://travis-ci.org/ikreymer/pywb_warc.png?branch=master)](https://travis-ci.org/ikreymer/pywb_warc)
+### pywb.warc
 
 This is the WARC/ARC record loading component of pywb wayback tool suite.
 
@@ -16,7 +14,17 @@ This package provides the following facilities:
 
 ### Tests
 
-This package will include a test suite for different WARC and ARC loading formats.
+This package will includes a test suite for loading a variety of WARC and ARC records.
 
-To run: `python run-tests.py`
+Tests so far:
 
+* Compressed WARC, ARC Records
+* Uncompressed ARC Records
+* Compressed WARC created by wget 1.14
+* Same Url revisit record resolving
+
+
+TODO:
+
+* Different url revisit record resolving (TODO)
+* File type detection (no .warc, .arc extensions)
