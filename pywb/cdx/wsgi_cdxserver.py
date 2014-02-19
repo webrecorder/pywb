@@ -9,6 +9,8 @@ import pkgutil
 #=================================================================
 CONFIG_FILE = 'config.yaml'
 
+RULES_FILE = 'rules.yaml'
+
 DEFAULT_PORT = 8080
 
 config = None
@@ -31,7 +33,7 @@ def main(paths=None):
         else:
             paths = get_test_dir() + 'cdx/'
 
-    cdxserver = create_cdx_server(paths)
+    cdxserver = create_cdx_server(paths, RULES_FILE)
 
     def application(env, start_response):
         try:

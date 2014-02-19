@@ -11,8 +11,10 @@ A very simple reference WSGI app is included.
 
 Run: `python -m pywb.cdx.wsgi_cdxserver` to start the app, keyboard interrupt to stop.
 
-The default [config.yaml](pywb_cdx/config.yaml) points to the sample data directory
-and uses port 8080
+The default [config.yaml](config.yaml) points to the sample data directory
+and uses port 8080.
+
+The domain specific [rules.yaml](rules.yaml) are also loaded.
 
 #### CDX Server API Reference
 
