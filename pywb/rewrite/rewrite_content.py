@@ -6,7 +6,7 @@ from regex_rewriters import RegexRewriter, JSRewriter, CSSRewriter, XMLRewriter
 from header_rewriter import HeaderRewriter, RewrittenStatusAndHeaders
 
 from pywb.utils.statusandheaders import StatusAndHeaders
-from pywb.utils.bufferedreaders import BufferedReader, ChunkedDataReader
+from pywb.utils.bufferedreaders import DecompressingBufferedReader, ChunkedDataReader
 
 class RewriteContent:
 
@@ -54,7 +54,7 @@ class RewriteContent:
         # =========================================================================
         # special case -- need to ungzip the body
         if (rewritten_headers.contains_removed_header('content-encoding', 'gzip')):
-            stream = BufferedReader(stream, decomp_type='gzip')
+            stream = DecompressingBufferedReader(stream, decomp_type='gzip')
 
         if rewritten_headers.charset:
             encoding = rewritten_headers.charset

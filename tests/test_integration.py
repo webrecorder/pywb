@@ -75,6 +75,11 @@ class TestWb:
         assert 'wb.js' in resp.body
         assert '/pywb/20140127171238/http://www.iana.org/time-zones' in resp.body
 
+    def test_replay_content_length_1(self):
+        # test larger file, rewritten file (svg!)
+        resp = self.testapp.get('/pywb/20140126200654/http://www.iana.org/_img/2013.1/rir-map.svg')
+        assert resp.headers['Content-Length'] == str(len(resp.body))
+
 
     def test_redirect_1(self):
         resp = self.testapp.get('/pywb/20140127171237/http://www.iana.org/')

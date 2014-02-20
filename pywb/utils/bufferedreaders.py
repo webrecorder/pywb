@@ -11,7 +11,7 @@ def gzip_decompressor():
 
 
 #=================================================================
-class BufferedReader(object):
+class DecompressingBufferedReader(object):
     """
     A wrapping line reader which wraps an existing reader.
     Read operations operate on underlying buffer, which is filled to
@@ -29,7 +29,7 @@ class BufferedReader(object):
 
     DECOMPRESSORS = {'gzip': gzip_decompressor}
 
-    def __init__(self, stream, max_len=0, block_size=1024, decomp_type=None):
+    def __init__(self, stream, block_size=1024, decomp_type=None):
         self.stream = stream
         self.block_size = block_size
 
@@ -44,19 +44,13 @@ class BufferedReader(object):
 
         self.buff = None
         self.num_read = 0
-        self.max_len = max_len
 
     def _fillbuff(self, block_size=None):
         if not block_size:
             block_size = self.block_size
 
         if not self.buff or self.buff.pos >= self.buff.len:
-            if self.max_len > 0:
-                to_read = min(self.max_len - self.num_read, self.block_size)
-            else:
-                to_read = self.block_size
-
-            data = self.stream.read(to_read)
+            data = self.stream.read(self.block_size)
             self._process_read(data)
 
     def _process_read(self, data):
@@ -97,7 +91,7 @@ class ChunkedDataException(Exception):
 
 
 #=================================================================
-class ChunkedDataReader(BufferedReader):
+class ChunkedDataReader(DecompressingBufferedReader):
     r"""
     A ChunkedDataReader is a BufferedReader which also supports de-chunking
     of the data if it happens to be http 'chunk-encoded'.
@@ -133,7 +127,7 @@ class ChunkedDataReader(BufferedReader):
 
     def _fillbuff(self, block_size=None):
         if self.not_chunked:
-            return BufferedReader._fillbuff(self, block_size)
+            return super(ChunkedDataReader, self)._fillbuff(block_size)
 
         if self.all_chunks_read:
             return

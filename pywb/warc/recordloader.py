@@ -7,7 +7,7 @@ from pywb.utils.statusandheaders import StatusAndHeadersParser
 from pywb.utils.statusandheaders import StatusAndHeadersParserException
 
 from pywb.utils.loaders import FileLoader, HttpLoader
-from pywb.utils.bufferedreaders import BufferedReader
+from pywb.utils.bufferedreaders import DecompressingBufferedReader
 
 #=================================================================
 ArcWarcRecord = collections.namedtuple('ArchiveRecord',
@@ -43,13 +43,13 @@ class ArcWarcRecordLoader:
             '': file
             }
 
-    def __init__(self, loaders={}, cookie_maker=None, chunk_size=8192):
+    def __init__(self, loaders={}, cookie_maker=None, block_size=8192):
         self.loaders = loaders
 
         if not self.loaders:
             self.loaders = self.create_default_loaders(cookie_maker)
 
-        self.chunk_size = chunk_size
+        self.block_size = block_size
 
         self.arc_parser = ARCHeadersParser(self.ARC_HEADERS)
 
@@ -73,9 +73,12 @@ class ArcWarcRecordLoader:
 
         decomp_type = 'gzip'
 
-        stream = BufferedReader(raw, length, self.chunk_size, decomp_type)
+        # Create decompressing stream
+        stream = DecompressingBufferedReader(stream = raw,
+                                             decomp_type = decomp_type,
+                                             block_size = self.block_size)
 
-        (the_format, rec_headers) = self._load_headers(stream)
+        (the_format, rec_headers) = self._detect_type_load_headers(stream)
 
         if the_format == 'arc':
             rec_type = 'response'
@@ -111,7 +114,7 @@ class ArcWarcRecordLoader:
         return ArcWarcRecord((the_format, rec_type),
                              rec_headers, stream, status_headers)
 
-    def _load_headers(self, stream):
+    def _detect_type_load_headers(self, stream):
         """
         Try parsing record as WARC, then try parsing as ARC.
         if neither one succeeds, we're out of luck.
