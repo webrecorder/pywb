@@ -58,7 +58,7 @@ def cdx_load_and_filter(sources, params):
 
     cdx_iter = make_cdx_iter(cdx_iter)
 
-    if params.get('proxy_all'):
+    if params.get('proxyAll'):
         return cdx_iter
 
     resolve_revisits = params.get('resolveRevisits', False)
