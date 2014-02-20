@@ -1,14 +1,14 @@
 import yaml
 import re
 import logging
-import pkgutil
+import pkg_resources
 
 from canonicalize import unsurt, UrlCanonicalizer
 
 
 #=================================================================
 def load_domain_specific_cdx_rules(filename, surt_ordered):
-    fh = pkgutil.get_data(__package__, filename)
+    fh = pkg_resources.resource_string(__name__, filename)
     config = yaml.load(fh)
 
     # Load Canonicalizer Rules
