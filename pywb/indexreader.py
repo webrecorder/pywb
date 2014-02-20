@@ -28,7 +28,7 @@ class IndexReader(object):
         if wbrequest.custom_params:
             params.update(wbrequest.custom_params)
 
-        params['allow_fuzzy'] = True
+        params['allowFuzzy'] = True
 
         cdxlines = self.load_cdx(url=wburl.url, output='raw', **params)
 

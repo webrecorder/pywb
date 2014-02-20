@@ -1,4 +1,4 @@
-from cdxobject import CDXObject
+from cdxobject import CDXObject, AccessException
 from pywb.utils.timeutils import timestamp_to_sec
 
 import bisect
@@ -10,25 +10,11 @@ from collections import deque
 
 
 #=================================================================
-class AllowAllPerms:
-    """
-    Sample Perm Checker which allows all
-    """
-    def allow_url(self, url):
-        return True
-
-    def allow_url_timestamp(self, url, timestamp):
-        return True
-
-    def filter_fields(self, cdx):
-        return cdx
-
-
-#=================================================================
-def cdx_load(source, params, perms_checker = AllowAllPerms()):
-
-    #cdx_iter = cdx_load_all(source, params)
-    cdx_iter = cdx_load_with_perms(source, params, perms_checker)
+def cdx_load(sources, params, perms_checker=None):
+    if perms_checker:
+        cdx_iter = cdx_load_with_perms(sources, params, perms_checker)
+    else:
+        cdx_iter = cdx_load_and_filter(sources, params)
 
     # output raw cdx objects
     if params.get('output') == 'raw':
@@ -42,16 +28,15 @@ def cdx_load(source, params, perms_checker = AllowAllPerms()):
 
 
 #=================================================================
-def cdx_load_with_perms(source, params, perms_checker):
-    if not perms_checker.allow_url(params['url']):
+def cdx_load_with_perms(sources, params, perms_checker):
+    if not perms_checker.allow_url_lookup(params['key'], params['url']):
         if params.get('matchType', 'exact') == 'exact':
-            yield
+            raise AccessException('Excluded')
 
-    cdx_iter = cdx_load_all(source, params)
+    cdx_iter = cdx_load_and_filter(sources, params)
 
     for cdx in cdx_iter:
-        if not perms_checker.allow_url_timestamp(cdx['original'],
-                                                 cdx['timestamp']):
+        if not perms_checker.allow_capture(cdx):
             continue
 
         cdx = perms_checker.filter_fields(cdx)
@@ -68,7 +53,7 @@ def cdx_text_out(cdx, fields):
 
 
 #=================================================================
-def cdx_load_all(sources, params):
+def cdx_load_and_filter(sources, params):
     cdx_iter = load_cdx_streams(sources, params)
 
     cdx_iter = make_cdx_iter(cdx_iter)
@@ -76,7 +61,7 @@ def cdx_load_all(sources, params):
     if params.get('proxy_all'):
         return cdx_iter
 
-    resolve_revisits = params.get('resolve_revisits', False)
+    resolve_revisits = params.get('resolveRevisits', False)
     if resolve_revisits:
         cdx_iter = cdx_resolve_revisits(cdx_iter)
 
@@ -84,13 +69,13 @@ def cdx_load_all(sources, params):
     if filters:
         cdx_iter = cdx_filter(cdx_iter, filters)
 
-    collapse_time = params.get('collapse_time', None)
+    collapse_time = params.get('collapseTime', None)
     if collapse_time:
         cdx_iter = cdx_collapse_time_status(cdx_iter, collapse_time)
 
     limit = int(params.get('limit', 1000000))
 
-    reverse = params.get('reverse', False)
+    reverse = params.get('reverse', False) or params.get('sort') == 'reverse'
     if reverse:
         cdx_iter = cdx_reverse(cdx_iter, limit)
 

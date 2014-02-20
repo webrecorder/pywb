@@ -97,3 +97,7 @@ enable_cdx_api: true
 # custom rules for domain specific matching
 # set to false to disable
 #domain_specific_rules: rules.yaml
+
+# Permissions checker
+#perms_checker: !!python/object/new:pywb.cdx.perms.AllowAllPerms []
+
