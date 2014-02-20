@@ -13,9 +13,10 @@ import urlparse
 
 #=================================================================
 class BaseCDXServer(object):
-    def __init__(self, url_canon=None, fuzzy_query=None):
-        self.url_canon = url_canon if url_canon else UrlCanonicalizer()
-        self.fuzzy_query = fuzzy_query
+    def __init__(self, **kwargs):
+        self.url_canon = kwargs.get('url_canon', UrlCanonicalizer())
+        self.fuzzy_query = kwargs.get('fuzzy_query')
+        self.perms_checker = kwargs.get('perms_checker')
 
     def _check_cdx_iter(self, cdx_iter, params):
         """ Check cdx iter semantics
@@ -31,13 +32,13 @@ class BaseCDXServer(object):
 
         url = params['url']
 
-        if self.fuzzy_query and params.get('allow_fuzzy'):
+        if self.fuzzy_query and params.get('allowFuzzy'):
             if not 'key' in params:
                 params['key'] = self.url_canon(url)
 
             params = self.fuzzy_query(params)
             if params:
-                params['allow_fuzzy'] = False
+                params['allowFuzzy'] = False
                 return self.load_cdx(**params)
 
         msg = 'No Captures found for: ' + url
@@ -63,8 +64,8 @@ class CDXServer(BaseCDXServer):
     responds to queries and dispatches to the cdx ops for processing
     """
 
-    def __init__(self, paths, url_canon=None, fuzzy_query=None):
-        super(CDXServer, self).__init__(url_canon, fuzzy_query)
+    def __init__(self, paths, **kwargs):
+        super(CDXServer, self).__init__(**kwargs)
         self.sources = create_cdx_sources(paths)
 
     def load_cdx(self, **params):
@@ -78,9 +79,7 @@ class CDXServer(BaseCDXServer):
 
             params['key'] = self.url_canon(url)
 
-        convert_old_style_params(params)
-
-        cdx_iter = cdx_load(self.sources, params)
+        cdx_iter = cdx_load(self.sources, params, self.perms_checker)
 
         return self._check_cdx_iter(cdx_iter, params)
 
@@ -95,8 +94,8 @@ class RemoteCDXServer(BaseCDXServer):
     It simply proxies the query params to the remote source
     and performs no local processing/filtering
     """
-    def __init__(self, source, url_canon=None, fuzzy_query=None):
-        super(RemoteCDXServer, self).__init__(url_canon, fuzzy_query)
+    def __init__(self, source, **kwargs):
+        super(RemoteCDXServer, self).__init__(**kwargs)
 
         if isinstance(source, RemoteCDXSource):
             self.source = source
@@ -124,9 +123,11 @@ def create_cdx_server(config, ds_rules_file=None):
     if hasattr(config, 'get'):
         paths = config.get('index_paths')
         surt_ordered = config.get('surt_ordered', True)
+        perms_checker = config.get('perms_checker')
     else:
         paths = config
         surt_ordered = True
+        perms_checker = None
 
     logging.debug('CDX Surt-Ordered? ' + str(surt_ordered))
 
@@ -145,7 +146,10 @@ def create_cdx_server(config, ds_rules_file=None):
     else:
         server_cls = CDXServer
 
-    return server_cls(paths, url_canon=canon, fuzzy_query=fuzzy)
+    return server_cls(paths,
+                      url_canon=canon,
+                      fuzzy_query=fuzzy,
+                      perms_checker=perms_checker)
 
 
 #=================================================================
@@ -196,29 +200,6 @@ def create_cdx_source(filename):
     #    return ZipNumCDXSource(filename)
     #elif filename.startswith('redis://')
     #    return RedisCDXSource(filename)
-
-
-#=================================================================
-def convert_old_style_params(params):
-    """
-    Convert old-style CDX Server param semantics
-    """
-    param = params.get('collapseTime')
-    if param:
-        params['collapse_time'] = param
-
-    param = params.get('matchType')
-    if param:
-        params['match_type'] = param
-
-    param = params.get('resolveRevisits')
-    if param:
-        params['resolve_revisits'] = param
-
-    if params.get('sort') == 'reverse':
-        params['reverse'] = True
-
-    return params
 
 
 #=================================================================

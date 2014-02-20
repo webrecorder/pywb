@@ -1,4 +1,4 @@
-from cdxobject import CDXObject
+from cdxobject import CDXObject, AccessException
 from pywb.utils.timeutils import timestamp_to_sec
 
 import bisect
@@ -10,44 +10,11 @@ from collections import deque
 
 
 #=================================================================
-def cdx_text_out(cdx, fields):
-    if not fields:
-        return str(cdx)
+def cdx_load(sources, params, perms_checker=None):
+    if perms_checker:
+        cdx_iter = cdx_load_with_perms(sources, params, perms_checker)
     else:
-        return ' '.join(map(lambda x: cdx[x], fields.split(',')))
-
-
-#=================================================================
-def cdx_load(sources, params):
-    cdx_iter = load_cdx_streams(sources, params)
-
-    cdx_iter = make_cdx_iter(cdx_iter)
-
-    if not params.get('proxy_all'):
-        resolve_revisits = params.get('resolve_revisits', False)
-        if resolve_revisits:
-            cdx_iter = cdx_resolve_revisits(cdx_iter)
-
-        filters = params.get('filter', None)
-        if filters:
-            cdx_iter = cdx_filter(cdx_iter, filters)
-
-        collapse_time = params.get('collapse_time', None)
-        if collapse_time:
-            cdx_iter = cdx_collapse_time_status(cdx_iter, collapse_time)
-
-        limit = int(params.get('limit', 1000000))
-
-        reverse = params.get('reverse', False)
-        if reverse:
-            cdx_iter = cdx_reverse(cdx_iter, limit)
-
-        closest_to = params.get('closest', None)
-        if closest_to:
-            cdx_iter = cdx_sort_closest(closest_to, cdx_iter, limit)
-
-        if limit:
-            cdx_iter = cdx_limit(cdx_iter, limit)
+        cdx_iter = cdx_load_and_filter(sources, params)
 
     # output raw cdx objects
     if params.get('output') == 'raw':
@@ -58,6 +25,68 @@ def cdx_load(sources, params):
             yield cdx_text_out(cdx, fields) + '\n'
 
     return write_cdx(params.get('fields'))
+
+
+#=================================================================
+def cdx_load_with_perms(sources, params, perms_checker):
+    if not perms_checker.allow_url_lookup(params['key'], params['url']):
+        if params.get('matchType', 'exact') == 'exact':
+            raise AccessException('Excluded')
+
+    cdx_iter = cdx_load_and_filter(sources, params)
+
+    for cdx in cdx_iter:
+        if not perms_checker.allow_capture(cdx):
+            continue
+
+        cdx = perms_checker.filter_fields(cdx)
+
+        yield cdx
+
+
+#=================================================================
+def cdx_text_out(cdx, fields):
+    if not fields:
+        return str(cdx)
+    else:
+        return ' '.join(map(lambda x: cdx[x], fields.split(',')))
+
+
+#=================================================================
+def cdx_load_and_filter(sources, params):
+    cdx_iter = load_cdx_streams(sources, params)
+
+    cdx_iter = make_cdx_iter(cdx_iter)
+
+    if params.get('proxy_all'):
+        return cdx_iter
+
+    resolve_revisits = params.get('resolveRevisits', False)
+    if resolve_revisits:
+        cdx_iter = cdx_resolve_revisits(cdx_iter)
+
+    filters = params.get('filter', None)
+    if filters:
+        cdx_iter = cdx_filter(cdx_iter, filters)
+
+    collapse_time = params.get('collapseTime', None)
+    if collapse_time:
+        cdx_iter = cdx_collapse_time_status(cdx_iter, collapse_time)
+
+    limit = int(params.get('limit', 1000000))
+
+    reverse = params.get('reverse', False) or params.get('sort') == 'reverse'
+    if reverse:
+        cdx_iter = cdx_reverse(cdx_iter, limit)
+
+    closest_to = params.get('closest', None)
+    if closest_to:
+        cdx_iter = cdx_sort_closest(closest_to, cdx_iter, limit)
+
+    if limit:
+        cdx_iter = cdx_limit(cdx_iter, limit)
+
+    return cdx_iter
 
 
 #=================================================================

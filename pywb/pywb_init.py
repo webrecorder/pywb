@@ -53,14 +53,12 @@ def pywb_config_manual(passed_config = {}):
 
     for name, value in collections.iteritems():
         if isinstance(value, str):
-            route_config = config
-            cdx_config = value
-        else:
-            route_config = DictChain(value, config)
-            cdx_config = route_config
+            value = {'index_paths': value}
+
+        route_config = DictChain(value, config)
 
         ds_rules = route_config.get('domain_specific_rules', None)
-        cdx_server = IndexReader(cdx_config, ds_rules)
+        cdx_server = IndexReader(route_config, ds_rules)
 
         wb_handler = config_utils.create_wb_handler(
             cdx_server = cdx_server,
