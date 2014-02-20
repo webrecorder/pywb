@@ -25,7 +25,7 @@ class CDXFile(CDXSource):
     def load_cdx(self, params):
         source = SeekableTextFileReader(self.filename)
 
-        match_type = params.get('match_type')
+        match_type = params.get('matchType')
 
         if match_type == 'prefix':
             iter_func = iter_prefix
@@ -56,12 +56,12 @@ class RemoteCDXSource(CDXSource):
     def load_cdx(self, proxy_params):
         if self.proxy_all:
             params = proxy_params
-            params['proxy_all'] = True
+            params['proxyAll'] = True
         else:
             # Only send url and matchType params to remote
             params = {}
             params['url'] = proxy_params['url']
-            match_type = proxy_params.get('match_type')
+            match_type = proxy_params.get('matchType')
 
             if match_type:
                 proxy_params['matchType'] = match_type

@@ -119,6 +119,12 @@ class TestWb:
         assert resp.content_type == 'text/css'
 
 
+    def test_excluded_content(self):
+        resp = self.testapp.get('/pywb/http://www.iana.org/_img/bookmark_icon.ico', status = 403)
+        assert resp.status_int == 403
+        assert 'Excluded' in resp.body
+
+
     def test_static_content(self):
         resp = self.testapp.get('/static/test/route/wb.css')
         assert resp.status_int == 200
@@ -149,7 +155,7 @@ class TestWb:
 
     def test_cdx_server_advanced(self):
         # combine collapsing, reversing and revisit resolving
-        resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/print.css&collapse_time=11&resolve_revisits=true&reverse=true')
+        resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/print.css&collapseTime=11&resolveRevisits=true&reverse=true')
 
         # convert back to CDXObject
         cdxs = map(CDXObject, resp.body.rstrip().split('\n'))
@@ -169,8 +175,42 @@ class TestWb:
         assert resp.status_int == 400
         assert 'Invalid Url: http://?abc' in resp.body
 
+#=================================================================
 # Reporter callback for replay view
-def print_reporter(wbrequest, cdx, response):
-    print wbrequest
-    print cdx
-    pass
+class PrintReporter:
+    def __call__(self, wbrequest, cdx, response):
+        print wbrequest
+        print cdx
+        pass
+
+#=================================================================
+class TestExclusionPerms:
+    """
+    Sample Perm Checker which allows all
+    """
+    def allow_url_lookup(self, urlkey, url):
+        """
+        Return true/false if url or urlkey (canonicalized url)
+        should be allowed
+        """
+        print urlkey
+        if urlkey == 'org,iana)/_img/bookmark_icon.ico':
+            return False
+
+        return True
+
+    def allow_capture(self, cdx):
+        """
+        Return true/false is specified capture (cdx) should be
+        allowed
+        """
+        return True
+
+    def filter_fields(self, cdx):
+        """
+        Filter out any forbidden cdx fields from cdx dictionary
+        """
+        return cdx
+
+
+
