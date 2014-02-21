@@ -23,6 +23,9 @@
 >>> seek_read_full(sr, 100)
 'org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126200826 http://www.iana.org/_css/2013.1/fonts/Inconsolata.otf application/octet-stream 200 LNMEDYOENSOEI5VPADCKL3CB6N3GWXPR - - 34054 620049 iana.warc.gz\\n'
 
+# Buffered Reader Tests
+#=================================================================
+
 #DecompressingBufferedReader readline()
 >>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb')).readline()
 ' CDX N b a m s k r M S V g\\n'
@@ -33,6 +36,17 @@
 
 >>> HttpLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read()
 'Example Domain'
+
+# test very small block size
+>>> dbr = DecompressingBufferedReader(StringIO.StringIO('ABCDEFG\\nHIJKLMN\\nOPQR\\nXYZ'), block_size = 3)
+>>> dbr.readline(); dbr.readline(4); dbr.readline(); dbr.readline(); dbr.readline(2); dbr.readline(); dbr.readline()
+'ABCDEFG\\n'
+'HIJK'
+'LMN\\n'
+'OPQR\\n'
+'XY'
+'Z'
+''
 """
 
 

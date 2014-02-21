@@ -77,3 +77,34 @@ class CDXObject(OrderedDict):
 
         li = itertools.imap(lambda (n, val): val, self.items())
         return ' '.join(li)
+
+
+#=================================================================
+class IDXObject(OrderedDict):
+
+    FORMAT = ['urlkey', 'part', 'offset', 'length', 'lineno']
+    NUM_REQ_FIELDS = len(FORMAT) - 1  # lineno is an optional field
+
+    def __init__(self, idxline):
+        OrderedDict.__init__(self)
+
+        idxline = idxline.rstrip()
+        fields = idxline.split('\t')
+
+        if len(fields) < self.NUM_REQ_FIELDS:
+            msg = 'invalid idx format: {0} fields found, {1} required'
+            raise Exception(msg.format(len(fields), self.NUM_REQ_FIELDS))
+
+        for header, field in itertools.izip(self.FORMAT, fields):
+            self[header] = field
+
+        self['offset'] = int(self['offset'])
+        self['length'] = int(self['length'])
+        lineno = self.get('lineno')
+        if lineno:
+            self['lineno'] = int(lineno)
+
+        self.idxline = idxline
+
+    def __str__(self):
+        return self.idxline

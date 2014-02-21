@@ -36,6 +36,58 @@ def binsearch_offset(reader, key, compare_func=cmp, block_size=8192):
 
 
 #=================================================================
+def binsearch(reader, key, compare_func=cmp, block_size=8192):
+    """
+    Perform a binary search for a specified key to within a 'block_size'
+    (default 8192) granularity, and return first full line found.
+    """
+
+    min_ = binsearch_offset(reader, key, compare_func, block_size)
+
+    reader.seek(min_)
+
+    if min_ > 0:
+        reader.readline()  # skip partial line
+
+    def gen_iter(line):
+        while line:
+            yield line.rstrip()
+            line = reader.readline()
+
+    return gen_iter(reader.readline())
+
+
+#=================================================================
+def linearsearch(iter_, key, prev_size=0, compare_func=cmp):
+    """
+    Perform a linear search over iterator until
+    current_line >= key
+
+    optionally also tracking upto N previous lines, which are
+    returned before the first matched line.
+
+    if end of stream is reached before a match is found,
+    nothing is returned (prev lines discarded also)
+    """
+
+    prev_deque = deque(maxlen=prev_size + 1)
+
+    matched = False
+
+    for line in iter_:
+        prev_deque.append(line)
+        if compare_func(line, key) >= 0:
+            matched = True
+            break
+
+    # no matches, so return empty iterator
+    if not matched:
+        return []
+
+    return itertools.chain(prev_deque, iter_)
+
+
+#=================================================================
 def search(reader, key, prev_size=0, compare_func=cmp, block_size=8192):
     """
     Perform a binary search for a specified key to within a 'block_size'
@@ -45,63 +97,24 @@ def search(reader, key, prev_size=0, compare_func=cmp, block_size=8192):
     When performin_g linear search, keep track of up to N previous lines before
     first matching line.
     """
-    min_ = binsearch_offset(reader, key, compare_func, block_size)
-
-    reader.seek(min_)
-
-    if min_ > 0:
-        reader.readline()  # skip partial line
-
-    if prev_size > 1:
-        prev_deque = deque(max_len=prev_size)
-
-    line = None
-
-    while True:
-        line = reader.readline()
-        if not line:
-            break
-        if compare_func(line, key) >= 0:
-            break
-
-        if prev_size == 1:
-            prev = line
-        elif prev_size > 1:
-            prev_deque.append(line)
-
-    def gen_iter(line):
-        """
-        Create iterator over any previous lines to
-        current matched line
-        """
-        if prev_size == 1:
-            yield prev.rstrip()
-        elif prev_size > 1:
-            for i in prev_deque:
-                yield i.rstrip()
-
-        while line:
-            yield line.rstrip()
-            line = reader.readline()
-
-    return gen_iter(line)
+    iter_ = binsearch(reader, key, compare_func, block_size)
+    iter_ = linearsearch(iter_,
+                         key, prev_size=prev_size,
+                         compare_func=compare_func)
+    return iter_
 
 
 #=================================================================
-def iter_range(reader, start, end):
+def iter_range(reader, start, end, prev_size=0):
     """
     Creates an iterator which iterates over lines where
     start <= line < end (end exclusive)
     """
 
-    iter_ = search(reader, start)
-
-#    iter_ = itertools.dropwhile(
-#        lambda line: line < start,
-#        search(reader, start))
+    iter_ = search(reader, start, prev_size=prev_size)
 
     end_iter = itertools.takewhile(
-       lambda line: line <= end,
+       lambda line: line < end,
        iter_)
 
     return end_iter

@@ -50,12 +50,13 @@ class DecompressingBufferedReader(object):
             block_size = self.block_size
 
         if not self.buff or self.buff.pos >= self.buff.len:
-            data = self.stream.read(self.block_size)
+            data = self.stream.read(block_size)
             self._process_read(data)
 
     def _process_read(self, data):
         data = self._decompress(data)
-        self.num_read += len(data)
+        self.buff_size = len(data)
+        self.num_read += self.buff_size
         self.buff = StringIO.StringIO(data)
 
     def _decompress(self, data):
@@ -72,12 +73,40 @@ class DecompressingBufferedReader(object):
         return data
 
     def read(self, length=None):
+        """
+        Fill bytes and read some number of bytes
+        (up to length if specified)
+        < length bytes may be read if reached the end of input
+        or at a buffer boundary. If at a boundary, the subsequent
+        call will fill buffer anew.
+        """
         self._fillbuff()
         return self.buff.read(length)
 
     def readline(self, length=None):
+        """
+        Fill buffer and read a full line from the buffer
+        (up to specified length, if provided)
+        If no newline found at end, try filling buffer again in case
+        at buffer boundary.
+        """
         self._fillbuff()
-        return self.buff.readline(length)
+        linebuff = self.buff.readline(length)
+        # we may be at a boundary
+        while not linebuff.endswith('\n'):
+            if length:
+                length -= len(linebuff)
+                if length <= 0:
+                    break
+
+            self._fillbuff()
+
+            if self.buff_size == 0:
+                break
+
+            linebuff += self.buff.readline(length)
+
+        return linebuff
 
     def close(self):
         if self.stream:

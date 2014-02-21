@@ -107,4 +107,3 @@ class StatusAndHeadersParserException(Exception):
     def __init__(self, msg, statusline):
         super(StatusAndHeadersParserException, self).__init__(msg)
         self.statusline = statusline
-

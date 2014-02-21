@@ -88,6 +88,8 @@ class FileLoader(object):
 
         if length > 0:
             return LimitReader(afile, length)
+        else:
+            return afile
 
 
 #=================================================================

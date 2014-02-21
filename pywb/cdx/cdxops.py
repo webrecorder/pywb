@@ -1,4 +1,4 @@
-from cdxobject import CDXObject, AccessException
+from cdxobject import CDXObject, IDXObject, AccessException
 from pywb.utils.timeutils import timestamp_to_sec
 
 import bisect
@@ -56,7 +56,7 @@ def cdx_text_out(cdx, fields):
 def cdx_load_and_filter(sources, params):
     cdx_iter = load_cdx_streams(sources, params)
 
-    cdx_iter = make_cdx_iter(cdx_iter)
+    cdx_iter = make_obj_iter(cdx_iter, params)
 
     if params.get('proxyAll'):
         return cdx_iter
@@ -102,9 +102,15 @@ def load_cdx_streams(sources, params):
 
 
 #=================================================================
-# convert text cdx stream to CDXObject
-def make_cdx_iter(text_iter):
-    return itertools.imap(lambda line: CDXObject(line), text_iter)
+# convert text cdx stream to CDXObject/IDXObject
+def make_obj_iter(text_iter, params):
+    # already converted
+    if params.get('showPagedIndex'):
+        cls = IDXObject
+    else:
+        cls = CDXObject
+
+    return itertools.imap(lambda line: cls(line), text_iter)
 
 
 #=================================================================
