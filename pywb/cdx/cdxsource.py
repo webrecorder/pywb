@@ -1,4 +1,4 @@
-from pywb.utils.binsearch import iter_exact, iter_prefix
+from pywb.utils.binsearch import iter_range
 from pywb.utils.loaders import SeekableTextFileReader
 
 import urllib
@@ -24,17 +24,7 @@ class CDXFile(CDXSource):
 
     def load_cdx(self, params):
         source = SeekableTextFileReader(self.filename)
-
-        match_type = params.get('matchType')
-
-        if match_type == 'prefix':
-            iter_func = iter_prefix
-        else:
-            iter_func = iter_exact
-
-        key = params.get('key')
-
-        return iter_func(source, key)
+        return iter_range(source, params.get('key'), params.get('end_key'))
 
     def __str__(self):
         return 'CDX File - ' + self.filename

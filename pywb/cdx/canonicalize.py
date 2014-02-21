@@ -2,6 +2,7 @@
 """
 
 import surt
+import urlparse
 from cdxobject import CDXException
 
 
@@ -67,6 +68,109 @@ index.html?a=b?c=)/')
     except ValueError:
         # May not be a valid surt
         return surt
+
+
+#=================================================================
+def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
+    """
+    Canonicalize a url (either with custom canonicalizer or
+    standard canonicalizer with or without surt)
+
+    Then, compute a start and end search url search range
+    for a given match type.
+
+    Support match types:
+    * exact
+    * prefix
+    * host
+    * domain (only available when for surt ordering)
+
+    Examples below:
+
+    # surt ranges
+    >>> calc_search_range('http://example.com/path/file.html', 'exact')
+    ('com,example)/path/file.html', 'com,example)/path/file.html!')
+
+    >>> calc_search_range('http://example.com/path/file.html', 'prefix')
+    ('com,example)/path/file.html', 'com,example)/path/file.htmm')
+
+    >>> calc_search_range('http://example.com/path/file.html', 'host')
+    ('com,example)/', 'com,example*')
+
+    >>> calc_search_range('http://example.com/path/file.html', 'domain')
+    ('com,example)/', 'com,example-')
+
+    special case for tld domain range
+    >>> calc_search_range('com', 'domain')
+    ('com,', 'com-')
+
+    # non-surt ranges
+    >>> calc_search_range('http://example.com/path/file.html', 'exact', False)
+    ('example.com/path/file.html', 'example.com/path/file.html!')
+
+    >>> calc_search_range('http://example.com/path/file.html', 'prefix', False)
+    ('example.com/path/file.html', 'example.com/path/file.htmm')
+
+    >>> calc_search_range('http://example.com/path/file.html', 'host', False)
+    ('example.com/', 'example.com0')
+
+    # domain range not supported
+    >>> calc_search_range('http://example.com/path/file.html', 'domain', False)
+    Traceback (most recent call last):
+    Exception: matchType=domain unsupported for non-surt
+    """
+    def inc_last_char(x):
+        return x[0:-1] + chr(ord(x[-1]) + 1)
+
+    if not url_canon:
+        # make new canon
+        url_canon = UrlCanonicalizer(surt_ordered)
+    else:
+        # ensure surt order matches url_canon
+        surt_ordered = url_canon.surt_ordered
+
+    start_key = url_canon(url)
+
+    if match_type == 'exact':
+        end_key = start_key + '!'
+
+    elif match_type == 'prefix':
+        # add trailing slash if url has it
+        if url.endswith('/') and not start_key.endswith('/'):
+            start_key += '/'
+
+        end_key = inc_last_char(start_key)
+
+    elif match_type == 'host':
+        if surt_ordered:
+            host = start_key.split(')/')[0]
+
+            start_key = host + ')/'
+            end_key = host + '*'
+        else:
+            host = urlparse.urlsplit(url).netloc
+
+            start_key = host + '/'
+            end_key = host + '0'
+
+    elif match_type == 'domain':
+        if not surt_ordered:
+            raise Exception('matchType=domain unsupported for non-surt')
+
+        host = start_key.split(')/')[0]
+
+        # if tld, use com, as start_key
+        # otherwise, stick with com,example)/
+        if not ',' in host:
+            start_key = host + ','
+        else:
+            start_key = host + ')/'
+
+        end_key = host + '-'
+    else:
+        raise Exception('Invalid match_type: ' + match_type)
+
+    return (start_key, end_key)
 
 
 if __name__ == "__main__":

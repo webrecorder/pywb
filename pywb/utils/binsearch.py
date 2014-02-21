@@ -88,6 +88,26 @@ def search(reader, key, prev_size=0, compare_func=cmp, block_size=8192):
 
 
 #=================================================================
+def iter_range(reader, start, end):
+    """
+    Creates an iterator which iterates over lines where
+    start <= line < end (end exclusive)
+    """
+
+    iter_ = search(reader, start)
+
+#    iter_ = itertools.dropwhile(
+#        lambda line: line < start,
+#        search(reader, start))
+
+    end_iter = itertools.takewhile(
+       lambda line: line <= end,
+       iter_)
+
+    return end_iter
+
+
+#=================================================================
 def iter_prefix(reader, key):
     """
     Creates an iterator which iterates over lines that start with prefix

@@ -1,4 +1,4 @@
-from canonicalize import UrlCanonicalizer
+from canonicalize import UrlCanonicalizer, calc_search_range
 
 from cdxops import cdx_load
 from cdxsource import CDXSource, CDXFile, RemoteCDXSource
@@ -14,8 +14,23 @@ import urlparse
 #=================================================================
 class BaseCDXServer(object):
     def __init__(self, **kwargs):
-        self.url_canon = kwargs.get('url_canon', UrlCanonicalizer())
-        self.fuzzy_query = kwargs.get('fuzzy_query')
+        ds_rules = kwargs.get('ds_rules')
+        surt_ordered = kwargs.get('surt_ordered', True)
+
+        # load from domain-specific rules
+        if ds_rules:
+            self.url_canon, self.fuzzy_query = (
+                load_domain_specific_cdx_rules(ds_rules, surt_ordered))
+        # or custom passed in canonicalizer
+        else:
+            self.url_canon = kwargs.get('url_canon')
+            self.fuzzy_query = kwargs.get('fuzzy_query')
+
+        # set default canonicalizer if none set thus far
+        if not self.url_canon:
+            self.url_canon = UrlCanonicalizer(surt_ordered)
+
+        # set perms checker, if any
         self.perms_checker = kwargs.get('perms_checker')
 
     def _check_cdx_iter(self, cdx_iter, params):
@@ -77,7 +92,14 @@ class CDXServer(BaseCDXServer):
                 msg = 'A url= param must be specified to query the cdx server'
                 raise CDXException(msg)
 
-            params['key'] = self.url_canon(url)
+            #params['key'] = self.url_canon(url)
+            match_type = params.get('matchType', 'exact')
+
+            key, end_key = calc_search_range(url=url,
+                                             match_type=match_type,
+                                             url_canon=self.url_canon)
+            params['key'] = key
+            params['end_key'] = end_key
 
         cdx_iter = cdx_load(self.sources, params, self.perms_checker)
 
@@ -131,15 +153,6 @@ def create_cdx_server(config, ds_rules_file=None):
 
     logging.debug('CDX Surt-Ordered? ' + str(surt_ordered))
 
-    if ds_rules_file:
-        canon, fuzzy = load_domain_specific_cdx_rules(ds_rules_file,
-                                                      surt_ordered)
-    else:
-        canon, fuzzy = None, None
-
-    if not canon:
-        canon = UrlCanonicalizer(surt_ordered)
-
     if (isinstance(paths, str) and
         any(paths.startswith(x) for x in ['http://', 'https://'])):
         server_cls = RemoteCDXServer
@@ -147,8 +160,8 @@ def create_cdx_server(config, ds_rules_file=None):
         server_cls = CDXServer
 
     return server_cls(paths,
-                      url_canon=canon,
-                      fuzzy_query=fuzzy,
+                      surt_ordered=surt_ordered,
+                      ds_rules=ds_rules_file,
                       perms_checker=perms_checker)
 
 
