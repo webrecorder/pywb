@@ -39,9 +39,8 @@ def main(paths=None):
         try:
             params = extract_params_from_wsgi_env(env)
             response = cdxserver.load_cdx(**params)
-            start_response('200 OK', [('Content-Type', 'text/plain')])
 
-            response = list(response)
+            start_response('200 OK', [('Content-Type', 'text/plain')])
 
         except Exception as exc:
             import traceback

@@ -2,18 +2,19 @@ import os
 import collections
 import itertools
 import logging
+from cStringIO import StringIO
 
 from cdxsource import CDXSource
 from cdxobject import IDXObject
 
-from pywb.utils.loaders import FileLoader
+from pywb.utils.loaders import FileLoader, LimitReader
 from pywb.utils.loaders import SeekableTextFileReader
-from pywb.utils.bufferedreaders import DecompressingBufferedReader
+from pywb.utils.bufferedreaders import gzip_decompressor
 from pywb.utils.binsearch import iter_range, linearsearch
 
 
 #=================================================================
-class ZipBlock:
+class ZipBlocks:
     def __init__(self, part, offset, length, count):
         self.part = part
         self.offset = offset
@@ -81,35 +82,38 @@ class ZipNumCluster(CDXSource):
             return gen_cdx()
 
     def idx_to_cdx(self, idx_iter, params):
-        block = None
-        max_blocks = 1
+        blocks = None
+        max_blocks = 10
+        ranges = []
 
         for idx in idx_iter:
             idx = IDXObject(idx)
 
-            if (block and block.part == idx['part'] and
-                block.offset + block.length == idx['offset'] and
-                block.count < max_blocks):
+            if (blocks and blocks.part == idx['part'] and
+                blocks.offset + blocks.length == idx['offset'] and
+                blocks.count < max_blocks):
 
-                    block.length += idx['length']
-                    block.count += 1
+                    blocks.length += idx['length']
+                    blocks.count += 1
+                    ranges.append(idx['length'])
 
             else:
-                if block:
-                    yield self.block_to_cdx_iter(block, params)
+                if blocks:
+                    yield self.block_to_cdx_iter(blocks, ranges, params)
 
-                block = ZipBlock(idx['part'], idx['offset'], idx['length'], 1)
+                blocks = ZipBlocks(idx['part'], idx['offset'], idx['length'], 1)
+                ranges = [blocks.length]
 
-        if block:
-            yield self.block_to_cdx_iter(block, params)
+        if blocks:
+            yield self.block_to_cdx_iter(blocks, ranges, params)
 
-    def block_to_cdx_iter(self, block, params):
+    def block_to_cdx_iter(self, blocks, ranges, params):
         last_exc = None
         last_traceback = None
 
-        for location in self.lookup_loc(block.part):
+        for location in self.lookup_loc(blocks.part):
             try:
-                return self.load_block(location, block, params)
+                return self.load_blocks(location, blocks, ranges, params)
             except Exception as exc:
                 last_exc = exc
                 import sys
@@ -120,22 +124,20 @@ class ZipNumCluster(CDXSource):
         else:
             raise Exception('No Locations Found for: ' + block.part)
 
-    def load_block(self, location, block, params):
+    def load_blocks(self, location, blocks, ranges, params):
+
         if (logging.getLogger().getEffectiveLevel() <= logging.DEBUG):
-            msg = 'Loading {block.count} blocks from {location}:\
-{block.offset}+{block.length}'.format(block=block, location=location)
-            logging.debug(msg)
+            msg = 'Loading {b.count} blocks from {loc}:{b.offset}+{b.length}'
+            logging.debug(msg.format(b=blocks, loc=location))
 
-        reader = FileLoader().load(location,
-                                   block.offset,
-                                   block.length)
+        reader = FileLoader().load(location, blocks.offset, blocks.length)
 
-        # read whole zip block into buffer
-        reader = DecompressingBufferedReader(reader,
-                                             decomp_type='gzip',
-                                             block_size=block.length)
+        def decompress_block(range_):
+            decomp = gzip_decompressor()
+            buff = decomp.decompress(reader.read(range_))
+            return readline_to_iter(StringIO(buff))
 
-        iter_ = readline_to_iter(reader)
+        iter_ = itertools.chain(*itertools.imap(decompress_block, ranges))
 
         # start bound
         iter_ = linearsearch(iter_, params['key'])
