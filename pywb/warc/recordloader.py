@@ -6,7 +6,7 @@ from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.statusandheaders import StatusAndHeadersParser
 from pywb.utils.statusandheaders import StatusAndHeadersParserException
 
-from pywb.utils.loaders import FileLoader, HttpLoader
+from pywb.utils.loaders import BlockLoader
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 
 #=================================================================
@@ -32,23 +32,11 @@ class ArcWarcRecordLoader:
     ARC_HEADERS = ["uri", "ip-address", "creation-date",
                    "content-type", "length"]
 
-    @staticmethod
-    def create_default_loaders(cookie_maker=None):
-        http = HttpLoader(cookie_maker)
-        file = FileLoader()
-        return {
-            'http': http,
-            'https': http,
-            'file': file,
-            '': file
-            }
+    def __init__(self, loader=None, cookie_maker=None, block_size=8192):
+        if not loader:
+            loader = BlockLoader(cookie_maker)
 
-    def __init__(self, loaders={}, cookie_maker=None, block_size=8192):
-        self.loaders = loaders
-
-        if not self.loaders:
-            self.loaders = self.create_default_loaders(cookie_maker)
-
+        self.loader = loader
         self.block_size = block_size
 
         self.arc_parser = ARCHeadersParser(self.ARC_HEADERS)
@@ -60,16 +48,16 @@ class ArcWarcRecordLoader:
     def load(self, url, offset, length):
         url_parts = urlparse.urlsplit(url)
 
-        loader = self.loaders.get(url_parts.scheme)
-        if not loader:
-            raise ArchiveLoadFailed('Unknown Protocol', url)
+        #loader = self.loaders.get(url_parts.scheme)
+        #if not loader:
+        #    raise ArchiveLoadFailed('Unknown Protocol', url)
 
         try:
             length = int(length)
         except:
             length = -1
 
-        raw = loader.load(url, long(offset), length)
+        raw = self.loader.load(url, long(offset), length)
 
         decomp_type = 'gzip'
 

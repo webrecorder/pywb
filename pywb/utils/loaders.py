@@ -9,18 +9,50 @@ import urllib2
 import time
 
 
+def is_http(filename):
+    return any(filename.startswith(x) for x in ['http://', 'https://'])
+
+
 #=================================================================
-# load a reader from http
-#=================================================================
-class HttpLoader(object):
+class BlockLoader(object):
     """
-    Load a file-like reader over http using range requests
-    and an optional cookie created via a cookie_maker
+    a loader which can stream blocks of content
+    given a uri, offset and optional length.
+    Currently supports: http/https and file/local file system
     """
     def __init__(self, cookie_maker=None):
         self.cookie_maker = cookie_maker
 
     def load(self, url, offset, length):
+        """
+        Determine loading method based on uri
+        """
+        if is_http(url):
+            return self.load_http(url, offset, length)
+        else:
+            return self.load_file(url, offset, length)
+
+    def load_file(self, url, offset, length):
+        """
+        Load a file-like reader from the local file system
+        """
+
+        if url.startswith('file://'):
+            url = url[len('file://'):]
+
+        afile = open(url, 'rb')
+        afile.seek(offset)
+
+        if length > 0:
+            return LimitReader(afile, length)
+        else:
+            return afile
+
+    def load_http(self, url, offset, length):
+        """
+        Load a file-like reader over http using range requests
+        and an optional cookie created via a cookie_maker
+        """
         if length > 0:
             range_header = 'bytes={0}-{1}'.format(offset, offset + length - 1)
         else:
@@ -69,27 +101,6 @@ class HMACCookieMaker(object):
             cookie = '{0}={1}-{2}'.format(self.name, expire, hexdigest)
 
         return cookie
-
-
-#=================================================================
-# load a reader from local filesystem
-#=================================================================
-class FileLoader(object):
-    """
-    Load a file-like reader from the local file system
-    """
-
-    def load(self, url, offset, length):
-        if url.startswith('file://'):
-            url = url[len('file://'):]
-
-        afile = open(url, 'rb')
-        afile.seek(offset)
-
-        if length > 0:
-            return LimitReader(afile, length)
-        else:
-            return afile
 
 
 #=================================================================

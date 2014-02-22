@@ -10,9 +10,9 @@
 >>> read_multiple(LimitReader(StringIO.StringIO('abcdefghjiklmnopqrstuvwxyz'), 10), [2, 2, 20])
 'efghji'
 
-# FileLoader Tests (includes LimitReader)
+# BlockLoader Tests (includes LimitReader)
 # Ensure attempt to read more than 100 bytes, reads exactly 100 bytes
->>> len(FileLoader().load(test_cdx_dir + 'iana.cdx', 0, 100).read('400'))
+>>> len(BlockLoader().load(test_cdx_dir + 'iana.cdx', 0, 100).read('400'))
 100
 
 # SeekableTextFileReader Test
@@ -34,7 +34,7 @@
 >>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx.gz', 'rb'), decomp_type = 'gzip').readline()
 ' CDX N b a m s k r M S V g\\n'
 
->>> HttpLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read()
+>>> BlockLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read()
 'Example Domain'
 
 # test very small block size
@@ -53,7 +53,7 @@
 #=================================================================
 import os
 import StringIO
-from pywb.utils.loaders import FileLoader, HttpLoader, HMACCookieMaker
+from pywb.utils.loaders import BlockLoader, HMACCookieMaker
 from pywb.utils.loaders import LimitReader, SeekableTextFileReader
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 

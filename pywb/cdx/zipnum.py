@@ -7,7 +7,7 @@ from cStringIO import StringIO
 from cdxsource import CDXSource
 from cdxobject import IDXObject
 
-from pywb.utils.loaders import FileLoader, LimitReader
+from pywb.utils.loaders import BlockLoader
 from pywb.utils.loaders import SeekableTextFileReader
 from pywb.utils.bufferedreaders import gzip_decompressor
 from pywb.utils.binsearch import iter_range, linearsearch
@@ -101,7 +101,11 @@ class ZipNumCluster(CDXSource):
                 if blocks:
                     yield self.block_to_cdx_iter(blocks, ranges, params)
 
-                blocks = ZipBlocks(idx['part'], idx['offset'], idx['length'], 1)
+                blocks = ZipBlocks(idx['part'],
+                                   idx['offset'],
+                                   idx['length'],
+                                   1)
+
                 ranges = [blocks.length]
 
         if blocks:
@@ -130,7 +134,7 @@ class ZipNumCluster(CDXSource):
             msg = 'Loading {b.count} blocks from {loc}:{b.offset}+{b.length}'
             logging.debug(msg.format(b=blocks, loc=location))
 
-        reader = FileLoader().load(location, blocks.offset, blocks.length)
+        reader = BlockLoader().load(location, blocks.offset, blocks.length)
 
         def decompress_block(range_):
             decomp = gzip_decompressor()
