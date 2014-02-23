@@ -53,8 +53,7 @@ class ZipNumCluster(CDXSource):
             loc = config.get('zipnum_loc')
             cookie_maker = config.get('cookie_maker')
 
-            self.max_blocks = config.get('max_blocks',
-                                         self.max_blocks)
+            self.max_blocks = config.get('max_blocks', self.max_blocks)
 
             reload_ival = config.get('reload_interval', reload_ival)
 
@@ -67,6 +66,7 @@ class ZipNumCluster(CDXSource):
 
         # initial loc map
         self.loc_map = {}
+        self.loc_mtime = 0
         self.load_loc()
 
         # reload interval
@@ -76,6 +76,14 @@ class ZipNumCluster(CDXSource):
         self.blk_loader = BlockLoader(cookie_maker=cookie_maker)
 
     def load_loc(self):
+        # check modified time of current file before loading
+        new_mtime = os.path.getmtime(self.loc_filename)
+        if (new_mtime == self.loc_mtime):
+            return
+
+        # update loc file mtime
+        self.loc_mtime = new_mtime
+
         logging.debug('Loading loc from: ' + self.loc_filename)
         with open(self.loc_filename) as fh:
             for line in fh:
@@ -91,13 +99,13 @@ class ZipNumCluster(CDXSource):
         return None
 
     def reload_loc(self):
-        newtime = self.reload_timed(self.loc_update_time,
-                                    self.loc_map,
-                                    self.reload_interval,
-                                    self.load_loc)
+        reload_time = self.reload_timed(self.loc_update_time,
+                                        self.loc_map,
+                                        self.reload_interval,
+                                        self.load_loc)
 
-        if newtime:
-            self.loc_update_time = newtime
+        if reload_time:
+            self.loc_update_time = reload_time
 
     def lookup_loc(self, part):
         return self.loc_map[part]
