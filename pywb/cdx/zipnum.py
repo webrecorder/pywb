@@ -3,6 +3,7 @@ import collections
 import itertools
 import logging
 from cStringIO import StringIO
+import datetime
 
 from cdxsource import CDXSource
 from cdxobject import IDXObject
@@ -38,29 +39,72 @@ def readline_to_iter(stream):
 
 #=================================================================
 class ZipNumCluster(CDXSource):
-    def __init__(self, summary, loc=None):
+    DEFAULT_RELOAD_INTERVAL = 10  # in minutes
+    DEFAULT_MAX_BLOCKS = 50
+
+    def __init__(self, summary, config=None):
+
+        loc = None
+        cookie_maker = None
+        self.max_blocks = self.DEFAULT_MAX_BLOCKS
+        reload_ival = self.DEFAULT_RELOAD_INTERVAL
+
+        if config:
+            loc = config.get('zipnum_loc')
+            cookie_maker = config.get('cookie_maker')
+
+            self.max_blocks = config.get('max_blocks',
+                                         self.max_blocks)
+
+            reload_ival = config.get('reload_interval', reload_ival)
+
         if not loc:
             splits = os.path.splitext(summary)
             loc = splits[0] + '.loc'
 
         self.summary = summary
-        self.loc = loc
-        self.loc_map = self.load_loc(loc)
+        self.loc_filename = loc
 
-    @staticmethod
-    def load_loc(loc_file):
-        loc_map = {}
-        with open(loc_file) as fh:
+        # initial loc map
+        self.loc_map = {}
+        self.load_loc()
+
+        # reload interval
+        self.loc_update_time = datetime.datetime.now()
+        self.reload_interval = datetime.timedelta(minutes=reload_ival)
+
+        self.blk_loader = BlockLoader(cookie_maker=cookie_maker)
+
+    def load_loc(self):
+        logging.debug('Loading loc from: ' + self.loc_filename)
+        with open(self.loc_filename) as fh:
             for line in fh:
                 parts = line.rstrip().split('\t')
-                loc_map[parts[0]] = parts[1:]
+                self.loc_map[parts[0]] = parts[1:]
 
-        return loc_map
+    @staticmethod
+    def reload_timed(timestamp, val, delta, func):
+        now = datetime.datetime.now()
+        if now - timestamp >= delta:
+            func()
+            return now
+        return None
+
+    def reload_loc(self):
+        newtime = self.reload_timed(self.loc_update_time,
+                                    self.loc_map,
+                                    self.reload_interval,
+                                    self.load_loc)
+
+        if newtime:
+            self.loc_update_time = newtime
 
     def lookup_loc(self, part):
         return self.loc_map[part]
 
     def load_cdx(self, params):
+        self.reload_loc()
+
         reader = SeekableTextFileReader(self.summary)
 
         idx_iter = iter_range(reader,
@@ -83,7 +127,6 @@ class ZipNumCluster(CDXSource):
 
     def idx_to_cdx(self, idx_iter, params):
         blocks = None
-        max_blocks = 10
         ranges = []
 
         for idx in idx_iter:
@@ -91,7 +134,7 @@ class ZipNumCluster(CDXSource):
 
             if (blocks and blocks.part == idx['part'] and
                 blocks.offset + blocks.length == idx['offset'] and
-                blocks.count < max_blocks):
+                blocks.count < self.max_blocks):
 
                     blocks.length += idx['length']
                     blocks.count += 1
@@ -134,7 +177,7 @@ class ZipNumCluster(CDXSource):
             msg = 'Loading {b.count} blocks from {loc}:{b.offset}+{b.length}'
             logging.debug(msg.format(b=blocks, loc=location))
 
-        reader = BlockLoader().load(location, blocks.offset, blocks.length)
+        reader = self.blk_loader.load(location, blocks.offset, blocks.length)
 
         def decompress_block(range_):
             decomp = gzip_decompressor()

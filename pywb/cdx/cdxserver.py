@@ -6,6 +6,8 @@ from zipnum import ZipNumCluster
 from cdxobject import CDXObject, CaptureNotFoundException, CDXException
 from cdxdomainspecific import load_domain_specific_cdx_rules
 
+from pywb.utils.loaders import is_http
+
 from itertools import chain
 import logging
 import os
@@ -82,7 +84,7 @@ class CDXServer(BaseCDXServer):
 
     def __init__(self, paths, **kwargs):
         super(CDXServer, self).__init__(**kwargs)
-        self.sources = create_cdx_sources(paths)
+        self.sources = create_cdx_sources(paths, kwargs.get('config'))
 
     def load_cdx(self, **params):
         # if key not set, assume 'url' is set and needs canonicalization
@@ -154,8 +156,7 @@ def create_cdx_server(config, ds_rules_file=None):
 
     logging.debug('CDX Surt-Ordered? ' + str(surt_ordered))
 
-    if (isinstance(paths, str) and
-        any(paths.startswith(x) for x in ['http://', 'https://'])):
+    if isinstance(paths, str) and is_http(paths):
         server_cls = RemoteCDXServer
     else:
         server_cls = CDXServer
@@ -167,7 +168,7 @@ def create_cdx_server(config, ds_rules_file=None):
 
 
 #=================================================================
-def create_cdx_sources(paths):
+def create_cdx_sources(paths, config=None):
     sources = []
 
     if not isinstance(paths, list):
@@ -175,13 +176,13 @@ def create_cdx_sources(paths):
 
     for path in paths:
         if isinstance(path, CDXSource):
-            add_cdx_source(sources, path)
+            add_cdx_source(sources, path, config)
         elif isinstance(path, str):
             if os.path.isdir(path):
                 for file in os.listdir(path):
-                    add_cdx_source(sources, path + file)
+                    add_cdx_source(sources, path + file, config)
             else:
-                add_cdx_source(sources, path)
+                add_cdx_source(sources, path, config)
 
     if len(sources) == 0:
         logging.exception('No CDX Sources Found from: ' + str(sources))
@@ -190,9 +191,9 @@ def create_cdx_sources(paths):
 
 
 #=================================================================
-def add_cdx_source(sources, source):
+def add_cdx_source(sources, source, config):
     if not isinstance(source, CDXSource):
-        source = create_cdx_source(source)
+        source = create_cdx_source(source, config)
         if not source:
             return
 
@@ -201,15 +202,15 @@ def add_cdx_source(sources, source):
 
 
 #=================================================================
-def create_cdx_source(filename):
-    if filename.startswith('http://') or filename.startswith('https://'):
+def create_cdx_source(filename, config):
+    if is_http(filename):
         return RemoteCDXSource(filename)
 
     if filename.endswith('.cdx'):
         return CDXFile(filename)
 
     if filename.endswith('.summary'):
-        return ZipNumCluster(filename)
+        return ZipNumCluster(filename, config)
 
     return None
     #TODO: support zipnum
