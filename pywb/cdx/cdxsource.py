@@ -3,6 +3,7 @@ from pywb.utils.loaders import SeekableTextFileReader
 
 import urllib
 import urllib2
+import redis
 
 
 #=================================================================
@@ -80,3 +81,33 @@ class RemoteCDXSource(CDXSource):
 
     def __str__(self):
         return 'Remote CDX Server: ' + self.remote_url
+
+
+#=================================================================
+class RedisCDXSource(CDXSource):
+    DEFAULT_KEY_PREFIX = 'c:'
+
+    def __init__(self, redis_url, config=None):
+        self.redis = redis.StrictRedis.from_url(redis_url)
+
+        key_prefix = self.DEFAULT_KEY_PREFIX
+        if config:
+            self.key_prefix = config.get('redis_key_prefix', key_prefix)
+
+    def load_cdx(self, params):
+        """
+        Load cdx from redis cache, from an ordered list
+
+        Currently, there is no support for range queries
+        Only 'exact' matchType is supported
+        """
+        key = params['key']
+
+        # ensure only url/surt is part of key
+        key = key.split(' ')[0]
+        cdx_list = self.redis.zrange(self.key_prefix + key, 0, -1)
+
+        # key is not part of list, so prepend to each line
+        key += ' '
+        cdx_list = itertools.imap(lambda x: key + x, cdx_list)
+        return cdx_list
