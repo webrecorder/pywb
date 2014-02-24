@@ -37,7 +37,7 @@ class IndexReader(object):
     def load_cdx(self, **params):
         return self.cdx_server.load_cdx(**params)
 
-    def get_query_params(self, wburl, limit = 150000, collapse_time = None, replay_closest = 10):
+    def get_query_params(self, wburl, limit = 150000, collapse_time = None, replay_closest = 100):
         if wburl.type == wburl.URL_QUERY:
             raise NotImplementedError('Url Query Not Yet Supported')
 

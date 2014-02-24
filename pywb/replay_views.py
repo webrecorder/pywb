@@ -7,7 +7,6 @@ from wbrequestresponse import WbResponse
 from wbexceptions import CaptureException, InternalRedirect
 from pywb.warc.recordloader import ArchiveLoadFailed
 
-
 #=================================================================
 class ReplayView:
     def __init__(self, content_loader, content_rewriter, head_insert_view = None,
@@ -48,6 +47,9 @@ class ReplayView:
 
                 # check if redir is needed
                 self._redirect_if_needed(wbrequest, cdx)
+
+                # one more check for referrer-based self-redirect
+                self._reject_referrer_self_redirect(wbrequest, status_headers)
 
                 response = None
 
@@ -148,6 +150,7 @@ class ReplayView:
 
 
     def _reject_self_redirect(self, wbrequest, cdx, status_headers):
+        # self-redirect via location
         if status_headers.statusline.startswith('3'):
             request_url = wbrequest.wb_url.url.lower()
             location_url = status_headers.get_header('Location').lower()
@@ -155,4 +158,17 @@ class ReplayView:
             #TODO: canonicalize before testing?
             if (UrlRewriter.strip_protocol(request_url) == UrlRewriter.strip_protocol(location_url)):
                 raise CaptureException('Self Redirect: ' + str(cdx))
+
+    def _reject_referrer_self_redirect(self, wbrequest, status_headers):
+        # at correct timestamp now, but must check for referrer redirect
+        # indirect self-redirect, via meta-refresh, if referrer is same as current url
+        if status_headers.statusline.startswith('2'):
+            # build full url even if using relative-rewriting
+            request_url = wbrequest.host_prefix + wbrequest.rel_prefix + str(wbrequest.wb_url)
+            referrer_url = wbrequest.referrer
+            if (referrer_url and UrlRewriter.strip_protocol(request_url) == UrlRewriter.strip_protocol(referrer_url)):
+                raise CaptureException('Self Redirect via Referrer: ' + str(wbrequest.wb_url))
+
+
+
 

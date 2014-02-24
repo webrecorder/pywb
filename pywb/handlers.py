@@ -10,19 +10,28 @@ from wbexceptions import WbException, NotFoundException
 from views import TextCapturesView
 
 
-class BaseHandler:
-    @staticmethod
-    def get_wburl_type():
-        return WbUrl
-
+#=================================================================
+class BaseHandler(object):
     def __call__(self, wbrequest):
         return wbrequest
+
+    def get_wburl_type(self):
+        return None
+
+
+#=================================================================
+class WbUrlHandler(BaseHandler):
+    def get_wburl_type(self):
+        return WbUrl
+
 
 #=================================================================
 # Standard WB Handler
 #=================================================================
-class WBHandler(BaseHandler):
-    def __init__(self, index_reader, replay, html_view = None, search_view = None):
+class WBHandler(WbUrlHandler):
+    def __init__(self, index_reader, replay,
+                 html_view=None, search_view=None):
+
         self.index_reader = index_reader
         self.replay = replay
 
@@ -30,7 +39,6 @@ class WBHandler(BaseHandler):
 
         self.html_view = html_view
         self.search_view = search_view
-
 
     def __call__(self, wbrequest):
         if wbrequest.wb_url_str == '/':
@@ -61,6 +69,7 @@ class WBHandler(BaseHandler):
     def __str__(self):
         return 'WBHandler: ' + str(self.index_reader) + ', ' + str(self.replay)
 
+
 #=================================================================
 # CDX-Server Handler -- pass all params to cdx server
 #=================================================================
@@ -74,11 +83,6 @@ class CDXHandler(BaseHandler):
         cdx_lines = self.index_reader.load_cdx(**params)
 
         return self.view.render_response(wbrequest, cdx_lines)
-
-
-    @staticmethod
-    def get_wburl_type():
-        return None
 
     def __str__(self):
         return 'Index Reader: ' + str(self.index_reader)
@@ -115,10 +119,6 @@ class StaticHandler(BaseHandler):
         except IOError:
             raise NotFoundException('Static File Not Found: ' + wbrequest.wb_url_str)
 
-    @staticmethod
-    def get_wburl_type():
-        return None
-
     def __str__(self):
         return 'Static files from ' + self.static_path
 
@@ -129,6 +129,7 @@ class StaticHandler(BaseHandler):
 class DebugEchoEnvHandler(BaseHandler):
     def __call__(self, wbrequest):
         return WbResponse.text_response(str(wbrequest.env))
+
 
 #=================================================================
 class DebugEchoHandler(BaseHandler):
@@ -150,5 +151,3 @@ class PerfTimer:
         self.end = time.clock()
         if self.perfdict is not None:
             self.perfdict[self.name] = str(self.end - self.start)
-
-

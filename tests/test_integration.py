@@ -124,6 +124,20 @@ class TestWb:
         assert resp.content_type == 'text/css'
 
 
+    def test_referrer_self_redirect(self):
+        uri = '/pywb/20140127171239/http://www.iana.org/_css/2013.1/screen.css'
+        host = 'somehost:8082'
+        referrer = 'http://' + host + uri
+
+        # capture is normally a 200
+        resp = self.testapp.get(uri)
+        assert resp.status_int == 200
+
+        # redirect causes skip of this capture, redirect to next
+        resp = self.testapp.get(uri, headers = [('Referer', referrer), ('Host', host)], status = 302)
+        assert resp.status_int == 302
+
+
     def test_excluded_content(self):
         resp = self.testapp.get('/pywb/http://www.iana.org/_img/bookmark_icon.ico', status = 403)
         assert resp.status_int == 403

@@ -1,98 +1,74 @@
-from pywb.rewrite.wburl import WbUrl
-from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.utils.statusandheaders import StatusAndHeaders
-
 import pprint
-#WB Request and Response
 
+
+#=================================================================
 class WbRequest:
     """
-    >>> WbRequest.from_uri('/save/_embed/example.com/?a=b')
-    {'wb_url': ('latest_replay', '', '', 'http://_embed/example.com/?a=b', 'http://_embed/example.com/?a=b'), 'coll': 'save', 'wb_prefix': '/save/', 'request_uri': '/save/_embed/example.com/?a=b'}
+    Represents the main pywb request object.
 
-    >>> WbRequest.from_uri('/2345/20101024101112im_/example.com/?b=c')
-    {'wb_url': ('replay', '20101024101112', 'im_', 'http://example.com/?b=c', '20101024101112im_/http://example.com/?b=c'), 'coll': '2345', 'wb_prefix': '/2345/', 'request_uri': '/2345/20101024101112im_/example.com/?b=c'}
+    Contains various info from wsgi env, add additional info
+    about the request, such as coll, relative prefix,
+    host prefix, absolute prefix.
 
-    >>> WbRequest.from_uri('/2010/example.com')
-    {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
-
-    >>> WbRequest.from_uri('../example.com')
-    {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '', 'wb_prefix': '/', 'request_uri': '../example.com'}
-
-    # Abs path
-    >>> WbRequest.from_uri('/2010/example.com', {'wsgi.url_scheme': 'https', 'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
-    {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': 'https://localhost:8080/2010/', 'request_uri': '/2010/example.com'}
-
-    # No Scheme, so stick to relative
-    >>> WbRequest.from_uri('/2010/example.com', {'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
-    {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
+    If a wburl and url rewriter classes are specified, the class
+    also contains the url rewriter.
 
     """
-
-    @staticmethod
-    def from_uri(request_uri, env = {}, use_abs_prefix = False):
-        if not request_uri:
-            request_uri = env.get('REL_REQUEST_URI')
-
-        parts = request_uri.split('/', 2)
-
-        # Has coll prefix
-        if len(parts) == 3:
-            wb_prefix = '/' + parts[1] + '/'
-            wb_url_str = parts[2]
-            coll = parts[1]
-        # No Coll Prefix
-        elif len(parts) == 2:
-            wb_prefix = '/'
-            wb_url_str = parts[1]
-            coll = ''
-        else:
-            wb_prefix = '/'
-            wb_url_str = parts[0]
-            coll = ''
-
-        host_prefix = WbRequest.make_host_prefix(env) if use_abs_prefix else ''
-
-        return WbRequest(env, request_uri, wb_prefix, wb_url_str, coll, host_prefix = host_prefix)
-
-
     @staticmethod
     def make_host_prefix(env):
         try:
-            return env['wsgi.url_scheme'] + '://' + env['HTTP_HOST']
+            host = env.get('HTTP_HOST')
+            if not host:
+                host = env['SERVER_NAME'] + ':' + env['SERVER_PORT']
+
+            return env['wsgi.url_scheme'] + '://' + host
         except KeyError:
             return ''
 
 
-    def __init__(self, env, request_uri, wb_prefix, wb_url_str, coll,
-                 host_prefix = '',
-                 wburl_class = WbUrl,
-                 url_rewriter_class = UrlRewriter,
-                 is_proxy = False):
+    def __init__(self, env,
+                 request_uri=None,
+                 rel_prefix='',
+                 wb_url_str='/',
+                 coll='',
+                 host_prefix='',
+                 use_abs_prefix=False,
+                 wburl_class=None,
+                 urlrewriter_class=None,
+                 is_proxy=False):
 
         self.env = env
 
         self.request_uri = request_uri if request_uri else env.get('REL_REQUEST_URI')
 
-        self.host_prefix = host_prefix
+        self.coll = coll
 
-        self.wb_prefix = host_prefix + wb_prefix
+        if not host_prefix:
+            host_prefix = self.make_host_prefix(env)
+
+        self.host_prefix = host_prefix
+        self.rel_prefix = rel_prefix
+
+        if use_abs_prefix:
+            self.wb_prefix = host_prefix + rel_prefix
+        else:
+            self.wb_prefix = rel_prefix
+
 
         if not wb_url_str:
             wb_url_str = '/'
 
+        self.wb_url_str = wb_url_str
+
         # wb_url present and not root page
         if wb_url_str != '/' and wburl_class:
-            self.wb_url_str = wb_url_str
             self.wb_url = wburl_class(wb_url_str)
-            self.urlrewriter = url_rewriter_class(self.wb_url, self.wb_prefix)
+            self.urlrewriter = urlrewriter_class(self.wb_url, self.wb_prefix)
         else:
         # no wb_url, just store blank wb_url
-            self.wb_url_str = wb_url_str
             self.wb_url = None
             self.urlrewriter = None
-
-        self.coll = coll
 
         self.referrer = env.get('HTTP_REFERER')
 
@@ -122,24 +98,19 @@ class WbRequest:
 
 
     def __repr__(self):
-        #return "WbRequest(env, '" + (self.wb_url) + "', '" + (self.coll) + "')"
-        #return str(vars(self))
         varlist = vars(self)
-        return str({k: varlist[k] for k in ('request_uri', 'wb_prefix', 'wb_url', 'coll')})
+        varstr = pprint.pformat(varlist)
+        return varstr
 
 
+#=================================================================
 class WbResponse:
     """
-    >>> WbResponse.text_response('Test')
-    {'body': ['Test'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [('Content-Type', 'text/plain')])}
+    Represnts a pywb wsgi response object.
 
-    >>> WbResponse.text_stream(['Test', 'Another'], '404')
-    {'body': ['Test', 'Another'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '404', headers = [('Content-Type', 'text/plain')])}
-
-    >>> WbResponse.redir_response('http://example.com/otherfile')
-    {'body': [], 'status_headers': StatusAndHeaders(protocol = '', statusline = '302 Redirect', headers = [('Location', 'http://example.com/otherfile')])}
+    Holds a status_headers object and a response iter, to be
+    returned to wsgi container.
     """
-
     def __init__(self, status_headers, value = []):
         self.status_headers = status_headers
         self.body = value
@@ -180,8 +151,3 @@ class WbResponse:
 
     def __repr__(self):
         return str(vars(self))
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
-
