@@ -1,4 +1,4 @@
-from wbrequestresponse import WbResponse, WbRequest
+from pywb.core.wbrequestresponse import WbResponse, WbRequest
 from archivalrouter import ArchivalRouter
 import urlparse
 

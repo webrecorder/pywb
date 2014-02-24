@@ -1,16 +1,16 @@
-import views
-import handlers
-import replay_views
 import logging
 
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
 from pywb.rewrite.rewrite_content import RewriteContent
+from pywb.core.views import J2TemplateView, J2HtmlCapturesView
+from pywb.core.handlers import WBHandler
+from pywb.core.replay_views import ReplayView
 
 #=================================================================
 # Config Loading
 #=================================================================
-def load_template_file(file, desc = None, view_class = views.J2TemplateView):
+def load_template_file(file, desc = None, view_class = J2TemplateView):
     if file:
         logging.debug('Adding {0}: {1}'.format(desc if desc else name, file))
         file = view_class(file)
@@ -25,7 +25,7 @@ def create_wb_handler(cdx_server, config):
 
     resolving_loader = ResolvingLoader(paths = paths, cdx_server = cdx_server, record_loader = record_loader)
 
-    replayer = replay_views.ReplayView(
+    replayer = ReplayView(
         content_loader = resolving_loader,
 
         content_rewriter = RewriteContent(),
@@ -40,12 +40,12 @@ def create_wb_handler(cdx_server, config):
     )
 
 
-    wb_handler = handlers.WBHandler(
+    wb_handler = WBHandler(
         cdx_server,
 
         replayer,
 
-        html_view = load_template_file(config.get('query_html'), 'Captures Page', views.J2HtmlCapturesView),
+        html_view = load_template_file(config.get('query_html'), 'Captures Page', J2HtmlCapturesView),
 
         search_view = load_template_file(config.get('search_html'), 'Search Page'),
     )

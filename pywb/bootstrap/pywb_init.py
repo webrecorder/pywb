@@ -1,8 +1,10 @@
-import handlers
-import archivalrouter
+from pywb.core.handlers import CDXHandler, StaticHandler
+from pywb.core.handlers import DebugEchoHandler, DebugEchoEnvHandler
+from pywb.dispatch.archivalrouter import ArchivalRouter, Route
+from pywb.dispatch.proxy import ProxyArchivalRouter
+from pywb.core.indexreader import IndexReader
+
 import config_utils
-import proxy
-from indexreader import IndexReader
 
 import os
 import yaml
@@ -67,32 +69,32 @@ def pywb_config_manual(passed_config = {}):
 
         logging.debug('Adding Collection: ' + name)
 
-        route_class = route_config.get('route_class', archivalrouter.Route)
+        route_class = route_config.get('route_class', Route)
 
         routes.append(route_class(name, wb_handler, config = route_config))
 
         # cdx query handler
         if route_config.get('enable_cdx_api', False):
-            routes.append(archivalrouter.Route(name + '-cdx', handlers.CDXHandler(cdx_server)))
+            routes.append(Route(name + '-cdx', CDXHandler(cdx_server)))
 
 
     if config.get('debug_echo_env', False):
-        routes.append(archivalrouter.Route('echo_env', handlers.DebugEchoEnvHandler()))
+        routes.append(Route('echo_env', DebugEchoEnvHandler()))
 
     if config.get('debug_echo_req', False):
-        routes.append(archivalrouter.Route('echo_req', handlers.DebugEchoHandler()))
+        routes.append(Route('echo_req', DebugEchoHandler()))
 
 
     static_routes = config.get('static_routes')
 
     for static_name, static_path in static_routes.iteritems():
-        routes.append(archivalrouter.Route(static_name, handlers.StaticHandler(static_path)))
+        routes.append(Route(static_name, StaticHandler(static_path)))
 
     # Check for new proxy mode!
     if config.get('enable_http_proxy', False):
-        router = proxy.ProxyArchivalRouter
+        router = ProxyArchivalRouter
     else:
-        router = archivalrouter.ArchivalRouter
+        router = ArchivalRouter
 
     # Finally, create wb router
     return router(

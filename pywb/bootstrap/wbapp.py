@@ -1,5 +1,5 @@
-from wbexceptions import WbException, NotFoundException, InternalRedirect
-from wbrequestresponse import WbResponse, StatusAndHeaders
+from pywb.core.wbexceptions import WbException, NotFoundException, InternalRedirect
+from pywb.core.wbrequestresponse import WbResponse, StatusAndHeaders
 
 from pywb.cdx.cdxserver import CDXException
 from pywb.warc.recordloader import ArchiveLoadFailed
@@ -91,6 +91,10 @@ def handle_exception(env, error_view, exc, print_trace):
 #=================================================================
 DEFAULT_CONFIG_FILE = 'config.yaml'
 
+DEFAULT_INIT_MODULE = 'pywb.bootstrap.pywb_init'
+
+
+#=================================================================
 def main():
     try:
         logging.basicConfig(format = '%(asctime)s: [%(levelname)s]: %(message)s', level = logging.DEBUG)
@@ -100,7 +104,7 @@ def main():
 
         if not config_name:
             # use default module
-            config_name = 'pywb.pywb_init'
+            config_name = DEFAULT_INIT_MODULE
             logging.info('Loading from default config module "{0}"'.format(config_name))
             logging.info('')
 

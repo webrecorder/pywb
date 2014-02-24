@@ -1,7 +1,7 @@
 import urlparse
 import re
 
-from wbrequestresponse import WbRequest, WbResponse
+from pywb.core.wbrequestresponse import WbRequest, WbResponse
 from pywb.rewrite.url_rewriter import UrlRewriter
 
 

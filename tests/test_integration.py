@@ -1,6 +1,6 @@
 import webtest
-from pywb.pywb_init import pywb_config
-from pywb.wbapp import create_wb_app
+from pywb.bootstrap.pywb_init import pywb_config
+from pywb.bootstrap.wbapp import create_wb_app
 from pywb.cdx.cdxobject import CDXObject
 
 class TestWb:
