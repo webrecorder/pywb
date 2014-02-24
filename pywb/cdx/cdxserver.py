@@ -149,10 +149,12 @@ def create_cdx_server(config, ds_rules_file=None):
         paths = config.get('index_paths')
         surt_ordered = config.get('surt_ordered', True)
         perms_checker = config.get('perms_checker')
+        pass_config = config
     else:
         paths = config
         surt_ordered = True
         perms_checker = None
+        pass_config = None
 
     logging.debug('CDX Surt-Ordered? ' + str(surt_ordered))
 
@@ -162,6 +164,7 @@ def create_cdx_server(config, ds_rules_file=None):
         server_cls = CDXServer
 
     return server_cls(paths,
+                      config=pass_config,
                       surt_ordered=surt_ordered,
                       ds_rules=ds_rules_file,
                       perms_checker=perms_checker)

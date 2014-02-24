@@ -3,8 +3,7 @@ from pywb.utils.loaders import SeekableTextFileReader
 
 import urllib
 import urllib2
-import redis
-
+import itertools
 
 #=================================================================
 class CDXSource(object):
@@ -88,11 +87,13 @@ class RedisCDXSource(CDXSource):
     DEFAULT_KEY_PREFIX = 'c:'
 
     def __init__(self, redis_url, config=None):
+        import redis
         self.redis = redis.StrictRedis.from_url(redis_url)
 
-        key_prefix = self.DEFAULT_KEY_PREFIX
+        self.key_prefix = self.DEFAULT_KEY_PREFIX
         if config:
-            self.key_prefix = config.get('redis_key_prefix', key_prefix)
+            self.key_prefix = config.get('redis_key_prefix', self.key_prefix)
+        
 
     def load_cdx(self, params):
         """
