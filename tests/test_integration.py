@@ -75,6 +75,11 @@ class TestWb:
         assert 'wb.js' in resp.body
         assert '/pywb/20140127171238/http://www.iana.org/time-zones' in resp.body
 
+    def test_replay_content_length_1(self):
+        # test larger file, rewritten file (svg!)
+        resp = self.testapp.get('/pywb/20140126200654/http://www.iana.org/_img/2013.1/rir-map.svg')
+        assert resp.headers['Content-Length'] == str(len(resp.body))
+
 
     def test_redirect_1(self):
         resp = self.testapp.get('/pywb/20140127171237/http://www.iana.org/')
@@ -117,6 +122,20 @@ class TestWb:
         resp = resp.follow()
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
+
+
+    def test_referrer_self_redirect(self):
+        uri = '/pywb/20140127171239/http://www.iana.org/_css/2013.1/screen.css'
+        host = 'somehost:8082'
+        referrer = 'http://' + host + uri
+
+        # capture is normally a 200
+        resp = self.testapp.get(uri)
+        assert resp.status_int == 200
+
+        # redirect causes skip of this capture, redirect to next
+        resp = self.testapp.get(uri, headers = [('Referer', referrer), ('Host', host)], status = 302)
+        assert resp.status_int == 302
 
 
     def test_excluded_content(self):

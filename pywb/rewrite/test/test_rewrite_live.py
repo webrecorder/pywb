@@ -24,9 +24,9 @@ def test_example_2():
 
 
 
-def test_example_3():
-    status_headers, buff = get_rewritten('http://archive.org/', urlrewriter)
+#def test_example_3():
+#    status_headers, buff = get_rewritten('http://archive.org/', urlrewriter)
 
-    assert '/pywb/20131226101010/http://example.com/about/terms.php' in buff, buff
+#    assert '/pywb/20131226101010/http://example.com/about/terms.php' in buff, buff
 
 

@@ -132,8 +132,8 @@ org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db tex
  ('filename', 'dupes.warc.gz')]
 
 # NOTE: external dependency -- need self-contained test
->>> x = CDXServer('http://web.archive.org/cdx/search/cdx').load_cdx(url = 'example.com', output = 'raw', limit = '2')
->>> pprint.pprint(x.next().items())
+#>>> x = CDXServer('http://web.archive.org/cdx/search/cdx').load_cdx(url = 'example.com', output = 'raw', limit = '2')
+#>>> pprint.pprint(x.next().items())
 [('urlkey', 'com,example)/'),
  ('timestamp', '20020120142510'),
  ('original', 'http://example.com:80/'),

@@ -1,9 +1,12 @@
-from canonicalize import UrlCanonicalizer
+from canonicalize import UrlCanonicalizer, calc_search_range
 
 from cdxops import cdx_load
-from cdxsource import CDXSource, CDXFile, RemoteCDXSource
+from cdxsource import CDXSource, CDXFile, RemoteCDXSource, RedisCDXSource
+from zipnum import ZipNumCluster
 from cdxobject import CDXObject, CaptureNotFoundException, CDXException
 from cdxdomainspecific import load_domain_specific_cdx_rules
+
+from pywb.utils.loaders import is_http
 
 from itertools import chain
 import logging
@@ -14,8 +17,23 @@ import urlparse
 #=================================================================
 class BaseCDXServer(object):
     def __init__(self, **kwargs):
-        self.url_canon = kwargs.get('url_canon', UrlCanonicalizer())
-        self.fuzzy_query = kwargs.get('fuzzy_query')
+        ds_rules = kwargs.get('ds_rules')
+        surt_ordered = kwargs.get('surt_ordered', True)
+
+        # load from domain-specific rules
+        if ds_rules:
+            self.url_canon, self.fuzzy_query = (
+                load_domain_specific_cdx_rules(ds_rules, surt_ordered))
+        # or custom passed in canonicalizer
+        else:
+            self.url_canon = kwargs.get('url_canon')
+            self.fuzzy_query = kwargs.get('fuzzy_query')
+
+        # set default canonicalizer if none set thus far
+        if not self.url_canon:
+            self.url_canon = UrlCanonicalizer(surt_ordered)
+
+        # set perms checker, if any
         self.perms_checker = kwargs.get('perms_checker')
 
     def _check_cdx_iter(self, cdx_iter, params):
@@ -66,7 +84,7 @@ class CDXServer(BaseCDXServer):
 
     def __init__(self, paths, **kwargs):
         super(CDXServer, self).__init__(**kwargs)
-        self.sources = create_cdx_sources(paths)
+        self.sources = create_cdx_sources(paths, kwargs.get('config'))
 
     def load_cdx(self, **params):
         # if key not set, assume 'url' is set and needs canonicalization
@@ -77,7 +95,14 @@ class CDXServer(BaseCDXServer):
                 msg = 'A url= param must be specified to query the cdx server'
                 raise CDXException(msg)
 
-            params['key'] = self.url_canon(url)
+            #params['key'] = self.url_canon(url)
+            match_type = params.get('matchType', 'exact')
+
+            key, end_key = calc_search_range(url=url,
+                                             match_type=match_type,
+                                             url_canon=self.url_canon)
+            params['key'] = key
+            params['end_key'] = end_key
 
         cdx_iter = cdx_load(self.sources, params, self.perms_checker)
 
@@ -124,36 +149,29 @@ def create_cdx_server(config, ds_rules_file=None):
         paths = config.get('index_paths')
         surt_ordered = config.get('surt_ordered', True)
         perms_checker = config.get('perms_checker')
+        pass_config = config
     else:
         paths = config
         surt_ordered = True
         perms_checker = None
+        pass_config = None
 
     logging.debug('CDX Surt-Ordered? ' + str(surt_ordered))
 
-    if ds_rules_file:
-        canon, fuzzy = load_domain_specific_cdx_rules(ds_rules_file,
-                                                      surt_ordered)
-    else:
-        canon, fuzzy = None, None
-
-    if not canon:
-        canon = UrlCanonicalizer(surt_ordered)
-
-    if (isinstance(paths, str) and
-        any(paths.startswith(x) for x in ['http://', 'https://'])):
+    if isinstance(paths, str) and is_http(paths):
         server_cls = RemoteCDXServer
     else:
         server_cls = CDXServer
 
     return server_cls(paths,
-                      url_canon=canon,
-                      fuzzy_query=fuzzy,
+                      config=pass_config,
+                      surt_ordered=surt_ordered,
+                      ds_rules=ds_rules_file,
                       perms_checker=perms_checker)
 
 
 #=================================================================
-def create_cdx_sources(paths):
+def create_cdx_sources(paths, config=None):
     sources = []
 
     if not isinstance(paths, list):
@@ -161,13 +179,13 @@ def create_cdx_sources(paths):
 
     for path in paths:
         if isinstance(path, CDXSource):
-            add_cdx_source(sources, path)
+            add_cdx_source(sources, path, config)
         elif isinstance(path, str):
             if os.path.isdir(path):
                 for file in os.listdir(path):
-                    add_cdx_source(sources, path + file)
+                    add_cdx_source(sources, path + file, config)
             else:
-                add_cdx_source(sources, path)
+                add_cdx_source(sources, path, config)
 
     if len(sources) == 0:
         logging.exception('No CDX Sources Found from: ' + str(sources))
@@ -176,9 +194,9 @@ def create_cdx_sources(paths):
 
 
 #=================================================================
-def add_cdx_source(sources, source):
+def add_cdx_source(sources, source, config):
     if not isinstance(source, CDXSource):
-        source = create_cdx_source(source)
+        source = create_cdx_source(source, config)
         if not source:
             return
 
@@ -187,19 +205,20 @@ def add_cdx_source(sources, source):
 
 
 #=================================================================
-def create_cdx_source(filename):
-    if filename.startswith('http://') or filename.startswith('https://'):
+def create_cdx_source(filename, config):
+    if is_http(filename):
         return RemoteCDXSource(filename)
+
+    if filename.startswith('redis://'):
+        return RedisCDXSource(filename, config)
 
     if filename.endswith('.cdx'):
         return CDXFile(filename)
 
+    if filename.endswith('.summary'):
+        return ZipNumCluster(filename, config)
+
     return None
-    #TODO: support zipnum
-    #elif filename.endswith('.summary')
-    #    return ZipNumCDXSource(filename)
-    #elif filename.startswith('redis://')
-    #    return RedisCDXSource(filename)
 
 
 #=================================================================

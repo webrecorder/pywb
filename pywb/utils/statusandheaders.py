@@ -65,23 +65,36 @@ class StatusAndHeadersParser(object):
         """
         parse stream for status line and headers
         return a StatusAndHeaders object
+
+        support continuation headers starting with space or tab
         """
         statusline = stream.readline().rstrip()
 
         protocol_status = self.split_prefix(statusline, self.statuslist)
 
         if not protocol_status:
-            msg = 'Expected Status Line - Found: ' + statusline
+            msg = 'Expected Status Line starting with {0} - Found: {1}'
+            msg = msg.format(self.statuslist, statusline)
             raise StatusAndHeadersParserException(msg, statusline)
 
         headers = []
 
         line = stream.readline().rstrip()
-        while line and line != '\r\n':
+        while line:
             name, value = line.split(':', 1)
-            header = (name, value.strip())
+            name = name.rstrip(' \t')
+            value = value.lstrip()
+
+            next_line = stream.readline().rstrip()
+
+            # append continuation lines, if any
+            while next_line and next_line.startswith((' ', '\t')):
+                value += next_line
+                next_line = stream.readline().rstrip()
+
+            header = (name, value)
             headers.append(header)
-            line = stream.readline().rstrip()
+            line = next_line
 
         return StatusAndHeaders(statusline=protocol_status[1].strip(),
                                 headers=headers,
@@ -107,4 +120,3 @@ class StatusAndHeadersParserException(Exception):
     def __init__(self, msg, statusline):
         super(StatusAndHeadersParserException, self).__init__(msg)
         self.statusline = statusline
-

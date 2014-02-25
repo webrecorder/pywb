@@ -1,13 +1,19 @@
 """
-Test Route
-# route with relative path
->>> Route('web', BaseHandler())({'REL_REQUEST_URI': '/web/test.example.com', 'SCRIPT_NAME': ''}, False)
-{'wb_url': ('latest_replay', '', '', 'http://test.example.com', 'http://test.example.com'), 'coll': 'web', 'wb_prefix': '/web/', 'request_uri': '/web/test.example.com'}
+# Test WbRequest parsed via a Route
+# route with relative path, print resulting wbrequest
+>>> print_req(Route('web', WbUrlHandler())({'REL_REQUEST_URI': '/web/test.example.com', 'SCRIPT_NAME': ''}, False))
+{'coll': 'web',
+ 'request_uri': '/web/test.example.com',
+ 'wb_prefix': '/web/',
+ 'wb_url': ('latest_replay', '', '', 'http://test.example.com', 'http://test.example.com')}
 
-# route with absolute path, running at script /my_pywb
->>> Route('web', BaseHandler())({'REL_REQUEST_URI': '/web/2013im_/test.example.com', 'SCRIPT_NAME': '/my_pywb', 'HTTP_HOST': 'localhost:8081', 'wsgi.url_scheme': 'https'}, True)
-{'wb_url': ('replay', '2013', 'im_', 'http://test.example.com', '2013im_/http://test.example.com'), 'coll': 'web', 'wb_prefix': 'https://localhost:8081/my_pywb/web/', 'request_uri': '/web/2013im_/test.example.com'}
 
+# route with absolute path, running at script /my_pywb, print resultingwbrequest
+>>> print_req(Route('web', WbUrlHandler())({'REL_REQUEST_URI': '/web/2013im_/test.example.com', 'SCRIPT_NAME': '/my_pywb', 'HTTP_HOST': 'localhost:8081', 'wsgi.url_scheme': 'https'}, True))
+{'coll': 'web',
+ 'request_uri': '/web/2013im_/test.example.com',
+ 'wb_prefix': 'https://localhost:8081/my_pywb/web/',
+ 'wb_url': ('replay', '2013', 'im_', 'http://test.example.com', '2013im_/http://test.example.com')}
 
 # not matching route -- skipped
 >>> Route('web', BaseHandler())({'REL_REQUEST_URI': '/other/test.example.com', 'SCRIPT_NAME': ''}, False)
@@ -65,7 +71,12 @@ False
 """
 
 from pywb.archivalrouter import Route, ReferRedirect
-from pywb.handlers import BaseHandler
+from pywb.handlers import BaseHandler, WbUrlHandler
+import pprint
+
+def print_req(req):
+    varlist = vars(req)
+    pprint.pprint({k: varlist[k] for k in ('request_uri', 'wb_prefix', 'wb_url', 'coll')})
 
 
 def _test_redir(match_host, request_uri, referrer, script_name = '', coll = 'coll', http_host = None):
@@ -74,7 +85,7 @@ def _test_redir(match_host, request_uri, referrer, script_name = '', coll = 'col
     if http_host:
         env['HTTP_HOST'] = http_host
 
-    routes = [Route(coll, BaseHandler())]
+    routes = [Route(coll, WbUrlHandler())]
 
     redir = ReferRedirect(match_host)
     #req = WbRequest.from_uri(request_uri, env)
@@ -85,4 +96,6 @@ def _test_redir(match_host, request_uri, referrer, script_name = '', coll = 'col
     return rep.status_headers.get_header('Location')
 
 
-
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

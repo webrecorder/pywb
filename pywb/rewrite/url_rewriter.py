@@ -103,9 +103,11 @@ class UrlRewriter:
 
         return self.prefix + self.wburl.to_str(timestamp=timestamp, url=url)
 
-
     def set_base_url(self, newUrl):
         self.wburl.url = newUrl
+
+    def __repr__(self):
+        return "UrlRewriter('{0}', '{1}')".format(self.wburl, self.prefix)
 
     @staticmethod
     def strip_protocol(url):

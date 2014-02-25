@@ -3,13 +3,13 @@ import re
 
 from wbrequestresponse import WbRequest, WbResponse
 from pywb.rewrite.url_rewriter import UrlRewriter
-from pywb.rewrite.wburl import WbUrl
+
 
 #=================================================================
 # ArchivalRouter -- route WB requests in archival mode
 #=================================================================
 class ArchivalRouter:
-    def __init__(self, routes, hostpaths = None, abs_path = True, home_view = None, error_view = None):
+    def __init__(self, routes, hostpaths=None, abs_path=True, home_view=None, error_view=None):
         self.routes = routes
         self.fallback = ReferRedirect(hostpaths)
         self.abs_path = abs_path
@@ -69,24 +69,25 @@ class Route:
         if not matcher:
             return None
 
-        rel_prefix = matcher.group(0)
+        matched_str = matcher.group(0)
 
-        if rel_prefix:
-            wb_prefix = env['SCRIPT_NAME'] + '/' + rel_prefix + '/'
-            wb_url_str = request_uri[len(rel_prefix) + 2:] # remove the '/' + rel_prefix part of uri
+        if matched_str:
+            rel_prefix = env['SCRIPT_NAME'] + '/' + matched_str + '/'
+            wb_url_str = request_uri[len(matched_str) + 2:] # remove the '/' + rel_prefix part of uri
         else:
-            wb_prefix = env['SCRIPT_NAME'] + '/'
+            rel_prefix = env['SCRIPT_NAME'] + '/'
             wb_url_str = request_uri[1:] # the request_uri is the wb_url, since no coll
 
         coll = matcher.group(self.coll_group)
 
         wbrequest = WbRequest(env,
-                              request_uri = request_uri,
-                              wb_url_str = wb_url_str,
-                              wb_prefix = wb_prefix,
-                              coll = coll,
-                              host_prefix = WbRequest.make_host_prefix(env) if use_abs_prefix else '',
-                              wburl_class = self.handler.get_wburl_type())
+                              request_uri=request_uri,
+                              wb_url_str=wb_url_str,
+                              rel_prefix=rel_prefix,
+                              coll=coll,
+                              use_abs_prefix=use_abs_prefix,
+                              wburl_class = self.handler.get_wburl_type(),
+                              urlrewriter_class=UrlRewriter)
 
 
         # Allow for applying of additional filters

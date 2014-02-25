@@ -45,14 +45,14 @@ class ProxyRouter:
             return None
 
         wbrequest = WbRequest(env,
-                              request_uri = url,
-                              wb_url_str = url,
-                              wb_prefix = '',
-                              coll = '',
-                              host_prefix = self.hostpaths[0],
-                              wburl_class = self.handler.get_wburl_type(),
-                              url_rewriter_class = ProxyHttpsUrlRewriter,
-                              is_proxy = True)
+                              request_uri=url,
+                              wb_url_str=url,
+                              #rel_prefix=url,
+                              #host_prefix=self.hostpaths[0],
+                              wburl_class=self.handler.get_wburl_type(),
+                              urlrewriter_class=ProxyHttpsUrlRewriter,
+                              use_abs_prefix=False,
+                              is_proxy=True)
 
         return self.handler(wbrequest)
 

@@ -10,9 +10,9 @@
 >>> read_multiple(LimitReader(StringIO.StringIO('abcdefghjiklmnopqrstuvwxyz'), 10), [2, 2, 20])
 'efghji'
 
-# FileLoader Tests (includes LimitReader)
+# BlockLoader Tests (includes LimitReader)
 # Ensure attempt to read more than 100 bytes, reads exactly 100 bytes
->>> len(FileLoader().load(test_cdx_dir + 'iana.cdx', 0, 100).read('400'))
+>>> len(BlockLoader().load(test_cdx_dir + 'iana.cdx', 0, 100).read('400'))
 100
 
 # SeekableTextFileReader Test
@@ -23,25 +23,39 @@
 >>> seek_read_full(sr, 100)
 'org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126200826 http://www.iana.org/_css/2013.1/fonts/Inconsolata.otf application/octet-stream 200 LNMEDYOENSOEI5VPADCKL3CB6N3GWXPR - - 34054 620049 iana.warc.gz\\n'
 
-#BufferedReader readline()
->>> BufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb')).readline()
+# Buffered Reader Tests
+#=================================================================
+
+#DecompressingBufferedReader readline()
+>>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb')).readline()
 ' CDX N b a m s k r M S V g\\n'
 
-#BufferedReader readline() with decompression
->>> BufferedReader(open(test_cdx_dir + 'iana.cdx.gz', 'rb'), decomp_type = 'gzip').readline()
+#DecompressingBufferedReader readline() with decompression
+>>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx.gz', 'rb'), decomp_type = 'gzip').readline()
 ' CDX N b a m s k r M S V g\\n'
 
->>> HttpLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read()
+>>> BlockLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read()
 'Example Domain'
+
+# test very small block size
+>>> dbr = DecompressingBufferedReader(StringIO.StringIO('ABCDEFG\\nHIJKLMN\\nOPQR\\nXYZ'), block_size = 3)
+>>> dbr.readline(); dbr.readline(4); dbr.readline(); dbr.readline(); dbr.readline(2); dbr.readline(); dbr.readline()
+'ABCDEFG\\n'
+'HIJK'
+'LMN\\n'
+'OPQR\\n'
+'XY'
+'Z'
+''
 """
 
 
 #=================================================================
 import os
 import StringIO
-from pywb.utils.loaders import FileLoader, HttpLoader, HMACCookieMaker
+from pywb.utils.loaders import BlockLoader, HMACCookieMaker
 from pywb.utils.loaders import LimitReader, SeekableTextFileReader
-from pywb.utils.bufferedreaders import BufferedReader
+from pywb.utils.bufferedreaders import DecompressingBufferedReader
 
 from pywb import get_test_dir
 #test_cdx_dir = os.path.dirname(os.path.realpath(__file__)) + '/../sample-data/'
