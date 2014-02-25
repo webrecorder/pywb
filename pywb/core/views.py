@@ -57,7 +57,7 @@ class J2TemplateView:
     # Filters
     @staticmethod
     def format_ts(value, format_='%a, %b %d %Y %H:%M:%S'):
-        value = timeutils.timestamp_to_datetime(value)
+        value = timestamp_to_datetime(value)
         return value.strftime(format_)
 
     @staticmethod
