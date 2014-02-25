@@ -213,3 +213,6 @@ def load_from_cdx_test(cdx):
     except Exception as e:
         print 'Exception: ' + e.__class__.__name__
 
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
