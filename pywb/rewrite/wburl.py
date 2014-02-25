@@ -1,9 +1,5 @@
 #!/usr/bin/python
 
-import re
-import rfc3987
-
-# WbUrl : wb archival url representation for WB
 """
 WbUrl represents the standard wayback archival url format.
 A regular url is a subset of the WbUrl (latest replay).
@@ -34,9 +30,38 @@ replay form:
 
 latest_replay: (no timestamp)
 http://example.com
+
+Additionally, the BaseWbUrl provides the base components
+(url, timestamp, end_timestamp, modifier, type) which
+can be used to provide a custom representation of the
+wayback url format.
+
 """
 
-class WbUrl:
+import re
+import rfc3987
+
+
+#=================================================================
+class BaseWbUrl(object):
+    QUERY = 'query'
+    URL_QUERY = 'url_query'
+    REPLAY = 'replay'
+    LATEST_REPLAY = 'latest_replay'
+
+
+    def __init__(self, url='', mod='',
+                 timestamp='', end_timestamp='', type=None):
+
+        self.url = url
+        self.timestamp = timestamp
+        self.end_timestamp = end_timestamp
+        self.mod = mod
+        self.type = type
+
+
+#=================================================================
+class WbUrl(BaseWbUrl):
     """
     # Replay Urls
     # ======================
@@ -107,22 +132,14 @@ class WbUrl:
     QUERY_REGEX = re.compile('^(?:([\w\-:]+)/)?(\d*)(?:-(\d+))?\*/?(.*)$')
     REPLAY_REGEX = re.compile('^(\d*)([a-z]+_)?/{0,3}(.*)$')
 
-    QUERY = 'query'
-    URL_QUERY = 'url_query'
-    REPLAY = 'replay'
-    LATEST_REPLAY = 'latest_replay'
-
     DEFAULT_SCHEME = 'http://'
     # ======================
 
 
     def __init__(self, url):
+        super(WbUrl, self).__init__()
+
         self.original_url = url
-        self.type = None
-        self.url = ''
-        self.timestamp = ''
-        self.end_timestamp = ''
-        self.mod = ''
 
         if not any (f(url) for f in [self._init_query, self._init_replay]):
             raise Exception('Invalid WbUrl: ', url)
