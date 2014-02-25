@@ -4,7 +4,13 @@ python:
 # command to install dependencies
 install:
   - "python setup.py -q install"
+  - "pip install coveralls"
 # command to run tests
 #script: nosetests --with-doctest
 #script: py.test run-tests.py ./pywb/ --doctest-modules --ignore=setup.py
-script: py.test -v --doctest-module ./tests/*.py ./pywb/
+#script: py.test -v --doctest-module ./tests/*.py ./pywb/
+script: 
+    run-tests.py
+
+after_success:
+    coveralls
