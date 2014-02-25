@@ -56,9 +56,9 @@ class J2TemplateView:
 
     # Filters
     @staticmethod
-    def format_ts(value, format='%a, %b %d %Y %H:%M:%S'):
-        value = timestamp_to_datetime(value)
-        return time.strftime(format, value)
+    def format_ts(value, format_='%a, %b %d %Y %H:%M:%S'):
+        value = timeutils.timestamp_to_datetime(value)
+        return value.strftime(format_)
 
     @staticmethod
     def get_host(url):

@@ -1,7 +1,7 @@
 from canonicalize import UrlCanonicalizer, calc_search_range
 
 from cdxops import cdx_load
-from cdxsource import CDXSource, CDXFile, RemoteCDXSource
+from cdxsource import CDXSource, CDXFile, RemoteCDXSource, RedisCDXSource
 from zipnum import ZipNumCluster
 from cdxobject import CDXObject, CaptureNotFoundException, CDXException
 from cdxdomainspecific import load_domain_specific_cdx_rules
@@ -149,10 +149,12 @@ def create_cdx_server(config, ds_rules_file=None):
         paths = config.get('index_paths')
         surt_ordered = config.get('surt_ordered', True)
         perms_checker = config.get('perms_checker')
+        pass_config = config
     else:
         paths = config
         surt_ordered = True
         perms_checker = None
+        pass_config = None
 
     logging.debug('CDX Surt-Ordered? ' + str(surt_ordered))
 
@@ -162,6 +164,7 @@ def create_cdx_server(config, ds_rules_file=None):
         server_cls = CDXServer
 
     return server_cls(paths,
+                      config=pass_config,
                       surt_ordered=surt_ordered,
                       ds_rules=ds_rules_file,
                       perms_checker=perms_checker)
@@ -206,6 +209,9 @@ def create_cdx_source(filename, config):
     if is_http(filename):
         return RemoteCDXSource(filename)
 
+    if filename.startswith('redis://'):
+        return RedisCDXSource(filename, config)
+
     if filename.endswith('.cdx'):
         return CDXFile(filename)
 
@@ -213,9 +219,6 @@ def create_cdx_source(filename, config):
         return ZipNumCluster(filename, config)
 
     return None
-    #TODO: support zipnum
-   #elif filename.startswith('redis://')
-    #    return RedisCDXSource(filename)
 
 
 #=================================================================
