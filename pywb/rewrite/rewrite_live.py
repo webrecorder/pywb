@@ -2,11 +2,16 @@ import urllib2
 import os
 import sys
 import datetime
+import mimetypes
 
+from pywb.utils.loaders import is_http
 from pywb.utils.timeutils import datetime_to_timestamp
 from pywb.utils.statusandheaders import StatusAndHeaders
+
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.rewrite_content import RewriteContent
+
+from pywb.cdx.canonicalize import canonicalize
 
 """
 Fetch a url from live web and apply rewriting rules
@@ -26,10 +31,33 @@ def get_status_and_stream(url):
     return (status_headers, stream)
 
 #=================================================================
-def get_rewritten(url, urlrewriter):
-    (status_headers, stream) = get_status_and_stream(url)
+def get_local_file(uri):
+    fh = open(uri)
 
-    status_headers, gen = RewriteContent().rewrite_content(urlrewriter, status_headers, stream)
+    content_type, _ = mimetypes.guess_type(uri)
+
+    # create fake headers for local file
+    status_headers = StatusAndHeaders('200 OK', [('Content-Type', content_type)])
+    stream = fh
+
+    return (status_headers, stream)
+
+#=================================================================
+def get_rewritten(url, urlrewriter, urlkey=None):
+    if is_http(url):
+        (status_headers, stream) = get_status_and_stream(url)
+    else:
+        (status_headers, stream) = get_local_file(url)
+
+    # explicit urlkey may be passed in (say for testing)
+    if not urlkey:
+        urlkey = canonicalize(url)
+
+    status_headers, gen = RewriteContent().rewrite_content(urlrewriter,
+                                                           status_headers,
+                                                           stream,
+                                                           head_insert_str='',
+                                                           urlkey=urlkey)
 
     buff = ''
     for x in gen:

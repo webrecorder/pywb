@@ -2,6 +2,9 @@
 omit = 
     */test/*
     */tests/*
+    *.html
+    *.js
+    *.css
 
 [report]
 exclude_lines =
