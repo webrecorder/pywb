@@ -214,7 +214,7 @@ def create_cdx_source(filename, config):
     if filename.endswith('.cdx'):
         return CDXFile(filename)
 
-    if filename.endswith('.summary'):
+    if filename.endswith(('.summary', '.idx')):
         return ZipNumCluster(filename, config)
 
     return None
