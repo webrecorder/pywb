@@ -11,9 +11,12 @@ from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.bufferedreaders import DecompressingBufferedReader, ChunkedDataReader
 
 
+#=================================================================
 class RewriteContent:
-    def __init__(self, config=None):
-        self.ruleset = RuleSet(RewriteRules, 'rewrite', config, {})
+    def __init__(self, ds_rules_file=None):
+        self.ruleset = RuleSet(RewriteRules, 'rewrite',
+                               default_rule_config={},
+                               ds_rules_file=ds_rules_file)
 
     def rewrite_headers(self, urlrewriter, status_headers, stream, urlkey=''):
         header_rewriter_class = self.ruleset.get_first_match(urlkey).rewriters['header']
@@ -31,7 +34,7 @@ class RewriteContent:
 
         return (rewritten_headers, stream)
 
-    def rewrite_content(self, urlrewriter, headers, stream, head_insert_str=None, urlkey=''):
+    def rewrite_content(self, urlrewriter, headers, stream, head_insert_func=None, urlkey=''):
 
         # see if we've already rewritten headers
         if isinstance(headers, RewrittenStatusAndHeaders):
@@ -65,7 +68,6 @@ class RewriteContent:
 
         text_type = rewritten_headers.text_type
 
-        #rewriter_class = self.rewriters.get(text_type)
         rule = self.ruleset.get_first_match(urlkey)
 
         try:
@@ -74,10 +76,13 @@ class RewriteContent:
             raise Exception('Unknown Text Type for Rewrite: ' + text_type)
 
         #import sys
-        #sys.stderr.write(str(vars(self.ruleset.get_first_match(urlkey))))
+        #sys.stderr.write(str(vars(rule)))
 
         if text_type == 'html':
-            head_insert_str = rule.create_head_inserts() + head_insert_str
+            head_insert_str = ''
+
+            if head_insert_func:
+                head_insert_str = head_insert_func(rule)
 
             rewriter = rewriter_class(urlrewriter,
                                       outstream=None,

@@ -7,11 +7,11 @@ import mimetypes
 from pywb.utils.loaders import is_http
 from pywb.utils.timeutils import datetime_to_timestamp
 from pywb.utils.statusandheaders import StatusAndHeaders
+from pywb.utils.canonicalize import canonicalize
 
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.rewrite_content import RewriteContent
 
-from pywb.cdx.canonicalize import canonicalize
 
 """
 Fetch a url from live web and apply rewriting rules
@@ -43,7 +43,7 @@ def get_local_file(uri):
     return (status_headers, stream)
 
 #=================================================================
-def get_rewritten(url, urlrewriter, urlkey=None):
+def get_rewritten(url, urlrewriter, urlkey=None, head_insert_func=None):
     if is_http(url):
         (status_headers, stream) = get_status_and_stream(url)
     else:
@@ -53,11 +53,15 @@ def get_rewritten(url, urlrewriter, urlkey=None):
     if not urlkey:
         urlkey = canonicalize(url)
 
-    status_headers, gen = RewriteContent().rewrite_content(urlrewriter,
-                                                           status_headers,
-                                                           stream,
-                                                           head_insert_str='',
-                                                           urlkey=urlkey)
+    rewriter = RewriteContent()
+
+    result = rewriter.rewrite_content(urlrewriter,
+                                      status_headers,
+                                      stream,
+                                      head_insert_func=head_insert_func,
+                                      urlkey=urlkey)
+
+    status_headers, gen = result
 
     buff = ''
     for x in gen:

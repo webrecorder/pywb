@@ -7,6 +7,7 @@ from wbrequestresponse import WbResponse
 from wbexceptions import CaptureException, InternalRedirect
 from pywb.warc.recordloader import ArchiveLoadFailed
 
+
 #=================================================================
 class ReplayView:
     def __init__(self, content_loader, content_rewriter, head_insert_view = None,
@@ -99,20 +100,34 @@ class ReplayView:
     def rewrite_content(self, wbrequest, cdx, status_headers, stream):
         urlrewriter = wbrequest.urlrewriter
 
-        (rewritten_headers, stream) = self.content_rewriter.rewrite_headers(urlrewriter, status_headers, stream)
+        result = self.content_rewriter.rewrite_headers(urlrewriter,
+                                                       status_headers,
+                                                       stream,
+                                                       cdx['urlkey'])
+        (rewritten_headers, stream) = result
 
         # no rewriting needed!
         if rewritten_headers.text_type is None:
             response_iter = self.stream_to_iter(stream)
             return WbResponse(rewritten_headers.status_headers, response_iter)
 
-        # do head insert
+        def make_head_insert(rule):
+            return (self.head_insert_view.render_to_string(wbrequest=wbrequest,
+                                                           cdx=cdx,
+                                                           rule=rule))
+         # do head insert
         if self.head_insert_view:
-            head_insert_str = self.head_insert_view.render_to_string(wbrequest = wbrequest, cdx = cdx)
+            head_insert_func = make_head_insert
         else:
-            head_insert_str = None
+            head_insert_func = None
 
-        (status_headers, response_gen) = self.content_rewriter.rewrite_content(urlrewriter, rewritten_headers, stream, head_insert_str)
+        result = self.content_rewriter.rewrite_content(urlrewriter,
+                                                       rewritten_headers,
+                                                       stream,
+                                                       head_insert_func,
+                                                       cdx['urlkey'])
+
+        (status_headers, response_gen) = result
 
         if self.buffer_response:
             if wbrequest.wb_url.mod == 'id_':

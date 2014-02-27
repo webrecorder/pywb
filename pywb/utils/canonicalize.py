@@ -3,8 +3,6 @@
 
 import surt
 import urlparse
-from cdxobject import CDXException
-
 
 #=================================================================
 class UrlCanonicalizer(object):
@@ -13,6 +11,12 @@ class UrlCanonicalizer(object):
 
     def __call__(self, url):
         return canonicalize(url, self.surt_ordered)
+
+
+#=================================================================
+class UrlCanonicalizeException(Exception):
+    def status(self):
+        return '400 Bad Request'
 
 
 #=================================================================
@@ -31,7 +35,7 @@ def canonicalize(url, surt_ordered=True):
     try:
         key = surt.surt(url)
     except Exception as e:
-        raise CDXException('Invalid Url: ' + url)
+        raise UrlCanonicalizeException('Invalid Url: ' + url)
 
     # if not surt, unsurt the surt to get canonicalized non-surt url
     if not surt_ordered:

@@ -2,6 +2,7 @@ from wbexceptions import WbException, NotFoundException, InternalRedirect
 from wbrequestresponse import WbResponse, StatusAndHeaders
 
 from pywb.cdx.cdxserver import CDXException
+from pywb.utils.canonicalize import UrlCanonicalizeException
 from pywb.warc.recordloader import ArchiveLoadFailed
 
 import os
@@ -55,7 +56,8 @@ def create_wb_app(wb_router):
         except InternalRedirect as ir:
             response = WbResponse(StatusAndHeaders(ir.status, ir.httpHeaders))
 
-        except (WbException, CDXException, ArchiveLoadFailed) as e:
+        except (WbException, CDXException,
+                UrlCanonicalizeException, ArchiveLoadFailed) as e:
             response = handle_exception(env, wb_router.error_view, e, False)
 
         except Exception as e:

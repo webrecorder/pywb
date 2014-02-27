@@ -5,11 +5,11 @@ import pkgutil
 
 from pywb.utils.dsrules import BaseRule, RuleSet
 
-from canonicalize import unsurt, UrlCanonicalizer
+from pywb.utils.canonicalize import unsurt, UrlCanonicalizer
 
 
 #=================================================================
-def load_domain_specific_cdx_rules(filename, surt_ordered):
+def load_domain_specific_cdx_rules(ds_rules_file, surt_ordered):
     #fh = pkgutil.get_data(__package__, filename)
     #config = yaml.load(fh)
 
@@ -17,7 +17,8 @@ def load_domain_specific_cdx_rules(filename, surt_ordered):
     fuzzy = None
 
     # Load Canonicalizer Rules
-    rules = RuleSet(CDXDomainSpecificRule, 'canonicalize')
+    rules = RuleSet(CDXDomainSpecificRule, 'canonicalize',
+                    ds_rules_file=ds_rules_file)
 
     if not surt_ordered:
         for rule in rules:
@@ -27,7 +28,8 @@ def load_domain_specific_cdx_rules(filename, surt_ordered):
         canon = CustomUrlCanonicalizer(rules, surt_ordered)
 
     # Load Fuzzy Lookup Rules
-    rules = RuleSet(CDXDomainSpecificRule, 'fuzzy_lookup')
+    rules = RuleSet(CDXDomainSpecificRule, 'fuzzy_lookup',
+                    ds_rules_file=ds_rules_file)
 
     if not surt_ordered:
         for rule in rules:

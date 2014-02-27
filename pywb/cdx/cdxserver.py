@@ -1,4 +1,4 @@
-from canonicalize import UrlCanonicalizer, calc_search_range
+from pywb.utils.canonicalize import UrlCanonicalizer, calc_search_range
 
 from cdxops import cdx_load
 from cdxsource import CDXSource, CDXFile, RemoteCDXSource, RedisCDXSource
@@ -17,13 +17,13 @@ import urlparse
 #=================================================================
 class BaseCDXServer(object):
     def __init__(self, **kwargs):
-        ds_rules = kwargs.get('ds_rules')
+        ds_rules_file = kwargs.get('ds_rules_file')
         surt_ordered = kwargs.get('surt_ordered', True)
 
         # load from domain-specific rules
-        if ds_rules:
+        if ds_rules_file:
             self.url_canon, self.fuzzy_query = (
-                load_domain_specific_cdx_rules(ds_rules, surt_ordered))
+                load_domain_specific_cdx_rules(ds_rules_file, surt_ordered))
         # or custom passed in canonicalizer
         else:
             self.url_canon = kwargs.get('url_canon')
@@ -166,7 +166,7 @@ def create_cdx_server(config, ds_rules_file=None):
     return server_cls(paths,
                       config=pass_config,
                       surt_ordered=surt_ordered,
-                      ds_rules=ds_rules_file,
+                      ds_rules_file=ds_rules_file,
                       perms_checker=perms_checker)
 
 

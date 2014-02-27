@@ -8,9 +8,18 @@ from pywb import get_test_dir
 
 urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html', '/pywb/')
 
+def head_insert_func(rule):
+    if rule.js_rewrite_location == True:
+        return '<script src="/static/default/wombat.js"> </script>'
+    else:
+        return ''
+
 
 def test_local_1():
-    status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html', urlrewriter, 'com,example,test)/')
+    status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html',
+                                         urlrewriter,
+                                         'com,example,test)/',
+                                         head_insert_func)
 
     # wombat insert added
     assert '<head><script src="/static/default/wombat.js"> </script>' in buff
@@ -23,7 +32,10 @@ def test_local_1():
 
 
 def test_local_2_no_js_location_rewrite():
-    status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html', urlrewriter, 'example,example,test)/nolocation_rewrite')
+    status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html',
+                                         urlrewriter,
+                                         'example,example,test)/nolocation_rewrite',
+                                         head_insert_func)
 
     # no wombat insert
     assert '<head><script src="/static/default/wombat.js"> </script>' not in buff
@@ -55,6 +67,6 @@ def test_example_domain_specific_3():
     status_headers, buff = get_rewritten('http://facebook.com/digitalpreservation', urlrewriter)
 
     # comment out bootloader
-    assert '/* Bootloader.configurePage' in buff, buff
+    assert '/* Bootloader.configurePage' in buff
 
 

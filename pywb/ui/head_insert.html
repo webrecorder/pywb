@@ -1,7 +1,14 @@
 <!-- WB Insert -->
+{% if rule.js_rewrite_location %}
+<script src='{{ wbrequest.host_prefix }}/static/default/wombat.js'> </script>
 <script>
-wbinfo = {}
-wbinfo.capture_str = "{{ cdx['timestamp'] | format_ts }}";
+  WB_wombat_Init("{{wbrequest.wb_prefix}}", "{{cdx['timestamp']}}", "{{cdx['original'] | host}}");
+</script>
+{% endif %}
+
+<script>
+  wbinfo = {}
+  wbinfo.capture_str = "{{ cdx['timestamp'] | format_ts }}";
 </script>
 <script src='{{ wbrequest.host_prefix }}/static/default/wb.js'> </script>
 <link rel='stylesheet' href='{{ wbrequest.host_prefix }}/static/default/wb.css'/>
