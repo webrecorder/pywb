@@ -10,32 +10,38 @@ from collections import deque
 
 
 #=================================================================
-def cdx_load(sources, params, perms_checker=None):
+def cdx_load(sources, params, filter=True, perms_checker=None):
+    """
+    merge text CDX lines from sources, return an iterator for
+    filtered and access-checked sequence of CDX objects.
+    :param sources: iterable for text CDX sources.
+    :param perms_checker: access check filter object implementing
+      allow_url_lookup(key, url), allow_capture(cdxobj) and
+      filter_fields(cdxobj) methods.
+    """
+    cdx_iter = load_cdx_streams(sources, params)
+    cdx_iter = make_obj_iter(cdx_iter, params)
+    cdx_iter = filter_cdx(cdx_iter, params)
     if perms_checker:
-        cdx_iter = cdx_load_with_perms(sources, params, perms_checker)
-    else:
-        cdx_iter = cdx_load_and_filter(sources, params)
-
-    # output raw cdx objects
-    if params.get('output') == 'raw':
-        return cdx_iter
-
-    def write_cdx(fields):
-        for cdx in cdx_iter:
-            yield cdx_text_out(cdx, fields) + '\n'
-
-    return write_cdx(params.get('fields'))
-
+        cdx_iter = restrict_cdx(cdx_iter, params, perms_checker)
+    return cdx_iter
 
 #=================================================================
-def cdx_load_with_perms(sources, params, perms_checker):
+def restrict_cdx(cdx_iter, params, perms_checker):
+    """
+    filter out those cdx records that user doesn't have access to,
+    by consulting :param perms_checker:.
+    :param cdx_iter: cdx record source iterable
+    :param params: request parameters (dict)
+    :param perms_checker: object implementing permission checker
+    """
     if not perms_checker.allow_url_lookup(params['key'], params['url']):
         if params.get('matchType', 'exact') == 'exact':
             raise AccessException('Excluded')
 
-    cdx_iter = cdx_load_and_filter(sources, params)
-
     for cdx in cdx_iter:
+        # TODO: we could let filter_fields handle this case by accepting
+        # None as a return value.
         if not perms_checker.allow_capture(cdx):
             continue
 
@@ -43,21 +49,8 @@ def cdx_load_with_perms(sources, params, perms_checker):
 
         yield cdx
 
-
 #=================================================================
-def cdx_text_out(cdx, fields):
-    if not fields:
-        return str(cdx)
-    else:
-        return ' '.join(map(lambda x: cdx[x], fields.split(',')))
-
-
-#=================================================================
-def cdx_load_and_filter(sources, params):
-    cdx_iter = load_cdx_streams(sources, params)
-
-    cdx_iter = make_obj_iter(cdx_iter, params)
-
+def filter_cdx(cdx_iter, params):
     if params.get('proxyAll'):
         return cdx_iter
 
@@ -110,7 +103,7 @@ def make_obj_iter(text_iter, params):
     else:
         cls = CDXObject
 
-    return itertools.imap(lambda line: cls(line), text_iter)
+    return (cls(line) for line in text_iter)
 
 
 #=================================================================
@@ -242,8 +235,8 @@ def cdx_resolve_revisits(cdx_iter):
     originals = {}
 
     for cdx in cdx_iter:
-        is_revisit = ((cdx['mimetype'] == 'warc/revisit') or
-                      (cdx['filename'] == '-'))
+        
+        is_revisit = cdx.is_revisit()
 
         digest = cdx['digest']
 

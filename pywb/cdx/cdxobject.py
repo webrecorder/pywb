@@ -71,12 +71,15 @@ class CDXObject(OrderedDict):
         # force regen on next __str__ call
         self.cdxline = None
 
+    def is_revisit(self):
+        return (self['mimetype'] == 'warc/revisit' or
+                self['filename'] == '-')
+
     def __str__(self):
         if self.cdxline:
             return self.cdxline
 
-        li = itertools.imap(lambda (n, val): val, self.items())
-        return ' '.join(li)
+        return ' '.join(val for n, val in self.iteritems())
 
 
 #=================================================================

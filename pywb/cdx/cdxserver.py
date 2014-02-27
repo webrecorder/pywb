@@ -84,7 +84,10 @@ class CDXServer(BaseCDXServer):
 
     def __init__(self, paths, **kwargs):
         super(CDXServer, self).__init__(**kwargs)
-        self.sources = create_cdx_sources(paths, kwargs.get('config'))
+        # TODO: we could save config in member, so that other
+        # methods can use it. it's bad for add_cdx_source to take
+        # config argument.
+        self._create_cdx_sources(paths, kwargs.get('config'))
 
     def load_cdx(self, **params):
         # if key not set, assume 'url' is set and needs canonicalization
@@ -105,8 +108,61 @@ class CDXServer(BaseCDXServer):
             params['end_key'] = end_key
 
         cdx_iter = cdx_load(self.sources, params, self.perms_checker)
-
         return self._check_cdx_iter(cdx_iter, params)
+
+    def _create_cdx_sources(self, paths, config):
+        """
+        build CDXSource instances for each of path in :param paths:.
+        :param paths: list of sources or single source.
+        each source may be either string or CDXSource instance. value
+        of any other types will be silently ignored.
+        :param config: config object passed to :method:`add_cdx_source`.
+        """
+        self.sources = []
+
+        if paths is not None:
+            if not isinstance(paths, (list, tuple)):
+                paths = [paths]
+
+            for path in paths:
+                self.add_cdx_source(path, config)
+
+        if len(self.sources) == 0:
+            logging.warn('No CDX Sources configured from paths=%s', paths)
+
+    def _add_cdx_source(self, source):
+        if source is None: return
+        logging.debug('Adding CDX Source: %s', source)
+        self.sources.append(source)
+
+    def add_cdx_source(self, source, config):
+        if source is None: return
+        if isinstance(source, CDXSource):
+            self._add_cdx_source(source)
+        elif isinstance(source, str):
+            if os.path.isdir(source):
+                for fn in os.listdir(source):
+                    self._add_cdx_source(self._create_cdx_source(
+                            os.path.join(source, fn), config))
+            else:
+                self._add_cdx_source(self._create_cdx_source(
+                        source, config))
+
+    def _create_cdx_source(self, filename, config):
+        if is_http(filename):
+            return RemoteCDXSource(filename)
+
+        if filename.startswith('redis://'):
+            return RedisCDXSource(filename, config)
+
+        if filename.endswith('.cdx'):
+            return CDXFile(filename)
+
+        if filename.endswith('.summary'):
+            return ZipNumCluster(filename, config)
+
+        logging.warn('skipping unrecognized URI:%s', filename)
+        return None
 
     def __str__(self):
         return 'CDX server serving from ' + str(self.sources)
@@ -131,12 +187,7 @@ class RemoteCDXServer(BaseCDXServer):
             raise Exception('Invalid remote cdx source: ' + str(source))
 
     def load_cdx(self, **params):
-        remote_iter = self.source.load_cdx(params)
-
-        # if need raw, convert to raw format here
-        if params.get('output') == 'raw':
-            remote_iter = (CDXObject(cdx) for cdx in remote_iter)
-
+        remote_iter = cdx_load((self.sources,), params, filter=False)
         return self._check_cdx_iter(remote_iter, params)
 
     def __str__(self):
@@ -168,58 +219,6 @@ def create_cdx_server(config, ds_rules_file=None):
                       surt_ordered=surt_ordered,
                       ds_rules=ds_rules_file,
                       perms_checker=perms_checker)
-
-
-#=================================================================
-def create_cdx_sources(paths, config=None):
-    sources = []
-
-    if not isinstance(paths, list):
-        paths = [paths]
-
-    for path in paths:
-        if isinstance(path, CDXSource):
-            add_cdx_source(sources, path, config)
-        elif isinstance(path, str):
-            if os.path.isdir(path):
-                for file in os.listdir(path):
-                    add_cdx_source(sources, path + file, config)
-            else:
-                add_cdx_source(sources, path, config)
-
-    if len(sources) == 0:
-        logging.exception('No CDX Sources Found from: ' + str(sources))
-
-    return sources
-
-
-#=================================================================
-def add_cdx_source(sources, source, config):
-    if not isinstance(source, CDXSource):
-        source = create_cdx_source(source, config)
-        if not source:
-            return
-
-    logging.debug('Adding CDX Source: ' + str(source))
-    sources.append(source)
-
-
-#=================================================================
-def create_cdx_source(filename, config):
-    if is_http(filename):
-        return RemoteCDXSource(filename)
-
-    if filename.startswith('redis://'):
-        return RedisCDXSource(filename, config)
-
-    if filename.endswith('.cdx'):
-        return CDXFile(filename)
-
-    if filename.endswith('.summary'):
-        return ZipNumCluster(filename, config)
-
-    return None
-
 
 #=================================================================
 def extract_params_from_wsgi_env(env):
