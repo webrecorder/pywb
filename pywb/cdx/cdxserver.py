@@ -50,14 +50,14 @@ class BaseCDXServer(object):
 
         url = params['url']
 
-        if self.fuzzy_query and params.get('allowFuzzy'):
-            if not 'key' in params:
-                params['key'] = self.url_canon(url)
+        # check if fuzzy is allowed and ensure that its an
+        # exact match
+        if (self.fuzzy_query and params.get('allowFuzzy') and
+            params.get('matchType', 'exact') == 'exact'):
 
-            params = self.fuzzy_query(params)
-            if params:
-                params['allowFuzzy'] = False
-                return self.load_cdx(**params)
+            fuzzy_params = self.fuzzy_query(params)
+            if fuzzy_params:
+                return self.load_cdx(**fuzzy_params)
 
         msg = 'No Captures found for: ' + url
         raise CaptureNotFoundException(msg)
@@ -95,7 +95,6 @@ class CDXServer(BaseCDXServer):
                 msg = 'A url= param must be specified to query the cdx server'
                 raise CDXException(msg)
 
-            #params['key'] = self.url_canon(url)
             match_type = params.get('matchType', 'exact')
 
             key, end_key = calc_search_range(url=url,

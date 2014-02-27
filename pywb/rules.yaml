@@ -12,11 +12,12 @@ rules:
     #=================================================================
     - url_prefix: 'com,facebook)/ajax/pagelet/generic.php/profiletimelinesectionpagelet'
 
-      fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*(?:[&]|query_type[^,]+))'
+      fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|query_type[^,]+))'
 
-      canonicalize:
-        match: 'com,facebook\)/.*[?&]data=([^&]+).*'
-        replace: 'com,facebook)/ajax/pagelet/generic.php/profiletimelinesectionpagelet?data=\1'
+# not actually needed, fuzzy match is used instead here
+#      canonicalize:
+#        match: 'com,facebook\)/.*[?&]data=([^&]+).*'
+#        replace: 'com,facebook)/ajax/pagelet/generic.php/profiletimelinesectionpagelet?data=\1'
 
 
     - url_prefix: 'com,facebook)/'

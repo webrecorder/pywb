@@ -38,8 +38,8 @@ def load_domain_specific_cdx_rules(ds_rules_file, surt_ordered):
     if rules:
         fuzzy = FuzzyQuery(rules)
 
-    logging.debug('CANON: ' + str(canon))
-    logging.debug('FUZZY: ' + str(fuzzy))
+    logging.debug('CustomCanonilizer? ' + str(bool(canon)))
+    logging.debug('FuzzyMatcher? ' + str(bool(canon)))
     return (canon, fuzzy)
 
 
@@ -73,6 +73,8 @@ class FuzzyQuery:
 
         urlkey = params['key']
         url = params['url']
+        filter_ = params.get('filter', [])
+        output = params.get('output')
 
         for rule in self.rules.iter_matching(urlkey):
             m = rule.regex.search(urlkey)
@@ -82,7 +84,7 @@ class FuzzyQuery:
             matched_rule = rule
 
             if len(m.groups()) == 1:
-                params['filter'] = '=urlkey:' + m.group(1)
+                filter_.append('~urlkey:' + m.group(1))
 
             break
 
@@ -91,10 +93,13 @@ class FuzzyQuery:
 
         inx = url.find('?')
         if inx > 0:
-            params['url'] = url[:inx + 1]
+            url = url[:inx + 1]
 
-        params['matchType'] = 'prefix'
-        params['key'] = None
+        params = {'url': url,
+                  'matchType': 'prefix',
+                  'filter': filter_,
+                  'output': output}
+
         return params
 
 
