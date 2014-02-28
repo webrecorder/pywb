@@ -3,8 +3,6 @@
 
 import surt
 import urlparse
-from cdxobject import CDXException
-
 
 #=================================================================
 class UrlCanonicalizer(object):
@@ -13,6 +11,12 @@ class UrlCanonicalizer(object):
 
     def __call__(self, url):
         return canonicalize(url, self.surt_ordered)
+
+
+#=================================================================
+class UrlCanonicalizeException(Exception):
+    def status(self):
+        return '400 Bad Request'
 
 
 #=================================================================
@@ -31,7 +35,7 @@ def canonicalize(url, surt_ordered=True):
     try:
         key = surt.surt(url)
     except Exception as e:
-        raise CDXException('Invalid Url: ' + url)
+        raise UrlCanonicalizeException('Invalid Url: ' + url)
 
     # if not surt, unsurt the surt to get canonicalized non-surt url
     if not surt_ordered:
@@ -114,10 +118,15 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
     >>> calc_search_range('http://example.com/path/file.html', 'host', False)
     ('example.com/', 'example.com0')
 
-    # domain range not supported
+    # errors: domain range not supported
     >>> calc_search_range('http://example.com/path/file.html', 'domain', False)
     Traceback (most recent call last):
-    Exception: matchType=domain unsupported for non-surt
+    UrlCanonicalizeException: matchType=domain unsupported for non-surt
+
+    >>> calc_search_range('http://example.com/path/file.html', 'blah', False)
+    Traceback (most recent call last):
+    UrlCanonicalizeException: Invalid match_type: blah
+
     """
     def inc_last_char(x):
         return x[0:-1] + chr(ord(x[-1]) + 1)
@@ -155,7 +164,7 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
 
     elif match_type == 'domain':
         if not surt_ordered:
-            raise Exception('matchType=domain unsupported for non-surt')
+            raise UrlCanonicalizeException('matchType=domain unsupported for non-surt')
 
         host = start_key.split(')/')[0]
 
@@ -168,7 +177,7 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
 
         end_key = host + '-'
     else:
-        raise Exception('Invalid match_type: ' + match_type)
+        raise UrlCanonicalizeException('Invalid match_type: ' + match_type)
 
     return (start_key, end_key)
 

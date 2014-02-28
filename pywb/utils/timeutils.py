@@ -162,6 +162,10 @@ def timestamp_to_datetime(string):
     >>> timestamp_to_datetime('40001965252477')
     datetime.datetime(2999, 12, 31, 23, 24, 59)
 
+    # not a number!
+    >>> timestamp_to_datetime('2010abc')
+    datetime.datetime(2010, 12, 31, 23, 59, 59)
+
     """
 
     # pad to 6 digits

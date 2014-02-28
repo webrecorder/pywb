@@ -3,6 +3,8 @@ import pytest
 
 import yaml
 
+from pywb.cdx.perms import AllowAllPerms
+
 @pytest.fixture
 def testconfig():
     config = yaml.load(open('test_config.yaml'))
@@ -25,7 +27,7 @@ class PrintReporter:
         pass
 
 #================================================================
-class TestExclusionPerms:
+class TestExclusionPerms(AllowAllPerms):
     """
     Perm Checker fixture which can block one URL.
     """
@@ -37,20 +39,7 @@ class TestExclusionPerms:
         Return true/false if url or urlkey (canonicalized url)
         should be allowed
         """
-        print "allow_url_lookup:urlkey={}".format(urlkey)
         if urlkey == self.URLKEY_EXCLUDED:
             return False
 
-        return True
-
-    def allow_capture(self, cdx):
-        """
-        Return True if specified capture (cdx) is allowed.
-        """
-        return True
-
-    def filter_fields(self, cdx):
-        """
-        Filter out any forbidden cdx fields from cdx object
-        """
-        return cdx
+        return super(TestExclusionPerms, self).allow_url_lookup(urlkey, url)

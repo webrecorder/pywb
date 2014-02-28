@@ -2,6 +2,7 @@ import webtest
 from pywb.pywb_init import pywb_config
 from pywb.wbapp import create_wb_app
 from pywb.cdx.cdxobject import CDXObject
+from pywb.cdx.perms import AllowAllPerms
 
 class TestWb:
     TEST_CONFIG = 'test_config.yaml'
@@ -75,7 +76,19 @@ class TestWb:
 
         assert 'Mon, Jan 27 2014 17:12:38' in resp.body
         assert 'wb.js' in resp.body
-        assert '/pywb/20140127171238/http://www.iana.org/time-zones' in resp.body
+        assert '/pywb/20140127171238/http://www.iana.org/time-zones"' in resp.body
+
+    def test_replay_identity_1(self):
+        resp = self.testapp.get('/pywb/20140127171251id_/http://example.com')
+        #resp = self.testapp.get('/pywb/20140126200654id_/http://www.iana.org/_img/2013.1/rir-map.svg')
+        #resp = self.testapp.get('/pywb/20140127171239id_/http://www.iana.org/_css/2013.1/screen.css')
+        #self._assert_basic_html(resp)
+
+        # no wb header insertion
+        assert 'wb.js' not in resp.body
+
+        # original unrewritten url present
+        assert '"http://www.iana.org/domains/example"' in resp.body
 
     def test_replay_content_length_1(self):
         # test larger file, rewritten file (svg!)

@@ -1,0 +1,50 @@
+
+rules:
+
+    # twitter rules
+    #=================================================================
+    - url_prefix: 'com,twitter)/i/profiles/show/'
+
+      fuzzy_lookup: '/profiles/show/.*with_replies\?.*(max_id=[^&]+)'
+
+
+    # facebook rules
+    #=================================================================
+    - url_prefix: 'com,facebook)/ajax/pagelet/generic.php/profiletimelinesectionpagelet'
+
+      fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|query_type[^,]+))'
+
+# not actually needed, fuzzy match is used instead here
+#      canonicalize:
+#        match: 'com,facebook\)/.*[?&]data=([^&]+).*'
+#        replace: 'com,facebook)/ajax/pagelet/generic.php/profiletimelinesectionpagelet?data=\1'
+
+
+    - url_prefix: 'com,facebook)/'
+      rewrite:
+        js_regexs:
+            - match: 'Bootloader\.configurePage.*'
+              replace: '/* {0} */'
+
+
+    # yahoo rules
+    #=================================================================
+    - url_prefix: ['com,yimg,l)/g/combo', 'com,yahooapis,yui)/combo']
+
+      fuzzy_lookup: '([^/]+(?:\.css|\.js))'
+
+
+    # testing rules -- not for valid domain
+    #=================================================================
+    # this rule block is a non-existent prefix merely for testing
+    - url_prefix: 'example,example,test)/nolocation_rewrite'
+
+      rewrite:
+        js_rewrite_location: False
+
+
+    # all domain rules -- fallback to this dataset
+    #=================================================================
+    # Applies to all urls -- should be last
+    - url_prefix: ''
+      fuzzy_lookup: '[&?](?:_|uncache)=[\d]+[&]?'

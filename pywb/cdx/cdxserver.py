@@ -1,4 +1,4 @@
-from canonicalize import UrlCanonicalizer, calc_search_range
+from pywb.utils.canonicalize import UrlCanonicalizer, calc_search_range
 
 from cdxops import cdx_load
 from cdxsource import CDXSource, CDXFile, RemoteCDXSource, RedisCDXSource
@@ -17,13 +17,13 @@ import urlparse
 #=================================================================
 class BaseCDXServer(object):
     def __init__(self, **kwargs):
-        ds_rules = kwargs.get('ds_rules')
+        ds_rules_file = kwargs.get('ds_rules_file')
         surt_ordered = kwargs.get('surt_ordered', True)
 
         # load from domain-specific rules
-        if ds_rules:
+        if ds_rules_file:
             self.url_canon, self.fuzzy_query = (
-                load_domain_specific_cdx_rules(ds_rules, surt_ordered))
+                load_domain_specific_cdx_rules(ds_rules_file, surt_ordered))
         # or custom passed in canonicalizer
         else:
             self.url_canon = kwargs.get('url_canon')
@@ -50,14 +50,14 @@ class BaseCDXServer(object):
 
         url = params['url']
 
-        if self.fuzzy_query and params.get('allowFuzzy'):
-            if not 'key' in params:
-                params['key'] = self.url_canon(url)
+        # check if fuzzy is allowed and ensure that its an
+        # exact match
+        if (self.fuzzy_query and params.get('allowFuzzy') and
+            params.get('matchType', 'exact') == 'exact'):
 
-            params = self.fuzzy_query(params)
-            if params:
-                params['allowFuzzy'] = False
-                return self.load_cdx(**params)
+            fuzzy_params = self.fuzzy_query(params)
+            if fuzzy_params:
+                return self.load_cdx(**fuzzy_params)
 
         msg = 'No Captures found for: ' + url
         raise CaptureNotFoundException(msg)
@@ -98,7 +98,6 @@ class CDXServer(BaseCDXServer):
                 msg = 'A url= param must be specified to query the cdx server'
                 raise CDXException(msg)
 
-            #params['key'] = self.url_canon(url)
             match_type = params.get('matchType', 'exact')
 
             key, end_key = calc_search_range(url=url,
@@ -159,7 +158,7 @@ class CDXServer(BaseCDXServer):
         if filename.endswith('.cdx'):
             return CDXFile(filename)
 
-        if filename.endswith('.summary'):
+        if filename.endswith(('.summary', '.idx')):
             return ZipNumCluster(filename, config)
 
         logging.warn('skipping unrecognized URI:%s', filename)
@@ -218,7 +217,7 @@ def create_cdx_server(config, ds_rules_file=None):
     return server_cls(paths,
                       config=pass_config,
                       surt_ordered=surt_ordered,
-                      ds_rules=ds_rules_file,
+                      ds_rules_file=ds_rules_file,
                       perms_checker=perms_checker)
 
 #=================================================================

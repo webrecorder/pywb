@@ -1,30 +1,27 @@
 import chardet
+import pkgutil
+import yaml
 
-from url_rewriter import UrlRewriter
-from html_rewriter import HTMLRewriter
-from regex_rewriters import RegexRewriter, JSRewriter, CSSRewriter, XMLRewriter
-from header_rewriter import HeaderRewriter, RewrittenStatusAndHeaders
+from header_rewriter import RewrittenStatusAndHeaders
 
+from rewriterules import RewriteRules
+
+from pywb.utils.dsrules import RuleSet
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.bufferedreaders import DecompressingBufferedReader, ChunkedDataReader
 
+
+#=================================================================
 class RewriteContent:
+    def __init__(self, ds_rules_file=None):
+        self.ruleset = RuleSet(RewriteRules, 'rewrite',
+                               default_rule_config={},
+                               ds_rules_file=ds_rules_file)
 
-    DEFAULT_CONTENT_REWRITERS = {
-      'header': HeaderRewriter,
-      'js': JSRewriter,
-      'css': CSSRewriter,
-      'xml': XMLRewriter,
-      'html': HTMLRewriter
-    }
+    def rewrite_headers(self, urlrewriter, status_headers, stream, urlkey=''):
+        header_rewriter_class = self.ruleset.get_first_match(urlkey).rewriters['header']
 
-
-    def __init__(self, rewriters = {}):
-        self.rewriters = dict(self.DEFAULT_CONTENT_REWRITERS.items() + rewriters.items())
-
-
-    def rewrite_headers(self, urlrewriter, status_headers, stream):
-        rewritten_headers = self.rewriters['header']().rewrite(status_headers, urlrewriter)
+        rewritten_headers = header_rewriter_class().rewrite(status_headers, urlrewriter)
 
         # note: since chunking may be broken, approach taken here is to *always* attempt
         # to dechunk if transfer-encoding: chunked is present
@@ -37,7 +34,8 @@ class RewriteContent:
 
         return (rewritten_headers, stream)
 
-    def rewrite_content(self, urlrewriter, headers, stream, head_insert_str = None):
+    def rewrite_content(self, urlrewriter, headers, stream, head_insert_func=None, urlkey=''):
+
         # see if we've already rewritten headers
         if isinstance(headers, RewrittenStatusAndHeaders):
             rewritten_headers = headers
@@ -50,9 +48,11 @@ class RewriteContent:
                 return (status_headers, gen)
 
         status_headers = rewritten_headers.status_headers
+
         # Handle text content rewriting
         # =========================================================================
         # special case -- need to ungzip the body
+
         if (rewritten_headers.contains_removed_header('content-encoding', 'gzip')):
             stream = DecompressingBufferedReader(stream, decomp_type='gzip')
 
@@ -68,13 +68,27 @@ class RewriteContent:
 
         text_type = rewritten_headers.text_type
 
-        rewriter_class = self.rewriters.get(text_type)
-        if not rewriter_class:
+        rule = self.ruleset.get_first_match(urlkey)
+
+        try:
+            rewriter_class = rule.rewriters[text_type]
+        except KeyError:
             raise Exception('Unknown Text Type for Rewrite: ' + text_type)
 
+        #import sys
+        #sys.stderr.write(str(vars(rule)))
 
         if text_type == 'html':
-            rewriter = rewriter_class(urlrewriter, outstream = None, head_insert = head_insert_str)
+            head_insert_str = ''
+
+            if head_insert_func:
+                head_insert_str = head_insert_func(rule)
+
+            rewriter = rewriter_class(urlrewriter,
+                                      outstream=None,
+                                      js_rewriter_class=rule.rewriters['js'],
+                                      css_rewriter_class=rule.rewriters['css'],
+                                      head_insert=head_insert_str)
         else:
             rewriter = rewriter_class(urlrewriter)
 

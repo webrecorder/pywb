@@ -151,9 +151,15 @@ def cdx_filter(cdx_iter, filter_strings):
             if self.invert:
                 string = string[1:]
 
-            self.exact = string.startswith('=')
-            if self.exact:
+            # exact match
+            if string.startswith('='):
                 string = string[1:]
+                self.compare_func = self.exact
+            elif string.startswith('~'):
+                string = string[1:]
+                self.compare_func = self.contains
+            else:
+                self.compare_func = self.regex
 
             parts = string.split(':', 1)
             # no field set, apply filter to entire cdx
@@ -164,18 +170,27 @@ def cdx_filter(cdx_iter, filter_strings):
                 self.field = parts[0]
                 string = parts[1]
 
-            if self.exact:
-                self.exact_str = string
-            else:
+            # make regex if regex mode
+            if self.compare_func == self.regex:
                 self.regex = re.compile(string)
+            else:
+                self.filter_str = string
 
         def __call__(self, cdx):
             val = cdx[self.field] if self.field else str(cdx)
-            if self.exact:
-                matched = (self.exact_str == val)
-            else:
-                matched = self.regex.match(val) is not None
+
+            matched = self.compare_func(val)
+
             return matched ^ self.invert
+
+        def exact(self, val):
+            return (self.filter_str == val)
+
+        def contains(self, val):
+            return (self.filter_str in val)
+
+        def regex(self, val):
+            return self.regex.match(val) is not None
 
     filters = map(Filter, filter_strings)
 

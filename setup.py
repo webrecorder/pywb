@@ -22,7 +22,9 @@ setup(
         },
     data_files = [
         ('sample_archive/cdx/', glob.glob('sample_archive/cdx/*')),
-        ('sample_archive/warcs/', glob.glob('sample_archive/warcs/*'))
+        ('sample_archive/zipcdx/', glob.glob('sample_archive/zipcdx/*')),
+        ('sample_archive/warcs/', glob.glob('sample_archive/warcs/*')),
+        ('sample_archive/text_content/', glob.glob('sample_archive/text_content/*'))],
         ],
     install_requires=[
         'uwsgi',

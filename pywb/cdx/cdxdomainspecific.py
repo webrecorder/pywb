@@ -3,34 +3,43 @@ import re
 import logging
 import pkg_resources
 
-from canonicalize import unsurt, UrlCanonicalizer
+from pywb.utils.dsrules import BaseRule, RuleSet
+
+from pywb.utils.canonicalize import unsurt, UrlCanonicalizer
 
 
 #=================================================================
-def load_domain_specific_cdx_rules(filename, surt_ordered):
-    fh = pkg_resources.resource_string(__name__, filename)
-    config = yaml.load(fh)
+def load_domain_specific_cdx_rules(ds_rules_file, surt_ordered):
+    #fh = pkg_resources.resource_string(__name__, filename)
+    #config = yaml.load(fh)
+
+    canon = None
+    fuzzy = None
 
     # Load Canonicalizer Rules
-    rules = StartsWithRule.load_rules(config.get('canon_rules'),
-                                      surt_ordered)
+    rules = RuleSet(CDXDomainSpecificRule, 'canonicalize',
+                    ds_rules_file=ds_rules_file)
+
+    if not surt_ordered:
+        for rule in rules:
+            rule.unsurt()
 
     if rules:
         canon = CustomUrlCanonicalizer(rules, surt_ordered)
-    else:
-        canon = None
 
     # Load Fuzzy Lookup Rules
-    rules = StartsWithRule.load_rules(config.get('fuzzy_lookup_rules'),
-                                      surt_ordered)
+    rules = RuleSet(CDXDomainSpecificRule, 'fuzzy_lookup',
+                    ds_rules_file=ds_rules_file)
+
+    if not surt_ordered:
+        for rule in rules:
+            rule.unsurt()
 
     if rules:
         fuzzy = FuzzyQuery(rules)
-    else:
-        fuzzy = None
 
-    logging.debug('CANON: ' + str(canon))
-    logging.debug('FUZZY: ' + str(fuzzy))
+    logging.debug('CustomCanonilizer? ' + str(bool(canon)))
+    logging.debug('FuzzyMatcher? ' + str(bool(canon)))
     return (canon, fuzzy)
 
 
@@ -43,10 +52,7 @@ class CustomUrlCanonicalizer(UrlCanonicalizer):
     def __call__(self, url):
         urlkey = super(CustomUrlCanonicalizer, self).__call__(url)
 
-        for rule in self.rules:
-            if not any(urlkey.startswith(x) for x in rule.starts):
-                continue
-
+        for rule in self.rules.iter_matching(urlkey):
             m = rule.regex.match(urlkey)
             if not m:
                 continue
@@ -67,11 +73,10 @@ class FuzzyQuery:
 
         urlkey = params['key']
         url = params['url']
+        filter_ = params.get('filter', [])
+        output = params.get('output')
 
-        for rule in self.rules:
-            if not any(urlkey.startswith(x) for x in rule.starts):
-                continue
-
+        for rule in self.rules.iter_matching(urlkey):
             m = rule.regex.search(urlkey)
             if not m:
                 continue
@@ -79,7 +84,7 @@ class FuzzyQuery:
             matched_rule = rule
 
             if len(m.groups()) == 1:
-                params['filter'] = '=urlkey:' + m.group(1)
+                filter_.append('~urlkey:' + m.group(1))
 
             break
 
@@ -88,28 +93,40 @@ class FuzzyQuery:
 
         inx = url.find('?')
         if inx > 0:
-            params['url'] = url[:inx + 1]
+            url = url[:inx + 1]
 
-        params['matchType'] = 'prefix'
-        params['key'] = None
+        params = {'url': url,
+                  'matchType': 'prefix',
+                  'filter': filter_,
+                  'output': output}
+
         return params
 
 
 #=================================================================
-class StartsWithRule:
-    def __init__(self, config, surt_ordered=True):
-        self.starts = config.get('startswith')
-        if not isinstance(self.starts, list):
-            self.starts = [self.starts]
+class CDXDomainSpecificRule(BaseRule):
+    def __init__(self, name, config):
+        super(CDXDomainSpecificRule, self).__init__(name, config)
 
-        self.regex = re.compile(config.get('matches'))
-        self.replace = config.get('replace')
+        if isinstance(config, basestring):
+            self.regex = re.compile(config)
+            self.replace = None
+        else:
+            self.regex = re.compile(config.get('match'))
+            self.replace = config.get('replace')
 
     def unsurt(self):
-        # must convert to non-surt form
-        self.starts = map(unsurt, self.starts)
-        self.regex = unsurt(self.regex)
-        self.replace = unsurt(self.replace)
+        """
+        urlkey is assumed to be in surt format by default
+        In the case of non-surt format, this method is called
+        to desurt any urls
+        """
+        self.url_prefix = map(unsurt, self.url_prefix)
+        if self.regex:
+            self.regex = unsurt(self.regex)
+
+        if self.replace:
+            self.replace = unsurt(self.replace)
 
     @staticmethod
     def load_rules(rules_config, surt_ordered=True):

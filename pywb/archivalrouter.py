@@ -50,7 +50,10 @@ class Route:
 
     def __init__(self, regex, handler, coll_group = 0, config = {}, lookahead = SLASH_QUERY_LOOKAHEAD):
         self.path = regex
-        self.regex = re.compile(regex + lookahead)
+        if regex:
+            self.regex = re.compile(regex + lookahead)
+        else:
+            self.regex = re.compile('')
         self.handler = handler
         # collection id from regex group (default 0)
         self.coll_group = coll_group
@@ -70,7 +73,6 @@ class Route:
             return None
 
         matched_str = matcher.group(0)
-
         if matched_str:
             rel_prefix = env['SCRIPT_NAME'] + '/' + matched_str + '/'
             wb_url_str = request_uri[len(matched_str) + 2:] # remove the '/' + rel_prefix part of uri
