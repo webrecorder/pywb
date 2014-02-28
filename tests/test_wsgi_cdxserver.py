@@ -12,15 +12,7 @@ import yaml
 from pywb.cdx.cdxobject import CDXObject
 from pywb.cdx.wsgi_cdxserver import create_app
 
-@pytest.fixture
-def testconfig():
-    config = yaml.load(open('test_config.yaml'))
-    assert config
-    if 'index_paths' not in config:
-        config['index_paths'] = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            '../sample_archive/cdx')
-    return config
+from tests.fixture import testconfig
 
 @pytest.fixture
 def client(testconfig):

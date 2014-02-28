@@ -107,7 +107,8 @@ class CDXServer(BaseCDXServer):
             params['key'] = key
             params['end_key'] = end_key
 
-        cdx_iter = cdx_load(self.sources, params, self.perms_checker)
+        cdx_iter = cdx_load(self.sources, params,
+                            perms_checker=self.perms_checker)
         return self._check_cdx_iter(cdx_iter, params)
 
     def _create_cdx_sources(self, paths, config):

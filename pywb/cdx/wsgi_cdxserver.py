@@ -83,8 +83,7 @@ class PlainTextResponse(BaseResponse):
     def __init__(self, cdxitr, fields, status=200, content_type='text/plain'):
         super(PlainTextResponse, self).__init__(
             response=(
-                cdx_text_out(cdx, fields)
-                for cdx in cdxitr
+                cdx.to_text(fields) for cdx in cdxitr
                 ),
             status=status, content_type=content_type)
 

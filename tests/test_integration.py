@@ -8,7 +8,9 @@ class TestWb:
 
     def setup(self):
         #self.app = pywb.wbapp.create_wb_app(pywb.pywb_init.pywb_config())
-        self.app = create_wb_app(pywb_config(self.TEST_CONFIG))
+        # save it in self - useful for debugging
+        self.router = pywb_config(self.TEST_CONFIG)
+        self.app = create_wb_app(self.router)
         self.testapp = webtest.TestApp(self.app)
 
     def _assert_basic_html(self, resp):
@@ -193,43 +195,3 @@ class TestWb:
         resp = self.testapp.get('/pywb/?abc', status = 400)
         assert resp.status_int == 400
         assert 'Invalid Url: http://?abc' in resp.body
-
-#=================================================================
-# Reporter callback for replay view
-class PrintReporter:
-    def __call__(self, wbrequest, cdx, response):
-        print wbrequest
-        print cdx
-        pass
-
-#=================================================================
-class TestExclusionPerms:
-    """
-    Sample Perm Checker which allows all
-    """
-    def allow_url_lookup(self, urlkey, url):
-        """
-        Return true/false if url or urlkey (canonicalized url)
-        should be allowed
-        """
-        print urlkey
-        if urlkey == 'org,iana)/_img/bookmark_icon.ico':
-            return False
-
-        return True
-
-    def allow_capture(self, cdx):
-        """
-        Return true/false is specified capture (cdx) should be
-        allowed
-        """
-        return True
-
-    def filter_fields(self, cdx):
-        """
-        Filter out any forbidden cdx fields from cdx dictionary
-        """
-        return cdx
-
-
-

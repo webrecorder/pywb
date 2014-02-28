@@ -75,6 +75,16 @@ class CDXObject(OrderedDict):
         return (self['mimetype'] == 'warc/revisit' or
                 self['filename'] == '-')
 
+    def to_text(self, fields=None):
+        """
+        return plaintext CDX record (includes newline).
+        :param fields: list of field names to output.
+        """
+        if fields is None:
+            return str(self) + '\n'
+        else:
+            return ' '.join(self[x] for x in fields) + '\n'
+
     def __str__(self):
         if self.cdxline:
             return self.cdxline
@@ -108,6 +118,13 @@ class IDXObject(OrderedDict):
             self['lineno'] = int(lineno)
 
         self.idxline = idxline
+
+    def to_text(self, fields=None):
+        """
+        return plaintext IDX record (including newline).
+        :param fields: list of field names to output (currently ignored)
+        """
+        return str(self) + '\n'
 
     def __str__(self):
         return self.idxline

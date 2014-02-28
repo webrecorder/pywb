@@ -10,10 +10,11 @@ from collections import deque
 
 
 #=================================================================
-def cdx_load(sources, params, filter=True, perms_checker=None):
+def cdx_load(sources, params, perms_checker=None, filter=True):
     """
     merge text CDX lines from sources, return an iterator for
     filtered and access-checked sequence of CDX objects.
+
     :param sources: iterable for text CDX sources.
     :param perms_checker: access check filter object implementing
       allow_url_lookup(key, url), allow_capture(cdxobj) and

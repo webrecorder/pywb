@@ -1,10 +1,10 @@
 import webtest
-from pywb.cdx.wsgi_cdxserver import main
+from pywb.cdx.wsgi_cdxserver import create_app
 from pywb import get_test_dir
 
 class TestCdx:
     def setup(self):
-        self.app = main(get_test_dir() + 'cdx/')
+        self.app = create_app(get_test_dir() + 'cdx/')
         self.testapp = webtest.TestApp(self.app)
 
     def test_cdx(self):
