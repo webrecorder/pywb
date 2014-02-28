@@ -10,9 +10,11 @@ from pywb.utils.canonicalize import unsurt, UrlCanonicalizer
 
 #=================================================================
 def load_domain_specific_cdx_rules(ds_rules_file, surt_ordered):
-    #fh = pkgutil.get_data(__package__, filename)
-    #config = yaml.load(fh)
-
+    """
+    >>> (canon, fuzzy) = load_domain_specific_cdx_rules(None, True)
+    >>> canon('http://test.example.example/path/index.html?a=b&id=value&c=d')
+    'example,example,test)/path/index.html?id=value'
+    """
     canon = None
     fuzzy = None
 
@@ -128,15 +130,7 @@ class CDXDomainSpecificRule(BaseRule):
         if self.replace:
             self.replace = unsurt(self.replace)
 
-    @staticmethod
-    def load_rules(rules_config, surt_ordered=True):
-        if not rules_config:
-            return []
 
-        rules = map(StartsWithRule, rules_config)
-
-        if not surt_ordered:
-            for rule in rules:
-                rule.unsurt()
-
-        return rules
+if __name__ == "__main__":
+        import doctest
+        doctest.testmod()

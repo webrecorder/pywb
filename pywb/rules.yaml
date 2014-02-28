@@ -37,7 +37,11 @@ rules:
     # testing rules -- not for valid domain
     #=================================================================
     # this rule block is a non-existent prefix merely for testing
-    - url_prefix: 'example,example,test)/nolocation_rewrite'
+    - url_prefix: 'example,example,test)/'
+
+      canonicalize:
+        match: '(example,example,test\)/.*?)[?].*?(id=value).*'
+        replace: '\1?\2'
 
       rewrite:
         js_rewrite_location: False
