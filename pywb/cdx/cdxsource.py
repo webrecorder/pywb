@@ -1,6 +1,8 @@
 from pywb.utils.binsearch import iter_range
 from pywb.utils.loaders import SeekableTextFileReader
 
+from cdxobject import AccessException
+
 import urllib
 import urllib2
 import itertools
@@ -93,7 +95,7 @@ class RedisCDXSource(CDXSource):
         self.key_prefix = self.DEFAULT_KEY_PREFIX
         if config:
             self.key_prefix = config.get('redis_key_prefix', self.key_prefix)
-        
+
 
     def load_cdx(self, params):
         """

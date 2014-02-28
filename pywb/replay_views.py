@@ -7,6 +7,7 @@ from wbrequestresponse import WbResponse
 from wbexceptions import CaptureException, InternalRedirect
 from pywb.warc.recordloader import ArchiveLoadFailed
 
+from pywb.utils.loaders import LimitReader
 
 #=================================================================
 class ReplayView:
@@ -54,10 +55,21 @@ class ReplayView:
 
                 response = None
 
+                # if Content-Length for payload is present, ensure we don't read past it
+                content_len = status_headers.get_header('content-length')
+                try:
+                    content_len=int(content_len)
+                    if content_len > 0:
+                        stream = LimitReader(stream, content_len)
+                except ValueError:
+                    pass
+
                 if self.content_rewriter and wbrequest.wb_url.mod != 'id_':
                     response = self.rewrite_content(wbrequest, cdx, status_headers, stream)
                 else:
                     (status_headers, stream) = self.sanitize_content(status_headers, stream)
+                    #status_headers.remove_header('content-length')
+
                     response_iter = self.stream_to_iter(stream)
                     response = WbResponse(status_headers, response_iter)
 

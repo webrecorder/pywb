@@ -2,6 +2,7 @@ import webtest
 from pywb.pywb_init import pywb_config
 from pywb.wbapp import create_wb_app
 from pywb.cdx.cdxobject import CDXObject
+from pywb.cdx.perms import AllowAllPerms
 
 class TestWb:
     TEST_CONFIG = 'test_config.yaml'
@@ -73,7 +74,19 @@ class TestWb:
 
         assert 'Mon, Jan 27 2014 17:12:38' in resp.body
         assert 'wb.js' in resp.body
-        assert '/pywb/20140127171238/http://www.iana.org/time-zones' in resp.body
+        assert '/pywb/20140127171238/http://www.iana.org/time-zones"' in resp.body
+
+    def test_replay_identity_1(self):
+        resp = self.testapp.get('/pywb/20140127171251id_/http://example.com')
+        #resp = self.testapp.get('/pywb/20140126200654id_/http://www.iana.org/_img/2013.1/rir-map.svg')
+        #resp = self.testapp.get('/pywb/20140127171239id_/http://www.iana.org/_css/2013.1/screen.css')
+        #self._assert_basic_html(resp)
+
+        # no wb header insertion
+        assert 'wb.js' not in resp.body
+
+        # original unrewritten url present
+        assert '"http://www.iana.org/domains/example"' in resp.body
 
     def test_replay_content_length_1(self):
         # test larger file, rewritten file (svg!)
@@ -198,38 +211,21 @@ class TestWb:
 # Reporter callback for replay view
 class PrintReporter:
     def __call__(self, wbrequest, cdx, response):
-        print wbrequest
-        print cdx
+        #print wbrequest
+        #print cdx
         pass
 
 #=================================================================
-class TestExclusionPerms:
+class TestExclusionPerms(AllowAllPerms):
     """
-    Sample Perm Checker which allows all
+    Sample Perm Checker with hard-coded exclusion
     """
     def allow_url_lookup(self, urlkey, url):
         """
         Return true/false if url or urlkey (canonicalized url)
         should be allowed
         """
-        print urlkey
         if urlkey == 'org,iana)/_img/bookmark_icon.ico':
             return False
 
-        return True
-
-    def allow_capture(self, cdx):
-        """
-        Return true/false is specified capture (cdx) should be
-        allowed
-        """
-        return True
-
-    def filter_fields(self, cdx):
-        """
-        Filter out any forbidden cdx fields from cdx dictionary
-        """
-        return cdx
-
-
-
+        return super(TestExclusionPerms, self).allow_url_lookup(urlkey, url)

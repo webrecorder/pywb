@@ -15,6 +15,13 @@
  'wb_prefix': 'https://localhost:8081/my_pywb/web/',
  'wb_url': ('replay', '2013', 'im_', 'http://test.example.com', '2013im_/http://test.example.com')}
 
+# route with no collection
+>>> print_req(Route('', BaseHandler())({'REL_REQUEST_URI': 'http://example.com', 'SCRIPT_NAME': '/pywb'}, False))
+{'coll': '',
+ 'request_uri': 'http://example.com',
+ 'wb_prefix': '/pywb/',
+ 'wb_url': None}
+
 # not matching route -- skipped
 >>> Route('web', BaseHandler())({'REL_REQUEST_URI': '/other/test.example.com', 'SCRIPT_NAME': ''}, False)
 
@@ -67,6 +74,13 @@ False
 >>> _test_redir('http://localhost:8080/', '/../other.html', 'http://localhost:8080/extra/coll/20131010/http://example.com/path/page.html', '/extr')
 False
 
+# With no collection
+>>> _test_redir('http://localhost:8080/', '/other.html', 'http://localhost:8080/2013/http://example.com/path/page.html', coll='')
+'http://localhost:8080/2013/http://example.com/other.html'
+
+# With SCRIPT_NAME but no collection
+>>> _test_redir('http://localhost:8080/', '/other.html', 'http://localhost:8080/pywb-access/http://example.com/path/page.html', '/pywb-access', coll='')
+'http://localhost:8080/pywb-access/http://example.com/other.html'
 
 """
 
