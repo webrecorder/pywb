@@ -211,9 +211,8 @@ class TestWb:
 # Reporter callback for replay view
 class PrintReporter:
     def __call__(self, wbrequest, cdx, response):
-        #print wbrequest
-        #print cdx
-        pass
+        print wbrequest
+        print cdx
 
 #=================================================================
 class TestExclusionPerms(AllowAllPerms):

@@ -2,6 +2,7 @@ PyWb 0.2 Beta
 ==============
 
 [![Build Status](https://travis-ci.org/ikreymer/pywb.png?branch=master)](https://travis-ci.org/ikreymer/pywb)
+[![Coverage Status](https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=master)](https://coveralls.io/r/ikreymer/pywb?branch=master)
 
 pywb is a Python re-implementation of the Wayback Machine software.
 
