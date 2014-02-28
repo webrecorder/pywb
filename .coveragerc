@@ -1,0 +1,11 @@
+[run]
+omit = 
+    */test/*
+    */tests/*
+    *.html
+    *.js
+    *.css
+
+[report]
+exclude_lines =
+    if __name__ == .__main__.:

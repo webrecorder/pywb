@@ -54,6 +54,16 @@ com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit
 com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz
 com,example)/ 20140127171251 http://example.com warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 11875 dupes.warc.gz
 
+# Filter contains
+>>> cdx_ops_test(url = 'http://example.com', sources = [test_cdx_dir], matchType = 'prefix', filter = '~urlkey:example=1')
+com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 333 example.warc.gz
+com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 1864 example.warc.gz
+
+# Filter contains invert
+>>> cdx_ops_test(url = 'http://example.com', sources = [test_cdx_dir], matchType = 'prefix', filter = '!~urlkey:example=1')
+com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz
+com,example)/ 20140127171251 http://example.com warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 11875 dupes.warc.gz
+
 # Collapse by timestamp
 # unresolved revisits, different statuscode results in an extra repeat
 >>> cdx_ops_test(url = 'http://iana.org/_css/2013.1/screen.css', collapseTime = 11)
@@ -131,9 +141,9 @@ org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db tex
  ('offset', '334'),
  ('filename', 'dupes.warc.gz')]
 
-# NOTE: external dependency -- need self-contained test
-#>>> x = CDXServer('http://web.archive.org/cdx/search/cdx').load_cdx(url = 'example.com', output = 'raw', limit = '2')
-#>>> pprint.pprint(x.next().items())
+# NOTE: external dependency -- need self-contained test TODO
+>>> x = CDXServer('http://web.archive.org/cdx/search/cdx').load_cdx(url = 'example.com', output = 'raw', limit = '2')
+>>> pprint.pprint(x.next().items())
 [('urlkey', 'com,example)/'),
  ('timestamp', '20020120142510'),
  ('original', 'http://example.com:80/'),
@@ -142,6 +152,10 @@ org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db tex
  ('digest', 'HT2DYGA5UKZCPBSFVCV3JOBXGW2G5UUA'),
  ('length', '1792')]
 
+
+>>> x = CDXServer('http://web.archive.org/cdx/search/cdx').load_cdx(url = 'facebook.com', output = 'raw', limit = '2')
+Traceback (most recent call last):
+AccessException: Blocked By Robots
 """
 
 #=================================================================
@@ -162,6 +176,7 @@ def cdx_ops_test(url, sources = [test_cdx_dir + 'iana.cdx'], **kwparams):
     results = server.load_cdx(**kwparams)
 
     for x in results:
+        x = x.replace('\t', '    ')
         sys.stdout.write(x)
 
 

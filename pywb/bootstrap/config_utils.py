@@ -18,17 +18,19 @@ def load_template_file(file, desc = None, view_class = J2TemplateView):
     return file
 
 #=================================================================
-def create_wb_handler(cdx_server, config):
+def create_wb_handler(cdx_server, config, ds_rules_file=None):
 
     record_loader = ArcWarcRecordLoader(cookie_maker = config.get('cookie_maker'))
     paths = config.get('archive_paths')
 
-    resolving_loader = ResolvingLoader(paths = paths, cdx_server = cdx_server, record_loader = record_loader)
+    resolving_loader = ResolvingLoader(paths=paths,
+                                       cdx_server=cdx_server,
+                                       record_loader=record_loader)
 
     replayer = ReplayView(
         content_loader = resolving_loader,
 
-        content_rewriter = RewriteContent(),
+        content_rewriter = RewriteContent(ds_rules_file=ds_rules_file),
 
         head_insert_view = load_template_file(config.get('head_insert_html'), 'Head Insert'),
 

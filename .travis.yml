@@ -3,8 +3,14 @@ python:
   - "2.7"
 # command to install dependencies
 install:
-  - "python setup.py -q install"
+  - python setup.py -q install
+  - pip install coverage pytest-cov coveralls --use-mirrors
 # command to run tests
 #script: nosetests --with-doctest
 #script: py.test run-tests.py ./pywb/ --doctest-modules --ignore=setup.py
-script: py.test -v --doctest-module ./tests/*.py ./pywb/
+#script: py.test -v --doctest-module ./tests/*.py ./pywb/
+script: 
+    py.test --cov-config .coveragerc --cov pywb -v --doctest-module ./pywb/ tests/
+
+after_success:
+    coveralls

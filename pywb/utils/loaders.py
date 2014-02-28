@@ -9,6 +9,7 @@ import urllib2
 import time
 
 
+#=================================================================
 def is_http(filename):
     return any(filename.startswith(x) for x in ['http://', 'https://'])
 

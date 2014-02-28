@@ -59,12 +59,13 @@ def pywb_config_manual(passed_config = {}):
 
         route_config = DictChain(value, config)
 
-        ds_rules = route_config.get('domain_specific_rules', None)
-        cdx_server = IndexReader(route_config, ds_rules)
+        ds_rules_file = route_config.get('domain_specific_rules', None)
+        cdx_server = IndexReader(route_config, ds_rules_file)
 
         wb_handler = config_utils.create_wb_handler(
-            cdx_server = cdx_server,
-            config = route_config,
+            cdx_server=cdx_server,
+            config=route_config,
+            ds_rules_file=ds_rules_file,
         )
 
         logging.debug('Adding Collection: ' + name)

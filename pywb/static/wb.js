@@ -1,18 +1,21 @@
+/*
+Copyright(c) 2013-2014 Ilya Kreymer. Released under the GNU General Public License.
 
+This file is part of pywb.
 
-// Rewritten location and domain obj setup
-window.WB_wombat_location = window.location
+    pywb is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-if (window.top != window) {
-    window.top.WB_wombat_location = window.top.location
-}
+    pywb is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-if (window.opener) {
-    window.opener.WB_wombat_location = window.opener.location
-}
-
-document.WB_wombat_domain = document.domain
-
+    You should have received a copy of the GNU General Public License
+    along with pywb.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 function initBanner()
 {

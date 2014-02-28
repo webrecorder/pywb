@@ -121,7 +121,7 @@ r"""
 'document_domain = "anotherdomain.com"; window.document.WB_wombat_domain = "example.com"'
 
 # custom rules added
->>> _test_js('window.location = "http://example.com/abc.html"; some_func(); ', [('some_func\(\).*', RegexRewriter.comment_out, 0)])
+>>> _test_js('window.location = "http://example.com/abc.html"; some_func(); ', [('some_func\(\).*', RegexRewriter.format('/*{0}*/'), 0)])
 'window.WB_wombat_location = "/web/20131010im_/http://example.com/abc.html"; /*some_func(); */'
 
 # scheme-agnostic

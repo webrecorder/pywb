@@ -1,7 +1,7 @@
 
 
 #=================================================================
-class AllowAllPerms:
+class AllowAllPerms(object):
     """
     Sample Perm Checker which allows all
     """
