@@ -92,10 +92,10 @@ enable_cdx_api: true
 
 # optional reporter callback func
 # if set, called with request and cdx object
-reporter: !!python/object/new:tests.test_integration.PrintReporter []
+reporter: !!python/object/new:tests.fixture.PrintReporter []
 
 # custom rules for domain specific matching
 #domain_specific_rules: rules.yaml
 
 #perms_checker: !!python/object/new:pywb.cdx.perms.AllowAllPerms []
-perms_checker:  !!python/object/new:tests.test_integration.TestExclusionPerms []
+perms_checker:  !!python/object/new:tests.fixture.TestExclusionPerms []

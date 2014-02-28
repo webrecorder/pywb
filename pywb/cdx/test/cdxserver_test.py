@@ -167,22 +167,42 @@ import pprint
 from pywb import get_test_dir
 #test_cdx_dir = os.path.dirname(os.path.realpath(__file__)) + '/../sample_data/'
 test_cdx_dir = get_test_dir() + 'cdx/'
+from pywb.cdx.cdxobject import AccessException
+
+from tests.fixture import testconfig, TestExclusionPerms
+
+import pytest
 
 def cdx_ops_test(url, sources = [test_cdx_dir + 'iana.cdx'], **kwparams):
     kwparams['url'] = url
-    kwparams['output'] = 'text'
+    fields = kwparams.get('fields')
+    if fields:
+        fields = fields.split(',')
 
     server = CDXServer(sources)
     results = server.load_cdx(**kwparams)
 
     for x in results:
-        x = x.replace('\t', '    ')
-        sys.stdout.write(x)
+        l = x.to_text(fields).replace('\t', '    ')
+        sys.stdout.write(l)
 
+#================================================================
+
+def test_excluded(testconfig):
+    testconfig['perms_checker'] = TestExclusionPerms()
+    sources = testconfig.get('index_paths')
+    print sources
+    server = CDXServer(sources, perms_checker=testconfig['perms_checker'])
+    assert isinstance(server, CDXServer)
+    assert server.perms_checker
+
+    url = 'http://www.iana.org/_img/bookmark_icon.ico'
+    key = 'org,iana)/_img/bookmark_icon.ico'
+    with pytest.raises(AccessException):
+        cdxobjs = list(server.load_cdx(url=url))
+        print cdxobjs
 
 
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-
-

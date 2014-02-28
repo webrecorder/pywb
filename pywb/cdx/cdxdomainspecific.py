@@ -1,7 +1,7 @@
 import yaml
 import re
 import logging
-import pkgutil
+import pkg_resources
 
 from pywb.utils.dsrules import BaseRule, RuleSet
 

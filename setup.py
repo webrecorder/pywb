@@ -35,6 +35,8 @@ setup(
         'pyyaml',
         'WebTest',
         'pytest',
+        'werkzeug>=0.9.4',
+        'setuptools',
         ],
     # tests_require=['WebTest', 'pytest'],
     zip_safe=False
