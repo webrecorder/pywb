@@ -3,7 +3,8 @@ from pywb.utils.canonicalize import UrlCanonicalizer, calc_search_range
 from cdxops import cdx_load
 from cdxsource import CDXSource, CDXFile, RemoteCDXSource, RedisCDXSource
 from zipnum import ZipNumCluster
-from cdxobject import CDXObject, CaptureNotFoundException, CDXException, CDXQuery
+from cdxobject import CDXObject, CaptureNotFoundException, CDXException
+from query import CDXQuery
 from cdxdomainspecific import load_domain_specific_cdx_rules
 
 from pywb.utils.loaders import is_http

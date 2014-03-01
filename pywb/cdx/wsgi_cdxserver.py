@@ -1,14 +1,12 @@
 from werkzeug.wrappers import BaseResponse
 from cdxserver import create_cdx_server
 from pywb import get_test_dir
-from cdxobject import CDXQuery
+from query import CDXQuery
 
 import logging
 import os
 import yaml
 import pkg_resources
-
-import cdxops
 
 #=================================================================
 CONFIG_FILE = 'config.yaml'

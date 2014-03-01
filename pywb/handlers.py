@@ -4,7 +4,7 @@ import mimetypes
 import time
 
 from pywb.rewrite.wburl import WbUrl
-from pywb.cdx.cdxobject import CDXQuery
+from pywb.cdx.query import CDXQuery
 from wbrequestresponse import WbResponse
 from wbexceptions import WbException, NotFoundException
 from views import TextCapturesView

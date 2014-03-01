@@ -1,4 +1,5 @@
-from cdxobject import CDXObject, IDXObject, AccessException, CDXQuery
+from cdxobject import CDXObject, IDXObject, AccessException
+from query import CDXQuery
 from pywb.utils.timeutils import timestamp_to_sec
 
 import bisect
