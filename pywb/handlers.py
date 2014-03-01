@@ -4,7 +4,7 @@ import mimetypes
 import time
 
 from pywb.rewrite.wburl import WbUrl
-from pywb.cdx.cdxserver import extract_params_from_wsgi_env
+from pywb.cdx.cdxobject import CDXQuery
 from wbrequestresponse import WbResponse
 from wbexceptions import WbException, NotFoundException
 from views import TextCapturesView
@@ -79,8 +79,8 @@ class CDXHandler(BaseHandler):
         self.view = view if view else TextCapturesView()
 
     def __call__(self, wbrequest):
-        params = extract_params_from_wsgi_env(wbrequest.env)
-        cdx_lines = self.index_reader.load_cdx(**params)
+        query = CDXQuery.from_wsgi_env(wbrequest.env)
+        cdx_lines = self.index_reader.load_cdx_query(query)
 
         return self.view.render_response(wbrequest, cdx_lines)
 

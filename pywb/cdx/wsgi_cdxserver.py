@@ -1,6 +1,7 @@
-from werkzeug.wrappers import BaseRequest, BaseResponse
+from werkzeug.wrappers import BaseResponse
 from cdxserver import create_cdx_server
 from pywb import get_test_dir
+from cdxobject import CDXQuery
 
 import logging
 import os
@@ -18,37 +19,10 @@ DEFAULT_PORT = 8080
 
 #=================================================================
 
-class CDXQueryRequest(BaseRequest):
+class CDXQueryRequest(object):
     def __init__(self, environ):
-        super(CDXQueryRequest, self).__init__(environ)
+        self.query = CDXQuery.from_wsgi_env(environ)
 
-    def _get_bool(self, name):
-        v = self.args.get(name)
-        if v:
-            try:
-                v = int(s)
-            except ValueError as ex:
-                v = (s.lower() == 'true')
-        return bool(v)
-    @property
-    def output(self):
-        return self.args.get('output', 'text')
-    @property
-    def filter(self):
-        return self.args.getlist('filter', [])
-    @property
-    def fields(self):
-        v = self.args.get('fields')
-        return v.split(',') if v else None
-    @property
-    def reverse(self):
-        # sort=reverse overrides reverse=0
-        return (self._get_bool('reverse') or
-                self.args.get('sort') == 'reverse')
-    @property
-    def params(self):
-        return dict(t if t[0] == 'filter' else (t[0], t[1][0])
-                    for t in self.args.iterlists())
 
 class WSGICDXServer(object):
     def __init__(self, config, rules_file):
@@ -57,11 +31,11 @@ class WSGICDXServer(object):
     def __call__(self, environ, start_response):
         request = CDXQueryRequest(environ)
         try:
-            logging.debug('request.args=%s', request.params)
-            result = self.cdxserver.load_cdx(**request.params)
+            logging.debug('request.args=%s', request.query)
+            result = self.cdxserver.load_cdx_query(request.query)
 
             # TODO: select response type by "output" parameter
-            response = PlainTextResponse(result, request.fields)
+            response = PlainTextResponse(result, request.query.fields)
             return response(environ, start_response)
         except Exception as exc:
             logging.error('load_cdx failed', exc_info=1)
@@ -74,7 +48,7 @@ def cdx_text_out(cdx, fields):
     if not fields:
         return str(cdx) + '\n'
     else:
-        logging.info('cdx fields=%s', cdx.keys())
+        logging.info('cdx fields=%s', cdx.keys)
         # TODO: this will results in an exception if fields contain
         # non-existent field name.
         return ' '.join(cdx[x] for x in fields) + '\n'

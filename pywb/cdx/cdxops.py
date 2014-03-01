@@ -1,4 +1,4 @@
-from cdxobject import CDXObject, IDXObject, AccessException
+from cdxobject import CDXObject, IDXObject, AccessException, CDXQuery
 from pywb.utils.timeutils import timestamp_to_sec
 
 import bisect
@@ -10,7 +10,7 @@ from collections import deque
 
 
 #=================================================================
-def cdx_load(sources, params, perms_checker=None, filter=True):
+def cdx_load(sources, query, perms_checker=None, process=True):
     """
     merge text CDX lines from sources, return an iterator for
     filtered and access-checked sequence of CDX objects.
@@ -19,25 +19,30 @@ def cdx_load(sources, params, perms_checker=None, filter=True):
     :param perms_checker: access check filter object implementing
       allow_url_lookup(key, url), allow_capture(cdxobj) and
       filter_fields(cdxobj) methods.
+    :param process: bool, perform processing sorting/filtering/grouping ops
     """
-    cdx_iter = load_cdx_streams(sources, params)
-    cdx_iter = make_obj_iter(cdx_iter, params)
-    cdx_iter = filter_cdx(cdx_iter, params)
+    cdx_iter = load_cdx_streams(sources, query)
+    cdx_iter = make_obj_iter(cdx_iter, query)
+
+    if process and query.process:
+        cdx_iter = process_cdx(cdx_iter, query)
+
     if perms_checker:
-        cdx_iter = restrict_cdx(cdx_iter, params, perms_checker)
+        cdx_iter = restrict_cdx(cdx_iter, query, perms_checker)
+
     return cdx_iter
 
 #=================================================================
-def restrict_cdx(cdx_iter, params, perms_checker):
+def restrict_cdx(cdx_iter, query, perms_checker):
     """
     filter out those cdx records that user doesn't have access to,
     by consulting :param perms_checker:.
     :param cdx_iter: cdx record source iterable
-    :param params: request parameters (dict)
+    :param query: request parameters (CDXQuery)
     :param perms_checker: object implementing permission checker
     """
-    if not perms_checker.allow_url_lookup(params['key'], params['url']):
-        if params.get('matchType', 'exact') == 'exact':
+    if not perms_checker.allow_url_lookup(query.key, query.url):
+        if query.is_exact:
             raise AccessException('Excluded')
 
     for cdx in cdx_iter:
@@ -51,31 +56,26 @@ def restrict_cdx(cdx_iter, params, perms_checker):
         yield cdx
 
 #=================================================================
-def filter_cdx(cdx_iter, params):
-    if params.get('proxyAll'):
-        return cdx_iter
-
-    resolve_revisits = params.get('resolveRevisits', False)
-    if resolve_revisits:
+def process_cdx(cdx_iter, query):
+    if query.resolve_revisits:
         cdx_iter = cdx_resolve_revisits(cdx_iter)
 
-    filters = params.get('filter', None)
+    filters = query.filters
     if filters:
         cdx_iter = cdx_filter(cdx_iter, filters)
 
-    collapse_time = params.get('collapseTime', None)
+    collapse_time = query.collapse_time
     if collapse_time:
         cdx_iter = cdx_collapse_time_status(cdx_iter, collapse_time)
 
-    limit = int(params.get('limit', 1000000))
+    limit = query.limit
 
-    reverse = params.get('reverse', False) or params.get('sort') == 'reverse'
-    if reverse:
+    if query.reverse:
         cdx_iter = cdx_reverse(cdx_iter, limit)
 
-    closest_to = params.get('closest', None)
-    if closest_to:
-        cdx_iter = cdx_sort_closest(closest_to, cdx_iter, limit)
+    closest = query.closest
+    if closest:
+        cdx_iter = cdx_sort_closest(closest, cdx_iter, limit)
 
     if limit:
         cdx_iter = cdx_limit(cdx_iter, limit)
@@ -85,21 +85,21 @@ def filter_cdx(cdx_iter, params):
 
 #=================================================================
 # load and source merge cdx streams
-def load_cdx_streams(sources, params):
+def load_cdx_streams(sources, query):
     # Optimize: no need to merge if just one input
     if len(sources) == 1:
-        return sources[0].load_cdx(params)
+        return sources[0].load_cdx(query)
 
-    source_iters = map(lambda src: src.load_cdx(params), sources)
+    source_iters = map(lambda src: src.load_cdx(query), sources)
     merged_stream = merge(*(source_iters))
     return merged_stream
 
 
 #=================================================================
 # convert text cdx stream to CDXObject/IDXObject
-def make_obj_iter(text_iter, params):
+def make_obj_iter(text_iter, query):
     # already converted
-    if params.get('showPagedIndex'):
+    if query.secondary_index_only:
         cls = IDXObject
     else:
         cls = CDXObject

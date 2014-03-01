@@ -7,6 +7,7 @@ from pywb.utils.dsrules import BaseRule, RuleSet
 
 from pywb.utils.canonicalize import unsurt, UrlCanonicalizer
 
+from cdxobject import CDXQuery
 
 #=================================================================
 def load_domain_specific_cdx_rules(ds_rules_file, surt_ordered):
@@ -70,13 +71,13 @@ class FuzzyQuery:
     def __init__(self, rules):
         self.rules = rules
 
-    def __call__(self, params):
+    def __call__(self, query):
         matched_rule = None
 
-        urlkey = params['key']
-        url = params['url']
-        filter_ = params.get('filter', [])
-        output = params.get('output')
+        urlkey = query.key
+        url = query.url
+        filter_ = query.filters
+        output = query.output
 
         for rule in self.rules.iter_matching(urlkey):
             m = rule.regex.search(urlkey)
@@ -102,7 +103,7 @@ class FuzzyQuery:
                   'filter': filter_,
                   'output': output}
 
-        return params
+        return CDXQuery(**params)
 
 
 #=================================================================

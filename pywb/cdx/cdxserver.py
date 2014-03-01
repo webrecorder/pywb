@@ -3,7 +3,7 @@ from pywb.utils.canonicalize import UrlCanonicalizer, calc_search_range
 from cdxops import cdx_load
 from cdxsource import CDXSource, CDXFile, RemoteCDXSource, RedisCDXSource
 from zipnum import ZipNumCluster
-from cdxobject import CDXObject, CaptureNotFoundException, CDXException
+from cdxobject import CDXObject, CaptureNotFoundException, CDXException, CDXQuery
 from cdxdomainspecific import load_domain_specific_cdx_rules
 
 from pywb.utils.loaders import is_http
@@ -36,7 +36,7 @@ class BaseCDXServer(object):
         # set perms checker, if any
         self.perms_checker = kwargs.get('perms_checker')
 
-    def _check_cdx_iter(self, cdx_iter, params):
+    def _check_cdx_iter(self, cdx_iter, query):
         """ Check cdx iter semantics
         If iter is empty (no matches), check if fuzzy matching
         is allowed, and try it -- otherwise,
@@ -48,21 +48,23 @@ class BaseCDXServer(object):
         if cdx_iter:
             return cdx_iter
 
-        url = params['url']
-
         # check if fuzzy is allowed and ensure that its an
         # exact match
-        if (self.fuzzy_query and params.get('allowFuzzy') and
-            params.get('matchType', 'exact') == 'exact'):
+        if (self.fuzzy_query and
+            query.allow_fuzzy and
+            query.is_exact):
 
-            fuzzy_params = self.fuzzy_query(params)
-            if fuzzy_params:
-                return self.load_cdx(**fuzzy_params)
+            fuzzy_query_params = self.fuzzy_query(query)
+            if fuzzy_query_params:
+                return self.load_cdx_query(fuzzy_query_params)
 
-        msg = 'No Captures found for: ' + url
+        msg = 'No Captures found for: ' + query.url
         raise CaptureNotFoundException(msg)
 
     def load_cdx(self, **params):
+        return self.load_cdx_query(CDXQuery(**params))
+
+    def load_cdx_query(self, query):
         raise NotImplementedError('Implement in subclass')
 
     @staticmethod
@@ -89,26 +91,18 @@ class CDXServer(BaseCDXServer):
         # config argument.
         self._create_cdx_sources(paths, kwargs.get('config'))
 
-    def load_cdx(self, **params):
-        # if key not set, assume 'url' is set and needs canonicalization
-        if not params.get('key'):
-            try:
-                url = params['url']
-            except KeyError:
-                msg = 'A url= param must be specified to query the cdx server'
-                raise CDXException(msg)
+    def load_cdx_query(self, query):
+        url = query.url
+        key, end_key = calc_search_range(url=url,
+                                         match_type=query.match_type,
+                                         url_canon=self.url_canon)
+        query.set_key(key, end_key)
 
-            match_type = params.get('matchType', 'exact')
-
-            key, end_key = calc_search_range(url=url,
-                                             match_type=match_type,
-                                             url_canon=self.url_canon)
-            params['key'] = key
-            params['end_key'] = end_key
-
-        cdx_iter = cdx_load(self.sources, params,
+        cdx_iter = cdx_load(self.sources,
+                            query,
                             perms_checker=self.perms_checker)
-        return self._check_cdx_iter(cdx_iter, params)
+
+        return self._check_cdx_iter(cdx_iter, query)
 
     def _create_cdx_sources(self, paths, config):
         """
@@ -186,9 +180,9 @@ class RemoteCDXServer(BaseCDXServer):
         else:
             raise Exception('Invalid remote cdx source: ' + str(source))
 
-    def load_cdx(self, **params):
-        remote_iter = cdx_load((self.sources,), params, filter=False)
-        return self._check_cdx_iter(remote_iter, params)
+    def load_cdx_query(self, query):
+        remote_iter = cdx_load(self.sources, query, process=False)
+        return self._check_cdx_iter(remote_iter, query)
 
     def __str__(self):
         return 'Remote CDX server serving from ' + str(self.sources[0])
@@ -220,23 +214,4 @@ def create_cdx_server(config, ds_rules_file=None):
                       ds_rules_file=ds_rules_file,
                       perms_checker=perms_checker)
 
-#=================================================================
-def extract_params_from_wsgi_env(env):
-    """ utility function to extract params from the query
-    string of a WSGI environment dictionary
-    """
-    # use url= param to get actual url
-    params = urlparse.parse_qs(env['QUERY_STRING'])
 
-    if not 'output' in params:
-        params['output'] = 'text'
-
-    # parse_qs produces arrays for single values
-    # cdx processing expects singleton params for all params,
-    # except filters, so convert here
-    # use first value of the list
-    for name, val in params.iteritems():
-        if name != 'filter':
-            params[name] = val[0]
-
-    return params

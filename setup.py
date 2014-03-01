@@ -26,7 +26,6 @@ setup(
         ('sample_archive/text_content/', glob.glob('sample_archive/text_content/*')),
         ],
     install_requires=[
-        'uwsgi',
         'rfc3987',
         'chardet',
         'redis',
@@ -36,7 +35,6 @@ setup(
         'WebTest',
         'pytest',
         'werkzeug>=0.9.4',
-        'setuptools',
         ],
     # tests_require=['WebTest', 'pytest'],
     zip_safe=False

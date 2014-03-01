@@ -12,7 +12,7 @@ class CDXSource(object):
     """
     Represents any cdx index source
     """
-    def load_cdx(self, params):
+    def load_cdx(self, query):
         raise NotImplementedError('Implement in subclass')
 
 
@@ -24,9 +24,9 @@ class CDXFile(CDXSource):
     def __init__(self, filename):
         self.filename = filename
 
-    def load_cdx(self, params):
+    def load_cdx(self, query):
         source = SeekableTextFileReader(self.filename)
-        return iter_range(source, params.get('key'), params.get('end_key'))
+        return iter_range(source, query.key, query.end_key)
 
     def __str__(self):
         return 'CDX File - ' + self.filename
@@ -45,20 +45,16 @@ class RemoteCDXSource(CDXSource):
         self.cookie = cookie
         self.proxy_all = proxy_all
 
-    def load_cdx(self, proxy_params):
+    def load_cdx(self, query):
         if self.proxy_all:
-            params = proxy_params
-            params['proxyAll'] = True
+            query.set_process(False)
+            remote_query = query
         else:
             # Only send url and matchType params to remote
-            params = {}
-            params['url'] = proxy_params['url']
-            match_type = proxy_params.get('matchType')
+            remote_query = CDXQuery(url=query.url,
+                                    match_type=query.matchType)
 
-            if match_type:
-                proxy_params['matchType'] = match_type
-
-        urlparams = urllib.urlencode(params, True)
+        urlparams = remote_query.urlencode()
 
         try:
             request = urllib2.Request(self.remote_url, urlparams)
@@ -97,14 +93,14 @@ class RedisCDXSource(CDXSource):
             self.key_prefix = config.get('redis_key_prefix', self.key_prefix)
 
 
-    def load_cdx(self, params):
+    def load_cdx(self, query):
         """
         Load cdx from redis cache, from an ordered list
 
         Currently, there is no support for range queries
         Only 'exact' matchType is supported
         """
-        key = params['key']
+        key = query.key
 
         # ensure only url/surt is part of key
         key = key.split(' ')[0]
