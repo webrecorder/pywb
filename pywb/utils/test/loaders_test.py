@@ -30,9 +30,9 @@
 >>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb')).readline()
 ' CDX N b a m s k r M S V g\\n'
 
-#DecompressingBufferedReader readline() with decompression
->>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx.gz', 'rb'), decomp_type = 'gzip').readline()
-' CDX N b a m s k r M S V g\\n'
+#DecompressingBufferedReader readline() with decompression (zipnum file, no header)
+>>> DecompressingBufferedReader(open(test_zip_dir + 'zipnum-sample.cdx.gz', 'rb'), decomp_type = 'gzip').readline()
+'com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz\\n'
 
 >>> BlockLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read()
 'Example Domain'
@@ -60,7 +60,7 @@ from pywb.utils.bufferedreaders import DecompressingBufferedReader
 from pywb import get_test_dir
 #test_cdx_dir = os.path.dirname(os.path.realpath(__file__)) + '/../sample-data/'
 test_cdx_dir = get_test_dir() + 'cdx/'
-
+test_zip_dir = get_test_dir() + 'zipcdx/'
 
 def read_multiple(reader, inc_reads):
     result = None
