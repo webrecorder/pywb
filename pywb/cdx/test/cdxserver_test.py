@@ -142,6 +142,8 @@ org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db tex
  ('filename', 'dupes.warc.gz')]
 
 # NOTE: external dependency -- need self-contained test TODO
+
+# Load remote query but filter locally
 >>> x = CDXServer('http://web.archive.org/cdx/search/cdx').load_cdx(url = 'example.com', output = 'raw', limit = '2')
 >>> pprint.pprint(x.next().items())
 [('urlkey', 'com,example)/'),
@@ -152,14 +154,24 @@ org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db tex
  ('digest', 'HT2DYGA5UKZCPBSFVCV3JOBXGW2G5UUA'),
  ('length', '1792')]
 
+# No local filtering/processing of cdx, simply return result from remote server
+>>> x = RemoteCDXServer('http://web.archive.org/cdx/search/cdx').load_cdx(url = 'example.com', output = 'raw', limit = '2')
+>>> pprint.pprint(x.next().items())
+[('urlkey', 'com,example)/'),
+ ('timestamp', '20020120142510'),
+ ('original', 'http://example.com:80/'),
+ ('mimetype', 'text/html'),
+ ('statuscode', '200'),
+ ('digest', 'HT2DYGA5UKZCPBSFVCV3JOBXGW2G5UUA'),
+ ('length', '1792')]
 
->>> x = CDXServer('http://web.archive.org/cdx/search/cdx').load_cdx(url = 'facebook.com', output = 'raw', limit = '2')
+>>> x = RemoteCDXServer('http://web.archive.org/cdx/search/cdx').load_cdx(url = 'facebook.com', output = 'raw', limit = '2')
 Traceback (most recent call last):
 AccessException: Blocked By Robots
 """
 
 #=================================================================
-from pywb.cdx.cdxserver import CDXServer
+from pywb.cdx.cdxserver import CDXServer, RemoteCDXServer
 import os
 import sys
 import pprint

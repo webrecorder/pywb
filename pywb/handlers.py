@@ -79,8 +79,8 @@ class CDXHandler(BaseHandler):
         self.view = view if view else TextCapturesView()
 
     def __call__(self, wbrequest):
-        query = CDXQuery.from_wsgi_env(wbrequest.env)
-        cdx_lines = self.index_reader.load_cdx_query(query)
+        params = CDXQuery.extract_params_from_wsgi_env(wbrequest.env)
+        cdx_lines = self.index_reader.load_cdx(**params)
 
         return self.view.render_response(wbrequest, cdx_lines)
 

@@ -175,14 +175,13 @@ class RemoteCDXServer(BaseCDXServer):
 
         if isinstance(source, RemoteCDXSource):
             self.source = source
-        elif (isinstance(source, str) and
-              any(source.startswith(x) for x in ['http://', 'https://'])):
-            self.source = RemoteCDXSource(source)
+        elif (isinstance(source, str) and is_http(source)):
+            self.source = RemoteCDXSource(source, remote_processing=True)
         else:
             raise Exception('Invalid remote cdx source: ' + str(source))
 
     def load_cdx_query(self, query):
-        remote_iter = cdx_load(self.sources, query, process=False)
+        remote_iter = cdx_load([self.source], query, process=False)
         return self._check_cdx_iter(remote_iter, query)
 
     def __str__(self):

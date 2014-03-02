@@ -41,19 +41,18 @@ class RemoteCDXSource(CDXSource):
     Only url and match type params are proxied at this time,
     the stream is passed through all other filters locally.
     """
-    def __init__(self, filename, cookie=None, proxy_all=True):
+    def __init__(self, filename, cookie=None, remote_processing=False):
         self.remote_url = filename
         self.cookie = cookie
-        self.proxy_all = proxy_all
+        self.remote_processing = remote_processing
 
     def load_cdx(self, query):
-        if self.proxy_all:
-            query.set_process(False)
+        if self.remote_processing:
             remote_query = query
         else:
             # Only send url and matchType params to remote
             remote_query = CDXQuery(url=query.url,
-                                    match_type=query.matchType)
+                                    match_type=query.match_type)
 
         urlparams = remote_query.urlencode()
 

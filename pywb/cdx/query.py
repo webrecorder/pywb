@@ -79,13 +79,6 @@ class CDXQuery(object):
     def secondary_index_only(self):
         return self._get_bool('showPagedIndex')
 
-    @property
-    def process(self):
-        return self._get_bool('processOps', True)
-
-    def set_process(self, process):
-        self.params['processOps'] = process
-
     def _get_bool(self, name, def_val=False):
         v = self.params.get(name)
         if v:
@@ -103,6 +96,10 @@ class CDXQuery(object):
 
     @staticmethod
     def from_wsgi_env(env):
+        return CDXQuery(**CDXQuery.extract_params_from_wsgi_env(env))
+
+    @staticmethod
+    def extract_params_from_wsgi_env(env):
         """ utility function to extract params and create a CDXQuery
         from a WSGI environment dictionary
         """
@@ -119,4 +116,4 @@ class CDXQuery(object):
             if name != 'filter':
                 params[name] = val[0]
 
-        return CDXQuery(**params)
+        return params

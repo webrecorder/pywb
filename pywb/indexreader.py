@@ -34,9 +34,6 @@ class IndexReader(object):
 
         return cdxlines
 
-    def load_cdx_query(self, query):
-        return self.cdx_server.load_cdx_query(query)
-
     def load_cdx(self, **params):
         return self.cdx_server.load_cdx(**params)
 

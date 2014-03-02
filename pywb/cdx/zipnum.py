@@ -121,7 +121,6 @@ class ZipNumCluster(CDXSource):
                               prev_size=1)
 
         if query.secondary_index_only:
-            query.set_process(False)
             return idx_iter
         else:
             blocks = self.idx_to_cdx(idx_iter, query)

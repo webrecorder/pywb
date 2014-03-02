@@ -25,7 +25,7 @@ def cdx_load(sources, query, perms_checker=None, process=True):
     cdx_iter = load_cdx_streams(sources, query)
     cdx_iter = make_obj_iter(cdx_iter, query)
 
-    if process and query.process:
+    if process and not query.secondary_index_only:
         cdx_iter = process_cdx(cdx_iter, query)
 
     if perms_checker:
