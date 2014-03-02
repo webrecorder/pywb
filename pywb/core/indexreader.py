@@ -30,7 +30,7 @@ class IndexReader(object):
 
         params['allowFuzzy'] = True
 
-        cdxlines = self.load_cdx(url=wburl.url, output='raw', **params)
+        cdxlines = self.load_cdx(url=wburl.url, **params)
 
         return cdxlines
 

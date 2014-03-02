@@ -110,21 +110,20 @@ class ZipNumCluster(CDXSource):
     def lookup_loc(self, part):
         return self.loc_map[part]
 
-    def load_cdx(self, params):
+    def load_cdx(self, query):
         self.reload_loc()
 
         reader = SeekableTextFileReader(self.summary)
 
         idx_iter = iter_range(reader,
-                              params['key'],
-                              params['end_key'],
+                              query.key,
+                              query.end_key,
                               prev_size=1)
 
-        if params.get('showPagedIndex'):
-            params['proxyAll'] = True
+        if query.secondary_index_only:
             return idx_iter
         else:
-            blocks = self.idx_to_cdx(idx_iter, params)
+            blocks = self.idx_to_cdx(idx_iter, query)
 
             def gen_cdx():
                 for blk in blocks:
@@ -133,7 +132,7 @@ class ZipNumCluster(CDXSource):
 
             return gen_cdx()
 
-    def idx_to_cdx(self, idx_iter, params):
+    def idx_to_cdx(self, idx_iter, query):
         blocks = None
         ranges = []
 
@@ -150,7 +149,7 @@ class ZipNumCluster(CDXSource):
 
             else:
                 if blocks:
-                    yield self.block_to_cdx_iter(blocks, ranges, params)
+                    yield self.block_to_cdx_iter(blocks, ranges, query)
 
                 blocks = ZipBlocks(idx['part'],
                                    idx['offset'],
@@ -160,15 +159,15 @@ class ZipNumCluster(CDXSource):
                 ranges = [blocks.length]
 
         if blocks:
-            yield self.block_to_cdx_iter(blocks, ranges, params)
+            yield self.block_to_cdx_iter(blocks, ranges, query)
 
-    def block_to_cdx_iter(self, blocks, ranges, params):
+    def block_to_cdx_iter(self, blocks, ranges, query):
         last_exc = None
         last_traceback = None
 
         for location in self.lookup_loc(blocks.part):
             try:
-                return self.load_blocks(location, blocks, ranges, params)
+                return self.load_blocks(location, blocks, ranges, query)
             except Exception as exc:
                 last_exc = exc
                 import sys
@@ -179,7 +178,7 @@ class ZipNumCluster(CDXSource):
         else:
             raise Exception('No Locations Found for: ' + block.part)
 
-    def load_blocks(self, location, blocks, ranges, params):
+    def load_blocks(self, location, blocks, ranges, query):
 
         if (logging.getLogger().getEffectiveLevel() <= logging.DEBUG):
             msg = 'Loading {b.count} blocks from {loc}:{b.offset}+{b.length}'
@@ -195,9 +194,9 @@ class ZipNumCluster(CDXSource):
         iter_ = itertools.chain(*itertools.imap(decompress_block, ranges))
 
         # start bound
-        iter_ = linearsearch(iter_, params['key'])
+        iter_ = linearsearch(iter_, query.key)
 
         # end bound
-        end = params['end_key']
+        end = query.end_key
         iter_ = itertools.takewhile(lambda line: line < end, iter_)
         return iter_

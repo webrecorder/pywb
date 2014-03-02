@@ -1,4 +1,5 @@
 from cdxobject import CDXObject, IDXObject, AccessException
+from query import CDXQuery
 from pywb.utils.timeutils import timestamp_to_sec
 
 import bisect
@@ -10,32 +11,44 @@ from collections import deque
 
 
 #=================================================================
-def cdx_load(sources, params, perms_checker=None):
+def cdx_load(sources, query, perms_checker=None, process=True):
+    """
+    merge text CDX lines from sources, return an iterator for
+    filtered and access-checked sequence of CDX objects.
+
+    :param sources: iterable for text CDX sources.
+    :param perms_checker: access check filter object implementing
+      allow_url_lookup(key, url), allow_capture(cdxobj) and
+      filter_fields(cdxobj) methods.
+    :param process: bool, perform processing sorting/filtering/grouping ops
+    """
+    cdx_iter = load_cdx_streams(sources, query)
+    cdx_iter = make_obj_iter(cdx_iter, query)
+
+    if process and not query.secondary_index_only:
+        cdx_iter = process_cdx(cdx_iter, query)
+
     if perms_checker:
-        cdx_iter = cdx_load_with_perms(sources, params, perms_checker)
-    else:
-        cdx_iter = cdx_load_and_filter(sources, params)
+        cdx_iter = restrict_cdx(cdx_iter, query, perms_checker)
 
-    # output raw cdx objects
-    if params.get('output') == 'raw':
-        return cdx_iter
-
-    def write_cdx(fields):
-        for cdx in cdx_iter:
-            yield cdx_text_out(cdx, fields) + '\n'
-
-    return write_cdx(params.get('fields'))
-
+    return cdx_iter
 
 #=================================================================
-def cdx_load_with_perms(sources, params, perms_checker):
-    if not perms_checker.allow_url_lookup(params['key'], params['url']):
-        if params.get('matchType', 'exact') == 'exact':
+def restrict_cdx(cdx_iter, query, perms_checker):
+    """
+    filter out those cdx records that user doesn't have access to,
+    by consulting :param perms_checker:.
+    :param cdx_iter: cdx record source iterable
+    :param query: request parameters (CDXQuery)
+    :param perms_checker: object implementing permission checker
+    """
+    if not perms_checker.allow_url_lookup(query.key, query.url):
+        if query.is_exact:
             raise AccessException('Excluded')
 
-    cdx_iter = cdx_load_and_filter(sources, params)
-
     for cdx in cdx_iter:
+        # TODO: we could let filter_fields handle this case by accepting
+        # None as a return value.
         if not perms_checker.allow_capture(cdx):
             continue
 
@@ -43,45 +56,27 @@ def cdx_load_with_perms(sources, params, perms_checker):
 
         yield cdx
 
-
 #=================================================================
-def cdx_text_out(cdx, fields):
-    if not fields:
-        return str(cdx)
-    else:
-        return ' '.join(map(lambda x: cdx[x], fields.split(',')))
-
-
-#=================================================================
-def cdx_load_and_filter(sources, params):
-    cdx_iter = load_cdx_streams(sources, params)
-
-    cdx_iter = make_obj_iter(cdx_iter, params)
-
-    if params.get('proxyAll'):
-        return cdx_iter
-
-    resolve_revisits = params.get('resolveRevisits', False)
-    if resolve_revisits:
+def process_cdx(cdx_iter, query):
+    if query.resolve_revisits:
         cdx_iter = cdx_resolve_revisits(cdx_iter)
 
-    filters = params.get('filter', None)
+    filters = query.filters
     if filters:
         cdx_iter = cdx_filter(cdx_iter, filters)
 
-    collapse_time = params.get('collapseTime', None)
+    collapse_time = query.collapse_time
     if collapse_time:
         cdx_iter = cdx_collapse_time_status(cdx_iter, collapse_time)
 
-    limit = int(params.get('limit', 1000000))
+    limit = query.limit
 
-    reverse = params.get('reverse', False) or params.get('sort') == 'reverse'
-    if reverse:
+    if query.reverse:
         cdx_iter = cdx_reverse(cdx_iter, limit)
 
-    closest_to = params.get('closest', None)
-    if closest_to:
-        cdx_iter = cdx_sort_closest(closest_to, cdx_iter, limit)
+    closest = query.closest
+    if closest:
+        cdx_iter = cdx_sort_closest(closest, cdx_iter, limit)
 
     if limit:
         cdx_iter = cdx_limit(cdx_iter, limit)
@@ -91,26 +86,28 @@ def cdx_load_and_filter(sources, params):
 
 #=================================================================
 # load and source merge cdx streams
-def load_cdx_streams(sources, params):
+def load_cdx_streams(sources, query):
     # Optimize: no need to merge if just one input
     if len(sources) == 1:
-        return sources[0].load_cdx(params)
+        cdx_iter = sources[0].load_cdx(query)
+    else:
+        source_iters = map(lambda src: src.load_cdx(query), sources)
+        cdx_iter = merge(*(source_iters))
 
-    source_iters = map(lambda src: src.load_cdx(params), sources)
-    merged_stream = merge(*(source_iters))
-    return merged_stream
+    for cdx in cdx_iter:
+        yield cdx
 
 
 #=================================================================
 # convert text cdx stream to CDXObject/IDXObject
-def make_obj_iter(text_iter, params):
+def make_obj_iter(text_iter, query):
     # already converted
-    if params.get('showPagedIndex'):
+    if query.secondary_index_only:
         cls = IDXObject
     else:
         cls = CDXObject
 
-    return itertools.imap(lambda line: cls(line), text_iter)
+    return (cls(line) for line in text_iter)
 
 
 #=================================================================
@@ -161,6 +158,7 @@ def cdx_filter(cdx_iter, filter_strings):
             if string.startswith('='):
                 string = string[1:]
                 self.compare_func = self.exact
+            # contains match
             elif string.startswith('~'):
                 string = string[1:]
                 self.compare_func = self.contains
@@ -257,8 +255,8 @@ def cdx_resolve_revisits(cdx_iter):
     originals = {}
 
     for cdx in cdx_iter:
-        is_revisit = ((cdx['mimetype'] == 'warc/revisit') or
-                      (cdx['filename'] == '-'))
+        
+        is_revisit = cdx.is_revisit()
 
         digest = cdx['digest']
 

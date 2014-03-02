@@ -2,6 +2,7 @@ from pywb.utils.binsearch import iter_range
 from pywb.utils.loaders import SeekableTextFileReader
 
 from cdxobject import AccessException
+from query import CDXQuery
 
 import urllib
 import urllib2
@@ -12,7 +13,7 @@ class CDXSource(object):
     """
     Represents any cdx index source
     """
-    def load_cdx(self, params):
+    def load_cdx(self, query):
         raise NotImplementedError('Implement in subclass')
 
 
@@ -24,9 +25,9 @@ class CDXFile(CDXSource):
     def __init__(self, filename):
         self.filename = filename
 
-    def load_cdx(self, params):
+    def load_cdx(self, query):
         source = SeekableTextFileReader(self.filename)
-        return iter_range(source, params.get('key'), params.get('end_key'))
+        return iter_range(source, query.key, query.end_key)
 
     def __str__(self):
         return 'CDX File - ' + self.filename
@@ -40,25 +41,20 @@ class RemoteCDXSource(CDXSource):
     Only url and match type params are proxied at this time,
     the stream is passed through all other filters locally.
     """
-    def __init__(self, filename, cookie=None, proxy_all=True):
+    def __init__(self, filename, cookie=None, remote_processing=False):
         self.remote_url = filename
         self.cookie = cookie
-        self.proxy_all = proxy_all
+        self.remote_processing = remote_processing
 
-    def load_cdx(self, proxy_params):
-        if self.proxy_all:
-            params = proxy_params
-            params['proxyAll'] = True
+    def load_cdx(self, query):
+        if self.remote_processing:
+            remote_query = query
         else:
             # Only send url and matchType params to remote
-            params = {}
-            params['url'] = proxy_params['url']
-            match_type = proxy_params.get('matchType')
+            remote_query = CDXQuery(url=query.url,
+                                    match_type=query.match_type)
 
-            if match_type:
-                proxy_params['matchType'] = match_type
-
-        urlparams = urllib.urlencode(params, True)
+        urlparams = remote_query.urlencode()
 
         try:
             request = urllib2.Request(self.remote_url, urlparams)
@@ -97,14 +93,14 @@ class RedisCDXSource(CDXSource):
             self.key_prefix = config.get('redis_key_prefix', self.key_prefix)
 
 
-    def load_cdx(self, params):
+    def load_cdx(self, query):
         """
         Load cdx from redis cache, from an ordered list
 
         Currently, there is no support for range queries
         Only 'exact' matchType is supported
         """
-        key = params['key']
+        key = query.key
 
         # ensure only url/surt is part of key
         key = key.split(' ')[0]
