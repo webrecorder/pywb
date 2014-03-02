@@ -89,11 +89,13 @@ def process_cdx(cdx_iter, query):
 def load_cdx_streams(sources, query):
     # Optimize: no need to merge if just one input
     if len(sources) == 1:
-        return sources[0].load_cdx(query)
+        cdx_iter = sources[0].load_cdx(query)
+    else:
+        source_iters = map(lambda src: src.load_cdx(query), sources)
+        cdx_iter = merge(*(source_iters))
 
-    source_iters = map(lambda src: src.load_cdx(query), sources)
-    merged_stream = merge(*(source_iters))
-    return merged_stream
+    for cdx in cdx_iter:
+        yield cdx
 
 
 #=================================================================
@@ -156,6 +158,7 @@ def cdx_filter(cdx_iter, filter_strings):
             if string.startswith('='):
                 string = string[1:]
                 self.compare_func = self.exact
+            # contains match
             elif string.startswith('~'):
                 string = string[1:]
                 self.compare_func = self.contains

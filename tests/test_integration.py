@@ -2,7 +2,8 @@ import webtest
 from pywb.pywb_init import pywb_config
 from pywb.wbapp import create_wb_app
 from pywb.cdx.cdxobject import CDXObject
-from pywb.cdx.perms import AllowAllPerms
+
+from fixture import TestExclusionPerms
 
 class TestWb:
     TEST_CONFIG = 'test_config.yaml'
@@ -208,3 +209,4 @@ class TestWb:
         resp = self.testapp.get('/pywb/?abc', status = 400)
         assert resp.status_int == 400
         assert 'Invalid Url: http://?abc' in resp.body
+
