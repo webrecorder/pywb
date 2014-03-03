@@ -9,6 +9,7 @@ from pywb.utils.canonicalize import unsurt, UrlCanonicalizer
 
 from query import CDXQuery
 
+
 #=================================================================
 def load_domain_specific_cdx_rules(ds_rules_file, surt_ordered):
     """

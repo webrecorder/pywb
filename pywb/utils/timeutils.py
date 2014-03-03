@@ -171,7 +171,6 @@ def timestamp_to_datetime(string):
     # pad to 6 digits
     string = _pad_timestamp(string, PAD_6)
 
-
     def clamp(val, min_, max_):
         try:
             val = int(val)

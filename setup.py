@@ -14,7 +14,14 @@ setup(
     license='GPL',
     packages=find_packages(),
     provides=[
-        'pywb','pywb.utils','pywb.cdx','pywb.warc','pywb.rewrite'
+        'pywb',
+        'pywb.utils',
+        'pywb.cdx',
+        'pywb.warc',
+        'pywb.rewrite',
+        'pywb.framework'
+        'pywb.core',
+        'pywb.apps'
         ],
     package_data={
         'pywb': ['ui/*', 'static/*', '*.yaml'],
@@ -34,7 +41,6 @@ setup(
         'pyyaml',
         'WebTest',
         'pytest',
-        'werkzeug>=0.9.4',
         ],
     # tests_require=['WebTest', 'pytest'],
     zip_safe=False

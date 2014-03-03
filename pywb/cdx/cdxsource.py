@@ -8,6 +8,7 @@ import urllib
 import urllib2
 import itertools
 
+
 #=================================================================
 class CDXSource(object):
     """
@@ -91,7 +92,6 @@ class RedisCDXSource(CDXSource):
         self.key_prefix = self.DEFAULT_KEY_PREFIX
         if config:
             self.key_prefix = config.get('redis_key_prefix', self.key_prefix)
-
 
     def load_cdx(self, query):
         """

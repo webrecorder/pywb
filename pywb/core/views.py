@@ -1,6 +1,6 @@
-import pywb.utils.timeutils as timeutils
+from pywb.utils.timeutils import timestamp_to_datetime
+from pywb.framework.wbrequestresponse import WbResponse
 
-import wbrequestresponse
 import urlparse
 import time
 
@@ -18,7 +18,7 @@ class StaticTextView:
         return self.text
 
     def render_response(self, **kwargs):
-        return wbrequestresponse.WbResponse.text_stream(self.text)
+        return WbResponse.text_stream(self.text)
 
 #=================================================================
 class J2TemplateView:
@@ -34,7 +34,7 @@ class J2TemplateView:
         if template_dir.startswith('.') or template_dir.startswith('file://'):
             loader = FileSystemLoader(template_dir)
         else:
-            loader = PackageLoader(__package__, template_dir)
+            loader = PackageLoader('pywb', template_dir)
 
         jinja_env = Environment(loader = loader, trim_blocks = True)
         jinja_env.filters['format_ts'] = J2TemplateView.format_ts
@@ -51,13 +51,13 @@ class J2TemplateView:
     def render_response(self, **kwargs):
         template_result = self.render_to_string(**kwargs)
         status = kwargs.get('status', '200 OK')
-        return wbrequestresponse.WbResponse.text_response(str(template_result), status = status, content_type = 'text/html; charset=utf-8')
+        return WbResponse.text_response(str(template_result), status = status, content_type = 'text/html; charset=utf-8')
 
 
     # Filters
     @staticmethod
     def format_ts(value, format_='%a, %b %d %Y %H:%M:%S'):
-        value = timeutils.timestamp_to_datetime(value)
+        value = timestamp_to_datetime(value)
         return value.strftime(format_)
 
     @staticmethod
@@ -90,7 +90,7 @@ class TextCapturesView:
                 cdx += '\n'
             return cdx
         cdx_lines = imap(to_str, cdx_lines)
-        return wbrequestresponse.WbResponse.text_stream(cdx_lines)
+        return WbResponse.text_stream(cdx_lines)
 
 
 

@@ -2,9 +2,9 @@ import StringIO
 
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.utils.bufferedreaders import ChunkedDataReader
-from wbrequestresponse import WbResponse
+from pywb.framework.wbrequestresponse import WbResponse
 
-from wbexceptions import CaptureException, InternalRedirect
+from pywb.framework.wbexceptions import CaptureException, InternalRedirect
 from pywb.warc.recordloader import ArchiveLoadFailed
 
 from pywb.utils.loaders import LimitReader
@@ -51,7 +51,7 @@ class ReplayView:
                 self._redirect_if_needed(wbrequest, cdx)
 
                 # one more check for referrer-based self-redirect
-                self._reject_referrer_self_redirect(wbrequest, status_headers)
+                self._reject_referrer_self_redirect(wbrequest)
 
                 response = None
 
@@ -177,25 +177,30 @@ class ReplayView:
 
 
     def _reject_self_redirect(self, wbrequest, cdx, status_headers):
-        # self-redirect via location
+        """
+        Check if response is a 3xx redirect to the same url
+        If so, reject this capture to avoid causing redirect loop
+        """
         if status_headers.statusline.startswith('3'):
             request_url = wbrequest.wb_url.url.lower()
             location_url = status_headers.get_header('Location').lower()
 
-            #TODO: canonicalize before testing?
             if (UrlRewriter.strip_protocol(request_url) == UrlRewriter.strip_protocol(location_url)):
                 raise CaptureException('Self Redirect: ' + str(cdx))
 
-    def _reject_referrer_self_redirect(self, wbrequest, status_headers):
-        # at correct timestamp now, but must check for referrer redirect
-        # indirect self-redirect, via meta-refresh, if referrer is same as current url
-        if status_headers.statusline.startswith('2'):
-            # build full url even if using relative-rewriting
-            request_url = wbrequest.host_prefix + wbrequest.rel_prefix + str(wbrequest.wb_url)
-            referrer_url = wbrequest.referrer
-            if (referrer_url and UrlRewriter.strip_protocol(request_url) == UrlRewriter.strip_protocol(referrer_url)):
-                raise CaptureException('Self Redirect via Referrer: ' + str(wbrequest.wb_url))
+    def _reject_referrer_self_redirect(self, wbrequest):
+        """
+        Perform final check for referrer based self-redirect.
+        This method should be called after verifying request timestamp matches capture.
+        if referrer is same as current url, reject this response and try another capture
+        """
+        if not wbrequest.referrer:
+            return
 
+        # build full url even if using relative-rewriting
+        request_url = (wbrequest.host_prefix +
+                       wbrequest.rel_prefix + str(wbrequest.wb_url))
 
-
-
+        if (UrlRewriter.strip_protocol(request_url) ==
+            UrlRewriter.strip_protocol(wbrequest.referrer)):
+            raise CaptureException('Self Redirect via Referrer: ' + str(wbrequest.wb_url))

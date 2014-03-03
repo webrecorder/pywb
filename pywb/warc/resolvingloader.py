@@ -176,6 +176,6 @@ class ResolvingLoader:
         params = {'url': url,
                   'closest': timestamp,
                   'filter': 'digest:' + digest,
-                  'output': 'raw'}
+                  'output': 'cdxobject'}
 
         return self.cdx_server.load_cdx(**params)

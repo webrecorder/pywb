@@ -1,28 +1,11 @@
-import urlparse
 import pkgutil
 import mimetypes
 import time
 
-from pywb.rewrite.wburl import WbUrl
-from pywb.cdx.query import CDXQuery
-from wbrequestresponse import WbResponse
-from wbexceptions import WbException, NotFoundException
+from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
+from pywb.framework.wbrequestresponse import WbResponse
+from pywb.framework.wbexceptions import WbException, NotFoundException
 from views import TextCapturesView
-
-
-#=================================================================
-class BaseHandler(object):
-    def __call__(self, wbrequest):
-        return wbrequest
-
-    def get_wburl_type(self):
-        return None
-
-
-#=================================================================
-class WbUrlHandler(BaseHandler):
-    def get_wburl_type(self):
-        return WbUrl
 
 
 #=================================================================
@@ -33,11 +16,15 @@ class WBHandler(WbUrlHandler):
                  html_view=None, search_view=None):
 
         self.index_reader = index_reader
+
         self.replay = replay
 
-        self.text_view = TextCapturesView()
+        self.text_query_view = TextCapturesView()
 
-        self.html_view = html_view
+        self.query_view = html_view
+        if not self.query_view:
+            self.query_view = text_query_view
+
         self.search_view = search_view
 
     def __call__(self, wbrequest):
@@ -49,11 +36,10 @@ class WBHandler(WbUrlHandler):
 
         # new special modifier to always show cdx index
         if wbrequest.wb_url.mod == 'cdx_':
-            return self.text_view.render_response(wbrequest, cdx_lines)
+            return self.text_query_view.render_response(wbrequest, cdx_lines)
 
         if (wbrequest.wb_url.type == wbrequest.wb_url.QUERY) or (wbrequest.wb_url.type == wbrequest.wb_url.URL_QUERY):
-            query_view = self.html_view if self.html_view else self.text_view
-            return query_view.render_response(wbrequest, cdx_lines)
+            return self.query_view.render_response(wbrequest, cdx_lines)
 
         with PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
             return self.replay(wbrequest, cdx_lines)
@@ -71,28 +57,10 @@ class WBHandler(WbUrlHandler):
 
 
 #=================================================================
-# CDX-Server Handler -- pass all params to cdx server
-#=================================================================
-class CDXHandler(BaseHandler):
-    def __init__(self, index_reader, view = None):
-        self.index_reader = index_reader
-        self.view = view if view else TextCapturesView()
-
-    def __call__(self, wbrequest):
-        params = CDXQuery.extract_params_from_wsgi_env(wbrequest.env)
-        cdx_lines = self.index_reader.load_cdx(**params)
-
-        return self.view.render_response(wbrequest, cdx_lines)
-
-    def __str__(self):
-        return 'Index Reader: ' + str(self.index_reader)
-
-
-#=================================================================
 # Static Content Handler
 #=================================================================
 class StaticHandler(BaseHandler):
-    def __init__(self, static_path, pkg = __package__):
+    def __init__(self, static_path, pkg = 'pywb'):
         mimetypes.init()
 
         self.static_path = static_path

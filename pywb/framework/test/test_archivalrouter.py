@@ -84,8 +84,8 @@ False
 
 """
 
-from pywb.archivalrouter import Route, ReferRedirect
-from pywb.handlers import BaseHandler, WbUrlHandler
+from pywb.framework.archivalrouter import Route, ReferRedirect
+from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 import pprint
 
 def print_req(req):

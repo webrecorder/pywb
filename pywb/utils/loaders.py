@@ -7,11 +7,20 @@ import os
 import hmac
 import urllib2
 import time
+import pkg_resources
 
 
 #=================================================================
 def is_http(filename):
-    return any(filename.startswith(x) for x in ['http://', 'https://'])
+    return filename.startswith(('http://', 'https://'))
+
+
+#=================================================================
+def load_yaml_config(config_file):
+    import yaml
+    configdata = BlockLoader().load(config_file)
+    config = yaml.load(configdata)
+    return config
 
 
 #=================================================================
@@ -24,27 +33,46 @@ class BlockLoader(object):
     def __init__(self, cookie_maker=None):
         self.cookie_maker = cookie_maker
 
-    def load(self, url, offset, length):
+    def load(self, url, offset=0, length=-1):
         """
         Determine loading method based on uri
         """
         if is_http(url):
             return self.load_http(url, offset, length)
         else:
-            return self.load_file(url, offset, length)
+            return self.load_file_or_resource(url, offset, length)
 
-    def load_file(self, url, offset, length):
+    def load_file_or_resource(self, url, offset, length):
         """
         Load a file-like reader from the local file system
         """
 
+        file_only = False
+
         if url.startswith('file://'):
             url = url[len('file://'):]
+            file_only = True
 
-        afile = open(url, 'rb')
-        afile.seek(offset)
+        try:
+            # first, try as file
+            afile = open(url, 'rb')
 
-        if length > 0:
+        except IOError:
+            if file_only:
+                raise
+
+            # then, try as package.path/file
+            pkg_split = url.split('/', 1)
+            if len(pkg_split) == 1:
+                raise
+
+            afile = pkg_resources.resource_stream(pkg_split[0],
+                                                  pkg_split[1])
+
+        if offset > 0:
+            afile.seek(offset)
+
+        if length >= 0:
             return LimitReader(afile, length)
         else:
             return afile

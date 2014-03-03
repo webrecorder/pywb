@@ -90,6 +90,9 @@ enable_http_proxy: true
 # enable cdx server api for querying cdx directly (experimental)
 enable_cdx_api: true
 
+# test different port
+port: 9000
+
 # optional reporter callback func
 # if set, called with request and cdx object
 reporter: !!python/object/new:tests.fixture.PrintReporter []

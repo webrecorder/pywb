@@ -126,14 +126,19 @@ class CDXServer(BaseCDXServer):
             logging.warn('No CDX Sources configured from paths=%s', paths)
 
     def _add_cdx_source(self, source):
-        if source is None: return
+        if source is None:
+            return
+
         logging.debug('Adding CDX Source: %s', source)
         self.sources.append(source)
 
     def add_cdx_source(self, source, config):
-        if source is None: return
+        if source is None:
+            return
+
         if isinstance(source, CDXSource):
             self._add_cdx_source(source)
+
         elif isinstance(source, str):
             if os.path.isdir(source):
                 for fn in os.listdir(source):
@@ -213,5 +218,3 @@ def create_cdx_server(config, ds_rules_file=None):
                       surt_ordered=surt_ordered,
                       ds_rules_file=ds_rules_file,
                       perms_checker=perms_checker)
-
-

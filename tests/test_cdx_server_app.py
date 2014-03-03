@@ -1,32 +1,26 @@
-import os
 import re
+import webtest
 
-import pytest
 from urllib import urlencode
 
-from werkzeug.test import Client
-from werkzeug.wrappers import BaseResponse, Response
-
-import yaml
-
 from pywb.cdx.cdxobject import CDXObject
-from pywb.cdx.wsgi_cdxserver import create_app
+from pywb.apps.cdx_server import application
 
-from tests.fixture import testconfig
+import pytest
 
+#================================================================
 @pytest.fixture
-def client(testconfig):
-    app = create_app(testconfig)
-    return Client(app, Response)
+def client():
+    return webtest.TestApp(application)
 
-# ================================================================
 
-def query(client, url, **params):
+#================================================================
+def query(client, url, is_error=False, **params):
     params['url'] = url
-    return client.get('/cdx?' + urlencode(params, doseq=1))
+    return client.get('/cdx?' + urlencode(params, doseq=1), expect_errors=is_error)
 
-# ================================================================
 
+#================================================================
 def test_exact_url(client):
     """
     basic exact match, no filters, etc.
@@ -34,48 +28,54 @@ def test_exact_url(client):
     resp = query(client, 'http://www.iana.org/')
 
     assert resp.status_code == 200
-    print resp.data
+    print resp.body
 
+
+#================================================================
 def test_prefix_match(client):
     """
     prefix match test
     """
     resp = query(client, 'http://www.iana.org/', matchType='prefix')
 
-    print resp.data.splitlines()
+    print resp.body.splitlines()
     assert resp.status_code == 200
 
     suburls = 0
-    for l in resp.data.splitlines():
+    for l in resp.body.splitlines():
         fields = l.split(' ')
         if len(fields[0]) > len('org,iana)/'):
             suburls += 1
     assert suburls > 0
-               
+
+
+#================================================================
 def test_filters(client):
     """
     filter cdxes by mimetype and filename field, exact match.
     """
     resp = query(client, 'http://www.iana.org/_css/2013.1/screen.css',
                  filter=('mimetype:warc/revisit', 'filename:dupes.warc.gz'))
-    
-    assert resp.status_code == 200
-    assert resp.mimetype == 'text/plain'
 
-    for l in resp.data.splitlines():
+    assert resp.status_code == 200
+    assert resp.content_type == 'text/plain'
+
+    for l in resp.body.splitlines():
         fields = l.split(' ')
         assert fields[0] == 'org,iana)/_css/2013.1/screen.css'
         assert fields[3] == 'warc/revisit'
         assert fields[10] == 'dupes.warc.gz'
 
+
+#================================================================
 def test_limit(client):
     resp = query(client, 'http://www.iana.org/_css/2013.1/screen.css',
                  limit='1')
 
     assert resp.status_code == 200
-    assert resp.mimetype == 'text/plain'
+    assert resp.content_type == 'text/plain'
 
-    cdxes = resp.data.splitlines()
+    cdxes = resp.body.splitlines()
     assert len(cdxes) == 1
     fields = cdxes[0].split(' ')
     assert fields[0] == 'org,iana)/_css/2013.1/screen.css'
@@ -86,15 +86,17 @@ def test_limit(client):
                  limit='1', reverse='1')
 
     assert resp.status_code == 200
-    assert resp.mimetype == 'text/plain'
+    assert resp.content_type == 'text/plain'
 
-    cdxes = resp.data.splitlines()
+    cdxes = resp.body.splitlines()
     assert len(cdxes) == 1
     fields = cdxes[0].split(' ')
     assert fields[0] == 'org,iana)/_css/2013.1/screen.css'
     assert fields[1] == '20140127171239'
     assert fields[3] == 'warc/revisit'
 
+
+#================================================================
 def test_fields(client):
     """
     retrieve subset of fields with ``fields`` parameter.
@@ -104,7 +106,7 @@ def test_fields(client):
 
     assert resp.status_code == 200
 
-    cdxes = resp.data.splitlines()
+    cdxes = resp.body.splitlines()
 
     for cdx in cdxes:
         fields = cdx.split(' ')
@@ -113,16 +115,21 @@ def test_fields(client):
         assert re.match(r'\d{14}$', fields[1])
         assert re.match(r'\d{3}|-', fields[2])
 
+
+#================================================================
 def test_fields_undefined(client):
     """
-    server shall respond with Bad Request (TODO: with proper explanation),
+    server shall respond with Bad Request and name of undefined
     when ``fields`` parameter contains undefined name(s).
     """
     resp = query(client, 'http://www.iana.org/_css/2013.1/print.css',
+                 is_error=True,
                  fields='urlkey,nosuchfield')
 
     resp.status_code == 400
-    
+
+
+#================================================================
 def test_resolveRevisits(client):
     """
     with ``resolveRevisits=true``, server adds three fields pointing to
@@ -132,9 +139,9 @@ def test_resolveRevisits(client):
                  resolveRevisits='true'
                  )
     assert resp.status_code == 200
-    assert resp.mimetype == 'text/plain'
+    assert resp.content_type == 'text/plain'
 
-    cdxes = resp.data.splitlines()
+    cdxes = resp.body.splitlines()
     originals = {}
     for cdx in cdxes:
         fields = cdx.split(' ')
@@ -151,6 +158,8 @@ def test_resolveRevisits(client):
             orig = originals.get(sha)
             assert orig == (int(orig_size), int(orig_offset), orig_fn)
 
+
+#================================================================
 def test_resolveRevisits_orig_fields(client):
     """
     when resolveRevisits=true, extra three fields are named
@@ -162,9 +171,9 @@ def test_resolveRevisits_orig_fields(client):
                  fields='urlkey,orig.length,orig.offset,orig.filename'
                  )
     assert resp.status_code == 200
-    assert resp.mimetype == 'text/plain'
+    assert resp.content_type == 'text/plain'
 
-    cdxes = resp.data.splitlines()
+    cdxes = resp.body.splitlines()
     for cdx in cdxes:
         fields = cdx.split(' ')
         assert len(fields) == 4
@@ -172,6 +181,8 @@ def test_resolveRevisits_orig_fields(client):
         assert (orig_len == '-' and orig_offset == '-' and orig_fn == '-' or
                 (int(orig_len), int(orig_offset), orig_fn))
 
+
+#================================================================
 def test_collapseTime_resolveRevisits_reverse(client):
     resp = query(client, 'http://www.iana.org/_css/2013.1/print.css',
                  collapseTime='11',
@@ -179,11 +190,10 @@ def test_collapseTime_resolveRevisits_reverse(client):
                  reverse='true'
                  )
 
-    cdxes = [CDXObject(l) for l in resp.data.splitlines()]
-    
+    cdxes = [CDXObject(l) for l in resp.body.splitlines()]
+
     assert len(cdxes) == 3
 
     # timestamp is in descending order
     for i in range(len(cdxes) - 1):
         assert cdxes[i]['timestamp'] >= cdxes[i + 1]['timestamp']
-
