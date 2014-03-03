@@ -1,5 +1,6 @@
 from urllib import urlencode
 from urlparse import parse_qs
+from cdxobject import CDXException
 
 
 #=================================================================
@@ -62,6 +63,9 @@ class CDXQuery(object):
     @property
     def fields(self):
         v = self.params.get('fields')
+        # check old param name
+        if not v:
+            v = self.params.get('fl')
         return v.split(',') if v else None
 
     @property
@@ -105,9 +109,6 @@ class CDXQuery(object):
         """
         params = parse_qs(env['QUERY_STRING'])
 
-        if not 'output' in params:
-            params['output'] = 'text'
-
         # parse_qs produces arrays for single values
         # cdx processing expects singleton params for all params,
         # except filters, so convert here
@@ -115,5 +116,9 @@ class CDXQuery(object):
         for name, val in params.iteritems():
             if name != 'filter':
                 params[name] = val[0]
+
+        if not 'output' in params:
+            params['output'] = 'text'
+
 
         return params

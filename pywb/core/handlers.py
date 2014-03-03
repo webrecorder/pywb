@@ -3,26 +3,11 @@ import pkgutil
 import mimetypes
 import time
 
-from pywb.rewrite.wburl import WbUrl
 from pywb.cdx.query import CDXQuery
+from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
-from wbexceptions import WbException, NotFoundException
+from pywb.framework.wbexceptions import WbException, NotFoundException
 from views import TextCapturesView
-
-
-#=================================================================
-class BaseHandler(object):
-    def __call__(self, wbrequest):
-        return wbrequest
-
-    def get_wburl_type(self):
-        return None
-
-
-#=================================================================
-class WbUrlHandler(BaseHandler):
-    def get_wburl_type(self):
-        return WbUrl
 
 
 #=================================================================

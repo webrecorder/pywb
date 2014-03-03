@@ -31,7 +31,16 @@ def cdx_load(sources, query, perms_checker=None, process=True):
     if perms_checker:
         cdx_iter = restrict_cdx(cdx_iter, query, perms_checker)
 
+    if query.output == 'text':
+        cdx_iter = cdx_to_text(cdx_iter, query.fields)
+
     return cdx_iter
+
+
+#=================================================================
+def cdx_to_text(cdx_iter, fields):
+    for cdx in cdx_iter:
+        yield cdx.to_text(fields)
 
 
 #=================================================================

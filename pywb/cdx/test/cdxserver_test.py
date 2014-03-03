@@ -187,6 +187,7 @@ import pytest
 
 def cdx_ops_test(url, sources = [test_cdx_dir + 'iana.cdx'], **kwparams):
     kwparams['url'] = url
+    kwparams['output'] = 'cdxobject'
     fields = kwparams.get('fields')
     if fields:
         fields = fields.split(',')

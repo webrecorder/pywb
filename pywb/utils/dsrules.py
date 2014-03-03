@@ -3,8 +3,8 @@ from loaders import load_yaml_config
 
 
 #=================================================================
-
 DEFAULT_RULES_FILE = 'pywb/rules.yaml'
+
 
 #=================================================================
 class RuleSet(object):

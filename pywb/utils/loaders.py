@@ -58,13 +58,13 @@ class BlockLoader(object):
             afile = open(url, 'rb')
 
         except IOError:
-            #if file_only:
-            #    raise
+            if file_only:
+                raise
 
             # then, try as package.path/file
             pkg_split = url.split('/', 1)
-            #if len(pkg_split) == 1:
-            #    raise
+            if len(pkg_split) == 1:
+                raise
 
             afile = pkg_resources.resource_stream(pkg_split[0],
                                                   pkg_split[1])

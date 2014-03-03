@@ -13,7 +13,12 @@ class ArchivalRouter(object):
                  home_view=None, error_view=None):
 
         self.routes = routes
-        self.fallback = ReferRedirect(hostpaths)
+
+        if hostpaths:
+            self.fallback = ReferRedirect(hostpaths)
+        else:
+            self.fallback = None
+
         self.abs_path = abs_path
 
         self.home_view = home_view

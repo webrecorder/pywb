@@ -19,9 +19,8 @@ setup(
         'pywb.cdx',
         'pywb.warc',
         'pywb.rewrite',
+        'pywb.framework'
         'pywb.core',
-        'pywb.dispatch',
-        'pywb.bootstrap'
         'pywb.apps'
         ],
     package_data={

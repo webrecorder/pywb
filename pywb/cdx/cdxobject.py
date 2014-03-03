@@ -63,7 +63,7 @@ class CDXObject(OrderedDict):
                 cdxformat = i
 
         if not cdxformat:
-            raise Exception('unknown {0}-field cdx format'.format(len(fields)))
+            raise CDXException('unknown {0}-field cdx format'.format(len(fields)))
 
         for header, field in itertools.izip(cdxformat, fields):
             self[header] = field
@@ -87,8 +87,15 @@ class CDXObject(OrderedDict):
         """
         if fields is None:
             return str(self) + '\n'
-        else:
-            return ' '.join(self[x] for x in fields) + '\n'
+
+        try:
+            result = ' '.join(self[x] for x in fields) + '\n'
+        except KeyError as ke:
+            msg = 'Invalid field "{0}" found in fields= argument'
+            msg = msg.format(ke.message)
+            raise CDXException(msg)
+
+        return result
 
     def __str__(self):
         if self.cdxline:
@@ -111,7 +118,7 @@ class IDXObject(OrderedDict):
 
         if len(fields) < self.NUM_REQ_FIELDS:
             msg = 'invalid idx format: {0} fields found, {1} required'
-            raise Exception(msg.format(len(fields), self.NUM_REQ_FIELDS))
+            raise CDXException(msg.format(len(fields), self.NUM_REQ_FIELDS))
 
         for header, field in itertools.izip(self.FORMAT, fields):
             self[header] = field
