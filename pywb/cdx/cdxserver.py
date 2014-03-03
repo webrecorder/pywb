@@ -194,16 +194,14 @@ class RemoteCDXServer(BaseCDXServer):
 
 
 #=================================================================
-def create_cdx_server(config, ds_rules_file=None):
+def create_cdx_server(config, ds_rules_file=None, perms_checker=None):
     if hasattr(config, 'get'):
         paths = config.get('index_paths')
         surt_ordered = config.get('surt_ordered', True)
-        perms_checker = config.get('perms_checker')
         pass_config = config
     else:
         paths = config
         surt_ordered = True
-        perms_checker = None
         pass_config = None
 
     logging.debug('CDX Surt-Ordered? ' + str(surt_ordered))

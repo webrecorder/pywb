@@ -1,7 +1,6 @@
 import urllib
 import urllib2
 
-from pywb.cdx.cdxserver import create_cdx_server
 
 #=================================================================
 class IndexReader(object):
@@ -12,8 +11,8 @@ class IndexReader(object):
     Creates an appropriate query based on wbrequest type info
     """
 
-    def __init__(self, config, ds_rules_file=None):
-        self.cdx_server = create_cdx_server(config, ds_rules_file)
+    def __init__(self, cdx_server):
+        self.cdx_server = cdx_server
 
     def load_for_request(self, wbrequest):
         wburl = wbrequest.wb_url

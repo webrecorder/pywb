@@ -6,6 +6,8 @@ from pywb.warc.resolvingloader import ResolvingLoader
 
 from pywb.rewrite.rewrite_content import RewriteContent
 
+from pywb.cdx.cdxserver import create_cdx_server
+
 from indexreader import IndexReader
 from views import J2TemplateView, J2HtmlCapturesView
 from replay_views import ReplayView
@@ -128,7 +130,14 @@ def create_wb_router(passed_config = {}):
         route_config = DictChain(value, config)
 
         ds_rules_file = route_config.get('domain_specific_rules', None)
-        cdx_server = IndexReader(route_config, ds_rules_file)
+
+        perms_checker = route_config.get('perms_checker', None)
+
+        cdx_server = create_cdx_server(route_config,
+                                       ds_rules_file,
+                                       perms_checker)
+
+        cdx_server = IndexReader(cdx_server)
 
         wb_handler = create_wb_handler(
             cdx_server=cdx_server,
