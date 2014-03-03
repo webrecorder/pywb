@@ -1,5 +1,5 @@
 from pywb.utils.timeutils import timestamp_to_datetime
-from wbrequestresponse import WbResponse
+from pywb.framework.wbrequestresponse import WbResponse
 
 import urlparse
 import time

@@ -1,24 +1,24 @@
-from pywb.dispatch.archivalrouter import ArchivalRouter, Route
-from pywb.dispatch.proxy import ProxyArchivalRouter
+from pywb.framework.archivalrouter import ArchivalRouter, Route
+from pywb.framework.proxy import ProxyArchivalRouter
 
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
 
 from pywb.rewrite.rewrite_content import RewriteContent
 
-from pywb.core.indexreader import IndexReader
-from pywb.core.views import J2TemplateView, J2HtmlCapturesView
-from pywb.core.handlers import WBHandler
-from pywb.core.replay_views import ReplayView
+from indexreader import IndexReader
+from views import J2TemplateView, J2HtmlCapturesView
+from replay_views import ReplayView
 
-from pywb.core.handlers import CDXHandler, StaticHandler
-from pywb.core.handlers import DebugEchoHandler, DebugEchoEnvHandler
+from handlers import WBHandler
+from handlers import CDXHandler, StaticHandler
+from handlers import DebugEchoHandler, DebugEchoEnvHandler
 
-from pywb.utils.loaders import BlockLoader
 
 import os
 import yaml
 import logging
+
 
 #=================================================================
 DEFAULTS = {
@@ -34,7 +34,7 @@ DEFAULTS = {
 
     'static_routes': {'static/default': 'static/'},
 
-    'domain_specific_rules': 'rules.yaml',
+    'domain_specific_rules': 'pywb/rules.yaml',
 }
 
 #=================================================================

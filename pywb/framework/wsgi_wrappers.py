@@ -1,8 +1,9 @@
 from pywb.utils.wbexception import WbException
-from pywb.core.wbexceptions import NotFoundException, InternalRedirect
-from pywb.core.wbrequestresponse import WbResponse, StatusAndHeaders
+from pywb.utils.loaders import load_yaml_config
 
-from pywb.utils.loaders import BlockLoader
+from wbexceptions import NotFoundException, InternalRedirect
+from wbrequestresponse import WbResponse, StatusAndHeaders
+
 
 import os
 import importlib
@@ -10,10 +11,13 @@ import logging
 
 
 #=================================================================
-# adapted from wsgiref.request_uri, but doesn't include domain name and allows all characters
-# allowed in the path segment according to: http://tools.ietf.org/html/rfc3986#section-3.3
+# adapted from wsgiref.request_uri, but doesn't include domain name
+# and allows all characters which are allowed in the path segment
+# according to: http://tools.ietf.org/html/rfc3986#section-3.3
 # explained here:
-# http://stackoverflow.com/questions/4669692/valid-characters-for-directory-part-of-a-url-for-short-links
+# http://stackoverflow.com/questions/4669692/
+#   valid-characters-for-directory-part-of-a-url-for-short-links
+
 def rel_request_uri(environ, include_query=1):
     """
     Return the requested path, optionally including the query string
@@ -28,7 +32,7 @@ def rel_request_uri(environ, include_query=1):
     "/web/example.com/0~!+$&'()*+,;=:%22"
     """
     from urllib import quote
-    url = quote(environ.get('PATH_INFO',''), safe='/~!$&\'()*+,;=:@')
+    url = quote(environ.get('PATH_INFO', ''), safe='/~!$&\'()*+,;=:@')
     if include_query and environ.get('QUERY_STRING'):
         url += '?' + environ['QUERY_STRING']
 
@@ -50,7 +54,8 @@ def create_wb_app(wb_router):
             response = wb_router(env)
 
             if not response:
-                raise NotFoundException('No handler for "{0}"'.format(env['REL_REQUEST_URI']))
+                msg = 'No handler for "{0}"'.format(env['REL_REQUEST_URI'])
+                raise NotFoundException(msg)
 
         except InternalRedirect as ir:
             response = WbResponse(StatusAndHeaders(ir.status, ir.httpHeaders))
@@ -62,7 +67,6 @@ def create_wb_app(wb_router):
             response = handle_exception(env, wb_router.error_view, e, True)
 
         return response(env, start_response)
-
 
     return application
 
@@ -94,16 +98,6 @@ def handle_exception(env, error_view, exc, print_trace):
 #=================================================================
 DEFAULT_CONFIG_FILE = 'config.yaml'
 
-def load_yaml_config(config_file=None):
-    import yaml
-
-    if not config_file:
-        config_file = DEFAULT_CONFIG_FILE
-
-    configdata = BlockLoader().load(config_file)
-    config = yaml.load(configdata)
-    return config
-
 
 #=================================================================
 def init_app(init_func, load_yaml=True, config_file=None):
@@ -114,6 +108,9 @@ def init_app(init_func, load_yaml=True, config_file=None):
     if load_yaml:
         if not config_file:
             config_file = os.environ.get('PYWB_CONFIG_FILE')
+        if not config_file:
+            config_file = DEFAULT_CONFIG_FILE
+
         config = load_yaml_config(config_file)
 
     try:
@@ -135,6 +132,7 @@ def init_app(init_func, load_yaml=True, config_file=None):
 #=================================================================
 DEFAULT_PORT = 8080
 
+
 def start_wsgi_server(the_app):
     from wsgiref.simple_server import make_server
     from optparse import OptionParser
@@ -152,7 +150,6 @@ def start_wsgi_server(the_app):
             port = config.get('port', DEFAULT_PORT)
         except:
             port = DEFAULT_PORT
-
 
     logging.debug('Starting CDX Server on port %s', port)
 

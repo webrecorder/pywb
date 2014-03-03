@@ -7,12 +7,20 @@ import os
 import hmac
 import urllib2
 import time
-from pkg_resources import resource_stream
+import pkg_resources
 
 
 #=================================================================
 def is_http(filename):
-    return any(filename.startswith(x) for x in ['http://', 'https://'])
+    return filename.startswith(('http://', 'https://'))
+
+
+#=================================================================
+def load_yaml_config(config_file):
+    import yaml
+    configdata = BlockLoader().load(config_file)
+    config = yaml.load(configdata)
+    return config
 
 
 #=================================================================
@@ -39,16 +47,27 @@ class BlockLoader(object):
         Load a file-like reader from the local file system
         """
 
+        file_only = False
+
         if url.startswith('file://'):
             url = url[len('file://'):]
+            file_only = True
 
         try:
             # first, try as file
             afile = open(url, 'rb')
-        except IOError as file_err:
+
+        except IOError:
+            #if file_only:
+            #    raise
+
             # then, try as package.path/file
             pkg_split = url.split('/', 1)
-            afile = resource_stream(pkg_split[0], pkg_split[1])
+            #if len(pkg_split) == 1:
+            #    raise
+
+            afile = pkg_resources.resource_stream(pkg_split[0],
+                                                  pkg_split[1])
 
         if offset > 0:
             afile.seek(offset)

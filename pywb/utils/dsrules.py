@@ -1,11 +1,10 @@
-import yaml
 import pkgutil
+from loaders import load_yaml_config
+
 
 #=================================================================
 
-DEFAULT_RULES_FILE = 'rules.yaml'
-DEFAULT_RULES_PKG = 'pywb'
-
+DEFAULT_RULES_FILE = 'pywb/rules.yaml'
 
 #=================================================================
 class RuleSet(object):
@@ -23,10 +22,14 @@ class RuleSet(object):
 
         self.rules = []
 
-        ds_rules_file = kwargs.get('ds_rules_file')
         default_rule_config = kwargs.get('default_rule_config')
 
-        config = self.load_default_rules(ds_rules_file)
+        ds_rules_file = kwargs.get('ds_rules_file')
+
+        if not ds_rules_file:
+            ds_rules_file = DEFAULT_RULES_FILE
+
+        config = load_yaml_config(ds_rules_file)
 
         rulesmap = config.get('rules') if config else None
 
@@ -52,22 +55,6 @@ class RuleSet(object):
         # if default_rule_config provided, always init a default ruleset
         if not def_key_found and default_rule_config is not None:
             self.rules.append(rule_cls(self.DEFAULT_KEY, default_rule_config))
-
-    @staticmethod
-    def load_default_rules(filename=None, pkg=None):
-        config = None
-
-        if not filename:
-            filename = DEFAULT_RULES_FILE
-
-        if not pkg:
-            pkg = DEFAULT_RULES_PKG
-
-        if filename:
-            yaml_str = pkgutil.get_data(pkg, filename)
-            config = yaml.load(yaml_str)
-
-        return config
 
     def iter_matching(self, urlkey):
         """

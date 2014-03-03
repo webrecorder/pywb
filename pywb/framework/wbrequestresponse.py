@@ -26,7 +26,6 @@ class WbRequest:
         except KeyError:
             return ''
 
-
     def __init__(self, env,
                  request_uri=None,
                  rel_prefix='',
@@ -40,7 +39,10 @@ class WbRequest:
 
         self.env = env
 
-        self.request_uri = request_uri if request_uri else env.get('REL_REQUEST_URI')
+        if request_uri:
+            self.request_uri = request_uri
+        else:
+            self.request_uri = env.get('REL_REQUEST_URI')
 
         self.coll = coll
 
@@ -54,7 +56,6 @@ class WbRequest:
             self.wb_prefix = host_prefix + rel_prefix
         else:
             self.wb_prefix = rel_prefix
-
 
         if not wb_url_str:
             wb_url_str = '/'
@@ -83,7 +84,6 @@ class WbRequest:
         # PERF
         env['X_PERF'] = {}
 
-
     def _is_ajax(self):
         value = self.env.get('HTTP_X_REQUESTED_WITH')
         if not value:
@@ -95,7 +95,6 @@ class WbRequest:
         if self.referrer and ('ajaxpipe' in self.env.get('QUERY_STRING')):
             return True
         return False
-
 
     def __repr__(self):
         varlist = vars(self)
@@ -111,32 +110,39 @@ class WbResponse:
     Holds a status_headers object and a response iter, to be
     returned to wsgi container.
     """
-    def __init__(self, status_headers, value = []):
+    def __init__(self, status_headers, value=[]):
         self.status_headers = status_headers
         self.body = value
 
     @staticmethod
-    def text_stream(text, status = '200 OK', content_type = 'text/plain'):
-        return WbResponse(StatusAndHeaders(status, [('Content-Type', content_type)]), value = text)
+    def text_stream(stream, status='200 OK', content_type='text/plain'):
+        status_headers = StatusAndHeaders(status,
+                                          [('Content-Type', content_type)])
+
+        return WbResponse(status_headers, value=stream)
 
     @staticmethod
-    def text_response(text, status = '200 OK', content_type = 'text/plain'):
-        return WbResponse(StatusAndHeaders(status, [('Content-Type', content_type)]), value = [text])
+    def text_response(text, status='200 OK', content_type='text/plain'):
+        status_headers = StatusAndHeaders(status,
+                                          [('Content-Type', content_type)])
+
+        return WbResponse(status_headers, value=[text])
 
     @staticmethod
-    def redir_response(location, status = '302 Redirect'):
-        return WbResponse(StatusAndHeaders(status, [('Location', location)]))
-
+    def redir_response(location, status='302 Redirect'):
+        return WbResponse(StatusAndHeaders(status,
+                                           [('Location', location)]))
 
     def __call__(self, env, start_response):
 
         # PERF
         perfstats = env.get('X_PERF')
         if perfstats:
-            self.status_headers.headers.append(('X-Archive-Perf-Stats', str(perfstats)))
+            self.status_headers.headers.append(('X-Archive-Perf-Stats',
+                                                str(perfstats)))
 
-
-        start_response(self.status_headers.statusline, self.status_headers.headers)
+        start_response(self.status_headers.statusline,
+                       self.status_headers.headers)
 
         if env['REQUEST_METHOD'] == 'HEAD':
             if hasattr(self.body, 'close'):
@@ -147,7 +153,6 @@ class WbResponse:
             return self.body
         else:
             return [str(self.body)]
-
 
     def __repr__(self):
         return str(vars(self))

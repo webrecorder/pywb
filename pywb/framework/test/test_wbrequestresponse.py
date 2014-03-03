@@ -41,7 +41,7 @@ from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.utils.statusandheaders import StatusAndHeaders
 
-from pywb.core.wbrequestresponse import WbRequest, WbResponse
+from pywb.framework.wbrequestresponse import WbRequest, WbResponse
 
 
 def print_req_from_uri(request_uri, env={}, use_abs_prefix=False):

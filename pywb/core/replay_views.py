@@ -2,9 +2,9 @@ import StringIO
 
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.utils.bufferedreaders import ChunkedDataReader
-from wbrequestresponse import WbResponse
+from pywb.framework.wbrequestresponse import WbResponse
 
-from wbexceptions import CaptureException, InternalRedirect
+from pywb.framework.wbexceptions import CaptureException, InternalRedirect
 from pywb.warc.recordloader import ArchiveLoadFailed
 
 from pywb.utils.loaders import LimitReader
