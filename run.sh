@@ -10,7 +10,7 @@ mypath=$(cd `dirname $0` && pwd)
 # ex: my_pywb.pywb_config()
 #export 'PYWB_CONFIG=my_pywb'
 
-app="pywb.bootstrap.wbapp"
+app="pywb.apps.wayback"
 
 params="--http-socket :8080 -b 65536"
 #params="--static-map /static=$mypath/static --http-socket :8080 -b 65536"

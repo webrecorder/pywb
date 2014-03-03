@@ -33,6 +33,7 @@ def cdx_load(sources, query, perms_checker=None, process=True):
 
     return cdx_iter
 
+
 #=================================================================
 def restrict_cdx(cdx_iter, query, perms_checker):
     """
@@ -55,6 +56,7 @@ def restrict_cdx(cdx_iter, query, perms_checker):
         cdx = perms_checker.filter_fields(cdx)
 
         yield cdx
+
 
 #=================================================================
 def process_cdx(cdx_iter, query):
@@ -255,7 +257,6 @@ def cdx_resolve_revisits(cdx_iter):
     originals = {}
 
     for cdx in cdx_iter:
-        
         is_revisit = cdx.is_revisit()
 
         digest = cdx['digest']

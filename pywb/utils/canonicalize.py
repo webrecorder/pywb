@@ -4,6 +4,9 @@
 import surt
 import urlparse
 
+from wbexception import WbException
+
+
 #=================================================================
 class UrlCanonicalizer(object):
     def __init__(self, surt_ordered=True):
@@ -14,7 +17,7 @@ class UrlCanonicalizer(object):
 
 
 #=================================================================
-class UrlCanonicalizeException(Exception):
+class UrlCanonicalizeException(WbException):
     def status(self):
         return '400 Bad Request'
 
@@ -164,7 +167,8 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
 
     elif match_type == 'domain':
         if not surt_ordered:
-            raise UrlCanonicalizeException('matchType=domain unsupported for non-surt')
+            msg = 'matchType=domain unsupported for non-surt'
+            raise UrlCanonicalizeException(msg)
 
         host = start_key.split(')/')[0]
 

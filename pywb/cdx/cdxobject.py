@@ -4,9 +4,11 @@ import itertools
 from urllib import urlencode
 from urlparse import parse_qs
 
+from pywb.utils.wbexception import WbException
+
 
 #=================================================================
-class CDXException(Exception):
+class CDXException(WbException):
     def status(self):
         return '400 Bad Request'
 

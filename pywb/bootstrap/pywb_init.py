@@ -1,10 +1,20 @@
-from pywb.core.handlers import CDXHandler, StaticHandler
-from pywb.core.handlers import DebugEchoHandler, DebugEchoEnvHandler
 from pywb.dispatch.archivalrouter import ArchivalRouter, Route
 from pywb.dispatch.proxy import ProxyArchivalRouter
-from pywb.core.indexreader import IndexReader
 
-import config_utils
+from pywb.warc.recordloader import ArcWarcRecordLoader
+from pywb.warc.resolvingloader import ResolvingLoader
+
+from pywb.rewrite.rewrite_content import RewriteContent
+
+from pywb.core.indexreader import IndexReader
+from pywb.core.views import J2TemplateView, J2HtmlCapturesView
+from pywb.core.handlers import WBHandler
+from pywb.core.replay_views import ReplayView
+
+from pywb.core.handlers import CDXHandler, StaticHandler
+from pywb.core.handlers import DebugEchoHandler, DebugEchoEnvHandler
+
+from pywb.utils.loaders import BlockLoader
 
 import os
 import yaml
@@ -27,6 +37,7 @@ DEFAULTS = {
     'domain_specific_rules': 'rules.yaml',
 }
 
+#=================================================================
 class DictChain:
     def __init__(self, *dicts):
         self.dicts = dicts
@@ -40,9 +51,63 @@ class DictChain:
 
 
 #=================================================================
-## Reference non-YAML config
+def load_template_file(file, desc=None, view_class=J2TemplateView):
+    if file:
+        logging.debug('Adding {0}: {1}'.format(desc if desc else name, file))
+        file = view_class(file)
+
+    return file
+
+
 #=================================================================
-def pywb_config_manual(passed_config = {}):
+def create_wb_handler(cdx_server, config, ds_rules_file=None):
+
+    cookie_maker=config.get('cookie_maker')
+    record_loader = ArcWarcRecordLoader(cookie_maker=cookie_maker)
+
+    paths = config.get('archive_paths')
+
+    resolving_loader = ResolvingLoader(paths=paths,
+                                       cdx_server=cdx_server,
+                                       record_loader=record_loader)
+
+    head_insert_view = load_template_file(config.get('head_insert_html'),
+                                          'Head Insert')
+
+    replayer = ReplayView(
+        content_loader=resolving_loader,
+
+        content_rewriter=RewriteContent(ds_rules_file=ds_rules_file),
+
+        head_insert_view=head_insert_view,
+
+        buffer_response=config.get('buffer_response', True),
+
+        redir_to_exact=config.get('redir_to_exact', True),
+
+        reporter=config.get('reporter')
+    )
+
+    html_view = load_template_file(config.get('query_html'),
+                                   'Captures Page',
+                                   J2HtmlCapturesView)
+
+
+    search_view = load_template_file(config.get('search_html'),
+                                     'Search Page')
+
+    wb_handler = WBHandler(
+        cdx_server,
+        replayer,
+        html_view=html_view,
+        search_view=search_view,
+    )
+
+    return wb_handler
+
+
+#=================================================================
+def create_wb_router(passed_config = {}):
 
     config = DictChain(passed_config, DEFAULTS)
 
@@ -62,7 +127,7 @@ def pywb_config_manual(passed_config = {}):
         ds_rules_file = route_config.get('domain_specific_rules', None)
         cdx_server = IndexReader(route_config, ds_rules_file)
 
-        wb_handler = config_utils.create_wb_handler(
+        wb_handler = create_wb_handler(
             cdx_server=cdx_server,
             config=route_config,
             ds_rules_file=ds_rules_file,
@@ -107,24 +172,6 @@ def pywb_config_manual(passed_config = {}):
 
         abs_path = config.get('absolute_paths', True),
 
-        home_view = config_utils.load_template_file(config.get('home_html'), 'Home Page'),
-        error_view = config_utils.load_template_file(config.get('error_html'), 'Error Page')
+        home_view = load_template_file(config.get('home_html'), 'Home Page'),
+        error_view = load_template_file(config.get('error_html'), 'Error Page')
     )
-
-
-
-#=================================================================
-# YAML config loader
-#=================================================================
-DEFAULT_CONFIG_FILE = 'config.yaml'
-
-
-def pywb_config(config_file = None):
-    if not config_file:
-        config_file = os.environ.get('PYWB_CONFIG', DEFAULT_CONFIG_FILE)
-
-    with open(config_file) as fh:
-        config = yaml.load(fh)
-
-    return pywb_config_manual(config)
-

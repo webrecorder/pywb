@@ -7,6 +7,7 @@ import os
 import hmac
 import urllib2
 import time
+from pkg_resources import resource_stream
 
 
 #=================================================================
@@ -24,16 +25,16 @@ class BlockLoader(object):
     def __init__(self, cookie_maker=None):
         self.cookie_maker = cookie_maker
 
-    def load(self, url, offset, length):
+    def load(self, url, offset=0, length=-1):
         """
         Determine loading method based on uri
         """
         if is_http(url):
             return self.load_http(url, offset, length)
         else:
-            return self.load_file(url, offset, length)
+            return self.load_file_or_resource(url, offset, length)
 
-    def load_file(self, url, offset, length):
+    def load_file_or_resource(self, url, offset, length):
         """
         Load a file-like reader from the local file system
         """
@@ -41,10 +42,18 @@ class BlockLoader(object):
         if url.startswith('file://'):
             url = url[len('file://'):]
 
-        afile = open(url, 'rb')
-        afile.seek(offset)
+        try:
+            # first, try as file
+            afile = open(url, 'rb')
+        except IOError as file_err:
+            # then, try as package.path/file
+            pkg_split = url.split('/', 1)
+            afile = resource_stream(pkg_split[0], pkg_split[1])
 
-        if length > 0:
+        if offset > 0:
+            afile.seek(offset)
+
+        if length >= 0:
             return LimitReader(afile, length)
         else:
             return afile

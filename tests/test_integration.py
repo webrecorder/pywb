@@ -1,6 +1,6 @@
 import webtest
-from pywb.bootstrap.pywb_init import pywb_config
-from pywb.bootstrap.wbapp import create_wb_app
+from pywb.bootstrap.pywb_init import create_wb_router
+from pywb.bootstrap.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
 
 from fixture import TestExclusionPerms
@@ -11,8 +11,13 @@ class TestWb:
     def setup(self):
         #self.app = pywb.wbapp.create_wb_app(pywb.pywb_init.pywb_config())
         # save it in self - useful for debugging
-        self.router = pywb_config(self.TEST_CONFIG)
-        self.app = create_wb_app(self.router)
+        self.app = init_app(create_wb_router,
+                            load_yaml=True,
+                            config_file=self.TEST_CONFIG)
+
+        #self.router = pywb_config(self.TEST_CONFIG)
+        #self.app = create_wb_app(self.router)
+
         self.testapp = webtest.TestApp(self.app)
 
     def _assert_basic_html(self, resp):

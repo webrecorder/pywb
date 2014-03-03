@@ -22,6 +22,7 @@ setup(
         'pywb.core',
         'pywb.dispatch',
         'pywb.bootstrap'
+        'pywb.apps'
         ],
     package_data={
         'pywb': ['ui/*', 'static/*', '*.yaml'],
@@ -41,7 +42,6 @@ setup(
         'pyyaml',
         'WebTest',
         'pytest',
-        'werkzeug>=0.9.4',
         ],
     # tests_require=['WebTest', 'pytest'],
     zip_safe=False

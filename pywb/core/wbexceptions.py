@@ -1,7 +1,5 @@
+from pywb.utils.wbexception import WbException
 
-
-class WbException(Exception):
-    pass
 
 class NotFoundException(WbException):
     def status(self):

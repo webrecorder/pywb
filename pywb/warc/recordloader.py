@@ -9,6 +9,9 @@ from pywb.utils.statusandheaders import StatusAndHeadersParserException
 from pywb.utils.loaders import BlockLoader
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 
+from pywb.utils.wbexception import WbException
+
+
 #=================================================================
 ArcWarcRecord = collections.namedtuple('ArchiveRecord',
                                        'type, rec_headers, ' +
@@ -16,7 +19,7 @@ ArcWarcRecord = collections.namedtuple('ArchiveRecord',
 
 
 #=================================================================
-class ArchiveLoadFailed(Exception):
+class ArchiveLoadFailed(WbException):
     def __init__(self, reason, filename=''):
         super(ArchiveLoadFailed, self).__init__(filename + ':' + str(reason))
         #self.filename = filename
@@ -62,9 +65,9 @@ class ArcWarcRecordLoader:
         decomp_type = 'gzip'
 
         # Create decompressing stream
-        stream = DecompressingBufferedReader(stream = raw,
-                                             decomp_type = decomp_type,
-                                             block_size = self.block_size)
+        stream = DecompressingBufferedReader(stream=raw,
+                                             decomp_type=decomp_type,
+                                             block_size=self.block_size)
 
         (the_format, rec_headers) = self._detect_type_load_headers(stream)
 
