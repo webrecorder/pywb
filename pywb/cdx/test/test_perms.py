@@ -6,7 +6,7 @@ from pywb.cdx.cdxobject import AccessException
 from pytest import raises
 
 class BlockAllPerms(AllowAllPerms):
-    def allow_url_lookup(self, urlkey, url):
+    def allow_url_lookup(self, urlkey):
         return False
 
 

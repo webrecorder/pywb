@@ -5,7 +5,7 @@ class AllowAllPerms(object):
     """
     Sample Perm Checker which allows all
     """
-    def allow_url_lookup(self, urlkey, url):
+    def allow_url_lookup(self, urlkey):
         """
         Return true/false if url or urlkey (canonicalized url)
         should be allowed

@@ -34,7 +34,7 @@ class TestExclusionPerms(AllowAllPerms):
     # sample_archive has captures for this URLKEY
     URLKEY_EXCLUDED = 'org,iana)/_img/bookmark_icon.ico'
 
-    def allow_url_lookup(self, urlkey, url):
+    def allow_url_lookup(self, urlkey):
         """
         Return true/false if url or urlkey (canonicalized url)
         should be allowed
@@ -42,4 +42,4 @@ class TestExclusionPerms(AllowAllPerms):
         if urlkey == self.URLKEY_EXCLUDED:
             return False
 
-        return super(TestExclusionPerms, self).allow_url_lookup(urlkey, url)
+        return super(TestExclusionPerms, self).allow_url_lookup(urlkey)

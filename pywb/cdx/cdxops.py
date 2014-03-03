@@ -18,11 +18,11 @@ def cdx_load(sources, query, perms_checker=None, process=True):
 
     :param sources: iterable for text CDX sources.
     :param perms_checker: access check filter object implementing
-      allow_url_lookup(key, url), allow_capture(cdxobj) and
+      allow_url_lookup(key), allow_capture(cdxobj) and
       filter_fields(cdxobj) methods.
     :param process: bool, perform processing sorting/filtering/grouping ops
     """
-    cdx_iter = load_cdx_streams(sources, query)
+    cdx_iter = create_merged_cdx_gen(sources, query)
     cdx_iter = make_obj_iter(cdx_iter, query)
 
     if process and not query.secondary_index_only:
@@ -52,7 +52,7 @@ def restrict_cdx(cdx_iter, query, perms_checker):
     :param query: request parameters (CDXQuery)
     :param perms_checker: object implementing permission checker
     """
-    if not perms_checker.allow_url_lookup(query.key, query.url):
+    if not perms_checker.allow_url_lookup(query.key):
         if query.is_exact:
             raise AccessException('Excluded')
 
@@ -96,8 +96,11 @@ def process_cdx(cdx_iter, query):
 
 
 #=================================================================
-# load and source merge cdx streams
-def load_cdx_streams(sources, query):
+def create_merged_cdx_gen(sources, query):
+    """
+    create a generator which loads and merges cdx streams
+    ensures cdxs are lazy loaded
+    """
     # Optimize: no need to merge if just one input
     if len(sources) == 1:
         cdx_iter = sources[0].load_cdx(query)
@@ -138,17 +141,18 @@ def cdx_reverse(cdx_iter, limit):
         for cdx in cdx_iter:
             last = cdx
 
-        return [last] if last else []
+        yield last
 
     reverse_cdxs = deque(maxlen=limit)
 
     for cdx in cdx_iter:
         reverse_cdxs.appendleft(cdx)
 
-    return reverse_cdxs
+    for cdx in reverse_cdxs:
+        yield cdx
 
 
- #=================================================================
+#=================================================================
 # filter cdx by regex if each filter is field:regex form,
 # apply filter to cdx[field]
 def cdx_filter(cdx_iter, filter_strings):
@@ -252,7 +256,8 @@ def cdx_sort_closest(closest, cdx_iter, limit=10):
         if len(closest_cdx) > limit:
             closest_cdx.pop()
 
-    return itertools.imap(lambda x: x[1], closest_cdx)
+    for cdx in itertools.imap(lambda x: x[1], closest_cdx):
+        yield cdx
 
 
 #=================================================================
