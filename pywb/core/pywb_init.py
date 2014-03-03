@@ -11,7 +11,8 @@ from views import J2TemplateView, J2HtmlCapturesView
 from replay_views import ReplayView
 
 from handlers import WBHandler
-from handlers import CDXHandler, StaticHandler
+from handlers import StaticHandler
+from cdx_handler import CDXHandler
 from handlers import DebugEchoHandler, DebugEchoEnvHandler
 
 
@@ -115,6 +116,8 @@ def create_wb_router(passed_config = {}):
 
     hostpaths = config.get('hostpaths')
 
+    port = config.get('port')
+
     # collections based on cdx source
     collections = config.get('collections')
 
@@ -169,6 +172,7 @@ def create_wb_router(passed_config = {}):
         # This will help catch occasionally missed rewrites that fall-through to the host
         # (See archivalrouter.ReferRedirect)
         hostpaths = hostpaths,
+        port = port,
 
         abs_path = config.get('absolute_paths', True),
 

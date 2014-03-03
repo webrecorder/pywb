@@ -9,10 +9,17 @@ from wbrequestresponse import WbRequest, WbResponse
 # ArchivalRouter -- route WB requests in archival mode
 #=================================================================
 class ArchivalRouter(object):
-    def __init__(self, routes, hostpaths=None, abs_path=True,
-                 home_view=None, error_view=None):
+    def __init__(self, routes,
+                 hostpaths=None,
+                 port=None,
+                 abs_path=True,
+                 home_view=None,
+                 error_view=None):
 
         self.routes = routes
+
+        # optional port setting may be ignored by wsgi container
+        self.port = port
 
         if hostpaths:
             self.fallback = ReferRedirect(hostpaths)

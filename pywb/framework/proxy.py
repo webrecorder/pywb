@@ -8,21 +8,31 @@ import urlparse
 # http proxy mode support is very simple so far:
 # only latest capture is available currently
 #=================================================================
-class ProxyArchivalRouter:
-    def __init__(self, routes, hostpaths=None, abs_path=True,
-                 home_view=None, error_view=None):
+class ProxyArchivalRouter(ArchivalRouter):
+    def __init__(self, routes,
+                 hostpaths=None,
+                 port=None,
+                 abs_path=True,
+                 home_view=None,
+                 error_view=None):
 
-        self.archival = ArchivalRouter(routes, hostpaths, abs_path,
-                                       home_view, error_view)
+        (super(ProxyArchivalRouter, self).
+                              __init__(routes,
+                                       hostpaths=hostpaths,
+                                       port=port,
+                                       abs_path=abs_path,
+                                       home_view=home_view,
+                                       error_view=error_view))
+
         self.proxy = ProxyRouter(routes[0].handler, hostpaths, error_view)
-        self.error_view = error_view
+        #self.error_view = error_view
 
     def __call__(self, env):
-        response = self.archival(env)
+        response = self.proxy(env)
         if response:
             return response
 
-        response = self.proxy(env)
+        response = super(ProxyArchivalRouter, self).__call__(env)
         if response:
             return response
 

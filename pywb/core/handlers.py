@@ -1,9 +1,7 @@
-import urlparse
 import pkgutil
 import mimetypes
 import time
 
-from pywb.cdx.query import CDXQuery
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.wbexceptions import WbException, NotFoundException
@@ -56,24 +54,6 @@ class WBHandler(WbUrlHandler):
 
     def __str__(self):
         return 'WBHandler: ' + str(self.index_reader) + ', ' + str(self.replay)
-
-
-#=================================================================
-# CDX-Server Handler -- pass all params to cdx server
-#=================================================================
-class CDXHandler(BaseHandler):
-    def __init__(self, index_reader, view = None):
-        self.index_reader = index_reader
-        self.view = view if view else TextCapturesView()
-
-    def __call__(self, wbrequest):
-        params = CDXQuery.extract_params_from_wsgi_env(wbrequest.env)
-        cdx_lines = self.index_reader.load_cdx(**params)
-
-        return self.view.render_response(wbrequest, cdx_lines)
-
-    def __str__(self):
-        return 'Index Reader: ' + str(self.index_reader)
 
 
 #=================================================================

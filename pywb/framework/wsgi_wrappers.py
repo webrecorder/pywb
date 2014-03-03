@@ -10,6 +10,8 @@ import importlib
 import logging
 
 
+DEFAULT_PORT = 8080
+
 #=================================================================
 # adapted from wsgiref.request_uri, but doesn't include domain name
 # and allows all characters which are allowed in the path segment
@@ -17,6 +19,7 @@ import logging
 # explained here:
 # http://stackoverflow.com/questions/4669692/
 #   valid-characters-for-directory-part-of-a-url-for-short-links
+
 
 def rel_request_uri(environ, include_query=1):
     """
@@ -40,14 +43,21 @@ def rel_request_uri(environ, include_query=1):
 
 
 #=================================================================
-def create_wb_app(wb_router):
+class WSGIApp(object):
+    def __init__(self, wb_router):
+        self.wb_router = wb_router
+        self.port = DEFAULT_PORT
+        if hasattr(wb_router, 'port'):
+            self.port = wb_router.port
+
     # Top-level wsgi application
-    def application(env, start_response):
+    def __call__(self, env, start_response):
         if env.get('SCRIPT_NAME') or not env.get('REQUEST_URI'):
             env['REL_REQUEST_URI'] = rel_request_uri(env)
         else:
             env['REL_REQUEST_URI'] = env['REQUEST_URI']
 
+        wb_router = self.wb_router
         response = None
 
         try:
@@ -67,8 +77,6 @@ def create_wb_app(wb_router):
             response = handle_exception(env, wb_router.error_view, e, True)
 
         return response(env, start_response)
-
-    return application
 
 
 #=================================================================
@@ -126,13 +134,10 @@ def init_app(init_func, load_yaml=True, config_file=None):
         msg = '*** pywb app inited with config from "%s"!\n'
         logging.info(msg, init_func.__name__)
 
-    return create_wb_app(wb_router)
+    return WSGIApp(wb_router)
 
 
 #=================================================================
-DEFAULT_PORT = 8080
-
-
 def start_wsgi_server(the_app):
     from wsgiref.simple_server import make_server
     from optparse import OptionParser
@@ -144,12 +149,10 @@ def start_wsgi_server(the_app):
 
     port = options.port
 
-    if port is None:
-        try:
-            config = load_default_config()
-            port = config.get('port', DEFAULT_PORT)
-        except:
-            port = DEFAULT_PORT
+    port = the_app.port
+
+    if not port:
+        port = DEFAULT_PORT
 
     logging.debug('Starting CDX Server on port %s', port)
 
