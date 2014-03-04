@@ -26,7 +26,7 @@ class ReplayView:
         self._reporter = reporter
 
 
-    def __call__(self, wbrequest, cdx_lines):
+    def __call__(self, wbrequest, cdx_lines, cdx_loader):
         last_e = None
         first = True
 
@@ -42,7 +42,8 @@ class ReplayView:
                     self._redirect_if_needed(wbrequest, cdx)
                     first = False
 
-                (status_headers, stream) = self.content_loader.resolve_headers_and_payload(cdx, failed_files)
+                (status_headers, stream) = (self.content_loader.
+                                            resolve_headers_and_payload(cdx, failed_files, cdx_loader))
 
                 # check and reject self-redirect
                 self._reject_self_redirect(wbrequest, cdx, status_headers)

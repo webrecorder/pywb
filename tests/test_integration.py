@@ -84,6 +84,15 @@ class TestWb:
         assert 'wb.js' in resp.body
         assert '/pywb/20140127171238/http://www.iana.org/time-zones"' in resp.body
 
+
+    def test_replay_url_agnostic_revisit(self):
+        resp = self.testapp.get('/pywb/20130729195151/http://www.example.com/')
+        self._assert_basic_html(resp)
+
+        assert 'Mon, Jul 29 2013 19:51:51' in resp.body
+        assert 'wb.js' in resp.body
+        assert '/pywb/20130729195151/http://www.iana.org/domains/example"' in resp.body
+
     def test_replay_identity_1(self):
         resp = self.testapp.get('/pywb/20140127171251id_/http://example.com')
         #resp = self.testapp.get('/pywb/20140126200654id_/http://www.iana.org/_img/2013.1/rir-map.svg')

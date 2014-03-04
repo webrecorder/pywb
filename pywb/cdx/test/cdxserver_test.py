@@ -51,6 +51,7 @@ com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit
 
 # Filter exact invert
 >>> cdx_ops_test(url = 'http://example.com', sources = [test_cdx_dir], matchType = 'prefix', filter = '!=urlkey:com,example)/?example=1')
+com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
 com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz
 com,example)/ 20140127171251 http://example.com warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 11875 dupes.warc.gz
 
@@ -61,6 +62,7 @@ com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit
 
 # Filter contains invert
 >>> cdx_ops_test(url = 'http://example.com', sources = [test_cdx_dir], matchType = 'prefix', filter = '!~urlkey:example=1')
+com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
 com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz
 com,example)/ 20140127171251 http://example.com warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 11875 dupes.warc.gz
 
@@ -127,8 +129,8 @@ org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db tex
 
 
 # CDX Server init
->>> x = CDXServer([test_cdx_dir]).load_cdx(url = 'example.com', limit = 1, output = 'raw')
->>> pprint.pprint(x.next().items())
+>>> x = CDXServer([test_cdx_dir]).load_cdx(url = 'example.com', limit = 2, output = 'raw')
+>>> y = x.next(); pprint.pprint(x.next().items())
 [('urlkey', 'com,example)/'),
  ('timestamp', '20140127171200'),
  ('original', 'http://example.com'),

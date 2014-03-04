@@ -126,7 +126,7 @@ class ArcWarcRecordLoader:
             rec_headers = self.arc_parser.parse(stream, statusline)
             return 'arc', rec_headers
         except StatusAndHeadersParserException as se:
-            msg = 'Unknown archive format, first line: ' + se.statusline
+            msg = 'Unknown archive format, first line: ' + str(se.statusline)
             raise ArchiveLoadFailed(msg)
 
 
@@ -148,7 +148,7 @@ class ARCHeadersParser:
         if len(parts) != len(headernames):
             msg = 'Wrong # of headers, expected arc headers {0}, Found {1}'
             msg = msg.format(headernames, parts)
-            raise StatusAndHeadersParserException(msg, headernames)
+            raise StatusAndHeadersParserException(msg, parts)
 
         headers = []
 

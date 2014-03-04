@@ -159,7 +159,36 @@ StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Acc
 <!doctype html>
 <html>
 
+# Test Url Agnostic Revisit Resolving
+# ==============================================================================
+>>> load_from_cdx_test(URL_AGNOSTIC_ORIG_CDX)
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [ ('Accept-Ranges', 'bytes'),
+  ('Content-Type', 'text/html; charset=UTF-8'),
+  ('Date', 'Tue, 02 Jul 2013 19:54:02 GMT'),
+  ('ETag', '"780602-4f6-4db31b2978ec0"'),
+  ('Last-Modified', 'Thu, 25 Apr 2013 16:13:23 GMT'),
+  ('Server', 'ECS (sjc/4FCE)'),
+  ('X-Cache', 'HIT'),
+  ('Content-Length', '1270'),
+  ('Connection', 'close')])
+<!doctype html>
+<html>
+
+>>> load_from_cdx_test(URL_AGNOSTIC_REVISIT_CDX)
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [ ('Accept-Ranges', 'bytes'),
+  ('Content-Type', 'text/html; charset=UTF-8'),
+  ('Date', 'Mon, 29 Jul 2013 19:51:51 GMT'),
+  ('ETag', '"780602-4f6-4db31b2978ec0"'),
+  ('Last-Modified', 'Thu, 25 Apr 2013 16:13:23 GMT'),
+  ('Server', 'ECS (sjc/4FCE)'),
+  ('X-Cache', 'HIT'),
+  ('Content-Length', '1270'),
+  ('Connection', 'close')])
+<!doctype html>
+<html>
+
 # Error Handling
+# ==============================================================================
 
 # Invalid WARC Offset
 >>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 1860 example.warc.gz 1043 333 example.warc.gz')
@@ -167,13 +196,14 @@ Exception: ArchiveLoadFailed
 
 
 # Invalid ARC Offset
->>> load_from_cdx_test('com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 332 example.warc.gz')
+>>> load_from_cdx_test('com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 856 170 example.arc.gz')
 Exception: ArchiveLoadFailed
 
 
 # Error Expected with revisit -- invalid offset on original
 >>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 1864 example.warc.gz 1043 330 example.warc.gz')
 Exception: ArchiveLoadFailed
+
 
 """
 
@@ -188,29 +218,44 @@ from pywb.cdx.cdxobject import CDXObject
 
 from pywb import get_test_dir
 
-#test_warc_dir = os.path.dirname(os.path.realpath(__file__)) + '/../sample_data/'
+#==============================================================================
 test_warc_dir = get_test_dir() + 'warcs/'
 
+
+URL_AGNOSTIC_ORIG_CDX = 'org,iana,example)/ 20130702195402 http://example.iana.org/ \
+text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - \
+1001 353 example-url-agnostic-orig.warc.gz'
+
+URL_AGNOSTIC_REVISIT_CDX = 'com,example)/ 20130729195151 http://test@example.com/ \
+warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - \
+591 355 example-url-agnostic-revisit.warc.gz'
+
+
+#==============================================================================
 def load_test_archive(test_file, offset, length):
     path = test_warc_dir + test_file
 
     testloader = ArcWarcRecordLoader()
 
     archive = testloader.load(path, offset, length)
-    archive = testloader.load(path, offset, length)
 
     pprint.pprint((archive.type, archive.rec_headers, archive.status_headers))
 
 
+#==============================================================================
+def load_orig_cdx(self):
+    return [CDXObject(URL_AGNOSTIC_ORIG_CDX)]
+
+#==============================================================================
 def load_from_cdx_test(cdx):
     resolve_loader = ResolvingLoader(test_warc_dir)
     cdx = CDXObject(cdx)
     try:
-        (headers, stream) = resolve_loader.resolve_headers_and_payload(cdx, None)
+        (headers, stream) = resolve_loader.resolve_headers_and_payload(cdx, None, load_orig_cdx)
         print headers
         sys.stdout.write(stream.readline())
         sys.stdout.write(stream.readline())
-    except Exception as e:
+    except ArchiveLoadFailed as e:
         print 'Exception: ' + e.__class__.__name__
 
 if __name__ == "__main__":

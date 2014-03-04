@@ -42,7 +42,9 @@ class WBHandler(WbUrlHandler):
             return self.query_view.render_response(wbrequest, cdx_lines)
 
         with PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
-            return self.replay(wbrequest, cdx_lines)
+            return self.replay(wbrequest,
+                               cdx_lines,
+                               self.index_reader.cdx_load_callback(wbrequest))
 
 
     def render_search_page(self, wbrequest):

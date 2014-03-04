@@ -5,14 +5,11 @@ from pathresolvers import make_best_resolvers
 
 #=================================================================
 class ResolvingLoader:
-    def __init__(self, paths, record_loader=ArcWarcRecordLoader(),
-                 cdx_server=None):
-
+    def __init__(self, paths, record_loader=ArcWarcRecordLoader()):
         self.path_resolvers = make_best_resolvers(paths)
         self.record_loader = record_loader
-        self.cdx_server = cdx_server
 
-    def resolve_headers_and_payload(self, cdx, failed_files):
+    def resolve_headers_and_payload(self, cdx, failed_files, cdx_loader):
         """
         Resolve headers and payload for a given capture
         In the simple case, headers and payload are in the same record.
@@ -37,7 +34,8 @@ class ResolvingLoader:
         if cdx['mimetype'] == 'warc/revisit' and headers_record:
             payload_record = self._load_different_url_payload(cdx,
                                                               headers_record,
-                                                              failed_files)
+                                                              failed_files,
+                                                              cdx_loader)
 
         # single lookup cases
         # case 2: non-revisit
@@ -121,7 +119,8 @@ class ResolvingLoader:
 
         raise ArchiveLoadFailed(msg, filename), None, last_traceback
 
-    def _load_different_url_payload(self, cdx, headers_record, failed_files):
+    def _load_different_url_payload(self, cdx, headers_record,
+                                    failed_files, cdx_loader):
         """
         Handle the case where a duplicate of a capture with same digest
         exists at a different url.
@@ -152,7 +151,8 @@ class ResolvingLoader:
 
         orig_cdx_lines = self.load_cdx_for_dupe(ref_target_uri,
                                                 ref_target_date,
-                                                cdx['digest'])
+                                                cdx['digest'],
+                                                cdx_loader)
 
         for cdx in orig_cdx_lines:
             try:
@@ -165,12 +165,12 @@ class ResolvingLoader:
 
         raise ArchiveLoadFailed('Original for revisit could not be loaded')
 
-    def load_cdx_for_dupe(self, url, timestamp, digest):
+    def load_cdx_for_dupe(self, url, timestamp, digest, cdx_loader):
         """
         If a cdx_server is available, return response from server,
         otherwise empty list
         """
-        if not self.cdx_server:
+        if not cdx_loader:
             return []
 
         params = {'url': url,
@@ -178,4 +178,4 @@ class ResolvingLoader:
                   'filter': 'digest:' + digest,
                   'output': 'cdxobject'}
 
-        return self.cdx_server.load_cdx(**params)
+        return cdx_loader(params)

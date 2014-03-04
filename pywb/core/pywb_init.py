@@ -71,7 +71,6 @@ def create_wb_handler(cdx_server, config, ds_rules_file=None):
     paths = config.get('archive_paths')
 
     resolving_loader = ResolvingLoader(paths=paths,
-                                       cdx_server=cdx_server,
                                        record_loader=record_loader)
 
     head_insert_view = load_template_file(config.get('head_insert_html'),
