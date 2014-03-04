@@ -88,9 +88,10 @@ def create_merged_cdx_gen(sources, query):
 
 
 #=================================================================
-# convert text cdx stream to CDXObject/IDXObject
 def make_obj_iter(text_iter, query):
-    # already converted
+    """
+    convert text cdx stream to CDXObject/IDXObject.
+    """
     if query.secondary_index_only:
         cls = IDXObject
     else:
@@ -100,16 +101,20 @@ def make_obj_iter(text_iter, query):
 
 
 #=================================================================
-# limit cdx to at most limit
 def cdx_limit(cdx_iter, limit):
+    """
+    limit cdx to at most `limit`.
+    """
 #    for cdx, _ in itertools.izip(cdx_iter, xrange(limit)):
 #        yield cdx
     return (cdx for cdx, _ in itertools.izip(cdx_iter, xrange(limit)))
 
 
 #=================================================================
-# reverse cdx
 def cdx_reverse(cdx_iter, limit):
+    """
+    return cdx records in reverse order.
+    """
     # optimize for single last
     if limit == 1:
         last = None
@@ -129,9 +134,11 @@ def cdx_reverse(cdx_iter, limit):
 
 
 #=================================================================
-# filter cdx by regex if each filter is field:regex form,
-# apply filter to cdx[field]
 def cdx_filter(cdx_iter, filter_strings):
+    """
+    filter CDX by regex if each filter is :samp:`{field}:{regex}` form,
+    apply filter to :samp:`cdx[{field}]`.
+    """
     # Support single strings as well
     if isinstance(filter_strings, str):
         filter_strings = [filter_strings]
@@ -195,8 +202,10 @@ def cdx_filter(cdx_iter, filter_strings):
 
 
 #=================================================================
-# collapse by timestamp and status code
 def cdx_collapse_time_status(cdx_iter, timelen=10):
+    """
+    collapse by timestamp and status code.
+    """
     timelen = int(timelen)
 
     last_token = None
@@ -211,8 +220,10 @@ def cdx_collapse_time_status(cdx_iter, timelen=10):
 
 
 #=================================================================
-# sort CDXCaptureResult by closest to timestamp
 def cdx_sort_closest(closest, cdx_iter, limit=10):
+    """
+    sort CDXCaptureResult by closest to timestamp.
+    """
     closest_cdx = []
 
     closest_sec = timestamp_to_sec(closest)
@@ -242,8 +253,15 @@ def cdx_sort_closest(closest, cdx_iter, limit=10):
 # Fields to append from cdx original to revisit
 ORIG_TUPLE = ['length', 'offset', 'filename']
 
-
 def cdx_resolve_revisits(cdx_iter):
+    """
+    resolve revisits.
+
+    this filter adds three fields to CDX: ``orig.length``, ``orig.offset``,
+    and ``orig.filename``. for revisit records, these fields have corresponding
+    field values in previous non-revisit (original) CDX record.
+    They are all ``"-"`` for non-revisit records.
+    """
     originals = {}
 
     for cdx in cdx_iter:

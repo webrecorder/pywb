@@ -39,7 +39,7 @@ class RemoteCDXSource(CDXSource):
     """
     Represents a remote cdx server, to which requests will be proxied.
 
-    Only url and match type params are proxied at this time,
+    Only ``url`` and ``match_type`` params are proxied at this time,
     the stream is passed through all other filters locally.
     """
     def __init__(self, filename, cookie=None, remote_processing=False):

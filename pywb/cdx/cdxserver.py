@@ -39,9 +39,9 @@ class BaseCDXServer(object):
 
     def _check_cdx_iter(self, cdx_iter, query):
         """ Check cdx iter semantics
-        If iter is empty (no matches), check if fuzzy matching
+        If `cdx_iter` is empty (no matches), check if fuzzy matching
         is allowed, and try it -- otherwise,
-        throw CaptureNotFoundException
+        throw :exc:`~pywb.cdx.cdxobject.CaptureNotFoundException`
         """
 
         cdx_iter = self.peek_iter(cdx_iter)
@@ -93,6 +93,19 @@ class CDXServer(BaseCDXServer):
         self._create_cdx_sources(paths, kwargs.get('config'))
 
     def load_cdx_query(self, query):
+        """
+        load CDX for query parameters ``params``.
+        ``key`` (or ``url``) parameter specifies URL to query,
+        ``matchType`` parameter specifies matching method for ``key``
+        (default ``exact``).
+        other parameters are passed down to :func:`cdx_load`.
+        raises :exc:`~pywb.cdx.cdxobject.CaptureNotFoundException`
+        if no captures are found.
+
+        :param query: query parameters
+        :type query: :class:`~pywb.cdx.query.CDXQuery`
+        :rtype: iterator on :class:`~pywb.cdx.cdxobject.CDXObject`
+        """
         url = query.url
         key, end_key = calc_search_range(url=url,
                                          match_type=query.match_type,
@@ -107,7 +120,8 @@ class CDXServer(BaseCDXServer):
 
     def _create_cdx_sources(self, paths, config):
         """
-        build CDXSource instances for each of path in :param paths:.
+        build CDXSource instances for each of path in ``paths``.
+
         :param paths: list of sources or single source.
         each source may be either string or CDXSource instance. value
         of any other types will be silently ignored.
@@ -171,7 +185,8 @@ class CDXServer(BaseCDXServer):
 #=================================================================
 class RemoteCDXServer(BaseCDXServer):
     """
-    A special cdx server that uses a single RemoteCDXSource
+    A special cdx server that uses a single
+    :class:`~pywb.cdx.cdxsource.RemoteCDXSource`.
     It simply proxies the query params to the remote source
     and performs no local processing/filtering
     """
