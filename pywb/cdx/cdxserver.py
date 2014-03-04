@@ -35,7 +35,7 @@ class BaseCDXServer(object):
             self.url_canon = UrlCanonicalizer(surt_ordered)
 
         # set perms checker, if any
-        self.perms_checker = kwargs.get('perms_checker')
+        #self.perms_checker = kwargs.get('perms_checker')
 
     def _check_cdx_iter(self, cdx_iter, query):
         """ Check cdx iter semantics
@@ -100,8 +100,8 @@ class CDXServer(BaseCDXServer):
         query.set_key(key, end_key)
 
         cdx_iter = cdx_load(self.sources,
-                            query,
-                            perms_checker=self.perms_checker)
+                            query)
+                            #perms_checker=self.perms_checker)
 
         return self._check_cdx_iter(cdx_iter, query)
 
@@ -194,7 +194,7 @@ class RemoteCDXServer(BaseCDXServer):
 
 
 #=================================================================
-def create_cdx_server(config, ds_rules_file=None, perms_checker=None):
+def create_cdx_server(config, ds_rules_file=None):
     if hasattr(config, 'get'):
         paths = config.get('index_paths')
         surt_ordered = config.get('surt_ordered', True)
@@ -214,5 +214,4 @@ def create_cdx_server(config, ds_rules_file=None, perms_checker=None):
     return server_cls(paths,
                       config=pass_config,
                       surt_ordered=surt_ordered,
-                      ds_rules_file=ds_rules_file,
-                      perms_checker=perms_checker)
+                      ds_rules_file=ds_rules_file)

@@ -131,13 +131,12 @@ def create_wb_router(passed_config = {}):
 
         ds_rules_file = route_config.get('domain_specific_rules', None)
 
-        perms_checker = route_config.get('perms_checker', None)
+        perms_policy = route_config.get('perms_policy', None)
 
         cdx_server = create_cdx_server(route_config,
-                                       ds_rules_file,
-                                       perms_checker)
+                                       ds_rules_file)
 
-        cdx_server = IndexReader(cdx_server)
+        cdx_server = IndexReader(cdx_server, perms_policy)
 
         wb_handler = create_wb_handler(
             cdx_server=cdx_server,

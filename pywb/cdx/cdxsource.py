@@ -1,7 +1,7 @@
 from pywb.utils.binsearch import iter_range
 from pywb.utils.loaders import SeekableTextFileReader
 
-from cdxobject import AccessException
+from pywb.utils.wbexception import AccessException
 from query import CDXQuery
 
 import urllib

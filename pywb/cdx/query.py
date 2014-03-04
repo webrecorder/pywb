@@ -1,5 +1,4 @@
 from urllib import urlencode
-from urlparse import parse_qs
 from cdxobject import CDXException
 
 
@@ -80,6 +79,10 @@ class CDXQuery(object):
                 self.params.get('sort') == 'reverse')
 
     @property
+    def custom_ops(self):
+        return self.params.get('custom_ops', [])
+
+    @property
     def secondary_index_only(self):
         return self._get_bool('showPagedIndex')
 
@@ -97,28 +100,3 @@ class CDXQuery(object):
 
     def urlencode(self):
         return urlencode(self.params, True)
-
-    @staticmethod
-    def from_wsgi_env(env):
-        return CDXQuery(**CDXQuery.extract_params_from_wsgi_env(env))
-
-    @staticmethod
-    def extract_params_from_wsgi_env(env):
-        """ utility function to extract params and create a CDXQuery
-        from a WSGI environment dictionary
-        """
-        params = parse_qs(env['QUERY_STRING'])
-
-        # parse_qs produces arrays for single values
-        # cdx processing expects singleton params for all params,
-        # except filters, so convert here
-        # use first value of the list
-        for name, val in params.iteritems():
-            if name != 'filter':
-                params[name] = val[0]
-
-        if not 'output' in params:
-            params['output'] = 'text'
-
-
-        return params

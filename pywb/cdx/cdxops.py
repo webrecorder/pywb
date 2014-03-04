@@ -1,4 +1,4 @@
-from cdxobject import CDXObject, IDXObject, AccessException
+from cdxobject import CDXObject, IDXObject
 from query import CDXQuery
 from pywb.utils.timeutils import timestamp_to_sec
 
@@ -11,15 +11,12 @@ from collections import deque
 
 
 #=================================================================
-def cdx_load(sources, query, perms_checker=None, process=True):
+def cdx_load(sources, query, process=True):
     """
     merge text CDX lines from sources, return an iterator for
     filtered and access-checked sequence of CDX objects.
 
     :param sources: iterable for text CDX sources.
-    :param perms_checker: access check filter object implementing
-      allow_url_lookup(key), allow_capture(cdxobj) and
-      filter_fields(cdxobj) methods.
     :param process: bool, perform processing sorting/filtering/grouping ops
     """
     cdx_iter = create_merged_cdx_gen(sources, query)
@@ -28,8 +25,9 @@ def cdx_load(sources, query, perms_checker=None, process=True):
     if process and not query.secondary_index_only:
         cdx_iter = process_cdx(cdx_iter, query)
 
-    if perms_checker:
-        cdx_iter = restrict_cdx(cdx_iter, query, perms_checker)
+    custom_ops = query.custom_ops
+    for op in custom_ops:
+        cdx_iter = op(cdx_iter, query)
 
     if query.output == 'text':
         cdx_iter = cdx_to_text(cdx_iter, query.fields)
@@ -41,30 +39,6 @@ def cdx_load(sources, query, perms_checker=None, process=True):
 def cdx_to_text(cdx_iter, fields):
     for cdx in cdx_iter:
         yield cdx.to_text(fields)
-
-
-#=================================================================
-def restrict_cdx(cdx_iter, query, perms_checker):
-    """
-    filter out those cdx records that user doesn't have access to,
-    by consulting :param perms_checker:.
-    :param cdx_iter: cdx record source iterable
-    :param query: request parameters (CDXQuery)
-    :param perms_checker: object implementing permission checker
-    """
-    if not perms_checker.allow_url_lookup(query.key):
-        if query.is_exact:
-            raise AccessException('Excluded')
-
-    for cdx in cdx_iter:
-        # TODO: we could let filter_fields handle this case by accepting
-        # None as a return value.
-        if not perms_checker.allow_capture(cdx):
-            continue
-
-        cdx = perms_checker.filter_fields(cdx)
-
-        yield cdx
 
 
 #=================================================================
@@ -81,15 +55,16 @@ def process_cdx(cdx_iter, query):
         cdx_iter = cdx_collapse_time_status(cdx_iter, collapse_time)
 
     limit = query.limit
+    reverse = query.reverse
 
-    if query.reverse:
+    if reverse:
         cdx_iter = cdx_reverse(cdx_iter, limit)
 
     closest = query.closest
     if closest:
         cdx_iter = cdx_sort_closest(closest, cdx_iter, limit)
 
-    if limit:
+    if limit and not reverse:
         cdx_iter = cdx_limit(cdx_iter, limit)
 
     return cdx_iter
@@ -127,8 +102,9 @@ def make_obj_iter(text_iter, query):
 #=================================================================
 # limit cdx to at most limit
 def cdx_limit(cdx_iter, limit):
-    for cdx, _ in itertools.izip(cdx_iter, xrange(limit)):
-        yield cdx
+#    for cdx, _ in itertools.izip(cdx_iter, xrange(limit)):
+#        yield cdx
+    return (cdx for cdx, _ in itertools.izip(cdx_iter, xrange(limit)))
 
 
 #=================================================================

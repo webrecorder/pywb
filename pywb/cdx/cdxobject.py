@@ -20,12 +20,6 @@ class CaptureNotFoundException(CDXException):
 
 
 #=================================================================
-class AccessException(CDXException):
-    def status(self):
-        return '403 Access Denied'
-
-
-#=================================================================
 class CDXObject(OrderedDict):
     CDX_FORMATS = [
         # Public CDX Format
