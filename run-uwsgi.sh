@@ -3,12 +3,7 @@
 mypath=$(cd `dirname $0` && pwd)
 
 # Set a different config file
-#export 'PYWB_CONFIG=myconfig.yaml'
-
-# Set alternate init module
-# The modules pywb_config()
-# ex: my_pywb.pywb_config()
-#export 'PYWB_CONFIG=my_pywb'
+#export 'PYWB_CONFIG_FILE=myconfig.yaml'
 
 app="pywb.apps.wayback"
 
@@ -19,7 +14,7 @@ if [ -z "$1" ]; then
     # Standard root config
     params="$params --wsgi $app"
 else
-    # run with --mount 
+    # run with --mount to specify a non-root context
     # requires a file not a package, so creating a mount_run.py to load the package
     echo "#!/bin/python\n" > $mypath/mount_run.py
     echo "import $app\napplication = $app.application" >> $mypath/mount_run.py

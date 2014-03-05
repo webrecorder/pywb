@@ -7,6 +7,7 @@ apt-get install -y python-dev
 apt-get install -y git
 apt-get install -y python-pip
 pip install virtualenv
+pip install uwsgi
 sudo -u vagrant virtualenv pywb_env
 echo Installing pywb and dependencies via pip... This may take a while.
 if [ ! -d pywb ]; then
@@ -14,7 +15,7 @@ if [ ! -d pywb ]; then
 fi;
 cd pywb
 sudo -u vagrant ../pywb_env/bin/pip install .
-sudo -u vagrant -H sh -c ". ../pywb_env/bin/activate; ./run.sh"
+sudo -u vagrant -H sh -c ". ../pywb_env/bin/activate; ./run-uwsgi.sh"
 SCRIPT
 
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!

@@ -4,22 +4,23 @@ PyWb 0.2 Beta
 [![Build Status](https://travis-ci.org/ikreymer/pywb.png?branch=master)](https://travis-ci.org/ikreymer/pywb)
 [![Coverage Status](https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=master)](https://coveralls.io/r/ikreymer/pywb?branch=master)
 
-pywb is a Python re-implementation of the Wayback Machine software.
+pywb is a new Python implementation of the Wayback Machine software and tools.
 
-The goal is to provide a brand new, clean implementation of the Wayback Machine.
+At its core, it provides a web app which 'replays' archived web data stored in ARC and WARC files and provides metadata about the archived
+captures.
 
-The 0.2 architecture includes a seperation of the project into distinct packages, which have
-their own tests and may be used seperately if needed.
 
-The focus is to focus on providing the best/accurate replay of archival web content (usually in WARC or ARC files),
-and new ways of handling dynamic and difficult content.
+The basic feature set of web replay is nearly complete.
 
-pywb should also be easy to deploy and modify!
+pywb features new domain specific rules which can be applied to certain difficult and dynamic content in order to make
+web replay work.
+
+The rules set will be under constant iteration to deal with new challenges as the web evoles.
 
 
 ### Wayback Machine
 
-A typical Wayback Machine serves archival content in the following form:
+pywb is compatible with the standard Wayback Machine url format:
 
 `http://<host>/<collection>/<timestamp>/<original url>`
 
@@ -31,52 +32,70 @@ Ex: The [Internet Archive Wayback Machine](https//archive.org/web/) has urls of 
 
 A listing of archived content, often in calendar form, is available when a `*` is used instead of timestamp.
 
+
 The Wayback Machine uses an html parser to rewrite relative and absolute links, as well as absolute links found in javascript, css and some xml.
 
-pywb uses this interface as a starting point.
+pywb provides these features as a starting point.
 
 
 ### Requirements
 
-pywb currently works best with 2.7.x
-It should run in a standard WSGI container, although currently
-tested primarily with uWSGI 1.9 and 2.0
+pywb has tested in python 2.6, 2.7 and pypy.
+
+It runs best in python 2.7 currently.
+
+pywb tool suite provides several WSGI applications, which have been tested under
+*wsgiref* and *uWSGI*.
+
+For best results, the *uWSGI* container is recommended.
 
 Support for Python 3 is planned.
 
+### Sample Data
 
-### Installation
-
-pywb comes with sample archived content, also used
-for unit testing the app.
+pywb comes with a a set of sample archived content, also used by the test suite.
 
 The data can be found in `sample_archive` and contains
 `warc` and `cdx` files. The sample archive contains
 recent captures from `http://example.com` and `http://iana.org`
 
+### Installation
 
-To start a pywb with sample data
+To start a pywb with sample data:
 
 1. Clone this repo
 
 2. Install with `python setup.py install`
 
-3. Run pywb by via script `run.sh` (script currently assumes a default python and uwsgi install, feel free to edit as needed)
+3. Run pywb via `python -m pywb.apps.wayback` to start the server in implementation.
 
-4. Test pywb in your browser!  (pywb is set to run on port 8080 by default.)
+   OR run `run-uwsgi.sh` to start with uWSGI (see below for more info).
+
+4. Test pywb in your browser!  (pywb is set to run on port 8080 by default).
 
 
 If everything worked, the following pages should be loading (served from *sample_archive* dir):
+
 
 | Original Url       | Latest Capture  | List of All Captures    |
 | -------------      | -------------   | ----------------------- |
 | `http://example.com` | [http://localhost:8080/pywb/example.com](http://localhost:8080/pywb/example.com) | [http://localhost:8080/pywb/*/example.com](http://localhost:8080/pywb/*/example.com) |
 | `http://iana.org`    | [http://localhost:8080/pywb/iana.org](http://localhost:8080/pywb/iana.org) | [http://localhost:8080/pywb/*/iana.org](http://localhost:8080/pywb/*/iana.org) |
 
+#### uWSGI startup script
+
+A sample uWSGI start up script, `run-uwsgi.sh` which assumes a default uWSGI installation is provided as well.
+
+Currently, uWSGI is not installed automatically with this distribution, but it is recommended for production environments.
+
+Please see [uWSGI Installation][1] for more details on installing uWSGI.
+
 
 ### Vagrant
 
-pywb comes with a Vagrantfile to help you set up a VM quickly for testing.
+pywb comes with a Vagrantfile to help you set up a VM quickly for testing and deploy pywb
+with uWSGI.
+
 If you have [Vagrant](http://www.vagrantup.com/) and [VirtualBox](https://www.virtualbox.org/)
 installed, then you can start a test instance of pywb like so:
 
@@ -86,7 +105,7 @@ cd pywb
 vagrant up
 ```
 
-After pywb and all its dependencies are installed, the uwsgi server will start up and you should see:
+After pywb and all its dependencies are installed, the uWSGI server will startup
 
 ```
 spawned uWSGI worker 1 (and the only) (pid: 123, cores: 1)
@@ -107,7 +126,7 @@ The full set of tests can be run by executing:
 
 `python run-tests.py`
 
-which will run the tests using py.test
+which will run the tests using py.test.
 
 
 ### Sample Setup
@@ -129,88 +148,22 @@ archive_paths: ./sample_archive/warcs/
 This sets up pywb with a single route for collection /pywb
 
 
-(The [full version of config.yaml](config.yaml) contains additional documentation and specifies
+(The the latest version of [config.yaml](config.yaml) contains additional documentation and specifies
 all the optional properties, such as ui filenames for Jinja2/html template files.)
 
 
 For more advanced use, the pywb init path can be customized further:
 
 
-* The `PYWB_CONFIG` env can be used to set a different yaml file.
+* The `PYWB_CONFIG_FILE` env can be used to set a different yaml file.
 
-* The `PYWB_CONFIG_MODULE` env variable can be used to set a different init module, for implementing a custom init
-
-(or for extensions not yet supported via yaml)
-
-
-See `run.sh` for more details
+* Custom init app (with or without yaml) can be created. See [bin/wayback.py] and [pywb/core/pywb_init.py] for examples
+  of boot strapping.
 
 
-### Running with Existing CDX/WARCs
+### Configuring PyWb With Archived Data
 
-If you have existing .warc/.arc and .cdx files, you can adjust the `index_paths` and `archive_paths` to point to
-the location of those files.
-
-#### SURT
-
-By default, pywb expects the cdx files to be Sort-friendly URL Reordering Transform (SURT) ordering.
-This is an ordering that transforms: `example.com` -> `com,example)/` to faciliate better search.
-It is recommended for future indexing, but is not required.
-
-Non-SURT ordered cdx indexs will work as well, but be sure to specify:
-
-`surt_ordered: False` in the [config.yaml](config.yaml)
-
-
-### Creating CDX from WARCs
-
-If you have warc files without cdxs, the following steps can be taken to create the indexs.
-
-cdx indexs are sorted plain text files indexing the contents of archival records in one or more WARC/ARC files.
-
-(The cdx_writer tool creates SURT ordered keys by default)
-
-pywb does not currently generate indexs automatically, but this may be added in the future.
-
-For production purposes, it is recommended that the cdx indexs be generated ahead of time.
-
-
-** Note: these recommendations are subject to change as the external libraries are being cleaned up **
-
-The directions are for running in a shell:
-
-
-1. Clone https://bitbucket.org/rajbot/warc-tools
-
-2. Clone https://github.com/internetarchive/CDX-Writer to get **cdx_writer.py**
-
-3. Copy **cdx_writer.py** from `CDX_Writer` into **warctools/hanzo** in `warctools`
-
-4. Ensure sort order set to byte-order `export LC_ALL=C` to ensure proper sorting.
-
-5. From the directory of the warc(s), run `<FULL PATH>/warctools/hanzo/cdx_writer mypath/warcs/mywarc.gz | sort > mypath/cdx/mywarc.cdx`
-
-   This will create a sorted `mywarc.cdx` for `mywarc.gz`. Then point `pywb` to the `mypath/warcs` and `mypath/cdx` directories in the yaml config.
-
-
-
-6. pywb sort merges all specified cdx files on the fly. However, if dealing with larger number of small cdxs, there will be performance benefit
-
-    from sort-merging them into a larger cdx file before running pywb. This is recommended for production.
-
-    An example sort merge post process can be done as follows:
-
-   ```
-   export LC_ALL=C
-   sort -m mypath/cdx/*.cdx | sort -c > mypath/merged_cdx/merge_1.cdx
-   ```
-
-   (The merged cdx will start with several ` CDX` headers due to the merge. These headers indicate the cdx format and should be all the same!
-    They are always first and pywb ignores them)
-
-
-   In the yaml config, set `index_paths` to point to `mypath/merged_cdx/merged_1.cdx`
-
+Please see the [PyWb Configuration](https://github.com/ikreymer/pywb/wiki/Pywb-Configuration) for latest instructions on how to setup pywb to run with your existing WARC/ARC collections.
 
 ### Additional Documentation
 
@@ -225,3 +178,4 @@ You are encouraged to fork and contribute to this project to improve web archivi
 Please take a look at list of current [issues](https://github.com/ikreymer/pywb/issues?state=open) and feel free to open new ones
 
 
+[1]: http://uwsgi-docs.readthedocs.org/en/latest/Install.html
