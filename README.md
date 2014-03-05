@@ -10,12 +10,13 @@ At its core, it provides a web app which 'replays' archived web data stored in A
 captures.
 
 
+### Latest Changes ###
+
 The basic feature set of web replay is nearly complete.
 
-pywb features new domain specific rules which can be applied to certain difficult and dynamic content in order to make
-web replay work.
+pywb now features new [domain-specific rules](pywb/rules.yaml) which are applied to certain difficult and dynamic content in order to make web replay work.
 
-The rules set will be under constant iteration to deal with new challenges as the web evoles.
+This rules set will be under constant iteration to deal with new challenges as the web evoles.
 
 
 ### Wayback Machine
@@ -55,11 +56,20 @@ Support for Python 3 is planned.
 
 pywb comes with a a set of sample archived content, also used by the test suite.
 
-The data can be found in `sample_archive` and contains
-`warc` and `cdx` files. The sample archive contains
-recent captures from `http://example.com` and `http://iana.org`
+The data can be found in `sample_archive` and contains `warc` and `cdx` files.
 
-### Installation
+The sample archive contains recent captures from `http://example.com` and `http://iana.org`
+
+### Runnable Apps
+
+The pywb tool suite currently includes two runnable applications in the `pywb.apps` package:
+
+* `python -m pywb.apps.wayback` -- start the full wayback on port 8080
+
+* `python -m pywb.apps.cdx_server` -- start standalone cdx server on port 8090
+
+
+### Step-By-Step Installation
 
 To start a pywb with sample data:
 
@@ -114,9 +124,9 @@ spawned uWSGI worker 1 (and the only) (pid: 123, cores: 1)
 At this point, you can open a web browser and navigate to the examples above for testing.
 
 
-### Automated Tests
+### Test Suite
 
-Currently pywb includes a full (and growing) suite of tests.
+Currently pywb includes a full (and growing) suite of unit doctest and integration tests.
 
 Top level integration tests can be found in the `tests/` directory,
 and each subpackage also contains doctests and unit tests.
@@ -124,9 +134,11 @@ and each subpackage also contains doctests and unit tests.
 
 The full set of tests can be run by executing:
 
-`python run-tests.py`
+`python setup.py test`
 
 which will run the tests using py.test.
+
+The py.test coverage plugin is used to keep track of test coverage.
 
 
 ### Sample Setup
@@ -157,8 +169,8 @@ For more advanced use, the pywb init path can be customized further:
 
 * The `PYWB_CONFIG_FILE` env can be used to set a different yaml file.
 
-* Custom init app (with or without yaml) can be created. See [bin/wayback.py] and [pywb/core/pywb_init.py] for examples
-  of boot strapping.
+* Custom init app (with or without yaml) can be created. See [wayback.py](pywb/apps/wayback.py) and [pywb_init.py](pywb/core/pywb_init.py) for examples
+  of existing initialization paths.
 
 
 ### Configuring PyWb With Archived Data

@@ -13,7 +13,8 @@ install:
 #script: py.test run-tests.py ./pywb/ --doctest-modules --ignore=setup.py
 #script: py.test -v --doctest-module ./tests/*.py ./pywb/
 script: 
-    py.test --cov-config .coveragerc --cov pywb -v --doctest-module ./pywb/ tests/
+    #py.test --cov-config .coveragerc --cov pywb -v --doctest-module ./pywb/ tests/
+    python setup.py test
 
 after_success:
     coveralls
