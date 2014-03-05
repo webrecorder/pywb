@@ -25,6 +25,9 @@ class CaptureNotFoundException(CDXException):
 
 #=================================================================
 class CDXObject(OrderedDict):
+    """
+    dictionary object representing parsed CDX line.
+    """
     CDX_FORMATS = [
         # Public CDX Format
         ["urlkey", "timestamp", "original", "mimetype", "statuscode",
@@ -75,12 +78,16 @@ class CDXObject(OrderedDict):
         self.cdxline = None
 
     def is_revisit(self):
+        """return ``True`` if this record is a revisit record."""
         return (self['mimetype'] == 'warc/revisit' or
                 self['filename'] == '-')
 
     def to_text(self, fields=None):
         """
         return plaintext CDX record (includes newline).
+        if ``fields`` is ``None``, output will have all fields
+        in the order they are stored.
+
         :param fields: list of field names to output.
         """
         if fields is None:
@@ -132,6 +139,7 @@ class IDXObject(OrderedDict):
     def to_text(self, fields=None):
         """
         return plaintext IDX record (including newline).
+
         :param fields: list of field names to output (currently ignored)
         """
         return str(self) + '\n'
