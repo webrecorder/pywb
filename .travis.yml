@@ -1,10 +1,12 @@
 language: python
 python:
   - "2.7"
+  - "2.6"
+  - "pypy"
 # command to install dependencies
 install:
   - python setup.py -q install
-  - pip install coverage pytest-cov coveralls --use-mirrors
+  - pip install tox coverage pytest-cov coveralls --use-mirrors
 # command to run tests
 #script: nosetests --with-doctest
 #script: py.test run-tests.py ./pywb/ --doctest-modules --ignore=setup.py
