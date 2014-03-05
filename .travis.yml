@@ -6,7 +6,7 @@ python:
 # command to install dependencies
 install:
   - python setup.py -q install
-  - pip install coverage pytest-cov coveralls --use-mirrors --allow-external
+  - pip install coverage pytest-cov argparse>=1.2.1 coveralls --use-mirrors
 # command to run tests
 #script: nosetests --with-doctest
 #script: py.test run-tests.py ./pywb/ --doctest-modules --ignore=setup.py
