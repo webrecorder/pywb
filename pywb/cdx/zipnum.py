@@ -90,28 +90,28 @@ class ZipNumCluster(CDXSource):
                 parts = line.rstrip().split('\t')
                 self.loc_map[parts[0]] = parts[1:]
 
-    @staticmethod
-    def reload_timed(timestamp, val, delta, func):
-        now = datetime.datetime.now()
-        if now - timestamp >= delta:
-            func()
-            return now
-        return None
-
-    def reload_loc(self):
-        reload_time = self.reload_timed(self.loc_update_time,
-                                        self.loc_map,
-                                        self.reload_interval,
-                                        self.load_loc)
-
-        if reload_time:
-            self.loc_update_time = reload_time
+#    @staticmethod
+#    def reload_timed(timestamp, val, delta, func):
+#        now = datetime.datetime.now()
+#        if now - timestamp >= delta:
+#            func()
+#            return now
+#        return None
+#
+#    def reload_loc(self):
+#        reload_time = self.reload_timed(self.loc_update_time,
+#                                        self.loc_map,
+#                                        self.reload_interval,
+#                                        self.load_loc)
+#
+#        if reload_time:
+#            self.loc_update_time = reload_time
 
     def lookup_loc(self, part):
         return self.loc_map[part]
 
     def load_cdx(self, query):
-        self.reload_loc()
+        self.load_loc()
 
         reader = SeekableTextFileReader(self.summary)
 
