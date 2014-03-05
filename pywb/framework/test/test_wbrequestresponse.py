@@ -47,7 +47,8 @@ from pywb.framework.wbrequestresponse import WbRequest, WbResponse
 def print_req_from_uri(request_uri, env={}, use_abs_prefix=False):
     response = req_from_uri(request_uri, env, use_abs_prefix)
     varlist = vars(response)
-    print str({k: varlist[k] for k in ('request_uri', 'wb_prefix', 'wb_url', 'coll')})
+    the_dict = dict((k, varlist[k]) for k in ('request_uri', 'wb_prefix', 'wb_url', 'coll'))
+    print the_dict
 
 
 def req_from_uri(request_uri, env={}, use_abs_prefix=False):

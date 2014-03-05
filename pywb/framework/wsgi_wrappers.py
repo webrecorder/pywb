@@ -6,7 +6,6 @@ from wbrequestresponse import WbResponse, StatusAndHeaders
 
 
 import os
-import importlib
 import logging
 
 

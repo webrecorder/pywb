@@ -4,7 +4,8 @@
 import sys
 import re
 
-from HTMLParser import HTMLParser
+from HTMLParser import HTMLParser, HTMLParseError
+
 from url_rewriter import UrlRewriter
 from regex_rewriters import JSRewriter, CSSRewriter
 
@@ -181,7 +182,10 @@ class HTMLRewriter(HTMLParser):
         if not self.out:
             self.out = self.AccumBuff()
 
-        self.feed(string)
+        try:
+            self.feed(string)
+        except HTMLParseError:
+            self.out.write(string)
 
         result = self.out.buff
         # Clear buffer to create new one for next rewrite()
@@ -197,7 +201,11 @@ class HTMLRewriter(HTMLParser):
         else:
             result = ''
 
-        HTMLParser.close(self)
+        try:
+            HTMLParser.close(self)
+        except HTMLParseError:
+            pass
+
         return result
 
     def handle_starttag(self, tag, attrs):
@@ -238,6 +246,3 @@ class HTMLRewriter(HTMLParser):
         self.out.write('<![')
         self.parse_data(data)
         self.out.write(']>')
-
-
-

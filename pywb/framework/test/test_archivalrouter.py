@@ -90,7 +90,8 @@ import pprint
 
 def print_req(req):
     varlist = vars(req)
-    pprint.pprint({k: varlist[k] for k in ('request_uri', 'wb_prefix', 'wb_url', 'coll')})
+    the_dict = dict((k, varlist[k]) for k in ('request_uri', 'wb_prefix', 'wb_url', 'coll'))
+    pprint.pprint(the_dict)
 
 
 def _test_redir(match_host, request_uri, referrer, script_name = '', coll = 'coll', http_host = None):
