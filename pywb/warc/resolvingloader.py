@@ -149,9 +149,11 @@ class ResolvingLoader:
         else:
             ref_target_date = iso_date_to_timestamp(ref_target_date)
 
+        digest = cdx['digest']
+
         orig_cdx_lines = self.load_cdx_for_dupe(ref_target_uri,
                                                 ref_target_date,
-                                                cdx['digest'],
+                                                digest,
                                                 cdx_loader)
 
         for cdx in orig_cdx_lines:
@@ -173,9 +175,10 @@ class ResolvingLoader:
         if not cdx_loader:
             return []
 
-        params = {'url': url,
-                  'closest': timestamp,
-                  'filter': 'digest:' + digest,
-                  'output': 'cdxobject'}
+        params = dict(url=url,
+                      closest=timestamp)
+
+        if digest and digest != '-':
+            params['filter'] = 'digest:' + digest
 
         return cdx_loader(params)

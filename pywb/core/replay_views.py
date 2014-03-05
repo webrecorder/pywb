@@ -57,13 +57,9 @@ class ReplayView:
                 response = None
 
                 # if Content-Length for payload is present, ensure we don't read past it
-                content_len = status_headers.get_header('content-length')
-                try:
-                    content_len=int(content_len)
-                    if content_len > 0:
-                        stream = LimitReader(stream, content_len)
-                except ValueError:
-                    pass
+                content_length = status_headers.get_header('content-length')
+                if content_length:
+                    stream = LimitReader.wrap_stream(stream, content_length)
 
                 if self.content_rewriter and wbrequest.wb_url.mod != 'id_':
                     response = self.rewrite_content(wbrequest, cdx, status_headers, stream)

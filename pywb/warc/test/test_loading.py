@@ -187,6 +187,19 @@ StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [ ('Acc
 <!doctype html>
 <html>
 
+>>> load_from_cdx_test(URL_AGNOSTIC_REVISIT_NO_DIGEST_CDX)
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [ ('Accept-Ranges', 'bytes'),
+  ('Content-Type', 'text/html; charset=UTF-8'),
+  ('Date', 'Mon, 29 Jul 2013 19:51:51 GMT'),
+  ('ETag', '"780602-4f6-4db31b2978ec0"'),
+  ('Last-Modified', 'Thu, 25 Apr 2013 16:13:23 GMT'),
+  ('Server', 'ECS (sjc/4FCE)'),
+  ('X-Cache', 'HIT'),
+  ('Content-Length', '1270'),
+  ('Connection', 'close')])
+<!doctype html>
+<html>
+
 # Error Handling
 # ==============================================================================
 
@@ -228,6 +241,10 @@ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - \
 
 URL_AGNOSTIC_REVISIT_CDX = 'com,example)/ 20130729195151 http://test@example.com/ \
 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - \
+591 355 example-url-agnostic-revisit.warc.gz'
+
+URL_AGNOSTIC_REVISIT_NO_DIGEST_CDX = 'com,example)/ 20130729195151 http://test@example.com/ \
+warc/revisit - - - - \
 591 355 example-url-agnostic-revisit.warc.gz'
 
 

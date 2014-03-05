@@ -162,6 +162,22 @@ class LimitReader(object):
     def close(self):
         self.stream.close()
 
+    @staticmethod
+    def wrap_stream(stream, content_length):
+        """
+        If given content_length is an int > 0, wrap the stream
+        in a LimitReader. Ottherwise, return the stream unaltered
+        """
+        try:
+            content_length = int(content_length)
+            if content_length > 0:
+                stream = LimitReader(stream, content_length)
+
+        except (ValueError, TypeError):
+            pass
+
+        return stream
+
 
 #=================================================================
 # Local text file with known size -- used for binsearch

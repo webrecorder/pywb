@@ -29,8 +29,8 @@ class IndexReader(object):
             params.update(wbrequest.custom_params)
 
         params['allowFuzzy'] = True
-        params['output'] = 'cdxobject'
         params['url'] = wburl.url
+        params['output'] = 'cdxobject'
 
         cdxlines = self.load_cdx(wbrequest, params)
 
@@ -46,7 +46,9 @@ class IndexReader(object):
 
     def cdx_load_callback(self, wbrequest):
         def load_cdx(params):
+            params['output'] = 'cdxobject'
             return self.load_cdx(wbrequest, params)
+
         return load_cdx
 
     def get_query_params(self, wburl, limit = 150000, collapse_time = None, replay_closest = 100):
