@@ -71,16 +71,20 @@ class WSGIApp(object):
             response = WbResponse(StatusAndHeaders(ir.status, ir.httpHeaders))
 
         except WbException as e:
-            response = handle_exception(env, wb_router.error_view, e, False)
+            response = handle_exception(env, wb_router, e, False)
 
         except Exception as e:
-            response = handle_exception(env, wb_router.error_view, e, True)
+            response = handle_exception(env, wb_router, e, True)
 
         return response(env, start_response)
 
 
 #=================================================================
-def handle_exception(env, error_view, exc, print_trace):
+def handle_exception(env, wb_router, exc, print_trace):
+    error_view = None
+    if hasattr(wb_router, 'error_view'):
+        error_view = wb_router.error_view
+
     if hasattr(exc, 'status'):
         status = exc.status()
     else:
@@ -138,7 +142,7 @@ def init_app(init_func, load_yaml=True, config_file=None):
 
 
 #=================================================================
-def start_wsgi_server(the_app):
+def start_wsgi_server(the_app):  # pragma: no cover
     from wsgiref.simple_server import make_server
     from optparse import OptionParser
 
@@ -149,7 +153,8 @@ def start_wsgi_server(the_app):
 
     port = options.port
 
-    port = the_app.port
+    if not port:
+        port = the_app.port
 
     if not port:
         port = DEFAULT_PORT
@@ -161,5 +166,5 @@ def start_wsgi_server(the_app):
         httpd.serve_forever()
     except KeyboardInterrupt as ex:
         pass
-
-    logging.debug('Stopping CDX Server')
+    finally:
+        logging.debug('Stopping CDX Server')

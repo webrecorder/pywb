@@ -1,0 +1,58 @@
+from pywb.framework.wsgi_wrappers import init_app
+from pywb.framework.wsgi_wrappers import start_wsgi_server
+
+from pywb.utils.wbexception import AccessException
+
+import webtest
+
+class TestOkApp:
+    def __call__(self, env):
+        def response(env, start_response):
+            start_response('200 OK', [])
+            return ['Test']
+        return response
+
+class TestErrApp:
+    def __call__(self, env):
+        raise Exception('Test Error')
+
+class TestCustomErrApp:
+    def __call__(self, env):
+        raise AccessException('Forbidden Test')
+
+
+def initer(app_class):
+    def init():
+        return app_class()
+    return init
+
+def test_ok_app():
+    the_app = init_app(initer(TestOkApp), load_yaml=False)
+
+    testapp = webtest.TestApp(the_app)
+    resp = testapp.get('/')
+
+    assert resp.status_int == 200
+    assert 'Test' in resp.body
+
+def test_err_app():
+    the_app = init_app(initer(TestErrApp), load_yaml=False)
+
+    testapp = webtest.TestApp(the_app)
+    resp = testapp.get('/abc', expect_errors=True)
+
+    assert resp.status_int == 400
+    assert '400 Bad Request Error: Test Error' in resp.body
+
+def test_custom_err_app():
+    the_app = init_app(initer(TestCustomErrApp), load_yaml=False)
+
+    testapp = webtest.TestApp(the_app)
+    resp = testapp.get('/abc', expect_errors=True)
+
+    assert resp.status_int == 403
+    assert '403 Access Denied Error: Forbidden Test' in resp.body
+
+
+
+

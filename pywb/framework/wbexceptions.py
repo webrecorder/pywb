@@ -9,7 +9,7 @@ class NotFoundException(WbException):
 # Exceptions that effect a specific capture and result in a retry
 class CaptureException(WbException):
     def status(self):
-        return '500 Internal Server Error'
+        return '502 Internal Server Error'
 
 
 class InternalRedirect(WbException):

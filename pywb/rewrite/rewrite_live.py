@@ -70,10 +70,10 @@ def get_rewritten(url, urlrewriter, urlkey=None, head_insert_func=None):
     return (status_headers, buff)
 
 #=================================================================
-def main():
+def main():  # pragma: no cover
     if len(sys.argv) < 2:
         print 'Usage: {0} url-to-fetch [wb-url-target] [extra-prefix]'.format(sys.argv[0])
-        exit(1)
+        return 1
     else:
         url = sys.argv[1]
 
@@ -93,8 +93,9 @@ def main():
     status_headers, buff = get_rewritten(url, urlrewriter)
 
     sys.stdout.write(buff)
+    return 0
 
 
 #=================================================================
 if __name__ == "__main__":
-    main()
+    exit(main())
