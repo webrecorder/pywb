@@ -47,7 +47,8 @@ class BlockLoader(object):
         Load a file-like reader from the local file system
         """
 
-        file_only = False
+        # if starting with . or /, can only be a file path..
+        file_only = url.startswith(('/', '.'))
 
         if url.startswith('file://'):
             url = url[len('file://'):]

@@ -64,7 +64,8 @@ class CDXObject(OrderedDict):
                 cdxformat = i
 
         if not cdxformat:
-            raise CDXException('unknown {0}-field cdx format'.format(len(fields)))
+            msg = 'unknown {0}-field cdx format'.format(len(fields))
+            raise CDXException(msg)
 
         for header, field in itertools.izip(cdxformat, fields):
             self[header] = field

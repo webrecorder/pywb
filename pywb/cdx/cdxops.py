@@ -253,6 +253,7 @@ def cdx_sort_closest(closest, cdx_iter, limit=10):
 # Fields to append from cdx original to revisit
 ORIG_TUPLE = ['length', 'offset', 'filename']
 
+
 def cdx_resolve_revisits(cdx_iter):
     """
     resolve revisits.

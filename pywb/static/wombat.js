@@ -196,6 +196,7 @@ function WB_wombat_Init(replayPrefix, captureDate, origHost)
   WB_wombat_origHost = "http://" + origHost;
 
   window.WB_wombat_location = WB_CopyLocationObj(window.self.location);
+  document.WB_wombat_location = window.WB_wombat_location;
 
 
   if (window.self.location != window.top.location) {
