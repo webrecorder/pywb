@@ -23,7 +23,7 @@ rules:
     - url_prefix: 'com,facebook)/'
       rewrite:
         js_regexs:
-            - match: 'Bootloader\.configurePage[^}$]+'
+            - match: 'Bootloader\.configurePage.*?;'
               replace: '/* {0} */'
 
 
