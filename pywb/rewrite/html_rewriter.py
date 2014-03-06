@@ -208,6 +208,10 @@ class HTMLRewriter(HTMLParser):
 
         return result
 
+    # called to unescape attrs -- do not unescape!
+    def unescape(self, s):
+        return s
+
     def handle_starttag(self, tag, attrs):
         if not self.rewrite_tag_attrs(tag, attrs, False):
             self.out.write(self.get_starttag_text())

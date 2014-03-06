@@ -31,6 +31,10 @@ r"""
 >>> parse('<HTML><A Href="#abc">Text</a></hTmL>')
 <HTML><a href="#abc">Text</a></html>
 
+# Ensure attr values are not unescaped
+>>> parse('<input value="&quot;X&quot;">X</input>')
+<input value="&quot;X&quot;">X</input>
+
 # Unicode
 >>> parse('<a href="http://испытание.испытание/">испытание</a>')
 <a href="/web/20131226101010/http://испытание.испытание/">испытание</a>
