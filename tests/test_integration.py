@@ -3,8 +3,6 @@ from pywb.core.pywb_init import create_wb_router
 from pywb.framework.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
 
-from fixture import TestExclusionPerms
-
 class TestWb:
     TEST_CONFIG = 'test_config.yaml'
 
