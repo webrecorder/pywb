@@ -72,7 +72,14 @@ class ProxyRouter:
 
     # Proxy Auto-Config (PAC) script for the proxy
     def make_pac_response(self, env):
-        server_hostport = env['SERVER_NAME'] + ':' + env['SERVER_PORT']
+        import os
+        hostname = os.environ.get('PYWB_HOST_NAME')
+        if not hostname:
+            server_hostport = env['SERVER_NAME'] + ':' + env['SERVER_PORT']
+            hostonly = env['SERVER_NAME']
+        else:
+            server_hostport = hostname
+            hostonly = hostname.split(':')[0]
 
         buff = 'function FindProxyForURL (url, host) {\n'
 
@@ -82,7 +89,7 @@ class ProxyRouter:
             parts = urlparse.urlsplit(hostpath).netloc.split(':')
             buff += direct.format(parts[0])
 
-        buff += direct.format(env['SERVER_NAME'])
+        buff += direct.format(hostonly)
 
         #buff += '\n    return "PROXY {0}";\n}}\n'.format(self.hostpaths[0])
         buff += '\n    return "PROXY {0}";\n}}\n'.format(server_hostport)
