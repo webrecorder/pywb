@@ -39,6 +39,7 @@ class J2TemplateView:
         jinja_env = Environment(loader = loader, trim_blocks = True)
         jinja_env.filters['format_ts'] = J2TemplateView.format_ts
         jinja_env.filters['host'] = J2TemplateView.get_host
+        jinja_env.filters['request_hostname'] = J2TemplateView.request_hostname
         return jinja_env
 
     def render_to_string(self, **kwargs):
@@ -64,6 +65,10 @@ class J2TemplateView:
     def get_host(url):
         return urlparse.urlsplit(url).netloc
 
+
+    @staticmethod
+    def request_hostname(env):
+        return env.get('HTTP_HOST', 'localhost')
 
 
 # cdx index view
