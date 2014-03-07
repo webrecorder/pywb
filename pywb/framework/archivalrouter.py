@@ -37,16 +37,16 @@ class ArchivalRouter(object):
             if result:
                 return result
 
-        # Home Page
+        # Default Home Page
         if env['REL_REQUEST_URI'] in ['/', '/index.html', '/index.htm']:
-            return self.render_home_page()
+            return self.render_home_page(env)
 
         return self.fallback(env, self.routes) if self.fallback else None
 
-    def render_home_page(self):
+    def render_home_page(self, env):
         # render the homepage!
         if self.home_view:
-            return self.home_view.render_response(routes=self.routes)
+            return self.home_view.render_response(env=env, routes=self.routes)
         else:
             # default home page template
             text = '\n'.join(map(str, self.routes))

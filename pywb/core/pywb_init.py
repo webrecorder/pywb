@@ -19,7 +19,6 @@ from handlers import DebugEchoHandler, DebugEchoEnvHandler
 
 
 import os
-import yaml
 import logging
 
 
@@ -115,7 +114,12 @@ def create_wb_router(passed_config = {}):
 
     routes = []
 
-    hostpaths = config.get('hostpaths')
+    # TODO: examine this more
+    hostname = os.environ.get('PYWB_HOST_NAME')
+    if hostname:
+        hostpaths = [hostname]
+    else:
+        hostpaths = config.get('hostpaths')
 
     port = config.get('port')
 
