@@ -54,17 +54,17 @@ def process_cdx(cdx_iter, query):
     if collapse_time:
         cdx_iter = cdx_collapse_time_status(cdx_iter, collapse_time)
 
-    limit = query.limit
-    reverse = query.reverse
-
-    if reverse:
-        cdx_iter = cdx_reverse(cdx_iter, limit)
-
     closest = query.closest
+    reverse = query.reverse
+    limit = query.limit
+
     if closest:
         cdx_iter = cdx_sort_closest(closest, cdx_iter, limit)
 
-    if limit and not reverse:
+    elif reverse:
+        cdx_iter = cdx_reverse(cdx_iter, limit)
+
+    elif limit:
         cdx_iter = cdx_limit(cdx_iter, limit)
 
     return cdx_iter

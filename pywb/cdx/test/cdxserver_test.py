@@ -96,6 +96,14 @@ org,iana)/_css/2013.1/screen.css 20140126201054 http://www.iana.org/_css/2013.1/
 20140126200654
 20140126200625
 
+# In case of both reverse and closest, closest takes precedence
+# 'reverse closest' not supported at this time
+# if it is, this test will reflect the change
+>>> cdx_ops_test(closest = '20140126200826', url = 'http://iana.org/_css/2013.1/fonts/opensans-bold.ttf', fields = 'timestamp', limit = 3, reverse = True)
+20140126200826
+20140126200816
+20140126200805
+
 >>> cdx_ops_test(closest = '20140126201306', url = 'http://iana.org/dnssec', resolveRevisits = True, sources = [test_cdx_dir + 'dupes.cdx', test_cdx_dir + 'iana.cdx'])
 org,iana)/dnssec 20140126201306 http://www.iana.org/dnssec text/html 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 442 772827 iana.warc.gz - - -
 org,iana)/dnssec 20140126201307 https://www.iana.org/dnssec text/html 200 PHLRSX73EV3WSZRFXMWDO6BRKTVUSASI - - 2278 773766 iana.warc.gz - - -
