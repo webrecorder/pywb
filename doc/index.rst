@@ -6,77 +6,33 @@
 Welcome to pywb's documentation!
 ================================
 
-Contents:
+Pywb is a pure-Python implementation of Wayback Machine.
 
 .. toctree::
    :maxdepth: 2
 
-CDX Server (pywb.cdx)
----------------------
+Installing Pywb
+---------------
 
-pywb.cdx.cdxserver
-~~~~~~~~~~~~~~~~~~
+Pywb QuickStart
+---------------
 
-.. automodule:: pywb.cdx.cdxserver
-   :members:
-   :undoc-members:
-   :special-members: __call__
+The pywb tool suite currently includes two runnable applications in the
+:mod:`pywb.apps` package::
 
-pywb.cdx.cdxsource
-~~~~~~~~~~~~~~~~~~
+	python -m pywb.apps.wayback
 
-.. automodule:: pywb.cdx.cdxsource
-   :members:
-   :undoc-members:
-   :special-members: __call__
+starts the full wayback on port 8080, and::
 
-pywb.cdx.cdxobject
-~~~~~~~~~~~~~~~~~~
+	python -m pywb.apps.cdx_server
 
-.. automodule:: pywb.cdx.cdxobject
-   :members:
-   :undoc-members:
-   :special-members: __call__
+starts standalone cdx server on port 8090
 
-pywb.cdx.query
+Customizing Pywb
+----------------
+
+Access Control
 ~~~~~~~~~~~~~~
-
-.. automodule:: pywb.cdx.query
-   :members:
-   :undoc-members:
-   :special-members: __call__
-
-pywb.cdx.cdxops
-~~~~~~~~~~~~~~~
-
-.. automodule:: pywb.cdx.cdxops
-   :members:
-   :undoc-members:
-   :special-members: __call__
-
-pywb.cdx.cdxdomainspecific
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: pywb.cdx.cdxdomainspecific
-   :members:
-   :undoc-members:
-   :special-members: __call__
- 
-pywb.cdx.perms
-~~~~~~~~~~~~~~
-
-.. automodule:: pywb.cdx.perms
-   :members:
-   :undoc-members:
-   :special-members: __call__
-
-pywb.cdx.zipnum
-~~~~~~~~~~~~~~~
-
-.. automodule:: pywb.cdx.zipnum
-   :members:
-   :undoc-members:
-   :special-members: __call__
 
 
 Indices and tables
