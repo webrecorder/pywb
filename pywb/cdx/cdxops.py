@@ -122,6 +122,8 @@ def cdx_reverse(cdx_iter, limit):
         for cdx in cdx_iter:
             last = cdx
 
+        if not last:
+            return
         yield last
 
     reverse_cdxs = deque(maxlen=limit)

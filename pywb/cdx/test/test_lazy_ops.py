@@ -45,6 +45,9 @@ def test_closest():
 def test_limit():
     lazy_cdx_load(key=KEY, limit=10)
 
+def test_limit_1_reverse():
+    lazy_cdx_load(key=KEY, limit=1, reverse=True)
+
 def test_multi_ops():
     lazy_cdx_load(key=KEY,
                   resolveRevisits=True,
