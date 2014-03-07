@@ -2,7 +2,25 @@ from pywb.utils.wbexception import AccessException
 
 
 #=================================================================
-def create_filter_op(perms_checker):
+def make_perms_cdx_filter(perms_policy, wbrequest):
+    """
+    Called internally to convert a perms_policy and a request
+    to a filter which can be applied on the cdx
+    """
+    perms_checker = perms_policy(wbrequest)
+    if not perms_checker:
+        return None
+
+    return _create_cdx_perms_filter(perms_checker)
+
+#=================================================================
+def _create_cdx_perms_filter(perms_checker):
+    """
+    Return a function which will filter the cdx given
+    a Perms object.
+    :param perms_checker: a Perms object which implements the
+        allow_url_lookup() and access_check_capture() methods
+    """
 
     def perms_filter_op(cdx_iter, query):
         """
@@ -25,18 +43,24 @@ def create_filter_op(perms_checker):
 
 
 #================================================================
-class AllowAllPermsPolicy(object):
-    def create_perms_filter_op(self, wbrequest):
-        return create_filter_op(self.create_perms_checker(wbrequest))
+def allow_all_perms_policy(wbrequest):
+    """
+    Perms policy which always returns a default Perms object
+    which allows everything.
 
-    def create_perms_checker(self, wbrequest):
-        return AllowAllPerms()
+    The perms object is created per request and may store request
+    state, if necessary.
+
+    The same perms object may be called with multiple queries
+    (such as for each cdx line) per request.
+    """
+    return Perms()
 
 
 #=================================================================
-class AllowAllPerms(object):
+class Perms(object):
     """
-    Sample Perm Checker which allows all
+    A base perms checker which allows everything
     """
 
     def allow_url_lookup(self, key):

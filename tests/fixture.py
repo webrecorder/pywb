@@ -3,7 +3,7 @@ import pytest
 
 import yaml
 
-from pywb.perms.perms_filter import AllowAllPerms, AllowAllPermsPolicy
+from pywb.perms.perms_filter import Perms
 
 @pytest.fixture
 def testconfig():
@@ -27,7 +27,7 @@ class PrintReporter:
         pass
 
 #================================================================
-class TestExclusionPerms(AllowAllPerms):
+class TestExclusionPerms(Perms):
     """
     Perm Checker fixture to block a single url for testing
     """
@@ -46,6 +46,5 @@ class TestExclusionPerms(AllowAllPerms):
 
 
 #================================================================
-class TestExclusionPermsPolicy(AllowAllPermsPolicy):
-    def create_perms_checker(self, wbrequest):
-        return TestExclusionPerms()
+def test_exclusion_perms_policy(wbrequest):
+    return TestExclusionPerms()

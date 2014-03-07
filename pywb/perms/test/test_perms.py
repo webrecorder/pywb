@@ -8,7 +8,7 @@ from pywb.core.indexreader import IndexReader
 
 from pytest import raises
 
-from tests.fixture import TestExclusionPermsPolicy, testconfig
+from tests.fixture import testconfig
 
 
 #================================================================

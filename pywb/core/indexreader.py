@@ -1,6 +1,7 @@
 import urllib
 import urllib2
 
+from pywb.perms.perms_filter import make_perms_cdx_filter
 
 #=================================================================
 class IndexReader(object):
@@ -38,7 +39,7 @@ class IndexReader(object):
 
     def load_cdx(self, wbrequest, params):
         if self.perms_policy:
-            perms_op = self.perms_policy.create_perms_filter_op(wbrequest)
+            perms_op = make_perms_cdx_filter(self.perms_policy, wbrequest)
             if perms_op:
                 params['custom_ops'] = [perms_op]
 

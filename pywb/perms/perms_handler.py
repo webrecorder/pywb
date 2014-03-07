@@ -19,7 +19,7 @@ class PermsHandler(WbUrlHandler):
         self.url_canon = url_canon
 
     def __call__(self, wbrequest):
-        perms_checker = self.perms_policy.create_perms_checker(wbrequest)
+        perms_checker = self.perms_policy(wbrequest)
 
         if wbrequest.wb_url:
             return self.check_single_url(wbrequest, perms_checker)

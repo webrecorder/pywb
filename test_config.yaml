@@ -101,4 +101,4 @@ reporter: !!python/object/new:tests.fixture.PrintReporter []
 #domain_specific_rules: rules.yaml
 
 #perms_checker: !!python/object/new:pywb.cdx.perms.AllowAllPerms []
-perms_policy:  !!python/object/new:tests.fixture.TestExclusionPermsPolicy []
+perms_policy: !!python/name:tests.fixture.test_exclusion_perms_policy
