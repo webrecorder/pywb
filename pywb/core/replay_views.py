@@ -178,12 +178,20 @@ class ReplayView:
         Check if response is a 3xx redirect to the same url
         If so, reject this capture to avoid causing redirect loop
         """
-        if status_headers.statusline.startswith('3'):
-            request_url = wbrequest.wb_url.url.lower()
-            location_url = status_headers.get_header('Location').lower()
+        if not status_headers.statusline.startswith('3'):
+            return
 
-            if (UrlRewriter.strip_protocol(request_url) == UrlRewriter.strip_protocol(location_url)):
-                raise CaptureException('Self Redirect: ' + str(cdx))
+        request_url = wbrequest.wb_url.url.lower()
+        location_url = status_headers.get_header('Location')
+        if not location_url:
+	    if status_headers.statusline.startswith('304'):
+                raise CaptureException('Skipping 304 Modified: ' + str(cdx))
+            return
+
+        location_url = location_url.lower()
+
+        if (UrlRewriter.strip_protocol(request_url) == UrlRewriter.strip_protocol(location_url)):
+            raise CaptureException('Self Redirect: ' + str(cdx))
 
     def _reject_referrer_self_redirect(self, wbrequest):
         """
