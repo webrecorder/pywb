@@ -57,7 +57,7 @@ class UrlRewriter:
 
     NO_REWRITE_URI_PREFIX = ['#', 'javascript:', 'data:', 'mailto:', 'about:']
 
-    PROTOCOLS = ['http://', 'https://', '//', 'ftp://', 'mms://', 'rtsp://', 'wais://']
+    PROTOCOLS = ['http:/', 'https:/', '//', 'ftp:/', 'mms:/', 'rtsp:/', 'wais:/']
 
     def __init__(self, wburl, prefix):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)

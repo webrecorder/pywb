@@ -138,7 +138,26 @@ function WB_CopyLocationObj(loc)
   newLoc.replace = function(url) { this._origLoc.replace(WB_RewriteUrl(url)); }
   newLoc.assign = function(url) { this._origLoc.assign(WB_RewriteUrl(url)); }
   newLoc.reload = loc.reload;
-  newLoc.href = WB_ExtractOrig(newLoc._origHref);
+  
+  // Adapted from:
+  // https://gist.github.com/jlong/2428561
+  var parser = document.createElement('a');
+  parser.href = WB_ExtractOrig(newLoc._origHref);
+
+  newLoc.hash = parser.hash;
+  newLoc.host = parser.host;
+  newLoc.hostname = parser.hostname;
+  newLoc.href = parser.href;
+
+  if (newLoc.origin) {
+    newLoc.origin = parser.origin;
+  }
+
+  newLoc.pathname = parser.pathname;
+  newLoc.port = parser.port
+  newLoc.protocol = parser.protocol;
+  newLoc.search = parser.search;
+  
   newLoc.toString = function() { return this.href; }
   
   return newLoc;
@@ -148,7 +167,8 @@ function WB_wombat_updateLoc(reqHref, origHref, location)
 {
   if (reqHref && (WB_ExtractOrig(origHref) != WB_ExtractOrig(reqHref))) {      
     var finalHref = WB_RewriteUrl(reqHref);
-    
+   
+    console.log("Rewrite: " + reqHref + " => " + origHref);
     location.href = finalHref;
   }  
 }

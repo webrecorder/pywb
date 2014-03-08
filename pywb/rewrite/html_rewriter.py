@@ -196,7 +196,10 @@ class HTMLRewriter(HTMLParser):
     # HTMLParser overrides below
     def close(self):
         if (self._wb_parse_context):
-            result = self.rewrite('</' + self._wb_parse_context + '>')
+            end_tag = '</' + self._wb_parse_context + '>'
+            result = self.rewrite(end_tag)
+            if result.endswith(end_tag):
+                result = result[:-len(end_tag)]
             self._wb_parse_context = None
         else:
             result = ''

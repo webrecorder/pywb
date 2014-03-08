@@ -71,6 +71,9 @@ class WbUrl(BaseWbUrl):
     >>> repr(WbUrl('20130102im_/https://example.com'))
     "('replay', '20130102', 'im_', 'https://example.com', '20130102im_/https://example.com')"
 
+    >>> repr(WbUrl('20130102im_/https:/example.com'))
+    "('replay', '20130102', 'im_', 'https://example.com', '20130102im_/https://example.com')"
+
     # Protocol agnostic convert to http
     >>> repr(WbUrl('20130102im_///example.com'))
     "('replay', '20130102', 'im_', 'http://example.com', '20130102im_/http://example.com')"
@@ -79,6 +82,9 @@ class WbUrl(BaseWbUrl):
     "('latest_replay', '', 'cs_', 'http://example.com', 'cs_/http://example.com')"
 
     >>> repr(WbUrl('https://example.com/xyz'))
+    "('latest_replay', '', '', 'https://example.com/xyz', 'https://example.com/xyz')"
+
+    >>> repr(WbUrl('https:/example.com/xyz'))
     "('latest_replay', '', '', 'https://example.com/xyz', 'https://example.com/xyz')"
 
     >>> repr(WbUrl('https://example.com/xyz?a=%2f&b=%2E'))
@@ -125,6 +131,11 @@ class WbUrl(BaseWbUrl):
     >>> x = WbUrl('/http://example.com:abc/')
     Traceback (most recent call last):
     Exception: Bad Request Url: http://example.com:abc/
+
+    # considered blank
+    >>> x = WbUrl('https:/')
+    >>> x = WbUrl('https:///')
+    >>> x = WbUrl('http://')
     """
 
     # Regexs
@@ -148,11 +159,14 @@ class WbUrl(BaseWbUrl):
             raise Exception('Invalid WbUrl: ', url)
 
         # protocol agnostic url -> http://
-        #if self.url.startswith('//'):
-        #    self.url = self.DEFAULT_SCHEME + self.url[2:]
         # no protocol -> http://
-        if not '://' in self.url:
+        inx = self.url.find(':/')
+        if inx < 0:
             self.url = self.DEFAULT_SCHEME + self.url
+        else:
+            inx += 2
+            if inx < len(self.url) and self.url[inx] != '/':
+                self.url = self.url[:inx] + '/' + self.url[inx:]
 
         # BUG?: adding upper() because rfc3987 lib rejects lower case %-encoding
         # %2F is fine, but %2f -- standard supports either
