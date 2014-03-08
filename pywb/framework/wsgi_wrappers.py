@@ -114,7 +114,7 @@ DEFAULT_CONFIG_FILE = 'config.yaml'
 def init_app(init_func, load_yaml=True, config_file=None):
     logging.basicConfig(format='%(asctime)s: [%(levelname)s]: %(message)s',
                         level=logging.DEBUG)
-    logging.info('')
+    logging.debug('')
 
     if load_yaml:
         if not config_file:
@@ -135,13 +135,13 @@ def init_app(init_func, load_yaml=True, config_file=None):
         raise
     else:
         msg = '*** pywb app inited with config from "%s"!\n'
-        logging.info(msg, init_func.__name__)
+        logging.debug(msg, init_func.__name__)
 
     return WSGIApp(wb_router)
 
 
 #=================================================================
-def start_wsgi_server(the_app):  # pragma: no cover
+def start_wsgi_server(the_app, name):  # pragma: no cover
     from wsgiref.simple_server import make_server
     from optparse import OptionParser
 
@@ -158,7 +158,7 @@ def start_wsgi_server(the_app):  # pragma: no cover
     if not port:
         port = DEFAULT_PORT
 
-    logging.debug('Starting CDX Server on port %s', port)
+    logging.info('Starting %s on port %s', name, port)
 
     try:
         httpd = make_server('', port, the_app)
@@ -166,4 +166,4 @@ def start_wsgi_server(the_app):  # pragma: no cover
     except KeyboardInterrupt as ex:
         pass
     finally:
-        logging.debug('Stopping CDX Server')
+        logging.info('Stopping %s', name)

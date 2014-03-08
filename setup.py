@@ -76,4 +76,9 @@ setup(
        ],
     cmdclass={'test': PyTest},
     test_suite='',
+    entry_points="""
+        [console_scripts]
+        wayback = pywb.apps.wayback:main
+        cdx-server = pywb.apps.cdx_server:main
+        """
     )
