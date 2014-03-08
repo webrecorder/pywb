@@ -95,7 +95,11 @@ class FuzzyQuery:
         if not matched_rule:
             return None
 
-        inx = url.find('?')
+        repl = '?'
+        if matched_rule.replace:
+            repl = matched_rule.replace
+
+        inx = url.rfind(repl)
         if inx > 0:
             url = url[:inx + 1]
 
@@ -103,6 +107,8 @@ class FuzzyQuery:
                   'matchType': 'prefix',
                   'filter': filter_,
                   'output': output}
+
+        print params
 
         return CDXQuery(**params)
 
