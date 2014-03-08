@@ -1,4 +1,4 @@
-import StringIO
+from io import BytesIO
 
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.utils.bufferedreaders import ChunkedDataReader
@@ -149,11 +149,11 @@ class ReplayView:
 
     # Buffer rewrite iterator and return a response from a string
     def buffered_response(self, status_headers, iterator):
-        out = StringIO.StringIO()
+        out = BytesIO()
 
         try:
             for buff in iterator:
-                out.write(buff)
+                out.write(bytes(buff))
 
         finally:
             content = out.getvalue()

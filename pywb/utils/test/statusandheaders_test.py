@@ -1,17 +1,17 @@
 """
->>> StatusAndHeadersParser(['HTTP/1.0']).parse(StringIO.StringIO(status_headers_1))
+>>> StatusAndHeadersParser(['HTTP/1.0']).parse(BytesIO(status_headers_1))
 StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [ ('Content-Type', 'ABC'),
   ('Some', 'Value'),
   ('Multi-Line', 'Value1    Also This')])
 
->>> StatusAndHeadersParser(['Other']).parse(StringIO.StringIO(status_headers_1))
+>>> StatusAndHeadersParser(['Other']).parse(BytesIO(status_headers_1))
 Traceback (most recent call last):
 StatusAndHeadersParserException: Expected Status Line starting with ['Other'] - Found: HTTP/1.0 200 OK
 """
 
 
 from pywb.utils.statusandheaders import StatusAndHeadersParser
-import StringIO
+from io import BytesIO
 
 
 status_headers_1 = "\

@@ -1,4 +1,4 @@
-import StringIO
+from io import BytesIO
 import zlib
 
 
@@ -44,12 +44,13 @@ class DecompressingBufferedReader(object):
 
         self.buff = None
         self.num_read = 0
+        self.buff_size = 0
 
     def _fillbuff(self, block_size=None):
         if not block_size:
             block_size = self.block_size
 
-        if not self.buff or self.buff.pos >= self.buff.len:
+        if not self.buff or self.buff.tell() == self.buff_size:
             data = self.stream.read(block_size)
             self._process_read(data)
 
@@ -57,7 +58,7 @@ class DecompressingBufferedReader(object):
         data = self._decompress(data)
         self.buff_size = len(data)
         self.num_read += self.buff_size
-        self.buff = StringIO.StringIO(data)
+        self.buff = BytesIO(data)
 
     def _decompress(self, data):
         if self.decompressor and data:
@@ -129,21 +130,21 @@ class ChunkedDataReader(DecompressingBufferedReader):
     assumed to not be chunked and no more dechunking occurs.
 
     Properly formatted chunked data:
-    >>> c = ChunkedDataReader(StringIO.StringIO("4\r\n1234\r\n0\r\n\r\n"));
+    >>> c = ChunkedDataReader(BytesIO("4\r\n1234\r\n0\r\n\r\n"));
     >>> c.read() + c.read()
     '1234'
 
     Non-chunked data:
-    >>> ChunkedDataReader(StringIO.StringIO("xyz123!@#")).read()
+    >>> ChunkedDataReader(BytesIO("xyz123!@#")).read()
     'xyz123!@#'
 
     Starts like chunked data, but isn't:
-    >>> c = ChunkedDataReader(StringIO.StringIO("1\r\nxyz123!@#"));
+    >>> c = ChunkedDataReader(BytesIO("1\r\nxyz123!@#"));
     >>> c.read() + c.read()
     '1\r\nx123!@#'
 
     Chunked data cut off part way through:
-    >>> c = ChunkedDataReader(StringIO.StringIO("4\r\n1234\r\n4\r\n12"));
+    >>> c = ChunkedDataReader(BytesIO("4\r\n1234\r\n4\r\n12"));
     >>> c.read() + c.read()
     '123412'
     """
@@ -161,7 +162,7 @@ class ChunkedDataReader(DecompressingBufferedReader):
         if self.all_chunks_read:
             return
 
-        if not self.buff or self.buff.pos >= self.buff.len:
+        if not self.buff or self.buff.tell() >= self.buff_size:
             length_header = self.stream.readline(64)
             self._data = ''
 

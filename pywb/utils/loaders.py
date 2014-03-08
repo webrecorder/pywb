@@ -8,7 +8,7 @@ import hmac
 import urllib2
 import time
 import pkg_resources
-
+from io import open
 
 #=================================================================
 def is_http(filename):

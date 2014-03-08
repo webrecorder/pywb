@@ -2,7 +2,7 @@ import os
 import collections
 import itertools
 import logging
-from cStringIO import StringIO
+from io import BytesIO
 import datetime
 
 from cdxsource import CDXSource
@@ -189,7 +189,7 @@ class ZipNumCluster(CDXSource):
         def decompress_block(range_):
             decomp = gzip_decompressor()
             buff = decomp.decompress(reader.read(range_))
-            return readline_to_iter(StringIO(buff))
+            return readline_to_iter(BytesIO(buff))
 
         iter_ = itertools.chain(*itertools.imap(decompress_block, ranges))
 

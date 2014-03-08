@@ -1,13 +1,13 @@
 #=================================================================
 """
 # LimitReader Tests
->>> LimitReader(StringIO.StringIO('abcdefghjiklmnopqrstuvwxyz'), 10).read(26)
+>>> LimitReader(BytesIO('abcdefghjiklmnopqrstuvwxyz'), 10).read(26)
 'abcdefghji'
 
->>> LimitReader(StringIO.StringIO('abcdefghjiklmnopqrstuvwxyz'), 8).readline(26)
+>>> LimitReader(BytesIO('abcdefghjiklmnopqrstuvwxyz'), 8).readline(26)
 'abcdefgh'
 
->>> read_multiple(LimitReader(StringIO.StringIO('abcdefghjiklmnopqrstuvwxyz'), 10), [2, 2, 20])
+>>> read_multiple(LimitReader(BytesIO('abcdefghjiklmnopqrstuvwxyz'), 10), [2, 2, 20])
 'efghji'
 
 # BlockLoader Tests (includes LimitReader)
@@ -30,6 +30,9 @@
 >>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb')).readline()
 ' CDX N b a m s k r M S V g\\n'
 
+>>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb'), decomp_type = 'gzip').readline()
+' CDX N b a m s k r M S V g\\n'
+
 #DecompressingBufferedReader readline() with decompression (zipnum file, no header)
 >>> DecompressingBufferedReader(open(test_zip_dir + 'zipnum-sample.cdx.gz', 'rb'), decomp_type = 'gzip').readline()
 'com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz\\n'
@@ -38,7 +41,7 @@
 'Example Domain'
 
 # test very small block size
->>> dbr = DecompressingBufferedReader(StringIO.StringIO('ABCDEFG\\nHIJKLMN\\nOPQR\\nXYZ'), block_size = 3)
+>>> dbr = DecompressingBufferedReader(BytesIO('ABCDEFG\\nHIJKLMN\\nOPQR\\nXYZ'), block_size = 3)
 >>> dbr.readline(); dbr.readline(4); dbr.readline(); dbr.readline(); dbr.readline(2); dbr.readline(); dbr.readline()
 'ABCDEFG\\n'
 'HIJK'
@@ -52,7 +55,7 @@
 
 #=================================================================
 import os
-import StringIO
+from io import BytesIO, open
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker
 from pywb.utils.loaders import LimitReader, SeekableTextFileReader
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
