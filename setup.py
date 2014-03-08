@@ -25,9 +25,10 @@ class PyTest(TestCommand):
     def run_tests(self):
         import pytest
         import sys
-        cmdline = ' --cov-config .coveragerc --cov pywb'
-        cmdline += ' -v --doctest-module ./pywb/ tests/'
-        errcode = pytest.main(cmdline)
+        # cmdline opts moved to pytest.ini
+        #cmdline = ' --cov-config .coveragerc --cov pywb'
+        #cmdline += ' -v --doctest-module ./pywb/ tests/'
+        errcode = pytest.main('')
         sys.exit(errcode)
 
 setup(
