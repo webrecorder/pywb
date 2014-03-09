@@ -108,7 +108,10 @@ class JSLinkOnlyRewriter(RegexRewriter):
     JS_HTTPX = r'(?<="|\')(?:https?:)?\\{0,2}/\\{0,2}/[A-Za-z0-9:_@.-]+'
 
     def __init__(self, rewriter, rules=[]):
-        rules = rules + [(self.JS_HTTPX, rewriter.get_abs_url(), 0)]
+        rules = rules + [
+            #(self.JS_HTTPX, rewriter.get_abs_url(), 0)
+            (self.JS_HTTPX, RegexRewriter.archival_rewrite(rewriter), 0)
+        ]
         super(JSLinkOnlyRewriter, self).__init__(rules)
 
 

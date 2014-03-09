@@ -2,6 +2,7 @@ from wbrequestresponse import WbResponse, WbRequest
 from archivalrouter import ArchivalRouter
 import urlparse
 
+from pywb.rewrite.url_rewriter import HttpsUrlRewriter
 
 #=================================================================
 # An experimental router which combines both archival and proxy modes
@@ -64,7 +65,7 @@ class ProxyRouter:
                               #rel_prefix=url,
                               host_prefix=self.hostpaths[0],
                               wburl_class=self.handler.get_wburl_type(),
-                              urlrewriter_class=ProxyHttpsUrlRewriter,
+                              urlrewriter_class=HttpsUrlRewriter,
                               use_abs_prefix=False,
                               is_proxy=True)
 
@@ -97,26 +98,3 @@ class ProxyRouter:
         content_type = 'application/x-ns-proxy-autoconfig'
 
         return WbResponse.text_response(buff, content_type=content_type)
-
-
-#=================================================================
-# A rewriter which only rewrites https -> http
-#=================================================================
-class ProxyHttpsUrlRewriter:
-    HTTP = 'http://'
-    HTTPS = 'https://'
-
-    def __init__(self, wbrequest, prefix):
-        pass
-
-    def rewrite(self, url, mod=None):
-        if url.startswith(self.HTTPS):
-            return self.HTTP + url[len(self.HTTPS):]
-        else:
-            return url
-
-    def get_timestamp_url(self, timestamp, url):
-        return url
-
-    def get_abs_url(self, url=''):
-        return url

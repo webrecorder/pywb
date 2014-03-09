@@ -4,6 +4,7 @@ import urlparse
 from wburl import WbUrl
 
 
+#=================================================================
 class UrlRewriter:
     """
     >>> do_rewrite('other.html', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
@@ -30,6 +31,9 @@ class UrlRewriter:
     >>> do_rewrite('http://some-other-site.com', '20101226101112/http://example.com/index.html', 'localhost:8080/')
     'localhost:8080/20101226101112/http://some-other-site.com'
 
+    >>> do_rewrite(r'http:\/\/some-other-site.com', '20101226101112/http://example.com/index.html', 'localhost:8080/')
+    'localhost:8080/20101226101112/http:\\\\/\\\\/some-other-site.com'
+
     >>> do_rewrite('../../other.html', '2020/http://example.com/index.html', '/')
     '/2020/http://example.com/other.html'
 
@@ -50,14 +54,11 @@ class UrlRewriter:
 
     >>> UrlRewriter('2013id_/example.com/file/path/blah.html', '/123/').get_timestamp_url('20131024')
     '/123/20131024id_/http://example.com/file/path/blah.html'
-
-    >>> UrlRewriter.strip_protocol('https://example.com') == UrlRewriter.strip_protocol('http://example.com')
-    True
     """
 
     NO_REWRITE_URI_PREFIX = ['#', 'javascript:', 'data:', 'mailto:', 'about:']
 
-    PROTOCOLS = ['http:/', 'https:/', '//', 'ftp:/', 'mms:/', 'rtsp:/', 'wais:/']
+    PROTOCOLS = ['http:', 'https:', '//', 'ftp:', 'mms:', 'rtsp:', 'wais:']
 
     def __init__(self, wburl, prefix):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
@@ -109,19 +110,45 @@ class UrlRewriter:
     def __repr__(self):
         return "UrlRewriter('{0}', '{1}')".format(self.wburl, self.prefix)
 
-    @staticmethod
-    def strip_protocol(url):
-        for protocol in UrlRewriter.PROTOCOLS:
-            if url.startswith(protocol):
-                return url[len(protocol):]
-
-        return url
-
 
 def do_rewrite(rel_url, base_url, prefix, mod = None):
     rewriter = UrlRewriter(base_url, prefix)
     return rewriter.rewrite(rel_url, mod)
 
+
+#=================================================================
+class HttpsUrlRewriter:
+    """
+    A url rewriter which urls that start with https:// to http://
+    Other urls/input is unchanged.
+
+    >>> HttpsUrlRewriter(None, None).rewrite('https://example.com/abc')
+    'http://example.com/abc'
+
+    >>> HttpsUrlRewriter(None, None).rewrite('http://example.com/abc')
+    'http://example.com/abc'
+    """
+    HTTP = 'http://'
+    HTTPS = 'https://'
+
+    def __init__(self, wburl, prefix):
+        pass
+
+    def rewrite(self, url, mod=None):
+        if url.startswith(self.HTTPS):
+            result = self.HTTP + url[len(self.HTTPS):]
+            return result
+        else:
+            return url
+
+    def get_timestamp_url(self, timestamp, url):
+        return url
+
+    def get_abs_url(self, url=''):
+        return url
+
+    def set_base_url(self, newUrl):
+        pass
 if __name__ == "__main__":
     import doctest
     doctest.testmod()

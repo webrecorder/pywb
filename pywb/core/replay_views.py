@@ -1,6 +1,6 @@
+import re
 from io import BytesIO
 
-from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.utils.bufferedreaders import ChunkedDataReader
 from pywb.framework.wbrequestresponse import WbResponse
 
@@ -11,6 +11,9 @@ from pywb.utils.loaders import LimitReader
 
 #=================================================================
 class ReplayView:
+
+    STRIP_SCHEME = re.compile('^([\w]+:[/]*)?(.*?)$')
+
     def __init__(self, content_loader, content_rewriter, head_insert_view = None,
                  redir_to_exact = True, buffer_response = False, reporter = None):
 
@@ -181,16 +184,20 @@ class ReplayView:
         if not status_headers.statusline.startswith('3'):
             return
 
+        # skip all 304s
+        if (status_headers.statusline.startswith('304') and
+            not wbrequest.wb_url.mod == 'id_'):
+
+            raise CaptureException('Skipping 304 Modified: ' + str(cdx))
+
         request_url = wbrequest.wb_url.url.lower()
         location_url = status_headers.get_header('Location')
         if not location_url:
-	    if status_headers.statusline.startswith('304'):
-                raise CaptureException('Skipping 304 Modified: ' + str(cdx))
-            return
+           return
 
         location_url = location_url.lower()
 
-        if (UrlRewriter.strip_protocol(request_url) == UrlRewriter.strip_protocol(location_url)):
+        if (ReplayView.strip_scheme(request_url) == ReplayView.strip_scheme(location_url)):
             raise CaptureException('Self Redirect: ' + str(cdx))
 
     def _reject_referrer_self_redirect(self, wbrequest):
@@ -206,6 +213,36 @@ class ReplayView:
         request_url = (wbrequest.host_prefix +
                        wbrequest.rel_prefix + str(wbrequest.wb_url))
 
-        if (UrlRewriter.strip_protocol(request_url) ==
-            UrlRewriter.strip_protocol(wbrequest.referrer)):
+        if (ReplayView.strip_scheme(request_url) ==
+            ReplayView.strip_scheme(wbrequest.referrer)):
             raise CaptureException('Self Redirect via Referrer: ' + str(wbrequest.wb_url))
+
+
+    @staticmethod
+    def strip_scheme(url):
+        """
+        >>> ReplayView.strip_scheme('https://example.com') == ReplayView.strip_scheme('http://example.com')
+        True
+
+        >>> ReplayView.strip_scheme('https://example.com') == ReplayView.strip_scheme('http:/example.com')
+        True
+
+        >>> ReplayView.strip_scheme('https://example.com') == ReplayView.strip_scheme('example.com')
+        True
+
+        >>> ReplayView.strip_scheme('about://example.com') == ReplayView.strip_scheme('example.com')
+        True
+        """
+        m = ReplayView.STRIP_SCHEME.match(url)
+        if not m:
+            return url
+
+        match = m.group(2)
+        if match:
+            return match
+        else:
+            return url
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
