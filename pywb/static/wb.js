@@ -1,5 +1,5 @@
 /*
-Copyright(c) 2013-2014 Ilya Kreymer. Released under the GNU General Public License.
+Copyright(c) 2013-2014 Internet Archive / Ilya Kreymer. Released under the GNU General Public License.
 
 This file is part of pywb.
 
@@ -15,10 +15,9 @@ This file is part of pywb.
 
     You should have received a copy of the GNU General Public License
     along with pywb.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
-function initBanner()
-{
+function init_banner() {
     var BANNER_ID = "_wayback_banner";
 
     var banner = document.getElementById(BANNER_ID);
@@ -26,7 +25,7 @@ function initBanner()
     if (!banner) {
         banner = document.createElement("wb_div");
         banner.setAttribute("id", BANNER_ID);
-	banner.setAttribute("lang", "en");
+        banner.setAttribute("lang", "en");
 
         text = "This is an archived page ";
         if (wbinfo && wbinfo.capture_str) {
@@ -39,12 +38,11 @@ function initBanner()
 }
 
 var readyStateCheckInterval = setInterval(function() {
-    if (document.readyState === "interactive" || document.readyState === "complete") {
-        initBanner();
+    if (document.readyState === "interactive" ||
+        document.readyState === "complete") {
+        
+        init_banner();
+        
         clearInterval(readyStateCheckInterval);
     }
 }, 10);
-
-
-
-

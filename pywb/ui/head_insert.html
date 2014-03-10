@@ -2,7 +2,7 @@
 {% if rule.js_rewrite_location %}
 <script src='{{ wbrequest.host_prefix }}/static/default/wombat.js'> </script>
 <script>
-  WB_wombat_Init("{{wbrequest.wb_prefix}}",
+  WB_wombat_init("{{wbrequest.wb_prefix}}",
                  "{{cdx['timestamp']}}",
                  "{{cdx['original'] | host}}",
                  "{{ cdx.timestamp | format_ts('%s') }}");

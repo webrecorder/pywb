@@ -1,5 +1,5 @@
 /*
-Copyright(c) 2013-2014 Ilya Kreymer. Released under the GNU General Public License.
+Copyright(c) 2013-2014 Internet Archive / Ilya Kreymer. Released under the GNU General Public License.
 
 This file is part of pywb.
 
@@ -15,288 +15,290 @@ This file is part of pywb.
 
     You should have received a copy of the GNU General Public License
     along with pywb.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 //============================================
 // Wombat JS-Rewriting Library
 //============================================
+WB_wombat_init = (function() {
 
-var WB_wombat_replayPrefix;
-var WB_wombat_replayDatePrefix;
-var WB_wombat_captureDatePart;
-var WB_wombat_origHost;
+    // Globals
+    var wb_replay_prefix;
+    var wb_replay_date_prefix;
+    var wb_capture_date_part;
+    var wb_orig_host;
 
-	
-function WB_StripPort(str)
-{
-  var hostWithPort = str.match(/^http:\/\/[\w\d@.-]+:\d+/);
-  if (hostWithPort) {
-     var hostName = hostWithPort[0].substr(0, hostWithPort[0].lastIndexOf(':'));
-     return hostName + str.substr(hostWithPort[0].length);
-  }
+    var wb_wombat_updating = false;
 
-  return str;
-}
+    //============================================
+    function is_host_url(str) {
+        // Good guess that's its a hostname
+        if (str.indexOf("www.") == 0) {
+            return true;
+        }
 
-function WB_IsHostUrl(str)
-{
-  // Good guess that's its a hostname
-  if (str.indexOf("www.") == 0) {
-    return true;
-  }
-  
-  // hostname:port (port required)
-  var matches = str.match(/^[\w-]+(\.[\w-_]+)+(:\d+)(\/|$)/);
-  if (matches && (matches[0].length < 64)) {
-    return true;
-  }
-  
-  // ip:port
-  matches = str.match(/^\d+\.\d+\.\d+\.\d+(:\d+)?(\/|$)/);
-  if (matches && (matches[0].length < 64)) {
-    return true;
-  }
+        // hostname:port (port required)
+        var matches = str.match(/^[\w-]+(\.[\w-_]+)+(:\d+)(\/|$)/);
+        if (matches && (matches[0].length < 64)) {
+            return true;
+        }
 
-  return false;
-}
+        // ip:port
+        matches = str.match(/^\d+\.\d+\.\d+\.\d+(:\d+)?(\/|$)/);
+        if (matches && (matches[0].length < 64)) {
+            return true;
+        }
 
-function WB_RewriteUrl(url)
-{
-  var httpPrefix = "http://";
-  var httpsPrefix = "https://";
-
-  // If not dealing with a string, just return it
-  if (!url || (typeof url) != "string") {
-    return url;
-  }
-  
-  // If starts with prefix, no rewriting needed
-  // Only check replay prefix (no date) as date may be different for each capture
-  if (url.indexOf(WB_wombat_replayPrefix) == 0) {
-    return url;
-  }
-  
-  // If server relative url, add prefix and original host
-  if (url.charAt(0) == "/") {
-    
-    // Already a relative url, don't make any changes!
-    if (url.indexOf(WB_wombat_captureDatePart) >= 0) {
-      return url;
+        return false;
     }
-    
-    return WB_wombat_replayDatePrefix + WB_wombat_origHost + url;
-  }
-  
-  // If full url starting with http://, add prefix
-  if (url.indexOf(httpPrefix) == 0 || url.indexOf(httpsPrefix) == 0) {
-    return WB_wombat_replayDatePrefix + url;
-  }
-  
-  // May or may not be a hostname, call function to determine
-  // If it is, add the prefix and make sure port is removed
-  if (WB_IsHostUrl(url)) {
-    return WB_wombat_replayDatePrefix + httpPrefix + url;
-  }
 
-  return url;
-}
+    //============================================
+    function rewrite_url(url) {
+        var http_prefix = "http://";
+        var https_prefix = "https://";
 
-function WB_CopyObjectFields(obj)
-{
-  var newObj = {};
-  
-  for (prop in obj) {
-    if ((typeof obj[prop]) != "function") {
-      newObj[prop] = obj[prop];
+        // If not dealing with a string, just return it
+        if (!url || (typeof url) != "string") {
+            return url;
+        }
+
+        // If starts with prefix, no rewriting needed
+        // Only check replay prefix (no date) as date may be different for each
+        // capture
+        if (url.indexOf(wb_replay_prefix) == 0) {
+            return url;
+        }
+
+        // If server relative url, add prefix and original host
+        if (url.charAt(0) == "/") {
+
+            // Already a relative url, don't make any changes!
+            if (url.indexOf(wb_capture_date_part) >= 0) {
+                return url;
+            }
+
+            return wb_replay_date_prefix + wb_orig_host + url;
+        }
+
+        // If full url starting with http://, add prefix
+        if (url.indexOf(http_prefix) == 0 || url.indexOf(https_prefix) == 0) {
+            return wb_replay_date_prefix + url;
+        }
+
+        // May or may not be a hostname, call function to determine
+        // If it is, add the prefix and make sure port is removed
+        if (is_host_url(url)) {
+            return wb_replay_date_prefix + http_prefix + url;
+        }
+
+        return url;
     }
-  }
-  
-  return newObj;
-}
 
-function WB_ExtractOrig(href)
-{
-  if (!href) {
-    return "";
-  }
-  href = href.toString();
-  var index = href.indexOf("/http", 1);
-  if (index > 0) {
-    return href.substr(index + 1);
-  } else {
-    return href;
-  }
-}
-  
-function WB_CopyLocationObj(loc)
-{
-  var newLoc = WB_CopyObjectFields(loc);
-  
-  newLoc._origLoc = loc;
-  newLoc._origHref = loc.href;
-  
-  // Rewrite replace and assign functions
-  newLoc.replace = function(url) { this._origLoc.replace(WB_RewriteUrl(url)); }
-  newLoc.assign = function(url) { this._origLoc.assign(WB_RewriteUrl(url)); }
-  newLoc.reload = loc.reload;
-  
-  // Adapted from:
-  // https://gist.github.com/jlong/2428561
-  var parser = document.createElement('a');
-  parser.href = WB_ExtractOrig(newLoc._origHref);
+    //============================================
+    function copy_object_fields(obj) {
+        var new_obj = {};
 
-  newLoc.hash = parser.hash;
-  newLoc.host = parser.host;
-  newLoc.hostname = parser.hostname;
-  newLoc.href = parser.href;
+        for (prop in obj) {
+            if ((typeof obj[prop]) != "function") {
+                new_obj[prop] = obj[prop];
+            }
+        }
 
-  if (newLoc.origin) {
-    newLoc.origin = parser.origin;
-  }
+        return new_obj;
+    }
 
-  newLoc.pathname = parser.pathname;
-  newLoc.port = parser.port
-  newLoc.protocol = parser.protocol;
-  newLoc.search = parser.search;
-  
-  newLoc.toString = function() { return this.href; }
-  
-  return newLoc;
-}
+    //============================================
+    function extract_orig(href) {
+        if (!href) {
+            return "";
+        }
+        href = href.toString();
+        var index = href.indexOf("/http", 1);
+        if (index > 0) {
+            return href.substr(index + 1);
+        } else {
+            return href;
+        }
+    }
 
-function WB_wombat_updateLoc(reqHref, origHref, location)
-{
-  if (reqHref && (WB_ExtractOrig(origHref) != WB_ExtractOrig(reqHref))) {      
-    var finalHref = WB_RewriteUrl(reqHref);
-   
-    location.href = finalHref;
-  }  
-}
+    //============================================
+    function copy_location_obj(loc) {
+        var new_loc = copy_object_fields(loc);
 
-function WB_wombat_checkLocationChange(wbLoc, isTop)
-{
-  var locType = (typeof wbLoc);
-  
-  var location = (isTop ? window.top.location : window.location);
-	
-  // String has been assigned to location, so assign it
-  if (locType == "string") {
-    WB_wombat_updateLoc(wbLoc, location.href, location)
-    
-  } else if (locType == "object") {
-    WB_wombat_updateLoc(wbLoc.href, wbLoc._origHref, location);
-  }
-}
+        new_loc._orig_loc = loc;
+        new_loc._orig_href = loc.href;
 
-var wombat_updating = false;
+        // Rewrite replace and assign functions
+        new_loc.replace = function(url) {
+            this._orig_loc.replace(rewrite_url(url));
+        }
+        new_loc.assign = function(url) {
+            this._orig_loc.assign(rewrite_url(url));
+        }
+        new_loc.reload = loc.reload;
 
-function WB_wombat_checkLocations()
-{
-  if (wombat_updating) {
-    return false;
-  }
-  
-  wombat_updating = true;
-  
-  WB_wombat_checkLocationChange(window.WB_wombat_location, false);
-  
-  if (window.self.location != window.top.location) {
-    WB_wombat_checkLocationChange(window.top.WB_wombat_location, true);
-  }
-  
-  wombat_updating = false;
-}
+        // Adapted from:
+        // https://gist.github.com/jlong/2428561
+        var parser = document.createElement('a');
+        parser.href = extract_orig(new_loc._orig_href);
 
-function WB_wombat_Init_SeededRandom(seed)
-{
-  // Adapted from:
-  // http://indiegamr.com/generate-repeatable-random-numbers-in-js/
+        new_loc.hash = parser.hash;
+        new_loc.host = parser.host;
+        new_loc.hostname = parser.hostname;
+        new_loc.href = parser.href;
 
-  Math.seed = seed;
-  function seededRandom() {
-    Math.seed = (Math.seed * 9301 + 49297) % 233280;
-    var rnd = Math.seed / 233280;
+        if (new_loc.origin) {
+            new_loc.origin = parser.origin;
+        }
 
-    return rnd;
-  }
+        new_loc.pathname = parser.pathname;
+        new_loc.port = parser.port
+        new_loc.protocol = parser.protocol;
+        new_loc.search = parser.search;
 
-  Math.random = seededRandom;
-}
+        new_loc.toString = function() {
+            return this.href;
+        }
 
-function WB_wombat_CopyHistoryFunc(history, funcName)
-{
-  origFunc = history[funcName];
-  
-  if (!origFunc) {
-    return;
-  }
+        return new_loc;
+    }
 
-  history['_orig_' + funcName] = origFunc;
+    //============================================
+    function update_location(req_href, orig_href, location) {
+        if (req_href && (extract_orig(orig_href) != extract_orig(req_href))) {
+            var final_href = rewrite_url(req_href);
 
-  function rewrittenFunc(stateObj, title, url) {
-    url = WB_RewriteUrl(url);
-    return origFunc.call(history, stateObj, title, url);
-  }
+            location.href = final_href;
+        }
+    }
 
-  history[funcName] = rewrittenFunc;
+    //============================================
+    function check_location_change(loc, is_top) {
+        var locType = (typeof loc);
 
-  return rewrittenFunc;
-}
+        var location = (is_top ? window.top.location : window.location);
 
-function WB_wombat_Init_AjaxOverride() {
-  if (!window.XMLHttpRequest || !window.XMLHttpRequest.prototype ||
-      !window.XMLHttpRequest.prototype.open) {
-      return;
-  }
+        // String has been assigned to location, so assign it
+        if (locType == "string") {
+            update_location(loc, location.href, location)
 
-  var orig = window.XMLHttpRequest.prototype.open;
+        } else if (locType == "object") {
+            update_location(loc.href, loc._orig_href, location);
+        }
+    }
 
-  function openRewritten(sMethod, sUrl, bAsync, sUser, sPassword) {
-    sUrl = WB_RewriteUrl(sUrl);
-    return orig.call(this, sMethod, sUrl, bAsync, sUser, sPassword);
-  }
+    //============================================
+    function check_all_locations() {
+        if (wb_wombat_updating) {
+            return false;
+        }
 
-  window.XMLHttpRequest.prototype.open = openRewritten;
-}
+        wb_wombat_updating = true;
 
-function WB_wombat_Init(replayPrefix, captureDate, origHost, timestamp)
-{
-  WB_wombat_replayPrefix = replayPrefix;
-  WB_wombat_replayDatePrefix = replayPrefix + captureDate + "/";
-  WB_wombat_captureDatePart = "/" + captureDate + "/";
-  
-  WB_wombat_origHost = "http://" + origHost;
+        check_location_change(window.WB_wombat_location, false);
 
-  // Location
-  window.WB_wombat_location = WB_CopyLocationObj(window.self.location);
-  document.WB_wombat_location = window.WB_wombat_location;
+        if (window.self.location != window.top.location) {
+            check_location_change(window.top.WB_wombat_location, true);
+        }
 
+        wb_wombat_updating = false;
+    }
 
-  if (window.self.location != window.top.location) {
-    window.top.WB_wombat_location = WB_CopyLocationObj(window.top.location);
-  }
+    //============================================
+    function init_seeded_random(seed) {
+        // Adapted from:
+        // http://indiegamr.com/generate-repeatable-random-numbers-in-js/
 
-  if (window.opener) {
-    window.opener.WB_wombat_location = (window.opener ? WB_CopyLocationObj(window.opener.location) : null);
-  }
+        Math.seed = seed;
+        function seeded_random() {
+            Math.seed = (Math.seed * 9301 + 49297) % 233280;
+            var rnd = Math.seed / 233280;
 
-  // Domain
-  document.WB_wombat_domain = origHost;
+            return rnd;
+        }
 
-  // History
-  WB_wombat_CopyHistoryFunc(window.history, 'pushState');
-  WB_wombat_CopyHistoryFunc(window.history, 'replaceState');
+        Math.random = seeded_random;
+    }
 
-  // Ajax
-  WB_wombat_Init_AjaxOverride();
+    //============================================
+    function copy_history_func(history, func_name) {
+        orig_func = history[func_name];
 
-  // Random
-  WB_wombat_Init_SeededRandom(timestamp);
-}
+        if (!orig_func) {
+            return;
+        }
 
-// Check quickly after page load
-setTimeout(WB_wombat_checkLocations, 100);
+        history['_orig_' + func_name] = orig_func;
 
+        function rewritten_func(state_obj, title, url) {
+            url = rewrite_url(url);
+            return orig_func.call(history, state_obj, title, url);
+        }
 
-// Check periodically every few seconds
-setInterval(WB_wombat_checkLocations, 500);
+        history[func_name] = rewritten_func;
+
+        return rewritten_func;
+    }
+
+    //============================================
+    function init_ajax_rewrite() {
+        if (!window.XMLHttpRequest || 
+            !window.XMLHttpRequest.prototype ||
+            !window.XMLHttpRequest.prototype.open) {
+            return;
+        }
+
+        var orig = window.XMLHttpRequest.prototype.open;
+
+        function open_rewritten(method, url, async, user, password) {
+            url = rewrite_url(url);
+            return orig.call(this, method, url, async, user, password);
+        }
+
+        window.XMLHttpRequest.prototype.open = open_rewritten;
+    }
+
+    //============================================
+    function wombat_init(replay_prefix, capture_date, orig_host, timestamp) {
+        wb_replay_prefix = replay_prefix;
+        wb_replay_date_prefix = replay_prefix + capture_date + "/";
+        wb_capture_date_part = "/" + capture_date + "/";
+
+        wb_orig_host = "http://" + orig_host;
+
+        // Location
+        window.WB_wombat_location = copy_location_obj(window.self.location);
+        document.WB_wombat_location = window.WB_wombat_location;
+
+        if (window.self.location != window.top.location) {
+            window.top.WB_wombat_location = copy_location_obj(window.top.location);
+        }
+
+        if (window.opener) {
+            window.opener.WB_wombat_location = (window.opener ? copy_location_obj(window.opener.location)
+                    : null);
+        }
+
+        // Domain
+        document.WB_wombat_domain = orig_host;
+
+        // History
+        copy_history_func(window.history, 'pushState');
+        copy_history_func(window.history, 'replaceState');
+
+        // Ajax
+        init_ajax_rewrite();
+
+        // Random
+        init_seeded_random(timestamp);
+    }
+
+    // Check quickly after page load
+    setTimeout(check_all_locations, 100);
+
+    // Check periodically every few seconds
+    setInterval(check_all_locations, 500);
+
+    return wombat_init;
+
+})(this);
