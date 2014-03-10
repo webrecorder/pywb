@@ -108,8 +108,6 @@ class FuzzyQuery:
                   'filter': filter_,
                   'output': output}
 
-        print params
-
         return CDXQuery(**params)
 
 

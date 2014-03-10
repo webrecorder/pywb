@@ -168,7 +168,6 @@ function WB_wombat_updateLoc(reqHref, origHref, location)
   if (reqHref && (WB_ExtractOrig(origHref) != WB_ExtractOrig(reqHref))) {      
     var finalHref = WB_RewriteUrl(reqHref);
    
-    console.log("Rewrite: " + reqHref + " => " + origHref);
     location.href = finalHref;
   }  
 }
