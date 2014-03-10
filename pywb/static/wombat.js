@@ -63,6 +63,7 @@ function WB_IsHostUrl(str)
 function WB_RewriteUrl(url)
 {
   var httpPrefix = "http://";
+  var httpsPrefix = "https://";
 
   // If not dealing with a string, just return it
   if (!url || (typeof url) != "string") {
@@ -87,7 +88,7 @@ function WB_RewriteUrl(url)
   }
   
   // If full url starting with http://, add prefix
-  if (url.indexOf(httpPrefix) == 0) {
+  if (url.indexOf(httpPrefix) == 0 || url.indexOf(httpsPrefix) == 0) {
     return WB_wombat_replayDatePrefix + url;
   }
   
@@ -206,7 +207,59 @@ function WB_wombat_checkLocations()
   wombat_updating = false;
 }
 
-function WB_wombat_Init(replayPrefix, captureDate, origHost)
+function WB_wombat_Init_SeededRandom(seed)
+{
+  // Adapted from:
+  // http://indiegamr.com/generate-repeatable-random-numbers-in-js/
+
+  Math.seed = seed;
+  function seededRandom() {
+    Math.seed = (Math.seed * 9301 + 49297) % 233280;
+    var rnd = Math.seed / 233280;
+
+    return rnd;
+  }
+
+  Math.random = seededRandom;
+}
+
+function WB_wombat_CopyHistoryFunc(history, funcName)
+{
+  origFunc = history[funcName];
+  
+  if (!origFunc) {
+    return;
+  }
+
+  history['_orig_' + funcName] = origFunc;
+
+  function rewrittenFunc(stateObj, title, url) {
+    url = WB_RewriteUrl(url);
+    return origFunc.call(history, stateObj, title, url);
+  }
+
+  history[funcName] = rewrittenFunc;
+
+  return rewrittenFunc;
+}
+
+function WB_wombat_Init_AjaxOverride() {
+  if (!window.XMLHttpRequest || !window.XMLHttpRequest.prototype ||
+      !window.XMLHttpRequest.prototype.open) {
+      return;
+  }
+
+  var orig = window.XMLHttpRequest.prototype.open;
+
+  function openRewritten(sMethod, sUrl, bAsync, sUser, sPassword) {
+    sUrl = WB_RewriteUrl(sUrl);
+    return orig.call(this, sMethod, sUrl, bAsync, sUser, sPassword);
+  }
+
+  window.XMLHttpRequest.prototype.open = openRewritten;
+}
+
+function WB_wombat_Init(replayPrefix, captureDate, origHost, timestamp)
 {
   WB_wombat_replayPrefix = replayPrefix;
   WB_wombat_replayDatePrefix = replayPrefix + captureDate + "/";
@@ -214,6 +267,7 @@ function WB_wombat_Init(replayPrefix, captureDate, origHost)
   
   WB_wombat_origHost = "http://" + origHost;
 
+  // Location
   window.WB_wombat_location = WB_CopyLocationObj(window.self.location);
   document.WB_wombat_location = window.WB_wombat_location;
 
@@ -226,9 +280,18 @@ function WB_wombat_Init(replayPrefix, captureDate, origHost)
     window.opener.WB_wombat_location = (window.opener ? WB_CopyLocationObj(window.opener.location) : null);
   }
 
-
+  // Domain
   document.WB_wombat_domain = origHost;
 
+  // History
+  WB_wombat_CopyHistoryFunc(window.history, 'pushState');
+  WB_wombat_CopyHistoryFunc(window.history, 'replaceState');
+
+  // Ajax
+  WB_wombat_Init_AjaxOverride();
+
+  // Random
+  WB_wombat_Init_SeededRandom(timestamp);
 }
 
 // Check quickly after page load
