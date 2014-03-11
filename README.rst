@@ -1,8 +1,8 @@
 PyWb 0.2.0
 =============
 
-`|Build Status| <https://travis-ci.org/ikreymer/pywb>`_ `|Coverage
-Status| <https://coveralls.io/r/ikreymer/pywb?branch=master>`_
+.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=master  :target: https://travis-ci.org/ikreymer/pywb
+.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=master  :target: https://coveralls.io/r/ikreymer/pywb?branch=master
 
 pywb is a new Python implementation of the Wayback Machine software and
 tools.
@@ -73,7 +73,7 @@ Runnable Apps
 ~~~~~~~~~~~~~
 
 The pywb tool suite currently includes two runnable applications in the
-``pywb.apps`` package:
+``pywb.apps`` package.
 
 -  ``python -m pywb.apps.wayback`` -- start the full wayback on port
    8080
@@ -227,8 +227,3 @@ archiving replay
 Please take a look at list of current
 `issues <https://github.com/ikreymer/pywb/issues?state=open>`_ and feel
 free to open new ones
-
-.. |Build
-Status| image:: https://travis-ci.org/ikreymer/pywb.png?branch=master
-.. |Coverage
-Status| image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=master
