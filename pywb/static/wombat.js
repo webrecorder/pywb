@@ -1,5 +1,5 @@
 /*
-Copyright(c) 2013-2014 Internet Archive / Ilya Kreymer. Released under the GNU General Public License.
+Copyright(c) 2013-2014 Ilya Kreymer. Released under the GNU General Public License.
 
 This file is part of pywb.
 
@@ -209,7 +209,7 @@ WB_wombat_init = (function() {
         // Adapted from:
         // http://indiegamr.com/generate-repeatable-random-numbers-in-js/
 
-        Math.seed = seed;
+        Math.seed = parseInt(seed);
         function seeded_random() {
             Math.seed = (Math.seed * 9301 + 49297) % 233280;
             var rnd = Math.seed / 233280;
@@ -275,8 +275,7 @@ WB_wombat_init = (function() {
         }
 
         if (window.opener) {
-            window.opener.WB_wombat_location = (window.opener ? copy_location_obj(window.opener.location)
-                    : null);
+            window.opener.WB_wombat_location = copy_location_obj(window.opener.location);
         }
 
         // Domain
@@ -290,7 +289,7 @@ WB_wombat_init = (function() {
         init_ajax_rewrite();
 
         // Random
-        init_seeded_random(timestamp);
+        init_seeded_random(timestamp);       
     }
 
     // Check quickly after page load

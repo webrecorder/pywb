@@ -1,5 +1,5 @@
 /*
-Copyright(c) 2013-2014 Internet Archive / Ilya Kreymer. Released under the GNU General Public License.
+Copyright(c) 2013-2014 Ilya Kreymer. Released under the GNU General Public License.
 
 This file is part of pywb.
 
