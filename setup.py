@@ -14,7 +14,7 @@ except ImportError:
     pass
 
 
-long_description = open('README.md').read()
+long_description = open('README.rst').read()
 
 
 class PyTest(TestCommand):
@@ -81,4 +81,22 @@ setup(
         wayback = pywb.apps.wayback:main
         cdx-server = pywb.apps.cdx_server:main
         """
-    )
+    zip_safe=False,
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Environment :: Web Environment',
+        'License :: OSI Approved :: GNU General Public License (GPL)',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Topic :: Internet :: Proxy Servers',
+        'Topic :: Internet :: WWW/HTTP',
+        'Topic :: Internet :: WWW/HTTP :: WSGI',
+        'Topic :: Internet :: WWW/HTTP :: WSGI :: Application',
+        'Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware',
+        'Topic :: Internet :: WWW/HTTP :: WSGI :: Server',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: System :: Archiving',
+        'Topic :: System :: Archiving :: Backup',
+        'Topic :: Utilities',
+    ])
