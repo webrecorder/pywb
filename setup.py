@@ -80,7 +80,7 @@ setup(
         [console_scripts]
         wayback = pywb.apps.wayback:main
         cdx-server = pywb.apps.cdx_server:main
-        """
+        """,
     zip_safe=False,
     classifiers=[
         'Development Status :: 4 - Beta',
