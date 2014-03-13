@@ -1,8 +1,11 @@
 PyWb 0.2.0
 =============
 
-.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=master  :target: https://travis-ci.org/ikreymer/pywb
-.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=master  :target: https://coveralls.io/r/ikreymer/pywb?branch=master
+.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=master
+      :target: https://travis-ci.org/ikreymer/pywb
+         
+.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=master
+      :target: https://coveralls.io/r/ikreymer/pywb?branch=master
 
 pywb is a new Python implementation of the Wayback Machine software and
 tools.
@@ -14,7 +17,7 @@ captures.
 Latest Changes
 ~~~~~~~~~~~~~~
 
-The basic feature set of web replay is nearly complete.
+The basic feature set of web replay is nearly complete in this version.
 
 pywb now features new `domain-specific rules <pywb/rules.yaml>`_ which
 are applied to certain difficult and dynamic content in order to make
@@ -30,15 +33,16 @@ pywb is compatible with the standard Wayback Machine url format:
 
 ``http://<host>/<collection>/<timestamp>/<original url>``
 
-Ex: The `Internet Archive Wayback Machine <https//archive.org/web/>`_
-has urls of the form:
+Some examples of this url from other wayback machines (not implemented via pywb):
 
-``http://web.archive.org/web/20131015120316/http://archive.org/``
+``http://web.archive.org/web/20140312103519/http://www.example.com``
+``http://www.webarchive.org.uk/wayback/archive/20100513010014/http://www.example.com/``
+
 
 A listing of archived content, often in calendar form, is available when
 a ``*`` is used instead of timestamp.
 
-The Wayback Machine uses an html parser to rewrite relative and absolute
+The Wayback Machine often uses an html parser to rewrite relative and absolute
 links, as well as absolute links found in javascript, css and some xml.
 
 pywb provides these features as a starting point.
@@ -72,13 +76,13 @@ and ``http://iana.org``
 Runnable Apps
 ~~~~~~~~~~~~~
 
-The pywb tool suite currently includes two runnable applications in the
-``pywb.apps`` package.
+The pywb tool suite currently includes two runnable applications, installed
+as command-line scripts via setuptools
 
--  ``python -m pywb.apps.wayback`` -- start the full wayback on port
+-  ``wayback`` or ``python -m pywb.apps.wayback`` -- start the full wayback on port
    8080
 
--  ``python -m pywb.apps.cdx_server`` -- start standalone cdx server on
+-  ``cdx-server`` or ``python -m pywb.apps.cdx_server`` -- start standalone cdx server on
    port 8090
 
 Step-By-Step Installation
@@ -90,8 +94,7 @@ To start a pywb with sample data:
 
 2. Install with ``python setup.py install``
 
-3. Run pywb via ``python -m pywb.apps.wayback`` to start the server in
-   implementation.
+3. Run ``wayback`` (shorthand for ``python -m pywb.apps.wayback``) to start the pywb wayback server with reference WSGI implementation.
 
 OR run ``run-uwsgi.sh`` to start with uWSGI (see below for more info).
 
@@ -101,17 +104,13 @@ OR run ``run-uwsgi.sh`` to start with uWSGI (see below for more info).
 If everything worked, the following pages should be loading (served from
 *sample\_archive* dir):
 
-\| Original Url \| Latest Capture \| List of All Captures \| \|
-------------- \| ------------- \| ----------------------- \| \|
-``http://example.com`` \|
-`http://localhost:8080/pywb/example.com <http://localhost:8080/pywb/example.com>`_
-\|
-[http://localhost:8080/pywb/*/example.com](http://localhost:8080/pywb/*/example.com)
-\| \| ``http://iana.org`` \|
-`http://localhost:8080/pywb/iana.org <http://localhost:8080/pywb/iana.org>`_
-\|
-[http://localhost:8080/pywb/*/iana.org](http://localhost:8080/pywb/*/iana.org)
-\|
++------------------------+----------------------------------------+--------------------------------------------+
+| Original Url           | Latest Capture                         | List of All Captures                       | 
++========================+========================================+============================================+
+| ``http://example.com`` | http://localhost:8080/pywb/example.com | http://localhost:8080/pywb/\*/example.com  |
++------------------------+----------------------------------------+--------------------------------------------+
+| ``http://iana.org``    | http://localhost:8080/pywb/iana.org    | http://localhost:8080/pywb/\*/iana.org     |
++------------------------+----------------------------------------+--------------------------------------------+
 
 uWSGI startup script
 ^^^^^^^^^^^^^^^^^^^^
