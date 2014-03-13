@@ -19,7 +19,7 @@ Latest Changes
 
 The basic feature set of web replay is nearly complete in this version.
 
-pywb now features new `domain-specific rules <pywb/rules.yaml>`_ which
+pywb now features new `domain-specific rules <https://github.com/ikreymer/pywb/blob/master/pywb/rules.yaml>`_ which
 are applied to certain difficult and dynamic content in order to make
 web replay work.
 
@@ -173,7 +173,7 @@ Sample Setup
 
 pywb is configurable via yaml.
 
-The simplest `config.yaml <config.yaml>`_ is roughly as follows:
+The simplest `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_ is roughly as follows:
 
 ::
 
@@ -186,7 +186,7 @@ The simplest `config.yaml <config.yaml>`_ is roughly as follows:
 
 This sets up pywb with a single route for collection /pywb
 
-(The the latest version of `config.yaml <config.yaml>`_ contains
+(The the latest version of `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_ contains
 additional documentation and specifies all the optional properties, such
 as ui filenames for Jinja2/html template files.)
 
@@ -196,8 +196,8 @@ For more advanced use, the pywb init path can be customized further:
    file.
 
 -  Custom init app (with or without yaml) can be created. See
-   `wayback.py <pywb/apps/wayback.py>`_ and
-   `pywb\_init.py <pywb/core/pywb_init.py>`_ for examples of existing
+   `wayback.py <https://github.com/ikreymer/pywb/blob/master/pywb/apps/wayback.py>`_ and
+   `pywb\_init.py <https://github.com/ikreymer/pywb/blob/master/pywb/core/pywb_init.py>`_ for examples of existing
    initialization paths.
 
 Configuring PyWb With Archived Data
@@ -212,7 +212,7 @@ Additional Documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  For additional/up-to-date configuration details, consult the current
-   `config.yaml <config.yaml>`_
+   `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_
 
 -  The `wiki <https://github.com/ikreymer/pywb/wiki>`_ will have
    additional technical documentation about various aspects of pywb

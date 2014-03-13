@@ -37,6 +37,7 @@ setup(
     url='https://github.com/ikreymer/pywb',
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
+    description='Python WayBack Machine for web archive replay',
     long_description=long_description,
     license='GPL',
     packages=find_packages(),
@@ -46,7 +47,7 @@ setup(
         'pywb.cdx',
         'pywb.warc',
         'pywb.rewrite',
-        'pywb.framework'
+        'pywb.framework',
         'pywb.perms',
         'pywb.core',
         'pywb.apps'
