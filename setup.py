@@ -33,10 +33,10 @@ class PyTest(TestCommand):
 
 setup(
     name='pywb',
-    version='0.2',
+    version='0.2.0',
     url='https://github.com/ikreymer/pywb',
     author='Ilya Kreymer',
-    author_email='ilya@archive.org',
+    author_email='ikreymer@gmail.com',
     long_description=long_description,
     license='GPL',
     packages=find_packages(),
