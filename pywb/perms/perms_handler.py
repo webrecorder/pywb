@@ -11,6 +11,7 @@ RESPONSE_TYPE = 'application/json'
 
 NOT_FOUND = 'Please specify a url to check for access'
 
+
 #=================================================================
 class PermsHandler(WbUrlHandler):
 

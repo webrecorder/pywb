@@ -4,12 +4,15 @@ import urlparse
 
 from pywb.rewrite.url_rewriter import HttpsUrlRewriter
 
-#=================================================================
-# An experimental router which combines both archival and proxy modes
-# http proxy mode support is very simple so far:
-# only latest capture is available currently
+
 #=================================================================
 class ProxyArchivalRouter(ArchivalRouter):
+    """
+    A router which combines both archival and proxy modes support
+    First, request is treated as a proxy request using ProxyRouter
+    Second, if not handled by the router, it is treated as a regular
+    archival mode request.
+    """
     def __init__(self, routes, **kwargs):
         super(ProxyArchivalRouter, self).__init__(routes, **kwargs)
         request_class = routes[0].request_class
@@ -28,11 +31,18 @@ class ProxyArchivalRouter(ArchivalRouter):
 
 
 #=================================================================
-# Simple router which routes http proxy requests
-# Handles requests of the form: GET  http://example.com
-# Only supports latest capture replay at the moment
-#=================================================================
-class ProxyRouter:
+class ProxyRouter(object):
+    """
+    A router which supports http proxy mode requests
+    Handles requests of the form: GET http://example.com
+
+    The router returns latest capture by default.
+    However, if Memento protocol support is enabled,
+    the memento Accept-Datetime header can be used
+    to select specific capture.
+    See: http://www.mementoweb.org/guide/rfc/#Pattern1.3
+    for more details.
+    """
     def __init__(self, handler, **kwargs):
         self.handler = handler
         self.hostpaths = kwargs.get('hostpaths')

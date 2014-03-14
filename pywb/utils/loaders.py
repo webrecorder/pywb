@@ -10,6 +10,7 @@ import time
 import pkg_resources
 from io import open
 
+
 #=================================================================
 def is_http(filename):
     return filename.startswith(('http://', 'https://'))

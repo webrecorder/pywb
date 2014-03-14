@@ -20,6 +20,7 @@ class UrlCanonicalizer(object):
 class UrlCanonicalizeException(BadRequestException):
     pass
 
+
 #=================================================================
 def canonicalize(url, surt_ordered=True):
     """

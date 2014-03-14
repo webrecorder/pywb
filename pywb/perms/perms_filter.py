@@ -13,6 +13,7 @@ def make_perms_cdx_filter(perms_policy, wbrequest):
 
     return _create_cdx_perms_filter(perms_checker)
 
+
 #=================================================================
 def _create_cdx_perms_filter(perms_checker):
     """

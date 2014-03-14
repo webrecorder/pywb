@@ -3,14 +3,24 @@ from io import BytesIO
 
 from pywb.utils.bufferedreaders import ChunkedDataReader
 from pywb.utils.statusandheaders import StatusAndHeaders
+from pywb.utils.wbexception import WbException
+from pywb.utils.loaders import LimitReader
 
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import MementoResponse
 
-from pywb.framework.wbexceptions import CaptureException
 from pywb.warc.recordloader import ArchiveLoadFailed
 
-from pywb.utils.loaders import LimitReader
+
+#=================================================================
+class CaptureException(WbException):
+    """
+    raised to indicate an issue with a specific capture
+    and will be caught and result in a retry, if possible
+    if not, will result in a 502
+    """
+    def status(self):
+        return '502 Internal Server Error'
 
 
 #=================================================================
