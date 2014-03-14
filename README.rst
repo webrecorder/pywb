@@ -1,4 +1,4 @@
-PyWb 0.2.0
+PyWb 0.2.1
 =============
 
 .. image:: https://travis-ci.org/ikreymer/pywb.png?branch=master
@@ -17,14 +17,11 @@ captures.
 Latest Changes
 ~~~~~~~~~~~~~~
 
-The basic feature set of web replay is nearly complete in this version.
+* Basic support for `Memento Protocol RFC7089 <http://www.mementoweb.org/guide/rfc/>`_
 
-pywb now features new `domain-specific rules <https://github.com/ikreymer/pywb/blob/master/pywb/rules.yaml>`_ which
-are applied to certain difficult and dynamic content in order to make
-web replay work.
+* pywb now features new `domain-specific rules <https://github.com/ikreymer/pywb/blob/master/pywb/rules.yaml>`_ which are applied to certain difficult and dynamic content in order to make web replay work.
 
-This rules set will be under constant iteration to deal with new
-challenges as the web evoles.
+  This rules set will be under constant iteration to deal with new challenges as the web evoles.
 
 Wayback Machine
 ~~~~~~~~~~~~~~~
