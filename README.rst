@@ -17,11 +17,10 @@ captures.
 Latest Changes
 ~~~~~~~~~~~~~~
 
-* Basic support for `Memento Protocol RFC7089 <http://www.mementoweb.org/guide/rfc/>`_
+* Basic support for `Memento Protocol RFC7089 <http://www.mementoweb.org/guide/rfc/>`_ Memento and TimeGate interaction only. (TimeMap support planned).
 
-* pywb now features new `domain-specific rules <https://github.com/ikreymer/pywb/blob/master/pywb/rules.yaml>`_ which are applied to certain difficult and dynamic content in order to make web replay work.
+* pywb now features new `domain-specific rules <https://github.com/ikreymer/pywb/blob/master/pywb/rules.yaml>`_ which are applied to resolve and render certain difficult and dynamic content, in order to make accurate web replay work. This ruleset will be under further iteration to address further challenges as the web evoles.
 
-  This rules set will be under constant iteration to deal with new challenges as the web evoles.
 
 Wayback Machine
 ~~~~~~~~~~~~~~~
