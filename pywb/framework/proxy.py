@@ -10,23 +10,12 @@ from pywb.rewrite.url_rewriter import HttpsUrlRewriter
 # only latest capture is available currently
 #=================================================================
 class ProxyArchivalRouter(ArchivalRouter):
-    def __init__(self, routes,
-                 hostpaths=None,
-                 port=None,
-                 abs_path=True,
-                 home_view=None,
-                 error_view=None):
-
-        (super(ProxyArchivalRouter, self).
-                              __init__(routes,
-                                       hostpaths=hostpaths,
-                                       port=port,
-                                       abs_path=abs_path,
-                                       home_view=home_view,
-                                       error_view=error_view))
-
-        self.proxy = ProxyRouter(routes[0].handler, hostpaths, error_view)
-        #self.error_view = error_view
+    def __init__(self, routes, **kwargs):
+        super(ProxyArchivalRouter, self).__init__(routes, **kwargs)
+        request_class = routes[0].request_class
+        self.proxy = ProxyRouter(routes[0].handler,
+                                 request_class=request_class,
+                                 **kwargs)
 
     def __call__(self, env):
         response = self.proxy(env)
@@ -44,11 +33,12 @@ class ProxyArchivalRouter(ArchivalRouter):
 # Only supports latest capture replay at the moment
 #=================================================================
 class ProxyRouter:
-    def __init__(self, handler, hostpaths=None, error_view=None):
+    def __init__(self, handler, **kwargs):
         self.handler = handler
-        self.hostpaths = hostpaths
+        self.hostpaths = kwargs.get('hostpaths')
 
-        self.error_view = error_view
+        self.error_view = kwargs.get('error_view')
+        self.request_class = kwargs.get('request_class')
 
     def __call__(self, env):
         url = env['REL_REQUEST_URI']
@@ -59,10 +49,9 @@ class ProxyRouter:
         if not url.startswith('http://'):
             return None
 
-        wbrequest = WbRequest(env,
+        wbrequest = self.request_class(env,
                               request_uri=url,
                               wb_url_str=url,
-                              #rel_prefix=url,
                               host_prefix=self.hostpaths[0],
                               wburl_class=self.handler.get_wburl_type(),
                               urlrewriter_class=HttpsUrlRewriter,

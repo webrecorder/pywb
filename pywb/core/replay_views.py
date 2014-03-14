@@ -2,20 +2,25 @@ import re
 from io import BytesIO
 
 from pywb.utils.bufferedreaders import ChunkedDataReader
-from pywb.framework.wbrequestresponse import WbResponse
+from pywb.utils.statusandheaders import StatusAndHeaders
 
-from pywb.framework.wbexceptions import CaptureException, InternalRedirect
+from pywb.framework.wbrequestresponse import WbResponse
+from pywb.framework.memento import MementoResponse
+
+from pywb.framework.wbexceptions import CaptureException
 from pywb.warc.recordloader import ArchiveLoadFailed
 
 from pywb.utils.loaders import LimitReader
+
 
 #=================================================================
 class ReplayView:
 
     STRIP_SCHEME = re.compile('^([\w]+:[/]*)?(.*?)$')
 
-    def __init__(self, content_loader, content_rewriter, head_insert_view = None,
-                 redir_to_exact = True, buffer_response = False, reporter = None):
+    def __init__(self, content_loader, content_rewriter, head_insert_view=None,
+                 redir_to_exact=True, buffer_response=False, reporter=None,
+                 memento=False):
 
         self.content_loader = content_loader
         self.content_rewriter = content_rewriter
@@ -27,6 +32,11 @@ class ReplayView:
         self.buffer_response = buffer_response
 
         self._reporter = reporter
+
+        if memento:
+            self.response_class = MementoResponse
+        else:
+            self.response_class = WbResponse
 
 
     def __call__(self, wbrequest, cdx_lines, cdx_loader):
@@ -42,7 +52,10 @@ class ReplayView:
             try:
                 # optimize: can detect if redirect is needed just from the cdx, no need to load w/arc data
                 if first:
-                    self._redirect_if_needed(wbrequest, cdx)
+                    redir_response = self._redirect_if_needed(wbrequest, cdx)
+                    if redir_response:
+                        return redir_response
+
                     first = False
 
                 (status_headers, stream) = (self.content_loader.
@@ -52,7 +65,9 @@ class ReplayView:
                 self._reject_self_redirect(wbrequest, cdx, status_headers)
 
                 # check if redir is needed
-                self._redirect_if_needed(wbrequest, cdx)
+                redir_response = self._redirect_if_needed(wbrequest, cdx)
+                if redir_response:
+                    return redir_response
 
                 # one more check for referrer-based self-redirect
                 self._reject_referrer_self_redirect(wbrequest)
@@ -121,12 +136,16 @@ class ReplayView:
         # no rewriting needed!
         if rewritten_headers.text_type is None:
             response_iter = self.stream_to_iter(stream)
-            return WbResponse(rewritten_headers.status_headers, response_iter)
+            return self.response_class(rewritten_headers.status_headers,
+                                       response_iter,
+                                       wbrequest=wbrequest,
+                                       cdx=cdx)
 
         def make_head_insert(rule):
-            return (self.head_insert_view.render_to_string(wbrequest=wbrequest,
-                                                           cdx=cdx,
-                                                           rule=rule))
+            return (self.head_insert_view.
+                    render_to_string(wbrequest=wbrequest,
+                                     cdx=cdx,
+                                     rule=rule))
          # do head insert
         if self.head_insert_view:
             head_insert_func = make_head_insert
@@ -145,9 +164,12 @@ class ReplayView:
             if wbrequest.wb_url.mod == 'id_':
                 status_headers.remove_header('content-length')
 
-            return self.buffered_response(status_headers, response_gen)
+            response_gen = self.buffered_response(status_headers, response_gen)
 
-        return WbResponse(status_headers, response_gen)
+        return self.response_class(status_headers,
+                                   response_gen,
+                                   wbrequest=wbrequest,
+                                   cdx=cdx)
 
 
     # Buffer rewrite iterator and return a response from a string
@@ -165,15 +187,27 @@ class ReplayView:
             status_headers.headers.append(('Content-Length', content_length_str))
             out.close()
 
-        return WbResponse(status_headers, value = [content])
-
+        return content
 
     def _redirect_if_needed(self, wbrequest, cdx):
-        if self.redir_to_exact and not wbrequest.is_proxy and cdx and (cdx['timestamp'] != wbrequest.wb_url.timestamp):
-            new_url = wbrequest.urlrewriter.get_timestamp_url(cdx['timestamp'], cdx['original'])
-            raise InternalRedirect(new_url)
+        if wbrequest.is_proxy:
+            return None
 
-        return None
+        redir_needed = hasattr(wbrequest, 'is_timegate') and wbrequest.is_timegate
+
+        if not redir_needed and self.redir_to_exact:
+            redir_needed = (cdx['timestamp'] != wbrequest.wb_url.timestamp)
+
+        if not redir_needed:
+            return None
+
+        new_url = wbrequest.urlrewriter.get_timestamp_url(cdx['timestamp'], cdx['original'])
+        status_headers = StatusAndHeaders('302 Internal Redirect',
+                                          [('Location', new_url)])
+
+        # don't include cdx to indicate internal redirect
+        return self.response_class(status_headers,
+                                   wbrequest=wbrequest)
 
 
     def _reject_self_redirect(self, wbrequest, cdx, status_headers):

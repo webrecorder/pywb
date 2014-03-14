@@ -4,7 +4,7 @@
 import surt
 import urlparse
 
-from wbexception import WbException
+from wbexception import BadRequestException
 
 
 #=================================================================
@@ -17,10 +17,8 @@ class UrlCanonicalizer(object):
 
 
 #=================================================================
-class UrlCanonicalizeException(WbException):
-    def status(self):
-        return '400 Bad Request'
-
+class UrlCanonicalizeException(BadRequestException):
+    pass
 
 #=================================================================
 def canonicalize(url, surt_ordered=True):

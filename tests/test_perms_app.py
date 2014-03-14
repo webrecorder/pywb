@@ -5,7 +5,7 @@ from pywb.perms.perms_handler import ALLOW, BLOCK
 from pywb.framework.wsgi_wrappers import init_app
 
 class TestPermsApp:
-    TEST_CONFIG = 'test_config.yaml'
+    TEST_CONFIG = 'tests/test_config.yaml'
 
     def setup(self):
         self.app = init_app(create_perms_checker_app,

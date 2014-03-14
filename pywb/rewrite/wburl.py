@@ -214,6 +214,11 @@ class WbUrl(BaseWbUrl):
 
         return True
 
+    def set_replay_timestamp(self, timestamp):
+        self.timestamp = timestamp
+        self.type = self.REPLAY
+
+
     # Str Representation
     # ====================
     def to_str(self, **overrides):

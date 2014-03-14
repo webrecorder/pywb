@@ -101,3 +101,5 @@ enable_cdx_api: true
 # Permissions checker
 #perms_checker: !!python/object/new:pywb.cdx.perms.AllowAllPerms []
 
+# Memento support, enable
+enable_memento: true

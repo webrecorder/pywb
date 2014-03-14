@@ -1,9 +1,9 @@
 from pywb.utils.canonicalize import UrlCanonicalizer
+from pywb.utils.wbexception import NotFoundException
 
 from pywb.framework.basehandlers import WbUrlHandler
 from pywb.framework.archivalrouter import ArchivalRouter, Route
 from pywb.framework.wbrequestresponse import WbResponse
-from pywb.framework.wbexceptions import NotFoundException
 
 BLOCK = '["block"]'
 ALLOW = '["allow"]'

@@ -18,12 +18,6 @@ class CDXException(WbException):
 
 
 #=================================================================
-class CaptureNotFoundException(CDXException):
-    def status(self):
-        return '404 Not Found'
-
-
-#=================================================================
 class CDXObject(OrderedDict):
     """
     dictionary object representing parsed CDX line.

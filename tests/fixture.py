@@ -5,7 +5,7 @@ import yaml
 
 @pytest.fixture
 def testconfig():
-    config = yaml.load(open('test_config.yaml'))
+    config = yaml.load(open('tests/test_config.yaml'))
     assert config
     if 'index_paths' not in config:
         # !!! assumes this module is in a sub-directory of project root.

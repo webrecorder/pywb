@@ -8,6 +8,7 @@ import time
 import datetime
 import calendar
 from itertools import imap
+from email.utils import parsedate, formatdate
 
 #=================================================================
 # str <-> datetime conversion
@@ -38,6 +39,30 @@ def iso_date_to_datetime(string):
     return the_datetime
 
 
+def http_date_to_datetime(string):
+    """
+    >>> http_date_to_datetime('Thu, 26 Dec 2013 09:50:10 GMT')
+    datetime.datetime(2013, 12, 26, 9, 50, 10)
+    """
+    return datetime.datetime(*parsedate(string)[:6])
+
+
+def datetime_to_http_date(the_datetime):
+    """
+    >>> datetime_to_http_date(datetime.datetime(2013, 12, 26, 9, 50, 10))
+    'Thu, 26 Dec 2013 09:50:10 GMT'
+
+    # Verify inverses
+    >>> x = 'Thu, 26 Dec 2013 09:50:10 GMT'
+    >>> datetime_to_http_date(http_date_to_datetime(x)) == x
+    True
+    """
+    timeval = calendar.timegm(the_datetime.utctimetuple())
+    return formatdate(timeval=timeval,
+                      localtime=False,
+                      usegmt=True)
+
+
 def datetime_to_timestamp(the_datetime):
     """
     >>> datetime_to_timestamp(datetime.datetime(2013, 12, 26, 10, 11, 12))
@@ -57,6 +82,17 @@ def iso_date_to_timestamp(string):
      """
 
     return datetime_to_timestamp(iso_date_to_datetime(string))
+
+
+def http_date_to_timestamp(string):
+    """
+    >>> http_date_to_timestamp('Thu, 26 Dec 2013 09:50:00 GMT')
+    '20131226095000'
+
+    >>> http_date_to_timestamp('Sun, 26 Jan 2014 20:08:04 GMT')
+    '20140126200804'
+    """
+    return datetime_to_timestamp(http_date_to_datetime(string))
 
 
 # pad to certain length (default 6)
@@ -213,6 +249,17 @@ def timestamp_to_sec(string):
     """
 
     return calendar.timegm(timestamp_to_datetime(string).utctimetuple())
+
+
+def timestamp_to_http_date(string):
+    """
+    >>> timestamp_to_http_date('20131226095000')
+    'Thu, 26 Dec 2013 09:50:00 GMT'
+
+    >>> timestamp_to_http_date('20140126200804')
+    'Sun, 26 Jan 2014 20:08:04 GMT'
+    """
+    return datetime_to_http_date(timestamp_to_datetime(string))
 
 
 if __name__ == "__main__":

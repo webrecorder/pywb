@@ -1,9 +1,9 @@
 from pywb.utils.statusandheaders import StatusAndHeaders
+
 import pprint
 
-
 #=================================================================
-class WbRequest:
+class WbRequest(object):
     """
     Represents the main pywb request object.
 
@@ -84,6 +84,8 @@ class WbRequest:
         # PERF
         env['X_PERF'] = {}
 
+        self._parse_extra()
+
     def _is_ajax(self):
         value = self.env.get('HTTP_X_REQUESTED_WITH')
         if not value:
@@ -101,18 +103,25 @@ class WbRequest:
         varstr = pprint.pformat(varlist)
         return varstr
 
+    def _parse_extra(self):
+        pass
+
 
 #=================================================================
-class WbResponse:
+class WbResponse(object):
     """
     Represnts a pywb wsgi response object.
 
     Holds a status_headers object and a response iter, to be
     returned to wsgi container.
     """
-    def __init__(self, status_headers, value=[]):
+    def __init__(self, status_headers, value=[], **kwargs):
         self.status_headers = status_headers
         self.body = value
+        self._init_derived(kwargs)
+
+    def _init_derived(self, params):
+        pass
 
     @staticmethod
     def text_stream(stream, status='200 OK', content_type='text/plain'):

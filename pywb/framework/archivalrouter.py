@@ -9,27 +9,23 @@ from wbrequestresponse import WbRequest, WbResponse
 # ArchivalRouter -- route WB requests in archival mode
 #=================================================================
 class ArchivalRouter(object):
-    def __init__(self, routes,
-                 hostpaths=None,
-                 port=None,
-                 abs_path=True,
-                 home_view=None,
-                 error_view=None):
-
+    def __init__(self, routes, **kwargs):
         self.routes = routes
 
         # optional port setting may be ignored by wsgi container
-        self.port = port
+        self.port = kwargs.get('port')
+
+        hostpaths = kwargs.get('hostpaths')
 
         if hostpaths:
             self.fallback = ReferRedirect(hostpaths)
         else:
             self.fallback = None
 
-        self.abs_path = abs_path
+        self.abs_path = kwargs.get('abs_path')
 
-        self.home_view = home_view
-        self.error_view = error_view
+        self.home_view = kwargs.get('home_view')
+        self.error_view = kwargs.get('error_view')
 
     def __call__(self, env):
         for route in self.routes:
@@ -62,6 +58,7 @@ class Route(object):
     SLASH_QUERY_LOOKAHEAD = '(?=/|$|\?)'
 
     def __init__(self, regex, handler, coll_group=0, config={},
+                 request_class=WbRequest,
                  lookahead=SLASH_QUERY_LOOKAHEAD):
 
         self.path = regex
@@ -70,6 +67,7 @@ class Route(object):
         else:
             self.regex = re.compile('')
         self.handler = handler
+        self.request_class = request_class
         # collection id from regex group (default 0)
         self.coll_group = coll_group
         self._custom_init(config)
@@ -98,7 +96,7 @@ class Route(object):
 
         coll = matcher.group(self.coll_group)
 
-        wbrequest = WbRequest(env,
+        wbrequest = self.request_class(env,
                               request_uri=request_uri,
                               wb_url_str=wb_url_str,
                               rel_prefix=rel_prefix,

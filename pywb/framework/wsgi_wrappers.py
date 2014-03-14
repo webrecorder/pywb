@@ -1,7 +1,7 @@
-from pywb.utils.wbexception import WbException
+from pywb.utils.wbexception import WbException, NotFoundException
 from pywb.utils.loaders import load_yaml_config
 
-from wbexceptions import NotFoundException, InternalRedirect
+#from wbexceptions import InternalRedirect
 from wbrequestresponse import WbResponse, StatusAndHeaders
 
 
@@ -66,8 +66,8 @@ class WSGIApp(object):
                 msg = 'No handler for "{0}"'.format(env['REL_REQUEST_URI'])
                 raise NotFoundException(msg)
 
-        except InternalRedirect as ir:
-            response = WbResponse(StatusAndHeaders(ir.status, ir.httpHeaders))
+#        except InternalRedirect as ir:
+#            return ir.response
 
         except WbException as e:
             response = handle_exception(env, wb_router, e, False)

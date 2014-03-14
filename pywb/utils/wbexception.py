@@ -10,3 +10,15 @@ class WbException(Exception):
 class AccessException(WbException):
     def status(self):
         return '403 Access Denied'
+
+
+#=================================================================
+class BadRequestException(WbException):
+    def status(self):
+        return '400 Bad Request'
+
+
+#=================================================================
+class NotFoundException(WbException):
+    def status(self):
+        return '404 Not Found'

@@ -4,7 +4,7 @@ from pywb.framework.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
 
 class TestWb:
-    TEST_CONFIG = 'test_config.yaml'
+    TEST_CONFIG = 'tests/test_config.yaml'
 
     def setup(self):
         #self.app = pywb.wbapp.create_wb_app(pywb.pywb_init.pywb_config())

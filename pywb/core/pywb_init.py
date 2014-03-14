@@ -1,5 +1,7 @@
 from pywb.framework.archivalrouter import ArchivalRouter, Route
 from pywb.framework.proxy import ProxyArchivalRouter
+from pywb.framework.wbrequestresponse import WbRequest
+from pywb.framework.memento import MementoRequest
 
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
@@ -37,6 +39,8 @@ DEFAULTS = {
     'static_routes': {'static/default': 'static/'},
 
     'domain_specific_rules': 'pywb/rules.yaml',
+
+    'enable_memento': True,
 }
 
 #=================================================================
@@ -86,6 +90,8 @@ def create_wb_handler(cdx_server, config, ds_rules_file=None):
 
         redir_to_exact=config.get('redir_to_exact', True),
 
+        memento=config.get('enable_memento', False),
+
         reporter=config.get('reporter')
     )
 
@@ -126,6 +132,12 @@ def create_wb_router(passed_config = {}):
     # collections based on cdx source
     collections = config.get('collections')
 
+    if config.get('enable_memento', False):
+        request_class = MementoRequest
+    else:
+        request_class = WbRequest
+
+
     for name, value in collections.iteritems():
         if isinstance(value, str):
             value = {'index_paths': value}
@@ -151,7 +163,9 @@ def create_wb_router(passed_config = {}):
 
         route_class = route_config.get('route_class', Route)
 
-        routes.append(route_class(name, wb_handler, config = route_config))
+        routes.append(route_class(name, wb_handler,
+                                  config=route_config,
+                                  request_class=request_class))
 
         # cdx query handler
         if route_config.get('enable_cdx_api', False):

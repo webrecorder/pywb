@@ -2,9 +2,10 @@ import pkgutil
 import mimetypes
 import time
 
+from pywb.utils.wbexception import NotFoundException
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
-from pywb.framework.wbexceptions import WbException, NotFoundException
+from pywb.framework.wbexceptions import WbException
 from views import TextCapturesView
 
 

@@ -1,9 +1,10 @@
 from pywb.utils.canonicalize import UrlCanonicalizer, calc_search_range
+from pywb.utils.wbexception import NotFoundException
 
 from cdxops import cdx_load
 from cdxsource import CDXSource, CDXFile, RemoteCDXSource, RedisCDXSource
 from zipnum import ZipNumCluster
-from cdxobject import CDXObject, CaptureNotFoundException, CDXException
+from cdxobject import CDXObject, CDXException
 from query import CDXQuery
 from cdxdomainspecific import load_domain_specific_cdx_rules
 
@@ -41,7 +42,7 @@ class BaseCDXServer(object):
         """ Check cdx iter semantics
         If `cdx_iter` is empty (no matches), check if fuzzy matching
         is allowed, and try it -- otherwise,
-        throw :exc:`~pywb.cdx.cdxobject.CaptureNotFoundException`
+        throw :exc:`~pywb.utils.wbexception.NotFoundException`
         """
 
         cdx_iter = self.peek_iter(cdx_iter)
@@ -60,7 +61,7 @@ class BaseCDXServer(object):
                 return self.load_cdx_query(fuzzy_query_params)
 
         msg = 'No Captures found for: ' + query.url
-        raise CaptureNotFoundException(msg)
+        raise NotFoundException(msg)
 
     def load_cdx(self, **params):
         return self.load_cdx_query(CDXQuery(**params))
@@ -99,7 +100,7 @@ class CDXServer(BaseCDXServer):
         ``matchType`` parameter specifies matching method for ``key``
         (default ``exact``).
         other parameters are passed down to :func:`cdx_load`.
-        raises :exc:`~pywb.cdx.cdxobject.CaptureNotFoundException`
+        raises :exc:`~pywb.utils.wbexception.NotFoundException`
         if no captures are found.
 
         :param query: query parameters
