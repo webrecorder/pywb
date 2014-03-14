@@ -1,0 +1,94 @@
+# pywb config file
+# ========================================
+#
+# Settings for each collection
+
+collections:
+    # <name>: <cdx_path>
+    # collection will be accessed via /<name>
+    # <cdx_path> is a string or list of:
+    #  - string or list of one or more local .cdx file
+    #  - string or list of one or more local dirs with .cdx files
+    #  - a string value indicating remote http cdx server
+    pywb: ./sample_archive/cdx/
+
+    # ex with filtering: filter CDX lines by filename starting with 'dupe'
+    pywb-filt: {'index_paths': './sample_archive/cdx/', 'filters': ['filename:dupe*']}
+
+
+# indicate if cdx files are sorted by SURT keys -- eg: com,example)/
+# SURT keys are recommended for future indices, but non-SURT cdxs
+# are also supported
+#
+#   * Set to true if cdxs start with surts: com,example)/
+#   * Set to false if cdx start with urls: example.com)/
+surt_ordered: true
+
+# list of paths prefixes for pywb look to 'resolve'  WARC and ARC filenames
+# in the cdx to their absolute path
+#
+# if path is:
+#   * local dir, use path as prefix
+#   * local file, lookup prefix in tab-delimited sorted index
+#   * http:// path, use path as remote prefix
+#   * redis:// path, use redis to lookup full path for w:<warc> as key
+
+archive_paths: ['./invalid/path/to/ignore/', './sample_archive/warcs/']
+
+# ==== Optional UI: HTML/Jinja2 Templates ====
+
+# template for <head> insert into replayed html content
+head_insert_html: ui/head_insert.html
+
+# template to for 'calendar' query,
+# eg, a listing of captures  in response to a ../*/<url>
+#
+# may be a simple listing or a more complex 'calendar' UI
+# if omitted, will list raw cdx in plain text
+query_html: ui/query.html
+
+# template for search page, which is displayed when no search url is entered
+# in a collection
+search_html: ui/search.html
+
+# template for home page.
+# if no other route is set, this will be rendered at /, /index.htm and /index.html
+home_html: ui/index.html
+
+
+# error page temlpate for may formatting error message and details
+# if omitted, a text response is returned
+error_html: ui/error.html
+
+# ==== Other Paths ====
+
+# list of host names that pywb will be running from to detect
+# 'fallthrough' requests based on referrer
+#
+# eg: an incorrect request for http://localhost:8080/image.gif with a referrer
+# of http://localhost:8080/pywb/index.html, pywb can correctly redirect
+# to http://localhost:8080/pywb/image.gif
+#
+
+#hostpaths: ['http://localhost:8080']
+
+# Rewrite urls with absolute paths instead of relative
+absoulte_paths: true
+
+# List of route names:
+# <route>: <package or file path>
+static_routes:
+          static/test/route: static/
+
+
+# Enable simple http proxy mode
+enable_http_proxy: true
+
+# enable cdx server api for querying cdx directly (experimental)
+enable_cdx_api: true
+
+# test different port
+port: 9000
+
+#with memento
+enable_memento: True
