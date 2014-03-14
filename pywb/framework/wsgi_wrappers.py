@@ -1,7 +1,6 @@
 from pywb.utils.wbexception import WbException, NotFoundException
 from pywb.utils.loaders import load_yaml_config
 
-#from wbexceptions import InternalRedirect
 from wbrequestresponse import WbResponse, StatusAndHeaders
 
 
