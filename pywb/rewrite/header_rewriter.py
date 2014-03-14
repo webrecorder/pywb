@@ -1,8 +1,11 @@
 from pywb.utils.statusandheaders import StatusAndHeaders
 
+
 #=================================================================
 class RewrittenStatusAndHeaders:
-    def __init__(self, statusline, headers, removed_header_dict, text_type, charset):
+    def __init__(self, statusline, headers,
+                 removed_header_dict, text_type, charset):
+
         self.status_headers = StatusAndHeaders(statusline, headers)
         self.removed_header_dict = removed_header_dict
         self.text_type = text_type
@@ -16,11 +19,15 @@ class RewrittenStatusAndHeaders:
 class HeaderRewriter:
     REWRITE_TYPES = {
         'html': ['text/html', 'application/xhtml'],
+
         'css':  ['text/css'],
-        'js':   ['text/javascript', 'application/javascript', 'application/x-javascript'],
+
+        'js':   ['text/javascript',
+                 'application/javascript',
+                 'application/x-javascript'],
+
         'xml':  ['/xml', '+xml', '.xml', '.rss'],
     }
-
 
     PROXY_HEADERS = ['content-type', 'content-disposition']
 
@@ -32,7 +39,7 @@ class HeaderRewriter:
 
     PROXY_NO_REWRITE_HEADERS = ['content-length']
 
-    def __init__(self, header_prefix = 'X-Archive-Orig-'):
+    def __init__(self, header_prefix='X-Archive-Orig-'):
         self.header_prefix = header_prefix
 
     def rewrite(self, status_headers, urlrewriter):
@@ -47,14 +54,22 @@ class HeaderRewriter:
                 charset = self._extract_char_set(content_type)
                 strip_encoding = True
 
-        (new_headers, removed_header_dict) = self._rewrite_headers(status_headers.headers, urlrewriter, strip_encoding)
+        result = self._rewrite_headers(status_headers.headers,
+                                       urlrewriter,
+                                       strip_encoding)
 
-        return RewrittenStatusAndHeaders(status_headers.statusline, new_headers, removed_header_dict, text_type, charset)
+        new_headers = result[0]
+        removed_header_dict = result[1]
 
+        return RewrittenStatusAndHeaders(status_headers.statusline,
+                                         new_headers,
+                                         removed_header_dict,
+                                         text_type,
+                                         charset)
 
     def _extract_text_type(self, content_type):
         for ctype, mimelist in self.REWRITE_TYPES.iteritems():
-            if any ((mime in content_type) for mime in mimelist):
+            if any((mime in content_type) for mime in mimelist):
                 return ctype
 
         return None
@@ -67,27 +82,34 @@ class HeaderRewriter:
 
         return content_type[idx + len(CHARSET_TOKEN):].lower()
 
-    def _rewrite_headers(self, headers, urlrewriter, content_rewritten = False):
+    def _rewrite_headers(self, headers, urlrewriter, content_rewritten=False):
         new_headers = []
         removed_header_dict = {}
 
         for (name, value) in headers:
+
             lowername = name.lower()
+
             if lowername in self.PROXY_HEADERS:
                 new_headers.append((name, value))
+
             elif lowername in self.URL_REWRITE_HEADERS:
                 new_headers.append((name, urlrewriter.rewrite(value)))
+
             elif lowername in self.ENCODING_HEADERS:
                 if content_rewritten:
                     removed_header_dict[lowername] = value
                 else:
                     new_headers.append((name, value))
+
             elif lowername in self.REMOVE_HEADERS:
                     removed_header_dict[lowername] = value
-            elif lowername in self.PROXY_NO_REWRITE_HEADERS and not content_rewritten:
+
+            elif (lowername in self.PROXY_NO_REWRITE_HEADERS and
+                  not content_rewritten):
                 new_headers.append((name, value))
+
             else:
                 new_headers.append((self.header_prefix + name, value))
 
         return (new_headers, removed_header_dict)
-

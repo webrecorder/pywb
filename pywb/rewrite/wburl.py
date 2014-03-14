@@ -49,7 +49,6 @@ class BaseWbUrl(object):
     REPLAY = 'replay'
     LATEST_REPLAY = 'latest_replay'
 
-
     def __init__(self, url='', mod='',
                  timestamp='', end_timestamp='', type=None):
 
@@ -62,82 +61,6 @@ class BaseWbUrl(object):
 
 #=================================================================
 class WbUrl(BaseWbUrl):
-    """
-    # Replay Urls
-    # ======================
-    >>> repr(WbUrl('20131010000506/example.com'))
-    "('replay', '20131010000506', '', 'http://example.com', '20131010000506/http://example.com')"
-
-    >>> repr(WbUrl('20130102im_/https://example.com'))
-    "('replay', '20130102', 'im_', 'https://example.com', '20130102im_/https://example.com')"
-
-    >>> repr(WbUrl('20130102im_/https:/example.com'))
-    "('replay', '20130102', 'im_', 'https://example.com', '20130102im_/https://example.com')"
-
-    # Protocol agnostic convert to http
-    >>> repr(WbUrl('20130102im_///example.com'))
-    "('replay', '20130102', 'im_', 'http://example.com', '20130102im_/http://example.com')"
-
-    >>> repr(WbUrl('cs_/example.com'))
-    "('latest_replay', '', 'cs_', 'http://example.com', 'cs_/http://example.com')"
-
-    >>> repr(WbUrl('https://example.com/xyz'))
-    "('latest_replay', '', '', 'https://example.com/xyz', 'https://example.com/xyz')"
-
-    >>> repr(WbUrl('https:/example.com/xyz'))
-    "('latest_replay', '', '', 'https://example.com/xyz', 'https://example.com/xyz')"
-
-    >>> repr(WbUrl('https://example.com/xyz?a=%2f&b=%2E'))
-    "('latest_replay', '', '', 'https://example.com/xyz?a=%2f&b=%2E', 'https://example.com/xyz?a=%2f&b=%2E')"
-
-    # Query Urls
-    # ======================
-    >>> repr(WbUrl('*/http://example.com/abc?def=a'))
-    "('query', '', '', 'http://example.com/abc?def=a', '*/http://example.com/abc?def=a')"
-
-    >>> repr(WbUrl('*/http://example.com/abc?def=a*'))
-    "('url_query', '', '', 'http://example.com/abc?def=a', '*/http://example.com/abc?def=a*')"
-
-    >>> repr(WbUrl('2010*/http://example.com/abc?def=a'))
-    "('query', '2010', '', 'http://example.com/abc?def=a', '2010*/http://example.com/abc?def=a')"
-
-    # timestamp range query
-    >>> repr(WbUrl('2009-2015*/http://example.com/abc?def=a'))
-    "('query', '2009', '', 'http://example.com/abc?def=a', '2009-2015*/http://example.com/abc?def=a')"
-
-    >>> repr(WbUrl('json/*/http://example.com/abc?def=a'))
-    "('query', '', 'json', 'http://example.com/abc?def=a', 'json/*/http://example.com/abc?def=a')"
-
-    >>> repr(WbUrl('timemap-link/2011*/http://example.com/abc?def=a'))
-    "('query', '2011', 'timemap-link', 'http://example.com/abc?def=a', 'timemap-link/2011*/http://example.com/abc?def=a')"
-
-    # strip off repeated, likely scheme-agnostic, slashes altogether
-    >>> repr(WbUrl('///example.com'))
-    "('latest_replay', '', '', 'http://example.com', 'http://example.com')"
-
-    >>> repr(WbUrl('//example.com/'))
-    "('latest_replay', '', '', 'http://example.com/', 'http://example.com/')"
-
-    >>> repr(WbUrl('/example.com/'))
-    "('latest_replay', '', '', 'http://example.com/', 'http://example.com/')"
-
-
-    # Error Urls
-    # ======================
-    >>> x = WbUrl('/#$%#/')
-    Traceback (most recent call last):
-    Exception: Bad Request Url: http://#$%#/
-
-    >>> x = WbUrl('/http://example.com:abc/')
-    Traceback (most recent call last):
-    Exception: Bad Request Url: http://example.com:abc/
-
-    # considered blank
-    >>> x = WbUrl('https:/')
-    >>> x = WbUrl('https:///')
-    >>> x = WbUrl('http://')
-    """
-
     # Regexs
     # ======================
     QUERY_REGEX = re.compile('^(?:([\w\-:]+)/)?(\d*)(?:-(\d+))?\*/?(.*)$')
@@ -146,13 +69,12 @@ class WbUrl(BaseWbUrl):
     DEFAULT_SCHEME = 'http://'
     # ======================
 
-
     def __init__(self, url):
         super(WbUrl, self).__init__()
 
         self.original_url = url
 
-        if not any (f(url) for f in [self._init_query, self._init_replay]):
+        if not any(f(url) for f in [self._init_query, self._init_replay]):
             raise Exception('Invalid WbUrl: ', url)
 
         if len(self.url) == 0:
@@ -168,7 +90,8 @@ class WbUrl(BaseWbUrl):
             if inx < len(self.url) and self.url[inx] != '/':
                 self.url = self.url[:inx] + '/' + self.url[inx:]
 
-        # BUG?: adding upper() because rfc3987 lib rejects lower case %-encoding
+        # BUG?: adding upper() because rfc3987 lib
+        # rejects lower case %-encoding
         # %2F is fine, but %2f -- standard supports either
         matcher = rfc3987.match(self.url.upper(), 'IRI')
 
@@ -218,15 +141,14 @@ class WbUrl(BaseWbUrl):
         self.timestamp = timestamp
         self.type = self.REPLAY
 
-
     # Str Representation
     # ====================
     def to_str(self, **overrides):
-        atype = overrides['type'] if 'type' in overrides else self.type
-        mod = overrides['mod'] if 'mod' in overrides else self.mod
-        timestamp = overrides['timestamp'] if 'timestamp' in overrides else self.timestamp
-        end_timestamp = overrides['end_timestamp'] if 'end_timestamp' in overrides else self.end_timestamp
-        url = overrides['url'] if 'url' in overrides else self.url
+        atype = overrides.get('type', self.type)
+        mod = overrides.get('mod', self.mod)
+        timestamp = overrides.get('timestamp', self.timestamp)
+        end_timestamp = overrides.get('end_timestamp', self.end_timestamp)
+        url = overrides.get('url', self.url)
 
         if atype == self.QUERY or atype == self.URL_QUERY:
             tsmod = ''
@@ -253,7 +175,3 @@ class WbUrl(BaseWbUrl):
 
     def __repr__(self):
         return str((self.type, self.timestamp, self.mod, self.url, str(self)))
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

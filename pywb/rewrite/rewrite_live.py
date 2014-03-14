@@ -1,3 +1,7 @@
+"""
+Fetch a url from live web and apply rewriting rules
+"""
+
 import urllib2
 import os
 import sys
@@ -13,10 +17,6 @@ from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.rewrite_content import RewriteContent
 
 
-"""
-Fetch a url from live web and apply rewriting rules
-"""
-
 #=================================================================
 def get_status_and_stream(url):
     resp = urllib2.urlopen(url)
@@ -30,6 +30,7 @@ def get_status_and_stream(url):
 
     return (status_headers, stream)
 
+
 #=================================================================
 def get_local_file(uri):
     fh = open(uri)
@@ -37,10 +38,12 @@ def get_local_file(uri):
     content_type, _ = mimetypes.guess_type(uri)
 
     # create fake headers for local file
-    status_headers = StatusAndHeaders('200 OK', [('Content-Type', content_type)])
+    status_headers = StatusAndHeaders('200 OK',
+                                      [('Content-Type', content_type)])
     stream = fh
 
     return (status_headers, stream)
+
 
 #=================================================================
 def get_rewritten(url, urlrewriter, urlkey=None, head_insert_func=None):
@@ -69,10 +72,12 @@ def get_rewritten(url, urlrewriter, urlkey=None, head_insert_func=None):
 
     return (status_headers, buff)
 
+
 #=================================================================
 def main():  # pragma: no cover
     if len(sys.argv) < 2:
-        print 'Usage: {0} url-to-fetch [wb-url-target] [extra-prefix]'.format(sys.argv[0])
+        msg = 'Usage: {0} url-to-fetch [wb-url-target] [extra-prefix]'
+        print msg.format(sys.argv[0])
         return 1
     else:
         url = sys.argv[1]
@@ -85,7 +90,8 @@ def main():  # pragma: no cover
         prefix, wburl_str = wburl_str.split('/', 1)
         prefix = '/' + prefix + '/'
     else:
-        wburl_str = datetime_to_timestamp(datetime.datetime.now()) + '/http://example.com/path/sample.html'
+        wburl_str = (datetime_to_timestamp(datetime.datetime.now()) +
+                     '/http://example.com/path/sample.html')
         prefix = '/pywb_rewrite/'
 
     urlrewriter = UrlRewriter(wburl_str, prefix)

@@ -9,12 +9,12 @@ from HTMLParser import HTMLParser, HTMLParseError
 from url_rewriter import UrlRewriter
 from regex_rewriters import JSRewriter, CSSRewriter
 
-#=================================================================
-# HTMLRewriter -- html parser for custom rewriting, also handlers for script and css
+
 #=================================================================
 class HTMLRewriter(HTMLParser):
     """
-    HTML-Parsing Rewriter
+    HTML-Parsing Rewriter for custom rewriting, also delegates
+    to rewriters for script and css
     """
 
     REWRITE_TAGS = {
@@ -27,7 +27,7 @@ class HTMLRewriter(HTMLParser):
         'body':    {'background': 'im_'},
         'del':     {'cite': ''},
         'embed':   {'src': 'oe_'},
-        'head':    {'': ''}, # for head rewriting
+        'head':    {'': ''},  # for head rewriting
         'iframe':  {'src': 'if_'},
         'img':     {'src': 'im_'},
         'ins':     {'cite': ''},
@@ -41,16 +41,19 @@ class HTMLRewriter(HTMLParser):
         'q':       {'cite': ''},
         'ref':     {'href': 'oe_'},
         'script':  {'src': 'js_'},
-        'div':     {'data-src' : '',
-                    'data-uri' : ''},
-        'li':      {'data-src' : '',
-                    'data-uri' : ''},
+        'div':     {'data-src': '',
+                    'data-uri': ''},
+        'li':      {'data-src': '',
+                    'data-uri': ''},
     }
 
     STATE_TAGS = ['script', 'style']
 
-    HEAD_TAGS = ['html', 'head', 'base', 'link', 'meta', 'title', 'style', 'script', 'object', 'bgsound']
+    # tags allowed in the <head> of an html document
+    HEAD_TAGS = ['html', 'head', 'base', 'link', 'meta',
+                 'title', 'style', 'script', 'object', 'bgsound']
 
+    # ===========================
     class AccumBuff:
         def __init__(self):
             self.buff = ''
@@ -58,22 +61,27 @@ class HTMLRewriter(HTMLParser):
         def write(self, string):
             self.buff += string
 
+    # ===========================
+    def __init__(self, url_rewriter,
+                 head_insert=None,
+                 js_rewriter_class=JSRewriter,
+                 css_rewriter_class=CSSRewriter):
 
-    def __init__(self, url_rewriter, outstream = None, head_insert = None, js_rewriter_class = JSRewriter, css_rewriter_class = CSSRewriter):
         HTMLParser.__init__(self)
 
         self.url_rewriter = url_rewriter
         self._wb_parse_context = None
-        self.out = outstream if outstream else self.AccumBuff()
+        #self.out = outstream if outstream else self.AccumBuff()
+        self.out = self.AccumBuff()
 
         self.js_rewriter = js_rewriter_class(url_rewriter)
         self.css_rewriter = css_rewriter_class(url_rewriter)
 
         self.head_insert = head_insert
 
-
     # ===========================
-    META_REFRESH_REGEX = re.compile('^[\\d.]+\\s*;\\s*url\\s*=\\s*(.+?)\\s*$', re.IGNORECASE | re.MULTILINE)
+    META_REFRESH_REGEX = re.compile('^[\\d.]+\\s*;\\s*url\\s*=\\s*(.+?)\\s*$',
+                                    re.IGNORECASE | re.MULTILINE)
 
     def _rewrite_meta_refresh(self, meta_refresh):
         if not meta_refresh:
@@ -84,22 +92,32 @@ class HTMLRewriter(HTMLParser):
             return meta_refresh
 
         try:
-            meta_refresh = meta_refresh[:m.start(1)] + self._rewrite_url(m.group(1)) + meta_refresh[m.end(1):]
+            meta_refresh = (meta_refresh[:m.start(1)] +
+                            self._rewrite_url(m.group(1)) +
+                            meta_refresh[m.end(1):])
         except Exception:
             pass
 
         return meta_refresh
     # ===========================
 
-    def _rewrite_url(self, value, mod = None):
-        return self.url_rewriter.rewrite(value, mod) if value else None
-
+    def _rewrite_url(self, value, mod=None):
+        if value:
+            return self.url_rewriter.rewrite(value, mod)
+        else:
+            return None
 
     def _rewrite_css(self, css_content):
-        return self.css_rewriter.rewrite(css_content) if css_content else None
+        if css_content:
+            return self.css_rewriter.rewrite(css_content)
+        else:
+            return None
 
     def _rewrite_script(self, script_content):
-        return self.js_rewriter.rewrite(script_content) if script_content else None
+        if script_content:
+            return self.js_rewriter.rewrite(script_content)
+        else:
+            return None
 
     def has_attr(self, tag_attrs, attr):
         name, value = attr
@@ -110,11 +128,13 @@ class HTMLRewriter(HTMLParser):
 
     def rewrite_tag_attrs(self, tag, tag_attrs, is_start_end):
         # special case: script or style parse context
-        if (tag in self.STATE_TAGS) and (self._wb_parse_context == None):
+        if ((tag in self.STATE_TAGS) and not self._wb_parse_context):
             self._wb_parse_context = tag
 
         # special case: head insertion, non-head tags
-        elif (self.head_insert and (self._wb_parse_context == None) and (tag not in self.HEAD_TAGS)):
+        elif (self.head_insert and
+              not self._wb_parse_context
+              and (tag not in self.HEAD_TAGS)):
             self.out.write(self.head_insert)
             self.head_insert = None
 
@@ -132,7 +152,8 @@ class HTMLRewriter(HTMLParser):
             attr_name, attr_value = attr
 
             # special case: inline JS/event handler
-            if (attr_value and attr_value.startswith('javascript:')) or attr_name.startswith('on'):
+            if ((attr_value and attr_value.startswith('javascript:'))
+                or attr_name.startswith('on')):
                 attr_value = self._rewrite_script(attr_value)
 
             # special case: inline CSS/style attribute
@@ -163,12 +184,13 @@ class HTMLRewriter(HTMLParser):
         self.out.write('/>' if is_start_end else '>')
 
         # special case: head tag
-        if (self.head_insert) and (self._wb_parse_context == None) and (tag == 'head'):
+        if (self.head_insert and
+            not self._wb_parse_context and
+            (tag == 'head')):
             self.out.write(self.head_insert)
             self.head_insert = None
 
         return True
-
 
     def parse_data(self, data):
         if self._wb_parse_context == 'script':
