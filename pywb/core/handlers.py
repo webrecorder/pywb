@@ -3,8 +3,11 @@ import mimetypes
 import time
 
 from pywb.utils.wbexception import NotFoundException
+from pywb.utils.loaders import BlockLoader
+
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
+
 from views import TextCapturesView
 
 
@@ -38,7 +41,8 @@ class WBHandler(WbUrlHandler):
         if wbrequest.wb_url.mod == 'cdx_':
             return self.text_query_view.render_response(wbrequest, cdx_lines)
 
-        if (wbrequest.wb_url.type == wbrequest.wb_url.QUERY) or (wbrequest.wb_url.type == wbrequest.wb_url.URL_QUERY):
+        if ((wbrequest.wb_url.type == wbrequest.wb_url.QUERY) or
+            (wbrequest.wb_url.type == wbrequest.wb_url.URL_QUERY)):
             return self.query_view.render_response(wbrequest, cdx_lines)
 
         with PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
@@ -46,13 +50,11 @@ class WBHandler(WbUrlHandler):
                                cdx_lines,
                                self.index_reader.cdx_load_callback(wbrequest))
 
-
     def render_search_page(self, wbrequest):
         if self.search_view:
-            return self.search_view.render_response(wbrequest = wbrequest)
+            return self.search_view.render_response(wbrequest=wbrequest)
         else:
             return WbResponse.text_response('No Lookup Url Specified')
-
 
     def __str__(self):
         return 'WBHandler: ' + str(self.index_reader) + ', ' + str(self.replay)
@@ -62,7 +64,7 @@ class WBHandler(WbUrlHandler):
 # Static Content Handler
 #=================================================================
 class StaticHandler(BaseHandler):
-    def __init__(self, static_path, pkg = 'pywb'):
+    def __init__(self, static_path, pkg='pywb'):
         mimetypes.init()
 
         self.static_path = static_path
@@ -72,10 +74,11 @@ class StaticHandler(BaseHandler):
         full_path = self.static_path + wbrequest.wb_url_str
 
         try:
-            if full_path.startswith('.') or full_path.startswith('file://'):
-                data = open(full_path, 'rb')
-            else:
-                data = pkgutil.get_data(self.pkg, full_path)
+            #if full_path.startswith('.') or full_path.startswith('file://'):
+            #    data = open(full_path, 'rb')
+            #else:
+            #    data = pkgutil.get_data(self.pkg, full_path)
+            data = BlockLoader().load(full_path)
 
             if 'wsgi.file_wrapper' in wbrequest.env:
                 reader = wbrequest.env['wsgi.file_wrapper'](data)
@@ -84,10 +87,11 @@ class StaticHandler(BaseHandler):
 
             content_type, _ = mimetypes.guess_type(full_path)
 
-            return WbResponse.text_stream(data, content_type = content_type)
+            return WbResponse.text_stream(data, content_type=content_type)
 
         except IOError:
-            raise NotFoundException('Static File Not Found: ' + wbrequest.wb_url_str)
+            raise NotFoundException('Static File Not Found: ' +
+                                    wbrequest.wb_url_str)
 
     def __str__(self):
         return 'Static files from ' + self.static_path

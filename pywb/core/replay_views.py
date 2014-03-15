@@ -48,7 +48,6 @@ class ReplayView:
         else:
             self.response_class = WbResponse
 
-
     def __call__(self, wbrequest, cdx_lines, cdx_loader):
         last_e = None
         first = True
@@ -56,11 +55,15 @@ class ReplayView:
         # List of already failed w/arcs
         failed_files = []
 
+        response = None
+
         # Iterate over the cdx until find one that works
-        # The cdx should already be sorted in closest-to-timestamp order (from the cdx server)
+        # The cdx should already be sorted in
+        # closest-to-timestamp order (from the cdx server)
         for cdx in cdx_lines:
             try:
-                # optimize: can detect if redirect is needed just from the cdx, no need to load w/arc data
+                # optimize: can detect if redirect is needed just from the cdx,
+                # no need to load w/arc data if requiring exact match
                 if first:
                     redir_response = self._redirect_if_needed(wbrequest, cdx)
                     if redir_response:
@@ -68,42 +71,10 @@ class ReplayView:
 
                     first = False
 
-                (status_headers, stream) = (self.content_loader.
-                                            resolve_headers_and_payload(cdx, failed_files, cdx_loader))
-
-                # check and reject self-redirect
-                self._reject_self_redirect(wbrequest, cdx, status_headers)
-
-                # check if redir is needed
-                redir_response = self._redirect_if_needed(wbrequest, cdx)
-                if redir_response:
-                    return redir_response
-
-                # one more check for referrer-based self-redirect
-                self._reject_referrer_self_redirect(wbrequest)
-
-                response = None
-
-                # if Content-Length for payload is present, ensure we don't read past it
-                content_length = status_headers.get_header('content-length')
-                if content_length:
-                    stream = LimitReader.wrap_stream(stream, content_length)
-
-                if self.content_rewriter and wbrequest.wb_url.mod != 'id_':
-                    response = self.rewrite_content(wbrequest, cdx, status_headers, stream)
-                else:
-                    (status_headers, stream) = self.sanitize_content(status_headers, stream)
-                    #status_headers.remove_header('content-length')
-
-                    response_iter = self.stream_to_iter(stream)
-                    response = WbResponse(status_headers, response_iter)
-
-                # notify reporter callback, if any
-                if self._reporter:
-                    self._reporter(wbrequest, cdx, response)
-
-                return response
-
+                response = self.replay_capture(wbrequest,
+                                               cdx,
+                                               cdx_loader,
+                                               failed_files)
 
             except (CaptureException, ArchiveLoadFailed) as ce:
                 import traceback
@@ -111,10 +82,57 @@ class ReplayView:
                 last_e = ce
                 pass
 
+            if response:
+                return response
+
         if last_e:
             raise last_e
         else:
-            raise WbException('No Content Loaded for: ' + wbrequest.wb_url)
+            raise WbException('No Content Loaded for: ' +
+                              str(wbrequest.wb_url))
+
+    def replay_capture(self, wbrequest, cdx, cdx_loader, failed_files):
+        (status_headers, stream) = (self.content_loader.
+                                    resolve_headers_and_payload(cdx,
+                                                                failed_files,
+                                                                cdx_loader))
+
+        # check and reject self-redirect
+        self._reject_self_redirect(wbrequest, cdx, status_headers)
+
+        # check if redir is needed
+        redir_response = self._redirect_if_needed(wbrequest, cdx)
+        if redir_response:
+            return redir_response
+
+        # one more check for referrer-based self-redirect
+        self._reject_referrer_self_redirect(wbrequest)
+
+        response = None
+
+        # if Content-Length for payload is present,
+        # ensure we don't read past it
+        content_length = status_headers.get_header('content-length')
+        if content_length:
+            stream = LimitReader.wrap_stream(stream, content_length)
+
+        if self.content_rewriter and wbrequest.wb_url.mod != 'id_':
+
+            response = self.rewrite_content(wbrequest,
+                                            cdx,
+                                            status_headers,
+                                            stream)
+        else:
+            (status_headers, stream) = self.sanitize_content(status_headers,
+                                                             stream)
+            response_iter = self.stream_to_iter(stream)
+            response = WbResponse(status_headers, response_iter)
+
+        # notify reporter callback, if any
+        if self._reporter:
+            self._reporter(wbrequest, cdx, response)
+
+        return response
 
     @staticmethod
     def stream_to_iter(stream):
@@ -181,7 +199,6 @@ class ReplayView:
                                    wbrequest=wbrequest,
                                    cdx=cdx)
 
-
     # Buffer rewrite iterator and return a response from a string
     def buffered_response(self, status_headers, iterator):
         out = BytesIO()
@@ -194,7 +211,8 @@ class ReplayView:
             content = out.getvalue()
 
             content_length_str = str(len(content))
-            status_headers.headers.append(('Content-Length', content_length_str))
+            status_headers.headers.append(('Content-Length',
+                                           content_length_str))
             out.close()
 
         return content
@@ -203,7 +221,9 @@ class ReplayView:
         if wbrequest.is_proxy:
             return None
 
-        redir_needed = hasattr(wbrequest, 'is_timegate') and wbrequest.is_timegate
+        # todo: generalize this?
+        redir_needed = (hasattr(wbrequest, 'is_timegate') and
+                        wbrequest.is_timegate)
 
         if not redir_needed and self.redir_to_exact:
             redir_needed = (cdx['timestamp'] != wbrequest.wb_url.timestamp)
@@ -211,14 +231,15 @@ class ReplayView:
         if not redir_needed:
             return None
 
-        new_url = wbrequest.urlrewriter.get_timestamp_url(cdx['timestamp'], cdx['original'])
+        new_url = wbrequest.urlrewriter.get_timestamp_url(cdx['timestamp'],
+                                                          cdx['original'])
+
         status_headers = StatusAndHeaders('302 Internal Redirect',
                                           [('Location', new_url)])
 
         # don't include cdx to indicate internal redirect
         return self.response_class(status_headers,
                                    wbrequest=wbrequest)
-
 
     def _reject_self_redirect(self, wbrequest, cdx, status_headers):
         """
@@ -237,18 +258,22 @@ class ReplayView:
         request_url = wbrequest.wb_url.url.lower()
         location_url = status_headers.get_header('Location')
         if not location_url:
-           return
+            return
 
         location_url = location_url.lower()
 
-        if (ReplayView.strip_scheme(request_url) == ReplayView.strip_scheme(location_url)):
+        if (ReplayView.strip_scheme(request_url) ==
+             ReplayView.strip_scheme(location_url)):
             raise CaptureException('Self Redirect: ' + str(cdx))
 
     def _reject_referrer_self_redirect(self, wbrequest):
         """
         Perform final check for referrer based self-redirect.
-        This method should be called after verifying request timestamp matches capture.
-        if referrer is same as current url, reject this response and try another capture
+        This method should be called after verifying that
+        the request timestamp == capture timestamp
+
+        If referrer is same as current url,
+        reject this response and try another capture.
         """
         if not wbrequest.referrer:
             return
@@ -258,23 +283,27 @@ class ReplayView:
                        wbrequest.rel_prefix + str(wbrequest.wb_url))
 
         if (ReplayView.strip_scheme(request_url) ==
-            ReplayView.strip_scheme(wbrequest.referrer)):
-            raise CaptureException('Self Redirect via Referrer: ' + str(wbrequest.wb_url))
-
+             ReplayView.strip_scheme(wbrequest.referrer)):
+            raise CaptureException('Self Redirect via Referrer: ' +
+                                   str(wbrequest.wb_url))
 
     @staticmethod
     def strip_scheme(url):
         """
-        >>> ReplayView.strip_scheme('https://example.com') == ReplayView.strip_scheme('http://example.com')
+        >>> ReplayView.strip_scheme('https://example.com') ==\
+            ReplayView.strip_scheme('http://example.com')
         True
 
-        >>> ReplayView.strip_scheme('https://example.com') == ReplayView.strip_scheme('http:/example.com')
+        >>> ReplayView.strip_scheme('https://example.com') ==\
+            ReplayView.strip_scheme('http:/example.com')
         True
 
-        >>> ReplayView.strip_scheme('https://example.com') == ReplayView.strip_scheme('example.com')
+        >>> ReplayView.strip_scheme('https://example.com') ==\
+            ReplayView.strip_scheme('example.com')
         True
 
-        >>> ReplayView.strip_scheme('about://example.com') == ReplayView.strip_scheme('example.com')
+        >>> ReplayView.strip_scheme('about://example.com') ==\
+            ReplayView.strip_scheme('example.com')
         True
         """
         m = ReplayView.STRIP_SCHEME.match(url)
@@ -286,6 +315,7 @@ class ReplayView:
             return match
         else:
             return url
+
 
 if __name__ == "__main__":
     import doctest

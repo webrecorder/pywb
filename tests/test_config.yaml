@@ -78,7 +78,7 @@ absoulte_paths: true
 # List of route names:
 # <route>: <package or file path>
 static_routes:
-          static/test/route: static/
+          static/test/route: pywb/static/
 
 # Enable simple http proxy mode
 enable_http_proxy: true
