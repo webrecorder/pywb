@@ -36,7 +36,7 @@ DEFAULTS = {
     'home_html': 'ui/index.html',
     'error_html': 'ui/error.html',
 
-    'static_routes': {'static/default': 'static/'},
+    'static_routes': {'static/default': 'pywb/static/'},
 
     'domain_specific_rules': 'pywb/rules.yaml',
 
