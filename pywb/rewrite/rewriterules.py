@@ -15,7 +15,8 @@ HTML = HTMLRewriter
 def use_lxml_parser():
     try:
         import logging
-        from lxml_parser import LXMLHTMLRewriter
+        from lxml_html_rewriter import LXMLHTMLRewriter
+        global HTML
         HTML = LXMLHTMLRewriter
         logging.debug('Using LXML Parser')
     except ImportError:
