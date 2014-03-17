@@ -9,9 +9,10 @@ from HTMLParser import HTMLParser, HTMLParseError
 from url_rewriter import UrlRewriter
 from regex_rewriters import JSRewriter, CSSRewriter
 
+import cgi
 
 #=================================================================
-class HTMLRewriter(HTMLParser):
+class HTMLRewriterMixin(object):
     """
     HTML-Parsing Rewriter for custom rewriting, also delegates
     to rewriters for script and css
@@ -56,18 +57,19 @@ class HTMLRewriter(HTMLParser):
     # ===========================
     class AccumBuff:
         def __init__(self):
-            self.buff = ''
+            self.ls = []
 
         def write(self, string):
-            self.buff += string
+            self.ls.append(string)
+
+        def getvalue(self):
+            return ''.join(self.ls)
 
     # ===========================
     def __init__(self, url_rewriter,
                  head_insert=None,
                  js_rewriter_class=JSRewriter,
                  css_rewriter_class=CSSRewriter):
-
-        HTMLParser.__init__(self)
 
         self.url_rewriter = url_rewriter
         self._wb_parse_context = None
@@ -126,7 +128,7 @@ class HTMLRewriter(HTMLParser):
                 return value.lower() == attr_value.lower()
         return False
 
-    def rewrite_tag_attrs(self, tag, tag_attrs, is_start_end):
+    def _rewrite_tag_attrs(self, tag, tag_attrs, escape=False):
         # special case: script or style parse context
         if ((tag in self.STATE_TAGS) and not self._wb_parse_context):
             self._wb_parse_context = tag
@@ -148,8 +150,7 @@ class HTMLRewriter(HTMLParser):
 
         self.out.write('<' + tag)
 
-        for attr in tag_attrs:
-            attr_name, attr_value = attr
+        for attr_name, attr_value in tag_attrs:
 
             # special case: inline JS/event handler
             if ((attr_value and attr_value.startswith('javascript:'))
@@ -174,23 +175,37 @@ class HTMLRewriter(HTMLParser):
                 if rw_mod is not None:
                     attr_value = self._rewrite_url(attr_value, rw_mod)
 
-            # parser doesn't differentiate between 'attr=""' and just 'attr'
-            # 'attr=""' is more common, so use that form
-            if attr_value:
-                self.out.write(' ' + attr_name + '="' + attr_value + '"')
-            else:
-                self.out.write(' ' + attr_name + '=""')
-
-        self.out.write('/>' if is_start_end else '>')
-
-        # special case: head tag
-        if (self.head_insert and
-            not self._wb_parse_context and
-            (tag == 'head')):
-            self.out.write(self.head_insert)
-            self.head_insert = None
+            # write the attr!
+            self._write_attr(attr_name, attr_value, escape=escape)
 
         return True
+
+    def _rewrite_head(self, start_end):
+        # special case: head tag
+
+        # if no insert or in context, no rewrite
+        if not self.head_insert or self._wb_parse_context:
+            return False
+
+        self.out.write('>')
+        self.out.write(self.head_insert)
+        self.head_insert = None
+
+        if start_end:
+            self.out.write('</head>')
+
+        return True
+
+
+    def _write_attr(self, name, value, escape=False):
+        # parser doesn't differentiate between 'attr=""' and just 'attr'
+        # 'attr=""' is more common, so use that form
+        if value:
+            if escape:
+                value = cgi.escape(value, quote=True)
+            self.out.write(' ' + name + '="' + value + '"')
+        else:
+            self.out.write(' ' + name + '=""')
 
     def parse_data(self, data):
         if self._wb_parse_context == 'script':
@@ -204,18 +219,35 @@ class HTMLRewriter(HTMLParser):
         if not self.out:
             self.out = self.AccumBuff()
 
-        try:
-            self.feed(string)
-        except HTMLParseError:
-            self.out.write(string)
+        self.feed(string)
 
-        result = self.out.buff
+        result = self.out.getvalue()
         # Clear buffer to create new one for next rewrite()
         self.out = None
 
         return result
 
+
+#=================================================================
+class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
+    def __init__(self, url_rewriter,
+                 head_insert=None,
+                 js_rewriter_class=JSRewriter,
+                 css_rewriter_class=CSSRewriter):
+
+        HTMLParser.__init__(self)
+        super(HTMLRewriter, self).__init__(url_rewriter,
+                                           head_insert,
+                                           js_rewriter_class,
+                                           css_rewriter_class)
+
     # HTMLParser overrides below
+    def feed(self, string):
+        try:
+            HTMLParser.feed(self, string)
+        except HTMLParseError:
+            self.out.write(string)
+
     def close(self):
         if (self._wb_parse_context):
             end_tag = '</' + self._wb_parse_context + '>'
@@ -238,12 +270,17 @@ class HTMLRewriter(HTMLParser):
         return s
 
     def handle_starttag(self, tag, attrs):
-        if not self.rewrite_tag_attrs(tag, attrs, False):
+        if not self._rewrite_tag_attrs(tag, attrs):
             self.out.write(self.get_starttag_text())
+        elif tag != 'head' or not self._rewrite_head(False):
+            self.out.write('>')
 
     def handle_startendtag(self, tag, attrs):
-        if not self.rewrite_tag_attrs(tag, attrs, True):
+        if not self._rewrite_tag_attrs(tag, attrs):
             self.out.write(self.get_starttag_text())
+        elif tag != 'head' or not self._rewrite_head(True):
+            self.out.write('/>')
+
 
     def handle_endtag(self, tag):
         if (tag == self._wb_parse_context):
