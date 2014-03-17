@@ -64,7 +64,8 @@ def test_example_2():
 
 
 def test_example_domain_specific_3():
-    status_headers, buff = get_rewritten('http://facebook.com/digitalpreservation', urlrewriter)
+    urlrewriter2 = UrlRewriter('20131226101010/http://example.com/some/path/index.html', '/pywb/')
+    status_headers, buff = get_rewritten('http://facebook.com/digitalpreservation', urlrewriter2)
 
     # comment out bootloader
     assert '/* Bootloader.configurePage' in buff

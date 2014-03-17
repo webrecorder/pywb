@@ -61,8 +61,11 @@ class UrlRewriter(object):
 
         return self.prefix + self.wburl.to_str(timestamp=timestamp, url=url)
 
-    def set_base_url(self, newUrl):
-        self.wburl.url = newUrl
+    def rebase_rewriter(self, new_url):
+        #self.wburl.url = newUrl
+        new_wburl = copy.copy(self.wburl)
+        new_wburl.url = new_url
+        return UrlRewriter(new_wburl, self.prefix)
 
     def __repr__(self):
         return "UrlRewriter('{0}', '{1}')".format(self.wburl, self.prefix)
@@ -94,5 +97,5 @@ class HttpsUrlRewriter(object):
     def get_abs_url(self, url=''):
         return url
 
-    def set_base_url(self, newUrl):
-        pass
+    def rebase_rewriter(self, new_url):
+        return self

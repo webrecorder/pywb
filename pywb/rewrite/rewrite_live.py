@@ -66,11 +66,9 @@ def get_rewritten(url, urlrewriter, urlkey=None, head_insert_func=None):
 
     status_headers, gen = result
 
-    buff = ''
-    for x in gen:
-        buff += x
+    #buff = u''.join(gen)
 
-    return (status_headers, buff)
+    return (status_headers, gen)
 
 
 #=================================================================

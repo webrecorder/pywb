@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-r"""
+ur"""
 
 #=================================================================
 # HTML Rewriting
@@ -260,6 +260,7 @@ urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.htm
 
 def parse(data, head_insert = None):
     parser = HTMLRewriter(urlrewriter, head_insert = head_insert)
+    data = data.decode('utf-8')
     print parser.rewrite(data) + parser.close()
 
 arcrw = UrlRewriter('20131010im_/http://example.com/', '/web/')

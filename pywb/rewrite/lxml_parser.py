@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import lxml.html
+#import lxml.html
 import lxml.etree
 import cgi
+import re
 
 from regex_rewriters import JSRewriter, CSSRewriter
 from url_rewriter import UrlRewriter
 from html_rewriter import HTMLRewriterMixin
-from StringIO import StringIO
 
 
 class LXMLHTMLRewriter(HTMLRewriterMixin):
-    r"""
+    ur"""
     >>> parse('<HTML><A Href="page.html">Text</a></hTmL>')
     <html><body><a href="/web/20131226101010/http://example.com/some/path/page.html">Text</a></body></html>
 
@@ -45,7 +45,7 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
     <html><head><script src="/web/20131226101010js_/http://example.com/some/path/abc.js"></script></head></html>
 
     # Unicode
-    #>>> parse('<a href="http://испытание.испытание/">испытание</a>')
+    >>> parse('<a href="http://испытание.испытание/">испытание</a>')
     <html><body><a href="/web/20131226101010/http://испытание.испытание/">испытание</a></body></html>
 
     # Meta tag
@@ -106,6 +106,8 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
     <html><body><checkbox selected=""></checkbox></body></html>
     """
 
+    END_HTML = re.compile(r'</\s*html\s*>', re.IGNORECASE)
+
     def __init__(self, url_rewriter,
                  head_insert=None,
                  js_rewriter_class=JSRewriter,
@@ -115,7 +117,6 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
                                                head_insert,
                                                js_rewriter_class,
                                                css_rewriter_class)
-
 
         self.target = RewriterTarget(self)
         self.parser = lxml.etree.HTMLParser(remove_pis=False,
@@ -127,15 +128,19 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
                                             recover=True,
                                             )
 
+        self.is_closing = False
+
 
     def feed(self, string):
-        string = string.replace('</html>', '')
+        string = self.END_HTML.sub(u'', string)
+        #string = string.replace(u'</html>', u'')
         self.parser.feed(string)
 
     def close(self):
         if not self.out:
             self.out = self.AccumBuff()
 
+        self.is_closing = True
         self.parser.close()
 
         result = self.out.getvalue()
@@ -153,23 +158,26 @@ class RewriterTarget(object):
         attrs = attrs.items()
 
         if not self.rewriter._rewrite_tag_attrs(tag, attrs, escape=True):
-            self.rewriter.out.write('<' + tag)
+            self.rewriter.out.write(u'<' + tag)
 
             for name, value in attrs:
                 self.rewriter._write_attr(name, value, escape=True)
         else:
-            if tag == 'head':
+            if tag == u'head':
                 if (self.rewriter._rewrite_head(False)):
                     return
 
-        self.rewriter.out.write('>')
+        self.rewriter.out.write(u'>')
 
 
     def end(self, tag):
+        #if tag == 'html' and not self.rewriter.is_closing:
+        #    raise lxml.etree.LxmlError('test')
+
         if (tag == self.rewriter._wb_parse_context):
             self.rewriter._wb_parse_context = None
 
-        self.rewriter.out.write('</' + tag + '>')
+        self.rewriter.out.write(u'</' + tag + u'>')
 
     def data(self, data):
         if not self.rewriter._wb_parse_context:
@@ -178,12 +186,12 @@ class RewriterTarget(object):
         self.rewriter.parse_data(data)
 
     def comment(self, data):
-        self.rewriter.out.write('<!--')
+        self.rewriter.out.write(u'<!--')
         self.rewriter.parse_data(data)
-        self.rewriter.out.write('-->')
+        self.rewriter.out.write(u'-->')
 
     def pi(self, data):
-        self.rewriter.out.write('<?' + data + '>')
+        self.rewriter.out.write(u'<?' + data + u'>')
 
     def close(self):
         return ''
@@ -192,6 +200,7 @@ urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.htm
 
 def parse(data, head_insert=None):
     parser = LXMLHTMLRewriter(urlrewriter, head_insert=head_insert)
+    data = data.decode('utf-8')
     print parser.rewrite(data) + parser.close()
     #return parser.rewrite(data) + parser.close()
 

@@ -169,7 +169,9 @@ class HTMLRewriterMixin(object):
             else:
                 # special case: base tag
                 if (tag == 'base') and (attr_name == 'href') and attr_value:
-                    self.url_rewriter.set_base_url(attr_value)
+                    #self.url_rewriter.set_base_url(attr_value)
+                    self.url_rewriter = (self.url_rewriter.
+                                         rebase_rewriter(attr_value))
 
                 rw_mod = handler.get(attr_name)
                 if rw_mod is not None:
