@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#import lxml.html
 import lxml.etree
 import cgi
 import re
@@ -11,6 +10,7 @@ from url_rewriter import UrlRewriter
 from html_rewriter import HTMLRewriterMixin
 
 
+#=================================================================
 class LXMLHTMLRewriter(HTMLRewriterMixin):
     ur"""
     >>> parse('<HTML><A Href="page.html">Text</a></hTmL>')
@@ -128,9 +128,6 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
                                             recover=True,
                                             )
 
-        self.is_closing = False
-
-
     def feed(self, string):
         string = self.END_HTML.sub(u'', string)
         #string = string.replace(u'</html>', u'')
@@ -150,6 +147,7 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
         return result
 
 
+#=================================================================
 class RewriterTarget(object):
     def __init__(self, rewriter):
         self.rewriter = rewriter
@@ -169,11 +167,7 @@ class RewriterTarget(object):
 
         self.rewriter.out.write(u'>')
 
-
     def end(self, tag):
-        #if tag == 'html' and not self.rewriter.is_closing:
-        #    raise lxml.etree.LxmlError('test')
-
         if (tag == self.rewriter._wb_parse_context):
             self.rewriter._wb_parse_context = None
 
@@ -202,21 +196,7 @@ def parse(data, head_insert=None):
     parser = LXMLHTMLRewriter(urlrewriter, head_insert=head_insert)
     data = data.decode('utf-8')
     print parser.rewrite(data) + parser.close()
-    #return parser.rewrite(data) + parser.close()
-
 
 if __name__ == "__main__":
-
-    import sys
-    if len(sys.argv) == 1:
-        import doctest
-        doctest.testmod()
-    else:
-        parser = LXMLHTMLRewriter(urlrewriter)
-        x = open(sys.argv[1])
-        b = x.read(81920)
-        while b:
-            result = parser.rewrite(b.decode('utf-8'))
-            print result.encode('utf-8')
-            b = x.read(81920)
-        print parser.close()
+    import doctest
+    doctest.testmod()

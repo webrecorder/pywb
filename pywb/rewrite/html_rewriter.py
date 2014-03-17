@@ -11,6 +11,7 @@ from regex_rewriters import JSRewriter, CSSRewriter
 
 import cgi
 
+
 #=================================================================
 class HTMLRewriterMixin(object):
     """
@@ -198,7 +199,6 @@ class HTMLRewriterMixin(object):
 
         return True
 
-
     def _write_attr(self, name, value, escape=False):
         # parser doesn't differentiate between 'attr=""' and just 'attr'
         # 'attr=""' is more common, so use that form
@@ -282,7 +282,6 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
             self.out.write(self.get_starttag_text())
         elif tag != 'head' or not self._rewrite_head(True):
             self.out.write('/>')
-
 
     def handle_endtag(self, tag):
         if (tag == self._wb_parse_context):

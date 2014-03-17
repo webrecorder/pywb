@@ -123,7 +123,11 @@ class RewriteContent:
             return buff
 
         def do_finish():
-            return rewriter.close()
+            result = rewriter.close()
+            if encoding:
+                result = result.encode(encoding)
+
+            return result
 
         return self.stream_to_gen(stream,
                                   rewrite_func=do_rewrite,

@@ -103,3 +103,7 @@ enable_cdx_api: true
 
 # Memento support, enable
 enable_memento: true
+
+# Use lxml parser, if available
+use_lxml_parser: true
+

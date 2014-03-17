@@ -3,21 +3,23 @@ from pywb.utils.dsrules import BaseRule
 from regex_rewriters import RegexRewriter, CSSRewriter, XMLRewriter
 from regex_rewriters import JSLinkAndLocationRewriter, JSLinkOnlyRewriter
 
-HTML = None
-try:
-    from lxml_parser import LXMLHTMLRewriter
-    HTML = LXMLHTMLRewriter
-    pass
-except ImportError:
-    pass
-
-if not HTML:
-    from html_rewriter import HTMLRewriter
-    HTML = HTMLRewriter
-
 from header_rewriter import HeaderRewriter
+from html_rewriter import HTMLRewriter
 
 import itertools
+
+HTML = HTMLRewriter
+
+
+#=================================================================
+def use_lxml_parser():
+    try:
+        import logging
+        from lxml_parser import LXMLHTMLRewriter
+        HTML = LXMLHTMLRewriter
+        logging.debug('Using LXML Parser')
+    except ImportError:
+        logging.debug('Error Loading LXML Parser')
 
 
 #=================================================================
