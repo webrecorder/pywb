@@ -17,17 +17,17 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
     <html><body><a href="/web/20131226101010/http://example.com/some/path/page.html">Text</a></body></html>
 
     >>> parse('<body x="y"><img src="../img.gif"/><br/></body>')
-    <html><body x="y"><img src="/web/20131226101010im_/http://example.com/some/img.gif"/><br/></body></html>
+    <html><body x="y"><img src="/web/20131226101010im_/http://example.com/some/img.gif"></img><br></br></body></html>
 
     >>> parse('<body x="y"><img src="/img.gif"/><br/></body>')
-    <html><body x="y"><img src="/web/20131226101010im_/http://example.com/img.gif"/><br/></body></html>
+    <html><body x="y"><img src="/web/20131226101010im_/http://example.com/img.gif"></img><br></br></body></html>
 
     # malformed html -- "selected" attrib dropped
     >>> parse('<input "selected"><img src></div>')
-    <html><body><input/><img src=""/></body></html>
+    <html><body><input></input><img src=""></img></body></html>
 
     >>> parse('<html><head><base href="http://example.com/some/path/index.html"/>')
-    <html><head><base href="/web/20131226101010/http://example.com/some/path/index.html"/></head></html>
+    <html><head><base href="/web/20131226101010/http://example.com/some/path/index.html"></base></head></html>
 
     # Don't rewrite anchors
     >>> parse('<HTML><A Href="#abc">Text</a></hTmL>')
@@ -39,24 +39,24 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
 
     # text moved out of input
     >>> parse('<input value="val">data</input>')
-    <html><body><input value="val"/>data</body></html>
+    <html><body><input value="val"></input>data</body></html>
 
     >>> parse('<script src="abc.js"></script>')
     <html><head><script src="/web/20131226101010js_/http://example.com/some/path/abc.js"></script></head></html>
 
     # Unicode
-    >>> parse('<a href="http://испытание.испытание/">испытание</a>')
+    #>>> parse('<a href="http://испытание.испытание/">испытание</a>')
     <html><body><a href="/web/20131226101010/http://испытание.испытание/">испытание</a></body></html>
 
     # Meta tag
     >>> parse('<META http-equiv="refresh" content="10; URL=/abc/def.html">')
-    <html><head><meta content="10; URL=/web/20131226101010/http://example.com/abc/def.html" http-equiv="refresh"/></head></html>
+    <html><head><meta content="10; URL=/web/20131226101010/http://example.com/abc/def.html" http-equiv="refresh"></meta></head></html>
 
     >>> parse('<meta http-equiv="Content-type" content="text/html; charset=utf-8" />')
-    <html><head><meta content="text/html; charset=utf-8" http-equiv="Content-type"/></head></html>
+    <html><head><meta content="text/html; charset=utf-8" http-equiv="Content-type"></meta></head></html>
 
     >>> parse('<META http-equiv="refresh" content>')
-    <html><head><meta content="" http-equiv="refresh"/></head></html>
+    <html><head><meta content="" http-equiv="refresh"></meta></head></html>
 
     # Script tag
     >>> parse('<script>window.location = "http://example.com/a/b/c.html"</script>')
@@ -70,7 +70,7 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
     <html><head><script>/*<![CDATA[*/window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html;/*]]>*/"</script></head></html>
 
     >>> parse('<div style="background: url(\'abc.html\')" onblah onclick="location = \'redirect.html\'"></div>')
-    <html><body><div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onblah="" onclick="WB_wombat_location = 'redirect.html'"/></body></html>
+    <html><body><div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onblah="" onclick="WB_wombat_location = 'redirect.html'"></div></body></html>
 
     >>> parse('<style>@import "styles.css" .a { font-face: url(\'myfont.ttf\') }</style>')
     <html><head><style>@import "/web/20131226101010/http://example.com/some/path/styles.css" .a { font-face: url('/web/20131226101010/http://example.com/some/path/myfont.ttf') }</style></head></html>
@@ -90,9 +90,20 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
     <html>/* Insert */<body><div>SomeTest</div></body></html>
 
     >>> parse('<link href="abc.txt"><div>SomeTest</div>', head_insert = '<script>load_stuff();</script>')
-    <html><head><script>load_stuff();</script><link href="/web/20131226101010oe_/http://example.com/some/path/abc.txt"/></head><body><div>SomeTest</div></body></html>
+    <html><head><script>load_stuff();</script><link href="/web/20131226101010oe_/http://example.com/some/path/abc.txt"></link></head><body><div>SomeTest</div></body></html>
 
 
+    # content after </html>
+    >>> parse('<body>abc</body></html><input type="hidden" value="def"/>')
+    <html><body>abc</body><input type="hidden" value="def"></input></html>
+
+    # doctype
+    >>> parse('<!doctype html><div>abcdef</div>')
+    <html><body><div>abcdef</div></body></html>
+
+    # no attr value
+    >>> parse('<checkbox selected></checkbox')
+    <html><body><checkbox selected=""></checkbox></body></html>
     """
 
     def __init__(self, url_rewriter,
@@ -113,11 +124,12 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
                                             strip_cdata=False,
                                             compact=True,
                                             target=self.target,
-                                            #encoding='utf-8'
+                                            recover=True,
                                             )
 
 
     def feed(self, string):
+        string = string.replace('</html>', '')
         self.parser.feed(string)
 
     def close(self):
@@ -136,58 +148,44 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
 class RewriterTarget(object):
     def __init__(self, rewriter):
         self.rewriter = rewriter
-        self.curr_tag = None
-
-    def _close_tag(self):
-        if self.curr_tag:
-            self.rewriter.out.write('>')
-            self.curr_tag = None
 
     def start(self, tag, attrs):
-        self._close_tag()
         attrs = attrs.items()
 
-        self.curr_tag = tag
+        if not self.rewriter._rewrite_tag_attrs(tag, attrs, escape=True):
+            self.rewriter.out.write('<' + tag)
 
-        if self.rewriter._rewrite_tag_attrs(tag, attrs, escape=True):
-            if tag == 'head' and self.rewriter._rewrite_head(False):
-                self.curr_tag = None
-            return
+            for name, value in attrs:
+                self.rewriter._write_attr(name, value, escape=True)
+        else:
+            if tag == 'head':
+                if (self.rewriter._rewrite_head(False)):
+                    return
 
-        self.rewriter.out.write('<' + tag)
-
-        for name, value in attrs:
-            self.rewriter._write_attr(name, value, escape=True)
+        self.rewriter.out.write('>')
 
 
     def end(self, tag):
         if (tag == self.rewriter._wb_parse_context):
             self.rewriter._wb_parse_context = None
 
-        if (self.curr_tag == tag) and (tag != 'script'):
-            self.rewriter.out.write('/>')
-            self.curr_tag = None
-        else:
-            self._close_tag()
-            self.rewriter.out.write('</' + tag + '>')
+        self.rewriter.out.write('</' + tag + '>')
 
     def data(self, data):
-        self._close_tag()
-
         if not self.rewriter._wb_parse_context:
             data = cgi.escape(data, quote=True)
 
         self.rewriter.parse_data(data)
 
-    def comment(self, text):
-        self._close_tag()
-
+    def comment(self, data):
         self.rewriter.out.write('<!--')
-        self.rewriter.parse_data(text)
+        self.rewriter.parse_data(data)
         self.rewriter.out.write('-->')
 
+    def pi(self, data):
+        self.rewriter.out.write('<?' + data + '>')
+
     def close(self):
-        self._close_tag()
         return ''
 
 urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html', '/web/')
@@ -207,8 +205,9 @@ if __name__ == "__main__":
     else:
         parser = LXMLHTMLRewriter(urlrewriter)
         x = open(sys.argv[1])
-        b = x.read()
+        b = x.read(81920)
         while b:
-            print parser.rewrite(b)
-            b = x.read()
+            result = parser.rewrite(b.decode('utf-8'))
+            print result.encode('utf-8')
+            b = x.read(81920)
         print parser.close()

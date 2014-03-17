@@ -2,8 +2,19 @@ from pywb.utils.dsrules import BaseRule
 
 from regex_rewriters import RegexRewriter, CSSRewriter, XMLRewriter
 from regex_rewriters import JSLinkAndLocationRewriter, JSLinkOnlyRewriter
-from html_rewriter import HTMLRewriter
-from lxml_parser import LXMLHTMLRewriter
+
+HTML = None
+try:
+    from lxml_parser import LXMLHTMLRewriter
+    HTML = LXMLHTMLRewriter
+    pass
+except ImportError:
+    pass
+
+if not HTML:
+    from html_rewriter import HTMLRewriter
+    HTML = HTMLRewriter
+
 from header_rewriter import HeaderRewriter
 
 import itertools
@@ -21,7 +32,7 @@ class RewriteRules(BaseRule):
         self.rewriters['header'] = config.get('header_class', HeaderRewriter)
         self.rewriters['css'] = config.get('css_class', CSSRewriter)
         self.rewriters['xml'] = config.get('xml_class', XMLRewriter)
-        self.rewriters['html'] = config.get('html_class', LXMLHTMLRewriter)
+        self.rewriters['html'] = config.get('html_class', HTML)
         #self.rewriters['html'] = config.get('html_class', HTMLRewriter)
 
         # Custom handling for js rewriting, often the most complex
