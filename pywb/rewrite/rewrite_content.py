@@ -1,6 +1,8 @@
-import chardet
+#import chardet
 import pkgutil
 import yaml
+from chardet.universaldetector import UniversalDetector
+from io import BytesIO
 
 from header_rewriter import RewrittenStatusAndHeaders
 
@@ -151,11 +153,31 @@ class RewriteContent:
 
         return buff
 
+    #def _detect_charset(self, stream):
+    #    buff = stream.read(8192)
+    #    result = chardet.detect(buff)
+    #    print "chardet result: " + str(result)
+    #    return (result['encoding'], buff)
+
     def _detect_charset(self, stream):
-        buff = stream.read(8192)
-        result = chardet.detect(buff)
-        print "chardet result: " + str(result)
-        return (result['encoding'], buff)
+        full_buff = stream.read(8192)
+        io_buff = BytesIO(full_buff)
+
+        detector = UniversalDetector()
+
+        try:
+            buff = io_buff.read(256)
+            while buff:
+                detector.feed(buff)
+                if detector.done:
+                    break
+
+                buff = io_buff.read(256)
+        finally:
+            detector.close()
+
+        print "chardet result: " + str(detector.result)
+        return (detector.result['encoding'], full_buff)
 
     # Create a generator reading from a stream,
     # with optional rewriting and final read call
