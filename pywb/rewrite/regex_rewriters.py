@@ -25,7 +25,7 @@ class RegexRewriter(object):
 
     @staticmethod
     def archival_rewrite(rewriter):
-        return lambda string: rewriter.rewrite(string)
+        return lambda string: rewriter.rewrite(string, 'em_')
 
     #@staticmethod
     #def replacer(other):
@@ -33,7 +33,7 @@ class RegexRewriter(object):
 
     HTTPX_MATCH_STR = r'https?:\\?/\\?/[A-Za-z0-9:_@.-]+'
 
-    DEFAULT_OP = add_prefix
+    #DEFAULT_OP = add_prefix
 
     def __init__(self, rules):
         #rules = self.create_rules(http_prefix)
@@ -74,8 +74,8 @@ class RegexRewriter(object):
                 return m.group(0)
 
             # Custom func
-            if not hasattr(op, '__call__'):
-                op = RegexRewriter.DEFAULT_OP(op)
+            #if not hasattr(op, '__call__'):
+            #    op = RegexRewriter.DEFAULT_OP(op)
 
             result = op(m.group(i))
             final_str = result
@@ -124,8 +124,8 @@ class JSLinkAndLocationRewriter(JSLinkOnlyRewriter):
 
     def __init__(self, rewriter, rules=[], prefix='WB_wombat_'):
         rules = rules + [
-             (r'(?<!/)\blocation\b', prefix, 0),
-             (r'(?<=document\.)domain', prefix, 0),
+             (r'(?<!/)\blocation\b', RegexRewriter.add_prefix(prefix), 0),
+             (r'(?<=document\.)domain', RegexRewriter.add_prefix(prefix), 0),
         ]
         #import sys
         #sys.stderr.write('\n\n*** RULES:' + str(rules) + '\n\n')
@@ -140,7 +140,7 @@ JSRewriter = JSLinkAndLocationRewriter
 #=================================================================
 class XMLRewriter(RegexRewriter):
     def __init__(self, rewriter, extra=[]):
-        rules = self._create_rules(rewriter.get_abs_url())
+        rules = self._create_rules(rewriter)
 
         super(XMLRewriter, self).__init__(rules)
 
@@ -152,10 +152,11 @@ class XMLRewriter(RegexRewriter):
 
         return True
 
-    def _create_rules(self, http_prefix):
+    def _create_rules(self, rewriter):
         return [
              ('([A-Za-z:]+[\s=]+)?["\'\s]*(' +
-              RegexRewriter.HTTPX_MATCH_STR + ')', http_prefix, 2),
+              RegexRewriter.HTTPX_MATCH_STR + ')',
+              RegexRewriter.archival_rewrite(rewriter), 2),
         ]
 
 
