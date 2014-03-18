@@ -74,8 +74,6 @@ class HTMLRewriterMixin(object):
 
         self.url_rewriter = url_rewriter
         self._wb_parse_context = None
-        #self.out = outstream if outstream else self.AccumBuff()
-        self.out = self.AccumBuff()
 
         self.js_rewriter = js_rewriter_class(url_rewriter)
         self.css_rewriter = css_rewriter_class(url_rewriter)
@@ -218,16 +216,31 @@ class HTMLRewriterMixin(object):
         self.out.write(data)
 
     def rewrite(self, string):
-        if not self.out:
-            self.out = self.AccumBuff()
+        self.out = self.AccumBuff()
 
         self.feed(string)
 
         result = self.out.getvalue()
+
         # Clear buffer to create new one for next rewrite()
         self.out = None
 
         return result
+
+    def close(self):
+        self.out = self.AccumBuff()
+
+        self._internal_close()
+
+        result = self.out.getvalue()
+
+        # Clear buffer to create new one for next rewrite()
+        self.out = None
+
+        return result
+
+    def _internal_close(self):
+        pass
 
 
 #=================================================================
@@ -243,29 +256,22 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
                                            js_rewriter_class,
                                            css_rewriter_class)
 
-    # HTMLParser overrides below
     def feed(self, string):
         try:
             HTMLParser.feed(self, string)
         except HTMLParseError:
             self.out.write(string)
 
-    def close(self):
+    def _internal_close(self):
         if (self._wb_parse_context):
             end_tag = '</' + self._wb_parse_context + '>'
-            result = self.rewrite(end_tag)
-            if result.endswith(end_tag):
-                result = result[:-len(end_tag)]
+            self.feed(end_tag)
             self._wb_parse_context = None
-        else:
-            result = ''
 
         try:
             HTMLParser.close(self)
         except HTMLParseError:
             pass
-
-        return result
 
     # called to unescape attrs -- do not unescape!
     def unescape(self, s):

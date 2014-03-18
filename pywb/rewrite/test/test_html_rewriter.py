@@ -53,9 +53,9 @@ ur"""
 >>> parse('<script>window.location = "http://example.com/a/b/c.html"</script>')
 <script>window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html"</script>
 
-# Unterminated script tag, handle but don't auto-terminate
+# Unterminated script tag, handle and auto-terminate
 >>> parse('<script>window.location = "http://example.com/a/b/c.html"</sc>')
-<script>window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html"</sc>
+<script>window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html"</sc></script>
 
 >>> parse('<script>/*<![CDATA[*/window.location = "http://example.com/a/b/c.html;/*]]>*/"</script>')
 <script>/*<![CDATA[*/window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html;/*]]>*/"</script>
@@ -66,9 +66,9 @@ ur"""
 >>> parse('<style>@import "styles.css" .a { font-face: url(\'myfont.ttf\') }</style>')
 <style>@import "/web/20131226101010/http://example.com/some/path/styles.css" .a { font-face: url('/web/20131226101010/http://example.com/some/path/myfont.ttf') }</style>
 
-# Unterminated style tag, handle but don't auto-terminate
+# Unterminated style tag, handle and auto-terminate
 >>> parse('<style>@import url(styles.css)')
-<style>@import url(/web/20131226101010/http://example.com/some/path/styles.css)
+<style>@import url(/web/20131226101010/http://example.com/some/path/styles.css)</style>
 
 # Head Insertion
 >>> parse('<html><head><script src="other.js"></script></head><body>Test</body></html>', head_insert = '<script src="cool.js"></script>')

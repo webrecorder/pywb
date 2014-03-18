@@ -36,18 +36,8 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
         #string = string.replace(u'</html>', u'')
         self.parser.feed(string)
 
-    def close(self):
-        if not self.out:
-            self.out = self.AccumBuff()
-
-        self.is_closing = True
+    def _internal_close(self):
         self.parser.close()
-
-        result = self.out.getvalue()
-        # Clear buffer to create new one for next rewrite()
-        self.out = None
-
-        return result
 
 
 #=================================================================
