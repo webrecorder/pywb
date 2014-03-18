@@ -1,7 +1,7 @@
 from pywb.utils.binsearch import iter_range
 from pywb.utils.loaders import SeekableTextFileReader
 
-from pywb.utils.wbexception import AccessException
+from pywb.utils.wbexception import AccessException, NotFoundException
 from query import CDXQuery
 
 import urllib
@@ -72,6 +72,9 @@ class RemoteCDXSource(CDXSource):
                        else 'Excluded')
 
                 raise AccessException(msg)
+            elif e.code == 404:
+                msg = 'No Captures found for: ' + query.url
+                raise NotFoundException(msg)
             else:
                 raise
 

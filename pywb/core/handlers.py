@@ -26,7 +26,7 @@ class WBHandler(WbUrlHandler):
 
         self.query_view = html_view
         if not self.query_view:
-            self.query_view = text_query_view
+            self.query_view = self.text_query_view
 
         self.search_view = search_view
 

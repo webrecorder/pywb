@@ -12,7 +12,7 @@ class IndexReader(object):
     Creates an appropriate query based on wbrequest type info
     """
 
-    def __init__(self, cdx_server, perms_policy):
+    def __init__(self, cdx_server, perms_policy=None):
         self.cdx_server = cdx_server
         self.perms_policy = perms_policy
 

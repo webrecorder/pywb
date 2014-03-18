@@ -106,7 +106,9 @@ def create_wb_handler(cdx_server, config, ds_rules_file=None):
     search_view = load_template_file(config.get('search_html'),
                                      'Search Page')
 
-    wb_handler = WBHandler(
+    wb_handler_class = config.get('wb_handler_class', WBHandler)
+
+    wb_handler = wb_handler_class(
         cdx_server,
         replayer,
         html_view=html_view,
