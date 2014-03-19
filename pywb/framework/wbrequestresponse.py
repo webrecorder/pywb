@@ -87,6 +87,17 @@ class WbRequest(object):
 
         self._parse_extra()
 
+    @property
+    def is_embed(self):
+        return (self.wb_url and
+                self.wb_url.mod and
+                self.wb_url.mod != 'id_')
+
+    @property
+    def is_identity(self):
+        return (self.wb_url and
+                self.wb_url.mod == 'id_')
+
     def _is_ajax(self):
         value = self.env.get('HTTP_X_REQUESTED_WITH')
         if not value:

@@ -11,7 +11,9 @@
 <script>
   wbinfo = {}
   wbinfo.capture_str = "{{ cdx.timestamp | format_ts }}";
+  wbinfo.is_embed = {{"true" if wbrequest.is_embed else "false"}};
 </script>
 <script src='{{ wbrequest.host_prefix }}/static/default/wb.js'> </script>
 <link rel='stylesheet' href='{{ wbrequest.host_prefix }}/static/default/wb.css'/>
 <!-- End WB Insert -->
+

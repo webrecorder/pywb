@@ -22,6 +22,10 @@ function init_banner() {
 
     var banner = document.getElementById(BANNER_ID);
 
+    if (wbinfo.is_embed) {
+        return;
+    }
+
     if (!banner) {
         banner = document.createElement("wb_div");
         banner.setAttribute("id", BANNER_ID);
