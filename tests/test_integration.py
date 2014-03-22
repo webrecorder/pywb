@@ -93,9 +93,24 @@ class TestWb:
 
     def test_replay_identity_1(self):
         resp = self.testapp.get('/pywb/20140127171251id_/http://example.com')
-        #resp = self.testapp.get('/pywb/20140126200654id_/http://www.iana.org/_img/2013.1/rir-map.svg')
-        #resp = self.testapp.get('/pywb/20140127171239id_/http://www.iana.org/_css/2013.1/screen.css')
-        #self._assert_basic_html(resp)
+
+        # no wb header insertion
+        assert 'wb.js' not in resp.body
+
+        # original unrewritten url present
+        assert '"http://www.iana.org/domains/example"' in resp.body
+
+    def test_replay_identity_2_arcgz(self):
+        resp = self.testapp.get('/pywb/20140216050221id_/http://arc.gz.test.example.com')
+
+        # no wb header insertion
+        assert 'wb.js' not in resp.body
+
+        # original unrewritten url present
+        assert '"http://www.iana.org/domains/example"' in resp.body
+
+    def test_replay_identity_2_arc(self):
+        resp = self.testapp.get('/pywb/20140216050221id_/http://arc.test.example.com')
 
         # no wb header insertion
         assert 'wb.js' not in resp.body

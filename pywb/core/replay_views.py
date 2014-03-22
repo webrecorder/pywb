@@ -4,7 +4,6 @@ from io import BytesIO
 from pywb.utils.bufferedreaders import ChunkedDataReader
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.wbexception import WbException
-from pywb.utils.loaders import LimitReader
 
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import MementoResponse
@@ -109,12 +108,6 @@ class ReplayView:
         self._reject_referrer_self_redirect(wbrequest)
 
         response = None
-
-        # if Content-Length for payload is present,
-        # ensure we don't read past it
-        content_length = status_headers.get_header('content-length')
-        if content_length:
-            stream = LimitReader.wrap_stream(stream, content_length)
 
         if self.content_rewriter and wbrequest.wb_url.mod != 'id_':
 

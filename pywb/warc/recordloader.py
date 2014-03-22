@@ -6,7 +6,7 @@ from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.statusandheaders import StatusAndHeadersParser
 from pywb.utils.statusandheaders import StatusAndHeadersParserException
 
-from pywb.utils.loaders import BlockLoader
+from pywb.utils.loaders import BlockLoader, LimitReader
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 
 from pywb.utils.wbexception import WbException
@@ -73,14 +73,14 @@ class ArcWarcRecordLoader:
 
         if the_format == 'arc':
             rec_type = 'response'
-            empty = (rec_headers.get_header('length') == 0)
+            length = int(rec_headers.get_header('length'))
 
         elif the_format == 'warc':
             rec_type = rec_headers.get_header('WARC-Type')
-            empty = (rec_headers.get_header('Content-Length') == '0')
+            length = int(rec_headers.get_header('Content-Length'))
 
         # special case: empty w/arc record (hopefully a revisit)
-        if empty:
+        if length == 0:
             status_headers = StatusAndHeaders('204 No Content', [])
 
         # special case: warc records that are not expected to have http headers
@@ -101,6 +101,13 @@ class ArcWarcRecordLoader:
         else:
             #(statusline, http_headers) = self.parse_http_headers(stream)
             status_headers = self.http_parser.parse(stream)
+
+        # limit the stream to the remainder, if >0
+        # should always be valid, but just in case, still stream if
+        # content-length was not set
+        remains = length - status_headers.total_len
+        if remains > 0:
+            stream = LimitReader.wrap_stream(stream, remains)
 
         return ArcWarcRecord((the_format, rec_type),
                              rec_headers, stream, status_headers)
@@ -137,9 +144,14 @@ class ARCHeadersParser:
 
     def parse(self, stream, headerline=None):
 
+        total_read = 0
+
         # if headerline passed in, use that
         if not headerline:
-            headerline = stream.readline().rstrip()
+            headerline = stream.readline()
+
+        total_read = len(headerline)
+        headerline = headerline.rstrip()
 
         parts = headerline.split()
 
@@ -157,4 +169,5 @@ class ARCHeadersParser:
 
         return StatusAndHeaders(statusline='',
                                 headers=headers,
-                                protocol='ARC/1.0')
+                                protocol='ARC/1.0',
+                                total_len=total_read)

@@ -13,10 +13,11 @@ class StatusAndHeaders(object):
     Headers is a list of (name, value) tuples
     An optional protocol which appears on first line may be specified
     """
-    def __init__(self, statusline, headers, protocol=''):
+    def __init__(self, statusline, headers, protocol='', total_len=0):
         self.statusline = statusline
         self.headers = headers
         self.protocol = protocol
+        self.total_len = total_len
 
     def get_header(self, name):
         """
@@ -53,6 +54,12 @@ headers = {2})".format(self.protocol, self.statusline, headers_str)
 
 
 #=================================================================
+def _strip_count(string, total_read):
+    length = len(string)
+    return string.rstrip(), total_read + length
+
+
+#=================================================================
 class StatusAndHeadersParser(object):
     """
     Parser which consumes a stream support readline() to read
@@ -68,29 +75,33 @@ class StatusAndHeadersParser(object):
 
         support continuation headers starting with space or tab
         """
-        statusline = stream.readline().rstrip()
+        # status line w newlines intact
+        full_statusline = stream.readline()
+        statusline, total_read = _strip_count(full_statusline, 0)
 
         protocol_status = self.split_prefix(statusline, self.statuslist)
 
         if not protocol_status:
             msg = 'Expected Status Line starting with {0} - Found: {1}'
             msg = msg.format(self.statuslist, statusline)
-            raise StatusAndHeadersParserException(msg, statusline)
+            raise StatusAndHeadersParserException(msg, full_statusline)
 
         headers = []
 
-        line = stream.readline().rstrip()
+        line, total_read = _strip_count(stream.readline(), total_read)
         while line:
             name, value = line.split(':', 1)
             name = name.rstrip(' \t')
             value = value.lstrip()
 
-            next_line = stream.readline().rstrip()
+            next_line, total_read = _strip_count(stream.readline(),
+                                                 total_read)
 
             # append continuation lines, if any
             while next_line and next_line.startswith((' ', '\t')):
                 value += next_line
-                next_line = stream.readline().rstrip()
+                next_line, total_read = _strip_count(stream.readline(),
+                                                     total_read)
 
             header = (name, value)
             headers.append(header)
@@ -98,7 +109,8 @@ class StatusAndHeadersParser(object):
 
         return StatusAndHeaders(statusline=protocol_status[1].strip(),
                                 headers=headers,
-                                protocol=protocol_status[0])
+                                protocol=protocol_status[0],
+                                total_len=total_read)
 
     @staticmethod
     def split_prefix(key, prefixs):
