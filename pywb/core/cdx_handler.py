@@ -2,32 +2,31 @@ from pywb.cdx.cdxserver import create_cdx_server
 
 from pywb.framework.archivalrouter import ArchivalRouter, Route
 from pywb.framework.basehandlers import BaseHandler
+from pywb.framework.wbrequestresponse import WbResponse
 
-from indexreader import IndexReader
-from views import TextCapturesView
+from query_handler import QueryHandler
 
 from urlparse import parse_qs
 
 
 #=================================================================
-class CDXHandler(BaseHandler):
+class CDXAPIHandler(BaseHandler):
     """
     Handler which passes wsgi request to cdx server and
-    returns a text-based cdx response
+    returns a text-based cdx api
     """
-    def __init__(self, index_reader, view=None):
-        self.index_reader = index_reader
-        self.view = view if view else TextCapturesView()
+    def __init__(self, index_handler):
+        self.index_handler = index_handler
 
     def __call__(self, wbrequest):
         params = self.extract_params_from_wsgi_env(wbrequest.env)
 
-        cdx_iter = self.index_reader.load_cdx(wbrequest, params)
+        cdx_iter = self.index_handler.load_cdx(wbrequest, params)
 
-        return self.view.render_response(wbrequest, cdx_iter)
+        return WbResponse.text_stream(cdx_iter)
 
     def __str__(self):
-        return 'CDX Handler: ' + str(self.index_reader)
+        return 'CDX Handler: ' + str(self.index_handler)
 
     @staticmethod
     def extract_params_from_wsgi_env(env):
@@ -46,25 +45,21 @@ class CDXHandler(BaseHandler):
 
         if not 'output' in params:
             params['output'] = 'text'
+        elif params['output'] not in ('text'):
+            params['output'] = 'text'
 
         return params
-
-
-#=================================================================
-DEFAULT_RULES = 'pywb/rules.yaml'
 
 
 #=================================================================
 def create_cdx_server_app(config):
     """
     Create a cdx server config to be wrapped in a wsgi app
-    Currently using single access point '/cdx'
+    Currently using single access point '/cdx' to expose the api
     TODO: more complex example with multiple collections?
     """
-    cdx_server = create_cdx_server(config, DEFAULT_RULES)
-    perms_policy = config.get('perms_policy')
-    cdx_server = IndexReader(cdx_server, perms_policy)
+    query_handler = QueryHandler.init_from_config(config)
 
     port = config.get('port')
-    routes = [Route('cdx', CDXHandler(cdx_server))]
+    routes = [Route('cdx', CDXAPIHandler(query_handler))]
     return ArchivalRouter(routes, port=port)

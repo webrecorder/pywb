@@ -9,16 +9,14 @@ from pywb.warc.resolvingloader import ResolvingLoader
 from pywb.rewrite.rewrite_content import RewriteContent
 from pywb.rewrite.rewriterules import use_lxml_parser
 
-from pywb.cdx.cdxserver import create_cdx_server
-
-from indexreader import IndexReader
-from views import J2TemplateView, J2HtmlCapturesView
+from views import load_template_file, load_query_template
 from replay_views import ReplayView
 
+from query_handler import QueryHandler
 from handlers import WBHandler
 from handlers import StaticHandler
-from cdx_handler import CDXHandler
 from handlers import DebugEchoHandler, DebugEchoEnvHandler
+from cdx_handler import CDXAPIHandler
 
 
 import os
@@ -46,6 +44,7 @@ DEFAULTS = {
     'use_lxml_parser': True,
 }
 
+
 #=================================================================
 class DictChain:
     def __init__(self, *dicts):
@@ -60,18 +59,9 @@ class DictChain:
 
 
 #=================================================================
-def load_template_file(file, desc=None, view_class=J2TemplateView):
-    if file:
-        logging.debug('Adding {0}: {1}'.format(desc if desc else name, file))
-        file = view_class(file)
+def create_wb_handler(query_handler, config, ds_rules_file=None):
 
-    return file
-
-
-#=================================================================
-def create_wb_handler(cdx_server, config, ds_rules_file=None):
-
-    cookie_maker=config.get('cookie_maker')
+    cookie_maker = config.get('cookie_maker')
     record_loader = ArcWarcRecordLoader(cookie_maker=cookie_maker)
 
     paths = config.get('archive_paths')
@@ -98,20 +88,15 @@ def create_wb_handler(cdx_server, config, ds_rules_file=None):
         reporter=config.get('reporter')
     )
 
-    html_view = load_template_file(config.get('query_html'),
-                                   'Captures Page',
-                                   J2HtmlCapturesView)
-
-
     search_view = load_template_file(config.get('search_html'),
                                      'Search Page')
 
     wb_handler_class = config.get('wb_handler_class', WBHandler)
 
     wb_handler = wb_handler_class(
-        cdx_server,
+        query_handler,
         replayer,
-        html_view=html_view,
+        #html_view=html_view,
         search_view=search_view,
     )
 
@@ -119,7 +104,7 @@ def create_wb_handler(cdx_server, config, ds_rules_file=None):
 
 
 #=================================================================
-def create_wb_router(passed_config = {}):
+def create_wb_router(passed_config={}):
 
     config = DictChain(passed_config, DEFAULTS)
 
@@ -153,15 +138,20 @@ def create_wb_router(passed_config = {}):
 
         ds_rules_file = route_config.get('domain_specific_rules', None)
 
-        perms_policy = route_config.get('perms_policy', None)
+        #perms_policy = route_config.get('perms_policy', None)
+        #
+        #cdx_server = create_cdx_server(route_config,
+        #                               ds_rules_file)
+        #
+        html_view = load_query_template(config.get('query_html'),
+                                        'Captures Page')
 
-        cdx_server = create_cdx_server(route_config,
-                                       ds_rules_file)
-
-        cdx_server = IndexReader(cdx_server, perms_policy)
+        query_handler = QueryHandler.init_from_config(route_config,
+                                                      ds_rules_file,
+                                                      html_view)
 
         wb_handler = create_wb_handler(
-            cdx_server=cdx_server,
+            query_handler=query_handler,
             config=route_config,
             ds_rules_file=ds_rules_file,
         )
@@ -176,15 +166,13 @@ def create_wb_router(passed_config = {}):
 
         # cdx query handler
         if route_config.get('enable_cdx_api', False):
-            routes.append(Route(name + '-cdx', CDXHandler(cdx_server)))
-
+            routes.append(Route(name + '-cdx', CDXAPIHandler(query_handler)))
 
     if config.get('debug_echo_env', False):
         routes.append(Route('echo_env', DebugEchoEnvHandler()))
 
     if config.get('debug_echo_req', False):
         routes.append(Route('echo_req', DebugEchoHandler()))
-
 
     static_routes = config.get('static_routes')
 
@@ -201,13 +189,17 @@ def create_wb_router(passed_config = {}):
     return router(
         routes,
         # Specify hostnames that pywb will be running on
-        # This will help catch occasionally missed rewrites that fall-through to the host
+        # This will help catch occasionally missed rewrites that
+        # fall-through to the host
         # (See archivalrouter.ReferRedirect)
-        hostpaths = hostpaths,
-        port = port,
+        hostpaths=hostpaths,
+        port=port,
 
-        abs_path = config.get('absolute_paths', True),
+        abs_path=config.get('absolute_paths', True),
 
-        home_view = load_template_file(config.get('home_html'), 'Home Page'),
-        error_view = load_template_file(config.get('error_html'), 'Error Page')
+        home_view=load_template_file(config.get('home_html'),
+                                     'Home Page'),
+
+        error_view=load_template_file(config.get('error_html'),
+                                      'Error Page')
     )

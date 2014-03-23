@@ -8,25 +8,17 @@ from pywb.utils.loaders import BlockLoader
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
 
-from views import TextCapturesView
-
 
 #=================================================================
 # Standard WB Handler
 #=================================================================
 class WBHandler(WbUrlHandler):
     def __init__(self, index_reader, replay,
-                 html_view=None, search_view=None):
+                 search_view=None):
 
         self.index_reader = index_reader
 
         self.replay = replay
-
-        self.text_query_view = TextCapturesView()
-
-        self.query_view = html_view
-        if not self.query_view:
-            self.query_view = self.text_query_view
 
         self.search_view = search_view
 
@@ -35,20 +27,18 @@ class WBHandler(WbUrlHandler):
             return self.render_search_page(wbrequest)
 
         with PerfTimer(wbrequest.env.get('X_PERF'), 'query') as t:
-            cdx_lines = self.index_reader.load_for_request(wbrequest)
+            response = self.index_reader.load_for_request(wbrequest)
 
-        # new special modifier to always show cdx index
-        if wbrequest.wb_url.mod == 'cdx_':
-            return self.text_query_view.render_response(wbrequest, cdx_lines)
+        if isinstance(response, WbResponse):
+            return response
 
-        if ((wbrequest.wb_url.type == wbrequest.wb_url.QUERY) or
-            (wbrequest.wb_url.type == wbrequest.wb_url.URL_QUERY)):
-            return self.query_view.render_response(wbrequest, cdx_lines)
+        cdx_lines = response[0]
+        cdx_callback = response[1]
 
         with PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
             return self.replay(wbrequest,
                                cdx_lines,
-                               self.index_reader.cdx_load_callback(wbrequest))
+                               cdx_callback)
 
     def render_search_page(self, wbrequest):
         if self.search_view:

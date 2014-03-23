@@ -58,6 +58,14 @@ class BaseWbUrl(object):
         self.mod = mod
         self.type = type
 
+    def is_replay(self):
+        return (self.type == self.REPLAY or
+                self.type == self.LATEST_REPLAY)
+
+    def is_query(self):
+        return (self.type == self.QUERY or
+                self.type == self.URL_QUERY)
+
 
 #=================================================================
 class WbUrl(BaseWbUrl):
