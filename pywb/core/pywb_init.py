@@ -16,7 +16,7 @@ from query_handler import QueryHandler
 from handlers import WBHandler
 from handlers import StaticHandler
 from handlers import DebugEchoHandler, DebugEchoEnvHandler
-from cdx_handler import CDXAPIHandler
+from cdx_api_handler import CDXAPIHandler
 
 
 import os

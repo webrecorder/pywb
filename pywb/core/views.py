@@ -10,18 +10,6 @@ from jinja2 import Environment, FileSystemLoader, PackageLoader
 
 
 #=================================================================
-class StaticTextView:
-    def __init__(self, text):
-        self.text = text
-
-    def render_to_string(self, **kwargs):
-        return self.text
-
-    def render_response(self, **kwargs):
-        return WbResponse.text_stream(self.text)
-
-
-#=================================================================
 class J2TemplateView:
     def __init__(self, filename):
         template_dir, template_file = path.split(filename)

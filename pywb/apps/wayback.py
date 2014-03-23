@@ -6,6 +6,7 @@ from pywb.core.pywb_init import create_wb_router
 #=================================================================
 application = init_app(create_wb_router, load_yaml=True)
 
+
 def main():
     start_wsgi_server(application, 'Wayback')
 
