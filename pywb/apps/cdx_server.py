@@ -1,6 +1,6 @@
 from pywb.framework.wsgi_wrappers import init_app, start_wsgi_server
 
-from pywb.core.cdx_handler import create_cdx_server_app
+from pywb.core.cdx_api_handler import create_cdx_server_app
 
 #=================================================================
 # init cdx server app
