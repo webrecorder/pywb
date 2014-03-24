@@ -140,17 +140,19 @@ class TestWb:
 
         lines = resp.body.split('\n')
 
-        assert len(lines) == 4
+        assert len(lines) == 5
 
         assert lines[0] == '<http://localhost:80/pywb/timemap/*/http://example.com?example=1>; \
 rel="self"; type="application/link-format"; from="Fri, 03 Jan 2014 03:03:21 GMT",'
 
-        assert lines[1] == '<http://localhost:80/pywb/http://example.com?example=1>; rel="timegate",'
+        assert lines[1] == '<http://example.com?example=1>; rel="original",'
 
-        assert lines[2] == '<http://localhost:80/pywb/20140103030321/http://example.com?example=1>; \
+        assert lines[2] == '<http://localhost:80/pywb/http://example.com?example=1>; rel="timegate",'
+
+        assert lines[3] == '<http://localhost:80/pywb/20140103030321/http://example.com?example=1>; \
 rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT",'
 
-        assert lines[3] == '<http://localhost:80/pywb/20140103030341/http://example.com?example=1>; \
+        assert lines[4] == '<http://localhost:80/pywb/20140103030341/http://example.com?example=1>; \
 rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"'
 
     # Below functions test pywb proxy mode behavior

@@ -142,6 +142,10 @@ def make_timemap(wbrequest, cdx_lines):
                'type="application/link-format"; from="{1}",\n')
     yield timemap.format(prefix + wbrequest.wb_url.to_str(), from_date)
 
+    # original link
+    original = '<{0}>; rel="original",\n'
+    yield original.format(url)
+
     # timegate link
     timegate = '<{0}>; rel="timegate",\n'
     yield timegate.format(prefix + url)
@@ -158,6 +162,6 @@ def make_timemap(wbrequest, cdx_lines):
 
         prev_cdx = cdx
 
-    # last memento link
+    # last memento link, if any
     if prev_cdx:
         yield make_memento_link(prev_cdx, prefix, end='')
