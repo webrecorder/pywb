@@ -86,13 +86,30 @@ ur"""
 >>> parse('<body>abc</body></html><input type="hidden" value="def"/>')
 <html><body>abc</body><input type="hidden" value="def"></input></html>
 
-# doctype
->>> parse('<!doctype html><div>abcdef</div>')
-<html><body><div>abcdef</div></body></html>
-
 # no attr value
 >>> parse('<checkbox selected></checkbox')
 <html><body><checkbox selected=""></checkbox></body></html>
+
+# doctype
+>>> parse('<!doctype html><div>abcdef</div>')
+<!doctype html><html><body><div>abcdef</div></body></html>
+
+>>> parse('<!doctype html PUBLIC "public"><div>abcdef</div>')
+<!doctype html PUBLIC public><html><body><div>abcdef</div></body></html>
+
+>>> parse('<!doctype html SYSTEM "system"><div>abcdef</div>')
+<!doctype html SYSTEM system><html><body><div>abcdef</div></body></html>
+
+# uncommon markup
+>>> parse('<?test content?>')
+<?test content?>
+
+# no special cdata treatment, preserved in <script>
+>>> parse('<script><![CDATA[ <a href="path.html"></a> ]]></script>')
+<html><head><script><![CDATA[ <a href="path.html"></a> ]]></script></head></html>
+
+>>> parse('<!-- <a href="http://example.com"></a> -->')
+<!-- <a href="http://example.com"></a> -->
 """
 
 from pywb.rewrite.url_rewriter import UrlRewriter

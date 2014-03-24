@@ -46,6 +46,9 @@ ur"""
 >>> parse('<meta http-equiv="Content-type" content="text/html; charset=utf-8" />')
 <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
 
+>>> parse('<meta http-equiv="refresh" content="text/html; charset=utf-8" />')
+<meta http-equiv="refresh" content="text/html; charset=utf-8"/>
+
 >>> parse('<META http-equiv="refresh" content>')
 <meta http-equiv="refresh" content="">
 
@@ -63,6 +66,7 @@ ur"""
 >>> parse('<div style="background: url(\'abc.html\')" onblah onclick="location = \'redirect.html\'"></div>')
 <div style="background: url('/web/20131226101010em_/http://example.com/some/path/abc.html')" onblah="" onclick="WB_wombat_location = 'redirect.html'"></div>
 
+# Style
 >>> parse('<style>@import "styles.css" .a { font-face: url(\'myfont.ttf\') }</style>')
 <style>@import "/web/20131226101010em_/http://example.com/some/path/styles.css" .a { font-face: url('/web/20131226101010em_/http://example.com/some/path/myfont.ttf') }</style>
 
@@ -77,11 +81,29 @@ ur"""
 >>> parse('<html><head/><body>Test</body></html>', head_insert = '<script src="cool.js"></script>')
 <html><head><script src="cool.js"></script></head><body>Test</body></html>
 
->>> parse('<body><div>SomeTest</div>', head_insert = '/* Insert */')
-/* Insert */<body><div>SomeTest</div>
+>>> parse('<body><div style="">SomeTest</div>', head_insert = '/* Insert */')
+/* Insert */<body><div style="">SomeTest</div>
 
 >>> parse('<link href="abc.txt"><div>SomeTest</div>', head_insert = '<script>load_stuff();</script>')
 <link href="/web/20131226101010oe_/http://example.com/some/path/abc.txt"><script>load_stuff();</script><div>SomeTest</div>
+
+>>> parse('<!doctype html PUBLIC "public">')
+<!doctype html PUBLIC "public">
+
+# uncommon markup
+>>> parse('<?test content?>')
+<?test content?>
+
+# no special cdata treatment, preserved in <script>
+>>> parse('<script><![CDATA[ <a href="path.html"></a> ]]></script>')
+<script><![CDATA[ <a href="path.html"></a> ]]></script>
+
+# CDATA outside of <script> parsed and *not* rewritten
+>>> parse('<?test content><![CDATA[ <a href="http://example.com"></a> ]]>')
+<?test content><![CDATA[ <a href="http://example.com"></a> ]>
+
+>>> parse('<!-- <a href="http://example.com"></a> -->')
+<!-- <a href="http://example.com"></a> -->
 """
 
 from pywb.rewrite.url_rewriter import UrlRewriter

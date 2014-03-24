@@ -77,8 +77,18 @@ class RewriterTarget(object):
         self.rewriter.parse_data(data)
         self.rewriter.out.write(u'-->')
 
-    def pi(self, data):
-        self.rewriter.out.write(u'<?' + data + u'>')
+    def doctype(self, root_tag, public_id, system_id):
+        self.rewriter.out.write(u'<!doctype')
+        if root_tag:
+            self.rewriter.out.write(' ' + root_tag)
+        if public_id:
+            self.rewriter.out.write(' PUBLIC ' + public_id)
+        if system_id:
+            self.rewriter.out.write(' SYSTEM ' + system_id)
+        self.rewriter.out.write(u'>')
+
+    def pi(self, target, data):
+        self.rewriter.out.write(u'<?' + target + ' ' + data + u'>')
 
     def close(self):
         return ''
