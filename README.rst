@@ -1,11 +1,11 @@
-PyWb 0.2.1
+PyWb 0.2.2
 =============
 
-.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=master
+.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=develop
       :target: https://travis-ci.org/ikreymer/pywb
          
-.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=master
-      :target: https://coveralls.io/r/ikreymer/pywb?branch=master
+.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=develop
+      :target: https://coveralls.io/r/ikreymer/pywb?branch=develop
 
 pywb is a new Python implementation of the Wayback Machine software and
 tools.
@@ -17,8 +17,12 @@ captures.
 Latest Changes
 ~~~~~~~~~~~~~~
 
-* Basic support for `Memento Protocol RFC7089 <http://www.mementoweb.org/guide/rfc/>`_ Memento and TimeGate interaction only. (TimeMap support planned).
+* Support for optional LXML html-based parser for fastest possible parsing.
 
+* Memento: TimeMaps in `application/link-format` provided via the `/timemap/*/` query.. eg: `http://localhost:8080/pywb/timemap/*/http://example.com`
+
+* Basic support for `Memento Protocol RFC7089 <http://www.mementoweb.org/guide/rfc/>`_ Memento, TimeGate and now TimeMaps.
+  
 * pywb now features new `domain-specific rules <https://github.com/ikreymer/pywb/blob/master/pywb/rules.yaml>`_ which are applied to resolve and render certain difficult and dynamic content, in order to make accurate web replay work. This ruleset will be under further iteration to address further challenges as the web evoles.
 
 
