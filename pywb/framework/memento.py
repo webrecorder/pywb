@@ -3,6 +3,9 @@ from pywb.utils.timeutils import http_date_to_timestamp
 from pywb.utils.timeutils import timestamp_to_http_date
 
 from wbrequestresponse import WbRequest, WbResponse
+from pywb.rewrite.wburl import WbUrl
+
+LINK_FORMAT = 'application/link-format'
 
 
 #=================================================================
@@ -69,24 +72,92 @@ class MementoRespMixin(object):
 
         req_url = wbrequest.wb_url.url
 
-        if is_memento and is_timegate:
-            link = self.make_link(req_url, 'original timegate')
-        elif is_memento:
-            timegate = wbrequest.urlrewriter.get_timestamp_url('')
+        link = []
 
-            link = []
-            link.append(self.make_link(req_url, 'original'))
-            link.append(self.make_link(timegate, 'timegate'))
-            link = ', '.join(link)
+        if is_memento and is_timegate:
+            link.append(self.make_link(req_url, 'original timegate'))
         else:
-            link = self.make_link(req_url, 'original')
+            link.append(self.make_link(req_url, 'original'))
+
+        # for now, include timemap only in non-proxy mode
+        if not wbrequest.is_proxy and (is_memento or is_timegate):
+            link.append(self.make_timemap_link(wbrequest))
+
+        if is_memento and not is_timegate:
+            timegate = wbrequest.urlrewriter.get_timestamp_url('')
+            link.append(self.make_link(timegate, 'timegate'))
+
+        link = ', '.join(link)
 
         self.status_headers.headers.append(('Link', link))
 
     def make_link(self, url, type):
         return '<{0}>; rel="{1}"'.format(url, type)
 
+    def make_timemap_link(self, wbrequest):
+        format_ = '<{0}>; rel="timemap"; type="{1}"'
+
+        prefix = wbrequest.wb_prefix
+
+        url = prefix + (wbrequest.wb_url.
+                        to_str(mod='timemap',
+                               timestamp='',
+                               type=wbrequest.wb_url.QUERY))
+
+        return format_.format(url, LINK_FORMAT)
+
 
 #=================================================================
 class MementoResponse(MementoRespMixin, WbResponse):
     pass
+
+
+#=================================================================
+def make_memento_link(cdx, prefix, datetime=None, rel='memento', end=',\n'):
+    memento = '<{0}>; rel="{1}"; datetime="{2}"' + end
+
+    string = WbUrl.to_wburl_str(url=cdx['original'],
+                                timestamp=cdx['timestamp'],
+                                type=WbUrl.REPLAY)
+
+    url = prefix + string
+
+    if not datetime:
+        datetime = timestamp_to_http_date(cdx['timestamp'])
+
+    return memento.format(url, rel, datetime)
+
+
+#=================================================================
+def make_timemap(wbrequest, cdx_lines):
+    prefix = wbrequest.wb_prefix
+    url = wbrequest.wb_url.url
+
+    # get first memento as it'll be used for 'from' field
+    first_cdx = cdx_lines.next()
+    from_date = timestamp_to_http_date(first_cdx['timestamp'])
+
+    # timemap link
+    timemap = ('<{0}>; rel="self"; ' +
+               'type="application/link-format"; from="{1}",\n')
+    yield timemap.format(prefix + wbrequest.wb_url.to_str(), from_date)
+
+    # timegate link
+    timegate = '<{0}>; rel="timegate",\n'
+    yield timegate.format(prefix + url)
+
+    # first memento link
+    yield make_memento_link(first_cdx, prefix,
+                            datetime=from_date)
+
+    prev_cdx = None
+
+    for cdx in cdx_lines:
+        if prev_cdx:
+            yield make_memento_link(prev_cdx, prefix)
+
+        prev_cdx = cdx
+
+    # last memento link
+    if prev_cdx:
+        yield make_memento_link(prev_cdx, prefix, end='')

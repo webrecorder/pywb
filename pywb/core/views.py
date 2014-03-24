@@ -1,5 +1,6 @@
 from pywb.utils.timeutils import timestamp_to_datetime
 from pywb.framework.wbrequestresponse import WbResponse
+from pywb.framework.memento import make_timemap, LINK_FORMAT
 
 import urlparse
 import logging
@@ -75,7 +76,7 @@ def load_query_template(file, desc=None):
 
 
 #=================================================================
-# html captures 'calendar' view
+# query views
 #=================================================================
 class J2HtmlCapturesView(J2TemplateView):
     def render_response(self, wbrequest, cdx_lines):
@@ -83,3 +84,11 @@ class J2HtmlCapturesView(J2TemplateView):
                                     cdx_lines=list(cdx_lines),
                                     url=wbrequest.wb_url.url,
                                     prefix=wbrequest.wb_prefix)
+
+
+#=================================================================
+class MementoTimemapView(object):
+    def render_response(self, wbrequest, cdx_lines):
+        memento_lines = make_timemap(wbrequest, cdx_lines)
+        return WbResponse.text_stream(memento_lines,
+                                      content_type=LINK_FORMAT)

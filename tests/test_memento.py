@@ -7,6 +7,7 @@ MEMENTO_DATETIME = 'Memento-Datetime'
 ACCEPT_DATETIME = 'Accept-Datetime'
 LINK = 'Link'
 VARY = 'Vary'
+LINK_FORMAT = 'application/link-format'
 
 class TestWb:
     TEST_CONFIG = 'tests/test_config_memento.yaml'
@@ -17,6 +18,13 @@ class TestWb:
                             config_file=self.TEST_CONFIG)
 
         self.testapp = webtest.TestApp(self.app)
+
+    def get_links(self, resp):
+        return map(lambda x: x.strip(), resp.headers[LINK].split(','))
+
+    def make_timemap_link(self, url):
+        format_ = '<http://localhost:80/pywb/timemap/*/{0}>; rel="timemap"; type="{1}"'
+        return format_.format(url, LINK_FORMAT)
 
     # Below functionality is for archival (non-proxy) mode
     # It is designed to conform to Memento protocol Pattern 2.1
@@ -31,7 +39,11 @@ class TestWb:
         assert resp.status_int == 302
 
         assert resp.headers[VARY] == 'accept-datetime'
-        assert resp.headers[LINK] == '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"'
+
+        links = self.get_links(resp)
+        assert '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"' in links
+        assert self.make_timemap_link('http://www.iana.org/_css/2013.1/screen.css') in links
+
         assert MEMENTO_DATETIME not in resp.headers
 
         assert '/pywb/20140127171239/http://www.iana.org/_css/2013.1/screen.css' in resp.headers['Location']
@@ -47,7 +59,12 @@ class TestWb:
         assert resp.status_int == 302
 
         assert resp.headers[VARY] == 'accept-datetime'
-        assert resp.headers[LINK] == '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"'
+
+        links = self.get_links(resp)
+        assert '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"' in links
+        assert self.make_timemap_link('http://www.iana.org/_css/2013.1/screen.css') in links
+
+
         assert MEMENTO_DATETIME not in resp.headers
 
         assert '/pywb/20140126200804/http://www.iana.org/_css/2013.1/screen.css' in resp.headers['Location']
@@ -65,7 +82,10 @@ class TestWb:
 
         # no vary header
         assert VARY not in resp.headers
-        assert resp.headers[LINK] == '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"'
+
+        links = self.get_links(resp)
+        assert '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"' in links
+
         assert MEMENTO_DATETIME not in resp.headers
 
 
@@ -83,8 +103,10 @@ class TestWb:
 
         assert VARY not in resp.headers
 
-        assert resp.headers[LINK] == '<http://www.iana.org/_css/2013.1/screen.css>; rel="original", \
-<http://localhost:80/pywb/http://www.iana.org/_css/2013.1/screen.css>; rel="timegate"'
+        links = self.get_links(resp)
+        assert '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"' in links
+        assert '<http://localhost:80/pywb/http://www.iana.org/_css/2013.1/screen.css>; rel="timegate"' in links
+        assert self.make_timemap_link('http://www.iana.org/_css/2013.1/screen.css') in links
 
         assert resp.headers[MEMENTO_DATETIME] == 'Sun, 26 Jan 2014 20:08:04 GMT'
 
@@ -99,11 +121,37 @@ class TestWb:
 
         assert VARY not in resp.headers
 
-        assert resp.headers[LINK] == '<http://www.iana.org/domains/example>; rel="original", \
-<http://localhost:80/pywb/http://www.iana.org/domains/example>; rel="timegate"'
+        links = self.get_links(resp)
+        assert '<http://www.iana.org/domains/example>; rel="original"' in links
+        assert '<http://localhost:80/pywb/http://www.iana.org/domains/example>; rel="timegate"' in links
+        assert self.make_timemap_link('http://www.iana.org/domains/example') in links
 
         assert resp.headers[MEMENTO_DATETIME] == 'Tue, 28 Jan 2014 05:15:39 GMT'
 
+
+    def test_timemap(self):
+        """
+        Test application/link-format timemap
+        """
+
+        resp = self.testapp.get('/pywb/timemap/*/http://example.com?example=1')
+        assert resp.status_int == 200
+        assert resp.content_type == LINK_FORMAT
+
+        lines = resp.body.split('\n')
+
+        assert len(lines) == 4
+
+        assert lines[0] == '<http://localhost:80/pywb/timemap/*/http://example.com?example=1>; \
+rel="self"; type="application/link-format"; from="Fri, 03 Jan 2014 03:03:21 GMT",'
+
+        assert lines[1] == '<http://localhost:80/pywb/http://example.com?example=1>; rel="timegate",'
+
+        assert lines[2] == '<http://localhost:80/pywb/20140103030321/http://example.com?example=1>; \
+rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT",'
+
+        assert lines[3] == '<http://localhost:80/pywb/20140103030341/http://example.com?example=1>; \
+rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"'
 
     # Below functions test pywb proxy mode behavior
     # They are designed to roughly conform to Memento protocol Pattern 1.3
@@ -126,7 +174,10 @@ class TestWb:
         assert resp.headers[VARY] == 'accept-datetime'
 
         # for memento
-        assert resp.headers[LINK] == '<http://www.iana.org/_css/2013.1/screen.css>; rel="original timegate"'
+        links = self.get_links(resp)
+        assert '<http://www.iana.org/_css/2013.1/screen.css>; rel="original timegate"' in links
+        #assert self.make_timemap_link('http://www.iana.org/_css/2013.1/screen.css') in links
+
         assert resp.headers[MEMENTO_DATETIME] == 'Mon, 27 Jan 2014 17:12:39 GMT'
 
 
@@ -148,7 +199,10 @@ class TestWb:
         assert resp.headers[VARY] == 'accept-datetime'
 
         # for memento
-        assert resp.headers[LINK] == '<http://www.iana.org/_css/2013.1/screen.css>; rel="original timegate"'
+        links = self.get_links(resp)
+        assert '<http://www.iana.org/_css/2013.1/screen.css>; rel="original timegate"' in links
+        #assert self.make_timemap_link('http://www.iana.org/_css/2013.1/screen.css') in links
+
         assert resp.headers[MEMENTO_DATETIME] == 'Sun, 26 Jan 2014 20:08:04 GMT'
 
 

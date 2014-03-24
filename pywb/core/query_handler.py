@@ -4,7 +4,7 @@ import urllib2
 from pywb.perms.perms_filter import make_perms_cdx_filter
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.cdx.cdxserver import create_cdx_server
-
+from views import MementoTimemapView
 
 #=================================================================
 DEFAULT_RULES = 'pywb/rules.yaml'
@@ -29,6 +29,8 @@ class QueryHandler(object):
         if html_query_view:
             self.views['html'] = html_query_view
 
+        self.views['timemap'] = MementoTimemapView()
+
     @staticmethod
     def init_from_config(config,
                          ds_rules_file=DEFAULT_RULES,
@@ -46,7 +48,7 @@ class QueryHandler(object):
         # cdx server only supports text and cdxobject for now
         if wb_url.mod == 'cdx_':
             output = 'text'
-        elif wb_url.mod == 'timemap_':
+        elif wb_url.mod == 'timemap':
             output = 'timemap'
         elif wb_url.is_query():
             output = 'html'

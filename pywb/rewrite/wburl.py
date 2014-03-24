@@ -59,12 +59,20 @@ class BaseWbUrl(object):
         self.type = type
 
     def is_replay(self):
-        return (self.type == self.REPLAY or
-                self.type == self.LATEST_REPLAY)
+        return self.is_replay_type(self.type)
 
     def is_query(self):
-        return (self.type == self.QUERY or
-                self.type == self.URL_QUERY)
+        return self.is_query_type(self.type)
+
+    @staticmethod
+    def is_replay_type(type_):
+        return (type_ == BaseWbUrl.REPLAY or
+                type_ == BaseWbUrl.LATEST_REPLAY)
+
+    @staticmethod
+    def is_query_type(type_):
+        return (type_ == BaseWbUrl.QUERY or
+                type_ == BaseWbUrl.URL_QUERY)
 
 
 #=================================================================
@@ -152,23 +160,33 @@ class WbUrl(BaseWbUrl):
     # Str Representation
     # ====================
     def to_str(self, **overrides):
-        atype = overrides.get('type', self.type)
+        type_ = overrides.get('type', self.type)
         mod = overrides.get('mod', self.mod)
         timestamp = overrides.get('timestamp', self.timestamp)
         end_timestamp = overrides.get('end_timestamp', self.end_timestamp)
         url = overrides.get('url', self.url)
 
-        if atype == self.QUERY or atype == self.URL_QUERY:
+        return self.to_wburl_str(url=url,
+                                 type=type_,
+                                 mod=mod,
+                                 timestamp=timestamp,
+                                 end_timestamp=end_timestamp)
+
+    @staticmethod
+    def to_wburl_str(url, type=BaseWbUrl.LATEST_REPLAY,
+                     mod='', timestamp='', end_timestamp=''):
+
+        if WbUrl.is_query_type(type):
             tsmod = ''
             if mod:
                 tsmod += mod + "/"
             if timestamp:
                 tsmod += timestamp
-            if end_timestamp:
-                tsmod += '-' + end_timestamp
+                if end_timestamp:
+                    tsmod += '-' + end_timestamp
 
             tsmod += "*/" + url
-            if atype == self.URL_QUERY:
+            if type == BaseWbUrl.URL_QUERY:
                 tsmod += "*"
             return tsmod
         else:
