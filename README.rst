@@ -19,7 +19,7 @@ Latest Changes
 
 * Support for optional LXML html-based parser for fastest possible parsing.
 
-* Memento: TimeMaps in `application/link-format` provided via the `/timemap/*/` query.. eg: `http://localhost:8080/pywb/timemap/*/http://example.com`
+* Memento: TimeMaps in ``application/link-format`` provided via the ``/timemap/*/`` query.. eg: ``http://localhost:8080/pywb/timemap/*/http://example.com``
 
 * Basic support for `Memento Protocol RFC7089 <http://www.mementoweb.org/guide/rfc/>`_ Memento, TimeGate and now TimeMaps.
   

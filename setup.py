@@ -73,6 +73,8 @@ setup(
         'WebTest',
         'pytest',
         'pytest-cov',
+        'fakeredis',
+        'mock',
        ],
     cmdclass={'test': PyTest},
     test_suite='',
