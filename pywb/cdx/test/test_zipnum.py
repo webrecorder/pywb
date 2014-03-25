@@ -23,14 +23,11 @@ org,iana)/domains/root/servers 20140126201227 http://www.iana.org/domains/root/s
 
 """
 
-
-
-
-from cdxserver_test import cdx_ops_test
-
+from test_cdxserver import cdx_ops_test
 from pywb import get_test_dir
+
+
 test_zipnum = get_test_dir() + 'zipcdx/zipnum-sample.idx'
-print test_zipnum
 
 def zip_ops_test(url, **kwargs):
     sources = test_zipnum
@@ -40,5 +37,3 @@ def zip_ops_test(url, **kwargs):
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-
-
