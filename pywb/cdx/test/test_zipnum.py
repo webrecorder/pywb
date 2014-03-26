@@ -23,7 +23,7 @@ org,iana)/domains/root/servers 20140126201227 http://www.iana.org/domains/root/s
 
 """
 
-from test_cdxserver import cdx_ops_test
+from test_cdxops import cdx_ops_test
 from pywb import get_test_dir
 
 

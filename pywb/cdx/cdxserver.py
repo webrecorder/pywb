@@ -58,15 +58,27 @@ class BaseCDXServer(object):
 
             fuzzy_query_params = self.fuzzy_query(query)
             if fuzzy_query_params:
-                return self.load_cdx_query(fuzzy_query_params)
+                return self.load_cdx(**fuzzy_query_params)
 
         msg = 'No Captures found for: ' + query.url
+        print self.fuzzy_query
+        print query.params
         raise NotFoundException(msg)
 
     def load_cdx(self, **params):
-        return self.load_cdx_query(CDXQuery(**params))
+        query = CDXQuery(**params)
 
-    def load_cdx_query(self, query):
+        url = query.url
+        key, end_key = calc_search_range(url=url,
+                                         match_type=query.match_type,
+                                         url_canon=self.url_canon)
+        query.set_key(key, end_key)
+
+        cdx_iter = self._load_cdx_query(query)
+
+        return self._check_cdx_iter(cdx_iter, query)
+
+    def _load_cdx_query(self, query):
         raise NotImplementedError('Implement in subclass')
 
     @staticmethod
@@ -93,7 +105,7 @@ class CDXServer(BaseCDXServer):
         # config argument.
         self._create_cdx_sources(paths, kwargs.get('config'))
 
-    def load_cdx_query(self, query):
+    def _load_cdx_query(self, query):
         """
         load CDX for query parameters ``params``.
         ``key`` (or ``url``) parameter specifies URL to query,
@@ -107,17 +119,7 @@ class CDXServer(BaseCDXServer):
         :type query: :class:`~pywb.cdx.query.CDXQuery`
         :rtype: iterator on :class:`~pywb.cdx.cdxobject.CDXObject`
         """
-        url = query.url
-        key, end_key = calc_search_range(url=url,
-                                         match_type=query.match_type,
-                                         url_canon=self.url_canon)
-        query.set_key(key, end_key)
-
-        cdx_iter = cdx_load(self.sources,
-                            query)
-                            #perms_checker=self.perms_checker)
-
-        return self._check_cdx_iter(cdx_iter, query)
+        return cdx_load(self.sources, query)
 
     def _create_cdx_sources(self, paths, config):
         """
@@ -201,9 +203,8 @@ class RemoteCDXServer(BaseCDXServer):
         else:
             raise Exception('Invalid remote cdx source: ' + str(source))
 
-    def load_cdx_query(self, query):
-        remote_iter = cdx_load([self.source], query, process=False)
-        return self._check_cdx_iter(remote_iter, query)
+    def _load_cdx_query(self, query):
+        return cdx_load([self.source], query, process=False)
 
     def __str__(self):
         return 'Remote CDX server serving from ' + str(self.sources[0])

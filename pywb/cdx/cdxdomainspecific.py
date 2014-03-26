@@ -108,7 +108,7 @@ class FuzzyQuery:
                   'filter': filter_,
                   'output': output}
 
-        return CDXQuery(**params)
+        return params
 
 
 #=================================================================

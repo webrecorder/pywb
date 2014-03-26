@@ -2,6 +2,8 @@ from pywb.utils.binsearch import iter_range
 from pywb.utils.loaders import SeekableTextFileReader
 
 from pywb.utils.wbexception import AccessException, NotFoundException
+from pywb.utils.wbexception import BadRequestException, WbException
+
 from query import CDXQuery
 
 import urllib
@@ -51,14 +53,14 @@ class RemoteCDXSource(CDXSource):
         if self.remote_processing:
             remote_query = query
         else:
-            # Only send url and matchType params to remote
+            # Only send url and matchType to remote
             remote_query = CDXQuery(url=query.url,
                                     match_type=query.match_type)
 
         urlparams = remote_query.urlencode()
 
         try:
-            request = urllib2.Request(self.remote_url, urlparams)
+            request = urllib2.Request(self.remote_url + '?' + urlparams)
 
             if self.cookie:
                 request.add_header('Cookie', self.cookie)
@@ -67,16 +69,15 @@ class RemoteCDXSource(CDXSource):
 
         except urllib2.HTTPError as e:
             if e.code == 403:
-                exc_msg = e.read()
-                msg = ('Blocked By Robots' if 'Blocked By Robots' in exc_msg
-                       else 'Excluded')
-
-                raise AccessException(msg)
+                raise AccessException('Access Denied')
             elif e.code == 404:
-                msg = 'No Captures found for: ' + query.url
-                raise NotFoundException(msg)
+                # return empty list for consistency with other cdx sources
+                # will be converted to 404 if no other retry
+                return []
+            elif e.code == 400:
+                raise BadRequestException()
             else:
-                raise
+                raise WbException('Invalid response from remote cdx server')
 
         return iter(response)
 
