@@ -13,14 +13,17 @@ HTML = HTMLRewriter
 
 #=================================================================
 def use_lxml_parser():
-    try:
-        import logging
-        from lxml_html_rewriter import LXMLHTMLRewriter
+    import logging
+    from lxml_html_rewriter import LXMLHTMLRewriter, LXML_SUPPORTED
+
+    if LXML_SUPPORTED:
         global HTML
         HTML = LXMLHTMLRewriter
         logging.debug('Using LXML Parser')
-    except ImportError:
-        logging.debug('Error Loading LXML Parser')
+        return True
+    else:
+        logging.debug('LXML Parser not available')
+        return False
 
 
 #=================================================================

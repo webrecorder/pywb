@@ -1,4 +1,10 @@
-import lxml.etree
+try:
+    import lxml.etree
+    LXML_SUPPORTED = True
+except ImportError:
+    LXML_SUPPORTED = False
+    pass
+
 import cgi
 import re
 

@@ -114,10 +114,7 @@ ur"""
 
 from pywb.rewrite.url_rewriter import UrlRewriter
 
-try:
-    from pywb.rewrite.lxml_html_rewriter import LXMLHTMLRewriter
-except ImportError:
-    pass
+from pywb.rewrite.lxml_html_rewriter import LXMLHTMLRewriter, LXML_SUPPORTED
 
 urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html', '/web/')
 
@@ -127,5 +124,13 @@ def parse(data, head_insert=None):
     print parser.rewrite(data) + parser.close()
 
 if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+    if LXML_SUPPORTED:
+        import doctest
+        doctest.testmod()
+else:
+    # skip if not supported and lxml not available
+    if not LXML_SUPPORTED:
+        import pytest
+        lxml = pytest.importorskip('lxml.etree')
+
+
