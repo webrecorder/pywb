@@ -244,11 +244,24 @@ def timestamp_to_sec(string):
     >>> timestamp_to_sec('20131226095010')
     1388051410
 
+    # rounds to end of 2014
     >>> timestamp_to_sec('2014')
     1420070399
     """
 
     return calendar.timegm(timestamp_to_datetime(string).utctimetuple())
+
+
+def sec_to_timestamp(secs):
+    """
+    >>> sec_to_timestamp(1388051410)
+    '20131226095010'
+
+    >>> sec_to_timestamp(1420070399)
+    '20141231235959'
+    """
+
+    return datetime_to_timestamp(datetime.datetime.utcfromtimestamp(secs))
 
 
 def timestamp_to_http_date(string):
