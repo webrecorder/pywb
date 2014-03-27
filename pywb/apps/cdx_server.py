@@ -7,7 +7,7 @@ from pywb.core.cdx_api_handler import create_cdx_server_app
 #=================================================================
 
 # cdx-server only config
-DEFAULT_CONFIG = 'pywb/cdx/config.yaml'
+DEFAULT_CONFIG = 'configs/cdx-server-config.yaml'
 
 application = init_app(create_cdx_server_app,
                        load_yaml=True,

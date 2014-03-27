@@ -106,7 +106,7 @@ def handle_exception(env, wb_router, exc, print_trace):
                                         status=status)
 
 #=================================================================
-DEFAULT_CONFIG_FILE = 'config.yaml'
+DEFAULT_CONFIG_FILE = 'configs/config.yaml'
 
 
 #=================================================================
@@ -116,8 +116,11 @@ def init_app(init_func, load_yaml=True, config_file=None):
     logging.debug('')
 
     if load_yaml:
-        if not config_file:
-            config_file = os.environ.get('PYWB_CONFIG_FILE')
+        # env setting overrides all others
+        env_config = os.environ.get('PYWB_CONFIG_FILE')
+        if env_config:
+            config_file = env_config
+
         if not config_file:
             config_file = DEFAULT_CONFIG_FILE
 

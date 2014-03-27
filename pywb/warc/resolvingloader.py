@@ -31,7 +31,7 @@ class ResolvingLoader:
 
         # two index lookups
         # Case 1: if mimetype is still warc/revisit
-        if cdx['mimetype'] == 'warc/revisit' and headers_record:
+        if cdx.get('mimetype') == 'warc/revisit' and headers_record:
             payload_record = self._load_different_url_payload(cdx,
                                                               headers_record,
                                                               failed_files,
