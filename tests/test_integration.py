@@ -91,6 +91,15 @@ class TestWb:
         assert 'wb.js' in resp.body
         assert '/pywb/20130729195151/http://www.iana.org/domains/example"' in resp.body
 
+    def test_replay_cdx_mod(self):
+        resp = self.testapp.get('/pywb/20140127171239cdx_/http://www.iana.org/_css/2013.1/print.css')
+        self._assert_basic_text(resp)
+
+        lines = resp.body.rstrip().split('\n')
+        assert len(lines) == 17
+        assert lines[0].startswith('org,iana)/_css/2013.1/print.css 20140127171239')
+
+
     def test_replay_identity_1(self):
         resp = self.testapp.get('/pywb/20140127171251id_/http://example.com')
 

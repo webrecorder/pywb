@@ -71,7 +71,7 @@ class QueryHandler(object):
 
         cdx_iter = self.load_cdx(wbrequest, params)
 
-        if wb_url.is_replay():
+        if output != 'text' and wb_url.is_replay():
             return (cdx_iter, self.cdx_load_callback(wbrequest))
 
         return self.make_cdx_response(wbrequest, params, cdx_iter)
