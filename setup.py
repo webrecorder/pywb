@@ -62,6 +62,7 @@ setup(
         ('sample_archive/warcs/', glob.glob('sample_archive/warcs/*')),
         ('sample_archive/text_content/',
             glob.glob('sample_archive/text_content/*')),
+        ('configs/', glob.glob('configs/*')),
         ],
     install_requires=[
         'rfc3987',
