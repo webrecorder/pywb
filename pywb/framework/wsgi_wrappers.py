@@ -106,7 +106,7 @@ def handle_exception(env, wb_router, exc, print_trace):
                                         status=status)
 
 #=================================================================
-DEFAULT_CONFIG_FILE = 'configs/config.yaml'
+DEFAULT_CONFIG_FILE = 'pywb/configs/config.yaml'
 
 
 #=================================================================
