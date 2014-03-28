@@ -165,8 +165,16 @@ def create_wb_router(passed_config={}):
                                   request_class=request_class))
 
         # cdx query handler
-        if route_config.get('enable_cdx_api', False):
-            routes.append(Route(name + '-cdx', CDXAPIHandler(query_handler)))
+        cdx_api_suffix = route_config.get('enable_cdx_api', False)
+
+        if cdx_api_suffix:
+            # if bool, use -cdx suffix, else use custom string
+            # as the suffix
+            if isinstance(cdx_api_suffix, bool):
+                cdx_api_suffix = '-cdx'
+
+            routes.append(Route(name + str(cdx_api_suffix),
+                                CDXAPIHandler(query_handler)))
 
     if config.get('debug_echo_env', False):
         routes.append(Route('echo_env', DebugEchoEnvHandler()))

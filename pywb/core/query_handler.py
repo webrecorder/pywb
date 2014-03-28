@@ -38,7 +38,9 @@ class QueryHandler(object):
 
         perms_policy = config.get('perms_policy')
 
-        cdx_server = create_cdx_server(config, ds_rules_file)
+        server_cls = config.get('server_cls')
+
+        cdx_server = create_cdx_server(config, ds_rules_file, server_cls)
 
         return QueryHandler(cdx_server, html_view, perms_policy)
 
@@ -108,8 +110,8 @@ class QueryHandler(object):
                          collapse_time=None,
                          replay_closest=100):
 
-        if wburl.type == wburl.URL_QUERY:
-            raise NotImplementedError('Url Query Not Yet Supported')
+        #if wburl.type == wburl.URL_QUERY:
+        #    raise NotImplementedError('Url Query Not Yet Supported')
 
         return {
             wburl.QUERY:
