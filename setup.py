@@ -54,7 +54,7 @@ setup(
         'pywb.apps'
         ],
     package_data={
-        'pywb': ['ui/*', 'static/*', '*.yaml'],
+        'pywb': ['ui/*', 'static/*', '*.yaml', 'configs/*'],
         },
     data_files=[
         ('sample_archive/cdx/', glob.glob('sample_archive/cdx/*')),
@@ -62,7 +62,6 @@ setup(
         ('sample_archive/warcs/', glob.glob('sample_archive/warcs/*')),
         ('sample_archive/text_content/',
             glob.glob('sample_archive/text_content/*')),
-        ('configs/', glob.glob('configs/*')),
         ],
     install_requires=[
         'rfc3987',
