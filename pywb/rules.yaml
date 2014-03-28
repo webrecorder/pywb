@@ -58,4 +58,6 @@ rules:
     #=================================================================
     # Applies to all urls -- should be last
     - url_prefix: ''
-      fuzzy_lookup: '[&?](?:_|uncache)=[\d]+[&]?'
+      fuzzy_lookup:
+        match: '(.*)[&?](?:_|uncache)=[\d]+[&]?'
+        filter: '=urlkey:{0}'

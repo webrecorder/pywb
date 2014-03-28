@@ -88,7 +88,8 @@ class FuzzyQuery:
             matched_rule = rule
 
             if len(m.groups()) == 1:
-                filter_.append('~urlkey:' + m.group(1))
+                #filter_.append('~urlkey:' + m.group(1))
+                filter_.append(rule.filter.format(m.group(1)))
 
             break
 
@@ -113,15 +114,19 @@ class FuzzyQuery:
 
 #=================================================================
 class CDXDomainSpecificRule(BaseRule):
+    DEFAULT_FILTER = '~urlkey:{0}'
+
     def __init__(self, name, config):
         super(CDXDomainSpecificRule, self).__init__(name, config)
 
         if isinstance(config, basestring):
             self.regex = re.compile(config)
             self.replace = None
+            self.filter = self.DEFAULT_FILTER
         else:
             self.regex = re.compile(config.get('match'))
             self.replace = config.get('replace')
+            self.filter = config.get('filter', self.DEFAULT_FILTER)
 
     def unsurt(self):
         """

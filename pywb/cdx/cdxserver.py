@@ -35,9 +35,6 @@ class BaseCDXServer(object):
         if not self.url_canon:
             self.url_canon = UrlCanonicalizer(surt_ordered)
 
-        # set perms checker, if any
-        #self.perms_checker = kwargs.get('perms_checker')
-
     def _check_cdx_iter(self, cdx_iter, query):
         """ Check cdx iter semantics
         If `cdx_iter` is empty (no matches), check if fuzzy matching
@@ -61,17 +58,18 @@ class BaseCDXServer(object):
                 return self.load_cdx(**fuzzy_query_params)
 
         msg = 'No Captures found for: ' + query.url
-        print self.fuzzy_query
-        print query.params
         raise NotFoundException(msg)
+
+    def _calc_search_keys(self, query):
+        return calc_search_range(url=query.url,
+                                 match_type=query.match_type,
+                                 url_canon=self.url_canon)
 
     def load_cdx(self, **params):
         query = CDXQuery(**params)
 
-        url = query.url
-        key, end_key = calc_search_range(url=url,
-                                         match_type=query.match_type,
-                                         url_canon=self.url_canon)
+        key, end_key = self._calc_search_keys(query)
+
         query.set_key(key, end_key)
 
         cdx_iter = self._load_cdx_query(query)
@@ -211,7 +209,7 @@ class RemoteCDXServer(BaseCDXServer):
 
 
 #=================================================================
-def create_cdx_server(config, ds_rules_file=None):
+def create_cdx_server(config, ds_rules_file=None, server_cls=None):
     if hasattr(config, 'get'):
         paths = config.get('index_paths')
         surt_ordered = config.get('surt_ordered', True)
@@ -223,10 +221,11 @@ def create_cdx_server(config, ds_rules_file=None):
 
     logging.debug('CDX Surt-Ordered? ' + str(surt_ordered))
 
-    if isinstance(paths, str) and is_http(paths):
-        server_cls = RemoteCDXServer
-    else:
-        server_cls = CDXServer
+    if not server_cls:
+        if isinstance(paths, str) and is_http(paths):
+            server_cls = RemoteCDXServer
+        else:
+            server_cls = CDXServer
 
     return server_cls(paths,
                       config=pass_config,
