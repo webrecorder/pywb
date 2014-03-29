@@ -13,8 +13,8 @@ from pywb.utils.wbexception import WbException
 
 
 #=================================================================
-ArcWarcRecord = collections.namedtuple('ArchiveRecord',
-                                       'type, rec_headers, ' +
+ArcWarcRecord = collections.namedtuple('ArcWarcRecord',
+                                       'format, rec_type, rec_headers, ' +
                                        'stream, status_headers')
 
 
@@ -32,7 +32,7 @@ class ArchiveLoadFailed(WbException):
 #=================================================================
 class ArcWarcRecordLoader:
     # Standard ARC headers
-    ARC_HEADERS = ["uri", "ip-address", "creation-date",
+    ARC_HEADERS = ["uri", "ip-address", "archive-date",
                    "content-type", "length"]
 
     def __init__(self, loader=None, cookie_maker=None, block_size=8192):
@@ -49,35 +49,37 @@ class ArcWarcRecordLoader:
         self.http_parser = StatusAndHeadersParser(['HTTP/1.0', 'HTTP/1.1'])
 
     def load(self, url, offset, length):
-        url_parts = urlparse.urlsplit(url)
-
-        #loader = self.loaders.get(url_parts.scheme)
-        #if not loader:
-        #    raise ArchiveLoadFailed('Unknown Protocol', url)
-
         try:
             length = int(length)
         except:
             length = -1
 
-        raw = self.loader.load(url, long(offset), length)
-
+        stream = self.loader.load(url, long(offset), length)
         decomp_type = 'gzip'
 
         # Create decompressing stream
-        stream = DecompressingBufferedReader(stream=raw,
+        stream = DecompressingBufferedReader(stream=stream,
                                              decomp_type=decomp_type,
                                              block_size=self.block_size)
 
+        return self.parse_record_stream(stream)
+
+    def parse_record_stream(self, stream):
         (the_format, rec_headers) = self._detect_type_load_headers(stream)
 
         if the_format == 'arc':
-            rec_type = 'response'
-            length = int(rec_headers.get_header('length'))
-
+            if rec_headers.get_header('uri').startswith('filedesc://'):
+                rec_type = 'arc_header'
+                length = 0
+            else:
+                rec_type = 'response'
+                length = int(rec_headers.get_header('length'))
         elif the_format == 'warc':
             rec_type = rec_headers.get_header('WARC-Type')
             length = int(rec_headers.get_header('Content-Length'))
+
+        # ================================================================
+        # handle different types of records
 
         # special case: empty w/arc record (hopefully a revisit)
         if length == 0:
@@ -90,6 +92,12 @@ class ArcWarcRecordLoader:
                             rec_headers.get_header('Content-Type'))]
 
             status_headers = StatusAndHeaders('200 OK', content_type)
+
+        elif (rec_type == 'warcinfo' or
+              rec_type == 'arc_header' or
+              rec_type == 'request'):
+            # not parsing these for now
+            status_headers = StatusAndHeaders('204 No Content', [])
 
         # special case: http 0.9 response, no status or headers
         #elif rec_type == 'response':
@@ -109,7 +117,7 @@ class ArcWarcRecordLoader:
         if remains > 0:
             stream = LimitReader.wrap_stream(stream, remains)
 
-        return ArcWarcRecord((the_format, rec_type),
+        return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, status_headers)
 
     def _detect_type_load_headers(self, stream):

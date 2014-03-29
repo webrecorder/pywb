@@ -256,7 +256,8 @@ def load_test_archive(test_file, offset, length):
 
     archive = testloader.load(path, offset, length)
 
-    pprint.pprint((archive.type, archive.rec_headers, archive.status_headers))
+    pprint.pprint(((archive.format, archive.rec_type),
+                   archive.rec_headers, archive.status_headers))
 
 
 #==============================================================================
