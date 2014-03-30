@@ -4,25 +4,33 @@ from pywb.utils.timeutils import iso_date_to_timestamp
 from recordloader import ArcWarcRecordLoader
 
 import surt
-
 import hashlib
 import base64
-import re
 
-from collections import OrderedDict
+import re
 
 
 #=================================================================
 class ArchiveIndexer(object):
+    """
+    Generate a CDX index for WARC and ARC files, both gzip chunk
+    compressed and uncompressed
+
+    The indexer will automatically detect format, and decompress
+    if necessary
+    """
     def __init__(self, filename):
         self.filename = filename
         self.loader = ArcWarcRecordLoader()
 
     def make_index(self):
         self.fh = open(self.filename, 'r')
+
+        # assume gzip until proven otherwise
         gf = GzipFile(fileobj=self.fh)
 
         member = gf.read_member()
+
         offset = self.fh.tell()
 
         print ' CDX N b a m s k r M S V g'
@@ -58,14 +66,13 @@ class ArchiveIndexer(object):
         if not digest:
             digest = '-'
 
-        result = OrderedDict()
-        result['urlkey'] = surt.surt(url)
-        result['timestamp'] = timestamp
-        result['url'] = url
-        result['mimetype'] = mime
-        result['statuscode'] = status
-        result['digest'] = digest
-        return result
+        #result = OrderedDict()
+        return [ surt.surt(url),
+                 timestamp,
+                 url,
+                 mime,
+                 status,
+                 digest ]
 
     def _parse_arc_record(self, record):
         if record.rec_type == 'arc_header':
@@ -76,14 +83,12 @@ class ArchiveIndexer(object):
         mime = record.rec_headers.get_header('content-type')
         mime = self._extract_mime(mime)
 
-        result = OrderedDict()
-        result['urlkey'] = surt.surt(url)
-        result['timestamp'] = record.rec_headers.get_header('archive-date')
-        result['url'] = url
-        result['mimetype'] = mime
-        result['statuscode'] = status
-        result['digest'] = '-'
-        return result
+        return [ surt.surt(url),
+                 record.rec_headers.get_header('archive-date'),
+                 url,
+                 mime,
+                 status,
+                 '-' ]
 
     MIME_RE = re.compile('[; ]')
 
@@ -107,27 +112,28 @@ class ArchiveIndexer(object):
             new_offset = self.fh.tell()
             return new_offset
 
-        result['redirect'] = '-'
-        result['metaflags'] = '-'
-
-        #if result['mimetype'] != 'warc/revisit':
-        #    result['digest'] = '-'
-
-        if result['digest'] == '-':
+        # generate digest if doesn't exist
+        if result[-1] == '-':
             digester = hashlib.sha1()
             self.read_rest(record.stream, digester)
-            result['digest'] = base64.b32encode(digester.digest())
+            result[-1] = base64.b32encode(digester.digest())
+        else:
+            self.read_rest(record.stream)
 
-        self.read_rest(member)
+        result.append('- -')
+
+        #self.read_rest(member)
+        #print len(member.read(16))
+        b = member.read(5)
 
         new_offset = self.fh.tell()
         length = new_offset - offset
 
-        result['length'] = str(length)
-        result['offset'] = str(offset)
-        result['filename'] = self.filename
+        result.append(str(length))
+        result.append(str(offset))
+        result.append(self.filename)
 
-        print ' '.join(v for k, v in result.iteritems())
+        print ' '.join(result)
 
         return new_offset
 
