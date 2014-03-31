@@ -126,8 +126,8 @@ StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Acc
 <!doctype html>
 <html>
 
-# Test cdx w/ revisit
->>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 1864 example.warc.gz 1043 333 example.warc.gz')
+# Test cdx w/ revisit, also no length specified
+>>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - - 1864 example.warc.gz 1043 333 example.warc.gz')
 StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Accept-Ranges', 'bytes'),
   ('Cache-Control', 'max-age=604800'),
   ('Content-Type', 'text/html'),
@@ -158,6 +158,7 @@ StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Acc
   ('Content-Length', '1270')])
 <!doctype html>
 <html>
+
 
 # Test Url Agnostic Revisit Resolving
 # ==============================================================================
@@ -218,6 +219,20 @@ Exception: ArchiveLoadFailed
 Exception: ArchiveLoadFailed
 
 
+# Test EOF
+>>> parse_stream_error(stream=None, statusline='', known_format='warc')
+Exception: EOFError
+
+>>> parse_stream_error(stream=None, statusline='', known_format='arc')
+Exception: EOFError
+
+# Invalid ARC
+>>> parse_stream_error(stream=None, statusline='ABC', known_format='arc')
+Exception: ArchiveLoadFailed
+
+# Invalid WARC
+>>> parse_stream_error(stream=None, statusline='ABC', known_format='warc')
+Exception: ArchiveLoadFailed
 """
 
 import os
@@ -264,6 +279,7 @@ def load_test_archive(test_file, offset, length):
 def load_orig_cdx(self):
     return [CDXObject(URL_AGNOSTIC_ORIG_CDX)]
 
+
 #==============================================================================
 def load_from_cdx_test(cdx):
     resolve_loader = ResolvingLoader(test_warc_dir)
@@ -275,6 +291,15 @@ def load_from_cdx_test(cdx):
         sys.stdout.write(stream.readline())
     except ArchiveLoadFailed as e:
         print 'Exception: ' + e.__class__.__name__
+
+
+#==============================================================================
+def parse_stream_error(**params):
+    try:
+        return ArcWarcRecordLoader().parse_record_stream(**params)
+    except Exception as e:
+        print 'Exception: ' + e.__class__.__name__
+
 
 if __name__ == "__main__":
     import doctest

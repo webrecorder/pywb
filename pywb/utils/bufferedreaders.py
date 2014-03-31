@@ -29,30 +29,48 @@ class DecompressingBufferedReader(object):
 
     DECOMPRESSORS = {'gzip': gzip_decompressor}
 
-    def __init__(self, stream, block_size=1024, decomp_type=None):
+    def __init__(self, stream, block_size=1024,
+                 decomp_type=None,
+                 starting_data=None):
         self.stream = stream
         self.block_size = block_size
 
+        self._init_decomp(decomp_type)
+
+        self.buff = None
+        self.starting_data = starting_data
+        self.num_read = 0
+        self.buff_size = 0
+
+    def _init_decomp(self, decomp_type):
         if decomp_type:
             try:
+                self.decomp_type = decomp_type
                 self.decompressor = self.DECOMPRESSORS[decomp_type.lower()]()
             except KeyError:
                 raise Exception('Decompression type not supported: ' +
                                 decomp_type)
         else:
+            self.decomp_type = None
             self.decompressor = None
 
-        self.buff = None
-        self.num_read = 0
-        self.buff_size = 0
-
     def _fillbuff(self, block_size=None):
-        if not block_size:
-            block_size = self.block_size
+        if not self.empty():
+            return
 
-        if not self.buff or self.buff.tell() == self.buff_size:
+        # can't read past next member
+        if self.rem_length() > 0:
+            return
+
+        if self.starting_data:
+            data = self.starting_data
+            self.starting_data = None
+        else:
+            if not block_size:
+                block_size = self.block_size
             data = self.stream.read(block_size)
-            self._process_read(data)
+
+        self._process_read(data)
 
     def _process_read(self, data):
         data = self._decompress(data)
@@ -81,6 +99,9 @@ class DecompressingBufferedReader(object):
         or at a buffer boundary. If at a boundary, the subsequent
         call will fill buffer anew.
         """
+        if length == 0:
+            return ''
+
         self._fillbuff()
         return self.buff.read(length)
 
@@ -91,8 +112,12 @@ class DecompressingBufferedReader(object):
         If no newline found at end, try filling buffer again in case
         at buffer boundary.
         """
+        if length == 0:
+            return ''
+
         self._fillbuff()
         linebuff = self.buff.readline(length)
+
         # we may be at a boundary
         while not linebuff.endswith('\n'):
             if length:
@@ -102,12 +127,32 @@ class DecompressingBufferedReader(object):
 
             self._fillbuff()
 
-            if self.buff_size == 0:
+            if self.empty():
                 break
 
             linebuff += self.buff.readline(length)
 
         return linebuff
+
+    def empty(self):
+        return not self.buff or self.buff.tell() >= self.buff_size
+
+    def read_next_member(self):
+        if not self.decompressor or not self.decompressor.unused_data:
+            return False
+
+        self.starting_data = self.decompressor.unused_data
+        self._init_decomp(self.decomp_type)
+        return True
+
+    def rem_length(self):
+        rem = 0
+        if self.buff:
+            rem = self.buff_size - self.buff.tell()
+
+        if self.decompressor and self.decompressor.unused_data:
+            rem += len(self.decompressor.unused_data)
+        return rem
 
     def close(self):
         if self.stream:
@@ -123,37 +168,20 @@ class ChunkedDataException(Exception):
 #=================================================================
 class ChunkedDataReader(DecompressingBufferedReader):
     r"""
-    A ChunkedDataReader is a BufferedReader which also supports de-chunking
-    of the data if it happens to be http 'chunk-encoded'.
+    A ChunkedDataReader is a DecompressingBufferedReader
+    which also supports de-chunking of the data if it happens
+    to be http 'chunk-encoded'.
 
     If at any point the chunked header is not available, the stream is
     assumed to not be chunked and no more dechunking occurs.
-
-    Properly formatted chunked data:
-    >>> c = ChunkedDataReader(BytesIO("4\r\n1234\r\n0\r\n\r\n"));
-    >>> c.read() + c.read()
-    '1234'
-
-    Non-chunked data:
-    >>> ChunkedDataReader(BytesIO("xyz123!@#")).read()
-    'xyz123!@#'
-
-    Starts like chunked data, but isn't:
-    >>> c = ChunkedDataReader(BytesIO("1\r\nxyz123!@#"));
-    >>> c.read() + c.read()
-    '1\r\nx123!@#'
-
-    Chunked data cut off part way through:
-    >>> c = ChunkedDataReader(BytesIO("4\r\n1234\r\n4\r\n12"));
-    >>> c.read() + c.read()
-    '123412'
     """
+    def __init__(self, stream, raise_exceptions=False, **kwargs):
+        super(ChunkedDataReader, self).__init__(stream, **kwargs)
+        self.all_chunks_read = False
+        self.not_chunked = False
 
-    all_chunks_read = False
-    not_chunked = False
-
-    # if False, we'll use best-guess fallback for parse errors
-    raise_chunked_data_exceptions = False
+        # if False, we'll use best-guess fallback for parse errors
+        self.raise_chunked_data_exceptions = raise_exceptions
 
     def _fillbuff(self, block_size=None):
         if self.not_chunked:
@@ -162,7 +190,7 @@ class ChunkedDataReader(DecompressingBufferedReader):
         if self.all_chunks_read:
             return
 
-        if not self.buff or self.buff.tell() >= self.buff_size:
+        if self.empty():
             length_header = self.stream.readline(64)
             self._data = ''
 
@@ -222,7 +250,3 @@ class ChunkedDataReader(DecompressingBufferedReader):
 
         # hand to base class for further processing
         self._process_read(self._data)
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

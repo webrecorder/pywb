@@ -49,6 +49,9 @@ class ArcWarcRecordLoader:
         self.http_parser = StatusAndHeadersParser(['HTTP/1.0', 'HTTP/1.1'])
 
     def load(self, url, offset, length):
+        """ Load a single record from given url at offset with length
+        and parse as either warc or arc record
+        """
         try:
             length = int(length)
         except:
@@ -64,8 +67,19 @@ class ArcWarcRecordLoader:
 
         return self.parse_record_stream(stream)
 
-    def parse_record_stream(self, stream):
-        (the_format, rec_headers) = self._detect_type_load_headers(stream)
+    def parse_record_stream(self, stream,
+                            statusline=None, known_format=None):
+        """ Parse file-like stream and return an ArcWarcRecord
+        encapsulating the record headers, http headers (if any),
+        and a stream limited to the remainder of the record.
+
+        Pass statusline and known_format to detect_type_loader_headers()
+        to faciliate parsing.
+        """
+        (the_format, rec_headers) = (self.
+                                     _detect_type_load_headers(stream,
+                                                               statusline,
+                                                               known_format))
 
         if the_format == 'arc':
             if rec_headers.get_header('uri').startswith('filedesc://'):
@@ -73,10 +87,18 @@ class ArcWarcRecordLoader:
                 length = 0
             else:
                 rec_type = 'response'
-                length = int(rec_headers.get_header('length'))
+                length = rec_headers.get_header('length')
+
         elif the_format == 'warc':
             rec_type = rec_headers.get_header('WARC-Type')
-            length = int(rec_headers.get_header('Content-Length'))
+            length = rec_headers.get_header('Content-Length')
+
+        try:
+            length = int(length)
+            if length < 0:
+                length = 0
+        except ValueError:
+            length = 0
 
         # ================================================================
         # handle different types of records
@@ -114,35 +136,44 @@ class ArcWarcRecordLoader:
         # should always be valid, but just in case, still stream if
         # content-length was not set
         remains = length - status_headers.total_len
-        if remains > 0:
+        if remains >= 0:
             stream = LimitReader.wrap_stream(stream, remains)
 
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, status_headers)
 
-    def _detect_type_load_headers(self, stream):
-        """
-        Try parsing record as WARC, then try parsing as ARC.
+    def _detect_type_load_headers(self, stream,
+                                  statusline=None, known_format=None):
+        """ If known_format is specified ('warc' or 'arc'),
+        parse only as that format.
+
+        Otherwise, try parsing record as WARC, then try parsing as ARC.
         if neither one succeeds, we're out of luck.
         """
 
-        statusline = None
+        if known_format != 'arc':
+            # try as warc first
+            try:
+                rec_headers = self.warc_parser.parse(stream, statusline)
+                return 'warc', rec_headers
+            except StatusAndHeadersParserException as se:
+                if known_format == 'warc':
+                    msg = 'Invalid WARC record, first line: '
+                    raise ArchiveLoadFailed(msg + str(se.statusline))
 
-        # try as warc first
-        try:
-            rec_headers = self.warc_parser.parse(stream)
-            return 'warc', rec_headers
-        except StatusAndHeadersParserException as se:
-            statusline = se.statusline
-            pass
+                statusline = se.statusline
+                pass
 
         # now try as arc
         try:
             rec_headers = self.arc_parser.parse(stream, statusline)
             return 'arc', rec_headers
         except StatusAndHeadersParserException as se:
-            msg = 'Unknown archive format, first line: ' + str(se.statusline)
-            raise ArchiveLoadFailed(msg)
+            if known_format == 'arc':
+                msg = 'Invalid WARC record, first line: '
+            else:
+                msg = 'Unknown archive format, first line: '
+            raise ArchiveLoadFailed(msg + str(se.statusline))
 
 
 #=================================================================
@@ -155,15 +186,24 @@ class ARCHeadersParser:
         total_read = 0
 
         # if headerline passed in, use that
-        if not headerline:
+        if headerline is None:
             headerline = stream.readline()
 
         total_read = len(headerline)
+
+        if total_read == 0:
+            raise EOFError()
+
         headerline = headerline.rstrip()
 
-        parts = headerline.split()
-
         headernames = self.headernames
+
+        # if arc header, consume next two lines
+        if headerline.startswith('filedesc://'):
+            stream.readline()  # skip version
+            stream.readline()  # skip header spec, use preset one
+
+        parts = headerline.split(' ')
 
         if len(parts) != len(headernames):
             msg = 'Wrong # of headers, expected arc headers {0}, Found {1}'

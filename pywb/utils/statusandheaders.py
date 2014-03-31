@@ -68,7 +68,7 @@ class StatusAndHeadersParser(object):
     def __init__(self, statuslist):
         self.statuslist = statuslist
 
-    def parse(self, stream):
+    def parse(self, stream, full_statusline=None):
         """
         parse stream for status line and headers
         return a StatusAndHeaders object
@@ -76,8 +76,14 @@ class StatusAndHeadersParser(object):
         support continuation headers starting with space or tab
         """
         # status line w newlines intact
-        full_statusline = stream.readline()
+        if full_statusline is None:
+            full_statusline = stream.readline()
+
         statusline, total_read = _strip_count(full_statusline, 0)
+
+        # at end of stream
+        if total_read == 0:
+            raise EOFError()
 
         protocol_status = self.split_prefix(statusline, self.statuslist)
 

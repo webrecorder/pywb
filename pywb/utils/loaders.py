@@ -146,17 +146,28 @@ class LimitReader(object):
         self.stream = stream
         self.limit = limit
 
-        if not self.limit:
-            self.limit = 1
-
     def read(self, length=None):
-        length = min(length, self.limit) if length else self.limit
+        if length is not None:
+            length = min(length, self.limit)
+        else:
+            length = self.limit
+
+        if length == 0:
+            return ''
+
         buff = self.stream.read(length)
         self.limit -= len(buff)
         return buff
 
     def readline(self, length=None):
-        length = min(length, self.limit) if length else self.limit
+        if length is not None:
+            length = min(length, self.limit)
+        else:
+            length = self.limit
+
+        if length == 0:
+            return ''
+
         buff = self.stream.readline(length)
         self.limit -= len(buff)
         return buff
@@ -172,7 +183,7 @@ class LimitReader(object):
         """
         try:
             content_length = int(content_length)
-            if content_length > 0:
+            if content_length >= 0:
                 stream = LimitReader(stream, content_length)
 
         except (ValueError, TypeError):
@@ -199,11 +210,11 @@ class SeekableTextFileReader(object):
     def getsize(self):
         return self.size
 
-    def read(self):
-        return self.fh.read()
+    def read(self, length=None):
+        return self.fh.read(length)
 
-    def readline(self):
-        return self.fh.readline()
+    def readline(self, length=None):
+        return self.fh.readline(length)
 
     def seek(self, offset):
         return self.fh.seek(offset)

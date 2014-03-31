@@ -10,10 +10,31 @@
 >>> read_multiple(LimitReader(BytesIO('abcdefghjiklmnopqrstuvwxyz'), 10), [2, 2, 20])
 'efghji'
 
+# zero-length read
+>>> LimitReader(BytesIO('a'), 0).readline(0)
+''
+
+# don't wrap if invalid length
+>>> b = BytesIO('b')
+>>> LimitReader.wrap_stream(b, 'abc') == b
+True
+
 # BlockLoader Tests (includes LimitReader)
 # Ensure attempt to read more than 100 bytes, reads exactly 100 bytes
 >>> len(BlockLoader().load(test_cdx_dir + 'iana.cdx', 0, 100).read('400'))
 100
+
+# no length specified, read full amount requested
+>>> len(BlockLoader().load('file://' + test_cdx_dir + 'example.cdx', 0, -1).read(400))
+400
+
+# HMAC Cookie Maker
+>>> BlockLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read()
+'Example Domain'
+
+# test with extra id, ensure 4 parts of the A-B=C-D form are present
+>>> len(re.split('[-=]', HMACCookieMaker('test', 'test', 5).make('extra')))
+4
 
 # SeekableTextFileReader Test
 >>> sr = SeekableTextFileReader(test_cdx_dir + 'iana.cdx')
@@ -23,47 +44,21 @@
 >>> seek_read_full(sr, 100)
 'org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126200826 http://www.iana.org/_css/2013.1/fonts/Inconsolata.otf application/octet-stream 200 LNMEDYOENSOEI5VPADCKL3CB6N3GWXPR - - 34054 620049 iana.warc.gz\\n'
 
-# Buffered Reader Tests
-#=================================================================
-
-#DecompressingBufferedReader readline()
->>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb')).readline()
-' CDX N b a m s k r M S V g\\n'
-
->>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb'), decomp_type = 'gzip').readline()
-' CDX N b a m s k r M S V g\\n'
-
-#DecompressingBufferedReader readline() with decompression (zipnum file, no header)
->>> DecompressingBufferedReader(open(test_zip_dir + 'zipnum-sample.cdx.gz', 'rb'), decomp_type = 'gzip').readline()
-'com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz\\n'
-
->>> BlockLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read()
-'Example Domain'
-
-# test very small block size
->>> dbr = DecompressingBufferedReader(BytesIO('ABCDEFG\\nHIJKLMN\\nOPQR\\nXYZ'), block_size = 3)
->>> dbr.readline(); dbr.readline(4); dbr.readline(); dbr.readline(); dbr.readline(2); dbr.readline(); dbr.readline()
-'ABCDEFG\\n'
-'HIJK'
-'LMN\\n'
-'OPQR\\n'
-'XY'
-'Z'
-''
+# seek, read, close
+>>> r = sr.seek(0); sr.read(10); sr.close()
+' CDX N b a'
 """
 
 
 #=================================================================
-import os
-from io import BytesIO, open
+import re
+from io import BytesIO
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker
 from pywb.utils.loaders import LimitReader, SeekableTextFileReader
-from pywb.utils.bufferedreaders import DecompressingBufferedReader
 
 from pywb import get_test_dir
-#test_cdx_dir = os.path.dirname(os.path.realpath(__file__)) + '/../sample-data/'
+
 test_cdx_dir = get_test_dir() + 'cdx/'
-test_zip_dir = get_test_dir() + 'zipcdx/'
 
 def read_multiple(reader, inc_reads):
     result = None
