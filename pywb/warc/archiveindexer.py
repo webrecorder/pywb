@@ -21,17 +21,17 @@ class ArchiveIndexer(object):
     The indexer will automatically detect format, and decompress
     if necessary
     """
-    def __init__(self, fileobj, filename, out=sys.stdout, sort=False):
+    def __init__(self, fileobj, filename,
+                 out=sys.stdout, sort=False, writer=None):
         self.fh = fileobj
         self.filename = filename
         self.loader = ArcWarcRecordLoader()
         self.offset = 0
         self.known_format = None
 
-        if not out:
-            out = sys.stdout
-
-        if sort:
+        if writer:
+            self.writer = writer
+        elif sort:
             self.writer = SortedCDXWriter(out)
         else:
             self.writer = CDXWriter(out)
@@ -260,14 +260,10 @@ class CDXWriter(object):
 
 
 #=================================================================
-class SortedCDXWriter(object):
+class SortedCDXWriter(CDXWriter):
     def __init__(self, out):
-        self.out = out
+        super(SortedCDXWriter, self).__init__(out)
         self.sortlist = []
-
-    def start(self):
-        self.out.write(' CDX N b a m s k r M S V g\n')
-        pass
 
     def write(self, line):
         line = ' '.join(line) + '\n'
@@ -277,19 +273,114 @@ class SortedCDXWriter(object):
         self.out.write(''.join(self.sortlist))
 
 
+class MultiFileMixin(object):
+    def start_all(self):
+        super(MultiFileMixin, self).start()
+
+    def end_all(self):
+        super(MultiFileMixin, self).end()
+
+    def start(self):
+        pass
+
+    def end(self):
+        pass
+
+
+class MultiFileCDXWriter(MultiFileMixin, CDXWriter):
+    pass
+
+
+class MultiFileSortedCDXWriter(MultiFileMixin, SortedCDXWriter):
+    pass
+
+
 #=================================================================
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print 'USAGE {0} <warc or file>'.format(sys.argv[0])
-        exit(0)
+import os
+from argparse import ArgumentParser, RawTextHelpFormatter
 
-    filename = sys.argv[1]
 
-    if len(sys.argv) >= 3:
-        sort = sys.argv[2] == '--sort'
+def iter_file_or_dir(inputs):
+    for input_ in inputs:
+        if not os.path.isdir(input_):
+            yield input_, os.path.basename(input_)
+        else:
+            for filename in os.listdir(input_):
+                yield os.path.join(input_, filename), filename
+
+
+def index_to_file(inputs, output, sort):
+    if output == '-':
+        outfile = sys.stdout
     else:
-        sort = False
+        outfile = open(output, 'w')
 
-    with open(filename, 'r') as fh:
-         index = ArchiveIndexer(fh, filename, sort=sort)
-         index.make_index()
+    if sort:
+        writer = MultiFileSortedCDXWriter(outfile)
+    else:
+        writer = MultiFileCDXWriter(outfile)
+
+    try:
+        infile = None
+        writer.start_all()
+
+        for fullpath, filename in iter_file_or_dir(inputs):
+            with open(fullpath, 'r') as infile:
+                ArchiveIndexer(fileobj=infile,
+                               filename=filename,
+                               writer=writer).make_index()
+    finally:
+        writer.end_all()
+        if infile:
+            infile.close()
+
+
+def remove_ext(filename):
+    for ext in ('.arc', '.arc.gz', '.warc', '.warc.gz'):
+        if filename.endswith(ext):
+            return filename[:-len(ext)]
+    return filename
+
+
+def index_to_dir(inputs, output, sort):
+    for fullpath, filename in iter_file_or_dir(inputs):
+
+        outpath = remove_ext(filename) + '.cdx'
+        outpath = os.path.join(output, outpath)
+
+        with open(outpath, 'w') as outfile:
+            with open(fullpath, 'r') as infile:
+                ArchiveIndexer(fileobj=infile,
+                               filename=filename,
+                               sort=sort,
+                               out=outfile).make_index()
+
+
+def main():
+    description = 'description'
+    epilog = 'epilog'
+
+    sort_help = 'sort help'
+    output_help = 'output help'
+    input_help = 'input help'
+
+    parser = ArgumentParser(description=description,
+                            epilog=epilog,
+                            formatter_class=RawTextHelpFormatter)
+
+    parser.add_argument('--sort', action='store_true', help=sort_help)
+    parser.add_argument('output', help=output_help)
+    parser.add_argument('inputs', nargs='+', help=input_help)
+
+    cmd = parser.parse_args()
+    #print cmd
+    #return
+
+    if cmd.output != '-' and os.path.isdir(cmd.output):
+        index_to_dir(cmd.inputs, cmd.output, cmd.sort)
+    else:
+        index_to_file(cmd.inputs, cmd.output, cmd.sort)
+
+
+if __name__ == '__main__':
+    main()
