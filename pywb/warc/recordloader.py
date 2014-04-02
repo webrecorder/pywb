@@ -31,7 +31,8 @@ class ArchiveLoadFailed(WbException):
 
 #=================================================================
 class ArcWarcRecordLoader:
-    # Standard ARC headers
+    # Standard ARC v1.0 headers
+    # TODO: support ARV v2.0 also?
     ARC_HEADERS = ["uri", "ip-address", "archive-date",
                    "content-type", "length"]
 

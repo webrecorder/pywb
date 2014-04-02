@@ -46,12 +46,8 @@ class RedisResolver:
         self.redis = redis.StrictRedis.from_url(redis_url)
 
     def __call__(self, filename):
-        try:
-            redis_val = self.redis.hget(self.key_prefix + filename, 'path')
-            return [redis_val] if redis_val else None
-        except Exception as e:
-            print e
-            return None
+        redis_val = self.redis.hget(self.key_prefix + filename, 'path')
+        return [redis_val] if redis_val else []
 
     def __repr__(self):
         return "RedisResolver('{0}')".format(self.redis_url)
@@ -68,13 +64,13 @@ class PathIndexResolver:
 
         def gen_list(result):
             for pathline in result:
-                path = pathline.split('\t')
-                if len(path) == 2:
-                    yield path[1]
+                paths = pathline.split('\t')[1:]
+                for path in paths:
+                    yield path
 
         return gen_list(result)
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return "PathIndexResolver('{0}')".format(self.pathindex_file)
 
 
@@ -82,32 +78,6 @@ class PathIndexResolver:
 #TODO: more options (remote files, contains param, etc..)
 # find best resolver given the path
 def make_best_resolver(param):
-    """
-    # http path
-    >>> make_best_resolver('http://myhost.example.com/warcs/')
-    PrefixResolver('http://myhost.example.com/warcs/')
-
-    # http path w/ contains param
-    >>> make_best_resolver(['http://myhost.example.com/warcs/', '/'])
-    PrefixResolver('http://myhost.example.com/warcs/', contains = '/')
-
-    # redis path
-    >>> make_best_resolver('redis://myhost.example.com:1234/1')
-    RedisResolver('redis://myhost.example.com:1234/1')
-
-    # a file
-    >>> r = make_best_resolver('file://' + os.path.realpath(__file__))
-    >>> r.__class__.__name__
-    'PathIndexResolver'
-
-    # a dir
-    >>> path = os.path.realpath(__file__)
-    >>> r = make_best_resolver('file://' + os.path.dirname(path))
-    >>> r.__class__.__name__
-    'PrefixResolver'
-
-    """
-
     if isinstance(param, list):
         path = param[0]
         arg = param[1]
@@ -136,19 +106,7 @@ def make_best_resolver(param):
 
 #=================================================================
 def make_best_resolvers(paths):
-    """
-    >>> r = make_best_resolvers(['http://example.com/warcs/',\
-                                'redis://example.com:1234/1'])
-    >>> map(lambda x: x.__class__.__name__, r)
-    ['PrefixResolver', 'RedisResolver']
-    """
     if hasattr(paths, '__iter__'):
         return map(make_best_resolver, paths)
     else:
         return [make_best_resolver(paths)]
-
-
-#=================================================================
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

@@ -1,0 +1,2 @@
+example.warc.gz	invalid_path	sample_archive/warcs/example.warc.gz
+iana.warc.gz	sample_archive/warcs/iana.warc.gz
