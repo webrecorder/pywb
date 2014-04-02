@@ -79,8 +79,8 @@ class BaseWbUrl(object):
 class WbUrl(BaseWbUrl):
     # Regexs
     # ======================
-    QUERY_REGEX = re.compile('^(?:([\w\-:]+)/)?(\d*)(?:-(\d+))?\*/?(.*)$')
-    REPLAY_REGEX = re.compile('^(\d*)([a-z]+_)?/{0,3}(.*)$')
+    QUERY_REGEX = re.compile('^(?:([\w\-:]+)/)?(\d*)(?:-(\d+))?\*/?(.+)$')
+    REPLAY_REGEX = re.compile('^(\d*)([a-z]+_)?/{0,3}(.+)$')
 
     DEFAULT_SCHEME = 'http://'
     # ======================
@@ -90,11 +90,9 @@ class WbUrl(BaseWbUrl):
 
         self.original_url = url
 
-        if not any(f(url) for f in [self._init_query, self._init_replay]):
-            raise Exception('Invalid WbUrl: ', url)
-
-        if len(self.url) == 0:
-            raise Exception('Invalid WbUrl: ', url)
+        if not self._init_query(url):
+            if not self._init_replay(url):
+                raise Exception('Invalid WbUrl: ', url)
 
         # protocol agnostic url -> http://
         # no protocol -> http://

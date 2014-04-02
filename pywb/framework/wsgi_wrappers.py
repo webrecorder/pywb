@@ -65,9 +65,6 @@ class WSGIApp(object):
                 msg = 'No handler for "{0}"'.format(env['REL_REQUEST_URI'])
                 raise NotFoundException(msg)
 
-#        except InternalRedirect as ir:
-#            return ir.response
-
         except WbException as e:
             response = handle_exception(env, wb_router, e, False)
 
@@ -115,19 +112,18 @@ def init_app(init_func, load_yaml=True, config_file=None):
                         level=logging.DEBUG)
     logging.debug('')
 
-    if load_yaml:
-        # env setting overrides all others
-        env_config = os.environ.get('PYWB_CONFIG_FILE')
-        if env_config:
-            config_file = env_config
-
-        if not config_file:
-            config_file = DEFAULT_CONFIG_FILE
-
-        config = load_yaml_config(config_file)
-
     try:
         if load_yaml:
+            # env setting overrides all others
+            env_config = os.environ.get('PYWB_CONFIG_FILE')
+            if env_config:
+                config_file = env_config
+
+            if not config_file:
+                config_file = DEFAULT_CONFIG_FILE
+
+            config = load_yaml_config(config_file)
+
             wb_router = init_func(config)
         else:
             wb_router = init_func()

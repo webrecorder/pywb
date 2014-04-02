@@ -1,7 +1,9 @@
+from pytest import raises
 import webtest
 from pywb.core.pywb_init import create_wb_router
 from pywb.framework.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
+
 
 class TestWb:
     TEST_CONFIG = 'tests/test_config.yaml'
@@ -37,6 +39,16 @@ class TestWb:
         resp = self.testapp.get('/pywb/')
         self._assert_basic_html(resp)
         assert 'Search' in resp.body
+
+    def test_pywb_root_head(self):
+        resp = self.testapp.head('/pywb/')
+        assert resp.content_type == 'text/html'
+        assert resp.status_int == 200
+
+    def test_pywb_invalid_path(self):
+        resp = self.testapp.head('/blah/', status=404)
+        assert resp.content_type == 'text/html'
+        assert resp.status_int == 404
 
     def test_calendar_query(self):
         resp = self.testapp.get('/pywb/*/iana.org')
@@ -245,4 +257,11 @@ class TestWb:
         resp = self.testapp.get('/pywb/?abc', status = 400)
         assert resp.status_int == 400
         assert 'Invalid Url: http://?abc' in resp.body
+
+    def test_invalid_config(self):
+        with raises(IOError):
+            init_app(create_wb_router,
+                     load_yaml=True,
+                     config_file='x-invalid-x')
+
 

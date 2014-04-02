@@ -100,14 +100,12 @@ class WbRequest(object):
 
     def _is_ajax(self):
         value = self.env.get('HTTP_X_REQUESTED_WITH')
-        if not value:
-            return False
-
-        if value.lower() == 'xmlhttprequest':
+        if value and value.lower() == 'xmlhttprequest':
             return True
 
-        if self.referrer and ('ajaxpipe' in self.env.get('QUERY_STRING')):
-            return True
+        #if self.referrer and ('ajaxpipe' in self.env.get('QUERY_STRING')):
+        #    return True
+
         return False
 
     def __repr__(self):

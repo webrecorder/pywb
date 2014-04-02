@@ -109,7 +109,7 @@ class ReplayView:
 
         response = None
 
-        if self.content_rewriter and wbrequest.wb_url.mod != 'id_':
+        if self.content_rewriter and not wbrequest.is_identity:
 
             response = self.rewrite_content(wbrequest,
                                             cdx,
@@ -182,7 +182,7 @@ class ReplayView:
         (status_headers, response_gen) = result
 
         if self.buffer_response:
-            if wbrequest.wb_url.mod == 'id_':
+            if wbrequest.is_identity:
                 status_headers.remove_header('content-length')
 
             response_gen = self.buffered_response(status_headers, response_gen)
@@ -244,7 +244,7 @@ class ReplayView:
 
         # skip all 304s
         if (status_headers.statusline.startswith('304') and
-            not wbrequest.wb_url.mod == 'id_'):
+            not wbrequest.is_identity):
 
             raise CaptureException('Skipping 304 Modified: ' + str(cdx))
 
@@ -298,16 +298,18 @@ class ReplayView:
         >>> ReplayView.strip_scheme('about://example.com') ==\
             ReplayView.strip_scheme('example.com')
         True
+
+        >>> ReplayView.strip_scheme('http://') ==\
+            ReplayView.strip_scheme('')
+        True
+
+        >>> ReplayView.strip_scheme('#!@?') ==\
+            ReplayView.strip_scheme('#!@?')
+        True
         """
         m = ReplayView.STRIP_SCHEME.match(url)
-        if not m:
-            return url
-
         match = m.group(2)
-        if match:
-            return match
-        else:
-            return url
+        return match
 
 
 if __name__ == "__main__":

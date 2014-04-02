@@ -21,9 +21,12 @@ ArcWarcRecord = collections.namedtuple('ArcWarcRecord',
 #=================================================================
 class ArchiveLoadFailed(WbException):
     def __init__(self, reason, filename=''):
-        super(ArchiveLoadFailed, self).__init__(filename + ':' + str(reason))
-        #self.filename = filename
-        #self.reason = reason
+        if filename:
+            msg = filename + ':' + str(reason)
+        else:
+            msg = str(reason)
+
+        super(ArchiveLoadFailed, self).__init__(msg)
 
     def status(self):
         return '503 Service Unavailable'

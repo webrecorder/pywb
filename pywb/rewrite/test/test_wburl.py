@@ -68,6 +68,10 @@ Exception: Bad Request Url: http://#$%#/
 Traceback (most recent call last):
 Exception: Bad Request Url: http://example.com:abc/
 
+>>> x = WbUrl('')
+Traceback (most recent call last):
+Exception: ('Invalid WbUrl: ', '')
+
 # considered blank
 >>> x = WbUrl('https:/')
 >>> x = WbUrl('https:///')

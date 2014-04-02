@@ -6,9 +6,9 @@ org,iana)/ 20140127171238 http://www.iana.org/ warc/revisit - OSSAPWJ23L56IYVRW3
 
 # test idx index (tabs replacad with 4 spaces)
 >>> zip_ops_test(url = 'http://iana.org/domains/', matchType = 'prefix', showPagedIndex = True)
-org,iana)/dnssec 20140126201307    zipnum    8511    373
-org,iana)/domains/int 20140126201239    zipnum    8884    353
-org,iana)/domains/root/servers 20140126201227    zipnum    9237    386
+org,iana)/dnssec 20140126201307    zipnum    8511    373    35
+org,iana)/domains/int 20140126201239    zipnum    8884    353    36
+org,iana)/domains/root/servers 20140126201227    zipnum    9237    386    37
 
 >>> zip_ops_test(url = 'http://iana.org/domains/', matchType = 'prefix')
 org,iana)/domains/arpa 20140126201248 http://www.iana.org/domains/arpa text/html 200 QOFZZRN6JIKAL2JRL6ZC2VVG42SPKGHT - - 2939 759039 iana.warc.gz

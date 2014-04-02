@@ -10,6 +10,10 @@
 >>> print_req_from_uri('/2010/example.com')
 {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
 
+# ajax
+>>> print_req_from_uri('', {'REL_REQUEST_URI': '/2010/example.com', 'HTTP_HOST': 'localhost:8080', 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'})
+{'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
+
 >>> print_req_from_uri('../example.com')
 {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '', 'wb_prefix': '/', 'request_uri': '../example.com'}
 

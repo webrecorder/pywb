@@ -233,6 +233,19 @@ Exception: ArchiveLoadFailed
 # Invalid WARC
 >>> parse_stream_error(stream=None, statusline='ABC', known_format='warc')
 Exception: ArchiveLoadFailed
+
+# Revisit Errors
+# original not found
+>>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - - 1864 example.warc.gz - - -', reraise=True)
+Traceback (most recent call last):
+ArchiveLoadFailed: Missing Revisit Original
+
+# no revisit func available
+>>> load_from_cdx_test(URL_AGNOSTIC_REVISIT_CDX, revisit_func=None, reraise=True)
+Traceback (most recent call last):
+ArchiveLoadFailed: Original for revisit could not be loaded
+
+
 """
 
 import os
@@ -281,16 +294,19 @@ def load_orig_cdx(self):
 
 
 #==============================================================================
-def load_from_cdx_test(cdx):
+def load_from_cdx_test(cdx, revisit_func=load_orig_cdx, reraise=False):
     resolve_loader = ResolvingLoader(test_warc_dir)
     cdx = CDXObject(cdx)
     try:
-        (headers, stream) = resolve_loader.resolve_headers_and_payload(cdx, None, load_orig_cdx)
+        (headers, stream) = resolve_loader.resolve_headers_and_payload(cdx, None, revisit_func)
         print headers
         sys.stdout.write(stream.readline())
         sys.stdout.write(stream.readline())
     except ArchiveLoadFailed as e:
-        print 'Exception: ' + e.__class__.__name__
+        if reraise:
+            raise
+        else:
+            print 'Exception: ' + e.__class__.__name__
 
 
 #==============================================================================

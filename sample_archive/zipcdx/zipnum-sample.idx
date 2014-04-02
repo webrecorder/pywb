@@ -1,38 +1,38 @@
-com,example)/ 20140127171200	zipnum	0	276
-org,iana)/ 20140127171238	zipnum	276	328
-org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126201055	zipnum	604	312
-org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200718	zipnum	916	235
-org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200912	zipnum	1151	235
-org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126201240	zipnum	1386	306
-org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126200654	zipnum	1692	235
-org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126200816	zipnum	1927	231
-org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126201128	zipnum	2158	236
-org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140127171240	zipnum	2394	312
-org,iana)/_css/2013.1/fonts/opensans-semibold.ttf 20140126200805	zipnum	2706	234
-org,iana)/_css/2013.1/fonts/opensans-semibold.ttf 20140126201055	zipnum	2940	235
-org,iana)/_css/2013.1/fonts/opensans-semibold.ttf 20140126201308	zipnum	3175	289
-org,iana)/_css/2013.1/print.css 20140126200737	zipnum	3464	208
-org,iana)/_css/2013.1/print.css 20140126200929	zipnum	3672	207
-org,iana)/_css/2013.1/print.css 20140126201248	zipnum	3879	276
-org,iana)/_css/2013.1/screen.css 20140126200706	zipnum	4155	210
-org,iana)/_css/2013.1/screen.css 20140126200825	zipnum	4365	211
-org,iana)/_css/2013.1/screen.css 20140126201227	zipnum	4576	216
-org,iana)/_img/2013.1/iana-logo-header.svg 20140126200654	zipnum	4792	236
-org,iana)/_img/2013.1/iana-logo-header.svg 20140126200816	zipnum	5028	219
-org,iana)/_img/2013.1/iana-logo-header.svg 20140126201128	zipnum	5247	221
-org,iana)/_img/2013.1/iana-logo-homepage.png 20140126200625	zipnum	5468	299
-org,iana)/_img/2013.1/icann-logo.svg 20140126200719	zipnum	5767	210
-org,iana)/_img/2013.1/icann-logo.svg 20140126200912	zipnum	5977	212
-org,iana)/_img/2013.1/icann-logo.svg 20140126201240	zipnum	6189	281
-org,iana)/_img/bookmark_icon.ico 20140126200631	zipnum	6470	298
-org,iana)/_js/2013.1/iana.js 20140126200716	zipnum	6768	213
-org,iana)/_js/2013.1/iana.js 20140126200912	zipnum	6981	216
-org,iana)/_js/2013.1/iana.js 20140126201239	zipnum	7197	270
-org,iana)/_js/2013.1/jquery.js 20140126200653	zipnum	7467	215
-org,iana)/_js/2013.1/jquery.js 20140126200816	zipnum	7682	209
-org,iana)/_js/2013.1/jquery.js 20140126201127	zipnum	7891	210
-org,iana)/_js/2013.1/jquery.js 20140127171239	zipnum	8101	410
-org,iana)/dnssec 20140126201307	zipnum	8511	373
-org,iana)/domains/int 20140126201239	zipnum	8884	353
-org,iana)/domains/root/servers 20140126201227	zipnum	9237	386
-org,iana)/time-zones 20140126200737	zipnum	9623	145
+com,example)/ 20140127171200	zipnum	0	276	1
+org,iana)/ 20140127171238	zipnum	276	328	2
+org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126201055	zipnum	604	312	3
+org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200718	zipnum	916	235	4
+org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200912	zipnum	1151	235	5
+org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126201240	zipnum	1386	306	6
+org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126200654	zipnum	1692	235	7
+org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126200816	zipnum	1927	231	8
+org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126201128	zipnum	2158	236	9
+org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140127171240	zipnum	2394	312	10
+org,iana)/_css/2013.1/fonts/opensans-semibold.ttf 20140126200805	zipnum	2706	234	11
+org,iana)/_css/2013.1/fonts/opensans-semibold.ttf 20140126201055	zipnum	2940	235	12
+org,iana)/_css/2013.1/fonts/opensans-semibold.ttf 20140126201308	zipnum	3175	289	13
+org,iana)/_css/2013.1/print.css 20140126200737	zipnum	3464	208	14
+org,iana)/_css/2013.1/print.css 20140126200929	zipnum	3672	207	15
+org,iana)/_css/2013.1/print.css 20140126201248	zipnum	3879	276	16
+org,iana)/_css/2013.1/screen.css 20140126200706	zipnum	4155	210	17
+org,iana)/_css/2013.1/screen.css 20140126200825	zipnum	4365	211	18
+org,iana)/_css/2013.1/screen.css 20140126201227	zipnum	4576	216	19
+org,iana)/_img/2013.1/iana-logo-header.svg 20140126200654	zipnum	4792	236	20
+org,iana)/_img/2013.1/iana-logo-header.svg 20140126200816	zipnum	5028	219	21
+org,iana)/_img/2013.1/iana-logo-header.svg 20140126201128	zipnum	5247	221	22
+org,iana)/_img/2013.1/iana-logo-homepage.png 20140126200625	zipnum	5468	299	23
+org,iana)/_img/2013.1/icann-logo.svg 20140126200719	zipnum	5767	210	24
+org,iana)/_img/2013.1/icann-logo.svg 20140126200912	zipnum	5977	212	25
+org,iana)/_img/2013.1/icann-logo.svg 20140126201240	zipnum	6189	281	26
+org,iana)/_img/bookmark_icon.ico 20140126200631	zipnum	6470	298	27
+org,iana)/_js/2013.1/iana.js 20140126200716	zipnum	6768	213	28
+org,iana)/_js/2013.1/iana.js 20140126200912	zipnum	6981	216	29
+org,iana)/_js/2013.1/iana.js 20140126201239	zipnum	7197	270	30
+org,iana)/_js/2013.1/jquery.js 20140126200653	zipnum	7467	215	31
+org,iana)/_js/2013.1/jquery.js 20140126200816	zipnum	7682	209	32
+org,iana)/_js/2013.1/jquery.js 20140126201127	zipnum	7891	210	33
+org,iana)/_js/2013.1/jquery.js 20140127171239	zipnum	8101	410	34
+org,iana)/dnssec 20140126201307	zipnum	8511	373	35
+org,iana)/domains/int 20140126201239	zipnum	8884	353	36
+org,iana)/domains/root/servers 20140126201227	zipnum	9237	386	37
+org,iana)/time-zones 20140126200737	zipnum	9623	145	38
