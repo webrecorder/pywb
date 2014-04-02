@@ -76,7 +76,7 @@ class BaseCDXServer(object):
 
         return self._check_cdx_iter(cdx_iter, query)
 
-    def _load_cdx_query(self, query):
+    def _load_cdx_query(self, query):  # pragma: no cover
         raise NotImplementedError('Implement in subclass')
 
     @staticmethod
@@ -148,9 +148,6 @@ class CDXServer(BaseCDXServer):
         self.sources.append(source)
 
     def add_cdx_source(self, source, config):
-        if source is None:
-            return
-
         if isinstance(source, CDXSource):
             self._add_cdx_source(source)
 
@@ -179,9 +176,6 @@ class CDXServer(BaseCDXServer):
         logging.warn('skipping unrecognized URI:%s', filename)
         return None
 
-    def __str__(self):
-        return 'CDX server serving from ' + str(self.sources)
-
 
 #=================================================================
 class RemoteCDXServer(BaseCDXServer):
@@ -204,9 +198,6 @@ class RemoteCDXServer(BaseCDXServer):
     def _load_cdx_query(self, query):
         return cdx_load([self.source], query, process=False)
 
-    def __str__(self):
-        return 'Remote CDX server serving from ' + str(self.sources[0])
-
 
 #=================================================================
 def create_cdx_server(config, ds_rules_file=None, server_cls=None):
@@ -222,7 +213,8 @@ def create_cdx_server(config, ds_rules_file=None, server_cls=None):
     logging.debug('CDX Surt-Ordered? ' + str(surt_ordered))
 
     if not server_cls:
-        if isinstance(paths, str) and is_http(paths):
+        if ((isinstance(paths, str) and is_http(paths)) or
+            isinstance(paths, RemoteCDXSource)):
             server_cls = RemoteCDXServer
         else:
             server_cls = CDXServer

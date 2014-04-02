@@ -16,7 +16,7 @@ class CDXSource(object):
     """
     Represents any cdx index source
     """
-    def load_cdx(self, query):
+    def load_cdx(self, query):  # pragma: no cover
         raise NotImplementedError('Implement in subclass')
 
 
@@ -82,7 +82,10 @@ class RemoteCDXSource(CDXSource):
         return iter(response)
 
     def __str__(self):
-        return 'Remote CDX Server: ' + self.remote_url
+        if self.remote_processing:
+            return 'Remote CDX Server: ' + self.remote_url
+        else:
+            return 'Remote CDX Source: ' + self.remote_url
 
 
 #=================================================================
@@ -91,6 +94,7 @@ class RedisCDXSource(CDXSource):
 
     def __init__(self, redis_url, config=None):
         import redis
+        self.redis_url = redis_url
         self.redis = redis.StrictRedis.from_url(redis_url)
 
         self.key_prefix = self.DEFAULT_KEY_PREFIX
@@ -114,3 +118,6 @@ class RedisCDXSource(CDXSource):
         key += ' '
         cdx_list = itertools.imap(lambda x: key + x, cdx_list)
         return cdx_list
+
+    def __str__(self):
+        return 'Redis - ' + self.redis_url

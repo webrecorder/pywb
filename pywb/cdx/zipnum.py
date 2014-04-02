@@ -200,3 +200,7 @@ class ZipNumCluster(CDXSource):
         end = query.end_key
         iter_ = itertools.takewhile(lambda line: line < end, iter_)
         return iter_
+
+    def __str__(self):
+        return 'ZipNum Cluster: {0}, {1}'.format(self.summary,
+                                                 self.loc_filename)
