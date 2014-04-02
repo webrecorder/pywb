@@ -72,8 +72,8 @@ setup(
         'pyyaml',
        ],
     tests_require=[
-        'WebTest',
         'pytest',
+        'WebTest',
         'pytest-cov',
         'fakeredis',
         'mock',
@@ -84,6 +84,7 @@ setup(
         [console_scripts]
         wayback = pywb.apps.wayback:main
         cdx-server = pywb.apps.cdx_server:main
+        cdx-indexer = pywb.warc.archiveindexer:main
         """,
     zip_safe=False,
     classifiers=[

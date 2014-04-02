@@ -1,5 +1,6 @@
 r"""
 
+#=================================================================
 # warc.gz
 >>> print_cdx_index('example.warc.gz')
  CDX N b a m s k r M S V g
@@ -37,13 +38,39 @@ metadata)/gnu.org/software/wget/warc/wget.log 20140216012908 metadata://gnu.org/
  CDX N b a m s k r M S V g
 com,example)/ 20140401000000 http://example.com/ text/html 204 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 67 134 bad.arc
 com,example)/ 20140401000000 http://example.com/ text/html 204 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 68 202 bad.arc
+
+# Test CLI interface -- (check for num lines)
+#=================================================================
+
+# test sort, multiple inputs
+>>> cli_lines(['--sort', '-',  TEST_WARC_DIR])
+com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
+org,iana,example)/ 20130702195402 http://example.iana.org/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1001 353 example-url-agnostic-orig.warc.gz
+200
+
+# test writing to stdout
+>>> cli_lines(['-', TEST_WARC_DIR + 'example.warc.gz'])
+com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 333 example.warc.gz
+org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 example.warc.gz
+4
+
+# test writing to temp dir
+>>> cli_lines_with_dir(TEST_WARC_DIR + 'example.warc.gz')
+example.cdx
+com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 333 example.warc.gz
+org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 example.warc.gz
+4
 """
 
 from pywb import get_test_dir
-from pywb.warc.archiveindexer import ArchiveIndexer
+from pywb.warc.archiveindexer import ArchiveIndexer, main, cdx_filename
 
 from io import BytesIO
 import sys
+
+import os
+import shutil
+import tempfile
 
 TEST_CDX_DIR = get_test_dir() + 'cdx/'
 TEST_WARC_DIR = get_test_dir() + 'warcs/'
@@ -79,3 +106,49 @@ def test_sorted_warc_gz():
     assert_cdx_match('example.cdx', 'example.warc.gz', sort=True)
     assert_cdx_match('dupes.cdx', 'dupes.warc.gz', sort=True)
     assert_cdx_match('iana.cdx', 'iana.warc.gz', sort=True)
+
+def cli_lines(cmds):
+    buff = BytesIO()
+    orig = sys.stdout
+    sys.stdout = buff
+    main(cmds)
+    sys.stdout = orig
+    lines = buff.getvalue().rstrip().split('\n')
+
+    # print first, last, num lines
+    print (lines[1])
+    print (lines[-1])
+    print len(lines)
+
+def cli_lines_with_dir(input_):
+    try:
+        lines = None
+        tmp_dir = None
+        tmp_dir = tempfile.mkdtemp()
+
+        main([tmp_dir, input_])
+
+        filename = cdx_filename(os.path.basename(input_))
+
+        print filename
+
+        with open(os.path.join(tmp_dir, filename), 'r') as fh:
+            lines = fh.read(8192).rstrip().split('\n')
+
+    finally:
+        try:
+            if tmp_dir:
+                shutil.rmtree(tmp_dir)
+        except OSError as exc:
+            if exc.errno != 2:
+                raise
+
+    if not lines:
+        return
+
+    # print first, last, num lines
+    print (lines[1])
+    print (lines[-1])
+    print len(lines)
+
+

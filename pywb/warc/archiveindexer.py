@@ -273,6 +273,7 @@ class SortedCDXWriter(CDXWriter):
         self.out.write(''.join(self.sortlist))
 
 
+#=================================================================
 class MultiFileMixin(object):
     def start_all(self):
         super(MultiFileMixin, self).start()
@@ -338,14 +339,18 @@ def index_to_file(inputs, output, sort):
 def remove_ext(filename):
     for ext in ('.arc', '.arc.gz', '.warc', '.warc.gz'):
         if filename.endswith(ext):
-            return filename[:-len(ext)]
+            filename = filename[:-len(ext)]
+            break
+
     return filename
 
+def cdx_filename(filename):
+    return remove_ext(filename) + '.cdx'
 
 def index_to_dir(inputs, output, sort):
     for fullpath, filename in iter_file_or_dir(inputs):
 
-        outpath = remove_ext(filename) + '.cdx'
+        outpath = cdx_filename(filename)
         outpath = os.path.join(output, outpath)
 
         with open(outpath, 'w') as outfile:
@@ -356,26 +361,49 @@ def index_to_dir(inputs, output, sort):
                                out=outfile).make_index()
 
 
-def main():
-    description = 'description'
-    epilog = 'epilog'
+def main(args=None):
+    description = """
+Generate .cdx index files for WARCs and ARCs
+Compressed (.warc.gz / .arc.gz) or uncompressed (.warc / .arc) formats
+are supported.
+"""
 
-    sort_help = 'sort help'
-    output_help = 'output help'
-    input_help = 'input help'
+    epilog = """
+Some examples:
+
+* Create "example.cdx" index from example.warc.gz
+{0} ./cdx/example.cdx ./warcs/example.warc.gz
+
+* Create "combined.cdx", a combined, sorted index of all warcs in ./warcs/
+{0} --sort combined.cdx ./warcs/
+
+* Create a sorted cdx per file in ./cdx/ for each archive file in ./warcs/
+{0} --sort ./cdx/ ./warcs/
+""".format(os.path.basename(sys.argv[0]))
+
+    sort_help = """
+sort the output to each file before writing to create a total ordering
+"""
+
+    output_help = """output file or directory.
+- If directory, each input file is written to a seperate output file
+  with a .cdx extension
+- If output is '-', output is written to stdout
+"""
+
+    input_help = """input file or directory
+- If directory, all archive files from that directory are read
+"""
 
     parser = ArgumentParser(description=description,
                             epilog=epilog,
                             formatter_class=RawTextHelpFormatter)
 
-    parser.add_argument('--sort', action='store_true', help=sort_help)
+    parser.add_argument('-s', '--sort', action='store_true', help=sort_help)
     parser.add_argument('output', help=output_help)
     parser.add_argument('inputs', nargs='+', help=input_help)
 
-    cmd = parser.parse_args()
-    #print cmd
-    #return
-
+    cmd = parser.parse_args(args=args)
     if cmd.output != '-' and os.path.isdir(cmd.output):
         index_to_dir(cmd.inputs, cmd.output, cmd.sort)
     else:
