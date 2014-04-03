@@ -13,12 +13,13 @@ pywb allows high-fidelity replay (browsing) of archived web data stored in stand
 
 
 Latest Changes
-""""""""""""""
+--------------
+
 See `CHANGES.rst <https://github.com/ikreymer/pywb/blob/develop/CHANGES.rst>`_ for up-to-date changelist.
 
 
 Quick Install & Run Samples
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
 1. ``git clone https://github.com/ikreymer/pywb.git``
 
@@ -33,8 +34,8 @@ Quick Install & Run Samples
 installation and testing examples.)
 
 
-Configure to Replay Archived Content
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Configure with Archived Content
+-------------------------------
 
 If you have existing WARC or ARC files (.warc, .warc.gz, .arc, .arc.gz), you should be able to view
 their contents in pywb after creating sorted .cdx index files of their contents.
@@ -89,10 +90,10 @@ If you would like to use non-SURT ordered .cdx files, simply add this field to t
       surt_ordered: false
 
 
-About Wayback
-~~~~~~~~~~~~~
+About Wayback Machine
+---------------------
 
-pywb is compatible with the standard Wayback Machine url format:
+pywb is compatible with the standard `Wayback Machine <http://en.wikipedia.org/wiki/Wayback_Machine>`_ url format:
 
 ``http://<host>/<collection>/<timestamp>/<original url>``
 
@@ -112,7 +113,7 @@ pywb provides these features as a starting point.
 
 
 Additional Documentation
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 -  For additional/up-to-date configuration details, consult the current
    `config.yaml <https://github.com/ikreymer/pywb/blob/develop/config.yaml>`_
@@ -121,7 +122,7 @@ Additional Documentation
    additional technical documentation about various aspects of pywb
 
 Contributions
-~~~~~~~~~~~~~
+-------------
 
 You are encouraged to fork and contribute to this project to improve web
 archiving replay!
