@@ -7,27 +7,87 @@ PyWb 0.2.2
 .. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=develop
       :target: https://coveralls.io/r/ikreymer/pywb?branch=develop
 
-pywb is a new Python implementation of the Wayback Machine software and
-tools.
+pywb is a python implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
 
-At its core, it provides a web app which 'replays' archived web data
-stored in ARC and WARC files and provides metadata about the archived
-captures.
+The software includes wsgi apps and other tools which 'replay' archived web data
+stored in standard `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_ files and can provide additional information about the archived captures.
+
+
+Quick Install & Run Samples
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. ``git clone https://github.com/ikreymer/pywb.git``
+
+2. ``python setup.py install``
+
+3. ``wayback`` to run samples
+
+4.  Browse to http://localhost:8080/pywb/\*/example.com to see capture of http://example.com
+
+
+(The `installation page <https://github.com/ikreymer/pywb/blob/develop/INSTALL.rst>`_ contains additional
+installation and testing examples.)
+
+
+Configure to Replay Archived Content
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have existing WARC or ARC files (.warc, .warc.gz, .arc, .arc.gz), you should be able
+to replay them in pywb after creating sorted indexs with the ``cdx-indexer`` script.
+
+
+Given an archive of warcs at ``myarchive/warcs``
+
+1. Create a dir for indexs, .eg. ``myarchive/cdx``
+
+2. Run ``cdx-indexer --sort myarchive/cdx myarchive/warcs`` to generate .cdx files for each
+   warc/arc file in ``myarchive/warcs``
+
+3. Edit ``config.yaml`` to contain the following. You may replace ``pywb`` with
+   a name of your choice -- it will be the path to your collection. (Multiple collections can be added
+   for different sets of .cdx files as well)
+
+::
+
+    collections:
+       pywb: ./my_archive/cdx/
+
+
+    archive_paths: ./my_archive/warcs/
+
+
+4. Run ``wayback`` to start session.
+   If your archives contain ``http://my-archive-page.example.com``, all captures should be accessible
+   by browsing to http://localhost:8080/pywb/\*/my-archived-page.example.com
+
+   (You can also ./run-uwsgi.sh for running with those WSGI containers)
+
+
+Use existing .cdx index files
+"""""""""""""""""""""""""""""
+
+If you already have .cdx files for your archive, you can skip the first two steps above.
+
+pywb recommends using `SURT <http://crawler.archive.org/articles/user_manual/glossary.html#surt>`_ (Sort-friendly URI Reordering Transform)
+sorted urls and the ``cdx-indexer`` automatically generates indexs in this format.
+
+However, pywb is compatible with regular url keyed indexs.
+If you would like to use non-SURT ordered .cdx files, simply add this field to the config:
+
+::
+
+      surt_ordered: false
+
+
 
 Latest Changes
 ~~~~~~~~~~~~~~
-
-* Support for optional LXML html-based parser for fastest possible parsing.
-
-* Memento: TimeMaps in ``application/link-format`` provided via the ``/timemap/*/`` query.. eg: ``http://localhost:8080/pywb/timemap/*/http://example.com``
-
-* Basic support for `Memento Protocol RFC7089 <http://www.mementoweb.org/guide/rfc/>`_ Memento, TimeGate and now TimeMaps.
-  
-* pywb now features new `domain-specific rules <https://github.com/ikreymer/pywb/blob/master/pywb/rules.yaml>`_ which are applied to resolve and render certain difficult and dynamic content, in order to make accurate web replay work. This ruleset will be under further iteration to address further challenges as the web evoles.
+See `CHANGES.rst <https://github.com/ikreymer/pywb/develop/CHANGES.rst>`_ for up-to-date changelist.
 
 
-Wayback Machine
-~~~~~~~~~~~~~~~
+
+About Wayback
+~~~~~~~~~~~~~
 
 pywb is compatible with the standard Wayback Machine url format:
 
@@ -47,172 +107,12 @@ links, as well as absolute links found in javascript, css and some xml.
 
 pywb provides these features as a starting point.
 
-Requirements
-~~~~~~~~~~~~
-
-pywb has tested in python 2.6, 2.7 and pypy.
-
-It runs best in python 2.7 currently.
-
-pywb tool suite provides several WSGI applications, which have been
-tested under *wsgiref* and *uWSGI*.
-
-For best results, the *uWSGI* container is recommended.
-
-Support for Python 3 is planned.
-
-Sample Data
-~~~~~~~~~~~
-
-pywb comes with a a set of sample archived content, also used by the
-test suite.
-
-The data can be found in ``sample_archive`` and contains ``warc`` and
-``cdx`` files.
-
-The sample archive contains recent captures from ``http://example.com``
-and ``http://iana.org``
-
-Runnable Apps
-~~~~~~~~~~~~~
-
-The pywb tool suite currently includes two runnable applications, installed
-as command-line scripts via setuptools
-
--  ``wayback`` or ``python -m pywb.apps.wayback`` -- start the full wayback on port
-   8080
-
--  ``cdx-server`` or ``python -m pywb.apps.cdx_server`` -- start standalone cdx server on
-   port 8090
-
-Step-By-Step Installation
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To start a pywb with sample data:
-
-1. Clone this repo
-
-2. Install with ``python setup.py install``
-
-3. Run ``wayback`` (shorthand for ``python -m pywb.apps.wayback``) to start the pywb wayback server with reference WSGI implementation.
-
-OR run ``run-uwsgi.sh`` to start with uWSGI (see below for more info).
-
-4. Test pywb in your browser! (pywb is set to run on port 8080 by
-   default).
-
-If everything worked, the following pages should be loading (served from
-*sample\_archive* dir):
-
-+------------------------+----------------------------------------+--------------------------------------------+
-| Original Url           | Latest Capture                         | List of All Captures                       | 
-+========================+========================================+============================================+
-| ``http://example.com`` | http://localhost:8080/pywb/example.com | http://localhost:8080/pywb/\*/example.com  |
-+------------------------+----------------------------------------+--------------------------------------------+
-| ``http://iana.org``    | http://localhost:8080/pywb/iana.org    | http://localhost:8080/pywb/\*/iana.org     |
-+------------------------+----------------------------------------+--------------------------------------------+
-
-uWSGI startup script
-^^^^^^^^^^^^^^^^^^^^
-
-A sample uWSGI start up script, ``run-uwsgi.sh`` which assumes a default
-uWSGI installation is provided as well.
-
-Currently, uWSGI is not installed automatically with this distribution,
-but it is recommended for production environments.
-
-Please see `uWSGI
-Installation <http://uwsgi-docs.readthedocs.org/en/latest/Install.html>`_
-for more details on installing uWSGI.
-
-Vagrant
-~~~~~~~
-
-pywb comes with a Vagrantfile to help you set up a VM quickly for
-testing and deploy pywb with uWSGI.
-
-If you have `Vagrant <http://www.vagrantup.com/>`_ and
-`VirtualBox <https://www.virtualbox.org/>`_ installed, then you can
-start a test instance of pywb like so:
-
-::
-
-    git clone https://github.com/ikreymer/pywb.git
-    cd pywb
-    vagrant up
-
-After pywb and all its dependencies are installed, the uWSGI server will
-startup
-
-::
-
-    spawned uWSGI worker 1 (and the only) (pid: 123, cores: 1)
-
-At this point, you can open a web browser and navigate to the examples
-above for testing.
-
-Test Suite
-~~~~~~~~~~
-
-Currently pywb includes a full (and growing) suite of unit doctest and
-integration tests.
-
-Top level integration tests can be found in the ``tests/`` directory,
-and each subpackage also contains doctests and unit tests.
-
-The full set of tests can be run by executing:
-
-``python setup.py test``
-
-which will run the tests using py.test.
-
-The py.test coverage plugin is used to keep track of test coverage.
-
-Sample Setup
-~~~~~~~~~~~~
-
-pywb is configurable via yaml.
-
-The simplest `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_ is roughly as follows:
-
-::
-
-
-    collections:
-       pywb: ./sample_archive/cdx/
-
-
-    archive_paths: ./sample_archive/warcs/
-
-This sets up pywb with a single route for collection /pywb
-
-(The the latest version of `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_ contains
-additional documentation and specifies all the optional properties, such
-as ui filenames for Jinja2/html template files.)
-
-For more advanced use, the pywb init path can be customized further:
-
--  The ``PYWB_CONFIG_FILE`` env can be used to set a different yaml
-   file.
-
--  Custom init app (with or without yaml) can be created. See
-   `wayback.py <https://github.com/ikreymer/pywb/blob/master/pywb/apps/wayback.py>`_ and
-   `pywb\_init.py <https://github.com/ikreymer/pywb/blob/master/pywb/core/pywb_init.py>`_ for examples of existing
-   initialization paths.
-
-Configuring PyWb With Archived Data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Please see the `PyWb
-Configuration <https://github.com/ikreymer/pywb/wiki/Pywb-Configuration>`_
-for latest instructions on how to setup pywb to run with your existing
-WARC/ARC collections.
 
 Additional Documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  For additional/up-to-date configuration details, consult the current
-   `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_
+   `config.yaml <https://github.com/ikreymer/pywb/blob/develop/configs/config.yaml>`_
 
 -  The `wiki <https://github.com/ikreymer/pywb/wiki>`_ will have
    additional technical documentation about various aspects of pywb
@@ -221,8 +121,8 @@ Contributions
 ~~~~~~~~~~~~~
 
 You are encouraged to fork and contribute to this project to improve web
-archiving replay
+archiving replay!
 
 Please take a look at list of current
 `issues <https://github.com/ikreymer/pywb/issues?state=open>`_ and feel
-free to open new ones
+free to open new ones.
