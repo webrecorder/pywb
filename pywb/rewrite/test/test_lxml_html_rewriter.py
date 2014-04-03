@@ -110,6 +110,15 @@ ur"""
 
 >>> parse('<!-- <a href="http://example.com"></a> -->')
 <!-- <a href="http://example.com"></a> -->
+
+# Test blank
+>>> parse('')
+<BLANKLINE>
+
+# Test no parsing at all
+>>> p = LXMLHTMLRewriter(urlrewriter)
+>>> p.close()
+''
 """
 
 from pywb.rewrite.url_rewriter import UrlRewriter

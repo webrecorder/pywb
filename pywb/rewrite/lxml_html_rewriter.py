@@ -37,13 +37,17 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
                                             recover=True,
                                             )
 
+        self.started = False
+
     def feed(self, string):
+        self.started = True
         string = self.END_HTML.sub(u'', string)
         #string = string.replace(u'</html>', u'')
         self.parser.feed(string)
 
     def _internal_close(self):
-        self.parser.close()
+        if self.started:
+            self.parser.close()
 
 
 #=================================================================
