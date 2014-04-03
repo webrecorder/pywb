@@ -11,7 +11,7 @@ application = init_app(create_cdx_server_app,
                        load_yaml=True)
 
 
-def main():
+def main():  # pragma: no cover
     start_wsgi_server(application, 'CDX Server', default_port=8090)
 
 if __name__ == "__main__":

@@ -9,8 +9,12 @@ PyWb 0.2.2
 
 pywb is a python implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
 
-The software includes wsgi apps and other tools which 'replay' archived web data
-stored in standard `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_ files and can provide additional information about the archived captures.
+pywb allows high-fidelity replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
+
+
+Latest Changes
+""""""""""""""
+See `CHANGES.rst <https://github.com/ikreymer/pywb/blob/develop/CHANGES.rst>`_ for up-to-date changelist.
 
 
 Quick Install & Run Samples
@@ -32,8 +36,11 @@ installation and testing examples.)
 Configure to Replay Archived Content
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you have existing WARC or ARC files (.warc, .warc.gz, .arc, .arc.gz), you should be able
-to replay them in pywb after creating sorted indexs with the ``cdx-indexer`` script.
+If you have existing WARC or ARC files (.warc, .warc.gz, .arc, .arc.gz), you should be able to view
+their contents in pywb after creating sorted .cdx index files of their contents.
+This process can be done by running the ``cdx-indexer`` script and only needs to be done once.
+
+(See the note below if you already have .cdx files for your archives)
 
 
 Given an archive of warcs at ``myarchive/warcs``
@@ -63,6 +70,9 @@ Given an archive of warcs at ``myarchive/warcs``
    (You can also ./run-uwsgi.sh for running with those WSGI containers)
 
 
+See `INSTALL.rst <https://github.com/ikreymer/pywb/blob/develop/INSTALL.rst>`_ for additional installation info.
+
+
 Use existing .cdx index files
 """""""""""""""""""""""""""""
 
@@ -77,13 +87,6 @@ If you would like to use non-SURT ordered .cdx files, simply add this field to t
 ::
 
       surt_ordered: false
-
-
-
-Latest Changes
-~~~~~~~~~~~~~~
-See `CHANGES.rst <https://github.com/ikreymer/pywb/develop/CHANGES.rst>`_ for up-to-date changelist.
-
 
 
 About Wayback
