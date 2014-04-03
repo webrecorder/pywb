@@ -54,7 +54,7 @@ setup(
         'pywb.apps'
         ],
     package_data={
-        'pywb': ['ui/*', 'static/*', '*.yaml', 'configs/*'],
+        'pywb': ['ui/*', 'static/*', '*.yaml'],
         },
     data_files=[
         ('sample_archive/cdx/', glob.glob('sample_archive/cdx/*')),

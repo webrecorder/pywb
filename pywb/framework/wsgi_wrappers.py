@@ -103,7 +103,7 @@ def handle_exception(env, wb_router, exc, print_trace):
                                         status=status)
 
 #=================================================================
-DEFAULT_CONFIG_FILE = 'pywb/configs/config.yaml'
+DEFAULT_CONFIG_FILE = 'config.yaml'
 
 
 #=================================================================
@@ -139,7 +139,7 @@ def init_app(init_func, load_yaml=True, config_file=None):
 
 
 #=================================================================
-def start_wsgi_server(the_app, name):  # pragma: no cover
+def start_wsgi_server(the_app, name, default_port=None):  # pragma: no cover
     from wsgiref.simple_server import make_server
     from optparse import OptionParser
 
@@ -154,7 +154,10 @@ def start_wsgi_server(the_app, name):  # pragma: no cover
         port = the_app.port
 
     if not port:
-        port = DEFAULT_PORT
+        if default_port:
+            port = default_port
+        else:
+            port = DEFAULT_PORT
 
     logging.info('Starting %s on port %s', name, port)
 

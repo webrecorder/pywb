@@ -96,11 +96,65 @@ def create_wb_handler(query_handler, config, ds_rules_file=None):
     wb_handler = wb_handler_class(
         query_handler,
         replayer,
-        #html_view=html_view,
         search_view=search_view,
     )
 
     return wb_handler
+
+
+#=================================================================
+def init_collection(value, config):
+    if isinstance(value, str):
+        value = {'index_paths': value}
+
+    route_config = DictChain(value, config)
+
+    ds_rules_file = route_config.get('domain_specific_rules', None)
+
+    html_view = load_query_template(config.get('query_html'),
+                                    'Captures Page')
+
+    query_handler = QueryHandler.init_from_config(route_config,
+                                                  ds_rules_file,
+                                                  html_view)
+
+    return route_config, query_handler, ds_rules_file
+
+
+#=================================================================
+def add_cdx_api_handler(name, cdx_api_suffix, routes, query_handler):
+    # if bool, use -cdx suffix, else use custom string
+    # as the suffix
+    if isinstance(cdx_api_suffix, bool):
+        name += '-cdx'
+    else:
+        name += str(cdx_api_suffix)
+
+    routes.append(Route(name, CDXAPIHandler(query_handler)))
+
+
+#=================================================================
+def create_cdx_server_app(passed_config):
+    """
+    Create a cdx server api-only app
+    For each collection, create a /<coll>-cdx access point
+    which follows the cdx api
+    """
+    config = DictChain(passed_config, DEFAULTS)
+
+    collections = config.get('collections')
+
+    routes = []
+
+    for name, value in collections.iteritems():
+        result = init_collection(value, config)
+        route_config, query_handler, ds_rules_file = result
+
+        cdx_api_suffix = route_config.get('enable_cdx_api', True)
+
+        add_cdx_api_handler(name, cdx_api_suffix, routes, query_handler)
+
+    return ArchivalRouter(routes)
 
 
 #=================================================================
@@ -131,24 +185,9 @@ def create_wb_router(passed_config={}):
         use_lxml_parser()
 
     for name, value in collections.iteritems():
-        if isinstance(value, str):
-            value = {'index_paths': value}
 
-        route_config = DictChain(value, config)
-
-        ds_rules_file = route_config.get('domain_specific_rules', None)
-
-        #perms_policy = route_config.get('perms_policy', None)
-        #
-        #cdx_server = create_cdx_server(route_config,
-        #                               ds_rules_file)
-        #
-        html_view = load_query_template(config.get('query_html'),
-                                        'Captures Page')
-
-        query_handler = QueryHandler.init_from_config(route_config,
-                                                      ds_rules_file,
-                                                      html_view)
+        result = init_collection(value, config)
+        route_config, query_handler, ds_rules_file = result
 
         wb_handler = create_wb_handler(
             query_handler=query_handler,
@@ -168,13 +207,7 @@ def create_wb_router(passed_config={}):
         cdx_api_suffix = route_config.get('enable_cdx_api', False)
 
         if cdx_api_suffix:
-            # if bool, use -cdx suffix, else use custom string
-            # as the suffix
-            if isinstance(cdx_api_suffix, bool):
-                cdx_api_suffix = '-cdx'
-
-            routes.append(Route(name + str(cdx_api_suffix),
-                                CDXAPIHandler(query_handler)))
+            add_cdx_api_handler(name, cdx_api_suffix, routes, query_handler)
 
     if config.get('debug_echo_env', False):
         routes.append(Route('echo_env', DebugEchoEnvHandler()))

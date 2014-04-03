@@ -1,21 +1,18 @@
 from pywb.framework.wsgi_wrappers import init_app, start_wsgi_server
 
-from pywb.core.cdx_api_handler import create_cdx_server_app
+#from pywb.core.cdx_api_handler import create_cdx_server_app
+from pywb.core.pywb_init import create_cdx_server_app
 
 #=================================================================
 # init cdx server app
 #=================================================================
 
-# cdx-server only config
-DEFAULT_CONFIG = 'pywb/configs/cdx-server-config.yaml'
-
 application = init_app(create_cdx_server_app,
-                       load_yaml=True,
-                       config_file=DEFAULT_CONFIG)
+                       load_yaml=True)
 
 
 def main():
-    start_wsgi_server(application, 'CDX Server')
+    start_wsgi_server(application, 'CDX Server', default_port=8090)
 
 if __name__ == "__main__":
     main()

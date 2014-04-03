@@ -132,7 +132,7 @@ Sample Setup
 
 pywb is configurable via yaml.
 
-The simplest `config.yaml <https://github.com/ikreymer/pywb/blob/develop/configs/config.yaml>`_ is roughly as follows:
+The simplest `config.yaml <https://github.com/ikreymer/pywb/blob/develop/config.yaml>`_ is roughly as follows:
 
 ::
 
@@ -145,7 +145,7 @@ The simplest `config.yaml <https://github.com/ikreymer/pywb/blob/develop/configs
 
 This sets up pywb with a single route for collection /pywb
 
-(The the latest version of `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_ contains
+(The the latest version of `config.yaml <https://github.com/ikreymer/pywb/blob/develop/config.yaml>`_ contains
 additional documentation and specifies all the optional properties, such
 as ui filenames for Jinja2/html template files.)
 

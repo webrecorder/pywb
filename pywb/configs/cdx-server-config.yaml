@@ -1,3 +1,0 @@
-#CDX Server WSGI App Config
-index_paths: ./sample_archive/cdx/
-port: 8090

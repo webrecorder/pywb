@@ -43,7 +43,7 @@ Given an archive of warcs at ``myarchive/warcs``
 2. Run ``cdx-indexer --sort myarchive/cdx myarchive/warcs`` to generate .cdx files for each
    warc/arc file in ``myarchive/warcs``
 
-3. Edit ``config.yaml`` to contain the following. You may replace ``pywb`` with
+3. Edit ``<https://github.com/ikreymer/pywb/blob/develop/config.yaml>`` to contain the following. You may replace ``pywb`` with
    a name of your choice -- it will be the path to your collection. (Multiple collections can be added
    for different sets of .cdx files as well)
 
@@ -71,7 +71,7 @@ If you already have .cdx files for your archive, you can skip the first two step
 pywb recommends using `SURT <http://crawler.archive.org/articles/user_manual/glossary.html#surt>`_ (Sort-friendly URI Reordering Transform)
 sorted urls and the ``cdx-indexer`` automatically generates indexs in this format.
 
-However, pywb is compatible with regular url keyed indexs.
+However, pywb is compatible with regular url keyed indexes also.
 If you would like to use non-SURT ordered .cdx files, simply add this field to the config:
 
 ::
@@ -112,7 +112,7 @@ Additional Documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  For additional/up-to-date configuration details, consult the current
-   `config.yaml <https://github.com/ikreymer/pywb/blob/develop/configs/config.yaml>`_
+   `config.yaml <https://github.com/ikreymer/pywb/blob/develop/config.yaml>`_
 
 -  The `wiki <https://github.com/ikreymer/pywb/wiki>`_ will have
    additional technical documentation about various aspects of pywb

@@ -98,9 +98,6 @@ enable_cdx_api: true
 # set to false to disable
 #domain_specific_rules: rules.yaml
 
-# Permissions checker
-#perms_checker: !!python/object/new:pywb.cdx.perms.AllowAllPerms []
-
 # Memento support, enable
 enable_memento: true
 

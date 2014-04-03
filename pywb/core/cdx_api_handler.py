@@ -49,17 +49,3 @@ class CDXAPIHandler(BaseHandler):
             params['output'] = 'text'
 
         return params
-
-
-#=================================================================
-def create_cdx_server_app(config):
-    """
-    Create a cdx server config to be wrapped in a wsgi app
-    Currently using single access point '/cdx' to expose the api
-    TODO: more complex example with multiple collections?
-    """
-    query_handler = QueryHandler.init_from_config(config)
-
-    port = config.get('port')
-    routes = [Route('cdx', CDXAPIHandler(query_handler))]
-    return ArchivalRouter(routes, port=port)

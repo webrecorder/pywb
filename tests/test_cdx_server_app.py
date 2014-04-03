@@ -17,7 +17,7 @@ def client():
 #================================================================
 def query(client, url, is_error=False, **params):
     params['url'] = url
-    return client.get('/cdx?' + urlencode(params, doseq=1), expect_errors=is_error)
+    return client.get('/pywb-cdx?' + urlencode(params, doseq=1), expect_errors=is_error)
 
 
 #================================================================

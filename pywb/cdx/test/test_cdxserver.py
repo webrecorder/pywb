@@ -14,7 +14,7 @@ from pywb import get_test_dir
 
 TEST_CDX_DIR = get_test_dir() + 'cdx/'
 
-CDX_SERVER_URL = 'http://localhost/cdx'
+CDX_SERVER_URL = 'http://localhost/pywb-cdx'
 
 CDX_RESULT = [
  ('urlkey', 'com,example)/'),
