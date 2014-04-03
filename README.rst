@@ -50,7 +50,7 @@ Given an archive of warcs at ``myarchive/warcs``
 2. Run ``cdx-indexer --sort myarchive/cdx myarchive/warcs`` to generate .cdx files for each
    warc/arc file in ``myarchive/warcs``
 
-3. Edit ``<https://github.com/ikreymer/pywb/blob/develop/config.yaml>`` to contain the following. You may replace ``pywb`` with
+3. Edit **config.yaml** to contain the following. You may replace ``pywb`` with
    a name of your choice -- it will be the path to your collection. (Multiple collections can be added
    for different sets of .cdx files as well)
 
@@ -67,7 +67,7 @@ Given an archive of warcs at ``myarchive/warcs``
    If your archives contain ``http://my-archive-page.example.com``, all captures should be accessible
    by browsing to http://localhost:8080/pywb/\*/my-archived-page.example.com
 
-   (You can also ./run-uwsgi.sh for running with those WSGI containers)
+   (You can also use ``run-uwsgi.sh`` or ``run-gunicorn.sh`` to launch using those WSGI containers)
 
 
 See `INSTALL.rst <https://github.com/ikreymer/pywb/blob/develop/INSTALL.rst>`_ for additional installation info.

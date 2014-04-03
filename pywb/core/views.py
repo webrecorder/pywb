@@ -2,6 +2,8 @@ from pywb.utils.timeutils import timestamp_to_datetime
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import make_timemap, LINK_FORMAT
 
+from pywb.core.handlers import WBHandler
+
 import urlparse
 import logging
 
@@ -52,6 +54,14 @@ def get_hostname(url):
 @template_filter()
 def request_hostname(env):
     return env.get('HTTP_HOST', 'localhost')
+
+
+@template_filter()
+def is_wb_handler(obj):
+    if not hasattr(obj, 'handler'):
+        return False
+
+    return isinstance(obj.handler, WBHandler)
 
 
 #=================================================================

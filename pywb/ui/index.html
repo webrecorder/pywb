@@ -3,7 +3,9 @@
 The following archive collections are available:
 
 <ul>
-{% for route in routes  %}
+{% for route in routes %}
+  {% if route | is_wb_handler %}
   <li><a href="{{ '/' + route.path }}">{{ '/' + route.path }}</a>: {{ route | string }}</li>
+  {% endif %} 
 {% endfor %}
 </ul>

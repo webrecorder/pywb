@@ -344,8 +344,10 @@ def remove_ext(filename):
 
     return filename
 
+
 def cdx_filename(filename):
     return remove_ext(filename) + '.cdx'
+
 
 def index_to_dir(inputs, output, sort):
     for fullpath, filename in iter_file_or_dir(inputs):

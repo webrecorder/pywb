@@ -55,7 +55,7 @@ To start a pywb with sample data:
 
 3. Run ``wayback`` (shorthand for ``python -m pywb.apps.wayback``) to start the pywb wayback server with reference WSGI implementation.
 
-OR run ``run-uwsgi.sh`` to start with uWSGI (see below for more info).
+OR run ``run-uwsgi.sh`` or ``run-gunicorn.sh`` to start with uWSGI or gunicorn (see below for more info).
 
 4. Test pywb in your browser! (pywb is set to run on port 8080 by
    default).
@@ -71,18 +71,17 @@ If everything worked, the following pages should be loading (served from
 | ``http://iana.org``    | http://localhost:8080/pywb/iana.org    | http://localhost:8080/pywb/\*/iana.org     |
 +------------------------+----------------------------------------+--------------------------------------------+
 
-uWSGI startup script
-^^^^^^^^^^^^^^^^^^^^
+uWSGI and gunicorn startup scripts
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A sample uWSGI start up script, ``run-uwsgi.sh`` which assumes a default
-uWSGI installation is provided as well.
-
-Currently, uWSGI is not installed automatically with this distribution,
-but it is recommended for production environments.
+pywb includes sample uWSGI and gunicorn scripts ``run-uwsgi.sh`` and
+``run-gunicorn.sh`` which pip install uwsgi and gunicorn and attempt to launch
+the wsgi app with those containers.
 
 Please see `uWSGI
 Installation <http://uwsgi-docs.readthedocs.org/en/latest/Install.html>`_
-for more details on installing uWSGI.
+and `Gunicorn QuickStart <http://gunicorn.org/>`_
+for more details on installing these containers.
 
 Vagrant
 ~~~~~~~
