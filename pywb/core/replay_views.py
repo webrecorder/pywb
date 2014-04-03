@@ -3,7 +3,7 @@ from io import BytesIO
 
 from pywb.utils.bufferedreaders import ChunkedDataReader
 from pywb.utils.statusandheaders import StatusAndHeaders
-from pywb.utils.wbexception import WbException
+from pywb.utils.wbexception import WbException, NotFoundException
 
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import MementoResponse
@@ -23,8 +23,7 @@ class CaptureException(WbException):
 
 
 #=================================================================
-class ReplayView:
-
+class ReplayView(object):
     STRIP_SCHEME = re.compile('^([\w]+:[/]*)?(.*?)$')
 
     def __init__(self, content_loader, content_rewriter, head_insert_view=None,
@@ -84,11 +83,13 @@ class ReplayView:
             if response:
                 return response
 
-        if last_e:
-            raise last_e
-        else:
-            raise WbException('No Content Loaded for: ' +
-                              str(wbrequest.wb_url))
+        if not last_e:
+            # can only get here if cdx_lines is empty somehow
+            # should be filtered out before hand, but if not
+            msg = 'No Captures found for: ' + wbrequest.wb_url.url
+            last_e = NotFoundException(msg)
+
+        raise last_e
 
     def replay_capture(self, wbrequest, cdx, cdx_loader, failed_files):
         (status_headers, stream) = (self.content_loader.
@@ -107,19 +108,32 @@ class ReplayView:
         # one more check for referrer-based self-redirect
         self._reject_referrer_self_redirect(wbrequest)
 
-        response = None
+        urlrewriter = wbrequest.urlrewriter
 
-        if self.content_rewriter and not wbrequest.is_identity:
+        head_insert_func = self.get_head_insert_func(wbrequest, cdx)
 
-            response = self.rewrite_content(wbrequest,
-                                            cdx,
-                                            status_headers,
-                                            stream)
-        else:
-            (status_headers, stream) = self.sanitize_content(status_headers,
-                                                             stream)
-            response_iter = self.stream_to_iter(stream)
-            response = WbResponse(status_headers, response_iter)
+        result = (self.content_rewriter.
+                  rewrite_content(urlrewriter,
+                                  headers=status_headers,
+                                  stream=stream,
+                                  head_insert_func=head_insert_func,
+                                  urlkey=cdx['urlkey'],
+                                  sanitize_only=wbrequest.is_identity))
+
+        (status_headers, response_iter, is_rewritten) = result
+
+        # buffer response if buffering enabled
+        if self.buffer_response:
+            if wbrequest.is_identity:
+                status_headers.remove_header('content-length')
+
+            response_iter = self.buffered_response(status_headers,
+                                                   response_iter)
+
+        response = self.response_class(status_headers,
+                                       response_iter,
+                                       wbrequest=wbrequest,
+                                       cdx=cdx)
 
         # notify reporter callback, if any
         if self._reporter:
@@ -127,70 +141,17 @@ class ReplayView:
 
         return response
 
-    @staticmethod
-    def stream_to_iter(stream):
-        try:
-            buff = stream.read()
-            while buff:
-                yield buff
-                buff = stream.read()
-
-        finally:
-            stream.close()
-
-    def sanitize_content(self, status_headers, stream):
-        # remove transfer encoding chunked and wrap in a dechunking stream
-        if (status_headers.remove_header('transfer-encoding')):
-            stream = ChunkedDataReader(stream)
-
-        return (status_headers, stream)
-
-    def rewrite_content(self, wbrequest, cdx, status_headers, stream):
-        urlrewriter = wbrequest.urlrewriter
-
-        result = self.content_rewriter.rewrite_headers(urlrewriter,
-                                                       status_headers,
-                                                       stream,
-                                                       cdx['urlkey'])
-        (rewritten_headers, stream) = result
-
-        # no rewriting needed!
-        if rewritten_headers.text_type is None:
-            response_iter = self.stream_to_iter(stream)
-            return self.response_class(rewritten_headers.status_headers,
-                                       response_iter,
-                                       wbrequest=wbrequest,
-                                       cdx=cdx)
+    def get_head_insert_func(self, wbrequest, cdx):
+        # no head insert specified
+        if not self.head_insert_view:
+            return None
 
         def make_head_insert(rule):
             return (self.head_insert_view.
                     render_to_string(wbrequest=wbrequest,
                                      cdx=cdx,
                                      rule=rule))
-         # do head insert
-        if self.head_insert_view:
-            head_insert_func = make_head_insert
-        else:
-            head_insert_func = None
-
-        result = self.content_rewriter.rewrite_content(urlrewriter,
-                                                       rewritten_headers,
-                                                       stream,
-                                                       head_insert_func,
-                                                       cdx['urlkey'])
-
-        (status_headers, response_gen) = result
-
-        if self.buffer_response:
-            if wbrequest.is_identity:
-                status_headers.remove_header('content-length')
-
-            response_gen = self.buffered_response(status_headers, response_gen)
-
-        return self.response_class(status_headers,
-                                   response_gen,
-                                   wbrequest=wbrequest,
-                                   cdx=cdx)
+        return make_head_insert
 
     # Buffer rewrite iterator and return a response from a string
     def buffered_response(self, status_headers, iterator):

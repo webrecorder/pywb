@@ -21,6 +21,13 @@ class RewriteContent:
                                default_rule_config={},
                                ds_rules_file=ds_rules_file)
 
+    def sanitize_content(self, status_headers, stream):
+        # remove transfer encoding chunked and wrap in a dechunking stream
+        if (status_headers.remove_header('transfer-encoding')):
+            stream = ChunkedDataReader(stream)
+
+        return (status_headers, stream)
+
     def rewrite_headers(self, urlrewriter, status_headers, stream, urlkey=''):
 
         header_rewriter_class = (self.ruleset.get_first_match(urlkey).
@@ -45,22 +52,22 @@ class RewriteContent:
         return (rewritten_headers, stream)
 
     def rewrite_content(self, urlrewriter, headers, stream,
-                        head_insert_func=None, urlkey=''):
+                        head_insert_func=None, urlkey='',
+                        sanitize_only=False):
 
-        # see if we've already rewritten headers
-        if isinstance(headers, RewrittenStatusAndHeaders):
-            rewritten_headers = headers
-        elif isinstance(headers, StatusAndHeaders):
-        # otherwise, need to determine if rewriting is even necessary
-            (rewritten_headers, stream) = self.rewrite_headers(urlrewriter,
-                                                               headers,
-                                                               stream)
-            # no rewriting needed here
-            if rewritten_headers.text_type is None:
-                gen = self.stream_to_gen(stream)
-                return (status_headers, gen)
+        if sanitize_only:
+            status_headers, stream = self.sanitize_content(headers, stream)
+            return (status_headers, self.stream_to_gen(stream), False)
+
+        (rewritten_headers, stream) = self.rewrite_headers(urlrewriter,
+                                                           headers,
+                                                           stream)
 
         status_headers = rewritten_headers.status_headers
+
+        # use rewritten headers, but no further rewriting needed
+        if rewritten_headers.text_type is None:
+            return (status_headers, self.stream_to_gen(stream), False)
 
         # Handle text content rewriting
         # ====================================================================
@@ -89,9 +96,8 @@ class RewriteContent:
         except KeyError:
             raise Exception('Unknown Text Type for Rewrite: ' + text_type)
 
-        #import sys
-        #sys.stderr.write(str(vars(rule)))
-
+        # for html, need to perform header insert, supply js, css, xml
+        # rewriters
         if text_type == 'html':
             head_insert_str = ''
 
@@ -103,12 +109,14 @@ class RewriteContent:
                                       css_rewriter_class=rule.rewriters['css'],
                                       head_insert=head_insert_str)
         else:
+        # apply one of (js, css, xml) rewriters
             rewriter = rewriter_class(urlrewriter)
 
         # Create rewriting generator
         gen = self._rewriting_stream_gen(rewriter, encoding,
                                          stream, first_buff)
-        return (status_headers, gen)
+
+        return (status_headers, gen, True)
 
     # Create rewrite stream,  may even be chunked by front-end
     def _rewriting_stream_gen(self, rewriter, encoding,
@@ -136,7 +144,8 @@ class RewriteContent:
                                   final_read_func=do_finish,
                                   first_buff=first_buff)
 
-    def _decode_buff(self, buff, stream, encoding):
+    @staticmethod
+    def _decode_buff(buff, stream, encoding):
         try:
             buff = buff.decode(encoding)
         except UnicodeDecodeError, e:
@@ -152,12 +161,6 @@ class RewriteContent:
                 raise
 
         return buff
-
-    #def _detect_charset(self, stream):
-    #    buff = stream.read(8192)
-    #    result = chardet.detect(buff)
-    #    print "chardet result: " + str(result)
-    #    return (result['encoding'], buff)
 
     def _detect_charset(self, stream):
         full_buff = stream.read(8192)

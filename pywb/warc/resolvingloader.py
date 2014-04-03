@@ -87,7 +87,7 @@ class ResolvingLoader:
 
         # optimization: if same file already failed this request,
         # don't try again
-        if failed_files and filename in failed_files:
+        if failed_files is not None and filename in failed_files:
             raise ArchiveLoadFailed('Skipping Already Failed', filename)
 
         any_found = False
@@ -108,7 +108,7 @@ class ResolvingLoader:
                         last_traceback = sys.exc_info()[2]
 
         # Unsuccessful if reached here
-        if failed_files:
+        if failed_files is not None:
             failed_files.append(filename)
 
         if last_exc:

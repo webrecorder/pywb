@@ -204,6 +204,21 @@ StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [ ('Acc
 # Error Handling
 # ==============================================================================
 
+# Warc not found, keep track of failed files
+>>> failed_files = []
+>>> load_from_cdx_test('com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 856 170 x-not-found-x.warc.gz',\
+failed_files=failed_files)
+Exception: ArchiveLoadFailed
+
+# ensure failed_files being filled
+>>> failed_files
+['x-not-found-x.warc.gz']
+
+>>> load_from_cdx_test('com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 856 170 x-not-found-x.warc.gz',\
+failed_files=failed_files)
+Exception: ArchiveLoadFailed
+
+
 # Invalid WARC Offset
 >>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 1860 example.warc.gz 1043 333 example.warc.gz')
 Exception: ArchiveLoadFailed
@@ -235,8 +250,13 @@ Exception: ArchiveLoadFailed
 Exception: ArchiveLoadFailed
 
 # Revisit Errors
-# original not found
+# original missing
 >>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - - 1864 example.warc.gz - - -', reraise=True)
+Traceback (most recent call last):
+ArchiveLoadFailed: Missing Revisit Original
+
+# original warc not found
+>>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - - 1864 example.warc.gz 100 10 someunknown.warc.gz', reraise=True)
 Traceback (most recent call last):
 ArchiveLoadFailed: Missing Revisit Original
 
@@ -245,6 +265,10 @@ ArchiveLoadFailed: Missing Revisit Original
 Traceback (most recent call last):
 ArchiveLoadFailed: Original for revisit could not be loaded
 
+# url-agnostic original found, but could not be loaded
+>>> load_from_cdx_test(URL_AGNOSTIC_REVISIT_CDX, revisit_func=load_orig_bad_cdx, reraise=True)
+Traceback (most recent call last):
+ArchiveLoadFailed: Original for revisit could not be loaded
 
 """
 
@@ -275,6 +299,10 @@ URL_AGNOSTIC_REVISIT_NO_DIGEST_CDX = 'com,example)/ 20130729195151 http://test@e
 warc/revisit - - - - \
 591 355 example-url-agnostic-revisit.warc.gz'
 
+BAD_ORIG_CDX = 'org,iana,example)/ 20130702195401 http://example.iana.org/ \
+text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - \
+1001 353 someunknown.warc.gz'
+
 
 #==============================================================================
 def load_test_archive(test_file, offset, length):
@@ -289,16 +317,27 @@ def load_test_archive(test_file, offset, length):
 
 
 #==============================================================================
-def load_orig_cdx(self):
-    return [CDXObject(URL_AGNOSTIC_ORIG_CDX)]
+def load_orig_bad_cdx(self):
+    return [CDXObject(BAD_ORIG_CDX),
+            CDXObject(BAD_ORIG_CDX)]
 
 
 #==============================================================================
-def load_from_cdx_test(cdx, revisit_func=load_orig_cdx, reraise=False):
+def load_orig_cdx(self):
+    return [CDXObject(BAD_ORIG_CDX),
+            CDXObject(URL_AGNOSTIC_ORIG_CDX)]
+
+
+#==============================================================================
+def load_from_cdx_test(cdx, revisit_func=load_orig_cdx, reraise=False,
+                       failed_files=None):
     resolve_loader = ResolvingLoader(test_warc_dir)
     cdx = CDXObject(cdx)
+
     try:
-        (headers, stream) = resolve_loader.resolve_headers_and_payload(cdx, None, revisit_func)
+        (headers, stream) = resolve_loader.resolve_headers_and_payload(cdx,
+                                                                       failed_files,
+                                                                       revisit_func)
         print headers
         sys.stdout.write(stream.readline())
         sys.stdout.write(stream.readline())

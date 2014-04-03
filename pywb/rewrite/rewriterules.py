@@ -21,7 +21,7 @@ def use_lxml_parser():
         HTML = LXMLHTMLRewriter
         logging.debug('Using LXML Parser')
         return True
-    else:
+    else:  # pragma: no cover
         logging.debug('LXML Parser not available')
         return False
 

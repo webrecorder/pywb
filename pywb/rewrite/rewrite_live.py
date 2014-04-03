@@ -64,7 +64,7 @@ def get_rewritten(url, urlrewriter, urlkey=None, head_insert_func=None):
                                       head_insert_func=head_insert_func,
                                       urlkey=urlkey)
 
-    status_headers, gen = result
+    status_headers, gen, is_rewritten = result
 
     buff = ''.join(gen)
 
