@@ -66,6 +66,8 @@ def is_wb_handler(obj):
 
 #=================================================================
 class J2TemplateView:
+    env_globals = {}
+
     def __init__(self, filename):
         template_dir, template_file = path.split(filename)
 
@@ -81,6 +83,7 @@ class J2TemplateView:
 
         jinja_env = Environment(loader=loader, trim_blocks=True)
         jinja_env.filters.update(FILTERS)
+        jinja_env.globals.update(self.env_globals)
         return jinja_env
 
     def render_to_string(self, **kwargs):
@@ -97,6 +100,11 @@ class J2TemplateView:
         return WbResponse.text_response(str(template_result),
                                         status=status,
                                         content_type=content_type)
+
+
+#=================================================================
+def add_env_globals(glb):
+    J2TemplateView.env_globals.update(glb)
 
 
 #=================================================================

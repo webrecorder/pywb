@@ -35,9 +35,12 @@ class QueryHandler(object):
                          ds_rules_file=DEFAULT_RULES_FILE,
                          html_view=None):
 
-        perms_policy = config.get('perms_policy')
+        perms_policy = None
+        server_cls = None
 
-        server_cls = config.get('server_cls')
+        if hasattr(config, 'get'):
+            perms_policy = config.get('perms_policy')
+            server_cls = config.get('server_cls')
 
         cdx_server = create_cdx_server(config, ds_rules_file, server_cls)
 

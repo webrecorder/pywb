@@ -11,7 +11,7 @@ from pywb.warc.resolvingloader import ResolvingLoader
 from pywb.rewrite.rewrite_content import RewriteContent
 from pywb.rewrite.rewriterules import use_lxml_parser
 
-from views import load_template_file, load_query_template
+from views import load_template_file, load_query_template, add_env_globals
 from replay_views import ReplayView
 
 from query_handler import QueryHandler
@@ -37,6 +37,8 @@ DEFAULTS = {
     'home_html': 'ui/index.html',
     'error_html': 'ui/error.html',
 
+    'template_globals': {'static_path': 'static/default'},
+
     'static_routes': {'static/default': 'pywb/static/'},
 
     'domain_specific_rules': DEFAULT_RULES_FILE,
@@ -61,7 +63,8 @@ class DictChain:
 
 
 #=================================================================
-def create_wb_handler(query_handler, config, ds_rules_file=None):
+def create_wb_handler(query_handler, config,
+                      ds_rules_file=DEFAULT_RULES_FILE):
 
     cookie_maker = config.get('cookie_maker')
     record_loader = ArcWarcRecordLoader(cookie_maker=cookie_maker)
@@ -70,6 +73,10 @@ def create_wb_handler(query_handler, config, ds_rules_file=None):
 
     resolving_loader = ResolvingLoader(paths=paths,
                                        record_loader=record_loader)
+
+    template_globals = config.get('template_globals')
+    if template_globals:
+        add_env_globals(template_globals)
 
     head_insert_view = load_template_file(config.get('head_insert_html'),
                                           'Head Insert')

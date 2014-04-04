@@ -104,10 +104,15 @@ class FuzzyQuery:
         if inx > 0:
             url = url[:inx + 1]
 
-        params = {'url': url,
-                  'matchType': 'prefix',
-                  'filter': filter_,
-                  'output': output}
+        params = query.params
+        params.update({'url': url,
+                       'matchType': 'prefix',
+                       'filter': filter_})
+        try:
+            del params['reverse']
+            del params['closest']
+        except KeyError:
+            pass
 
         return params
 
