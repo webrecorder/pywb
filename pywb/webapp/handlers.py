@@ -86,13 +86,13 @@ class StaticHandler(BaseHandler):
 #=================================================================
 # Debug Handlers
 #=================================================================
-class DebugEchoEnvHandler(BaseHandler):
+class DebugEchoEnvHandler(BaseHandler):  # pragma: no cover
     def __call__(self, wbrequest):
         return WbResponse.text_response(str(wbrequest.env))
 
 
 #=================================================================
-class DebugEchoHandler(BaseHandler):
+class DebugEchoHandler(BaseHandler):  # pragma: no cover
     def __call__(self, wbrequest):
         return WbResponse.text_response(str(wbrequest))
 

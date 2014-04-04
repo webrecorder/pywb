@@ -1,5 +1,5 @@
 """
-An example perms policy used for testing
+An example perms policy used as a testing fixture
 this policy is enabled by adding the following setting to the
 main config.yaml
 
@@ -31,5 +31,3 @@ class TestExclusionPerms(Perms):
 #================================================================
 def perms_policy(wbrequest):
     return TestExclusionPerms()
-
-

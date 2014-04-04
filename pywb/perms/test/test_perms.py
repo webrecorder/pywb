@@ -2,7 +2,7 @@ from pywb.cdx.cdxops import cdx_load
 from pywb.cdx.query import CDXQuery
 from pywb.cdx.cdxserver import CDXServer
 from pywb.utils.wbexception import AccessException
-from pywb.core.query_handler import QueryHandler
+from pywb.webapp.query_handler import QueryHandler
 
 from pytest import raises
 

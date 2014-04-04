@@ -2,7 +2,7 @@ from pywb.utils.timeutils import timestamp_to_datetime
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import make_timemap, LINK_FORMAT
 
-from pywb.core.handlers import WBHandler
+from handlers import WBHandler
 
 import urlparse
 import logging

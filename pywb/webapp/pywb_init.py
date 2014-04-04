@@ -1,3 +1,5 @@
+from pywb.utils.dsrules import DEFAULT_RULES_FILE
+
 from pywb.framework.archivalrouter import ArchivalRouter, Route
 from pywb.framework.proxy import ProxyArchivalRouter
 from pywb.framework.wbrequestresponse import WbRequest
@@ -37,7 +39,7 @@ DEFAULTS = {
 
     'static_routes': {'static/default': 'pywb/static/'},
 
-    'domain_specific_rules': 'pywb/rules.yaml',
+    'domain_specific_rules': DEFAULT_RULES_FILE,
 
     'enable_memento': True,
 

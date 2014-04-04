@@ -1,5 +1,5 @@
 from pywb.framework.wsgi_wrappers import init_app, start_wsgi_server
-from pywb.core.pywb_init import create_wb_router
+from pywb.webapp.pywb_init import create_wb_router
 
 #=================================================================
 # init pywb app

@@ -1,6 +1,7 @@
 from pywb.apps.cdx_server import application
 from pywb.cdx.cdxserver import CDXServer, RemoteCDXServer
 
+from pywb.utils.dsrules import DEFAULT_RULES_FILE
 from pywb.utils.wbexception import AccessException, NotFoundException
 from pywb.utils.wbexception import BadRequestException, WbException
 
@@ -110,25 +111,22 @@ def test_match():
     assert_cdx_match(RemoteCDXServer(CDX_SERVER_URL))
 
 
-# TODO: make these automatic
-DEFAULT_RULES = 'pywb/rules.yaml'
-
 def test_fuzzy_match():
     # Local CDX Server
     assert_cdx_fuzzy_match(CDXServer([TEST_CDX_DIR],
-                           ds_rules_file=DEFAULT_RULES))
+                           ds_rules_file=DEFAULT_RULES_FILE))
 
     # Remote CDX Source, Local Filtering
     # two calls to remote, first exact with 404,
     # then fuzzy with 200
     assert_cdx_fuzzy_match(CDXServer(CDX_SERVER_URL,
-                           ds_rules_file=DEFAULT_RULES),
+                           ds_rules_file=DEFAULT_RULES_FILE),
                            mock_urlopen_fuzzy)
 
     # Remote CDX Query (Remote Filtering)
     # fuzzy match handled on remote, single response
     assert_cdx_fuzzy_match(RemoteCDXServer(CDX_SERVER_URL,
-                           ds_rules_file=DEFAULT_RULES))
+                           ds_rules_file=DEFAULT_RULES_FILE))
 
 def assert_error(func, exception):
     with raises(exception):

@@ -100,7 +100,7 @@ reporter: !!python/object/new:tests.fixture.PrintReporter []
 # Not yet production ready -- used primarily for testing
 
 #perms_checker: !!python/object/new:pywb.cdx.perms.AllowAllPerms []
-perms_policy: !!python/name:pywb.perms.test.test_perms_policy.perms_policy
+perms_policy: !!python/name:tests.perms_fixture.perms_policy
 
 # not testing memento here
 enable_memento: False

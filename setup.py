@@ -50,7 +50,7 @@ setup(
         'pywb.rewrite',
         'pywb.framework',
         'pywb.perms',
-        'pywb.core',
+        'pywb.webapp',
         'pywb.apps'
         ],
     package_data={
