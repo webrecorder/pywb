@@ -1,11 +1,11 @@
 PyWb 0.2.2
 =============
 
-.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=develop
+.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=master
       :target: https://travis-ci.org/ikreymer/pywb
          
-.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=develop
-      :target: https://coveralls.io/r/ikreymer/pywb?branch=develop
+.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=master
+      :target: https://coveralls.io/r/ikreymer/pywb?branch=master
 
 pywb is a python implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
 
@@ -15,7 +15,7 @@ pywb allows high-fidelity replay (browsing) of archived web data stored in stand
 Latest Changes
 --------------
 
-See `CHANGES.rst <https://github.com/ikreymer/pywb/blob/develop/CHANGES.rst>`_ for up-to-date changelist.
+See `CHANGES.rst <https://github.com/ikreymer/pywb/blob/master/CHANGES.rst>`_ for up-to-date changelist.
 
 
 Quick Install & Run Samples
@@ -30,7 +30,7 @@ Quick Install & Run Samples
 4.  Browse to http://localhost:8080/pywb/\*/example.com to see capture of http://example.com
 
 
-(The `installation page <https://github.com/ikreymer/pywb/blob/develop/INSTALL.rst>`_ contains additional
+(The `installation page <https://github.com/ikreymer/pywb/blob/master/INSTALL.rst>`_ contains additional
 installation and testing examples.)
 
 
@@ -71,7 +71,7 @@ Given an archive of warcs at ``myarchive/warcs``
    (You can also use ``run-uwsgi.sh`` or ``run-gunicorn.sh`` to launch using those WSGI containers)
 
 
-See `INSTALL.rst <https://github.com/ikreymer/pywb/blob/develop/INSTALL.rst>`_ for additional installation info.
+See `INSTALL.rst <https://github.com/ikreymer/pywb/blob/master/INSTALL.rst>`_ for additional installation info.
 
 
 Use existing .cdx index files
@@ -116,7 +116,7 @@ Additional Documentation
 ------------------------
 
 -  For additional/up-to-date configuration details, consult the current
-   `config.yaml <https://github.com/ikreymer/pywb/blob/develop/config.yaml>`_
+   `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_
 
 -  The `wiki <https://github.com/ikreymer/pywb/wiki>`_ will have
    additional technical documentation about various aspects of pywb
