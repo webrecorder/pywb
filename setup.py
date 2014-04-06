@@ -34,7 +34,7 @@ class PyTest(TestCommand):
 
 setup(
     name='pywb',
-    version='0.2.2',
+    version='0.3.1',
     url='https://github.com/ikreymer/pywb',
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
@@ -84,6 +84,7 @@ setup(
         [console_scripts]
         wayback = pywb.apps.wayback:main
         cdx-server = pywb.apps.cdx_server:main
+        rewrite-live = pywb.apps.rewrite_live:main
         cdx-indexer = pywb.warc.archiveindexer:main
         """,
     zip_safe=False,

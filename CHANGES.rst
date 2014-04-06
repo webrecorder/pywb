@@ -1,4 +1,10 @@
-pywb 0.2.2 changelist
+pywb 0.3.1 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Improve lxml rewriting, letting lxml handle decoding from bytestream (to address #36)
+
+
+pywb 0.3.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
 * Generate cdx indexs via command-line `cdx-indexer` script. Optionally sorting, and output to either a single combined file or a file per-directory.
