@@ -6,7 +6,7 @@ from io import BytesIO
 
 from header_rewriter import RewrittenStatusAndHeaders
 
-from rewriterules import RewriteRules
+from rewriterules import RewriteRules, is_lxml
 
 from pywb.utils.dsrules import RuleSet
 from pywb.utils.statusandheaders import StatusAndHeaders
@@ -73,21 +73,25 @@ class RewriteContent:
         # ====================================================================
         # special case -- need to ungzip the body
 
+        text_type = rewritten_headers.text_type
+        stream_raw = False
+        encoding = None
+        first_buff = None
+
         if (rewritten_headers.
              contains_removed_header('content-encoding', 'gzip')):
             stream = DecompressingBufferedReader(stream, decomp_type='gzip')
 
         if rewritten_headers.charset:
             encoding = rewritten_headers.charset
-            first_buff = None
+        elif is_lxml() and text_type == 'html':
+            stream_raw = True
         else:
             (encoding, first_buff) = self._detect_charset(stream)
 
-            # if chardet thinks its ascii, use utf-8
-            if encoding == 'ascii':
-                encoding = 'utf-8'
-
-        text_type = rewritten_headers.text_type
+        # if encoding not set or chardet thinks its ascii, use utf-8
+        if not encoding or encoding == 'ascii':
+            encoding = 'utf-8'
 
         rule = self.ruleset.get_first_match(urlkey)
 
@@ -108,34 +112,33 @@ class RewriteContent:
                                       js_rewriter_class=rule.rewriters['js'],
                                       css_rewriter_class=rule.rewriters['css'],
                                       head_insert=head_insert_str)
+
         else:
         # apply one of (js, css, xml) rewriters
             rewriter = rewriter_class(urlrewriter)
 
         # Create rewriting generator
-        gen = self._rewriting_stream_gen(rewriter, encoding,
+        gen = self._rewriting_stream_gen(rewriter, encoding, stream_raw,
                                          stream, first_buff)
 
         return (status_headers, gen, True)
 
     # Create rewrite stream,  may even be chunked by front-end
-    def _rewriting_stream_gen(self, rewriter, encoding,
+    def _rewriting_stream_gen(self, rewriter, encoding, stream_raw,
                               stream, first_buff=None):
         def do_rewrite(buff):
-            if encoding:
+            if not stream_raw:
                 buff = self._decode_buff(buff, stream, encoding)
 
             buff = rewriter.rewrite(buff)
 
-            if encoding:
-                buff = buff.encode(encoding)
+            buff = buff.encode(encoding)
 
             return buff
 
         def do_finish():
             result = rewriter.close()
-            if encoding:
-                result = result.encode(encoding)
+            result = result.encode(encoding)
 
             return result
 
@@ -188,12 +191,16 @@ class RewriteContent:
     def stream_to_gen(stream, rewrite_func=None,
                       final_read_func=None, first_buff=None):
         try:
-            buff = first_buff if first_buff else stream.read()
+            if first_buff:
+                buff = first_buff
+            else:
+                buff = stream.read() + stream.readline()
+
             while buff:
                 if rewrite_func:
                     buff = rewrite_func(buff)
                 yield buff
-                buff = stream.read()
+                buff = stream.read() + stream.readline()
 
             # For adding a tail/handling final buffer
             if final_read_func:

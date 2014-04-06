@@ -119,6 +119,15 @@ ur"""
 >>> p = LXMLHTMLRewriter(urlrewriter)
 >>> p.close()
 ''
+
+# test &nbsp;
+>>> parse('&nbsp;')
+<html><body><p>&nbsp;</p></body></html>
+
+# test multiple rewrites: &nbsp; extra >, split comment
+>>> p = LXMLHTMLRewriter(urlrewriter)
+>>> p.rewrite('<div>&nbsp; &nbsp; > <!-- a') + p.rewrite('b --></div>') + p.close()
+u'<html><body><div>&nbsp; &nbsp; &gt; <!-- ab --></div></body></html>'
 """
 
 from pywb.rewrite.url_rewriter import UrlRewriter

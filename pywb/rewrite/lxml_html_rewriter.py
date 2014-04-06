@@ -79,7 +79,8 @@ class RewriterTarget(object):
     def data(self, data):
         if not self.rewriter._wb_parse_context:
             data = cgi.escape(data, quote=True)
-
+            if isinstance(data, unicode):
+                data = data.replace(u'\xa0', '&nbsp;')
         self.rewriter.parse_data(data)
 
     def comment(self, data):
