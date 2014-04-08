@@ -66,7 +66,7 @@ def is_wb_handler(obj):
 
 #=================================================================
 class J2TemplateView:
-    env_globals = {}
+    env_globals = {'static_path': 'static/default'}
 
     def __init__(self, filename):
         template_dir, template_file = path.split(filename)
