@@ -52,25 +52,49 @@ WB_wombat_init = (function() {
         return false;
     }
 
+    function starts_with(string, prefix) {
+        if (string.indexOf(prefix) == 0) {
+            return prefix;
+        } else {
+            return undefined;
+        }
+    }
+
     //============================================
+/*    function rewrite_url_debug(url) {
+        rewritten = rewrite_url_(url);
+        if (url != rewritten) {
+            console.log('REWRITE: ' + url + ' -> ' + rewritten);
+        } else {
+            console.log('NOT REWRITTEN ' + url);
+        }
+        return rewritten;
+    }
+*/
     function rewrite_url(url) {
         var http_prefix = "http://";
         var https_prefix = "https://";
+        var rel_prefix = "//";
 
         // If not dealing with a string, just return it
         if (!url || (typeof url) != "string") {
             return url;
         }
 
+        // ignore anchors
+        if (starts_with(url, "#")) {
+            return url;
+        }
+
         // If starts with prefix, no rewriting needed
         // Only check replay prefix (no date) as date may be different for each
         // capture
-        if (url.indexOf(wb_replay_prefix) == 0) {
+        if (starts_with(url, wb_replay_prefix)) {
             return url;
         }
 
         // If server relative url, add prefix and original host
-        if (url.charAt(0) == "/") {
+        if (url.charAt(0) == "/" && !starts_with(url, rel_prefix)) {
 
             // Already a relative url, don't make any changes!
             if (url.indexOf(wb_capture_date_part) >= 0) {
@@ -81,13 +105,21 @@ WB_wombat_init = (function() {
         }
 
         // If full url starting with http://, add prefix
-        if (url.indexOf(http_prefix) == 0 || url.indexOf(https_prefix) == 0) {
+
+        var prefix = starts_with(url, http_prefix) || 
+                     starts_with(url, https_prefix) || 
+                     starts_with(url, rel_prefix);
+
+        if (prefix) {
+            if (starts_with(url, prefix + window.location.host + '/')) {
+                return url;
+            }
             return wb_replay_date_prefix + url;
         }
 
         // May or may not be a hostname, call function to determine
         // If it is, add the prefix and make sure port is removed
-        if (is_host_url(url)) {
+        if (is_host_url(url) && !starts_with(url, window.location.host + '/')) {
             return wb_replay_date_prefix + http_prefix + url;
         }
 
@@ -252,10 +284,71 @@ WB_wombat_init = (function() {
 
         function open_rewritten(method, url, async, user, password) {
             url = rewrite_url(url);
+
+            // defaults to true
+            if (async != false) {
+                async = true;
+            }
+
             return orig.call(this, method, url, async, user, password);
         }
 
         window.XMLHttpRequest.prototype.open = open_rewritten;
+    }
+
+    function init_worker_override() {
+        if (!window.Worker) {
+            return;
+        }
+
+        // for now, disabling workers until override of worker content can be supported
+        // hopefully, pages depending on workers will have a fallback
+        window.Worker = undefined;
+    }
+
+
+    function rewrite_attr(elem, name) {
+        if (!elem || !elem.getAttribute) {
+            return;
+        }
+
+        value = elem.getAttribute(name);
+
+        if (!value) {
+            return;
+        }
+
+        if (starts_with(value, "javascript:")) {
+            return;
+        }
+
+        orig_value = value;        
+        value = rewrite_url(value);
+           
+        elem.setAttribute(name, value);
+    }
+
+    function init_dom_override() {
+        if (!Element ||
+            !Element.prototype) {
+            return;
+        }
+
+        function replace_dom_func(funcname) {
+
+            var orig = Element.prototype[funcname];
+
+            Element.prototype[funcname] = function() {
+                rewrite_attr(arguments[0], "src");
+                rewrite_attr(arguments[0], "href");
+
+                return orig.apply(this, arguments);
+            }
+        }
+
+        replace_dom_func("appendChild");
+        replace_dom_func("insertBefore");
+        replace_dom_func("replaceChild");
     }
 
     //============================================
@@ -287,6 +380,10 @@ WB_wombat_init = (function() {
 
         // Ajax
         init_ajax_rewrite();
+        init_worker_override();
+
+        // DOM
+        init_dom_override();
 
         // Random
         init_seeded_random(timestamp);       
