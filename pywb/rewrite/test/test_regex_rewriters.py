@@ -51,7 +51,7 @@ r"""
 
 # scheme-agnostic
 >>> _test_js('cool_Location = "//example.com/abc.html" //comment')
-'cool_Location = "/web/20131010em_///example.com/abc.html" //comment'
+'cool_Location = "/web/20131010em_/http://example.com/abc.html" //comment'
 
 
 #=================================================================

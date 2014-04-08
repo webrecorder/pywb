@@ -123,12 +123,20 @@ class RewriteContent:
 
         return (status_headers, gen, True)
 
+    def _parse_full_gen(self, rewriter, encoding, stream):
+        buff = rewriter.parse(stream)
+        buff = buff.encode(encoding)
+        yield buff
+
     # Create rewrite stream,  may even be chunked by front-end
     def _rewriting_stream_gen(self, rewriter, encoding, stream_raw,
                               stream, first_buff=None):
+
+        if stream_raw:
+            return self._parse_full_gen(rewriter, encoding, stream)
+
         def do_rewrite(buff):
-            if not stream_raw:
-                buff = self._decode_buff(buff, stream, encoding)
+            buff = self._decode_buff(buff, stream, encoding)
 
             buff = rewriter.rewrite(buff)
 

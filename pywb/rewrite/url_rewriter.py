@@ -14,7 +14,7 @@ class UrlRewriter(object):
 
     NO_REWRITE_URI_PREFIX = ['#', 'javascript:', 'data:', 'mailto:', 'about:']
 
-    PROTOCOLS = ['http:', 'https:', '//', 'ftp:', 'mms:', 'rtsp:', 'wais:']
+    PROTOCOLS = ['http:', 'https:', 'ftp:', 'mms:', 'rtsp:', 'wais:']
 
     def __init__(self, wburl, prefix):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
@@ -31,6 +31,10 @@ class UrlRewriter(object):
         wburl = self.wburl
 
         isAbs = any(url.startswith(x) for x in self.PROTOCOLS)
+
+        if url.startswith('//'):
+            isAbs = True
+            url = 'http:' + url
 
         # Optimized rewriter for
         # -rel urls that don't start with / and

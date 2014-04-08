@@ -45,6 +45,18 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
         #string = string.replace(u'</html>', u'')
         self.parser.feed(string)
 
+    def parse(self, stream):
+        self.out = self.AccumBuff()
+
+        lxml.etree.parse(stream, self.parser)
+
+        result = self.out.getvalue()
+
+        # Clear buffer to create new one for next rewrite()
+        self.out = None
+
+        return result
+
     def _internal_close(self):
         if self.started:
             self.parser.close()
