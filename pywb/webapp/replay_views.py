@@ -1,9 +1,9 @@
 import re
 from io import BytesIO
 
-from pywb.utils.bufferedreaders import ChunkedDataReader
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.wbexception import WbException, NotFoundException
+from pywb.utils.loaders import LimitReader
 
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import MementoResponse
@@ -105,6 +105,9 @@ class ReplayView(object):
         if redir_response:
             return redir_response
 
+        length = status_headers.get_header('content-length')
+        stream = LimitReader.wrap_stream(stream, length)
+
         # one more check for referrer-based self-redirect
         self._reject_referrer_self_redirect(wbrequest)
 
@@ -124,9 +127,6 @@ class ReplayView(object):
 
         # buffer response if buffering enabled
         if self.buffer_response:
-            if wbrequest.is_identity:
-                status_headers.remove_header('content-length')
-
             response_iter = self.buffered_response(status_headers,
                                                    response_iter)
 
@@ -165,8 +165,10 @@ class ReplayView(object):
             content = out.getvalue()
 
             content_length_str = str(len(content))
-            status_headers.headers.append(('Content-Length',
-                                           content_length_str))
+
+            # remove existing content length
+            status_headers.replace_header('Content-Length',
+                                          content_length_str)
             out.close()
 
         return content

@@ -63,6 +63,9 @@ class ResolvingLoader:
         if not headers_record or not payload_record:
             raise ArchiveLoadFailed('Could not load ' + str(cdx))
 
+        # ensure status line is valid from here
+        headers_record.status_headers.validate_statusline('204 No Content')
+
         return (headers_record.status_headers, payload_record.stream)
 
     def _resolve_path_load(self, cdx, is_original, failed_files):

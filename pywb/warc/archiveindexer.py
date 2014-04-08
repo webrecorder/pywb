@@ -164,7 +164,7 @@ class ArchiveIndexer(object):
 
         digest = record.rec_headers.get_header('WARC-Payload-Digest')
 
-        status = record.status_headers.statusline.split(' ')[0]
+        status = self._extract_status(record.status_headers)
 
         if record.rec_type == 'revisit':
             mime = 'warc/revisit'
@@ -205,7 +205,9 @@ class ArchiveIndexer(object):
         timestamp = record.rec_headers.get_header('archive-date')
         if len(timestamp) > 14:
             timestamp = timestamp[:14]
-        status = record.status_headers.statusline.split(' ')[0]
+
+        status = self._extract_status(record.status_headers)
+
         mime = record.rec_headers.get_header('content-type')
         mime = self._extract_mime(mime)
 
@@ -227,6 +229,12 @@ class ArchiveIndexer(object):
         if not mime:
             mime = 'unk'
         return mime
+
+    def _extract_status(self, status_headers):
+        status = status_headers.statusline.split(' ')[0]
+        if not status:
+            status = '-'
+        return status
 
     def read_rest(self, reader, digester=None):
         """ Read remainder of the stream

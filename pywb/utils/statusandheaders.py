@@ -29,6 +29,21 @@ class StatusAndHeaders(object):
             if value[0].lower() == name_lower:
                 return value[1]
 
+    def replace_header(self, name, value):
+        """
+        replace header with new value or add new header
+        return old header value, if any
+        """
+        name_lower = name.lower()
+        for index in xrange(len(self.headers) - 1, -1, -1):
+            curr_name, curr_value = self.headers[index]
+            if curr_name.lower() == name_lower:
+                self.headers[index] = (curr_name, value)
+                return curr_value
+
+        self.headers.append((name, value))
+        return None
+
     def remove_header(self, name):
         """
         remove header (case-insensitive)
@@ -41,6 +56,20 @@ class StatusAndHeaders(object):
                 return True
 
         return False
+
+    def validate_statusline(self, valid_statusline):
+        """
+        Check that the statusline is valid, eg. starts with a numeric
+        code. If not, replace with passed in valid_statusline
+        """
+        code = self.statusline.split(' ', 1)[0]
+        try:
+            code = int(code)
+            assert(code > 0)
+            return True
+        except ValueError, AssertionError:
+            self.statusline = valid_statusline
+            return False
 
     def __repr__(self):
         headers_str = pprint.pformat(self.headers, indent=2)
@@ -81,9 +110,16 @@ class StatusAndHeadersParser(object):
 
         statusline, total_read = _strip_count(full_statusline, 0)
 
+        headers = []
+
         # at end of stream
         if total_read == 0:
             raise EOFError()
+        elif not statusline:
+            return StatusAndHeaders(statusline=statusline,
+                                    headers=headers,
+                                    protocol='',
+                                    total_len=total_read)
 
         protocol_status = self.split_prefix(statusline, self.statuslist)
 
@@ -92,13 +128,15 @@ class StatusAndHeadersParser(object):
             msg = msg.format(self.statuslist, statusline)
             raise StatusAndHeadersParserException(msg, full_statusline)
 
-        headers = []
-
         line, total_read = _strip_count(stream.readline(), total_read)
         while line:
-            name, value = line.split(':', 1)
-            name = name.rstrip(' \t')
-            value = value.lstrip()
+            result = line.split(':', 1)
+            if len(result) == 2:
+                name = result[0].rstrip(' \t')
+                value = result[1].lstrip()
+            else:
+                name = result[0]
+                value = None
 
             next_line, total_read = _strip_count(stream.readline(),
                                                  total_read)
@@ -109,8 +147,10 @@ class StatusAndHeadersParser(object):
                 next_line, total_read = _strip_count(stream.readline(),
                                                      total_read)
 
-            header = (name, value)
-            headers.append(header)
+            if value is not None:
+                header = (name, value)
+                headers.append(header)
+
             line = next_line
 
         return StatusAndHeaders(statusline=protocol_status[1].strip(),
