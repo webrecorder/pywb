@@ -42,6 +42,7 @@ from io import BytesIO
 status_headers_1 = "\
 HTTP/1.0 200 OK\r\n\
 Content-Type: ABC\r\n\
+HTTP/1.0 200 OK\r\n\
 Some: Value\r\n\
 Multi-Line: Value1\r\n\
     Also This\r\n\

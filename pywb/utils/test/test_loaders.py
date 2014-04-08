@@ -32,6 +32,10 @@ True
 >>> BlockLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read()
 'Example Domain'
 
+# fixed cookie
+>>> BlockLoader('some=value').load('http://example.com', 41, 14).read()
+'Example Domain'
+
 # test with extra id, ensure 4 parts of the A-B=C-D form are present
 >>> len(re.split('[-=]', HMACCookieMaker('test', 'test', 5).make('extra')))
 4

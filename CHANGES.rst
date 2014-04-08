@@ -1,7 +1,11 @@
 pywb 0.3.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* Improve lxml rewriting, letting lxml handle decoding from bytestream (to address #36)
+* Update wombat.js to support: scheme-relative urls rewriting, dom manipulation rewriting, disable web Worker api which could leak to live requests
+
+* Fixed support for empty arc/warc records. Indexed with '-', replay with '204 No Content'
+
+* Improve lxml rewriting, letting lxml handle parsing and decoding from bytestream directly (to address #36)
 
 
 pywb 0.3.0 changelist
