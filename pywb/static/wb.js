@@ -26,6 +26,10 @@ function init_banner() {
         return;
     }
 
+    if (window.top != window.self) {
+        return;
+    }
+
     if (!banner) {
         banner = document.createElement("wb_div");
         banner.setAttribute("id", BANNER_ID);
@@ -41,12 +45,54 @@ function init_banner() {
     }
 }
 
-var readyStateCheckInterval = setInterval(function() {
+function add_event(name, func, object) {
+    if (object.addEventListener) {
+        object.addEventListener(name, func);
+        return true;
+    } else if (object.attachEvent) {
+        object.attachEvent("on" + name, func);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function remove_event(name, func, object) {
+    if (object.removeEventListener) {
+        object.removeEventListener(name, func);
+        return true;
+    } else if (object.detachEvent) {
+        object.detachEvent("on" + name, func);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+var notified_top = false;
+
+var detect_on_init = function() {
+    if (!notified_top && window && window.top && (window.self != window.top) && window.WB_wombat_location) {
+        if (!wbinfo.is_embed) {
+            window.top.postMessage(window.WB_wombat_location.href, "*");
+        }
+        notified_top = true;
+    }
+
     if (document.readyState === "interactive" ||
         document.readyState === "complete") {
         
         init_banner();
-        
-        clearInterval(readyStateCheckInterval);
+
+        remove_event("readystatechange", detect_on_init, document);
     }
-}, 10);
+}
+
+add_event("readystatechange", detect_on_init, document);
+
+/*
+if ((window.self == window.top) && !wbinfo.is_embed && window.location.href.indexOf("/rewrite/fr_/") == -1) {
+    new_loc = window.location.href.replace("/rewrite/", "/rewrite/fr_/");
+    window.location.replace(new_loc);
+}
+*/

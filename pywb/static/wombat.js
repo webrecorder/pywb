@@ -60,18 +60,28 @@ WB_wombat_init = (function() {
         }
     }
 
+    function ends_with(str, suffix) {
+        if (str.indexOf(suffix, str.length - suffix.length) !== -1) {
+            return suffix;
+        } else {
+            return undefined;
+        }
+    }
+
     //============================================
-/*    function rewrite_url_debug(url) {
+    var rewrite_url = rewrite_url_debug;
+
+    function rewrite_url_debug(url) {
         rewritten = rewrite_url_(url);
         if (url != rewritten) {
             console.log('REWRITE: ' + url + ' -> ' + rewritten);
         } else {
-            console.log('NOT REWRITTEN ' + url);
+            //console.log('NOT REWRITTEN ' + url);
         }
         return rewritten;
     }
-*/
-    function rewrite_url(url) {
+
+    function rewrite_url_(url) {
         var http_prefix = "http://";
         var https_prefix = "https://";
         var rel_prefix = "//";
@@ -144,13 +154,22 @@ WB_wombat_init = (function() {
         if (!href) {
             return "";
         }
+        
         href = href.toString();
+
         var index = href.indexOf("/http", 1);
+        
+        // extract original url from wburl
         if (index > 0) {
-            return href.substr(index + 1);
-        } else {
-            return href;
+            href = href.substr(index + 1);
         }
+
+        // remove trailing slash
+        if (ends_with(href, "/")) {
+            href = href.substring(0, href.length - 1);
+        }
+
+        return href;
     }
 
     //============================================
@@ -196,26 +215,39 @@ WB_wombat_init = (function() {
     }
 
     //============================================
-    function update_location(req_href, orig_href, location) {
-        if (req_href && (extract_orig(orig_href) != extract_orig(req_href))) {
-            var final_href = rewrite_url(req_href);
-
-            location.href = final_href;
+    function update_location(req_href, orig_href, actual_location) {
+        if (!req_href || req_href == orig_href) {
+            return;
         }
+
+        ext_orig = extract_orig(orig_href);
+        ext_req = extract_orig(req_href);
+
+        if (!ext_orig || ext_orig == ext_req) {
+            return;
+        }
+
+        var final_href = rewrite_url(req_href);
+
+        console.log(actual_location.href + ' -> ' + final_href);
+
+        actual_location.href = final_href;
     }
 
     //============================================
     function check_location_change(loc, is_top) {
         var locType = (typeof loc);
 
-        var location = (is_top ? window.top.location : window.location);
+        var actual_location = (is_top ? window.top.location : window.location);
+
+        //console.log(loc.href);
 
         // String has been assigned to location, so assign it
         if (locType == "string") {
-            update_location(loc, location.href, location)
+            update_location(loc, actual_location.href, actual_location)
 
         } else if (locType == "object") {
-            update_location(loc.href, loc._orig_href, location);
+            update_location(loc.href, loc._orig_href, actual_location);
         }
     }
 
@@ -306,7 +338,6 @@ WB_wombat_init = (function() {
         window.Worker = undefined;
     }
 
-
     function rewrite_attr(elem, name) {
         if (!elem || !elem.getAttribute) {
             return;
@@ -324,25 +355,41 @@ WB_wombat_init = (function() {
 
         orig_value = value;        
         value = rewrite_url(value);
-           
+
         elem.setAttribute(name, value);
     }
 
     function init_dom_override() {
-        if (!Element ||
-            !Element.prototype) {
+        if (!Node || !Node.prototype) {
             return;
         }
 
         function replace_dom_func(funcname) {
+            var orig = Node.prototype[funcname];
 
-            var orig = Element.prototype[funcname];
-
-            Element.prototype[funcname] = function() {
+            Node.prototype[funcname] = function() {
                 rewrite_attr(arguments[0], "src");
                 rewrite_attr(arguments[0], "href");
 
-                return orig.apply(this, arguments);
+                child = arguments[0];
+
+                var desc;
+
+                if (child instanceof DocumentFragment) {
+                    desc = child.querySelectorAll("*[href],*[src]");
+                } else if (child.getElementsByTagName) {
+                    desc = child.getElementsByTagName("*");
+                }
+
+                if (desc) {
+                    for (var i = 0; i < desc.length; i++) {
+                        rewrite_attr(desc[i], "src");
+                        rewrite_attr(desc[i], "href");
+                    }
+                }
+
+                result = orig.apply(this, arguments);
+                return result;
             }
         }
 
@@ -363,13 +410,14 @@ WB_wombat_init = (function() {
         window.WB_wombat_location = copy_location_obj(window.self.location);
         document.WB_wombat_location = window.WB_wombat_location;
 
-        if (window.self.location != window.top.location) {
-            window.top.WB_wombat_location = copy_location_obj(window.top.location);
-        }
+        //if (window.self.location != window.top.location) {
+        //    window.top.WB_wombat_location = copy_location_obj(window.top.location);
+        //}
+        window.top.WB_wombat_location = window.WB_wombat_location;
 
-        if (window.opener) {
-            window.opener.WB_wombat_location = copy_location_obj(window.opener.location);
-        }
+        //if (window.opener) {
+        //    window.opener.WB_wombat_location = copy_location_obj(window.opener.location);
+        //}
 
         // Domain
         document.WB_wombat_domain = orig_host;

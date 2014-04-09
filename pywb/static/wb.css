@@ -5,15 +5,48 @@
     top: 0px !important;
     left: 0px !important;
     font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
-    position: absolute !important;
-    padding: 4px !important;
+    position: fixed !important;
+ /*   padding: 4px !important; */
+    height: 40px !important;
     width: 100% !important;
     font-size: 24px !important;
-    border: 1px solid !important; 
+/*    border: 1px solid !important; */
     background-color: lightYellow !important; 
     color: black !important;
     text-align: center !important;
     z-index: 2147483643 !important;
     line-height: normal !important;
 }
+
+.wb_iframe_div
+{
+    width: 100%;
+    height: 100%;
+    padding: 40px 8px 8px 0px;
+    border: none;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+.wb_iframe
+{
+    width: 100%;
+    height: 100%;
+    border: 4px solid firebrick;
+}
+
+.wb_iframe_all
+{
+    width: 100%;
+    height: 100%;
+    border: none;
+    background-color: firebrick;
+    padding: 44px 4px 4px 4px;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+
 
