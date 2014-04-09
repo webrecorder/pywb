@@ -4,6 +4,7 @@ from pywb.framework.archivalrouter import ArchivalRouter, Route
 from pywb.framework.proxy import ProxyArchivalRouter
 from pywb.framework.wbrequestresponse import WbRequest
 from pywb.framework.memento import MementoRequest
+from pywb.framework.basehandlers import BaseHandler
 
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
@@ -199,6 +200,10 @@ def create_wb_router(passed_config={}):
         use_lxml_parser()
 
     for name, value in collections.iteritems():
+
+        if isinstance(value, BaseHandler):
+            routes.append(Route(name, value))
+            continue
 
         result = init_collection(value, config)
         route_config, query_handler, ds_rules_file = result

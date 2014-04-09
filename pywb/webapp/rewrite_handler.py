@@ -55,13 +55,6 @@ class RewriteHandler(WbUrlHandler):  # pragma: no cover
                                         req_headers)
         code = response.status_code
 
-        # remove transfer-encoding as raw stream
-        # is already de-chunked
-        try:
-            del response.headers['transfer-encoding']
-        except KeyError:
-            pass
-
         headers = response.headers.items()
         stream = response.raw
 
@@ -125,18 +118,6 @@ class RewriteHandler(WbUrlHandler):  # pragma: no cover
 
         return WbResponse(status_headers, gen)
 
-
-    def get_head_insert_func(self, wbrequest, cdx):
-        # no head insert specified
-        if not self.head_insert_view:
-            return None
-
-        def make_head_insert(rule):
-            return (self.head_insert_view.
-                    render_to_string(wbrequest=wbrequest,
-                                     cdx=cdx,
-                                     rule=rule))
-        return make_head_insert
 
 def create_rewrite_app(): # pragma: no cover
     routes = [Route('rewrite', RewriteHandler()),

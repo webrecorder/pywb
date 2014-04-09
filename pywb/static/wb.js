@@ -18,9 +18,8 @@ This file is part of pywb.
  */
 
 function init_banner() {
-    var BANNER_ID = "_wayback_banner";
-
-    var banner = document.getElementById(BANNER_ID);
+    var PLAIN_BANNER_ID = "_wb_plain_banner";
+    var FRAME_BANNER_ID = "_wb_frame_top_banner";
 
     if (wbinfo.is_embed) {
         return;
@@ -30,9 +29,17 @@ function init_banner() {
         return;
     }
 
+    if (wbinfo.is_frame) {
+        bid = FRAME_BANNER_ID;
+    } else {
+        bid = PLAIN_BANNER_ID;
+    }
+
+    var banner = document.getElementById(bid);
+    
     if (!banner) {
         banner = document.createElement("wb_div");
-        banner.setAttribute("id", BANNER_ID);
+        banner.setAttribute("id", bid);
         banner.setAttribute("lang", "en");
 
         text = "This is an archived page ";
@@ -90,9 +97,11 @@ var detect_on_init = function() {
 
 add_event("readystatechange", detect_on_init, document);
 
-/*
-if ((window.self == window.top) && !wbinfo.is_embed && window.location.href.indexOf("/rewrite/fr_/") == -1) {
-    new_loc = window.location.href.replace("/rewrite/", "/rewrite/fr_/");
-    window.location.replace(new_loc);
+
+if (wbinfo.is_frame_mp && wbinfo.canon_url &&
+   (window.self == window.top) && 
+   window.location.href != wbinfo.canon_url) {
+    
+    console.log('frame');
+    window.location.replace(wbinfo.canon_url);
 }
-*/

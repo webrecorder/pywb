@@ -69,7 +69,7 @@ WB_wombat_init = (function() {
     }
 
     //============================================
-    var rewrite_url = rewrite_url_debug;
+    var rewrite_url = rewrite_url_;
 
     function rewrite_url_debug(url) {
         rewritten = rewrite_url_(url);

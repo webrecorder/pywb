@@ -7,6 +7,7 @@
   wbinfo.is_embed = false;
   wbinfo.prefix = "{{ wbrequest.wb_prefix }}";
   wbinfo.capture_url = "{{ url }}";
+  wbinfo.is_frame = true;
 </script>
 <script src='{{ wbrequest.host_prefix }}/{{ static_path }}/wb.js'> </script>
 <script>
@@ -30,7 +31,6 @@ function pop_state(url) {
 }
 
 function update_url(event) {
-    console.log(event);
     if (event.source == window.frames[0]) {
         push_state(event.data);
     }
