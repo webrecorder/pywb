@@ -53,7 +53,6 @@ class HTMLRewriterMixin(object):
 
         return rewrite_tags
 
-
     STATE_TAGS = ['script', 'style']
 
     # tags allowed in the <head> of an html document

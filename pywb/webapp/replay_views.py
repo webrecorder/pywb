@@ -115,8 +115,8 @@ class ReplayView(object):
 
         head_insert_func = None
         if self.head_insert_view:
-            head_insert_func = self.head_insert_view.create_insert_func(wbrequest,
-                                                                        cdx)
+            head_insert_func = (self.head_insert_view.
+                                create_insert_func(wbrequest))
 
         result = (self.content_rewriter.
                   rewrite_content(urlrewriter,
@@ -124,7 +124,8 @@ class ReplayView(object):
                                   stream=stream,
                                   head_insert_func=head_insert_func,
                                   urlkey=cdx['urlkey'],
-                                  sanitize_only=wbrequest.wb_url.is_identity))
+                                  sanitize_only=wbrequest.wb_url.is_identity,
+                                  cdx=cdx))
 
         (status_headers, response_iter, is_rewritten) = result
 

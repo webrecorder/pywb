@@ -57,12 +57,20 @@ class StatusAndHeaders(object):
 
         return False
 
+    def get_statuscode(self):
+        """
+        Return the statuscode part of the status response line
+        (Assumes no protocol in the statusline)
+        """
+        code = self.statusline.split(' ', 1)[0]
+        return code
+
     def validate_statusline(self, valid_statusline):
         """
         Check that the statusline is valid, eg. starts with a numeric
         code. If not, replace with passed in valid_statusline
         """
-        code = self.statusline.split(' ', 1)[0]
+        code = self.get_statuscode()
         try:
             code = int(code)
             assert(code > 0)

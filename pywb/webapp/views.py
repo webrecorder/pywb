@@ -117,11 +117,11 @@ def add_env_globals(glb):
 
 #=================================================================
 class HeadInsertView(J2TemplateView):
-    def create_insert_func(self, wbrequest, cdx):
+    def create_insert_func(self, wbrequest):
 
         canon_url = wbrequest.wb_prefix + wbrequest.wb_url.to_str(mod='')
 
-        def make_head_insert(rule):
+        def make_head_insert(rule, cdx):
             return (self.render_to_string(wbrequest=wbrequest,
                                           cdx=cdx,
                                           canon_url=canon_url,

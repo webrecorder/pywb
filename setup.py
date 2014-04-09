@@ -66,6 +66,7 @@ setup(
     install_requires=[
         'rfc3987',
         'chardet',
+        'requests',
         'redis',
         'jinja2',
         'surt',
@@ -84,8 +85,8 @@ setup(
         [console_scripts]
         wayback = pywb.apps.wayback:main
         cdx-server = pywb.apps.cdx_server:main
-        rewrite-live = pywb.apps.rewrite_live:main
         cdx-indexer = pywb.warc.archiveindexer:main
+        live-rewrite-server = pywb.apps.live_rewrite_server:main
         """,
     zip_safe=False,
     classifiers=[

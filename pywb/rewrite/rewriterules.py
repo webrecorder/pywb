@@ -30,8 +30,10 @@ def use_lxml_parser():
     return _is_lxml
 
 
+#=================================================================
 def is_lxml():
     return _is_lxml
+
 
 #=================================================================
 class RewriteRules(BaseRule):

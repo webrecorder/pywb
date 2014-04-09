@@ -32,7 +32,7 @@
 {
     width: 100%;
     height: 100%;
-    padding: 40px 8px 8px 0px;
+    padding: 40px 4px 4px 0px;
     border: none;
     box-sizing: border-box;
     -moz-box-sizing: border-box;
@@ -43,5 +43,5 @@
 {
     width: 100%;
     height: 100%;
-    border: 4px solid firebrick;
+    border: 2px solid tan;
 }

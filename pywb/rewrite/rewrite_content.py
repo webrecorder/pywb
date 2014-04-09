@@ -54,7 +54,7 @@ class RewriteContent:
 
     def rewrite_content(self, urlrewriter, headers, stream,
                         head_insert_func=None, urlkey='',
-                        sanitize_only=False):
+                        sanitize_only=False, cdx=None):
 
         if sanitize_only:
             status_headers, stream = self.sanitize_content(headers, stream)
@@ -107,7 +107,7 @@ class RewriteContent:
             head_insert_str = ''
 
             if head_insert_func:
-                head_insert_str = head_insert_func(rule)
+                head_insert_str = head_insert_func(rule, cdx)
 
             rewriter = rewriter_class(urlrewriter,
                                       js_rewriter_class=rule.rewriters['js'],
