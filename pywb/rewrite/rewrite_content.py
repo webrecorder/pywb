@@ -204,13 +204,17 @@ class RewriteContent:
             if first_buff:
                 buff = first_buff
             else:
-                buff = stream.read() + stream.readline()
+                buff = stream.read()
+                if buff:
+                    buff += stream.readline()
 
             while buff:
                 if rewrite_func:
                     buff = rewrite_func(buff)
                 yield buff
-                buff = stream.read() + stream.readline()
+                buff = stream.read()
+                if buff:
+                    buff += stream.readline()
 
             # For adding a tail/handling final buffer
             if final_read_func:
