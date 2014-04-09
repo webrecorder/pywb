@@ -17,15 +17,8 @@ from html_rewriter import HTMLRewriterMixin
 class LXMLHTMLRewriter(HTMLRewriterMixin):
     END_HTML = re.compile(r'</\s*html\s*>', re.IGNORECASE)
 
-    def __init__(self, url_rewriter,
-                 head_insert=None,
-                 js_rewriter_class=JSRewriter,
-                 css_rewriter_class=CSSRewriter):
-
-        super(LXMLHTMLRewriter, self).__init__(url_rewriter,
-                                               head_insert,
-                                               js_rewriter_class,
-                                               css_rewriter_class)
+    def __init__(self, *args, **kwargs):
+        super(LXMLHTMLRewriter, self).__init__(*args, **kwargs)
 
         self.target = RewriterTarget(self)
         self.parser = lxml.etree.HTMLParser(remove_pis=False,

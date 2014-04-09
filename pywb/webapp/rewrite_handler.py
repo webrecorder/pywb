@@ -13,22 +13,24 @@ from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.rewrite.rewriterules import use_lxml_parser
 
 import datetime
-#import urllib2
-import urlparse
-import httplib
 import requests
 
 from io import BytesIO, BufferedReader
 
-from views import load_template_file
+from views import J2TemplateView, HeadInsertView
 
 
 class RewriteHandler(WbUrlHandler):  # pragma: no cover
     def __init__(self, head_insert_view=None):
         #use_lxml_parser()
-        self.rewriter = RewriteContent()
-        self.head_insert_view = load_template_file('ui/head_insert.html', 'Head Insert')
-        self.frame_insert_view = load_template_file('ui/frame_insert.html', 'Frame Insert')
+        self.rewriter = RewriteContent(defmod='mp_')
+        self.head_insert_view = (HeadInsertView.
+                                 create_template('ui/head_insert.html',
+                                                 'Head Insert'))
+
+        self.frame_insert_view = (J2TemplateView.
+                                  create_template('ui/frame_insert.html',
+                                                  'Frame Insert'))
 
     def proxy_request(self, url, env):
 
@@ -76,36 +78,12 @@ class RewriteHandler(WbUrlHandler):  # pragma: no cover
                                stream=True)
         return req
 
-    def do_request(self, method, url, data, req_headers):
-        splits = urlparse.urlsplit(url)
-
-        hostport = splits.netloc.split(':', 1)
-        host = hostport[0]
-
-        if len(hostport) == 2:
-            port = hostport[1]
-        else:
-            port = None
-
-        path = splits.path
-
-        if splits.query:
-            path += '?' + splits.query
-
-        if splits.scheme == 'https':
-            conn = httplib.HTTPSConnection(host, port)
-        else:
-            conn = httplib.HTTPConnection(host, port)
-
-        conn.request(method.upper(), path, data, req_headers)
-        return conn.getresponse()
-
     def __call__(self, wbrequest):
 
         url = wbrequest.wb_url.url
 
-        if wbrequest.wb_url.mod == 'fr_':
-            embed_url = wbrequest.wb_url.to_str(mod='')
+        if not wbrequest.wb_url.mod:
+            embed_url = wbrequest.wb_url.to_str(mod='mp_')
             timestamp = datetime_to_timestamp(datetime.datetime.utcnow())
 
             return self.frame_insert_view.render_response(embed_url=embed_url,
@@ -133,7 +111,9 @@ class RewriteHandler(WbUrlHandler):  # pragma: no cover
               }
 
 
-        head_insert_func = self.get_head_insert_func(wbrequest, cdx)
+        #head_insert_func = self.get_head_insert_func(wbrequest, cdx)
+        head_insert_func = self.head_insert_view.create_insert_func(wbrequest,
+                                                                    cdx)
 
         result = self.rewriter.rewrite_content(wbrequest.urlrewriter,
                                                status_headers,

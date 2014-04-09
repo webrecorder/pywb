@@ -16,10 +16,11 @@ from pywb.utils.bufferedreaders import ChunkedDataReader
 
 #=================================================================
 class RewriteContent:
-    def __init__(self, ds_rules_file=None):
+    def __init__(self, ds_rules_file=None, defmod=''):
         self.ruleset = RuleSet(RewriteRules, 'rewrite',
                                default_rule_config={},
                                ds_rules_file=ds_rules_file)
+        self.defmod = defmod
 
     def sanitize_content(self, status_headers, stream):
         # remove transfer encoding chunked and wrap in a dechunking stream
@@ -111,7 +112,8 @@ class RewriteContent:
             rewriter = rewriter_class(urlrewriter,
                                       js_rewriter_class=rule.rewriters['js'],
                                       css_rewriter_class=rule.rewriters['css'],
-                                      head_insert=head_insert_str)
+                                      head_insert=head_insert_str,
+                                      defmod=self.defmod)
 
         else:
         # apply one of (js, css, xml) rewriters

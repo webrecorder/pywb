@@ -101,6 +101,14 @@ class J2TemplateView:
                                         status=status,
                                         content_type=content_type)
 
+    @staticmethod
+    def create_template(filename, desc='', view_class=None):
+        if not view_class:
+            view_class = J2TemplateView
+
+        logging.debug('Adding {0}: {1}'.format(desc, filename))
+        return view_class(filename)
+
 
 #=================================================================
 def add_env_globals(glb):
@@ -108,17 +116,18 @@ def add_env_globals(glb):
 
 
 #=================================================================
-def load_template_file(file, desc=None, view_class=J2TemplateView):
-    if file:
-        logging.debug('Adding {0}: {1}'.format(desc if desc else name, file))
-        file = view_class(file)
+class HeadInsertView(J2TemplateView):
+    def create_insert_func(self, wbrequest, cdx):
+        def make_head_insert(rule):
+            return (self.render_to_string(wbrequest=wbrequest,
+                                          cdx=cdx,
+                                          rule=rule))
+        return make_head_insert
 
-    return file
-
-
-#=================================================================
-def load_query_template(file, desc=None):
-    return load_template_file(file, desc, J2HtmlCapturesView)
+    @staticmethod
+    def create_template(filename, desc=''):
+        return J2TemplateView.create_template(filename, desc,
+                                              HeadInsertView)
 
 
 #=================================================================
@@ -131,6 +140,11 @@ class J2HtmlCapturesView(J2TemplateView):
                                     url=wbrequest.wb_url.url,
                                     type=wbrequest.wb_url.type,
                                     prefix=wbrequest.wb_prefix)
+
+    @staticmethod
+    def create_template(filename, desc=''):
+        return J2TemplateView.create_template(filename, desc,
+                                              J2HtmlCapturesView)
 
 
 #=================================================================

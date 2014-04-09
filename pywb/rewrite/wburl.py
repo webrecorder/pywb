@@ -194,6 +194,21 @@ class WbUrl(BaseWbUrl):
             else:
                 return url
 
+    @property
+    def is_mainpage(self):
+        return (not self.mod or
+                self.mod == 'mp_')
+
+    @property
+    def is_embed(self):
+        return (self.mod and
+                self.mod != 'id_' and
+                self.mod != 'mp_')
+
+    @property
+    def is_identity(self):
+        return (self.mod == 'id_')
+
     def __str__(self):
         return self.to_str()
 

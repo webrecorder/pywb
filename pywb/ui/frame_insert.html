@@ -15,9 +15,9 @@ window.addEventListener("message", update_url, false);
 
 function push_state(url) {
     state = {}
-    state.inner_url = wbinfo.prefix + url;
-    state.outer_url = wbinfo.prefix + "fr_/" + url;
-
+    state.outer_url = wbinfo.prefix + url;
+    state.inner_url = wbinfo.prefix + "mp_/" + url;
+    
     if (url == wbinfo.capture_url) {
         return;
     }
@@ -30,6 +30,7 @@ function pop_state(url) {
 }
 
 function update_url(event) {
+    console.log(event);
     if (event.source == window.frames[0]) {
         push_state(event.data);
     }

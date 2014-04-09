@@ -113,7 +113,10 @@ class ReplayView(object):
 
         urlrewriter = wbrequest.urlrewriter
 
-        head_insert_func = self.get_head_insert_func(wbrequest, cdx)
+        head_insert_func = None
+        if self.head_insert_view:
+            head_insert_func = self.head_insert_view.create_insert_func(wbrequest,
+                                                                        cdx)
 
         result = (self.content_rewriter.
                   rewrite_content(urlrewriter,
@@ -121,7 +124,7 @@ class ReplayView(object):
                                   stream=stream,
                                   head_insert_func=head_insert_func,
                                   urlkey=cdx['urlkey'],
-                                  sanitize_only=wbrequest.is_identity))
+                                  sanitize_only=wbrequest.wb_url.is_identity))
 
         (status_headers, response_iter, is_rewritten) = result
 
@@ -140,18 +143,6 @@ class ReplayView(object):
             self._reporter(wbrequest, cdx, response)
 
         return response
-
-    def get_head_insert_func(self, wbrequest, cdx):
-        # no head insert specified
-        if not self.head_insert_view:
-            return None
-
-        def make_head_insert(rule):
-            return (self.head_insert_view.
-                    render_to_string(wbrequest=wbrequest,
-                                     cdx=cdx,
-                                     rule=rule))
-        return make_head_insert
 
     # Buffer rewrite iterator and return a response from a string
     def buffered_response(self, status_headers, iterator):
@@ -207,7 +198,7 @@ class ReplayView(object):
 
         # skip all 304s
         if (status_headers.statusline.startswith('304') and
-            not wbrequest.is_identity):
+            not wbrequest.wb_url.is_identity):
 
             raise CaptureException('Skipping 304 Modified: ' + str(cdx))
 
