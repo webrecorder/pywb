@@ -207,6 +207,9 @@ class ChunkedDataReader(DecompressingBufferedReader):
                 self._process_read(length_header + self._data)
                 self.not_chunked = True
 
+                # parse as block as non-chunked
+                return super(ChunkedDataReader, self)._fillbuff(block_size)
+
     def _try_decode(self, length_header):
         # decode length header
         try:
