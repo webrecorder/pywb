@@ -30,7 +30,7 @@ class DecompressingBufferedReader(object):
     DECOMPRESSORS = {'gzip': gzip_decompressor}
 
     def __init__(self, stream, block_size=1024,
-                 decomp_type=None,
+                 decomp_type='gzip',
                  starting_data=None):
         self.stream = stream
         self.block_size = block_size

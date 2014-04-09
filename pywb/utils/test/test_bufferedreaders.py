@@ -10,8 +10,8 @@ r"""
 >>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb'), decomp_type = 'gzip').readline()
 ' CDX N b a m s k r M S V g\n'
 
-# decompress with on the fly compression
->>> DecompressingBufferedReader(BytesIO(compress('ABC\n1234\n')), decomp_type = 'gzip').read()
+# decompress with on the fly compression, default gzip compression
+>>> DecompressingBufferedReader(BytesIO(compress('ABC\n1234\n'))).read()
 'ABC\n1234\n'
 
 # error: invalid compress type
@@ -26,6 +26,11 @@ Exception: Decompression type not supported: bzip2
 >>> x.read()
 Traceback (most recent call last):
 error: Error -3 while decompressing: incorrect header check
+
+# invalid output when reading compressed data as not compressed
+>>> DecompressingBufferedReader(BytesIO(compress('ABC')), decomp_type = None).read() != 'ABC'
+True
+
 
 # DecompressingBufferedReader readline() with decompression (zipnum file, no header)
 >>> DecompressingBufferedReader(open(test_zip_dir + 'zipnum-sample.cdx.gz', 'rb'), decomp_type = 'gzip').readline()
@@ -59,6 +64,14 @@ Properly formatted chunked data:
 Non-chunked data:
 >>> ChunkedDataReader(BytesIO("xyz123!@#")).read()
 'xyz123!@#'
+
+Non-chunked, compressed data
+>>> ChunkedDataReader(BytesIO(compress('ABCDEF'))).read()
+'ABCDEF'
+
+Non-chunked, compressed data
+>>> DecompressingBufferedReader(ChunkedDataReader(BytesIO(compress('\nABCDEF\nGHIJ')))).read()
+'\nABCDEF\nGHIJ'
 
 Starts like chunked data, but isn't:
 >>> c = ChunkedDataReader(BytesIO("1\r\nxyz123!@#"));
