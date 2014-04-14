@@ -50,7 +50,8 @@ class LiveRewriter(object):
     def fetch_http(self, url,
                    env=None,
                    req_headers={},
-                   follow_redirects=False):
+                   follow_redirects=False,
+                   proxies=None):
 
         method = 'GET'
         data = None
@@ -69,7 +70,9 @@ class LiveRewriter(object):
                                     data=data,
                                     headers=req_headers,
                                     allow_redirects=follow_redirects,
-                                    stream=True)
+                                    proxies=proxies,
+                                    stream=True,
+                                    verify=False)
 
         statusline = str(response.status_code) + ' ' + response.reason
 
@@ -81,8 +84,13 @@ class LiveRewriter(object):
         return (status_headers, stream)
 
     def fetch_request(self, url, urlrewriter,
-                      head_insert_func=None, urlkey=None,
-                      env=None, req_headers={}, follow_redirects=False):
+                      head_insert_func=None,
+                      urlkey=None,
+                      env=None,
+                      req_headers={},
+                      timestamp=None,
+                      follow_redirects=False,
+                      proxies=None):
 
         ts_err = url.split('///')
 
@@ -94,7 +102,8 @@ class LiveRewriter(object):
 
         if is_http(url):
             (status_headers, stream) = self.fetch_http(url, env, req_headers,
-                                                       follow_redirects)
+                                                       follow_redirects,
+                                                       proxies)
         else:
             (status_headers, stream) = self.fetch_local_file(url)
 
@@ -102,8 +111,11 @@ class LiveRewriter(object):
         if not urlkey:
             urlkey = canonicalize(url)
 
+        if timestamp is None:
+            timestamp = datetime_to_timestamp(datetime.datetime.utcnow())
+
         cdx = {'urlkey': urlkey,
-               'timestamp': datetime_to_timestamp(datetime.datetime.utcnow()),
+               'timestamp': timestamp,
                'original': url,
                'statuscode': status_headers.get_statuscode(),
                'mimetype': status_headers.get_header('Content-Type')
