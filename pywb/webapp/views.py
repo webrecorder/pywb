@@ -66,7 +66,8 @@ def is_wb_handler(obj):
 
 #=================================================================
 class J2TemplateView:
-    env_globals = {'static_path': 'static/default'}
+    env_globals = {'static_path': 'static/default',
+                   'package': 'pywb'}
 
     def __init__(self, filename):
         template_dir, template_file = path.split(filename)
@@ -79,7 +80,7 @@ class J2TemplateView:
         if template_dir.startswith('.') or template_dir.startswith('file://'):
             loader = FileSystemLoader(template_dir)
         else:
-            loader = PackageLoader('pywb', template_dir)
+            loader = PackageLoader(self.env_globals['package'], template_dir)
 
         jinja_env = Environment(loader=loader, trim_blocks=True)
         jinja_env.filters.update(FILTERS)
@@ -117,14 +118,16 @@ def add_env_globals(glb):
 
 #=================================================================
 class HeadInsertView(J2TemplateView):
-    def create_insert_func(self, wbrequest):
+    def create_insert_func(self, wbrequest, include_ts=True):
 
         canon_url = wbrequest.wb_prefix + wbrequest.wb_url.to_str(mod='')
+        include_ts = include_ts
 
         def make_head_insert(rule, cdx):
             return (self.render_to_string(wbrequest=wbrequest,
                                           cdx=cdx,
                                           canon_url=canon_url,
+                                          include_ts=include_ts,
                                           rule=rule))
         return make_head_insert
 
