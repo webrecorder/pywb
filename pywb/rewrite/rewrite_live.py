@@ -17,7 +17,12 @@ from pywb.rewrite.rewrite_content import RewriteContent
 
 #=================================================================
 class LiveRewriter(object):
-    PROXY_HEADER_LIST = [('HTTP_USER_AGENT', 'User-Agent')]
+    PROXY_HEADER_LIST = [('HTTP_USER_AGENT', 'User-Agent'),
+                         ('HTTP_ACCEPT', 'Accept'),
+                         ('HTTP_ACCEPT_LANGUAGE', 'Accept-Language'),
+                         ('HTTP_ACCEPT_CHARSET', 'Accept-Charset'),
+                         ('HTTP_REFERER', 'Referer'),
+                        ]
 
     def __init__(self, defmod=''):
         self.rewriter = RewriteContent(defmod=defmod)

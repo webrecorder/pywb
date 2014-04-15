@@ -3,6 +3,7 @@ from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.archivalrouter import ArchivalRouter, Route
 
 from pywb.rewrite.rewrite_live import LiveRewriter
+from pywb.rewrite.wburl import WbUrl
 
 from handlers import StaticHandler
 
@@ -22,16 +23,22 @@ class RewriteHandler(WbUrlHandler):
         #use_lxml_parser()
         self.rewriter = LiveRewriter(defmod='mp_')
 
-        head_insert = config.get('head_insert_html',
-                                 'ui/head_insert.html')
+        view = config.get('head_insert_view')
+        if not view:
+            head_insert = config.get('head_insert_html',
+                                     'ui/head_insert.html')
+            view = HeadInsertView.create_template(head_insert, 'Head Insert')
 
-        frame_insert = config.get('frame_insert_html',
-                                  'ui/frame_insert.html')
-
-        view = HeadInsertView.create_template(head_insert, 'Head Insert')
         self.head_insert_view = view
 
-        view = J2TemplateView.create_template(frame_insert, 'Frame Insert')
+
+        view = config.get('frame_insert_view')
+        if not view:
+            frame_insert = config.get('frame_insert_html',
+                                      'ui/frame_insert.html')
+
+            view = J2TemplateView.create_template(frame_insert, 'Frame Insert')
+
         self.frame_insert_view = view
 
     def __call__(self, wbrequest):
@@ -48,6 +55,11 @@ class RewriteHandler(WbUrlHandler):
                                                           url=url)
 
         head_insert_func = self.head_insert_view.create_insert_func(wbrequest)
+
+        ref_wburl_str = wbrequest.extract_referrer_wburl_str()
+        if ref_wburl_str:
+            wbrequest.env['HTTP_REFERER'] = WbUrl(ref_wburl_str).url
+
 
         result = self.rewriter.fetch_request(url, wbrequest.urlrewriter,
                                              head_insert_func=head_insert_func,

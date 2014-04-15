@@ -105,6 +105,16 @@ class WbRequest(object):
     def _parse_extra(self):
         pass
 
+    def extract_referrer_wburl_str(self):
+        if not self.referrer:
+            return None
+
+        if not self.referrer.startswith(self.host_prefix + self.rel_prefix):
+            return None
+
+        wburl_str = self.referrer[len(self.host_prefix + self.rel_prefix):]
+        return wburl_str
+
 
 #=================================================================
 class WbResponse(object):

@@ -64,7 +64,6 @@ setup(
             glob.glob('sample_archive/text_content/*')),
         ],
     install_requires=[
-        'rfc3987',
         'chardet',
         'requests',
         'redis',

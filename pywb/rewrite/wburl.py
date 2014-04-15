@@ -39,7 +39,6 @@ wayback url format.
 """
 
 import re
-import rfc3987
 
 
 #=================================================================
@@ -103,14 +102,6 @@ class WbUrl(BaseWbUrl):
             inx += 2
             if inx < len(self.url) and self.url[inx] != '/':
                 self.url = self.url[:inx] + '/' + self.url[inx:]
-
-        # BUG?: adding upper() because rfc3987 lib
-        # rejects lower case %-encoding
-        # %2F is fine, but %2f -- standard supports either
-        matcher = rfc3987.match(self.url.upper(), 'IRI')
-
-        if not matcher:
-            raise Exception('Bad Request Url: ' + self.url)
 
     # Match query regex
     # ======================

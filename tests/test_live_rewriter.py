@@ -8,7 +8,7 @@ class TestLiveRewriter:
         self.testapp = webtest.TestApp(self.app)
 
     def test_live_rewrite_1(self):
-        headers = [('User-Agent', 'python')]
+        headers = [('User-Agent', 'python'), ('Referer', 'http://localhost:80/rewrite/other.example.com')]
         resp = self.testapp.get('/rewrite/mp_/http://example.com/', headers=headers)
         assert resp.status_int == 200
 
