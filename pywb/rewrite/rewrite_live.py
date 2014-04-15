@@ -21,7 +21,7 @@ class LiveRewriter(object):
                          ('HTTP_ACCEPT', 'Accept'),
                          ('HTTP_ACCEPT_LANGUAGE', 'Accept-Language'),
                          ('HTTP_ACCEPT_CHARSET', 'Accept-Charset'),
-                         ('HTTP_REFERER', 'Referer'),
+                         ('REL_REFERER', 'Referer'),
                         ]
 
     def __init__(self, defmod=''):

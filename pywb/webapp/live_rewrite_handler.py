@@ -58,7 +58,7 @@ class RewriteHandler(WbUrlHandler):
 
         ref_wburl_str = wbrequest.extract_referrer_wburl_str()
         if ref_wburl_str:
-            wbrequest.env['HTTP_REFERER'] = WbUrl(ref_wburl_str).url
+            wbrequest.env['REL_REFERER'] = WbUrl(ref_wburl_str).url
 
 
         result = self.rewriter.fetch_request(url, wbrequest.urlrewriter,
