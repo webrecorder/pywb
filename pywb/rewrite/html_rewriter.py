@@ -45,6 +45,7 @@ class HTMLRewriterMixin(object):
             'q':       {'cite': defmod},
             'ref':     {'href': 'oe_'},
             'script':  {'src': 'js_'},
+            'source':  {'src': 'oe_'},
             'div':     {'data-src': defmod,
                         'data-uri': defmod},
             'li':      {'data-src': defmod,

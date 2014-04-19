@@ -21,6 +21,8 @@ class LiveRewriter(object):
                          ('HTTP_ACCEPT', 'Accept'),
                          ('HTTP_ACCEPT_LANGUAGE', 'Accept-Language'),
                          ('HTTP_ACCEPT_CHARSET', 'Accept-Charset'),
+                         ('HTTP_ACCEPT_ENCODING', 'Accept-Encoding'),
+                         ('HTTP_RANGE', 'Range'),
                          ('REL_REFERER', 'Referer'),
                         ]
 
@@ -78,6 +80,7 @@ class LiveRewriter(object):
                                     proxies=proxies,
                                     stream=True,
                                     verify=False)
+
 
         statusline = str(response.status_code) + ' ' + response.reason
 
