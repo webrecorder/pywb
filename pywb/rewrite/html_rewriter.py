@@ -167,6 +167,11 @@ class HTMLRewriterMixin(object):
             elif attr_name == 'style':
                 attr_value = self._rewrite_css(attr_value)
 
+            # special case: disable crossorigin attr
+            # as they may interfere with rewriting semantics
+            elif attr_name == 'crossorigin':
+                attr_name = '_crossorigin'
+
             # special case: meta tag
             elif (tag == 'meta') and (attr_name == 'content'):
                 if self.has_attr(tag_attrs, ('http-equiv', 'refresh')):

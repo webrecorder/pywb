@@ -51,6 +51,10 @@ ur"""
 >>> parse('<script>window.location = "http://example.com/a/b/c.html"</script>')
 <html><head><script>window.WB_wombat_location = "/web/20131226101010em_/http://example.com/a/b/c.html"</script></head></html>
 
+# Script tag + crossorigin
+>>> parse('<script src="/js/scripts.js" crossorigin="anonymous"></script>')
+<html><head><script src="/web/20131226101010js_/http://example.com/js/scripts.js" _crossorigin="anonymous"></script></head></html>
+
 # Unterminated script tag, will auto-terminate
 >>> parse('<script>window.location = "http://example.com/a/b/c.html"</sc>')
 <html><head><script>window.WB_wombat_location = "/web/20131226101010em_/http://example.com/a/b/c.html"</sc></script></head></html>

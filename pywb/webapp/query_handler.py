@@ -33,14 +33,14 @@ class QueryHandler(object):
     @staticmethod
     def init_from_config(config,
                          ds_rules_file=DEFAULT_RULES_FILE,
-                         html_view=None):
+                         html_view=None,
+                         server_cls=None):
 
         perms_policy = None
-        server_cls = None
 
         if hasattr(config, 'get'):
             perms_policy = config.get('perms_policy')
-            server_cls = config.get('server_cls')
+            server_cls = config.get('server_cls', server_cls)
 
         cdx_server = create_cdx_server(config, ds_rules_file, server_cls)
 
@@ -62,13 +62,6 @@ class QueryHandler(object):
         # init standard params
         params = self.get_query_params(wb_url)
 
-        # add any custom filter from the request
-        if wbrequest.query_filter:
-            params['filter'].extend(wbrequest.query_filter)
-
-        if wbrequest.custom_params:
-            params.update(wbrequest.custom_params)
-
         params['allowFuzzy'] = True
         params['url'] = wb_url.url
         params['output'] = output
@@ -81,6 +74,14 @@ class QueryHandler(object):
         return self.make_cdx_response(wbrequest, params, cdx_iter)
 
     def load_cdx(self, wbrequest, params):
+        if wbrequest:
+            # add any custom filter from the request
+            if wbrequest.query_filter:
+                params['filter'].extend(wbrequest.query_filter)
+
+            if wbrequest.custom_params:
+                params.update(wbrequest.custom_params)
+
         if self.perms_policy:
             perms_op = make_perms_cdx_filter(self.perms_policy, wbrequest)
             if perms_op:

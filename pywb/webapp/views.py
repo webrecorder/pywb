@@ -104,6 +104,9 @@ class J2TemplateView:
 
     @staticmethod
     def create_template(filename, desc='', view_class=None):
+        if not filename:
+            return None
+
         if not view_class:
             view_class = J2TemplateView
 
