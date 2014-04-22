@@ -47,6 +47,10 @@ ur"""
 >>> parse('<META http-equiv="refresh" content>')
 <html><head><meta content="" http-equiv="refresh"></meta></head></html>
 
+# Custom -data attribs
+>>> parse('<div data-url="http://example.com/a/b/c.html" data-some-other-value="http://example.com/img.gif">')
+<html><body><div data-url="/web/20131226101010oe_/http://example.com/a/b/c.html" data-some-other-value="/web/20131226101010oe_/http://example.com/img.gif"></div></body></html>
+
 # Script tag
 >>> parse('<script>window.location = "http://example.com/a/b/c.html"</script>')
 <html><head><script>window.WB_wombat_location = "/web/20131226101010em_/http://example.com/a/b/c.html"</script></head></html>

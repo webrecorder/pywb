@@ -52,6 +52,10 @@ ur"""
 >>> parse('<META http-equiv="refresh" content>')
 <meta http-equiv="refresh" content="">
 
+# Custom -data attribs
+>>> parse('<div data-url="http://example.com/a/b/c.html" data-some-other-value="http://example.com/img.gif">')
+<div data-url="/web/20131226101010oe_/http://example.com/a/b/c.html" data-some-other-value="/web/20131226101010oe_/http://example.com/img.gif">
+
 # Script tag
 >>> parse('<script>window.location = "http://example.com/a/b/c.html"</script>')
 <script>window.WB_wombat_location = "/web/20131226101010em_/http://example.com/a/b/c.html"</script>

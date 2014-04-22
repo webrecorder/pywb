@@ -60,6 +60,9 @@ class HTMLRewriterMixin(object):
     HEAD_TAGS = ['html', 'head', 'base', 'link', 'meta',
                  'title', 'style', 'script', 'object', 'bgsound']
 
+    DATA_RW_PROTOCOLS = ('http://', 'https://', '//')
+
+
     # ===========================
     class AccumBuff:
         def __init__(self):
@@ -176,6 +179,12 @@ class HTMLRewriterMixin(object):
             elif (tag == 'meta') and (attr_name == 'content'):
                 if self.has_attr(tag_attrs, ('http-equiv', 'refresh')):
                     attr_value = self._rewrite_meta_refresh(attr_value)
+
+            # special case: data- attrs
+            elif attr_name and attr_value and attr_name.startswith('data-'):
+                if attr_value.startswith(self.DATA_RW_PROTOCOLS):
+                    rw_mod = 'oe_'
+                    attr_value = self._rewrite_url(attr_value, rw_mod)
 
             else:
                 # special case: base tag
