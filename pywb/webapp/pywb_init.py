@@ -85,10 +85,13 @@ def create_wb_handler(query_handler, config,
                         create_template(config.get('head_insert_html'),
                                        'Head Insert'))
 
+    defmod = config.get('default_mod', '')
+
     replayer = ReplayView(
         content_loader=resolving_loader,
 
-        content_rewriter=RewriteContent(ds_rules_file=ds_rules_file),
+        content_rewriter=RewriteContent(ds_rules_file=ds_rules_file,
+                                        defmod=defmod),
 
         head_insert_view=head_insert_view,
 
@@ -111,6 +114,7 @@ def create_wb_handler(query_handler, config,
         query_handler,
         replayer,
         search_view=search_view,
+        config=config,
     )
 
     return wb_handler
