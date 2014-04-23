@@ -83,6 +83,10 @@ Chunked data cut off part way through:
 >>> c.read() + c.read()
 '123412'
 
+Zero-Length chunk:
+>>> ChunkedDataReader(BytesIO("0\r\n\r\n")).read()
+''
+
 Chunked data cut off with exceptions
 >>> c = ChunkedDataReader(BytesIO("4\r\n1234\r\n4\r\n12"), raise_exceptions=True)
 >>> c.read() + c.read()

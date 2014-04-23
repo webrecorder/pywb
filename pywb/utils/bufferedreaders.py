@@ -221,7 +221,7 @@ class ChunkedDataReader(DecompressingBufferedReader):
         if not chunk_size:
             # chunk_size 0 indicates end of file
             self.all_chunks_read = True
-            #self._process_read('')
+            self._process_read('')
             return
 
         data_len = len(self._data)
