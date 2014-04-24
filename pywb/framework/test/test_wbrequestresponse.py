@@ -21,9 +21,9 @@
 >>> print_req_from_uri('/2010/example.com', {'wsgi.url_scheme': 'https', 'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
 {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': 'https://localhost:8080/2010/', 'request_uri': '/2010/example.com'}
 
-# No Scheme, so stick to relative
+# No Scheme, default to http (shouldn't happen per WSGI standard)
 >>> print_req_from_uri('/2010/example.com', {'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
-{'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
+{'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': 'http://localhost:8080/2010/', 'request_uri': '/2010/example.com'}
 
 # Referrer extraction
 >>> WbUrl(req_from_uri('/web/2010/example.com', {'wsgi.url_scheme': 'http', 'HTTP_HOST': 'localhost:8080', 'HTTP_REFERER': 'http://localhost:8080/web/2011/blah.example.com/'}).extract_referrer_wburl_str()).url

@@ -23,7 +23,7 @@ class WbRequest(object):
             if not host:
                 host = env['SERVER_NAME'] + ':' + env['SERVER_PORT']
 
-            return env['wsgi.url_scheme'] + '://' + host
+            return env.get('wsgi.url_scheme', 'http') + '://' + host
         except KeyError:
             return ''
 
@@ -66,7 +66,8 @@ class WbRequest(object):
         # wb_url present and not root page
         if wb_url_str != '/' and wburl_class:
             self.wb_url = wburl_class(wb_url_str)
-            self.urlrewriter = urlrewriter_class(self.wb_url, self.wb_prefix)
+            self.urlrewriter = urlrewriter_class(self.wb_url, self.wb_prefix,
+                                                 host_prefix + rel_prefix)
         else:
         # no wb_url, just store blank wb_url
             self.wb_url = None
