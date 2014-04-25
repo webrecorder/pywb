@@ -73,6 +73,15 @@ Non-chunked, compressed data
 >>> DecompressingBufferedReader(ChunkedDataReader(BytesIO(compress('\nABCDEF\nGHIJ')))).read()
 '\nABCDEF\nGHIJ'
 
+Chunked compressed data
+Split compressed stream into 10-byte chunk and a remainder chunk
+>>> b = compress('ABCDEFGHIJKLMNOP')
+>>> l = len(b)
+>>> in_ = format(10, 'x') + "\r\n" + b[:10] + "\r\n" + format(l - 10, 'x') + "\r\n" + b[10:] + "\r\n0\r\n\r\n"
+>>> c = ChunkedDataReader(BytesIO(in_), decomp_type='gzip')
+>>> c.read()
+'ABCDEFGHIJKLMNOP'
+
 Starts like chunked data, but isn't:
 >>> c = ChunkedDataReader(BytesIO("1\r\nxyz123!@#"));
 >>> c.read() + c.read()

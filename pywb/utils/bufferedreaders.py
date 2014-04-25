@@ -103,7 +103,8 @@ class DecompressingBufferedReader(object):
             return ''
 
         self._fillbuff()
-        return self.buff.read(length)
+        buff = self.buff.read(length)
+        return buff
 
     def readline(self, length=None):
         """
@@ -162,7 +163,9 @@ class DecompressingBufferedReader(object):
 
 #=================================================================
 class ChunkedDataException(Exception):
-    pass
+    def __init__(self, msg, data=''):
+        Exception.__init__(self, msg)
+        self.data = data
 
 
 #=================================================================
@@ -187,16 +190,17 @@ class ChunkedDataReader(DecompressingBufferedReader):
         if self.not_chunked:
             return super(ChunkedDataReader, self)._fillbuff(block_size)
 
-        if self.all_chunks_read:
-            return
-
-        if self.empty():
-            length_header = self.stream.readline(64)
-            self._data = ''
+        # Loop over chunks until there is some data (not empty())
+        # In particular, gzipped data may require multiple chunks to
+        # return any decompressed result
+        while (self.empty() and
+               not self.all_chunks_read and
+               not self.not_chunked):
 
             try:
+                length_header = self.stream.readline(64)
                 self._try_decode(length_header)
-            except ChunkedDataException:
+            except ChunkedDataException as e:
                 if self.raise_chunked_data_exceptions:
                     raise
 
@@ -204,7 +208,7 @@ class ChunkedDataReader(DecompressingBufferedReader):
                 # It's possible that non-chunked data is served
                 # with a Transfer-Encoding: chunked.
                 # Treat this as non-chunk encoded from here on.
-                self._process_read(length_header + self._data)
+                self._process_read(length_header + e.data)
                 self.not_chunked = True
 
                 # parse as block as non-chunked
@@ -224,7 +228,8 @@ class ChunkedDataReader(DecompressingBufferedReader):
             self._process_read('')
             return
 
-        data_len = len(self._data)
+        data_len = 0
+        data = ''
 
         # read chunk
         while data_len < chunk_size:
@@ -236,20 +241,21 @@ class ChunkedDataReader(DecompressingBufferedReader):
             if not new_data:
                 if self.raise_chunked_data_exceptions:
                     msg = 'Ran out of data before end of chunk'
-                    raise ChunkedDataException(msg)
+                    raise ChunkedDataException(msg, data)
                 else:
                     chunk_size = data_len
                     self.all_chunks_read = True
 
-            self._data += new_data
-            data_len = len(self._data)
+            data += new_data
+            data_len = len(data)
 
         # if we successfully read a block without running out,
         # it should end in \r\n
         if not self.all_chunks_read:
             clrf = self.stream.read(2)
             if clrf != '\r\n':
-                raise ChunkedDataException("Chunk terminator not found.")
+                raise ChunkedDataException("Chunk terminator not found.",
+                                           data)
 
         # hand to base class for further processing
-        self._process_read(self._data)
+        self._process_read(data)
