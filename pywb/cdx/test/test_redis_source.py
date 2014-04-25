@@ -4,8 +4,8 @@ com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYA
 com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz
 com,example)/ 20140127171251 http://example.com warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 11875 dupes.warc.gz
 
-
->>> redis_cdx(redis_cdx_server_key, 'http://example.com')
+# TODO: enable when FakeRedis supports zrangebylex!
+#>>> redis_cdx(redis_cdx_server_key, 'http://example.com')
 
 """
 
