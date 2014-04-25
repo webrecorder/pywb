@@ -94,22 +94,43 @@ class RedisCDXSource(CDXSource):
 
     def __init__(self, redis_url, config=None):
         import redis
+
+        parts = redis_url.split('/')
+        if len(parts) > 4:
+            self.cdx_key = parts[4]
+        else:
+            self.cdx_key = None
+
         self.redis_url = redis_url
         self.redis = redis.StrictRedis.from_url(redis_url)
 
         self.key_prefix = self.DEFAULT_KEY_PREFIX
-        if config:
-            self.key_prefix = config.get('redis_key_prefix', self.key_prefix)
 
     def load_cdx(self, query):
         """
         Load cdx from redis cache, from an ordered list
 
-        Currently, there is no support for range queries
-        Only 'exact' matchType is supported
-        """
-        key = query.key
+        If cdx_key is set, treat it as cdx file and load use
+        zrangebylex! (Supports all match types!)
 
+        Otherwise, assume a key per-url and load all entries for that key.
+        (Only exact match supported)
+        """
+
+        if self.cdx_key:
+            return self.load_sorted_range(query)
+        else:
+            return self.load_single_key(query.key)
+
+    def load_sorted_range(self, query):
+        cdx_list = self.redis.zrangebylex(self.cdx_key,
+                                          '[' + query.key,
+                                          '(' + query.end_key)
+
+        return cdx_list
+
+
+    def load_single_key(self, key):
         # ensure only url/surt is part of key
         key = key.split(' ')[0]
         cdx_list = self.redis.zrange(self.key_prefix + key, 0, -1)
