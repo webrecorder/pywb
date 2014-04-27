@@ -553,7 +553,7 @@ WB_wombat_init = (function() {
             setInterval(check_all_locations, 500);
         }
         
-        var is_framed = (window.top.update_wb_url != undefined);
+        var is_framed = (window.top.wbinfo && window.top.wbinfo.is_frame);
 
         if (window.self.location != window.top.location) {
             if (is_framed) {

@@ -127,8 +127,10 @@ class JSLinkAndLocationRewriter(JSLinkOnlyRewriter):
              (r'(?<!/)\blocation\b', RegexRewriter.add_prefix(prefix), 0),
              (r'(?<=document\.)domain', RegexRewriter.add_prefix(prefix), 0),
              (r'(?<=document\.)referrer', RegexRewriter.add_prefix(prefix), 0),
-             (r'(?<!/)\btop\b', RegexRewriter.add_prefix(prefix), 0),
-             #(r'(?<=window\.)top', RegexRewriter.add_prefix(prefix), 0),
+
+             (r'(?<=window\.)top', RegexRewriter.add_prefix(prefix), 0),
+             (r'\b(top)\b[!=\W]+(?:self|window)', RegexRewriter.add_prefix(prefix), 1),
+             (r'(?:self|window)[!=\W]+\b(top)\b', RegexRewriter.add_prefix(prefix), 1),
         ]
         #import sys
         #sys.stderr.write('\n\n*** RULES:' + str(rules) + '\n\n')
