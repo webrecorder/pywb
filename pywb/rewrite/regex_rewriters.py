@@ -128,12 +128,11 @@ class JSLinkAndLocationRewriter(JSLinkOnlyRewriter):
              (r'(?<=document\.)domain', RegexRewriter.add_prefix(prefix), 0),
              (r'(?<=document\.)referrer', RegexRewriter.add_prefix(prefix), 0),
 
+            #todo: move to mixin?
              (r'(?<=window\.)top', RegexRewriter.add_prefix(prefix), 0),
              (r'\b(top)\b[!=\W]+(?:self|window)', RegexRewriter.add_prefix(prefix), 1),
-             (r'(?:self|window)[!=\W]+\b(top)\b', RegexRewriter.add_prefix(prefix), 1),
+             #(r'\b(?:self|window)\b[!=\W]+\b(top)\b', RegexRewriter.add_prefix(prefix), 1),
         ]
-        #import sys
-        #sys.stderr.write('\n\n*** RULES:' + str(rules) + '\n\n')
         super(JSLinkAndLocationRewriter, self).__init__(rewriter, rules)
 
 
