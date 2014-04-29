@@ -11,7 +11,7 @@ def gzip_decompressor():
 
 
 #=================================================================
-class DecompressingBufferedReader(object):
+class BufferedReader(object):
     """
     A wrapping line reader which wraps an existing reader.
     Read operations operate on underlying buffer, which is filled to
@@ -20,9 +20,12 @@ class DecompressingBufferedReader(object):
     If an optional decompress type is specified,
     data is fed through the decompressor when read from the buffer.
     Currently supported decompression: gzip
+    If unspecified, default decompression is None
 
-    If decompression fails on first try, data is assumed to be decompressed
-    and no exception is thrown. If a failure occurs after data has been
+    If decompression is specified, and decompress fails on first try,
+    data is assumed to not be compressed and no exception is thrown.
+
+    If a failure occurs after data has been
     partially decompressed, the exception is propagated.
 
     """
@@ -30,7 +33,7 @@ class DecompressingBufferedReader(object):
     DECOMPRESSORS = {'gzip': gzip_decompressor}
 
     def __init__(self, stream, block_size=1024,
-                 decomp_type='gzip',
+                 decomp_type=None,
                  starting_data=None):
         self.stream = stream
         self.block_size = block_size
@@ -41,6 +44,12 @@ class DecompressingBufferedReader(object):
         self.starting_data = starting_data
         self.num_read = 0
         self.buff_size = 0
+
+    def set_decomp(self, decomp_type):
+        if self.num_read > 0:
+            raise Exception('Attempting to change decompression mid-stream')
+
+        self._init_decomp(decomp_type)
 
     def _init_decomp(self, decomp_type):
         if decomp_type:
@@ -162,6 +171,18 @@ class DecompressingBufferedReader(object):
 
 
 #=================================================================
+class DecompressingBufferedReader(BufferedReader):
+    """
+    A BufferedReader which defaults to gzip decompression,
+    (unless different type specified)
+    """
+    def __init__(self, *args, **kwargs):
+        if 'decomp_type' not in kwargs:
+            kwargs['decomp_type'] = 'gzip'
+        super(DecompressingBufferedReader, self).__init__(*args, **kwargs)
+
+
+#=================================================================
 class ChunkedDataException(Exception):
     def __init__(self, msg, data=''):
         Exception.__init__(self, msg)
@@ -169,7 +190,7 @@ class ChunkedDataException(Exception):
 
 
 #=================================================================
-class ChunkedDataReader(DecompressingBufferedReader):
+class ChunkedDataReader(BufferedReader):
     r"""
     A ChunkedDataReader is a DecompressingBufferedReader
     which also supports de-chunking of the data if it happens

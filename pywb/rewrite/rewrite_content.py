@@ -81,7 +81,12 @@ class RewriteContent:
 
         if (rewritten_headers.
              contains_removed_header('content-encoding', 'gzip')):
-            stream = DecompressingBufferedReader(stream, decomp_type='gzip')
+
+            #optimize: if already a ChunkedDataReader, add gzip
+            if isinstance(stream, ChunkedDataReader):
+                stream.set_decomp('gzip')
+            else:
+                stream = DecompressingBufferedReader(stream, decomp_type='gzip')
 
         if rewritten_headers.charset:
             encoding = rewritten_headers.charset

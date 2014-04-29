@@ -65,11 +65,15 @@ Non-chunked data:
 >>> ChunkedDataReader(BytesIO("xyz123!@#")).read()
 'xyz123!@#'
 
-Non-chunked, compressed data
->>> ChunkedDataReader(BytesIO(compress('ABCDEF'))).read()
+Non-chunked, compressed data, specify decomp_type
+>>> ChunkedDataReader(BytesIO(compress('ABCDEF')), decomp_type='gzip').read()
 'ABCDEF'
 
-Non-chunked, compressed data
+Non-chunked, compressed data, specifiy compression seperately
+>>> c = ChunkedDataReader(BytesIO(compress('ABCDEF'))); c.set_decomp('gzip'); c.read()
+'ABCDEF'
+
+Non-chunked, compressed data, wrap in DecompressingBufferedReader
 >>> DecompressingBufferedReader(ChunkedDataReader(BytesIO(compress('\nABCDEF\nGHIJ')))).read()
 '\nABCDEF\nGHIJ'
 
