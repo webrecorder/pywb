@@ -72,7 +72,7 @@ def is_wb_handler(obj):
 
 
 #=================================================================
-class J2TemplateView:
+class J2TemplateView(object):
     env_globals = {'static_path': 'static/default',
                    'package': 'pywb'}
 
@@ -151,12 +151,13 @@ class HeadInsertView(J2TemplateView):
 # query views
 #=================================================================
 class J2HtmlCapturesView(J2TemplateView):
-    def render_response(self, wbrequest, cdx_lines):
+    def render_response(self, wbrequest, cdx_lines, **kwargs):
         return J2TemplateView.render_response(self,
                                     cdx_lines=list(cdx_lines),
                                     url=wbrequest.wb_url.url,
                                     type=wbrequest.wb_url.type,
-                                    prefix=wbrequest.wb_prefix)
+                                    prefix=wbrequest.wb_prefix,
+                                    **kwargs)
 
     @staticmethod
     def create_template(filename, desc=''):

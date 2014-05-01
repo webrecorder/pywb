@@ -63,6 +63,9 @@ class BaseWbUrl(object):
     def is_query(self):
         return self.is_query_type(self.type)
 
+    def is_url_query(self):
+        return (self.type == BaseWbUrl.URL_QUERY)
+
     @staticmethod
     def is_replay_type(type_):
         return (type_ == BaseWbUrl.REPLAY or
