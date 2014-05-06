@@ -98,7 +98,8 @@ class LiveRewriter(object):
                       req_headers={},
                       timestamp=None,
                       follow_redirects=False,
-                      proxies=None):
+                      proxies=None,
+                      mod=None):
 
         ts_err = url.split('///')
 
@@ -135,7 +136,8 @@ class LiveRewriter(object):
                                   stream,
                                   head_insert_func=head_insert_func,
                                   urlkey=urlkey,
-                                  cdx=cdx))
+                                  cdx=cdx,
+                                  mod=mod))
 
         return result
 

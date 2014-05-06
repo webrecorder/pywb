@@ -54,7 +54,7 @@ class RewriteContent:
 
     def rewrite_content(self, urlrewriter, headers, stream,
                         head_insert_func=None, urlkey='',
-                        sanitize_only=False, cdx=None):
+                        sanitize_only=False, cdx=None, mod=None):
 
         if sanitize_only:
             status_headers, stream = self.sanitize_content(headers, stream)
@@ -75,6 +75,14 @@ class RewriteContent:
         # special case -- need to ungzip the body
 
         text_type = rewritten_headers.text_type
+
+        # see known js/css modifier specified, the context should run
+        # default text_type
+        if mod == 'js_':
+            text_type = 'js'
+        elif mod == 'cs_':
+            text_type = 'css'
+
         stream_raw = False
         encoding = None
         first_buff = None

@@ -125,7 +125,8 @@ class ReplayView(object):
                                   head_insert_func=head_insert_func,
                                   urlkey=cdx['urlkey'],
                                   sanitize_only=wbrequest.wb_url.is_identity,
-                                  cdx=cdx))
+                                  cdx=cdx,
+                                  mod=wbrequest.wb_url.mod))
 
         (status_headers, response_iter, is_rewritten) = result
 
