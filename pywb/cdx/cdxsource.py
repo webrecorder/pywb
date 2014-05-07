@@ -1,5 +1,4 @@
 from pywb.utils.binsearch import iter_range
-from pywb.utils.loaders import SeekableTextFileReader
 
 from pywb.utils.wbexception import AccessException, NotFoundException
 from pywb.utils.wbexception import BadRequestException, WbException
@@ -29,7 +28,7 @@ class CDXFile(CDXSource):
         self.filename = filename
 
     def load_cdx(self, query):
-        source = SeekableTextFileReader(self.filename)
+        source = open(self.filename)
         return iter_range(source, query.key, query.end_key)
 
     def __str__(self):

@@ -198,34 +198,3 @@ class LimitReader(object):
             pass
 
         return stream
-
-
-#=================================================================
-# Local text file with known size -- used for binsearch
-#=================================================================
-class SeekableTextFileReader(object):
-    """
-    A very simple file-like object wrapper that knows it's total size,
-    via getsize()
-    Supports seek() operation.
-    Assumed to be a text file. Used for binsearch.
-    """
-    def __init__(self, filename):
-        self.fh = open(filename, 'rb')
-        self.filename = filename
-        self.size = os.path.getsize(filename)
-
-    def getsize(self):
-        return self.size
-
-    def read(self, length=None):
-        return self.fh.read(length)
-
-    def readline(self, length=None):
-        return self.fh.readline(length)
-
-    def seek(self, offset):
-        return self.fh.seek(offset)
-
-    def close(self):
-        return self.fh.close()

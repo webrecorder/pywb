@@ -1,7 +1,6 @@
 import redis
 
 from pywb.utils.binsearch import iter_exact
-from pywb.utils.loaders import SeekableTextFileReader
 
 import urlparse
 import os
@@ -57,7 +56,7 @@ class RedisResolver:
 class PathIndexResolver:
     def __init__(self, pathindex_file):
         self.pathindex_file = pathindex_file
-        self.reader = SeekableTextFileReader(pathindex_file)
+        self.reader = open(pathindex_file)
 
     def __call__(self, filename):
         result = iter_exact(self.reader, filename, '\t')

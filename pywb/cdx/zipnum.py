@@ -9,7 +9,6 @@ from cdxsource import CDXSource
 from cdxobject import IDXObject
 
 from pywb.utils.loaders import BlockLoader
-from pywb.utils.loaders import SeekableTextFileReader
 from pywb.utils.bufferedreaders import gzip_decompressor
 from pywb.utils.binsearch import iter_range, linearsearch
 
@@ -113,7 +112,7 @@ class ZipNumCluster(CDXSource):
     def load_cdx(self, query):
         self.load_loc()
 
-        reader = SeekableTextFileReader(self.summary)
+        reader = open(self.summary)
 
         idx_iter = iter_range(reader,
                               query.key,
