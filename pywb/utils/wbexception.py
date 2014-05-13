@@ -2,6 +2,10 @@
 
 #=================================================================
 class WbException(Exception):
+    def __init__(self, msg=None, url=None):
+        Exception.__init__(self, msg)
+        self.url = url
+
     def status(self):
         return '500 Internal Server Error'
 
