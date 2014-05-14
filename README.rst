@@ -1,4 +1,4 @@
-PyWb 0.3.1
+PyWb 0.4.0 Beta
 =============
 
 .. image:: https://travis-ci.org/ikreymer/pywb.png?branch=develop

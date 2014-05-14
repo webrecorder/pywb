@@ -3,6 +3,8 @@ from pywb.rewrite.url_rewriter import UrlRewriter
 
 from pywb import get_test_dir
 
+from io import BytesIO
+
 # This module has some rewriting tests against the 'live web'
 # As such, the content may change and the test may break
 
@@ -79,6 +81,18 @@ def test_example_domain_specific_3():
 
     # comment out bootloader
     assert '/* Bootloader.configurePage' in buff
+
+
+def test_post():
+    buff = BytesIO('ABCDEF')
+
+    env = {'REQUEST_METHOD': 'POST',
+           'HTTP_ORIGIN': 'http://example.com',
+           'HTTP_HOST': 'example.com',
+           'wsgi.input': buff}
+
+    status_headers, resp_buff = get_rewritten('http://example.com/', urlrewriter, env=env)
+    assert status_headers.get_statuscode() == '200', status_headers
 
 
 def get_rewritten(*args, **kwargs):

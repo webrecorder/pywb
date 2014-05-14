@@ -6,7 +6,9 @@ import requests
 import datetime
 import mimetypes
 
-from pywb.utils.loaders import is_http
+from urlparse import urlsplit
+
+from pywb.utils.loaders import is_http, LimitReader
 from pywb.utils.timeutils import datetime_to_timestamp
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.canonicalize import canonicalize
@@ -23,6 +25,12 @@ class LiveRewriter(object):
                          ('HTTP_ACCEPT_CHARSET', 'Accept-Charset'),
                          ('HTTP_ACCEPT_ENCODING', 'Accept-Encoding'),
                          ('HTTP_RANGE', 'Range'),
+                         ('HTTP_CACHE_CONTROL', 'Cache-Control'),
+                         ('HTTP_X_REQUESTED_WITH', 'X-Requested-With'),
+                         ('HTTP_X_CSRF_TOKEN', 'X-CSRF-Token'),
+                         ('HTTP_COOKIE', 'Cookie'),
+                         ('CONTENT_TYPE', 'Content-Type'),
+                         ('CONTENT_LENGTH', 'Content-Length'),
                          ('REL_REFERER', 'Referer'),
                         ]
 
@@ -67,10 +75,23 @@ class LiveRewriter(object):
             method = env['REQUEST_METHOD'].upper()
             input_ = env['wsgi.input']
 
+            host = env.get('HTTP_HOST')
+            origin = env.get('HTTP_ORIGIN')
+            if host or origin:
+                splits = urlsplit(url)
+                if host:
+                    req_headers['Host'] = splits.netloc
+                if origin:
+                    req_headers['Origin'] = (splits.scheme + '://' + splits.netloc)
+
             req_headers.update(self.translate_headers(env))
 
             if method in ('POST', 'PUT'):
-                data = input_
+                len_ = env.get('CONTENT_LENGTH')
+                if len_:
+                    data = LimitReader(input_, int(len_))
+                else:
+                    data = input_
 
         response = requests.request(method=method,
                                     url=url,

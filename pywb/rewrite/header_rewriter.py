@@ -39,6 +39,8 @@ class HeaderRewriter:
 
     PROXY_NO_REWRITE_HEADERS = ['content-length']
 
+    COOKIE_HEADERS = ['set-cookie', 'cookie']
+
     def __init__(self, header_prefix='X-Archive-Orig-'):
         self.header_prefix = header_prefix
 
@@ -86,6 +88,8 @@ class HeaderRewriter:
         new_headers = []
         removed_header_dict = {}
 
+        cookie_rewriter = urlrewriter.get_cookie_rewriter()
+
         for (name, value) in headers:
 
             lowername = name.lower()
@@ -108,6 +112,11 @@ class HeaderRewriter:
             elif (lowername in self.PROXY_NO_REWRITE_HEADERS and
                   not content_rewritten):
                 new_headers.append((name, value))
+
+            elif (lowername in self.COOKIE_HEADERS and
+                  cookie_rewriter):
+                cookie_list = cookie_rewriter.rewrite(value)
+                new_headers.extend(cookie_list)
 
             else:
                 new_headers.append((self.header_prefix + name, value))

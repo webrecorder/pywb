@@ -2,6 +2,7 @@ import copy
 import urlparse
 
 from wburl import WbUrl
+from cookie_rewriter import WbUrlCookieRewriter
 
 
 #=================================================================
@@ -82,6 +83,9 @@ class UrlRewriter(object):
         new_wburl.url = new_url
         return UrlRewriter(new_wburl, self.prefix)
 
+    def get_cookie_rewriter(self):
+        return WbUrlCookieRewriter(self)
+
     def __repr__(self):
         return "UrlRewriter('{0}', '{1}')".format(self.wburl, self.prefix)
 
@@ -114,3 +118,6 @@ class HttpsUrlRewriter(object):
 
     def rebase_rewriter(self, new_url):
         return self
+
+    def get_cookie_rewriter(self):
+        return None

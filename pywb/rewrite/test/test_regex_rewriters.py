@@ -116,61 +116,13 @@ r"""
 >>> _test_css("@import url(/url.css)\n@import  url(/anotherurl.css)\n @import  url(/and_a_third.css)")
 '@import url(/web/20131010em_/http://example.com/url.css)\n@import  url(/web/20131010em_/http://example.com/anotherurl.css)\n @import  url(/web/20131010em_/http://example.com/and_a_third.css)'
 
-#=================================================================
-HTTP Headers Rewriting
-#=================================================================
-
-# Text with charset
->>> _test_headers([('Date', 'Fri, 03 Jan 2014 03:03:21 GMT'), ('Content-Length', '5'), ('Content-Type', 'text/html;charset=UTF-8')])
-{'charset': 'utf-8',
- 'removed_header_dict': {},
- 'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('X-Archive-Orig-Date', 'Fri, 03 Jan 2014 03:03:21 GMT'),
-  ('X-Archive-Orig-Content-Length', '5'),
-  ('Content-Type', 'text/html;charset=UTF-8')]),
- 'text_type': 'html'}
-
-# Redirect
->>> _test_headers([('Connection', 'close'), ('Location', '/other.html')], '302 Redirect')
-{'charset': None,
- 'removed_header_dict': {},
- 'status_headers': StatusAndHeaders(protocol = '', statusline = '302 Redirect', headers = [ ('X-Archive-Orig-Connection', 'close'),
-  ('Location', '/web/20131010/http://example.com/other.html')]),
- 'text_type': None}
-
-# gzip
->>> _test_headers([('Content-Length', '199999'), ('Content-Type', 'text/javascript'), ('Content-Encoding', 'gzip'), ('Transfer-Encoding', 'chunked')])
-{'charset': None,
- 'removed_header_dict': {'content-encoding': 'gzip',
-                         'transfer-encoding': 'chunked'},
- 'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('X-Archive-Orig-Content-Length', '199999'),
-  ('Content-Type', 'text/javascript')]),
- 'text_type': 'js'}
-
-# Binary
->>> _test_headers([('Content-Length', '200000'), ('Content-Type', 'image/png'), ('Cookie', 'blah'), ('Content-Encoding', 'gzip'), ('Transfer-Encoding', 'chunked')])
-{'charset': None,
- 'removed_header_dict': {'transfer-encoding': 'chunked'},
- 'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('Content-Length', '200000'),
-  ('Content-Type', 'image/png'),
-  ('X-Archive-Orig-Cookie', 'blah'),
-  ('Content-Encoding', 'gzip')]),
- 'text_type': None}
-
-Removing Transfer-Encoding always, Was:
-  ('Content-Encoding', 'gzip'),
-  ('Transfer-Encoding', 'chunked')]), 'charset': None, 'text_type': None, 'removed_header_dict': {}}
-
-
 """
+
 
 #=================================================================
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.regex_rewriters import RegexRewriter, JSRewriter, CSSRewriter, XMLRewriter
-from pywb.rewrite.header_rewriter import HeaderRewriter
 
-from pywb.utils.statusandheaders import StatusAndHeaders
-
-import pprint
 
 urlrewriter = UrlRewriter('20131010/http://example.com/', '/web/')
 
@@ -183,12 +135,6 @@ def _test_xml(string):
 
 def _test_css(string):
     return CSSRewriter(urlrewriter).rewrite(string)
-
-headerrewriter = HeaderRewriter()
-
-def _test_headers(headers, status = '200 OK'):
-    rewritten = headerrewriter.rewrite(StatusAndHeaders(status, headers), urlrewriter)
-    return pprint.pprint(vars(rewritten))
 
 
 if __name__ == "__main__":
