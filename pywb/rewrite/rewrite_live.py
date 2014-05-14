@@ -57,7 +57,7 @@ class LiveRewriter(object):
 
         for env_name, req_name in header_list:
             value = env.get(env_name)
-            if value is not None:
+            if value:
                 headers[req_name] = value
 
         return headers
