@@ -26,6 +26,7 @@ WB_wombat_init = (function() {
     var wb_replay_prefix;
     var wb_replay_date_prefix;
     var wb_capture_date_part;
+    var wb_orig_scheme;
     var wb_orig_host;
 
     var wb_wombat_updating = false;
@@ -80,7 +81,7 @@ WB_wombat_init = (function() {
     var rewrite_url = rewrite_url_;
 
     function rewrite_url_debug(url) {
-        rewritten = rewrite_url_(url);
+        var rewritten = rewrite_url_(url);
         if (url != rewritten) {
             console.log('REWRITE: ' + url + ' -> ' + rewritten);
         } else {
@@ -100,8 +101,17 @@ WB_wombat_init = (function() {
     
     //============================================
     function rewrite_url_(url) {
-        // If not dealing with a string, just return it
-        if (!url || (typeof url) != "string") {
+        // If undefined, just return it
+        if (!url) {
+            return url;
+        }
+        
+        var urltype_ = (typeof url);
+        
+        // If object, use toString
+        if (urltype_ == "object") {
+            url = url.toString();
+        } else if (urltype_ != "string") {
             return url;
         }
 
@@ -145,7 +155,7 @@ WB_wombat_init = (function() {
         // May or may not be a hostname, call function to determine
         // If it is, add the prefix and make sure port is removed
         if (is_host_url(url) && !starts_with(url, window.location.host + '/')) {
-            return wb_replay_date_prefix + HTTP_PREFIX + url;
+            return wb_replay_date_prefix + wb_orig_scheme + url;
         }
 
         return url;
@@ -278,6 +288,9 @@ WB_wombat_init = (function() {
                                _get_hash);
             
             this._autooverride = res1 && res2;
+        } else {
+            this.href = href;
+            this.hash = parser.hash;
         }
                     
         this.host = parser.host;
@@ -323,8 +336,8 @@ WB_wombat_init = (function() {
         }
 
 
-        ext_orig = extract_orig(orig_href);
-        ext_req = extract_orig(req_href);
+        var ext_orig = extract_orig(orig_href);
+        var ext_req = extract_orig(req_href);
 
         if (!ext_orig || ext_orig == ext_req) {
             return;
@@ -400,7 +413,7 @@ WB_wombat_init = (function() {
 
     //============================================
     function copy_history_func(history, func_name) {
-        orig_func = history[func_name];
+        var orig_func = history[func_name];
 
         if (!orig_func) {
             return;
@@ -459,7 +472,7 @@ WB_wombat_init = (function() {
             return;
         }
 
-        value = elem.getAttribute(name);
+        var value = elem.getAttribute(name);
 
         if (!value) {
             return;
@@ -469,10 +482,21 @@ WB_wombat_init = (function() {
             return;
         }
 
-        orig_value = value;        
+        //var orig_value = value;        
         value = rewrite_url(value);
 
         elem.setAttribute(name, value);
+    }
+    
+    //============================================
+    function rewrite_elem(elem)
+    {
+        rewrite_attr(elem, "src");
+        rewrite_attr(elem, "href");
+        
+        if (elem && elem.getAttribute && elem.getAttribute("crossorigin")) {
+            elem.removeAttribute("crossorigin");
+        }
     }
 
     //============================================
@@ -485,28 +509,45 @@ WB_wombat_init = (function() {
             var orig = Node.prototype[funcname];
 
             Node.prototype[funcname] = function() {
-                rewrite_attr(arguments[0], "src");
-                rewrite_attr(arguments[0], "href");
-
-                child = arguments[0];
+                var child = arguments[0];
+                
+                rewrite_elem(child);
 
                 var desc;
 
                 if (child instanceof DocumentFragment) {
-                    //desc = child.querySelectorAll("*[href],*[src]");
+     //               desc = child.querySelectorAll("*[href],*[src]");
                 } else if (child.getElementsByTagName) {
-                    //desc = child.getElementsByTagName("*");
+     //               desc = child.getElementsByTagName("*");
                 }
 
                 if (desc) {
                     for (var i = 0; i < desc.length; i++) {
-                        rewrite_attr(desc[i], "src");
-                        rewrite_attr(desc[i], "href");
+                        rewrite_elem(desc[i]);
                     }
                 }
 
-                result = orig.apply(this, arguments);
-                return result;
+                var created = orig.apply(this, arguments);
+                
+                if (created.tagName == "IFRAME") {                   
+                    var setter = function(orig) {
+                        var val = rewrite_url(orig);
+                        console.log(orig + " -> " + val);
+                        this.setAttribute("src", val);
+                        return val;
+                    }
+                    
+                    var getter = function(val) {
+                        var res = this.getAttribute("src");
+                        return res;
+                    }
+                    
+                    var curr_src = created.getAttribute("src");
+                    
+                    defProp(created, "src", curr_src, setter, getter);
+                }
+                
+                return created;
             }
         }
 
@@ -514,9 +555,66 @@ WB_wombat_init = (function() {
         replace_dom_func("insertBefore");
         replace_dom_func("replaceChild");
     }
+    
+    var postmessage_rewritten;
+    
+    //============================================
+    function init_postmessage_override()
+    {   
+        if (!Window.prototype.postMessage) {
+            return;
+        }
+        
+        var orig = Window.prototype.postMessage;
+        
+        postmessage_rewritten = function(message, targetOrigin, transfer) {
+            if (targetOrigin && targetOrigin != "*") {
+                targetOrigin = window.location.origin;
+            }
+            
+            return orig.call(this, message, targetOrigin, transfer);
+        }
+        
+        window.postMessage = postmessage_rewritten;
+        window.Window.prototype.postMessage = postmessage_rewritten;
+        
+        for (var i = 0; i < window.frames.length; i++) {
+            try {
+                window.frames[i].postMessage = postmessage_rewritten;
+            } catch (e) {
+                console.log(e);
+            }
+        }
+    }
+    
+    //============================================
+    function init_open_override()
+    {   
+        if (!Window.prototype.open) {
+            return;
+        }
+        
+        var orig = Window.prototype.open;
+        
+        var open_rewritten = function(strUrl, strWindowName, strWindowFeatures) {
+            strUrl = rewrite_url(strUrl);
+            return orig.call(this, strUrl, strWindowName, strWindowFeatures);
+        }
+        
+        window.open = open_rewritten;
+        window.Window.prototype.open = open_rewritten;
+        
+        for (var i = 0; i < window.frames.length; i++) {
+            try {
+                window.frames[i].open = open_rewritten;
+            } catch (e) {
+                console.log(e);
+            }
+        }
+    }
 
     //============================================
-    function wombat_init(replay_prefix, capture_date, orig_host, timestamp) {
+    function wombat_init(replay_prefix, capture_date, orig_scheme, orig_host, timestamp) {
         wb_replay_prefix = replay_prefix;
 
         wb_replay_date_prefix = replay_prefix + capture_date + "em_/";
@@ -526,8 +624,10 @@ WB_wombat_init = (function() {
         } else {
             wb_capture_date_part = "";
         }
+        
+        wb_orig_scheme = orig_scheme + '://';
 
-        wb_orig_host = HTTP_PREFIX + orig_host;
+        wb_orig_host = wb_orig_scheme + orig_host;
 
         // Location
         var wombat_location = new WombatLocation(window.self.location);
@@ -546,6 +646,9 @@ WB_wombat_init = (function() {
             defProp(window, "WB_wombat_location", wombat_location, setter);
             defProp(document, "WB_wombat_location", wombat_location, setter);
         } else {
+            window.WB_wombat_location = wombat_location;
+            document.WB_wombat_location = wombat_location;
+            
             // Check quickly after page load
             setTimeout(check_all_locations, 500);   
       
@@ -579,7 +682,13 @@ WB_wombat_init = (function() {
         // History
         copy_history_func(window.history, 'pushState');
         copy_history_func(window.history, 'replaceState');
+        
+        // open
+        init_open_override();
 
+        // postMessage
+        init_postmessage_override();
+        
         // Ajax
         init_ajax_rewrite();
         init_worker_override();
