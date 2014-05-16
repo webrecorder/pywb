@@ -1,4 +1,4 @@
-import Cookie
+from Cookie import SimpleCookie, CookieError
 
 
 #=================================================================
@@ -11,10 +11,12 @@ class WbUrlCookieRewriter(object):
         self.url_rewriter = url_rewriter
 
     def rewrite(self, cookie_str, header='Set-Cookie'):
-        cookie = Cookie.SimpleCookie()
-        cookie.load(cookie_str)
-
         results = []
+        cookie = SimpleCookie()
+        try:
+            cookie.load(cookie_str)
+        except CookieError:
+            return results
 
         for name, morsel in cookie.iteritems():
             if morsel.get('domain'):

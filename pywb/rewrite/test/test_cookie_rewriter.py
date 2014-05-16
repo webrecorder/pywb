@@ -12,6 +12,10 @@ r"""
 >>> rewrite_cookie('abc=def; Path=file.html; Expires=Wed, 13 Jan 2021 22:23:01 GMT')
 [('Set-Cookie', 'abc=def; Path=/pywb/20131226101010/http://example.com/some/path/file.html')]
 
+# Cookie with invalid chars, not parsed
+>>> rewrite_cookie('abc@def=123')
+[]
+
 """
 
 
