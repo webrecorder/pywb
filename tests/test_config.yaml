@@ -15,7 +15,8 @@ collections:
     # ex with filtering: filter CDX lines by filename starting with 'dupe'
     pywb-filt: {'index_paths': './sample_archive/cdx/', 'filters': ['filename:dupe*']}
 
-    pywb-nosurt: {'index_paths': './sample_archive/cdx/example-non-surt.cdx', 'surt_ordered': False}
+    # collection of non-surt CDX
+    pywb-nosurt: {'index_paths': './sample_archive/non-surt-cdx/', 'surt_ordered': False}
 
 
 # indicate if cdx files are sorted by SURT keys -- eg: com,example)/
