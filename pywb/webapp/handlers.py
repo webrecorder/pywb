@@ -80,7 +80,7 @@ class StaticHandler(BaseHandler):
             raise NotFoundException('Static File Not Found: ' +
                                     wbrequest.wb_url_str)
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return 'Static files from ' + self.static_path
 
 

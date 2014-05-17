@@ -87,7 +87,9 @@ static_routes:
 enable_http_proxy: true
 
 # enable cdx server api for querying cdx directly (experimental)
-enable_cdx_api: true
+#enable_cdx_api: True
+# or specify suffix
+enable_cdx_api: -cdx
 
 # test different port
 port: 9000
@@ -107,3 +109,9 @@ perms_policy: !!python/name:tests.perms_fixture.perms_policy
 
 # not testing memento here
 enable_memento: False
+
+
+# Debug Handlers
+debug_echo_env: True
+
+debug_echo_req: True

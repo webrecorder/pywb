@@ -214,13 +214,22 @@ class TestWb:
         assert resp.status_int == 403
         assert 'Excluded' in resp.body
 
-
     def test_static_content(self):
         resp = self.testapp.get('/static/test/route/wb.css')
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
         assert resp.content_length > 0
 
+    def test_static_content_filewrapper(self):
+        from wsgiref.util import FileWrapper
+        resp = self.testapp.get('/static/test/route/wb.css', extra_environ = {'wsgi.file_wrapper': FileWrapper})
+        assert resp.status_int == 200
+        assert resp.content_type == 'text/css'
+        assert resp.content_length > 0
+
+    def test_static_not_found(self):
+        resp = self.testapp.get('/static/test/route/notfound.css', status = 404)
+        assert resp.status_int == 404
 
     # 'Simulating' proxy by settings REQUEST_URI explicitly to http:// url and no SCRIPT_NAME
     # would be nice to be able to test proxy more
