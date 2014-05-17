@@ -18,6 +18,7 @@ import datetime
 from views import J2TemplateView, HeadInsertView
 
 
+#=================================================================
 class RewriteHandler(WbUrlHandler):
     def __init__(self, config={}):
         #use_lxml_parser()
@@ -30,7 +31,6 @@ class RewriteHandler(WbUrlHandler):
             view = HeadInsertView.create_template(head_insert, 'Head Insert')
 
         self.head_insert_view = view
-
 
         view = config.get('frame_insert_view')
         if not view:
@@ -59,7 +59,6 @@ class RewriteHandler(WbUrlHandler):
         ref_wburl_str = wbrequest.extract_referrer_wburl_str()
         if ref_wburl_str:
             wbrequest.env['REL_REFERER'] = WbUrl(ref_wburl_str).url
-
 
         result = self.rewriter.fetch_request(url, wbrequest.urlrewriter,
                                              head_insert_func=head_insert_func,

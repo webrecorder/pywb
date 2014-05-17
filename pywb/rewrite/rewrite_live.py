@@ -82,7 +82,8 @@ class LiveRewriter(object):
                 if host:
                     req_headers['Host'] = splits.netloc
                 if origin:
-                    req_headers['Origin'] = (splits.scheme + '://' + splits.netloc)
+                    new_origin = (splits.scheme + '://' + splits.netloc)
+                    req_headers['Origin'] = new_origin
 
             req_headers.update(self.translate_headers(env))
 
@@ -101,7 +102,6 @@ class LiveRewriter(object):
                                     proxies=proxies,
                                     stream=True,
                                     verify=False)
-
 
         statusline = str(response.status_code) + ' ' + response.reason
 

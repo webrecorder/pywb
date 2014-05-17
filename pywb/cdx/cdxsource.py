@@ -128,7 +128,6 @@ class RedisCDXSource(CDXSource):
 
         return cdx_list
 
-
     def load_single_key(self, key):
         # ensure only url/surt is part of key
         key = key.split(' ')[0]

@@ -62,8 +62,7 @@ class HTMLRewriterMixin(object):
 
     DATA_RW_PROTOCOLS = ('http://', 'https://', '//')
 
-
-    # ===========================
+    #===========================
     class AccumBuff:
         def __init__(self):
             self.ls = []
