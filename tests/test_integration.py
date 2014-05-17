@@ -151,6 +151,17 @@ class TestWb:
         resp = self.testapp.get('/pywb/20140126200654/http://www.iana.org/_img/2013.1/rir-map.svg')
         assert resp.headers['Content-Length'] == str(len(resp.body))
 
+    def test_replay_css_mod(self):
+        resp = self.testapp.get('/pywb/20140127171239cs_/http://www.iana.org/_css/2013.1/screen.css')
+        assert resp.status_int == 200
+        assert resp.content_type == 'text/css'
+
+    def test_replay_js_mod(self):
+        # an empty js file
+        resp = self.testapp.get('/pywb/20140126201054js_/http://www.iana.org/_js/2013.1/iana.js')
+        assert resp.status_int == 200
+        assert resp.content_length == 0
+        assert resp.content_type == 'application/x-javascript'
 
     def test_redirect_1(self):
         resp = self.testapp.get('/pywb/20140127171237/http://www.iana.org/')

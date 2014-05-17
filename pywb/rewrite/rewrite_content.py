@@ -94,7 +94,7 @@ class RewriteContent:
             if isinstance(stream, ChunkedDataReader):
                 stream.set_decomp('gzip')
             else:
-                stream = DecompressingBufferedReader(stream, decomp_type='gzip')
+                stream = DecompressingBufferedReader(stream)
 
         if rewritten_headers.charset:
             encoding = rewritten_headers.charset
@@ -109,10 +109,7 @@ class RewriteContent:
 
         rule = self.ruleset.get_first_match(urlkey)
 
-        try:
-            rewriter_class = rule.rewriters[text_type]
-        except KeyError:
-            raise Exception('Unknown Text Type for Rewrite: ' + text_type)
+        rewriter_class = rule.rewriters[text_type]
 
         # for html, need to perform header insert, supply js, css, xml
         # rewriters
