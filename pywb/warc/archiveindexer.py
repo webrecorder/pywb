@@ -1,9 +1,9 @@
 from pywb.utils.timeutils import iso_date_to_timestamp
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
+from pywb.utils.canonicalize import canonicalize
 
 from recordloader import ArcWarcRecordLoader
 
-import surt
 import hashlib
 import base64
 
@@ -22,12 +22,13 @@ class ArchiveIndexer(object):
     if necessary
     """
     def __init__(self, fileobj, filename,
-                 out=sys.stdout, sort=False, writer=None):
+                 out=sys.stdout, sort=False, writer=None, surt_ordered=True):
         self.fh = fileobj
         self.filename = filename
         self.loader = ArcWarcRecordLoader()
         self.offset = 0
         self.known_format = None
+        self.surt_ordered = surt_ordered
 
         if writer:
             self.writer = writer
@@ -179,7 +180,9 @@ class ArchiveIndexer(object):
         if not digest:
             digest = '-'
 
-        return [surt.surt(url),
+        key = canonicalize(url, self.surt_ordered)
+
+        return [key,
                 timestamp,
                 url,
                 mime,
@@ -211,7 +214,9 @@ class ArchiveIndexer(object):
         mime = record.rec_headers.get_header('content-type')
         mime = self._extract_mime(mime)
 
-        return [surt.surt(url),
+        key = canonicalize(url, self.surt_ordered)
+
+        return [key,
                 timestamp,
                 url,
                 mime,
@@ -318,7 +323,7 @@ def iter_file_or_dir(inputs):
                 yield os.path.join(input_, filename), filename
 
 
-def index_to_file(inputs, output, sort):
+def index_to_file(inputs, output, sort, surt_ordered):
     if output == '-':
         outfile = sys.stdout
     else:
@@ -337,7 +342,8 @@ def index_to_file(inputs, output, sort):
             with open(fullpath, 'r') as infile:
                 ArchiveIndexer(fileobj=infile,
                                filename=filename,
-                               writer=writer).make_index()
+                               writer=writer,
+                               surt_ordered=surt_ordered).make_index()
     finally:
         writer.end_all()
         if infile:
@@ -357,7 +363,7 @@ def cdx_filename(filename):
     return remove_ext(filename) + '.cdx'
 
 
-def index_to_dir(inputs, output, sort):
+def index_to_dir(inputs, output, sort, surt_ordered):
     for fullpath, filename in iter_file_or_dir(inputs):
 
         outpath = cdx_filename(filename)
@@ -368,7 +374,8 @@ def index_to_dir(inputs, output, sort):
                 ArchiveIndexer(fileobj=infile,
                                filename=filename,
                                sort=sort,
-                               out=outfile).make_index()
+                               out=outfile,
+                               surt_ordered=surt_ordered).make_index()
 
 
 def main(args=None):
@@ -395,6 +402,12 @@ Some examples:
 sort the output to each file before writing to create a total ordering
 """
 
+    unsurt_help = """
+Convert SURT (Sort-friendly URI Reordering Transform) back to regular
+urls for the cdx key. Default is to use SURT keys.
+Not-recommended for new cdx, use only for backwards-compatibility.
+"""
+
     output_help = """output file or directory.
 - If directory, each input file is written to a seperate output file
   with a .cdx extension
@@ -409,15 +422,22 @@ sort the output to each file before writing to create a total ordering
                             epilog=epilog,
                             formatter_class=RawTextHelpFormatter)
 
-    parser.add_argument('-s', '--sort', action='store_true', help=sort_help)
+    parser.add_argument('-s', '--sort',
+                        action='store_true',
+                        help=sort_help)
+
+    parser.add_argument('-u', '--unsurt',
+                        action='store_true',
+                        help=unsurt_help)
+
     parser.add_argument('output', help=output_help)
     parser.add_argument('inputs', nargs='+', help=input_help)
 
     cmd = parser.parse_args(args=args)
     if cmd.output != '-' and os.path.isdir(cmd.output):
-        index_to_dir(cmd.inputs, cmd.output, cmd.sort)
+        index_to_dir(cmd.inputs, cmd.output, cmd.sort, not cmd.unsurt)
     else:
-        index_to_file(cmd.inputs, cmd.output, cmd.sort)
+        index_to_file(cmd.inputs, cmd.output, cmd.sort, not cmd.unsurt)
 
 
 if __name__ == '__main__':

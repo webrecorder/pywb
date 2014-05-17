@@ -128,6 +128,36 @@ def test_fuzzy_match():
     assert_cdx_fuzzy_match(RemoteCDXServer(CDX_SERVER_URL,
                            ds_rules_file=DEFAULT_RULES_FILE))
 
+def test_fuzzy_no_match_1():
+    # no match, no fuzzy
+    with patch('pywb.cdx.cdxsource.urllib2.urlopen', mock_urlopen):
+        server = CDXServer([TEST_CDX_DIR], ds_rules_file=DEFAULT_RULES_FILE)
+        with raises(NotFoundException):
+            server.load_cdx(url='http://notfound.example.com/',
+                            output='cdxobject',
+                            reverse=True,
+                            allowFuzzy=True)
+
+def test_fuzzy_no_match_2():
+    # fuzzy rule, but no actual match
+    with patch('pywb.cdx.cdxsource.urllib2.urlopen', mock_urlopen):
+        server = CDXServer([TEST_CDX_DIR], ds_rules_file=DEFAULT_RULES_FILE)
+        with raises(NotFoundException):
+            server.load_cdx(url='http://notfound.example.com/?_=1234',
+                            closest='2014',
+                            reverse=True,
+                            output='cdxobject',
+                            allowFuzzy=True)
+
+def test2_fuzzy_no_match_3():
+    # special fuzzy rule, matches prefix test.example.example.,
+    # but doesn't match rule regex
+    with patch('pywb.cdx.cdxsource.urllib2.urlopen', mock_urlopen):
+        server = CDXServer([TEST_CDX_DIR], ds_rules_file=DEFAULT_RULES_FILE)
+        with raises(NotFoundException):
+            server.load_cdx(url='http://test.example.example/',
+                            allowFuzzy=True)
+
 def assert_error(func, exception):
     with raises(exception):
         func(CDXServer(CDX_SERVER_URL))

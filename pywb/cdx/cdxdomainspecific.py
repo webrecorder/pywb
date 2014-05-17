@@ -25,7 +25,7 @@ def load_domain_specific_cdx_rules(ds_rules_file, surt_ordered):
                     ds_rules_file=ds_rules_file)
 
     if not surt_ordered:
-        for rule in rules:
+        for rule in rules.rules:
             rule.unsurt()
 
     if rules:
@@ -36,7 +36,7 @@ def load_domain_specific_cdx_rules(ds_rules_file, surt_ordered):
                     ds_rules_file=ds_rules_file)
 
     if not surt_ordered:
-        for rule in rules:
+        for rule in rules.rules:
             rule.unsurt()
 
     if rules:
@@ -108,11 +108,12 @@ class FuzzyQuery:
         params.update({'url': url,
                        'matchType': 'prefix',
                        'filter': filter_})
-        try:
+
+        if 'reverse' in params:
             del params['reverse']
+
+        if 'closest' in params:
             del params['closest']
-        except KeyError:
-            pass
 
         return params
 
@@ -141,7 +142,7 @@ class CDXDomainSpecificRule(BaseRule):
         """
         self.url_prefix = map(unsurt, self.url_prefix)
         if self.regex:
-            self.regex = unsurt(self.regex)
+            self.regex = re.compile(unsurt(self.regex.pattern))
 
         if self.replace:
             self.replace = unsurt(self.replace)

@@ -94,6 +94,13 @@ class TestWb:
         assert 'wb.js' in resp.body
         assert '/pywb/20140127171238/http://www.iana.org/time-zones"' in resp.body
 
+    def test_replay_non_surt(self):
+        resp = self.testapp.get('/pywb-nosurt/20140103030321/http://example.com?example=1')
+        self._assert_basic_html(resp)
+
+        #assert 'Mon, Jan 27 2014 17:12:38' in resp.body
+        assert 'wb.js' in resp.body
+        #assert '/pywb/20140127171238/http://www.iana.org/time-zones"' in resp.body
 
     def test_replay_url_agnostic_revisit(self):
         resp = self.testapp.get('/pywb/20130729195151/http://www.example.com/')

@@ -60,3 +60,4 @@ rules:
       fuzzy_lookup:
         match: '(.*)[&?](?:_|uncache)=[\d]+[&]?'
         filter: '=urlkey:{0}'
+        replace: '?'
