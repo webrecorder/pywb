@@ -43,6 +43,7 @@ class WBHandler(WbUrlHandler):
     def render_search_page(self, wbrequest, **kwargs):
         if self.search_view:
             return self.search_view.render_response(wbrequest=wbrequest,
+                                                    prefix=wbrequest.wb_prefix,
                                                     **kwargs)
         else:
             return WbResponse.text_response('No Lookup Url Specified')
