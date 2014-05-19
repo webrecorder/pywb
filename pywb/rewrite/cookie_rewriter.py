@@ -19,10 +19,14 @@ class WbUrlCookieRewriter(object):
             return results
 
         for name, morsel in cookie.iteritems():
+            # if domain set, no choice but to expand cookie path to root
             if morsel.get('domain'):
                 del morsel['domain']
-            if morsel.get('path'):
+                morsel['path'] = self.url_rewriter.prefix
+            # else set cookie to rewritten path
+            elif morsel.get('path'):
                 morsel['path'] = self.url_rewriter.rewrite(morsel['path'])
+            # remove expires as it refers to archived time
             if morsel.get('expires'):
                 del morsel['expires']
 

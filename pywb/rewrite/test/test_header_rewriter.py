@@ -21,7 +21,7 @@ HTTP Headers Rewriting
  'text_type': None}
 
 # cookie, host/origin rewriting
->>> _test_headers([('Connection', 'close'), ('Set-Cookie', 'foo=bar; Path=/; Domain=.example.com, abc=def; Path=somefile.html'), ('Host', 'example.com'), ('Origin', 'https://example.com')])
+>>> _test_headers([('Connection', 'close'), ('Set-Cookie', 'foo=bar; Path=/; abc=def; Path=somefile.html'), ('Host', 'example.com'), ('Origin', 'https://example.com')])
 {'charset': None,
  'removed_header_dict': {},
  'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('X-Archive-Orig-Connection', 'close'),
@@ -44,7 +44,7 @@ HTTP Headers Rewriting
  'text_type': 'js'}
 
 # Binary -- transfer-encoding removed
->>> _test_headers([('Content-Length', '200000'), ('Content-Type', 'image/png'), ('Set-Cookie', 'foo=bar; Path=/; Domain=.example.com'), ('Content-Encoding', 'gzip'), ('Transfer-Encoding', 'chunked')])
+>>> _test_headers([('Content-Length', '200000'), ('Content-Type', 'image/png'), ('Set-Cookie', 'foo=bar; Path=/;'), ('Content-Encoding', 'gzip'), ('Transfer-Encoding', 'chunked')])
 {'charset': None,
  'removed_header_dict': {'transfer-encoding': 'chunked'},
  'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('Content-Length', '200000'),

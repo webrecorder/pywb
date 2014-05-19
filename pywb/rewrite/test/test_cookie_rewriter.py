@@ -3,11 +3,15 @@ r"""
 >>> rewrite_cookie('a=b; c=d;')
 [('Set-Cookie', 'a=b'), ('Set-Cookie', 'c=d')]
 
->>> rewrite_cookie('some=value; Domain=foo.com; Path=/;')
+>>> rewrite_cookie('some=value; Path=/;')
 [('Set-Cookie', 'some=value; Path=/pywb/20131226101010/http://example.com/')]
 
->>> rewrite_cookie('some=value; Domain=foo.com; Path=/diff/path/;')
+>>> rewrite_cookie('some=value; Path=/diff/path/;')
 [('Set-Cookie', 'some=value; Path=/pywb/20131226101010/http://example.com/diff/path/')]
+
+# if domain set, set path to root
+>>> rewrite_cookie('some=value; Domain=.example.com; Path=/diff/path/;')
+[('Set-Cookie', 'some=value; Path=/pywb/')]
 
 >>> rewrite_cookie('abc=def; Path=file.html; Expires=Wed, 13 Jan 2021 22:23:01 GMT')
 [('Set-Cookie', 'abc=def; Path=/pywb/20131226101010/http://example.com/some/path/file.html')]
