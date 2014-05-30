@@ -11,6 +11,7 @@ pywb is a python implementation of web archival replay tools, sometimes also kno
 
 pywb allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
 
+*For an example of deployed service using pywb, please see the https://webrecorder.io project*
 
 pywb Tools
 -----------------------------
@@ -22,7 +23,7 @@ running ``python setup.py install``
 ``live-rewrite-server`` -- a demo live rewriting web server which accepts requests using wayback machine url format at ``/rewrite/`` path, eg, ``/rewrite/http://example.com/`` 
 and applies the same url rewriting rules as are used for archived content.
 This is useful for checking how live content will appear when archived before actually creating any archive files, or for recording data.
-Note: the `webrecorder.io <https://webrecorder.io>`_ service is based on this tool.
+The `webrecorder.io <https://webrecorder.io>`_ service is built using this tool.
 
 ``cdx-indexer`` -- a command-line tool for creating CDX indexs from WARC and ARC files. Supports SURT and
 non-SURT based cdx files and optional sorting. See ``cdx-indexer -h`` for all options.

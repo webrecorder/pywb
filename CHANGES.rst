@@ -20,6 +20,9 @@ pywb 0.4.0 changelist
 
 * Proper handling of js_ cs_ modifiers to select content-type.
 
+* New, experimental support for top-level 'frame mode', used by live-rewrite-server, to display rewritten content in a frame. The mp_ modifier is used
+  to indicate the main page when top-level page is a frame.
+
 * cdx-indexer: Support for creation of non-SURT, url-ordered as well SURT-ordered CDX files. 
 
 * Further rewrite of wombat.js: support for window.open, postMessage overrides, additional rewriting at Node creation time, better hash change detection.
