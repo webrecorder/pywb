@@ -28,6 +28,7 @@ class LiveRewriter(object):
                          ('HTTP_CACHE_CONTROL', 'Cache-Control'),
                          ('HTTP_X_REQUESTED_WITH', 'X-Requested-With'),
                          ('HTTP_X_CSRF_TOKEN', 'X-CSRF-Token'),
+                         ('HTTP_PE_TOKEN', 'PE-Token'),
                          ('HTTP_COOKIE', 'Cookie'),
                          ('CONTENT_TYPE', 'Content-Type'),
                          ('CONTENT_LENGTH', 'Content-Length'),

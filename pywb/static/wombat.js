@@ -97,7 +97,13 @@ WB_wombat_init = (function() {
     
     var VALID_PREFIXES = [HTTP_PREFIX, HTTPS_PREFIX, REL_PREFIX];
     var IGNORE_PREFIXES = ["#", "about:", "data:", "mailto:", "javascript:"];
-
+    
+    var BAD_PREFIXES;
+    
+    function init_bad_prefixes(prefix) {
+        BAD_PREFIXES = ["http:" + prefix, "https:" + prefix,
+                        "http:/" + prefix, "https:/" + prefix];
+    }
     
     //============================================
     function rewrite_url_(url) {
@@ -151,6 +157,14 @@ WB_wombat_init = (function() {
             }
             return wb_replay_date_prefix + url;
         }
+        
+        // Check for common bad prefixes and remove them
+        prefix = starts_with(url, BAD_PREFIXES);
+        
+        if (prefix) {
+            url = extract_orig(url);
+            return wb_replay_date_prefix + url;
+        }
 
         // May or may not be a hostname, call function to determine
         // If it is, add the prefix and make sure port is removed
@@ -200,7 +214,7 @@ WB_wombat_init = (function() {
     
     //============================================
     // Define custom property
-    function defProp(obj, prop, value, set_func, get_func) {
+    function def_prop(obj, prop, value, set_func, get_func) {
         var key = "_" + prop;
         obj[key] = value;
         
@@ -279,11 +293,11 @@ WB_wombat_init = (function() {
         }
         
         if (Object.defineProperty) {
-            var res1 = defProp(this, "href", href,
+            var res1 = def_prop(this, "href", href,
                                this.assign,
                                _get_url_with_hash);
             
-            var res2 = defProp(this, "hash", parser.hash,
+            var res2 = def_prop(this, "hash", parser.hash,
                                _set_hash,
                                _get_hash);
             
@@ -504,6 +518,24 @@ WB_wombat_init = (function() {
         if (!Node || !Node.prototype) {
             return;
         }
+        
+        function override_attr(obj, attr) {
+            var setter = function(orig) {
+                var val = rewrite_url(orig);
+                //console.log(orig + " -> " + val);
+                this.setAttribute(attr, val);
+                return val;
+            }
+            
+            var getter = function(val) {
+                var res = this.getAttribute(attr);
+                return res;
+            }
+            
+            var curr_src = obj.getAttribute(attr);
+            
+            def_prop(obj, attr, curr_src, setter, getter);            
+        }
 
         function replace_dom_func(funcname) {
             var orig = Node.prototype[funcname];
@@ -529,22 +561,14 @@ WB_wombat_init = (function() {
 
                 var created = orig.apply(this, arguments);
                 
-                if (created.tagName == "IFRAME") {                   
-                    var setter = function(orig) {
-                        var val = rewrite_url(orig);
-                        console.log(orig + " -> " + val);
-                        this.setAttribute("src", val);
-                        return val;
-                    }
+                if (created.tagName == "IFRAME" || 
+                    created.tagName == "IMG" || 
+                    created.tagName == "SCRIPT") {
                     
-                    var getter = function(val) {
-                        var res = this.getAttribute("src");
-                        return res;
-                    }
+                    override_attr(created, "src");
                     
-                    var curr_src = created.getAttribute("src");
-                    
-                    defProp(created, "src", curr_src, setter, getter);
+                } else if (created.tagName == "A") {
+                    override_attr(created, "href");
                 }
                 
                 return created;
@@ -628,6 +652,8 @@ WB_wombat_init = (function() {
         wb_orig_scheme = orig_scheme + '://';
 
         wb_orig_host = wb_orig_scheme + orig_host;
+        
+        init_bad_prefixes(replay_prefix);
 
         // Location
         var wombat_location = new WombatLocation(window.self.location);
@@ -643,8 +669,8 @@ WB_wombat_init = (function() {
                 }
             }
             
-            defProp(window, "WB_wombat_location", wombat_location, setter);
-            defProp(document, "WB_wombat_location", wombat_location, setter);
+            def_prop(window, "WB_wombat_location", wombat_location, setter);
+            def_prop(document, "WB_wombat_location", wombat_location, setter);
         } else {
             window.WB_wombat_location = wombat_location;
             document.WB_wombat_location = wombat_location;
