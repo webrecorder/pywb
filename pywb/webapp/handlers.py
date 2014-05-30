@@ -14,7 +14,7 @@ from pywb.framework.wbrequestresponse import WbResponse
 #=================================================================
 class WBHandler(WbUrlHandler):
     def __init__(self, index_reader, replay,
-                 search_view=None):
+                 search_view=None, config=None):
 
         self.index_reader = index_reader
 
@@ -40,9 +40,11 @@ class WBHandler(WbUrlHandler):
                                cdx_lines,
                                cdx_callback)
 
-    def render_search_page(self, wbrequest):
+    def render_search_page(self, wbrequest, **kwargs):
         if self.search_view:
-            return self.search_view.render_response(wbrequest=wbrequest)
+            return self.search_view.render_response(wbrequest=wbrequest,
+                                                    prefix=wbrequest.wb_prefix,
+                                                    **kwargs)
         else:
             return WbResponse.text_response('No Lookup Url Specified')
 
@@ -79,7 +81,7 @@ class StaticHandler(BaseHandler):
             raise NotFoundException('Static File Not Found: ' +
                                     wbrequest.wb_url_str)
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         return 'Static files from ' + self.static_path
 
 

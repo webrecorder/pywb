@@ -192,4 +192,4 @@ class ReferRedirect:
                                          '',
                                          ''))
 
-        return WbResponse.redir_response(final_url)
+        return WbResponse.redir_response(final_url, status='307 Temp Redirect')

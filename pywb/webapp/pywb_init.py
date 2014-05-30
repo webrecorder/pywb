@@ -4,6 +4,7 @@ from pywb.framework.archivalrouter import ArchivalRouter, Route
 from pywb.framework.proxy import ProxyArchivalRouter
 from pywb.framework.wbrequestresponse import WbRequest
 from pywb.framework.memento import MementoRequest
+from pywb.framework.basehandlers import BaseHandler
 
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
@@ -11,7 +12,9 @@ from pywb.warc.resolvingloader import ResolvingLoader
 from pywb.rewrite.rewrite_content import RewriteContent
 from pywb.rewrite.rewriterules import use_lxml_parser
 
-from views import load_template_file, load_query_template, add_env_globals
+from views import J2TemplateView, add_env_globals
+from views import J2HtmlCapturesView, HeadInsertView
+
 from replay_views import ReplayView
 
 from query_handler import QueryHandler
@@ -78,13 +81,17 @@ def create_wb_handler(query_handler, config,
     if template_globals:
         add_env_globals(template_globals)
 
-    head_insert_view = load_template_file(config.get('head_insert_html'),
-                                          'Head Insert')
+    head_insert_view = (HeadInsertView.
+                        create_template(config.get('head_insert_html'),
+                                       'Head Insert'))
+
+    defmod = config.get('default_mod', '')
 
     replayer = ReplayView(
         content_loader=resolving_loader,
 
-        content_rewriter=RewriteContent(ds_rules_file=ds_rules_file),
+        content_rewriter=RewriteContent(ds_rules_file=ds_rules_file,
+                                        defmod=defmod),
 
         head_insert_view=head_insert_view,
 
@@ -97,8 +104,9 @@ def create_wb_handler(query_handler, config,
         reporter=config.get('reporter')
     )
 
-    search_view = load_template_file(config.get('search_html'),
-                                     'Search Page')
+    search_view = (J2TemplateView.
+                   create_template(config.get('search_html'),
+                                   'Search Page'))
 
     wb_handler_class = config.get('wb_handler_class', WBHandler)
 
@@ -106,6 +114,7 @@ def create_wb_handler(query_handler, config,
         query_handler,
         replayer,
         search_view=search_view,
+        config=config,
     )
 
     return wb_handler
@@ -120,8 +129,9 @@ def init_collection(value, config):
 
     ds_rules_file = route_config.get('domain_specific_rules', None)
 
-    html_view = load_query_template(config.get('query_html'),
-                                    'Captures Page')
+    html_view = (J2HtmlCapturesView.
+                 create_template(config.get('query_html'),
+                                 'Captures Page'))
 
     query_handler = QueryHandler.init_from_config(route_config,
                                                   ds_rules_file,
@@ -195,6 +205,10 @@ def create_wb_router(passed_config={}):
 
     for name, value in collections.iteritems():
 
+        if isinstance(value, BaseHandler):
+            routes.append(Route(name, value))
+            continue
+
         result = init_collection(value, config)
         route_config, query_handler, ds_rules_file = result
 
@@ -247,9 +261,9 @@ def create_wb_router(passed_config={}):
 
         abs_path=config.get('absolute_paths', True),
 
-        home_view=load_template_file(config.get('home_html'),
-                                     'Home Page'),
+        home_view=J2TemplateView.create_template(config.get('home_html'),
+                                                 'Home Page'),
 
-        error_view=load_template_file(config.get('error_html'),
-                                      'Error Page')
+        error_view=J2TemplateView.create_template(config.get('error_html'),
+                                                 'Error Page')
     )

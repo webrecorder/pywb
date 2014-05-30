@@ -10,8 +10,8 @@ r"""
 >>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb'), decomp_type = 'gzip').readline()
 ' CDX N b a m s k r M S V g\n'
 
-# decompress with on the fly compression
->>> DecompressingBufferedReader(BytesIO(compress('ABC\n1234\n')), decomp_type = 'gzip').read()
+# decompress with on the fly compression, default gzip compression
+>>> DecompressingBufferedReader(BytesIO(compress('ABC\n1234\n'))).read()
 'ABC\n1234\n'
 
 # error: invalid compress type
@@ -26,6 +26,11 @@ Exception: Decompression type not supported: bzip2
 >>> x.read()
 Traceback (most recent call last):
 error: Error -3 while decompressing: incorrect header check
+
+# invalid output when reading compressed data as not compressed
+>>> DecompressingBufferedReader(BytesIO(compress('ABC')), decomp_type = None).read() != 'ABC'
+True
+
 
 # DecompressingBufferedReader readline() with decompression (zipnum file, no header)
 >>> DecompressingBufferedReader(open(test_zip_dir + 'zipnum-sample.cdx.gz', 'rb'), decomp_type = 'gzip').readline()
@@ -60,6 +65,27 @@ Non-chunked data:
 >>> ChunkedDataReader(BytesIO("xyz123!@#")).read()
 'xyz123!@#'
 
+Non-chunked, compressed data, specify decomp_type
+>>> ChunkedDataReader(BytesIO(compress('ABCDEF')), decomp_type='gzip').read()
+'ABCDEF'
+
+Non-chunked, compressed data, specifiy compression seperately
+>>> c = ChunkedDataReader(BytesIO(compress('ABCDEF'))); c.set_decomp('gzip'); c.read()
+'ABCDEF'
+
+Non-chunked, compressed data, wrap in DecompressingBufferedReader
+>>> DecompressingBufferedReader(ChunkedDataReader(BytesIO(compress('\nABCDEF\nGHIJ')))).read()
+'\nABCDEF\nGHIJ'
+
+Chunked compressed data
+Split compressed stream into 10-byte chunk and a remainder chunk
+>>> b = compress('ABCDEFGHIJKLMNOP')
+>>> l = len(b)
+>>> in_ = format(10, 'x') + "\r\n" + b[:10] + "\r\n" + format(l - 10, 'x') + "\r\n" + b[10:] + "\r\n0\r\n\r\n"
+>>> c = ChunkedDataReader(BytesIO(in_), decomp_type='gzip')
+>>> c.read()
+'ABCDEFGHIJKLMNOP'
+
 Starts like chunked data, but isn't:
 >>> c = ChunkedDataReader(BytesIO("1\r\nxyz123!@#"));
 >>> c.read() + c.read()
@@ -69,6 +95,10 @@ Chunked data cut off part way through:
 >>> c = ChunkedDataReader(BytesIO("4\r\n1234\r\n4\r\n12"));
 >>> c.read() + c.read()
 '123412'
+
+Zero-Length chunk:
+>>> ChunkedDataReader(BytesIO("0\r\n\r\n")).read()
+''
 
 Chunked data cut off with exceptions
 >>> c = ChunkedDataReader(BytesIO("4\r\n1234\r\n4\r\n12"), raise_exceptions=True)

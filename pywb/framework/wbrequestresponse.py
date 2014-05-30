@@ -23,7 +23,7 @@ class WbRequest(object):
             if not host:
                 host = env['SERVER_NAME'] + ':' + env['SERVER_PORT']
 
-            return env['wsgi.url_scheme'] + '://' + host
+            return env.get('wsgi.url_scheme', 'http') + '://' + host
         except KeyError:
             return ''
 
@@ -66,7 +66,8 @@ class WbRequest(object):
         # wb_url present and not root page
         if wb_url_str != '/' and wburl_class:
             self.wb_url = wburl_class(wb_url_str)
-            self.urlrewriter = urlrewriter_class(self.wb_url, self.wb_prefix)
+            self.urlrewriter = urlrewriter_class(self.wb_url, self.wb_prefix,
+                                                 host_prefix + rel_prefix)
         else:
         # no wb_url, just store blank wb_url
             self.wb_url = None
@@ -87,17 +88,6 @@ class WbRequest(object):
 
         self._parse_extra()
 
-    @property
-    def is_embed(self):
-        return (self.wb_url and
-                self.wb_url.mod and
-                self.wb_url.mod != 'id_')
-
-    @property
-    def is_identity(self):
-        return (self.wb_url and
-                self.wb_url.mod == 'id_')
-
     def _is_ajax(self):
         value = self.env.get('HTTP_X_REQUESTED_WITH')
         if value and value.lower() == 'xmlhttprequest':
@@ -115,6 +105,16 @@ class WbRequest(object):
 
     def _parse_extra(self):
         pass
+
+    def extract_referrer_wburl_str(self):
+        if not self.referrer:
+            return None
+
+        if not self.referrer.startswith(self.host_prefix + self.rel_prefix):
+            return None
+
+        wburl_str = self.referrer[len(self.host_prefix + self.rel_prefix):]
+        return wburl_str
 
 
 #=================================================================

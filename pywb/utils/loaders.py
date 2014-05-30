@@ -93,7 +93,10 @@ class BlockLoader(object):
         headers['Range'] = range_header
 
         if self.cookie_maker:
-            headers['Cookie'] = self.cookie_maker.make()
+            if isinstance(self.cookie_maker, basestring):
+                headers['Cookie'] = self.cookie_maker
+            else:
+                headers['Cookie'] = self.cookie_maker.make()
 
         request = urllib2.Request(url, headers=headers)
         return urllib2.urlopen(request)
@@ -184,40 +187,14 @@ class LimitReader(object):
         try:
             content_length = int(content_length)
             if content_length >= 0:
-                stream = LimitReader(stream, content_length)
+                # optimize: if already a LimitStream, set limit to
+                # the smaller of the two limits
+                if isinstance(stream, LimitReader):
+                    stream.limit = min(stream.limit, content_length)
+                else:
+                    stream = LimitReader(stream, content_length)
 
         except (ValueError, TypeError):
             pass
 
         return stream
-
-
-#=================================================================
-# Local text file with known size -- used for binsearch
-#=================================================================
-class SeekableTextFileReader(object):
-    """
-    A very simple file-like object wrapper that knows it's total size,
-    via getsize()
-    Supports seek() operation.
-    Assumed to be a text file. Used for binsearch.
-    """
-    def __init__(self, filename):
-        self.fh = open(filename, 'rb')
-        self.filename = filename
-        self.size = os.path.getsize(filename)
-
-    def getsize(self):
-        return self.size
-
-    def read(self, length=None):
-        return self.fh.read(length)
-
-    def readline(self, length=None):
-        return self.fh.readline(length)
-
-    def seek(self, offset):
-        return self.fh.seek(offset)
-
-    def close(self):
-        return self.fh.close()

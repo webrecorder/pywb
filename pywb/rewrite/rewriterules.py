@@ -9,6 +9,7 @@ from html_rewriter import HTMLRewriter
 import itertools
 
 HTML = HTMLRewriter
+_is_lxml = False
 
 
 #=================================================================
@@ -18,12 +19,20 @@ def use_lxml_parser():
 
     if LXML_SUPPORTED:
         global HTML
+        global _is_lxml
         HTML = LXMLHTMLRewriter
         logging.debug('Using LXML Parser')
-        return True
+        _is_lxml = True
     else:  # pragma: no cover
         logging.debug('LXML Parser not available')
-        return False
+        _is_lxml = False
+
+    return _is_lxml
+
+
+#=================================================================
+def is_lxml():
+    return _is_lxml
 
 
 #=================================================================

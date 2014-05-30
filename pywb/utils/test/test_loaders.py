@@ -32,21 +32,13 @@ True
 >>> BlockLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read()
 'Example Domain'
 
+# fixed cookie
+>>> BlockLoader('some=value').load('http://example.com', 41, 14).read()
+'Example Domain'
+
 # test with extra id, ensure 4 parts of the A-B=C-D form are present
 >>> len(re.split('[-=]', HMACCookieMaker('test', 'test', 5).make('extra')))
 4
-
-# SeekableTextFileReader Test
->>> sr = SeekableTextFileReader(test_cdx_dir + 'iana.cdx')
->>> sr.getsize()
-30399
-
->>> seek_read_full(sr, 100)
-'org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126200826 http://www.iana.org/_css/2013.1/fonts/Inconsolata.otf application/octet-stream 200 LNMEDYOENSOEI5VPADCKL3CB6N3GWXPR - - 34054 620049 iana.warc.gz\\n'
-
-# seek, read, close
->>> r = sr.seek(0); sr.read(10); sr.close()
-' CDX N b a'
 """
 
 
@@ -54,7 +46,7 @@ True
 import re
 from io import BytesIO
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker
-from pywb.utils.loaders import LimitReader, SeekableTextFileReader
+from pywb.utils.loaders import LimitReader
 
 from pywb import get_test_dir
 

@@ -97,18 +97,24 @@ class ArcWarcRecordLoader:
             rec_type = rec_headers.get_header('WARC-Type')
             length = rec_headers.get_header('Content-Length')
 
+        is_err = False
+
         try:
             length = int(length)
             if length < 0:
-                length = 0
+                is_err = True
         except ValueError:
-            length = 0
+            is_err = True
 
         # ================================================================
         # handle different types of records
 
+        # err condition
+        if is_err:
+            status_headers = StatusAndHeaders('-', [])
+            length = 0
         # special case: empty w/arc record (hopefully a revisit)
-        if length == 0:
+        elif length == 0:
             status_headers = StatusAndHeaders('204 No Content', [])
 
         # special case: warc records that are not expected to have http headers

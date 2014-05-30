@@ -39,7 +39,6 @@ wayback url format.
 """
 
 import re
-import rfc3987
 
 
 #=================================================================
@@ -63,6 +62,9 @@ class BaseWbUrl(object):
 
     def is_query(self):
         return self.is_query_type(self.type)
+
+    def is_url_query(self):
+        return (self.type == BaseWbUrl.URL_QUERY)
 
     @staticmethod
     def is_replay_type(type_):
@@ -103,14 +105,6 @@ class WbUrl(BaseWbUrl):
             inx += 2
             if inx < len(self.url) and self.url[inx] != '/':
                 self.url = self.url[:inx] + '/' + self.url[inx:]
-
-        # BUG?: adding upper() because rfc3987 lib
-        # rejects lower case %-encoding
-        # %2F is fine, but %2f -- standard supports either
-        matcher = rfc3987.match(self.url.upper(), 'IRI')
-
-        if not matcher:
-            raise Exception('Bad Request Url: ' + self.url)
 
     # Match query regex
     # ======================
@@ -193,6 +187,21 @@ class WbUrl(BaseWbUrl):
                 return tsmod + "/" + url
             else:
                 return url
+
+    @property
+    def is_mainpage(self):
+        return (not self.mod or
+                self.mod == 'mp_')
+
+    @property
+    def is_embed(self):
+        return (self.mod and
+                self.mod != 'id_' and
+                self.mod != 'mp_')
+
+    @property
+    def is_identity(self):
+        return (self.mod == 'id_')
 
     def __str__(self):
         return self.to_str()

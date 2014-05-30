@@ -18,17 +18,28 @@ This file is part of pywb.
  */
 
 function init_banner() {
-    var BANNER_ID = "_wayback_banner";
-
-    var banner = document.getElementById(BANNER_ID);
+    var PLAIN_BANNER_ID = "_wb_plain_banner";
+    var FRAME_BANNER_ID = "_wb_frame_top_banner";
 
     if (wbinfo.is_embed) {
         return;
     }
 
+    if (window.top != window.self) {
+        return;
+    }
+
+    if (wbinfo.is_frame) {
+        bid = FRAME_BANNER_ID;
+    } else {
+        bid = PLAIN_BANNER_ID;
+    }
+
+    var banner = document.getElementById(bid);
+    
     if (!banner) {
         banner = document.createElement("wb_div");
-        banner.setAttribute("id", BANNER_ID);
+        banner.setAttribute("id", bid);
         banner.setAttribute("lang", "en");
 
         text = "This is an archived page ";
@@ -41,12 +52,56 @@ function init_banner() {
     }
 }
 
-var readyStateCheckInterval = setInterval(function() {
+function add_event(name, func, object) {
+    if (object.addEventListener) {
+        object.addEventListener(name, func);
+        return true;
+    } else if (object.attachEvent) {
+        object.attachEvent("on" + name, func);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function remove_event(name, func, object) {
+    if (object.removeEventListener) {
+        object.removeEventListener(name, func);
+        return true;
+    } else if (object.detachEvent) {
+        object.detachEvent("on" + name, func);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+var notified_top = false;
+
+var detect_on_init = function() {
+    if (!notified_top && window && window.top && (window.self != window.top) && window.WB_wombat_location) {
+        if (!wbinfo.is_embed) {
+            window.top.postMessage(window.WB_wombat_location.href, "*");
+        }
+        notified_top = true;
+    }
+
     if (document.readyState === "interactive" ||
         document.readyState === "complete") {
         
         init_banner();
-        
-        clearInterval(readyStateCheckInterval);
+
+        remove_event("readystatechange", detect_on_init, document);
     }
-}, 10);
+}
+
+add_event("readystatechange", detect_on_init, document);
+
+
+if (wbinfo.is_frame_mp && wbinfo.canon_url &&
+   (window.self == window.top) && 
+   window.location.href != wbinfo.canon_url) {
+    
+    console.log('frame');
+    window.location.replace(wbinfo.canon_url);
+}

@@ -52,9 +52,17 @@ ur"""
 >>> parse('<META http-equiv="refresh" content>')
 <meta http-equiv="refresh" content="">
 
+# Custom -data attribs
+>>> parse('<div data-url="http://example.com/a/b/c.html" data-some-other-value="http://example.com/img.gif">')
+<div data-url="/web/20131226101010oe_/http://example.com/a/b/c.html" data-some-other-value="/web/20131226101010oe_/http://example.com/img.gif">
+
 # Script tag
 >>> parse('<script>window.location = "http://example.com/a/b/c.html"</script>')
 <script>window.WB_wombat_location = "/web/20131226101010em_/http://example.com/a/b/c.html"</script>
+
+# Script tag + crossorigin
+>>> parse('<script src="/js/scripts.js" crossorigin="anonymous"></script>')
+<script src="/web/20131226101010js_/http://example.com/js/scripts.js" _crossorigin="anonymous"></script>
 
 # Unterminated script tag, handle and auto-terminate
 >>> parse('<script>window.location = "http://example.com/a/b/c.html"</sc>')

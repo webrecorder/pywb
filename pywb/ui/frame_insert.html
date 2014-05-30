@@ -1,0 +1,55 @@
+<html>
+<head>
+<!-- Start WB Insert -->
+<script>
+  wbinfo = {}
+  wbinfo.capture_str = "{{ timestamp | format_ts }}";
+  wbinfo.is_embed = false;
+  wbinfo.prefix = "{{ wbrequest.wb_prefix }}";
+  wbinfo.capture_url = "{{ url }}";
+  wbinfo.is_frame = true;
+</script>
+<script src='{{ wbrequest.host_prefix }}/{{ static_path }}/wb.js'> </script>
+<script>
+
+window.addEventListener("message", update_url, false);
+
+function push_state(url) {
+    state = {}
+    state.outer_url = wbinfo.prefix + url;
+    state.inner_url = wbinfo.prefix + "mp_/" + url;
+    
+    if (url == wbinfo.capture_url) {
+        return;
+    }
+
+    window.history.replaceState(state, "", state.outer_url);
+}
+
+function pop_state(url) {
+    window.frames[0].src = url;
+}
+
+function update_url(event) {
+    if (event.source == window.frames[0]) {
+        push_state(event.data);
+    }
+}
+
+window.onpopstate = function(event) {
+    var curr_state = event.state;
+    
+    if (curr_state) {
+        pop_state(curr_state.outer_url);
+    }
+}
+
+</script>
+<link rel='stylesheet' href='{{ wbrequest.host_prefix }}/{{ static_path }}/wb.css'/>
+<!-- End WB Insert -->
+<body style="margin: 0px; padding: 0px;">
+<div class="wb_iframe_div">
+<iframe src="{{ wbrequest.wb_prefix + embed_url }}" seamless="seamless" frameborder="0" scrolling="yes" class="wb_iframe"/>
+</div>
+</body>
+</html>

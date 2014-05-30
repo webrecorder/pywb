@@ -94,6 +94,13 @@ class TestWb:
         assert 'wb.js' in resp.body
         assert '/pywb/20140127171238/http://www.iana.org/time-zones"' in resp.body
 
+    def test_replay_non_surt(self):
+        resp = self.testapp.get('/pywb-nosurt/20140103030321/http://example.com?example=1')
+        self._assert_basic_html(resp)
+
+        assert 'Fri, Jan 03 2014 03:03:21' in resp.body
+        assert 'wb.js' in resp.body
+        assert '/pywb-nosurt/20140103030321/http://www.iana.org/domains/example' in resp.body
 
     def test_replay_url_agnostic_revisit(self):
         resp = self.testapp.get('/pywb/20130729195151/http://www.example.com/')
@@ -144,6 +151,17 @@ class TestWb:
         resp = self.testapp.get('/pywb/20140126200654/http://www.iana.org/_img/2013.1/rir-map.svg')
         assert resp.headers['Content-Length'] == str(len(resp.body))
 
+    def test_replay_css_mod(self):
+        resp = self.testapp.get('/pywb/20140127171239cs_/http://www.iana.org/_css/2013.1/screen.css')
+        assert resp.status_int == 200
+        assert resp.content_type == 'text/css'
+
+    def test_replay_js_mod(self):
+        # an empty js file
+        resp = self.testapp.get('/pywb/20140126201054js_/http://www.iana.org/_js/2013.1/iana.js')
+        assert resp.status_int == 200
+        assert resp.content_length == 0
+        assert resp.content_type == 'application/x-javascript'
 
     def test_redirect_1(self):
         resp = self.testapp.get('/pywb/20140127171237/http://www.iana.org/')
@@ -170,12 +188,12 @@ class TestWb:
 
         # without timestamp
         resp = self.testapp.get('/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014/http://iana.org/')])
-        assert resp.status_int == 302
+        assert resp.status_int == 307
         assert resp.headers['Location'] == target, resp.headers['Location']
 
         # with timestamp
         resp = self.testapp.get('/2014/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014/http://iana.org/')])
-        assert resp.status_int == 302
+        assert resp.status_int == 307
         assert resp.headers['Location'] == target, resp.headers['Location']
 
 
@@ -207,13 +225,22 @@ class TestWb:
         assert resp.status_int == 403
         assert 'Excluded' in resp.body
 
-
     def test_static_content(self):
         resp = self.testapp.get('/static/test/route/wb.css')
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
         assert resp.content_length > 0
 
+    def test_static_content_filewrapper(self):
+        from wsgiref.util import FileWrapper
+        resp = self.testapp.get('/static/test/route/wb.css', extra_environ = {'wsgi.file_wrapper': FileWrapper})
+        assert resp.status_int == 200
+        assert resp.content_type == 'text/css'
+        assert resp.content_length > 0
+
+    def test_static_not_found(self):
+        resp = self.testapp.get('/static/test/route/notfound.css', status = 404)
+        assert resp.status_int == 404
 
     # 'Simulating' proxy by settings REQUEST_URI explicitly to http:// url and no SCRIPT_NAME
     # would be nice to be able to test proxy more

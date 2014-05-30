@@ -29,8 +29,7 @@ rules:
 
     # flickr rules
     #=================================================================
-    - url_prefix: ['com,yimg,l)/g/combo', 'com,yahooapis,yui)/combo']
-
+    - url_prefix: ['com,yimg,l)/g/combo', 'com,yimg,s)/pw/combo', 'com,yahooapis,yui)/combo']
       fuzzy_lookup: '([^/]+(?:\.css|\.js))'
 
 
@@ -61,3 +60,4 @@ rules:
       fuzzy_lookup:
         match: '(.*)[&?](?:_|uncache)=[\d]+[&]?'
         filter: '=urlkey:{0}'
+        replace: '?'

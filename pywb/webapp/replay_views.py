@@ -1,9 +1,9 @@
 import re
 from io import BytesIO
 
-from pywb.utils.bufferedreaders import ChunkedDataReader
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.wbexception import WbException, NotFoundException
+from pywb.utils.loaders import LimitReader
 
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import MementoResponse
@@ -105,12 +105,18 @@ class ReplayView(object):
         if redir_response:
             return redir_response
 
+        length = status_headers.get_header('content-length')
+        stream = LimitReader.wrap_stream(stream, length)
+
         # one more check for referrer-based self-redirect
         self._reject_referrer_self_redirect(wbrequest)
 
         urlrewriter = wbrequest.urlrewriter
 
-        head_insert_func = self.get_head_insert_func(wbrequest, cdx)
+        head_insert_func = None
+        if self.head_insert_view:
+            head_insert_func = (self.head_insert_view.
+                                create_insert_func(wbrequest))
 
         result = (self.content_rewriter.
                   rewrite_content(urlrewriter,
@@ -118,15 +124,14 @@ class ReplayView(object):
                                   stream=stream,
                                   head_insert_func=head_insert_func,
                                   urlkey=cdx['urlkey'],
-                                  sanitize_only=wbrequest.is_identity))
+                                  sanitize_only=wbrequest.wb_url.is_identity,
+                                  cdx=cdx,
+                                  mod=wbrequest.wb_url.mod))
 
         (status_headers, response_iter, is_rewritten) = result
 
         # buffer response if buffering enabled
         if self.buffer_response:
-            if wbrequest.is_identity:
-                status_headers.remove_header('content-length')
-
             response_iter = self.buffered_response(status_headers,
                                                    response_iter)
 
@@ -141,18 +146,6 @@ class ReplayView(object):
 
         return response
 
-    def get_head_insert_func(self, wbrequest, cdx):
-        # no head insert specified
-        if not self.head_insert_view:
-            return None
-
-        def make_head_insert(rule):
-            return (self.head_insert_view.
-                    render_to_string(wbrequest=wbrequest,
-                                     cdx=cdx,
-                                     rule=rule))
-        return make_head_insert
-
     # Buffer rewrite iterator and return a response from a string
     def buffered_response(self, status_headers, iterator):
         out = BytesIO()
@@ -165,8 +158,10 @@ class ReplayView(object):
             content = out.getvalue()
 
             content_length_str = str(len(content))
-            status_headers.headers.append(('Content-Length',
-                                           content_length_str))
+
+            # remove existing content length
+            status_headers.replace_header('Content-Length',
+                                          content_length_str)
             out.close()
 
         return content
@@ -205,7 +200,7 @@ class ReplayView(object):
 
         # skip all 304s
         if (status_headers.statusline.startswith('304') and
-            not wbrequest.is_identity):
+            not wbrequest.wb_url.is_identity):
 
             raise CaptureException('Skipping 304 Modified: ' + str(cdx))
 

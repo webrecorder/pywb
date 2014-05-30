@@ -16,7 +16,9 @@ def binsearch_offset(reader, key, compare_func=cmp, block_size=8192):
     Optional compare_func may be specified
     """
     min_ = 0
-    max_ = reader.getsize() / block_size
+
+    reader.seek(0, 2)
+    max_ = reader.tell() / block_size
 
     while max_ - min_ > 1:
         mid = min_ + ((max_ - min_) / 2)

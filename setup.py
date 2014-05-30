@@ -34,7 +34,7 @@ class PyTest(TestCommand):
 
 setup(
     name='pywb',
-    version='0.2.2',
+    version='0.4.0',
     url='https://github.com/ikreymer/pywb',
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
@@ -64,8 +64,8 @@ setup(
             glob.glob('sample_archive/text_content/*')),
         ],
     install_requires=[
-        'rfc3987',
         'chardet',
+        'requests',
         'redis',
         'jinja2',
         'surt',
@@ -85,6 +85,7 @@ setup(
         wayback = pywb.apps.wayback:main
         cdx-server = pywb.apps.cdx_server:main
         cdx-indexer = pywb.warc.archiveindexer:main
+        live-rewrite-server = pywb.apps.live_rewrite_server:main
         """,
     zip_safe=False,
     classifiers=[

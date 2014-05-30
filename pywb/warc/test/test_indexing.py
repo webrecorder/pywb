@@ -36,8 +36,9 @@ metadata)/gnu.org/software/wget/warc/wget.log 20140216012908 metadata://gnu.org/
 # bad arcs -- test error edge cases
 >>> print_cdx_index('bad.arc')
  CDX N b a m s k r M S V g
-com,example)/ 20140401000000 http://example.com/ text/html 204 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 67 134 bad.arc
-com,example)/ 20140401000000 http://example.com/ text/html 204 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 68 202 bad.arc
+com,example)/ 20140401000000 http://example.com/ text/html - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 67 134 bad.arc
+com,example)/ 20140102000000 http://example.com/ text/plain - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 59 202 bad.arc
+com,example)/ 20140401000000 http://example.com/ text/html - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 68 262 bad.arc
 
 # Test CLI interface -- (check for num lines)
 #=================================================================
@@ -46,7 +47,7 @@ com,example)/ 20140401000000 http://example.com/ text/html 204 3I42H3S6NNFQ2MSVX
 >>> cli_lines(['--sort', '-',  TEST_WARC_DIR])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
 org,iana,example)/ 20130702195402 http://example.iana.org/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1001 353 example-url-agnostic-orig.warc.gz
-200
+201
 
 # test writing to stdout
 >>> cli_lines(['-', TEST_WARC_DIR + 'example.warc.gz'])

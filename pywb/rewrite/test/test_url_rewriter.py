@@ -24,6 +24,12 @@
 >>> do_rewrite('http://some-other-site.com', '20101226101112/http://example.com/index.html', 'localhost:8080/')
 'localhost:8080/20101226101112/http://some-other-site.com'
 
+>>> do_rewrite('http://localhost:8080/web/2014im_/http://some-other-site.com', 'http://example.com/index.html', '/web/', full_prefix='http://localhost:8080/web/')
+'http://localhost:8080/web/2014im_/http://some-other-site.com'
+
+>>> do_rewrite('/web/http://some-other-site.com', 'http://example.com/index.html', '/web/', full_prefix='http://localhost:8080/web/')
+'/web/http://some-other-site.com'
+
 >>> do_rewrite(r'http:\/\/some-other-site.com', '20101226101112/http://example.com/index.html', 'localhost:8080/')
 'localhost:8080/20101226101112/http:\\\\/\\\\/some-other-site.com'
 
@@ -62,8 +68,8 @@
 from pywb.rewrite.url_rewriter import UrlRewriter, HttpsUrlRewriter
 
 
-def do_rewrite(rel_url, base_url, prefix, mod = None):
-    rewriter = UrlRewriter(base_url, prefix)
+def do_rewrite(rel_url, base_url, prefix, mod=None, full_prefix=None):
+    rewriter = UrlRewriter(base_url, prefix, full_prefix=full_prefix)
     return rewriter.rewrite(rel_url, mod)
 
 

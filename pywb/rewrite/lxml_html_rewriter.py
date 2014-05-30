@@ -17,15 +17,8 @@ from html_rewriter import HTMLRewriterMixin
 class LXMLHTMLRewriter(HTMLRewriterMixin):
     END_HTML = re.compile(r'</\s*html\s*>', re.IGNORECASE)
 
-    def __init__(self, url_rewriter,
-                 head_insert=None,
-                 js_rewriter_class=JSRewriter,
-                 css_rewriter_class=CSSRewriter):
-
-        super(LXMLHTMLRewriter, self).__init__(url_rewriter,
-                                               head_insert,
-                                               js_rewriter_class,
-                                               css_rewriter_class)
+    def __init__(self, *args, **kwargs):
+        super(LXMLHTMLRewriter, self).__init__(*args, **kwargs)
 
         self.target = RewriterTarget(self)
         self.parser = lxml.etree.HTMLParser(remove_pis=False,
@@ -44,6 +37,18 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
         string = self.END_HTML.sub(u'', string)
         #string = string.replace(u'</html>', u'')
         self.parser.feed(string)
+
+    def parse(self, stream):
+        self.out = self.AccumBuff()
+
+        lxml.etree.parse(stream, self.parser)
+
+        result = self.out.getvalue()
+
+        # Clear buffer to create new one for next rewrite()
+        self.out = None
+
+        return result
 
     def _internal_close(self):
         if self.started:
@@ -79,7 +84,8 @@ class RewriterTarget(object):
     def data(self, data):
         if not self.rewriter._wb_parse_context:
             data = cgi.escape(data, quote=True)
-
+            if isinstance(data, unicode):
+                data = data.replace(u'\xa0', '&nbsp;')
         self.rewriter.parse_data(data)
 
     def comment(self, data):

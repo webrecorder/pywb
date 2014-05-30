@@ -15,6 +15,9 @@ collections:
     # ex with filtering: filter CDX lines by filename starting with 'dupe'
     pywb-filt: {'index_paths': './sample_archive/cdx/', 'filters': ['filename:dupe*']}
 
+    # collection of non-surt CDX
+    pywb-nosurt: {'index_paths': './sample_archive/non-surt-cdx/', 'surt_ordered': False}
+
 
 # indicate if cdx files are sorted by SURT keys -- eg: com,example)/
 # SURT keys are recommended for future indices, but non-SURT cdxs
@@ -84,7 +87,9 @@ static_routes:
 enable_http_proxy: true
 
 # enable cdx server api for querying cdx directly (experimental)
-enable_cdx_api: true
+#enable_cdx_api: True
+# or specify suffix
+enable_cdx_api: -cdx
 
 # test different port
 port: 9000
@@ -104,3 +109,9 @@ perms_policy: !!python/name:tests.perms_fixture.perms_policy
 
 # not testing memento here
 enable_memento: False
+
+
+# Debug Handlers
+debug_echo_env: True
+
+debug_echo_req: True

@@ -19,35 +19,40 @@ class HTMLRewriterMixin(object):
     to rewriters for script and css
     """
 
-    REWRITE_TAGS = {
-        'a':       {'href': ''},
-        'applet':  {'codebase': 'oe_',
-                    'archive': 'oe_'},
-        'area':    {'href': ''},
-        'base':    {'href': ''},
-        'blockquote': {'cite': ''},
-        'body':    {'background': 'im_'},
-        'del':     {'cite': ''},
-        'embed':   {'src': 'oe_'},
-        'head':    {'': ''},  # for head rewriting
-        'iframe':  {'src': 'if_'},
-        'img':     {'src': 'im_'},
-        'ins':     {'cite': ''},
-        'input':   {'src': 'im_'},
-        'form':    {'action': ''},
-        'frame':   {'src': 'fr_'},
-        'link':    {'href': 'oe_'},
-        'meta':    {'content': ''},
-        'object':  {'codebase': 'oe_',
-                    'data': 'oe_'},
-        'q':       {'cite': ''},
-        'ref':     {'href': 'oe_'},
-        'script':  {'src': 'js_'},
-        'div':     {'data-src': '',
-                    'data-uri': ''},
-        'li':      {'data-src': '',
-                    'data-uri': ''},
-    }
+    @staticmethod
+    def _init_rewrite_tags(defmod):
+        rewrite_tags = {
+            'a':       {'href': defmod},
+            'applet':  {'codebase': 'oe_',
+                        'archive': 'oe_'},
+            'area':    {'href': defmod},
+            'base':    {'href': defmod},
+            'blockquote': {'cite': defmod},
+            'body':    {'background': 'im_'},
+            'del':     {'cite': defmod},
+            'embed':   {'src': 'oe_'},
+            'head':    {'': defmod},  # for head rewriting
+            'iframe':  {'src': 'if_'},
+            'img':     {'src': 'im_'},
+            'ins':     {'cite': defmod},
+            'input':   {'src': 'im_'},
+            'form':    {'action': defmod},
+            'frame':   {'src': 'fr_'},
+            'link':    {'href': 'oe_'},
+            'meta':    {'content': defmod},
+            'object':  {'codebase': 'oe_',
+                        'data': 'oe_'},
+            'q':       {'cite': defmod},
+            'ref':     {'href': 'oe_'},
+            'script':  {'src': 'js_'},
+            'source':  {'src': 'oe_'},
+            'div':     {'data-src': defmod,
+                        'data-uri': defmod},
+            'li':      {'data-src': defmod,
+                        'data-uri': defmod},
+        }
+
+        return rewrite_tags
 
     STATE_TAGS = ['script', 'style']
 
@@ -55,7 +60,9 @@ class HTMLRewriterMixin(object):
     HEAD_TAGS = ['html', 'head', 'base', 'link', 'meta',
                  'title', 'style', 'script', 'object', 'bgsound']
 
-    # ===========================
+    DATA_RW_PROTOCOLS = ('http://', 'https://', '//')
+
+    #===========================
     class AccumBuff:
         def __init__(self):
             self.ls = []
@@ -70,7 +77,8 @@ class HTMLRewriterMixin(object):
     def __init__(self, url_rewriter,
                  head_insert=None,
                  js_rewriter_class=JSRewriter,
-                 css_rewriter_class=CSSRewriter):
+                 css_rewriter_class=CSSRewriter,
+                 defmod=''):
 
         self.url_rewriter = url_rewriter
         self._wb_parse_context = None
@@ -79,6 +87,7 @@ class HTMLRewriterMixin(object):
         self.css_rewriter = css_rewriter_class(url_rewriter)
 
         self.head_insert = head_insert
+        self.rewrite_tags = self._init_rewrite_tags(defmod)
 
     # ===========================
     META_REFRESH_REGEX = re.compile('^[\\d.]+\\s*;\\s*url\\s*=\\s*(.+?)\\s*$',
@@ -140,9 +149,9 @@ class HTMLRewriterMixin(object):
             self.head_insert = None
 
         # attr rewriting
-        handler = self.REWRITE_TAGS.get(tag)
+        handler = self.rewrite_tags.get(tag)
         if not handler:
-            handler = self.REWRITE_TAGS.get('')
+            handler = self.rewrite_tags.get('')
 
         if not handler:
             return False
@@ -160,10 +169,21 @@ class HTMLRewriterMixin(object):
             elif attr_name == 'style':
                 attr_value = self._rewrite_css(attr_value)
 
+            # special case: disable crossorigin attr
+            # as they may interfere with rewriting semantics
+            elif attr_name == 'crossorigin':
+                attr_name = '_crossorigin'
+
             # special case: meta tag
             elif (tag == 'meta') and (attr_name == 'content'):
                 if self.has_attr(tag_attrs, ('http-equiv', 'refresh')):
                     attr_value = self._rewrite_meta_refresh(attr_value)
+
+            # special case: data- attrs
+            elif attr_name and attr_value and attr_name.startswith('data-'):
+                if attr_value.startswith(self.DATA_RW_PROTOCOLS):
+                    rw_mod = 'oe_'
+                    attr_value = self._rewrite_url(attr_value, rw_mod)
 
             else:
                 # special case: base tag
@@ -245,16 +265,9 @@ class HTMLRewriterMixin(object):
 
 #=================================================================
 class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
-    def __init__(self, url_rewriter,
-                 head_insert=None,
-                 js_rewriter_class=JSRewriter,
-                 css_rewriter_class=CSSRewriter):
-
+    def __init__(self, *args, **kwargs):
         HTMLParser.__init__(self)
-        super(HTMLRewriter, self).__init__(url_rewriter,
-                                           head_insert,
-                                           js_rewriter_class,
-                                           css_rewriter_class)
+        super(HTMLRewriter, self).__init__(*args, **kwargs)
 
     def feed(self, string):
         try:

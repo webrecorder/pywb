@@ -1,5 +1,5 @@
-PyWb 0.2.2
-=============
+PyWb 0.4.0
+==========
 
 .. image:: https://travis-ci.org/ikreymer/pywb.png?branch=master
       :target: https://travis-ci.org/ikreymer/pywb
@@ -9,7 +9,31 @@ PyWb 0.2.2
 
 pywb is a python implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
 
-pywb allows high-fidelity replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
+pywb allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
+
+*For an example of deployed service using pywb, please see the https://webrecorder.io project*
+
+pywb Tools
+-----------------------------
+
+In addition to the standard wayback machine (explained further below), pywb tool suite includes a 
+number of useful command-line and web server tools. The tools should be available to run after
+running ``python setup.py install``
+
+``live-rewrite-server`` -- a demo live rewriting web server which accepts requests using wayback machine url format at ``/rewrite/`` path, eg, ``/rewrite/http://example.com/`` 
+and applies the same url rewriting rules as are used for archived content.
+This is useful for checking how live content will appear when archived before actually creating any archive files, or for recording data.
+The `webrecorder.io <https://webrecorder.io>`_ service is built using this tool.
+
+``cdx-indexer`` -- a command-line tool for creating CDX indexs from WARC and ARC files. Supports SURT and
+non-SURT based cdx files and optional sorting. See ``cdx-indexer -h`` for all options.
+for all options.
+
+``cdx-server`` -- a CDX API only server which returns a responses about CDX captures in bulk. 
+Includes most of the features of the `original cdx server implementation <https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server>`_,
+updated documentation coming soon.
+
+``wayback`` -- The full Wayback Machine application, further explained below.
 
 
 Latest Changes

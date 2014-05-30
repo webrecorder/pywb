@@ -155,6 +155,19 @@ rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT",'
         assert lines[4] == '<http://localhost:80/pywb/20140103030341/http://example.com?example=1>; \
 rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"'
 
+    def test_timemap_2(self):
+        """
+        Test application/link-format timemap total count
+        """
+
+        resp = self.testapp.get('/pywb/timemap/*/http://example.com')
+        assert resp.status_int == 200
+        assert resp.content_type == LINK_FORMAT
+
+        lines = resp.body.split('\n')
+
+        assert len(lines) == 3 + 3
+
     # Below functions test pywb proxy mode behavior
     # They are designed to roughly conform to Memento protocol Pattern 1.3
     # with the exception that the original resource is not available
@@ -228,4 +241,20 @@ rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"'
 
         resp = self.testapp.get('/x-ignore-this-x', extra_environ=extra, headers=headers, status=400)
 
+        assert resp.status_int == 400
+
+    def test_non_memento_path(self):
+        """
+        Non WbUrl memento path -- just ignore ACCEPT_DATETIME
+        """
+        headers = {ACCEPT_DATETIME: 'Sun, 26 Jan 2014 20:08:04'}
+        resp = self.testapp.get('/pywb/', headers=headers)
+        assert resp.status_int == 200
+
+    def test_non_memento_cdx_path(self):
+        """
+        CDX API Path -- different api, ignore ACCEPT_DATETIME for this
+        """
+        headers = {ACCEPT_DATETIME: 'Sun, 26 Jan 2014 20:08:04'}
+        resp = self.testapp.get('/pywb-cdx', headers=headers, status=400)
         assert resp.status_int == 400

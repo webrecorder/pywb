@@ -31,12 +31,8 @@ class RuleSet(object):
 
         config = load_yaml_config(ds_rules_file)
 
-        rulesmap = config.get('rules') if config else None
-
-        # if default_rule_config provided, always init a default ruleset
-        if not rulesmap and default_rule_config is not None:
-            self.rules = [rule_cls(self.DEFAULT_KEY, default_rule_config)]
-            return
+        # load rules dict or init to empty
+        rulesmap = config.get('rules') if config else {}
 
         def_key_found = False
 

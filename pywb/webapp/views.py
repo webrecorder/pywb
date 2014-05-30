@@ -46,9 +46,10 @@ def format_ts(value, format_='%a, %b %d %Y %H:%M:%S'):
     return value.strftime(format_)
 
 
-@template_filter('host')
-def get_hostname(url):
-    return urlparse.urlsplit(url).netloc
+@template_filter('urlsplit')
+def get_urlsplit(url):
+    split = urlparse.urlsplit(url)
+    return split
 
 
 @template_filter()
@@ -65,8 +66,9 @@ def is_wb_handler(obj):
 
 
 #=================================================================
-class J2TemplateView:
-    env_globals = {}
+class J2TemplateView(object):
+    env_globals = {'static_path': 'static/default',
+                   'package': 'pywb'}
 
     def __init__(self, filename):
         template_dir, template_file = path.split(filename)
@@ -79,7 +81,7 @@ class J2TemplateView:
         if template_dir.startswith('.') or template_dir.startswith('file://'):
             loader = FileSystemLoader(template_dir)
         else:
-            loader = PackageLoader('pywb', template_dir)
+            loader = PackageLoader(self.env_globals['package'], template_dir)
 
         jinja_env = Environment(loader=loader, trim_blocks=True)
         jinja_env.filters.update(FILTERS)
@@ -97,9 +99,20 @@ class J2TemplateView:
         template_result = self.render_to_string(**kwargs)
         status = kwargs.get('status', '200 OK')
         content_type = 'text/html; charset=utf-8'
-        return WbResponse.text_response(str(template_result),
+        return WbResponse.text_response(template_result.encode('utf-8'),
                                         status=status,
                                         content_type=content_type)
+
+    @staticmethod
+    def create_template(filename, desc='', view_class=None):
+        if not filename:
+            return None
+
+        if not view_class:
+            view_class = J2TemplateView
+
+        logging.debug('Adding {0}: {1}'.format(desc, filename))
+        return view_class(filename)
 
 
 #=================================================================
@@ -108,29 +121,42 @@ def add_env_globals(glb):
 
 
 #=================================================================
-def load_template_file(file, desc=None, view_class=J2TemplateView):
-    if file:
-        logging.debug('Adding {0}: {1}'.format(desc if desc else name, file))
-        file = view_class(file)
+class HeadInsertView(J2TemplateView):
+    def create_insert_func(self, wbrequest, include_ts=True):
 
-    return file
+        canon_url = wbrequest.wb_prefix + wbrequest.wb_url.to_str(mod='')
+        include_ts = include_ts
 
+        def make_head_insert(rule, cdx):
+            return (self.render_to_string(wbrequest=wbrequest,
+                                          cdx=cdx,
+                                          canon_url=canon_url,
+                                          include_ts=include_ts,
+                                          rule=rule))
+        return make_head_insert
 
-#=================================================================
-def load_query_template(file, desc=None):
-    return load_template_file(file, desc, J2HtmlCapturesView)
+    @staticmethod
+    def create_template(filename, desc=''):
+        return J2TemplateView.create_template(filename, desc,
+                                              HeadInsertView)
 
 
 #=================================================================
 # query views
 #=================================================================
 class J2HtmlCapturesView(J2TemplateView):
-    def render_response(self, wbrequest, cdx_lines):
+    def render_response(self, wbrequest, cdx_lines, **kwargs):
         return J2TemplateView.render_response(self,
                                     cdx_lines=list(cdx_lines),
                                     url=wbrequest.wb_url.url,
                                     type=wbrequest.wb_url.type,
-                                    prefix=wbrequest.wb_prefix)
+                                    prefix=wbrequest.wb_prefix,
+                                    **kwargs)
+
+    @staticmethod
+    def create_template(filename, desc=''):
+        return J2TemplateView.create_template(filename, desc,
+                                              J2HtmlCapturesView)
 
 
 #=================================================================

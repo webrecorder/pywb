@@ -62,45 +62,50 @@ class WSGIApp(object):
             response = wb_router(env)
 
             if not response:
-                msg = 'No handler for "{0}"'.format(env['REL_REQUEST_URI'])
+                msg = 'No handler for "{0}".'.format(env['REL_REQUEST_URI'])
                 raise NotFoundException(msg)
 
         except WbException as e:
-            response = handle_exception(env, wb_router, e, False)
+            response = self.handle_exception(env, e, False)
 
         except Exception as e:
-            response = handle_exception(env, wb_router, e, True)
+            response = self.handle_exception(env, e, True)
 
         return response(env, start_response)
 
+    def handle_exception(self, env, exc, print_trace):
+        error_view = None
 
-#=================================================================
-def handle_exception(env, wb_router, exc, print_trace):
-    error_view = None
-    if hasattr(wb_router, 'error_view'):
-        error_view = wb_router.error_view
+        if hasattr(self.wb_router, 'error_view'):
+            error_view = self.wb_router.error_view
 
-    if hasattr(exc, 'status'):
-        status = exc.status()
-    else:
-        status = '400 Bad Request'
+        if hasattr(exc, 'status'):
+            status = exc.status()
+        else:
+            status = '400 Bad Request'
 
-    if print_trace:
-        import traceback
-        err_details = traceback.format_exc(exc)
-        print err_details
-    else:
-        logging.info(str(exc))
-        err_details = None
+        if hasattr(exc, 'url'):
+            err_url = exc.url
+        else:
+            err_url = None
 
-    if error_view:
-        import traceback
-        return error_view.render_response(err_msg=str(exc),
-                                          err_details=err_details,
-                                          status=status)
-    else:
-        return WbResponse.text_response(status + ' Error: ' + str(exc),
-                                        status=status)
+        if print_trace:
+            import traceback
+            err_details = traceback.format_exc(exc)
+            print err_details
+        else:
+            logging.info(str(exc))
+            err_details = None
+
+        if error_view:
+            return error_view.render_response(exc_type=type(exc).__name__,
+                                              err_msg=str(exc),
+                                              err_details=err_details,
+                                              status=status,
+                                              err_url=err_url)
+        else:
+            return WbResponse.text_response(status + ' Error: ' + str(exc),
+                                            status=status)
 
 #=================================================================
 DEFAULT_CONFIG_FILE = 'config.yaml'

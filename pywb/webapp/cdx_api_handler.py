@@ -1,6 +1,5 @@
 from pywb.cdx.cdxserver import create_cdx_server
 
-from pywb.framework.archivalrouter import ArchivalRouter, Route
 from pywb.framework.basehandlers import BaseHandler
 from pywb.framework.wbrequestresponse import WbResponse
 

@@ -59,7 +59,6 @@ org,iana)/about 20140126200706 http://www.iana.org/about text/html 200 6G77LZKFA
 #=================================================================
 import os
 from pywb.utils.binsearch import iter_prefix, iter_exact, iter_range
-from pywb.utils.loaders import SeekableTextFileReader
 
 from pywb import get_test_dir
 
@@ -67,17 +66,14 @@ from pywb import get_test_dir
 test_cdx_dir = get_test_dir() + 'cdx/'
 
 def print_binsearch_results(key, iter_func):
-    cdx =  SeekableTextFileReader(test_cdx_dir + 'iana.cdx')
-
-    for line in iter_func(cdx, key):
-        print line
-
+    with open(test_cdx_dir + 'iana.cdx') as cdx:
+        for line in iter_func(cdx, key):
+            print line
 
 def print_binsearch_results_range(key, end_key, iter_func, prev_size=0):
-    cdx =  SeekableTextFileReader(test_cdx_dir + 'iana.cdx')
-
-    for line in iter_func(cdx, key, end_key, prev_size=prev_size):
-        print line
+    with open(test_cdx_dir + 'iana.cdx') as cdx:
+        for line in iter_func(cdx, key, end_key, prev_size=prev_size):
+            print line
 
 
 if __name__ == "__main__":

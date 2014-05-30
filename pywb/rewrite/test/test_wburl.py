@@ -60,13 +60,14 @@
 
 # Error Urls
 # ======================
->>> x = WbUrl('/#$%#/')
+# no longer rejecting this here
+#>>> x = WbUrl('/#$%#/')
 Traceback (most recent call last):
 Exception: Bad Request Url: http://#$%#/
 
->>> x = WbUrl('/http://example.com:abc/')
-Traceback (most recent call last):
-Exception: Bad Request Url: http://example.com:abc/
+#>>> x = WbUrl('/http://example.com:abc/')
+#Traceback (most recent call last):
+#Exception: Bad Request Url: http://example.com:abc/
 
 >>> x = WbUrl('')
 Traceback (most recent call last):
