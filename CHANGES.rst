@@ -14,9 +14,11 @@ pywb 0.4.0 changelist
 
 * Redis CDX: Initial support for reading entire CDX 'file' from a redis key via ZRANGEBYLEX, though needs more testing.
 
-* Jinja templates: additional keyword args added to most templates for customization
+* Jinja templates: additional keyword args added to most templates for customization, export 'urlsplit' to use by templates.
 
-* Proper handling of js_ cs_ modifiers to select content-type
+* Remove SeekableLineReader, just using standard file-like object for binary search.
+
+* Proper handling of js_ cs_ modifiers to select content-type.
 
 * cdx-indexer: Support for creation of non-SURT, url-ordered as well SURT-ordered CDX files. 
 
