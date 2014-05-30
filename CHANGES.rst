@@ -4,7 +4,7 @@ pywb 0.4.0 changelist
 * Improved test coverage throughout the project.
 
 * live-rewrite-server: A new web server for checking rewriting rules against live content. A white-list of request headers is sent to 
-  the destination server. See `rewrite_live.py <https://github.com/ikreymer/pywb/blob/develop/pywb/rewrite/rewrite_live.py>`_ for more details.
+  the destination server. See `rewrite_live.py <https://github.com/ikreymer/pywb/blob/master/pywb/rewrite/rewrite_live.py>`_ for more details.
 
 * Cookie Rewriting in Archival Mode: HTTP Set-Cookie header rewritten to remove Expires, rewrite Path and Domain. If Domain is used, Path is set to / to ensure cookie is visible
   from all archival urls.
