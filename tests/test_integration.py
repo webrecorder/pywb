@@ -188,12 +188,12 @@ class TestWb:
 
         # without timestamp
         resp = self.testapp.get('/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014/http://iana.org/')])
-        assert resp.status_int == 302
+        assert resp.status_int == 307
         assert resp.headers['Location'] == target, resp.headers['Location']
 
         # with timestamp
         resp = self.testapp.get('/2014/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014/http://iana.org/')])
-        assert resp.status_int == 302
+        assert resp.status_int == 307
         assert resp.headers['Location'] == target, resp.headers['Location']
 
 

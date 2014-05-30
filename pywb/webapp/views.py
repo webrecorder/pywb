@@ -46,12 +46,6 @@ def format_ts(value, format_='%a, %b %d %Y %H:%M:%S'):
     return value.strftime(format_)
 
 
-@template_filter('host')
-def get_hostname(url):
-    split = urlparse.urlsplit(url)
-    return split.netloc
-
-
 @template_filter('urlsplit')
 def get_urlsplit(url):
     split = urlparse.urlsplit(url)
