@@ -113,6 +113,10 @@ class ReplayView(object):
 
         urlrewriter = wbrequest.urlrewriter
 
+        # if using url rewriter, use original url for rewriting purposes
+        if wbrequest and wbrequest.wb_url:
+            wbrequest.wb_url.url = cdx['original']
+
         head_insert_func = None
         if self.head_insert_view:
             head_insert_func = (self.head_insert_view.
