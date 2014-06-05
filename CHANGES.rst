@@ -1,4 +1,4 @@
-pywb 0.4.0 changelist
+pywb 0.4.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
 * Improved test coverage throughout the project.
