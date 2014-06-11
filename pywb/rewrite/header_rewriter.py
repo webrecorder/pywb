@@ -18,7 +18,9 @@ class RewrittenStatusAndHeaders:
 #=================================================================
 class HeaderRewriter:
     REWRITE_TYPES = {
-        'html': ['text/html', 'application/xhtml'],
+        'html': ['text/html',
+                 'application/xhtml',
+                 'application/xhtml+xml'],
 
         'css':  ['text/css'],
 

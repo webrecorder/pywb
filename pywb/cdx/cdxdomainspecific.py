@@ -87,9 +87,9 @@ class FuzzyQuery:
 
             matched_rule = rule
 
-            if len(m.groups()) == 1:
-                #filter_.append('~urlkey:' + m.group(1))
-                filter_.append(rule.filter.format(m.group(1)))
+            groups = m.groups()
+            for g in groups:
+                filter_.append(rule.filter.format(g))
 
             break
 
@@ -99,6 +99,11 @@ class FuzzyQuery:
         repl = '?'
         if matched_rule.replace:
             repl = matched_rule.replace
+
+        if '/_/stream/squarestream?soc-app' in url and 'jserror' not in url:
+            print 'KEY ', urlkey
+            print 'RULE ', url, vars(matched_rule)
+            print 'FILTERS ', filter_
 
         inx = url.rfind(repl)
         if inx > 0:
@@ -148,6 +153,6 @@ class CDXDomainSpecificRule(BaseRule):
             self.replace = unsurt(self.replace)
 
 
-if __name__ == "__main__":
+    if __name__ == "__main__":
         import doctest
         doctest.testmod()

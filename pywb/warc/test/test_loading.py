@@ -54,6 +54,28 @@ Test loading different types of records from a variety of formats
   ('Content-Length', '1270'),
   ('Connection', 'close')]))
 
+# request parsing
+>>> load_test_archive('example.warc.gz', '1376', '488')
+(('warc', 'request'),
+ StatusAndHeaders(protocol = 'WARC/1.0', statusline = '', headers = [ ('WARC-Type', 'request'),
+  ('WARC-Record-ID', '<urn:uuid:9a3ffea5-9556-4790-a6bf-c15231fd6b97>'),
+  ('WARC-Date', '2014-01-03T03:03:21Z'),
+  ('Content-Length', '323'),
+  ('Content-Type', 'application/http; msgtype=request'),
+  ('WARC-Concurrent-To', '<urn:uuid:6d058047-ede2-4a13-be79-90c17c631dd4>'),
+  ('WARC-Target-URI', 'http://example.com?example=1'),
+  ('WARC-Warcinfo-ID', '<urn:uuid:fbd6cf0a-6160-4550-b343-12188dc05234>')]),
+ StatusAndHeaders(protocol = 'GET', statusline = '/?example=1 HTTP/1.1', headers = [ ('Connection', 'close'),
+  ( 'Accept',
+    'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
+  ('Accept-Language', 'en-US,en;q=0.8'),
+  ( 'User-Agent',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36 (via Wayback Save Page)'),
+  ('Host', 'example.com')]))
+
+
+StatusAndHeaders(protocol = '', statusline = '204 No Content', headers = []))
+
 
 # Test of record loading based on cdx line
 # Print parsed http headers + 2 lines of content
@@ -308,7 +330,7 @@ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - \
 def load_test_archive(test_file, offset, length):
     path = test_warc_dir + test_file
 
-    testloader = ArcWarcRecordLoader()
+    testloader = ArcWarcRecordLoader(parse_request=True)
 
     archive = testloader.load(path, offset, length)
 

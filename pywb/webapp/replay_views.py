@@ -187,7 +187,12 @@ class ReplayView(object):
         new_url = wbrequest.urlrewriter.get_timestamp_url(cdx['timestamp'],
                                                           cdx['original'])
 
-        status_headers = StatusAndHeaders('302 Internal Redirect',
+        if wbrequest.method not in ('HEAD', 'GET'):
+            statusline = '307 Same-Method Internal Redirect'
+        else:
+            statusline = '302 Internal Redirect'
+
+        status_headers = StatusAndHeaders(statusline,
                                           [('Location', new_url)])
 
         # don't include cdx to indicate internal redirect

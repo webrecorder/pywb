@@ -220,6 +220,16 @@ class TestWb:
         assert resp.status_int == 302
 
 
+    def test_post_1(self):
+        resp = self.testapp.post('/pywb/httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
+        assert resp.status_int == 307
+
+        resp = self.testapp.post('/pywb/20140610000859/http://httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
+        assert resp.status_int == 200
+        assert '"foo": "bar"' in resp.body
+        assert '"test": "abc"' in resp.body
+
+
     def test_excluded_content(self):
         resp = self.testapp.get('/pywb/http://www.iana.org/_img/bookmark_icon.ico', status = 403)
         assert resp.status_int == 403

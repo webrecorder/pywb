@@ -5,6 +5,7 @@ local and remote access
 
 import os
 import hmac
+import urllib
 import urllib2
 import time
 import pkg_resources
@@ -22,6 +23,56 @@ def load_yaml_config(config_file):
     configdata = BlockLoader().load(config_file)
     config = yaml.load(configdata)
     return config
+
+
+#=================================================================
+def extract_post_query(method, mime, length, stream):
+    """
+    Extract a url-encoded form POST from stream
+    If not a application/x-www-form-urlencoded, or no missing
+    content length, return None
+    """
+    if method.upper() != 'POST':
+        return None
+
+    if (not mime or
+         not mime.lower().startswith('application/x-www-form-urlencoded')):
+        return None
+
+    if not length or length == '0':
+        return None
+
+    try:
+        length = int(length)
+    except ValueError:
+        return None
+
+    #todo: encoding issues?
+    post_query = ''
+
+    while length > 0:
+        buff = stream.read(length)
+        length -= len(buff)
+
+        if not buff:
+            break
+
+        post_query += buff
+
+    post_query = urllib.unquote_plus(post_query)
+    return post_query
+
+
+#=================================================================
+def append_post_query(url, post_query):
+    if not post_query:
+        return url
+
+    if '?' not in url:
+        url += '?'
+
+    url += '&&&' + post_query
+    return url
 
 
 #=================================================================

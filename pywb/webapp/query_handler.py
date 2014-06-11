@@ -47,6 +47,8 @@ class QueryHandler(object):
         return QueryHandler(cdx_server, html_view, perms_policy)
 
     def load_for_request(self, wbrequest):
+        wbrequest.normalize_post_query()
+
         wb_url = wbrequest.wb_url
 
         # cdx server only supports text and cdxobject for now

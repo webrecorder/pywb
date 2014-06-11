@@ -1,6 +1,7 @@
 from pywb.utils.timeutils import iso_date_to_timestamp
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 from pywb.utils.canonicalize import canonicalize
+from pywb.utils.loaders import extract_post_query, append_post_query
 
 from recordloader import ArcWarcRecordLoader
 
@@ -21,14 +22,26 @@ class ArchiveIndexer(object):
     The indexer will automatically detect format, and decompress
     if necessary
     """
+
+    # arc/warc record types which are
+    # indexed by default, without 'include_all'
+    DEFAULT_REC_TYPES = ('response', 'revisit', 'metadata', 'resource')
+
     def __init__(self, fileobj, filename,
-                 out=sys.stdout, sort=False, writer=None, surt_ordered=True):
+                 out=sys.stdout, sort=False, writer=None, surt_ordered=True,
+                 include_all=False, append_post_query=False):
         self.fh = fileobj
         self.filename = filename
-        self.loader = ArcWarcRecordLoader()
+
+        loader_parse_req = include_all or append_post_query
+        self.loader = ArcWarcRecordLoader(parse_request=loader_parse_req)
+
         self.offset = 0
         self.known_format = None
         self.surt_ordered = surt_ordered
+
+        self.include_all = include_all
+        self.append_post_query = append_post_query
 
         if writer:
             self.writer = writer
@@ -36,6 +49,12 @@ class ArchiveIndexer(object):
             self.writer = SortedCDXWriter(out)
         else:
             self.writer = CDXWriter(out)
+
+        # todo: refactor this
+        self.writer.indexer = self
+
+        if append_post_query:
+            self.writer = PostResolveWriter(self.writer, self)
 
     def make_index(self):
         """ Output a cdx index!
@@ -127,9 +146,23 @@ class ArchiveIndexer(object):
             self._read_to_record_end(reader, record)
             return record
 
+        post_query = None
+
+        if record.rec_type == 'request':
+            method = record.status_headers.protocol
+            mime = result[3]
+            len_ = record.status_headers.get_header('Content-Length')
+
+            post_query = extract_post_query(method,
+                                            mime,
+                                            len_,
+                                            record.stream)
+
+            # should be 0 if read query string
+            num = self.read_rest(record.stream)
         # generate digest if it doesn't exist and if not a revisit
         # if revisit, then nothing we can do here
-        if result[-1] == '-' and record.rec_type != 'revisit':
+        elif result[-1] == '-' and record.rec_type != 'revisit':
             digester = hashlib.sha1()
             self.read_rest(record.stream, digester)
             result[-1] = base64.b32encode(digester.digest())
@@ -146,7 +179,7 @@ class ArchiveIndexer(object):
         result.append(str(offset))
         result.append(self.filename)
 
-        self.writer.write(result)
+        self.writer.write(result, record.rec_type, post_query)
 
         return record
 
@@ -154,25 +187,31 @@ class ArchiveIndexer(object):
         """ Parse warc record to be included in index, or
         return none if skipping this type of record
         """
-        if record.rec_type not in ('response', 'revisit',
-                                    'metadata', 'resource'):
+
+        if (not self.append_post_query and
+            not self.include_record(record.rec_type)):
             return None
 
         url = record.rec_headers.get_header('WARC-Target-Uri')
+        if not url:
+            return None
 
         timestamp = record.rec_headers.get_header('WARC-Date')
         timestamp = iso_date_to_timestamp(timestamp)
 
         digest = record.rec_headers.get_header('WARC-Payload-Digest')
 
-        status = self._extract_status(record.status_headers)
-
         if record.rec_type == 'revisit':
             mime = 'warc/revisit'
+            status = '-'
+        elif record.rec_type == 'request':
+            mime = record.status_headers.get_header('Content-Type')
+            mime = self._extract_mime(mime, '-')
             status = '-'
         else:
             mime = record.status_headers.get_header('Content-Type')
             mime = self._extract_mime(mime)
+            status = self._extract_status(record.status_headers)
 
         if digest and digest.startswith('sha1:'):
             digest = digest[len('sha1:'):]
@@ -225,14 +264,14 @@ class ArchiveIndexer(object):
 
     MIME_RE = re.compile('[; ]')
 
-    def _extract_mime(self, mime):
+    def _extract_mime(self, mime, def_mime='unk'):
         """ Utility function to extract mimetype only
         from a full content type, removing charset settings
         """
         if mime:
             mime = self.MIME_RE.split(mime, 1)[0]
         if not mime:
-            mime = 'unk'
+            mime = def_mime
         return mime
 
     def _extract_status(self, status_headers):
@@ -256,17 +295,27 @@ class ArchiveIndexer(object):
                 digester.update(b)
         return num
 
+    def include_record(self, type_):
+        return self.include_all or (type_ in self.DEFAULT_REC_TYPES)
+
+    def add_post_query(self, fields, post_query):
+        url = append_post_query(fields[2], post_query)
+        fields[0] = canonicalize(url, self.surt_ordered)
+        return fields
+
 
 #=================================================================
 class CDXWriter(object):
     def __init__(self, out):
         self.out = out
+        self.indexer = None
 
     def start(self):
         self.out.write(' CDX N b a m s k r M S V g\n')
 
-    def write(self, line):
-        self.out.write(' '.join(line) + '\n')
+    def write(self, line, rec_type, *args):
+        if not self.indexer or self.indexer.include_record(rec_type):
+            self.out.write(' '.join(line) + '\n')
 
     def end(self):
         pass
@@ -278,12 +327,64 @@ class SortedCDXWriter(CDXWriter):
         super(SortedCDXWriter, self).__init__(out)
         self.sortlist = []
 
-    def write(self, line):
-        line = ' '.join(line) + '\n'
-        insort(self.sortlist, line)
+    def write(self, line, rec_type, *args):
+        if not self.indexer or self.indexer.include_record(rec_type):
+            line = ' '.join(line) + '\n'
+            insort(self.sortlist, line)
 
     def end(self):
         self.out.write(''.join(self.sortlist))
+
+
+#=================================================================
+class PostResolveWriter(CDXWriter):
+    def __init__(self, writer, indexer):
+        self.writer = writer
+        self.indexer = indexer
+        self.prev_line = None
+        self.prev_post_query = None
+        self.prev_type = None
+
+    def start(self):
+        self.writer.start()
+
+    def write(self, line, rec_type, post_query):
+        if not self.prev_line:
+            self.prev_line = line
+            self.prev_post_query = post_query
+            self.prev_type = rec_type
+            return
+
+        #cdx original field
+        if self.prev_line[2] != line[2]:
+            self.writer.write(self.prev_line, self.prev_type)
+            self.prev_line = line
+            self.prev_post_query = post_query
+            return
+
+        if self.prev_post_query or post_query:
+            if self.prev_post_query:
+                self.indexer.add_post_query(line, self.prev_post_query)
+            else:
+                self.indexer.add_post_query(line, post_query)
+
+        # update prev url key too
+        self.prev_line[0] = line[0]
+
+        # write both lines
+        self.writer.write(self.prev_line, self.prev_type)
+        self.writer.write(line, rec_type)
+
+        # flush any cached lines
+        self.prev_line = None
+        self.prev_post_query = None
+        self.prev_type = None
+
+    def end(self):
+        if self.prev_line:
+            self.writer.write(self.prev_line, self.prev_type)
+
+        self.writer.end()
 
 
 #=================================================================
@@ -323,7 +424,8 @@ def iter_file_or_dir(inputs):
                 yield os.path.join(input_, filename), filename
 
 
-def index_to_file(inputs, output, sort, surt_ordered):
+def index_to_file(inputs, output, sort,
+                  surt_ordered, include_all, append_post_query):
     if output == '-':
         outfile = sys.stdout
     else:
@@ -343,7 +445,9 @@ def index_to_file(inputs, output, sort, surt_ordered):
                 ArchiveIndexer(fileobj=infile,
                                filename=filename,
                                writer=writer,
-                               surt_ordered=surt_ordered).make_index()
+                               surt_ordered=surt_ordered,
+                               append_post_query=append_post_query,
+                               include_all=include_all).make_index()
     finally:
         writer.end_all()
         if infile:
@@ -363,7 +467,8 @@ def cdx_filename(filename):
     return remove_ext(filename) + '.cdx'
 
 
-def index_to_dir(inputs, output, sort, surt_ordered):
+def index_to_dir(inputs, output, sort,
+                 surt_ordered, include_all, append_post_query):
     for fullpath, filename in iter_file_or_dir(inputs):
 
         outpath = cdx_filename(filename)
@@ -375,7 +480,9 @@ def index_to_dir(inputs, output, sort, surt_ordered):
                                filename=filename,
                                sort=sort,
                                out=outfile,
-                               surt_ordered=surt_ordered).make_index()
+                               surt_ordered=surt_ordered,
+                               append_post_query=append_post_query,
+                               include_all=include_all).make_index()
 
 
 def main(args=None):
@@ -418,6 +525,13 @@ Not-recommended for new cdx, use only for backwards-compatibility.
 - If directory, all archive files from that directory are read
 """
 
+    allrecords_help = """include all records.
+currently includes the 'request' records in addition to all
+response records"""
+
+    post_append_help = """for POST requests, append
+form query to url key. (Only applies to form url encoded posts)"""
+
     parser = ArgumentParser(description=description,
                             epilog=epilog,
                             formatter_class=RawTextHelpFormatter)
@@ -426,18 +540,28 @@ Not-recommended for new cdx, use only for backwards-compatibility.
                         action='store_true',
                         help=sort_help)
 
+    parser.add_argument('-a', '--allrecords',
+                        action='store_true',
+                        help=allrecords_help)
+
+    parser.add_argument('-p', '--postappend',
+                        action='store_true',
+                        help=post_append_help)
+
     parser.add_argument('-u', '--unsurt',
                         action='store_true',
                         help=unsurt_help)
 
-    parser.add_argument('output', help=output_help)
+    parser.add_argument('output', nargs='?', default='-', help=output_help)
     parser.add_argument('inputs', nargs='+', help=input_help)
 
     cmd = parser.parse_args(args=args)
     if cmd.output != '-' and os.path.isdir(cmd.output):
-        index_to_dir(cmd.inputs, cmd.output, cmd.sort, not cmd.unsurt)
+        index_to_dir(cmd.inputs, cmd.output, cmd.sort,
+                     not cmd.unsurt, cmd.allrecords, cmd.postappend)
     else:
-        index_to_file(cmd.inputs, cmd.output, cmd.sort, not cmd.unsurt)
+        index_to_file(cmd.inputs, cmd.output, cmd.sort,
+                      not cmd.unsurt, cmd.allrecords, cmd.postappend)
 
 
 if __name__ == '__main__':

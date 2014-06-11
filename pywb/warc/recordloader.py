@@ -39,7 +39,15 @@ class ArcWarcRecordLoader:
     ARC_HEADERS = ["uri", "ip-address", "archive-date",
                    "content-type", "length"]
 
-    def __init__(self, loader=None, cookie_maker=None, block_size=8192):
+    WARC_TYPES = ['WARC/1.0', 'WARC/0.17', 'WARC/0.18']
+
+    HTTP_TYPES = ['HTTP/1.0', 'HTTP/1.1']
+
+    HTTP_VERBS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE',
+                  'OPTIONS', 'CONNECT', 'PATCH']
+
+    def __init__(self, loader=None, cookie_maker=None, block_size=8192,
+                 parse_request=False):
         if not loader:
             loader = BlockLoader(cookie_maker)
 
@@ -48,9 +56,13 @@ class ArcWarcRecordLoader:
 
         self.arc_parser = ARCHeadersParser(self.ARC_HEADERS)
 
-        warc_types = ['WARC/1.0', 'WARC/0.17', 'WARC/0.18']
-        self.warc_parser = StatusAndHeadersParser(warc_types)
-        self.http_parser = StatusAndHeadersParser(['HTTP/1.0', 'HTTP/1.1'])
+        self.warc_parser = StatusAndHeadersParser(self.WARC_TYPES)
+        self.http_parser = StatusAndHeadersParser(self.HTTP_TYPES)
+
+        self.parse_request = parse_request
+        if self.parse_request:
+            self.http_req_parser = StatusAndHeadersParser(self.HTTP_VERBS)
+
 
     def load(self, url, offset, length):
         """ Load a single record from given url at offset with length
@@ -126,10 +138,15 @@ class ArcWarcRecordLoader:
             status_headers = StatusAndHeaders('200 OK', content_type)
 
         elif (rec_type == 'warcinfo' or
-              rec_type == 'arc_header' or
-              rec_type == 'request'):
+              rec_type == 'arc_header'):
             # not parsing these for now
             status_headers = StatusAndHeaders('204 No Content', [])
+
+        elif (rec_type == 'request'):
+            if self.parse_request:
+                status_headers = self.http_req_parser.parse(stream)
+            else:
+                status_headers = StatusAndHeaders('204 No Content', [])
 
         # special case: http 0.9 response, no status or headers
         #elif rec_type == 'response':

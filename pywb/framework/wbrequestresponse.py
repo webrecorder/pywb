@@ -1,4 +1,5 @@
 from pywb.utils.statusandheaders import StatusAndHeaders
+from pywb.utils.loaders import extract_post_query, append_post_query
 
 import pprint
 
@@ -44,6 +45,8 @@ class WbRequest(object):
             self.request_uri = request_uri
         else:
             self.request_uri = env.get('REL_REQUEST_URI')
+
+        self.method = self.env.get('REQUEST_METHOD')
 
         self.coll = coll
 
@@ -115,6 +118,22 @@ class WbRequest(object):
 
         wburl_str = self.referrer[len(self.host_prefix + self.rel_prefix):]
         return wburl_str
+
+    def normalize_post_query(self):
+        if self.method != 'POST':
+            return
+
+        if not self.wb_url:
+            return
+
+        mime = self.env.get('CONTENT_TYPE')
+        length = self.env.get('CONTENT_LENGTH')
+        stream = self.env['wsgi.input']
+
+        post_query = extract_post_query('POST', mime, length, stream)
+
+        if post_query:
+            self.wb_url.url = append_post_query(self.wb_url.url, post_query)
 
 
 #=================================================================
