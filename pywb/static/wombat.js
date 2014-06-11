@@ -111,11 +111,7 @@ WB_wombat_init = (function() {
         if (!url) {
             return url;
         }
-
-        if (url.indexOf("hypothes.is") > 0) {
-            return url;
-        }
-        
+      
         var urltype_ = (typeof url);
         
         // If object, use toString

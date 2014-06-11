@@ -100,11 +100,6 @@ class FuzzyQuery:
         if matched_rule.replace:
             repl = matched_rule.replace
 
-        if '/_/stream/squarestream?soc-app' in url and 'jserror' not in url:
-            print 'KEY ', urlkey
-            print 'RULE ', url, vars(matched_rule)
-            print 'FILTERS ', filter_
-
         inx = url.rfind(repl)
         if inx > 0:
             url = url[:inx + 1]
