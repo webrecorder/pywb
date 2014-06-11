@@ -102,6 +102,5 @@ if (wbinfo.is_frame_mp && wbinfo.canon_url &&
    (window.self == window.top) && 
    window.location.href != wbinfo.canon_url) {
     
-    //console.log('frame');
-    //window.location.replace(wbinfo.canon_url);
+    window.location.replace(wbinfo.canon_url);
 }
