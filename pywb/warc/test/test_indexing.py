@@ -62,9 +62,9 @@ org,httpbin)/post?foo=bar 20140610001255 http://httpbin.org/post?foo=bar applica
 # post append
 >>> print_cdx_index('post-test.warc.gz', append_post_query=True)
  CDX N b a m s k r M S V g
-org,httpbin)/post?&&&foo=bar&test=abc 20140610000859 http://httpbin.org/post application/json 200 M532K5WS4GY2H4OVZO6HRPOP47A7KDWU - - 720 0 post-test.warc.gz
-org,httpbin)/post?&&&a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/json 200 M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2 - - 723 1196 post-test.warc.gz
-org,httpbin)/post?&&data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/json 200 B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ - - 723 2395 post-test.warc.gz
+org,httpbin)/post?foo=bar&test=abc 20140610000859 http://httpbin.org/post application/json 200 M532K5WS4GY2H4OVZO6HRPOP47A7KDWU - - 720 0 post-test.warc.gz
+org,httpbin)/post?a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/json 200 M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2 - - 723 1196 post-test.warc.gz
+org,httpbin)/post?data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/json 200 B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ - - 723 2395 post-test.warc.gz
 
 # no post append, requests included
 >>> print_cdx_index('post-test.warc.gz', include_all=True)
@@ -79,12 +79,12 @@ org,httpbin)/post?foo=bar 20140610001255 http://httpbin.org/post?foo=bar applica
 # post append + requests included
 >>> print_cdx_index('post-test.warc.gz', include_all=True, append_post_query=True)
  CDX N b a m s k r M S V g
-org,httpbin)/post?&&&foo=bar&test=abc 20140610000859 http://httpbin.org/post application/json 200 M532K5WS4GY2H4OVZO6HRPOP47A7KDWU - - 720 0 post-test.warc.gz
-org,httpbin)/post?&&&foo=bar&test=abc 20140610000859 http://httpbin.org/post application/x-www-form-urlencoded - - - - 476 720 post-test.warc.gz
-org,httpbin)/post?&&&a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/json 200 M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2 - - 723 1196 post-test.warc.gz
-org,httpbin)/post?&&&a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/x-www-form-urlencoded - - - - 476 1919 post-test.warc.gz
-org,httpbin)/post?&&data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/json 200 B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ - - 723 2395 post-test.warc.gz
-org,httpbin)/post?&&data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/x-www-form-urlencoded - - - - 475 3118 post-test.warc.gz
+org,httpbin)/post?foo=bar&test=abc 20140610000859 http://httpbin.org/post application/json 200 M532K5WS4GY2H4OVZO6HRPOP47A7KDWU - - 720 0 post-test.warc.gz
+org,httpbin)/post?foo=bar&test=abc 20140610000859 http://httpbin.org/post application/x-www-form-urlencoded - - - - 476 720 post-test.warc.gz
+org,httpbin)/post?a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/json 200 M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2 - - 723 1196 post-test.warc.gz
+org,httpbin)/post?a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/x-www-form-urlencoded - - - - 476 1919 post-test.warc.gz
+org,httpbin)/post?data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/json 200 B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ - - 723 2395 post-test.warc.gz
+org,httpbin)/post?data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/x-www-form-urlencoded - - - - 475 3118 post-test.warc.gz
 
 
 
@@ -96,6 +96,12 @@ org,httpbin)/post?&&data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=ba
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
 org,iana,example)/ 20130702195402 http://example.iana.org/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1001 353 example-url-agnostic-orig.warc.gz
 204
+
+# test sort, multiple inputs, all records + post query
+>>> cli_lines(['--sort', '-a', '-p', TEST_WARC_DIR])
+com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
+org,iana,example)/ 20130702195402 http://example.iana.org/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1001 353 example-url-agnostic-orig.warc.gz
+392
 
 # test writing to stdout
 >>> cli_lines(['-', TEST_WARC_DIR + 'example.warc.gz'])

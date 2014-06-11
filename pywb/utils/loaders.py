@@ -70,8 +70,10 @@ def append_post_query(url, post_query):
 
     if '?' not in url:
         url += '?'
+    else:
+        url += '&'
 
-    url += '&&&' + post_query
+    url += post_query
     return url
 
 

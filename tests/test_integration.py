@@ -223,12 +223,20 @@ class TestWb:
     def test_post_1(self):
         resp = self.testapp.post('/pywb/httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
         assert resp.status_int == 307
+        assert resp.headers['Location'].endswith('/pywb/20140610000859/http://httpbin.org/post')
 
-        resp = self.testapp.post('/pywb/20140610000859/http://httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
+        # XX webtest doesn't support 307 redirect of post
+        #resp = resp.follow()
+        resp = self.testapp.post(resp.headers['Location'], {'foo': 'bar', 'test': 'abc'})
+
         assert resp.status_int == 200
         assert '"foo": "bar"' in resp.body
         assert '"test": "abc"' in resp.body
 
+    def test_post_2(self):
+        resp = self.testapp.post('/pywb/20140610001255/http://httpbin.org/post?foo=bar', {'data': '^'})
+        assert resp.status_int == 200
+        assert '"data": "^"' in resp.body
 
     def test_excluded_content(self):
         resp = self.testapp.get('/pywb/http://www.iana.org/_img/bookmark_icon.ico', status = 403)
