@@ -187,8 +187,10 @@ class ReplayView(object):
         new_url = wbrequest.urlrewriter.get_timestamp_url(cdx['timestamp'],
                                                           cdx['original'])
 
-        if wbrequest.method not in ('HEAD', 'GET'):
-            statusline = '307 Same-Method Internal Redirect'
+        if wbrequest.method == 'POST':
+#   FF shows a confirm dialog, so can't use 307 effectively
+#            statusline = '307 Same-Method Internal Redirect'
+            return None
         else:
             statusline = '302 Internal Redirect'
 

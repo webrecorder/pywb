@@ -222,12 +222,14 @@ class TestWb:
 
     def test_post_1(self):
         resp = self.testapp.post('/pywb/httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
-        assert resp.status_int == 307
-        assert resp.headers['Location'].endswith('/pywb/20140610000859/http://httpbin.org/post')
+
+        # no redirects for POST, as some browsers (FF) show modal confirmation dialog!
+        #assert resp.status_int == 307
+        #assert resp.headers['Location'].endswith('/pywb/20140610000859/http://httpbin.org/post')
 
         # XX webtest doesn't support 307 redirect of post
         #resp = resp.follow()
-        resp = self.testapp.post(resp.headers['Location'], {'foo': 'bar', 'test': 'abc'})
+        #resp = self.testapp.post(resp.headers['Location'], {'foo': 'bar', 'test': 'abc'})
 
         assert resp.status_int == 200
         assert '"foo": "bar"' in resp.body
