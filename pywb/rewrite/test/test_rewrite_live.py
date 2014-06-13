@@ -91,7 +91,7 @@ def test_post():
            'HTTP_HOST': 'example.com',
            'wsgi.input': buff}
 
-    status_headers, resp_buff = get_rewritten('http://example.com/', urlrewriter, env=env)
+    status_headers, resp_buff = get_rewritten('http://httpbin.org/post', urlrewriter, env=env)
     assert status_headers.get_statuscode() == '200', status_headers
 
 

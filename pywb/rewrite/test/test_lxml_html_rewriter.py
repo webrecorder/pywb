@@ -15,8 +15,12 @@ ur"""
 >>> parse('<input "selected"><img src></div>')
 <html><body><input></input><img src=""></img></body></html>
 
->>> parse('<html><head><base href="http://example.com/some/path/index.html"/>')
-<html><head><base href="/web/20131226101010/http://example.com/some/path/index.html"></base></head></html>
+# Base Tests
+>>> parse('<html><head><base href="http://example.com/diff/path/file.html"/>')
+<html><head><base href="/web/20131226101010/http://example.com/diff/path/file.html"></base></head></html>
+
+>>> parse('<base href="static/"/><img src="image.gif"/>')
+<html><head><base href="/web/20131226101010/http://example.com/some/path/static/"></base><img src="/web/20131226101010im_/http://example.com/some/path/static/image.gif"></img></head></html>
 
 # Don't rewrite anchors
 >>> parse('<HTML><A Href="#abc">Text</a></hTmL>')

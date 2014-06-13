@@ -20,8 +20,12 @@ ur"""
 #>>> parse('<input "selected"><img src></div>')
 #<input "selected"=""><img src=""></div>
 
->>> parse('<html><head><base href="http://example.com/some/path/index.html"/>')
-<html><head><base href="/web/20131226101010/http://example.com/some/path/index.html"/>
+# Base Tests
+>>> parse('<html><head><base href="http://example.com/diff/path/file.html"/>')
+<html><head><base href="/web/20131226101010/http://example.com/diff/path/file.html"/>
+
+>>> parse('<base href="static/"/><img src="image.gif"/>')
+<base href="/web/20131226101010/http://example.com/some/path/static/"/><img src="/web/20131226101010im_/http://example.com/some/path/static/image.gif"/>
 
 # HTML Entities
 >>> parse('<a href="">&rsaquo; &nbsp; &#62;</div>')
