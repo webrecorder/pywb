@@ -188,12 +188,12 @@ class TestWb:
 
         # without timestamp
         resp = self.testapp.get('/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014/http://iana.org/')])
-        assert resp.status_int == 307
+        assert resp.status_int == 302
         assert resp.headers['Location'] == target, resp.headers['Location']
 
         # with timestamp
         resp = self.testapp.get('/2014/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014/http://iana.org/')])
-        assert resp.status_int == 307
+        assert resp.status_int == 302
         assert resp.headers['Location'] == target, resp.headers['Location']
 
 
@@ -239,6 +239,14 @@ class TestWb:
         resp = self.testapp.post('/pywb/20140610001255/http://httpbin.org/post?foo=bar', {'data': '^'})
         assert resp.status_int == 200
         assert '"data": "^"' in resp.body
+
+    def test_post_redirect(self):
+        # post handled without redirect (since 307 not allowed)
+        resp = self.testapp.post('/post', {'foo': 'bar', 'test': 'abc'}, headers=[('Referer', 'http://localhost:8080/pywb/2014/http://httpbin.org/post')])
+        assert resp.status_int == 200
+        assert '"foo": "bar"' in resp.body
+        assert '"test": "abc"' in resp.body
+
 
     def test_excluded_content(self):
         resp = self.testapp.get('/pywb/http://www.iana.org/_img/bookmark_icon.ico', status = 403)
