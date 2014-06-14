@@ -89,9 +89,6 @@ def test_post():
     env = {'REQUEST_METHOD': 'POST',
            'HTTP_ORIGIN': 'http://httpbin.org',
            'HTTP_HOST': 'httpbin.org',
-           'HTTP_CONNECTION': 'close',
-           'CONTENT_LENGTH': str(len(buff.getvalue())),
-           'CONTENT_TYPE': 'application/x-www-form-urlencoded',
            'wsgi.input': buff}
 
     status_headers, resp_buff = get_rewritten('http://httpbin.org/post', urlrewriter, env=env)

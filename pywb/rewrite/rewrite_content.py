@@ -215,7 +215,8 @@ class RewriteContent:
                 buff = first_buff
             else:
                 buff = stream.read()
-                if buff:
+                if buff and (not hasattr(stream, 'closed') or
+                             not stream.closed):
                     buff += stream.readline()
 
             while buff:
