@@ -75,7 +75,8 @@ class LiveRewriter(object):
             else:
                 continue
 
-            headers[name] = value
+            if value:
+                headers[name] = value
 
         return headers
 

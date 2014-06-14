@@ -84,11 +84,14 @@ def test_example_domain_specific_3():
 
 
 def test_post():
-    buff = BytesIO('ABCDEF')
+    buff = BytesIO('ABC=DEF')
 
     env = {'REQUEST_METHOD': 'POST',
-           'HTTP_ORIGIN': 'http://example.com',
-           'HTTP_HOST': 'example.com',
+           'HTTP_ORIGIN': 'http://httpbin.org',
+           'HTTP_HOST': 'httpbin.org',
+           'HTTP_CONNECTION': 'close',
+           'CONTENT_LENGTH': str(len(buff.getvalue())),
+           'CONTENT_TYPE': 'application/x-www-form-urlencoded',
            'wsgi.input': buff}
 
     status_headers, resp_buff = get_rewritten('http://httpbin.org/post', urlrewriter, env=env)
