@@ -147,7 +147,6 @@ class CDXDomainSpecificRule(BaseRule):
         if self.replace:
             self.replace = unsurt(self.replace)
 
-
     if __name__ == "__main__":
         import doctest
         doctest.testmod()

@@ -113,7 +113,7 @@ class ReplayView(BaseContentView):
         super(ReplayView, self).__init__(config)
 
         self.content_loader = content_loader
-        self.content_rewriter=RewriteContent(defmod=self._mp_mod)
+        self.content_rewriter = RewriteContent(defmod=self._mp_mod)
 
         self.buffer_response = config.get('buffer_response', True)
 

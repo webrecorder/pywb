@@ -198,11 +198,7 @@ class ReferRedirect:
         if ref_request.method == 'POST':
             new_wb_url = WbUrl(rewritten_url[len(rewriter.prefix):])
             ref_request.wb_url.url = new_wb_url.url
-
-            print 'REL URI ', ref_request.wb_url.url
-
             return ref_route.handler(ref_request)
-
 
         final_url = urlparse.urlunsplit((ref_split.scheme,
                                          ref_split.netloc,

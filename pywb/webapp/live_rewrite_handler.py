@@ -10,10 +10,10 @@ from replay_views import RewriteLiveView
 #=================================================================
 class RewriteHandler(WbUrlHandler):
     def __init__(self, config=dict(framed_replay=True)):
-        self.rewrite_proxy_view = RewriteLiveView(config)
+        self.rewrite_view = RewriteLiveView(config)
 
     def __call__(self, wbrequest):
-        return self.rewrite_proxy_view(wbrequest)
+        return self.rewrite_view(wbrequest)
 
 
 #=================================================================

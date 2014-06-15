@@ -63,7 +63,6 @@ class ArcWarcRecordLoader:
         if self.parse_request:
             self.http_req_parser = StatusAndHeadersParser(self.HTTP_VERBS)
 
-
     def load(self, url, offset, length):
         """ Load a single record from given url at offset with length
         and parse as either warc or arc record
