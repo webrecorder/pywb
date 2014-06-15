@@ -1,14 +1,23 @@
 import re
+import datetime
 from io import BytesIO
 
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.wbexception import WbException, NotFoundException
 from pywb.utils.loaders import LimitReader
+from pywb.utils.timeutils import datetime_to_timestamp
 
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import MementoResponse
 
+from pywb.rewrite.rewrite_content import RewriteContent
+from pywb.rewrite.rewrite_live import LiveRewriter
+from pywb.rewrite.wburl import WbUrl
+
 from pywb.warc.recordloader import ArchiveLoadFailed
+
+from views import J2TemplateView, add_env_globals
+from views import J2HtmlCapturesView, HeadInsertView
 
 
 #=================================================================
@@ -23,32 +32,107 @@ class CaptureException(WbException):
 
 
 #=================================================================
-class ReplayView(object):
+class BaseContentView(object):
+    def __init__(self, config):
+        self.is_frame_mode = config.get('framed_replay', False)
+
+        if self.is_frame_mode:
+            self._mp_mod = 'mp_'
+        else:
+            self._mp_mod = ''
+
+        view = config.get('head_insert_view')
+        if not view:
+            head_insert = config.get('head_insert_html',
+                                     'ui/head_insert.html')
+            view = HeadInsertView.create_template(head_insert, 'Head Insert')
+
+        self.head_insert_view = view
+
+        if not self.is_frame_mode:
+            self.frame_insert_view = None
+            return
+
+        view = config.get('frame_insert_view')
+        if not view:
+            frame_insert = config.get('frame_insert_html',
+                                      'ui/frame_insert.html')
+
+            view = J2TemplateView.create_template(frame_insert, 'Frame Insert')
+
+        self.frame_insert_view = view
+
+    def __call__(self, wbrequest, *args):
+        # render top level frame if in frame mode
+        # (not supported in proxy mode)
+        if (self.is_frame_mode and
+             not wbrequest.is_proxy and
+             not wbrequest.wb_url.mod):
+
+            embed_url = wbrequest.wb_url.to_str(mod=self._mp_mod)
+            timestamp = datetime_to_timestamp(datetime.datetime.utcnow())
+            url = wbrequest.wb_url.url
+
+            return self.frame_insert_view.render_response(embed_url=embed_url,
+                                                          wbrequest=wbrequest,
+                                                          timestamp=timestamp,
+                                                          url=url)
+
+        return self.render_content(wbrequest, *args)
+
+
+#=================================================================
+class RewriteLiveView(BaseContentView):
+    def __init__(self, config):
+        super(RewriteLiveView, self).__init__(config)
+
+        self.rewriter = LiveRewriter(defmod=self._mp_mod)
+
+    def render_content(self, wbrequest, *args):
+        head_insert_func = self.head_insert_view.create_insert_func(wbrequest)
+
+        ref_wburl_str = wbrequest.extract_referrer_wburl_str()
+        if ref_wburl_str:
+            wbrequest.env['REL_REFERER'] = WbUrl(ref_wburl_str).url
+
+        url = wbrequest.wb_url.url
+        result = self.rewriter.fetch_request(url, wbrequest.urlrewriter,
+                                             head_insert_func=head_insert_func,
+                                             env=wbrequest.env)
+
+        status_headers, gen, is_rewritten = result
+
+        return WbResponse(status_headers, gen)
+
+
+#=================================================================
+class ReplayView(BaseContentView):
     STRIP_SCHEME = re.compile('^([\w]+:[/]*)?(.*?)$')
 
-    def __init__(self, content_loader, content_rewriter, head_insert_view=None,
-                 redir_to_exact=True, buffer_response=False, reporter=None,
-                 memento=False):
+    def __init__(self, content_loader, config):
+        super(ReplayView, self).__init__(config)
 
         self.content_loader = content_loader
-        self.content_rewriter = content_rewriter
+        self.content_rewriter=RewriteContent(defmod=self._mp_mod)
 
-        self.head_insert_view = head_insert_view
+        self.buffer_response = config.get('buffer_response', True)
 
-        self.redir_to_exact = redir_to_exact
-        # buffer or stream rewritten response
-        self.buffer_response = buffer_response
+        self.redir_to_exact = config.get('redir_to_exact', True)
 
-        self._reporter = reporter
-
+        memento = config.get('enable_memento', False)
         if memento:
             self.response_class = MementoResponse
         else:
             self.response_class = WbResponse
 
-    def __call__(self, wbrequest, cdx_lines, cdx_loader):
+        self._reporter = config.get('reporter')
+
+    def render_content(self, wbrequest, *args):
         last_e = None
         first = True
+
+        cdx_lines = args[0]
+        cdx_loader = args[1]
 
         # List of already failed w/arcs
         failed_files = []

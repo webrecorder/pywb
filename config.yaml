@@ -104,3 +104,5 @@ enable_memento: true
 # Use lxml parser, if available
 use_lxml_parser: false
 
+# Replay content in an iframe
+framed_replay: true

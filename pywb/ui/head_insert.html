@@ -12,6 +12,7 @@
 {% endif %}
 <script>
   wbinfo = {}
+  wbinfo.timestamp = "{{ cdx.timestamp }}";
   wbinfo.capture_str = "{{ cdx.timestamp | format_ts }}";
   wbinfo.prefix = "{{ wbrequest.wb_prefix }}";
   wbinfo.is_embed = {{"true" if wbrequest.wb_url.is_embed else "false"}};
