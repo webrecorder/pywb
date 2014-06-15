@@ -110,7 +110,7 @@ reporter: !!python/object/new:tests.fixture.PrintReporter []
 #domain_specific_rules: rules.yaml
 
 # Use lxml parser, if available
-use_lxml_parser: false
+use_lxml_parser: true
 
 # Replay content in an iframe
 framed_replay: true
