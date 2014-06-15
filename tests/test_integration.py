@@ -85,30 +85,43 @@ class TestWb:
         actual_len = len(str(resp.body).rstrip().split('\n'))
         assert actual_len == 3, actual_len
 
-
-    def test_replay_1(self):
+    def test_replay_top_frame(self):
         resp = self.testapp.get('/pywb/20140127171238/http://www.iana.org/')
+
+        assert '<iframe ' in resp.body
+        assert '/pywb/20140127171238mp_/http://www.iana.org/' in resp.body
+
+    def test_replay_content(self):
+        resp = self.testapp.get('/pywb/20140127171238mp_/http://www.iana.org/')
         self._assert_basic_html(resp)
 
         assert 'Mon, Jan 27 2014 17:12:38' in resp.body
         assert 'wb.js' in resp.body
-        assert '/pywb/20140127171238/http://www.iana.org/time-zones"' in resp.body
+        assert '/pywb/20140127171238mp_/http://www.iana.org/time-zones"' in resp.body
+
+    def test_replay_non_frame_content(self):
+        resp = self.testapp.get('/pywb-nonframe/20140127171238/http://www.iana.org/')
+        self._assert_basic_html(resp)
+
+        assert 'Mon, Jan 27 2014 17:12:38' in resp.body
+        assert 'wb.js' in resp.body
+        assert '/pywb-nonframe/20140127171238/http://www.iana.org/time-zones"' in resp.body
 
     def test_replay_non_surt(self):
-        resp = self.testapp.get('/pywb-nosurt/20140103030321/http://example.com?example=1')
+        resp = self.testapp.get('/pywb-nosurt/20140103030321mp_/http://example.com?example=1')
         self._assert_basic_html(resp)
 
         assert 'Fri, Jan 03 2014 03:03:21' in resp.body
         assert 'wb.js' in resp.body
-        assert '/pywb-nosurt/20140103030321/http://www.iana.org/domains/example' in resp.body
+        assert '/pywb-nosurt/20140103030321mp_/http://www.iana.org/domains/example' in resp.body
 
     def test_replay_url_agnostic_revisit(self):
-        resp = self.testapp.get('/pywb/20130729195151/http://www.example.com/')
+        resp = self.testapp.get('/pywb/20130729195151mp_/http://www.example.com/')
         self._assert_basic_html(resp)
 
         assert 'Mon, Jul 29 2013 19:51:51' in resp.body
         assert 'wb.js' in resp.body
-        assert '/pywb/20130729195151/http://www.iana.org/domains/example"' in resp.body
+        assert '/pywb/20130729195151mp_/http://www.iana.org/domains/example"' in resp.body
 
     def test_replay_cdx_mod(self):
         resp = self.testapp.get('/pywb/20140127171239cdx_/http://www.iana.org/_css/2013.1/print.css')
@@ -164,42 +177,42 @@ class TestWb:
         assert resp.content_type == 'application/x-javascript'
 
     def test_redirect_1(self):
-        resp = self.testapp.get('/pywb/20140127171237/http://www.iana.org/')
+        resp = self.testapp.get('/pywb/20140127171237mp_/http://www.iana.org/')
         assert resp.status_int == 302
 
-        assert resp.headers['Location'].endswith('/pywb/20140127171238/http://iana.org')
+        assert resp.headers['Location'].endswith('/pywb/20140127171238mp_/http://iana.org')
 
 
     def test_redirect_replay_2(self):
-        resp = self.testapp.get('/pywb/http://example.com/')
+        resp = self.testapp.get('/pywb/mp_/http://example.com/')
         assert resp.status_int == 302
 
-        assert resp.headers['Location'].endswith('/20140127171251/http://example.com')
+        assert resp.headers['Location'].endswith('/20140127171251mp_/http://example.com')
         resp = resp.follow()
 
         #check resp
         self._assert_basic_html(resp)
         assert 'Mon, Jan 27 2014 17:12:51' in resp.body
-        assert '/pywb/20140127171251/http://www.iana.org/domains/example' in resp.body
+        assert '/pywb/20140127171251mp_/http://www.iana.org/domains/example' in resp.body
 
     def test_redirect_relative_3(self):
         # first two requests should result in same redirect
-        target = 'http://localhost:8080/pywb/2014/http://iana.org/_css/2013.1/screen.css'
+        target = 'http://localhost:8080/pywb/2014mp_/http://iana.org/_css/2013.1/screen.css'
 
         # without timestamp
-        resp = self.testapp.get('/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014/http://iana.org/')])
-        assert resp.status_int == 307
+        resp = self.testapp.get('/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014mp_/http://iana.org/')])
+        assert resp.status_int == 302
         assert resp.headers['Location'] == target, resp.headers['Location']
 
         # with timestamp
-        resp = self.testapp.get('/2014/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014/http://iana.org/')])
-        assert resp.status_int == 307
+        resp = self.testapp.get('/2014/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014mp_/http://iana.org/')])
+        assert resp.status_int == 302
         assert resp.headers['Location'] == target, resp.headers['Location']
 
 
         resp = resp.follow()
         assert resp.status_int == 302
-        assert resp.headers['Location'].endswith('/pywb/20140127171239/http://www.iana.org/_css/2013.1/screen.css')
+        assert resp.headers['Location'].endswith('/pywb/20140127171239mp_/http://www.iana.org/_css/2013.1/screen.css')
 
         resp = resp.follow()
         assert resp.status_int == 200
@@ -207,7 +220,7 @@ class TestWb:
 
 
     def test_referrer_self_redirect(self):
-        uri = '/pywb/20140127171239/http://www.iana.org/_css/2013.1/screen.css'
+        uri = '/pywb/20140127171239mp_/http://www.iana.org/_css/2013.1/screen.css'
         host = 'somehost:8082'
         referrer = 'http://' + host + uri
 
@@ -218,6 +231,34 @@ class TestWb:
         # redirect causes skip of this capture, redirect to next
         resp = self.testapp.get(uri, headers = [('Referer', referrer), ('Host', host)], status = 302)
         assert resp.status_int == 302
+
+
+    def test_post_1(self):
+        resp = self.testapp.post('/pywb/mp_/httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
+
+        # no redirects for POST, as some browsers (FF) show modal confirmation dialog!
+        #assert resp.status_int == 307
+        #assert resp.headers['Location'].endswith('/pywb/20140610000859/http://httpbin.org/post')
+
+        # XX webtest doesn't support 307 redirect of post
+        #resp = resp.follow()
+        #resp = self.testapp.post(resp.headers['Location'], {'foo': 'bar', 'test': 'abc'})
+
+        assert resp.status_int == 200
+        assert '"foo": "bar"' in resp.body
+        assert '"test": "abc"' in resp.body
+
+    def test_post_2(self):
+        resp = self.testapp.post('/pywb/20140610001255mp_/http://httpbin.org/post?foo=bar', {'data': '^'})
+        assert resp.status_int == 200
+        assert '"data": "^"' in resp.body
+
+    def test_post_redirect(self):
+        # post handled without redirect (since 307 not allowed)
+        resp = self.testapp.post('/post', {'foo': 'bar', 'test': 'abc'}, headers=[('Referer', 'http://localhost:8080/pywb/2014mp_/http://httpbin.org/post')])
+        assert resp.status_int == 200
+        assert '"foo": "bar"' in resp.body
+        assert '"test": "abc"' in resp.body
 
 
     def test_excluded_content(self):

@@ -50,16 +50,33 @@ class LiveRewriter(object):
 
         return (status_headers, stream)
 
-    def translate_headers(self, env, header_list=None):
+    def translate_headers(self, url, env):
         headers = {}
 
-        if not header_list:
-            header_list = self.PROXY_HEADER_LIST
+        splits = urlsplit(url)
 
-        for env_name, req_name in header_list:
-            value = env.get(env_name)
+        for name, value in env.iteritems():
+            if name == 'HTTP_HOST':
+                name = 'Host'
+                value = splits.netloc
+
+            elif name == 'HTTP_ORIGIN':
+                name = 'Origin'
+                value = (splits.scheme + '://' + splits.netloc)
+
+            elif name.startswith('HTTP_'):
+                name = name[5:].title().replace('_', '-')
+
+            elif name in ('CONTENT_LENGTH', 'CONTENT_TYPE'):
+                name = name.title().replace('_', '-')
+
+            elif name == 'REL_REFERER':
+                name = 'Referer'
+            else:
+                continue
+
             if value:
-                headers[req_name] = value
+                headers[name] = value
 
         return headers
 
@@ -76,17 +93,7 @@ class LiveRewriter(object):
             method = env['REQUEST_METHOD'].upper()
             input_ = env['wsgi.input']
 
-            host = env.get('HTTP_HOST')
-            origin = env.get('HTTP_ORIGIN')
-            if host or origin:
-                splits = urlsplit(url)
-                if host:
-                    req_headers['Host'] = splits.netloc
-                if origin:
-                    new_origin = (splits.scheme + '://' + splits.netloc)
-                    req_headers['Origin'] = new_origin
-
-            req_headers.update(self.translate_headers(env))
+            req_headers.update(self.translate_headers(url, env))
 
             if method in ('POST', 'PUT'):
                 len_ = env.get('CONTENT_LENGTH')

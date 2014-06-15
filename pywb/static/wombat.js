@@ -548,9 +548,9 @@ WB_wombat_init = (function() {
                 var desc;
 
                 if (child instanceof DocumentFragment) {
-     //               desc = child.querySelectorAll("*[href],*[src]");
+                    desc = child.querySelectorAll("a[href], iframe[src]");
                 } else if (child.getElementsByTagName) {
-     //               desc = child.getElementsByTagName("*");
+                    desc = child.getElementsByTagName("*");
                 }
 
                 if (desc) {
@@ -561,9 +561,14 @@ WB_wombat_init = (function() {
 
                 var created = orig.apply(this, arguments);
                 
-                if (created.tagName == "IFRAME" || 
-                    created.tagName == "IMG" || 
-                    created.tagName == "SCRIPT") {
+                if (created.tagName == "IFRAME" 
+                    //|| created.tagName == "IMG" 
+                    //|| created.tagName == "SCRIPT"
+                    ) {
+                    
+                    if (created.contentWindow) {
+                        created.contentWindow.window.WB_wombat_location = created.contentWindow.window.location;
+                    }
                     
                     override_attr(created, "src");
                     
@@ -633,6 +638,22 @@ WB_wombat_init = (function() {
                 window.frames[i].open = open_rewritten;
             } catch (e) {
                 console.log(e);
+            }
+        }
+    }
+    
+    //============================================
+    function init_write_override()
+    {
+        document.write = function(string) {
+            var doc = new DOMParser().parseFromString(string, "text/html");
+            
+            if (doc) {
+                var children = doc.body.children;
+                
+                for (var i = 0; i < children.length; i++) {
+                    document.body.appendChild(children[i]);
+                }
             }
         }
     }
@@ -714,6 +735,9 @@ WB_wombat_init = (function() {
 
         // postMessage
         init_postmessage_override();
+        
+        // write
+        init_write_override();
         
         // Ajax
         init_ajax_rewrite();

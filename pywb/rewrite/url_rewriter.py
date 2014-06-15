@@ -78,9 +78,12 @@ class UrlRewriter(object):
         return self.prefix + self.wburl.to_str(timestamp=timestamp, url=url)
 
     def rebase_rewriter(self, new_url):
-        #self.wburl.url = newUrl
-        new_wburl = copy.copy(self.wburl)
-        new_wburl.url = new_url
+        if new_url.startswith(self.prefix):
+            new_url = new_url[len(self.prefix):]
+
+        #new_wburl = copy.copy(self.wburl)
+        #new_wburl.url = new_url
+        new_wburl = WbUrl(new_url)
         return UrlRewriter(new_wburl, self.prefix)
 
     def get_cookie_rewriter(self):

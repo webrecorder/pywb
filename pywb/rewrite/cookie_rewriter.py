@@ -30,6 +30,10 @@ class WbUrlCookieRewriter(object):
             if morsel.get('expires'):
                 del morsel['expires']
 
+            # don't use max-age, just expire at end of session
+            if morsel.get('max-age'):
+                del morsel['max-age']
+
             results.append((header, morsel.OutputString()))
 
         return results

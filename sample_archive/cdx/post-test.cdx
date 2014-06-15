@@ -1,0 +1,4 @@
+ CDX N b a m s k r M S V g
+org,httpbin)/post?a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/json 200 M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2 - - 723 1196 post-test.warc.gz
+org,httpbin)/post?data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/json 200 B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ - - 723 2395 post-test.warc.gz
+org,httpbin)/post?foo=bar&test=abc 20140610000859 http://httpbin.org/post application/json 200 M532K5WS4GY2H4OVZO6HRPOP47A7KDWU - - 720 0 post-test.warc.gz

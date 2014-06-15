@@ -102,5 +102,7 @@ enable_cdx_api: true
 enable_memento: true
 
 # Use lxml parser, if available
-use_lxml_parser: true
+use_lxml_parser: false
 
+# Replay content in an iframe
+framed_replay: true

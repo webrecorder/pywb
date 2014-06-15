@@ -17,9 +17,12 @@ This file is part of pywb.
     along with pywb.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+_wb_js = (function() {
+
 function init_banner() {
     var PLAIN_BANNER_ID = "_wb_plain_banner";
     var FRAME_BANNER_ID = "_wb_frame_top_banner";
+    var bid;
 
     if (wbinfo.is_embed) {
         return;
@@ -44,7 +47,7 @@ function init_banner() {
 
         text = "This is an archived page ";
         if (wbinfo && wbinfo.capture_str) {
-            text += " from <b>" + wbinfo.capture_str + "</b>";
+            text += " from <b id='_wb_capture_info'>" + wbinfo.capture_str + "</b>";
         }
         banner.innerHTML = text;
 
@@ -76,32 +79,51 @@ function remove_event(name, func, object) {
     }
 }
 
-var notified_top = false;
-
-var detect_on_init = function() {
-    if (!notified_top && window && window.top && (window.self != window.top) && window.WB_wombat_location) {
-        if (!wbinfo.is_embed) {
-            window.top.postMessage(window.WB_wombat_location.href, "*");
-        }
-        notified_top = true;
+function notify_top(event) {    
+    if (window.self == window.top) {
+        return;
+    } 
+    
+    if (window.top.top != window.top) {
+        return;
+    }
+    
+    if (!window.WB_wombat_location) {
+        return;
+    }
+    
+    if (wbinfo.is_embed) {
+        return;
+    }
+    
+    if (event.target != window.document) {
+        return;
     }
 
-    if (document.readyState === "interactive" ||
-        document.readyState === "complete") {
-        
-        init_banner();
-
-        remove_event("readystatechange", detect_on_init, document);
+    if (typeof(window.WB_wombat_location.href) != "string") {
+        return;
     }
+
+    if (window.top.update_wb_url) {
+        window.top.update_wb_url(window.WB_wombat_location.href, wbinfo.timestamp, wbinfo.capture_str);
+    }
+}
+
+var detect_on_init = function(event) {
+    init_banner();  
+    notify_top(event);    
+    remove_event("readystatechange", detect_on_init, document);
 }
 
 add_event("readystatechange", detect_on_init, document);
 
 
+
 if (wbinfo.is_frame_mp && wbinfo.canon_url &&
-   (window.self == window.top) && 
+   (window.self == window.top) && (window.self.top == window.top) &&
    window.location.href != wbinfo.canon_url) {
     
-    console.log('frame');
     window.location.replace(wbinfo.canon_url);
 }
+
+})();

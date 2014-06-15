@@ -87,9 +87,9 @@ class FuzzyQuery:
 
             matched_rule = rule
 
-            if len(m.groups()) == 1:
-                #filter_.append('~urlkey:' + m.group(1))
-                filter_.append(rule.filter.format(m.group(1)))
+            groups = m.groups()
+            for g in groups:
+                filter_.append(rule.filter.format(g))
 
             break
 
@@ -147,7 +147,6 @@ class CDXDomainSpecificRule(BaseRule):
         if self.replace:
             self.replace = unsurt(self.replace)
 
-
-if __name__ == "__main__":
+    if __name__ == "__main__":
         import doctest
         doctest.testmod()

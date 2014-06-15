@@ -13,10 +13,18 @@ collections:
     pywb: ./sample_archive/cdx/
 
     # ex with filtering: filter CDX lines by filename starting with 'dupe'
-    pywb-filt: {'index_paths': './sample_archive/cdx/', 'filters': ['filename:dupe*']}
+    pywb-filt:
+        index_paths: './sample_archive/cdx/'
+        filters: ['filename:dupe*']
+    
+    pywb-nonframe:
+        index_paths: './sample_archive/cdx/'
+        framed_replay: false
 
     # collection of non-surt CDX
-    pywb-nosurt: {'index_paths': './sample_archive/non-surt-cdx/', 'surt_ordered': False}
+    pywb-nosurt: 
+        index_paths: './sample_archive/non-surt-cdx/'
+        surt_ordered: false
 
 
 # indicate if cdx files are sorted by SURT keys -- eg: com,example)/
@@ -100,6 +108,12 @@ reporter: !!python/object/new:tests.fixture.PrintReporter []
 
 # custom rules for domain specific matching
 #domain_specific_rules: rules.yaml
+
+# Use lxml parser, if available
+use_lxml_parser: true
+
+# Replay content in an iframe
+framed_replay: true
 
 # ==== New / Experimental Settings ====
 # Not yet production ready -- used primarily for testing

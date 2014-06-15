@@ -1,3 +1,18 @@
+pywb 0.4.5 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Support for framed or non-framed mode replay, toggleable via the ``framed_replay`` flag in the config.yaml
+
+* Cookie rewriter: remove Max-Age to use ensure session-expiry instead of long-term cookie (experimental).
+
+* Live Rewrite: proxy all headers, instead of a whitelist.
+
+* Fixes to ``<base>`` tag handling, now correctly rewriting remainder of urls with the set base.
+
+* ``cdx-indexer`` options for resolving POST requests, and indexing request records. (``-p`` and ``-a``)
+
+* Improved `POST request replay <https://github.com/ikreymer/pywb/wiki/POST-request-replay>`_, allowing for improved replay of many captures relying on POST requests.
+
 pywb 0.4.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

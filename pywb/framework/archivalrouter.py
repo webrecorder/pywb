@@ -2,6 +2,7 @@ import urlparse
 import re
 
 from pywb.rewrite.url_rewriter import UrlRewriter
+from pywb.rewrite.wburl import WbUrl
 from wbrequestresponse import WbRequest, WbResponse
 
 
@@ -161,9 +162,13 @@ class ReferRedirect:
 
             path = path[len(app_path):]
 
+        ref_route = None
+        ref_request = None
+
         for route in routes:
             ref_request = route.parse_request(env, False, request_uri=path)
             if ref_request:
+                ref_route = route
                 break
 
         # must have matched one of the routes
@@ -186,10 +191,19 @@ class ReferRedirect:
             # 2013/path.html -> /path.html
             rel_request_uri = rel_request_uri[len(timestamp_path) - 1:]
 
+        rewritten_url = rewriter.rewrite(rel_request_uri)
+
+        # if post, can't redirect as that would lost the post data
+        # (can't use 307 because FF will show confirmation warning)
+        if ref_request.method == 'POST':
+            new_wb_url = WbUrl(rewritten_url[len(rewriter.prefix):])
+            ref_request.wb_url.url = new_wb_url.url
+            return ref_route.handler(ref_request)
+
         final_url = urlparse.urlunsplit((ref_split.scheme,
                                          ref_split.netloc,
-                                         rewriter.rewrite(rel_request_uri),
+                                         rewritten_url,
                                          '',
                                          ''))
 
-        return WbResponse.redir_response(final_url, status='307 Temp Redirect')
+        return WbResponse.redir_response(final_url, status='302 Temp Redirect')

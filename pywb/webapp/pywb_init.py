@@ -9,7 +9,6 @@ from pywb.framework.basehandlers import BaseHandler
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
 
-from pywb.rewrite.rewrite_content import RewriteContent
 from pywb.rewrite.rewriterules import use_lxml_parser
 
 from views import J2TemplateView, add_env_globals
@@ -66,8 +65,7 @@ class DictChain:
 
 
 #=================================================================
-def create_wb_handler(query_handler, config,
-                      ds_rules_file=DEFAULT_RULES_FILE):
+def create_wb_handler(query_handler, config):
 
     cookie_maker = config.get('cookie_maker')
     record_loader = ArcWarcRecordLoader(cookie_maker=cookie_maker)
@@ -81,28 +79,7 @@ def create_wb_handler(query_handler, config,
     if template_globals:
         add_env_globals(template_globals)
 
-    head_insert_view = (HeadInsertView.
-                        create_template(config.get('head_insert_html'),
-                                       'Head Insert'))
-
-    defmod = config.get('default_mod', '')
-
-    replayer = ReplayView(
-        content_loader=resolving_loader,
-
-        content_rewriter=RewriteContent(ds_rules_file=ds_rules_file,
-                                        defmod=defmod),
-
-        head_insert_view=head_insert_view,
-
-        buffer_response=config.get('buffer_response', True),
-
-        redir_to_exact=config.get('redir_to_exact', True),
-
-        memento=config.get('enable_memento', False),
-
-        reporter=config.get('reporter')
-    )
+    replayer = ReplayView(resolving_loader, config)
 
     search_view = (J2TemplateView.
                    create_template(config.get('search_html'),
@@ -137,7 +114,7 @@ def init_collection(value, config):
                                                   ds_rules_file,
                                                   html_view)
 
-    return route_config, query_handler, ds_rules_file
+    return route_config, query_handler
 
 
 #=================================================================
@@ -167,7 +144,7 @@ def create_cdx_server_app(passed_config):
 
     for name, value in collections.iteritems():
         result = init_collection(value, config)
-        route_config, query_handler, ds_rules_file = result
+        route_config, query_handler = result
 
         cdx_api_suffix = route_config.get('enable_cdx_api', True)
 
@@ -210,12 +187,11 @@ def create_wb_router(passed_config={}):
             continue
 
         result = init_collection(value, config)
-        route_config, query_handler, ds_rules_file = result
+        route_config, query_handler = result
 
         wb_handler = create_wb_handler(
             query_handler=query_handler,
-            config=route_config,
-            ds_rules_file=ds_rules_file,
+            config=route_config
         )
 
         logging.debug('Adding Collection: ' + name)
