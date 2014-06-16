@@ -109,7 +109,6 @@ class JSLinkOnlyRewriter(RegexRewriter):
 
     def __init__(self, rewriter, rules=[]):
         rules = rules + [
-            #(self.JS_HTTPX, rewriter.get_abs_url(), 0)
             (self.JS_HTTPX, RegexRewriter.archival_rewrite(rewriter), 0)
         ]
         super(JSLinkOnlyRewriter, self).__init__(rules)
@@ -129,11 +128,14 @@ class JSLinkAndLocationRewriter(JSLinkOnlyRewriter):
              (r'(?<=document\.)referrer', RegexRewriter.add_prefix(prefix), 0),
 
             #todo: move to mixin?
+             (r'(?:[\s=()]|^)(top)(?:[\s!=()]|$)',
+              RegexRewriter.add_prefix(prefix), 1),
+
              (r'(?<=window\.)top',
               RegexRewriter.add_prefix(prefix), 0),
 
-             (r'\b(top)\b[!=\W]+(?:self|window)',
-              RegexRewriter.add_prefix(prefix), 1),
+#             (r'\b(top)\b[!=\W]+(?:self|window)',
+#              RegexRewriter.add_prefix(prefix), 1),
 
              #(r'\b(?:self|window)\b[!=\W]+\b(top)\b',
              #RegexRewriter.add_prefix(prefix), 1),

@@ -1,3 +1,8 @@
+pywb 0.4.6 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Improved top -> WB_wombat_top rewriting.
+
 pywb 0.4.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
