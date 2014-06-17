@@ -34,22 +34,54 @@ function make_inner_url(url, ts)
 }
 
 function push_state(url, timestamp, capture_str) {
+    var curr_href = null;
+    
+    if (window.frames[0].WB_wombat_location) {
+        curr_href = window.frames[0].WB_wombat_location.href;
+    }
+    
+    console.log(curr_href);
+    console.log(url);
+    
+    if (url != curr_href) {
+        update_status(capture_str);
+        return;
+    }
+    
+    if (!timestamp) {
+        timestamp = extract_ts(window.frames[0].location.href);
+    }
+    
     var state = {}
-    state.outer_url = make_outer_url(url, timestamp);
-    state.inner_url = make_inner_url(url, timestamp);
+    state.timestamp = timestamp;
+    state.outer_url = make_outer_url(url, state.timestamp);
+    state.inner_url = make_inner_url(url, state.timestamp);
+    state.url = url;
     state.capture_str = capture_str;
     
-    //if (url == wbinfo.capture_url) {
-    //    return;
-    //}
-
     window.history.replaceState(state, "", state.outer_url);
+
     update_status(state.capture_str);
 }
 
 function pop_state(state) {
     update_status(state.capture_str);
+    
     window.frames[0].src = state.outer_url;
+}
+
+function extract_ts(url)
+{
+    var inx = url.indexOf("mp_");
+    if (inx < 0) {
+        return "";
+    }
+    url = url.substring(0, inx);
+    inx = url.lastIndexOf("/");
+    if (inx <= 0) {
+        return "";
+    }
+    return url.substring(inx + 1);
 }
 
 function update_status(str) {
