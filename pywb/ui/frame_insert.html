@@ -39,10 +39,7 @@ function push_state(url, timestamp, capture_str) {
     if (window.frames[0].WB_wombat_location) {
         curr_href = window.frames[0].WB_wombat_location.href;
     }
-    
-    console.log(curr_href);
-    console.log(url);
-    
+        
     if (url != curr_href) {
         update_status(capture_str);
         return;

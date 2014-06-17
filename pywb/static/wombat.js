@@ -561,20 +561,17 @@ WB_wombat_init = (function() {
 
                 var created = orig.apply(this, arguments);
                 
-                if (created.tagName == "IFRAME" 
-                    //|| created.tagName == "IMG" 
-                    //|| created.tagName == "SCRIPT"
-                    ) {
-                    
+                if (created.tagName == "IFRAME") {          
                     if (created.contentWindow) {
                         created.contentWindow.window.WB_wombat_location = created.contentWindow.window.location;
                     }
                     
                     override_attr(created, "src");
-                    
-                } else if (created.tagName == "A") {
-                    override_attr(created, "href");
                 }
+                    
+//                } else if (created.tagName == "A") {
+//                    override_attr(created, "href");
+//                }
                 
                 return created;
             }
@@ -704,14 +701,22 @@ WB_wombat_init = (function() {
         }
         
         var is_framed = (window.top.wbinfo && window.top.wbinfo.is_frame);
+        
+        function find_next_top(win) {
+            while ((win.parent != win) && (win.parent != win.top)) {
+                win = win.parent;
+            }
+            return win;
+        }
 
         if (window.self.location != window.top.location) {
             if (is_framed) {
                 window.top.WB_wombat_location = window.WB_wombat_location;
-                window.WB_wombat_top = window.self;
+                
+                window.WB_wombat_top = find_next_top(window.self);
+                
             } else {
                 window.top.WB_wombat_location = new WombatLocation(window.top.location);
-                
                 window.WB_wombat_top = window.top;
             }
         } else {
