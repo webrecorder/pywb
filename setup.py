@@ -84,7 +84,7 @@ setup(
         [console_scripts]
         wayback = pywb.apps.wayback:main
         cdx-server = pywb.apps.cdx_server:main
-        cdx-indexer = pywb.warc.archiveindexer:main
+        cdx-indexer = pywb.warc.cdxindexer:main
         live-rewrite-server = pywb.apps.live_rewrite_server:main
         """,
     zip_safe=False,

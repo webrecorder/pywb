@@ -46,8 +46,7 @@ class ArcWarcRecordLoader:
     HTTP_VERBS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE',
                   'OPTIONS', 'CONNECT', 'PATCH']
 
-    def __init__(self, loader=None, cookie_maker=None, block_size=8192,
-                 parse_request=False):
+    def __init__(self, loader=None, cookie_maker=None, block_size=8192):
         if not loader:
             loader = BlockLoader(cookie_maker)
 
@@ -59,9 +58,7 @@ class ArcWarcRecordLoader:
         self.warc_parser = StatusAndHeadersParser(self.WARC_TYPES)
         self.http_parser = StatusAndHeadersParser(self.HTTP_TYPES)
 
-        self.parse_request = parse_request
-        if self.parse_request:
-            self.http_req_parser = StatusAndHeadersParser(self.HTTP_VERBS)
+        self.http_req_parser = StatusAndHeadersParser(self.HTTP_VERBS)
 
     def load(self, url, offset, length):
         """ Load a single record from given url at offset with length
@@ -117,9 +114,6 @@ class ArcWarcRecordLoader:
         except ValueError:
             is_err = True
 
-        # ================================================================
-        # handle different types of records
-
         # err condition
         if is_err:
             status_headers = StatusAndHeaders('-', [])
@@ -128,6 +122,15 @@ class ArcWarcRecordLoader:
         elif length == 0:
             status_headers = StatusAndHeaders('204 No Content', [])
 
+        # limit stream to the length for all valid records
+        stream = LimitReader.wrap_stream(stream, length)
+
+        if length == 0:
+            # already handled error case above
+            pass
+
+        # ================================================================
+        # handle different types of records
         # special case: warc records that are not expected to have http headers
         # attempt to add 200 status and content-type
         elif rec_type == 'metadata' or rec_type == 'resource':
@@ -138,32 +141,15 @@ class ArcWarcRecordLoader:
 
         elif (rec_type == 'warcinfo' or
               rec_type == 'arc_header'):
-            # not parsing these for now
+            # no extra parsing of body for these
             status_headers = StatusAndHeaders('204 No Content', [])
 
         elif (rec_type == 'request'):
-            if self.parse_request:
-                status_headers = self.http_req_parser.parse(stream)
-            else:
-                status_headers = StatusAndHeaders('204 No Content', [])
+            status_headers = self.http_req_parser.parse(stream)
 
-        # special case: http 0.9 response, no status or headers
-        #elif rec_type == 'response':
-        #    content_type = rec_headers.get_header('Content-Type')
-        #    if content_type and (';version=0.9' in content_type):
-        #        status_headers = StatusAndHeaders('200 OK', [])
-
-        # response record: parse HTTP status and headers!
+            # response record: parse HTTP status and headers!
         else:
-            #(statusline, http_headers) = self.parse_http_headers(stream)
             status_headers = self.http_parser.parse(stream)
-
-        # limit the stream to the remainder, if >0
-        # should always be valid, but just in case, still stream if
-        # content-length was not set
-        remains = length - status_headers.total_len
-        if remains >= 0:
-            stream = LimitReader.wrap_stream(stream, remains)
 
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, status_headers)

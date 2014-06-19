@@ -330,7 +330,7 @@ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - \
 def load_test_archive(test_file, offset, length):
     path = test_warc_dir + test_file
 
-    testloader = ArcWarcRecordLoader(parse_request=True)
+    testloader = ArcWarcRecordLoader()
 
     archive = testloader.load(path, offset, length)
 

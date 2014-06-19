@@ -24,6 +24,15 @@ com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 20
 com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 896 3161 example.warc
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 854 4771 example.warc
 
+# warc all
+>>> print_cdx_index('example.warc', include_all=True)
+ CDX N b a m s k r M S V g
+com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1987 460 example.warc
+com,example)/?example=1 20140103030321 http://example.com?example=1 - - - - - 706 2451 example.warc
+com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 896 3161 example.warc
+com,example)/?example=1 20140103030341 http://example.com?example=1 - - - - - 706 4061 example.warc
+org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 854 4771 example.warc
+
 # arc.gz
 >>> print_cdx_index('example.arc.gz')
  CDX N b a m s k r M S V g
@@ -101,7 +110,7 @@ org,iana,example)/ 20130702195402 http://example.iana.org/ text/html 200 B2LTWWP
 >>> cli_lines(['--sort', '-a', '-p', TEST_WARC_DIR])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
 org,iana,example)/ 20130702195402 http://example.iana.org/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1001 353 example-url-agnostic-orig.warc.gz
-392
+395
 
 # test writing to stdout
 >>> cli_lines(['-', TEST_WARC_DIR + 'example.warc.gz'])
@@ -124,7 +133,9 @@ org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example tex
 """
 
 from pywb import get_test_dir
-from pywb.warc.archiveindexer import ArchiveIndexer, main, cdx_filename
+
+#from pywb.warc.archiveindexer import ArchiveIndexer, main, cdx_filename
+from pywb.warc.cdxindexer import write_index, main, cdx_filename, CDXWriter, SortedCDXWriter
 
 from io import BytesIO
 import sys
@@ -149,14 +160,16 @@ def read_fully(cdx):
 def cdx_index(warc, sort=False,
               include_all=False, append_post_query=False):
     buff = BytesIO()
-    with open(TEST_WARC_DIR + warc) as fh:
-        indexer = ArchiveIndexer(fh, warc,
-                                 out=buff,
-                                 sort=sort,
-                                 include_all=include_all,
-                                 append_post_query=append_post_query)
 
-        indexer.make_index()
+    if sort:
+        writer_cls = SortedCDXWriter
+    else:
+        writer_cls = CDXWriter
+
+    with writer_cls(buff) as writer:
+        with open(TEST_WARC_DIR + warc) as fh:
+            write_index(writer, warc, fh,
+                        True, append_post_query, include_all)
 
     return buff.getvalue()
 
