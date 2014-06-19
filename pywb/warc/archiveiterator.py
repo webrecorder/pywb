@@ -170,22 +170,26 @@ class ArchiveIndexEntry(object):
         if digest:
             self.digest = digest
 
-    def add_post_query(self, other, options):
+    def merge_request_data(self, other, options):
         surt_ordered = options.get('surt_ordered')
 
         if other.record.rec_type != 'request':
-            return False
-
-        if not hasattr(other, 'post_query'):
             return False
 
         # two requests, not correct
         if self.record.rec_type == 'request':
             return False
 
-        url = append_post_query(self.url, other.post_query)
-        self.key = canonicalize(url, surt_ordered)
-        other.key = self.key
+        # merge POST/PUT body query
+        if hasattr(other, 'post_query'):
+            url = append_post_query(self.url, other.post_query)
+            self.key = canonicalize(url, surt_ordered)
+            other.key = self.key
+
+        referer = other.record.status_headers.get_header('referer')
+        if referer:
+            self.referer = referer
+
         return True
 
 
@@ -244,13 +248,14 @@ def join_request_records(entry_iter, options):
         # check for url match
         if (entry.url != prev_entry.url):
             pass
-        # check for concurrency also
-        #elif (entry.record.rec_headers.get_header('WARC-Concurrent-To') !=
-        #    prev_entry.record.rec_headers.get_header('WARC-Record-ID')):
-        #    pass
 
-        elif (entry.add_post_query(prev_entry, options) or
-            prev_entry.add_post_query(entry, options)):
+        # check for concurrency also
+        elif (entry.record.rec_headers.get_header('WARC-Concurrent-To') !=
+            prev_entry.record.rec_headers.get_header('WARC-Record-ID')):
+            pass
+
+        elif (entry.merge_request_data(prev_entry, options) or
+            prev_entry.merge_request_data(entry, options)):
             yield prev_entry
             yield entry
             prev_entry = None

@@ -107,9 +107,9 @@ org,iana,example)/ 20130702195402 http://example.iana.org/ text/html 200 B2LTWWP
 204
 
 # test sort, multiple inputs, all records + post query
->>> cli_lines(['--sort', '-a', '-p', TEST_WARC_DIR])
-com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
-org,iana,example)/ 20130702195402 http://example.iana.org/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1001 353 example-url-agnostic-orig.warc.gz
+>>> cli_lines(['--sort', '-a', '-p', '-9', TEST_WARC_DIR])
+com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - 355 example-url-agnostic-revisit.warc.gz
+org,iana,example)/ 20130702195402 http://example.iana.org/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - 353 example-url-agnostic-orig.warc.gz
 395
 
 # test writing to stdout

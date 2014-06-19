@@ -10,11 +10,16 @@ from archiveiterator import create_index_iter
 
 #=================================================================
 class CDXWriter(object):
-    def __init__(self, out):
+    def __init__(self, out, cdx09=False):
         self.out = out
+        self.cdx09 = cdx09
 
     def __enter__(self):
-        self.out.write(' CDX N b a m s k r M S V g\n')
+        if not self.cdx09:
+            self.out.write(' CDX N b a m s k r M S V g\n')
+        else:
+            self.out.write(' CDX N b a m s k r V g\n')
+
         return self
 
     def write(self, entry, filename):
@@ -23,8 +28,7 @@ class CDXWriter(object):
     def __exit__(self, *args):
         return False
 
-    @staticmethod
-    def write_cdx_line(out, entry, filename):
+    def write_cdx_line(self, out, entry, filename):
         out.write(entry.key)
         out.write(' ')
         out.write(entry.timestamp)
@@ -36,9 +40,12 @@ class CDXWriter(object):
         out.write(entry.status)
         out.write(' ')
         out.write(entry.digest)
-        out.write(' - - ')
-        out.write(entry.length)
-        out.write(' ')
+        if self.cdx09:
+            out.write(' - ')
+        else:
+            out.write(' - - ')
+            out.write(entry.length)
+            out.write(' ')
         out.write(entry.offset)
         out.write(' ')
         out.write(filename)
@@ -47,9 +54,9 @@ class CDXWriter(object):
 
 #=================================================================
 class SortedCDXWriter(CDXWriter):
-    def __init__(self, out):
-        super(SortedCDXWriter, self).__init__(out)
+    def __enter__(self):
         self.sortlist = []
+        return super(SortedCDXWriter, self).__enter__()
 
     def write(self, entry, filename):
         outbuff = BytesIO()
@@ -74,7 +81,7 @@ def iter_file_or_dir(inputs):
 
 #=================================================================
 def index_to_file(inputs, output, sort,
-                  surt_ordered, include_all, append_post_query):
+                  surt_ordered, include_all, append_post, cdx09):
     if output == '-':
         outfile = sys.stdout
     else:
@@ -85,15 +92,15 @@ def index_to_file(inputs, output, sort,
     else:
         writer_cls = CDXWriter
 
-    with writer_cls(outfile) as writer:
+    with writer_cls(outfile, cdx09) as writer:
         for fullpath, filename in iter_file_or_dir(inputs):
             with open(fullpath, 'r') as infile:
                 write_index(writer, filename, infile,
-                            surt_ordered, append_post_query, include_all)
+                            surt_ordered, append_post, include_all)
 
 #=================================================================
 def index_to_dir(inputs, output, sort,
-                 surt_ordered, include_all, append_post_query):
+                 surt_ordered, include_all, append_post, cdx09):
 
     if sort:
         writer_cls = SortedCDXWriter
@@ -101,15 +108,14 @@ def index_to_dir(inputs, output, sort,
         writer_cls = CDXWriter
 
     for fullpath, filename in iter_file_or_dir(inputs):
-
         outpath = cdx_filename(filename)
         outpath = os.path.join(output, outpath)
 
         with open(outpath, 'w') as outfile:
-            with writer_cls(outfile) as writer:
+            with writer_cls(outfile, cdx09) as writer:
                 with open(fullpath, 'r') as infile:
                     write_index(writer, filename, infile,
-                                surt_ordered, append_post_query, include_all)
+                                surt_ordered, append_post, include_all)
 
 #=================================================================
 def remove_ext(filename):
@@ -170,6 +176,10 @@ urls for the cdx key. Default is to use SURT keys.
 Not-recommended for new cdx, use only for backwards-compatibility.
 """
 
+    cdx09_help = """
+Use older 9-field cdx format, default is 11-cdx field
+"""
+
     output_help = """output file or directory.
 - If directory, each input file is written to a seperate output file
   with a .cdx extension
@@ -207,16 +217,20 @@ form query to url key. (Only applies to form url encoded posts)"""
                         action='store_true',
                         help=unsurt_help)
 
+    parser.add_argument('-9', '--cdx09',
+                        action='store_true',
+                        help=cdx09_help)
+
     parser.add_argument('output', nargs='?', default='-', help=output_help)
     parser.add_argument('inputs', nargs='+', help=input_help)
 
     cmd = parser.parse_args(args=args)
     if cmd.output != '-' and os.path.isdir(cmd.output):
         index_to_dir(cmd.inputs, cmd.output, cmd.sort,
-                     not cmd.unsurt, cmd.allrecords, cmd.postappend)
+                     not cmd.unsurt, cmd.allrecords, cmd.postappend, cmd.cdx09)
     else:
         index_to_file(cmd.inputs, cmd.output, cmd.sort,
-                      not cmd.unsurt, cmd.allrecords, cmd.postappend)
+                      not cmd.unsurt, cmd.allrecords, cmd.postappend, cmd.cdx09)
 
 
 if __name__ == '__main__':
