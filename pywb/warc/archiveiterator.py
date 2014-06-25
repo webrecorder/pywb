@@ -171,7 +171,7 @@ class ArchiveIndexEntry(object):
             self.digest = digest
 
     def merge_request_data(self, other, options):
-        surt_ordered = options.get('surt_ordered')
+        surt_ordered = options.get('surt_ordered', True)
 
         if other.record.rec_type != 'request':
             return False
@@ -354,7 +354,7 @@ def create_index_iter(fh, **options):
 
     entry_iter = create_record_iter(aiter, options)
 
-    if options.get('append_post'):
+    if options.get('append_post') == True:
         entry_iter = join_request_records(entry_iter, options)
 
     for entry in entry_iter:

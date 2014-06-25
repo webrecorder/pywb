@@ -80,44 +80,6 @@ def iter_file_or_dir(inputs):
 
 
 #=================================================================
-def index_to_file(inputs, output, sort,
-                  surt_ordered, include_all, append_post, cdx09):
-    if output == '-':
-        outfile = sys.stdout
-    else:
-        outfile = open(output, 'w')
-
-    if sort:
-        writer_cls = SortedCDXWriter
-    else:
-        writer_cls = CDXWriter
-
-    with writer_cls(outfile, cdx09) as writer:
-        for fullpath, filename in iter_file_or_dir(inputs):
-            with open(fullpath, 'r') as infile:
-                write_index(writer, filename, infile,
-                            surt_ordered, append_post, include_all)
-
-#=================================================================
-def index_to_dir(inputs, output, sort,
-                 surt_ordered, include_all, append_post, cdx09):
-
-    if sort:
-        writer_cls = SortedCDXWriter
-    else:
-        writer_cls = CDXWriter
-
-    for fullpath, filename in iter_file_or_dir(inputs):
-        outpath = cdx_filename(filename)
-        outpath = os.path.join(output, outpath)
-
-        with open(outpath, 'w') as outfile:
-            with writer_cls(outfile, cdx09) as writer:
-                with open(fullpath, 'r') as infile:
-                    write_index(writer, filename, infile,
-                                surt_ordered, append_post, include_all)
-
-#=================================================================
 def remove_ext(filename):
     for ext in ('.arc', '.arc.gz', '.warc', '.warc.gz'):
         if filename.endswith(ext):
@@ -133,16 +95,57 @@ def cdx_filename(filename):
 
 
 #=================================================================
-def write_index(writer, filename, infile,
-                surt_ordered, append_post, include_all):
+def write_multi_cdx_index(output, inputs, **options):
 
-    entry_iter = create_index_iter(infile,
-                                   surt_ordered=surt_ordered,
-                                   append_post=append_post,
-                                   include_all=include_all)
+    # write one cdx per dir
+    if output != '-' and os.path.isdir(output):
+        for fullpath, filename in iter_file_or_dir(inputs):
+            outpath = cdx_filename(filename)
+            outpath = os.path.join(output, outpath)
 
-    for entry in entry_iter:
-        writer.write(entry, filename)
+            with open(outpath, 'w') as outfile:
+                with open(fullpath, 'r') as infile:
+                    write_cdx_index(outfile, infile, filename, **options)
+
+    # write to one cdx file
+    else:
+        if output == '-':
+            outfile = sys.stdout
+        else:
+            outfile = open(output, 'w')
+
+        if options.get('sort'):
+            writer_cls = SortedCDXWriter
+        else:
+            writer_cls = CDXWriter
+
+        with writer_cls(outfile, options.get('cdx09')) as writer:
+            for fullpath, filename in iter_file_or_dir(inputs):
+                with open(fullpath, 'r') as infile:
+                    entry_iter = create_index_iter(infile, **options)
+
+                    for entry in entry_iter:
+                        writer.write(entry, filename)
+
+
+#=================================================================
+def write_cdx_index(outfile, infile, filename, **options):
+    writer_cls = options.get('writer_cls')
+
+    if writer_cls:
+        pass
+    elif options.get('sort'):
+        writer_cls = SortedCDXWriter
+    else:
+        writer_cls = CDXWriter
+
+    with writer_cls(outfile, options.get('cdx09')) as writer:
+        entry_iter = create_index_iter(infile, **options)
+
+        for entry in entry_iter:
+            writer.write(entry, filename)
+
+    return writer
 
 
 #=================================================================
@@ -225,12 +228,13 @@ form query to url key. (Only applies to form url encoded posts)"""
     parser.add_argument('inputs', nargs='+', help=input_help)
 
     cmd = parser.parse_args(args=args)
-    if cmd.output != '-' and os.path.isdir(cmd.output):
-        index_to_dir(cmd.inputs, cmd.output, cmd.sort,
-                     not cmd.unsurt, cmd.allrecords, cmd.postappend, cmd.cdx09)
-    else:
-        index_to_file(cmd.inputs, cmd.output, cmd.sort,
-                      not cmd.unsurt, cmd.allrecords, cmd.postappend, cmd.cdx09)
+
+    write_multi_cdx_index(cmd.output, cmd.inputs,
+                          sort=cmd.sort,
+                          surt_ordered=not cmd.unsurt,
+                          include_all=cmd.allrecords,
+                          append_post=cmd.postappend,
+                          cdx09=cmd.cdx09)
 
 
 if __name__ == '__main__':

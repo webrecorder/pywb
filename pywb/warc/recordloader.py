@@ -94,21 +94,29 @@ class ArcWarcRecordLoader:
                                                                known_format))
 
         if the_format == 'arc':
-            if rec_headers.get_header('uri').startswith('filedesc://'):
-                rec_type = 'arc_header'
-                length = 0
-            else:
-                rec_type = 'response'
-                length = rec_headers.get_header('length')
+            rec_type = 'response'
+            uri = rec_headers.get_header('uri')
+            length = rec_headers.get_header('length')
+            sub_len = rec_headers.total_len
 
         elif the_format == 'warc':
             rec_type = rec_headers.get_header('WARC-Type')
+            uri = rec_headers.get_header('WARC-Target-URI')
             length = rec_headers.get_header('Content-Length')
+            sub_len = 0
+
+        if rec_type == 'response' and uri:
+            if uri.startswith('filedesc://'):
+                rec_type = 'arc_header'
+            elif uri.startswith('dns:'):
+                rec_type = 'dns_response'
+            elif uri.startswith('whois:'):
+                rec_type = 'whois_response'
 
         is_err = False
 
         try:
-            length = int(length)
+            length = int(length) - sub_len
             if length < 0:
                 is_err = True
         except ValueError:
@@ -139,8 +147,7 @@ class ArcWarcRecordLoader:
 
             status_headers = StatusAndHeaders('200 OK', content_type)
 
-        elif (rec_type == 'warcinfo' or
-              rec_type == 'arc_header'):
+        elif (rec_type in ('warcinfo', 'arc_header', 'dns_response', 'whois_response')):
             # no extra parsing of body for these
             status_headers = StatusAndHeaders('204 No Content', [])
 
@@ -182,7 +189,7 @@ class ArcWarcRecordLoader:
             return 'arc', rec_headers
         except StatusAndHeadersParserException as se:
             if known_format == 'arc':
-                msg = 'Invalid WARC record, first line: '
+                msg = 'Invalid ARC record, first line: '
             else:
                 msg = 'Unknown archive format, first line: '
             raise ArchiveLoadFailed(msg + str(se.statusline))
@@ -194,16 +201,15 @@ class ARCHeadersParser:
         self.headernames = headernames
 
     def parse(self, stream, headerline=None):
-
         total_read = 0
 
         # if headerline passed in, use that
         if headerline is None:
             headerline = stream.readline()
 
-        total_read = len(headerline)
+        header_len = len(headerline)
 
-        if total_read == 0:
+        if header_len == 0:
             raise EOFError()
 
         headerline = headerline.rstrip()
@@ -212,8 +218,10 @@ class ARCHeadersParser:
 
         # if arc header, consume next two lines
         if headerline.startswith('filedesc://'):
-            stream.readline()  # skip version
-            stream.readline()  # skip header spec, use preset one
+            version = stream.readline()  # skip version
+            spec = stream.readline()  # skip header spec, use preset one
+            total_read += len(version)
+            total_read += len(spec)
 
         parts = headerline.split(' ')
 

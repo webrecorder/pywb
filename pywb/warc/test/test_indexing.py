@@ -69,7 +69,7 @@ org,httpbin)/post 20140610001151 http://httpbin.org/post application/json 200 M7
 org,httpbin)/post?foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/json 200 B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ - - 723 2395 post-test.warc.gz
 
 # post append
->>> print_cdx_index('post-test.warc.gz', append_post_query=True)
+>>> print_cdx_index('post-test.warc.gz', append_post=True)
  CDX N b a m s k r M S V g
 org,httpbin)/post?foo=bar&test=abc 20140610000859 http://httpbin.org/post application/json 200 M532K5WS4GY2H4OVZO6HRPOP47A7KDWU - - 720 0 post-test.warc.gz
 org,httpbin)/post?a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/json 200 M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2 - - 723 1196 post-test.warc.gz
@@ -86,7 +86,7 @@ org,httpbin)/post?foo=bar 20140610001255 http://httpbin.org/post?foo=bar applica
 org,httpbin)/post?foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/x-www-form-urlencoded - - - - 475 3118 post-test.warc.gz
 
 # post append + requests included
->>> print_cdx_index('post-test.warc.gz', include_all=True, append_post_query=True)
+>>> print_cdx_index('post-test.warc.gz', include_all=True, append_post=True)
  CDX N b a m s k r M S V g
 org,httpbin)/post?foo=bar&test=abc 20140610000859 http://httpbin.org/post application/json 200 M532K5WS4GY2H4OVZO6HRPOP47A7KDWU - - 720 0 post-test.warc.gz
 org,httpbin)/post?foo=bar&test=abc 20140610000859 http://httpbin.org/post application/x-www-form-urlencoded - - - - 476 720 post-test.warc.gz
@@ -135,7 +135,7 @@ org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example tex
 from pywb import get_test_dir
 
 #from pywb.warc.archiveindexer import ArchiveIndexer, main, cdx_filename
-from pywb.warc.cdxindexer import write_index, main, cdx_filename, CDXWriter, SortedCDXWriter
+from pywb.warc.cdxindexer import write_cdx_index, main, cdx_filename
 
 from io import BytesIO
 import sys
@@ -157,19 +157,11 @@ def read_fully(cdx):
             curr.write(b)
     return curr.getvalue()
 
-def cdx_index(warc, sort=False,
-              include_all=False, append_post_query=False):
+def cdx_index(warc, **options):
     buff = BytesIO()
 
-    if sort:
-        writer_cls = SortedCDXWriter
-    else:
-        writer_cls = CDXWriter
-
-    with writer_cls(buff) as writer:
-        with open(TEST_WARC_DIR + warc) as fh:
-            write_index(writer, warc, fh,
-                        True, append_post_query, include_all)
+    with open(TEST_WARC_DIR + warc) as fh:
+        write_cdx_index(buff, fh,  warc, **options)
 
     return buff.getvalue()
 
@@ -177,7 +169,7 @@ def print_cdx_index(*args, **kwargs):
     sys.stdout.write(cdx_index(*args, **kwargs))
 
 def assert_cdx_match(cdx, warc, sort=False):
-    assert read_fully(cdx) == cdx_index(warc, sort)
+    assert read_fully(cdx) == cdx_index(warc, sort=sort)
 
 def test_sorted_warc_gz():
     assert_cdx_match('example.cdx', 'example.warc.gz', sort=True)
