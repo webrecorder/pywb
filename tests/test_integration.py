@@ -240,6 +240,23 @@ class TestWb:
         resp = self.testapp.get(uri, headers = [('Referer', referrer), ('Host', host)], status = 302)
         assert resp.status_int == 302
 
+    def test_not_existant_warc_other_capture(self):
+        resp = self.testapp.get('/pywb/20140703030321mp_/http://example.com?example=2')
+        assert resp.status_int == 302
+        assert resp.headers['Location'].endswith('/pywb/20140603030341mp_/http://example.com?example=2')
+
+    def test_missing_revisit_other_capture(self):
+        resp = self.testapp.get('/pywb/20140603030351mp_/http://example.com?example=2')
+        assert resp.status_int == 302
+        assert resp.headers['Location'].endswith('/pywb/20140603030341mp_/http://example.com?example=2')
+
+    def test_not_existant_warc_no_other(self):
+        resp = self.testapp.get('/pywb/20140703030321mp_/http://example.com?example=3', status = 503)
+        assert resp.status_int == 503
+
+    def test_missing_revisit_no_other(self):
+        resp = self.testapp.get('/pywb/20140603030351mp_/http://example.com?example=3', status = 503)
+        assert resp.status_int == 503
 
     def test_post_1(self):
         resp = self.testapp.post('/pywb/mp_/httpbin.org/post', {'foo': 'bar', 'test': 'abc'})

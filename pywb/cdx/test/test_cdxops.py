@@ -54,7 +54,7 @@ com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 20
 com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 1864 example.warc.gz
 
 # Filter exact invert
->>> cdx_ops_test(url = 'http://example.com', sources = [test_cdx_dir], matchType = 'prefix', filter = ['!=urlkey:com,example)/?example=1', '!=urlkey:com,example)/?example=2'])
+>>> cdx_ops_test(url = 'http://example.com', sources = [test_cdx_dir], matchType = 'prefix', filter = ['!=urlkey:com,example)/?example=1', '!=urlkey:com,example)/?example=2', '!=urlkey:com,example)/?example=3'])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
 com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz
 com,example)/ 20140127171251 http://example.com warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 11875 dupes.warc.gz
