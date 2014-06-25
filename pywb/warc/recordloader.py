@@ -46,6 +46,8 @@ class ArcWarcRecordLoader:
     HTTP_VERBS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE',
                   'OPTIONS', 'CONNECT', 'PATCH']
 
+    NON_HTTP_RECORDS = ('warcinfo', 'arc_header', 'metadata', 'resource')
+
     def __init__(self, loader=None, cookie_maker=None, block_size=8192):
         if not loader:
             loader = BlockLoader(cookie_maker)
@@ -94,24 +96,21 @@ class ArcWarcRecordLoader:
                                                                known_format))
 
         if the_format == 'arc':
-            rec_type = 'response'
             uri = rec_headers.get_header('uri')
             length = rec_headers.get_header('length')
+            content_type = rec_headers.get_header('content-type')
             sub_len = rec_headers.total_len
+            if uri and uri.startswith('filedesc://'):
+                rec_type = 'arc_header'
+            else:
+                rec_type = 'response'
 
         elif the_format == 'warc':
             rec_type = rec_headers.get_header('WARC-Type')
             uri = rec_headers.get_header('WARC-Target-URI')
             length = rec_headers.get_header('Content-Length')
+            content_type = rec_headers.get_header('Content-Type')
             sub_len = 0
-
-        if rec_type == 'response' and uri:
-            if uri.startswith('filedesc://'):
-                rec_type = 'arc_header'
-            elif uri.startswith('dns:'):
-                rec_type = 'dns_response'
-            elif uri.startswith('whois:'):
-                rec_type = 'whois_response'
 
         is_err = False
 
@@ -124,39 +123,28 @@ class ArcWarcRecordLoader:
 
         # err condition
         if is_err:
-            status_headers = StatusAndHeaders('-', [])
             length = 0
-        # special case: empty w/arc record (hopefully a revisit)
-        elif length == 0:
-            status_headers = StatusAndHeaders('204 No Content', [])
-
         # limit stream to the length for all valid records
         stream = LimitReader.wrap_stream(stream, length)
 
+        # if empty record (error or otherwise) set status to -
         if length == 0:
-            # already handled error case above
-            pass
+            status_headers = StatusAndHeaders('- None', [])
 
-        # ================================================================
-        # handle different types of records
-        # special case: warc records that are not expected to have http headers
-        # attempt to add 200 status and content-type
-        elif rec_type == 'metadata' or rec_type == 'resource':
-            content_type = [('Content-Type',
-                            rec_headers.get_header('Content-Type'))]
+        # response record or non-empty revisit: parse HTTP status and headers!
+        elif (rec_type in ('response', 'revisit') and
+              not uri.startswith(('dns:', 'whois:'))):
+            status_headers = self.http_parser.parse(stream)
 
-            status_headers = StatusAndHeaders('200 OK', content_type)
-
-        elif (rec_type in ('warcinfo', 'arc_header', 'dns_response', 'whois_response')):
-            # no extra parsing of body for these
-            status_headers = StatusAndHeaders('204 No Content', [])
-
-        elif (rec_type == 'request'):
+        # request record: parse request
+        elif ((rec_type == 'request') and
+              not uri.startswith(('dns:', 'whois:'))):
             status_headers = self.http_req_parser.parse(stream)
 
-            # response record: parse HTTP status and headers!
+        # everything else: create a no-status entry, set content-type
         else:
-            status_headers = self.http_parser.parse(stream)
+            content_type_header = [('Content-Type', content_type)]
+            status_headers = StatusAndHeaders('- OK', content_type_header)
 
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, status_headers)

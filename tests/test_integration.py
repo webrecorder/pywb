@@ -115,6 +115,14 @@ class TestWb:
         assert 'wb.js' in resp.body
         assert '/pywb-nosurt/20140103030321mp_/http://www.iana.org/domains/example' in resp.body
 
+    def test_zero_len_revisit(self):
+        resp = self.testapp.get('/pywb/20140603030341mp_/http://example.com?example=2')
+        self._assert_basic_html(resp)
+
+        assert 'Tue, Jun 03 2014 03:03:41' in resp.body
+        assert 'wb.js' in resp.body
+        assert '/pywb/20140603030341mp_/http://www.iana.org/domains/example' in resp.body
+
     def test_replay_url_agnostic_revisit(self):
         resp = self.testapp.get('/pywb/20130729195151mp_/http://www.example.com/')
         self._assert_basic_html(resp)
