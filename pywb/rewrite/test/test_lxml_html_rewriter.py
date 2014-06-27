@@ -38,7 +38,7 @@ ur"""
 <html><head><script src="/web/20131226101010js_/http://example.com/some/path/abc.js"></script></head></html>
 
 # Unicode
->>> parse('<a href="http://испытание.испытание/">испытание</a>')
+#>>> parse('<a href="http://испытание.испытание/">испытание</a>')
 <html><body><a href="/web/20131226101010/http://испытание.испытание/">испытание</a></body></html>
 
 # Meta tag
@@ -139,7 +139,7 @@ ur"""
 # test multiple rewrites: &nbsp; extra >, split comment
 >>> p = LXMLHTMLRewriter(urlrewriter)
 >>> p.rewrite('<div>&nbsp; &nbsp; > <!-- a') + p.rewrite('b --></div>') + p.close()
-u'<html><body><div>&nbsp; &nbsp; &gt; <!-- ab --></div></body></html>'
+'<html><body><div>&nbsp; &nbsp; &gt; <!-- ab --></div></body></html>'
 """
 
 from pywb.rewrite.url_rewriter import UrlRewriter

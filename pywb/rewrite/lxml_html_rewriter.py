@@ -34,8 +34,8 @@ class LXMLHTMLRewriter(HTMLRewriterMixin):
 
     def feed(self, string):
         self.started = True
-        string = self.END_HTML.sub(u'', string)
-        #string = string.replace(u'</html>', u'')
+        string = self.END_HTML.sub(b'', string)
+        #string = string.replace(b'</html>', b'')
         self.parser.feed(string)
 
     def parse(self, stream):
@@ -64,47 +64,48 @@ class RewriterTarget(object):
         attrs = attrs.items()
 
         if not self.rewriter._rewrite_tag_attrs(tag, attrs, escape=True):
-            self.rewriter.out.write(u'<' + tag)
+            self.rewriter.out.write(b'<' + tag)
 
             for name, value in attrs:
                 self.rewriter._write_attr(name, value, escape=True)
         else:
-            if tag == u'head':
+            if tag == b'head':
                 if (self.rewriter._rewrite_head(False)):
                     return
 
-        self.rewriter.out.write(u'>')
+        self.rewriter.out.write(b'>')
 
     def end(self, tag):
         if (tag == self.rewriter._wb_parse_context):
             self.rewriter._wb_parse_context = None
 
-        self.rewriter.out.write(u'</' + tag + u'>')
+        self.rewriter.out.write(b'</' + tag + b'>')
 
     def data(self, data):
         if not self.rewriter._wb_parse_context:
             data = cgi.escape(data, quote=True)
             if isinstance(data, unicode):
                 data = data.replace(u'\xa0', '&nbsp;')
+                data = data.encode('utf-8')
         self.rewriter.parse_data(data)
 
     def comment(self, data):
-        self.rewriter.out.write(u'<!--')
+        self.rewriter.out.write(b'<!--')
         self.rewriter.parse_data(data)
-        self.rewriter.out.write(u'-->')
+        self.rewriter.out.write(b'-->')
 
     def doctype(self, root_tag, public_id, system_id):
-        self.rewriter.out.write(u'<!doctype')
+        self.rewriter.out.write(b'<!doctype')
         if root_tag:
             self.rewriter.out.write(' ' + root_tag)
         if public_id:
             self.rewriter.out.write(' PUBLIC ' + public_id)
         if system_id:
             self.rewriter.out.write(' SYSTEM ' + system_id)
-        self.rewriter.out.write(u'>')
+        self.rewriter.out.write(b'>')
 
     def pi(self, target, data):
-        self.rewriter.out.write(u'<?' + target + ' ' + data + u'>')
+        self.rewriter.out.write(b'<?' + target + ' ' + data + b'>')
 
     def close(self):
         return ''

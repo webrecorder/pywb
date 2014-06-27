@@ -137,8 +137,10 @@ urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.htm
 
 def parse(data, head_insert = None):
     parser = HTMLRewriter(urlrewriter, head_insert = head_insert)
-    data = data.decode('utf-8')
-    print parser.rewrite(data) + parser.close()
+    #data = data.decode('utf-8')
+    result = parser.rewrite(data) + parser.close()
+    # decode only for printing
+    print result.decode('utf-8')
 
 if __name__ == "__main__":
     import doctest

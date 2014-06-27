@@ -1,6 +1,7 @@
 from pywb.framework.basehandlers import WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.archivalrouter import ArchivalRouter, Route
+from pywb.rewrite.rewriterules import use_lxml_parser
 
 from handlers import StaticHandler
 
@@ -22,4 +23,5 @@ def create_live_rewriter_app():
               Route('static/default', StaticHandler('pywb/static/'))
              ]
 
+#    use_lxml_parser()
     return ArchivalRouter(routes, hostpaths=['http://localhost:8080'])

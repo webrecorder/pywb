@@ -21,6 +21,7 @@ class RewriteContent:
                                default_rule_config={},
                                ds_rules_file=ds_rules_file)
         self.defmod = defmod
+        self.decode_stream = False
 
     def sanitize_content(self, status_headers, stream):
         # remove transfer encoding chunked and wrap in a dechunking stream
@@ -96,16 +97,17 @@ class RewriteContent:
             else:
                 stream = DecompressingBufferedReader(stream)
 
-        if rewritten_headers.charset:
-            encoding = rewritten_headers.charset
-        elif is_lxml() and text_type == 'html':
-            stream_raw = True
-        else:
-            (encoding, first_buff) = self._detect_charset(stream)
+        if self.decode_stream:
+            if rewritten_headers.charset:
+                encoding = rewritten_headers.charset
+            elif is_lxml() and text_type == 'html':
+                stream_raw = True
+            else:
+                (encoding, first_buff) = self._detect_charset(stream)
 
-        # if encoding not set or chardet thinks its ascii, use utf-8
-        if not encoding or encoding == 'ascii':
-            encoding = 'utf-8'
+            # if encoding not set or chardet thinks its ascii, use utf-8
+            if not encoding or encoding == 'ascii':
+                encoding = 'utf-8'
 
         rule = self.ruleset.get_first_match(urlkey)
 
@@ -147,23 +149,30 @@ class RewriteContent:
         if stream_raw:
             return self._parse_full_gen(rewriter, encoding, stream)
 
-        def do_rewrite(buff):
+        def do_enc_rewrite(buff):
             buff = self._decode_buff(buff, stream, encoding)
-
             buff = rewriter.rewrite(buff)
-
             buff = buff.encode(encoding)
-
             return buff
+
+        def do_rewrite(buff):
+            buff = rewriter.rewrite(buff)
+            return buff
+
+        if encoding:
+            rewrite_func = do_enc_rewrite
+        else:
+            rewrite_func = do_rewrite
 
         def do_finish():
             result = rewriter.close()
-            result = result.encode(encoding)
+            if encoding:
+                result = result.encode(encoding)
 
             return result
 
         return self.stream_to_gen(stream,
-                                  rewrite_func=do_rewrite,
+                                  rewrite_func=rewrite_func,
                                   final_read_func=do_finish,
                                   first_buff=first_buff)
 
@@ -202,7 +211,7 @@ class RewriteContent:
         finally:
             detector.close()
 
-        print "chardet result: " + str(detector.result)
+        print "chardet result: ", str(detector.result)
         return (detector.result['encoding'], full_buff)
 
     # Create a generator reading from a stream,
@@ -215,17 +224,17 @@ class RewriteContent:
                 buff = first_buff
             else:
                 buff = stream.read()
-                if buff and (not hasattr(stream, 'closed') or
-                             not stream.closed):
-                    buff += stream.readline()
+        #        if buff and (not hasattr(stream, 'closed') or
+        #                     not stream.closed):
+        #            buff += stream.readline()
 
             while buff:
                 if rewrite_func:
                     buff = rewrite_func(buff)
                 yield buff
                 buff = stream.read()
-                if buff:
-                    buff += stream.readline()
+       #         if buff:
+       #             buff += stream.readline()
 
             # For adding a tail/handling final buffer
             if final_read_func:

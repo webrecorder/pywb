@@ -68,10 +68,10 @@ class HTMLRewriterMixin(object):
             self.ls = []
 
         def write(self, string):
-            self.ls.append(string)
+            self.ls.append(bytes(string))
 
         def getvalue(self):
-            return ''.join(self.ls)
+            return b''.join(self.ls)
 
     # ===========================
     def __init__(self, url_rewriter,
