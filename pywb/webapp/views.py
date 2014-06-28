@@ -98,7 +98,7 @@ class J2TemplateView(object):
     def render_response(self, **kwargs):
         template_result = self.render_to_string(**kwargs)
         status = kwargs.get('status', '200 OK')
-        content_type = 'text/html; charset=utf-8'
+        content_type = kwargs.get('content_type', 'text/html; charset=utf-8')
         return WbResponse.text_response(template_result.encode('utf-8'),
                                         status=status,
                                         content_type=content_type)

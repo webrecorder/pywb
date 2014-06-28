@@ -66,17 +66,19 @@ class BaseContentView(object):
         # render top level frame if in frame mode
         # (not supported in proxy mode)
         if (self.is_frame_mode and
-             not wbrequest.is_proxy and
-             not wbrequest.wb_url.mod):
+            not wbrequest.is_proxy and
+            not wbrequest.wb_url.mod):
 
             embed_url = wbrequest.wb_url.to_str(mod=self._mp_mod)
             timestamp = datetime_to_timestamp(datetime.datetime.utcnow())
             url = wbrequest.wb_url.url
+            ctype='text/html'
 
             return self.frame_insert_view.render_response(embed_url=embed_url,
                                                           wbrequest=wbrequest,
                                                           timestamp=timestamp,
-                                                          url=url)
+                                                          url=url,
+                                                          content_type=ctype)
 
         return self.render_content(wbrequest, *args)
 

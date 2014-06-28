@@ -6,7 +6,7 @@ from io import BytesIO
 
 from header_rewriter import RewrittenStatusAndHeaders
 
-from rewriterules import RewriteRules, is_lxml
+from rewriterules import RewriteRules
 
 from pywb.utils.dsrules import RuleSet
 from pywb.utils.statusandheaders import StatusAndHeaders
@@ -21,7 +21,6 @@ class RewriteContent:
                                default_rule_config={},
                                ds_rules_file=ds_rules_file)
         self.defmod = defmod
-        self.decode_stream = False
 
     def sanitize_content(self, status_headers, stream):
         # remove transfer encoding chunked and wrap in a dechunking stream
@@ -97,17 +96,15 @@ class RewriteContent:
             else:
                 stream = DecompressingBufferedReader(stream)
 
-        if self.decode_stream:
-            if rewritten_headers.charset:
-                encoding = rewritten_headers.charset
-            elif is_lxml() and text_type == 'html':
-                stream_raw = True
-            else:
-                (encoding, first_buff) = self._detect_charset(stream)
+        #if self.decode_stream:
+        #    if rewritten_headers.charset:
+        #        encoding = rewritten_headers.charset
+        #    else:
+        #        (encoding, first_buff) = self._detect_charset(stream)
 
             # if encoding not set or chardet thinks its ascii, use utf-8
-            if not encoding or encoding == 'ascii':
-                encoding = 'utf-8'
+        #    if not encoding or encoding == 'ascii':
+        #        encoding = 'utf-8'
 
         rule = self.ruleset.get_first_match(urlkey)
 
@@ -132,37 +129,23 @@ class RewriteContent:
             rewriter = rewriter_class(urlrewriter)
 
         # Create rewriting generator
-        gen = self._rewriting_stream_gen(rewriter, encoding, stream_raw,
+        gen = self._rewriting_stream_gen(rewriter, encoding,
                                          stream, first_buff)
 
         return (status_headers, gen, True)
 
-    def _parse_full_gen(self, rewriter, encoding, stream):
-        buff = rewriter.parse(stream)
-        buff = buff.encode(encoding)
-        yield buff
-
     # Create rewrite stream,  may even be chunked by front-end
-    def _rewriting_stream_gen(self, rewriter, encoding, stream_raw,
+    def _rewriting_stream_gen(self, rewriter, encoding,
                               stream, first_buff=None):
 
-        if stream_raw:
-            return self._parse_full_gen(rewriter, encoding, stream)
-
-        def do_enc_rewrite(buff):
-            buff = self._decode_buff(buff, stream, encoding)
-            buff = rewriter.rewrite(buff)
-            buff = buff.encode(encoding)
-            return buff
-
         def do_rewrite(buff):
+            if encoding:
+                buff = self._decode_buff(buff, stream, encoding)
             buff = rewriter.rewrite(buff)
-            return buff
+            if encoding:
+                buff = buff.encode(encoding)
 
-        if encoding:
-            rewrite_func = do_enc_rewrite
-        else:
-            rewrite_func = do_rewrite
+            return buff
 
         def do_finish():
             result = rewriter.close()
@@ -172,12 +155,12 @@ class RewriteContent:
             return result
 
         return self.stream_to_gen(stream,
-                                  rewrite_func=rewrite_func,
+                                  rewrite_func=do_rewrite,
                                   final_read_func=do_finish,
                                   first_buff=first_buff)
 
     @staticmethod
-    def _decode_buff(buff, stream, encoding):
+    def _decode_buff(buff, stream, encoding): # pragma: no coverage
         try:
             buff = buff.decode(encoding)
         except UnicodeDecodeError, e:
@@ -194,7 +177,7 @@ class RewriteContent:
 
         return buff
 
-    def _detect_charset(self, stream):
+    def _detect_charset(self, stream):  # pragma: no coverage
         full_buff = stream.read(8192)
         io_buff = BytesIO(full_buff)
 
@@ -224,17 +207,17 @@ class RewriteContent:
                 buff = first_buff
             else:
                 buff = stream.read()
-        #        if buff and (not hasattr(stream, 'closed') or
-        #                     not stream.closed):
-        #            buff += stream.readline()
+                if buff and (not hasattr(stream, 'closed') or
+                             not stream.closed):
+                    buff += stream.readline()
 
             while buff:
                 if rewrite_func:
                     buff = rewrite_func(buff)
                 yield buff
                 buff = stream.read()
-       #         if buff:
-       #             buff += stream.readline()
+                if buff:
+                    buff += stream.readline()
 
             # For adding a tail/handling final buffer
             if final_read_func:

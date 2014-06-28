@@ -9,8 +9,6 @@ from pywb.framework.basehandlers import BaseHandler
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
 
-from pywb.rewrite.rewriterules import use_lxml_parser
-
 from views import J2TemplateView, add_env_globals
 from views import J2HtmlCapturesView, HeadInsertView
 
@@ -45,9 +43,7 @@ DEFAULTS = {
 
     'domain_specific_rules': DEFAULT_RULES_FILE,
 
-    'enable_memento': True,
-
-    'use_lxml_parser': True,
+    'enable_memento': True
 }
 
 
@@ -177,8 +173,8 @@ def create_wb_router(passed_config={}):
     else:
         request_class = WbRequest
 
-    if config.get('use_lxml_parser', False):
-        use_lxml_parser()
+    #if config.get('use_lxml_parser', False):
+    #    use_lxml_parser()
 
     for name, value in collections.iteritems():
 
