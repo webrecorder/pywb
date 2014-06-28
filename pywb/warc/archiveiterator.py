@@ -195,13 +195,23 @@ class ArchiveIndexEntry(object):
 
 #=================================================================
 def create_record_iter(arcv_iter, options):
+
+    append_post = options.get('append_post')
+    include_all = options.get('include_all')
+
     for record in arcv_iter.iter_records():
         entry = None
 
+        if not include_all and (record.status_headers.get_statuscode() == '-'):
+            continue
+
         if record.format == 'warc':
             if (record.rec_type == 'request' and
-                not options.get('append_post') and
-                not options.get('include_all')):
+                 not include_all and
+                 not append_post):
+                continue
+
+            elif (not include_all and record.content_type == 'application/warc-fields'):
                 continue
 
             entry = parse_warc_record(record)
@@ -236,6 +246,7 @@ def create_record_iter(arcv_iter, options):
 
         yield entry
 
+
 #=================================================================
 def join_request_records(entry_iter, options):
     prev_entry = None
@@ -264,11 +275,8 @@ def join_request_records(entry_iter, options):
         yield prev_entry
         prev_entry = entry
 
-
     if prev_entry:
         yield prev_entry
-
-
 
 
 #=================================================================
@@ -354,7 +362,7 @@ def create_index_iter(fh, **options):
 
     entry_iter = create_record_iter(aiter, options)
 
-    if options.get('append_post') == True:
+    if options.get('append_post'):
         entry_iter = join_request_records(entry_iter, options)
 
     for entry in entry_iter:

@@ -15,7 +15,7 @@ from pywb.utils.wbexception import WbException
 #=================================================================
 ArcWarcRecord = collections.namedtuple('ArcWarcRecord',
                                        'format, rec_type, rec_headers, ' +
-                                       'stream, status_headers')
+                                       'stream, status_headers content_type')
 
 
 #=================================================================
@@ -147,7 +147,8 @@ class ArcWarcRecordLoader:
             status_headers = StatusAndHeaders('- OK', content_type_header)
 
         return ArcWarcRecord(the_format, rec_type,
-                             rec_headers, stream, status_headers)
+                             rec_headers, stream, status_headers,
+                             content_type)
 
     def _detect_type_load_headers(self, stream,
                                   statusline=None, known_format=None):
