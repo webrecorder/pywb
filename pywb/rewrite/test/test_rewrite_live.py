@@ -82,6 +82,10 @@ def test_example_domain_specific_3():
     # comment out bootloader
     assert '/* Bootloader.configurePage' in buff
 
+def test_wombat_top():
+    status_headers, buff = get_rewritten('https://assets-cdn.github.com/assets/github-0f06d0f46fe7bcfbf31f2380f23aec15ba21b8ec.js', urlrewriter)
+
+    assert 'WB_wombat_top!==window' in buff
 
 def test_post():
     buff = BytesIO('ABC=DEF')

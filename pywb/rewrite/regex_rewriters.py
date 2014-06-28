@@ -128,7 +128,7 @@ class JSLinkAndLocationRewriter(JSLinkOnlyRewriter):
              (r'(?<=document\.)referrer', RegexRewriter.add_prefix(prefix), 0),
 
             #todo: move to mixin?
-             (r'(?:[\s=()]|^)(top)(?:[\s!=()]|$)',
+             (r'(?:[\s=(){]|^)(top)(?:[\s!=}()]|$)',
               RegexRewriter.add_prefix(prefix), 1),
 
              (r'(?<=window\.)top',
