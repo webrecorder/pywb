@@ -23,12 +23,18 @@ class CDXWriter(object):
         return self
 
     def write(self, entry, filename):
+        if not entry.url or not entry.key:
+            return
+
         self.write_cdx_line(self.out, entry, filename)
 
     def __exit__(self, *args):
         return False
 
     def write_cdx_line(self, out, entry, filename):
+        if entry.record.rec_type == 'warcinfo':
+            return
+
         out.write(entry.key)
         out.write(' ')
         out.write(entry.timestamp)
@@ -62,7 +68,9 @@ class SortedCDXWriter(CDXWriter):
         outbuff = BytesIO()
         self.write_cdx_line(outbuff, entry, filename)
 
-        insort(self.sortlist, outbuff.getvalue())
+        line = outbuff.getvalue()
+        if line:
+            insort(self.sortlist, line)
 
     def __exit__(self, *args):
         self.out.write(''.join(self.sortlist))

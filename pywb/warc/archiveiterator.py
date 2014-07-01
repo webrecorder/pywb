@@ -149,6 +149,11 @@ class ArchiveIterator(object):
 class ArchiveIndexEntry(object):
     MIME_RE = re.compile('[; ]')
 
+    def __init__(self):
+        self.url = None
+        self.key = None
+        self.digest = '-'
+
     def extract_mime(self, mime, def_mime='unk'):
         """ Utility function to extract mimetype only
         from a full content type, removing charset settings
@@ -195,7 +200,6 @@ class ArchiveIndexEntry(object):
 
 #=================================================================
 def create_record_iter(arcv_iter, options):
-
     append_post = options.get('append_post')
     include_all = options.get('include_all')
 
@@ -206,7 +210,7 @@ def create_record_iter(arcv_iter, options):
             continue
 
         if record.format == 'warc':
-            if (record.rec_type == 'request' and
+            if (record.rec_type in ('request', 'warcinfo') and
                  not include_all and
                  not append_post):
                 continue
@@ -221,12 +225,13 @@ def create_record_iter(arcv_iter, options):
         if not entry:
             continue
 
-        entry.key = canonicalize(entry.url, options.get('surt_ordered', True))
+        if entry.url and not entry.key:
+            entry.key = canonicalize(entry.url, options.get('surt_ordered', True))
 
         compute_digest = False
 
         if (entry.digest == '-' and
-            record.rec_type not in ('revisit', 'request')):
+            record.rec_type not in ('revisit', 'request', 'warcinfo')):
 
             compute_digest = True
 
@@ -284,12 +289,15 @@ def parse_warc_record(record):
     """ Parse warc record
     """
 
-    url = record.rec_headers.get_header('WARC-Target-Uri')
-    if not url:
-        return None
-
     entry = ArchiveIndexEntry()
-    entry.url = url
+
+    if record.rec_type == 'warcinfo':
+        entry.url = record.rec_headers.get_header('WARC-Filename')
+        entry.key = entry.url
+        entry.warcinfo = record.stream.read(record.length)
+        return entry
+
+    entry.url = record.rec_headers.get_header('WARC-Target-Uri')
 
     # timestamp
     entry.timestamp = iso_date_to_timestamp(record.rec_headers.
@@ -366,29 +374,8 @@ def create_index_iter(fh, **options):
         entry_iter = join_request_records(entry_iter, options)
 
     for entry in entry_iter:
-        if (entry.record.rec_type == 'request' and
+        if (entry.record.rec_type in ('request', 'warcinfo') and
             not options.get('include_all')):
             continue
 
         yield entry
-
-
-#=================================================================
-if __name__ == "__main__":
-    import sys
-    filename = sys.argv[1]
-
-    with open(filename) as fh:
-        ait = ArchiveIterator(fh)
-        options = dict(surt_ordered=True, append_post=True)
-
-        out = sys.stdout
-
-        entry_iter = create_record_iter(ait, options)
-        entry_iter = join_request_records(entry_iter, options)
-
-        cdx_write(out, entry_iter, options, filename)
-
-        #for record in ait.iter_records():
-        #    result = ait.read_to_end(record.stream)
-        #    print record.rec_type, result
