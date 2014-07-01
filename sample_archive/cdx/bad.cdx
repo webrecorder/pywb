@@ -1,5 +1,5 @@
  CDX N b a m s k r M S V g
-com,example)/?example=2 20140703030321 http://example.com?example=2 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1987 0 non-existent.warc
 com,example)/?example=2 20140603030351 http://example.com?example=2 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36B - - 504 2701 example-extra.warc
-com,example)/?example=3 20140703030321 http://example.com?example=3 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1987 0 non-existent.warc
+com,example)/?example=2 20140703030321 http://example.com?example=2 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1987 0 non-existent.warc
 com,example)/?example=3 20140603030351 http://example.com?example=3 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36B - - 504 2701 example-extra.warc
+com,example)/?example=3 20140703030321 http://example.com?example=3 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1987 0 non-existent.warc
