@@ -1,7 +1,19 @@
-pywb 0.4.6 changelist
+pywb 0.4.7 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* Improved top -> WB_wombat_top rewriting.
+* Tests: Additional testing of bad cdx lines, missing revisit records.
+
+* Rewrite: Removal of lxml support for now, as it leads to problematic replay and not much performance improvements.
+
+* Rewrite: Parsing of html as raw bytes instead of decode/encode, detection still needed for non-ascii compatible encoding.
+
+* Indexing: Refactoring of cdx-indexer using a seperate 'archive record iterator' and pluggable cdx writer classes. Groundwork for creating custom indexers.
+
+* Indexing: Support for 9 field cdx formats with -9 flag.
+
+* Rewrite: Improved top -> WB_wombat_top rewriting.
+
+* Rewrite: Better handling of framed replay url notification
 
 pywb 0.4.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~
