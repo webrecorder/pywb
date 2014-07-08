@@ -31,7 +31,7 @@ class HeaderRewriter:
         'xml':  ['/xml', '+xml', '.xml', '.rss'],
     }
 
-    PROXY_HEADERS = ['content-type', 'content-disposition']
+    PROXY_HEADERS = ['content-type', 'content-disposition', 'content-range']
 
     URL_REWRITE_HEADERS = ['location', 'content-location', 'content-base']
 
