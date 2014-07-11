@@ -1,7 +1,7 @@
 """
 # Test WbRequest parsed via a Route
 # route with relative path, print resulting wbrequest
->>> print_req(Route('web', WbUrlHandler())({'REL_REQUEST_URI': '/web/test.example.com', 'SCRIPT_NAME': ''}, False))
+>>> _test_route_req(Route('web', WbUrlHandler()), {'REL_REQUEST_URI': '/web/test.example.com', 'SCRIPT_NAME': ''})
 {'coll': 'web',
  'request_uri': '/web/test.example.com',
  'wb_prefix': '/web/',
@@ -9,21 +9,21 @@
 
 
 # route with absolute path, running at script /my_pywb, print resultingwbrequest
->>> print_req(Route('web', WbUrlHandler())({'REL_REQUEST_URI': '/web/2013im_/test.example.com', 'SCRIPT_NAME': '/my_pywb', 'HTTP_HOST': 'localhost:8081', 'wsgi.url_scheme': 'https'}, True))
+>>> _test_route_req(Route('web', WbUrlHandler()), {'REL_REQUEST_URI': '/web/2013im_/test.example.com', 'SCRIPT_NAME': '/my_pywb', 'HTTP_HOST': 'localhost:8081', 'wsgi.url_scheme': 'https'}, True)
 {'coll': 'web',
  'request_uri': '/web/2013im_/test.example.com',
  'wb_prefix': 'https://localhost:8081/my_pywb/web/',
  'wb_url': ('replay', '2013', 'im_', 'http://test.example.com', '2013im_/http://test.example.com')}
 
 # route with no collection
->>> print_req(Route('', BaseHandler())({'REL_REQUEST_URI': 'http://example.com', 'SCRIPT_NAME': '/pywb'}, False))
+>>> _test_route_req(Route('', BaseHandler()), {'REL_REQUEST_URI': 'http://example.com', 'SCRIPT_NAME': '/pywb'})
 {'coll': '',
  'request_uri': 'http://example.com',
  'wb_prefix': '/pywb/',
  'wb_url': None}
 
 # not matching route -- skipped
->>> Route('web', BaseHandler())({'REL_REQUEST_URI': '/other/test.example.com', 'SCRIPT_NAME': ''}, False)
+>>> _test_route_req(Route('web', BaseHandler()), {'REL_REQUEST_URI': '/other/test.example.com', 'SCRIPT_NAME': ''})
 
 
 # Referer Redirect Test
@@ -84,11 +84,18 @@ False
 
 """
 
-from pywb.framework.archivalrouter import Route, ReferRedirect
+from pywb.framework.archivalrouter import Route, ReferRedirect, ArchivalRouter
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 import pprint
 
-def print_req(req):
+def _test_route_req(route, env, abs_path=False):
+    matcher, coll = route.is_handling(env['REL_REQUEST_URI'])
+    if not matcher:
+        return
+
+    the_router = ArchivalRouter([route], abs_path=abs_path)
+    req = the_router.parse_request(route, env, matcher, coll, env['REL_REQUEST_URI'], abs_path)
+
     varlist = vars(req)
     the_dict = dict((k, varlist[k]) for k in ('request_uri', 'wb_prefix', 'wb_url', 'coll'))
     pprint.pprint(the_dict)
@@ -102,9 +109,11 @@ def _test_redir(match_host, request_uri, referrer, script_name = '', coll = 'col
 
     routes = [Route(coll, WbUrlHandler())]
 
+    the_router = ArchivalRouter(routes)
+
     redir = ReferRedirect(match_host)
     #req = WbRequest.from_uri(request_uri, env)
-    rep = redir(env, routes)
+    rep = redir(env, the_router)
     if not rep:
         return False
 

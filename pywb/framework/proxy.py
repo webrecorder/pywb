@@ -1,8 +1,11 @@
 from wbrequestresponse import WbResponse, WbRequest
 from archivalrouter import ArchivalRouter
+
 import urlparse
+import base64
 
 from pywb.rewrite.url_rewriter import HttpsUrlRewriter
+from pywb.utils.statusandheaders import StatusAndHeaders
 
 
 #=================================================================
@@ -15,10 +18,7 @@ class ProxyArchivalRouter(ArchivalRouter):
     """
     def __init__(self, routes, **kwargs):
         super(ProxyArchivalRouter, self).__init__(routes, **kwargs)
-        request_class = routes[0].request_class
-        self.proxy = ProxyRouter(routes[0].handler,
-                                 request_class=request_class,
-                                 **kwargs)
+        self.proxy = ProxyRouter(routes, **kwargs)
 
     def __call__(self, env):
         response = self.proxy(env)
@@ -43,12 +43,14 @@ class ProxyRouter(object):
     See: http://www.mementoweb.org/guide/rfc/#Pattern1.3
     for more details.
     """
-    def __init__(self, handler, **kwargs):
-        self.handler = handler
+    def __init__(self, routes, **kwargs):
+        self.routes = routes
         self.hostpaths = kwargs.get('hostpaths')
 
         self.error_view = kwargs.get('error_view')
-        self.request_class = kwargs.get('request_class')
+
+        self.auth_msg = kwargs.get('auth_msg',
+        'Please enter name of a collection to use for proxy mode')
 
     def __call__(self, env):
         url = env['REL_REQUEST_URI']
@@ -59,16 +61,50 @@ class ProxyRouter(object):
         if not url.startswith('http://'):
             return None
 
-        wbrequest = self.request_class(env,
+        proxy_auth = env.get('HTTP_PROXY_AUTHORIZATION')
+
+        route = None
+        coll = None
+        matcher = None
+
+        if proxy_auth:
+            proxy_coll = self.read_basic_auth_coll(proxy_auth)
+            proxy_coll = '/' + proxy_coll + '/'
+
+            if not proxy_coll:
+                return self.proxy_auth_coll_response()
+
+            for r in self.routes:
+                matcher, c = r.is_handling(proxy_coll)
+                print r.regex.pattern
+                if matcher:
+                    route = r
+                    coll = c
+                    break
+
+            if not route:
+                return self.proxy_auth_coll_response()
+
+            print 'COLL ', coll
+
+        else:
+            route = self.routes[0]
+            coll = self.routes[0].regex.pattern
+
+        wbrequest = route.request_class(env,
                               request_uri=url,
                               wb_url_str=url,
+                              coll=coll,
                               host_prefix=self.hostpaths[0],
-                              wburl_class=self.handler.get_wburl_type(),
+                              wburl_class=route.handler.get_wburl_type(),
                               urlrewriter_class=HttpsUrlRewriter,
                               use_abs_prefix=False,
                               is_proxy=True)
 
-        return self.handler(wbrequest)
+        if matcher:
+            route.apply_filters(wbrequest, matcher)
+
+        return route.handler(wbrequest)
 
     # Proxy Auto-Config (PAC) script for the proxy
     def make_pac_response(self, env):
@@ -97,3 +133,27 @@ class ProxyRouter(object):
         content_type = 'application/x-ns-proxy-autoconfig'
 
         return WbResponse.text_response(buff, content_type=content_type)
+
+    def proxy_auth_coll_response(self):
+        proxy_msg = 'Basic realm="{0}"'.format(self.auth_msg)
+
+        headers = [('Content-Type', 'text/plain'),
+                   ('Proxy-Authenticate', proxy_msg)]
+
+        status_headers = StatusAndHeaders('407 Proxy Authentication', headers)
+
+        value = self.auth_msg
+
+        return WbResponse(status_headers, value=[value])
+
+    @staticmethod
+    def read_basic_auth_coll(value):
+        parts = value.split(' ')
+        if parts[0].lower() != 'basic':
+            return ''
+
+        if len(parts) != 2:
+            return ''
+
+        user_pass = base64.b64decode(parts[1])
+        return user_pass.split(':')[0]

@@ -83,7 +83,8 @@ def test_example_domain_specific_3():
     assert '/* Bootloader.configurePage' in buff
 
 def test_wombat_top():
-    status_headers, buff = get_rewritten('https://assets-cdn.github.com/assets/github-0f06d0f46fe7bcfbf31f2380f23aec15ba21b8ec.js', urlrewriter)
+    #status_headers, buff = get_rewritten('https://assets-cdn.github.com/assets/github-0f06d0f46fe7bcfbf31f2380f23aec15ba21b8ec.js', urlrewriter)
+    status_headers, buff = get_rewritten(get_test_dir() + 'text_content/toptest.js', urlrewriter)
 
     assert 'WB_wombat_top!==window' in buff
 
