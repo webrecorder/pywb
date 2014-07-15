@@ -102,14 +102,18 @@ class UrlRewriter(object):
         scheme, netloc, path, query, frag = parts
 
         path_parts = path.split('/')
-        i = len(path_parts) - 1
-        while i >= 0:
+        i = 0
+        n = len(path_parts) - 1
+        while i < n:
             if path_parts[i] == '..':
                 del path_parts[i]
+                n -= 1
                 if i > 0:
                     del path_parts[i - 1]
+                    n -= 1
                     i -= 1
-            i -= 1
+            else:
+                i += 1
 
         if path_parts == ['']:
             path = '/'
