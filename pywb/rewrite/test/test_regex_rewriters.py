@@ -53,6 +53,10 @@ r"""
 >>> _test_js('cool_Location = "//example.com/abc.html" //comment')
 'cool_Location = "/web/20131010em_/http://example.com/abc.html" //comment'
 
+# document.cookie test
+>>> _test_js('document.cookie = "a=b; Path=/"')
+'document.WB_wombat_cookie = "a=b; Path=/"'
+
 
 #=================================================================
 # XML Rewriting
