@@ -57,7 +57,7 @@ class UrlRewriter(object):
         else:
             # optimize: join if not absolute url, otherwise just use that
             if not is_abs:
-                new_url = urlparse.urljoin(wburl.url, url).replace('../', '')
+                new_url = self.urljoin(wburl.url, url)
             else:
                 new_url = url
 
@@ -91,6 +91,36 @@ class UrlRewriter(object):
 
     def __repr__(self):
         return "UrlRewriter('{0}', '{1}')".format(self.wburl, self.prefix)
+
+    @staticmethod
+    def urljoin(orig_url, url):
+        new_url = urlparse.urljoin(orig_url, url)
+        if '../' not in new_url:
+            return new_url
+
+        parts = urlparse.urlsplit(new_url)
+        scheme, netloc, path, query, frag = parts
+
+        path_parts = path.split('/')
+        i = len(path_parts) - 1
+        while i >= 0:
+            if path_parts[i] == '..':
+                del path_parts[i]
+                if i > 0:
+                    del path_parts[i - 1]
+                    i -= 1
+            i -= 1
+
+        if path_parts == ['']:
+            path = '/'
+        else:
+            path = '/'.join(path_parts)
+
+        parts = (scheme, netloc, path, query, frag)
+
+
+        new_url = urlparse.urlunsplit(parts)
+        return new_url
 
 
 #=================================================================

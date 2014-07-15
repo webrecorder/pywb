@@ -86,6 +86,9 @@ r"""
 >>> _test_css("background: url(file.jpeg)")
 'background: url(/web/20131010em_/http://example.com/file.jpeg)'
 
+>>> _test_css("background:#abc url('/static/styles/../images/layout/logo.png')")
+"background:#abc url('/web/20131010em_/http://example.com/static/images/layout/logo.png')"
+
 >>> _test_css("background: url('')")
 "background: url('')"
 
