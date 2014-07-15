@@ -126,6 +126,7 @@ class JSLinkAndLocationRewriter(JSLinkOnlyRewriter):
              (r'(?<!/)\blocation\b', RegexRewriter.add_prefix(prefix), 0),
              (r'(?<=document\.)domain', RegexRewriter.add_prefix(prefix), 0),
              (r'(?<=document\.)referrer', RegexRewriter.add_prefix(prefix), 0),
+             (r'(?<=document\.)cookie', RegexRewriter.add_prefix(prefix), 0),
 
             #todo: move to mixin?
              (r'(?:[\s=(){]|^)(top)(?:[\s!=}()]|$)',

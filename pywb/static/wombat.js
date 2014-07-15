@@ -639,6 +639,31 @@ WB_wombat_init = (function() {
         }
     }
     
+    function init_cookies_override()
+    {
+        var cookie_path_regex = /\bPath=\'?\"?([^;'"\s]+)/i;
+        
+        var get_cookie = function() {
+            return document.cookie;
+        }
+        
+        var set_cookie = function(value) {
+            var matched = value.match(cookie_path_regex);
+                        
+            // if has cookie path, rewrite and replace
+            if (matched) {
+                var rewritten = rewrite_url(matched[1]);
+                value = value.replace(matched[1], rewritten);
+            }
+            
+            document.cookie = value;
+        }
+        
+        def_prop(document, "WB_wombat_cookie", document.cookie,
+                set_cookie,
+                get_cookie);
+    }
+    
     //============================================
     function init_write_override()
     {
@@ -747,6 +772,9 @@ WB_wombat_init = (function() {
         // Ajax
         init_ajax_rewrite();
         init_worker_override();
+        
+        // Cookies
+        init_cookies_override();
 
         // DOM
         init_dom_override();
