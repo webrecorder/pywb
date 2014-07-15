@@ -49,8 +49,14 @@ class ProxyRouter(object):
 
         self.error_view = kwargs.get('error_view')
 
-        self.auth_msg = kwargs.get('auth_msg',
+        routing_options = kwargs.get('routing_options')
+        if not routing_options:
+            routing_options = {}
+
+        self.auth_msg = routing_options.get('auth_msg',
         'Please enter name of a collection to use for proxy mode')
+
+        self.proxy_coll_select = routing_options.get('proxy_coll_select', False)
 
     def __call__(self, env):
         url = env['REL_REQUEST_URI']
@@ -76,7 +82,6 @@ class ProxyRouter(object):
 
             for r in self.routes:
                 matcher, c = r.is_handling(proxy_coll)
-                print r.regex.pattern
                 if matcher:
                     route = r
                     coll = c
@@ -85,8 +90,8 @@ class ProxyRouter(object):
             if not route:
                 return self.proxy_auth_coll_response()
 
-            print 'COLL ', coll
-
+        elif self.proxy_coll_select:
+            return self.proxy_auth_coll_response()
         else:
             route = self.routes[0]
             coll = self.routes[0].regex.pattern

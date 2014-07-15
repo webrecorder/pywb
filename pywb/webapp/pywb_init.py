@@ -237,5 +237,7 @@ def create_wb_router(passed_config={}):
                                                  'Home Page'),
 
         error_view=J2TemplateView.create_template(config.get('error_html'),
-                                                 'Error Page')
+                                                 'Error Page'),
+
+        routing_options=config.get('routing_options')
     )

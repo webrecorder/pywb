@@ -91,6 +91,10 @@ static_routes:
 # Enable simple http proxy mode
 enable_http_proxy: true
 
+# additional options for routing
+routing_options:
+    proxy_coll_select: false
+
 # enable cdx server api for querying cdx directly (experimental)
 enable_cdx_api: true
 
