@@ -4,7 +4,8 @@ import webtest
 
 class TestLiveRewriter:
     def setup(self):
-        self.app = init_app(create_live_rewriter_app, load_yaml=False)
+        self.app = init_app(create_live_rewriter_app, load_yaml=False,
+                            config=dict(framed_replay=True))
         self.testapp = webtest.TestApp(self.app)
 
     def test_live_rewrite_1(self):

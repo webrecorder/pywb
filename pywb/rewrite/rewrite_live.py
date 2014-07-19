@@ -5,6 +5,7 @@ Fetch a url from live web and apply rewriting rules
 import requests
 import datetime
 import mimetypes
+import logging
 
 from urlparse import urlsplit
 
@@ -19,24 +20,11 @@ from pywb.rewrite.rewrite_content import RewriteContent
 
 #=================================================================
 class LiveRewriter(object):
-    PROXY_HEADER_LIST = [('HTTP_USER_AGENT', 'User-Agent'),
-                         ('HTTP_ACCEPT', 'Accept'),
-                         ('HTTP_ACCEPT_LANGUAGE', 'Accept-Language'),
-                         ('HTTP_ACCEPT_CHARSET', 'Accept-Charset'),
-                         ('HTTP_ACCEPT_ENCODING', 'Accept-Encoding'),
-                         ('HTTP_RANGE', 'Range'),
-                         ('HTTP_CACHE_CONTROL', 'Cache-Control'),
-                         ('HTTP_X_REQUESTED_WITH', 'X-Requested-With'),
-                         ('HTTP_X_CSRF_TOKEN', 'X-CSRF-Token'),
-                         ('HTTP_PE_TOKEN', 'PE-Token'),
-                         ('HTTP_COOKIE', 'Cookie'),
-                         ('CONTENT_TYPE', 'Content-Type'),
-                         ('CONTENT_LENGTH', 'Content-Length'),
-                         ('REL_REFERER', 'Referer'),
-                        ]
-
-    def __init__(self, defmod=''):
+    def __init__(self, defmod='', default_proxy=None):
         self.rewriter = RewriteContent(defmod=defmod)
+        self.default_proxy = default_proxy
+        if self.default_proxy:
+            logging.debug('Live Rewrite via proxy ' + self.default_proxy)
 
     def fetch_local_file(self, uri):
         fh = open(uri)
@@ -88,6 +76,10 @@ class LiveRewriter(object):
 
         method = 'GET'
         data = None
+
+        if not proxies and self.default_proxy:
+            proxies = {'http': self.default_proxy,
+                       'https': self.default_proxy}
 
         if env is not None:
             method = env['REQUEST_METHOD'].upper()

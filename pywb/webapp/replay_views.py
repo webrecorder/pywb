@@ -88,7 +88,9 @@ class RewriteLiveView(BaseContentView):
     def __init__(self, config):
         super(RewriteLiveView, self).__init__(config)
 
-        self.rewriter = LiveRewriter(defmod=self._mp_mod)
+        default_proxy = config.get('proxyhostport')
+        self.rewriter = LiveRewriter(defmod=self._mp_mod,
+                                     default_proxy=default_proxy)
 
     def render_content(self, wbrequest, *args):
         head_insert_func = self.head_insert_view.create_insert_func(wbrequest)

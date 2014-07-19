@@ -9,7 +9,7 @@ from replay_views import RewriteLiveView
 
 #=================================================================
 class RewriteHandler(WbUrlHandler):
-    def __init__(self, config=dict(framed_replay=True)):
+    def __init__(self, config):
         self.rewrite_view = RewriteLiveView(config)
 
     def __call__(self, wbrequest):
@@ -17,8 +17,8 @@ class RewriteHandler(WbUrlHandler):
 
 
 #=================================================================
-def create_live_rewriter_app():
-    routes = [Route('rewrite', RewriteHandler()),
+def create_live_rewriter_app(config={}):
+    routes = [Route('rewrite', RewriteHandler(config)),
               Route('static/default', StaticHandler('pywb/static/'))
              ]
 
