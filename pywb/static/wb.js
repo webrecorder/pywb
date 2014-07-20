@@ -19,6 +19,12 @@ This file is part of pywb.
 
 _wb_js = (function() {
 
+
+var labels = {LOADING_MSG: "Loading...",
+              REPLAY_MSG: "This is an <b>archived</b> page from ",
+              LIVE_MSG: "This is a <b>live</b> page just fetched on "};
+
+
 function init_banner() {
     var PLAIN_BANNER_ID = "_wb_plain_banner";
     var FRAME_BANNER_ID = "_wb_frame_top_banner";
@@ -40,19 +46,33 @@ function init_banner() {
 
     var banner = document.getElementById(bid);
     
-    if (!banner) {
-        banner = document.createElement("wb_div");
-        banner.setAttribute("id", bid);
-        banner.setAttribute("lang", "en");
-
-        text = "This is an archived page ";
-        if (wbinfo && wbinfo.capture_str) {
-            text += " from <b id='_wb_capture_info'>" + wbinfo.capture_str + "</b>";
-        }
-        banner.innerHTML = text;
-
-        document.body.insertBefore(banner, document.body.firstChild);
+    if (banner) {
+        return;
     }
+        
+    banner = document.createElement("wb_div");
+    banner.setAttribute("id", bid);
+    banner.setAttribute("lang", "en");
+
+    var text;
+
+    if (wbinfo.is_frame) {
+        text = labels.LOADING_MSG;
+    } else if (wbinfo.is_live) {
+        text = labels.LIVE_MSG;
+    } else {
+        text = labels.REPLAY_MSG;
+    }
+    
+    text = "<span id='_wb_label'>" + text + "</span>";
+
+    var capture_str = (wbinfo ? wbinfo.capture_str : "");
+
+    text += "<b id='_wb_capture_info'>" + capture_str + "</b>";
+    
+    banner.innerHTML = text;
+
+    document.body.insertBefore(banner, document.body.firstChild);
 }
 
 function add_event(name, func, object) {
@@ -105,7 +125,10 @@ function notify_top(event) {
     }
 
     if (window.top.update_wb_url) {
-        window.top.update_wb_url(window.WB_wombat_location.href, wbinfo.timestamp, wbinfo.capture_str);
+        window.top.update_wb_url(window.WB_wombat_location.href,
+                                 wbinfo.timestamp,
+                                 wbinfo.capture_str,
+                                 wbinfo.is_live);
     }
 }
 
@@ -125,5 +148,7 @@ if (wbinfo.is_frame_mp && wbinfo.canon_url &&
     
     window.location.replace(wbinfo.canon_url);
 }
+
+return {'labels': labels};
 
 })();

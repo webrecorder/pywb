@@ -9,3 +9,14 @@ The following archive collections are available:
   {% endif %} 
 {% endfor %}
 </ul>
+
+Other endpoints in this deployment:
+
+<ul>
+{% for route in routes %}
+  {% if not route | is_wb_handler %}
+  <li><b>{{ '/' + route.path }}</b> - {{ route | string }}</li>
+  {% endif %} 
+{% endfor %}
+</ul>
+
