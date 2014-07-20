@@ -14,7 +14,7 @@ from pywb.framework.wbrequestresponse import WbResponse
 #=================================================================
 class WBHandler(WbUrlHandler):
     def __init__(self, index_reader, replay,
-                 search_view=None, config=None):
+                 search_view=None, config=None, handler_dict=None):
 
         self.index_reader = index_reader
 
@@ -22,23 +22,44 @@ class WBHandler(WbUrlHandler):
 
         self.search_view = search_view
 
+        self.fallback_handler = None
+
+        if handler_dict:
+            fallback = config.get('redir_fallback')
+            if fallback:
+                self.fallback_handler = handler_dict.get(fallback)
+
     def __call__(self, wbrequest):
         if wbrequest.wb_url_str == '/':
             return self.render_search_page(wbrequest)
 
-        with PerfTimer(wbrequest.env.get('X_PERF'), 'query') as t:
-            response = self.index_reader.load_for_request(wbrequest)
+        try:
+            with PerfTimer(wbrequest.env.get('X_PERF'), 'query') as t:
+                response = self.index_reader.load_for_request(wbrequest)
+        except NotFoundException as nfe:
+            return self.handle_not_found(wbrequest, nfe)
 
         if isinstance(response, WbResponse):
             return response
 
-        cdx_lines = response[0]
-        cdx_callback = response[1]
+        cdx_lines, cdx_callback = response
+        return self.handle_replay(wbrequest, cdx_lines, cdx_callback)
 
+    def handle_replay(self, wbrequest, cdx_lines, cdx_callback):
         with PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
             return self.replay(wbrequest,
                                cdx_lines,
                                cdx_callback)
+
+    def handle_not_found(self, wbrequest, nfe):
+        if (not self.fallback_handler or
+            wbrequest.wb_url.is_query() or
+            wbrequest.wb_url.is_identity):
+            raise
+
+        return self.fallback_handler(wbrequest)
+        #new_url = (self.redir_fallback + wbrequest.wb_url.to_str(timestamp=''))
+        #return WbResponse.redir_response(new_url)
 
     def render_search_page(self, wbrequest, **kwargs):
         if self.search_view:

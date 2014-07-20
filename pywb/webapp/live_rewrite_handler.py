@@ -15,6 +15,9 @@ class RewriteHandler(WbUrlHandler):
     def __call__(self, wbrequest):
         return self.rewrite_view(wbrequest)
 
+    def __str__(self):
+        return 'Live Web Rewrite Handler'
+
 
 #=================================================================
 def create_live_rewriter_app(config={}):

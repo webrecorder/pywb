@@ -25,6 +25,8 @@ class LiveRewriter(object):
         self.default_proxy = default_proxy
         if self.default_proxy:
             logging.debug('Live Rewrite via proxy ' + self.default_proxy)
+        else:
+            logging.debug('Live Rewrite Direct (no proxy)')
 
     def fetch_local_file(self, uri):
         fh = open(uri)
@@ -148,7 +150,8 @@ class LiveRewriter(object):
                'timestamp': timestamp,
                'original': url,
                'statuscode': status_headers.get_statuscode(),
-               'mimetype': status_headers.get_header('Content-Type')
+               'mimetype': status_headers.get_header('Content-Type'),
+               'is_live': True,
               }
 
         result = (self.rewriter.

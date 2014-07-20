@@ -13,6 +13,7 @@ from views import J2TemplateView, add_env_globals
 from views import J2HtmlCapturesView, HeadInsertView
 
 from replay_views import ReplayView
+from live_rewrite_handler import RewriteHandler
 
 from query_handler import QueryHandler
 from handlers import WBHandler
@@ -61,7 +62,7 @@ class DictChain:
 
 
 #=================================================================
-def create_wb_handler(query_handler, config):
+def create_wb_handler(query_handler, config, handler_dict={}):
 
     cookie_maker = config.get('cookie_maker')
     record_loader = ArcWarcRecordLoader(cookie_maker=cookie_maker)
@@ -88,29 +89,40 @@ def create_wb_handler(query_handler, config):
         replayer,
         search_view=search_view,
         config=config,
+        handler_dict=handler_dict,
     )
 
     return wb_handler
 
 
 #=================================================================
-def init_collection(value, config):
+def create_live_handler(config):
+    live_handler = RewriteHandler(config)
+    return live_handler
+
+
+#=================================================================
+def init_route_config(value, config):
     if isinstance(value, str):
-        value = {'index_paths': value}
+        value = dict(index_paths=value)
 
     route_config = DictChain(value, config)
+    return route_config
 
+
+#=================================================================
+def init_collection(route_config):
     ds_rules_file = route_config.get('domain_specific_rules', None)
 
     html_view = (J2HtmlCapturesView.
-                 create_template(config.get('query_html'),
+                 create_template(route_config.get('query_html'),
                                  'Captures Page'))
 
     query_handler = QueryHandler.init_from_config(route_config,
                                                   ds_rules_file,
                                                   html_view)
 
-    return route_config, query_handler
+    return query_handler
 
 
 #=================================================================
@@ -139,8 +151,8 @@ def create_cdx_server_app(passed_config):
     routes = []
 
     for name, value in collections.iteritems():
-        result = init_collection(value, config)
-        route_config, query_handler = result
+        route_config = init_route_config(value, config)
+        query_handler = init_collection(route_config)
 
         cdx_api_suffix = route_config.get('enable_cdx_api', True)
 
@@ -173,22 +185,32 @@ def create_wb_router(passed_config={}):
     else:
         request_class = WbRequest
 
-    #if config.get('use_lxml_parser', False):
-    #    use_lxml_parser()
+    # store live and replay handlers
+    handler_dict = {}
 
     for name, value in collections.iteritems():
-
         if isinstance(value, BaseHandler):
+            handler_dict[name] = value
             routes.append(Route(name, value))
             continue
 
-        result = init_collection(value, config)
-        route_config, query_handler = result
+        route_config = init_route_config(value, config)
+
+        if route_config.get('index_paths') == '$liveweb':
+            live = create_live_handler(route_config)
+            handler_dict[name] = live
+            routes.append(Route(name, live))
+            continue
+
+        query_handler = init_collection(route_config)
 
         wb_handler = create_wb_handler(
             query_handler=query_handler,
-            config=route_config
+            config=route_config,
+            handler_dict=handler_dict,
         )
+
+        handler_dict[name] = wb_handler
 
         logging.debug('Adding Collection: ' + name)
 
