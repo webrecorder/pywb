@@ -77,6 +77,8 @@ class SortedCDXWriter(CDXWriter):
         return False
 
 
+ALLOWED_EXT = ('.arc', '.arc.gz', '.warc', '.warc.gz')
+
 #=================================================================
 def iter_file_or_dir(inputs):
     for input_ in inputs:
@@ -84,12 +86,13 @@ def iter_file_or_dir(inputs):
             yield input_, os.path.basename(input_)
         else:
             for filename in os.listdir(input_):
-                yield os.path.join(input_, filename), filename
+                if filename.endswith(ALLOWED_EXT):
+                    yield os.path.join(input_, filename), filename
 
 
 #=================================================================
 def remove_ext(filename):
-    for ext in ('.arc', '.arc.gz', '.warc', '.warc.gz'):
+    for ext in ALLOWED_EXT:
         if filename.endswith(ext):
             filename = filename[:-len(ext)]
             break
