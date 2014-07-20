@@ -25,7 +25,7 @@ class WBHandler(WbUrlHandler):
         self.fallback_handler = None
 
         if handler_dict:
-            fallback = config.get('redir_fallback')
+            fallback = config.get('fallback')
             if fallback:
                 self.fallback_handler = handler_dict.get(fallback)
 
