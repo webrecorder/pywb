@@ -117,6 +117,7 @@ def make_memento_link(cdx, prefix, datetime=None, rel='memento', end=',\n'):
     memento = '<{0}>; rel="{1}"; datetime="{2}"' + end
 
     string = WbUrl.to_wburl_str(url=cdx['original'],
+                                mod='mp_',
                                 timestamp=cdx['timestamp'],
                                 type=WbUrl.REPLAY)
 
@@ -140,7 +141,8 @@ def make_timemap(wbrequest, cdx_lines):
     # timemap link
     timemap = ('<{0}>; rel="self"; ' +
                'type="application/link-format"; from="{1}",\n')
-    yield timemap.format(prefix + wbrequest.wb_url.to_str(), from_date)
+    yield timemap.format(prefix + wbrequest.wb_url.to_str(),
+                         from_date)
 
     # original link
     original = '<{0}>; rel="original",\n'
@@ -148,7 +150,7 @@ def make_timemap(wbrequest, cdx_lines):
 
     # timegate link
     timegate = '<{0}>; rel="timegate",\n'
-    yield timegate.format(prefix + url)
+    yield timegate.format(prefix + 'mp_/' + url)
 
     # first memento link
     yield make_memento_link(first_cdx, prefix,

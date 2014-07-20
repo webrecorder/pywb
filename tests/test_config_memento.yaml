@@ -17,4 +17,5 @@ enable_http_proxy: true
 # enable cdx server api for timemap
 enable_cdx_api: true
 
-
+# test memento with framed replay
+framed_replay: true
