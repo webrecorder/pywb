@@ -259,6 +259,14 @@ class TestWb:
         resp = self.testapp.get('/pywb/20140603030351mp_/http://example.com?example=3', status = 503)
         assert resp.status_int == 503
 
+    def test_live_frame(self):
+        resp = self.testapp.get('/live/mp_/http://example.com/?test=test')
+        assert resp.status_int == 200
+
+    def test_live_fallback(self):
+        resp = self.testapp.get('/pywb-fallback/mp_/http://example.com/?test=test')
+        assert resp.status_int == 200
+
     def test_post_1(self):
         resp = self.testapp.post('/pywb/mp_/httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
 

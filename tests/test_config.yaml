@@ -30,6 +30,14 @@ collections:
         index_paths: './sample_archive/non-surt-cdx/'
         surt_ordered: false
 
+    # live collection
+    live: $liveweb
+
+    # coll with fallback
+    pywb-fallback:
+        index_paths: ./sample_archive/cdx/
+        fallback: live
+
 
 # indicate if cdx files are sorted by SURT keys -- eg: com,example)/
 # SURT keys are recommended for future indices, but non-SURT cdxs
