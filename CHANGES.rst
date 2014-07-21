@@ -3,13 +3,13 @@ pywb 0.5.0 changelist
 
 * Fixes to memento timemap/timegate to work with framed replay mode.
 
-* Support for a fallback handler which will be called from a replay handler instead of a 404 response. The handler, specified via the ``fallback`` option
-can be the name of any other replay handler. Typically, it can be used with a live rewrite handler to fetch missing content from live instead of showing a 404.
+* Support for a fallback handler which will be called from a replay handler instead of a 404 response.
+
+  The handler, specified via the ``fallback`` option, can be the name of any other replay handler. Typically, it can be used with a live rewrite handler to fetch missing content from live instead of showing a 404.
 
 * Live Rewrite can now be included as a 'collection type' in a pywb deployment by setting index path to ``$liveweb``
 
-* ``live-rewrite-server`` has optional ``--proxy host:port`` param to specify a loading live web data through an HTTP/S proxy, such as for use with a
-recording proxy.
+* ``live-rewrite-server`` has optional ``--proxy host:port`` param to specify a loading live web data through an HTTP/S proxy, such as for use with a recording proxy.
 
 * wombat: add document.cookie -> document.WB_wombat_cookie rewriting to check and rewrite Path= to archival url
 
