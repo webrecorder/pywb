@@ -354,8 +354,16 @@ class TestWb:
 
         assert resp.status_int == 407
 
-    def test_proxy_replay_auth_invalid(self):
+    def test_proxy_replay_auth_invalid_1(self):
         headers = [('Proxy-Authorization', 'abc' + base64.b64encode('no-such-coll'))]
+        resp = self.testapp.get('/x-ignore-this-x', headers = headers,
+                                extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''),
+                                status=407)
+
+        assert resp.status_int == 407
+
+    def test_proxy_replay_auth_invalid_2(self):
+        headers = [('Proxy-Authorization', 'basic')]
         resp = self.testapp.get('/x-ignore-this-x', headers = headers,
                                 extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''),
                                 status=407)

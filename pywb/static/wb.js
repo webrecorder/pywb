@@ -22,7 +22,7 @@ _wb_js = (function() {
 
 var labels = {LOADING_MSG: "Loading...",
               REPLAY_MSG: "This is an <b>archived</b> page from ",
-              LIVE_MSG: "This is a <b>live</b> page just fetched on "};
+              LIVE_MSG: "This is a <b>live</b> page loaded on "};
 
 
 function init_banner() {

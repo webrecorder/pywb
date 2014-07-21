@@ -43,21 +43,23 @@ class ProxyRouter(object):
     See: http://www.mementoweb.org/guide/rfc/#Pattern1.3
     for more details.
     """
+
     def __init__(self, routes, **kwargs):
         self.routes = routes
         self.hostpaths = kwargs.get('hostpaths')
 
         self.error_view = kwargs.get('error_view')
 
-        routing_options = kwargs.get('routing_options')
-        if not routing_options:
-            routing_options = {}
+        proxy_options = kwargs.get('config', {})
+        if proxy_options:
+            proxy_options = proxy_options.get('proxy_options', {})
 
-        self.auth_msg = routing_options.get('auth_msg',
+        self.auth_msg = proxy_options.get('auth_msg',
         'Please enter name of a collection to use for proxy mode')
 
-        self.proxy_coll_select = routing_options.get('proxy_coll_select',
-                                                     False)
+        self.use_default_coll = proxy_options.get('use_default_coll', True)
+
+        self.unaltered = proxy_options.get('unaltered_replay', False)
 
     def __call__(self, env):
         url = env['REL_REQUEST_URI']
@@ -76,10 +78,11 @@ class ProxyRouter(object):
 
         if proxy_auth:
             proxy_coll = self.read_basic_auth_coll(proxy_auth)
-            proxy_coll = '/' + proxy_coll + '/'
 
             if not proxy_coll:
                 return self.proxy_auth_coll_response()
+
+            proxy_coll = '/' + proxy_coll + '/'
 
             for r in self.routes:
                 matcher, c = r.is_handling(proxy_coll)
@@ -91,11 +94,15 @@ class ProxyRouter(object):
             if not route:
                 return self.proxy_auth_coll_response()
 
-        elif self.proxy_coll_select:
-            return self.proxy_auth_coll_response()
-        else:
+        # if 'use_default_coll' or only one collection, use that
+        # for proxy mode
+        elif self.use_default_coll or len(self.routes) == 1:
             route = self.routes[0]
             coll = self.routes[0].regex.pattern
+
+        # otherwise, require proxy auth 407 to select collection
+        else:
+            return self.proxy_auth_coll_response()
 
         wbrequest = route.request_class(env,
                               request_uri=url,
@@ -109,6 +116,9 @@ class ProxyRouter(object):
 
         if matcher:
             route.apply_filters(wbrequest, matcher)
+
+        if self.unaltered:
+            wbrequest.wb_url.mod = 'id_'
 
         return route.handler(wbrequest)
 
