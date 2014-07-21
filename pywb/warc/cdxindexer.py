@@ -77,7 +77,9 @@ class SortedCDXWriter(CDXWriter):
         return False
 
 
+#=================================================================
 ALLOWED_EXT = ('.arc', '.arc.gz', '.warc', '.warc.gz')
+
 
 #=================================================================
 def iter_file_or_dir(inputs):

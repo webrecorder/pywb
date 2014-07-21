@@ -56,7 +56,8 @@ class ProxyRouter(object):
         self.auth_msg = routing_options.get('auth_msg',
         'Please enter name of a collection to use for proxy mode')
 
-        self.proxy_coll_select = routing_options.get('proxy_coll_select', False)
+        self.proxy_coll_select = routing_options.get('proxy_coll_select',
+                                                     False)
 
     def __call__(self, env):
         url = env['REL_REQUEST_URI']

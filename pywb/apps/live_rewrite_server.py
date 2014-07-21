@@ -18,7 +18,7 @@ def create_app():
 
     result, unknown = parser.parse_known_args()
 
-    config=dict(proxyhostport=result.proxy, framed_replay=True)
+    config = dict(proxyhostport=result.proxy, framed_replay=True)
 
     app = init_app(create_live_rewriter_app, load_yaml=False,
                    config=config)

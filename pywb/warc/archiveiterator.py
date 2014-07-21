@@ -215,7 +215,8 @@ def create_record_iter(arcv_iter, options):
                  not append_post):
                 continue
 
-            elif (not include_all and record.content_type == 'application/warc-fields'):
+            elif (not include_all and
+                  record.content_type == 'application/warc-fields'):
                 continue
 
             entry = parse_warc_record(record)
@@ -226,7 +227,8 @@ def create_record_iter(arcv_iter, options):
             continue
 
         if entry.url and not entry.key:
-            entry.key = canonicalize(entry.url, options.get('surt_ordered', True))
+            entry.key = canonicalize(entry.url,
+                                     options.get('surt_ordered', True))
 
         compute_digest = False
 

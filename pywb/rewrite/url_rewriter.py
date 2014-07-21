@@ -81,8 +81,6 @@ class UrlRewriter(object):
         if new_url.startswith(self.prefix):
             new_url = new_url[len(self.prefix):]
 
-        #new_wburl = copy.copy(self.wburl)
-        #new_wburl.url = new_url
         new_wburl = WbUrl(new_url)
         return UrlRewriter(new_wburl, self.prefix)
 
@@ -121,7 +119,6 @@ class UrlRewriter(object):
             path = '/'.join(path_parts)
 
         parts = (scheme, netloc, path, query, frag)
-
 
         new_url = urlparse.urlunsplit(parts)
         return new_url

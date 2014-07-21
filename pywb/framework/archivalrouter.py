@@ -72,7 +72,6 @@ class ArchivalRouter(object):
 
         return wbrequest
 
-
     def render_home_page(self, env):
         # render the homepage!
         if self.home_view:
