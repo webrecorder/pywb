@@ -62,7 +62,7 @@ class DictChain:
 
 
 #=================================================================
-def create_wb_handler(query_handler, config, handler_dict={}):
+def create_wb_handler(query_handler, config):
 
     cookie_maker = config.get('cookie_maker')
     record_loader = ArcWarcRecordLoader(cookie_maker=cookie_maker)
@@ -89,7 +89,6 @@ def create_wb_handler(query_handler, config, handler_dict={}):
         replayer,
         search_view=search_view,
         config=config,
-        handler_dict=handler_dict,
     )
 
     return wb_handler
@@ -207,7 +206,6 @@ def create_wb_router(passed_config={}):
         wb_handler = create_wb_handler(
             query_handler=query_handler,
             config=route_config,
-            handler_dict=handler_dict,
         )
 
         handler_dict[name] = wb_handler
@@ -236,6 +234,12 @@ def create_wb_router(passed_config={}):
 
     for static_name, static_path in static_routes.iteritems():
         routes.append(Route(static_name, StaticHandler(static_path)))
+
+    # resolve any cross handler references
+    for route in routes:
+        if hasattr(route.handler, 'resolve_refs'):
+            route.handler.resolve_refs(handler_dict)
+
 
     # Check for new proxy mode!
     if config.get('enable_http_proxy', False):

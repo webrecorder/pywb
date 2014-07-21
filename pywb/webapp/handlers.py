@@ -8,13 +8,15 @@ from pywb.utils.loaders import BlockLoader
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
 
+import logging
+
 
 #=================================================================
 # Standard WB Handler
 #=================================================================
 class WBHandler(WbUrlHandler):
     def __init__(self, index_reader, replay,
-                 search_view=None, config=None, handler_dict=None):
+                 search_view=None, config=None):
 
         self.index_reader = index_reader
 
@@ -23,11 +25,11 @@ class WBHandler(WbUrlHandler):
         self.search_view = search_view
 
         self.fallback_handler = None
+        self.fallback_name = config.get('fallback')
 
-        if handler_dict:
-            fallback = config.get('fallback')
-            if fallback:
-                self.fallback_handler = handler_dict.get(fallback)
+    def resolve_refs(self, handler_dict):
+        if self.fallback_name:
+            self.fallback_handler = handler_dict.get(self.fallback_name)
 
     def __call__(self, wbrequest):
         if wbrequest.wb_url_str == '/':
@@ -58,8 +60,6 @@ class WBHandler(WbUrlHandler):
             raise
 
         return self.fallback_handler(wbrequest)
-        #new_url = (self.redir_fallback + wbrequest.wb_url.to_str(timestamp=''))
-        #return WbResponse.redir_response(new_url)
 
     def render_search_page(self, wbrequest, **kwargs):
         if self.search_view:
