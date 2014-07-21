@@ -11,15 +11,13 @@ LINK_FORMAT = 'application/link-format'
 #=================================================================
 class MementoReqMixin(object):
     def _parse_extra(self):
-        self.is_timegate = False
-
         if not self.wb_url:
             return
 
         if self.wb_url.type != self.wb_url.LATEST_REPLAY:
             return
 
-        self.is_timegate = True
+        self.options['is_timegate'] = True
 
         accept_datetime = self.env.get('HTTP_ACCEPT_DATETIME')
         if not accept_datetime:
@@ -48,7 +46,7 @@ class MementoRespMixin(object):
         if not wbrequest or not wbrequest.wb_url:
             return
 
-        is_timegate = wbrequest.is_timegate
+        is_timegate = wbrequest.options.get('is_timegate', False)
 
         if is_timegate:
             self.status_headers.headers.append(('Vary', 'accept-datetime'))
@@ -59,7 +57,7 @@ class MementoRespMixin(object):
             is_memento = False
 
         # otherwise, if in proxy mode, then always a memento
-        elif wbrequest.is_proxy:
+        elif wbrequest.options['is_proxy']:
             is_memento = True
 
         # otherwise only for replay
@@ -80,7 +78,7 @@ class MementoRespMixin(object):
             link.append(self.make_link(req_url, 'original'))
 
         # for now, include timemap only in non-proxy mode
-        if not wbrequest.is_proxy and (is_memento or is_timegate):
+        if not wbrequest.options['is_proxy'] and (is_memento or is_timegate):
             link.append(self.make_timemap_link(wbrequest))
 
         if is_memento and not is_timegate:

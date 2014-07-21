@@ -8,8 +8,6 @@ from pywb.utils.loaders import BlockLoader
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
 
-import logging
-
 
 #=================================================================
 # Standard WB Handler

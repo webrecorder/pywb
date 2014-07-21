@@ -78,12 +78,11 @@ class WbRequest(object):
 
         self.referrer = env.get('HTTP_REFERER')
 
-        self.is_ajax = self._is_ajax()
+        self.options = dict()
+        self.options['is_ajax'] = self._is_ajax()
+        self.options['is_proxy'] = is_proxy
 
         self.query_filter = []
-
-        self.is_proxy = is_proxy
-
         self.custom_params = {}
 
         # PERF
