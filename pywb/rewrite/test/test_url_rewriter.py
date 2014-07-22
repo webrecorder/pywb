@@ -1,4 +1,21 @@
 """
+# urljoin tests
+
+>>> UrlRewriter.urljoin('http://example.com/test/', '../file.html')
+'http://example.com/file.html'
+
+>>> UrlRewriter.urljoin('http://example.com/test/', '../path/../../../file.html')
+'http://example.com/file.html'
+
+>>> UrlRewriter.urljoin('http://example.com/test/', '/../file.html')
+'http://example.com/file.html'
+
+>>> UrlRewriter.urljoin('http://example.com/', '/abc/../../file.html')
+'http://example.com/file.html'
+
+>>> UrlRewriter.urljoin('http://example.com/path/more/', 'abc/../../file.html')
+'http://example.com/path/file.html'
+
 # UrlRewriter tests
 >>> do_rewrite('other.html', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
 'https://web.archive.org/web/20131010/http://example.com/path/other.html'

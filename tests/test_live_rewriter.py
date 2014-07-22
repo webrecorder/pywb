@@ -4,7 +4,8 @@ import webtest
 
 class TestLiveRewriter:
     def setup(self):
-        self.app = init_app(create_live_rewriter_app, load_yaml=False)
+        self.app = init_app(create_live_rewriter_app, load_yaml=False,
+                            config=dict(framed_replay=True))
         self.testapp = webtest.TestApp(self.app)
 
     def test_live_rewrite_1(self):
@@ -21,5 +22,13 @@ class TestLiveRewriter:
         assert resp.status_int == 200
         assert '<iframe ' in resp.body
         assert 'src="/rewrite/mp_/http://example.com/"' in resp.body
+
+    def test_live_invalid(self):
+        resp = self.testapp.get('/rewrite/mp_/http://abcdef', status=400)
+        assert resp.status_int == 400
+
+    def test_live_invalid_2(self):
+        resp = self.testapp.get('/rewrite/mp_/@#$@#$', status=400)
+        assert resp.status_int == 400
 
 

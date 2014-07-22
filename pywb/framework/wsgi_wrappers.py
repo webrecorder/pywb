@@ -112,7 +112,7 @@ DEFAULT_CONFIG_FILE = 'config.yaml'
 
 
 #=================================================================
-def init_app(init_func, load_yaml=True, config_file=None):
+def init_app(init_func, load_yaml=True, config_file=None, config={}):
     logging.basicConfig(format='%(asctime)s: [%(levelname)s]: %(message)s',
                         level=logging.DEBUG)
     logging.debug('')
@@ -129,9 +129,7 @@ def init_app(init_func, load_yaml=True, config_file=None):
 
             config = load_yaml_config(config_file)
 
-            wb_router = init_func(config)
-        else:
-            wb_router = init_func()
+        wb_router = init_func(config)
     except:
         msg = '*** pywb app init FAILED config from "%s"!\n'
         logging.exception(msg, init_func.__name__)
@@ -146,17 +144,8 @@ def init_app(init_func, load_yaml=True, config_file=None):
 #=================================================================
 def start_wsgi_server(the_app, name, default_port=None):  # pragma: no cover
     from wsgiref.simple_server import make_server
-    from optparse import OptionParser
 
-    opt = OptionParser('%prog [OPTIONS]')
-    opt.add_option('-p', '--port', type='int', default=None)
-
-    options, args = opt.parse_args()
-
-    port = options.port
-
-    if not port:
-        port = the_app.port
+    port = the_app.port
 
     if not port:
         if default_port:

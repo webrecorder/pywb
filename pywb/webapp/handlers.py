@@ -8,37 +8,23 @@ from pywb.utils.loaders import BlockLoader
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
 
+from pywb.warc.recordloader import ArcWarcRecordLoader
+from pywb.warc.resolvingloader import ResolvingLoader
+
+from views import J2TemplateView, add_env_globals
+from replay_views import ReplayView
+
 
 #=================================================================
-# Standard WB Handler
-#=================================================================
-class WBHandler(WbUrlHandler):
-    def __init__(self, index_reader, replay,
-                 search_view=None, config=None):
-
-        self.index_reader = index_reader
-
-        self.replay = replay
-
-        self.search_view = search_view
-
-    def __call__(self, wbrequest):
-        if wbrequest.wb_url_str == '/':
-            return self.render_search_page(wbrequest)
-
-        with PerfTimer(wbrequest.env.get('X_PERF'), 'query') as t:
-            response = self.index_reader.load_for_request(wbrequest)
-
-        if isinstance(response, WbResponse):
-            return response
-
-        cdx_lines = response[0]
-        cdx_callback = response[1]
-
-        with PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
-            return self.replay(wbrequest,
-                               cdx_lines,
-                               cdx_callback)
+class SearchPageWbUrlHandler(WbUrlHandler):
+    """
+    Loads a default search page html template to be shown when
+    the wb_url is empty
+    """
+    def __init__(self, config):
+        self.search_view = (J2TemplateView.
+                            create_template(config.get('search_html'),
+                           'Search Page'))
 
     def render_search_page(self, wbrequest, **kwargs):
         if self.search_view:
@@ -47,6 +33,67 @@ class WBHandler(WbUrlHandler):
                                                     **kwargs)
         else:
             return WbResponse.text_response('No Lookup Url Specified')
+
+
+#=================================================================
+# Standard WB Handler
+#=================================================================
+class WBHandler(SearchPageWbUrlHandler):
+    def __init__(self, query_handler, config=None):
+        super(WBHandler, self).__init__(config)
+
+        self.index_reader = query_handler
+
+        cookie_maker = config.get('cookie_maker')
+        record_loader = ArcWarcRecordLoader(cookie_maker=cookie_maker)
+
+        paths = config.get('archive_paths')
+
+        resolving_loader = ResolvingLoader(paths=paths,
+                                           record_loader=record_loader)
+
+        template_globals = config.get('template_globals')
+        if template_globals:
+            add_env_globals(template_globals)
+
+        self.replay = ReplayView(resolving_loader, config)
+
+        self.fallback_handler = None
+        self.fallback_name = config.get('fallback')
+
+    def resolve_refs(self, handler_dict):
+        if self.fallback_name:
+            self.fallback_handler = handler_dict.get(self.fallback_name)
+
+    def __call__(self, wbrequest):
+        if wbrequest.wb_url_str == '/':
+            return self.render_search_page(wbrequest)
+
+        try:
+            with PerfTimer(wbrequest.env.get('X_PERF'), 'query') as t:
+                response = self.index_reader.load_for_request(wbrequest)
+        except NotFoundException as nfe:
+            return self.handle_not_found(wbrequest, nfe)
+
+        if isinstance(response, WbResponse):
+            return response
+
+        cdx_lines, cdx_callback = response
+        return self.handle_replay(wbrequest, cdx_lines, cdx_callback)
+
+    def handle_replay(self, wbrequest, cdx_lines, cdx_callback):
+        with PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
+            return self.replay(wbrequest,
+                               cdx_lines,
+                               cdx_callback)
+
+    def handle_not_found(self, wbrequest, nfe):
+        if (not self.fallback_handler or
+            wbrequest.wb_url.is_query() or
+            wbrequest.wb_url.is_identity):
+            raise
+
+        return self.fallback_handler(wbrequest)
 
     def __str__(self):
         return 'Web Archive Replay Handler'

@@ -29,16 +29,48 @@ class ArchivalRouter(object):
         self.error_view = kwargs.get('error_view')
 
     def __call__(self, env):
+        request_uri = env['REL_REQUEST_URI']
+
         for route in self.routes:
-            result = route(env, self.abs_path)
-            if result:
-                return result
+            matcher, coll = route.is_handling(request_uri)
+            if matcher:
+                wbrequest = self.parse_request(route, env, matcher,
+                                               coll, request_uri,
+                                               use_abs_prefix=self.abs_path)
+
+                return route.handler(wbrequest)
 
         # Default Home Page
-        if env['REL_REQUEST_URI'] in ['/', '/index.html', '/index.htm']:
+        if request_uri in ['/', '/index.html', '/index.htm']:
             return self.render_home_page(env)
 
-        return self.fallback(env, self.routes) if self.fallback else None
+        return self.fallback(env, self) if self.fallback else None
+
+    def parse_request(self, route, env, matcher, coll, request_uri,
+                      use_abs_prefix=False):
+        matched_str = matcher.group(0)
+        if matched_str:
+            rel_prefix = env['SCRIPT_NAME'] + '/' + matched_str + '/'
+            # remove the '/' + rel_prefix part of uri
+            wb_url_str = request_uri[len(matched_str) + 2:]
+        else:
+            rel_prefix = env['SCRIPT_NAME'] + '/'
+            # the request_uri is the wb_url, since no coll
+            wb_url_str = request_uri[1:]
+
+        wbrequest = route.request_class(env,
+                              request_uri=request_uri,
+                              wb_url_str=wb_url_str,
+                              rel_prefix=rel_prefix,
+                              coll=coll,
+                              use_abs_prefix=use_abs_prefix,
+                              wburl_class=route.handler.get_wburl_type(),
+                              urlrewriter_class=UrlRewriter)
+
+        # Allow for applying of additional filters
+        route.apply_filters(wbrequest, matcher)
+
+        return wbrequest
 
     def render_home_page(self, env):
         # render the homepage!
@@ -73,45 +105,15 @@ class Route(object):
         self.coll_group = coll_group
         self._custom_init(config)
 
-    def __call__(self, env, use_abs_prefix):
-        wbrequest = self.parse_request(env, use_abs_prefix)
-        return self.handler(wbrequest) if wbrequest else None
-
-    def parse_request(self, env, use_abs_prefix, request_uri=None):
-        if not request_uri:
-            request_uri = env['REL_REQUEST_URI']
-
+    def is_handling(self, request_uri):
         matcher = self.regex.match(request_uri[1:])
         if not matcher:
-            return None
-
-        matched_str = matcher.group(0)
-        if matched_str:
-            rel_prefix = env['SCRIPT_NAME'] + '/' + matched_str + '/'
-            # remove the '/' + rel_prefix part of uri
-            wb_url_str = request_uri[len(matched_str) + 2:]
-        else:
-            rel_prefix = env['SCRIPT_NAME'] + '/'
-            # the request_uri is the wb_url, since no coll
-            wb_url_str = request_uri[1:]
+            return None, None
 
         coll = matcher.group(self.coll_group)
+        return matcher, coll
 
-        wbrequest = self.request_class(env,
-                              request_uri=request_uri,
-                              wb_url_str=wb_url_str,
-                              rel_prefix=rel_prefix,
-                              coll=coll,
-                              use_abs_prefix=use_abs_prefix,
-                              wburl_class=self.handler.get_wburl_type(),
-                              urlrewriter_class=UrlRewriter)
-
-        # Allow for applying of additional filters
-        self._apply_filters(wbrequest, matcher)
-
-        return wbrequest
-
-    def _apply_filters(self, wbrequest, matcher):
+    def apply_filters(self, wbrequest, matcher):
         for filter in self.filters:
             last_grp = len(matcher.groups())
             filter_str = filter.format(matcher.group(last_grp))
@@ -136,8 +138,10 @@ class ReferRedirect:
         else:
             self.match_prefixs = [match_prefixs]
 
-    def __call__(self, env, routes):
+    def __call__(self, env, the_router):
         referrer = env.get('HTTP_REFERER')
+
+        routes = the_router.routes
 
         # ensure there is a referrer
         if referrer is None:
@@ -166,17 +170,15 @@ class ReferRedirect:
         ref_request = None
 
         for route in routes:
-            ref_request = route.parse_request(env, False, request_uri=path)
-            if ref_request:
+            matcher, coll = route.is_handling(path)
+            if matcher:
+                ref_request = the_router.parse_request(route, env,
+                                                       matcher, coll, path)
                 ref_route = route
                 break
 
-        # must have matched one of the routes
-        if not ref_request:
-            return None
-
-        # must have a rewriter
-        if not ref_request.urlrewriter:
+        # must have matched one of the routes with a urlrewriter
+        if not ref_request or not ref_request.urlrewriter:
             return None
 
         rewriter = ref_request.urlrewriter

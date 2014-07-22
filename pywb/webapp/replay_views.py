@@ -65,14 +65,15 @@ class BaseContentView(object):
     def __call__(self, wbrequest, *args):
         # render top level frame if in frame mode
         # (not supported in proxy mode)
-        if (self.is_frame_mode and
-            not wbrequest.is_proxy and
-            not wbrequest.wb_url.mod):
+        if (self.is_frame_mode and wbrequest.wb_url and
+            not wbrequest.wb_url.mod and
+            not wbrequest.options['is_proxy'] and
+            not wbrequest.options.get('is_timegate', False)):
 
             embed_url = wbrequest.wb_url.to_str(mod=self._mp_mod)
             timestamp = datetime_to_timestamp(datetime.datetime.utcnow())
             url = wbrequest.wb_url.url
-            ctype='text/html'
+            ctype = 'text/html'
 
             return self.frame_insert_view.render_response(embed_url=embed_url,
                                                           wbrequest=wbrequest,
@@ -88,7 +89,9 @@ class RewriteLiveView(BaseContentView):
     def __init__(self, config):
         super(RewriteLiveView, self).__init__(config)
 
-        self.rewriter = LiveRewriter(defmod=self._mp_mod)
+        default_proxy = config.get('proxyhostport')
+        self.rewriter = LiveRewriter(defmod=self._mp_mod,
+                                     default_proxy=default_proxy)
 
     def render_content(self, wbrequest, *args):
         head_insert_func = self.head_insert_view.create_insert_func(wbrequest)
@@ -257,12 +260,10 @@ class ReplayView(BaseContentView):
         return content
 
     def _redirect_if_needed(self, wbrequest, cdx):
-        if wbrequest.is_proxy:
+        if wbrequest.options['is_proxy']:
             return None
 
-        # todo: generalize this?
-        redir_needed = (hasattr(wbrequest, 'is_timegate') and
-                        wbrequest.is_timegate)
+        redir_needed = (wbrequest.options.get('is_timegate', False))
 
         if not redir_needed and self.redir_to_exact:
             redir_needed = (cdx['timestamp'] != wbrequest.wb_url.timestamp)

@@ -121,6 +121,15 @@ WB_wombat_init = (function() {
             return url;
         }
 
+        // proxy mode: If no wb_replay_prefix, only rewrite https:// -> http://
+        if (!wb_replay_prefix) {
+            if (starts_with(url, HTTPS_PREFIX)) {
+                return HTTP_PREFIX + url.substr(HTTPS_PREFIX.length);
+            } else {
+                return url;
+            }
+        }
+        
         // just in case wombat reference made it into url!
         url = url.replace("WB_wombat_", "");
 
@@ -181,6 +190,11 @@ WB_wombat_init = (function() {
             return "";
         }
         
+        // proxy mode: no extraction needed
+        if (!wb_replay_prefix) {
+            return href;
+        }
+                
         href = href.toString();
 
         var index = href.indexOf("/http", 1);
@@ -639,6 +653,31 @@ WB_wombat_init = (function() {
         }
     }
     
+    function init_cookies_override()
+    {
+        var cookie_path_regex = /\bPath=\'?\"?([^;'"\s]+)/i;
+        
+        var get_cookie = function() {
+            return document.cookie;
+        }
+        
+        var set_cookie = function(value) {
+            var matched = value.match(cookie_path_regex);
+                        
+            // if has cookie path, rewrite and replace
+            if (matched) {
+                var rewritten = rewrite_url(matched[1]);
+                value = value.replace(matched[1], rewritten);
+            }
+            
+            document.cookie = value;
+        }
+        
+        def_prop(document, "WB_wombat_cookie", document.cookie,
+                set_cookie,
+                get_cookie);
+    }
+    
     //============================================
     function init_write_override()
     {
@@ -658,20 +697,22 @@ WB_wombat_init = (function() {
     //============================================
     function wombat_init(replay_prefix, capture_date, orig_scheme, orig_host, timestamp) {
         wb_replay_prefix = replay_prefix;
-
-        wb_replay_date_prefix = replay_prefix + capture_date + "em_/";
         
-        if (capture_date.length > 0) {
-            wb_capture_date_part = "/" + capture_date + "/";
-        } else {
-            wb_capture_date_part = "";
+        if (wb_replay_prefix) {
+            wb_replay_date_prefix = replay_prefix + capture_date + "em_/";
+            
+            if (capture_date.length > 0) {
+                wb_capture_date_part = "/" + capture_date + "/";
+            } else {
+                wb_capture_date_part = "";
+            }
+            
+            wb_orig_scheme = orig_scheme + '://';
+    
+            wb_orig_host = wb_orig_scheme + orig_host;
+            
+            init_bad_prefixes(replay_prefix);
         }
-        
-        wb_orig_scheme = orig_scheme + '://';
-
-        wb_orig_host = wb_orig_scheme + orig_host;
-        
-        init_bad_prefixes(replay_prefix);
 
         // Location
         var wombat_location = new WombatLocation(window.self.location);
@@ -747,6 +788,9 @@ WB_wombat_init = (function() {
         // Ajax
         init_ajax_rewrite();
         init_worker_override();
+        
+        // Cookies
+        init_cookies_override();
 
         // DOM
         init_dom_override();

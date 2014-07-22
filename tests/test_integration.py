@@ -1,5 +1,6 @@
 from pytest import raises
 import webtest
+import base64
 from pywb.webapp.pywb_init import create_wb_router
 from pywb.framework.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
@@ -258,6 +259,14 @@ class TestWb:
         resp = self.testapp.get('/pywb/20140603030351mp_/http://example.com?example=3', status = 503)
         assert resp.status_int == 503
 
+    def test_live_frame(self):
+        resp = self.testapp.get('/live/mp_/http://example.com/?test=test')
+        assert resp.status_int == 200
+
+    def test_live_fallback(self):
+        resp = self.testapp.get('/pywb-fallback/mp_/http://example.com/?test=test')
+        assert resp.status_int == 200
+
     def test_post_1(self):
         resp = self.testapp.post('/pywb/mp_/httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
 
@@ -316,6 +325,50 @@ class TestWb:
 
         assert 'Sun, Jan 26 2014 20:11:27' in resp.body
         assert 'wb.js' in resp.body
+
+    def test_proxy_replay_auth_filtered(self):
+        headers = [('Proxy-Authorization', 'Basic ' + base64.b64encode('pywb-filt-2:'))]
+        resp = self.testapp.get('/x-ignore-this-x', headers = headers,
+                                extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''))
+
+        self._assert_basic_html(resp)
+
+        assert 'Sun, Jan 26 2014 20:06:24' in resp.body
+        assert 'wb.js' in resp.body
+
+    def test_proxy_replay_auth(self):
+        headers = [('Proxy-Authorization', 'Basic ' + base64.b64encode('pywb'))]
+        resp = self.testapp.get('/x-ignore-this-x', headers = headers,
+                                extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''))
+
+        self._assert_basic_html(resp)
+
+        assert 'Mon, Jan 27 2014 17:12:38' in resp.body
+        assert 'wb.js' in resp.body
+
+    def test_proxy_replay_auth_no_coll(self):
+        headers = [('Proxy-Authorization', 'Basic ' + base64.b64encode('no-such-coll'))]
+        resp = self.testapp.get('/x-ignore-this-x', headers = headers,
+                                extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''),
+                                status=407)
+
+        assert resp.status_int == 407
+
+    def test_proxy_replay_auth_invalid_1(self):
+        headers = [('Proxy-Authorization', 'abc' + base64.b64encode('no-such-coll'))]
+        resp = self.testapp.get('/x-ignore-this-x', headers = headers,
+                                extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''),
+                                status=407)
+
+        assert resp.status_int == 407
+
+    def test_proxy_replay_auth_invalid_2(self):
+        headers = [('Proxy-Authorization', 'basic')]
+        resp = self.testapp.get('/x-ignore-this-x', headers = headers,
+                                extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''),
+                                status=407)
+
+        assert resp.status_int == 407
 
     def test_proxy_pac(self):
         resp = self.testapp.get('/proxy.pac', extra_environ = dict(SERVER_NAME='pywb-proxy', SERVER_PORT='8080'))

@@ -3,7 +3,6 @@
 <!-- Start WB Insert -->
 <script>
   wbinfo = {}
-//  wbinfo.capture_str = "{{ timestamp | format_ts }}";
   wbinfo.capture_str = " ";
   wbinfo.is_embed = false;
   wbinfo.prefix = "{{ wbrequest.wb_prefix }}";
@@ -33,7 +32,7 @@ function make_inner_url(url, ts)
     }
 }
 
-function push_state(url, timestamp, capture_str) {
+function push_state(url, timestamp, capture_str, is_live) {
     var curr_href = null;
     
     if (window.frames[0].WB_wombat_location) {
@@ -41,7 +40,7 @@ function push_state(url, timestamp, capture_str) {
     }
         
     if (url != curr_href) {
-        update_status(capture_str);
+        update_status(capture_str, is_live);
         return;
     }
     
@@ -55,14 +54,15 @@ function push_state(url, timestamp, capture_str) {
     state.inner_url = make_inner_url(url, state.timestamp);
     state.url = url;
     state.capture_str = capture_str;
+    state.is_live = is_live;
     
     window.history.replaceState(state, "", state.outer_url);
 
-    update_status(state.capture_str);
+    update_status(state.capture_str, is_live);
 }
 
 function pop_state(state) {
-    update_status(state.capture_str);
+    update_status(state.capture_str, state.is_live);
     
     window.frames[0].src = state.outer_url;
 }
@@ -81,10 +81,19 @@ function extract_ts(url)
     return url.substring(inx + 1);
 }
 
-function update_status(str) {
-    var elem = document.getElementById("_wb_capture_info");
-    if (elem) {
-        elem.innerHTML = str;
+function update_status(str, is_live) {
+    var capture_info = document.getElementById("_wb_capture_info");
+    if (capture_info) {
+        capture_info.innerHTML = str;
+    }
+
+    var label = document.getElementById("_wb_label");
+    if (label) {
+        if (is_live) {
+            label.innerHTML = _wb_js.labels.LIVE_MSG;
+        } else {
+            label.innerHTML = _wb_js.labels.REPLAY_MSG;
+        }
     }
 }
 

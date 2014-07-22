@@ -25,7 +25,7 @@ class CDXAPIHandler(BaseHandler):
         return WbResponse.text_stream(cdx_iter)
 
     def __str__(self):
-        return 'CDX Handler: ' + str(self.index_handler)
+        return 'CDX Index Handler'
 
     @staticmethod
     def extract_params_from_wsgi_env(env):

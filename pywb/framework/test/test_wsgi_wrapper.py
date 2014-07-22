@@ -22,7 +22,7 @@ class TestCustomErrApp:
 
 
 def initer(app_class):
-    def init():
+    def init(config=None):
         return app_class()
     return init
 

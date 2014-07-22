@@ -34,7 +34,7 @@ class TestWb:
         """
         TimeGate with no Accept-Datetime header
         """
-        resp = self.testapp.get('/pywb/http://www.iana.org/_css/2013.1/screen.css')
+        resp = self.testapp.get('/pywb/mp_/http://www.iana.org/_css/2013.1/screen.css')
 
         assert resp.status_int == 302
 
@@ -46,7 +46,7 @@ class TestWb:
 
         assert MEMENTO_DATETIME not in resp.headers
 
-        assert '/pywb/20140127171239/http://www.iana.org/_css/2013.1/screen.css' in resp.headers['Location']
+        assert '/pywb/20140127171239mp_/http://www.iana.org/_css/2013.1/screen.css' in resp.headers['Location']
 
 
     def test_timegate_accept_datetime(self):
@@ -54,7 +54,7 @@ class TestWb:
         TimeGate with Accept-Datetime header
         """
         headers = {ACCEPT_DATETIME: 'Sun, 26 Jan 2014 20:08:04'}
-        resp = self.testapp.get('/pywb/http://www.iana.org/_css/2013.1/screen.css', headers=headers)
+        resp = self.testapp.get('/pywb/mp_/http://www.iana.org/_css/2013.1/screen.css', headers=headers)
 
         assert resp.status_int == 302
 
@@ -67,7 +67,7 @@ class TestWb:
 
         assert MEMENTO_DATETIME not in resp.headers
 
-        assert '/pywb/20140126200804/http://www.iana.org/_css/2013.1/screen.css' in resp.headers['Location']
+        assert '/pywb/20140126200804mp_/http://www.iana.org/_css/2013.1/screen.css' in resp.headers['Location']
 
 
     def test_non_timegate_intermediate_redir(self):
@@ -76,7 +76,7 @@ class TestWb:
         """
         headers = {ACCEPT_DATETIME: 'Sun, 26 Jan 2014 20:08:04'}
         # not a timegate, partial timestamp /2014/ present
-        resp = self.testapp.get('/pywb/2014/http://www.iana.org/_css/2013.1/screen.css', headers=headers)
+        resp = self.testapp.get('/pywb/2014mp_/http://www.iana.org/_css/2013.1/screen.css', headers=headers)
 
         assert resp.status_int == 302
 
@@ -90,14 +90,14 @@ class TestWb:
 
 
         # redirect to latest, not negotiation via Accept-Datetime
-        assert '/pywb/20140127171239/' in resp.headers['Location']
+        assert '/pywb/20140127171239mp_/' in resp.headers['Location']
 
 
     def test_memento_url(self):
         """
         Memento response, 200 capture
         """
-        resp = self.testapp.get('/pywb/20140126200804/http://www.iana.org/_css/2013.1/screen.css')
+        resp = self.testapp.get('/pywb/20140126200804mp_/http://www.iana.org/_css/2013.1/screen.css')
 
         assert resp.status_int == 200
 
@@ -105,7 +105,7 @@ class TestWb:
 
         links = self.get_links(resp)
         assert '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"' in links
-        assert '<http://localhost:80/pywb/http://www.iana.org/_css/2013.1/screen.css>; rel="timegate"' in links
+        assert '<http://localhost:80/pywb/mp_/http://www.iana.org/_css/2013.1/screen.css>; rel="timegate"' in links
         assert self.make_timemap_link('http://www.iana.org/_css/2013.1/screen.css') in links
 
         assert resp.headers[MEMENTO_DATETIME] == 'Sun, 26 Jan 2014 20:08:04 GMT'
@@ -115,7 +115,7 @@ class TestWb:
         """
         Memento (capture) of a 302 response
         """
-        resp = self.testapp.get('/pywb/20140128051539/http://www.iana.org/domains/example')
+        resp = self.testapp.get('/pywb/20140128051539mp_/http://www.iana.org/domains/example')
 
         assert resp.status_int == 302
 
@@ -123,7 +123,7 @@ class TestWb:
 
         links = self.get_links(resp)
         assert '<http://www.iana.org/domains/example>; rel="original"' in links
-        assert '<http://localhost:80/pywb/http://www.iana.org/domains/example>; rel="timegate"' in links
+        assert '<http://localhost:80/pywb/mp_/http://www.iana.org/domains/example>; rel="timegate"' in links
         assert self.make_timemap_link('http://www.iana.org/domains/example') in links
 
         assert resp.headers[MEMENTO_DATETIME] == 'Tue, 28 Jan 2014 05:15:39 GMT'
@@ -147,12 +147,12 @@ rel="self"; type="application/link-format"; from="Fri, 03 Jan 2014 03:03:21 GMT"
 
         assert lines[1] == '<http://example.com?example=1>; rel="original",'
 
-        assert lines[2] == '<http://localhost:80/pywb/http://example.com?example=1>; rel="timegate",'
+        assert lines[2] == '<http://localhost:80/pywb/mp_/http://example.com?example=1>; rel="timegate",'
 
-        assert lines[3] == '<http://localhost:80/pywb/20140103030321/http://example.com?example=1>; \
+        assert lines[3] == '<http://localhost:80/pywb/20140103030321mp_/http://example.com?example=1>; \
 rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT",'
 
-        assert lines[4] == '<http://localhost:80/pywb/20140103030341/http://example.com?example=1>; \
+        assert lines[4] == '<http://localhost:80/pywb/20140103030341mp_/http://example.com?example=1>; \
 rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"'
 
     def test_timemap_2(self):

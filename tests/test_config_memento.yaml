@@ -14,7 +14,12 @@ enable_memento: true
 # Enable simple http proxy mode
 enable_http_proxy: true
 
+# test unaltered replay for proxy as well
+proxy_options:
+    unaltered_replay: true
+
 # enable cdx server api for timemap
 enable_cdx_api: true
 
-
+# test memento with framed replay
+framed_replay: true

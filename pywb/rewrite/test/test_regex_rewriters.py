@@ -53,6 +53,10 @@ r"""
 >>> _test_js('cool_Location = "//example.com/abc.html" //comment')
 'cool_Location = "/web/20131010em_/http://example.com/abc.html" //comment'
 
+# document.cookie test
+>>> _test_js('document.cookie = "a=b; Path=/"')
+'document.WB_wombat_cookie = "a=b; Path=/"'
+
 
 #=================================================================
 # XML Rewriting
@@ -85,6 +89,12 @@ r"""
 
 >>> _test_css("background: url(file.jpeg)")
 'background: url(/web/20131010em_/http://example.com/file.jpeg)'
+
+>>> _test_css("background:#abc url('/static/styles/../images/layout/logo.png')")
+"background:#abc url('/web/20131010em_/http://example.com/static/images/layout/logo.png')"
+
+>>> _test_css("background:#000 url('/static/styles/../../images/layout/logo.png')")
+"background:#000 url('/web/20131010em_/http://example.com/images/layout/logo.png')"
 
 >>> _test_css("background: url('')")
 "background: url('')"

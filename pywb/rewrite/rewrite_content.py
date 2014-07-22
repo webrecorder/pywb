@@ -160,7 +160,7 @@ class RewriteContent:
                                   first_buff=first_buff)
 
     @staticmethod
-    def _decode_buff(buff, stream, encoding): # pragma: no coverage
+    def _decode_buff(buff, stream, encoding):  # pragma: no coverage
         try:
             buff = buff.decode(encoding)
         except UnicodeDecodeError, e:
