@@ -1,9 +1,11 @@
 pywb 0.5.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* Catch live rewrite errors and display more friendly pywb error message.
+
 * LiveRewriteHandler and WBHandler refactoring: LiveRewriteHandler now supports a root search page html template.
 
-* Proxy mode option: 'unaltered_replay' to proxy archival data with no modifications (no banner, no server or client side rewriting)
+* Proxy mode option: 'unaltered_replay' to proxy archival data with no modifications (no banner, no server or client side rewriting).
 
 * Fix client side rewriting (wombat.js) for proxy mode: only rewrite https -> http in absolute urls.
 
@@ -13,7 +15,7 @@ pywb 0.5.0 changelist
 
   The handler, specified via the ``fallback`` option, can be the name of any other replay handler. Typically, it can be used with a live rewrite handler to fetch missing content from live instead of showing a 404.
 
-* Live Rewrite can now be included as a 'collection type' in a pywb deployment by setting index path to ``$liveweb``
+* Live Rewrite can now be included as a 'collection type' in a pywb deployment by setting index path to ``$liveweb``.
 
 * ``live-rewrite-server`` has optional ``--proxy host:port`` param to specify a loading live web data through an HTTP/S proxy, such as for use with a recording proxy.
 

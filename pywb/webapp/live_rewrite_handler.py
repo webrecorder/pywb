@@ -6,6 +6,14 @@ from handlers import StaticHandler, SearchPageWbUrlHandler
 
 from replay_views import RewriteLiveView
 
+from pywb.utils.wbexception import WbException
+
+
+#=================================================================
+class LiveResourceException(WbException):
+    def status(self):
+        return '400 Bad Live Resource'
+
 
 #=================================================================
 class RewriteHandler(SearchPageWbUrlHandler):
@@ -17,7 +25,13 @@ class RewriteHandler(SearchPageWbUrlHandler):
         if wbrequest.wb_url_str == '/':
             return self.render_search_page(wbrequest)
 
-        return self.rewrite_view(wbrequest)
+        try:
+            return self.rewrite_view(wbrequest)
+
+        except Exception as exc:
+            url = wbrequest.wb_url.url
+            msg = 'Could not load the url from the live web: ' + url
+            raise LiveResourceException(msg=msg, url=url)
 
     def __str__(self):
         return 'Live Web Rewrite Handler'
