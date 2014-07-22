@@ -6,13 +6,9 @@ from pywb.framework.wbrequestresponse import WbRequest
 from pywb.framework.memento import MementoRequest
 from pywb.framework.basehandlers import BaseHandler
 
-from pywb.warc.recordloader import ArcWarcRecordLoader
-from pywb.warc.resolvingloader import ResolvingLoader
-
-from views import J2TemplateView, add_env_globals
+from views import J2TemplateView
 from views import J2HtmlCapturesView, HeadInsertView
 
-from replay_views import ReplayView
 from live_rewrite_handler import RewriteHandler
 
 from query_handler import QueryHandler
@@ -63,31 +59,10 @@ class DictChain:
 
 #=================================================================
 def create_wb_handler(query_handler, config):
-
-    cookie_maker = config.get('cookie_maker')
-    record_loader = ArcWarcRecordLoader(cookie_maker=cookie_maker)
-
-    paths = config.get('archive_paths')
-
-    resolving_loader = ResolvingLoader(paths=paths,
-                                       record_loader=record_loader)
-
-    template_globals = config.get('template_globals')
-    if template_globals:
-        add_env_globals(template_globals)
-
-    replayer = ReplayView(resolving_loader, config)
-
-    search_view = (J2TemplateView.
-                   create_template(config.get('search_html'),
-                                   'Search Page'))
-
     wb_handler_class = config.get('wb_handler_class', WBHandler)
 
     wb_handler = wb_handler_class(
         query_handler,
-        replayer,
-        search_view=search_view,
         config=config,
     )
 

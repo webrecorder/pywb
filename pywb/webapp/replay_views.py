@@ -65,7 +65,7 @@ class BaseContentView(object):
     def __call__(self, wbrequest, *args):
         # render top level frame if in frame mode
         # (not supported in proxy mode)
-        if (self.is_frame_mode and
+        if (self.is_frame_mode and wbrequest.wb_url and
             not wbrequest.wb_url.mod and
             not wbrequest.options['is_proxy'] and
             not wbrequest.options.get('is_timegate', False)):

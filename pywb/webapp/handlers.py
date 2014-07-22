@@ -8,19 +8,55 @@ from pywb.utils.loaders import BlockLoader
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
 
+from pywb.warc.recordloader import ArcWarcRecordLoader
+from pywb.warc.resolvingloader import ResolvingLoader
+
+from views import J2TemplateView, add_env_globals
+from replay_views import ReplayView
+
+
+#=================================================================
+class SearchPageWbUrlHandler(WbUrlHandler):
+    """
+    Loads a default search page html template to be shown when
+    the wb_url is empty
+    """
+    def __init__(self, config):
+        self.search_view = (J2TemplateView.
+                            create_template(config.get('search_html'),
+                           'Search Page'))
+
+    def render_search_page(self, wbrequest, **kwargs):
+        if self.search_view:
+            return self.search_view.render_response(wbrequest=wbrequest,
+                                                    prefix=wbrequest.wb_prefix,
+                                                    **kwargs)
+        else:
+            return WbResponse.text_response('No Lookup Url Specified')
+
 
 #=================================================================
 # Standard WB Handler
 #=================================================================
-class WBHandler(WbUrlHandler):
-    def __init__(self, index_reader, replay,
-                 search_view=None, config=None):
+class WBHandler(SearchPageWbUrlHandler):
+    def __init__(self, query_handler, config=None):
+        super(WBHandler, self).__init__(config)
 
-        self.index_reader = index_reader
+        self.index_reader = query_handler
 
-        self.replay = replay
+        cookie_maker = config.get('cookie_maker')
+        record_loader = ArcWarcRecordLoader(cookie_maker=cookie_maker)
 
-        self.search_view = search_view
+        paths = config.get('archive_paths')
+
+        resolving_loader = ResolvingLoader(paths=paths,
+                                           record_loader=record_loader)
+
+        template_globals = config.get('template_globals')
+        if template_globals:
+            add_env_globals(template_globals)
+
+        self.replay = ReplayView(resolving_loader, config)
 
         self.fallback_handler = None
         self.fallback_name = config.get('fallback')
@@ -58,14 +94,6 @@ class WBHandler(WbUrlHandler):
             raise
 
         return self.fallback_handler(wbrequest)
-
-    def render_search_page(self, wbrequest, **kwargs):
-        if self.search_view:
-            return self.search_view.render_response(wbrequest=wbrequest,
-                                                    prefix=wbrequest.wb_prefix,
-                                                    **kwargs)
-        else:
-            return WbResponse.text_response('No Lookup Url Specified')
 
     def __str__(self):
         return 'Web Archive Replay Handler'

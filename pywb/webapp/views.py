@@ -2,8 +2,6 @@ from pywb.utils.timeutils import timestamp_to_datetime
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import make_timemap, LINK_FORMAT
 
-from handlers import WBHandler
-
 import urlparse
 import logging
 
@@ -62,7 +60,8 @@ def is_wb_handler(obj):
     if not hasattr(obj, 'handler'):
         return False
 
-    return isinstance(obj.handler, WBHandler)
+    #return isinstance(obj.handler, WBHandler)
+    return obj.handler.__class__.__name__ == "WBHandler"
 
 
 #=================================================================
