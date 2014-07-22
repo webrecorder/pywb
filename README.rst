@@ -11,9 +11,25 @@ pywb is a python implementation of web archival replay tools, sometimes also kno
 
 pywb allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
 
-*For an example of deployed service using pywb, please see the https://webrecorder.io project*
 
-pywb Tools
+Usage Examples
+-----------------------------
+
+This README contains a basic overview of using pywb. After reading this intro, consider also taking a look at these seperate projects:
+
+* `pywb-webrecorder <https://github.com/ikreymer/pywb-webrecorder>`_ demonstrates a way to use pywb and warcprox to record web content while browsing.
+
+* `pywb-samples <https://github.com/ikreymer/pywb-samples>`_ provides additional archive samples with difficult-to-replay content.
+
+
+The following deployed applications use pywb:
+
+* https://perma.cc embeds pywb as part of a larger `open source application <https://github.com/harvard-lil/perma>`_ to provide web archive replay for law libraries.
+
+* https://webrecorder.io uses pywb and builds upon pywb-webrecorder to create a hosted web recording and replay system.
+
+
+pywb Tools Overview
 -----------------------------
 
 In addition to the standard wayback machine (explained further below), pywb tool suite includes a 
@@ -72,7 +88,7 @@ This process can be done by running the ``cdx-indexer`` script and only needs to
 
 Given an archive of warcs at ``myarchive/warcs``
 
-1. Create a dir for indexs, .eg. ``myarchive/cdx``
+1. Create a dir for indexes, .eg. ``myarchive/cdx``
 
 2. Run ``cdx-indexer --sort myarchive/cdx myarchive/warcs`` to generate .cdx files for each
    warc/arc file in ``myarchive/warcs``
