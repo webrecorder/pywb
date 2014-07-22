@@ -1,6 +1,12 @@
 pywb 0.5.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* LiveRewriteHandler and WBHandler refactoring: LiveRewriteHandler now supports a root search page html template.
+
+* Proxy mode option: 'unaltered_replay' to proxy archival data with no modifications (no banner, no server or client side rewriting)
+
+* Fix client side rewriting (wombat.js) for proxy mode: only rewrite https -> http in absolute urls.
+
 * Fixes to memento timemap/timegate to work with framed replay mode.
 
 * Support for a fallback handler which will be called from a replay handler instead of a 404 response.
@@ -14,6 +20,8 @@ pywb 0.5.0 changelist
 * wombat: add document.cookie -> document.WB_wombat_cookie rewriting to check and rewrite Path= to archival url
 
 * Better parent relative '../' path rewriting, resolved to correct absolute urls when rewritten. Additional testing for parent relative urls.
+
+* New 'proxy_options' block, including 'use_default_coll' to allow defaulting to first collection w/o proxy auth.
 
 * Improved support for proxy mode, allow different collections to be selected via proxy auth
 
