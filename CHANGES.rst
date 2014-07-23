@@ -1,3 +1,11 @@
+pywb 0.5.1 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* cdxindexer supports unicode filenames
+
+* SCRIPT_NAME now defaults to '' if not present
+
+
 pywb 0.5.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
