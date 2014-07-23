@@ -130,8 +130,8 @@ com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 20
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 example.warc.gz
 4
 
-# test writing to temp dir
->>> cli_lines_with_dir(TEST_WARC_DIR + 'example.warc.gz')
+# test writing to temp dir, also use unicode filename
+>>> cli_lines_with_dir(unicode(TEST_WARC_DIR + 'example.warc.gz'))
 example.cdx
 com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 333 example.warc.gz
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 example.warc.gz
