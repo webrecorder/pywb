@@ -49,12 +49,13 @@ class ArchivalRouter(object):
     def parse_request(self, route, env, matcher, coll, request_uri,
                       use_abs_prefix=False):
         matched_str = matcher.group(0)
+        rel_prefix = env.get('SCRIPT_NAME', '') + '/'
+
         if matched_str:
-            rel_prefix = env['SCRIPT_NAME'] + '/' + matched_str + '/'
+            rel_prefix += matched_str + '/'
             # remove the '/' + rel_prefix part of uri
             wb_url_str = request_uri[len(matched_str) + 2:]
         else:
-            rel_prefix = env['SCRIPT_NAME'] + '/'
             # the request_uri is the wb_url, since no coll
             wb_url_str = request_uri[1:]
 
@@ -157,7 +158,7 @@ class ReferRedirect:
 
         path = ref_split.path
 
-        app_path = env['SCRIPT_NAME']
+        app_path = env.get('SCRIPT_NAME', '')
 
         if app_path:
             # must start with current app name, if not root
