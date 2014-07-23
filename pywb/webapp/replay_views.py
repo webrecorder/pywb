@@ -67,8 +67,7 @@ class BaseContentView(object):
         # (not supported in proxy mode)
         if (self.is_frame_mode and wbrequest.wb_url and
             not wbrequest.wb_url.mod and
-            not wbrequest.options['is_proxy'] and
-            not wbrequest.options.get('is_timegate', False)):
+            not wbrequest.options['is_proxy']):
 
             embed_url = wbrequest.wb_url.to_str(mod=self._mp_mod)
             timestamp = datetime_to_timestamp(datetime.datetime.utcnow())
