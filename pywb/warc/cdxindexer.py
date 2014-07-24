@@ -109,7 +109,6 @@ def cdx_filename(filename):
 
 #=================================================================
 def write_multi_cdx_index(output, inputs, **options):
-
     # write one cdx per dir
     if output != '-' and os.path.isdir(output):
         for fullpath, filename in iter_file_or_dir(inputs):
@@ -144,6 +143,9 @@ def write_multi_cdx_index(output, inputs, **options):
 #=================================================================
 def write_cdx_index(outfile, infile, filename, **options):
     writer_cls = options.get('writer_cls')
+
+    if type(filename) is unicode:
+        filename = filename.encode(sys.getfilesystemencoding())
 
     if writer_cls:
         pass
