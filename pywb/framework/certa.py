@@ -13,6 +13,7 @@ class CertificateAuthority(object):
 
         self.ca_file = ca_file
         self.certs_dir = certs_dir
+        self.certname = certname
 
         if not os.path.exists(ca_file):
             self._generate_ca()
@@ -34,7 +35,7 @@ class CertificateAuthority(object):
         self.cert.set_version(3)
         # avoid sec_error_reused_issuer_and_serial
         self.cert.set_serial_number(random.randint(0,2**64-1))
-        self.cert.get_subject().CN = certname
+        self.cert.get_subject().CN = self.certname
         self.cert.gmtime_adj_notBefore(0)                # now
         self.cert.gmtime_adj_notAfter(100*365*24*60*60)  # 100 yrs in future
         self.cert.set_issuer(self.cert.get_subject())
