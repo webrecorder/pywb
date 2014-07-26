@@ -70,6 +70,7 @@ setup(
         'jinja2',
         'surt',
         'pyyaml',
+        'pyopenssl',
        ],
     tests_require=[
         'pytest',
