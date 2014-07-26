@@ -50,6 +50,39 @@ class WSGIApp(object):
 
     # Top-level wsgi application
     def __call__(self, env, start_response):
+        if env['REQUEST_METHOD'] == 'CONNECT':
+            return self.handle_connect(env, start_response)
+        else:
+            return self.handle_methods(env, start_response)
+
+    def handle_connect(self, env, start_response):
+        def ssl_start_response(statusline, headers):
+            ssl_sock = env.get('pywb.proxy_ssl_sock')
+            if not ssl_sock:
+                return
+
+            env['pywb.proxy_statusline'] = statusline
+
+            ssl_sock.write('HTTP/1.1 ' + statusline + '\r\n')
+            for name, value in headers:
+                ssl_sock.write(name + ': ' + value + '\r\n')
+
+        resp_iter = self.handle_methods(env, ssl_start_response)
+
+        ssl_sock = env.get('pywb.proxy_ssl_sock')
+        if ssl_sock:
+            ssl_sock.write('\r\n')
+
+            for obj in resp_iter:
+                ssl_sock.write(obj)
+
+            ssl_sock.close()
+
+        start_response(env['pywb.proxy_statusline'], [])
+
+        return []
+
+    def handle_methods(self, env, start_response):
         if env.get('SCRIPT_NAME') or not env.get('REQUEST_URI'):
             env['REL_REQUEST_URI'] = rel_request_uri(env)
         else:

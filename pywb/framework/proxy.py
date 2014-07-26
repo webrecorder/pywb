@@ -62,12 +62,16 @@ class ProxyRouter(object):
         self.unaltered = proxy_options.get('unaltered_replay', False)
 
     def __call__(self, env):
+        if env['REQUEST_METHOD'] == 'CONNECT':
+            if not self.handle_connect(env):
+                return None
+
         url = env['REL_REQUEST_URI']
 
         if url.endswith('/proxy.pac'):
             return self.make_pac_response(env)
 
-        if not url.startswith('http://'):
+        if not url.startswith(('http://', 'https://')):
             return None
 
         proxy_auth = env.get('HTTP_PROXY_AUTHORIZATION')
@@ -121,6 +125,72 @@ class ProxyRouter(object):
             wbrequest.wb_url.mod = 'id_'
 
         return route.handler(wbrequest)
+
+    def handle_connect(self, env):
+        import uwsgi
+        import socket
+        import ssl
+        from io import BytesIO
+
+        fd = uwsgi.connection_fd()
+        conn = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
+        sock = socket.socket(_sock=conn)
+
+        if (self.use_default_coll or
+            len(self.routes) == 1 or
+            env.get('HTTP_PROXY_AUTHORIZATION') is not None):
+
+            sock.send('HTTP/1.0 200 Connection Established\r\n')
+            sock.send('Server: pywb proxy\r\n')
+            sock.send('\r\n')
+        else:
+            env['pywb.proxy_statusline'] = '407 Proxy Auth Required'
+            sock.send('HTTP/1.0 407 Proxy Auth Required\r\n')
+            sock.send('Server: pywb proxy\r\n')
+            sock.send('\r\n')
+            return False
+
+        ssl_sock = ssl.wrap_socket(sock, server_side=True,
+                                   certfile='/tmp/testcert.pem',
+                                   ssl_version=ssl.PROTOCOL_SSLv23)
+
+        env['pywb.proxy_ssl_sock'] = ssl_sock
+
+        buff = ssl_sock.recv(4096)
+
+        buffreader = BytesIO(buff)
+
+        statusline = buffreader.readline()
+        statusparts = statusline.split(' ')
+
+        if len(statusparts) < 3:
+            return
+
+        env['REQUEST_METHOD'] = statusparts[0]
+        env['REL_REQUEST_URI'] = ('https://' +
+                                  env['REL_REQUEST_URI'].replace(':443', '') +
+                                  statusparts[1])
+
+        env['SERVER_PROTOCOL'] = statusparts[2].strip()
+
+        queryparts = env['REL_REQUEST_URI'].split('?', 1)
+        env['PATH_INFO'] = queryparts[0]
+        env['QUERY_STRING'] = queryparts[1] if len(queryparts) > 1 else ''
+
+        while True:
+            line = buffreader.readline()
+            if not line:
+                break
+
+            parts = line.split(':')
+            if len(parts) < 2:
+                continue
+
+            name = 'HTTP_' + parts[0].replace('-', '_').upper()
+            env[name] = parts[1]
+
+        return True
+
 
     # Proxy Auto-Config (PAC) script for the proxy
     def make_pac_response(self, env):
