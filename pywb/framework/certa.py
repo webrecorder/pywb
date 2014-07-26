@@ -7,7 +7,10 @@ import random
 class CertificateAuthority(object):
     logger = logging.getLogger('pywb.CertificateAuthority')
 
-    def __init__(self, ca_file='pywb-ca.pem', certs_dir='./pywb-ca'):
+    def __init__(self, ca_file='pywb-ca.pem',
+                       certs_dir='./pywb-ca',
+                       certname='pywb CA'):
+
         self.ca_file = ca_file
         self.certs_dir = certs_dir
 
@@ -31,7 +34,7 @@ class CertificateAuthority(object):
         self.cert.set_version(3)
         # avoid sec_error_reused_issuer_and_serial
         self.cert.set_serial_number(random.randint(0,2**64-1))
-        self.cert.get_subject().CN = 'pywb CA on {}'.format('')
+        self.cert.get_subject().CN = certname
         self.cert.gmtime_adj_notBefore(0)                # now
         self.cert.gmtime_adj_notAfter(100*365*24*60*60)  # 100 yrs in future
         self.cert.set_issuer(self.cert.get_subject())

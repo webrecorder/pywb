@@ -161,7 +161,8 @@ class WbResponse(object):
     @staticmethod
     def text_response(text, status='200 OK', content_type='text/plain'):
         status_headers = StatusAndHeaders(status,
-                                          [('Content-Type', content_type)])
+                                          [('Content-Type', content_type),
+                                           ('Content-Length', str(len(text)))])
 
         return WbResponse(status_headers, value=[text])
 
