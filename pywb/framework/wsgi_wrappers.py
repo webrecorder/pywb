@@ -59,24 +59,27 @@ class WSGIApp(object):
         def ssl_start_response(statusline, headers):
             ssl_sock = env.get('pywb.proxy_ssl_sock')
             if not ssl_sock:
+                start_response(statusline, headers)
                 return
 
             env['pywb.proxy_statusline'] = statusline
 
-            ssl_sock.write('HTTP/1.1 ' + statusline + '\r\n')
+            ssl_sock.write('HTTP/1.0 ' + statusline + '\r\n')
             for name, value in headers:
                 ssl_sock.write(name + ': ' + value + '\r\n')
 
         resp_iter = self.handle_methods(env, ssl_start_response)
 
         ssl_sock = env.get('pywb.proxy_ssl_sock')
-        if ssl_sock:
-            ssl_sock.write('\r\n')
+        if not ssl_sock:
+            return resp_iter
 
-            for obj in resp_iter:
-                ssl_sock.write(obj)
+        ssl_sock.write('\r\n')
 
-            ssl_sock.close()
+        for obj in resp_iter:
+            ssl_sock.write(obj)
+
+        ssl_sock.close()
 
         start_response(env['pywb.proxy_statusline'], [])
 
@@ -177,6 +180,10 @@ def init_app(init_func, load_yaml=True, config_file=None, config={}):
 #=================================================================
 def start_wsgi_server(the_app, name, default_port=None):  # pragma: no cover
     from wsgiref.simple_server import make_server
+
+    # disable is_hop_by_hop restrictions
+    import wsgiref.handlers
+    wsgiref.handlers.is_hop_by_hop = lambda x: False
 
     port = the_app.port
 

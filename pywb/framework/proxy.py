@@ -4,8 +4,15 @@ from archivalrouter import ArchivalRouter
 import urlparse
 import base64
 
+import socket
+import ssl
+from io import BytesIO
+
 from pywb.rewrite.url_rewriter import HttpsUrlRewriter
 from pywb.utils.statusandheaders import StatusAndHeaders
+from pywb.utils.wbexception import BadRequestException
+
+from certa import CertificateAuthority
 
 
 #=================================================================
@@ -61,18 +68,20 @@ class ProxyRouter(object):
 
         self.unaltered = proxy_options.get('unaltered_replay', False)
 
+        self.ca = CertificateAuthority()
+
+
     def __call__(self, env):
-        if env['REQUEST_METHOD'] == 'CONNECT':
-            if not self.handle_connect(env):
+        is_https = (env['REQUEST_METHOD'] == 'CONNECT')
+
+        if not is_https:
+            url = env['REL_REQUEST_URI']
+
+            if url.endswith('/proxy.pac'):
+                return self.make_pac_response(env)
+
+            if not url.startswith(('http://', 'https://')):
                 return None
-
-        url = env['REL_REQUEST_URI']
-
-        if url.endswith('/proxy.pac'):
-            return self.make_pac_response(env)
-
-        if not url.startswith(('http://', 'https://')):
-            return None
 
         proxy_auth = env.get('HTTP_PROXY_AUTHORIZATION')
 
@@ -108,6 +117,12 @@ class ProxyRouter(object):
         else:
             return self.proxy_auth_coll_response()
 
+        # do connect, then get updated url
+        if is_https:
+            self.handle_connect(env)
+
+            url = env['REL_REQUEST_URI']
+
         wbrequest = route.request_class(env,
                               request_uri=url,
                               wb_url_str=url,
@@ -126,36 +141,41 @@ class ProxyRouter(object):
 
         return route.handler(wbrequest)
 
-    def handle_connect(self, env):
-        import uwsgi
-        import socket
-        import ssl
-        from io import BytesIO
-
-        fd = uwsgi.connection_fd()
-        conn = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
-        sock = socket.socket(_sock=conn)
-
-        if (self.use_default_coll or
-            len(self.routes) == 1 or
-            env.get('HTTP_PROXY_AUTHORIZATION') is not None):
-
-            sock.send('HTTP/1.0 200 Connection Established\r\n')
-            sock.send('Server: pywb proxy\r\n')
-            sock.send('\r\n')
+    def get_request_socket(self, env):
+        if env.get('uwsgi.version'):
+            import uwsgi
+            fd = uwsgi.connection_fd()
+            conn = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
+            sock = socket.socket(_sock=conn)
+        elif env.get('gunicorn.socket'):
+            sock = env['gunicorn.socket']
         else:
-            env['pywb.proxy_statusline'] = '407 Proxy Auth Required'
-            sock.send('HTTP/1.0 407 Proxy Auth Required\r\n')
-            sock.send('Server: pywb proxy\r\n')
-            sock.send('\r\n')
-            return False
+            # attempt to find socket from wsgi.input
+            input_ = env.get('wsgi.input')
+            if input_ and hasattr(input_, '_sock'):
+                sock = socket.socket(_sock=input_._sock)
+
+        return sock
+
+    def handle_connect(self, env):
+        sock = self.get_request_socket(env)
+        if not sock:
+            return WbResponse.text_response('HTTPS Proxy Not Supported',
+                                            '405 HTTPS Proxy Not Supported')
+
+        sock.send('HTTP/1.0 200 Connection Established\r\n')
+        sock.send('Server: pywb proxy\r\n')
+        sock.send('\r\n')
+
+        hostname = env['REL_REQUEST_URI'].split(':')[0]
 
         ssl_sock = ssl.wrap_socket(sock, server_side=True,
-                                   certfile='/tmp/testcert.pem',
-                                   ssl_version=ssl.PROTOCOL_SSLv23)
+                                   certfile=self.ca[hostname])
+                                   #ssl_version=ssl.PROTOCOL_SSLv23)
 
         env['pywb.proxy_ssl_sock'] = ssl_sock
 
+        #todo: better reading of all headers
         buff = ssl_sock.recv(4096)
 
         buffreader = BytesIO(buff)
@@ -164,7 +184,7 @@ class ProxyRouter(object):
         statusparts = statusline.split(' ')
 
         if len(statusparts) < 3:
-            return
+            raise BadRequestException('Invalid Proxy Request')
 
         env['REQUEST_METHOD'] = statusparts[0]
         env['REL_REQUEST_URI'] = ('https://' +
@@ -177,6 +197,8 @@ class ProxyRouter(object):
         env['PATH_INFO'] = queryparts[0]
         env['QUERY_STRING'] = queryparts[1] if len(queryparts) > 1 else ''
 
+        env['wsgi.input'] = socket._fileobject(ssl_sock, mode='r')
+
         while True:
             line = buffreader.readline()
             if not line:
@@ -188,9 +210,6 @@ class ProxyRouter(object):
 
             name = 'HTTP_' + parts[0].replace('-', '_').upper()
             env[name] = parts[1]
-
-        return True
-
 
     # Proxy Auto-Config (PAC) script for the proxy
     def make_pac_response(self, env):
