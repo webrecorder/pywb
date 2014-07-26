@@ -40,7 +40,7 @@
 # WbResponse Tests
 # =================
 >>> WbResponse.text_response('Test')
-{'body': ['Test'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [('Content-Type', 'text/plain')])}
+{'body': ['Test'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [('Content-Type', 'text/plain'), ('Content-Length', '4')])}
 
 >>> WbResponse.text_stream(['Test', 'Another'], '404')
 {'body': ['Test', 'Another'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '404', headers = [('Content-Type', 'text/plain')])}
