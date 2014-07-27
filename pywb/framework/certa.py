@@ -4,6 +4,7 @@ import OpenSSL
 import random
 
 
+#=================================================================
 class CertificateAuthority(object):
     logger = logging.getLogger('pywb.CertificateAuthority')
 
@@ -21,7 +22,6 @@ class CertificateAuthority(object):
             self._read_ca(ca_file)
 
         if not os.path.exists(certs_dir):
-            self.logger.info("directory for generated certs {} doesn't exist, creating it".format(certs_dir))
             os.mkdir(certs_dir)
 
 
@@ -41,23 +41,37 @@ class CertificateAuthority(object):
         self.cert.set_issuer(self.cert.get_subject())
         self.cert.set_pubkey(self.key)
         self.cert.add_extensions([
-            OpenSSL.crypto.X509Extension(b"basicConstraints", True, b"CA:TRUE, pathlen:0"),
-            OpenSSL.crypto.X509Extension(b"keyUsage", True, b"keyCertSign, cRLSign"),
-            OpenSSL.crypto.X509Extension(b"subjectKeyIdentifier", False, b"hash", subject=self.cert),
+            OpenSSL.crypto.X509Extension(b"basicConstraints",
+                                         True,
+                                         b"CA:TRUE, pathlen:0"),
+
+            OpenSSL.crypto.X509Extension(b"keyUsage",
+                                         True,
+                                         b"keyCertSign, cRLSign"),
+
+            OpenSSL.crypto.X509Extension(b"subjectKeyIdentifier",
+                                         False,
+                                         b"hash",
+                                         subject=self.cert),
             ])
         self.cert.sign(self.key, "sha1")
 
         with open(self.ca_file, 'wb+') as f:
-            f.write(OpenSSL.crypto.dump_privatekey(OpenSSL.SSL.FILETYPE_PEM, self.key))
-            f.write(OpenSSL.crypto.dump_certificate(OpenSSL.SSL.FILETYPE_PEM, self.cert))
+            f.write(OpenSSL.crypto.dump_privatekey(OpenSSL.SSL.FILETYPE_PEM,
+                                                   self.key))
 
-        self.logger.info('generated CA key+cert and wrote to {}'.format(self.ca_file))
-
+            f.write(OpenSSL.crypto.dump_certificate(OpenSSL.SSL.FILETYPE_PEM,
+                                                    self.cert))
 
     def _read_ca(self, filename):
-        self.cert = OpenSSL.crypto.load_certificate(OpenSSL.SSL.FILETYPE_PEM, open(filename).read())
-        self.key = OpenSSL.crypto.load_privatekey(OpenSSL.SSL.FILETYPE_PEM, open(filename).read())
-        self.logger.info('read CA key+cert from {}'.format(self.ca_file))
+        with open(filename) as cert_fh:
+            self.cert = OpenSSL.crypto.load_certificate(
+                OpenSSL.SSL.FILETYPE_PEM, cert_fh.read())
+
+            cert_fh.seek(0)
+
+            self.key = OpenSSL.crypto.load_privatekey(
+                OpenSSL.SSL.FILETYPE_PEM, cert_fh.read())
 
     def __getitem__(self, cn):
         cnp = os.path.sep.join([self.certs_dir, '%s.pem' % cn])
@@ -83,9 +97,9 @@ class CertificateAuthority(object):
             cert.sign(self.key, 'sha1')
 
             with open(cnp, 'wb+') as f:
-                f.write(OpenSSL.crypto.dump_privatekey(OpenSSL.SSL.FILETYPE_PEM, key))
-                f.write(OpenSSL.crypto.dump_certificate(OpenSSL.SSL.FILETYPE_PEM, cert))
-
-            self.logger.info('wrote generated key+cert to {}'.format(cnp))
+                f.write(OpenSSL.crypto.dump_privatekey(
+                    OpenSSL.SSL.FILETYPE_PEM, key))
+                f.write(OpenSSL.crypto.dump_certificate(
+                    OpenSSL.SSL.FILETYPE_PEM, cert))
 
         return cnp
