@@ -64,7 +64,7 @@ class WSGIApp(object):
 
             env['pywb.proxy_statusline'] = statusline
 
-            ssl_sock.write('HTTP/1.0 ' + statusline + '\r\n')
+            ssl_sock.write('HTTP/1.1 ' + statusline + '\r\n')
             for name, value in headers:
                 ssl_sock.write(name + ': ' + value + '\r\n')
 

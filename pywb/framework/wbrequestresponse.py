@@ -125,7 +125,7 @@ class WbRequest(object):
         if not self.wb_url:
             return
 
-        mime = self.env.get('CONTENT_TYPE')
+        mime = self.env.get('CONTENT_TYPE').split(';')[0]
         length = self.env.get('CONTENT_LENGTH')
         stream = self.env['wsgi.input']
 
@@ -167,9 +167,12 @@ class WbResponse(object):
         return WbResponse(status_headers, value=[text])
 
     @staticmethod
-    def redir_response(location, status='302 Redirect'):
-        return WbResponse(StatusAndHeaders(status,
-                                           [('Location', location)]))
+    def redir_response(location, status='302 Redirect', headers=None):
+        redir_headers = [('Location', location), ('Content-Length', '0')]
+        if headers:
+            redir_headers += headers
+
+        return WbResponse(StatusAndHeaders(status, redir_headers))
 
     def __call__(self, env, start_response):
 

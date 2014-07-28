@@ -215,12 +215,16 @@ def create_wb_router(passed_config={}):
         if hasattr(route.handler, 'resolve_refs'):
             route.handler.resolve_refs(handler_dict)
 
-
     # Check for new proxy mode!
     if config.get('enable_http_proxy', False):
         router = ProxyArchivalRouter
     else:
         router = ArchivalRouter
+
+    if config.get('proxy_select_html'):
+        temp = J2TemplateView.create_template(config.get('proxy_select_html'),
+                                              'Proxy Coll Selector')
+        config.get('proxy_options')['proxy_select_view'] = temp
 
     # Finally, create wb router
     return router(
