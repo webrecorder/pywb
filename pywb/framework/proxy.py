@@ -12,7 +12,7 @@ from pywb.rewrite.url_rewriter import HttpsUrlRewriter
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.wbexception import BadRequestException
 
-from certa import CertificateAuthority
+from certauth import CertificateAuthority
 
 
 #=================================================================
@@ -68,8 +68,19 @@ class ProxyRouter(object):
 
         self.unaltered = proxy_options.get('unaltered_replay', False)
 
-        self.ca = CertificateAuthority()
+        if proxy_options.get('enable_https_proxy'):
+            ca_file = proxy_options.get('root_ca_file')
 
+            # attempt to create the root_ca_file if doesn't exist
+            # (generally recommended to create this seperately)
+            certname = proxy_options.get('root_ca_name')
+            CertificateAuthority.generate_ca_root(certname, ca_file)
+
+            certs_dir = proxy_options.get('certs_dir')
+            self.ca = CertificateAuthority(ca_file=ca_file,
+                                           certs_dir=certs_dir)
+        else:
+            self.ca = None
 
     def __call__(self, env):
         is_https = (env['REQUEST_METHOD'] == 'CONNECT')
@@ -119,7 +130,9 @@ class ProxyRouter(object):
 
         # do connect, then get updated url
         if is_https:
-            self.handle_connect(env)
+            response = self.handle_connect(env)
+            if response:
+                return response
 
             url = env['REL_REQUEST_URI']
 
@@ -142,14 +155,23 @@ class ProxyRouter(object):
         return route.handler(wbrequest)
 
     def get_request_socket(self, env):
+        if not self.ca:
+            return None
+
+        sock = None
+
         if env.get('uwsgi.version'):
-            import uwsgi
-            fd = uwsgi.connection_fd()
-            conn = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
-            sock = socket.socket(_sock=conn)
+            try:
+                import uwsgi
+                fd = uwsgi.connection_fd()
+                conn = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
+                sock = socket.socket(_sock=conn)
+            except Exception:
+                pass
         elif env.get('gunicorn.socket'):
             sock = env['gunicorn.socket']
-        else:
+
+        if not sock:
             # attempt to find socket from wsgi.input
             input_ = env.get('wsgi.input')
             if input_ and hasattr(input_, '_sock'):
@@ -168,9 +190,11 @@ class ProxyRouter(object):
         sock.send('\r\n')
 
         hostname = env['REL_REQUEST_URI'].split(':')[0]
+        created, certfile = self.ca.get_cert_for_host(hostname)
 
-        ssl_sock = ssl.wrap_socket(sock, server_side=True,
-                                   certfile=self.ca[hostname])
+        ssl_sock = ssl.wrap_socket(sock,
+                                   server_side=True,
+                                   certfile=certfile)
                                    #ssl_version=ssl.PROTOCOL_SSLv23)
 
         env['pywb.proxy_ssl_sock'] = ssl_sock
