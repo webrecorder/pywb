@@ -150,10 +150,11 @@ class CertificateAuthority(object):
 def main():
     parser = ArgumentParser(description='Cert Auth Cert Maker')
 
-    parser.add_argument('output_file', help='path to certificate file')
+    parser.add_argument('output_pem_file', help='path to cert .pem file')
 
     parser.add_argument('-r', '--use-root',
-                        help='use specified root cert to create signed cert')
+                        help=('use specified root cert (.pem file) ' +
+                              'to create signed cert'))
 
     parser.add_argument('-n',  '--name', action='store', default=CERT_NAME,
                         help='name for root certificate')
@@ -173,7 +174,7 @@ def main():
                                   certs_dir=result.certs_dir,
                                   certname=result.name)
 
-        created, host_filename = ca.get_cert_for_host(result.output_file,
+        created, host_filename = ca.get_cert_for_host(result.output_pem_file,
                                                       overwrite)
 
         if created:
@@ -187,14 +188,14 @@ def main():
     # Create new root certificate
     else:
         created, c, k = (CertificateAuthority.
-                         generate_ca_root(result.output_file,
+                         generate_ca_root(result.output_pem_file,
                                           result.name,
                                           overwrite))
 
         if created:
-            print 'Created new root cert: "' + result.output_file + '"'
+            print 'Created new root cert: "' + result.output_pem_file + '"'
         else:
-            print ('Root cert "' + result.output_file + '" already exists,' +
+            print ('Root cert "' + result.output_pem_file + '" already exists,' +
                     ' use -f to overwrite')
 
 if __name__ == "__main__":
