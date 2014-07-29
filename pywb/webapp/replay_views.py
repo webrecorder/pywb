@@ -99,8 +99,8 @@ class RewriteLiveView(BaseContentView):
         if ref_wburl_str:
             wbrequest.env['REL_REFERER'] = WbUrl(ref_wburl_str).url
 
-        url = wbrequest.wb_url.url
-        result = self.rewriter.fetch_request(url, wbrequest.urlrewriter,
+        wb_url = wbrequest.wb_url
+        result = self.rewriter.fetch_request(wb_url, wbrequest.urlrewriter,
                                              head_insert_func=head_insert_func,
                                              env=wbrequest.env)
 
@@ -211,14 +211,13 @@ class ReplayView(BaseContentView):
                                 create_insert_func(wbrequest))
 
         result = (self.content_rewriter.
-                  rewrite_content(urlrewriter,
+                  rewrite_content(wbrequest.wb_url,
+                                  urlrewriter,
                                   headers=status_headers,
                                   stream=stream,
                                   head_insert_func=head_insert_func,
                                   urlkey=cdx['urlkey'],
-                                  sanitize_only=wbrequest.wb_url.is_identity,
-                                  cdx=cdx,
-                                  mod=wbrequest.wb_url.mod))
+                                  cdx=cdx))
 
         (status_headers, response_iter, is_rewritten) = result
 

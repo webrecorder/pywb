@@ -125,7 +125,7 @@ class WbRequest(object):
         if not self.wb_url:
             return
 
-        mime = self.env.get('CONTENT_TYPE')
+        mime = self.env.get('CONTENT_TYPE').split(';')[0]
         length = self.env.get('CONTENT_LENGTH')
         stream = self.env['wsgi.input']
 
@@ -152,23 +152,31 @@ class WbResponse(object):
         pass
 
     @staticmethod
-    def text_stream(stream, status='200 OK', content_type='text/plain'):
-        status_headers = StatusAndHeaders(status,
-                                          [('Content-Type', content_type)])
+    def text_stream(stream, status='200 OK', content_type='text/plain',
+                    headers=None):
+        def_headers = [('Content-Type', content_type)]
+        if headers:
+            def_headers += headers
+
+        status_headers = StatusAndHeaders(status, def_headers)
 
         return WbResponse(status_headers, value=stream)
 
     @staticmethod
     def text_response(text, status='200 OK', content_type='text/plain'):
         status_headers = StatusAndHeaders(status,
-                                          [('Content-Type', content_type)])
+                                          [('Content-Type', content_type),
+                                           ('Content-Length', str(len(text)))])
 
         return WbResponse(status_headers, value=[text])
 
     @staticmethod
-    def redir_response(location, status='302 Redirect'):
-        return WbResponse(StatusAndHeaders(status,
-                                           [('Location', location)]))
+    def redir_response(location, status='302 Redirect', headers=None):
+        redir_headers = [('Location', location), ('Content-Length', '0')]
+        if headers:
+            redir_headers += headers
+
+        return WbResponse(StatusAndHeaders(status, redir_headers))
 
     def __call__(self, env, start_response):
 
