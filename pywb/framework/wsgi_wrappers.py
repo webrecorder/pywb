@@ -77,8 +77,8 @@ class WSGIApp(object):
         ssl_sock.write('\r\n')
 
         for obj in resp_iter:
-            ssl_sock.write(obj)
-
+            if obj:
+                ssl_sock.write(obj)
         ssl_sock.close()
 
         start_response(env['pywb.proxy_statusline'], [])
@@ -125,22 +125,24 @@ class WSGIApp(object):
         else:
             err_url = None
 
+        err_msg = exc.message.encode('utf-8')
+
         if print_trace:
             import traceback
             err_details = traceback.format_exc(exc)
             print err_details
         else:
-            logging.info(str(exc))
+            logging.info(err_msg)
             err_details = None
 
         if error_view:
             return error_view.render_response(exc_type=type(exc).__name__,
-                                              err_msg=str(exc),
+                                              err_msg=err_msg,
                                               err_details=err_details,
                                               status=status,
                                               err_url=err_url)
         else:
-            return WbResponse.text_response(status + ' Error: ' + str(exc),
+            return WbResponse.text_response(status + ' Error: ' + err_msg,
                                             status=status)
 
 #=================================================================

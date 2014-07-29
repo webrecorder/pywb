@@ -2,6 +2,25 @@ from wbrequestresponse import WbResponse, WbRequest
 from pywb.utils.statusandheaders import StatusAndHeaders
 import urlparse
 import base64
+import os
+
+try:
+    import uwsgi
+    uwsgi_cache = True
+except ImportError:
+    uwsgi_cache = False
+
+
+#=================================================================
+class UwsgiCache(object):
+    def __setitem__(self, item, value):
+        uwsgi.cache_update(item, value)
+
+    def __getitem__(self, item):
+        return uwsgi.cache_get(item)
+
+    def __contains__(self, item):
+        return uwsgi.cache_exists(item)
 
 
 #=================================================================
@@ -104,9 +123,15 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
         self.cookie_name = config.get('cookie_name', '__pywb_coll')
         self.proxy_select_view = config.get('proxy_select_view')
 
+        if uwsgi_cache:
+            print 'UWSGI CACHE'
+            self.cache = UwsgiCache()
+        else:
+            self.cache = {}
+
     def get_proxy_coll(self, env):
-        cookie = self.extract_client_cookie(env, self.cookie_name)
-        return cookie
+        coll, sesh_id = self.get_coll(env)
+        return coll
 
     def select_coll_response(self, env):
         return self.make_magic_response('auto',
@@ -114,14 +139,15 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
                                         env)
 
     def resolve(self, env):
-        url = env['REL_REQUEST_URI']
+        server_name = env['pywb.proxy_host']
 
-        if ('.' + self.magic_name) in url:
-            return None, None, None, self.handle_magic_page(url, env)
+        if ('.' + self.magic_name) in server_name:
+            return None, None, None, self.handle_magic_page(env)
 
         return super(CookieResolver, self).resolve(env)
 
-    def handle_magic_page(self, url, env):
+    def handle_magic_page(self, env):
+        url = env['REL_REQUEST_URI']
         parts = urlparse.urlsplit(url)
 
         path_url = parts.path[1:]
@@ -129,58 +155,77 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
             path_url += '?' + parts.query
 
         if parts.netloc.startswith('auto'):
-            coll = self.extract_client_cookie(env, self.cookie_name)
+            coll, sesh_id = self.get_coll(env)
 
             if coll:
-                return self.make_sethost_cookie_response(coll, path_url, env)
+                return self.make_sethost_cookie_response(sesh_id, path_url, env)
             else:
                 return self.make_magic_response('select', path_url, env)
 
         elif '.set.' in parts.netloc:
-            coll = parts.netloc.split('.', 1)[0]
-            headers = self.make_cookie_headers(coll, self.magic_name)
+            old_sesh_id = self.extract_client_cookie(env, self.cookie_name)
+            sesh_id = self.create_renew_sesh_id(old_sesh_id)
 
-            return self.make_sethost_cookie_response(coll, path_url, env,
+            if sesh_id != old_sesh_id:
+                headers = self.make_cookie_headers(sesh_id, self.magic_name)
+            else:
+                headers = None
+
+            value, name, _ = parts.netloc.split('.', 2)
+
+            # set sesh value
+            self.cache[sesh_id] = value
+
+            return self.make_sethost_cookie_response(sesh_id, path_url, env,
                                                      headers=headers)
 
         elif '.sethost.' in parts.netloc:
             host_parts = parts.netloc.split('.', 1)
-            coll = host_parts[0]
+            sesh_id = host_parts[0]
 
             inx = parts.netloc.find('.' + self.magic_name + '.')
             domain = parts.netloc[inx + len(self.magic_name) + 2:]
 
-            headers = self.make_cookie_headers(coll, domain)
+            headers = self.make_cookie_headers(sesh_id, domain)
 
             full_url = env['pywb.proxy_scheme'] + '://' + domain
             full_url += '/' + path_url
             return WbResponse.redir_response(full_url, headers=headers)
 
-        elif self.proxy_select_view:
-            route_temp = env['pywb.proxy_scheme'] + '://%s.set.'
+        elif 'select.' in parts.netloc:
+            if not self.proxy_select_view:
+                return WbResponse.text_response('select text for ' + path_url)
+
+            coll, sesh_id = self.get_coll(env)
+
+            route_temp = env['pywb.proxy_scheme'] + '://%s.coll.set.'
             route_temp += self.magic_name + '/' + path_url
 
             return (self.proxy_select_view.
                     render_response(routes=self.routes,
                                     route_temp=route_temp,
+                                    coll=coll,
                                     url=path_url))
-        else:
-            return WbResponse.text_response('select text for ' + path_url)
 
-    def make_cookie_headers(self, coll, domain):
+        #else:
+        #    msg = 'Invalid Magic Path: ' + url
+        #    print msg
+        #    return WbResponse.text_response(msg, status='404 Not Found')
+
+    def make_cookie_headers(self, sesh_id, domain):
         cookie_val = '{0}={1}; Path=/; Domain=.{2}; HttpOnly'
-        cookie_val = cookie_val.format(self.cookie_name, coll, domain)
+        cookie_val = cookie_val.format(self.cookie_name, sesh_id, domain)
         headers = [('Set-Cookie', cookie_val)]
         return headers
 
-    def make_sethost_cookie_response(self, coll, path_url, env, headers=None):
+    def make_sethost_cookie_response(self, sesh_id, path_url, env, headers=None):
         path_parts = urlparse.urlsplit(path_url)
 
         new_url = path_parts.path[1:]
         if path_parts.query:
             new_url += '?' + path_parts.query
 
-        return self.make_magic_response(coll + '.sethost', new_url, env,
+        return self.make_magic_response(sesh_id + '.sethost', new_url, env,
                                         suffix=path_parts.netloc,
                                         headers=headers)
 
@@ -193,6 +238,23 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
             full_url += '.' + suffix
         full_url += '/' + url
         return WbResponse.redir_response(full_url, headers=headers)
+
+    def get_coll(self, env):
+        sesh_id = self.extract_client_cookie(env, self.cookie_name)
+
+        coll = None
+        if sesh_id:
+            coll = self.cache[sesh_id]
+
+        return coll, sesh_id
+
+    def create_renew_sesh_id(self, sesh_id, force=False):
+        #if sesh_id in self.cache and not force:
+        if sesh_id and (sesh_id in self.cache) and not force:
+            return sesh_id
+
+        sesh_id = base64.b32encode(os.urandom(5)).lower()
+        return sesh_id
 
     @staticmethod
     def extract_client_cookie(env, cookie_name):

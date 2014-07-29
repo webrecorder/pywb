@@ -14,7 +14,7 @@ from pywb.utils.bufferedreaders import BufferedReader
 
 from certauth import CertificateAuthority
 
-from proxy_resolvers import ProxyAuthResolver
+from proxy_resolvers import ProxyAuthResolver, CookieResolver
 
 
 #=================================================================
@@ -68,6 +68,8 @@ class ProxyRouter(object):
         self.resolver = ProxyAuthResolver(routes, proxy_options)
         #self.resolver = CookieResolver(routes, proxy_options)
 
+        self.magic_name = proxy_options.get('magic_name', 'pywb-proxy.com')
+
         self.unaltered = proxy_options.get('unaltered_replay', False)
 
         self.proxy_pac_path = proxy_options.get('pac_path', self.PAC_PATH)
@@ -100,7 +102,12 @@ class ProxyRouter(object):
             if not url.startswith(('http://', 'https://')):
                 return None
 
-        env['pywb.proxy_scheme'] = 'https' if is_https else 'http'
+            env['pywb.proxy_scheme'] = 'http'
+
+        route = None
+        coll = None
+        matcher = None
+        response = None
 
         # check resolver, for pre connect resolve
         if self.resolver.pre_connect:
@@ -115,6 +122,21 @@ class ProxyRouter(object):
                 return response
 
             url = env['REL_REQUEST_URI']
+        else:
+            parts = urlparse.urlsplit(env['REL_REQUEST_URI'])
+            hostport = parts.netloc.split(':', 1)
+            env['pywb.proxy_host'] = hostport[0]
+            env['pywb.proxy_port'] = hostport[1] if len(hostport) == 2 else ''
+            env['pywb.proxy_req_uri'] = parts.path
+            if parts.query:
+                env['pywb.proxy_req_uri'] += '?' + parts.query
+
+        # static
+        static_prefix = 'static.' + self.magic_name
+
+        if env['pywb.proxy_host'] == static_prefix:
+            env['REL_REQUEST_URI'] = env['pywb.proxy_req_uri']
+            return None
 
         # check resolver, post connect
         if not self.resolver.pre_connect:
@@ -122,11 +144,14 @@ class ProxyRouter(object):
             if response:
                 return response
 
+        host_prefix = env['pywb.proxy_scheme'] + '://' + static_prefix
+
         wbrequest = route.request_class(env,
                               request_uri=url,
                               wb_url_str=url,
                               coll=coll,
-                              host_prefix=self.hostpaths[0],
+            #                  host_prefix=self.hostpaths[0],
+                              host_prefix=host_prefix,
                               wburl_class=route.handler.get_wburl_type(),
                               urlrewriter_class=HttpsUrlRewriter,
                               use_abs_prefix=False,
@@ -136,7 +161,8 @@ class ProxyRouter(object):
             route.apply_filters(wbrequest, matcher)
 
         if self.unaltered:
-            wbrequest.wb_url.mod = 'id_'
+            #wbrequest.wb_url.mod = 'id_'
+            wbrequest.wb_url.mod = 'bn_'
 
         return route.handler(wbrequest)
 
@@ -201,14 +227,16 @@ class ProxyRouter(object):
 
         env['SERVER_PROTOCOL'] = statusparts[2].strip()
 
-        env['SERVER_NAME'] = hostname
-        env['SERVER_PORT'] = port
+        env['pywb.proxy_scheme'] = 'https'
+
+        env['pywb.proxy_host'] = hostname
+        env['pywb.proxy_port'] = port
+        env['pywb.proxy_req_uri'] = statusparts[1]
 
         queryparts = env['REL_REQUEST_URI'].split('?', 1)
         env['PATH_INFO'] = queryparts[0]
         env['QUERY_STRING'] = queryparts[1] if len(queryparts) > 1 else ''
 
-        env['wsgi.url_scheme'] = 'https'
 
         while True:
             line = buffreader.readline()

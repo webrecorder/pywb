@@ -152,9 +152,13 @@ class WbResponse(object):
         pass
 
     @staticmethod
-    def text_stream(stream, status='200 OK', content_type='text/plain'):
-        status_headers = StatusAndHeaders(status,
-                                          [('Content-Type', content_type)])
+    def text_stream(stream, status='200 OK', content_type='text/plain',
+                    headers=None):
+        def_headers = [('Content-Type', content_type)]
+        if headers:
+            def_headers += headers
+
+        status_headers = StatusAndHeaders(status, def_headers)
 
         return WbResponse(status_headers, value=stream)
 
