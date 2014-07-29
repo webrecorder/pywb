@@ -196,8 +196,11 @@ class WbUrl(BaseWbUrl):
     @property
     def is_embed(self):
         return (self.mod and
-                self.mod != 'id_' and
-                self.mod != 'mp_')
+                self.mod not in ('id_', 'mp_', 'bn_'))
+
+    @property
+    def is_banner_only(self):
+        return (self.mod == 'bn_')
 
     @property
     def is_identity(self):
