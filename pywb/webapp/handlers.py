@@ -115,6 +115,14 @@ class StaticHandler(BaseHandler):
         try:
             data = self.block_loader.load(full_path)
 
+            try:
+                data.seek(0, 2)
+                size = data.tell()
+                data.seek(0)
+                headers = [('Content-Length', str(size))]
+            except IOError:
+                headers = None
+
             if 'wsgi.file_wrapper' in wbrequest.env:
                 reader = wbrequest.env['wsgi.file_wrapper'](data)
             else:
@@ -122,7 +130,9 @@ class StaticHandler(BaseHandler):
 
             content_type, _ = mimetypes.guess_type(full_path)
 
-            return WbResponse.text_stream(data, content_type=content_type)
+            return WbResponse.text_stream(data,
+                                          content_type=content_type,
+                                          headers=headers)
 
         except IOError:
             raise NotFoundException('Static File Not Found: ' +

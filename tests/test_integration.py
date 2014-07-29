@@ -98,6 +98,7 @@ class TestWb:
 
         assert 'Mon, Jan 27 2014 17:12:38' in resp.body
         assert 'wb.js' in resp.body
+        assert 'WB_wombat_init' in resp.body
         assert '/pywb/20140127171238mp_/http://www.iana.org/time-zones"' in resp.body
 
     def test_replay_non_frame_content(self):
@@ -140,6 +141,19 @@ class TestWb:
         assert len(lines) == 17
         assert lines[0].startswith('org,iana)/_css/2013.1/print.css 20140127171239')
 
+
+    def test_replay_banner_only(self):
+        resp = self.testapp.get('/pywb/20140126201054bn_/http://www.iana.org/domains/reserved')
+
+        # wb.js header insertion
+        assert 'wb.js' in resp.body
+
+        # no wombat present
+        assert 'WB_wombat_init' not in resp.body
+
+        # url not rewritten
+        #assert '"http://www.iana.org/domains/example"' in resp.body
+        assert '"/_css/2013.1/screen.css"' in resp.body
 
     def test_replay_identity_1(self):
         resp = self.testapp.get('/pywb/20140127171251id_/http://example.com')

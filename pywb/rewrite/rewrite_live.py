@@ -14,8 +14,9 @@ from pywb.utils.timeutils import datetime_to_timestamp
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.canonicalize import canonicalize
 
-from pywb.rewrite.url_rewriter import UrlRewriter
-from pywb.rewrite.rewrite_content import RewriteContent
+from url_rewriter import UrlRewriter
+from wburl import WbUrl
+from rewrite_content import RewriteContent
 
 
 #=================================================================
@@ -114,15 +115,20 @@ class LiveRewriter(object):
 
         return (status_headers, stream)
 
-    def fetch_request(self, url, urlrewriter,
+    def fetch_request(self, wb_url, urlrewriter,
                       head_insert_func=None,
                       urlkey=None,
                       env=None,
                       req_headers={},
                       timestamp=None,
                       follow_redirects=False,
-                      proxies=None,
-                      mod=None):
+                      proxies=None):
+
+        if isinstance(wb_url, str):
+            url = wb_url
+            wb_url = WbUrl(url)
+        else:
+            url = wb_url.url
 
         ts_err = url.split('///')
 
@@ -155,13 +161,13 @@ class LiveRewriter(object):
               }
 
         result = (self.rewriter.
-                  rewrite_content(urlrewriter,
+                  rewrite_content(wb_url,
+                                  urlrewriter,
                                   status_headers,
                                   stream,
                                   head_insert_func=head_insert_func,
                                   urlkey=urlkey,
-                                  cdx=cdx,
-                                  mod=mod))
+                                  cdx=cdx))
 
         return result
 
@@ -174,41 +180,3 @@ class LiveRewriter(object):
         buff = ''.join(gen)
 
         return (status_headers, buff)
-
-
-#=================================================================
-def main():  # pragma: no cover
-    import sys
-
-    if len(sys.argv) < 2:
-        msg = 'Usage: {0} url-to-fetch [wb-url-target] [extra-prefix]'
-        print msg.format(sys.argv[0])
-        return 1
-    else:
-        url = sys.argv[1]
-
-    if len(sys.argv) >= 3:
-        wburl_str = sys.argv[2]
-        if wburl_str.startswith('/'):
-            wburl_str = wburl_str[1:]
-
-        prefix, wburl_str = wburl_str.split('/', 1)
-        prefix = '/' + prefix + '/'
-    else:
-        wburl_str = (datetime_to_timestamp(datetime.datetime.now()) +
-                     '/http://example.com/path/sample.html')
-        prefix = '/pywb_rewrite/'
-
-    urlrewriter = UrlRewriter(wburl_str, prefix)
-
-    liverewriter = LiveRewriter()
-
-    status_headers, buff = liverewriter.get_rewritten(url, urlrewriter)
-
-    sys.stdout.write(buff)
-    return 0
-
-
-#=================================================================
-if __name__ == "__main__":
-    exit(main())

@@ -1,6 +1,8 @@
 #import chardet
 import pkgutil
 import yaml
+import re
+
 from chardet.universaldetector import UniversalDetector
 from io import BytesIO
 
@@ -52,11 +54,12 @@ class RewriteContent:
 
         return (rewritten_headers, stream)
 
-    def rewrite_content(self, urlrewriter, headers, stream,
+    def rewrite_content(self, wb_url, urlrewriter, headers, stream,
                         head_insert_func=None, urlkey='',
-                        sanitize_only=False, cdx=None, mod=None):
+                        cdx=None):
 
-        if sanitize_only:
+        if (wb_url.is_identity or
+            (not head_insert_func and wb_url.is_banner_only)):
             status_headers, stream = self.sanitize_content(headers, stream)
             return (status_headers, self.stream_to_gen(stream), False)
 
@@ -78,6 +81,8 @@ class RewriteContent:
 
         # see known js/css modifier specified, the context should run
         # default text_type
+        mod = wb_url.mod
+
         if mod == 'js_':
             text_type = 'js'
         elif mod == 'cs_':
@@ -118,6 +123,10 @@ class RewriteContent:
             if head_insert_func:
                 head_insert_str = head_insert_func(rule, cdx)
 
+            if wb_url.is_banner_only:
+                gen = self._head_insert_only_gen(head_insert_str, stream)
+                return (status_headers, gen, False)
+
             rewriter = rewriter_class(urlrewriter,
                                       js_rewriter_class=rule.rewriters['js'],
                                       css_rewriter_class=rule.rewriters['css'],
@@ -125,7 +134,10 @@ class RewriteContent:
                                       defmod=self.defmod)
 
         else:
-        # apply one of (js, css, xml) rewriters
+            if wb_url.is_banner_only:
+                return (status_headers, self.stream_to_gen(stream), False)
+
+            # apply one of (js, css, xml) rewriters
             rewriter = rewriter_class(urlrewriter)
 
         # Create rewriting generator
@@ -133,6 +145,32 @@ class RewriteContent:
                                          stream, first_buff)
 
         return (status_headers, gen, True)
+
+    HEAD_REGEX = re.compile(r'<\s*head\b[^>]*[>]+', re.I)
+
+    def _head_insert_only_gen(self, insert_str, stream):
+        max_len = 1024
+        buff = ''
+        while max_len > 0:
+            curr = stream.read(max_len)
+            if not curr:
+                break
+
+            max_len -= len(buff)
+            buff += curr
+
+        matcher = self.HEAD_REGEX.search(buff)
+
+        if matcher:
+            yield buff[:matcher.end()] + insert_str
+            yield buff[matcher.end():]
+        else:
+            yield insert_str
+            yield buff
+
+        for buff in self.stream_to_gen(stream):
+            yield buff
+
 
     # Create rewrite stream,  may even be chunked by front-end
     def _rewriting_stream_gen(self, rewriter, encoding,
