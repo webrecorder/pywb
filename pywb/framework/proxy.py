@@ -65,11 +65,14 @@ class ProxyRouter(object):
         if proxy_options:
             proxy_options = proxy_options.get('proxy_options', {})
 
-        #self.resolver = ProxyAuthResolver(routes, proxy_options)
-        self.resolver = CookieResolver(routes, proxy_options)
+        if proxy_options.get('cookie_resolver'):
+            self.resolver = CookieResolver(routes, proxy_options)
+        else:
+            self.resolver = ProxyAuthResolver(routes, proxy_options)
 
         self.magic_name = proxy_options.get('magic_name', 'pywb-proxy.com')
 
+        self.insert_banner = proxy_options.get('banner_only_replay', False)
         self.unaltered = proxy_options.get('unaltered_replay', False)
 
         self.proxy_pac_path = proxy_options.get('pac_path', self.PAC_PATH)
@@ -160,9 +163,10 @@ class ProxyRouter(object):
         if matcher:
             route.apply_filters(wbrequest, matcher)
 
-        if self.unaltered:
-            #wbrequest.wb_url.mod = 'id_'
+        if self.insert_banner:
             wbrequest.wb_url.mod = 'bn_'
+        elif self.unaltered:
+            wbrequest.wb_url.mod = 'id_'
 
         return route.handler(wbrequest)
 
