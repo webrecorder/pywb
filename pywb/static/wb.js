@@ -70,8 +70,9 @@ function init_banner() {
 
     text += "<b id='_wb_capture_info'>" + capture_str + "</b>";
 
-    if (wbinfo.is_proxy_mode && wbinfo.url) {
-        text += '<br/><a href="//select.pywb-proxy.com/' + wbinfo.url + '">Switch Collection</a>';
+    if (wbinfo.proxy_select && wbinfo.url) {
+        full_url = wbinfo.proxy_select + "/" + wbinfo.url;
+        text += '<br/><a href="//' + full_url + '">Switch Collection</a>';
     }
     
     banner.innerHTML = text;

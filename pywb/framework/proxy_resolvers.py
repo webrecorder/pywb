@@ -119,7 +119,7 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
     def __init__(self, routes, config):
         config['pre_connect'] = False
         super(CookieResolver, self).__init__(routes, config)
-        self.magic_name = config.get('magic_name', 'pywb-proxy.com')
+        self.magic_name = config['magic_name']
         self.cookie_name = config.get('cookie_name', '__pywb_coll')
         self.proxy_select_view = config.get('proxy_select_view')
 

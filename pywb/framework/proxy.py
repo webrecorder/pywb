@@ -55,6 +55,7 @@ class ProxyRouter(object):
 
     PAC_PATH = '/proxy.pac'
     BLOCK_SIZE = 4096
+    DEF_MAGIC_NAME = 'pywb.proxy'
 
     def __init__(self, routes, **kwargs):
         self.hostpaths = kwargs.get('hostpaths')
@@ -65,12 +66,15 @@ class ProxyRouter(object):
         if proxy_options:
             proxy_options = proxy_options.get('proxy_options', {})
 
+        self.magic_name = proxy_options.get('magic_name')
+        if not self.magic_name:
+            self.magic_name = self.DEF_MAGIC_NAME
+            proxy_options['magic_name'] = self.magic_name
+
         if proxy_options.get('cookie_resolver'):
             self.resolver = CookieResolver(routes, proxy_options)
         else:
             self.resolver = ProxyAuthResolver(routes, proxy_options)
-
-        self.magic_name = proxy_options.get('magic_name', 'pywb-proxy.com')
 
         self.insert_banner = proxy_options.get('banner_only_replay', False)
         self.unaltered = proxy_options.get('unaltered_replay', False)
@@ -134,10 +138,10 @@ class ProxyRouter(object):
             if parts.query:
                 env['pywb.proxy_req_uri'] += '?' + parts.query
 
-        # static
-        static_prefix = 'static.' + self.magic_name
+        # select prefix
+        env['pywb_proxy_select'] = 'select.' + self.magic_name
 
-        if env['pywb.proxy_host'] == static_prefix:
+        if env['pywb.proxy_host'] == self.magic_name:
             env['REL_REQUEST_URI'] = env['pywb.proxy_req_uri']
             return None
 
@@ -147,13 +151,12 @@ class ProxyRouter(object):
             if response:
                 return response
 
-        host_prefix = env['pywb.proxy_scheme'] + '://' + static_prefix
+        host_prefix = env['pywb.proxy_scheme'] + '://' + self.magic_name
 
         wbrequest = route.request_class(env,
                               request_uri=url,
                               wb_url_str=url,
                               coll=coll,
-            #                  host_prefix=self.hostpaths[0],
                               host_prefix=host_prefix,
                               wburl_class=route.handler.get_wburl_type(),
                               urlrewriter_class=HttpsUrlRewriter,
