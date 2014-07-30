@@ -33,6 +33,7 @@ DEFAULTS = {
     'search_html': 'ui/search.html',
     'home_html': 'ui/index.html',
     'error_html': 'ui/error.html',
+    'proxy_select_html': 'ui/proxy_select.html',
 
     'template_globals': {'static_path': 'static/default'},
 
@@ -218,13 +219,18 @@ def create_wb_router(passed_config={}):
     # Check for new proxy mode!
     if config.get('enable_http_proxy', False):
         router = ProxyArchivalRouter
+
+        view = J2TemplateView.create_template(
+                  config.get('proxy_select_html'),
+                 'Proxy Coll Selector')
+
+        if not 'proxy_options' in passed_config:
+            passed_config['proxy_options'] = {}
+
+        passed_config['proxy_options']['proxy_select_view'] = view
+
     else:
         router = ArchivalRouter
-
-    if config.get('proxy_select_html'):
-        temp = J2TemplateView.create_template(config.get('proxy_select_html'),
-                                              'Proxy Coll Selector')
-        config.get('proxy_options')['proxy_select_view'] = temp
 
     # Finally, create wb router
     return router(
@@ -243,6 +249,5 @@ def create_wb_router(passed_config={}):
 
         error_view=J2TemplateView.create_template(config.get('error_html'),
                                                  'Error Page'),
-
         config=config
     )

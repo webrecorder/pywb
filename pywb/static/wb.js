@@ -69,6 +69,10 @@ function init_banner() {
     var capture_str = (wbinfo ? wbinfo.capture_str : "");
 
     text += "<b id='_wb_capture_info'>" + capture_str + "</b>";
+
+    if (wbinfo.is_proxy_mode && wbinfo.url) {
+        text += '<br/><a href="//select.pywb-proxy.com/' + wbinfo.url + '">Switch Collection</a>';
+    }
     
     banner.innerHTML = text;
 

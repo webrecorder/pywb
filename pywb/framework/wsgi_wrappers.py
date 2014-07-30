@@ -135,11 +135,14 @@ class WSGIApp(object):
             logging.info(err_msg)
             err_details = None
 
+        is_proxy_mode = env.get('pywb.proxy_host') is not None
+
         if error_view:
             return error_view.render_response(exc_type=type(exc).__name__,
                                               err_msg=err_msg,
                                               err_details=err_details,
                                               status=status,
+                                              is_proxy_mode=is_proxy_mode,
                                               err_url=err_url)
         else:
             return WbResponse.text_response(status + ' Error: ' + err_msg,

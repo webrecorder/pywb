@@ -124,7 +124,6 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
         self.proxy_select_view = config.get('proxy_select_view')
 
         if uwsgi_cache:
-            print 'UWSGI CACHE'
             self.cache = UwsgiCache()
         else:
             self.cache = {}

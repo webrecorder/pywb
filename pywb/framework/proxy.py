@@ -65,8 +65,8 @@ class ProxyRouter(object):
         if proxy_options:
             proxy_options = proxy_options.get('proxy_options', {})
 
-        self.resolver = ProxyAuthResolver(routes, proxy_options)
-        #self.resolver = CookieResolver(routes, proxy_options)
+        #self.resolver = ProxyAuthResolver(routes, proxy_options)
+        self.resolver = CookieResolver(routes, proxy_options)
 
         self.magic_name = proxy_options.get('magic_name', 'pywb-proxy.com')
 
