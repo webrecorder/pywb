@@ -118,7 +118,7 @@ class ProxyRouter(object):
 
         # check resolver, for pre connect resolve
         if self.resolver.pre_connect:
-            route, coll, matcher, response, ts = self.resolver.resolve(env)
+            route, coll, matcher, ts, response = self.resolver.resolve(env)
             if response:
                 return response
 
