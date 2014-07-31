@@ -76,7 +76,6 @@ class ProxyRouter(object):
         else:
             self.resolver = ProxyAuthResolver(routes, proxy_options)
 
-        self.insert_banner = proxy_options.get('banner_only_replay', False)
         self.unaltered = proxy_options.get('unaltered_replay', False)
 
         self.proxy_pac_path = proxy_options.get('pac_path', self.PAC_PATH)
@@ -115,10 +114,11 @@ class ProxyRouter(object):
         coll = None
         matcher = None
         response = None
+        ts = None
 
         # check resolver, for pre connect resolve
         if self.resolver.pre_connect:
-            route, coll, matcher, response = self.resolver.resolve(env)
+            route, coll, matcher, response, ts = self.resolver.resolve(env)
             if response:
                 return response
 
@@ -138,26 +138,36 @@ class ProxyRouter(object):
             if parts.query:
                 env['pywb.proxy_req_uri'] += '?' + parts.query
 
-        # select prefix
-        env['pywb_proxy_select'] = 'select.' + self.magic_name
+        env['pywb_proxy_magic'] = self.magic_name
 
+        # route (static) and other resources to archival replay
         if env['pywb.proxy_host'] == self.magic_name:
             env['REL_REQUEST_URI'] = env['pywb.proxy_req_uri']
             return None
 
         # check resolver, post connect
         if not self.resolver.pre_connect:
-            route, coll, matcher, response = self.resolver.resolve(env)
+            route, coll, matcher, ts, response = self.resolver.resolve(env)
             if response:
                 return response
 
         host_prefix = env['pywb.proxy_scheme'] + '://' + self.magic_name
+        rel_prefix = ''
+
+        # special case for proxy calendar
+        if (env['pywb.proxy_host'] == 'query.' + self.magic_name):
+            url = env['pywb.proxy_req_uri'][1:]
+            rel_prefix = '/'
+
+        if ts is not None:
+            url = ts + '/' + url
 
         wbrequest = route.request_class(env,
                               request_uri=url,
                               wb_url_str=url,
                               coll=coll,
                               host_prefix=host_prefix,
+                              rel_prefix=rel_prefix,
                               wburl_class=route.handler.get_wburl_type(),
                               urlrewriter_class=HttpsUrlRewriter,
                               use_abs_prefix=False,
@@ -166,10 +176,10 @@ class ProxyRouter(object):
         if matcher:
             route.apply_filters(wbrequest, matcher)
 
-        if self.insert_banner:
-            wbrequest.wb_url.mod = 'bn_'
-        elif self.unaltered:
+        if self.unaltered:
             wbrequest.wb_url.mod = 'id_'
+        elif is_https:
+            wbrequest.wb_url.mod = 'bn_'
 
         return route.handler(wbrequest)
 
@@ -209,13 +219,23 @@ class ProxyRouter(object):
         sock.send('\r\n')
 
         hostname, port = env['REL_REQUEST_URI'].split(':')
-        created, certfile = self.ca.get_cert_for_host(hostname)
+        cert_host = hostname
 
-        ssl_sock = ssl.wrap_socket(sock,
-                                   server_side=True,
-                                   certfile=certfile,
-                                   ciphers="ALL",
-                                   ssl_version=ssl.PROTOCOL_SSLv23)
+        host_parts = hostname.split('.', 1)
+        if len(host_parts) == 2 and '.' in host_parts[1]:
+            cert_host = host_parts[1]
+
+        created, certfile = self.ca.get_cert_for_host(cert_host,
+                                                      wildcard=True)
+
+        try:
+            ssl_sock = ssl.wrap_socket(sock,
+                                       server_side=True,
+                                       certfile=certfile,
+                                       ciphers="ALL",
+                                       ssl_version=ssl.PROTOCOL_SSLv23)
+        except Exception as se:
+            raise BadRequestException(se.message)
 
         env['pywb.proxy_ssl_sock'] = ssl_sock
 
@@ -244,7 +264,6 @@ class ProxyRouter(object):
         env['PATH_INFO'] = queryparts[0]
         env['QUERY_STRING'] = queryparts[1] if len(queryparts) > 1 else ''
 
-
         while True:
             line = buffreader.readline()
             if line:
@@ -270,8 +289,7 @@ class ProxyRouter(object):
         remain = buffreader.rem_length()
         if remain > 0:
             remainder = buffreader.read(self.BLOCK_SIZE)
-            input_ = socket._fileobject(ssl_sock, mode='r')
-            env['wsgi.input'] = BufferedReader(input_,
+            env['wsgi.input'] = BufferedReader(ssl_sock,
                                                block_size=self.BLOCK_SIZE,
                                                starting_data=remainder)
 

@@ -78,7 +78,7 @@ def create_live_handler(config):
 
 #=================================================================
 def init_route_config(value, config):
-    if isinstance(value, str):
+    if isinstance(value, str) or isinstance(value, list):
         value = dict(index_paths=value)
 
     route_config = DictChain(value, config)

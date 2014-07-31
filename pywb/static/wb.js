@@ -70,9 +70,13 @@ function init_banner() {
 
     text += "<b id='_wb_capture_info'>" + capture_str + "</b>";
 
-    if (wbinfo.proxy_select && wbinfo.url) {
-        full_url = wbinfo.proxy_select + "/" + wbinfo.url;
-        text += '<br/><a href="//' + full_url + '">Switch Collection</a>';
+    if (wbinfo.proxy_magic && wbinfo.url) {
+        var select_url = wbinfo.proxy_magic + "/" + wbinfo.url;
+        var query_url = wbinfo.proxy_magic + "/*/" + wbinfo.url;
+        text += '<br/>'
+        text += 'From <b>' + wbinfo.coll + '</b>&nbsp;<a href="//select.' + select_url + '">[Switch]</a>';
+        text += '&nbsp;&nbsp;';
+        text += '<a href="//query.' + query_url + '">View All Captures</a>';
     }
     
     banner.innerHTML = text;

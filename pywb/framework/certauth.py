@@ -45,13 +45,15 @@ class CertificateAuthority(object):
         if not os.path.exists(certs_dir):
             os.mkdir(certs_dir)
 
-    def get_cert_for_host(self, host, overwrite=False):
-        host_filename = os.path.sep.join([self.certs_dir, '%s.pem' % host])
+    def get_cert_for_host(self, host, overwrite=False, wildcard=False):
+        host_filename = os.path.join(self.certs_dir, host) + '.pem'
 
         if not overwrite and os.path.exists(host_filename):
             return False, host_filename
 
-        self.generate_host_cert(host, self.cert, self.key, host_filename)
+        self.generate_host_cert(host, self.cert, self.key, host_filename,
+                                wildcard)
+
         return True, host_filename
 
     @staticmethod
@@ -107,7 +109,8 @@ class CertificateAuthority(object):
         return True, cert, key
 
     @staticmethod
-    def generate_host_cert(host, root_cert, root_key, host_filename):
+    def generate_host_cert(host, root_cert, root_key, host_filename,
+                           wildcard=False):
         # Generate key
         key = crypto.PKey()
         key.generate_key(crypto.TYPE_RSA, 2048)
@@ -123,6 +126,19 @@ class CertificateAuthority(object):
 
         cert.set_issuer(root_cert.get_subject())
         cert.set_pubkey(req.get_pubkey())
+
+        if wildcard:
+            DNS = 'DNS:'
+            alt_hosts = [DNS + host,
+                         DNS + '*.' + host]
+
+            alt_hosts = ', '.join(alt_hosts)
+
+            cert.add_extensions([
+                crypto.X509Extension('subjectAltName',
+                                     False,
+                                     alt_hosts)])
+
         cert.sign(root_key, 'sha1')
 
         # Write cert + key
@@ -163,6 +179,9 @@ def main():
 
     parser.add_argument('-f', '--force', action='store_true')
 
+    parser.add_argument('-w', '--wildcard_cert', action='store_true',
+                        help='add wildcard SAN to host: *.<host>, <host>')
+
     result = parser.parse_args()
 
     overwrite = result.force
@@ -170,12 +189,13 @@ def main():
     # Create a new signed certificate using specified root
     if result.use_root:
         certs_dir = result.certs_dir
+        wildcard = result.wildcard
         ca = CertificateAuthority(ca_file=result.use_root,
                                   certs_dir=result.certs_dir,
                                   certname=result.name)
 
         created, host_filename = ca.get_cert_for_host(result.output_pem_file,
-                                                      overwrite)
+                                                      overwrite, wildcard)
 
         if created:
             print ('Created new cert "' + host_filename +

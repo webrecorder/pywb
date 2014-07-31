@@ -10,9 +10,9 @@
 </p>
 {% endif %}
 
-{% if env.pywb_proxy_select and err_url and status == '404 Not Found' %}
+{% if env.pywb_proxy_magic and err_url and status == '404 Not Found' %}
 <p>
-<a href="//{{ env.pywb_proxy_select }}/{{ err_url }}">Try Different Collections</a>
+<a href="//select.{{ env.pywb_proxy_magic }}/{{ err_url }}">Try Different Collection</a>
 </p>
 {% endif %}
 

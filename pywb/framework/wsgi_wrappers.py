@@ -125,7 +125,11 @@ class WSGIApp(object):
         else:
             err_url = None
 
-        err_msg = exc.message.encode('utf-8')
+        try:
+            err_msg = exc.message.encode('utf-8')
+        except Exception:
+            err_msg = exc.message
+            err_url = ''
 
         if print_trace:
             import traceback
