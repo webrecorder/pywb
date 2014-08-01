@@ -300,8 +300,7 @@ class ProxyRouter(object):
 
     # Proxy Auto-Config (PAC) script for the proxy
     def make_pac_response(self, env):
-        import os
-        hostname = os.environ.get('PYWB_HOST_NAME')
+        hostname = env.get('HTTP_HOST')
         if not hostname:
             server_hostport = env['SERVER_NAME'] + ':' + env['SERVER_PORT']
             hostonly = env['SERVER_NAME']
@@ -319,7 +318,6 @@ class ProxyRouter(object):
 
         buff += direct.format(hostonly)
 
-        #buff += '\n    return "PROXY {0}";\n}}\n'.format(self.hostpaths[0])
         buff += '\n    return "PROXY {0}";\n}}\n'.format(server_hostport)
 
         content_type = 'application/x-ns-proxy-autoconfig'

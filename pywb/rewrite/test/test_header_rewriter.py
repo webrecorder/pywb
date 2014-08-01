@@ -40,17 +40,19 @@ HTTP Headers Rewriting
  'removed_header_dict': {'content-encoding': 'gzip',
                          'transfer-encoding': 'chunked'},
  'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('X-Archive-Orig-Content-Length', '199999'),
-  ('Content-Type', 'text/javascript')]),
+  ('Content-Type', 'text/javascript'),
+  ('X-Archive-Orig-Transfer-Encoding', 'chunked')]),
  'text_type': 'js'}
 
-# Binary -- transfer-encoding removed
+# Binary -- transfer-encoding rewritten
 >>> _test_headers([('Content-Length', '200000'), ('Content-Type', 'image/png'), ('Set-Cookie', 'foo=bar; Path=/;'), ('Content-Encoding', 'gzip'), ('Transfer-Encoding', 'chunked')])
 {'charset': None,
  'removed_header_dict': {'transfer-encoding': 'chunked'},
  'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('Content-Length', '200000'),
   ('Content-Type', 'image/png'),
   ('Set-Cookie', 'foo=bar; Path=/web/20131010/http://example.com/'),
-  ('Content-Encoding', 'gzip')]),
+  ('Content-Encoding', 'gzip'),
+  ('X-Archive-Orig-Transfer-Encoding', 'chunked')]),
  'text_type': None}
 
 """
