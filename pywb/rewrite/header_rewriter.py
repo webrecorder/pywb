@@ -37,7 +37,8 @@ class HeaderRewriter:
 
     ENCODING_HEADERS = ['content-encoding']
 
-    REMOVE_HEADERS = ['transfer-encoding', 'content-security-policy']
+    REMOVE_HEADERS = ['transfer-encoding', 'content-security-policy',
+                      'strict-transport-security']
 
     PROXY_NO_REWRITE_HEADERS = ['content-length']
 

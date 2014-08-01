@@ -1,3 +1,11 @@
+pywb 0.6.0 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* HTTPS Proxy Support!
+
+* Revamped HTTP/S system: proxy collection and capture time switching via cookie!
+
+
 pywb 0.5.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 minor fixes:
