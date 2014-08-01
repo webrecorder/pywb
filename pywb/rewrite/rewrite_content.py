@@ -63,6 +63,10 @@ class RewriteContent:
             status_headers, stream = self.sanitize_content(headers, stream)
             return (status_headers, self.stream_to_gen(stream), False)
 
+
+        if wb_url.is_banner_only:
+            urlrewriter = None
+
         (rewritten_headers, stream) = self.rewrite_headers(urlrewriter,
                                                            headers,
                                                            stream)

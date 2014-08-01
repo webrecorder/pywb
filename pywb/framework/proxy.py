@@ -181,7 +181,12 @@ class ProxyRouter(object):
         elif is_https:
             wbrequest.wb_url.mod = 'bn_'
 
-        return route.handler(wbrequest)
+        response = route.handler(wbrequest)
+
+        if wbrequest.wb_url and wbrequest.wb_url.is_replay():
+            response.status_headers.replace_header('Cache-Control', 'no-cache')
+
+        return response
 
     def get_request_socket(self, env):
         if not self.ca:
