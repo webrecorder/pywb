@@ -59,7 +59,7 @@ class CertificateAuthority(object):
     @staticmethod
     def _make_cert(certname):
         cert = crypto.X509()
-        cert.set_version(3)
+        cert.set_version(2)
         cert.set_serial_number(random.randint(0, 2 ** 64 - 1))
         cert.get_subject().CN = certname
 
