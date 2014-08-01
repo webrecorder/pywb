@@ -73,9 +73,9 @@ function init_banner() {
     if (wbinfo.proxy_magic && wbinfo.url) {
         var select_url = wbinfo.proxy_magic + "/" + wbinfo.url;
         var query_url = wbinfo.proxy_magic + "/*/" + wbinfo.url;
-        text += '&nbsp;<a target="_self" href="//query.' + query_url + '">All Capture Times</a>';
+        text += '&nbsp;<a href="//query.' + query_url + '">All Capture Times</a>';
         text += '<br/>'
-        text += 'From collection <b>"' + wbinfo.coll + '"</b>&nbsp;<a target="_self" href="//select.' + select_url + '">All Collections</a>';
+        text += 'From collection <b>"' + wbinfo.coll + '"</b>&nbsp;<a href="//select.' + select_url + '">All Collections</a>';
     }
     
     banner.innerHTML = text;
