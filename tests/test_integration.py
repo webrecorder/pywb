@@ -385,7 +385,7 @@ class TestWb:
         assert resp.status_int == 407
 
     def test_proxy_pac(self):
-        resp = self.testapp.get('/proxy.pac', extra_environ = dict(SERVER_NAME='pywb-proxy', SERVER_PORT='8080'))
+        resp = self.testapp.get('/proxy.pac', headers = [('Host', 'pywb-proxy:8080')])
         assert resp.content_type == 'application/x-ns-proxy-autoconfig'
         assert '"PROXY pywb-proxy:8080"' in resp.body
         assert '"localhost"' in resp.body
