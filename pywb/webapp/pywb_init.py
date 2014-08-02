@@ -33,7 +33,9 @@ DEFAULTS = {
     'search_html': 'ui/search.html',
     'home_html': 'ui/index.html',
     'error_html': 'ui/error.html',
+
     'proxy_select_html': 'ui/proxy_select.html',
+    'proxy_cert_download_html': 'ui/proxy_cert_download.html',
 
     'template_globals': {'static_path': 'static/default'},
 
@@ -227,7 +229,15 @@ def create_wb_router(passed_config={}):
         if not 'proxy_options' in passed_config:
             passed_config['proxy_options'] = {}
 
-        passed_config['proxy_options']['proxy_select_view'] = view
+        if view:
+            passed_config['proxy_options']['proxy_select_view'] = view
+
+        view = J2TemplateView.create_template(
+                  config.get('proxy_cert_download_html'),
+                  'Proxy Cert Download')
+
+        if view:
+            passed_config['proxy_options']['proxy_cert_download_view'] = view
 
     else:
         router = ArchivalRouter

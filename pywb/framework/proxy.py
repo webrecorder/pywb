@@ -57,6 +57,9 @@ class ProxyRouter(object):
     BLOCK_SIZE = 4096
     DEF_MAGIC_NAME = 'pywb.proxy'
 
+    CERT_DL_PEM = '/pywb-ca.pem'
+    CERT_DL_P12 = '/pywb-ca.p12'
+
     def __init__(self, routes, **kwargs):
         self.hostpaths = kwargs.get('hostpaths')
 
@@ -81,19 +84,24 @@ class ProxyRouter(object):
         self.proxy_pac_path = proxy_options.get('pac_path', self.PAC_PATH)
 
 
-        if proxy_options.get('enable_https_proxy'):
-            ca_file = proxy_options.get('root_ca_file')
-
-            # attempt to create the root_ca_file if doesn't exist
-            # (generally recommended to create this seperately)
-            certname = proxy_options.get('root_ca_name')
-            CertificateAuthority.generate_ca_root(certname, ca_file)
-
-            certs_dir = proxy_options.get('certs_dir')
-            self.ca = CertificateAuthority(ca_file=ca_file,
-                                           certs_dir=certs_dir)
-        else:
+        if not proxy_options.get('enable_https_proxy'):
             self.ca = None
+            self.proxy_cert_dl_view = None
+            return
+
+        # HTTPS Only Options
+        ca_file = proxy_options.get('root_ca_file')
+
+        # attempt to create the root_ca_file if doesn't exist
+        # (generally recommended to create this seperately)
+        certname = proxy_options.get('root_ca_name')
+        CertificateAuthority.generate_ca_root(certname, ca_file)
+
+        certs_dir = proxy_options.get('certs_dir')
+        self.ca = CertificateAuthority(ca_file=ca_file,
+                                       certs_dir=certs_dir)
+
+        self.proxy_cert_dl_view = proxy_options.get('proxy_cert_download_view')
 
     def __call__(self, env):
         is_https = (env['REQUEST_METHOD'] == 'CONNECT')
@@ -143,6 +151,12 @@ class ProxyRouter(object):
         # route (static) and other resources to archival replay
         if env['pywb.proxy_host'] == self.magic_name:
             env['REL_REQUEST_URI'] = env['pywb.proxy_req_uri']
+
+            # special case for proxy install
+            response = self.handle_cert_install(env)
+            if response:
+                return response
+
             return None
 
         # check resolver, post connect
@@ -297,6 +311,44 @@ class ProxyRouter(object):
             env['wsgi.input'] = BufferedReader(ssl_sock,
                                                block_size=self.BLOCK_SIZE,
                                                starting_data=remainder)
+
+    def handle_cert_install(self, env):
+        if env['pywb.proxy_req_uri'] in ('/', '/index.html', '/index.html'):
+            available = (self.ca is not None)
+
+            if self.proxy_cert_dl_view:
+                return (self.proxy_cert_dl_view.
+                         render_response(available=available,
+                                         pem_path=self.CERT_DL_PEM,
+                                         p12_path=self.CERT_DL_P12))
+            else:
+                return None
+
+        elif env['pywb.proxy_req_uri'] == self.CERT_DL_PEM:
+            if not self.ca:
+                return None
+
+            buff = ''
+            with open(self.ca.ca_file) as fh:
+                buff = fh.read()
+
+            content_type = 'application/x-x509-ca-cert'
+
+            return WbResponse.text_response(buff,
+                                            content_type=content_type)
+
+        elif env['pywb.proxy_req_uri'] == self.CERT_DL_P12:
+            if not self.ca:
+                return None
+
+            buff = self.ca.get_root_PKCS12()
+
+            content_type = 'application/x-pkcs12'
+
+            return WbResponse.text_response(buff,
+                                            content_type=content_type)
+        else:
+            return None
 
     # Proxy Auto-Config (PAC) script for the proxy
     def make_pac_response(self, env):

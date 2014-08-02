@@ -14,7 +14,7 @@ Current collection is: <b>{{ coll }}</b>
 
 <ul>
 {% for route in routes %}
-{% if route | is_wb_handler %}
+{% if route.path and route | is_wb_handler %}
 <li><a href="{{ route_temp | format(route.path) }}">{{ route.path }}</a></li>
 {% endif %}
 {% endfor %}

@@ -56,6 +56,12 @@ class CertificateAuthority(object):
 
         return True, host_filename
 
+    def get_root_PKCS12(self):
+        p12 = crypto.PKCS12()
+        p12.set_certificate(self.cert)
+        p12.set_privatekey(self.key)
+        return p12.export()
+
     @staticmethod
     def _make_cert(certname):
         cert = crypto.X509()
