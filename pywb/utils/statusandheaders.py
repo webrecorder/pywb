@@ -3,6 +3,7 @@ Representation and parsing of HTTP-style status + headers
 """
 
 import pprint
+from copy import copy
 
 
 #=================================================================
@@ -44,9 +45,26 @@ class StatusAndHeaders(object):
         self.headers.append((name, value))
         return None
 
+    def replace_headers(self, header_dict):
+        """
+        replace all headers in header_dict that already exist
+        add any remaining headers
+        """
+        header_dict = copy(header_dict)
+
+        for index in xrange(len(self.headers) - 1, -1, -1):
+            curr_name, curr_value = self.headers[index]
+            name_lower = curr_name.lower()
+            if name_lower in header_dict:
+                self.headers[index] = (curr_name, header_dict[name_lower])
+                del header_dict[name_lower]
+
+        for name, value in header_dict.iteritems():
+            self.headers.append((name, value))
+
     def remove_header(self, name):
         """
-        remove header (case-insensitive)
+        Remove header (case-insensitive)
         return True if header removed, False otherwise
         """
         name_lower = name.lower()

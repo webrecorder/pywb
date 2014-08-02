@@ -60,6 +60,9 @@ class ProxyRouter(object):
     CERT_DL_PEM = '/pywb-ca.pem'
     CERT_DL_P12 = '/pywb-ca.p12'
 
+    EXTRA_HEADERS = {'cache-control': 'no-cache',
+                     'p3p': 'CP="NOI ADM DEV COM NAV OUR STP"'}
+
     def __init__(self, routes, **kwargs):
         self.hostpaths = kwargs.get('hostpaths')
 
@@ -73,6 +76,11 @@ class ProxyRouter(object):
         if not self.magic_name:
             self.magic_name = self.DEF_MAGIC_NAME
             proxy_options['magic_name'] = self.magic_name
+
+        self.extra_headers = proxy_options.get('extra_headers')
+        if not self.extra_headers:
+            self.extra_headers = self.EXTRA_HEADERS
+            proxy_options['extra_headers'] = self.extra_headers
 
         if proxy_options.get('cookie_resolver'):
             self.resolver = CookieResolver(routes, proxy_options)
@@ -198,7 +206,7 @@ class ProxyRouter(object):
         response = route.handler(wbrequest)
 
         if wbrequest.wb_url and wbrequest.wb_url.is_replay():
-            response.status_headers.replace_header('Cache-Control', 'no-cache')
+            response.status_headers.replace_headers(self.extra_headers)
 
         return response
 
@@ -252,19 +260,22 @@ class ProxyRouter(object):
                                        server_side=True,
                                        certfile=certfile,
                                        ciphers="ALL",
+                                       suppress_ragged_eofs=False,
+                                       #ssl_version=ssl.PROTOCOL_TLSv1)
                                        ssl_version=ssl.PROTOCOL_SSLv23)
+            env['pywb.proxy_ssl_sock'] = ssl_sock
+
+            buffreader = BufferedReader(ssl_sock, block_size=self.BLOCK_SIZE)
+
+            statusline = buffreader.readline().rstrip()
+
         except Exception as se:
             raise BadRequestException(se.message)
 
-        env['pywb.proxy_ssl_sock'] = ssl_sock
-
-        buffreader = BufferedReader(ssl_sock, block_size=self.BLOCK_SIZE)
-
-        statusline = buffreader.readline()
         statusparts = statusline.split(' ')
 
         if len(statusparts) < 3:
-            raise BadRequestException('Invalid Proxy Request')
+            raise BadRequestException('Invalid Proxy Request: ' + statusline)
 
         env['REQUEST_METHOD'] = statusparts[0]
         env['REL_REQUEST_URI'] = ('https://' +

@@ -132,6 +132,8 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
         self.cookie_name = config.get('cookie_name', '__pywb_coll')
         self.proxy_select_view = config.get('proxy_select_view')
 
+        self.extra_headers = config.get('extra_headers')
+
         if uwsgi_cache:
             self.cache = UwsgiCache()
         else:
@@ -222,14 +224,17 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
 
             coll, ts, sesh_id = self.get_coll(env)
 
-            route_temp = env['pywb.proxy_scheme'] + '://%s-set.'
-            route_temp += self.magic_name + '/' + path_url
+            #scheme = env['pywb.proxy_scheme'] + '://'
+            route_temp = '-set.' + self.magic_name + '/' + path_url
 
-            return (self.proxy_select_view.
-                    render_response(routes=self.routes,
-                                    route_temp=route_temp,
-                                    coll=coll,
-                                    url=path_url))
+            try:
+                return (self.proxy_select_view.
+                        render_response(routes=self.routes,
+                                        route_temp=route_temp,
+                                        coll=coll,
+                                        url=path_url))
+            except Exception as exc:
+                raise
 
         #else:
         #    msg = 'Invalid Magic Path: ' + url
@@ -301,6 +306,13 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
         return sesh_id
 
     def make_redir_response(self, url, headers=None):
+        if not headers:
+            headers = []
+
+        if self.extra_headers:
+            for name, value in self.extra_headers.iteritems():
+                headers.append((name, value))
+
         return WbResponse.redir_response(url, headers=headers)
 
     @staticmethod
