@@ -141,6 +141,14 @@ class HeadInsertView(J2TemplateView):
         return J2TemplateView.create_template(filename, desc,
                                               HeadInsertView)
 
+    @staticmethod
+    def init_from_config(config):
+        view = config.get('head_insert_view')
+        if not view:
+            html = config.get('head_insert_html', 'ui/head_insert.html')
+            view = HeadInsertView.create_template(html, 'Head Insert')
+        return view
+
 
 #=================================================================
 # query views

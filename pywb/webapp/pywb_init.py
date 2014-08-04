@@ -6,7 +6,7 @@ from pywb.framework.wbrequestresponse import WbRequest
 from pywb.framework.memento import MementoRequest
 from pywb.framework.basehandlers import BaseHandler
 
-from views import J2TemplateView
+from views import J2TemplateView, add_env_globals
 from views import J2HtmlCapturesView, HeadInsertView
 
 from live_rewrite_handler import RewriteHandler
@@ -74,7 +74,10 @@ def create_wb_handler(query_handler, config):
 
 #=================================================================
 def create_live_handler(config):
-    live_handler = RewriteHandler(config)
+    wb_handler_class = config.get('wb_handler_class', RewriteHandler)
+
+    live_handler = wb_handler_class(config)
+
     return live_handler
 
 
@@ -95,9 +98,12 @@ def init_collection(route_config):
                  create_template(route_config.get('query_html'),
                                  'Captures Page'))
 
+    server_cls = route_config.get('server_cls')
+
     query_handler = QueryHandler.init_from_config(route_config,
                                                   ds_rules_file,
-                                                  html_view)
+                                                  html_view,
+                                                  server_cls)
 
     return query_handler
 
@@ -164,6 +170,11 @@ def create_wb_router(passed_config={}):
 
     # store live and replay handlers
     handler_dict = {}
+
+    # setup template globals
+    template_globals = config.get('template_globals')
+    if template_globals:
+        add_env_globals(template_globals)
 
     for name, value in collections.iteritems():
         if isinstance(value, BaseHandler):

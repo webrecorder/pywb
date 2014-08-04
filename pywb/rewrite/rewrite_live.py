@@ -21,8 +21,8 @@ from rewrite_content import RewriteContent
 
 #=================================================================
 class LiveRewriter(object):
-    def __init__(self, defmod='', default_proxy=None):
-        self.rewriter = RewriteContent(defmod=defmod)
+    def __init__(self, is_framed_replay=False, default_proxy=None):
+        self.rewriter = RewriteContent(is_framed_replay=is_framed_replay)
         self.default_proxy = default_proxy
         if self.default_proxy:
             logging.debug('Live Rewrite via proxy ' + self.default_proxy)
@@ -73,7 +73,7 @@ class LiveRewriter(object):
 
     def fetch_http(self, url,
                    env=None,
-                   req_headers={},
+                   req_headers=None,
                    follow_redirects=False,
                    proxies=None):
 
@@ -83,6 +83,9 @@ class LiveRewriter(object):
         if not proxies and self.default_proxy:
             proxies = {'http': self.default_proxy,
                        'https': self.default_proxy}
+
+        if not req_headers:
+            req_headers = {}
 
         if env is not None:
             method = env['REQUEST_METHOD'].upper()
