@@ -310,7 +310,7 @@ class TestWb:
 
 
     def test_excluded_content(self):
-        resp = self.testapp.get('/pywb/http://www.iana.org/_img/bookmark_icon.ico', status = 403)
+        resp = self.testapp.get('/pywb/mp_/http://www.iana.org/_img/bookmark_icon.ico', status = 403)
         assert resp.status_int == 403
         assert 'Excluded' in resp.body
 
@@ -414,7 +414,7 @@ class TestWb:
 
 
     def test_error(self):
-        resp = self.testapp.get('/pywb/?abc', status = 400)
+        resp = self.testapp.get('/pywb/mp_/?abc', status = 400)
         assert resp.status_int == 400
         assert 'Invalid Url: http://?abc' in resp.body
 
