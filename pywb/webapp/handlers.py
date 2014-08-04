@@ -2,6 +2,8 @@ import pkgutil
 import mimetypes
 import time
 
+from datetime import datetime
+
 from pywb.utils.wbexception import NotFoundException
 from pywb.utils.loaders import BlockLoader
 
@@ -11,8 +13,9 @@ from pywb.framework.wbrequestresponse import WbResponse
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
 
-from views import J2TemplateView, add_env_globals
+from views import J2TemplateView
 from replay_views import ReplayView
+from pywb.utils.timeutils import datetime_to_timestamp
 
 
 #=================================================================
@@ -26,6 +29,15 @@ class SearchPageWbUrlHandler(WbUrlHandler):
                             create_template(config.get('search_html'),
                            'Search Page'))
 
+        self.is_frame_mode = config.get('framed_replay', False)
+
+        if self.is_frame_mode:
+            html = config.get('frame_insert_html', 'ui/frame_insert.html')
+            self.frame_insert_view = (J2TemplateView.
+                                      create_template(html, 'Frame Insert'))
+        else:
+            self.frame_insert_view = None
+
     def render_search_page(self, wbrequest, **kwargs):
         if self.search_view:
             return self.search_view.render_response(wbrequest=wbrequest,
@@ -33,6 +45,38 @@ class SearchPageWbUrlHandler(WbUrlHandler):
                                                     **kwargs)
         else:
             return WbResponse.text_response('No Lookup Url Specified')
+
+    def __call__(self, wbrequest):
+        # root search page
+        if wbrequest.wb_url_str == '/':
+            return self.render_search_page(wbrequest)
+
+        # render top level frame if in frame mode
+        # (not supported in proxy mode)
+        if (self.is_frame_mode and wbrequest.wb_url and
+            not wbrequest.wb_url.is_query() and
+            not wbrequest.wb_url.mod and
+            not wbrequest.options['is_proxy']):
+
+            params = self.get_top_frame_params(wbrequest)
+
+            return self.frame_insert_view.render_response(**params)
+
+        return self.handle_request(wbrequest)
+
+    def get_top_frame_params(self, wbrequest):
+        if wbrequest.wb_url.timestamp:
+            timestamp = wbrequest.wb_url.timestamp
+        else:
+            timestamp = datetime_to_timestamp(datetime.utcnow())
+
+        embed_url = wbrequest.wb_url.to_str(mod='mp_')
+
+        return dict(embed_url=embed_url,
+                    wbrequest=wbrequest,
+                    timestamp=timestamp,
+                    url=wbrequest.wb_url.url,
+                    content_type='text/html')
 
 
 #=================================================================
@@ -52,10 +96,6 @@ class WBHandler(SearchPageWbUrlHandler):
         resolving_loader = ResolvingLoader(paths=paths,
                                            record_loader=record_loader)
 
-        template_globals = config.get('template_globals')
-        if template_globals:
-            add_env_globals(template_globals)
-
         self.replay = ReplayView(resolving_loader, config)
 
         self.fallback_handler = None
@@ -65,13 +105,9 @@ class WBHandler(SearchPageWbUrlHandler):
         if self.fallback_name:
             self.fallback_handler = handler_dict.get(self.fallback_name)
 
-    def __call__(self, wbrequest):
-        if wbrequest.wb_url_str == '/':
-            return self.render_search_page(wbrequest)
-
+    def handle_request(self, wbrequest):
         try:
-            with PerfTimer(wbrequest.env.get('X_PERF'), 'query') as t:
-                response = self.index_reader.load_for_request(wbrequest)
+            response = self.handle_query(wbrequest)
         except NotFoundException as nfe:
             return self.handle_not_found(wbrequest, nfe)
 
@@ -81,11 +117,13 @@ class WBHandler(SearchPageWbUrlHandler):
         cdx_lines, cdx_callback = response
         return self.handle_replay(wbrequest, cdx_lines, cdx_callback)
 
+    def handle_query(self, wbrequest):
+        return self.index_reader.load_for_request(wbrequest)
+
     def handle_replay(self, wbrequest, cdx_lines, cdx_callback):
-        with PerfTimer(wbrequest.env.get('X_PERF'), 'replay') as t:
-            return self.replay(wbrequest,
-                               cdx_lines,
-                               cdx_callback)
+        return self.replay.render_content(wbrequest,
+                                          cdx_lines,
+                                          cdx_callback)
 
     def handle_not_found(self, wbrequest, nfe):
         if (not self.fallback_handler or
@@ -154,19 +192,3 @@ class DebugEchoEnvHandler(BaseHandler):  # pragma: no cover
 class DebugEchoHandler(BaseHandler):  # pragma: no cover
     def __call__(self, wbrequest):
         return WbResponse.text_response(str(wbrequest))
-
-
-#=================================================================
-class PerfTimer:
-    def __init__(self, perfdict, name):
-        self.perfdict = perfdict
-        self.name = name
-
-    def __enter__(self):
-        self.start = time.clock()
-        return self
-
-    def __exit__(self, *args):
-        self.end = time.clock()
-        if self.perfdict is not None:
-            self.perfdict[self.name] = str(self.end - self.start)
