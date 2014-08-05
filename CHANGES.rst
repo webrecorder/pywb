@@ -1,10 +1,10 @@
 pywb 0.5.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
-* better framed replay for non-html content -- include live rewrite timestamp via temp 'pywb.timestamp' cookie, timestamp formatting moved to client-side for better customization.
+* better framed replay for non-html content -- include live rewrite timestamp via temp 'pywb.timestamp' cookie, updating banner of iframe load. All timestamp formatting moved to client-side for better customization.
 
-* refactoring of replay/live handlers for better extensability
+* refactoring of replay/live handlers for better extensability.
 
-* banner-only ('bn_' modifier) to only insert banner with no rewriting
+* banner-only rewrite mode (via 'bn_' modifier) to support only banner insertion with no rewriting, server-side or client-side.
 
 pywb 0.5.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
