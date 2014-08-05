@@ -99,47 +99,13 @@ function remove_event(name, func, object) {
     }
 }
 
-function notify_top(event) {    
-    if (window.self == window.top) {
-        return;
-    } 
-    
-    if (window.top.top != window.top) {
-        return;
-    }
-    
-    if (!window.WB_wombat_location) {
-        return;
-    }
-    
-    if (wbinfo.is_embed) {
-        return;
-    }
-    
-    if (event.target != window.document) {
-        return;
-    }
-
-    if (typeof(window.WB_wombat_location.href) != "string") {
-        return;
-    }
-
-    if (window.top.update_wb_url) {
-        window.top.update_wb_url(window.WB_wombat_location.href,
-                                 wbinfo.timestamp,
-                                 wbinfo.capture_str,
-                                 wbinfo.is_live);
-    }
-}
-
 var detect_on_init = function(event) {
-    init_banner();  
-    notify_top(event);    
+    init_banner();
+
     remove_event("readystatechange", detect_on_init, document);
 }
 
 add_event("readystatechange", detect_on_init, document);
-
 
 
 if (wbinfo.is_frame_mp && wbinfo.canon_url &&
@@ -149,6 +115,8 @@ if (wbinfo.is_frame_mp && wbinfo.canon_url &&
     window.location.replace(wbinfo.canon_url);
 }
 
-return {'labels': labels};
+return {'labels': labels,
+        'add_event': add_event,
+        'remove_event': remove_event};
 
 })();
