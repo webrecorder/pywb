@@ -76,10 +76,10 @@
 
 
 # HttpsUrlRewriter tests
->>> HttpsUrlRewriter(None, None).rewrite('https://example.com/abc')
+>>> HttpsUrlRewriter('http://example.com/', None).rewrite('https://example.com/abc')
 'http://example.com/abc'
 
->>> HttpsUrlRewriter(None, None).rewrite('http://example.com/abc')
+>>> HttpsUrlRewriter('http://example.com/', None).rewrite('http://example.com/abc')
 'http://example.com/abc'
 
 """

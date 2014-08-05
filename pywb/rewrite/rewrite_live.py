@@ -119,7 +119,7 @@ class LiveRewriter(object):
 
         return (status_headers, stream)
 
-    def fetch_request(self, wb_url, urlrewriter,
+    def fetch_request(self, url, urlrewriter,
                       head_insert_func=None,
                       urlkey=None,
                       env=None,
@@ -127,12 +127,6 @@ class LiveRewriter(object):
                       timestamp=None,
                       follow_redirects=False,
                       proxies=None):
-
-        if isinstance(wb_url, str):
-            url = wb_url
-            wb_url = WbUrl(url)
-        else:
-            url = wb_url.url
 
         ts_err = url.split('///')
 
@@ -167,8 +161,7 @@ class LiveRewriter(object):
               }
 
         result = (self.rewriter.
-                  rewrite_content(wb_url,
-                                  urlrewriter,
+                  rewrite_content(urlrewriter,
                                   status_headers,
                                   stream,
                                   head_insert_func=head_insert_func,

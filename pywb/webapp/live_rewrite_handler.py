@@ -38,6 +38,10 @@ class RewriteHandler(SearchPageWbUrlHandler):
             return self.render_content(wbrequest)
 
         except Exception as exc:
+            import traceback
+            err_details = traceback.format_exc(exc)
+            print err_details
+
             url = wbrequest.wb_url.url
             msg = 'Could not load the url from the live web: ' + url
             raise LiveResourceException(msg=msg, url=url)
@@ -53,8 +57,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
         if ref_wburl_str:
             wbrequest.env['REL_REFERER'] = WbUrl(ref_wburl_str).url
 
-        wb_url = wbrequest.wb_url
-        result = self.rewriter.fetch_request(wb_url, wbrequest.urlrewriter,
+        result = self.rewriter.fetch_request(wbrequest.wb_url.url,
+                                             wbrequest.urlrewriter,
                                              head_insert_func=head_insert_func,
                                              req_headers=req_headers,
                                              env=wbrequest.env)

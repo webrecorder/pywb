@@ -58,9 +58,11 @@ class RewriteContent:
 
         return (rewritten_headers, stream)
 
-    def rewrite_content(self, wb_url, urlrewriter, headers, stream,
+    def rewrite_content(self, urlrewriter, headers, stream,
                         head_insert_func=None, urlkey='',
                         cdx=None):
+
+        wb_url = urlrewriter.wburl
 
         if (wb_url.is_identity or
             (not head_insert_func and wb_url.is_banner_only)):
