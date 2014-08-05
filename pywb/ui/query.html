@@ -1,3 +1,28 @@
+<html>
+<head>
+<script>
+function ts_to_date(ts, is_gmt)
+{
+    if (ts.length < 14) {
+        return ts;
+    }
+    
+    var datestr = (ts.substring(0, 4) + "-" + 
+                  ts.substring(4, 6) + "-" +
+                  ts.substring(6, 8) + "T" +
+                  ts.substring(8, 10) + ":" +
+                  ts.substring(10, 12) + ":" +
+                  ts.substring(12, 14) + "-00:00");
+    
+    var date = new Date(datestr);
+    if (is_gmt) {
+        return date.toGMTString();
+    } else {
+        return date.toLocaleString();
+    }
+}
+</script>
+</head>
 <body>
   <h2>pywb Sample Calendar Results</h2>
   <b>{{ cdx_lines | length }}</b> captures of <b>{{ url }}</b>
@@ -10,7 +35,9 @@
     </tr>
     {% for cdx in cdx_lines  %}
     <tr style="{{ 'font-weight: bold' if cdx['mimetype'] != 'warc/revisit' else '' }}">
-      <td><a href="{{ prefix }}{{ cdx.timestamp }}/{{ cdx.original }}">{{ cdx['timestamp'] | format_ts}}</a></td>
+      <td><a href="{{ prefix }}{{ cdx.timestamp }}/{{ cdx.original }}">
+      <script>document.write(ts_to_date("{{ cdx['timestamp']}}", true))</script>
+      </a></td>
       <td>{{ cdx['statuscode'] }}</td>
       <td>{{ cdx['original'] }}</td>
       <td>{{ cdx['filename'] }}</td>
@@ -21,3 +48,4 @@
   <i><b>* Unique captures are bold.</b> Other captures are duplicates of a previous capture.</i>
   </p>
 </body>
+</html>
