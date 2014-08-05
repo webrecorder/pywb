@@ -1,5 +1,5 @@
 #=================================================================
-"""
+r"""
 # LimitReader Tests
 >>> LimitReader(BytesIO('abcdefghjiklmnopqrstuvwxyz'), 10).read(26)
 'abcdefghji'
@@ -32,9 +32,13 @@ True
 >>> BlockLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read()
 'Example Domain'
 
-# fixed cookie
+# fixed cookie, range request
 >>> BlockLoader('some=value').load('http://example.com', 41, 14).read()
 'Example Domain'
+
+# range request
+>>> BlockLoader().load('http://example.com', 1262).read()
+'</html>\n'
 
 # test with extra id, ensure 4 parts of the A-B=C-D form are present
 >>> len(re.split('[-=]', HMACCookieMaker('test', 'test', 5).make('extra')))

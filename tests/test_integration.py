@@ -301,13 +301,17 @@ class TestWb:
         assert resp.status_int == 200
         assert '"data": "^"' in resp.body
 
+    def test_post_invalid(self):
+        # not json
+        resp = self.testapp.post_json('/pywb/20140610001255mp_/http://httpbin.org/post?foo=bar', {'data': '^'}, status=404)
+        assert resp.status_int == 404
+
     def test_post_redirect(self):
         # post handled without redirect (since 307 not allowed)
         resp = self.testapp.post('/post', {'foo': 'bar', 'test': 'abc'}, headers=[('Referer', 'http://localhost:8080/pywb/2014mp_/http://httpbin.org/post')])
         assert resp.status_int == 200
         assert '"foo": "bar"' in resp.body
         assert '"test": "abc"' in resp.body
-
 
     def test_excluded_content(self):
         resp = self.testapp.get('/pywb/mp_/http://www.iana.org/_img/bookmark_icon.ico', status = 403)
