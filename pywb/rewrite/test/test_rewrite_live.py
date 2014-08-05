@@ -1,5 +1,6 @@
 from pywb.rewrite.rewrite_live import LiveRewriter
 from pywb.rewrite.url_rewriter import UrlRewriter
+from pywb.rewrite.wburl import WbUrl
 
 from pywb import get_test_dir
 
@@ -32,6 +33,58 @@ def test_local_1():
     # link rewritten
     assert '"/pywb/20131226101010/http://example.com/some/path/another.html"' in buff
 
+
+def test_local_no_head():
+    wb_url = WbUrl('file://' + get_test_dir() + 'text_content/sample_no_head.html')
+    status_headers, buff = get_rewritten(wb_url,
+                                         urlrewriter,
+                                         head_insert_func,
+                                         'com,example,test)/')
+
+    # wombat insert added
+    assert '<script src="/static/default/wombat.js"> </script>' in buff
+
+    # location rewritten
+    assert 'window.WB_wombat_location = "/other.html"' in buff
+
+    # link rewritten
+    assert '"/pywb/20131226101010/http://example.com/some/path/another.html"' in buff
+
+def test_local_no_head_banner_only():
+    wb_url = WbUrl('file://' + get_test_dir() + 'text_content/sample_no_head.html')
+    wb_url.mod = 'bn_'
+
+    status_headers, buff = get_rewritten(wb_url,
+                                         urlrewriter,
+                                         head_insert_func,
+                                         'com,example,test)/')
+
+    # wombat insert added
+    assert '<script src="/static/default/wombat.js"> </script>' in buff
+
+    # location NOT rewritten
+    assert 'window.location = "/other.html"' in buff
+
+    # link NOT rewritten
+    assert '"another.html"' in buff
+
+def test_local_banner_only():
+    wb_url = WbUrl('file://' + get_test_dir() + 'text_content/sample.html')
+    wb_url.mod = 'bn_'
+
+    status_headers, buff = get_rewritten(wb_url,
+                                         urlrewriter,
+                                         head_insert_func,
+                                         'com,example,test)/')
+
+    # wombat insert added
+    assert '<head><script src="/static/default/wombat.js"> </script>' in buff
+
+    # location NOT rewritten
+    assert 'window.location = "/other.html"' in buff
+
+    # link NOT rewritten
+    assert '"another.html"' in buff
 
 def test_local_2_no_js_location_rewrite():
     status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html',

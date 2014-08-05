@@ -9,7 +9,7 @@ import logging
 
 from urlparse import urlsplit
 
-from pywb.utils.loaders import is_http, LimitReader
+from pywb.utils.loaders import is_http, LimitReader, BlockLoader
 from pywb.utils.timeutils import datetime_to_timestamp
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.canonicalize import canonicalize
@@ -30,7 +30,8 @@ class LiveRewriter(object):
             logging.debug('Live Rewrite Direct (no proxy)')
 
     def fetch_local_file(self, uri):
-        fh = open(uri)
+        #fh = open(uri)
+        fh = BlockLoader().load_file_or_resource(uri)
 
         content_type, _ = mimetypes.guess_type(uri)
 
@@ -135,11 +136,13 @@ class LiveRewriter(object):
 
         ts_err = url.split('///')
 
-        if len(ts_err) > 1:
+        if len(ts_err) > 1 and ts_err[0] != 'file:':
             url = 'http://' + ts_err[1]
 
         if url.startswith('//'):
             url = 'http:' + url
+
+        print 'URL ', url
 
         if is_http(url):
             (status_headers, stream) = self.fetch_http(url, env, req_headers,

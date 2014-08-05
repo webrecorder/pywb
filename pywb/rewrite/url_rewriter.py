@@ -13,7 +13,8 @@ class UrlRewriter(object):
     instance and an optional full path prefix
     """
 
-    NO_REWRITE_URI_PREFIX = ['#', 'javascript:', 'data:', 'mailto:', 'about:']
+    NO_REWRITE_URI_PREFIX = ['#', 'javascript:', 'data:',
+                             'mailto:', 'about:', 'file:']
 
     PROTOCOLS = ['http:', 'https:', 'ftp:', 'mms:', 'rtsp:', 'wais:']
 

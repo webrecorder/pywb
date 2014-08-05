@@ -105,16 +105,6 @@ class RewriteContent:
             else:
                 stream = DecompressingBufferedReader(stream)
 
-        #if self.decode_stream:
-        #    if rewritten_headers.charset:
-        #        encoding = rewritten_headers.charset
-        #    else:
-        #        (encoding, first_buff) = self._detect_charset(stream)
-
-            # if encoding not set or chardet thinks its ascii, use utf-8
-        #    if not encoding or encoding == 'ascii':
-        #        encoding = 'utf-8'
-
         rule = self.ruleset.get_first_match(urlkey)
 
         rewriter_class = rule.rewriters[text_type]
@@ -145,8 +135,11 @@ class RewriteContent:
             rewriter = rewriter_class(urlrewriter)
 
         # Create rewriting generator
-        gen = self._rewriting_stream_gen(rewriter, encoding,
-                                         stream, first_buff)
+        gen =  self.stream_to_gen(stream,
+                                  rewrite_func=rewriter.rewrite,
+                                  final_read_func=rewriter.close,
+                                  first_buff=first_buff)
+
 
         return (status_headers, gen, True)
 
@@ -175,32 +168,6 @@ class RewriteContent:
         for buff in self.stream_to_gen(stream):
             yield buff
 
-
-    # Create rewrite stream,  may even be chunked by front-end
-    def _rewriting_stream_gen(self, rewriter, encoding,
-                              stream, first_buff=None):
-
-        def do_rewrite(buff):
-            if encoding:
-                buff = self._decode_buff(buff, stream, encoding)
-            buff = rewriter.rewrite(buff)
-            if encoding:
-                buff = buff.encode(encoding)
-
-            return buff
-
-        def do_finish():
-            result = rewriter.close()
-            if encoding:
-                result = result.encode(encoding)
-
-            return result
-
-        return self.stream_to_gen(stream,
-                                  rewrite_func=do_rewrite,
-                                  final_read_func=do_finish,
-                                  first_buff=first_buff)
-
     @staticmethod
     def _decode_buff(buff, stream, encoding):  # pragma: no coverage
         try:
@@ -218,26 +185,6 @@ class RewriteContent:
                 raise
 
         return buff
-
-    def _detect_charset(self, stream):  # pragma: no coverage
-        full_buff = stream.read(8192)
-        io_buff = BytesIO(full_buff)
-
-        detector = UniversalDetector()
-
-        try:
-            buff = io_buff.read(256)
-            while buff:
-                detector.feed(buff)
-                if detector.done:
-                    break
-
-                buff = io_buff.read(256)
-        finally:
-            detector.close()
-
-        print "chardet result: ", str(detector.result)
-        return (detector.result['encoding'], full_buff)
 
     # Create a generator reading from a stream,
     # with optional rewriting and final read call

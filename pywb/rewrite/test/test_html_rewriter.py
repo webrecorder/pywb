@@ -99,6 +99,7 @@ ur"""
 >>> parse('<link href="abc.txt"><div>SomeTest</div>', head_insert = '<script>load_stuff();</script>')
 <link href="/web/20131226101010oe_/http://example.com/some/path/abc.txt"><script>load_stuff();</script><div>SomeTest</div>
 
+# doctype
 >>> parse('<!doctype html PUBLIC "public">')
 <!doctype html PUBLIC "public">
 

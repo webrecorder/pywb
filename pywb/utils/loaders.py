@@ -96,7 +96,7 @@ class BlockLoader(object):
         else:
             return self.load_file_or_resource(url, offset, length)
 
-    def load_file_or_resource(self, url, offset, length):
+    def load_file_or_resource(self, url, offset=0, length=-1):
         """
         Load a file-like reader from the local file system
         """
