@@ -142,7 +142,7 @@ class HttpsUrlRewriter(UrlRewriter):
         else:
             return url
 
-    def get_timestamp_url(self, timestamp, url):
+    def get_timestamp_url(self, timestamp, url=''):
         return url
 
     def get_abs_url(self, url=''):

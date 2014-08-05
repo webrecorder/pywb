@@ -34,6 +34,9 @@ DEFAULTS = {
     'home_html': 'ui/index.html',
     'error_html': 'ui/error.html',
 
+    'proxy_select_html': 'ui/proxy_select.html',
+    'proxy_cert_download_html': 'ui/proxy_cert_download.html',
+
     'template_globals': {'static_path': 'static/default'},
 
     'static_routes': {'static/default': 'pywb/static/'},
@@ -80,7 +83,7 @@ def create_live_handler(config):
 
 #=================================================================
 def init_route_config(value, config):
-    if isinstance(value, str):
+    if isinstance(value, str) or isinstance(value, list):
         value = dict(index_paths=value)
 
     route_config = DictChain(value, config)
@@ -226,10 +229,27 @@ def create_wb_router(passed_config={}):
         if hasattr(route.handler, 'resolve_refs'):
             route.handler.resolve_refs(handler_dict)
 
-
     # Check for new proxy mode!
     if config.get('enable_http_proxy', False):
         router = ProxyArchivalRouter
+
+        view = J2TemplateView.create_template(
+                  config.get('proxy_select_html'),
+                 'Proxy Coll Selector')
+
+        if not 'proxy_options' in passed_config:
+            passed_config['proxy_options'] = {}
+
+        if view:
+            passed_config['proxy_options']['proxy_select_view'] = view
+
+        view = J2TemplateView.create_template(
+                  config.get('proxy_cert_download_html'),
+                  'Proxy Cert Download')
+
+        if view:
+            passed_config['proxy_options']['proxy_cert_download_view'] = view
+
     else:
         router = ArchivalRouter
 
@@ -250,6 +270,5 @@ def create_wb_router(passed_config={}):
 
         error_view=J2TemplateView.create_template(config.get('error_html'),
                                                  'Error Page'),
-
         config=config
     )

@@ -37,7 +37,8 @@ class HeaderRewriter:
 
     ENCODING_HEADERS = ['content-encoding']
 
-    REMOVE_HEADERS = ['transfer-encoding']
+    REMOVE_HEADERS = ['transfer-encoding', 'content-security-policy',
+                      'strict-transport-security']
 
     PROXY_NO_REWRITE_HEADERS = ['content-length']
 
@@ -90,7 +91,10 @@ class HeaderRewriter:
         new_headers = []
         removed_header_dict = {}
 
-        cookie_rewriter = urlrewriter.get_cookie_rewriter()
+        if urlrewriter:
+            cookie_rewriter = urlrewriter.get_cookie_rewriter()
+        else:
+            cookie_rewriter = None
 
         for (name, value) in headers:
 
@@ -99,7 +103,7 @@ class HeaderRewriter:
             if lowername in self.PROXY_HEADERS:
                 new_headers.append((name, value))
 
-            elif lowername in self.URL_REWRITE_HEADERS:
+            elif urlrewriter and lowername in self.URL_REWRITE_HEADERS:
                 new_headers.append((name, urlrewriter.rewrite(value)))
 
             elif lowername in self.ENCODING_HEADERS:
@@ -109,7 +113,8 @@ class HeaderRewriter:
                     new_headers.append((name, value))
 
             elif lowername in self.REMOVE_HEADERS:
-                    removed_header_dict[lowername] = value
+                removed_header_dict[lowername] = value
+                new_headers.append((self.header_prefix + name, value))
 
             elif (lowername in self.PROXY_NO_REWRITE_HEADERS and
                   not content_rewritten):
@@ -120,7 +125,9 @@ class HeaderRewriter:
                 cookie_list = cookie_rewriter.rewrite(value)
                 new_headers.extend(cookie_list)
 
-            else:
+            elif urlrewriter:
                 new_headers.append((self.header_prefix + name, value))
+            else:
+                new_headers.append((name, value))
 
         return (new_headers, removed_header_dict)

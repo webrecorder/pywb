@@ -1,0 +1,25 @@
+<html>
+<body>
+<h2>Pywb Proxy Collection Selector</h1>
+{% if coll %}
+<p>
+Current collection is: <b>{{ coll }}</b>
+</p>
+{% else %}
+<p>You have attempted to load the url <b>{{ url }}</b>, but there are multiple collections available.</p>
+{% endif %}
+
+<p>Please select which collection you would like to use (You will be redirected back to <b>{{ url }}</b>):
+</p>
+
+<ul>
+{% for route in routes %}
+{% if route.path and route | is_wb_handler %}
+<li><a href="//{{ route.path }}{{ route_temp }}">{{ route.path }}</a></li>
+{% endif %}
+{% endfor %}
+</ul>
+
+<p>(Once selected, you will not be prompted again, however you can return to this page to switch collections.)</p>
+</body>
+</html>

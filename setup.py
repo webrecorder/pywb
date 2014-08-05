@@ -34,7 +34,7 @@ class PyTest(TestCommand):
 
 setup(
     name='pywb',
-    version='0.5.3',
+    version='0.6.0',
     url='https://github.com/ikreymer/pywb',
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
@@ -70,6 +70,7 @@ setup(
         'jinja2',
         'surt',
         'pyyaml',
+        'pyopenssl',
        ],
     tests_require=[
         'pytest',
@@ -86,6 +87,7 @@ setup(
         cdx-server = pywb.apps.cdx_server:main
         cdx-indexer = pywb.warc.cdxindexer:main
         live-rewrite-server = pywb.apps.live_rewrite_server:main
+        proxy-cert-auth = pywb.framework.certauth:main
         """,
     zip_safe=False,
     classifiers=[

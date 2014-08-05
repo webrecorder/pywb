@@ -50,6 +50,42 @@ class WSGIApp(object):
 
     # Top-level wsgi application
     def __call__(self, env, start_response):
+        if env['REQUEST_METHOD'] == 'CONNECT':
+            return self.handle_connect(env, start_response)
+        else:
+            return self.handle_methods(env, start_response)
+
+    def handle_connect(self, env, start_response):
+        def ssl_start_response(statusline, headers):
+            ssl_sock = env.get('pywb.proxy_ssl_sock')
+            if not ssl_sock:
+                start_response(statusline, headers)
+                return
+
+            env['pywb.proxy_statusline'] = statusline
+
+            ssl_sock.write('HTTP/1.1 ' + statusline + '\r\n')
+            for name, value in headers:
+                ssl_sock.write(name + ': ' + value + '\r\n')
+
+        resp_iter = self.handle_methods(env, ssl_start_response)
+
+        ssl_sock = env.get('pywb.proxy_ssl_sock')
+        if not ssl_sock:
+            return resp_iter
+
+        ssl_sock.write('\r\n')
+
+        for obj in resp_iter:
+            if obj:
+                ssl_sock.write(obj)
+        ssl_sock.close()
+
+        start_response(env['pywb.proxy_statusline'], [])
+
+        return []
+
+    def handle_methods(self, env, start_response):
         if env.get('SCRIPT_NAME') or not env.get('REQUEST_URI'):
             env['REL_REQUEST_URI'] = rel_request_uri(env)
         else:
@@ -89,22 +125,29 @@ class WSGIApp(object):
         else:
             err_url = None
 
+        try:
+            err_msg = exc.message.encode('utf-8')
+        except Exception:
+            err_msg = exc.message
+            err_url = ''
+
         if print_trace:
             import traceback
             err_details = traceback.format_exc(exc)
             print err_details
         else:
-            logging.info(str(exc))
+            logging.info(err_msg)
             err_details = None
 
         if error_view:
             return error_view.render_response(exc_type=type(exc).__name__,
-                                              err_msg=str(exc),
+                                              err_msg=err_msg,
                                               err_details=err_details,
                                               status=status,
+                                              env=env,
                                               err_url=err_url)
         else:
-            return WbResponse.text_response(status + ' Error: ' + str(exc),
+            return WbResponse.text_response(status + ' Error: ' + err_msg,
                                             status=status)
 
 #=================================================================
@@ -144,6 +187,10 @@ def init_app(init_func, load_yaml=True, config_file=None, config={}):
 #=================================================================
 def start_wsgi_server(the_app, name, default_port=None):  # pragma: no cover
     from wsgiref.simple_server import make_server
+
+    # disable is_hop_by_hop restrictions
+    import wsgiref.handlers
+    wsgiref.handlers.is_hop_by_hop = lambda x: False
 
     port = the_app.port
 

@@ -4,8 +4,17 @@ from archivalrouter import ArchivalRouter
 import urlparse
 import base64
 
+import socket
+import ssl
+
 from pywb.rewrite.url_rewriter import HttpsUrlRewriter
-from pywb.utils.statusandheaders import StatusAndHeaders
+from pywb.utils.wbexception import BadRequestException
+
+from pywb.utils.bufferedreaders import BufferedReader
+
+from certauth import CertificateAuthority
+
+from proxy_resolvers import ProxyAuthResolver, CookieResolver
 
 
 #=================================================================
@@ -44,8 +53,17 @@ class ProxyRouter(object):
     for more details.
     """
 
+    PAC_PATH = '/proxy.pac'
+    BLOCK_SIZE = 4096
+    DEF_MAGIC_NAME = 'pywb.proxy'
+
+    CERT_DL_PEM = '/pywb-ca.pem'
+    CERT_DL_P12 = '/pywb-ca.p12'
+
+    EXTRA_HEADERS = {'cache-control': 'no-cache',
+                     'p3p': 'CP="NOI ADM DEV COM NAV OUR STP"'}
+
     def __init__(self, routes, **kwargs):
-        self.routes = routes
         self.hostpaths = kwargs.get('hostpaths')
 
         self.error_view = kwargs.get('error_view')
@@ -54,61 +72,124 @@ class ProxyRouter(object):
         if proxy_options:
             proxy_options = proxy_options.get('proxy_options', {})
 
-        self.auth_msg = proxy_options.get('auth_msg',
-        'Please enter name of a collection to use for proxy mode')
+        self.magic_name = proxy_options.get('magic_name')
+        if not self.magic_name:
+            self.magic_name = self.DEF_MAGIC_NAME
+            proxy_options['magic_name'] = self.magic_name
 
-        self.use_default_coll = proxy_options.get('use_default_coll', True)
+        self.extra_headers = proxy_options.get('extra_headers')
+        if not self.extra_headers:
+            self.extra_headers = self.EXTRA_HEADERS
+            proxy_options['extra_headers'] = self.extra_headers
+
+        if proxy_options.get('cookie_resolver'):
+            self.resolver = CookieResolver(routes, proxy_options)
+        else:
+            self.resolver = ProxyAuthResolver(routes, proxy_options)
 
         self.unaltered = proxy_options.get('unaltered_replay', False)
 
+        self.proxy_pac_path = proxy_options.get('pac_path', self.PAC_PATH)
+
+
+        if not proxy_options.get('enable_https_proxy'):
+            self.ca = None
+            self.proxy_cert_dl_view = None
+            return
+
+        # HTTPS Only Options
+        ca_file = proxy_options.get('root_ca_file')
+
+        # attempt to create the root_ca_file if doesn't exist
+        # (generally recommended to create this seperately)
+        certname = proxy_options.get('root_ca_name')
+        CertificateAuthority.generate_ca_root(certname, ca_file)
+
+        certs_dir = proxy_options.get('certs_dir')
+        self.ca = CertificateAuthority(ca_file=ca_file,
+                                       certs_dir=certs_dir)
+
+        self.proxy_cert_dl_view = proxy_options.get('proxy_cert_download_view')
+
     def __call__(self, env):
-        url = env['REL_REQUEST_URI']
+        is_https = (env['REQUEST_METHOD'] == 'CONNECT')
 
-        if url.endswith('/proxy.pac'):
-            return self.make_pac_response(env)
+        # for non-https requests, check pac path and non-proxy urls
+        if not is_https:
+            url = env['REL_REQUEST_URI']
 
-        if not url.startswith('http://'):
-            return None
+            if url == self.proxy_pac_path:
+                return self.make_pac_response(env)
 
-        proxy_auth = env.get('HTTP_PROXY_AUTHORIZATION')
+            if not url.startswith(('http://', 'https://')):
+                return None
+
+            env['pywb.proxy_scheme'] = 'http'
 
         route = None
         coll = None
         matcher = None
+        response = None
+        ts = None
 
-        if proxy_auth:
-            proxy_coll = self.read_basic_auth_coll(proxy_auth)
+        # check resolver, for pre connect resolve
+        if self.resolver.pre_connect:
+            route, coll, matcher, ts, response = self.resolver.resolve(env)
+            if response:
+                return response
 
-            if not proxy_coll:
-                return self.proxy_auth_coll_response()
+        # do connect, then get updated url
+        if is_https:
+            response = self.handle_connect(env)
+            if response:
+                return response
 
-            proxy_coll = '/' + proxy_coll + '/'
-
-            for r in self.routes:
-                matcher, c = r.is_handling(proxy_coll)
-                if matcher:
-                    route = r
-                    coll = c
-                    break
-
-            if not route:
-                return self.proxy_auth_coll_response()
-
-        # if 'use_default_coll' or only one collection, use that
-        # for proxy mode
-        elif self.use_default_coll or len(self.routes) == 1:
-            route = self.routes[0]
-            coll = self.routes[0].regex.pattern
-
-        # otherwise, require proxy auth 407 to select collection
+            url = env['REL_REQUEST_URI']
         else:
-            return self.proxy_auth_coll_response()
+            parts = urlparse.urlsplit(env['REL_REQUEST_URI'])
+            hostport = parts.netloc.split(':', 1)
+            env['pywb.proxy_host'] = hostport[0]
+            env['pywb.proxy_port'] = hostport[1] if len(hostport) == 2 else ''
+            env['pywb.proxy_req_uri'] = parts.path
+            if parts.query:
+                env['pywb.proxy_req_uri'] += '?' + parts.query
+
+        env['pywb_proxy_magic'] = self.magic_name
+
+        # route (static) and other resources to archival replay
+        if env['pywb.proxy_host'] == self.magic_name:
+            env['REL_REQUEST_URI'] = env['pywb.proxy_req_uri']
+
+            # special case for proxy install
+            response = self.handle_cert_install(env)
+            if response:
+                return response
+
+            return None
+
+        # check resolver, post connect
+        if not self.resolver.pre_connect:
+            route, coll, matcher, ts, response = self.resolver.resolve(env)
+            if response:
+                return response
+
+        host_prefix = env['pywb.proxy_scheme'] + '://' + self.magic_name
+        rel_prefix = ''
+
+        # special case for proxy calendar
+        if (env['pywb.proxy_host'] == 'query.' + self.magic_name):
+            url = env['pywb.proxy_req_uri'][1:]
+            rel_prefix = '/'
+
+        if ts is not None:
+            url = ts + '/' + url
 
         wbrequest = route.request_class(env,
                               request_uri=url,
                               wb_url_str=url,
                               coll=coll,
-                              host_prefix=self.hostpaths[0],
+                              host_prefix=host_prefix,
+                              rel_prefix=rel_prefix,
                               wburl_class=route.handler.get_wburl_type(),
                               urlrewriter_class=HttpsUrlRewriter,
                               use_abs_prefix=False,
@@ -119,13 +200,170 @@ class ProxyRouter(object):
 
         if self.unaltered:
             wbrequest.wb_url.mod = 'id_'
+        elif is_https:
+            wbrequest.wb_url.mod = 'bn_'
 
-        return route.handler(wbrequest)
+        response = route.handler(wbrequest)
+
+        if wbrequest.wb_url and wbrequest.wb_url.is_replay():
+            response.status_headers.replace_headers(self.extra_headers)
+
+        return response
+
+    def get_request_socket(self, env):
+        if not self.ca:
+            return None
+
+        sock = None
+
+        if env.get('uwsgi.version'):
+            try:
+                import uwsgi
+                fd = uwsgi.connection_fd()
+                conn = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
+                sock = socket.socket(_sock=conn)
+            except Exception:
+                pass
+        elif env.get('gunicorn.socket'):
+            sock = env['gunicorn.socket']
+
+        if not sock:
+            # attempt to find socket from wsgi.input
+            input_ = env.get('wsgi.input')
+            if input_ and hasattr(input_, '_sock'):
+                sock = socket.socket(_sock=input_._sock)
+
+        return sock
+
+    def handle_connect(self, env):
+        sock = self.get_request_socket(env)
+        if not sock:
+            return WbResponse.text_response('HTTPS Proxy Not Supported',
+                                            '405 HTTPS Proxy Not Supported')
+
+        sock.send('HTTP/1.0 200 Connection Established\r\n')
+        sock.send('Server: pywb proxy\r\n')
+        sock.send('\r\n')
+
+        hostname, port = env['REL_REQUEST_URI'].split(':')
+        cert_host = hostname
+
+        host_parts = hostname.split('.', 1)
+        if len(host_parts) == 2 and '.' in host_parts[1]:
+            cert_host = host_parts[1]
+
+        created, certfile = self.ca.get_cert_for_host(cert_host,
+                                                      wildcard=True)
+
+        try:
+            ssl_sock = ssl.wrap_socket(sock,
+                                       server_side=True,
+                                       certfile=certfile,
+                                       ciphers="ALL",
+                                       suppress_ragged_eofs=False,
+                                       #ssl_version=ssl.PROTOCOL_TLSv1)
+                                       ssl_version=ssl.PROTOCOL_SSLv23)
+            env['pywb.proxy_ssl_sock'] = ssl_sock
+
+            buffreader = BufferedReader(ssl_sock, block_size=self.BLOCK_SIZE)
+
+            statusline = buffreader.readline().rstrip()
+
+        except Exception as se:
+            raise BadRequestException(se.message)
+
+        statusparts = statusline.split(' ')
+
+        if len(statusparts) < 3:
+            raise BadRequestException('Invalid Proxy Request: ' + statusline)
+
+        env['REQUEST_METHOD'] = statusparts[0]
+        env['REL_REQUEST_URI'] = ('https://' +
+                                  env['REL_REQUEST_URI'].replace(':443', '') +
+                                  statusparts[1])
+
+        env['SERVER_PROTOCOL'] = statusparts[2].strip()
+
+        env['pywb.proxy_scheme'] = 'https'
+
+        env['pywb.proxy_host'] = hostname
+        env['pywb.proxy_port'] = port
+        env['pywb.proxy_req_uri'] = statusparts[1]
+
+        queryparts = env['REL_REQUEST_URI'].split('?', 1)
+        env['PATH_INFO'] = queryparts[0]
+        env['QUERY_STRING'] = queryparts[1] if len(queryparts) > 1 else ''
+
+        while True:
+            line = buffreader.readline()
+            if line:
+                line = line.rstrip()
+
+            if not line:
+                break
+
+            parts = line.split(':', 1)
+            if len(parts) < 2:
+                continue
+
+            name = parts[0].strip()
+            value = parts[1].strip()
+
+            name = name.replace('-', '_').upper()
+
+            if not name in ('CONTENT_LENGTH', 'CONTENT_TYPE'):
+                name = 'HTTP_' + name
+
+            env[name] = value
+
+        remain = buffreader.rem_length()
+        if remain > 0:
+            remainder = buffreader.read(self.BLOCK_SIZE)
+            env['wsgi.input'] = BufferedReader(ssl_sock,
+                                               block_size=self.BLOCK_SIZE,
+                                               starting_data=remainder)
+
+    def handle_cert_install(self, env):
+        if env['pywb.proxy_req_uri'] in ('/', '/index.html', '/index.html'):
+            available = (self.ca is not None)
+
+            if self.proxy_cert_dl_view:
+                return (self.proxy_cert_dl_view.
+                         render_response(available=available,
+                                         pem_path=self.CERT_DL_PEM,
+                                         p12_path=self.CERT_DL_P12))
+            else:
+                return None
+
+        elif env['pywb.proxy_req_uri'] == self.CERT_DL_PEM:
+            if not self.ca:
+                return None
+
+            buff = ''
+            with open(self.ca.ca_file) as fh:
+                buff = fh.read()
+
+            content_type = 'application/x-x509-ca-cert'
+
+            return WbResponse.text_response(buff,
+                                            content_type=content_type)
+
+        elif env['pywb.proxy_req_uri'] == self.CERT_DL_P12:
+            if not self.ca:
+                return None
+
+            buff = self.ca.get_root_PKCS12()
+
+            content_type = 'application/x-pkcs12'
+
+            return WbResponse.text_response(buff,
+                                            content_type=content_type)
+        else:
+            return None
 
     # Proxy Auto-Config (PAC) script for the proxy
     def make_pac_response(self, env):
-        import os
-        hostname = os.environ.get('PYWB_HOST_NAME')
+        hostname = env.get('HTTP_HOST')
         if not hostname:
             server_hostport = env['SERVER_NAME'] + ':' + env['SERVER_PORT']
             hostonly = env['SERVER_NAME']
@@ -143,33 +381,8 @@ class ProxyRouter(object):
 
         buff += direct.format(hostonly)
 
-        #buff += '\n    return "PROXY {0}";\n}}\n'.format(self.hostpaths[0])
         buff += '\n    return "PROXY {0}";\n}}\n'.format(server_hostport)
 
         content_type = 'application/x-ns-proxy-autoconfig'
 
         return WbResponse.text_response(buff, content_type=content_type)
-
-    def proxy_auth_coll_response(self):
-        proxy_msg = 'Basic realm="{0}"'.format(self.auth_msg)
-
-        headers = [('Content-Type', 'text/plain'),
-                   ('Proxy-Authenticate', proxy_msg)]
-
-        status_headers = StatusAndHeaders('407 Proxy Authentication', headers)
-
-        value = self.auth_msg
-
-        return WbResponse(status_headers, value=[value])
-
-    @staticmethod
-    def read_basic_auth_coll(value):
-        parts = value.split(' ')
-        if parts[0].lower() != 'basic':
-            return ''
-
-        if len(parts) != 2:
-            return ''
-
-        user_pass = base64.b64decode(parts[1])
-        return user_pass.split(':')[0]
