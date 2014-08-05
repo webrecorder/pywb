@@ -8,8 +8,6 @@ from html_rewriter import HTMLRewriter
 
 import itertools
 
-HTML = HTMLRewriter
-
 
 #=================================================================
 class RewriteRules(BaseRule):
@@ -23,8 +21,9 @@ class RewriteRules(BaseRule):
         self.rewriters['header'] = config.get('header_class', HeaderRewriter)
         self.rewriters['css'] = config.get('css_class', CSSRewriter)
         self.rewriters['xml'] = config.get('xml_class', XMLRewriter)
-        self.rewriters['html'] = config.get('html_class', HTML)
-        #self.rewriters['html'] = config.get('html_class', HTMLRewriter)
+        self.rewriters['html'] = config.get('html_class', HTMLRewriter)
+
+        self.parse_comments = config.get('parse_comments', False)
 
         # Custom handling for js rewriting, often the most complex
         self.js_rewrite_location = config.get('js_rewrite_location', True)

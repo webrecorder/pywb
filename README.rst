@@ -1,11 +1,11 @@
 PyWb 0.6.0
 ==========
 
-.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=https-proxy
+.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=develop
       :target: https://travis-ci.org/ikreymer/pywb
          
-.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=https-proxy
-      :target: https://coveralls.io/r/ikreymer/pywb?branch=https-proxy
+.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=develop
+      :target: https://coveralls.io/r/ikreymer/pywb?branch=develop
 
 pywb is a python implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
 
