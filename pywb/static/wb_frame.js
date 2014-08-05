@@ -19,21 +19,6 @@ function make_inner_url(url, ts)
 }
 
 function push_state(url, timestamp, capture_str, is_live) {
-/*    var curr_href = null;
-    
-    if (window.frames[0].WB_wombat_location) {
-        curr_href = window.frames[0].WB_wombat_location.href;
-    }
-        
-    if (url != curr_href) {
-        update_status(capture_str, is_live);
-        return;
-    }
-    
-    if (!timestamp) {
-        timestamp = extract_ts(window.frames[0].location.href);
-    }
-*/    
     var state = {}
     state.timestamp = timestamp;
     state.outer_url = make_outer_url(url, state.timestamp);
@@ -94,27 +79,6 @@ function update_status(str, is_live) {
     }
 }
 
-function ts_to_date(ts, is_gmt)
-{
-    if (ts.length < 14) {
-        return ts;
-    }
-    
-    var datestr = (ts.substring(0, 4) + "-" + 
-                  ts.substring(4, 6) + "-" +
-                  ts.substring(6, 8) + "T" +
-                  ts.substring(8, 10) + ":" +
-                  ts.substring(10, 12) + ":" +
-                  ts.substring(12, 14) + "-00:00");
-    
-    var date = new Date(datestr);
-    if (is_gmt) {
-        return date.toGMTString();
-    } else {
-        return date.toLocaleString();
-    }
-}
-
 window.onpopstate = function(event) {
     var curr_state = event.state;
     
@@ -149,15 +113,14 @@ function iframe_loaded(event) {
     if (iframe.wbinfo) {
         ts = iframe.wbinfo.timestamp;
         is_live = iframe.wbinfo.is_live;
-        capture_str = iframe.wbinfo.capture_str;
     } else {
         ts = extract_ts(iframe.location.href);
         if (!ts) {
             is_live = true;
             ts = extract_ts_cookie(iframe.document.cookie);
         }
-        capture_str = ts_to_date(ts, true);
     }
+    capture_str = _wb_js.ts_to_date(ts, true);
 
     update_wb_url(url, ts, capture_str, is_live);
 }

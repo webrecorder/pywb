@@ -96,7 +96,7 @@ class TestWb:
         resp = self.testapp.get('/pywb/20140127171238mp_/http://www.iana.org/')
         self._assert_basic_html(resp)
 
-        assert 'Mon, Jan 27 2014 17:12:38' in resp.body
+        assert '"20140127171238"' in resp.body
         assert 'wb.js' in resp.body
         assert 'WB_wombat_init' in resp.body
         assert '/pywb/20140127171238mp_/http://www.iana.org/time-zones"' in resp.body
@@ -105,7 +105,7 @@ class TestWb:
         resp = self.testapp.get('/pywb-nonframe/20140127171238/http://www.iana.org/')
         self._assert_basic_html(resp)
 
-        assert 'Mon, Jan 27 2014 17:12:38' in resp.body
+        assert '"20140127171238"' in resp.body
         assert 'wb.js' in resp.body
         assert '/pywb-nonframe/20140127171238/http://www.iana.org/time-zones"' in resp.body
 
@@ -113,7 +113,7 @@ class TestWb:
         resp = self.testapp.get('/pywb-nosurt/20140103030321mp_/http://example.com?example=1')
         self._assert_basic_html(resp)
 
-        assert 'Fri, Jan 03 2014 03:03:21' in resp.body
+        assert '"20140103030321"' in resp.body
         assert 'wb.js' in resp.body
         assert '/pywb-nosurt/20140103030321mp_/http://www.iana.org/domains/example' in resp.body
 
@@ -121,7 +121,7 @@ class TestWb:
         resp = self.testapp.get('/pywb/20140603030341mp_/http://example.com?example=2')
         self._assert_basic_html(resp)
 
-        assert 'Tue, Jun 03 2014 03:03:41' in resp.body
+        assert '"20140603030341"' in resp.body
         assert 'wb.js' in resp.body
         assert '/pywb/20140603030341mp_/http://www.iana.org/domains/example' in resp.body
 
@@ -129,7 +129,7 @@ class TestWb:
         resp = self.testapp.get('/pywb/20130729195151mp_/http://www.example.com/')
         self._assert_basic_html(resp)
 
-        assert 'Mon, Jul 29 2013 19:51:51' in resp.body
+        assert '"20130729195151"' in resp.body
         assert 'wb.js' in resp.body
         assert '/pywb/20130729195151mp_/http://www.iana.org/domains/example"' in resp.body
 
@@ -215,7 +215,7 @@ class TestWb:
 
         #check resp
         self._assert_basic_html(resp)
-        assert 'Mon, Jan 27 2014 17:12:51' in resp.body
+        assert '"20140127171251"' in resp.body
         assert '/pywb/20140127171251mp_/http://www.iana.org/domains/example' in resp.body
 
     def test_redirect_relative_3(self):
@@ -337,7 +337,7 @@ class TestWb:
         resp = self.testapp.get('/x-ignore-this-x', extra_environ = dict(REQUEST_URI = 'http://www.iana.org/domains/idn-tables', SCRIPT_NAME = ''))
         self._assert_basic_html(resp)
 
-        assert 'Sun, Jan 26 2014 20:11:27' in resp.body
+        assert '"20140126201127"' in resp.body
         assert 'wb.js' in resp.body
 
     def test_proxy_replay_auth_filtered(self):
@@ -347,7 +347,7 @@ class TestWb:
 
         self._assert_basic_html(resp)
 
-        assert 'Sun, Jan 26 2014 20:06:24' in resp.body
+        assert '"20140126200624"' in resp.body
         assert 'wb.js' in resp.body
 
     def test_proxy_replay_auth(self):
@@ -357,7 +357,7 @@ class TestWb:
 
         self._assert_basic_html(resp)
 
-        assert 'Mon, Jan 27 2014 17:12:38' in resp.body
+        assert '"20140127171238"' in resp.body
         assert 'wb.js' in resp.body
 
     def test_proxy_replay_auth_no_coll(self):

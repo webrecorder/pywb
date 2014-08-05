@@ -66,13 +66,37 @@ function init_banner() {
     
     text = "<span id='_wb_label'>" + text + "</span>";
 
-    var capture_str = (wbinfo ? wbinfo.capture_str : "");
+    var capture_str = "";
+    if (wbinfo && wbinfo.timestamp) {
+        capture_str = ts_to_date(wbinfo.timestamp, true);
+    }
 
     text += "<b id='_wb_capture_info'>" + capture_str + "</b>";
     
     banner.innerHTML = text;
 
     document.body.insertBefore(banner, document.body.firstChild);
+}
+
+function ts_to_date(ts, is_gmt)
+{
+    if (ts.length < 14) {
+        return ts;
+    }
+    
+    var datestr = (ts.substring(0, 4) + "-" + 
+                  ts.substring(4, 6) + "-" +
+                  ts.substring(6, 8) + "T" +
+                  ts.substring(8, 10) + ":" +
+                  ts.substring(10, 12) + ":" +
+                  ts.substring(12, 14) + "-00:00");
+    
+    var date = new Date(datestr);
+    if (is_gmt) {
+        return date.toGMTString();
+    } else {
+        return date.toLocaleString();
+    }
 }
 
 function add_event(name, func, object) {
@@ -116,7 +140,6 @@ if (wbinfo.is_frame_mp && wbinfo.canon_url &&
 }
 
 return {'labels': labels,
-        'add_event': add_event,
-        'remove_event': remove_event};
+        'ts_to_date': ts_to_date};
 
 })();
