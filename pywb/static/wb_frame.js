@@ -89,6 +89,8 @@ function set_state(state) {
             label.innerHTML = _wb_js.labels.REPLAY_MSG;
         }
     }
+
+    curr_state = state;
 }
 
 window.onpopstate = function(event) {

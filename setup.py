@@ -34,11 +34,7 @@ class PyTest(TestCommand):
 
 setup(
     name='pywb',
-<<<<<<< HEAD
     version='0.6.0',
-=======
-    version='0.5.3',
->>>>>>> 0.5.4-fixes
     url='https://github.com/ikreymer/pywb',
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',

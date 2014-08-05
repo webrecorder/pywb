@@ -140,10 +140,6 @@ class RewriteContent:
 
                 return (status_headers, gen, False)
 
-            if wb_url.is_banner_only:
-                gen = self._head_insert_only_gen(head_insert_str, stream)
-                return (status_headers, gen, False)
-
             rewriter = rewriter_class(urlrewriter,
                                       js_rewriter_class=rule.rewriters['js'],
                                       css_rewriter_class=rule.rewriters['css'],
