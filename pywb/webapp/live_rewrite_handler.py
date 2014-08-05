@@ -57,6 +57,10 @@ class RewriteHandler(SearchPageWbUrlHandler):
         return self._make_response(wbrequest, *result)
 
     def _make_response(self, wbrequest, status_headers, gen, is_rewritten):
+        cdx = wbrequest.env['pywb.cdx']
+        cookie = 'pywb.timestamp=' + cdx['timestamp'] + '; max-age=60'
+        status_headers.headers.append(('Set-Cookie', cookie))
+
         return WbResponse(status_headers, gen)
 
     def __str__(self):
