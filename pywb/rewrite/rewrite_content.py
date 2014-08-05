@@ -118,9 +118,22 @@ class RewriteContent:
 
             if head_insert_func:
                 head_insert_str = head_insert_func(rule, cdx)
+                head_insert_str = head_insert_str.encode('utf-8')
 
             if wb_url.is_banner_only:
                 gen = self._head_insert_only_gen(head_insert_str, stream)
+
+                content_len = headers.get_header('Content-Length')
+                try:
+                    content_len = int(content_len)
+                except Exception:
+                    content_len = None
+
+                if content_len and content_len >= 0:
+                    content_len = str(content_len + len(head_insert_str))
+                    status_headers.replace_header('Content-Length',
+                                                  content_len)
+
                 return (status_headers, gen, False)
 
             rewriter = rewriter_class(urlrewriter,
@@ -162,7 +175,8 @@ class RewriteContent:
         matcher = self.HEAD_REGEX.search(buff)
 
         if matcher:
-            yield buff[:matcher.end()] + insert_str
+            yield buff[:matcher.end()]
+            yield insert_str
             yield buff[matcher.end():]
         else:
             yield insert_str

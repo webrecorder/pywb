@@ -119,14 +119,36 @@ function remove_event(name, func, object) {
     }
 }
 
-if ((window.self == window.top) && (window.self.top == window.top) && wbinfo) {
-    if (wbinfo.canon_url && (window.location.href != wbinfo.canon_url)) {
+function notify_top() {
+    if (window.parent != window.top) {
+        return;
+    }
+
+    if (!window.WB_wombat_location) {
+        return;
+    }
+
+    if (typeof(window.WB_wombat_location.href) != "string") {
+        return;
+    }
+
+    window.parent.update_wb_url(window.WB_wombat_location.href,
+                                wbinfo.timestamp,
+                                wbinfo.is_live);
+
+    remove_event("readystatechange", notify_top, document);
+}
+
+if ((window.self == window.top) && wbinfo) {
+    if (wbinfo.canon_url && (window.location.href != wbinfo.canon_url) && wbinfo.mod != "bn_") {
         // Auto-redirect to top frame
         window.location.replace(wbinfo.canon_url);
     } else {
         // Init Banner (no frame or top frame)
         add_event("readystatechange", init_banner, document);
     }
+} else if (window.self != window.parent && window.parent.update_wb_url) {
+    add_event("readystatechange", notify_top, document);
 }
 
 

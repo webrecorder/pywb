@@ -699,7 +699,7 @@ WB_wombat_init = (function() {
         wb_replay_prefix = replay_prefix;
         
         if (wb_replay_prefix) {
-            wb_replay_date_prefix = replay_prefix + capture_date + "em_/";
+            wb_replay_date_prefix = replay_prefix + capture_date + "mp_/";
             
             if (capture_date.length > 0) {
                 wb_capture_date_part = "/" + capture_date + "/";
