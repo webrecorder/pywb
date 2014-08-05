@@ -130,13 +130,13 @@ class LiveRewriter(object):
 
         ts_err = url.split('///')
 
+        # fixup for accidental erroneous rewrite which has ///
+        # (unless file:///)
         if len(ts_err) > 1 and ts_err[0] != 'file:':
             url = 'http://' + ts_err[1]
 
         if url.startswith('//'):
             url = 'http:' + url
-
-        print 'URL ', url
 
         if is_http(url):
             (status_headers, stream) = self.fetch_http(url, env, req_headers,

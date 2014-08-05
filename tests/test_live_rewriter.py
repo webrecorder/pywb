@@ -17,6 +17,13 @@ class TestLiveRewriter:
         resp = self.testapp.get('/rewrite/mp_/http://facebook.com/')
         assert resp.status_int == 301
 
+    def test_live_rewrite_post(self):
+        resp = self.testapp.post('/rewrite/mp_/httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
+        assert resp.status_int == 200
+        assert '"foo": "bar"' in resp.body
+        assert '"test": "abc"' in resp.body
+        assert resp.status_int == 200
+
     def test_live_rewrite_frame(self):
         resp = self.testapp.get('/rewrite/http://example.com/')
         assert resp.status_int == 200
