@@ -179,13 +179,6 @@ class WbResponse(object):
         return WbResponse(StatusAndHeaders(status, redir_headers))
 
     def __call__(self, env, start_response):
-
-        # PERF
-        perfstats = env.get('X_PERF')
-        if perfstats:
-            self.status_headers.headers.append(('X-Archive-Perf-Stats',
-                                                str(perfstats)))
-
         start_response(self.status_headers.statusline,
                        self.status_headers.headers)
 

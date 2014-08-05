@@ -101,12 +101,9 @@ class HTMLRewriterMixin(object):
         if not m:
             return meta_refresh
 
-        try:
-            meta_refresh = (meta_refresh[:m.start(1)] +
-                            self._rewrite_url(m.group(1)) +
-                            meta_refresh[m.end(1):])
-        except Exception:
-            pass
+        meta_refresh = (meta_refresh[:m.start(1)] +
+                        self._rewrite_url(m.group(1)) +
+                        meta_refresh[m.end(1):])
 
         return meta_refresh
     # ===========================
@@ -136,7 +133,7 @@ class HTMLRewriterMixin(object):
                 return value.lower() == attr_value.lower()
         return False
 
-    def _rewrite_tag_attrs(self, tag, tag_attrs, escape=False):
+    def _rewrite_tag_attrs(self, tag, tag_attrs):
         # special case: script or style parse context
         if ((tag in self.STATE_TAGS) and not self._wb_parse_context):
             self._wb_parse_context = tag
@@ -197,7 +194,7 @@ class HTMLRewriterMixin(object):
                                          rebase_rewriter(attr_value))
 
             # write the attr!
-            self._write_attr(attr_name, attr_value, escape=escape)
+            self._write_attr(attr_name, attr_value)
 
         return True
 
@@ -217,12 +214,10 @@ class HTMLRewriterMixin(object):
 
         return True
 
-    def _write_attr(self, name, value, escape=False):
+    def _write_attr(self, name, value):
         # parser doesn't differentiate between 'attr=""' and just 'attr'
         # 'attr=""' is more common, so use that form
         if value:
-            if escape:
-                value = cgi.escape(value, quote=True)
             self.out.write(' ' + name + '="' + value + '"')
         else:
             self.out.write(' ' + name + '=""')
@@ -259,8 +254,8 @@ class HTMLRewriterMixin(object):
 
         return result
 
-    def _internal_close(self):
-        pass
+    def _internal_close(self):  # pragma: no cover
+        raise NotImplementedError('Base method')
 
 
 #=================================================================
@@ -272,7 +267,8 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
     def feed(self, string):
         try:
             HTMLParser.feed(self, string)
-        except HTMLParseError:
+        except HTMLParseError:  # pragma: no cover
+            # only raised in 2.6
             self.out.write(string)
 
     def _internal_close(self):
@@ -283,7 +279,8 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
 
         try:
             HTMLParser.close(self)
-        except HTMLParseError:
+        except HTMLParseError:  # pragma: no cover
+            # only raised in 2.6
             pass
 
     # called to unescape attrs -- do not unescape!

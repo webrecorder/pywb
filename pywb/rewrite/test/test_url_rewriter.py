@@ -65,6 +65,9 @@
 >>> do_rewrite('mailto:example@example.com', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
 'mailto:example@example.com'
 
+>>> do_rewrite('file:///some/path/', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
+'file:///some/path/'
+
 >>> UrlRewriter('19960708im_/http://domain.example.com/path.txt', '/abc/').get_abs_url()
 '/abc/19960708im_/'
 
@@ -73,10 +76,10 @@
 
 
 # HttpsUrlRewriter tests
->>> HttpsUrlRewriter(None, None).rewrite('https://example.com/abc')
+>>> HttpsUrlRewriter('http://example.com/', None).rewrite('https://example.com/abc')
 'http://example.com/abc'
 
->>> HttpsUrlRewriter(None, None).rewrite('http://example.com/abc')
+>>> HttpsUrlRewriter('http://example.com/', None).rewrite('http://example.com/abc')
 'http://example.com/abc'
 
 """

@@ -9,7 +9,7 @@ import logging
 
 from urlparse import urlsplit
 
-from pywb.utils.loaders import is_http, LimitReader
+from pywb.utils.loaders import is_http, LimitReader, BlockLoader
 from pywb.utils.timeutils import datetime_to_timestamp
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.canonicalize import canonicalize
@@ -30,7 +30,8 @@ class LiveRewriter(object):
             logging.debug('Live Rewrite Direct (no proxy)')
 
     def fetch_local_file(self, uri):
-        fh = open(uri)
+        #fh = open(uri)
+        fh = BlockLoader().load_file_or_resource(uri)
 
         content_type, _ = mimetypes.guess_type(uri)
 
@@ -118,7 +119,7 @@ class LiveRewriter(object):
 
         return (status_headers, stream)
 
-    def fetch_request(self, wb_url, urlrewriter,
+    def fetch_request(self, url, urlrewriter,
                       head_insert_func=None,
                       urlkey=None,
                       env=None,
@@ -127,15 +128,11 @@ class LiveRewriter(object):
                       follow_redirects=False,
                       proxies=None):
 
-        if isinstance(wb_url, str):
-            url = wb_url
-            wb_url = WbUrl(url)
-        else:
-            url = wb_url.url
-
         ts_err = url.split('///')
 
-        if len(ts_err) > 1:
+        # fixup for accidental erroneous rewrite which has ///
+        # (unless file:///)
+        if len(ts_err) > 1 and ts_err[0] != 'file:':
             url = 'http://' + ts_err[1]
 
         if url.startswith('//'):
@@ -164,8 +161,7 @@ class LiveRewriter(object):
               }
 
         result = (self.rewriter.
-                  rewrite_content(wb_url,
-                                  urlrewriter,
+                  rewrite_content(urlrewriter,
                                   status_headers,
                                   stream,
                                   head_insert_func=head_insert_func,

@@ -130,8 +130,7 @@ class ReplayView(object):
                                 create_insert_func(wbrequest))
 
         result = (self.content_rewriter.
-                  rewrite_content(wbrequest.wb_url,
-                                  urlrewriter,
+                  rewrite_content(urlrewriter,
                                   headers=status_headers,
                                   stream=stream,
                                   head_insert_func=head_insert_func,

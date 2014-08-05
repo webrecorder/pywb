@@ -13,7 +13,8 @@ class UrlRewriter(object):
     instance and an optional full path prefix
     """
 
-    NO_REWRITE_URI_PREFIX = ['#', 'javascript:', 'data:', 'mailto:', 'about:']
+    NO_REWRITE_URI_PREFIX = ['#', 'javascript:', 'data:',
+                             'mailto:', 'about:', 'file:']
 
     PROTOCOLS = ['http:', 'https:', 'ftp:', 'mms:', 'rtsp:', 'wais:']
 
@@ -125,7 +126,7 @@ class UrlRewriter(object):
 
 
 #=================================================================
-class HttpsUrlRewriter(object):
+class HttpsUrlRewriter(UrlRewriter):
     """
     A url rewriter which urls that start with https:// to http://
     Other urls/input is unchanged.
@@ -133,9 +134,6 @@ class HttpsUrlRewriter(object):
 
     HTTP = 'http://'
     HTTPS = 'https://'
-
-    def __init__(self, wburl, prefix, full_prefix=None):
-        pass
 
     def rewrite(self, url, mod=None):
         if url.startswith(self.HTTPS):
