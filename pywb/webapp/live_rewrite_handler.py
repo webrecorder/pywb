@@ -19,6 +19,9 @@ class LiveResourceException(WbException):
 
 #=================================================================
 class RewriteHandler(SearchPageWbUrlHandler):
+
+    LIVE_COOKIE = 'pywb.timestamp={0}; max-age=60';
+
     def __init__(self, config):
         super(RewriteHandler, self).__init__(config)
 
@@ -28,6 +31,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
         self.head_insert_view = HeadInsertView.init_from_config(config)
 
+        self.live_cookie = config.get('live-cookie', self.LIVE_COOKIE)
+
     def handle_request(self, wbrequest):
         try:
             return self.render_content(wbrequest)
@@ -35,8 +40,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
         except Exception as exc:
             url = wbrequest.wb_url.url
             msg = 'Could not load the url from the live web: ' + url
-            #raise LiveResourceException(msg=msg, url=url)
-            raise
+            raise LiveResourceException(msg=msg, url=url)
 
     def _live_request_headers(self, wbrequest):
         return {}
@@ -58,9 +62,13 @@ class RewriteHandler(SearchPageWbUrlHandler):
         return self._make_response(wbrequest, *result)
 
     def _make_response(self, wbrequest, status_headers, gen, is_rewritten):
-        cdx = wbrequest.env['pywb.cdx']
-        cookie = 'pywb.timestamp=' + cdx['timestamp'] + '; max-age=60'
-        status_headers.headers.append(('Set-Cookie', cookie))
+        # if cookie set, pass recorded timestamp info via cookie
+        # so that client side may be able to access it
+        # used by framed mode to update frame banner
+        if self.live_cookie:
+            cdx = wbrequest.env['pywb.cdx']
+            value = self.live_cookie.format(cdx['timestamp'])
+            status_headers.headers.append(('Set-Cookie', value))
 
         return WbResponse(status_headers, gen)
 
