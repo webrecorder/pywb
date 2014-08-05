@@ -66,7 +66,10 @@ function init_banner() {
     
     text = "<span id='_wb_label'>" + text + "</span>";
 
-    var capture_str = (wbinfo ? wbinfo.capture_str : "");
+    var capture_str = "";
+    if (wbinfo && wbinfo.timestamp) {
+        capture_str = ts_to_date(wbinfo.timestamp, true);
+    }
 
     text += "<b id='_wb_capture_info'>" + capture_str + "</b>";
 
@@ -81,6 +84,27 @@ function init_banner() {
     banner.innerHTML = text;
 
     document.body.insertBefore(banner, document.body.firstChild);
+}
+
+function ts_to_date(ts, is_gmt)
+{
+    if (ts.length < 14) {
+        return ts;
+    }
+    
+    var datestr = (ts.substring(0, 4) + "-" + 
+                  ts.substring(4, 6) + "-" +
+                  ts.substring(6, 8) + "T" +
+                  ts.substring(8, 10) + ":" +
+                  ts.substring(10, 12) + ":" +
+                  ts.substring(12, 14) + "-00:00");
+    
+    var date = new Date(datestr);
+    if (is_gmt) {
+        return date.toGMTString();
+    } else {
+        return date.toLocaleString();
+    }
 }
 
 function add_event(name, func, object) {
@@ -107,47 +131,13 @@ function remove_event(name, func, object) {
     }
 }
 
-function notify_top(event) {    
-    if (window.self == window.top) {
-        return;
-    } 
-    
-    if (window.top.top != window.top) {
-        return;
-    }
-    
-    if (!window.WB_wombat_location) {
-        return;
-    }
-    
-    if (wbinfo.is_embed) {
-        return;
-    }
-    
-    if (event.target != window.document) {
-        return;
-    }
-
-    if (typeof(window.WB_wombat_location.href) != "string") {
-        return;
-    }
-
-    if (window.top.update_wb_url) {
-        window.top.update_wb_url(window.WB_wombat_location.href,
-                                 wbinfo.timestamp,
-                                 wbinfo.capture_str,
-                                 wbinfo.is_live);
-    }
-}
-
 var detect_on_init = function(event) {
-    init_banner();  
-    notify_top(event);    
+    init_banner();
+
     remove_event("readystatechange", detect_on_init, document);
 }
 
 add_event("readystatechange", detect_on_init, document);
-
 
 
 if (wbinfo.is_frame_mp && wbinfo.canon_url &&
@@ -157,6 +147,7 @@ if (wbinfo.is_frame_mp && wbinfo.canon_url &&
     window.location.replace(wbinfo.canon_url);
 }
 
-return {'labels': labels};
+return {'labels': labels,
+        'ts_to_date': ts_to_date};
 
 })();

@@ -172,10 +172,12 @@ class LiveRewriter(object):
                                   urlkey=urlkey,
                                   cdx=cdx))
 
+        if env:
+            env['pywb.cdx'] = cdx
+
         return result
 
     def get_rewritten(self, *args, **kwargs):
-
         result = self.fetch_request(*args, **kwargs)
 
         status_headers, gen, is_rewritten = result
