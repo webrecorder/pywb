@@ -35,7 +35,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
         except Exception as exc:
             url = wbrequest.wb_url.url
             msg = 'Could not load the url from the live web: ' + url
-            raise LiveResourceException(msg=msg, url=url)
+            #raise LiveResourceException(msg=msg, url=url)
+            raise
 
     def _live_request_headers(self, wbrequest):
         return {}

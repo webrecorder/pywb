@@ -41,7 +41,7 @@ class template_filter(object):
 @template_filter
 def format_ts(value, format_='%a, %b %d %Y %H:%M:%S'):
     value = timestamp_to_datetime(value)
-    return value.strftime(format_) + ' GMT'
+    return value.strftime(format_)
 
 
 @template_filter('urlsplit')
