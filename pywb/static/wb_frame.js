@@ -1,5 +1,8 @@
 var update_wb_url = push_state;
 
+var LIVE_COOKIE_REGEX = /pywb.timestamp=([\d]{1,14})/;
+
+
 function make_outer_url(url, ts)
 {
     if (ts) {
@@ -88,8 +91,7 @@ window.onpopstate = function(event) {
 }
 
 function extract_ts_cookie(value) {
-    var regex = /pywb.timestamp=([\d]{1,14})/;
-    var result = value.match(regex);
+    var result = value.match(LIVE_COOKIE_REGEX);
     if (result) {
         return result[1];
     } else {
@@ -114,10 +116,11 @@ function iframe_loaded(event) {
         ts = iframe.wbinfo.timestamp;
         is_live = iframe.wbinfo.is_live;
     } else {
-        ts = extract_ts(iframe.location.href);
-        if (!ts) {
+        ts = extract_ts_cookie(iframe.document.cookie);
+        if (ts) {
             is_live = true;
-            ts = extract_ts_cookie(iframe.document.cookie);
+        } else {
+            ts = extract_ts(iframe.location.href);
         }
     }
     capture_str = _wb_js.ts_to_date(ts, true);
