@@ -1,3 +1,11 @@
+pywb 0.5.3 changelist
+~~~~~~~~~~~~~~~~~~~~~
+* better framed replay for non-html content -- include live rewrite timestamp via temp 'pywb.timestamp' cookie, timestamp formatting moved to client-side for better customization.
+
+* refactoring of replay/live handlers for better extensability
+
+* banner-only ('bn_' modifier) to only insert banner with no rewriting
+
 pywb 0.5.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 minor fixes:
@@ -77,8 +85,7 @@ pywb 0.4.0 changelist
 * live-rewrite-server: A new web server for checking rewriting rules against live content. A white-list of request headers is sent to 
   the destination server. See `rewrite_live.py <https://github.com/ikreymer/pywb/blob/master/pywb/rewrite/rewrite_live.py>`_ for more details.
 
-* Cookie Rewriting in Archival Mode: HTTP Set-Cookie header rewritten to remove Expires, rewrite Path and Domain. If Domain is used, Path is set to / to ensure cookie is visible
-  from all archival urls.
+* Cookie Rewriting in Archival Mode: HTTP Set-Cookie header rewritten to remove Expires, rewrite Path and Domain. If Domain is used, Path is set to / to ensure cookie is visible from all archival urls.
 
 * Much improved handling of chunk encoded responses, better handling of zero-length chunks and fix bug where not enough gzip data was read for a full chunk to be decoded. Support for chunk-decoding w/o gzip decompression
   (for example, for binary data).
