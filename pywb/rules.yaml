@@ -31,6 +31,8 @@ rules:
             - match: 'Bootloader\.configurePage.*?;'
               replace: '/* {0} */'
 
+        parse_comments: true
+
 
     # flickr rules
     #=================================================================

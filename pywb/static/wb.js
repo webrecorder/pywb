@@ -30,10 +30,6 @@ function init_banner() {
     var FRAME_BANNER_ID = "_wb_frame_top_banner";
     var bid;
 
-    if (wbinfo.is_embed) {
-        return;
-    }
-
     if (window.top != window.self) {
         return;
     }
@@ -123,23 +119,20 @@ function remove_event(name, func, object) {
     }
 }
 
-var detect_on_init = function(event) {
-    init_banner();
-
-    remove_event("readystatechange", detect_on_init, document);
+if ((window.self == window.top) && (window.self.top == window.top) && wbinfo) {
+    if (wbinfo.canon_url && (window.location.href != wbinfo.canon_url)) {
+        // Auto-redirect to top frame
+        window.location.replace(wbinfo.canon_url);
+    } else {
+        // Init Banner (no frame or top frame)
+        add_event("readystatechange", init_banner, document);
+    }
 }
 
-add_event("readystatechange", detect_on_init, document);
 
-
-if (wbinfo.is_frame_mp && wbinfo.canon_url &&
-   (window.self == window.top) && (window.self.top == window.top) &&
-   window.location.href != wbinfo.canon_url) {
-    
-    window.location.replace(wbinfo.canon_url);
-}
-
-return {'labels': labels,
-        'ts_to_date': ts_to_date};
+return {
+        'labels': labels,
+        'ts_to_date': ts_to_date
+       };
 
 })();

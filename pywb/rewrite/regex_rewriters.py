@@ -25,7 +25,7 @@ class RegexRewriter(object):
 
     @staticmethod
     def archival_rewrite(rewriter):
-        return lambda string: rewriter.rewrite(string, 'em_')
+        return lambda string: rewriter.rewrite(string, 'mp_')
 
     #@staticmethod
     #def replacer(other):
@@ -105,7 +105,7 @@ class JSLinkOnlyRewriter(RegexRewriter):
     JS Rewriter which rewrites absolute http://, https:// and // urls
     at the beginning of a string
     """
-    JS_HTTPX = r'(?<="|\')(?:https?:)?\\{0,2}/\\{0,2}/[A-Za-z0-9:_@.-]+'
+    JS_HTTPX = r'(?<="|\'|;)(?:https?:)?\\{0,4}/\\{0,4}/[A-Za-z0-9:_@.-]+'
 
     def __init__(self, rewriter, rules=[]):
         rules = rules + [

@@ -22,6 +22,15 @@ function make_inner_url(url, ts)
 }
 
 function push_state(url, timestamp, capture_str, is_live) {
+    if (window.frames[0].WB_wombat_location) {
+        curr_href = window.frames[0].WB_wombat_location.href;
+        
+        // If not current url, don't update    
+        if (url != curr_href) {
+            return;
+        }
+    }
+
     var state = {}
     state.timestamp = timestamp;
     state.outer_url = make_outer_url(url, state.timestamp);
@@ -100,14 +109,14 @@ function extract_ts_cookie(value) {
 }
 
 function iframe_loaded(event) {
-    var iframe = window.frames[0];
     var url;
     var ts;
     var capture_str;
     var is_live = false;
+    var iframe = window.frames[0];
 
     if (iframe.WB_wombat_location) {
-        url = window.WB_wombat_location.href;
+        url = iframe.WB_wombat_location.href;
     } else {
         url = extract_replay_url(iframe.location.href);
     }

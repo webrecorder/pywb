@@ -14,7 +14,6 @@
   wbinfo = {}
   wbinfo.timestamp = "{{ cdx.timestamp }}";
   wbinfo.prefix = "{{ wbrequest.wb_prefix }}";
-  wbinfo.is_embed = {{"true" if wbrequest.wb_url.is_embed else "false"}};
   wbinfo.is_frame_mp = {{"true" if wbrequest.wb_url.mod == 'mp_' else "false"}};
   wbinfo.canon_url = "{{ canon_url }}";
   wbinfo.is_live = {{ "true" if cdx.is_live else "false" }};

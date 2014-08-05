@@ -62,7 +62,7 @@ ur"""
 
 # Script tag
 >>> parse('<script>window.location = "http://example.com/a/b/c.html"</script>')
-<script>window.WB_wombat_location = "/web/20131226101010em_/http://example.com/a/b/c.html"</script>
+<script>window.WB_wombat_location = "/web/20131226101010mp_/http://example.com/a/b/c.html"</script>
 
 # Script tag + crossorigin
 >>> parse('<script src="/js/scripts.js" crossorigin="anonymous"></script>')
@@ -70,21 +70,21 @@ ur"""
 
 # Unterminated script tag, handle and auto-terminate
 >>> parse('<script>window.location = "http://example.com/a/b/c.html"</sc>')
-<script>window.WB_wombat_location = "/web/20131226101010em_/http://example.com/a/b/c.html"</sc></script>
+<script>window.WB_wombat_location = "/web/20131226101010mp_/http://example.com/a/b/c.html"</sc></script>
 
 >>> parse('<script>/*<![CDATA[*/window.location = "http://example.com/a/b/c.html;/*]]>*/"</script>')
-<script>/*<![CDATA[*/window.WB_wombat_location = "/web/20131226101010em_/http://example.com/a/b/c.html;/*]]>*/"</script>
+<script>/*<![CDATA[*/window.WB_wombat_location = "/web/20131226101010mp_/http://example.com/a/b/c.html;/*]]>*/"</script>
 
 >>> parse('<div style="background: url(\'abc.html\')" onblah onclick="location = \'redirect.html\'"></div>')
-<div style="background: url('/web/20131226101010em_/http://example.com/some/path/abc.html')" onblah="" onclick="WB_wombat_location = 'redirect.html'"></div>
+<div style="background: url('/web/20131226101010mp_/http://example.com/some/path/abc.html')" onblah="" onclick="WB_wombat_location = 'redirect.html'"></div>
 
 # Style
 >>> parse('<style>@import "styles.css" .a { font-face: url(\'myfont.ttf\') }</style>')
-<style>@import "/web/20131226101010em_/http://example.com/some/path/styles.css" .a { font-face: url('/web/20131226101010em_/http://example.com/some/path/myfont.ttf') }</style>
+<style>@import "/web/20131226101010mp_/http://example.com/some/path/styles.css" .a { font-face: url('/web/20131226101010mp_/http://example.com/some/path/myfont.ttf') }</style>
 
 # Unterminated style tag, handle and auto-terminate
 >>> parse('<style>@import url(styles.css)')
-<style>@import url(/web/20131226101010em_/http://example.com/some/path/styles.css)</style>
+<style>@import url(/web/20131226101010mp_/http://example.com/some/path/styles.css)</style>
 
 # Head Insertion
 >>> parse('<html><head><script src="other.js"></script></head><body>Test</body></html>', head_insert = '<script src="cool.js"></script>')

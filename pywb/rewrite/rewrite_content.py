@@ -127,7 +127,8 @@ class RewriteContent:
                                       js_rewriter_class=rule.rewriters['js'],
                                       css_rewriter_class=rule.rewriters['css'],
                                       head_insert=head_insert_str,
-                                      defmod=self.defmod)
+                                      defmod=self.defmod,
+                                      parse_comments=rule.parse_comments)
 
         else:
             if wb_url.is_banner_only:
