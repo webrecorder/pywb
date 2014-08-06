@@ -1,5 +1,6 @@
 import re
 from io import BytesIO
+from urlparse import urlsplit
 
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.wbexception import WbException, NotFoundException
@@ -224,6 +225,9 @@ class ReplayView(object):
             return
 
         location_url = location_url.lower()
+        if location_url.startswith('/'):
+            host = urlsplit(cdx['original']).netloc
+            location_url = host + location_url
 
         if (ReplayView.strip_scheme(request_url) ==
              ReplayView.strip_scheme(location_url)):
