@@ -6,6 +6,16 @@ pywb 0.6.0 changelist
 * Revamped HTTP/S system: proxy collection and capture time switching via cookie!
 
 
+pywb 0.5.4 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* bug fix: self-redirect check resolves relative Location: redirects
+
+* rewrite rules: 'parse_comments' option to parse html comments as JS, regex rewrite update to match '&quot;http:\\\\/' double backslash
+
+* bug fixes in framed replay for html content, update top frame for html content on load when possible
+
+
 pywb 0.5.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 * better framed replay for non-html content -- include live rewrite timestamp via temp 'pywb.timestamp' cookie, updating banner of iframe load. All timestamp formatting moved to client-side for better customization.

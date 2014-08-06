@@ -1,5 +1,5 @@
 PyWb 0.6.0
-==========
+=======
 
 .. image:: https://travis-ci.org/ikreymer/pywb.png?branch=develop
       :target: https://travis-ci.org/ikreymer/pywb
