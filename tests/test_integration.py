@@ -335,65 +335,6 @@ class TestWb:
         resp = self.testapp.get('/static/test/route/notfound.css', status = 404)
         assert resp.status_int == 404
 
-    # 'Simulating' proxy by settings REQUEST_URI explicitly to http:// url and no SCRIPT_NAME
-    # would be nice to be able to test proxy more
-    def test_proxy_replay(self):
-        resp = self.testapp.get('/x-ignore-this-x', extra_environ = dict(REQUEST_URI = 'http://www.iana.org/domains/idn-tables', SCRIPT_NAME = ''))
-        self._assert_basic_html(resp)
-
-        assert '"20140126201127"' in resp.body
-        assert 'wb.js' in resp.body
-
-    def test_proxy_replay_auth_filtered(self):
-        headers = [('Proxy-Authorization', 'Basic ' + base64.b64encode('pywb-filt-2:'))]
-        resp = self.testapp.get('/x-ignore-this-x', headers = headers,
-                                extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''))
-
-        self._assert_basic_html(resp)
-
-        assert '"20140126200624"' in resp.body
-        assert 'wb.js' in resp.body
-
-    def test_proxy_replay_auth(self):
-        headers = [('Proxy-Authorization', 'Basic ' + base64.b64encode('pywb'))]
-        resp = self.testapp.get('/x-ignore-this-x', headers = headers,
-                                extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''))
-
-        self._assert_basic_html(resp)
-
-        assert '"20140127171238"' in resp.body
-        assert 'wb.js' in resp.body
-
-    def test_proxy_replay_auth_no_coll(self):
-        headers = [('Proxy-Authorization', 'Basic ' + base64.b64encode('no-such-coll'))]
-        resp = self.testapp.get('/x-ignore-this-x', headers = headers,
-                                extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''),
-                                status=407)
-
-        assert resp.status_int == 407
-
-    def test_proxy_replay_auth_invalid_1(self):
-        headers = [('Proxy-Authorization', 'abc' + base64.b64encode('no-such-coll'))]
-        resp = self.testapp.get('/x-ignore-this-x', headers = headers,
-                                extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''),
-                                status=407)
-
-        assert resp.status_int == 407
-
-    def test_proxy_replay_auth_invalid_2(self):
-        headers = [('Proxy-Authorization', 'basic')]
-        resp = self.testapp.get('/x-ignore-this-x', headers = headers,
-                                extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''),
-                                status=407)
-
-        assert resp.status_int == 407
-
-    def test_proxy_pac(self):
-        resp = self.testapp.get('/proxy.pac', headers = [('Host', 'pywb-proxy:8080')])
-        assert resp.content_type == 'application/x-ns-proxy-autoconfig'
-        assert '"PROXY pywb-proxy:8080"' in resp.body
-        assert '"localhost"' in resp.body
-
     def test_cdx_server_filters(self):
         resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mimetype:warc/revisit&filter=filename:dupes.warc.gz')
         self._assert_basic_text(resp)

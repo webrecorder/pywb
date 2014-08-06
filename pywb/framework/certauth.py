@@ -56,6 +56,16 @@ class CertificateAuthority(object):
 
         return True, host_filename
 
+    def get_wildcard_cert(self, cert_host):
+        host_parts = cert_host.split('.', 1)
+        if len(host_parts) == 2 and '.' in host_parts[1]:
+            cert_host = host_parts[1]
+
+        created, certfile = self.get_cert_for_host(cert_host,
+                                                   wildcard=True)
+
+        return certfile
+
     def get_root_PKCS12(self):
         p12 = crypto.PKCS12()
         p12.set_certificate(self.cert)
@@ -221,8 +231,8 @@ def main():
         if created:
             print 'Created new root cert: "' + result.output_pem_file + '"'
         else:
-            print ('Root cert "' + result.output_pem_file + '" already exists,' +
-                    ' use -f to overwrite')
+            print ('Root cert "' + result.output_pem_file +
+                    '" already exists,' + ' use -f to overwrite')
 
 if __name__ == "__main__":
     main()

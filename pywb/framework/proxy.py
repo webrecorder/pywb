@@ -246,14 +246,8 @@ class ProxyRouter(object):
         sock.send('\r\n')
 
         hostname, port = env['REL_REQUEST_URI'].split(':')
-        cert_host = hostname
 
-        host_parts = hostname.split('.', 1)
-        if len(host_parts) == 2 and '.' in host_parts[1]:
-            cert_host = host_parts[1]
-
-        created, certfile = self.ca.get_cert_for_host(cert_host,
-                                                      wildcard=True)
+        certfile = self.ca.get_wildcard_cert(hostname)
 
         try:
             ssl_sock = ssl.wrap_socket(sock,
@@ -261,7 +255,6 @@ class ProxyRouter(object):
                                        certfile=certfile,
                                        ciphers="ALL",
                                        suppress_ragged_eofs=False,
-                                       #ssl_version=ssl.PROTOCOL_TLSv1)
                                        ssl_version=ssl.PROTOCOL_SSLv23)
             env['pywb.proxy_ssl_sock'] = ssl_sock
 
