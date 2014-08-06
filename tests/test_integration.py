@@ -241,6 +241,11 @@ class TestWb:
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
 
+    def test_rel_self_redirect(self):
+        uri = '/pywb/20140126200927mp_/http://www.iana.org/domains/root/db'
+        resp = self.testapp.get(uri, status=302)
+        assert resp.status_int == 302
+        assert resp.headers['Location'].endswith('/pywb/20140126200928mp_/http://www.iana.org/domains/root/db')
 
     def test_referrer_self_redirect(self):
         uri = '/pywb/20140127171239mp_/http://www.iana.org/_css/2013.1/screen.css'
