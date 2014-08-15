@@ -174,7 +174,7 @@ class ReplayView(object):
                                           content_length_str)
             out.close()
 
-        return content
+        return [content]
 
     def _redirect_if_needed(self, wbrequest, cdx):
         if wbrequest.options['is_proxy']:

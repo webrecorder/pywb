@@ -187,10 +187,7 @@ class WbResponse(object):
                 self.body.close()
             return []
 
-        if hasattr(self.body, '__iter__'):
-            return self.body
-        else:
-            return [str(self.body)]
+        return self.body
 
     def __repr__(self):
         return str(vars(self))

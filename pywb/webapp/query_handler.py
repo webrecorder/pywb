@@ -144,7 +144,7 @@ class QueryHandler(object):
 
             wburl.LATEST_REPLAY:
                 {'sort': 'reverse',
-                 'filter': ['statuscode:[23]..'],
+                 'filter': ['statuscode:[23]..|-'],
                  'limit': '1',
                  'resolveRevisits': True,
                 }
