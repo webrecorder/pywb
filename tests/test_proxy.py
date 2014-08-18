@@ -77,3 +77,38 @@ class TestProxyWb:
         resp = self.testapp.get('/x-ignore-this-x', headers = headers,
                                 extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''),
                                 status=407)
+
+
+class TestProxyCookieWb:
+    TEST_CONFIG = 'tests/test_config_proxy.yaml'
+
+    def setup(self):
+        self.app = init_app(create_wb_router,
+                            load_yaml=True,
+                            config_file=self.TEST_CONFIG)
+
+        self.testapp = webtest.TestApp(self.app)
+
+    def _assert_basic_html(self, resp):
+        assert resp.status_int == 200
+        assert resp.content_type == 'text/html'
+        assert resp.content_length > 0
+
+    def _assert_basic_text(self, resp):
+        assert resp.status_int == 200
+        assert resp.content_type == 'text/plain'
+        assert resp.content_length > 0
+
+    def test_proxy_cookie_first_select(self):
+        resp = self.testapp.get('/x-ignore-this-x', extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''))
+        assert resp.headers['Location'] == 'http://auto.pywb.proxy/http://www.iana.org/'
+        assert resp.status_int == 302
+        assert 'Set-Cookie' not in resp.headers
+
+        resp = self.testapp.get('/x-ignore-this-x', extra_environ = dict(REQUEST_URI = 'http://auto.pywb.proxy/http://www.iana.org/', SCRIPT_NAME = ''))
+        assert resp.headers['Location'] == 'http://select.pywb.proxy/http://www.iana.org/'
+        assert resp.status_int == 302
+        assert 'Set-Cookie' not in resp.headers
+
+        #resp = resp.follow()
+        #assert resp.status == 200
