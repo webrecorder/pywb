@@ -19,3 +19,7 @@ proxy_options:
 
     cookie_resolver: true
     use_default_coll: false
+
+    root_ca_file: ./tests/pywb_test_ca.pem
+    root_ca_name: pywb Test Cert
+    certs_dir: ./tests/pywb_test_certs

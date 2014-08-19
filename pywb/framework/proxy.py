@@ -103,7 +103,7 @@ class ProxyRouter(object):
         # attempt to create the root_ca_file if doesn't exist
         # (generally recommended to create this seperately)
         certname = proxy_options.get('root_ca_name')
-        CertificateAuthority.generate_ca_root(certname, ca_file)
+        CertificateAuthority.generate_ca_root(ca_file, certname)
 
         certs_dir = proxy_options.get('certs_dir')
         self.ca = CertificateAuthority(ca_file=ca_file,
@@ -216,7 +216,7 @@ class ProxyRouter(object):
 
         sock = None
 
-        if env.get('uwsgi.version'):
+        if env.get('uwsgi.version'):  # pragma: no cover
             try:
                 import uwsgi
                 fd = uwsgi.connection_fd()
