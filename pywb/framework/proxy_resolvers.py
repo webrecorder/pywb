@@ -122,6 +122,9 @@ class ProxyAuthResolver(BaseCollResolver):
 #=================================================================
 # Experimental CookieResolver
 class CookieResolver(BaseCollResolver):  # pragma: no cover
+    
+    SESH_COOKIE_NAME = '__pywb_proxy_sesh'
+
     def __init__(self, routes, config):
         config['pre_connect'] = False
         super(CookieResolver, self).__init__(routes, config)
@@ -129,7 +132,7 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
         self.sethost_prefix = '-sethost.' + self.magic_name + '.'
         self.set_prefix = '-set.' + self.magic_name
 
-        self.cookie_name = config.get('cookie_name', '__pywb_coll')
+        self.cookie_name = config.get('cookie_name', self.SESH_COOKIE_NAME)
         self.proxy_select_view = config.get('proxy_select_view')
 
         self.extra_headers = config.get('extra_headers')

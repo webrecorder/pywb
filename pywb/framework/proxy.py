@@ -109,6 +109,8 @@ class ProxyRouter(object):
         self.ca = CertificateAuthority(ca_file=ca_file,
                                        certs_dir=certs_dir)
 
+        self.use_wildcard = proxy_options.get('use_wildcard_certs', True)
+
         self.proxy_cert_dl_view = proxy_options.get('proxy_cert_download_view')
 
     def __call__(self, env):
@@ -247,7 +249,10 @@ class ProxyRouter(object):
 
         hostname, port = env['REL_REQUEST_URI'].split(':')
 
-        certfile = self.ca.get_wildcard_cert(hostname)
+        if not self.use_wildcard:
+            _, certfile = self.ca.get_cert_for_host(hostname)
+        else:
+            certfile = self.ca.get_wildcard_cert(hostname)
 
         try:
             ssl_sock = ssl.wrap_socket(sock,

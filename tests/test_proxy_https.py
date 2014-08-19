@@ -3,13 +3,14 @@ from pywb.framework.wsgi_wrappers import init_app
 
 from wsgiref.simple_server import make_server
 
+from pywb.framework.proxy_resolvers import CookieResolver
+
 import threading
 import requests
 import shutil
 import os
 
 TEST_CONFIG = 'tests/test_config_proxy.yaml'
-CA_BUNDLE = 'pywb-ca.pem'
 
 TEST_CA_DIR = './tests/pywb_test_certs'
 TEST_CA_ROOT = './tests/pywb_test_ca.pem'
@@ -55,19 +56,18 @@ class ServeThread(threading.Thread):
 
 
 def test_replay():
+    #cookie_val = CookieResolver.SESH_COOKIE_NAME + '=
     resp = requests.get('https://iana.org/',
                         proxies=server.proxy_dict,
-                        verify=False)
-#                        verify=CA_BUNDLE)
+    #                    headers={'Cookie': cookie_val},
+                        verify=TEST_CA_ROOT)
     assert resp.status_code == 200
 
 
 def test_replay_static():
     resp = requests.get('https://pywb.proxy/static/default/wb.js',
                         proxies=server.proxy_dict,
-                        headers={'Connection': 'close'},
-                        verify=False)
-#                        verify=CA_BUNDLE)
+                        verify=TEST_CA_ROOT)
     assert resp.status_code == 200
     found = u'function init_banner' in resp.text
     assert found, resp.text
