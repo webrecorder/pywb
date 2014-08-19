@@ -258,9 +258,9 @@ class ProxyRouter(object):
             ssl_sock = ssl.wrap_socket(sock,
                                        server_side=True,
                                        certfile=certfile,
-                                       ciphers="ALL",
+                                       #ciphers="ALL",
                                        suppress_ragged_eofs=False,
-                                       #ssl_version=ssl.PROTOCOL_SSLv23
+                                       ssl_version=ssl.PROTOCOL_SSLv23
                                        )
             env['pywb.proxy_ssl_sock'] = ssl_sock
 
