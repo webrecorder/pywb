@@ -71,4 +71,27 @@ def test_replay_static():
     assert resp.status_code == 200
     found = u'function init_banner' in resp.text
     assert found, resp.text
-    resp.close()
+
+def test_replay_dl_page():
+    resp = requests.get('https://pywb.proxy/',
+                        proxies=server.proxy_dict,
+                        verify=TEST_CA_ROOT)
+    assert resp.status_code == 200
+    assert 'text/html' in resp.headers['content-type']
+    found = u'Download' in resp.text
+    assert found, resp.text
+
+def test_dl_pem():
+    resp = requests.get('https://pywb.proxy/pywb-ca.pem',
+                        proxies=server.proxy_dict,
+                        verify=TEST_CA_ROOT)
+
+    assert resp.headers['content-type'] == 'application/x-x509-ca-cert'
+
+def test_dl_p12():
+    resp = requests.get('https://pywb.proxy/pywb-ca.p12',
+                        proxies=server.proxy_dict,
+                        verify=TEST_CA_ROOT)
+
+    assert resp.headers['content-type'] == 'application/x-pkcs12'
+

@@ -226,7 +226,7 @@ class ProxyRouter(object):
                 sock = socket.socket(_sock=conn)
             except Exception:
                 pass
-        elif env.get('gunicorn.socket'):
+        elif env.get('gunicorn.socket'):  # pragma: no cover
             sock = env['gunicorn.socket']
 
         if not sock:
@@ -260,7 +260,8 @@ class ProxyRouter(object):
                                        certfile=certfile,
                                        ciphers="ALL",
                                        suppress_ragged_eofs=False,
-                                       ssl_version=ssl.PROTOCOL_SSLv23)
+                                       #ssl_version=ssl.PROTOCOL_SSLv23
+                                       )
             env['pywb.proxy_ssl_sock'] = ssl_sock
 
             buffreader = BufferedReader(ssl_sock, block_size=self.BLOCK_SIZE)
