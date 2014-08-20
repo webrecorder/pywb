@@ -6,7 +6,7 @@ import urlparse
 import base64
 import os
 
-try:
+try:  # pragma: no coverage
     import uwsgi
     uwsgi_cache = True
 except ImportError:
@@ -14,7 +14,7 @@ except ImportError:
 
 
 #=================================================================
-class UwsgiCache(object):
+class UwsgiCache(object):  # pragma: no coverage
     def __setitem__(self, item, value):
         uwsgi.cache_update(item, value)
 
@@ -120,8 +120,7 @@ class ProxyAuthResolver(BaseCollResolver):
 
 
 #=================================================================
-# Experimental CookieResolver
-class CookieResolver(BaseCollResolver):  # pragma: no cover
+class CookieResolver(BaseCollResolver):
     
     SESH_COOKIE_NAME = '__pywb_proxy_sesh'
 
@@ -137,7 +136,7 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
 
         self.extra_headers = config.get('extra_headers')
 
-        if uwsgi_cache:
+        if uwsgi_cache:  # pragma: no cover
             self.cache = UwsgiCache()
         else:
             self.cache = {}
@@ -193,7 +192,7 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
             return self.make_redir_response(wb_url.url)
 
         elif server_name.endswith(self.set_prefix):
-            old_sesh_id = self.extract_client_cookie(env, self.cookie_name)
+            old_sesh_id = WbRequest.extract_client_cookie(env, self.cookie_name)
             sesh_id = self.create_renew_sesh_id(old_sesh_id)
 
             if sesh_id != old_sesh_id:
@@ -222,12 +221,8 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
             return self.make_redir_response(full_url, headers=headers)
 
         elif 'select.' in server_name:
-            if not self.proxy_select_view:
-                return WbResponse.text_response('select text for ' + path_url)
-
             coll, ts, sesh_id = self.get_coll(env)
 
-            #scheme = env['pywb.proxy_scheme'] + '://'
             route_temp = '-set.' + self.magic_name + '/' + path_url
 
             try:
@@ -287,7 +282,7 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
             del self.cache[sesh_id + ':t']
 
     def get_coll(self, env):
-        sesh_id = self.extract_client_cookie(env, self.cookie_name)
+        sesh_id = WbRequest.extract_client_cookie(env, self.cookie_name)
 
         coll = None
         ts = None
@@ -318,26 +313,4 @@ class CookieResolver(BaseCollResolver):  # pragma: no cover
 
         return WbResponse.redir_response(url, headers=headers)
 
-    @staticmethod
-    def extract_client_cookie(env, cookie_name):
-        cookie_header = env.get('HTTP_COOKIE')
-        if not cookie_header:
-            return None
 
-        # attempt to extract cookie_name only
-        inx = cookie_header.find(cookie_name)
-        if inx < 0:
-            return None
-
-        end_inx = cookie_header.find(';', inx)
-        if end_inx > 0:
-            value = cookie_header[inx:end_inx]
-        else:
-            value = cookie_header[inx:]
-
-        value = value.split('=')
-        if len(value) < 2:
-            return None
-
-        value = value[1].strip()
-        return value
