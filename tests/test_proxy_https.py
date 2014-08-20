@@ -62,7 +62,7 @@ class TestHttpsProxy:
     def setup(self):
         self.session = requests.Session()
 
-    def get_url(self, url, headers=None):
+    def get_url(self, url):
         global sesh_key
         if sesh_key:
             self.session.headers.update({'Cookie': '__pywb_proxy_sesh=' + sesh_key})
@@ -174,16 +174,14 @@ class TestHttpsProxy:
     def test_replay_static(self):
         resp = self.get_url('https://pywb.proxy/static/default/wb.js')
         assert resp.status_code == 200
-        found = u'function init_banner' in resp.text
-        assert found, resp.text
+        assert 'function init_banner' in resp.text
 
     # download index page and cert downloads
     def test_replay_dl_page(self):
         resp = self.get_url('https://pywb.proxy/')
         assert resp.status_code == 200
         assert 'text/html' in resp.headers['content-type']
-        found = u'Download' in resp.text
-        assert found, resp.text
+        assert 'Download' in resp.text
 
     def test_dl_pem(self):
         resp = self.get_url('https://pywb.proxy/pywb-ca.pem')
@@ -194,4 +192,3 @@ class TestHttpsProxy:
         resp = self.get_url('https://pywb.proxy/pywb-ca.p12')
 
         assert resp.headers['content-type'] == 'application/x-pkcs12'
-

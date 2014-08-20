@@ -66,16 +66,6 @@ archive_paths: ./sample_archive/warcs/
 
 # ==== Other Paths ====
 
-# list of host names that pywb will be running from to detect
-# 'fallthrough' requests based on referrer
-#
-# eg: an incorrect request for http://localhost:8080/image.gif with a referrer
-# of http://localhost:8080/pywb/index.html, pywb can correctly redirect
-# to http://localhost:8080/pywb/image.gif
-#
-
-#hostpaths: ['http://localhost:8080']
-
 # Rewrite urls with absolute paths instead of relative
 #absoulte_paths: true
 

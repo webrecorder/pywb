@@ -53,7 +53,6 @@ class ProxyRouter(object):
     for more details.
     """
 
-    PAC_PATH = '/proxy.pac'
     BLOCK_SIZE = 4096
     DEF_MAGIC_NAME = 'pywb.proxy'
 
@@ -64,8 +63,6 @@ class ProxyRouter(object):
                      'p3p': 'CP="NOI ADM DEV COM NAV OUR STP"'}
 
     def __init__(self, routes, **kwargs):
-        self.hostpaths = kwargs.get('hostpaths')
-
         self.error_view = kwargs.get('error_view')
 
         proxy_options = kwargs.get('config', {})
@@ -88,9 +85,6 @@ class ProxyRouter(object):
             self.resolver = ProxyAuthResolver(routes, proxy_options)
 
         self.unaltered = proxy_options.get('unaltered_replay', False)
-
-        self.proxy_pac_path = proxy_options.get('pac_path', self.PAC_PATH)
-
 
         if not proxy_options.get('enable_https_proxy'):
             self.ca = None
@@ -116,12 +110,9 @@ class ProxyRouter(object):
     def __call__(self, env):
         is_https = (env['REQUEST_METHOD'] == 'CONNECT')
 
-        # for non-https requests, check pac path and non-proxy urls
+        # for non-https requests, check non-proxy urls
         if not is_https:
             url = env['REL_REQUEST_URI']
-
-            if url == self.proxy_pac_path:
-                return self.make_pac_response(env)
 
             if not url.startswith(('http://', 'https://')):
                 return None
@@ -359,29 +350,3 @@ class ProxyRouter(object):
                                             content_type=content_type)
         else:
             return None
-
-    # Proxy Auto-Config (PAC) script for the proxy
-    def make_pac_response(self, env):
-        hostname = env.get('HTTP_HOST')
-        if not hostname:
-            server_hostport = env['SERVER_NAME'] + ':' + env['SERVER_PORT']
-            hostonly = env['SERVER_NAME']
-        else:
-            server_hostport = hostname
-            hostonly = hostname.split(':')[0]
-
-        buff = 'function FindProxyForURL (url, host) {\n'
-
-        direct = '    if (shExpMatch(host, "{0}")) {{ return "DIRECT"; }}\n'
-
-        for hostpath in self.hostpaths:
-            parts = urlparse.urlsplit(hostpath).netloc.split(':')
-            buff += direct.format(parts[0])
-
-        buff += direct.format(hostonly)
-
-        buff += '\n    return "PROXY {0}";\n}}\n'.format(server_hostport)
-
-        content_type = 'application/x-ns-proxy-autoconfig'
-
-        return WbResponse.text_response(buff, content_type=content_type)

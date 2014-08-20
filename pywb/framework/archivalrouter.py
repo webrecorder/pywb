@@ -16,12 +16,7 @@ class ArchivalRouter(object):
         # optional port setting may be ignored by wsgi container
         self.port = kwargs.get('port')
 
-        hostpaths = kwargs.get('hostpaths')
-
-        if hostpaths:
-            self.fallback = ReferRedirect(hostpaths)
-        else:
-            self.fallback = None
+        self.fallback = ReferRedirect()
 
         self.abs_path = kwargs.get('abs_path')
 
@@ -133,12 +128,6 @@ class Route(object):
 # based on the referrer settings
 #=================================================================
 class ReferRedirect:
-    def __init__(self, match_prefixs):
-        if isinstance(match_prefixs, list):
-            self.match_prefixs = match_prefixs
-        else:
-            self.match_prefixs = [match_prefixs]
-
     def __call__(self, env, the_router):
         referrer = env.get('HTTP_REFERER')
 
@@ -151,10 +140,10 @@ class ReferRedirect:
         # get referrer path name
         ref_split = urlparse.urlsplit(referrer)
 
-        # ensure referrer starts with one of allowed hosts
-        if not any(referrer.startswith(i) for i in self.match_prefixs):
-            if ref_split.netloc != env.get('HTTP_HOST'):
-                return None
+        # require that referrer starts with current Host, if any
+        curr_host = env.get('HTTP_HOST')
+        if curr_host and curr_host != ref_split.netloc:
+            return None
 
         path = ref_split.path
 

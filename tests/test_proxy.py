@@ -77,3 +77,11 @@ class TestProxyWb:
         resp = self.testapp.get('/x-ignore-this-x', headers = headers,
                                 extra_environ = dict(REQUEST_URI = 'http://www.iana.org/', SCRIPT_NAME = ''),
                                 status=407)
+
+
+    def test_proxy_connect_unsupported(self):
+        resp = self.testapp.request('/x-ignore-this-x', method='CONNECT',
+                                    environ=dict(REQUEST_URI='example:443', SCRIPT_NAME=''),
+                                    status=405)
+
+        assert resp.status_int == 405

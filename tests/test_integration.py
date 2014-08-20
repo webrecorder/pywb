@@ -219,16 +219,17 @@ class TestWb:
         assert '/pywb/20140127171251mp_/http://www.iana.org/domains/example' in resp.body
 
     def test_redirect_relative_3(self):
+        # webtest uses Host: localhost:80 by default
         # first two requests should result in same redirect
-        target = 'http://localhost:8080/pywb/2014mp_/http://iana.org/_css/2013.1/screen.css'
+        target = 'http://localhost:80/pywb/2014mp_/http://iana.org/_css/2013.1/screen.css'
 
         # without timestamp
-        resp = self.testapp.get('/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014mp_/http://iana.org/')])
+        resp = self.testapp.get('/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:80/pywb/2014mp_/http://iana.org/')])
         assert resp.status_int == 302
         assert resp.headers['Location'] == target, resp.headers['Location']
 
         # with timestamp
-        resp = self.testapp.get('/2014/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:8080/pywb/2014mp_/http://iana.org/')])
+        resp = self.testapp.get('/2014/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:80/pywb/2014mp_/http://iana.org/')])
         assert resp.status_int == 302
         assert resp.headers['Location'] == target, resp.headers['Location']
 
@@ -313,7 +314,7 @@ class TestWb:
 
     def test_post_redirect(self):
         # post handled without redirect (since 307 not allowed)
-        resp = self.testapp.post('/post', {'foo': 'bar', 'test': 'abc'}, headers=[('Referer', 'http://localhost:8080/pywb/2014mp_/http://httpbin.org/post')])
+        resp = self.testapp.post('/post', {'foo': 'bar', 'test': 'abc'}, headers=[('Referer', 'http://localhost:80/pywb/2014mp_/http://httpbin.org/post')])
         assert resp.status_int == 200
         assert '"foo": "bar"' in resp.body
         assert '"test": "abc"' in resp.body

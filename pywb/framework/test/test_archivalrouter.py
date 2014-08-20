@@ -25,14 +25,7 @@
 # not matching route -- skipped
 >>> _test_route_req(Route('web', BaseHandler()), {'REL_REQUEST_URI': '/other/test.example.com', 'SCRIPT_NAME': ''})
 
-
-# Referer Redirect Test
->>> ReferRedirect('http://localhost:8080/').match_prefixs
-['http://localhost:8080/']
-
->>> ReferRedirect(['http://example:9090/']).match_prefixs
-['http://example:9090/']
-
+# Test Refer Redirects
 >>> _test_redir('http://localhost:8080/', '/diff_path/other.html', 'http://localhost:8080/coll/20131010/http://example.com/path/page.html')
 'http://localhost:8080/coll/20131010/http://example.com/diff_path/other.html'
 
@@ -55,11 +48,11 @@
 'http://localhost:8080/coll/20131010/http://example.com/path/other.html'
 
 # Wrong Host
->>> _test_redir('http://example:8080/', '/other.html', 'http://localhost:8080/coll/20131010/http://example.com/path/page.html')
+>>> _test_redir('http://example.com:8080/', '/other.html', 'http://localhost:8080/coll/20131010/http://example.com/path/page.html')
 False
 
 # Right Host
->>> _test_redir('http://localhost:8080/', '/other.html', 'http://example.com:8080/coll/20131010/http://example.com/path/page.html', http_host = 'example.com:8080')
+>>> _test_redir('http://example.com:8080/', '/other.html', 'http://example.com:8080/coll/20131010/http://example.com/path/page.html')
 'http://example.com:8080/coll/20131010/http://example.com/other.html'
 
 # With custom SCRIPT_NAME
@@ -87,6 +80,7 @@ False
 from pywb.framework.archivalrouter import Route, ReferRedirect, ArchivalRouter
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 import pprint
+import urlparse
 
 def _test_route_req(route, env, abs_path=False):
     matcher, coll = route.is_handling(env['REL_REQUEST_URI'])
@@ -101,17 +95,16 @@ def _test_route_req(route, env, abs_path=False):
     pprint.pprint(the_dict)
 
 
-def _test_redir(match_host, request_uri, referrer, script_name = '', coll = 'coll', http_host = None):
+def _test_redir(match_host, request_uri, referrer, script_name='', coll='coll'):
     env = {'REL_REQUEST_URI': request_uri, 'HTTP_REFERER': referrer, 'SCRIPT_NAME': script_name}
 
-    if http_host:
-        env['HTTP_HOST'] = http_host
+    env['HTTP_HOST'] = urlparse.urlsplit(match_host).netloc
 
     routes = [Route(coll, WbUrlHandler())]
 
     the_router = ArchivalRouter(routes)
 
-    redir = ReferRedirect(match_host)
+    redir = ReferRedirect()
     #req = WbRequest.from_uri(request_uri, env)
     rep = redir(env, the_router)
     if not rep:
