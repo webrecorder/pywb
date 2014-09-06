@@ -11,6 +11,7 @@ pywb is a python implementation of web archival replay tools, sometimes also kno
 
 pywb allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
 
+pywb can be used as a traditional web application or an HTTP or HTTPS proxy server.
 
 Usage Examples
 -----------------------------
@@ -50,6 +51,8 @@ running ``python setup.py install``:
 * ``cdx-server`` -- a CDX API only server which returns a responses about CDX captures in bulk. 
   Includes most of the features of the `original cdx server implementation <https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server>`_,
   updated documentation coming soon.
+  
+* ``proxy-cert-auth`` -- a utility to support proxy mode. It can be used in CA root certificate, or per-host certificate with an existing root cert.
 
 
 * ``wayback`` -- The full Wayback Machine application, further explained below.
@@ -75,6 +78,12 @@ Quick Install & Run Samples
 
 (The `installation page <https://github.com/ikreymer/pywb/blob/master/INSTALL.rst>`_ contains additional
 installation and testing examples.)
+
+Running in Proxy Mode
+---------------------
+
+pywb can also be used as an HTTP and/or HTTPS proxy server. See `pywb Proxy Mode Usage <https://github.com/ikreymer/pywb/wiki/Pywb-Proxy-Mode-Usage>`_ for more details
+on configuring proxy mode.
 
 
 Configure with Archived Content
