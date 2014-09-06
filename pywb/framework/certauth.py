@@ -1,7 +1,13 @@
 import logging
 import os
-from OpenSSL import crypto
-from OpenSSL.SSL import FILETYPE_PEM
+openssl_avail = False
+try:
+    from OpenSSL import crypto
+    from OpenSSL.SSL import FILETYPE_PEM
+    openssl_avail = True
+except ImportError:  # pragma: no cover
+    pass
+
 import random
 from argparse import ArgumentParser
 

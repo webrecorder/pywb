@@ -1,3 +1,5 @@
+import pytest
+
 import os
 import shutil
 
@@ -5,6 +7,10 @@ from pywb.framework.certauth import main, CertificateAuthority
 
 TEST_CA_DIR = './pywb/framework/test/pywb_test_ca_certs'
 TEST_CA_ROOT = './pywb/framework/test/pywb_test_ca.pem'
+
+def setup_module():
+    openssl_support = pytest.importorskip("OpenSSL")
+    pass
 
 def test_create_root():
     ret = main([TEST_CA_ROOT, '-n', 'Test Root Cert'])

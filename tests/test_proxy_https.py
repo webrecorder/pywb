@@ -1,3 +1,5 @@
+import pytest
+
 from pywb.webapp.pywb_init import create_wb_router
 from pywb.framework.wsgi_wrappers import init_app
 
@@ -8,7 +10,9 @@ from pywb.framework.proxy_resolvers import CookieResolver
 import threading
 import requests
 import shutil
+import sys
 import os
+
 
 TEST_CONFIG = 'tests/test_config_proxy.yaml'
 
@@ -19,6 +23,8 @@ server = None
 sesh_key = None
 
 def setup_module():
+    openssl_support = pytest.importorskip("OpenSSL")
+
     global server
     server = ServeThread()
     server.daemon = True
@@ -67,7 +73,6 @@ class TestHttpsProxy:
         if sesh_key:
             self.session.headers.update({'Cookie': '__pywb_proxy_sesh=' + sesh_key})
             self.session.cookies.set('__pywb_proxy_sesh', sesh_key, domain='.pywb.proxy')
-            #self.session.cookies.set('__pywb_proxy_sesh', sesh_key, domain='.iana.org')
 
         return self.session.get(url,
                            proxies=server.proxy_dict,
@@ -78,7 +83,6 @@ class TestHttpsProxy:
         if sesh_key:
             self.session.headers.update({'Cookie': '__pywb_proxy_sesh=' + sesh_key})
             self.session.cookies.set('__pywb_proxy_sesh', sesh_key, domain='.pywb.proxy')
-            #self.session.cookies.set('__pywb_proxy_sesh', sesh_key, domain='.iana.org')
 
         return self.session.post(url,
                            data=data,
@@ -160,14 +164,13 @@ class TestHttpsProxy:
         assert resp.url == 'https://example.com/'
         assert '20140127171251' in resp.text
 
+    @pytest.mark.skipif(sys.version_info < (2,7),
+                        reason="doesn't work in 2.6")
     def test_post_replay_all_coll(self):
         resp = self.post_url('https://httpbin.org/post', data={'foo': 'bar', 'test': 'abc'})
         assert resp.url == 'https://httpbin.org/post'
         assert 'application/json' in resp.headers['content-type']
         assert resp.status_code == 200
-
-        #assert 'wbinfo.proxy_magic = "pywb.proxy";' in resp.text
-        #assert '20140126200624' in resp.text
 
     # Bounce back to select.pywb.proxy due to missing session
     def test_clear_key(self):

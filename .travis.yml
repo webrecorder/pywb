@@ -6,6 +6,7 @@ python:
 
 install:
   - "pip install 'argparse>=1.2.1' --allow-all-external"
+  - pip install pyopenssl
   - python setup.py -q install
   - pip install coverage pytest-cov coveralls --use-mirrors
 
