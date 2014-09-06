@@ -84,7 +84,7 @@ class CertificateAuthority(object):
         return cert
 
     @staticmethod
-    def generate_ca_root(ca_file, certname=None, overwrite=False):
+    def generate_ca_root(ca_file, certname, overwrite=False):
         if not certname:
             certname = CERT_NAME
 
@@ -179,7 +179,7 @@ class CertificateAuthority(object):
 
 
 #=================================================================
-def main():
+def main(args=None):
     parser = ArgumentParser(description='Cert Auth Cert Maker')
 
     parser.add_argument('output_pem_file', help='path to cert .pem file')
@@ -198,17 +198,16 @@ def main():
     parser.add_argument('-w', '--wildcard_cert', action='store_true',
                         help='add wildcard SAN to host: *.<host>, <host>')
 
-    result = parser.parse_args()
+    result = parser.parse_args(args=args)
 
     overwrite = result.force
 
     # Create a new signed certificate using specified root
     if result.use_root:
         certs_dir = result.certs_dir
-        wildcard = result.wildcard
+        wildcard = result.wildcard_cert
         ca = CertificateAuthority(ca_file=result.use_root,
-                                  certs_dir=result.certs_dir,
-                                  certname=result.name)
+                                  certs_dir=result.certs_dir)
 
         created, host_filename = ca.get_cert_for_host(result.output_pem_file,
                                                       overwrite, wildcard)
@@ -217,9 +216,12 @@ def main():
             print ('Created new cert "' + host_filename +
                    '" signed by root cert ' +
                    result.use_root)
+            return 0
+
         else:
             print ('Cert "' + host_filename + '" already exists,' +
                    ' use -f to overwrite')
+            return 1
 
     # Create new root certificate
     else:
@@ -230,9 +232,11 @@ def main():
 
         if created:
             print 'Created new root cert: "' + result.output_pem_file + '"'
+            return 0
         else:
             print ('Root cert "' + result.output_pem_file +
                     '" already exists,' + ' use -f to overwrite')
+            return 1
 
 if __name__ == "__main__":
     main()

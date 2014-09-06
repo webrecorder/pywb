@@ -326,9 +326,6 @@ class ProxyRouter(object):
                 return None
 
         elif env['pywb.proxy_req_uri'] == self.CERT_DL_PEM:
-            if not self.ca:
-                return None
-
             buff = ''
             with open(self.ca.ca_file) as fh:
                 buff = fh.read()
@@ -339,14 +336,9 @@ class ProxyRouter(object):
                                             content_type=content_type)
 
         elif env['pywb.proxy_req_uri'] == self.CERT_DL_P12:
-            if not self.ca:
-                return None
-
             buff = self.ca.get_root_PKCS12()
 
             content_type = 'application/x-pkcs12'
 
             return WbResponse.text_response(buff,
                                             content_type=content_type)
-        else:
-            return None

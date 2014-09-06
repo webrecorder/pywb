@@ -23,10 +23,10 @@ def setup_module():
     server = ServeThread()
     server.daemon = True
     server.start()
-     
-    global session   
+
+    global session
     session = requests.Session()
- 
+
 
 def teardown_module():
     try:
@@ -46,7 +46,7 @@ class ServeThread(threading.Thread):
         self.app = init_app(create_wb_router,
                             load_yaml=True,
                             config_file=TEST_CONFIG)
- 
+
         # init with port 0 to allow os to pick a port
         self.httpd = make_server('', 0, self.app)
         port = self.httpd.socket.getsockname()[1]
@@ -72,7 +72,19 @@ class TestHttpsProxy:
         return self.session.get(url,
                            proxies=server.proxy_dict,
                            verify=TEST_CA_ROOT)
- 
+
+    def post_url(self, url, data):
+        global sesh_key
+        if sesh_key:
+            self.session.headers.update({'Cookie': '__pywb_proxy_sesh=' + sesh_key})
+            self.session.cookies.set('__pywb_proxy_sesh', sesh_key, domain='.pywb.proxy')
+            #self.session.cookies.set('__pywb_proxy_sesh', sesh_key, domain='.iana.org')
+
+        return self.session.post(url,
+                           data=data,
+                           proxies=server.proxy_dict,
+                           verify=TEST_CA_ROOT)
+
     def test_replay_no_coll(self):
         resp = self.get_url('https://iana.org/')
         assert resp.url == 'https://select.pywb.proxy/https://iana.org/'
@@ -83,11 +95,11 @@ class TestHttpsProxy:
         assert resp.url == 'https://iana.org/'
         assert resp.status_code == 200
         assert '20140126200624' in resp.text
-        
+
         sesh1 = self.session.cookies.get('__pywb_proxy_sesh', domain='.pywb.proxy')
         sesh2 = self.session.cookies.get('__pywb_proxy_sesh', domain='.iana.org')
         assert sesh1 and sesh1 == sesh2, self.session.cookies
-        
+
         # store session cookie
         global sesh_key
         sesh_key = sesh1
@@ -96,7 +108,7 @@ class TestHttpsProxy:
         sesh2 = self.session.cookies.get('__pywb_proxy_sesh', domain='.iana.org')
         assert sesh_key == sesh2
 
-    def test_replay_same_coll(self):      
+    def test_replay_same_coll(self):
         resp = self.get_url('https://iana.org/')
         assert resp.url == 'https://iana.org/'
         assert resp.status_code == 200
@@ -108,7 +120,7 @@ class TestHttpsProxy:
         assert resp.url == 'https://iana.org/'
         assert resp.status_code == 200
         assert '20140127171238' in resp.text
-        
+
         # verify still same session cookie
         sesh2 = self.session.cookies.get('__pywb_proxy_sesh', domain='.iana.org')
         global sesh_key
@@ -147,6 +159,15 @@ class TestHttpsProxy:
         resp = self.get_url('https://example.com/')
         assert resp.url == 'https://example.com/'
         assert '20140127171251' in resp.text
+
+    def test_post_replay_all_coll(self):
+        resp = self.post_url('https://httpbin.org/post', data={'foo': 'bar', 'test': 'abc'})
+        assert resp.url == 'https://httpbin.org/post'
+        assert 'application/json' in resp.headers['content-type']
+        assert resp.status_code == 200
+
+        #assert 'wbinfo.proxy_magic = "pywb.proxy";' in resp.text
+        #assert '20140126200624' in resp.text
 
     # Bounce back to select.pywb.proxy due to missing session
     def test_clear_key(self):
