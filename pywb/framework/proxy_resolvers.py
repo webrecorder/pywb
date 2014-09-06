@@ -6,7 +6,7 @@ import urlparse
 import base64
 import os
 
-try:  # pragma: no coverage
+try:  # pragma: no cover
     import uwsgi
     uwsgi_cache = True
 except ImportError:
@@ -14,7 +14,7 @@ except ImportError:
 
 
 #=================================================================
-class UwsgiCache(object):  # pragma: no coverage
+class UwsgiCache(object):  # pragma: no cover
     def __setitem__(self, item, value):
         uwsgi.cache_update(item, value)
 
@@ -65,7 +65,7 @@ class BaseCollResolver(object):
                 return None, None, None, None, self.select_coll_response(env)
 
         # if 'use_default_coll'
-        elif self.use_default_coll == True or len(self.routes) == 1:
+        elif self.use_default_coll or len(self.routes) == 1:
             route = self.routes[0]
             coll = self.routes[0].path
 
@@ -121,7 +121,6 @@ class ProxyAuthResolver(BaseCollResolver):
 
 #=================================================================
 class CookieResolver(BaseCollResolver):
-    
     SESH_COOKIE_NAME = '__pywb_proxy_sesh'
 
     def __init__(self, routes, config):
@@ -173,7 +172,9 @@ class CookieResolver(BaseCollResolver):
             coll, ts, sesh_id = self.get_coll(env)
 
             if coll:
-                return self.make_sethost_cookie_response(sesh_id, path_url, env)
+                return self.make_sethost_cookie_response(sesh_id,
+                                                         path_url,
+                                                         env)
             else:
                 return self.make_magic_response('select', path_url, env)
 
@@ -192,7 +193,8 @@ class CookieResolver(BaseCollResolver):
             return self.make_redir_response(wb_url.url)
 
         elif server_name.endswith(self.set_prefix):
-            old_sesh_id = WbRequest.extract_client_cookie(env, self.cookie_name)
+            old_sesh_id = WbRequest.extract_client_cookie(env,
+                                                          self.cookie_name)
             sesh_id = self.create_renew_sesh_id(old_sesh_id)
 
             if sesh_id != old_sesh_id:
@@ -260,7 +262,6 @@ class CookieResolver(BaseCollResolver):
                                         suffix=path_parts.netloc,
                                         headers=headers)
 
-
     def make_magic_response(self, prefix, url, env,
                             suffix=None, headers=None):
         full_url = env['pywb.proxy_scheme'] + '://' + prefix + '.'
@@ -312,5 +313,3 @@ class CookieResolver(BaseCollResolver):
                 headers.append((name, value))
 
         return WbResponse.redir_response(url, headers=headers)
-
-

@@ -229,7 +229,9 @@ def create_wb_router(passed_config={}):
         if hasattr(route.handler, 'resolve_refs'):
             route.handler.resolve_refs(handler_dict)
 
-    # Check for new proxy mode!
+    # default to regular archival mode
+    router = ArchivalRouter
+
     if config.get('enable_http_proxy', False):
         router = ProxyArchivalRouter
 
@@ -249,9 +251,6 @@ def create_wb_router(passed_config={}):
 
         if view:
             passed_config['proxy_options']['proxy_cert_download_view'] = view
-
-    else:
-        router = ArchivalRouter
 
     # Finally, create wb router
     return router(

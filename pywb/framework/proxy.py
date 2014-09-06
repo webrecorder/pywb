@@ -91,9 +91,10 @@ class ProxyRouter(object):
             self.proxy_cert_dl_view = None
             return
 
-        if not openssl_avail:  # pragma: no coverage
+        if not openssl_avail:  # pragma: no cover
             print('HTTPS proxy not available as pyopenssl is not installed')
-            print('Please install via "pip install pyopenssl" to enable HTTPS support')
+            print('Please install via "pip install pyopenssl" ' +
+                  'to enable HTTPS support')
             self.ca = None
             self.proxy_cert_dl_view = None
             return
@@ -329,8 +330,6 @@ class ProxyRouter(object):
                          render_response(available=available,
                                          pem_path=self.CERT_DL_PEM,
                                          p12_path=self.CERT_DL_P12))
-            else:
-                return None
 
         elif env['pywb.proxy_req_uri'] == self.CERT_DL_PEM:
             buff = ''

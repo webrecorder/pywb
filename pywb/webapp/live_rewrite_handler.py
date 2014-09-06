@@ -20,7 +20,7 @@ class LiveResourceException(WbException):
 #=================================================================
 class RewriteHandler(SearchPageWbUrlHandler):
 
-    LIVE_COOKIE = 'pywb.timestamp={0}; max-age=60';
+    LIVE_COOKIE = 'pywb.timestamp={0}; max-age=60'
 
     def __init__(self, config):
         super(RewriteHandler, self).__init__(config)

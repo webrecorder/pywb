@@ -18,6 +18,8 @@ from pywb.utils.bufferedreaders import ChunkedDataReader
 
 #=================================================================
 class RewriteContent:
+    HEAD_REGEX = re.compile(r'<\s*head\b[^>]*[>]+', re.I)
+
     def __init__(self, ds_rules_file=None, is_framed_replay=False):
         self.ruleset = RuleSet(RewriteRules, 'rewrite',
                                default_rule_config={},
@@ -68,7 +70,6 @@ class RewriteContent:
             (not head_insert_func and wb_url.is_banner_only)):
             status_headers, stream = self.sanitize_content(headers, stream)
             return (status_headers, self.stream_to_gen(stream), False)
-
 
         if wb_url.is_banner_only:
             urlrewriter = None
@@ -155,15 +156,12 @@ class RewriteContent:
             rewriter = rewriter_class(urlrewriter)
 
         # Create rewriting generator
-        gen =  self.stream_to_gen(stream,
-                                  rewrite_func=rewriter.rewrite,
-                                  final_read_func=rewriter.close,
-                                  first_buff=first_buff)
-
+        gen = self.stream_to_gen(stream,
+                                 rewrite_func=rewriter.rewrite,
+                                 final_read_func=rewriter.close,
+                                 first_buff=first_buff)
 
         return (status_headers, gen, True)
-
-    HEAD_REGEX = re.compile(r'<\s*head\b[^>]*[>]+', re.I)
 
     def _head_insert_only_gen(self, insert_str, stream):
         max_len = 1024
