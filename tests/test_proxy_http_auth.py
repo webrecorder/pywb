@@ -7,7 +7,7 @@ from pywb.framework.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
 
 
-class TestProxyWb:
+class TestProxyHttpAuth:
     TEST_CONFIG = 'tests/test_config.yaml'
 
     def setup(self):

@@ -14,7 +14,7 @@ import sys
 import os
 
 
-TEST_CONFIG = 'tests/test_config_proxy.yaml'
+TEST_CONFIG = 'tests/test_config_proxy_https.yaml'
 
 TEST_CA_DIR = './tests/pywb_test_certs'
 TEST_CA_ROOT = './tests/pywb_test_ca.pem'
@@ -64,7 +64,7 @@ class ServeThread(threading.Thread):
         self.httpd.serve_forever()
 
 
-class TestHttpsProxy:
+class TestProxyHttpsCookie:
     def setup(self):
         self.session = requests.Session()
 

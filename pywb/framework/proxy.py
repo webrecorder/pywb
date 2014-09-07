@@ -86,9 +86,10 @@ class ProxyRouter(object):
 
         self.unaltered = proxy_options.get('unaltered_replay', False)
 
+        self.proxy_cert_dl_view = proxy_options.get('proxy_cert_download_view')
+
         if not proxy_options.get('enable_https_proxy'):
             self.ca = None
-            self.proxy_cert_dl_view = None
             return
 
         if not openssl_avail:  # pragma: no cover
@@ -96,7 +97,6 @@ class ProxyRouter(object):
             print('Please install via "pip install pyopenssl" ' +
                   'to enable HTTPS support')
             self.ca = None
-            self.proxy_cert_dl_view = None
             return
 
         # HTTPS Only Options
@@ -112,8 +112,6 @@ class ProxyRouter(object):
                                        certs_dir=certs_dir)
 
         self.use_wildcard = proxy_options.get('use_wildcard_certs', True)
-
-        self.proxy_cert_dl_view = proxy_options.get('proxy_cert_download_view')
 
     def __call__(self, env):
         is_https = (env['REQUEST_METHOD'] == 'CONNECT')
@@ -161,7 +159,7 @@ class ProxyRouter(object):
         if env['pywb.proxy_host'] == self.magic_name:
             env['REL_REQUEST_URI'] = env['pywb.proxy_req_uri']
 
-            # special case for proxy install
+             # special case for proxy install
             response = self.handle_cert_install(env)
             if response:
                 return response
@@ -332,6 +330,9 @@ class ProxyRouter(object):
                                          p12_path=self.CERT_DL_P12))
 
         elif env['pywb.proxy_req_uri'] == self.CERT_DL_PEM:
+            if not self.ca:
+                return None
+
             buff = ''
             with open(self.ca.ca_file) as fh:
                 buff = fh.read()
@@ -342,6 +343,9 @@ class ProxyRouter(object):
                                             content_type=content_type)
 
         elif env['pywb.proxy_req_uri'] == self.CERT_DL_P12:
+            if not self.ca:
+                return None
+
             buff = self.ca.get_root_PKCS12()
 
             content_type = 'application/x-pkcs12'
