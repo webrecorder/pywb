@@ -12,7 +12,7 @@ import sys
 import os
 
 
-TEST_CONFIG = 'tests/test_config_proxy_http.yaml'
+TEST_CONFIG = 'tests/test_config_proxy_http_cookie.yaml'
 
 server = None
 sesh_key = None

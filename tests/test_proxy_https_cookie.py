@@ -14,7 +14,7 @@ import sys
 import os
 
 
-TEST_CONFIG = 'tests/test_config_proxy_https.yaml'
+TEST_CONFIG = 'tests/test_config_proxy_https_cookie.yaml'
 
 TEST_CA_DIR = './tests/pywb_test_certs'
 TEST_CA_ROOT = './tests/pywb_test_ca.pem'
