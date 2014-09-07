@@ -121,17 +121,11 @@ class WSGIApp(object):
             status = '400 Bad Request'
 
         if hasattr(exc, 'url'):
-            try:
-                err_url = exc.url.decode('utf-8', 'ignore')
-            except Exception:
-                err_url = None
+            err_url = exc.url
         else:
             err_url = None
 
-        try:
-            err_msg = exc.message.decode('utf-8', 'ignore')
-        except Exception:
-            err_msg = exc.message
+        err_msg = exc.message
 
         if print_trace:
             import traceback
@@ -142,6 +136,11 @@ class WSGIApp(object):
             err_details = None
 
         if error_view:
+            if err_url:
+                err_url = err_url.decode('utf-8', 'ignore')
+            if err_msg:
+                err_msg = err_msg.decode('utf-8', 'ignore')
+
             return error_view.render_response(exc_type=type(exc).__name__,
                                               err_msg=err_msg,
                                               err_details=err_details,
@@ -149,7 +148,12 @@ class WSGIApp(object):
                                               env=env,
                                               err_url=err_url)
         else:
-            return WbResponse.text_response(status + ' Error: ' + err_msg,
+            msg = status + ' Error: '
+            if err_msg:
+                msg += err_msg
+
+            msg = msg.encode('utf-8', 'ignore')
+            return WbResponse.text_response(msg,
                                             status=status)
 
 #=================================================================
