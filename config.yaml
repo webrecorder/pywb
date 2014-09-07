@@ -56,12 +56,12 @@ enable_http_proxy: true
 # use wildcard certificates when creating certs in proxy mode
 # helps lower number of certs created, by may not be compatible
 # with older libraries
-#   use_wildcard_certs: true
+#    use_wildcard_certs: true
 
 # if true, will not add any banner to proxy mode replay
-#   unaltered_replay: false
+#    unaltered_replay: false
 
-# Default settings for CA used by proxy mode
+# Default settings for CA used by proxy mode:
 #    root_ca_file: ./ca/pywb-ca.pem
 #    root_ca_name: pywb https proxy replay CA
 #    certs_dir: ./ca/certs
