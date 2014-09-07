@@ -84,6 +84,7 @@ Running in Proxy Mode
 
 pywb can also be used as an HTTP and/or HTTPS proxy server. See `pywb Proxy Mode Usage <https://github.com/ikreymer/pywb/wiki/Pywb-Proxy-Mode-Usage>`_ for more details
 on configuring proxy mode.
+The `pywb-proxy-demo <https://github.com/ikreymer/pywb-proxy-demo>`_ project also contains a working configuration of proxy mode deployment.
 
 
 Configure with Archived Content
