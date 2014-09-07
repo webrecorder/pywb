@@ -5,6 +5,11 @@ pywb 0.6.0 changelist
 
 * Revamped HTTP/S system: proxy collection and capture time switching via cookie!
 
+* removed *hostnames* setting in config.yaml. pywb no longer needs to know the host(s) it is running on, can infer the correct path from referrer
+on a fallback handling.
+
+* remove PAC config, just using direct proxy (HTTP and HTTPS) for simplicity.
+
 
 pywb 0.5.4 changelist
 ~~~~~~~~~~~~~~~~~~~~~

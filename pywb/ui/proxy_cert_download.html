@@ -2,13 +2,13 @@
 {% if not available %}
 <p>Sorry, HTTPS support is not configured for this proxy. However, the proxy should work in HTTP mode.</p>
 {% else %}
-<p>Download for all platforms (except Windows):</p>
+<p>Download for all platforms except Windows (or Firefox on Windows):</p>
 <p><b><a href="{{ pem_path }}">Download Certificate (All except Windows)</a></b></p>
 
 <p>(If you see the <i>Already Installed</i> message, then no further action is necessary and you may start browsing!</p>
 {% endif %}
 
-<p>Download for Windows platforms:</p>
+<p>Download for Windows platforms (except if using Firefox. For Firefox, use the above download, even on Windows):</p>
 <p><b><a href="{{ p12_path }}">Download Certificate (Window Only)</a></b></p>
 
 

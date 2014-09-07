@@ -100,6 +100,8 @@ enable_http_proxy: true
 proxy_options:
     use_default_coll: true
 
+    cookie_resolver: false
+
     unaltered_replay: false
 
 # enable cdx server api for querying cdx directly (experimental)

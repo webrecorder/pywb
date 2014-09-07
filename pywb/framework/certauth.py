@@ -16,11 +16,11 @@ from argparse import ArgumentParser
 # Duration of 100 years
 CERT_DURATION = 100 * 365 * 24 * 60 * 60
 
-CERTS_DIR = './pywb-certs/'
+CERTS_DIR = './ca/certs/'
 
 CERT_NAME = 'pywb https proxy replay CA'
 
-CERT_CA_FILE = './pywb-ca.pem'
+CERT_CA_FILE = './ca/pywb-ca.pem'
 
 
 #=================================================================

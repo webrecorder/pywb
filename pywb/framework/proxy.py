@@ -79,7 +79,7 @@ class ProxyRouter(object):
             self.extra_headers = self.EXTRA_HEADERS
             proxy_options['extra_headers'] = self.extra_headers
 
-        if proxy_options.get('cookie_resolver'):
+        if proxy_options.get('cookie_resolver', True):
             self.resolver = CookieResolver(routes, proxy_options)
         else:
             self.resolver = ProxyAuthResolver(routes, proxy_options)
