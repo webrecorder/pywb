@@ -121,15 +121,17 @@ class WSGIApp(object):
             status = '400 Bad Request'
 
         if hasattr(exc, 'url'):
-            err_url = exc.url
+            try:
+                err_url = exc.url.decode('utf-8', 'ignore')
+            except Exception:
+                err_url = None
         else:
             err_url = None
 
         try:
-            err_msg = exc.message.encode('utf-8')
+            err_msg = exc.message.decode('utf-8', 'ignore')
         except Exception:
             err_msg = exc.message
-            err_url = ''
 
         if print_trace:
             import traceback
