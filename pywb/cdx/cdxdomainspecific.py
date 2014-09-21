@@ -125,12 +125,12 @@ class CDXDomainSpecificRule(BaseRule):
     def __init__(self, name, config):
         super(CDXDomainSpecificRule, self).__init__(name, config)
 
-        if isinstance(config, basestring):
-            self.regex = re.compile(config)
+        if not isinstance(config, dict):
+            self.regex = self.make_regex(config)
             self.replace = None
             self.filter = self.DEFAULT_FILTER
         else:
-            self.regex = re.compile(config.get('match'))
+            self.regex = self.make_regex(config.get('match'))
             self.replace = config.get('replace')
             self.filter = config.get('filter', self.DEFAULT_FILTER)
 
@@ -147,6 +147,35 @@ class CDXDomainSpecificRule(BaseRule):
         if self.replace:
             self.replace = unsurt(self.replace)
 
-    if __name__ == "__main__":
-        import doctest
-        doctest.testmod()
+    @staticmethod
+    def make_regex(config):
+        if isinstance(config, list):
+            string = CDXDomainSpecificRule.make_query_match_regex(config)
+        # assumes string
+        else:
+            string = config
+
+        return re.compile(string)
+
+    @staticmethod
+    def make_query_match_regex(params_list):
+        r"""
+        >>> CDXDomainSpecificRule.make_query_match_regex(['param1', 'id', 'abc'])
+        '(abc=[^&]+).*(id=[^&]+).*(param1=[^&]+)'
+
+        >>> CDXDomainSpecificRule.make_query_match_regex(['id[0]', 'abc()'])
+        '(abc\\(\\)=[^&]+).*(id\\[0\\]=[^&]+)'
+
+        """
+        params_list.sort()
+        def conv(value):
+            return '({}=[^&]+)'.format(re.escape(value))
+
+        params_list = map(conv, params_list)
+        final_str = '.*'.join(params_list)
+        return final_str
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

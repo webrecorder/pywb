@@ -15,12 +15,14 @@ rules:
       fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|query_type[^,]+))'
               
     - url_prefix: 'com,facebook)/ajax/ufi/'
-                  
-      fuzzy_lookup: '(ft_ent_identifier=[^&]+).*(lsd=[^&]+)'
+      
+      fuzzy_lookup: ['ft_ent_identifier', 'lsd']      
+      #fuzzy_lookup: '(ft_ent_identifier=[^&]+).*(lsd=[^&]+)'
 
     - url_prefix: 'com,facebook)/ajax/chat/hovercard/sidebar.php'
 
-      fuzzy_lookup: '(ids\[0\]=[^&]+)'
+      fuzzy_lookup: ['ids[0]']
+      #fuzzy_lookup: '(ids\[0\]=[^&]+)'
 
     - url_prefix: 'com,facebook)/ajax/'
 
@@ -28,7 +30,8 @@ rules:
 
     - url_prefix: 'com,facebook)/login.php'
 
-      fuzzy_lookup: '(email=[^&]+).*(lgnrnd=[^&]+).*(lsd=[^&]+)'
+      #fuzzy_lookup: '(email=[^&]+).*(lgnrnd=[^&]+).*(lsd=[^&]+)'
+      fuzzy_lookup: ['email', 'lgnrnd', 'lsd']
 
  # not actually needed, fuzzy match is used instead here
 #      canonicalize:
@@ -87,6 +90,8 @@ rules:
       canonicalize:
         match: '(example,example,test\)/.*?)[?].*?(id=value).*'
         replace: '\1?\2'
+
+      fuzzy_lookup: ['param1', 'id']
 
       rewrite:
         js_rewrite_location: False
