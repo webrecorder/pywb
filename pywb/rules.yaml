@@ -10,7 +10,6 @@ rules:
 
     # facebook rules
     #=================================================================
-#   - url_prefix: 'com,facebook)/ajax/pagelet/generic.php/profiletimelinesectionpagelet'
     - url_prefix: 'com,facebook)/ajax/pagelet/generic.php/'
         
       fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|query_type[^,]+))'
@@ -19,7 +18,19 @@ rules:
                   
       fuzzy_lookup: '(ft_ent_identifier=[^&]+).*(lsd=[^&]+)'
 
-# not actually needed, fuzzy match is used instead here
+    - url_prefix: 'com,facebook)/ajax/chat/hovercard/sidebar.php'
+
+      fuzzy_lookup: '(ids\[0\]=[^&]+)'
+
+    - url_prefix: 'com,facebook)/ajax/'
+
+      fuzzy_lookup: '([?&][^_]\w+=[^&]+)+'
+
+    - url_prefix: 'com,facebook)/login.php'
+
+      fuzzy_lookup: '(email=[^&]+).*(lgnrnd=[^&]+).*(lsd=[^&]+)'
+
+ # not actually needed, fuzzy match is used instead here
 #      canonicalize:
 #        match: 'com,facebook\)/.*[?&]data=([^&]+).*'
 #        replace: 'com,facebook)/ajax/pagelet/generic.php/profiletimelinesectionpagelet?data=\1'

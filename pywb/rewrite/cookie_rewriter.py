@@ -22,7 +22,7 @@ class WbUrlCookieRewriter(object):
             # if domain set, no choice but to expand cookie path to root
             if morsel.get('domain'):
                 del morsel['domain']
-                morsel['path'] = self.url_rewriter.prefix
+                morsel['path'] = self.url_rewriter.rel_prefix
             # else set cookie to rewritten path
             elif morsel.get('path'):
                 morsel['path'] = self.url_rewriter.rewrite(morsel['path'])

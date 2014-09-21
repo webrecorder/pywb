@@ -70,7 +70,8 @@ class WbRequest(object):
         if wb_url_str != '/' and wburl_class:
             self.wb_url = wburl_class(wb_url_str)
             self.urlrewriter = urlrewriter_class(self.wb_url, self.wb_prefix,
-                                                 host_prefix + rel_prefix)
+                                                 host_prefix + rel_prefix,
+                                                 rel_prefix)
         else:
         # no wb_url, just store blank wb_url
             self.wb_url = None

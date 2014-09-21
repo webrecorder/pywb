@@ -18,13 +18,11 @@ class UrlRewriter(object):
 
     PROTOCOLS = ['http:', 'https:', 'ftp:', 'mms:', 'rtsp:', 'wais:']
 
-    def __init__(self, wburl, prefix, full_prefix=None):
+    def __init__(self, wburl, prefix, full_prefix=None, rel_prefix=None):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
         self.prefix = prefix
         self.full_prefix = full_prefix
-
-        #if self.prefix.endswith('/'):
-        #    self.prefix = self.prefix[:-1]
+        self.rel_prefix = rel_prefix if rel_prefix else prefix
 
     def rewrite(self, url, mod=None):
         # if special protocol, no rewriting at all
