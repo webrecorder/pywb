@@ -161,15 +161,15 @@ class CDXDomainSpecificRule(BaseRule):
     def make_query_match_regex(params_list):
         r"""
         >>> CDXDomainSpecificRule.make_query_match_regex(['param1', 'id', 'abc'])
-        '(abc=[^&]+).*(id=[^&]+).*(param1=[^&]+)'
+        '[?&](abc=[^&]+).*[?&](id=[^&]+).*[?&](param1=[^&]+)'
 
         >>> CDXDomainSpecificRule.make_query_match_regex(['id[0]', 'abc()'])
-        '(abc\\(\\)=[^&]+).*(id\\[0\\]=[^&]+)'
+        '[?&](abc\\(\\)=[^&]+).*[?&](id\\[0\\]=[^&]+)'
 
         """
         params_list.sort()
         def conv(value):
-            return '({}=[^&]+)'.format(re.escape(value))
+            return '[?&]({0}=[^&]+)'.format(re.escape(value))
 
         params_list = map(conv, params_list)
         final_str = '.*'.join(params_list)
