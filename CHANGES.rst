@@ -1,3 +1,9 @@
+pywb 0.6.1 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* New, implified notation for fuzzy match rules on query params (See: `Fuzzy Match Rules <https://github.com/ikreymer/pywb/wiki/Fuzzy-Match-Rules>`_)
+
+
 pywb 0.6.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

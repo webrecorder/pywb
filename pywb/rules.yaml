@@ -16,28 +16,26 @@ rules:
               
     - url_prefix: 'com,facebook)/ajax/ufi/'
       
-      fuzzy_lookup: ['ft_ent_identifier', 'lsd']      
-      #fuzzy_lookup: '(ft_ent_identifier=[^&]+).*(lsd=[^&]+)'
+      fuzzy_lookup:
+          - ft_ent_identifier
+          - lsd
 
     - url_prefix: 'com,facebook)/ajax/chat/hovercard/sidebar.php'
 
-      fuzzy_lookup: ['ids[0]']
-      #fuzzy_lookup: '(ids\[0\]=[^&]+)'
-
-    - url_prefix: 'com,facebook)/ajax/'
-
-      fuzzy_lookup: '([?&][^_]\w+=[^&]+)+'
+      fuzzy_lookup: 
+          - ids[0]
 
     - url_prefix: 'com,facebook)/login.php'
 
-      #fuzzy_lookup: '(email=[^&]+).*(lgnrnd=[^&]+).*(lsd=[^&]+)'
-      fuzzy_lookup: ['email', 'lgnrnd', 'lsd']
+      fuzzy_lookup:
+          - email
+          - lgnrnd
+          - lsd
 
- # not actually needed, fuzzy match is used instead here
-#      canonicalize:
-#        match: 'com,facebook\)/.*[?&]data=([^&]+).*'
-#        replace: 'com,facebook)/ajax/pagelet/generic.php/profiletimelinesectionpagelet?data=\1'
+    # fallback for all /ajax/
+    - url_prefix: 'com,facebook)/ajax/'
 
+      fuzzy_lookup: '([?&][^_]\w+=[^&]+)+'
 
     - url_prefix: 'com,facebook)/'
       rewrite:
@@ -91,7 +89,9 @@ rules:
         match: '(example,example,test\)/.*?)[?].*?(id=value).*'
         replace: '\1?\2'
 
-      fuzzy_lookup: ['param1', 'id']
+      fuzzy_lookup:
+          - param1
+          - id
 
       rewrite:
         js_rewrite_location: False
