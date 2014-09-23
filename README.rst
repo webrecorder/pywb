@@ -11,7 +11,7 @@ pywb is a python implementation of web archival replay tools, sometimes also kno
 
 pywb allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
 
-pywb can be used as a traditional web application or an HTTP or HTTPS proxy server.
+pywb can be used as a traditional web application or an HTTP or HTTPS proxy server. pywb is also fully compliant with the `Memento <http://mementoweb.org/>`_ protocol (`RFC-7089 <http://tools.ietf.org/html/rfc7089>`_)
 
 Usage Examples
 -----------------------------
