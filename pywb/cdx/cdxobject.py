@@ -46,10 +46,16 @@ class CDXObject(OrderedDict):
          "orig.length", "orig.offset", "orig.filename"]
         ]
 
-    def __init__(self, cdxline):
+    def __init__(self, cdxline=''):
         OrderedDict.__init__(self)
 
         cdxline = cdxline.rstrip()
+
+        # Allows for filling the fields later or in a custom way
+        if not cdxline:
+            self.cdxline = cdxline
+            return
+
         fields = cdxline.split(' ')
 
         cdxformat = None
