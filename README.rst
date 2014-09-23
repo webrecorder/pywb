@@ -13,6 +13,8 @@ pywb allows high-quality replay (browsing) of archived web data stored in standa
 
 pywb can be used as a traditional web application or an HTTP or HTTPS proxy server.
 
+pywb is also fully compliant with the `Memento <http://mementoweb.org/>`_ protocol (`RFC-7089 <http://tools.ietf.org/html/rfc7089>`_).
+
 Usage Examples
 -----------------------------
 
