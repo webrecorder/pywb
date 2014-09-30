@@ -49,7 +49,7 @@ class HeaderRewriter:
     def __init__(self, header_prefix='X-Archive-Orig-'):
         self.header_prefix = header_prefix
 
-    def rewrite(self, status_headers, urlrewriter):
+    def rewrite(self, status_headers, urlrewriter, cookie_rewriter):
         content_type = status_headers.get_header('Content-Type')
         text_type = None
         charset = None
@@ -63,6 +63,7 @@ class HeaderRewriter:
 
         result = self._rewrite_headers(status_headers.headers,
                                        urlrewriter,
+                                       cookie_rewriter,
                                        strip_encoding)
 
         new_headers = result[0]
@@ -89,14 +90,11 @@ class HeaderRewriter:
 
         return content_type[idx + len(CHARSET_TOKEN):].lower()
 
-    def _rewrite_headers(self, headers, urlrewriter, content_rewritten=False):
+    def _rewrite_headers(self, headers, urlrewriter, cookie_rewriter,
+                         content_rewritten):
+
         new_headers = []
         removed_header_dict = {}
-
-        if urlrewriter:
-            cookie_rewriter = urlrewriter.get_cookie_rewriter()
-        else:
-            cookie_rewriter = None
 
         for (name, value) in headers:
 

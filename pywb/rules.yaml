@@ -46,7 +46,14 @@ rules:
         parse_comments: true
 
 
-    # flickr rules
+    # instagram rules
+    #=================================================================
+    - url_prefix: 'com,instagram'
+      rewrite:
+          cookie_scope: root
+
+
+     # flickr rules
     #=================================================================
     - url_prefix: ['com,yimg,l)/g/combo', 'com,yimg,s)/pw/combo', 'com,yahooapis,yui)/combo']
       fuzzy_lookup: '([^/]+(?:\.css|\.js))'

@@ -2,10 +2,8 @@ from Cookie import SimpleCookie, CookieError
 
 
 #=================================================================
-class WbUrlCookieRewriter(object):
-    """ Cookie rewriter for wburl-based requests
-    Remove the domain and rewrite path, if any, to match
-    given WbUrl using the url rewriter.
+class WbUrlBaseCookieRewriter(object):
+    """ Base Cookie rewriter for wburl-based requests.
     """
     def __init__(self, url_rewriter):
         self.url_rewriter = url_rewriter
@@ -19,21 +17,68 @@ class WbUrlCookieRewriter(object):
             return results
 
         for name, morsel in cookie.iteritems():
-            # if domain set, no choice but to expand cookie path to root
-            if morsel.get('domain'):
-                del morsel['domain']
-                morsel['path'] = self.url_rewriter.rel_prefix
-            # else set cookie to rewritten path
-            elif morsel.get('path'):
-                morsel['path'] = self.url_rewriter.rewrite(morsel['path'])
-            # remove expires as it refers to archived time
-            if morsel.get('expires'):
-                del morsel['expires']
-
-            # don't use max-age, just expire at end of session
-            if morsel.get('max-age'):
-                del morsel['max-age']
-
-            results.append((header, morsel.OutputString()))
+            morsel = self.rewrite_cookie(name, morsel)
+            if morsel:
+                results.append((header, morsel.OutputString()))
 
         return results
+
+
+#=================================================================
+class MinimalScopeCookieRewriter(WbUrlBaseCookieRewriter):
+    """
+    Attempt to rewrite cookies to minimal scope possible
+
+    If path present, rewrite path to current rewritten url only
+    If domain present, remove domain and set to path prefix
+    """
+
+    def rewrite_cookie(self, name, morsel):
+        # if domain set, no choice but to expand cookie path to root
+        if morsel.get('domain'):
+            del morsel['domain']
+            morsel['path'] = self.url_rewriter.rel_prefix
+        # else set cookie to rewritten path
+        elif morsel.get('path'):
+            morsel['path'] = self.url_rewriter.rewrite(morsel['path'])
+
+        # remove expires as it refers to archived time
+        if morsel.get('expires'):
+            del morsel['expires']
+
+        # don't use max-age, just expire at end of session
+        if morsel.get('max-age'):
+            del morsel['max-age']
+
+        return morsel
+
+
+#=================================================================
+class RootScopeCookieRewriter(WbUrlBaseCookieRewriter):
+    """
+    Sometimes it is necessary to rewrite cookies to root scope
+    in order to work across time boundaries and modifiers
+
+    This rewriter simply sets all cookies to be in the root
+    """
+    def rewrite_cookie(self, name, morsel):
+        # get root path
+        morsel['path'] = self.url_rewriter.root_path
+       
+        # remove domain
+        if morsel.get('domain'):
+            del morsel['domain']
+
+        # remove expires as it refers to archived time
+        if morsel.get('expires'):
+            del morsel['expires']
+
+        return morsel
+
+
+#=================================================================
+def get_cookie_rewriter(rule):
+    if rule and rule.cookie_scope == 'root':
+        return RootScopeCookieRewriter
+    else:
+        return MinimalScopeCookieRewriter

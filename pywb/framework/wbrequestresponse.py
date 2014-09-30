@@ -71,7 +71,8 @@ class WbRequest(object):
             self.wb_url = wburl_class(wb_url_str)
             self.urlrewriter = urlrewriter_class(self.wb_url, self.wb_prefix,
                                                  host_prefix + rel_prefix,
-                                                 rel_prefix)
+                                                 rel_prefix,
+                                                 env.get('SCRIPT_NAME', '/'))
         else:
         # no wb_url, just store blank wb_url
             self.wb_url = None
@@ -95,9 +96,6 @@ class WbRequest(object):
         value = self.env.get('HTTP_X_REQUESTED_WITH')
         if value and value.lower() == 'xmlhttprequest':
             return True
-
-        #if self.referrer and ('ajaxpipe' in self.env.get('QUERY_STRING')):
-        #    return True
 
         return False
 

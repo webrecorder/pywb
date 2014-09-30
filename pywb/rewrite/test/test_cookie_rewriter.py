@@ -26,7 +26,7 @@ r"""
 """
 
 
-from pywb.rewrite.cookie_rewriter import WbUrlCookieRewriter
+from pywb.rewrite.cookie_rewriter import MinimalScopeCookieRewriter
 from pywb.rewrite.url_rewriter import UrlRewriter
 
 urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html', '/pywb/')
@@ -35,5 +35,5 @@ urlrewriter2 = UrlRewriter('em_/http://example.com/', '/preview/')
 
 
 def rewrite_cookie(cookie_str, rewriter=urlrewriter):
-    return WbUrlCookieRewriter(rewriter).rewrite(cookie_str)
+    return MinimalScopeCookieRewriter(rewriter).rewrite(cookie_str)
 

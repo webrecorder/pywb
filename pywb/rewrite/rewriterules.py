@@ -42,6 +42,9 @@ class RewriteRules(BaseRule):
         # add any regexs for js rewriter
         self._add_custom_regexs('js', config)
 
+        # cookie rewrite scope
+        self.cookie_scope = config.get('cookie_scope', 'default')
+
     def _add_custom_regexs(self, field, config):
         regexs = config.get(field + '_regexs')
         if not regexs:

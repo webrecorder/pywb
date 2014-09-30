@@ -71,7 +71,7 @@ urlrewriter = UrlRewriter('20131010/http://example.com/', '/web/')
 headerrewriter = HeaderRewriter()
 
 def _test_headers(headers, status = '200 OK'):
-    rewritten = headerrewriter.rewrite(StatusAndHeaders(status, headers), urlrewriter)
+    rewritten = headerrewriter.rewrite(StatusAndHeaders(status, headers), urlrewriter, urlrewriter.get_cookie_rewriter())
     return pprint.pprint(vars(rewritten))
 
 

@@ -37,13 +37,17 @@ class RewriteContent:
 
         return (status_headers, stream)
 
-    def rewrite_headers(self, urlrewriter, status_headers, stream, urlkey=''):
+    def _rewrite_headers(self, urlrewriter, rule, status_headers, stream, urlkey=''):
 
-        header_rewriter_class = (self.ruleset.get_first_match(urlkey).
-                                 rewriters['header'])
+        header_rewriter_class = rule.rewriters['header']
+
+        cookie_rewriter = None
+
+        if urlrewriter:
+            cookie_rewriter = urlrewriter.get_cookie_rewriter(rule)
 
         rewritten_headers = (header_rewriter_class().
-                             rewrite(status_headers, urlrewriter))
+                             rewrite(status_headers, urlrewriter, cookie_rewriter))
 
         # note: since chunk encoding may/may not be valid,
         # the approach taken here is to *always* attempt
@@ -74,9 +78,12 @@ class RewriteContent:
         if wb_url.is_banner_only:
             urlrewriter = None
 
-        (rewritten_headers, stream) = self.rewrite_headers(urlrewriter,
-                                                           headers,
-                                                           stream)
+        rule = self.ruleset.get_first_match(urlkey)
+
+        (rewritten_headers, stream) = self._rewrite_headers(urlrewriter,
+                                                            rule,
+                                                            headers,
+                                                            stream)
 
         status_headers = rewritten_headers.status_headers
 
@@ -111,8 +118,6 @@ class RewriteContent:
                 stream.set_decomp('gzip')
             else:
                 stream = DecompressingBufferedReader(stream)
-
-        rule = self.ruleset.get_first_match(urlkey)
 
         rewriter_class = rule.rewriters[text_type]
 

@@ -2,7 +2,7 @@ import copy
 import urlparse
 
 from wburl import WbUrl
-from cookie_rewriter import WbUrlCookieRewriter
+from cookie_rewriter import get_cookie_rewriter
 
 
 #=================================================================
@@ -18,11 +18,12 @@ class UrlRewriter(object):
 
     PROTOCOLS = ['http:', 'https:', 'ftp:', 'mms:', 'rtsp:', 'wais:']
 
-    def __init__(self, wburl, prefix, full_prefix=None, rel_prefix=None):
+    def __init__(self, wburl, prefix, full_prefix=None, rel_prefix=None, root_path=None):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
         self.prefix = prefix
         self.full_prefix = full_prefix
         self.rel_prefix = rel_prefix if rel_prefix else prefix
+        self.root_path = root_path if root_path else '/'
 
     def rewrite(self, url, mod=None):
         # if special protocol, no rewriting at all
@@ -83,8 +84,9 @@ class UrlRewriter(object):
         new_wburl = WbUrl(new_url)
         return UrlRewriter(new_wburl, self.prefix)
 
-    def get_cookie_rewriter(self):
-        return WbUrlCookieRewriter(self)
+    def get_cookie_rewriter(self, rule=None):
+        cls = get_cookie_rewriter(rule)
+        return cls(self)
 
     def __repr__(self):
         return "UrlRewriter('{0}', '{1}')".format(self.wburl, self.prefix)
@@ -149,5 +151,5 @@ class HttpsUrlRewriter(UrlRewriter):
     def rebase_rewriter(self, new_url):
         return self
 
-    def get_cookie_rewriter(self):
+    def get_cookie_rewriter(self, rule=None):
         return None
