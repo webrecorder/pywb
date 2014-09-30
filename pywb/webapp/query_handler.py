@@ -76,10 +76,15 @@ class QueryHandler(object):
         return self.make_cdx_response(wbrequest, cdx_iter, params['output'])
 
     def load_cdx(self, wbrequest, params):
+        print(params)
         if wbrequest:
             # add any custom filter from the request
             if wbrequest.query_filter:
-                params['filter'].extend(wbrequest.query_filter)
+                filters = params.get('filter')
+                if filters:
+                    filters.extend(wbrequest.query_filter)
+                else:
+                    params['filter'] = wbrequest.query_filter
 
             if wbrequest.custom_params:
                 params.update(wbrequest.custom_params)
@@ -144,7 +149,9 @@ class QueryHandler(object):
 
             wburl.LATEST_REPLAY:
                 {'sort': 'reverse',
-                 'filter': ['statuscode:[23]..|-'],
+       # Not appropriate as default
+       # Should be an option to configure status code filtering in general
+       #         'filter': ['statuscode:[23]..|-'],
                  'limit': '1',
                  'resolveRevisits': True,
                 }

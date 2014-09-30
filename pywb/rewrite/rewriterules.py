@@ -22,6 +22,7 @@ class RewriteRules(BaseRule):
         self.rewriters['css'] = config.get('css_class', CSSRewriter)
         self.rewriters['xml'] = config.get('xml_class', XMLRewriter)
         self.rewriters['html'] = config.get('html_class', HTMLRewriter)
+        self.rewriters['json'] = config.get('json_class', JSLinkOnlyRewriter)
 
         self.parse_comments = config.get('parse_comments', False)
 

@@ -108,7 +108,6 @@ class TestProxyHttpsCookie:
         global sesh_key
         sesh_key = sesh1
 
-        global sesh_key
         sesh2 = self.session.cookies.get('__pywb_proxy_sesh', domain='.iana.org')
         assert sesh_key == sesh2
 

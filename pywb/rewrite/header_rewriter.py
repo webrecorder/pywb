@@ -28,6 +28,8 @@ class HeaderRewriter:
                  'application/javascript',
                  'application/x-javascript'],
 
+        'json': ['application/json'],
+
         'xml':  ['/xml', '+xml', '.xml', '.rss'],
     }
 
