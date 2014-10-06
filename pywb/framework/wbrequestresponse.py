@@ -37,7 +37,8 @@ class WbRequest(object):
                  use_abs_prefix=False,
                  wburl_class=None,
                  urlrewriter_class=None,
-                 is_proxy=False):
+                 is_proxy=False,
+                 cookie_scope=None):
 
         self.env = env
 
@@ -69,10 +70,12 @@ class WbRequest(object):
         # wb_url present and not root page
         if wb_url_str != '/' and wburl_class:
             self.wb_url = wburl_class(wb_url_str)
-            self.urlrewriter = urlrewriter_class(self.wb_url, self.wb_prefix,
+            self.urlrewriter = urlrewriter_class(self.wb_url,
+                                                 self.wb_prefix,
                                                  host_prefix + rel_prefix,
                                                  rel_prefix,
-                                                 env.get('SCRIPT_NAME', '/'))
+                                                 env.get('SCRIPT_NAME', '/'),
+                                                 cookie_scope)
         else:
         # no wb_url, just store blank wb_url
             self.wb_url = None

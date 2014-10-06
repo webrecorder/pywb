@@ -90,13 +90,19 @@ class RegexRewriter(object):
 
     @staticmethod
     def parse_rules_from_config(config):
-        def parse_rule(obj):
-            match = obj.get('match')
-            replace = RegexRewriter.format(obj.get('replace', '{0}'))
-            group = obj.get('group', 0)
-            result = (match, replace, group)
-            return result
-        return map(parse_rule, config)
+        def run_parse_rules(rewriter):
+            def parse_rule(obj):
+                match = obj.get('match')
+                if 'rewrite' in obj:
+                    replace = RegexRewriter.archival_rewrite(rewriter)
+                else:
+                    replace = RegexRewriter.format(obj.get('replace', '{0}'))
+                group = obj.get('group', 0)
+                result = (match, replace, group)
+                return result
+            
+            return map(parse_rule, config)
+        return run_parse_rules
 
 
 #=================================================================

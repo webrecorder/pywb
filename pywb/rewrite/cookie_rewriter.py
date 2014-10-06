@@ -77,8 +77,8 @@ class RootScopeCookieRewriter(WbUrlBaseCookieRewriter):
 
 
 #=================================================================
-def get_cookie_rewriter(rule):
-    if rule and rule.cookie_scope == 'root':
+def get_cookie_rewriter(cookie_scope):
+    if cookie_scope == 'root':
         return RootScopeCookieRewriter
     else:
         return MinimalScopeCookieRewriter

@@ -18,12 +18,14 @@ class UrlRewriter(object):
 
     PROTOCOLS = ['http:', 'https:', 'ftp:', 'mms:', 'rtsp:', 'wais:']
 
-    def __init__(self, wburl, prefix, full_prefix=None, rel_prefix=None, root_path=None):
+    def __init__(self, wburl, prefix, full_prefix=None, rel_prefix=None, root_path=None,
+                 cookie_scope=None):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
         self.prefix = prefix
         self.full_prefix = full_prefix
         self.rel_prefix = rel_prefix if rel_prefix else prefix
         self.root_path = root_path if root_path else '/'
+        self.cookie_scope = cookie_scope
 
     def rewrite(self, url, mod=None):
         # if special protocol, no rewriting at all
@@ -84,8 +86,12 @@ class UrlRewriter(object):
         new_wburl = WbUrl(new_url)
         return UrlRewriter(new_wburl, self.prefix)
 
-    def get_cookie_rewriter(self, rule=None):
-        cls = get_cookie_rewriter(rule)
+    def get_cookie_rewriter(self, scope=None):
+        # collection scope overrides rule scope?
+        if self.cookie_scope:
+            scope = self.cookie_scope
+
+        cls = get_cookie_rewriter(scope)
         return cls(self)
 
     def __repr__(self):
@@ -151,5 +157,5 @@ class HttpsUrlRewriter(UrlRewriter):
     def rebase_rewriter(self, new_url):
         return self
 
-    def get_cookie_rewriter(self, rule=None):
+    def get_cookie_rewriter(self, scope=None):
         return None

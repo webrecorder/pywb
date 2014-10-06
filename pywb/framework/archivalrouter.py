@@ -61,7 +61,8 @@ class ArchivalRouter(object):
                               coll=coll,
                               use_abs_prefix=use_abs_prefix,
                               wburl_class=route.handler.get_wburl_type(),
-                              urlrewriter_class=UrlRewriter)
+                              urlrewriter_class=UrlRewriter,
+                              cookie_scope=route.cookie_scope)
 
         # Allow for applying of additional filters
         route.apply_filters(wbrequest, matcher)
@@ -99,6 +100,7 @@ class Route(object):
         self.request_class = request_class
         # collection id from regex group (default 0)
         self.coll_group = coll_group
+        self.cookie_scope = config.get('cookie_scope')
         self._custom_init(config)
 
     def is_handling(self, request_uri):

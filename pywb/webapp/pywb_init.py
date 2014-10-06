@@ -179,7 +179,7 @@ def create_wb_router(passed_config={}):
     for name, value in collections.iteritems():
         if isinstance(value, BaseHandler):
             handler_dict[name] = value
-            routes.append(Route(name, value))
+            routes.append(Route(name, value, config=route_config))
             continue
 
         route_config = init_route_config(value, config)
@@ -187,7 +187,7 @@ def create_wb_router(passed_config={}):
         if route_config.get('index_paths') == '$liveweb':
             live = create_live_handler(route_config)
             handler_dict[name] = live
-            routes.append(Route(name, live))
+            routes.append(Route(name, live, config=route_config))
             continue
 
         query_handler = init_collection(route_config)

@@ -52,11 +52,11 @@ class RewriteRules(BaseRule):
 
         rewriter_cls = self.rewriters[field]
 
-        rule_def_tuples = RegexRewriter.parse_rules_from_config(regexs)
+        #rule_def_tuples = RegexRewriter.parse_rules_from_config(regexs)
+        parse_rules_func = RegexRewriter.parse_rules_from_config(regexs)
 
         def extend_rewriter_with_regex(urlrewriter):
-            #import sys
-            #sys.stderr.write('\n\nEXTEND: ' + str(rule_def_tuples))
+            rule_def_tuples = parse_rules_func(urlrewriter)
             return rewriter_cls(urlrewriter, rule_def_tuples)
 
         self.rewriters[field] = extend_rewriter_with_regex

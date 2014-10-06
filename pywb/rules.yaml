@@ -45,13 +45,19 @@ rules:
 
         parse_comments: true
 
-
-    # instagram rules
-    #=================================================================
-    - url_prefix: 'com,instagram'
+    - url_prefix: 'com,facebook'
       rewrite:
           cookie_scope: root
 
+
+    # instagram rules
+    #=================================================================
+    - url_prefix: 'net,cloudfront,'
+      rewrite:
+          js_regexs:
+              - match: '\burl\((//[^)]+)\)'
+                rewrite: true
+                group: 1
 
      # flickr rules
     #=================================================================
