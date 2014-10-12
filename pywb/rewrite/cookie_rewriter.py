@@ -23,6 +23,15 @@ class WbUrlBaseCookieRewriter(object):
 
         return results
 
+    def _remove_age_opts(self, morsel):
+        # remove expires as it refers to archived time
+        if morsel.get('expires'):
+            del morsel['expires']
+
+        # don't use max-age, just expire at end of session
+        if morsel.get('max-age'):
+            del morsel['max-age']
+
 
 #=================================================================
 class MinimalScopeCookieRewriter(WbUrlBaseCookieRewriter):
@@ -42,14 +51,7 @@ class MinimalScopeCookieRewriter(WbUrlBaseCookieRewriter):
         elif morsel.get('path'):
             morsel['path'] = self.url_rewriter.rewrite(morsel['path'])
 
-        # remove expires as it refers to archived time
-        if morsel.get('expires'):
-            del morsel['expires']
-
-        # don't use max-age, just expire at end of session
-        if morsel.get('max-age'):
-            del morsel['max-age']
-
+        self._remove_age_opts(morsel)
         return morsel
 
 
@@ -64,15 +66,12 @@ class RootScopeCookieRewriter(WbUrlBaseCookieRewriter):
     def rewrite_cookie(self, name, morsel):
         # get root path
         morsel['path'] = self.url_rewriter.root_path
-       
+
         # remove domain
         if morsel.get('domain'):
             del morsel['domain']
 
-        # remove expires as it refers to archived time
-        if morsel.get('expires'):
-            del morsel['expires']
-
+        self._remove_age_opts(morsel)
         return morsel
 
 

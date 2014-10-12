@@ -76,7 +76,6 @@ class QueryHandler(object):
         return self.make_cdx_response(wbrequest, cdx_iter, params['output'])
 
     def load_cdx(self, wbrequest, params):
-        print(params)
         if wbrequest:
             # add any custom filter from the request
             if wbrequest.query_filter:

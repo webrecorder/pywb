@@ -43,6 +43,17 @@ True
 # test with extra id, ensure 4 parts of the A-B=C-D form are present
 >>> len(re.split('[-=]', HMACCookieMaker('test', 'test', 5).make('extra')))
 4
+
+# cookie extract tests
+>>> extract_client_cookie(dict(HTTP_COOKIE='a=b; c=d'), 'a')
+'b'
+
+>>> extract_client_cookie(dict(HTTP_COOKIE='a=b; c=d'), 'c')
+'d'
+
+>>> extract_client_cookie(dict(HTTP_COOKIE='a=b; c=d'), 'x')
+
+>>> extract_client_cookie({}, 'y')
 """
 
 
@@ -50,7 +61,7 @@ True
 import re
 from io import BytesIO
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker
-from pywb.utils.loaders import LimitReader
+from pywb.utils.loaders import LimitReader, extract_client_cookie
 
 from pywb import get_test_dir
 

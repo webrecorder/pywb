@@ -136,30 +136,6 @@ class WbRequest(object):
         if post_query:
             self.wb_url.url = append_post_query(self.wb_url.url, post_query)
 
-    @staticmethod
-    def extract_client_cookie(env, cookie_name):
-        cookie_header = env.get('HTTP_COOKIE')
-        if not cookie_header:
-            return None
-
-        # attempt to extract cookie_name only
-        inx = cookie_header.find(cookie_name)
-        if inx < 0:
-            return None
-
-        end_inx = cookie_header.find(';', inx)
-        if end_inx > 0:
-            value = cookie_header[inx:end_inx]
-        else:
-            value = cookie_header[inx:]
-
-        value = value.split('=')
-        if len(value) < 2:
-            return None
-
-        value = value[1].strip()
-        return value
-
 
 #=================================================================
 class WbResponse(object):

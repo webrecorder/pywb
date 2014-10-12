@@ -37,18 +37,6 @@
 >>> req_from_uri('/web/2010/example.com', {'wsgi.url_scheme': 'http', 'HTTP_HOST': 'localhost:8080'}).extract_referrer_wburl_str()
 
 
-# cookie extract tests
->>> WbRequest.extract_client_cookie(dict(HTTP_COOKIE='a=b; c=d'), 'a')
-'b'
-
->>> WbRequest.extract_client_cookie(dict(HTTP_COOKIE='a=b; c=d'), 'c')
-'d'
-
->>> WbRequest.extract_client_cookie(dict(HTTP_COOKIE='a=b; c=d'), 'x')
-
->>> WbRequest.extract_client_cookie({}, 'y')
-
-
 # WbResponse Tests
 # =================
 >>> WbResponse.text_response('Test')

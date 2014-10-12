@@ -1,4 +1,5 @@
-from wbrequestresponse import WbResponse, WbRequest
+from wbrequestresponse import WbResponse
+from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.rewrite.wburl import WbUrl
 
@@ -193,8 +194,7 @@ class CookieResolver(BaseCollResolver):
             return self.make_redir_response(wb_url.url)
 
         elif server_name.endswith(self.set_prefix):
-            old_sesh_id = WbRequest.extract_client_cookie(env,
-                                                          self.cookie_name)
+            old_sesh_id = extract_client_cookie(env, self.cookie_name)
             sesh_id = self.create_renew_sesh_id(old_sesh_id)
 
             if sesh_id != old_sesh_id:
@@ -283,7 +283,7 @@ class CookieResolver(BaseCollResolver):
             del self.cache[sesh_id + ':t']
 
     def get_coll(self, env):
-        sesh_id = WbRequest.extract_client_cookie(env, self.cookie_name)
+        sesh_id = extract_client_cookie(env, self.cookie_name)
 
         coll = None
         ts = None

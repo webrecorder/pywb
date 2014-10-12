@@ -10,6 +10,7 @@ import logging
 from urlparse import urlsplit
 
 from pywb.utils.loaders import is_http, LimitReader, BlockLoader
+from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.timeutils import datetime_to_timestamp
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.canonicalize import canonicalize
@@ -55,6 +56,12 @@ class LiveRewriter(object):
             elif name == 'HTTP_ORIGIN':
                 name = 'Origin'
                 value = (splits.scheme + '://' + splits.netloc)
+
+            elif name == 'HTTP_X_CSRFTOKEN':
+                name = 'X-CSRFToken'
+                cookie_val = extract_client_cookie(env, 'csrftoken')
+                if cookie_val:
+                    value = cookie_val
 
             elif name.startswith('HTTP_'):
                 name = name[5:].title().replace('_', '-')
