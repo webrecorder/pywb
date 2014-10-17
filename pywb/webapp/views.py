@@ -77,17 +77,19 @@ class J2TemplateView(object):
         self.jinja_env = self.make_jinja_env(template_dir)
 
     def make_jinja_env(self, template_dir):
-        loaders = []
-        loaders.append(FileSystemLoader(template_dir))
-        loaders.append(FileSystemLoader('.'))
-        loaders.append(PackageLoader(self.env_globals['package'], template_dir))
-
+        loaders = self._make_loaders(template_dir)
         loader = ChoiceLoader(loaders)
         
         jinja_env = Environment(loader=loader, trim_blocks=True)
         jinja_env.filters.update(FILTERS)
         jinja_env.globals.update(self.env_globals)
         return jinja_env
+
+    def _make_loaders(self, template_dir):
+        loaders = []
+        loaders.append(FileSystemLoader(template_dir))
+        loaders.append(PackageLoader(self.env_globals['package'], template_dir))
+        return loaders
 
     def render_to_string(self, **kwargs):
         template = self.jinja_env.get_template(self.template_file)
@@ -138,6 +140,15 @@ class HeadInsertView(J2TemplateView):
                                           banner_html=self.banner_html,
                                           rule=rule))
         return make_head_insert
+
+    def _make_loaders(self, template_dir):
+        loaders = []
+        loaders.append(FileSystemLoader(template_dir))
+        # add relative and absolute path loaders
+        loaders.append(FileSystemLoader('.'))
+        loaders.append(FileSystemLoader('/'))
+        loaders.append(PackageLoader(self.env_globals['package'], template_dir))
+        return loaders
 
     @staticmethod
     def init_from_config(config):
