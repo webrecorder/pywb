@@ -1,6 +1,12 @@
 pywb 0.6.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* Easier to customize just the banner html, via `banner_html` setting in the config. Default banner uses ui/banner.html and inserts the script default_banner.js, which creates the banner.
+
+  Other implementations may create banner via custom JS or directly insert HTML, as needed. Setting `banner_html: False` will disable the banner.
+
+* Small improvements to streaming response, read in fixed chunks to allow better streaming from live.
+
 * New, implified notation for fuzzy match rules on query params (See: `Fuzzy Match Rules <https://github.com/ikreymer/pywb/wiki/Fuzzy-Match-Rules>`_)
 
 

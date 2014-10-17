@@ -29,6 +29,8 @@ DEFAULTS = {
     'archive_paths': './sample_archive/warcs/',
 
     'head_insert_html': 'ui/head_insert.html',
+    'banner_html': 'banner.html',
+
     'query_html': 'ui/query.html',
     'search_html': 'ui/search.html',
     'home_html': 'ui/index.html',

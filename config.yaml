@@ -73,6 +73,11 @@ enable_http_proxy: true
 
 # template for <head> insert into replayed html content
 #head_insert_html: ui/head_insert.html
+#
+#
+# template for just the banner modifications
+# set to False to disable completely
+#banner_html: banner.html
 
 # template to for 'calendar' query,
 # eg, a listing of captures  in response to a ../*/<url>

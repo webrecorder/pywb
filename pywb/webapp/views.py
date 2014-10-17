@@ -72,15 +72,17 @@ class J2TemplateView(object):
 
     def __init__(self, filename):
         template_dir, template_file = path.split(filename)
-
         self.template_file = template_file
 
         self.jinja_env = self.make_jinja_env(template_dir)
 
     def make_jinja_env(self, template_dir):
-        filesys_loader = FileSystemLoader(template_dir)
-        pkg_loader = PackageLoader(self.env_globals['package'], template_dir)
-        loader = ChoiceLoader([filesys_loader, pkg_loader])
+        loaders = []
+        loaders.append(FileSystemLoader(template_dir))
+        loaders.append(FileSystemLoader('.'))
+        loaders.append(PackageLoader(self.env_globals['package'], template_dir))
+
+        loader = ChoiceLoader(loaders)
         
         jinja_env = Environment(loader=loader, trim_blocks=True)
         jinja_env.filters.update(FILTERS)
@@ -133,20 +135,24 @@ class HeadInsertView(J2TemplateView):
                                           canon_url=canon_url,
                                           include_ts=include_ts,
                                           include_wombat=include_wombat,
+                                          banner_html=self.banner_html,
                                           rule=rule))
         return make_head_insert
-
-    @staticmethod
-    def create_template(filename, desc=''):
-        return J2TemplateView.create_template(filename, desc,
-                                              HeadInsertView)
 
     @staticmethod
     def init_from_config(config):
         view = config.get('head_insert_view')
         if not view:
             html = config.get('head_insert_html', 'ui/head_insert.html')
-            view = HeadInsertView.create_template(html, 'Head Insert')
+
+            if html:
+                banner_html = config.get('banner_html', 'banner.html')
+                view = HeadInsertView(html)
+                logging.debug('Adding HeadInsert: {0}, Banner {1}'.
+                              format(html, banner_html))
+
+                view.banner_html = banner_html
+
         return view
 
 
