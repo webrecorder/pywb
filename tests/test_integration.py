@@ -248,18 +248,18 @@ class TestWb:
         assert resp.status_int == 302
         assert resp.headers['Location'].endswith('/pywb/20140126200928mp_/http://www.iana.org/domains/root/db')
 
-    def test_referrer_self_redirect(self):
-        uri = '/pywb/20140127171239mp_/http://www.iana.org/_css/2013.1/screen.css'
-        host = 'somehost:8082'
-        referrer = 'http://' + host + uri
+    #def test_referrer_self_redirect(self):
+    #    uri = '/pywb/20140127171239mp_/http://www.iana.org/_css/2013.1/screen.css'
+    #    host = 'somehost:8082'
+    #    referrer = 'http://' + host + uri
 
         # capture is normally a 200
-        resp = self.testapp.get(uri)
-        assert resp.status_int == 200
+    #    resp = self.testapp.get(uri)
+    #    assert resp.status_int == 200
 
         # redirect causes skip of this capture, redirect to next
-        resp = self.testapp.get(uri, headers = [('Referer', referrer), ('Host', host)], status = 302)
-        assert resp.status_int == 302
+    #    resp = self.testapp.get(uri, headers = [('Referer', referrer), ('Host', host)], status = 302)
+    #    assert resp.status_int == 302
 
     def test_not_existant_warc_other_capture(self):
         resp = self.testapp.get('/pywb/20140703030321mp_/http://example.com?example=2')

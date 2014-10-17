@@ -117,7 +117,9 @@ class ReplayView(object):
         stream = LimitReader.wrap_stream(stream, length)
 
         # one more check for referrer-based self-redirect
-        self._reject_referrer_self_redirect(wbrequest)
+        # TODO: evaluate this, as refreshing in browser may sometimes cause
+        # referrer to be set to the same page, incorrectly skipping a capture
+        # self._reject_referrer_self_redirect(wbrequest)
 
         urlrewriter = wbrequest.urlrewriter
 
@@ -233,7 +235,8 @@ class ReplayView(object):
              ReplayView.strip_scheme(location_url)):
             raise CaptureException('Self Redirect: ' + str(cdx))
 
-    def _reject_referrer_self_redirect(self, wbrequest):
+    # TODO: reevaluate this, as it may reject valid refreshes of a page
+    def _reject_referrer_self_redirect(self, wbrequest):  # pragma: no cover
         """
         Perform final check for referrer based self-redirect.
         This method should be called after verifying that
