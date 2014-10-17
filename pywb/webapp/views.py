@@ -7,7 +7,8 @@ import logging
 
 from os import path
 from itertools import imap
-from jinja2 import Environment, FileSystemLoader, PackageLoader
+from jinja2 import Environment
+from jinja2 import FileSystemLoader, PackageLoader, ChoiceLoader
 
 
 FILTERS = {}
@@ -77,11 +78,10 @@ class J2TemplateView(object):
         self.jinja_env = self.make_jinja_env(template_dir)
 
     def make_jinja_env(self, template_dir):
-        if template_dir.startswith('.') or template_dir.startswith('file://'):
-            loader = FileSystemLoader(template_dir)
-        else:
-            loader = PackageLoader(self.env_globals['package'], template_dir)
-
+        filesys_loader = FileSystemLoader(template_dir)
+        pkg_loader = PackageLoader(self.env_globals['package'], template_dir)
+        loader = ChoiceLoader([filesys_loader, pkg_loader])
+        
         jinja_env = Environment(loader=loader, trim_blocks=True)
         jinja_env.filters.update(FILTERS)
         jinja_env.globals.update(self.env_globals)
