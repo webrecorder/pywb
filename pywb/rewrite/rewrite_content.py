@@ -20,6 +20,8 @@ from pywb.utils.bufferedreaders import ChunkedDataReader
 class RewriteContent:
     HEAD_REGEX = re.compile(r'<\s*head\b[^>]*[>]+', re.I)
 
+    BUFF_SIZE = 16384
+
     def __init__(self, ds_rules_file=None, is_framed_replay=False):
         self.ruleset = RuleSet(RewriteRules, 'rewrite',
                                default_rule_config={},
@@ -161,10 +163,10 @@ class RewriteContent:
             rewriter = rewriter_class(urlrewriter)
 
         # Create rewriting generator
-        gen = self.stream_to_gen(stream,
-                                 rewrite_func=rewriter.rewrite,
-                                 final_read_func=rewriter.close,
-                                 first_buff=first_buff)
+        gen = self.rewrite_text_stream_to_gen(stream,
+                                              rewrite_func=rewriter.rewrite,
+                                              final_read_func=rewriter.close,
+                                              first_buff=first_buff)
 
         return (status_headers, gen, True)
 
@@ -210,33 +212,48 @@ class RewriteContent:
 
         return buff
 
-    # Create a generator reading from a stream,
-    # with optional rewriting and final read call
     @staticmethod
-    def stream_to_gen(stream, rewrite_func=None,
-                      final_read_func=None, first_buff=None):
+    def stream_to_gen(stream):
+        """
+        Convert stream to an iterator, reading BUFF_SIZE bytes
+        """
+        try:
+            while True:
+                buff = stream.read(RewriteContent.BUFF_SIZE)
+                yield buff
+                if not buff:
+                    break
+
+        finally:
+            stream.close()
+
+    @staticmethod
+    def rewrite_text_stream_to_gen(stream, rewrite_func,
+                                   final_read_func, first_buff):
+        """
+        Convert stream to generator using applying rewriting func
+        to each portion of the stream. Align to line boundaries
+        """
         try:
             if first_buff:
                 buff = first_buff
             else:
-                buff = stream.read()
+                buff = stream.read(RewriteContent.BUFF_SIZE)
                 if buff and (not hasattr(stream, 'closed') or
                              not stream.closed):
                     buff += stream.readline()
 
             while buff:
-                if rewrite_func:
-                    buff = rewrite_func(buff)
+                buff = rewrite_func(buff)
                 yield buff
-                buff = stream.read()
+                buff = stream.read(RewriteContent.BUFF_SIZE)
                 if buff:
                     buff += stream.readline()
 
             # For adding a tail/handling final buffer
-            if final_read_func:
-                buff = final_read_func()
-                if buff:
-                    yield buff
+            buff = final_read_func()
+            if buff:
+                yield buff
 
         finally:
             stream.close()
