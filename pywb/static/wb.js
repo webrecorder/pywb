@@ -42,6 +42,10 @@ function init_banner() {
     _wb_js.create_banner_element(bid);
 }
 
+this.banner_labels = {LOADING_MSG: "Loading...",
+                      REPLAY_MSG: "This is an <b>archived</b> page from ",
+                      LIVE_MSG: "This is a <b>live</b> page loaded on "};
+
 this.create_banner_element = function() {
     // No banner by default
     return null;

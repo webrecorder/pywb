@@ -25,10 +25,6 @@ This file is part of pywb.
 _wb_js.create_banner_element = function(banner_id)
 {
 
-    var banner_labels = {LOADING_MSG: "Loading...",
-                         REPLAY_MSG: "This is an <b>archived</b> page from ",
-                         LIVE_MSG: "This is a <b>live</b> page loaded on "};
-
     var banner = document.createElement("wb_div");
     banner.setAttribute("id", banner_id);
     banner.setAttribute("lang", "en");
@@ -36,11 +32,11 @@ _wb_js.create_banner_element = function(banner_id)
     var text;
 
     if (wbinfo.is_frame) {
-        text = banner_labels.LOADING_MSG;
+        text = _wb_js.banner_labels.LOADING_MSG;
     } else if (wbinfo.is_live) {
-        text = banner_labels.LIVE_MSG;
+        text = _wb_js.banner_labels.LIVE_MSG;
     } else {
-        text = banner_labels.REPLAY_MSG;
+        text = _wb_js.banner_labels.REPLAY_MSG;
     }
     
     text = "<span id='_wb_label'>" + text + "</span>";

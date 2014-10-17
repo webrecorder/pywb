@@ -84,9 +84,9 @@ function set_state(state) {
     var label = document.getElementById("_wb_label");
     if (label) {
         if (state.is_live) {
-            label.innerHTML = _wb_js.labels.LIVE_MSG;
+            label.innerHTML = _wb_js.banner_labels.LIVE_MSG;
         } else {
-            label.innerHTML = _wb_js.labels.REPLAY_MSG;
+            label.innerHTML = _wb_js.banner_labels.REPLAY_MSG;
         }
     }
 
@@ -146,4 +146,9 @@ function update_wb_url(url, ts, is_live) {
     capture_str = _wb_js.ts_to_date(ts, true);
 
     push_state(url, ts, capture_str, is_live);
+}
+
+// Load Banner
+if (_wb_js) {
+    _wb_js.load();
 }
