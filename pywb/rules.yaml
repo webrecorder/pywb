@@ -53,11 +53,17 @@ rules:
     # instagram rules
     #=================================================================
     - url_prefix: 'net,cloudfront,'
+
       rewrite:
           js_regexs:
               - match: '\burl\((//[^)]+)\)'
                 rewrite: true
                 group: 1
+
+    - url_prefix: 'com,instagram)/p/'
+
+      fuzzy_lookup: '()'
+
 
      # flickr rules
     #=================================================================
@@ -91,6 +97,23 @@ rules:
     - url_prefix: 'com,google,plus)/_/'
      
       fuzzy_lookup: 'com,google,plus\)/_/.*?.*(f.sid=[^&]+)'
+
+
+    # vimeo rules
+    #=================================================================
+
+    - url_prefix: 'com,vimeo,av)/'
+
+      # only use non query part of url, ignore query
+      fuzzy_lookup: '()'
+
+    - url_prefix: 'com,vimeo,player)/log/'
+
+      fuzzy_lookup:
+          - id
+          - ownerId
+          - videoFileId
+          - signature
  
 
     # testing rules -- not for valid domain
