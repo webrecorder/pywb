@@ -11,6 +11,10 @@ pywb 0.6.2 changelist
 
 * Small improvements to streaming response, read in fixed chunks to allow better streaming from live.
 
+* Improved cookie and csrf-token rewriting, including: ability to set `cookie_scope: root` per collection to have all replayed cookies have their Path set to application root.
+
+  This is useful for replaying sites which share cookies amongst different pages and across archived time ranges.
+
 * New, implified notation for fuzzy match rules on query params (See: `Fuzzy Match Rules <https://github.com/ikreymer/pywb/wiki/Fuzzy-Match-Rules>`_)
 
 
