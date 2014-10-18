@@ -143,7 +143,13 @@ If you would like to use non-SURT ordered .cdx files, simply add this field to t
 ::
 
       surt_ordered: false
+      
+UI Customization
+"""""""""""""""""""""
 
+pywb makes it easy to customize most aspects of the UI around archived content, including a custom banner insert, query calendar, search and home pages, via HTML Jinja2 templates.
+See the config file for comment examples or read more about
+`UI Customization <https://github.com/ikreymer/pywb/wiki/UI-Customization>`_.
 
 About Wayback Machine
 ---------------------
