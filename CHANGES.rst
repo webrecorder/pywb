@@ -1,5 +1,9 @@
-pywb 0.6.1 changelist
+pywb 0.6.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
+
+* Invert framed replay paradigm: Canonical page is always without a modifier (instead of with `mp_`), if using frames, the page redirects to `tf_`, and uses replaceState() to change url back to canonical form.
+
+* Enable Memento support for framed replay, include Memento headers in top frame
 
 * Easier to customize just the banner html, via `banner_html` setting in the config. Default banner uses ui/banner.html and inserts the script default_banner.js, which creates the banner.
 

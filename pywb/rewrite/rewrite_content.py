@@ -28,7 +28,7 @@ class RewriteContent:
                                ds_rules_file=ds_rules_file)
 
         if is_framed_replay:
-            self.defmod = 'mp_'
+            self.defmod = ''
         else:
             self.defmod = ''
 

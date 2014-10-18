@@ -1,23 +1,25 @@
 var LIVE_COOKIE_REGEX = /pywb.timestamp=([\d]{1,14})/;
 
+var TS_REGEX = /\/([\d]{1,14})\//;
+
 var curr_state = {};
 
 
 function make_outer_url(url, ts)
 {
     if (ts) {
-        return wbinfo.prefix + ts + "/" + url;
+        return wbinfo.prefix + ts + "tf_/" + url;
     } else {
-        return wbinfo.prefix + url;
+        return wbinfo.prefix + "tf_/" + url;
     }
 }
 
 function make_inner_url(url, ts)
 {
     if (ts) {
-        return wbinfo.prefix + ts + "mp_/" + url;
+        return wbinfo.prefix + ts + "/" + url;
     } else {
-        return wbinfo.prefix + "mp_/" + url;
+        return wbinfo.prefix + "/" + url;
     }
 }
 
@@ -39,7 +41,7 @@ function push_state(url, timestamp, capture_str, is_live) {
     state.capture_str = capture_str;
     state.is_live = is_live;
     
-    window.history.replaceState(state, "", state.outer_url);
+    window.history.replaceState(state, "", state.inner_url);
 
     set_state(state);
 }
@@ -52,16 +54,12 @@ function pop_state(state) {
 
 function extract_ts(url)
 {
-    var inx = url.indexOf("mp_");
-    if (inx < 0) {
+    var result = value.match(TS_REGEX);
+    if (!result) {
         return "";
     }
-    url = url.substring(0, inx);
-    inx = url.lastIndexOf("/");
-    if (inx <= 0) {
-        return "";
-    }
-    return url.substring(inx + 1);
+
+    return result[1];
 }
 
 function extract_replay_url(url) {

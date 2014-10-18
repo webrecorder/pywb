@@ -25,7 +25,7 @@ class RegexRewriter(object):
 
     @staticmethod
     def archival_rewrite(rewriter):
-        return lambda string: rewriter.rewrite(string, 'mp_')
+        return lambda string: rewriter.rewrite(string)
 
     #@staticmethod
     #def replacer(other):

@@ -194,9 +194,13 @@ class WbUrl(BaseWbUrl):
                 self.mod == 'mp_')
 
     @property
+    def is_top_frame(self):
+        return (self.mod == 'tf_')
+
+    @property
     def is_embed(self):
         return (self.mod and
-                self.mod not in ('id_', 'mp_', 'bn_'))
+                self.mod not in ('id_', 'mp_', 'tf_', 'bn_'))
 
     @property
     def is_banner_only(self):

@@ -1,4 +1,4 @@
-PyWb 0.6.1
+PyWb 0.6.2
 ==========
 
 .. image:: https://travis-ci.org/ikreymer/pywb.png?branch=develop

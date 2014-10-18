@@ -118,9 +118,9 @@ function notify_top() {
 
 this.load = function() {
     if ((window.self == window.top) && wbinfo) {
-        if (wbinfo.canon_url && (window.location.href != wbinfo.canon_url) && wbinfo.mod != "bn_") {
+        if (wbinfo.top_url && (window.location.href != wbinfo.top_url) && wbinfo.mod != "bn_") {
             // Auto-redirect to top frame
-            window.location.replace(wbinfo.canon_url);
+            window.location.replace(wbinfo.top_url);
         } else {
             // Init Banner (no frame or top frame)
             add_event("readystatechange", init_banner, document);

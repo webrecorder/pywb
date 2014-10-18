@@ -6,6 +6,7 @@ from datetime import datetime
 
 from pywb.utils.wbexception import NotFoundException
 from pywb.utils.loaders import BlockLoader
+from pywb.utils.statusandheaders import StatusAndHeaders
 
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
@@ -15,6 +16,7 @@ from pywb.warc.resolvingloader import ResolvingLoader
 
 from views import J2TemplateView
 from replay_views import ReplayView
+from pywb.framework.memento import MementoResponse
 from pywb.utils.timeutils import datetime_to_timestamp
 
 
@@ -30,13 +32,21 @@ class SearchPageWbUrlHandler(WbUrlHandler):
                            'Search Page'))
 
         self.is_frame_mode = config.get('framed_replay', False)
+        self.response_class = WbResponse
 
         if self.is_frame_mode:
             html = config.get('frame_insert_html', 'ui/frame_insert.html')
             self.frame_insert_view = (J2TemplateView.
                                       create_template(html, 'Frame Insert'))
+
+            self.banner_html = config.get('banner_html', 'banner.html')
+            
+            if config.get('enable_memento', False):
+                self.response_class = MementoResponse
+
         else:
             self.frame_insert_view = None
+            self.banner_html = None
 
     def render_search_page(self, wbrequest, **kwargs):
         if self.search_view:
@@ -55,28 +65,36 @@ class SearchPageWbUrlHandler(WbUrlHandler):
         # (not supported in proxy mode)
         if (self.is_frame_mode and wbrequest.wb_url and
             not wbrequest.wb_url.is_query() and
-            not wbrequest.wb_url.mod and
             not wbrequest.options['is_proxy']):
 
-            params = self.get_top_frame_params(wbrequest)
-
-            return self.frame_insert_view.render_response(**params)
+            if wbrequest.wb_url.is_top_frame:
+                return self.get_top_frame_response(wbrequest)
+            else:
+                wbrequest.final_mod = 'tf_'
 
         return self.handle_request(wbrequest)
 
-    def get_top_frame_params(self, wbrequest):
+    def get_top_frame_response(self, wbrequest):
         if wbrequest.wb_url.timestamp:
             timestamp = wbrequest.wb_url.timestamp
         else:
             timestamp = datetime_to_timestamp(datetime.utcnow())
 
-        embed_url = wbrequest.wb_url.to_str(mod='mp_')
+        embed_url = wbrequest.wb_url.to_str(mod='')
 
-        return dict(embed_url=embed_url,
-                    wbrequest=wbrequest,
-                    timestamp=timestamp,
-                    url=wbrequest.wb_url.url,
-                    content_type='text/html')
+        params = dict(embed_url=embed_url,
+                      wbrequest=wbrequest,
+                      timestamp=timestamp,
+                      url=wbrequest.wb_url.url,
+                      banner_html=self.banner_html)
+
+        headers = [('Content-Type', 'text/html; charset=utf-8')]
+        status_headers = StatusAndHeaders('200 OK', headers)
+
+        template_result = self.frame_insert_view.render_to_string(**params)
+        body = template_result.encode('utf-8')
+
+        return self.response_class(status_headers, [body], wbrequest=wbrequest)
 
 
 #=================================================================

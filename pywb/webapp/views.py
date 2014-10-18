@@ -88,6 +88,9 @@ class J2TemplateView(object):
     def _make_loaders(self, template_dir):
         loaders = []
         loaders.append(FileSystemLoader(template_dir))
+        # add relative and absolute path loaders for banner support
+        loaders.append(FileSystemLoader('.'))
+        loaders.append(FileSystemLoader('/'))
         loaders.append(PackageLoader(self.env_globals['package'], template_dir))
         return loaders
 
@@ -128,27 +131,20 @@ class HeadInsertView(J2TemplateView):
     def create_insert_func(self, wbrequest,
                            include_ts=True):
 
-        canon_url = wbrequest.wb_prefix + wbrequest.wb_url.to_str(mod='')
+        top_url = wbrequest.wb_prefix
+        top_url += wbrequest.wb_url.to_str(mod=wbrequest.final_mod)
+
         include_wombat = not wbrequest.wb_url.is_banner_only
 
         def make_head_insert(rule, cdx):
             return (self.render_to_string(wbrequest=wbrequest,
                                           cdx=cdx,
-                                          canon_url=canon_url,
+                                          top_url=top_url,
                                           include_ts=include_ts,
                                           include_wombat=include_wombat,
                                           banner_html=self.banner_html,
                                           rule=rule))
         return make_head_insert
-
-    def _make_loaders(self, template_dir):
-        loaders = []
-        loaders.append(FileSystemLoader(template_dir))
-        # add relative and absolute path loaders
-        loaders.append(FileSystemLoader('.'))
-        loaders.append(FileSystemLoader('/'))
-        loaders.append(PackageLoader(self.env_globals['package'], template_dir))
-        return loaders
 
     @staticmethod
     def init_from_config(config):

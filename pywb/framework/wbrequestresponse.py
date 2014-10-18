@@ -51,6 +51,8 @@ class WbRequest(object):
 
         self.coll = coll
 
+        self.final_mod = ''
+
         if not host_prefix:
             host_prefix = self.make_host_prefix(env)
 
