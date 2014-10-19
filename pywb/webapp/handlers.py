@@ -74,19 +74,24 @@ class SearchPageWbUrlHandler(WbUrlHandler):
 
         return self.handle_request(wbrequest)
 
-    def get_top_frame_response(self, wbrequest):
+    def get_top_frame_params(self, wbrequest):
+        embed_url = wbrequest.wb_url.to_str(mod='')
+
         if wbrequest.wb_url.timestamp:
             timestamp = wbrequest.wb_url.timestamp
         else:
             timestamp = datetime_to_timestamp(datetime.utcnow())
-
-        embed_url = wbrequest.wb_url.to_str(mod='')
 
         params = dict(embed_url=embed_url,
                       wbrequest=wbrequest,
                       timestamp=timestamp,
                       url=wbrequest.wb_url.url,
                       banner_html=self.banner_html)
+
+        return params
+
+    def get_top_frame_response(self, wbrequest):
+        params = self.get_top_frame_params(wbrequest)
 
         headers = [('Content-Type', 'text/html; charset=utf-8')]
         status_headers = StatusAndHeaders('200 OK', headers)
@@ -125,20 +130,23 @@ class WBHandler(SearchPageWbUrlHandler):
 
     def handle_request(self, wbrequest):
         try:
-            response = self.handle_query(wbrequest)
+            cdx_lines, output = self.index_reader.load_for_request(wbrequest)
         except NotFoundException as nfe:
             return self.handle_not_found(wbrequest, nfe)
 
-        if isinstance(response, WbResponse):
-            return response
+        if output != 'text' and wbrequest.wb_url.is_replay():
+            return self.handle_replay(wbrequest, cdx_lines)
+        else:
+            return self.handle_query(wbrequest, cdx_lines, output)
 
-        cdx_lines, cdx_callback = response
-        return self.handle_replay(wbrequest, cdx_lines, cdx_callback)
+    def handle_query(self, wbrequest, cdx_lines, output):
+        return self.index_reader.make_cdx_response(wbrequest,
+                                                   cdx_lines,
+                                                   output)
 
-    def handle_query(self, wbrequest):
-        return self.index_reader.load_for_request(wbrequest)
+    def handle_replay(self, wbrequest, cdx_lines):
+        cdx_callback = self.index_reader.cdx_load_callback(wbrequest)
 
-    def handle_replay(self, wbrequest, cdx_lines, cdx_callback):
         return self.replay.render_content(wbrequest,
                                           cdx_lines,
                                           cdx_callback)
@@ -166,7 +174,8 @@ class StaticHandler(BaseHandler):
         self.block_loader = BlockLoader()
 
     def __call__(self, wbrequest):
-        full_path = self.static_path + wbrequest.wb_url_str
+        url = wbrequest.wb_url_str.split('?')[0]
+        full_path = self.static_path + url
 
         try:
             data = self.block_loader.load(full_path)

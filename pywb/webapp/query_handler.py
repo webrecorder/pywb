@@ -69,11 +69,7 @@ class QueryHandler(object):
         params['output'] = output
 
         cdx_iter = self.load_cdx(wbrequest, params)
-
-        if output != 'text' and wb_url.is_replay():
-            return (cdx_iter, self.cdx_load_callback(wbrequest))
-
-        return self.make_cdx_response(wbrequest, cdx_iter, params['output'])
+        return cdx_iter, output
 
     def load_cdx(self, wbrequest, params):
         if wbrequest:
@@ -96,12 +92,12 @@ class QueryHandler(object):
         cdx_iter = self.cdx_server.load_cdx(**params)
         return cdx_iter
 
-    def make_cdx_response(self, wbrequest, cdx_iter, output):
+    def make_cdx_response(self, wbrequest, cdx_iter, output, **kwargs):
         # if not text, the iterator is assumed to be CDXObjects
         if output and output != 'text':
             view = self.views.get(output)
             if view:
-                return view.render_response(wbrequest, cdx_iter)
+                return view.render_response(wbrequest, cdx_iter, **kwargs)
 
         return WbResponse.text_stream(cdx_iter)
 
