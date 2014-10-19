@@ -190,8 +190,9 @@ class ReplayView(object):
         if not redir_needed:
             return None
 
-        new_url = wbrequest.urlrewriter.get_timestamp_url(cdx['timestamp'],
-                                                          cdx['original'])
+        new_url = (wbrequest.urlrewriter.
+                   get_new_url(timestamp=cdx['timestamp'],
+                               url=cdx['original']))
 
         if wbrequest.method == 'POST':
 #   FF shows a confirm dialog, so can't use 307 effectively

@@ -70,14 +70,8 @@ class UrlRewriter(object):
 
         return final_url
 
-    def get_abs_url(self, url=''):
-        return self.prefix + self.wburl.to_str(url=url)
-
-    def get_timestamp_url(self, timestamp, url=None):
-        if url is None:
-            url = self.wburl.url
-
-        return self.prefix + self.wburl.to_str(timestamp=timestamp, url=url)
+    def get_new_url(self, **kwargs):
+        return self.prefix + self.wburl.to_str(**kwargs)
 
     def rebase_rewriter(self, new_url):
         if new_url.startswith(self.prefix):
@@ -148,11 +142,8 @@ class HttpsUrlRewriter(UrlRewriter):
         else:
             return url
 
-    def get_timestamp_url(self, timestamp, url=''):
-        return url
-
-    def get_abs_url(self, url=''):
-        return url
+    def get_new_url(self, **kwargs):
+        return kwargs.get('url')
 
     def rebase_rewriter(self, new_url):
         return self

@@ -79,8 +79,7 @@ class MementoRespMixin(object):
 
         elif is_memento and is_top_frame and wbrequest.wb_url.timestamp:
             # top frame special case
-            canon_link = wbrequest.urlrewriter.prefix
-            canon_link += wbrequest.wb_url.to_str(mod='')
+            canon_link = wbrequest.urlrewriter.get_new_url(mod='')
             link.append(self.make_link(canon_link, 'memento'))
 
         req_url = wbrequest.wb_url.url
@@ -95,8 +94,7 @@ class MementoRespMixin(object):
             link.append(self.make_timemap_link(wbrequest))
 
         if is_memento and not is_timegate:
-            timegate = wbrequest.urlrewriter.prefix
-            timegate += wbrequest.wb_url.to_str(mod='', timestamp='')
+            timegate = wbrequest.urlrewriter.get_new_url(mod='', timestamp='')
             link.append(self.make_link(timegate, 'timegate'))
 
         link = ', '.join(link)
@@ -109,12 +107,9 @@ class MementoRespMixin(object):
     def make_timemap_link(self, wbrequest):
         format_ = '<{0}>; rel="timemap"; type="{1}"'
 
-        prefix = wbrequest.wb_prefix
-
-        url = prefix + (wbrequest.wb_url.
-                        to_str(mod='timemap',
-                               timestamp='',
-                               type=wbrequest.wb_url.QUERY))
+        url = wbrequest.urlrewriter.get_new_url(mod='timemap',
+                                                timestamp='',
+                                                type=wbrequest.wb_url.QUERY)
 
         return format_.format(url, LINK_FORMAT)
 

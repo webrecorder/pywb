@@ -68,10 +68,10 @@
 >>> do_rewrite('file:///some/path/', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
 'file:///some/path/'
 
->>> UrlRewriter('19960708im_/http://domain.example.com/path.txt', '/abc/').get_abs_url()
+>>> UrlRewriter('19960708im_/http://domain.example.com/path.txt', '/abc/').get_new_url(url='')
 '/abc/19960708im_/'
 
->>> UrlRewriter('2013id_/example.com/file/path/blah.html', '/123/').get_timestamp_url('20131024')
+>>> UrlRewriter('2013id_/example.com/file/path/blah.html', '/123/').get_new_url(timestamp='20131024')
 '/123/20131024id_/http://example.com/file/path/blah.html'
 
 
