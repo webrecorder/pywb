@@ -168,6 +168,7 @@ class CDXDomainSpecificRule(BaseRule):
 
         """
         params_list.sort()
+
         def conv(value):
             return '[?&]({0}=[^&]+)'.format(re.escape(value))
 

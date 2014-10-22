@@ -35,8 +35,8 @@ def extract_post_query(method, mime, length, stream):
     if method.upper() != 'POST':
         return None
 
-    if (not mime or
-         not mime.lower().startswith('application/x-www-form-urlencoded')):
+    if ((not mime or
+         not mime.lower().startswith('application/x-www-form-urlencoded'))):
         return None
 
     if not length or length == '0':

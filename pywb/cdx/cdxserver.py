@@ -155,10 +155,10 @@ class CDXServer(BaseCDXServer):
             if os.path.isdir(source):
                 for fn in os.listdir(source):
                     self._add_cdx_source(self._create_cdx_source(
-                            os.path.join(source, fn), config))
+                        os.path.join(source, fn), config))
             else:
                 self._add_cdx_source(self._create_cdx_source(
-                        source, config))
+                    source, config))
 
     def _create_cdx_source(self, filename, config):
         if is_http(filename):

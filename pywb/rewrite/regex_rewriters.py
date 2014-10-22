@@ -100,7 +100,7 @@ class RegexRewriter(object):
                 group = obj.get('group', 0)
                 result = (match, replace, group)
                 return result
-            
+
             return map(parse_rule, config)
         return run_parse_rules
 

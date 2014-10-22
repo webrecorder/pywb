@@ -48,7 +48,8 @@ class MementoRespMixin(object):
 
         is_top_frame = wbrequest.wb_url.is_top_frame
 
-        is_timegate = wbrequest.options.get('is_timegate', False) and not is_top_frame
+        is_timegate = (wbrequest.options.get('is_timegate', False) and
+                       not is_top_frame)
 
         if is_timegate:
             self.status_headers.headers.append(('Vary', 'accept-datetime'))
@@ -72,7 +73,7 @@ class MementoRespMixin(object):
             is_memento = (wbrequest.wb_url.type == wbrequest.wb_url.REPLAY)
 
         link = []
-        
+
         if is_memento and cdx:
             http_date = timestamp_to_http_date(cdx['timestamp'])
             self.status_headers.headers.append(('Memento-Datetime', http_date))

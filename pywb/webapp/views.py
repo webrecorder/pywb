@@ -79,7 +79,7 @@ class J2TemplateView(object):
     def make_jinja_env(self, template_dir):
         loaders = self._make_loaders(template_dir)
         loader = ChoiceLoader(loaders)
-        
+
         jinja_env = Environment(loader=loader, trim_blocks=True)
         jinja_env.filters.update(FILTERS)
         jinja_env.globals.update(self.env_globals)
@@ -91,7 +91,8 @@ class J2TemplateView(object):
         # add relative and absolute path loaders for banner support
         loaders.append(FileSystemLoader('.'))
         loaders.append(FileSystemLoader('/'))
-        loaders.append(PackageLoader(self.env_globals['package'], template_dir))
+        loaders.append(PackageLoader(self.env_globals['package'],
+                                     template_dir))
         return loaders
 
     def render_to_string(self, **kwargs):

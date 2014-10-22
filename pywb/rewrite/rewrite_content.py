@@ -39,7 +39,8 @@ class RewriteContent:
 
         return (status_headers, stream)
 
-    def _rewrite_headers(self, urlrewriter, rule, status_headers, stream, urlkey=''):
+    def _rewrite_headers(self, urlrewriter, rule, status_headers, stream,
+                         urlkey=''):
 
         header_rewriter_class = rule.rewriters['header']
 
@@ -49,7 +50,9 @@ class RewriteContent:
             cookie_rewriter = urlrewriter.get_cookie_rewriter(rule)
 
         rewritten_headers = (header_rewriter_class().
-                             rewrite(status_headers, urlrewriter, cookie_rewriter))
+                             rewrite(status_headers,
+                                     urlrewriter,
+                                     cookie_rewriter))
 
         # note: since chunk encoding may/may not be valid,
         # the approach taken here is to *always* attempt

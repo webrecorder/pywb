@@ -116,8 +116,8 @@ def iter_range(reader, start, end, prev_size=0):
     iter_ = search(reader, start, prev_size=prev_size)
 
     end_iter = itertools.takewhile(
-       lambda line: line < end,
-       iter_)
+        lambda line: line < end,
+        iter_)
 
     return end_iter
 

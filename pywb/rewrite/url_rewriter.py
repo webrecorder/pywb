@@ -18,8 +18,8 @@ class UrlRewriter(object):
 
     PROTOCOLS = ['http:', 'https:', 'ftp:', 'mms:', 'rtsp:', 'wais:']
 
-    def __init__(self, wburl, prefix, full_prefix=None, rel_prefix=None, root_path=None,
-                 cookie_scope=None):
+    def __init__(self, wburl, prefix, full_prefix=None, rel_prefix=None, 
+                 root_path=None, cookie_scope=None):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
         self.prefix = prefix
         self.full_prefix = full_prefix

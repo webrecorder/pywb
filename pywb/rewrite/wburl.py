@@ -189,11 +189,6 @@ class WbUrl(BaseWbUrl):
                 return url
 
     @property
-    def is_mainpage(self):
-        return (not self.mod or
-                self.mod == 'mp_')
-
-    @property
     def is_top_frame(self):
         return (self.mod == 'tf_')
 
