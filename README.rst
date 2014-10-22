@@ -3,10 +3,11 @@ PyWb 0.6.3
 
 .. image:: https://travis-ci.org/ikreymer/pywb.png?branch=develop
       :target: https://travis-ci.org/ikreymer/pywb
-         
-.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=develop
-      :target: https://coveralls.io/r/ikreymer/pywb?branch=develop
-
+.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=master
+      :target: https://coveralls.io/r/ikreymer/pywb?branch=master
+.. image:: https://img.shields.io/gratipay/ikreymer.svg
+      :target: https://www.gratipay.com/ikreymer/
+      
 pywb is a python implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
 
 pywb allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
@@ -14,6 +15,19 @@ pywb allows high-quality replay (browsing) of archived web data stored in standa
 pywb can be used as a traditional web application or an HTTP or HTTPS proxy server.
 
 pywb is also fully compliant with the `Memento <http://mementoweb.org/>`_ protocol (`RFC-7089 <http://tools.ietf.org/html/rfc7089>`_).
+
+
+Public Projects Using Pywb
+---------------------------
+
+Several organizations run public services which use pywb that you may explore directly:
+
+* `Webenact <http://webenact.rhizome.org/excellences-and-perfections/>`_ from `rhizome.org <https://rhizome.org>`_, features artist focused social media reenactments. (Featured in `NYTimes Bits Blog <http://bits.blogs.nytimes.com/2014/10/19/a-new-tool-to-preserve-moments-on-the-internet>`_)
+
+* `Perma.cc <https://perma.cc>`_ embeds pywb as part of a larger `open source application <https://github.com/harvard-lil/perma>`_ to provide web archive replay for law libraries.
+
+* `WebRecorder.io <https://webrecorder.io>`_ uses pywb and builds upon pywb-webrecorder to create a hosted web recording and replay system.
+
 
 Usage Examples
 -----------------------------
@@ -25,12 +39,6 @@ This README contains a basic overview of using pywb. After reading this intro, c
 * `pywb-samples <https://github.com/ikreymer/pywb-samples>`_ provides additional archive samples with difficult-to-replay content.
 
 * `pywb-proxy-demo <https://github.com/ikreymer/pywb-proxy-demo>`_ showcases the revamped HTTP/S proxy replay system (available from pywb 0.6.0)
-
-The following deployed applications use pywb:
-
-* https://perma.cc embeds pywb as part of a larger `open source application <https://github.com/harvard-lil/perma>`_ to provide web archive replay for law libraries.
-
-* https://webrecorder.io uses pywb and builds upon pywb-webrecorder to create a hosted web recording and replay system.
 
 
 pywb Tools Overview
@@ -191,3 +199,6 @@ archiving replay!
 Please take a look at list of current
 `issues <https://github.com/ikreymer/pywb/issues?state=open>`_ and feel
 free to open new ones.
+
+.. image:: https://cdn.rawgit.com/gratipay/gratipay-badge/2.0.1/dist/gratipay.png
+      :target: https://www.gratipay.com/ikreymer/
