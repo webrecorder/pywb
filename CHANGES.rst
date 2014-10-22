@@ -1,6 +1,8 @@
 pywb 0.6.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* Minor fixes for extensability and support https://webrecorder.io, easier to override any request (handle_request), handle_replay or handle_query via WBHandler
+
 
 pywb 0.6.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
