@@ -136,9 +136,9 @@ class WSGIApp(object):
             err_details = None
 
         if error_view:
-            if err_url:
+            if err_url and isinstance(err_url, str):
                 err_url = err_url.decode('utf-8', 'ignore')
-            if err_msg:
+            if err_msg and isinstance(err_msg, str):
                 err_msg = err_msg.decode('utf-8', 'ignore')
 
             return error_view.render_response(exc_type=type(exc).__name__,
