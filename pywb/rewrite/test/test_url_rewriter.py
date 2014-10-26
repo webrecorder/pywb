@@ -74,6 +74,18 @@
 >>> UrlRewriter('2013id_/example.com/file/path/blah.html', '/123/').get_new_url(timestamp='20131024')
 '/123/20131024id_/http://example.com/file/path/blah.html'
 
+# deprefix tests
+>>> do_deprefix('2013id_/http://example.com/file/path/blah.html?param=http://localhost:8080/pywb/20141226/http://example.com/', '/pywb/', 'http://localhost:8080/pywb/')
+'http://example.com/file/path/blah.html?param=http://example.com/'
+
+>>> do_deprefix('2013id_/http://example.com/file/path/blah.html?param=http://localhost:8080/pywb/if_/https://example.com/filename.html', '/pywb/', 'http://localhost:8080/pywb/')
+'http://example.com/file/path/blah.html?param=https://example.com/filename.html'
+
+>>> do_deprefix('2013id_/http://example.com/file/path/blah.html?param=http://localhost:8080/pywb/https://example.com/filename.html', '/pywb/', 'http://localhost:8080/pywb/')
+'http://example.com/file/path/blah.html?param=https://example.com/filename.html'
+
+>>> do_deprefix('http://example.com/file.html?param=http://localhost:8080/pywb/https%3A//example.com/filename.html&other=value&a=b&param2=http://localhost:8080/pywb/http://test.example.com', '/pywb/', 'http://localhost:8080/pywb/')
+'http://example.com/file.html?param=https://example.com/filename.html&other=value&a=b&param2=http://test.example.com'
 
 # HttpsUrlRewriter tests
 >>> HttpsUrlRewriter('http://example.com/', None).rewrite('https://example.com/abc')
@@ -86,11 +98,20 @@
 
 
 from pywb.rewrite.url_rewriter import UrlRewriter, HttpsUrlRewriter
-
+import urllib
 
 def do_rewrite(rel_url, base_url, prefix, mod=None, full_prefix=None):
     rewriter = UrlRewriter(base_url, prefix, full_prefix=full_prefix)
     return rewriter.rewrite(rel_url, mod)
+
+
+def do_deprefix(url, rel_prefix, full_prefix):
+    encoded = urllib.quote_plus(full_prefix)
+    url = url.replace(full_prefix, encoded)
+
+    rewriter = UrlRewriter(url, rel_prefix, full_prefix)
+    url = rewriter.deprefix_url()
+    return urllib.unquote_plus(url)
 
 
 if __name__ == "__main__":
