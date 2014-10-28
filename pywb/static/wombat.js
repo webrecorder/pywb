@@ -20,7 +20,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
 //============================================
 // Wombat JS-Rewriting Library v2.0
 //============================================
-var _WBWombat = (function() {
+window._WBWombat = (function() {
 
     // Globals
     var wb_replay_prefix;
