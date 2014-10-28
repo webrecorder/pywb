@@ -115,7 +115,22 @@ rules:
           - ownerId
           - videoFileId
           - signature
- 
+
+
+    # youtube rules
+    #=================================================================
+
+    - url_prefix: 'com,youtube)/get_video_info'
+
+      fuzzy_lookup:
+          - video_id
+          - html5
+
+
+    - url_prefix: 'com,googlevideo,'
+
+      fuzzy_lookup: 'com,googlevideo.*/videoplayback?.*(id=[^&]+).*(range=[^&]+)'
+
 
     # testing rules -- not for valid domain
     #=================================================================

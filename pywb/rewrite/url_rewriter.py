@@ -138,11 +138,7 @@ class HttpsUrlRewriter(UrlRewriter):
     HTTPS = 'https://'
 
     def rewrite(self, url, mod=None):
-        if url.startswith(self.HTTPS):
-            result = self.HTTP + url[len(self.HTTPS):]
-            return result
-        else:
-            return url
+        return self.remove_https(url)
 
     def get_new_url(self, **kwargs):
         return kwargs.get('url')
@@ -155,3 +151,12 @@ class HttpsUrlRewriter(UrlRewriter):
 
     def deprefix_url(self):
         return self.wburl.url
+
+    @staticmethod
+    def remove_https(url):
+        rw = HttpsUrlRewriter
+        if url.startswith(rw.HTTPS):
+            result = rw.HTTP + url[len(rw.HTTPS):]
+            return result
+        else:
+            return url

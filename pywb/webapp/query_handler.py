@@ -68,6 +68,14 @@ class QueryHandler(object):
         params['url'] = wb_url.url
         params['output'] = output
 
+        params['filter'].append('!mimetype:-')
+
+        # get metadata
+        if wb_url.mod == 'vi_':
+            # matching metadata explicitly with special scheme
+            params['url'] = wb_url.url.replace('http:/', 'metadata:/')
+            params['filter'].append('~original:metadata://')
+
         cdx_iter = self.load_cdx(wbrequest, params)
         return cdx_iter, output
 
@@ -132,6 +140,7 @@ class QueryHandler(object):
                  'limit': limit,
                  'fl': ('urlkey,original,timestamp,' +
                         'endtimestamp,groupcount,uniqcount'),
+                 'filter':[],
                 },
 
             wburl.REPLAY:
@@ -147,6 +156,7 @@ class QueryHandler(object):
        # Not appropriate as default
        # Should be an option to configure status code filtering in general
        #         'filter': ['statuscode:[23]..|-'],
+                 'filter': [],
                  'limit': '1',
                  'resolveRevisits': True,
                 }
