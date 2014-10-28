@@ -36,7 +36,7 @@ class ArchiveLoadFailed(WbException):
 #=================================================================
 class ArcWarcRecordLoader:
     # Standard ARC v1.0 headers
-    # TODO: support ARV v2.0 also?
+    # TODO: support ARC v2.0 also?
     ARC_HEADERS = ["uri", "ip-address", "archive-date",
                    "content-type", "length"]
 
@@ -128,9 +128,14 @@ class ArcWarcRecordLoader:
         # limit stream to the length for all valid records
         stream = LimitReader.wrap_stream(stream, length)
 
-        # if empty record (error or otherwise) set status to -
+        # if empty record (error or otherwise) set status to 204
         if length == 0:
-            status_headers = StatusAndHeaders('- None', [])
+            if is_err:
+                msg = '204 Possible Error'
+            else:
+                msg = '204 No Content'
+
+            status_headers = StatusAndHeaders(msg, [])
 
         # response record or non-empty revisit: parse HTTP status and headers!
         elif (rec_type in ('response', 'revisit') and
@@ -144,8 +149,10 @@ class ArcWarcRecordLoader:
 
         # everything else: create a no-status entry, set content-type
         else:
-            content_type_header = [('Content-Type', content_type)]
-            status_headers = StatusAndHeaders('- OK', content_type_header)
+            content_type_header = [('Content-Type', content_type),
+                                   ('Content-Length', length)]
+
+            status_headers = StatusAndHeaders('200 OK', content_type_header)
 
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, status_headers,

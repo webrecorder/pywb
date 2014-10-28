@@ -168,6 +168,8 @@ class ArchiveIndexEntry(object):
         self.status = status_headers.get_statuscode()
         if not self.status:
             self.status = '-'
+        if self.status == '204' and 'Error' in status_headers.statusline:
+            self.status = '-'
 
     def set_rec_info(self, offset, length, digest):
         self.offset = str(offset)
@@ -314,11 +316,11 @@ def parse_warc_record(record):
                            get_header('Content-Type'),
                            def_mime)
 
-    # status
-    if record.rec_type in ('request', 'revisit'):
-        entry.status = '-'
-    else:
+    # status -- only for response records (by convention):
+    if record.rec_type == 'response':
         entry.extract_status(record.status_headers)
+    else:
+        entry.status = '-'
 
     # digest
     entry.digest = record.rec_headers.get_header('WARC-Payload-Digest')
