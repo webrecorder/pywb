@@ -70,6 +70,7 @@ setup(
         'jinja2',
         'surt',
         'pyyaml',
+        'youtube_dl'
        ],
     tests_require=[
         'pytest',
