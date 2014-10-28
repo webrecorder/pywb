@@ -20,7 +20,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
 //============================================
 // Wombat JS-Rewriting Library v2.0
 //============================================
-WB_wombat_init = (function() {
+var _WBWombat = (function() {
 
     // Globals
     var wb_replay_prefix;
@@ -64,7 +64,7 @@ WB_wombat_init = (function() {
         } else if (string.indexOf(arr_or_prefix) == 0) {
             return arr_or_prefix;
         }
-        
+
         return undefined;
     }
 
@@ -89,31 +89,31 @@ WB_wombat_init = (function() {
         }
         return rewritten;
     }
-    
+
     //============================================
     var HTTP_PREFIX = "http://";
     var HTTPS_PREFIX = "https://";
     var REL_PREFIX = "//";
-    
+
     var VALID_PREFIXES = [HTTP_PREFIX, HTTPS_PREFIX, REL_PREFIX];
     var IGNORE_PREFIXES = ["#", "about:", "data:", "mailto:", "javascript:"];
-    
+
     var BAD_PREFIXES;
-    
+
     function init_bad_prefixes(prefix) {
         BAD_PREFIXES = ["http:" + prefix, "https:" + prefix,
                         "http:/" + prefix, "https:/" + prefix];
     }
-    
+
     //============================================
     function rewrite_url_(url) {
         // If undefined, just return it
         if (!url) {
             return url;
         }
-        
+
         var urltype_ = (typeof url);
-        
+
         // If object, use toString
         if (urltype_ == "object") {
             url = url.toString();
@@ -129,7 +129,7 @@ WB_wombat_init = (function() {
                 return url;
             }
         }
-        
+
         // just in case wombat reference made it into url!
         url = url.replace("WB_wombat_", "");
 
@@ -166,10 +166,10 @@ WB_wombat_init = (function() {
             }
             return wb_replay_date_prefix + url;
         }
-        
+
         // Check for common bad prefixes and remove them
         prefix = starts_with(url, BAD_PREFIXES);
-        
+
         if (prefix) {
             url = extract_orig(url);
             return wb_replay_date_prefix + url;
@@ -189,16 +189,16 @@ WB_wombat_init = (function() {
         if (!href) {
             return "";
         }
-        
+
         // proxy mode: no extraction needed
         if (!wb_replay_prefix) {
             return href;
         }
-                
+
         href = href.toString();
 
         var index = href.indexOf("/http", 1);
-        
+
         // extract original url from wburl
         if (index > 0) {
             href = href.substr(index + 1);
@@ -207,12 +207,12 @@ WB_wombat_init = (function() {
             if (index >= 0) {
                 href = href.substr(index + wb_replay_prefix.length);
             }
-            if ((href.length > 4) && 
-                (href.charAt(2) == "_") && 
+            if ((href.length > 4) &&
+                (href.charAt(2) == "_") &&
                 (href.charAt(3) == "/")) {
                 href = href.substr(4);
             }
-            
+
             if (!starts_with(href, "http")) {
                 href = HTTP_PREFIX + href;
             }
@@ -225,18 +225,18 @@ WB_wombat_init = (function() {
 
         return href;
     }
-    
+
     //============================================
     // Define custom property
     function def_prop(obj, prop, value, set_func, get_func) {
         var key = "_" + prop;
         obj[key] = value;
-        
+
         try {
             Object.defineProperty(obj, prop, {
                 configurable: false,
                 enumerable: true,
-                set: function(newval) { 
+                set: function(newval) {
                     var result = set_func.call(obj, newval);
                     if (result != undefined) {
                         obj[key] = result;
@@ -256,12 +256,12 @@ WB_wombat_init = (function() {
             obj[prop] = value;
             return false;
         }
-    }      
-    
+    }
+
     //============================================
     //Define WombatLocation
-    
-    function WombatLocation(loc) {       
+
+    function WombatLocation(loc) {
         this._orig_loc = loc;
         this._orig_href = loc.href;
 
@@ -273,53 +273,53 @@ WB_wombat_init = (function() {
             return this._orig_loc.assign(rewrite_url(url));
         }
         this.reload = loc.reload;
-              
+
         // Adapted from:
         // https://gist.github.com/jlong/2428561
         var parser = document.createElement('a');
         var href = extract_orig(this._orig_href);
         parser.href = href;
-        
+
         this._autooverride = false;
-        
+
         var _set_hash = function(hash) {
             this._orig_loc.hash = hash;
             return this._orig_loc.hash;
         }
-        
+
         var _get_hash = function() {
             return this._orig_loc.hash;
         }
-        
+
         var _get_url_with_hash = function(url) {
             return url + this._orig_loc.hash;
         }
-        
+
         href = parser.href;
         var hash = parser.hash;
-        
+
         if (hash) {
             var hidx = href.lastIndexOf("#");
             if (hidx > 0) {
                 href = href.substring(0, hidx);
             }
         }
-        
+
         if (Object.defineProperty) {
             var res1 = def_prop(this, "href", href,
                                this.assign,
                                _get_url_with_hash);
-            
+
             var res2 = def_prop(this, "hash", parser.hash,
                                _set_hash,
                                _get_hash);
-            
+
             this._autooverride = res1 && res2;
         } else {
             this.href = href;
             this.hash = parser.hash;
         }
-                    
+
         this.host = parser.host;
         this.hostname = parser.hostname;
 
@@ -335,17 +335,17 @@ WB_wombat_init = (function() {
         this.toString = function() {
             return this.href;
         }
-        
+
         // Copy any remaining properties
         for (prop in loc) {
             if (this.hasOwnProperty(prop)) {
                 continue;
             }
-          
+
             if ((typeof loc[prop]) != "function") {
                 this[prop] = loc[prop];
             }
-        }       
+        }
     }
 
     //============================================
@@ -460,7 +460,7 @@ WB_wombat_init = (function() {
 
     //============================================
     function init_ajax_rewrite() {
-        if (!window.XMLHttpRequest || 
+        if (!window.XMLHttpRequest ||
             !window.XMLHttpRequest.prototype ||
             !window.XMLHttpRequest.prototype.open) {
             return;
@@ -469,7 +469,9 @@ WB_wombat_init = (function() {
         var orig = window.XMLHttpRequest.prototype.open;
 
         function open_rewritten(method, url, async, user, password) {
-            url = rewrite_url(url);
+            if (!this._no_rewrite) {
+                url = rewrite_url(url);
+            }
 
             // defaults to true
             if (async != false) {
@@ -534,7 +536,7 @@ WB_wombat_init = (function() {
         rewrite_attr(elem, "src", rewrite_url);
         rewrite_attr(elem, "href", rewrite_url);
         rewrite_attr(elem, "style", rewrite_style);
-        
+
         if (elem && elem.getAttribute && elem.getAttribute("crossorigin")) {
             elem.removeAttribute("crossorigin");
         }
@@ -545,7 +547,7 @@ WB_wombat_init = (function() {
         if (!Node || !Node.prototype) {
             return;
         }
-        
+
         function override_attr(obj, attr) {
             var setter = function(orig) {
                 var val = rewrite_url(orig);
@@ -553,15 +555,15 @@ WB_wombat_init = (function() {
                 this.setAttribute(attr, val);
                 return val;
             }
-            
+
             var getter = function(val) {
                 var res = this.getAttribute(attr);
                 return res;
             }
-            
+
             var curr_src = obj.getAttribute(attr);
-            
-            def_prop(obj, attr, curr_src, setter, getter);            
+
+            def_prop(obj, attr, curr_src, setter, getter);
         }
 
         function replace_dom_func(funcname) {
@@ -569,7 +571,7 @@ WB_wombat_init = (function() {
 
             Node.prototype[funcname] = function() {
                 var child = arguments[0];
-                
+
                 rewrite_elem(child);
 
                 var desc;
@@ -587,19 +589,19 @@ WB_wombat_init = (function() {
                 }
 
                 var created = orig.apply(this, arguments);
-                
-                if (created.tagName == "IFRAME") {          
+
+                if (created.tagName == "IFRAME") {
                     if (created.contentWindow) {
                         created.contentWindow.window.WB_wombat_location = created.contentWindow.window.location;
                     }
-                    
+
                     override_attr(created, "src");
                 }
-                    
+
 //                } else if (created.tagName == "A") {
 //                    override_attr(created, "href");
 //                }
-                
+
                 return created;
             }
         }
@@ -608,29 +610,29 @@ WB_wombat_init = (function() {
         replace_dom_func("insertBefore");
         replace_dom_func("replaceChild");
     }
-    
+
     var postmessage_rewritten;
-    
+
     //============================================
     function init_postmessage_override()
-    {   
+    {
         if (!Window.prototype.postMessage) {
             return;
         }
-        
+
         var orig = Window.prototype.postMessage;
-        
+
         postmessage_rewritten = function(message, targetOrigin, transfer) {
             if (targetOrigin && targetOrigin != "*") {
                 targetOrigin = window.location.origin;
             }
-            
+
             return orig.call(this, message, targetOrigin, transfer);
         }
-        
+
         window.postMessage = postmessage_rewritten;
         window.Window.prototype.postMessage = postmessage_rewritten;
-        
+
         for (var i = 0; i < window.frames.length; i++) {
             try {
                 window.frames[i].postMessage = postmessage_rewritten;
@@ -639,24 +641,24 @@ WB_wombat_init = (function() {
             }
         }
     }
-    
+
     //============================================
     function init_open_override()
-    {   
+    {
         if (!Window.prototype.open) {
             return;
         }
-        
+
         var orig = Window.prototype.open;
-        
+
         var open_rewritten = function(strUrl, strWindowName, strWindowFeatures) {
             strUrl = rewrite_url(strUrl);
             return orig.call(this, strUrl, strWindowName, strWindowFeatures);
         }
-        
+
         window.open = open_rewritten;
         window.Window.prototype.open = open_rewritten;
-        
+
         for (var i = 0; i < window.frames.length; i++) {
             try {
                 window.frames[i].open = open_rewritten;
@@ -665,41 +667,41 @@ WB_wombat_init = (function() {
             }
         }
     }
-    
+
     function init_cookies_override()
     {
         var cookie_path_regex = /\bPath=\'?\"?([^;'"\s]+)/i;
-        
+
         var get_cookie = function() {
             return document.cookie;
         }
-        
+
         var set_cookie = function(value) {
             var matched = value.match(cookie_path_regex);
-                        
+
             // if has cookie path, rewrite and replace
             if (matched) {
                 var rewritten = rewrite_url(matched[1]);
                 value = value.replace(matched[1], rewritten);
             }
-            
+
             document.cookie = value;
         }
-        
+
         def_prop(document, "WB_wombat_cookie", document.cookie,
                 set_cookie,
                 get_cookie);
     }
-    
+
     //============================================
     function init_write_override()
     {
         document.write = function(string) {
             var doc = new DOMParser().parseFromString(string, "text/html");
-            
+
             if (doc) {
                 var children = doc.body.children;
-                
+
                 for (var i = 0; i < children.length; i++) {
                     document.body.appendChild(children[i]);
                 }
@@ -710,52 +712,52 @@ WB_wombat_init = (function() {
     //============================================
     function wombat_init(replay_prefix, capture_date, orig_scheme, orig_host, timestamp, mod) {
         wb_replay_prefix = replay_prefix;
-        
+
         if (wb_replay_prefix) {
             wb_replay_date_prefix = replay_prefix + capture_date + mod + "/";
-            
+
             if (capture_date.length > 0) {
                 wb_capture_date_part = "/" + capture_date + "/";
             } else {
                 wb_capture_date_part = "";
             }
-            
+
             wb_orig_scheme = orig_scheme + '://';
-    
+
             wb_orig_host = wb_orig_scheme + orig_host;
-            
+
             init_bad_prefixes(replay_prefix);
         }
 
         // Location
         var wombat_location = new WombatLocation(window.self.location);
-        
+
         if (wombat_location._autooverride) {
-                        
+
             var setter = function(val) {
-                if (typeof(val) == "string") { 
+                if (typeof(val) == "string") {
                     if (starts_with(val, "about:")) {
                         return undefined;
                     }
                     this._WB_wombat_location.href = val;
                 }
             }
-            
+
             def_prop(window, "WB_wombat_location", wombat_location, setter);
             def_prop(document, "WB_wombat_location", wombat_location, setter);
         } else {
             window.WB_wombat_location = wombat_location;
             document.WB_wombat_location = wombat_location;
-            
+
             // Check quickly after page load
-            setTimeout(check_all_locations, 500);   
-      
+            setTimeout(check_all_locations, 500);
+
             // Check periodically every few seconds
             setInterval(check_all_locations, 500);
         }
-        
+
         var is_framed = (window.top.wbinfo && window.top.wbinfo.is_frame);
-        
+
         function find_next_top(win) {
             while ((win.parent != win) && (win.parent != win.top)) {
                 win = win.parent;
@@ -766,9 +768,9 @@ WB_wombat_init = (function() {
         if (window.self.location != window.top.location) {
             if (is_framed) {
                 window.top.WB_wombat_location = window.WB_wombat_location;
-                
+
                 window.WB_wombat_top = find_next_top(window.self);
-                
+
             } else {
                 window.top.WB_wombat_location = new WombatLocation(window.top.location);
                 window.WB_wombat_top = window.top;
@@ -788,20 +790,20 @@ WB_wombat_init = (function() {
         // History
         copy_history_func(window.history, 'pushState');
         copy_history_func(window.history, 'replaceState');
-        
+
         // open
         init_open_override();
 
         // postMessage
         init_postmessage_override();
-        
+
         // write
         init_write_override();
-        
+
         // Ajax
         init_ajax_rewrite();
         init_worker_override();
-        
+
         // Cookies
         init_cookies_override();
 
@@ -810,6 +812,9 @@ WB_wombat_init = (function() {
 
         // Random
         init_seeded_random(timestamp);
+
+        // expose functions
+        this.extract_orig = extract_orig;
     }
 
     return wombat_init;

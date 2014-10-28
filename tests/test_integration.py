@@ -98,7 +98,7 @@ class TestWb:
 
         assert '"20140127171238"' in resp.body
         assert 'wb.js' in resp.body
-        assert 'WB_wombat_init' in resp.body
+        assert 'new _WBWombat' in resp.body, resp.body
         assert '/pywb/20140127171238/http://www.iana.org/time-zones"' in resp.body
 
     def test_replay_non_frame_content(self):
@@ -149,7 +149,7 @@ class TestWb:
         assert 'wb.js' in resp.body
 
         # no wombat present
-        assert 'WB_wombat_init' not in resp.body
+        assert '_WBWombat' not in resp.body
 
         # url not rewritten
         #assert '"http://www.iana.org/domains/example"' in resp.body
