@@ -101,7 +101,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
         if self.default_proxy:
             proxies = {'http': self.default_proxy}
 
-            headers = {'Content-Type': content_type}
+            headers = self._live_request_headers(wbrequest)
+            headers['Content-Type'] = content_type
 
             url = HttpsUrlRewriter.remove_https(wbrequest.wb_url.url)
 
