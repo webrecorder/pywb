@@ -41,10 +41,23 @@ __wbvidrw = (function() {
             already_checked = true;
             check_replacement(embeds[i], embeds[i].getAttribute("src"));
         }
+
+        if (wbinfo.url.indexOf("://www.youtube.com/watch") > 0) {
+            var ytvideo = document.getElementsByTagName("video");
+            if (ytvideo.length == 1) {
+                if (ytvideo[0].getAttribute("data-youtube-id") != "") {
+                    check_replacement(ytvideo[0], wbinfo.url);
+                }
+            }
+        }
     }
 
     function check_replacement(elem, src) {
         if (!src) {
+            return;
+        }
+
+        if (src.indexOf("javascript:") == 0) {
             return;
         }
 
@@ -66,9 +79,24 @@ __wbvidrw = (function() {
         var video_url = video_info.url;
         video_url = wbinfo.prefix + video_url;
 
+        var tag = elem.tagName.toLowerCase();
         console.log("REPLACING: " + video_url);
-        var width = elem.getAttribute("width");
-        var height = elem.getAttribute("height");
+
+        var width, height;
+
+        if (tag == "video") {
+            elem = elem.parentNode;
+            elem = elem.parentNode;
+
+            width = elem.clientWidth;
+            height = elem.clientHeight;
+
+            elem = elem.parentNode;
+            //elem.parentNode.setAttribute("id", "_wb_vid");
+        } else {
+            width = elem.clientWidth;
+            height = elem.clientHeight;
+        }
 
         console.log(video_info.ext);
 
@@ -94,14 +122,16 @@ __wbvidrw = (function() {
             console.log("html5 video success");
         });
 
-        console.log(elem.tagName);
-
-        if (elem.tagName.toLowerCase() == "iframe") {
+        if (tag == "iframe") {
             elem.parentNode.replaceChild(htmlvideo, elem);
-        } else if (elem.tagName.toLowerCase() == "embed") {
+        } else if (tag == "embed") {
             if (elem.parentNode && elem.parentElement.tagName.toLowerCase() == "object") {
                 elem = elem.parentNode;
             }
+            elem.parentNode.replaceChild(htmlvideo, elem);
+        } else if (tag == "video") {
+        //    elem = elem.parentNode;
+        //    elem = elem.parentNode;
             elem.parentNode.replaceChild(htmlvideo, elem);
         }
     }
