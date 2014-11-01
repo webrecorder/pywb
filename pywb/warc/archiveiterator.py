@@ -32,12 +32,11 @@ class ArchiveIterator(object):
 
         self.member_info = None
 
-    def iter_records(self):
+    def iter_records(self, block_size=16384):
         """ iterate over each record
         """
 
         decomp_type = 'gzip'
-        block_size = 16384
 
         self.reader = DecompressingBufferedReader(self.fh,
                                                   block_size=block_size)
@@ -204,8 +203,9 @@ class ArchiveIndexEntry(object):
 def create_record_iter(arcv_iter, options):
     append_post = options.get('append_post')
     include_all = options.get('include_all')
+    block_size = options.get('block_size', 16384)
 
-    for record in arcv_iter.iter_records():
+    for record in arcv_iter.iter_records(block_size):
         entry = None
 
         if not include_all and (record.status_headers.get_statuscode() == '-'):
