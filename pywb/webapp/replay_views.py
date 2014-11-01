@@ -15,6 +15,8 @@ from pywb.warc.recordloader import ArchiveLoadFailed
 from views import J2TemplateView, add_env_globals
 from views import J2HtmlCapturesView, HeadInsertView
 
+from rangecache import range_cache
+
 
 #=================================================================
 class CaptureException(WbException):
@@ -77,7 +79,7 @@ class ReplayView(object):
 
                     first = False
 
-                response = self.replay_capture(wbrequest,
+                response = self.cached_replay_capture(wbrequest,
                                                cdx,
                                                cdx_loader,
                                                failed_files)
@@ -98,6 +100,23 @@ class ReplayView(object):
             last_e = NotFoundException(msg)
 
         raise last_e
+
+
+    def cached_replay_capture(self, wbrequest, cdx, cdx_loader, failed_files):
+        def get_capture():
+            return self.replay_capture(wbrequest, cdx, cdx_loader, failed_files)
+
+        range_status, range_iter = range_cache(wbrequest,
+                                               cdx,
+                                               get_capture)
+        if range_status and range_iter:
+            response = self.response_class(range_status,
+                                           range_iter,
+                                           wbrequest=wbrequest,
+                                           cdx=cdx)
+            return response
+
+        return get_capture()
 
     def replay_capture(self, wbrequest, cdx, cdx_loader, failed_files):
         (status_headers, stream) = (self.content_loader.

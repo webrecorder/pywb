@@ -3,30 +3,11 @@ from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.rewrite.wburl import WbUrl
 
+from cache import create_cache
+
 import urlparse
 import base64
 import os
-
-try:  # pragma: no cover
-    import uwsgi
-    uwsgi_cache = True
-except ImportError:
-    uwsgi_cache = False
-
-
-#=================================================================
-class UwsgiCache(object):  # pragma: no cover
-    def __setitem__(self, item, value):
-        uwsgi.cache_update(item, value)
-
-    def __getitem__(self, item):
-        return uwsgi.cache_get(item)
-
-    def __contains__(self, item):
-        return uwsgi.cache_exists(item)
-
-    def __delitem__(self, item):
-        uwsgi.cache_del(item)
 
 
 #=================================================================
@@ -136,10 +117,7 @@ class CookieResolver(BaseCollResolver):
 
         self.extra_headers = config.get('extra_headers')
 
-        if uwsgi_cache:  # pragma: no cover
-            self.cache = UwsgiCache()
-        else:
-            self.cache = {}
+        self.cache = create_cache()
 
     def get_proxy_coll_ts(self, env):
         coll, ts, sesh_id = self.get_coll(env)

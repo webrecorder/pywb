@@ -38,4 +38,9 @@ class TestLiveRewriter:
         resp = self.testapp.get('/rewrite/@#$@#$', status=400)
         assert resp.status_int == 400
 
+    def test_live_video_info(self):
+        resp = self.testapp.get('/rewrite/vi_/https://www.youtube.com/watch?v=DjFZyFWSt1M')
+        assert resp.status_int == 200
+        assert resp.content_type == 'application/vnd.youtube-dl_formats+json', resp.content_type
+
 

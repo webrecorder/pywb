@@ -13,7 +13,8 @@ from pywb.utils.wbexception import WbException
 
 import json
 import requests
-from youtube_dl import YoutubeDL
+
+from rangecache import range_cache
 
 
 #=================================================================
@@ -26,6 +27,8 @@ class LiveResourceException(WbException):
 class RewriteHandler(SearchPageWbUrlHandler):
 
     LIVE_COOKIE = 'pywb.timestamp={0}; max-age=60'
+
+    youtubedl = None
 
     def __init__(self, config):
         super(RewriteHandler, self).__init__(config)
@@ -84,17 +87,22 @@ class RewriteHandler(SearchPageWbUrlHandler):
             value = self.live_cookie.format(cdx['timestamp'])
             status_headers.headers.append(('Set-Cookie', value))
 
-        return WbResponse(status_headers, gen)
+        def resp_func():
+            return WbResponse(status_headers, gen)
+
+        #range_status, range_iter = range_cache(wbrequest, cdx, resp_func)
+        #if range_status and range_iter:
+        #    return WbResponse(range_status, range_iter)
+        #else:
+        return resp_func()
 
 
     def get_video_info(self, wbrequest):
-        if not self.ydl:
-            self.ydl = YoutubeDL(dict(simulate=True,
-                                      youtube_include_dash_manifest=False))
+        if not self.youtubedl:
+            self.youtubedl = YoutubeDLWrapper()
 
-            self.ydl.add_default_info_extractors()
+        info = self.youtubedl.extract_info(wbrequest.wb_url.url)
 
-        info = self.ydl.extract_info(wbrequest.wb_url.url)
         content_type = 'application/vnd.youtube-dl_formats+json'
         metadata = json.dumps(info)
 
@@ -117,6 +125,42 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
     def __str__(self):
         return 'Live Web Rewrite Handler'
+
+
+#=================================================================
+class YoutubeDLWrapper(object):
+    """ Used to wrap youtubedl import, since youtubedl currently overrides
+    global HTMLParser.locatestarttagend regex with a different regex
+    that doesn't quite work.
+
+    This wrapper ensures that this regex is only set for YoutubeDL and unset
+    otherwise
+    """
+    def __init__(self):
+        import HTMLParser as htmlparser
+        self.htmlparser = htmlparser
+
+        self.orig_tagregex = htmlparser.locatestarttagend
+
+        from youtube_dl import YoutubeDL as YoutubeDL
+
+        self.ydl_tagregex = htmlparser.locatestarttagend
+
+        htmlparser.locatestarttagend = self.orig_tagregex
+
+        self.ydl = YoutubeDL(dict(simulate=True,
+                                  youtube_include_dash_manifest=False))
+        self.ydl.add_default_info_extractors()
+
+    def extract_info(self, url):
+        info = None
+        try:
+            self.htmlparser.locatestarttagend = self.ydl_tagregex
+            info = self.ydl.extract_info(url)
+        finally:
+            self.htmlparser.locatestarttagend = self.orig_tagregex
+
+        return info
 
 
 #=================================================================
