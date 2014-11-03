@@ -35,10 +35,14 @@ function init_banner() {
         bid = PLAIN_BANNER_ID;
     }
 
+    if (!document || !document.body) {
+        return;
+    }
+
     if (document.getElementById(bid) != null) {
         return;
     }
-    
+
     _wb_js.create_banner_element(bid);
 }
 
@@ -56,14 +60,14 @@ this.ts_to_date = function(ts, is_gmt)
     if (ts.length < 14) {
         return ts;
     }
-    
+
     var datestr = (ts.substring(0, 4) + "-" + 
                   ts.substring(4, 6) + "-" +
                   ts.substring(6, 8) + "T" +
                   ts.substring(8, 10) + ":" +
                   ts.substring(10, 12) + ":" +
                   ts.substring(12, 14) + "-00:00");
-    
+
     var date = new Date(datestr);
     if (is_gmt) {
         return date.toGMTString();
