@@ -33,7 +33,8 @@ class HTMLRewriterMixin(object):
             'embed':   {'src': 'oe_'},
             'head':    {'': defmod},  # for head rewriting
             'iframe':  {'src': 'if_'},
-            'img':     {'src': 'im_'},
+            'img':     {'src': 'im_',
+                        'srcset': 'im_'},
             'ins':     {'cite': defmod},
             'input':   {'src': 'im_'},
             'form':    {'action': defmod},
@@ -117,6 +118,11 @@ class HTMLRewriterMixin(object):
         else:
             return None
 
+    def _rewrite_srcset(self, value, mod=''):
+        values = value.split(',')
+        values = map(lambda x: self._rewrite_url(x.strip()), values)
+        return ', '.join(values)
+
     def _rewrite_css(self, css_content):
         if css_content:
             return self.css_rewriter.rewrite(css_content)
@@ -168,6 +174,11 @@ class HTMLRewriterMixin(object):
             # special case: inline CSS/style attribute
             elif attr_name == 'style':
                 attr_value = self._rewrite_css(attr_value)
+
+            # special case: srcset list
+            elif attr_name == 'srcset':
+                rw_mod = handler.get(attr_name, '')
+                attr_value = self._rewrite_srcset(attr_value, rw_mod)
 
             # special case: disable crossorigin attr
             # as they may interfere with rewriting semantics
