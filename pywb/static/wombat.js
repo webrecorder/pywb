@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.0
+// Wombat JS-Rewriting Library v2.1
 //============================================
 window._WBWombat = (function() {
 
@@ -386,10 +386,10 @@ window._WBWombat = (function() {
         // String has been assigned to location, so assign it
         if (locType == "string") {
             update_location(wombat_loc, actual_location.href, actual_location);
-            
+
         } else if (locType == "object") {
             update_location(wombat_loc.href,
-                            wombat_loc._orig_href, 
+                            wombat_loc._orig_href,
                             actual_location);
         }
     }
@@ -485,6 +485,42 @@ window._WBWombat = (function() {
     }
 
     //============================================
+    function init_setAttribute_override()
+    {
+        if (!window.Element ||
+            !window.Element.prototype ||
+            !window.Element.prototype.setAttribute) {
+            return;
+        }
+
+        var orig_setAttribute = window.Element.prototype.setAttribute;
+
+        Element.prototype.setAttribute = function(name, value) {
+            if (name) {
+                var lowername = name.toLowerCase();
+                if (lowername == "src" || lowername == "href") {
+                    if (!this._no_rewrite) {
+                        value = rewrite_url(value);
+                    }
+                }
+            }
+
+            orig_setAttribute.call(this, name, value);
+        };
+    }
+
+    //============================================
+    function init_image_override() {
+        window.Image = function (Image) {
+            return function (width, height) {
+                var image = new Image(width, height);
+                override_attr(image, "src");
+                return image;
+            }
+        }(Image);
+    }
+
+    //============================================
     function init_worker_override() {
         if (!window.Worker) {
             return;
@@ -511,8 +547,11 @@ window._WBWombat = (function() {
             return;
         }
 
-        value = func(value);
+        if (func) {
+            value = func(value);
+        }
 
+        // this now handles the actual rewrite
         elem.setAttribute(name, value);
     }
 
@@ -533,8 +572,8 @@ window._WBWombat = (function() {
     //============================================
     function rewrite_elem(elem)
     {
-        rewrite_attr(elem, "src", rewrite_url);
-        rewrite_attr(elem, "href", rewrite_url);
+        rewrite_attr(elem, "src");
+        rewrite_attr(elem, "href");
         rewrite_attr(elem, "style", rewrite_style);
 
         if (elem && elem.getAttribute && elem.getAttribute("crossorigin")) {
@@ -543,27 +582,28 @@ window._WBWombat = (function() {
     }
 
     //============================================
+    function override_attr(obj, attr) {
+        var setter = function(orig) {
+            //var val = rewrite_url(orig);
+            var val = orig;
+            this.setAttribute(attr, val);
+            return val;
+        }
+
+        var getter = function(val) {
+            var res = this.getAttribute(attr);
+            return res;
+        }
+
+        var curr_src = obj.getAttribute(attr);
+
+        def_prop(obj, attr, curr_src, setter, getter);
+    }
+
+    //============================================
     function init_dom_override() {
         if (!Node || !Node.prototype) {
             return;
-        }
-
-        function override_attr(obj, attr) {
-            var setter = function(orig) {
-                var val = rewrite_url(orig);
-                //console.log(orig + " -> " + val);
-                this.setAttribute(attr, val);
-                return val;
-            }
-
-            var getter = function(val) {
-                var res = this.getAttribute(attr);
-                return res;
-            }
-
-            var curr_src = obj.getAttribute(attr);
-
-            def_prop(obj, attr, curr_src, setter, getter);
         }
 
         function replace_dom_func(funcname) {
@@ -596,8 +636,9 @@ window._WBWombat = (function() {
                     }
 
                     override_attr(created, "src");
+                } else if (created.tagName == "IMG") {
+                    override_attr(created, "src");
                 }
-
 //                } else if (created.tagName == "A") {
 //                    override_attr(created, "href");
 //                }
@@ -611,8 +652,6 @@ window._WBWombat = (function() {
         replace_dom_func("replaceChild");
     }
 
-    var postmessage_rewritten;
-
     //============================================
     function init_postmessage_override()
     {
@@ -622,7 +661,7 @@ window._WBWombat = (function() {
 
         var orig = Window.prototype.postMessage;
 
-        postmessage_rewritten = function(message, targetOrigin, transfer) {
+        var postmessage_rewritten = function(message, targetOrigin, transfer) {
             if (targetOrigin && targetOrigin != "*") {
                 targetOrigin = window.location.origin;
             }
@@ -668,6 +707,7 @@ window._WBWombat = (function() {
         }
     }
 
+    //============================================
     function init_cookies_override()
     {
         var cookie_path_regex = /\bPath=\'?\"?([^;'"\s]+)/i;
@@ -803,6 +843,12 @@ window._WBWombat = (function() {
         // Ajax
         init_ajax_rewrite();
         init_worker_override();
+
+        // setAttribute
+        init_setAttribute_override();
+
+        // Image
+        init_image_override();
 
         // Cookies
         init_cookies_override();
