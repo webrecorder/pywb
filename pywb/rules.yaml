@@ -129,7 +129,7 @@ rules:
 
     - url_prefix: 'com,googlevideo,'
 
-      fuzzy_lookup: 'com,googlevideo.*/videoplayback?.*(id=[^&]+).*(range=[^&]+)'
+      fuzzy_lookup: 'com,googlevideo.*/videoplayback?.*(id=[^&]).*(mime=[^&]).*(signature=[^&])'
 
 
     # testing rules -- not for valid domain

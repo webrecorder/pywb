@@ -201,6 +201,9 @@ class ReplayView(object):
         if wbrequest.options['is_proxy']:
             return None
 
+        if range_cache and range_cache.match_yt(wbrequest.wb_url.url):
+            return None
+
         redir_needed = (wbrequest.options.get('is_timegate', False))
 
         if not redir_needed and self.redir_to_exact:

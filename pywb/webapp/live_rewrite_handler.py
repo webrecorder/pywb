@@ -70,32 +70,37 @@ class RewriteHandler(SearchPageWbUrlHandler):
         if ref_wburl_str:
             wbrequest.env['REL_REFERER'] = WbUrl(ref_wburl_str).url
 
-        result = self.rewriter.fetch_request(wbrequest.wb_url.url,
-                                             wbrequest.urlrewriter,
-                                             head_insert_func=head_insert_func,
-                                             req_headers=req_headers,
-                                             env=wbrequest.env)
+        def do_req():
+            result = self.rewriter.fetch_request(wbrequest.wb_url.url,
+                                                 wbrequest.urlrewriter,
+                                                 head_insert_func=head_insert_func,
+                                                 req_headers=req_headers,
+                                                 env=wbrequest.env)
 
-        return self._make_response(wbrequest, *result)
+            return self._make_response(wbrequest, *result)
+
+        cdx = dict(url=wbrequest.wb_url.url)
+
+        range_status, range_iter = range_cache(wbrequest, cdx, do_req)
+
+        if not range_status or not range_iter:
+            return do_req()
+        else:
+            result = range_status, range_iter, False
+            return self._make_response(wbrequest, *result)
+
 
     def _make_response(self, wbrequest, status_headers, gen, is_rewritten):
         # if cookie set, pass recorded timestamp info via cookie
         # so that client side may be able to access it
         # used by framed mode to update frame banner
         if self.live_cookie:
-            cdx = wbrequest.env['pywb.cdx']
-            value = self.live_cookie.format(cdx['timestamp'])
-            status_headers.headers.append(('Set-Cookie', value))
+            cdx = wbrequest.env.get('pywb.cdx')
+            if cdx:
+                value = self.live_cookie.format(cdx['timestamp'])
+                status_headers.headers.append(('Set-Cookie', value))
 
-        def resp_func():
-            return WbResponse(status_headers, gen)
-
-        #range_status, range_iter = range_cache(wbrequest, cdx, resp_func)
-        #if range_status and range_iter:
-        #    return WbResponse(range_status, range_iter)
-        #else:
-        return resp_func()
-
+        return WbResponse(status_headers, gen)
 
     def get_video_info(self, wbrequest):
         if not self.youtubedl:
