@@ -263,9 +263,19 @@ class HTMLRewriterMixin(object):
 
 #=================================================================
 class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
+    PARSETAG = re.compile('[<]')
+
     def __init__(self, *args, **kwargs):
         HTMLParser.__init__(self)
         super(HTMLRewriter, self).__init__(*args, **kwargs)
+
+    def reset(self):
+        HTMLParser.reset(self)
+        self.interesting = self.PARSETAG
+
+    def clear_cdata_mode(self):
+        HTMLParser.clear_cdata_mode(self)
+        self.interesting = self.PARSETAG
 
     def feed(self, string):
         try:
@@ -311,11 +321,12 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
     def handle_data(self, data):
         self.parse_data(data)
 
-    def handle_entityref(self, data):
-        self.out.write('&' + data + ';')
-
-    def handle_charref(self, data):
-        self.out.write('&#' + data + ';')
+    # overriding regex so that these are no longer called
+    #def handle_entityref(self, data):
+    #    self.out.write('&' + data + ';')
+    #
+    #def handle_charref(self, data):
+    #    self.out.write('&#' + data + ';')
 
     def handle_comment(self, data):
         self.out.write('<!--')
