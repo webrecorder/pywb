@@ -28,8 +28,11 @@ ur"""
 <base href="/web/20131226101010/http://example.com/some/path/static/"/><img src="/web/20131226101010im_/http://example.com/some/path/static/image.gif"/>
 
 # HTML Entities
->>> parse('<a href="">&rsaquo; &nbsp; &#62;</div>')
-<a href="">&rsaquo; &nbsp; &#62;</div>
+>>> parse('<a href="">&rsaquo; &nbsp; &#62; &#63</div>')
+<a href="">&rsaquo; &nbsp; &#62; &#63</div>
+
+>>> parse('<div>X&Y</div> </div>X&Y;</div>')
+<div>X&Y</div> </div>X&Y;</div>
 
 # Don't rewrite anchors
 >>> parse('<HTML><A Href="#abc">Text</a></hTmL>')
