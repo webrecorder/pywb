@@ -1,4 +1,4 @@
-PyWb 0.6.4
+PyWb 0.7.0
 ==========
 
 .. image:: https://travis-ci.org/ikreymer/pywb.png?branch=develop
@@ -7,7 +7,7 @@ PyWb 0.6.4
       :target: https://coveralls.io/r/ikreymer/pywb?branch=develop
 .. image:: https://img.shields.io/gratipay/ikreymer.svg
       :target: https://www.gratipay.com/ikreymer/
-      
+
 pywb is a python implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
 
 pywb allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
@@ -44,7 +44,7 @@ This README contains a basic overview of using pywb. After reading this intro, c
 pywb Tools Overview
 -----------------------------
 
-In addition to the standard wayback machine (explained further below), pywb tool suite includes a 
+In addition to the standard wayback machine (explained further below), pywb tool suite includes a
 number of useful command-line and web server tools. The tools should be available to run after
 running ``python setup.py install``:
 
@@ -151,7 +151,7 @@ If you would like to use non-SURT ordered .cdx files, simply add this field to t
 ::
 
       surt_ordered: false
-      
+
 UI Customization
 """""""""""""""""""""
 

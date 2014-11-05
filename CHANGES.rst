@@ -1,3 +1,9 @@
+pywb 0.7.0 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+Video Buffering Replay
+
+
 pywb 0.6.4 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -35,7 +41,7 @@ pywb 0.6.0 changelist
 
 * Revamped HTTP/S system: proxy collection and capture time switching via cookie!
 
-* removed *hostnames* setting in config.yaml. pywb no longer needs to know the host(s) it is running on, 
+* removed *hostnames* setting in config.yaml. pywb no longer needs to know the host(s) it is running on,
   can infer the correct path from referrer on a fallback handling.
 
 * remove PAC config, just using direct proxy (HTTP and HTTPS) for simplicity.
@@ -136,7 +142,7 @@ pywb 0.4.0 changelist
 
 * Improved test coverage throughout the project.
 
-* live-rewrite-server: A new web server for checking rewriting rules against live content. A white-list of request headers is sent to 
+* live-rewrite-server: A new web server for checking rewriting rules against live content. A white-list of request headers is sent to
   the destination server. See `rewrite_live.py <https://github.com/ikreymer/pywb/blob/master/pywb/rewrite/rewrite_live.py>`_ for more details.
 
 * Cookie Rewriting in Archival Mode: HTTP Set-Cookie header rewritten to remove Expires, rewrite Path and Domain. If Domain is used, Path is set to / to ensure cookie is visible from all archival urls.
@@ -155,7 +161,7 @@ pywb 0.4.0 changelist
 * New, experimental support for top-level 'frame mode', used by live-rewrite-server, to display rewritten content in a frame. The mp_ modifier is used
   to indicate the main page when top-level page is a frame.
 
-* cdx-indexer: Support for creation of non-SURT, url-ordered as well SURT-ordered CDX files. 
+* cdx-indexer: Support for creation of non-SURT, url-ordered as well SURT-ordered CDX files.
 
 * Further rewrite of wombat.js: support for window.open, postMessage overrides, additional rewriting at Node creation time, better hash change detection.
   Use ``Object.defineProperty`` whenever possible to better override assignment to various JS properties.
@@ -173,13 +179,13 @@ pywb 0.3.0 changelist
 
 * Generate cdx indexs via command-line `cdx-indexer` script. Optionally sorting, and output to either a single combined file or a file per-directory.
   Refer to ``cdx-indexer -h`` for more info.
-  
+
 * Initial support for prefix url queries, eg: http://localhost:8080/pywb/\*/http://example.com\* to query all captures from http://example.com
 
 * Support for optional LXML html-based parser for fastest possible parsing. If lxml is installed on the system and via ``pip install lxml``, lxml parser is enabled by default.
   (This can be turned off by setting ``use_lxml_parser: false`` in the config)
 
 * Full support for `Memento Protocol RFC7089 <http://www.mementoweb.org/guide/rfc/>`_ Memento, TimeGate and TimeMaps. Memento: TimeMaps in ``application/link-format`` provided via the ``/timemap/*/`` query.. eg: http://localhost:8080/pywb/timemap/\*/http://example.com
-  
+
 * pywb now features new `domain-specific rules <https://github.com/ikreymer/pywb/blob/master/pywb/rules.yaml>`_ which are applied to resolve and render certain difficult and dynamic content, in order to make accurate web replay work.
   This ruleset will be under further iteration to address further challenges as the web evoles.

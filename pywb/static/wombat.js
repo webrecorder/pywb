@@ -517,7 +517,21 @@ window._WBWombat = (function() {
                 override_attr(image, "src");
                 return image;
             }
-        }(Image);
+        }(window.Image);
+    }
+
+    //============================================
+    function init_date_override(timestamp) {
+        window.Date = function (Date) {
+            return function (A, B, C, D, E, F, G) {
+                if (arguments.length == 0) {
+                    timestamp = parseInt(timestamp) * 1000;
+                    return new Date(timestamp);
+                } else {
+                    return new Date(A, B, C, D, E, F, G);
+                }
+            }
+        }(window.Date);
     }
 
     //============================================
@@ -858,6 +872,9 @@ window._WBWombat = (function() {
 
         // Random
         init_seeded_random(timestamp);
+
+        // Date
+        init_date_override(timestamp);
 
         // expose functions
         this.extract_orig = extract_orig;

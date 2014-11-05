@@ -88,7 +88,9 @@ class LiveRewriter(object):
         method = 'GET'
         data = None
 
-        if not proxies and self.default_proxy:
+        if proxies == False:
+            proxies = None
+        elif not proxies and self.default_proxy:
             proxies = {'http': self.default_proxy,
                        'https': self.default_proxy}
 

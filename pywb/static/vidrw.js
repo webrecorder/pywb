@@ -44,11 +44,19 @@ __wbvidrw = (function() {
 
         if (wbinfo.url.indexOf("://www.youtube.com/watch") > 0) {
             var ytvideo = document.getElementsByTagName("video");
+/*
             if (ytvideo.length == 1) {
                 if (ytvideo[0].getAttribute("data-youtube-id") != "") {
-                    check_replacement(ytvideo[0], wbinfo.url);
+                    // Wait to see if video is playing, if so, don't replace it
+                    window.setTimeout(function() {
+                        if (ytvideo[0].readyState == 0) {
+                            console.log("Replacing Broken Video");
+                            check_replacement(ytvideo[0], wbinfo.url);
+                        }
+                    }, 3000);
                 }
             }
+*/
         }
     }
 

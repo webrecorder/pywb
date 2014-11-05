@@ -126,10 +126,20 @@ rules:
           - video_id
           - html5
 
+    - url_prefix: 'com,youtube,s)/api/stats/qoe'
+
+      fuzzy_lookup:
+          - docid
+
+    - url_prefix: 'com,youtube,s)/api/stats/watch'
+
+      fuzzy_lookup:
+          - docid
 
     - url_prefix: 'com,googlevideo,'
 
-      fuzzy_lookup: 'com,googlevideo.*/videoplayback?.*(id=[^&]).*(mime=[^&]).*(signature=[^&])'
+    #fuzzy_lookup: 'com,googlevideo.*/videoplayback?.*(id=[^&]).*(mime=[^&]).*(signature=[^&])'
+      fuzzy_lookup: 'com,googlevideo.*/videoplayback?.*(id=[^&]).*(mime=[^&])'
 
 
     # testing rules -- not for valid domain

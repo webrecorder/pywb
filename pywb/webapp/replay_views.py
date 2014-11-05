@@ -107,7 +107,7 @@ class ReplayView(object):
             return self.replay_capture(wbrequest, cdx, cdx_loader, failed_files)
 
         range_status, range_iter = range_cache(wbrequest,
-                                               cdx,
+                                               cdx.get('digest'),
                                                get_capture)
         if range_status and range_iter:
             response = self.response_class(range_status,
