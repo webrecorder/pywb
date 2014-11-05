@@ -20,7 +20,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
 //============================================
 // Wombat JS-Rewriting Library v2.1
 //============================================
-window._WBWombat = (function() {
+_WBWombat = (function() {
 
     // Globals
     var wb_replay_prefix;
@@ -511,6 +511,7 @@ window._WBWombat = (function() {
 
     //============================================
     function init_image_override() {
+        window.__Image = window.Image;
         window.Image = function (Image) {
             return function (width, height) {
                 var image = new Image(width, height);
@@ -522,16 +523,40 @@ window._WBWombat = (function() {
 
     //============================================
     function init_date_override(timestamp) {
+        timestamp = parseInt(timestamp) * 1000;
+        var timediff = Date.now() - timestamp;
+
+        window.__Date = window.Date;
+        window.__Date_now = window.Date.now;
+
         window.Date = function (Date) {
             return function (A, B, C, D, E, F, G) {
-                if (arguments.length == 0) {
-                    timestamp = parseInt(timestamp) * 1000;
-                    return new Date(timestamp);
+                // Apply doesn't work for constructors and Date doesn't
+                // seem to like undefined args, so must explicitly
+                // call constructor for each possible args 0..7
+                if (A === undefined) {
+                    return new Date(window.Date.now());
+                } else if (B === undefined) {
+                    return new Date(A);
+                } else if (C === undefined) {
+                    return new Date(A, B);
+                } else if (D === undefined) {
+                    return new Date(A, B, C);
+                } else if (E === undefined) {
+                    return new Date(A, B, C, D);
+                } else if (F === undefined) {
+                    return new Date(A, B, C, D, E);
+                } else if (G === undefined) {
+                    return new Date(A, B, C, D, E, F);
                 } else {
                     return new Date(A, B, C, D, E, F, G);
                 }
             }
         }(window.Date);
+
+        window.Date.now = function() {
+            return __Date_now() - timediff;
+        }
     }
 
     //============================================
@@ -874,7 +899,7 @@ window._WBWombat = (function() {
         init_seeded_random(timestamp);
 
         // Date
-        init_date_override(timestamp);
+        // init_date_override(timestamp);
 
         // expose functions
         this.extract_orig = extract_orig;
@@ -882,4 +907,6 @@ window._WBWombat = (function() {
 
     return wombat_init;
 
-})(this);
+})();
+
+window._WBWombat = _WBWombat;

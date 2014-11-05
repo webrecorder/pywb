@@ -138,8 +138,8 @@ rules:
 
     - url_prefix: 'com,googlevideo,'
 
-    #fuzzy_lookup: 'com,googlevideo.*/videoplayback?.*(id=[^&]).*(mime=[^&]).*(signature=[^&])'
-      fuzzy_lookup: 'com,googlevideo.*/videoplayback?.*(id=[^&]).*(mime=[^&])'
+      fuzzy_lookup: 'com,googlevideo.*/videoplayback?.*(id=[^&]).*(mime=[^&]).*(signature=[^&])'
+    #fuzzy_lookup: 'com,googlevideo.*/videoplayback?.*(id=[^&]).*(mime=[^&])'
 
 
     # testing rules -- not for valid domain

@@ -14,6 +14,8 @@ class RangeCache(object):
     YOUTUBE_RX = re.compile('.*.googlevideo.com/videoplayback')
     YT_EXTRACT_RX = re.compile('&range=([^&]+)')
 
+    DEFAULT_BUFF = 16384
+
     @staticmethod
     def match_yt(url):
         if not RangeCache.YOUTUBE_RX.match(url):
@@ -51,7 +53,17 @@ class RangeCache(object):
 
             use_206 = True
 
-        return url, range_h, use_206
+        # force bounded range
+        range_h = range_h.split('=')[-1]
+        range_h = range_h.rstrip()
+        parts = range_h.split('-', 1)
+        start = int(parts[0])
+        if len(parts) == 2 and parts[1]:
+            end = int(parts[1])
+        else:
+            end = start + self.DEFAULT_BUFF - 1
+
+        return url, start, end, use_206
 
     def __call__(self, wbrequest, digest, wbresponse_func):
         result = self.is_ranged(wbrequest)
@@ -62,9 +74,8 @@ class RangeCache(object):
                                  *result)
 
     def handle_range(self, wbrequest, digest, wbresponse_func,
-                     url, range_h, use_206):
+                     url, start, end, use_206):
 
-        range_h = range_h.split('=')[-1]
         key = digest
         if not key in self.cache:
             response = wbresponse_func()
@@ -90,20 +101,10 @@ class RangeCache(object):
 
         filelen = os.path.getsize(spec['name'])
 
-        range_h = range_h.rstrip()
-
-        if range_h == '0-':
-            range_h = '0-120000'
-
-        parts = range_h.rstrip().split('-')
-        start = parts[0]
-        #start = start.split('=')[1]
-        start = int(start)
-
         maxlen = filelen - start
 
-        if len(parts) == 2 and parts[1]:
-            maxlen = min(maxlen, int(parts[1]) - start + 1)
+        if end:
+            maxlen = min(maxlen, end - start + 1)
 
         def read_range():
             with open(spec['name']) as fh:

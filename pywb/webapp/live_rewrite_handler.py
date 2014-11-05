@@ -74,18 +74,27 @@ class RewriteHandler(SearchPageWbUrlHandler):
         proxies = None  # default
         ping_url = None
         ping_cache_key = None
+        ping_range_header = None
 
         if self.default_proxy and range_cache:
             rangeres = range_cache.is_ranged(wbrequest)
             if rangeres:
+                url, start, end, use_206 = rangeres
                 proxies = False
 
+                # force a bound on unbounded range
+                if use_206 and wbrequest.env['HTTP_RANGE'].endswith('-'):
+                    range_h = 'bytes={0}-{1}'.format(start, end)
+                    wbrequest.env['HTTP_RANGE'] = range_h
+                    print('BOUNDING: ' + range_h)
+
                 hash_ = hashlib.md5()
-                hash_.update(rangeres[0])
+                hash_.update(url)
                 ping_cache_key = hash_.hexdigest()
 
                 if ping_cache_key not in range_cache.cache:
-                    ping_url = rangeres[0]
+                    ping_url = url
+
 
         result = self.rewriter.fetch_request(wbrequest.wb_url.url,
                                              wbrequest.urlrewriter,
@@ -120,21 +129,25 @@ class RewriteHandler(SearchPageWbUrlHandler):
                        'https': self.default_proxy}
 
             headers = self._live_request_headers(wbrequest)
-            print('PINGING PROXY: ' + url)
-            resp = requests.get(url=url,
-                                headers=headers,
-                                proxies=proxies,
-                                verify=False,
-                                stream=True)
+            headers['Connection'] = 'close'
 
-            # don't actually read whole response, proxy response for writing it
-            resp.raw.close()
-            resp.close()
+            if key in range_cache.cache:
+                return
 
-            # mark as pinged
-            range_cache.cache[key] = '1'
+            try:
+                # mark as pinged
+                range_cache.cache[key] = '1'
 
-            return None
+                resp = requests.get(url=url,
+                                    headers=headers,
+                                    proxies=proxies,
+                                    verify=False,
+                                    stream=True)
+
+                # don't actually read whole response, proxy response for writing it
+                resp.close()
+            except:
+                del range_cache.cache[key]
 
         def check_buff_gen(gen):
             for x in gen:
