@@ -1,6 +1,18 @@
 pywb 0.6.4 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* Ignore bad multiline headers in warc.
+
+* Rewrite fix: Don't parse html entities in HTML rewriter.
+
+* Ensure cdx iterator closed when reeading.
+
+* Rewrite fix: remove pywb prefix from any query params.
+
+* Rewrite fix: better JS rewriting, avoid // comments when matching protocol-relative urls.
+
+* WARC metadata and resource records include in cdx from cdx-indexer by default
+
 
 pywb 0.6.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
