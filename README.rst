@@ -1,4 +1,4 @@
-PyWb 0.6.4
+PyWb 0.6.5
 ==========
 
 .. image:: https://travis-ci.org/ikreymer/pywb.png?branch=develop
@@ -7,7 +7,7 @@ PyWb 0.6.4
       :target: https://coveralls.io/r/ikreymer/pywb?branch=develop
 .. image:: https://img.shields.io/gratipay/ikreymer.svg
       :target: https://www.gratipay.com/ikreymer/
-      
+
 pywb is a python implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
 
 pywb allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
