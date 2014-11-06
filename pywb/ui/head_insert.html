@@ -7,7 +7,8 @@
                  "{{ cdx['timestamp'] if include_ts else ''}}",
                  "{{ urlsplit.scheme }}",
                  "{{ urlsplit.netloc }}",
-                 "{{ cdx.timestamp | format_ts('%s') }}");
+                 "{{ cdx.timestamp | format_ts('%s') }}",
+                 "{{ wbrequest.wb_url.mod }}");
 </script>
 {% endif %}
 <script>

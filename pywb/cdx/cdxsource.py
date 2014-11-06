@@ -28,8 +28,17 @@ class CDXFile(CDXSource):
         self.filename = filename
 
     def load_cdx(self, query):
-        source = open(self.filename)
-        return iter_range(source, query.key, query.end_key)
+        def do_open():
+            try:
+                source = open(self.filename)
+                gen = iter_range(source, query.key, query.end_key)
+                for line in gen:
+                    yield line
+            finally:
+                source.close()
+
+        return do_open()
+        #return iter_range(do_open(), query.key, query.end_key)
 
     def __str__(self):
         return 'CDX File - ' + self.filename

@@ -61,6 +61,9 @@ r"""
 >>> _test_js('&quot;http:\\/\\/www.example.com\\/some\\/path\\/?query=1&quot;')
 '&quot;/web/20131010/http:\\/\\/www.example.com\\/some\\/path\\/?query=1&quot;'
 
+>>> _test_js('"http:\/\/sub-site.example.com\/path-dashes\/path_other\/foo_bar.txt"')
+'"/web/20131010/http:\\/\\/sub-site.example.com\\/path-dashes\\/path_other\\/foo_bar.txt"'
+
 
 #=================================================================
 # XML Rewriting

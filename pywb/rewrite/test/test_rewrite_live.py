@@ -105,10 +105,10 @@ def test_example_1():
     assert '/pywb/20131226101010/http://www.iana.org/domains/example' in buff, buff
 
 def test_example_2_redirect():
-    status_headers, buff = get_rewritten('http://facebook.com/', urlrewriter)
+    status_headers, buff = get_rewritten('http://httpbin.org/redirect-to?url=http://example.com/', urlrewriter)
 
     # redirect, no content
-    assert status_headers.get_statuscode() == '301'
+    assert status_headers.get_statuscode() == '302'
     assert len(buff) == 0
 
 

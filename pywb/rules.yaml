@@ -11,18 +11,18 @@ rules:
     # facebook rules
     #=================================================================
     - url_prefix: 'com,facebook)/ajax/pagelet/generic.php/'
-        
+
       fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|query_type[^,]+))'
-              
+
     - url_prefix: 'com,facebook)/ajax/ufi/'
-      
+
       fuzzy_lookup:
           - ft_ent_identifier
           - lsd
 
     - url_prefix: 'com,facebook)/ajax/chat/hovercard/sidebar.php'
 
-      fuzzy_lookup: 
+      fuzzy_lookup:
           - ids[0]
 
     - url_prefix: 'com,facebook)/login.php'
@@ -82,20 +82,21 @@ rules:
     #=================================================================
 
     - url_prefix: 'com,google,plus)/_/stream/getactivities'
-    
-      fuzzy_lookup: '(egk[^"]+).*(f.sid=[^&]+)'
- 
+
+    #      fuzzy_lookup: '(egk[^"]+)?.*(f.sid=[^&]+)'
+      fuzzy_lookup: 'f.req=.*\]\]\]\,\"([^"]+).*(f.sid=[^&]+)'
+
     - url_prefix: 'com,google,plus)/_/stream/squarestream'
-    
+
       fuzzy_lookup: '(cai[^"]+).*(f.sid=[^&]+)'
- 
+
     - url_prefix: 'com,google,plus)/_/communities/rt/landing'
-    
+
       fuzzy_lookup: 'com,google,plus\)/_/.*?.*\,(\d{13}\])&.*(f.sid=[^&]+).*'
-    
+
 
     - url_prefix: 'com,google,plus)/_/'
-     
+
       fuzzy_lookup: 'com,google,plus\)/_/.*?.*(f.sid=[^&]+)'
 
 

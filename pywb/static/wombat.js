@@ -708,11 +708,11 @@ WB_wombat_init = (function() {
     }
 
     //============================================
-    function wombat_init(replay_prefix, capture_date, orig_scheme, orig_host, timestamp) {
+    function wombat_init(replay_prefix, capture_date, orig_scheme, orig_host, timestamp, mod) {
         wb_replay_prefix = replay_prefix;
         
         if (wb_replay_prefix) {
-            wb_replay_date_prefix = replay_prefix + capture_date + "/";
+            wb_replay_date_prefix = replay_prefix + capture_date + mod + "/";
             
             if (capture_date.length > 0) {
                 wb_capture_date_part = "/" + capture_date + "/";

@@ -169,7 +169,8 @@ class StatusAndHeadersParser(object):
 
             # append continuation lines, if any
             while next_line and next_line.startswith((' ', '\t')):
-                value += next_line
+                if value is not None:
+                    value += next_line
                 next_line, total_read = _strip_count(stream.readline(),
                                                      total_read)
 

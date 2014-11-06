@@ -78,6 +78,8 @@ class WbRequest(object):
                                                  rel_prefix,
                                                  env.get('SCRIPT_NAME', '/'),
                                                  cookie_scope)
+
+            self.urlrewriter.deprefix_url()
         else:
         # no wb_url, just store blank wb_url
             self.wb_url = None

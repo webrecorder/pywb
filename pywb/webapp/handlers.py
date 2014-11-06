@@ -74,8 +74,8 @@ class SearchPageWbUrlHandler(WbUrlHandler):
 
         return self.handle_request(wbrequest)
 
-    def get_top_frame_params(self, wbrequest):
-        embed_url = wbrequest.wb_url.to_str(mod='')
+    def get_top_frame_params(self, wbrequest, mod=''):
+        embed_url = wbrequest.wb_url.to_str(mod=mod)
 
         if wbrequest.wb_url.timestamp:
             timestamp = wbrequest.wb_url.timestamp

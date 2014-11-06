@@ -14,8 +14,8 @@ class TestLiveRewriter:
         assert resp.status_int == 200
 
     def test_live_rewrite_redirect_2(self):
-        resp = self.testapp.get('/rewrite/http://facebook.com/')
-        assert resp.status_int == 301
+        resp = self.testapp.get('/rewrite/http://httpbin.org/redirect-to?url=http://example.com/')
+        assert resp.status_int == 302
 
     def test_live_rewrite_post(self):
         resp = self.testapp.post('/rewrite/httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
