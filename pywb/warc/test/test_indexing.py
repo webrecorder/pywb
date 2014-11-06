@@ -144,7 +144,6 @@ Total: 4
 
 from pywb import get_test_dir
 
-#from pywb.warc.archiveindexer import ArchiveIndexer, main, cdx_filename
 from pywb.warc.cdxindexer import write_cdx_index, main, cdx_filename
 
 from io import BytesIO
@@ -153,6 +152,9 @@ import sys
 import os
 import shutil
 import tempfile
+
+from pytest import raises
+
 
 TEST_CDX_DIR = get_test_dir() + 'cdx/'
 TEST_WARC_DIR = get_test_dir() + 'warcs/'
@@ -231,3 +233,11 @@ def cli_lines_with_dir(input_):
     print('Total: ' + str(len(lines)))
 
 
+def test_non_chunked_gzip_err():
+    with raises(Exception):
+        print_cdx_index('example-bad.warc.gz.bad')
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
