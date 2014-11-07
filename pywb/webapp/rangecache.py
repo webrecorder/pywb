@@ -14,7 +14,7 @@ class RangeCache(object):
     YOUTUBE_RX = re.compile('.*.googlevideo.com/videoplayback')
     YT_EXTRACT_RX = re.compile('&range=([^&]+)')
 
-    DEFAULT_BUFF = 16384
+    DEFAULT_BUFF = 16384*4
 
     @staticmethod
     def match_yt(url):
@@ -78,9 +78,12 @@ class RangeCache(object):
 
         key = digest
         if not key in self.cache:
+            wbrequest.custom_params['noredir'] = True
             response = wbresponse_func()
-            if not response:
-                return None, None
+
+            # only cache 200 responses
+            if not response.status_headers.get_statuscode().startswith('200'):
+                return response.status_headers, response.body
 
             with NamedTemporaryFile(delete=False) as fh:
                 for obj in response.body:
@@ -94,8 +97,6 @@ class RangeCache(object):
             self.cache[key] = yaml.dump(spec)
         else:
             spec = yaml.load(self.cache[key])
-            if not spec:
-                return None, None
 
             spec['headers'] = [tuple(x) for x in spec['headers']]
 
