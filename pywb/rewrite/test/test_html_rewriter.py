@@ -102,6 +102,10 @@ ur"""
 >>> parse('<link href="abc.txt"><div>SomeTest</div>', head_insert = '<script>load_stuff();</script>')
 <link href="/web/20131226101010oe_/http://example.com/some/path/abc.txt"><script>load_stuff();</script><div>SomeTest</div>
 
+# don't rewrite rel=canonical
+>>> parse('<link rel=canonical href="http://example.com/">')
+<link rel="canonical" href="http://example.com/">
+
 # doctype
 >>> parse('<!doctype html PUBLIC "public">')
 <!doctype html PUBLIC "public">
