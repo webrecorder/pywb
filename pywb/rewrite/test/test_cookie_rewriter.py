@@ -1,4 +1,5 @@
 r"""
+# Default -- MinimalScopeRewriter
 # No rewriting
 >>> rewrite_cookie('a=b; c=d;')
 [('Set-Cookie', 'a=b'), ('Set-Cookie', 'c=d')]
@@ -23,10 +24,17 @@ r"""
 >>> rewrite_cookie('abc@def=123')
 []
 
+# ExactCookieRewriter
+>>> rewrite_cookie('some=value; Path=/diff/path/;', urlrewriter, ExactPathCookieRewriter)
+[('Set-Cookie', 'some=value')]
+
+>>> rewrite_cookie('some=value; Domain=.example.com; Path=/diff/path/; Max-Age=1500', urlrewriter, ExactPathCookieRewriter)
+[('Set-Cookie', 'some=value')]
+
 """
 
 
-from pywb.rewrite.cookie_rewriter import MinimalScopeCookieRewriter
+from pywb.rewrite.cookie_rewriter import MinimalScopeCookieRewriter, ExactPathCookieRewriter
 from pywb.rewrite.url_rewriter import UrlRewriter
 
 urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html', '/pywb/')
@@ -34,6 +42,6 @@ urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.htm
 urlrewriter2 = UrlRewriter('em_/http://example.com/', '/preview/')
 
 
-def rewrite_cookie(cookie_str, rewriter=urlrewriter):
-    return MinimalScopeCookieRewriter(rewriter).rewrite(cookie_str)
+def rewrite_cookie(cookie_str, rewriter=urlrewriter, cookie_rewriter=MinimalScopeCookieRewriter):
+    return cookie_rewriter(rewriter).rewrite(cookie_str)
 
