@@ -42,6 +42,7 @@ setup(
     long_description=long_description,
     license='GPL',
     packages=find_packages(),
+    include_package_data=True,
     provides=[
         'pywb',
         'pywb.utils',
@@ -54,7 +55,7 @@ setup(
         'pywb.apps'
         ],
     package_data={
-        'pywb': ['ui/*', 'static/*', '*.yaml'],
+        'pywb': ['static/flowplayer/*', 'static/*.*', 'ui/*', '*.yaml'],
         },
     data_files=[
         ('sample_archive/cdx/', glob.glob('sample_archive/cdx/*')),

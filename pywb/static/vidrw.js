@@ -21,30 +21,80 @@ This file is part of pywb, https://github.com/ikreymer/pywb
 
 __wbvidrw = (function() {
 
-    var already_checked = false;
+    var found_embeds = false;
 
     function check_videos() {
-        if (already_checked) {
+        if (found_embeds) {
             return;
         }
+
+        var tags = [];
 
         var iframes = document.getElementsByTagName("iframe");
 
         for (var i = 0; i < iframes.length; i++) {
-            already_checked = true;
-            check_replacement(iframes[i], iframes[i].getAttribute("src"));
+            found_embeds = true;
+            tags.push([iframes[i], iframes[i].getAttribute("src")]);
         }
 
         var embeds = document.getElementsByTagName("embed");
 
         for (var i = 0; i < embeds.length; i++) {
-            already_checked = true;
-            check_replacement(embeds[i], embeds[i].getAttribute("src"));
+            found_embeds = true;
+            tags.push([embeds[i], embeds[i].getAttribute("src")]);
         }
 
-        if (wbinfo.url.indexOf("://www.youtube.com/watch") > 0) {
+        var objects = document.getElementsByTagName("object");
+
+        for (var i = 0; i < objects.length; i++) {
+            var obj_url = undefined;
+
+/*            if (is_watch_page(wbinfo.url)) {
+                check_replacement(objects[i], wbinfo.url);
+                console.log('IS WATCH');
+                continue;
+            }
+*/
+
+            for (var j = 0; j < objects[i].children.length; j++) {
+                var child = objects[i].children[j];
+
+                if (child.tagName == "EMBED") {
+                    break;
+                }
+
+                if (child.tagName == "PARAM") {
+                    var name = child.getAttribute("name");
+                    name = name.toLowerCase();
+                    if (name == "flashvars") {
+                        var value = child.getAttribute("value");
+                        value = decodeURIComponent(value);
+                        var inx = value.indexOf("=http");
+                        if (inx >= 0) {
+                            obj_url = value.substring(inx + 1);
+                            console.log("OBJ URL: " + obj_url);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (obj_url) {
+                continue;
+            }
+
+            //check_replacement(objects[i], obj_url);
+            tags.push([objects[i], obj_url]);
+        }
+
+        for (var i = 0; i < tags.length; i++) {
+            check_replacement(tags[i][0], tags[i][1]);
+        }
+
+        // special case: yt
+        if (!found_embeds && wbinfo.url.indexOf("://www.youtube.com/watch") > 0) {
             var ytvideo = document.getElementsByTagName("video");
-/*
+
             if (ytvideo.length == 1) {
                 if (ytvideo[0].getAttribute("data-youtube-id") != "") {
                     // Wait to see if video is playing, if so, don't replace it
@@ -53,23 +103,30 @@ __wbvidrw = (function() {
                             console.log("Replacing Broken Video");
                             check_replacement(ytvideo[0], wbinfo.url);
                         }
-                    }, 3000);
+                    }, 4000);
                 }
             }
-*/
         }
     }
 
-    function check_replacement(elem, src) {
-        if (!src) {
-            return;
+    function is_watch_page(url) {
+        if (url.indexOf("://www.dailymotion.com/") > 0) {
+            return true;
         }
 
-        if (src.indexOf("javascript:") == 0) {
+        return false;
+    }
+
+    function check_replacement(elem, src) {
+        if (!src || src.indexOf("javascript:") == 0) {
             return;
         }
 
         src = _wb_wombat.extract_orig(src);
+
+        if (src.indexOf("dailymotion.com/swf/") > 0) {
+            src = src.replace("/swf/", "/video/");
+        }
 
         var xhr = new XMLHttpRequest();
         xhr._no_rewrite = true;
@@ -82,13 +139,16 @@ __wbvidrw = (function() {
         xhr.send();
     }
 
-    function do_replace_video(elem, video_info) {
-        // TODO: select based on size?
-        var video_url = video_info.url;
-        video_url = wbinfo.prefix + video_url;
+    function do_replace_video(elem, info) {
+        var video_url = video_url = wbinfo.prefix + info.url;
+
+        var thumb_url = null;
+
+        if (info.thumbnail) {
+            thumb_url = wbinfo.prefix + info.thumbnail;
+        }
 
         var tag = elem.tagName.toLowerCase();
-        console.log("REPLACING: " + video_url);
 
         var width, height;
 
@@ -100,26 +160,108 @@ __wbvidrw = (function() {
             height = elem.clientHeight;
 
             elem = elem.parentNode;
-            //elem.parentNode.setAttribute("id", "_wb_vid");
         } else {
             width = elem.clientWidth;
             height = elem.clientHeight;
         }
 
-        console.log(video_info.ext);
-
         // Try HTML5 Video
         var htmlvideo = document.createElement("video");
 
+        var replacement = null;
+
+        if (htmlvideo.canPlayType) {
+            if (can_play(htmlvideo, info.ext, "video/")) {
+               replacement = init_html_video(htmlvideo, width, height, video_url, thumb_url);
+            } else if (can_play(htmlvideo, info.ext, "audio/")) {
+               replacement = init_html_audio(video_url);
+            } else {
+
+                var best_match_heur = 1000000;
+                var best_url = undefined;
+
+                for (i = 0; i < info.formats.length; i++) {
+                    if (can_play(htmlvideo, info.formats[i].ext)) {
+
+                        if ((Math.abs(width - info.formats[i].width) + Math.abs(height - info.formats[i].height)) < best_match_heur) {
+                            best_url = info.formats[i].url;
+                            console.log("ALT: " + info.formats[i].ext);
+                        }
+                    }
+                }
+
+                if (best_url) {
+                    video_url = wbinfo.prefix + best_url;
+                    replacement = init_html_video(htmlvideo, width, height, video_url, thumb_url);
+                }
+            }
+        }
+
+        var vidId = undefined;
+
+        if (!replacement) {
+            replacement = document.createElement("div");
+
+            vidId = "_wb_vid" + Date.now();
+            replacement.setAttribute("id", vidId);
+        }
+
+        if (tag == "iframe") {
+            elem.parentNode.replaceChild(replacement, elem);
+        } else if (tag == "embed") {
+            if (elem.parentNode && elem.parentElement.tagName.toLowerCase() == "object") {
+                elem = elem.parentNode;
+            }
+            elem.parentNode.replaceChild(replacement, elem);
+        } else if (tag == "video") {
+            elem.parentNode.replaceChild(replacement, elem);
+        }
+
+        if (vidId) {
+            init_flash_player(vidId, width, height, video_url, thumb_url);
+        }
+    }
+
+    function can_play(elem, ext, type) {
+        if (!type) {
+            type = "video/";
+        }
+
+        var canplay = elem.canPlayType(type + ext);
+        if (canplay === "probably" || canplay === "maybe") {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function init_html_audio(audio_url) {
+        var htmlaudio = document.createElement("audio");
+        htmlaudio.setAttribute("src", audio_url);
+        htmlaudio.setAttribute("controls", "1");
+        htmlaudio.style.backgroundColor = "#000";
+
+        htmlaudio.addEventListener("error", function() {
+            console.log("html5 audio error");
+        });
+
+        htmlaudio.addEventListener("loadstart", function() {
+            console.log("html5 audio success");
+        });
+
+        return htmlaudio;
+    }
+
+    function init_html_video(htmlvideo, width, height, video_url, thumb_url)
+    {
         htmlvideo.setAttribute("src", video_url);
         htmlvideo.setAttribute("width", width);
         htmlvideo.setAttribute("height", height);
         htmlvideo.setAttribute("controls", "1");
         htmlvideo.style.backgroundColor = "#000";
 
-        if (video_info.thumbnail) {
-            var thumbnail = wbinfo.prefix + video_info.thumbnail;
-            htmlvideo.setAttribute("thumbnail", thumbnail);
+        if (thumb_url) {
+            htmlvideo.setAttribute("poster", thumb_url);
         }
 
         htmlvideo.addEventListener("error", function() {
@@ -130,18 +272,27 @@ __wbvidrw = (function() {
             console.log("html5 video success");
         });
 
-        if (tag == "iframe") {
-            elem.parentNode.replaceChild(htmlvideo, elem);
-        } else if (tag == "embed") {
-            if (elem.parentNode && elem.parentElement.tagName.toLowerCase() == "object") {
-                elem = elem.parentNode;
-            }
-            elem.parentNode.replaceChild(htmlvideo, elem);
-        } else if (tag == "video") {
-        //    elem = elem.parentNode;
-        //    elem = elem.parentNode;
-            elem.parentNode.replaceChild(htmlvideo, elem);
-        }
+        return htmlvideo;
+    }
+
+    function init_flash_player(div_id, width, height, video_url, thumb_url)
+    {
+        var swf = "/static/default/flowplayer/flowplayer-3.2.18.swf";
+
+        var style = 'width: ' + width + 'px; height: ' + height + 'px; display: block';
+        document.getElementById(div_id).style.cssText += ';' + style;
+
+        flashembed(div_id, swf, {config:
+            {
+                clip: {
+                    url: video_url
+                },
+
+                plugins: {
+                    rangeRequests: true
+                }
+
+            }});
     }
 
     document.addEventListener("DOMContentLoaded", check_videos);
