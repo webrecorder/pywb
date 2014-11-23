@@ -2,11 +2,13 @@ from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.loaders import LimitReader
 from pywb.framework.cache import create_cache
 
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, mkdtemp
 
 import yaml
 import os
 import re
+
+import atexit
 
 
 #=================================================================
@@ -35,6 +37,14 @@ class RangeCache(object):
 
     def __init__(self):
         self.cache = create_cache()
+        self.temp_dir = mkdtemp(prefix='_pywbcache')
+        atexit.register(self.cleanup)
+
+    def cleanup(self):
+        if self.temp_dir:
+            import shutil
+            print('Removing: ' + self.temp_dir)
+            shutil.rmtree(self.temp_dir, True)
 
     def is_ranged(self, wbrequest):
         url = wbrequest.wb_url.url
@@ -83,9 +93,10 @@ class RangeCache(object):
 
             # only cache 200 responses
             if not response.status_headers.get_statuscode().startswith('200'):
+                print('NON 200 RESP')
                 return response.status_headers, response.body
 
-            with NamedTemporaryFile(delete=False) as fh:
+            with NamedTemporaryFile(delete=False, dir=self.temp_dir) as fh:
                 for obj in response.body:
                     fh.write(obj)
 
@@ -127,11 +138,6 @@ class RangeCache(object):
             status_headers.replace_header('Content-Range', content_range)
         else:
             status_headers = StatusAndHeaders('200 OK', spec['headers'])
-
-            #status_headers.headers.append(('Accept-Ranges', 'bytes'))
-            #status_headers.headers.append(('Access-Control-Allow-Credentials', 'true'))
-            #status_headers.headers.append(('Access-Control-Allow-Origin', 'http://localhost:8080'))
-            #status_headers.headers.append(('Timing-Allow-Origin', 'http://localhost:8080'))
 
         status_headers.replace_header('Content-Length', str(maxlen))
         return status_headers, read_range()
