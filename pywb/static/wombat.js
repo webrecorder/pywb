@@ -478,6 +478,13 @@ _WBWombat = (function() {
                 async = true;
             }
 
+            // extra check for correct scheme here.. maybe move to rewrite_url..
+            var curr_scheme = window.location.protocol + '//';
+
+            if (starts_with(url, wb_orig_scheme) && (wb_orig_scheme != curr_scheme)) {
+                url = curr_scheme + url.substring(wb_orig_scheme.length);
+            }
+
             return orig.call(this, method, url, async, user, password);
         }
 
@@ -899,7 +906,7 @@ _WBWombat = (function() {
         init_seeded_random(timestamp);
 
         // Date
-        // init_date_override(timestamp);
+        init_date_override(timestamp);
 
         // expose functions
         this.extract_orig = extract_orig;
