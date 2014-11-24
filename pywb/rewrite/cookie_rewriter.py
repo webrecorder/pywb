@@ -56,6 +56,24 @@ class MinimalScopeCookieRewriter(WbUrlBaseCookieRewriter):
 
 
 #=================================================================
+class ExactPathCookieRewriter(WbUrlBaseCookieRewriter):
+    """
+    Rewrite cookies only using exact path, useful for live rewrite
+    without a timestamp and to minimize cookie pollution
+
+    If path or domain present, simply remove
+    """
+
+    def rewrite_cookie(self, name, morsel):
+        if morsel.get('domain'):
+            del morsel['domain']
+        # else set cookie to rewritten path
+        if morsel.get('path'):
+            del morsel['path']
+
+        self._remove_age_opts(morsel)
+        return morsel
+#=================================================================
 class RootScopeCookieRewriter(WbUrlBaseCookieRewriter):
     """
     Sometimes it is necessary to rewrite cookies to root scope
@@ -79,5 +97,7 @@ class RootScopeCookieRewriter(WbUrlBaseCookieRewriter):
 def get_cookie_rewriter(cookie_scope):
     if cookie_scope == 'root':
         return RootScopeCookieRewriter
+    elif cookie_scope == 'exact':
+        return ExactPathCookieRewriter
     else:
         return MinimalScopeCookieRewriter
