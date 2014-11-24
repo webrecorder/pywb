@@ -2,6 +2,7 @@ import yaml
 import re
 import logging
 import pkg_resources
+import urlparse
 
 from pywb.utils.dsrules import BaseRule, RuleSet
 
@@ -89,7 +90,8 @@ class FuzzyQuery:
 
             groups = m.groups()
             for g in groups:
-                filter_.append(rule.filter.format(g))
+                for f in matched_rule.filter:
+                    filter_.append(f.format(g))
 
             break
 
@@ -104,9 +106,15 @@ class FuzzyQuery:
         if inx > 0:
             url = url[:inx + 1]
 
+
+        if matched_rule.match_type == 'domain':
+            host = urlparse.urlsplit(url).netloc
+            # remove the subdomain
+            url = host.split('.', 1)[1]
+
         params = query.params
         params.update({'url': url,
-                       'matchType': 'prefix',
+                       'matchType': matched_rule.match_type,
                        'filter': filter_})
 
         if 'reverse' in params:
@@ -115,12 +123,17 @@ class FuzzyQuery:
         if 'closest' in params:
             del params['closest']
 
+        if 'end_key' in params:
+            del params['end_key']
+
+        print(params)
         return params
 
 
 #=================================================================
 class CDXDomainSpecificRule(BaseRule):
-    DEFAULT_FILTER = '~urlkey:{0}'
+    DEFAULT_FILTER = ['~urlkey:{0}']
+    DEFAULT_MATCH_TYPE = 'prefix'
 
     def __init__(self, name, config):
         super(CDXDomainSpecificRule, self).__init__(name, config)
@@ -129,10 +142,12 @@ class CDXDomainSpecificRule(BaseRule):
             self.regex = self.make_regex(config)
             self.replace = None
             self.filter = self.DEFAULT_FILTER
+            self.match_type = self.DEFAULT_MATCH_TYPE
         else:
             self.regex = self.make_regex(config.get('match'))
             self.replace = config.get('replace')
             self.filter = config.get('filter', self.DEFAULT_FILTER)
+            self.match_type = config.get('type', self.DEFAULT_MATCH_TYPE)
 
     def unsurt(self):
         """

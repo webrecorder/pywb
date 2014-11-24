@@ -142,8 +142,13 @@ rules:
 
     - url_prefix: 'com,googlevideo,'
 
-    #fuzzy_lookup: 'com,googlevideo.*/videoplayback?.*(id=[^&]).*(mime=[^&]).*(signature=[^&])'
-      fuzzy_lookup: 'com,googlevideo.*/videoplayback?.*(id=[^&]+).*(itag=[^&]+).*(mime=[^&]+)'
+      fuzzy_lookup:
+          match: 'com,googlevideo.*/videoplayback.*(id=[^&]+).*(itag=[^&]+).*(mime=[^&]+)'
+          filter:
+              - '~urlkey:{0}'
+              - '!mimetype:text/plain'
+
+          type: 'domain'
 
 
     # testing rules -- not for valid domain
@@ -169,5 +174,5 @@ rules:
     - url_prefix: ''
       fuzzy_lookup:
         match: '(.*)[&?](?:_|uncache)=[\d]+[&]?'
-        filter: '=urlkey:{0}'
+        filter: ['=urlkey:{0}']
         replace: '?'
