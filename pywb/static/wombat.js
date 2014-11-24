@@ -531,7 +531,8 @@ _WBWombat = (function() {
     //============================================
     function init_date_override(timestamp) {
         timestamp = parseInt(timestamp) * 1000;
-        var timediff = Date.now() - timestamp;
+        var timezone = new Date().getTimezoneOffset() * 60 * 1000;
+        var timediff = Date.now() - (timestamp - timezone);
 
         window.__Date = window.Date;
         window.__Date_now = window.Date.now;
