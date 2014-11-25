@@ -74,6 +74,7 @@ class QueryHandler(object):
         if wb_url.mod == 'vi_':
             # matching metadata explicitly with special scheme
             params['url'] = wb_url.url.replace('http:/', 'metadata:/')
+            params['url'] = wb_url.url.replace('https:/', 'metadata:/')
             params['filter'].append('~original:metadata://')
 
         cdx_iter = self.load_cdx(wbrequest, params)

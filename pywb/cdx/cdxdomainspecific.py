@@ -126,7 +126,6 @@ class FuzzyQuery:
         if 'end_key' in params:
             del params['end_key']
 
-        print(params)
         return params
 
 

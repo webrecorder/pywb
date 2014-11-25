@@ -100,7 +100,6 @@ __wbvidrw = (function() {
                     // Wait to see if video is playing, if so, don't replace it
                     window.setTimeout(function() {
                         if (ytvideo[0].readyState == 0) {
-                            console.log("Replacing Broken Video");
                             check_replacement(ytvideo[0], wbinfo.url);
                         }
                     }, 4000);
@@ -117,7 +116,7 @@ __wbvidrw = (function() {
         return false;
     }
 
-    function check_replacement(elem, src) {
+    function check_replacement(elem, src, no_retry) {
         if (!src || src.indexOf("javascript:") == 0) {
             return;
         }
@@ -134,6 +133,9 @@ __wbvidrw = (function() {
         xhr.onload = function() {
             if (xhr.status == 200) {
                 do_replace_video(elem, JSON.parse(xhr.responseText));
+            } else if (!no_retry) {
+                check_replacement(elem, wbinfo.url, true);
+                console.log("REPL RETRY: " + wbinfo.url);
             }
         };
         xhr.send();

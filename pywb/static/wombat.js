@@ -536,6 +536,8 @@ _WBWombat = (function() {
 
         window.__Date = window.Date;
         window.__Date_now = window.Date.now;
+        var utc = window.Date.UTC;
+        var parse = window.Date.parse;
 
         window.Date = function (Date) {
             return function (A, B, C, D, E, F, G) {
@@ -565,6 +567,9 @@ _WBWombat = (function() {
         window.Date.now = function() {
             return __Date_now() - timediff;
         }
+
+        window.Date.UTC = utc;
+        window.Date.parse = parse;
     }
 
     //============================================

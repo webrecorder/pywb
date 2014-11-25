@@ -63,6 +63,9 @@ class LiveRewriter(object):
                 if cookie_val:
                     value = cookie_val
 
+            elif name == 'HTTP_REFERER':
+                continue
+
             elif name.startswith('HTTP_'):
                 name = name[5:].title().replace('_', '-')
 
