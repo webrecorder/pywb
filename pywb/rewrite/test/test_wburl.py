@@ -26,6 +26,13 @@
 >>> repr(WbUrl('https://example.com/xyz?a=%2f&b=%2E'))
 "('latest_replay', '', '', 'https://example.com/xyz?a=%2f&b=%2E', 'https://example.com/xyz?a=%2f&b=%2E')"
 
+# Test scheme partially encoded urls
+>>> repr(WbUrl('https%3A//example.com/'))
+"('latest_replay', '', '', 'https://example.com/', 'https://example.com/')"
+
+>>> repr(WbUrl('2014/http%3A%2F%2Fexample.com/'))
+"('replay', '2014', '', 'http://example.com/', '2014/http://example.com/')"
+
 # Query Urls
 # ======================
 >>> repr(WbUrl('*/http://example.com/abc?def=a'))
@@ -56,6 +63,21 @@
 
 >>> repr(WbUrl('/example.com/'))
 "('latest_replay', '', '', 'http://example.com/', 'http://example.com/')"
+
+# Is_ Tests
+>>> u = WbUrl('*/http://example.com/abc?def=a*')
+>>> u.is_url_query()
+True
+
+>>> u.is_query()
+True
+
+>>> u2 = WbUrl('20130102im_/https:/example.com')
+>>> u2.is_embed
+True
+
+>>> u2.is_replay()
+True
 
 
 # Error Urls
