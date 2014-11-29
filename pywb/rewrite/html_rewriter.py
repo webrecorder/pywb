@@ -43,6 +43,7 @@ class HTMLRewriterMixin(object):
             'meta':    {'content': defmod},
             'object':  {'codebase': 'oe_',
                         'data': 'oe_'},
+            'param':   {'value': 'oe_'},
             'q':       {'cite': defmod},
             'ref':     {'href': 'oe_'},
             'script':  {'src': 'js_'},
@@ -196,7 +197,13 @@ class HTMLRewriterMixin(object):
                 if self.has_attr(tag_attrs, ('http-equiv', 'refresh')):
                     attr_value = self._rewrite_meta_refresh(attr_value)
 
-            # special case: data- attrs
+            # special case: param value, conditional rewrite
+            elif (tag == 'param'):
+                if attr_value.startswith(self.DATA_RW_PROTOCOLS):
+                    rw_mod = handler.get(attr_name)
+                    attr_value = self._rewrite_url(attr_value, rw_mod)
+
+            # special case: data- attrs, conditional rewrite
             elif attr_name and attr_value and attr_name.startswith('data-'):
                 if attr_value.startswith(self.DATA_RW_PROTOCOLS):
                     rw_mod = 'oe_'
