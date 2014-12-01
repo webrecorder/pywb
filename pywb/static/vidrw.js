@@ -30,14 +30,6 @@ __wbvidrw = (function() {
 
         var tags = [];
 
-        var iframes = document.getElementsByTagName("iframe");
-
-       /* for (var i = 0; i < iframes.length; i++) {
-            found_embeds = true;
-            tags.push([iframes[i], iframes[i].getAttribute("src")]);
-        }
-        */
-
         var embeds = document.getElementsByTagName("embed");
 
         for (var i = 0; i < embeds.length; i++) {
@@ -49,22 +41,17 @@ __wbvidrw = (function() {
 
         for (var i = 0; i < objects.length; i++) {
             var obj_url = undefined;
-
-/*            if (is_watch_page(wbinfo.url)) {
-                check_replacement(objects[i], wbinfo.url);
-                console.log('IS WATCH');
-                continue;
-            }
-*/
+            found_embeds = true;
 
             for (var j = 0; j < objects[i].children.length; j++) {
                 var child = objects[i].children[j];
 
                 if (child.tagName == "EMBED") {
+                    obj_url = undefined;
                     break;
                 }
 
-                if (child.tagName == "PARAM") {
+                if (child.tagName == "PARAM" && !obj_url) {
                     var name = child.getAttribute("name");
                     name = name.toLowerCase();
                     if (name == "flashvars") {
@@ -73,23 +60,17 @@ __wbvidrw = (function() {
                         var inx = value.indexOf("=http");
                         if (inx >= 0) {
                             obj_url = value.substring(inx + 1);
-                            break;
                         }
-                    }
-
-                    if (name == "movie") {
+                    } else if (name == "movie") {
                         var value = child.getAttribute("value");
                         obj_url = value;
-                        break;
                     }
                 }
             }
 
-            console.log("OBJ URL: " + obj_url);
-
-
-            //check_replacement(objects[i], obj_url);
-            tags.push([objects[i], obj_url]);
+            if (obj_url) {
+                tags.push([objects[i], obj_url]);
+            }
         }
 
         for (var i = 0; i < tags.length; i++) {
@@ -111,14 +92,6 @@ __wbvidrw = (function() {
                 }
             }
         }
-    }
-
-    function is_watch_page(url) {
-        if (url.indexOf("://www.dailymotion.com/") > 0) {
-            return true;
-        }
-
-        return false;
     }
 
     var VIMEO_RX = /^https?:\/\/.*vimeo.*clip_id=([^&]+).*/;
@@ -153,8 +126,6 @@ __wbvidrw = (function() {
     }
 
     function do_replace_video(elem, info) {
-        var video_url = video_url = wbinfo.prefix + info.url;
-
         var thumb_url = null;
 
         if (info.thumbnail) {
@@ -179,34 +150,18 @@ __wbvidrw = (function() {
         }
 
         // Try HTML5 Video
-        var htmlvideo = document.createElement("video");
+        var htmlelem = document.createElement("video");
 
         var replacement = null;
 
-        if (htmlvideo.canPlayType) {
-            if (can_play(htmlvideo, info.ext, "video/")) {
-               replacement = init_html_video(htmlvideo, width, height, video_url, thumb_url);
-            } else if (can_play(htmlvideo, info.ext, "audio/")) {
-               replacement = init_html_audio(video_url);
-            } else {
-                var best_match_heur = 1000000;
-                var best_url = undefined;
+        if (htmlelem.canPlayType) {
+            var type = can_play_video_or_audio(htmlelem, info);
 
-                for (i = 0; i < info.formats.length; i++) {
-                    if (can_play(htmlvideo, info.formats[i].ext)) {
-
-                        if ((Math.abs(width - info.formats[i].width) + Math.abs(height - info.formats[i].height)) < best_match_heur) {
-                            best_url = info.formats[i].url;
-                            console.log("ALT: " + info.formats[i].ext);
-                        }
-                    }
+            if (type) {
+                if (type == "audio") {
+                    htmlelem = document.createElement("audio");
                 }
-
-                if (best_url) {
-                    var original_url = video_url;
-                    video_url = wbinfo.prefix + best_url;
-                    replacement = init_html_video(htmlvideo, width, height, video_url, thumb_url, original_url);
-                }
+                replacement = init_html_player(htmlelem, type, width, height, info, thumb_url);
             }
         }
 
@@ -231,16 +186,33 @@ __wbvidrw = (function() {
         }
 
         if (vidId) {
-            init_flash_player(vidId, width, height, video_url, thumb_url);
+            init_flash_player(vidId, width, height, info, thumb_url);
         }
     }
 
-    function can_play(elem, ext, type) {
-        if (!type) {
-            type = "video/";
+    function can_play_video_or_audio(elem, info) {
+        var types = ["video", "audio"];
+        var type = undefined;
+
+        // include main url
+        info._wb_avail = 1;
+
+        for (var i = 0; i < info.formats.length; i++) {
+            for (var j = 0; j < types.length; j++) {
+                if (can_play(elem, info.formats[i].ext, types[j])) {
+                    info.formats[i]._wb_canPlay = true;
+                    info._wb_avail++;
+                    type = types[j];
+                    break;
+                }
+            }
         }
 
-        var canplay = elem.canPlayType(type + ext);
+        return type;
+    }
+
+    function can_play(elem, ext, type) {
+        var canplay = elem.canPlayType(type + "/" + ext);
         if (canplay === "probably" || canplay === "maybe") {
             return true;
         } else {
@@ -248,72 +220,102 @@ __wbvidrw = (function() {
         }
     }
 
-    function init_html_audio(audio_url) {
-        var htmlaudio = document.createElement("audio");
-        htmlaudio.setAttribute("src", audio_url);
-        htmlaudio.setAttribute("controls", "1");
-        htmlaudio.style.backgroundColor = "#000";
-
-        htmlaudio.addEventListener("error", function() {
-            console.log("html5 audio error");
-        });
-
-        htmlaudio.addEventListener("loadstart", function() {
-            console.log("html5 audio success");
-        });
-
-        return htmlaudio;
-    }
-
-    function init_html_video(htmlvideo, width, height, video_url, thumb_url, original_url)
+    function init_html_player(htmlelem, type, width, height, info, thumb_url)
     {
-        htmlvideo.setAttribute("src", video_url);
-        htmlvideo.setAttribute("width", width);
-        htmlvideo.setAttribute("height", height);
-        htmlvideo.setAttribute("controls", "1");
-        htmlvideo.style.backgroundColor = "#000";
+        htmlelem.setAttribute("width", width);
+        htmlelem.setAttribute("height", height);
+        htmlelem.setAttribute("controls", "1");
+        htmlelem.style.backgroundColor = "#000";
 
         if (thumb_url) {
-            htmlvideo.setAttribute("poster", thumb_url);
+            htmlelem.setAttribute("poster", thumb_url);
         }
 
-        htmlvideo.addEventListener("error", function() {
-            console.log("html5 video error");
+        var num_failed = 0;
+
+        var fallback = function() {
+            num_failed++;
+            // only handle if all have failed
+            if (num_failed < info._wb_avail) {
+                return;
+            }
+
+            console.log("html5 " + type +" error");
             var replacement = document.createElement("div");
 
             var vidId = "_wb_vid" + Date.now();
             replacement.setAttribute("id", vidId);
 
-            htmlvideo.parentNode.replaceChild(replacement, htmlvideo);
+            htmlelem.parentNode.replaceChild(replacement, htmlelem);
 
-            init_flash_player(vidId, width, height, original_url, thumb_url);
-        });
+            init_flash_player(vidId, width, height, info, thumb_url);
+        };
 
-        htmlvideo.addEventListener("loadstart", function() {
-            console.log("html5 video success");
-        });
+        for (var i = -1; i < info.formats.length; i++) {
+            var source = document.createElement("source");
 
-        return htmlvideo;
+            var url, format;
+
+            if (i < 0) {
+                url = info.url;
+                format = info.ext;
+            } else {
+                url = info.formats[i].url;
+                format = info.formats[i].ext;
+                if (!info.formats[i]._wb_canPlay) {
+                    continue;
+                }
+            }
+
+            url = wbinfo.prefix + url;
+            format = type + "/" + format;
+
+            source.setAttribute("src", url);
+            source.setAttribute("type", format);
+            source.addEventListener("error", fallback);
+
+            htmlelem.appendChild(source);
+        }
+
+        htmlelem.addEventListener("error", fallback);
+//        htmlelem.addEventListener("loadstart", function() {
+//           console.log("html5 " + type + " success");
+//        });
+
+        return htmlelem;
     }
 
-    function init_flash_player(div_id, width, height, video_url, thumb_url)
+    function init_flash_player(div_id, width, height, info, thumb_url)
     {
         var swf = "/static/default/flowplayer/flowplayer-3.2.18.swf";
 
         var style = 'width: ' + width + 'px; height: ' + height + 'px; display: block';
         document.getElementById(div_id).style.cssText += ';' + style;
 
-        flashembed(div_id, swf, {config:
-            {
-                clip: {
-                    url: video_url
-                },
+        var url;
 
-                plugins: {
-                    rangeRequests: true
-                }
+        if (wbinfo.is_live) {
+            url = info.url;
+        } else {
+            url = info.url;
+        }
 
-            }});
+        config = {
+            clip: {
+                url: url,
+            },
+
+            plugins: {
+                rangeRequests: true
+            }
+        };
+
+        opts = {
+            src: swf,
+            onFail: function() { alert("TEST"); }
+        };
+
+        flashembed(div_id, opts, {"config": config});
     }
 
     document.addEventListener("DOMContentLoaded", check_videos);

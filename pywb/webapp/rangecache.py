@@ -37,7 +37,7 @@ class RangeCache(object):
 
     def __init__(self):
         self.cache = create_cache()
-        self.temp_dir = mkdtemp(prefix='_pywbcache')
+        self.temp_dir = None
         atexit.register(self.cleanup)
 
     def cleanup(self):
@@ -95,6 +95,12 @@ class RangeCache(object):
             if not response.status_headers.get_statuscode().startswith('200'):
                 print('NON 200 RESP')
                 return response.status_headers, response.body
+
+            if not self.temp_dir:
+                self.temp_dir = mkdtemp(prefix='_pywbcache')
+            else:
+                pass
+                #self._check_dir_size(self.temp_dir)
 
             with NamedTemporaryFile(delete=False, dir=self.temp_dir) as fh:
                 for obj in response.body:
