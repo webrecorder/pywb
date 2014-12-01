@@ -85,6 +85,9 @@ class WbUrl(BaseWbUrl):
     REPLAY_REGEX = re.compile('^(\d*)([a-z]+_)?/{0,3}(.+)$')
 
     DEFAULT_SCHEME = 'http://'
+
+    PARTIAL_ENC_RX = re.compile('(https?%3A)?(%2F%2F)?', re.I)
+
     # ======================
 
     def __init__(self, url):
@@ -99,6 +102,14 @@ class WbUrl(BaseWbUrl):
         # protocol agnostic url -> http://
         # no protocol -> http://
         inx = self.url.find(':/')
+        if inx < 0:
+            # check for other partially encoded variants
+            m = self.PARTIAL_ENC_RX.match(self.url)
+            if m:
+                len_ = len(m.group(0))
+                self.url = urllib.unquote_plus(self.url[:len_]) + self.url[len_:]
+                inx = self.url.find(':/')
+
         if inx < 0:
             self.url = self.DEFAULT_SCHEME + self.url
         else:
