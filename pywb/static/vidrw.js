@@ -101,6 +101,11 @@ __wbvidrw = (function() {
             return;
         }
 
+        if (src.indexOf("blob:") == 0) {
+            src = wbinfo.url;
+            no_retry = true;
+        }
+
         src = _wb_wombat.extract_orig(src);
 
         // special cases
@@ -109,21 +114,54 @@ __wbvidrw = (function() {
         }
 
         src = src.replace(VIMEO_RX, "http://player.vimeo.com/video/$1");
-        console.log(src);
+        // end special cases
 
         var xhr = new XMLHttpRequest();
         xhr._no_rewrite = true;
         xhr.open('GET', wbinfo.prefix + 'vi_/' + src, true);
         xhr.onload = function() {
             if (xhr.status == 200) {
-                do_replace_video(elem, JSON.parse(xhr.responseText));
+                var videoinfo = JSON.parse(xhr.responseText);
+
+                // special case
+                if (videoinfo._type == "playlist" && videoinfo.extractor == "soundcloud:playlist") {
+                    var player_url = "https://w.soundcloud.com/player/?visual=true&show_artwork=true&url=" + encodeURIComponent(videoinfo.webpage_url);
+                    do_replace_iframe(elem, player_url);
+                    return;
+                }
+                // end special case
+
+                do_replace_video(elem, videoinfo);
             } else if (!no_retry) {
                 check_replacement(elem, wbinfo.url, true);
-                console.log("REPL RETRY: " + wbinfo.url);
             }
         };
         xhr.send();
     }
+
+    function do_replace_iframe(elem, url) {
+        var iframe = document.createElement("iframe");
+        iframe.width = elem.clientWidth;
+        iframe.height = elem.clientHeight;
+        iframe.src = url;
+        do_replace_elem(elem, iframe);
+    }
+
+    function do_replace_elem(elem, replacement) {
+        var tag_name = elem.tagName.toLowerCase();
+
+        if (tag_name == "iframe" || tag_name == "object") {
+            elem.parentNode.replaceChild(replacement, elem);
+        } else if (tag_name == "embed") {
+            if (elem.parentNode && elem.parentElement.tagName.toLowerCase() == "object") {
+                elem = elem.parentNode;
+            }
+            elem.parentNode.replaceChild(replacement, elem);
+        } else if (tag_name == "video") {
+            elem.parentNode.replaceChild(replacement, elem);
+        }
+    }
+
 
     function do_replace_video(elem, info) {
         var thumb_url = null;
@@ -132,11 +170,11 @@ __wbvidrw = (function() {
             thumb_url = wbinfo.prefix + info.thumbnail;
         }
 
-        var tag = elem.tagName.toLowerCase();
+        var tag_name = elem.tagName.toLowerCase();
 
         var width, height;
 
-        if (tag == "video") {
+        if (tag_name == "video") {
             elem = elem.parentNode;
             elem = elem.parentNode;
 
@@ -174,16 +212,7 @@ __wbvidrw = (function() {
             replacement.setAttribute("id", vidId);
         }
 
-        if (tag == "iframe" || tag == "object") {
-            elem.parentNode.replaceChild(replacement, elem);
-        } else if (tag == "embed") {
-            if (elem.parentNode && elem.parentElement.tagName.toLowerCase() == "object") {
-                elem = elem.parentNode;
-            }
-            elem.parentNode.replaceChild(replacement, elem);
-        } else if (tag == "video") {
-            elem.parentNode.replaceChild(replacement, elem);
-        }
+        do_replace_elem(elem, replacement);
 
         if (vidId) {
             init_flash_player(vidId, width, height, info, thumb_url);
@@ -240,7 +269,7 @@ __wbvidrw = (function() {
                 return;
             }
 
-            console.log("html5 " + type +" error");
+            //console.log("html5 " + type +" error");
             var replacement = document.createElement("div");
 
             var vidId = "_wb_vid" + Date.now();
@@ -278,10 +307,6 @@ __wbvidrw = (function() {
         }
 
         htmlelem.addEventListener("error", fallback);
-//        htmlelem.addEventListener("loadstart", function() {
-//           console.log("html5 " + type + " success");
-//        });
-
         return htmlelem;
     }
 
@@ -299,6 +324,8 @@ __wbvidrw = (function() {
         } else {
             url = info.url;
         }
+
+        url = wbinfo.prefix + url;
 
         config = {
             clip: {
