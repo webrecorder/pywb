@@ -187,6 +187,13 @@ __wbvidrw = (function() {
             height = elem.clientHeight;
         }
 
+        // sort in reverse preference
+        info.formats.sort(function(f1, f2) {
+            var pref1 = f1.preference ? f1.preference : 0;
+            var pref2 = f2.preference ? f2.preference : 0;
+            return pref2 - pref1;
+        });
+
         // Try HTML5 Video
         var htmlelem = document.createElement("video");
 
@@ -227,6 +234,11 @@ __wbvidrw = (function() {
         info._wb_avail = 1;
 
         for (var i = 0; i < info.formats.length; i++) {
+            // Skip DASH formats
+            if (info.formats[i].format_note && info.formats[i].format_note.indexOf("DASH") >= 0) {
+                continue;
+            }
+
             for (var j = 0; j < types.length; j++) {
                 if (can_play(elem, info.formats[i].ext, types[j])) {
                     info.formats[i]._wb_canPlay = true;
