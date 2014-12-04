@@ -71,7 +71,8 @@ class RangeCache(object):
         if len(parts) == 2 and parts[1]:
             end = int(parts[1])
         else:
-            end = start + self.DEFAULT_BUFF - 1
+            #end = start + self.DEFAULT_BUFF - 1
+            end = ''
 
         return url, start, end, use_206
 
@@ -142,10 +143,12 @@ class RangeCache(object):
 
             status_headers = StatusAndHeaders('206 Partial Content', spec['headers'])
             status_headers.replace_header('Content-Range', content_range)
+            status_headers.replace_header('Accept-Ranges', 'bytes')
         else:
             status_headers = StatusAndHeaders('200 OK', spec['headers'])
 
         status_headers.replace_header('Content-Length', str(maxlen))
+
         return status_headers, read_range()
 
 

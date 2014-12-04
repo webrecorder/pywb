@@ -54,14 +54,16 @@ __wbvidrw = (function() {
                 if (child.tagName == "PARAM" && !obj_url) {
                     var name = child.getAttribute("name");
                     name = name.toLowerCase();
-                    if (name == "flashvars") {
+ /*                   if (name == "flashvars") {
                         var value = child.getAttribute("value");
                         value = decodeURIComponent(value);
                         var inx = value.indexOf("=http");
                         if (inx >= 0) {
                             obj_url = value.substring(inx + 1);
                         }
-                    } else if (name == "movie") {
+                    }
+*/
+                    if (name == "movie") {
                         var value = child.getAttribute("value");
                         obj_url = value;
                     }
@@ -86,6 +88,8 @@ __wbvidrw = (function() {
                     // Wait to see if video is playing, if so, don't replace it
                     window.setTimeout(function() {
                         if (ytvideo[0].readyState == 0) {
+                            delete window.yt;
+                            delete window.ytplayer;
                             check_replacement(ytvideo[0], wbinfo.url);
                         }
                     }, 4000);
@@ -114,6 +118,13 @@ __wbvidrw = (function() {
         }
 
         src = src.replace(VIMEO_RX, "http://player.vimeo.com/video/$1");
+
+        if (window.yt) {
+            delete window.yt;
+        }
+        if (window.ytplayer) {
+            delete window.ytplayer;
+        }
         // end special cases
 
         var xhr = new XMLHttpRequest();
@@ -357,5 +368,8 @@ __wbvidrw = (function() {
         flashembed(div_id, opts, {"config": config});
     }
 
-    document.addEventListener("DOMContentLoaded", check_videos);
+    document.addEventListener("DOMContentLoaded", function() {
+        window.setTimeout(check_videos, 200);
+    });
+
 })();
