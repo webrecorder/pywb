@@ -335,7 +335,7 @@ __wbvidrw = (function() {
 
     function init_flash_player(div_id, width, height, info, thumb_url)
     {
-        var swf = "/static/default/flowplayer/flowplayer-3.2.18.swf";
+        var swf = wbinfo.static_prefix + "/flowplayer/flowplayer-3.2.18.swf";
 
         var style = 'width: ' + width + 'px; height: ' + height + 'px; display: block';
         document.getElementById(div_id).style.cssText += ';' + style;
@@ -365,7 +365,19 @@ __wbvidrw = (function() {
             onFail: function() { alert("TEST"); }
         };
 
-        flashembed(div_id, opts, {"config": config});
+        var do_embed = function() {
+            window.flashembed(div_id, opts, {"config": config});
+        };
+
+        if (!window.flashembed) {
+            var script = document.createElement("script");
+            script._no_rewrite = true;
+            script.onload = do_embed;
+            script.setAttribute("src", wbinfo.static_prefix + "/flowplayer/toolbox.flashembed.js");
+            document.body.appendChild(script);
+        } else {
+            do_embed();
+        }
     }
 
     document.addEventListener("DOMContentLoaded", function() {
