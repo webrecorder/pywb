@@ -1,10 +1,10 @@
 PyWb 0.7.0
 ==========
 
-.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=master
+.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=video
       :target: https://travis-ci.org/ikreymer/pywb
-.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=master
-      :target: https://coveralls.io/r/ikreymer/pywb?branch=master
+.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=video
+      :target: https://coveralls.io/r/ikreymer/pywb?branch=video
 .. image:: https://img.shields.io/gratipay/ikreymer.svg
       :target: https://www.gratipay.com/ikreymer/
 
