@@ -1,3 +1,20 @@
+pywb 0.6.5 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* fix static handling when content type can not be guessed, default to 'application/octet-stream'
+
+* rewrite fix: understand partially encoded urls such as http%3A// in WbUrl, decode correctly
+
+* rewrite fix: rewrite \/\/example.com and \\/\\/example.com in JS same as \\example.com
+
+* cookies: add exact cookie rewriter which sets cookie to exact url only, never collection or host root
+
+* don't rewrite rel=canonical links for services which rely on these
+
+* cdx-indexer: Detect non-gzip chunk encoded .warc.gz/arc.gz archive files and show a meaningful
+  error message explaining how to fix issue (uncompress and possibly use warctools warc2warc to recompress)
+
+
 pywb 0.6.4 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

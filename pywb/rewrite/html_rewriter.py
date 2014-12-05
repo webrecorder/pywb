@@ -174,6 +174,12 @@ class HTMLRewriterMixin(object):
             elif attr_name == 'crossorigin':
                 attr_name = '_crossorigin'
 
+            # special case: link don't rewrite canonical
+            elif tag == 'link' and attr_name == 'href':
+                if not self.has_attr(tag_attrs, ('rel', 'canonical')):
+                    rw_mod = handler.get(attr_name)
+                    attr_value = self._rewrite_url(attr_value, rw_mod)
+
             # special case: meta tag
             elif (tag == 'meta') and (attr_name == 'content'):
                 if self.has_attr(tag_attrs, ('http-equiv', 'refresh')):

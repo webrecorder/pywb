@@ -21,6 +21,25 @@ class ArchiveIterator(object):
 
     """
 
+    GZIP_ERR_MSG = """
+    ERROR: Non-chunked gzip file detected, gzip block continues
+    beyond single record.
+
+    This file is probably not a multi-chunk gzip but a single gzip file.
+
+    To allow seek, a gzipped {1} must have each record compressed into
+    a single gzip chunk and concatenated together.
+
+    This file is likely still valid and you can use it by decompressing it:
+
+    gunzip myfile.{0}.gz
+
+    You can then also use the 'warc2warc' tool from the 'warc-tools'
+    package which will create a properly chunked gzip file:
+
+    warc2warc -Z myfile.{0} > myfile.{0}.gz
+    """
+
     def __init__(self, fileobj):
         self.fh = fileobj
 
@@ -42,27 +61,34 @@ class ArchiveIterator(object):
                                                   block_size=block_size)
         self.offset = self.fh.tell()
 
-        next_line = None
+        self.next_line = None
+
+        is_valid = True
 
         while True:
             try:
-                record = self._next_record(next_line)
+                record = self._next_record(self.next_line)
+                if not is_valid:
+                    self._raise_err()
+
                 yield record
             except EOFError:
                 break
 
             self.read_to_end(record)
 
-            # for non-compressed, consume blank lines here
-            if not self.reader.decompressor:
-                next_line = self._consume_blanklines()
-                if next_line is None:
-                    # at end of file
-                    break
+            if self.reader.decompressor:
+                is_valid = self.reader.read_next_member()
 
-            # reset reader for next member
-            else:
-                self.reader.read_next_member()
+    def _raise_err(self):
+        frmt = 'warc/arc'
+        if self.known_format:
+            frmt = self.known_format
+
+        frmt_up = frmt.upper()
+
+        msg = self.GZIP_ERR_MSG.format(frmt, frmt_up)
+        raise Exception(msg)
 
     def _consume_blanklines(self):
         """ Consume blank lines that are between records
@@ -72,25 +98,31 @@ class ArchiveIterator(object):
           and are included in record length which is the full gzip envelope
         - For uncompressed, they are between records and so are NOT part of
           the record length
+
+          count empty_size so that it can be substracted from
+          the record length for uncompressed
         """
+        empty_size = 0
         while True:
             line = self.reader.readline()
             if len(line) == 0:
-                return None
+                return None, empty_size
 
             if line.rstrip() == '':
-                self.offset = self.fh.tell() - self.reader.rem_length()
+                empty_size += len(line)
                 continue
 
-            return line
+            return line, empty_size
 
     def read_to_end(self, record, compute_digest=False):
         """ Read remainder of the stream
         If a digester is included, update it
         with the data read
         """
+
+        # already at end of this record, don't read until it is consumed
         if self.member_info:
-            return self.member_info
+            return None
 
         if compute_digest:
             digester = hashlib.sha1()
@@ -114,11 +146,20 @@ class ArchiveIterator(object):
         - For uncompressed files, blank lines are read later,
           and not included in the record length
         """
-        if self.reader.decompressor:
-            self._consume_blanklines()
+        #if self.reader.decompressor:
+        self.next_line, empty_size = self._consume_blanklines()
 
         self.offset = self.fh.tell() - self.reader.rem_length()
+        #if self.offset < 0:
+        #    raise Exception('Not Gzipped Properly')
+
+        if self.next_line:
+            self.offset -= len(self.next_line)
+
         length = self.offset - curr_offset
+
+        if not self.reader.decompressor:
+            length -= empty_size
 
         if compute_digest:
             digest = base64.b32encode(digester.digest())
@@ -126,7 +167,8 @@ class ArchiveIterator(object):
             digest = None
 
         self.member_info = (curr_offset, length, digest)
-        return self.member_info
+        #return self.member_info
+        #return next_line
 
     def _next_record(self, next_line):
         """ Use loader to parse the record from the reader stream
@@ -250,7 +292,9 @@ def create_record_iter(arcv_iter, options):
 
             entry.post_query = post_query
 
-        entry.set_rec_info(*arcv_iter.read_to_end(record, compute_digest))
+        #entry.set_rec_info(*arcv_iter.read_to_end(record, compute_digest))
+        arcv_iter.read_to_end(record, compute_digest)
+        entry.set_rec_info(*arcv_iter.member_info)
         entry.record = record
 
         yield entry

@@ -17,7 +17,9 @@ class UrlRewriter(object):
 
     PROTOCOLS = ['http:', 'https:', 'ftp:', 'mms:', 'rtsp:', 'wais:']
 
-    def __init__(self, wburl, prefix, full_prefix=None, rel_prefix=None, 
+    REL_SCHEME = ('//', r'\/\/', r'\\/\\/')
+
+    def __init__(self, wburl, prefix, full_prefix=None, rel_prefix=None,
                  root_path=None, cookie_scope=None):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
         self.prefix = prefix
@@ -45,7 +47,7 @@ class UrlRewriter(object):
 
         is_abs = any(url.startswith(x) for x in self.PROTOCOLS)
 
-        if url.startswith('//'):
+        if url.startswith(self.REL_SCHEME):
             is_abs = True
             url = 'http:' + url
 
