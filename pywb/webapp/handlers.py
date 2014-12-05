@@ -40,7 +40,7 @@ class SearchPageWbUrlHandler(WbUrlHandler):
                                       create_template(html, 'Frame Insert'))
 
             self.banner_html = config.get('banner_html', 'banner.html')
-            
+
             if config.get('enable_memento', False):
                 self.response_class = MementoResponse
 
@@ -193,7 +193,11 @@ class StaticHandler(BaseHandler):
             else:
                 reader = iter(lambda: data.read(), '')
 
-            content_type, _ = mimetypes.guess_type(full_path)
+            content_type = 'application/octet-stream'
+
+            guessed = mimetypes.guess_type(full_path)
+            if guessed[0]:
+                content_type = guessed[0]
 
             return WbResponse.text_stream(data,
                                           content_type=content_type,
