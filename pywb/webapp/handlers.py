@@ -193,7 +193,11 @@ class StaticHandler(BaseHandler):
             else:
                 reader = iter(lambda: data.read(), '')
 
-            content_type, _ = mimetypes.guess_type(full_path)
+            content_type = 'application/octet-stream'
+
+            guessed = mimetypes.guess_type(full_path)
+            if guessed[0]:
+                content_type = guessed[0]
 
             return WbResponse.text_stream(reader,
                                           content_type=content_type,

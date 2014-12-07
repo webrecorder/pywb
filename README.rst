@@ -58,10 +58,10 @@ running ``python setup.py install``:
   for all options.
 
 
-* ``cdx-server`` -- a CDX API only server which returns a responses about CDX captures in bulk. 
+* ``cdx-server`` -- a CDX API only server which returns a responses about CDX captures in bulk.
   Includes most of the features of the `original cdx server implementation <https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server>`_,
   updated documentation coming soon.
-  
+
 * ``proxy-cert-auth`` -- a utility to support proxy mode. It can be used in CA root certificate, or per-host certificate with an existing root cert.
 
 

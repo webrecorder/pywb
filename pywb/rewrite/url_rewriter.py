@@ -20,13 +20,14 @@ class UrlRewriter(object):
     REL_SCHEME = ('//', r'\/\/', r'\\/\\/')
 
     def __init__(self, wburl, prefix, full_prefix=None, rel_prefix=None,
-                 root_path=None, cookie_scope=None):
+                 root_path=None, cookie_scope=None, rewrite_opts={}):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
         self.prefix = prefix
         self.full_prefix = full_prefix
         self.rel_prefix = rel_prefix if rel_prefix else prefix
         self.root_path = root_path if root_path else '/'
         self.cookie_scope = cookie_scope
+        self.rewrite_opts = rewrite_opts
 
     def rewrite(self, url, mod=None):
         # if special protocol, no rewriting at all
