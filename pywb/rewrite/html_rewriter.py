@@ -92,6 +92,9 @@ class HTMLRewriterMixin(object):
 
         self.rewrite_tags = self._init_rewrite_tags(defmod)
 
+        # get opts from urlrewriter
+        self.opts = url_rewriter.rewrite_opts
+
     # ===========================
     META_REFRESH_REGEX = re.compile('^[\\d.]+\\s*;\\s*url\\s*=\\s*(.+?)\\s*$',
                                     re.IGNORECASE | re.MULTILINE)
@@ -174,9 +177,11 @@ class HTMLRewriterMixin(object):
             elif attr_name == 'crossorigin':
                 attr_name = '_crossorigin'
 
-            # special case: link don't rewrite canonical
+            # special case: if rewrite_canon not set,
+            # don't rewrite rel=canonical
             elif tag == 'link' and attr_name == 'href':
-                if not self.has_attr(tag_attrs, ('rel', 'canonical')):
+                if (self.opts.get('rewrite_rel_canon', True) or
+                    not self.has_attr(tag_attrs, ('rel', 'canonical'))):
                     rw_mod = handler.get(attr_name)
                     attr_value = self._rewrite_url(attr_value, rw_mod)
 
@@ -191,16 +196,20 @@ class HTMLRewriterMixin(object):
                     rw_mod = 'oe_'
                     attr_value = self._rewrite_url(attr_value, rw_mod)
 
+            # special case: base tag
+            elif (tag == 'base') and (attr_name == 'href') and attr_value:
+                rw_mod = handler.get(attr_name)
+                base_value = self._rewrite_url(attr_value, rw_mod)
+                if self.opts.get('rewrite_base', True):
+                    attr_value = base_value
+                self.url_rewriter = (self.url_rewriter.
+                                     rebase_rewriter(base_value))
+
             else:
                 # rewrite url using tag handler
                 rw_mod = handler.get(attr_name)
                 if rw_mod is not None:
                     attr_value = self._rewrite_url(attr_value, rw_mod)
-
-                # special case: base tag
-                if (tag == 'base') and (attr_name == 'href') and attr_value:
-                    self.url_rewriter = (self.url_rewriter.
-                                         rebase_rewriter(attr_value))
 
             # write the attr!
             self._write_attr(attr_name, attr_value)

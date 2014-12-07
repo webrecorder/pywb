@@ -38,7 +38,8 @@ class WbRequest(object):
                  wburl_class=None,
                  urlrewriter_class=None,
                  is_proxy=False,
-                 cookie_scope=None):
+                 cookie_scope=None,
+                 rewrite_opts={}):
 
         self.env = env
 
@@ -77,7 +78,8 @@ class WbRequest(object):
                                                  host_prefix + rel_prefix,
                                                  rel_prefix,
                                                  env.get('SCRIPT_NAME', '/'),
-                                                 cookie_scope)
+                                                 cookie_scope,
+                                                 rewrite_opts)
 
             self.urlrewriter.deprefix_url()
         else:

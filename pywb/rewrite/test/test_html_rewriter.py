@@ -20,12 +20,21 @@ ur"""
 #>>> parse('<input "selected"><img src></div>')
 #<input "selected"=""><img src=""></div>
 
-# Base Tests
+# Base Tests -- w/ rewrite (default)
 >>> parse('<html><head><base href="http://example.com/diff/path/file.html"/>')
 <html><head><base href="/web/20131226101010/http://example.com/diff/path/file.html"/>
 
 >>> parse('<base href="static/"/><img src="image.gif"/>')
 <base href="/web/20131226101010/http://example.com/some/path/static/"/><img src="/web/20131226101010im_/http://example.com/some/path/static/image.gif"/>
+
+# Base Tests -- no rewrite
+>>> parse('<html><head><base href="http://example.com/diff/path/file.html"/>', urlrewriter=no_base_canon_rewriter)
+<html><head><base href="http://example.com/diff/path/file.html"/>
+
+>>> parse('<base href="static/"/><img src="image.gif"/>', urlrewriter=no_base_canon_rewriter)
+<base href="static/"/><img src="/web/20131226101010im_/http://example.com/some/path/static/image.gif"/>
+
+
 
 # HTML Entities
 >>> parse('<a href="">&rsaquo; &nbsp; &#62; &#63</div>')
@@ -102,8 +111,12 @@ ur"""
 >>> parse('<link href="abc.txt"><div>SomeTest</div>', head_insert = '<script>load_stuff();</script>')
 <link href="/web/20131226101010oe_/http://example.com/some/path/abc.txt"><script>load_stuff();</script><div>SomeTest</div>
 
-# don't rewrite rel=canonical
+# rel=canonical: rewrite (default)
 >>> parse('<link rel=canonical href="http://example.com/">')
+<link rel="canonical" href="/web/20131226101010oe_/http://example.com/">
+
+# rel=canonical: no_rewrite
+>>> parse('<link rel=canonical href="http://example.com/">', urlrewriter=no_base_canon_rewriter)
 <link rel="canonical" href="http://example.com/">
 
 # doctype
@@ -143,7 +156,12 @@ import pprint
 
 urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html', '/web/')
 
-def parse(data, head_insert = None):
+no_base_canon_rewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html',
+                                     '/web/',
+                                     rewrite_opts=dict(rewrite_rel_canon=False,
+                                                       rewrite_base=False))
+
+def parse(data, head_insert=None, urlrewriter=urlrewriter):
     parser = HTMLRewriter(urlrewriter, head_insert = head_insert)
     #data = data.decode('utf-8')
     result = parser.rewrite(data) + parser.close()

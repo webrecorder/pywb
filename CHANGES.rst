@@ -1,3 +1,14 @@
+pywb 0.6.6 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Beginning of new rewrite options, settable per collections and stored in UrlRewriter. Available options:
+
+  - `rewrite_base` - set to False to disable rewriting `<base href="...">` tag
+  - `rewrite_rel_canon` - set to false to disable rewriting `<link rel=canon href="...">`
+
+* JS rewrite: Don't rewrite location if starting with '$'
+
+
 pywb 0.6.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
