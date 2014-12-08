@@ -82,11 +82,10 @@ class RewriteHandler(SearchPageWbUrlHandler):
                 url, start, end, use_206 = rangeres
                 proxies = False
 
-                # force a bound on unbounded range
-                if use_206 and wbrequest.env['HTTP_RANGE'].endswith('-'):
+                # force a bound on unbounded range, if specified
+                if use_206 and end and wbrequest.env['HTTP_RANGE'].endswith('-'):
                     range_h = 'bytes={0}-{1}'.format(start, end)
                     wbrequest.env['HTTP_RANGE'] = range_h
-                    print('BOUNDING: ' + range_h)
 
                 hash_ = hashlib.md5()
                 hash_.update(url)
@@ -95,6 +94,11 @@ class RewriteHandler(SearchPageWbUrlHandler):
                 if ping_cache_key not in range_cache.cache:
                     ping_url = url
 
+                    # if non-206, (eg. youtube) generate a videoinfo page
+                    if not use_206 and ref_wburl_str:
+                        resp = self.get_video_info(wbrequest,
+                                                   info_url=wbrequest.env['REL_REFERER'],
+                                                   video_url=url)
 
         result = self.rewriter.fetch_request(wbrequest.wb_url.url,
                                              wbrequest.urlrewriter,
@@ -158,11 +162,17 @@ class RewriteHandler(SearchPageWbUrlHandler):
         wbresponse.body = check_buff_gen(wbresponse.body)
         return wbresponse
 
-    def get_video_info(self, wbrequest):
+    def get_video_info(self, wbrequest, info_url=None, video_url=None):
         if not self.youtubedl:
             self.youtubedl = YoutubeDLWrapper()
 
-        info = self.youtubedl.extract_info(wbrequest.wb_url.url)
+        if not video_url:
+            video_url = wbrequest.wb_url.url
+
+        if not info_url:
+            info_url = wbrequest.wb_url.url
+
+        info = self.youtubedl.extract_info(video_url)
 
         content_type = 'application/vnd.youtube-dl_formats+json'
         metadata = json.dumps(info)
@@ -173,10 +183,10 @@ class RewriteHandler(SearchPageWbUrlHandler):
             headers = self._live_request_headers(wbrequest)
             headers['Content-Type'] = content_type
 
-            url = HttpsUrlRewriter.remove_https(wbrequest.wb_url.url)
+            info_url = HttpsUrlRewriter.remove_https(info_url)
 
             response = requests.request(method='PUTMETA',
-                                        url=url,
+                                        url=info_url,
                                         data=metadata,
                                         headers=headers,
                                         proxies=proxies,
