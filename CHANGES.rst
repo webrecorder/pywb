@@ -1,6 +1,10 @@
 pywb 0.6.6 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* JS Rewriters: add mixins for link + location (default), link only, location only rewriting by setting ``js_rewrite_location`` to ``all``, ``urls``, ``location``, respectively.
+
+  (New: location only rewriting does not change JS urls)
+
 * Beginning of new rewrite options, settable per collections and stored in UrlRewriter. Available options:
 
   - ``rewrite_base`` - set to False to disable rewriting ``<base href="...">`` tag
