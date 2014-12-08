@@ -55,6 +55,10 @@ class RangeCache(object):
         if result:
             range_h, url = result
 
+            if wbrequest.env.get('HTTP_X_IGNORE_RANGE_ARG'):
+                wbrequest.wb_url.url = url
+                return None
+
         # check for standard range header
         if not range_h:
             range_h = wbrequest.env.get('HTTP_RANGE')
