@@ -120,6 +120,11 @@ rules:
     # testing rules -- not for valid domain
     #=================================================================
     # this rule block is a non-existent prefix merely for testing
+    - url_prefix: 'example,example,test,loconly)/'
+
+      rewrite:
+        js_rewrite_location: location
+
     - url_prefix: 'example,example,test)/'
 
       canonicalize:
@@ -131,10 +136,10 @@ rules:
           - id
 
       rewrite:
-        js_rewrite_location: False
+        js_rewrite_location: urls
 
 
-    # all domain rules -- fallback to this dataset
+      # all domain rules -- fallback to this dataset
     #=================================================================
     # Applies to all urls -- should be last
     - url_prefix: ''
