@@ -61,7 +61,7 @@ this.ts_to_date = function(ts, is_gmt)
         return ts;
     }
 
-    var datestr = (ts.substring(0, 4) + "-" + 
+    var datestr = (ts.substring(0, 4) + "-" +
                   ts.substring(4, 6) + "-" +
                   ts.substring(6, 8) + "T" +
                   ts.substring(8, 10) + ":" +
@@ -121,6 +121,12 @@ function notify_top() {
 }
 
 this.load = function() {
+    if (window._wb_js_inited) {
+        return;
+    }
+
+    window._wb_js_inited = true;
+
     if ((window.self == window.top) && wbinfo) {
         if (wbinfo.top_url && (window.location.href != wbinfo.top_url) && wbinfo.mod != "bn_") {
             // Auto-redirect to top frame
