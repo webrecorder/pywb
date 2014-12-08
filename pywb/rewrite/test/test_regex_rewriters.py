@@ -3,7 +3,7 @@ r"""
 # Custom Regex
 #=================================================================
 # Test https->http converter (other tests below in subclasses)
->>> RegexRewriter([(RegexRewriter.HTTPX_MATCH_STR, RegexRewriter.remove_https, 0)]).rewrite('a = https://example.com; b = http://example.com; c = https://some-url/path/https://embedded.example.com')
+>>> RegexRewriter(urlrewriter, [(RegexRewriter.HTTPX_MATCH_STR, RegexRewriter.remove_https, 0)]).rewrite('a = https://example.com; b = http://example.com; c = https://some-url/path/https://embedded.example.com')
 'a = http://example.com; b = http://example.com; c = http://some-url/path/http://embedded.example.com'
 
 
