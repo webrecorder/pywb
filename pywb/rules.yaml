@@ -150,6 +150,22 @@ rules:
 
           type: 'domain'
 
+    # comments support
+    - url_prefix: 'com,googleapis,plus)/u/0/_/widget/render/comments'
+
+      rewrite:
+          js_rewrite_location: location
+
+      fuzzy_lookup:
+          - href
+          - stream_id
+          - substream_id
+
+    - url_prefix: 'com,ytimg,s)/yts/jsbin/'
+
+      rewrite:
+          js_rewrite_location: location
+
 
     # testing rules -- not for valid domain
     #=================================================================
