@@ -7,10 +7,14 @@ Video/streaming content replay and buffering improvements!
 pywb 0.6.6 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* JS Rewriters: add mixins for link + location (default), link only, location only rewriting by setting ``js_rewrite_location`` to ``all``, ``urls``, ``location``, respectively.
+
+  (New: location only rewriting does not change JS urls)
+
 * Beginning of new rewrite options, settable per collections and stored in UrlRewriter. Available options:
 
-  - `rewrite_base` - set to False to disable rewriting `<base href="...">` tag
-  - `rewrite_rel_canon` - set to false to disable rewriting `<link rel=canon href="...">`
+  - ``rewrite_base`` - set to False to disable rewriting ``<base href="...">`` tag
+  - ``rewrite_rel_canon`` - set to false to disable rewriting ``<link rel=canon href="...">``
 
 * JS rewrite: Don't rewrite location if starting with '$'
 
@@ -58,17 +62,17 @@ pywb 0.6.3 changelist
 pywb 0.6.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* Invert framed replay paradigm: Canonical page is always without a modifier (instead of with `mp_`), if using frames, the page redirects to `tf_`, and uses replaceState() to change url back to canonical form.
+* Invert framed replay paradigm: Canonical page is always without a modifier (instead of with ``mp_``), if using frames, the page redirects to ``tf_``, and uses replaceState() to change url back to canonical form.
 
 * Enable Memento support for framed replay, include Memento headers in top frame
 
-* Easier to customize just the banner html, via `banner_html` setting in the config. Default banner uses ui/banner.html and inserts the script default_banner.js, which creates the banner.
+* Easier to customize just the banner html, via ``banner_html`` setting in the config. Default banner uses ui/banner.html and inserts the script default_banner.js, which creates the banner.
 
-  Other implementations may create banner via custom JS or directly insert HTML, as needed. Setting `banner_html: False` will disable the banner.
+  Other implementations may create banner via custom JS or directly insert HTML, as needed. Setting ``banner_html: False`` will disable the banner.
 
 * Small improvements to streaming response, read in fixed chunks to allow better streaming from live.
 
-* Improved cookie and csrf-token rewriting, including: ability to set `cookie_scope: root` per collection to have all replayed cookies have their Path set to application root.
+* Improved cookie and csrf-token rewriting, including: ability to set ``cookie_scope: root`` per collection to have all replayed cookies have their Path set to application root.
 
   This is useful for replaying sites which share cookies amongst different pages and across archived time ranges.
 
