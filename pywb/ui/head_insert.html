@@ -1,5 +1,5 @@
 <!-- WB Insert -->
-{% if rule.js_rewrite_location and include_wombat %}
+{% if rule.js_rewrite_location != 'urls' and include_wombat %}
 <script src='{{ wbrequest.host_prefix }}/{{ static_path }}/wombat.js'> </script>
 <script>
   {% set urlsplit = cdx.original | urlsplit %}

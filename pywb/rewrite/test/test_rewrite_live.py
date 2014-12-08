@@ -13,7 +13,7 @@ urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.htm
 bn_urlrewriter = UrlRewriter('20131226101010bn_/http://example.com/some/path/index.html', '/pywb/')
 
 def head_insert_func(rule, cdx):
-    if rule.js_rewrite_location == True:
+    if rule.js_rewrite_location != 'urls':
         return '<script src="/static/default/wombat.js"> </script>'
     else:
         return ''
@@ -26,10 +26,10 @@ def test_local_1():
                                          'com,example,test)/')
 
     # wombat insert added
-    assert '<head><script src="/static/default/wombat.js"> </script>' in buff
+    assert '<head><script src="/static/default/wombat.js"> </script>' in buff, buff
 
-    # location rewritten
-    assert 'window.WB_wombat_location = "/other.html"' in buff
+    # JS location and JS link rewritten
+    assert 'window.WB_wombat_location = "/pywb/20131226101010/http:\/\/example.com/dynamic_page.html"' in buff
 
     # link rewritten
     assert '"/pywb/20131226101010/http://example.com/some/path/another.html"' in buff
@@ -65,7 +65,7 @@ def test_local_no_head_banner_only():
     # link NOT rewritten
     assert '"another.html"' in buff
 
-def test_local_banner_only():
+def test_local_banner_only_no_rewrite():
     status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html',
                                          bn_urlrewriter,
                                          head_insert_func,
@@ -74,13 +74,13 @@ def test_local_banner_only():
     # wombat insert added
     assert '<head><script src="/static/default/wombat.js"> </script>' in buff
 
-    # location NOT rewritten
-    assert 'window.location = "/other.html"' in buff
+    # JS location NOT rewritten, JS link NOT rewritten
+    assert 'window.location = "http:\/\/example.com/dynamic_page.html"' in buff, buff
 
     # link NOT rewritten
     assert '"another.html"' in buff
 
-def test_local_2_no_js_location_rewrite():
+def test_local_2_link_only_rewrite():
     status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html',
                                          urlrewriter,
                                          head_insert_func,
@@ -89,12 +89,27 @@ def test_local_2_no_js_location_rewrite():
     # no wombat insert
     assert '<head><script src="/static/default/wombat.js"> </script>' not in buff
 
-    # no location rewrite
-    assert 'window.location = "/other.html"' in buff
+    # JS location NOT rewritten, JS link rewritten
+    assert 'window.location = "/pywb/20131226101010/http:\/\/example.com/dynamic_page.html"' in buff
 
     # still link rewrite
     assert '"/pywb/20131226101010/http://example.com/some/path/another.html"' in buff
 
+
+def test_local_2_js_loc_only_rewrite():
+    status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html',
+                                         urlrewriter,
+                                         head_insert_func,
+                                         'example,example,test,loconly)/')
+
+    # wombat insert added
+    assert '<script src="/static/default/wombat.js"> </script>' in buff
+
+    # JS location rewritten, JS link NOT rewritten
+    assert 'window.WB_wombat_location = "http:\/\/example.com/dynamic_page.html"' in buff
+
+    # still link rewrite in HTML
+    assert '"/pywb/20131226101010/http://example.com/some/path/another.html"' in buff
 
 def test_example_1():
     status_headers, buff = get_rewritten('http://example.com/', urlrewriter, req_headers={'Connection': 'close'})
