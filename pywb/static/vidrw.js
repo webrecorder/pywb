@@ -145,8 +145,14 @@ __wbvidrw = (function() {
                 }
                 // end special case
 
-                do_replace_video(elem, videoinfo);
-            } else if (!no_retry) {
+                if (videoinfo.formats) {
+                    do_replace_video(elem, videoinfo);
+                    return;
+                }
+            }
+
+            // Retry with current page as last resort
+            if (!no_retry) {
                 check_replacement(elem, wbinfo.url, true);
             }
         };
@@ -167,13 +173,11 @@ __wbvidrw = (function() {
         if (!width) {
             width = "100%";
         }
-        console.log(width);
 
         var height = elem.height;
         if (!height) {
             height = "100%";
         }
-        console.log(height);
 
         return [width, height];
     }
