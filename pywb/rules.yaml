@@ -108,6 +108,16 @@ rules:
       # only use non query part of url, ignore query
       fuzzy_lookup: '()'
 
+    - url_prefix: 'com,vimeocdn,'
+
+      fuzzy_lookup: '()'
+
+    - url_prefix: 'metadata)/player.vimeo.com/'
+
+      fuzzy_lookup:
+          match: '()'
+          replace: '&'
+
     - url_prefix: 'com,vimeo,player)/log/'
 
       fuzzy_lookup:
