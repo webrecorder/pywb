@@ -1,6 +1,8 @@
 pywb 0.6.6 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* JS client side improvements: check for double-inits, preserve anchor in wb.js top location redirect
+
 * JS Rewriters: add mixins for link + location (default), link only, location only rewriting by setting ``js_rewrite_location`` to ``all``, ``urls``, ``location``, respectively.
 
   (New: location only rewriting does not change JS urls)
