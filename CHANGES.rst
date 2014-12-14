@@ -7,6 +7,8 @@ Video/streaming content replay and buffering improvements!
 pywb 0.6.6 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* JS client side improvements: check for double-inits, preserve anchor in wb.js top location redirect
+
 * JS Rewriters: add mixins for link + location (default), link only, location only rewriting by setting ``js_rewrite_location`` to ``all``, ``urls``, ``location``, respectively.
 
   (New: location only rewriting does not change JS urls)
@@ -34,7 +36,6 @@ pywb 0.6.5 changelist
 
 * cdx-indexer: Detect non-gzip chunk encoded .warc.gz/arc.gz archive files and show a meaningful
   error message explaining how to fix issue (uncompress and possibly use warctools warc2warc to recompress)
->>>>>>> develop
 
 
 pywb 0.6.4 changelist
