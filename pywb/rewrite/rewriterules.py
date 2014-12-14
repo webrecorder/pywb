@@ -1,7 +1,7 @@
 from pywb.utils.dsrules import BaseRule
 
 from regex_rewriters import RegexRewriter, CSSRewriter, XMLRewriter
-from regex_rewriters import JSLinkAndLocationRewriter, JSLinkOnlyRewriter
+from regex_rewriters import JSLinkAndLocationRewriter, JSLinkOnlyRewriter, JSLocationOnlyRewriter
 
 from header_rewriter import HeaderRewriter
 from html_rewriter import HTMLRewriter
@@ -27,12 +27,13 @@ class RewriteRules(BaseRule):
         self.parse_comments = config.get('parse_comments', False)
 
         # Custom handling for js rewriting, often the most complex
-        self.js_rewrite_location = config.get('js_rewrite_location', True)
-        self.js_rewrite_location = bool(self.js_rewrite_location)
+        self.js_rewrite_location = config.get('js_rewrite_location', 'all')
 
         # ability to toggle rewriting
-        if self.js_rewrite_location:
+        if self.js_rewrite_location == 'all':
             js_default_class = JSLinkAndLocationRewriter
+        elif self.js_rewrite_location == 'location':
+            js_default_class = JSLocationOnlyRewriter
         else:
             js_default_class = JSLinkOnlyRewriter
 

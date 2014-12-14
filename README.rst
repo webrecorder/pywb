@@ -1,4 +1,4 @@
-PyWb 0.6.5
+PyWb 0.6.6
 ==========
 
 .. image:: https://travis-ci.org/ikreymer/pywb.png?branch=master
@@ -44,7 +44,7 @@ This README contains a basic overview of using pywb. After reading this intro, c
 pywb Tools Overview
 -----------------------------
 
-In addition to the standard wayback machine (explained further below), pywb tool suite includes a 
+In addition to the standard wayback machine (explained further below), pywb tool suite includes a
 number of useful command-line and web server tools. The tools should be available to run after
 running ``python setup.py install``:
 
@@ -58,10 +58,10 @@ running ``python setup.py install``:
   for all options.
 
 
-* ``cdx-server`` -- a CDX API only server which returns a responses about CDX captures in bulk. 
+* ``cdx-server`` -- a CDX API only server which returns a responses about CDX captures in bulk.
   Includes most of the features of the `original cdx server implementation <https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server>`_,
   updated documentation coming soon.
-  
+
 * ``proxy-cert-auth`` -- a utility to support proxy mode. It can be used in CA root certificate, or per-host certificate with an existing root cert.
 
 
@@ -151,7 +151,7 @@ If you would like to use non-SURT ordered .cdx files, simply add this field to t
 ::
 
       surt_ordered: false
-      
+
 UI Customization
 """""""""""""""""""""
 

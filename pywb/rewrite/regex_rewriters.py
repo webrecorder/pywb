@@ -35,7 +35,7 @@ class RegexRewriter(object):
 
     #DEFAULT_OP = add_prefix
 
-    def __init__(self, rules):
+    def __init__(self, rewriter, rules):
         #rules = self.create_rules(http_prefix)
 
         # Build regexstr, concatenating regex list
@@ -106,7 +106,7 @@ class RegexRewriter(object):
 
 
 #=================================================================
-class JSLinkOnlyRewriter(RegexRewriter):
+class JSLinkRewriterMixin(object):
     """
     JS Rewriter which rewrites absolute http://, https:// and // urls
     at the beginning of a string
@@ -118,19 +118,20 @@ class JSLinkOnlyRewriter(RegexRewriter):
         rules = rules + [
             (self.JS_HTTPX, RegexRewriter.archival_rewrite(rewriter), 0)
         ]
-        super(JSLinkOnlyRewriter, self).__init__(rules)
+        super(JSLinkRewriterMixin, self).__init__(rewriter, rules)
 
 
 #=================================================================
-class JSLinkAndLocationRewriter(JSLinkOnlyRewriter):
+class JSLocationRewriterMixin(object):
+#class JSLinkAndLocationRewriter(JSLinkOnlyRewriter):
     """
-    JS Rewriter which also rewrites location and domain to the
+    JS Rewriter mixin which rewrites location and domain to the
     specified prefix (default: 'WB_wombat_')
     """
 
     def __init__(self, rewriter, rules=[], prefix='WB_wombat_'):
         rules = rules + [
-             (r'(?<!/)\blocation\b(?!\":)', RegexRewriter.add_prefix(prefix), 0),
+             (r'(?<![/$])\blocation\b(?!\":)', RegexRewriter.add_prefix(prefix), 0),
              (r'(?<=document\.)domain', RegexRewriter.add_prefix(prefix), 0),
              (r'(?<=document\.)referrer', RegexRewriter.add_prefix(prefix), 0),
              (r'(?<=document\.)cookie', RegexRewriter.add_prefix(prefix), 0),
@@ -148,7 +149,23 @@ class JSLinkAndLocationRewriter(JSLinkOnlyRewriter):
              #(r'\b(?:self|window)\b[!=\W]+\b(top)\b',
              #RegexRewriter.add_prefix(prefix), 1),
         ]
-        super(JSLinkAndLocationRewriter, self).__init__(rewriter, rules)
+        super(JSLocationRewriterMixin, self).__init__(rewriter, rules)
+
+
+#=================================================================
+class JSLocationOnlyRewriter(JSLocationRewriterMixin, RegexRewriter):
+    pass
+
+
+#=================================================================
+class JSLinkOnlyRewriter(JSLinkRewriterMixin, RegexRewriter):
+    pass
+
+#=================================================================
+class JSLinkAndLocationRewriter(JSLocationRewriterMixin,
+                                JSLinkRewriterMixin,
+                                RegexRewriter):
+    pass
 
 
 #=================================================================
@@ -161,7 +178,7 @@ class XMLRewriter(RegexRewriter):
     def __init__(self, rewriter, extra=[]):
         rules = self._create_rules(rewriter)
 
-        super(XMLRewriter, self).__init__(rules)
+        super(XMLRewriter, self).__init__(rewriter, rules)
 
     # custom filter to reject 'xmlns' attr
     def filter(self, m):
@@ -189,7 +206,7 @@ class CSSRewriter(RegexRewriter):
 
     def __init__(self, rewriter):
         rules = self._create_rules(rewriter)
-        super(CSSRewriter, self).__init__(rules)
+        super(CSSRewriter, self).__init__(rewriter, rules)
 
     def _create_rules(self, rewriter):
         return [
