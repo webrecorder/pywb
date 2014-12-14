@@ -128,7 +128,10 @@ this.load = function() {
     window._wb_js_inited = true;
 
     if ((window.self == window.top) && wbinfo) {
-        if (wbinfo.top_url && (window.location.href != wbinfo.top_url) && wbinfo.mod != "bn_") {
+
+        var loc = window.location.href.replace(window.location.hash, "");
+
+        if (wbinfo.top_url && (loc != wbinfo.top_url) && wbinfo.mod != "bn_") {
             // Auto-redirect to top frame
             window.location.replace(wbinfo.top_url);
         } else {
