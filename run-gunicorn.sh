@@ -2,7 +2,7 @@
 pip install gunicorn
 
 if [ $? -ne 0 ]; then
-    "uwsgi install failed"
+    "gunicorn install failed"
     exit 1
 fi
 
