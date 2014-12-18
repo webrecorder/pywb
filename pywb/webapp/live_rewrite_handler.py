@@ -1,6 +1,7 @@
 from pywb.framework.basehandlers import WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.archivalrouter import ArchivalRouter, Route
+from pywb.framework.cache import create_cache
 
 from pywb.rewrite.rewrite_live import LiveRewriter
 from pywb.rewrite.wburl import WbUrl
@@ -14,8 +15,6 @@ from pywb.utils.wbexception import WbException
 import json
 import requests
 import hashlib
-
-from rangecache import range_cache
 
 
 #=================================================================
@@ -42,7 +41,11 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
         self.live_cookie = config.get('live-cookie', self.LIVE_COOKIE)
 
+        self.no_proxy_range = config.get('no_proxy_range', True)
+
         self.ydl = None
+
+        self._cache = None
 
     def handle_request(self, wbrequest):
         try:
@@ -72,33 +75,29 @@ class RewriteHandler(SearchPageWbUrlHandler):
             wbrequest.env['REL_REFERER'] = WbUrl(ref_wburl_str).url
 
         proxies = None  # default
-        ping_url = None
-        ping_cache_key = None
-        ping_range_header = None
+        use_206 = False
+        url = None
 
-        if self.default_proxy and range_cache:
-            rangeres = range_cache.is_ranged(wbrequest)
+        readd_range = False
+        cache_key = None
+
+        if self.default_proxy and self.no_proxy_range:
+            rangeres = wbrequest.extract_range()
+
             if rangeres:
                 url, start, end, use_206 = rangeres
-                proxies = False
 
-                # force a bound on unbounded range, if specified
-                if use_206 and end and wbrequest.env['HTTP_RANGE'].endswith('-'):
-                    range_h = 'bytes={0}-{1}'.format(start, end)
-                    wbrequest.env['HTTP_RANGE'] = range_h
+                # if bytes=0- Range request, simply remove the range and still proxy
+                if start == 0 and not end and use_206:
+                    wbrequest.wb_url.url = url
+                    del wbrequest.env['HTTP_RANGE']
+                    readd_range = True
+                else:
+                    # disables proxy
+                    proxies = False
 
-                hash_ = hashlib.md5()
-                hash_.update(url)
-                ping_cache_key = hash_.hexdigest()
-
-                if ping_cache_key not in range_cache.cache:
-                    ping_url = url
-
-                    # if non-206, (eg. youtube) generate a videoinfo page
-                    if not use_206 and ref_wburl_str:
-                        resp = self.get_video_info(wbrequest,
-                                                   info_url=wbrequest.env['REL_REFERER'],
-                                                   video_url=url)
+                    # sets cache_key only if not already cached
+                    cache_key = self._check_url_cache(url)
 
         result = self.rewriter.fetch_request(wbrequest.wb_url.url,
                                              wbrequest.urlrewriter,
@@ -109,9 +108,16 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
         wbresponse = self._make_response(wbrequest, *result)
 
-        if ping_url:
-            self._proxy_ping(wbrequest, wbresponse,
-                             ping_url, ping_cache_key)
+        if readd_range:
+            content_length = wbresponse.status_headers.get_header('Content-Length')
+            try:
+                content_length = int(content_length)
+                wbresponse.add_range(0, content_length, content_length)
+            except ValueError:
+                pass
+
+        if cache_key:
+            self._add_proxy_ping(cache_key, url, wbrequest, wbresponse)
 
         return wbresponse
 
@@ -127,20 +133,32 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
         return WbResponse(status_headers, gen)
 
-    def _proxy_ping(self, wbrequest, wbresponse, url, key):
-        def do_proxy_ping():
+    def _check_url_cache(self, url):
+        if not self._cache:
+            self._cache = create_cache()
+
+        hash_ = hashlib.md5()
+        hash_.update(url)
+        key = hash_.hexdigest()
+
+        if key in self._cache:
+            return None
+
+        return key
+
+    def _add_proxy_ping(self, key, url, wbrequest, wbresponse):
+        referrer = wbrequest.env.get('REL_REFERER')
+
+        def do_ping():
             proxies = {'http': self.default_proxy,
                        'https': self.default_proxy}
 
             headers = self._live_request_headers(wbrequest)
             headers['Connection'] = 'close'
 
-            if key in range_cache.cache:
-                return
-
             try:
                 # mark as pinged
-                range_cache.cache[key] = '1'
+                self._cache[key] = '1'
 
                 resp = requests.get(url=url,
                                     headers=headers,
@@ -151,15 +169,24 @@ class RewriteHandler(SearchPageWbUrlHandler):
                 # don't actually read whole response, proxy response for writing it
                 resp.close()
             except:
-                del range_cache.cache[key]
+                del self._cache[key]
 
-        def check_buff_gen(gen):
+            # also ping video info
+            if referrer:
+                resp = self.get_video_info(wbrequest,
+                                           info_url=referrer,
+                                           video_url=url)
+        def wrap_buff_gen(gen):
             for x in gen:
                 yield x
 
-            do_proxy_ping()
+            try:
+                do_ping()
+            except:
+                raise
+                pass
 
-        wbresponse.body = check_buff_gen(wbresponse.body)
+        wbresponse.body = wrap_buff_gen(wbresponse.body)
         return wbresponse
 
     def get_video_info(self, wbrequest, info_url=None, video_url=None):
