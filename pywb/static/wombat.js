@@ -682,6 +682,10 @@ _WBWombat = (function() {
 
                 var created = orig.apply(this, arguments);
 
+                if (!created) {
+                    return;
+                }
+
                 if (created.tagName == "IFRAME") {
                     if (created.contentWindow) {
                         created.contentWindow.window.WB_wombat_location = created.contentWindow.window.location;

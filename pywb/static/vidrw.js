@@ -25,71 +25,46 @@ __wbvidrw = (function() {
 
     var vid_type = "html";
 
+    var FLASH_PLAYER = wbinfo.static_prefix + "/flowplayer/flowplayer-3.2.18.swf";
+
     function check_videos() {
         if (found_embeds) {
             return;
         }
 
-        // extract_type
+        // extract_typ
         if (window.location.hash) {
             var m = window.location.hash.match(/_pywbvid=([\w]+)/);
             if (m) {
                 vid_type = m[1];
-                console.log(vid_type);
             }
         }
 
-        var tags = [];
+        function handle_all_embeds() {
+            var embeds = document.getElementsByTagName("embed");
 
-        var embeds = document.getElementsByTagName("embed");
-
-        for (var i = 0; i < embeds.length; i++) {
-            found_embeds = true;
-            tags.push([embeds[i], embeds[i].getAttribute("src")]);
-        }
-
-        var objects = document.getElementsByTagName("object");
-
-        for (var i = 0; i < objects.length; i++) {
-            var obj_url = undefined;
-            found_embeds = true;
-
-            for (var j = 0; j < objects[i].children.length; j++) {
-                var child = objects[i].children[j];
-
-                if (child.tagName == "EMBED") {
-                    obj_url = undefined;
-                    break;
-                }
-
-                if (child.tagName == "PARAM" && !obj_url) {
-                    var name = child.getAttribute("name");
-                    name = name.toLowerCase();
- /*                   if (name == "flashvars") {
-                        var value = child.getAttribute("value");
-                        value = decodeURIComponent(value);
-                        var inx = value.indexOf("=http");
-                        if (inx >= 0) {
-                            obj_url = value.substring(inx + 1);
-                        }
-                    }
-*/
-                    if (name == "movie") {
-                        var value = child.getAttribute("value");
-                        obj_url = value;
-                    }
-                }
-            }
-
-            if (obj_url) {
-                tags.push([objects[i], obj_url]);
+            for (var i = 0; i < embeds.length; i++) {
+                handle_embed_tag(embeds[i]);
             }
         }
 
-        for (var i = 0; i < tags.length; i++) {
-            check_replacement(tags[i][0], tags[i][1]);
+        function handle_all_objects() {
+            var objects = document.getElementsByTagName("object");
+
+            for (var i = 0; i < objects.length; i++) {
+                handle_object_tag(objects[i]);
+            }
         }
 
+        handle_all_embeds();
+        handle_all_objects();
+
+        found_embeds = true;
+
+        //window.setInterval(handle_all_embeds, 1000);
+
+        //_wb_wombat.add_tag_handler("embed", handle_all_embeds);
+        //_wb_wombat.add_tag_handler("object", handle_all_objects);
 
         // special case: yt
         /*
@@ -111,6 +86,69 @@ __wbvidrw = (function() {
             }
         }
         */
+    }
+
+    function handle_embed_tag(elem)
+    {
+        var src = elem.getAttribute("src");
+        if (src) {
+            if (elem._vidrw) {
+                return false;
+            }
+
+            // already rewritten
+            if (elem.outerHTML.indexOf(FLASH_PLAYER) >= 0) {
+                return false;
+            }
+
+            elem._vidrw = true;
+
+            check_replacement(elem, src);
+            return true;
+        }
+
+        return false;
+    }
+
+    function handle_object_tag(elem)
+    {
+        var obj_url = undefined;
+
+        // already rewritten
+        if (elem.outerHTML.indexOf(FLASH_PLAYER) >= 0) {
+            return false;
+        }
+
+        for (var j = 0; j < objects[i].children.length; j++) {
+            var child = objects[i].children[j];
+
+            if (child.tagName == "EMBED") {
+                return false;
+            }
+
+            if (child.tagName == "PARAM" && !obj_url) {
+                var name = child.getAttribute("name");
+                name = name.toLowerCase();
+
+                if (name == "movie") {
+                    var value = child.getAttribute("value");
+                    obj_url = value;
+                }
+            }
+        }
+
+        if (obj_url) {
+            if (elem._vidrw) {
+                return false;
+            }
+
+            elem._vidrw = true;
+
+            check_replacement(elem, src);
+            return true;
+        }
+
+        return false;
     }
 
     var YT_RX = /^(https?:\/\/.*youtube.com)\/v\/([^&?]+)(.*)$/;
@@ -213,10 +251,12 @@ __wbvidrw = (function() {
         if (tag_name == "iframe" || tag_name == "object") {
             elem.parentNode.replaceChild(replacement, elem);
         } else if (tag_name == "embed") {
-            if (elem.parentNode && elem.parentElement.tagName.toLowerCase() == "object") {
-                elem = elem.parentNode;
+            if (elem.parentElement && elem.parentElement.tagName.toLowerCase() == "object") {
+                elem = elem.parentElement;
             }
+
             elem.parentNode.replaceChild(replacement, elem);
+
         } else if (tag_name == "video") {
             elem.parentNode.replaceChild(replacement, elem);
         }
@@ -272,7 +312,7 @@ __wbvidrw = (function() {
         do_replace_elem(elem, replacement);
 
         if (vidId) {
-            init_flash_player(vidId, width, height, info, thumb_url);
+            init_flash_player(vidId, replacement, width, height, info, thumb_url);
         }
     }
 
@@ -339,7 +379,7 @@ __wbvidrw = (function() {
 
             htmlelem.parentNode.replaceChild(replacement, htmlelem);
 
-            init_flash_player(vidId, width, height, info, thumb_url);
+            init_flash_player(vidId, replacement, width, height, info, thumb_url);
         };
 
         for (var i = -1; i < info.formats.length; i++) {
@@ -372,10 +412,8 @@ __wbvidrw = (function() {
         return htmlelem;
     }
 
-    function init_flash_player(div_id, width, height, info, thumb_url)
+    function init_flash_player(div_id, elem, width, height, info, thumb_url)
     {
-        var swf = wbinfo.static_prefix + "/flowplayer/flowplayer-3.2.18.swf";
-
         if (width[width.length - 1] != '%') {
             width += "px";
         }
@@ -384,7 +422,8 @@ __wbvidrw = (function() {
         }
 
         var style = 'width: ' + width + '; height: ' + height + '; display: block';
-        document.getElementById(div_id).style.cssText += ';' + style;
+
+        elem.style.cssText += ';' + style;
 
         var url;
 
@@ -407,8 +446,8 @@ __wbvidrw = (function() {
         };
 
         var opts = {
-            src: swf,
-            onFail: function() {  }
+            src: FLASH_PLAYER,
+            onFail: function() { console.log("FAILED");  }
         };
 
         var do_embed = function() {
