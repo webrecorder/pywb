@@ -36,6 +36,25 @@
 # no referer
 >>> req_from_uri('/web/2010/example.com', {'wsgi.url_scheme': 'http', 'HTTP_HOST': 'localhost:8080'}).extract_referrer_wburl_str()
 
+# range requests
+>>> req_from_uri('/web/2014/example.com', dict(HTTP_RANGE='bytes=10-100')).extract_range()
+('http://example.com', 10, 100, True)
+
+>>> req_from_uri('/web/2014/example.com', dict(HTTP_RANGE='bytes=0-')).extract_range()
+('http://example.com', 0, '', True)
+
+>>> req_from_uri('/web/www.googlevideo.com/videoplayback?id=123&range=0-65535').extract_range()
+('http://www.googlevideo.com/videoplayback?id=123', 0, 65535, False)
+
+>>> req_from_uri('/web/www.googlevideo.com/videoplayback?id=123&range=100-200').extract_range()
+('http://www.googlevideo.com/videoplayback?id=123', 100, 200, False)
+
+# invalid range requests
+>>> req_from_uri('/web/2014/example.com', dict(HTTP_RANGE='10-20')).extract_range()
+
+>>> req_from_uri('/web/2014/example.com', dict(HTTP_RANGE='A-5')).extract_range()
+
+>>> req_from_uri('/web/www.googlevideo.com/videoplayback?id=123&range=100-').extract_range()
 
 # WbResponse Tests
 # =================
@@ -47,6 +66,12 @@
 
 >>> WbResponse.redir_response('http://example.com/otherfile')
 {'body': [], 'status_headers': StatusAndHeaders(protocol = '', statusline = '302 Redirect', headers = [('Location', 'http://example.com/otherfile'), ('Content-Length', '0')])}
+
+>>> WbResponse.text_response('Test').add_range(10, 4, 100)
+{'body': ['Test'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '206 Partial Content', headers = [ ('Content-Type', 'text/plain'),
+  ('Content-Length', '4'),
+  ('Content-Range', 'bytes 10-13/100'),
+  ('Accept-Ranges', 'bytes')])}
 
 """
 

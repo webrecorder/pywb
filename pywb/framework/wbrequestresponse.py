@@ -2,6 +2,7 @@ from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.loaders import extract_post_query, append_post_query
 
 import pprint
+import re
 
 
 #=================================================================
@@ -108,6 +109,44 @@ class WbRequest(object):
 
         return False
 
+    RANGE_ARG_RX = re.compile('.*.googlevideo.com/videoplayback.*([&?]range=(\d+)-(\d+))')
+    RANGE_HEADER = re.compile('bytes=(\d+)-(\d+)?')
+
+    def extract_range(self):
+        url = self.wb_url.url
+        use_206 = False
+        start = None
+        end = None
+
+        range_h = self.env.get('HTTP_RANGE')
+
+        if range_h:
+            m = self.RANGE_HEADER.match(range_h)
+            if m:
+                start = m.group(1)
+                end = m.group(2)
+                use_206 = True
+
+        else:
+            m = self.RANGE_ARG_RX.match(url)
+            if m:
+                start = m.group(2)
+                end = m.group(3)
+                url = url[:m.start(1)] + url[m.end(1):]
+                use_206 = False
+
+        if not start:
+            return None
+
+        start = int(start)
+
+        if end:
+            end = int(end)
+        else:
+            end = ''
+
+        return (url, start, end, use_206)
+
     def __repr__(self):
         varlist = vars(self)
         varstr = pprint.pformat(varlist)
@@ -185,6 +224,16 @@ class WbResponse(object):
             redir_headers += headers
 
         return WbResponse(StatusAndHeaders(status, redir_headers))
+
+    def add_range(self, start, part_len, total_len):
+        content_range = 'bytes {0}-{1}/{2}'.format(start,
+                                                   start + part_len - 1,
+                                                   total_len)
+
+        self.status_headers.statusline = '206 Partial Content'
+        self.status_headers.replace_header('Content-Range', content_range)
+        self.status_headers.replace_header('Accept-Ranges', 'bytes')
+        return self
 
     def __call__(self, env, start_response):
         start_response(self.status_headers.statusline,
