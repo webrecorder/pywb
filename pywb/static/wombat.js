@@ -688,7 +688,7 @@ _WBWombat = (function() {
                     }
 
                     override_attr(created, "src");
-                } else if (created.tagName == "IMG") {
+                } else if (created.tagName == "IMG" || created.tagName == "VIDEO" || created.tagName == "AUDIO") {
                     override_attr(created, "src");
                 }
 //                } else if (created.tagName == "A") {
