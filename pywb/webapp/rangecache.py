@@ -6,18 +6,12 @@ from tempfile import NamedTemporaryFile, mkdtemp
 
 import yaml
 import os
-import re
 
 import atexit
 
 
 #=================================================================
 class RangeCache(object):
-    YOUTUBE_RX = re.compile('.*.googlevideo.com/videoplayback')
-    YT_EXTRACT_RX = re.compile('&range=([^&]+)')
-
-    DEFAULT_BUFF = 16384*4
-
     @staticmethod
     def match_yt(url):
         if not RangeCache.YOUTUBE_RX.match(url):
@@ -46,46 +40,18 @@ class RangeCache(object):
             print('Removing: ' + self.temp_dir)
             shutil.rmtree(self.temp_dir, True)
 
-    def is_ranged(self, wbrequest):
-        url = wbrequest.wb_url.url
-        range_h = None
-        use_206 = False
-
-        result = self.match_yt(url)
-        if result:
-            range_h, url = result
-
-            if wbrequest.env.get('HTTP_X_IGNORE_RANGE_ARG'):
-                wbrequest.wb_url.url = url
-                return None
-
-        # check for standard range header
-        if not range_h:
-            range_h = wbrequest.env.get('HTTP_RANGE')
-            if not range_h:
-                return None
-
-            use_206 = True
-
-        # force bounded range
-        range_h = range_h.split('=')[-1]
-        range_h = range_h.rstrip()
-        parts = range_h.split('-', 1)
-        start = int(parts[0])
-        if len(parts) == 2 and parts[1]:
-            end = int(parts[1])
-        else:
-            #end = start + self.DEFAULT_BUFF - 1
-            end = ''
-
-        return url, start, end, use_206
-
     def __call__(self, wbrequest, digest, wbresponse_func):
-        result = self.is_ranged(wbrequest)
+        result = wbrequest.extract_range()
         if not result:
             return None, None
 
-        return self.handle_range(wbrequest, digest, wbresponse_func,
+        if wbrequest.env.get('HTTP_X_IGNORE_RANGE_ARG'):
+            wbrequest.wb_url.url = result[0]
+            return None, None
+
+        return self.handle_range(wbrequest,
+                                 digest,
+                                 wbresponse_func,
                                  *result)
 
     def handle_range(self, wbrequest, digest, wbresponse_func,
