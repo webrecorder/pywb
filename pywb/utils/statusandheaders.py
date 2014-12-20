@@ -97,6 +97,19 @@ class StatusAndHeaders(object):
             self.statusline = valid_statusline
             return False
 
+    def add_range(self, start, part_len, total_len):
+        """
+        Add range headers indicating that this a partial response
+        """
+        content_range = 'bytes {0}-{1}/{2}'.format(start,
+                                                   start + part_len - 1,
+                                                   total_len)
+
+        self.statusline = '206 Partial Content'
+        self.replace_header('Content-Range', content_range)
+        self.replace_header('Accept-Ranges', 'bytes')
+        return self
+
     def __repr__(self):
         headers_str = pprint.pformat(self.headers, indent=2)
         return "StatusAndHeaders(protocol = '{0}', statusline = '{1}', \

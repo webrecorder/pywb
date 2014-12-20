@@ -16,6 +16,7 @@ from pywb.warc.resolvingloader import ResolvingLoader
 
 from views import J2TemplateView
 from replay_views import ReplayView
+from cached_replay import CachedReplayView
 from pywb.framework.memento import MementoResponse
 from pywb.utils.timeutils import datetime_to_timestamp
 
@@ -119,7 +120,11 @@ class WBHandler(SearchPageWbUrlHandler):
         resolving_loader = ResolvingLoader(paths=paths,
                                            record_loader=record_loader)
 
-        self.replay = ReplayView(resolving_loader, config)
+        enable_cache = config.get('enable_cache')
+        if enable_cache:
+            self.replay = CachedReplayView(resolving_loader, config)
+        else:
+            self.replay = ReplayView(resolving_loader, config)
 
         self.fallback_handler = None
         self.fallback_name = config.get('fallback')

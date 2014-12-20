@@ -112,7 +112,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
             content_length = wbresponse.status_headers.get_header('Content-Length')
             try:
                 content_length = int(content_length)
-                wbresponse.add_range(0, content_length, content_length)
+                wbresponse.status_headers.add_range(0, content_length, content_length)
             except ValueError:
                 pass
 

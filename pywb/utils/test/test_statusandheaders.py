@@ -5,6 +5,12 @@ StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [ ('Con
   ('Some', 'Value'),
   ('Multi-Line', 'Value1    Also This')])
 
+# add range
+>>> StatusAndHeaders(statusline = '200 OK', headers=[('Content-Type', 'text/plain')]).add_range(10, 4, 100)
+StatusAndHeaders(protocol = '', statusline = '206 Partial Content', headers = [ ('Content-Type', 'text/plain'),
+  ('Content-Range', 'bytes 10-13/100'),
+  ('Accept-Ranges', 'bytes')])
+
 >>> StatusAndHeadersParser(['Other']).parse(BytesIO(status_headers_1))
 Traceback (most recent call last):
 StatusAndHeadersParserException: Expected Status Line starting with ['Other'] - Found: HTTP/1.0 200 OK
@@ -36,10 +42,12 @@ StatusAndHeaders(protocol = '', statusline = '204 No Content', headers = [])
 
 >>> StatusAndHeadersParser(['HTTP/1.0']).parse(BytesIO(status_headers_3))
 StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '204 Empty', headers = [('Content-Type', 'Value'), ('Content-Length', '0')])
+
+
 """
 
 
-from pywb.utils.statusandheaders import StatusAndHeadersParser
+from pywb.utils.statusandheaders import StatusAndHeadersParser, StatusAndHeaders
 from io import BytesIO
 
 

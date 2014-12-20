@@ -12,23 +12,6 @@ import atexit
 
 #=================================================================
 class RangeCache(object):
-    @staticmethod
-    def match_yt(url):
-        if not RangeCache.YOUTUBE_RX.match(url):
-            return None
-
-        range_h_res = []
-
-        def repl_range(matcher):
-            range_h_res.append(matcher.group(1))
-            return ''
-
-        new_url = RangeCache.YT_EXTRACT_RX.sub(repl_range, url)
-        if range_h_res:
-            return range_h_res[0], new_url
-        else:
-            return None, url
-
     def __init__(self):
         self.cache = create_cache()
         self.temp_dir = None
@@ -107,13 +90,7 @@ class RangeCache(object):
                     yield buf
 
         if use_206:
-            content_range = 'bytes {0}-{1}/{2}'.format(start,
-                                                       start + maxlen - 1,
-                                                       filelen)
-
-            status_headers = StatusAndHeaders('206 Partial Content', spec['headers'])
-            status_headers.replace_header('Content-Range', content_range)
-            status_headers.replace_header('Accept-Ranges', 'bytes')
+            WbResponse.add_range_status_h(status_headers)
         else:
             status_headers = StatusAndHeaders('200 OK', spec['headers'])
 

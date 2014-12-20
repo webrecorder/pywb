@@ -100,6 +100,9 @@ class WbRequest(object):
         # PERF
         env['X_PERF'] = {}
 
+        if env.get('HTTP_X_PYWB_NOREDIRECT'):
+            self.custom_params['noredir'] = True
+
         self._parse_extra()
 
     def _is_ajax(self):
@@ -145,7 +148,8 @@ class WbRequest(object):
         else:
             end = ''
 
-        return (url, start, end, use_206)
+        result = (url, start, end, use_206)
+        return result
 
     def __repr__(self):
         varlist = vars(self)
@@ -225,16 +229,6 @@ class WbResponse(object):
 
         return WbResponse(StatusAndHeaders(status, redir_headers))
 
-    def add_range(self, start, part_len, total_len):
-        content_range = 'bytes {0}-{1}/{2}'.format(start,
-                                                   start + part_len - 1,
-                                                   total_len)
-
-        self.status_headers.statusline = '206 Partial Content'
-        self.status_headers.replace_header('Content-Range', content_range)
-        self.status_headers.replace_header('Accept-Ranges', 'bytes')
-        return self
-
     def __call__(self, env, start_response):
         start_response(self.status_headers.statusline,
                        self.status_headers.headers)
@@ -245,6 +239,10 @@ class WbResponse(object):
             return []
 
         return self.body
+
+    def add_range(self, *args):
+        self.status_headers.add_range(*args)
+        return self
 
     def __repr__(self):
         return str(vars(self))
