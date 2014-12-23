@@ -1,57 +1,31 @@
-from pywb.webapp.pywb_init import create_wb_router
-from pywb.framework.wsgi_wrappers import init_app
-
 from wsgiref.simple_server import make_server
 
-from pywb.framework.proxy_resolvers import CookieResolver
-
-import threading
 import requests
-import shutil
-import sys
-import os
+from server_thread import ServerThreadRunner
 
 
+#=================================================================
 TEST_CONFIG = 'tests/test_config_proxy_http_cookie.yaml'
 
 server = None
 sesh_key = None
 
+
+#=================================================================
+# Inited once per module
 def setup_module():
+    def make_httpd(app):
+        return make_server('', 0, app)
+
     global server
-    server = ServeThread()
-    server.daemon = True
-    server.start()
-
-    global session
-    session = requests.Session()
-
+    server = ServerThreadRunner(make_httpd, TEST_CONFIG)
 
 def teardown_module():
-    try:
-        server.httpd.shutdown()
-        threading.current_thread().join(server)
-    except Exception:
-        pass
-
-class ServeThread(threading.Thread):
-    def __init__(self, *args, **kwargs):
-        super(ServeThread, self).__init__(*args, **kwargs)
-        self.app = init_app(create_wb_router,
-                            load_yaml=True,
-                            config_file=TEST_CONFIG)
-
-        # init with port 0 to allow os to pick a port
-        self.httpd = make_server('', 0, self.app)
-        port = self.httpd.socket.getsockname()[1]
-
-        proxy_str = 'http://localhost:' + str(port)
-        self.proxy_dict = {'http': proxy_str}
-
-    def run(self, *args, **kwargs):
-        self.httpd.serve_forever()
+    global server
+    server.stop_thread()
 
 
+#=================================================================
 class TestProxyHttpCookie:
     def setup(self):
         self.session = requests.Session()

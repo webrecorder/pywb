@@ -35,9 +35,11 @@ class RewriteHandler(SearchPageWbUrlHandler):
     def __init__(self, config):
         super(RewriteHandler, self).__init__(config)
 
-        self.proxy = config.get('proxyhostport')
+        proxyhostport = config.get('proxyhostport')
         self.rewriter = LiveRewriter(is_framed_replay=self.is_frame_mode,
-                                     proxies=self.proxy)
+                                     proxies=proxyhostport)
+
+        self.proxies = self.rewriter.proxies
 
         self.head_insert_view = HeadInsertView.init_from_config(config)
 
@@ -81,7 +83,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
         readd_range = False
         cache_key = None
 
-        if self.proxy:
+        if self.proxies:
             rangeres = wbrequest.extract_range()
 
             if rangeres:
@@ -113,7 +115,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
             try:
                 content_length = int(content_length)
                 wbresponse.status_headers.add_range(0, content_length, content_length)
-            except ValueError:
+            except (ValueError, TypeError):
                 pass
 
         if cache_key:
@@ -150,9 +152,6 @@ class RewriteHandler(SearchPageWbUrlHandler):
         referrer = wbrequest.env.get('REL_REFERER')
 
         def do_ping():
-            proxies = {'http': self.proxy,
-                       'https': self.proxy}
-
             headers = self._live_request_headers(wbrequest)
             headers['Connection'] = 'close'
 
@@ -162,7 +161,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
                 resp = requests.get(url=url,
                                     headers=headers,
-                                    proxies=proxies,
+                                    proxies=self.proxies,
                                     verify=False,
                                     stream=True)
 
@@ -170,6 +169,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
                 resp.close()
             except:
                 del self._cache[key]
+                raise
 
             # also ping video info
             if referrer:
@@ -183,9 +183,9 @@ class RewriteHandler(SearchPageWbUrlHandler):
             try:
                 do_ping()
             except:
-                raise
                 pass
 
+        #do_ping()
         wbresponse.body = wrap_buff_gen(wbresponse.body)
         return wbresponse
 
@@ -204,9 +204,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
         content_type = self.YT_DL_TYPE
         metadata = json.dumps(info)
 
-        if self.proxy:
-            proxies = {'http': self.proxy}
-
+        if self.proxies:
             headers = self._live_request_headers(wbrequest)
             headers['Content-Type'] = content_type
 
@@ -216,7 +214,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
                                         url=info_url,
                                         data=metadata,
                                         headers=headers,
-                                        proxies=proxies,
+                                        proxies=self.proxies,
                                         verify=False)
 
         return WbResponse.text_response(metadata, content_type=content_type)
