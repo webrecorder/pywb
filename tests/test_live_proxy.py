@@ -127,7 +127,7 @@ class TestProxyLiveRewriter:
         # Second Request
         # clear log
         self.requestlog.pop()
-        headers = [('Range', 'bytes=1001-1500')]
+        headers = [('Range', 'bytes=101-150')]
         resp = self.testapp.get('/rewrite/http://example.com/foobar', headers=headers)
 
         # actual response is with range
