@@ -53,6 +53,8 @@ True
 
 >>> extract_client_cookie(dict(HTTP_COOKIE='a=b; c=d'), 'x')
 
+>>> extract_client_cookie(dict(HTTP_COOKIE='x'), 'x')
+
 >>> extract_client_cookie({}, 'y')
 """
 

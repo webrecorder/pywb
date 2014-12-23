@@ -120,11 +120,7 @@ class WBHandler(SearchPageWbUrlHandler):
         resolving_loader = ResolvingLoader(paths=paths,
                                            record_loader=record_loader)
 
-        enable_cache = config.get('enable_cache')
-        if enable_cache:
-            self.replay = CachedReplayView(resolving_loader, config)
-        else:
-            self.replay = ReplayView(resolving_loader, config)
+        self.replay = ReplayView(resolving_loader, config)
 
         self.fallback_handler = None
         self.fallback_name = config.get('fallback')

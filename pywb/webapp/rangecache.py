@@ -24,21 +24,6 @@ class RangeCache(object):
             shutil.rmtree(self.temp_dir, True)
             self.temp_dir = None
 
-    def __call__(self, wbrequest, digest, wbresponse_func):
-        result = wbrequest.extract_range()
-        if not result:
-            return None, None
-
-        # no longer needed -- handled at frontend rewrite
-        #if wbrequest.env.get('HTTP_X_IGNORE_RANGE_ARG'):
-        #    wbrequest.wb_url.url = result[0]
-        #    return None, None
-
-        return self.handle_range(wbrequest,
-                                 digest,
-                                 wbresponse_func,
-                                 *result)
-
     def handle_range(self, wbrequest, digest, wbresponse_func,
                      url, start, end, use_206):
 

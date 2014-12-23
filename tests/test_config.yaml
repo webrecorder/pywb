@@ -38,9 +38,9 @@ collections:
         index_paths: ./sample_archive/cdx/
         fallback: live
 
-    pywb-rangecache:
+    pywb-norange:
         index_paths: ./sample_archive/cdx/
-        enable_cache: true
+        enable_ranges: False
 
 # indicate if cdx files are sorted by SURT keys -- eg: com,example)/
 # SURT keys are recommended for future indices, but non-SURT cdxs
