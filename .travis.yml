@@ -4,13 +4,19 @@ python:
   - "2.6"
   - "2.7"
 
+os:
+  - linux
+  - osx
+
+sudo: false
+
 install:
   - "pip install 'argparse>=1.2.1' --allow-all-external"
   - pip install pyopenssl
   - python setup.py -q install
   - pip install coverage pytest-cov coveralls --use-mirrors
 
-script: 
+script:
     python setup.py test
 
 after_success:
