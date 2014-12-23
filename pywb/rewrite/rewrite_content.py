@@ -76,7 +76,7 @@ class RewriteContent:
         wb_url = urlrewriter.wburl
 
         if (wb_url.is_identity or
-            (not head_insert_func and wb_url.is_banner_only)):
+             (not head_insert_func and wb_url.is_banner_only)):
             status_headers, stream = self.sanitize_content(headers, stream)
             return (status_headers, self.stream_to_gen(stream), False)
 

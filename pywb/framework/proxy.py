@@ -159,7 +159,7 @@ class ProxyRouter(object):
         if env['pywb.proxy_host'] == self.magic_name:
             env['REL_REQUEST_URI'] = env['pywb.proxy_req_uri']
 
-             # special case for proxy install
+            # special case for proxy install
             response = self.handle_cert_install(env)
             if response:
                 return response
@@ -307,7 +307,7 @@ class ProxyRouter(object):
 
             name = name.replace('-', '_').upper()
 
-            if not name in ('CONTENT_LENGTH', 'CONTENT_TYPE'):
+            if name not in ('CONTENT_LENGTH', 'CONTENT_TYPE'):
                 name = 'HTTP_' + name
 
             env[name] = value

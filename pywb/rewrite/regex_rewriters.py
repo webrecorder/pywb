@@ -123,7 +123,6 @@ class JSLinkRewriterMixin(object):
 
 #=================================================================
 class JSLocationRewriterMixin(object):
-#class JSLinkAndLocationRewriter(JSLinkOnlyRewriter):
     """
     JS Rewriter mixin which rewrites location and domain to the
     specified prefix (default: 'WB_wombat_')
@@ -131,23 +130,23 @@ class JSLocationRewriterMixin(object):
 
     def __init__(self, rewriter, rules=[], prefix='WB_wombat_'):
         rules = rules + [
-             (r'(?<![/$])\blocation\b(?!\":)', RegexRewriter.add_prefix(prefix), 0),
-             (r'(?<=document\.)domain', RegexRewriter.add_prefix(prefix), 0),
-             (r'(?<=document\.)referrer', RegexRewriter.add_prefix(prefix), 0),
-             (r'(?<=document\.)cookie', RegexRewriter.add_prefix(prefix), 0),
+            (r'(?<![/$])\blocation\b(?!\":)', RegexRewriter.add_prefix(prefix), 0),
+            (r'(?<=document\.)domain', RegexRewriter.add_prefix(prefix), 0),
+            (r'(?<=document\.)referrer', RegexRewriter.add_prefix(prefix), 0),
+            (r'(?<=document\.)cookie', RegexRewriter.add_prefix(prefix), 0),
 
             #todo: move to mixin?
-             (r'(?:[\s=(){]|^)(top)(?:[\s!=}()]|$)',
-              RegexRewriter.add_prefix(prefix), 1),
+            (r'(?:[\s=(){]|^)(top)(?:[\s!=}()]|$)',
+             RegexRewriter.add_prefix(prefix), 1),
 
-             (r'(?<=window\.)top',
-              RegexRewriter.add_prefix(prefix), 0),
+            (r'(?<=window\.)top',
+             RegexRewriter.add_prefix(prefix), 0),
 
-#             (r'\b(top)\b[!=\W]+(?:self|window)',
-#              RegexRewriter.add_prefix(prefix), 1),
+            #             (r'\b(top)\b[!=\W]+(?:self|window)',
+            #              RegexRewriter.add_prefix(prefix), 1),
 
-             #(r'\b(?:self|window)\b[!=\W]+\b(top)\b',
-             #RegexRewriter.add_prefix(prefix), 1),
+            #(r'\b(?:self|window)\b[!=\W]+\b(top)\b',
+            #RegexRewriter.add_prefix(prefix), 1),
         ]
         super(JSLocationRewriterMixin, self).__init__(rewriter, rules)
 
@@ -160,6 +159,7 @@ class JSLocationOnlyRewriter(JSLocationRewriterMixin, RegexRewriter):
 #=================================================================
 class JSLinkOnlyRewriter(JSLinkRewriterMixin, RegexRewriter):
     pass
+
 
 #=================================================================
 class JSLinkAndLocationRewriter(JSLocationRewriterMixin,
@@ -190,9 +190,9 @@ class XMLRewriter(RegexRewriter):
 
     def _create_rules(self, rewriter):
         return [
-             ('([A-Za-z:]+[\s=]+)?["\'\s]*(' +
-              RegexRewriter.HTTPX_MATCH_STR + ')',
-              RegexRewriter.archival_rewrite(rewriter), 2),
+            ('([A-Za-z:]+[\s=]+)?["\'\s]*(' +
+             RegexRewriter.HTTPX_MATCH_STR + ')',
+             RegexRewriter.archival_rewrite(rewriter), 2),
         ]
 
 
@@ -210,9 +210,9 @@ class CSSRewriter(RegexRewriter):
 
     def _create_rules(self, rewriter):
         return [
-             (CSSRewriter.CSS_URL_REGEX,
-              RegexRewriter.archival_rewrite(rewriter), 1),
+            (CSSRewriter.CSS_URL_REGEX,
+             RegexRewriter.archival_rewrite(rewriter), 1),
 
-             (CSSRewriter.CSS_IMPORT_NO_URL_REGEX,
-              RegexRewriter.archival_rewrite(rewriter), 1),
+            (CSSRewriter.CSS_IMPORT_NO_URL_REGEX,
+             RegexRewriter.archival_rewrite(rewriter), 1),
         ]

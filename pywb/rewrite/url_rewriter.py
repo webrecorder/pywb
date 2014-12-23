@@ -35,13 +35,13 @@ class UrlRewriter(object):
             return url
 
         if (self.prefix and
-            self.prefix != '/' and
-            url.startswith(self.prefix)):
+             self.prefix != '/' and
+             url.startswith(self.prefix)):
             return url
 
         if (self.full_prefix and
-            self.full_prefix != self.prefix and
-            url.startswith(self.full_prefix)):
+             self.full_prefix != self.prefix and
+             url.startswith(self.full_prefix)):
             return url
 
         wburl = self.wburl

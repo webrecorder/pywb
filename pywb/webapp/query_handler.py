@@ -141,7 +141,7 @@ class QueryHandler(object):
                  'limit': limit,
                  'fl': ('urlkey,original,timestamp,' +
                         'endtimestamp,groupcount,uniqcount'),
-                 'filter':[],
+                 'filter': [],
                 },
 
             wburl.REPLAY:

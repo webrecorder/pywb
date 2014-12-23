@@ -194,7 +194,7 @@ def main(args=None):
                         help=('use specified root cert (.pem file) ' +
                               'to create signed cert'))
 
-    parser.add_argument('-n',  '--name', action='store', default=CERT_NAME,
+    parser.add_argument('-n', '--name', action='store', default=CERT_NAME,
                         help='name for root certificate')
 
     parser.add_argument('-d', '--certs-dir', default=CERTS_DIR)

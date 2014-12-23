@@ -44,7 +44,7 @@ class CDXObject(OrderedDict):
         ["urlkey", "timestamp", "original", "mimetype", "statuscode",
          "digest", "redirect", "offset", "filename",
          "orig.length", "orig.offset", "orig.filename"]
-        ]
+    ]
 
     def __init__(self, cdxline=''):
         OrderedDict.__init__(self)

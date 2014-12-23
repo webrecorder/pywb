@@ -42,7 +42,7 @@ class CDXAPIHandler(BaseHandler):
             if name != 'filter':
                 params[name] = val[0]
 
-        if not 'output' in params:
+        if 'output' not in params:
             params['output'] = 'text'
         elif params['output'] not in ('text'):
             params['output'] = 'text'

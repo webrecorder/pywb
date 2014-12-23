@@ -229,8 +229,8 @@ class ReplayView(object):
                                url=cdx['original']))
 
         if wbrequest.method == 'POST':
-#   FF shows a confirm dialog, so can't use 307 effectively
-#            statusline = '307 Same-Method Internal Redirect'
+            #   FF shows a confirm dialog, so can't use 307 effectively
+            #   was: statusline = '307 Same-Method Internal Redirect'
             return None
         else:
             statusline = '302 Internal Redirect'
@@ -252,7 +252,7 @@ class ReplayView(object):
 
         # skip all 304s
         if (status_headers.statusline.startswith('304') and
-            not wbrequest.wb_url.is_identity):
+             not wbrequest.wb_url.is_identity):
 
             raise CaptureException('Skipping 304 Modified: ' + str(cdx))
 

@@ -83,8 +83,8 @@ class WbRequest(object):
                                                  rewrite_opts)
 
             self.urlrewriter.deprefix_url()
-        else:
         # no wb_url, just store blank wb_url
+        else:
             self.wb_url = None
             self.urlrewriter = None
 
@@ -113,6 +113,7 @@ class WbRequest(object):
         return False
 
     RANGE_ARG_RX = re.compile('.*.googlevideo.com/videoplayback.*([&?]range=(\d+)-(\d+))')
+
     RANGE_HEADER = re.compile('bytes=(\d+)-(\d+)?')
 
     def extract_range(self):

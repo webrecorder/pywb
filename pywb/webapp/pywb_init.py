@@ -24,7 +24,6 @@ import logging
 
 #=================================================================
 DEFAULTS = {
-    'hostpaths':  ['http://localhost:8080'],
     'collections': {'pywb': './sample_archive/cdx/'},
     'archive_paths': './sample_archive/warcs/',
 
@@ -153,13 +152,6 @@ def create_wb_router(passed_config={}):
 
     routes = []
 
-    # TODO: examine this more
-    hostname = os.environ.get('PYWB_HOST_NAME')
-    if hostname:
-        hostpaths = [hostname]
-    else:
-        hostpaths = config.get('hostpaths')
-
     port = config.get('port')
 
     # collections based on cdx source
@@ -238,18 +230,18 @@ def create_wb_router(passed_config={}):
         router = ProxyArchivalRouter
 
         view = J2TemplateView.create_template(
-                  config.get('proxy_select_html'),
-                 'Proxy Coll Selector')
+            config.get('proxy_select_html'),
+            'Proxy Coll Selector')
 
-        if not 'proxy_options' in passed_config:
+        if 'proxy_options' not in passed_config:
             passed_config['proxy_options'] = {}
 
         if view:
             passed_config['proxy_options']['proxy_select_view'] = view
 
         view = J2TemplateView.create_template(
-                  config.get('proxy_cert_download_html'),
-                  'Proxy Cert Download')
+            config.get('proxy_cert_download_html'),
+            'Proxy Cert Download')
 
         if view:
             passed_config['proxy_options']['proxy_cert_download_view'] = view
@@ -257,11 +249,6 @@ def create_wb_router(passed_config={}):
     # Finally, create wb router
     return router(
         routes,
-        # Specify hostnames that pywb will be running on
-        # This will help catch occasionally missed rewrites that
-        # fall-through to the host
-        # (See archivalrouter.ReferRedirect)
-        hostpaths=hostpaths,
         port=port,
 
         abs_path=config.get('absolute_paths', True),

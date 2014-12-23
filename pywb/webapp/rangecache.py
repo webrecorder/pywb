@@ -18,7 +18,7 @@ class RangeCache(object):
         atexit.register(self.cleanup)
 
     def cleanup(self):
-        if self.temp_dir: # pragma: no cover
+        if self.temp_dir:  # pragma: no cover
             import shutil
             print('Removing: ' + self.temp_dir)
             shutil.rmtree(self.temp_dir, True)
@@ -28,7 +28,7 @@ class RangeCache(object):
                      url, start, end, use_206):
 
         key = digest
-        if not key in self.cache:
+        if key not in self.cache:
             wbrequest.custom_params['noredir'] = True
             response = wbresponse_func()
 

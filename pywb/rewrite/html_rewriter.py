@@ -172,7 +172,7 @@ class HTMLRewriterMixin(object):
 
             # special case: inline JS/event handler
             if ((attr_value and attr_value.startswith('javascript:'))
-                or attr_name.startswith('on')):
+                 or attr_name.startswith('on')):
                 attr_value = self._rewrite_script(attr_value)
 
             # special case: inline CSS/style attribute
@@ -193,7 +193,7 @@ class HTMLRewriterMixin(object):
             # don't rewrite rel=canonical
             elif tag == 'link' and attr_name == 'href':
                 if (self.opts.get('rewrite_rel_canon', True) or
-                    not self.has_attr(tag_attrs, ('rel', 'canonical'))):
+                     not self.has_attr(tag_attrs, ('rel', 'canonical'))):
                     rw_mod = handler.get(attr_name)
                     attr_value = self._rewrite_url(attr_value, rw_mod)
 

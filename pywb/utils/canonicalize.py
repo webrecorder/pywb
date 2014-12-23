@@ -173,7 +173,7 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
 
         # if tld, use com, as start_key
         # otherwise, stick with com,example)/
-        if not ',' in host:
+        if ',' not in host:
             start_key = host + ','
         else:
             start_key = host + ')/'

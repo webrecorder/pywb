@@ -277,7 +277,7 @@ def create_record_iter(arcv_iter, options):
         compute_digest = False
 
         if (entry.digest == '-' and
-            record.rec_type not in ('revisit', 'request', 'warcinfo')):
+             record.rec_type not in ('revisit', 'request', 'warcinfo')):
 
             compute_digest = True
 
@@ -315,11 +315,11 @@ def join_request_records(entry_iter, options):
 
         # check for concurrency also
         elif (entry.record.rec_headers.get_header('WARC-Concurrent-To') !=
-            prev_entry.record.rec_headers.get_header('WARC-Record-ID')):
+              prev_entry.record.rec_headers.get_header('WARC-Record-ID')):
             pass
 
         elif (entry.merge_request_data(prev_entry, options) or
-            prev_entry.merge_request_data(entry, options)):
+              prev_entry.merge_request_data(entry, options)):
             yield prev_entry
             yield entry
             prev_entry = None
@@ -423,7 +423,7 @@ def create_index_iter(fh, **options):
 
     for entry in entry_iter:
         if (entry.record.rec_type in ('request', 'warcinfo') and
-            not options.get('include_all')):
+             not options.get('include_all')):
             continue
 
         yield entry

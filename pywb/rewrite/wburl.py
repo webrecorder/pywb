@@ -41,6 +41,7 @@ wayback url format.
 import re
 import urllib
 
+
 #=================================================================
 class BaseWbUrl(object):
     QUERY = 'query'
@@ -107,7 +108,8 @@ class WbUrl(BaseWbUrl):
             m = self.PARTIAL_ENC_RX.match(self.url)
             if m:
                 len_ = len(m.group(0))
-                self.url = urllib.unquote_plus(self.url[:len_]) + self.url[len_:]
+                self.url = (urllib.unquote_plus(self.url[:len_]) +
+                            self.url[len_:])
                 inx = self.url.find(':/')
 
         if inx < 0:
@@ -159,7 +161,6 @@ class WbUrl(BaseWbUrl):
     def set_replay_timestamp(self, timestamp):
         self.timestamp = timestamp
         self.type = self.REPLAY
-
 
     def deprefix_url(self, prefix):
         prefix = urllib.quote_plus(prefix)

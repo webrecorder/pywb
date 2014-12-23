@@ -106,7 +106,6 @@ class FuzzyQuery:
         if inx > 0:
             url = url[:inx + 1]
 
-
         if matched_rule.match_type == 'domain':
             host = urlparse.urlsplit(url).netloc
             # remove the subdomain
@@ -174,8 +173,8 @@ class CDXDomainSpecificRule(BaseRule):
     @staticmethod
     def make_query_match_regex(params_list):
         r"""
-        >>> CDXDomainSpecificRule.make_query_match_regex(['param1', 'id', 'abc'])
-        '[?&](abc=[^&]+).*[?&](id=[^&]+).*[?&](param1=[^&]+)'
+        >>> CDXDomainSpecificRule.make_query_match_regex(['para', 'id', 'abc'])
+        '[?&](abc=[^&]+).*[?&](id=[^&]+).*[?&](para=[^&]+)'
 
         >>> CDXDomainSpecificRule.make_query_match_regex(['id[0]', 'abc()'])
         '[?&](abc\\(\\)=[^&]+).*[?&](id\\[0\\]=[^&]+)'

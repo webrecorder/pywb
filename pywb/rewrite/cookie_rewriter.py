@@ -73,6 +73,8 @@ class ExactPathCookieRewriter(WbUrlBaseCookieRewriter):
 
         self._remove_age_opts(morsel)
         return morsel
+
+
 #=================================================================
 class RootScopeCookieRewriter(WbUrlBaseCookieRewriter):
     """

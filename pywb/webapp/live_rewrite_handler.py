@@ -89,7 +89,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
             if rangeres:
                 url, start, end, use_206 = rangeres
 
-                # if bytes=0- Range request, simply remove the range and still proxy
+                # if bytes=0- Range request,
+                # simply remove the range and still proxy
                 if start == 0 and not end and use_206:
                     wbrequest.wb_url.url = url
                     del wbrequest.env['HTTP_RANGE']
@@ -111,10 +112,12 @@ class RewriteHandler(SearchPageWbUrlHandler):
         wbresponse = self._make_response(wbrequest, *result)
 
         if readd_range:
-            content_length = wbresponse.status_headers.get_header('Content-Length')
+            content_length = (wbresponse.status_headers.
+                              get_header('Content-Length'))
             try:
                 content_length = int(content_length)
-                wbresponse.status_headers.add_range(0, content_length, content_length)
+                wbresponse.status_headers.add_range(0, content_length,
+                                                    content_length)
             except (ValueError, TypeError):
                 pass
 
@@ -165,7 +168,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
                                     verify=False,
                                     stream=True)
 
-                # don't actually read whole response, proxy response for writing it
+                # don't actually read whole response,
+                # proxy response for writing it
                 resp.close()
             except:
                 del self._cache[key]
@@ -176,6 +180,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
                 resp = self.get_video_info(wbrequest,
                                            info_url=referrer,
                                            video_url=url)
+
         def wrap_buff_gen(gen):
             for x in gen:
                 yield x

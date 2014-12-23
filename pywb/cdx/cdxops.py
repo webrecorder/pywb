@@ -169,8 +169,8 @@ def cdx_filter(cdx_iter, filter_strings):
             # no field set, apply filter to entire cdx
             if len(parts) == 1:
                 self.field = ''
-            else:
             # apply filter to cdx[field]
+            else:
                 self.field = parts[0]
                 string = parts[1]
 

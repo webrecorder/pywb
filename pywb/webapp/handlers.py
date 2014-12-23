@@ -16,7 +16,6 @@ from pywb.warc.resolvingloader import ResolvingLoader
 
 from views import J2TemplateView
 from replay_views import ReplayView
-from cached_replay import CachedReplayView
 from pywb.framework.memento import MementoResponse
 from pywb.utils.timeutils import datetime_to_timestamp
 
@@ -65,8 +64,8 @@ class SearchPageWbUrlHandler(WbUrlHandler):
         # render top level frame if in frame mode
         # (not supported in proxy mode)
         if (self.is_frame_mode and wbrequest.wb_url and
-            not wbrequest.wb_url.is_query() and
-            not wbrequest.options['is_proxy']):
+             not wbrequest.wb_url.is_query() and
+             not wbrequest.options['is_proxy']):
 
             if wbrequest.wb_url.is_top_frame:
                 return self.get_top_frame_response(wbrequest)
@@ -154,8 +153,8 @@ class WBHandler(SearchPageWbUrlHandler):
 
     def handle_not_found(self, wbrequest, nfe):
         if (not self.fallback_handler or
-            wbrequest.wb_url.is_query() or
-            wbrequest.wb_url.is_identity):
+             wbrequest.wb_url.is_query() or
+             wbrequest.wb_url.is_identity):
             raise
 
         return self.fallback_handler(wbrequest)
