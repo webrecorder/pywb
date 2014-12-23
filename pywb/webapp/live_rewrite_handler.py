@@ -28,20 +28,20 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
     LIVE_COOKIE = 'pywb.timestamp={0}; max-age=60'
 
+    YT_DL_TYPE = 'application/vnd.youtube-dl_formats+json'
+
     youtubedl = None
 
     def __init__(self, config):
         super(RewriteHandler, self).__init__(config)
 
-        self.default_proxy = config.get('proxyhostport')
+        self.proxy = config.get('proxyhostport')
         self.rewriter = LiveRewriter(is_framed_replay=self.is_frame_mode,
-                                     default_proxy=self.default_proxy)
+                                     proxies=self.proxy)
 
         self.head_insert_view = HeadInsertView.init_from_config(config)
 
         self.live_cookie = config.get('live-cookie', self.LIVE_COOKIE)
-
-        self.no_proxy_range = config.get('no_proxy_range', True)
 
         self.ydl = None
 
@@ -74,14 +74,14 @@ class RewriteHandler(SearchPageWbUrlHandler):
         if ref_wburl_str:
             wbrequest.env['REL_REFERER'] = WbUrl(ref_wburl_str).url
 
-        proxies = None  # default
+        ignore_proxies = False
         use_206 = False
         url = None
 
         readd_range = False
         cache_key = None
 
-        if self.default_proxy and self.no_proxy_range:
+        if self.proxy:
             rangeres = wbrequest.extract_range()
 
             if rangeres:
@@ -94,7 +94,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
                     readd_range = True
                 else:
                     # disables proxy
-                    proxies = False
+                    ignore_proxies = True
 
                     # sets cache_key only if not already cached
                     cache_key = self._check_url_cache(url)
@@ -104,7 +104,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
                                              head_insert_func=head_insert_func,
                                              req_headers=req_headers,
                                              env=wbrequest.env,
-                                             proxies=proxies)
+                                             ignore_proxies=ignore_proxies)
 
         wbresponse = self._make_response(wbrequest, *result)
 
@@ -150,8 +150,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
         referrer = wbrequest.env.get('REL_REFERER')
 
         def do_ping():
-            proxies = {'http': self.default_proxy,
-                       'https': self.default_proxy}
+            proxies = {'http': self.proxy,
+                       'https': self.proxy}
 
             headers = self._live_request_headers(wbrequest)
             headers['Connection'] = 'close'
@@ -201,11 +201,11 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
         info = self.youtubedl.extract_info(video_url)
 
-        content_type = 'application/vnd.youtube-dl_formats+json'
+        content_type = self.YT_DL_TYPE
         metadata = json.dumps(info)
 
-        if self.default_proxy:
-            proxies = {'http': self.default_proxy}
+        if self.proxy:
+            proxies = {'http': self.proxy}
 
             headers = self._live_request_headers(wbrequest)
             headers['Content-Type'] = content_type

@@ -22,11 +22,18 @@ from rewrite_content import RewriteContent
 
 #=================================================================
 class LiveRewriter(object):
-    def __init__(self, is_framed_replay=False, default_proxy=None):
+    def __init__(self, is_framed_replay=False, proxies=None):
         self.rewriter = RewriteContent(is_framed_replay=is_framed_replay)
-        self.default_proxy = default_proxy
-        if self.default_proxy:
-            logging.debug('Live Rewrite via proxy ' + self.default_proxy)
+
+        self.proxies = proxies
+
+        if self.proxies:
+            logging.debug('Live Rewrite via proxy ' + str(proxies))
+
+            if isinstance(proxies, str):
+                self.proxies = {'http': proxies,
+                                'https': proxies}
+
         else:
             logging.debug('Live Rewrite Direct (no proxy)')
 
@@ -86,16 +93,14 @@ class LiveRewriter(object):
                    env=None,
                    req_headers=None,
                    follow_redirects=False,
-                   proxies=None):
+                   ignore_proxies=False):
 
         method = 'GET'
         data = None
 
-        if proxies == False:
-            proxies = None
-        elif not proxies and self.default_proxy:
-            proxies = {'http': self.default_proxy,
-                       'https': self.default_proxy}
+        proxies = None
+        if not ignore_proxies:
+            proxies = self.proxies
 
         if not req_headers:
             req_headers = {}
@@ -138,7 +143,7 @@ class LiveRewriter(object):
                       req_headers={},
                       timestamp=None,
                       follow_redirects=False,
-                      proxies=None):
+                      ignore_proxies=False):
 
         ts_err = url.split('///')
 
@@ -153,7 +158,7 @@ class LiveRewriter(object):
         if is_http(url):
             (status_headers, stream) = self.fetch_http(url, env, req_headers,
                                                        follow_redirects,
-                                                       proxies)
+                                                       ignore_proxies)
         else:
             (status_headers, stream) = self.fetch_local_file(url)
 
