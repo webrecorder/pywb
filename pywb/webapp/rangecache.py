@@ -18,19 +18,21 @@ class RangeCache(object):
         atexit.register(self.cleanup)
 
     def cleanup(self):
-        if self.temp_dir:
+        if self.temp_dir: # pragma: no cover
             import shutil
             print('Removing: ' + self.temp_dir)
             shutil.rmtree(self.temp_dir, True)
+            self.temp_dir = None
 
     def __call__(self, wbrequest, digest, wbresponse_func):
         result = wbrequest.extract_range()
         if not result:
             return None, None
 
-        if wbrequest.env.get('HTTP_X_IGNORE_RANGE_ARG'):
-            wbrequest.wb_url.url = result[0]
-            return None, None
+        # no longer needed -- handled at frontend rewrite
+        #if wbrequest.env.get('HTTP_X_IGNORE_RANGE_ARG'):
+        #    wbrequest.wb_url.url = result[0]
+        #    return None, None
 
         return self.handle_range(wbrequest,
                                  digest,
@@ -47,7 +49,6 @@ class RangeCache(object):
 
             # only cache 200 responses
             if not response.status_headers.get_statuscode().startswith('200'):
-                print('NON 200 RESP')
                 return response.status_headers, response.body
 
             if not self.temp_dir:
@@ -89,10 +90,12 @@ class RangeCache(object):
 
                     yield buf
 
+        status_headers = StatusAndHeaders('200 OK', spec['headers'])
+
         if use_206:
-            WbResponse.add_range_status_h(status_headers)
-        else:
-            status_headers = StatusAndHeaders('200 OK', spec['headers'])
+            StatusAndHeaders.add_range(status_headers, start,
+                                       maxlen,
+                                       filelen)
 
         status_headers.replace_header('Content-Length', str(maxlen))
 

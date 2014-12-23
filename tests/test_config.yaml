@@ -16,7 +16,7 @@ collections:
     pywb-filt:
         index_paths: './sample_archive/cdx/'
         filters: ['filename:dupe*']
-    
+
     pywb-filt-2:
         index_paths: './sample_archive/cdx/'
         filters: ['!filename:dupe*']
@@ -26,7 +26,7 @@ collections:
         framed_replay: false
 
     # collection of non-surt CDX
-    pywb-nosurt: 
+    pywb-nosurt:
         index_paths: './sample_archive/non-surt-cdx/'
         surt_ordered: false
 
@@ -38,6 +38,9 @@ collections:
         index_paths: ./sample_archive/cdx/
         fallback: live
 
+    pywb-rangecache:
+        index_paths: ./sample_archive/cdx/
+        enable_cache: true
 
 # indicate if cdx files are sorted by SURT keys -- eg: com,example)/
 # SURT keys are recommended for future indices, but non-SURT cdxs

@@ -101,6 +101,15 @@ class TestWb:
         assert 'new _WBWombat' in resp.body, resp.body
         assert '/pywb/20140127171238/http://www.iana.org/time-zones"' in resp.body
 
+    def test_replay_content_with_rangecache(self):
+        resp = self.testapp.get('/pywb-rangecache/20140127171238/http://www.iana.org/')
+        self._assert_basic_html(resp)
+
+        assert '"20140127171238"' in resp.body
+        assert 'wb.js' in resp.body
+        assert 'new _WBWombat' in resp.body, resp.body
+        assert '/pywb-rangecache/20140127171238/http://www.iana.org/time-zones"' in resp.body
+
     def test_replay_non_frame_content(self):
         resp = self.testapp.get('/pywb-nonframe/20140127171238/http://www.iana.org/')
         self._assert_basic_html(resp)
@@ -161,8 +170,40 @@ class TestWb:
         # no wb header insertion
         assert 'wb.js' not in resp.body
 
+        assert resp.content_length == 1270, resp.content_length
+
         # original unrewritten url present
         assert '"http://www.iana.org/domains/example"' in resp.body
+
+    def test_replay_range_cache_content(self):
+        headers = [('Range', 'bytes=0-200')]
+        resp = self.testapp.get('/pywb-rangecache/20140127171251id_/http://example.com', headers=headers)
+
+        assert resp.status_int == 206
+        assert resp.headers['Accept-Ranges'] == 'bytes'
+        assert resp.headers['Content-Range'] == 'bytes 0-200/1270', resp.headers['Content-Range']
+        assert resp.content_length == 201, resp.content_length
+
+        assert 'wb.js' not in resp.body
+
+    def test_replay_range_cache_content_bound_end(self):
+        headers = [('Range', 'bytes=10-10000')]
+        resp = self.testapp.get('/pywb-rangecache/20140127171251id_/http://example.com', headers=headers)
+
+        assert resp.status_int == 206
+        assert resp.headers['Accept-Ranges'] == 'bytes'
+        assert resp.headers['Content-Range'] == 'bytes 10-1269/1270', resp.headers['Content-Range']
+        assert resp.content_length == 1260, resp.content_length
+        assert len(resp.body) == resp.content_length
+
+        assert 'wb.js' not in resp.body
+
+    def test_replay_redir_no_cache(self):
+        headers = [('Range', 'bytes=10-10000')]
+        # Range ignored
+        resp = self.testapp.get('/pywb-rangecache/20140126200927/http://www.iana.org/domains/root/db/', headers=headers)
+        assert resp.content_length == 0
+        assert resp.status_int == 302
 
     def test_replay_identity_2_arcgz(self):
         resp = self.testapp.get('/pywb/20140216050221id_/http://arc.gz.test.example.com')
