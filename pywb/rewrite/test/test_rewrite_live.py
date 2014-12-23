@@ -18,6 +18,13 @@ def head_insert_func(rule, cdx):
     else:
         return ''
 
+def test_csrf_token_headers():
+    rewriter = LiveRewriter()
+    env = {'HTTP_X_CSRFTOKEN': 'wrong', 'HTTP_COOKIE': 'csrftoken=foobar'}
+
+    req_headers = rewriter.translate_headers('http://example.com/', env)
+
+    assert req_headers == {'X-CSRFToken': 'foobar', 'Cookie': 'csrftoken=foobar'}
 
 def test_local_1():
     status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html',

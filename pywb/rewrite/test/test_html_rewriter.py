@@ -72,6 +72,13 @@ ur"""
 >>> parse('<div data-url="http://example.com/a/b/c.html" data-some-other-value="http://example.com/img.gif">')
 <div data-url="/web/20131226101010oe_/http://example.com/a/b/c.html" data-some-other-value="/web/20131226101010oe_/http://example.com/img.gif">
 
+# param tag -- rewrite conditionally if url
+>>> parse('<param value="http://example.com/"/>')
+<param value="/web/20131226101010oe_/http://example.com/"/>
+
+>>> parse('<param value="foo bar"/>')
+<param value="foo bar"/>
+
 # srcset attrib
 >>> parse('<img srcset="//example.com/1x 1x, //example.com/foo 2x, https://example.com/bar 4x">')
 <img srcset="/web/20131226101010/http://example.com/1x 1x, /web/20131226101010/http://example.com/foo 2x, /web/20131226101010/https://example.com/bar 4x">
