@@ -173,7 +173,7 @@ class TestWb:
 
     def test_replay_range_cache_content(self):
         headers = [('Range', 'bytes=0-200')]
-        resp = self.testapp.get('/pywb/20140127171251id_/http://example.com', headers=headers)
+        resp = self.testapp.get('/pywb/20140127171250id_/http://example.com', headers=headers)
 
         assert resp.status_int == 206
         assert resp.headers['Accept-Ranges'] == 'bytes'

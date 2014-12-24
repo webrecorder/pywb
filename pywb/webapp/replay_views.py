@@ -224,6 +224,9 @@ class ReplayView(object):
         if not redir_needed:
             return None
 
+        if self.enable_range_cache and wbrequest.extract_range():
+            return None
+
         new_url = (wbrequest.urlrewriter.
                    get_new_url(timestamp=cdx['timestamp'],
                                url=cdx['original']))

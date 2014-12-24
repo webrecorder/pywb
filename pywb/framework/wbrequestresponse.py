@@ -143,6 +143,7 @@ class WbRequest(object):
             return None
 
         start = int(start)
+        self.custom_params['noredir'] = True
 
         if end:
             end = int(end)
