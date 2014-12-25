@@ -23,7 +23,7 @@ __wbvidrw = (function() {
 
     var found_embeds = false;
 
-    var vid_type = "html";
+    var vid_type = "default";
 
     var FLASH_PLAYER = wbinfo.static_prefix + "/flowplayer/flowplayer-3.2.18.swf";
 
@@ -61,31 +61,12 @@ __wbvidrw = (function() {
 
         found_embeds = true;
 
+        handle_yt_videos(vid_type);
+
         //window.setInterval(handle_all_embeds, 1000);
 
         //_wb_wombat.add_tag_handler("embed", handle_all_embeds);
         //_wb_wombat.add_tag_handler("object", handle_all_objects);
-
-        // special case: yt
-        /*
-        if (!found_embeds && wbinfo.url.indexOf("://www.youtube.com/watch") > 0) {
-            var ytvideo = document.getElementsByTagName("video");
-
-            if (ytvideo.length == 1) {
-                if (ytvideo[0].getAttribute("data-youtube-id") != "") {
-                    // Wait to see if video is playing, if so, don't replace it
-                    window.setTimeout(function() {
-                        if (!ytvideo || !ytvideo.length || ytvideo[0].readyState == 0) {
-                            delete window.yt;
-                            delete window.ytplayer;
-                            console.log("REPLACING YT: " + wbinfo.url);
-                            check_replacement(ytvideo[0], wbinfo.url);
-                        }
-                    }, 4000);
-                }
-            }
-        }
-        */
     }
 
     function handle_embed_tag(elem)
@@ -151,10 +132,51 @@ __wbvidrw = (function() {
         return false;
     }
 
-    var YT_RX = /^(https?:\/\/.*youtube.com)\/v\/([^&?]+)(.*)$/;
-
+    var YT_W_E_RX = /^(https?:\/\/.*youtube.com)\/(watch|embed).*$/;
+    var YT_V_RX = /^(https?:\/\/.*youtube.com)\/v\/([^&?]+)(.*)$/;
     var VIMEO_RX = /^https?:\/\/.*vimeo.*clip_id=([^&]+)/;
 
+
+    function handle_yt_videos(vid_type)
+    {
+        function do_yt_video_replace()
+        {
+            console.log("REPLACING YT: " + wbinfo.url);
+            ytvideo[0].autoplay = false;
+            ytvideo[0].preload = "none";
+
+            var elem = ytvideo[0];
+            // get ancestor 'div'
+            if (elem.parentElement) {
+                elem = elem.parentElement;
+            }
+            if (elem.parentElement) {
+                elem = elem.parentElement;
+            }
+            console.log(elem);
+
+            // Experimental
+
+            check_replacement(elem, wbinfo.url);
+        }
+
+        // special case: yt
+        if (wbinfo.url.match(YT_W_E_RX)) {
+            var ytvideo = document.getElementsByTagName("video");
+
+            if (ytvideo.length == 1 && ytvideo[0].getAttribute("data-youtube-id") != "") {
+                if (vid_type == "html") {
+                    do_yt_video_replace();
+                } else {
+                    setTimeout(function() {
+                        if (!ytvideo || !ytvideo.length || ytvideo[0].readyState == 0) {
+                            do_yt_video_replace();
+                        }
+                    }, 4000);
+                }
+            }
+        }
+    }
 
     function check_replacement(elem, src, no_retry) {
         if (!src || src.indexOf("javascript:") == 0) {
@@ -176,18 +198,11 @@ __wbvidrw = (function() {
         src = src.replace(VIMEO_RX, "http://player.vimeo.com/video/$1");
 
         if (vid_type == "orig") {
-            var repl_src = src.replace(YT_RX, "$1/embed/$2?$3&controls=0");
+            var repl_src = src.replace(YT_V_RX, "$1/embed/$2?$3&controls=0");
             if (repl_src != src) {
                 do_replace_iframe(elem, repl_src);
                 return;
             }
-        }
-
-        if (window.yt) {
-            delete window.yt;
-        }
-        if (window.ytplayer) {
-            delete window.ytplayer;
         }
         // end special cases
 
@@ -257,8 +272,14 @@ __wbvidrw = (function() {
 
             elem.parentNode.replaceChild(replacement, elem);
 
-        } else if (tag_name == "video") {
-            elem.parentNode.replaceChild(replacement, elem);
+        } else {
+           elem.parentNode.replaceChild(replacement, elem);
+        }
+
+        if (window.yt) {
+            yt.player.Application.create("player-api", ytplayer.config).dispose();
+            delete window.yt;
+            delete window.ytplayer;
         }
     }
 
@@ -316,6 +337,14 @@ __wbvidrw = (function() {
         }
     }
 
+    function get_format_ext(info_format) {
+        if (info_format.ext == "unknown_video") {
+            return info_format.format_id;
+        } else {
+            return info_format.ext;
+        }
+    }
+
     function can_play_video_or_audio(elem, info) {
         var types = ["video", "audio"];
         var type = undefined;
@@ -330,7 +359,9 @@ __wbvidrw = (function() {
             }
 
             for (var j = 0; j < types.length; j++) {
-                if (can_play(elem, info.formats[i].ext, types[j])) {
+                var ext = get_format_ext(info.formats[i]);
+
+                if (can_play(elem, ext, types[j])) {
                     info.formats[i]._wb_canPlay = true;
                     info._wb_avail++;
                     type = types[j];
@@ -389,13 +420,13 @@ __wbvidrw = (function() {
 
             if (i < 0) {
                 url = info.url;
-                format = info.ext;
+                format = get_format_ext(info);
             } else {
-                url = info.formats[i].url;
-                format = info.formats[i].ext;
                 if (!info.formats[i]._wb_canPlay) {
                     continue;
                 }
+                url = info.formats[i].url;
+                format = get_format_ext(info.formats[i]);
             }
 
             url = wbinfo.prefix + url;
