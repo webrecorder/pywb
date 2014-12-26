@@ -13,11 +13,6 @@ from query import CDXQuery
 
 #=================================================================
 def load_domain_specific_cdx_rules(ds_rules_file, surt_ordered):
-    """
-    >>> (canon, fuzzy) = load_domain_specific_cdx_rules(None, True)
-    >>> canon('http://test.example.example/path/index.html?a=b&id=value&c=d')
-    'example,example,test)/path/index.html?id=value'
-    """
     canon = None
     fuzzy = None
 
@@ -162,24 +157,24 @@ class CDXDomainSpecificRule(BaseRule):
 
     @staticmethod
     def make_regex(config):
+        # just query args
         if isinstance(config, list):
             string = CDXDomainSpecificRule.make_query_match_regex(config)
-        # assumes string
+
+        # split out base and args
+        elif isinstance(config, dict):
+            string = config.get('regex', '')
+            string += CDXDomainSpecificRule.make_query_match_regex(
+                      config.get('args', []))
+
+        # else assume string
         else:
-            string = config
+            string = str(config)
 
         return re.compile(string)
 
     @staticmethod
     def make_query_match_regex(params_list):
-        r"""
-        >>> CDXDomainSpecificRule.make_query_match_regex(['para', 'id', 'abc'])
-        '[?&](abc=[^&]+).*[?&](id=[^&]+).*[?&](para=[^&]+)'
-
-        >>> CDXDomainSpecificRule.make_query_match_regex(['id[0]', 'abc()'])
-        '[?&](abc\\(\\)=[^&]+).*[?&](id\\[0\\]=[^&]+)'
-
-        """
         params_list.sort()
 
         def conv(value):
@@ -188,8 +183,3 @@ class CDXDomainSpecificRule(BaseRule):
         params_list = map(conv, params_list)
         final_str = '.*'.join(params_list)
         return final_str
-
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
