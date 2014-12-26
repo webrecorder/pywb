@@ -13,12 +13,14 @@ from rewriterules import RewriteRules
 from pywb.utils.dsrules import RuleSet
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
-from pywb.utils.bufferedreaders import ChunkedDataReader
+from pywb.utils.bufferedreaders import ChunkedDataReader, BufferedReader
 
 
 #=================================================================
 class RewriteContent:
     HEAD_REGEX = re.compile(r'<\s*head\b[^>]*[>]+', re.I)
+
+    TAG_REGEX = re.compile(r'^\s*\<')
 
     BUFF_SIZE = 16384
 
@@ -106,11 +108,6 @@ class RewriteContent:
         # default text_type
         mod = wb_url.mod
 
-        if mod == 'js_':
-            text_type = 'js'
-        elif mod == 'cs_':
-            text_type = 'css'
-
         stream_raw = False
         encoding = None
         first_buff = None
@@ -123,6 +120,15 @@ class RewriteContent:
                 stream.set_decomp('gzip')
             else:
                 stream = DecompressingBufferedReader(stream)
+
+        if mod == 'js_':
+            text_type, stream = self._resolve_text_type('js',
+                                                        text_type,
+                                                        stream)
+        elif mod == 'cs_':
+            text_type, stream = self._resolve_text_type('css',
+                                                        text_type,
+                                                        stream)
 
         rewriter_class = rule.rewriters[text_type]
 
@@ -172,6 +178,22 @@ class RewriteContent:
                                               first_buff=first_buff)
 
         return (status_headers, gen, True)
+
+    @staticmethod
+    def _resolve_text_type(mod, text_type, stream):
+        # only attempt to resolve between html and other text types
+        if text_type != 'html':
+            return mod, stream
+
+        buff = stream.read(128)
+
+        wrapped_stream = BufferedReader(stream, starting_data=buff)
+
+        # check if starts with a tag, then likely html
+        if RewriteContent.TAG_REGEX.match(buff):
+            mod = 'html'
+
+        return mod, wrapped_stream
 
     def _head_insert_only_gen(self, insert_str, stream):
         max_len = 1024

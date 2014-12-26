@@ -45,8 +45,8 @@ function make_inner_url(url, ts)
 function push_state(url, timestamp, capture_str, is_live) {
     if (window.frames[0].WB_wombat_location) {
         curr_href = window.frames[0].WB_wombat_location.href;
-        
-        // If not current url, don't update    
+
+        // If not current url, don't update
         if (url != curr_href) {
             return;
         }
@@ -59,7 +59,7 @@ function push_state(url, timestamp, capture_str, is_live) {
     state.url = url;
     state.capture_str = capture_str;
     state.is_live = is_live;
-    
+
     window.history.replaceState(state, "", state.inner_url);
 
     set_state(state);
@@ -67,13 +67,13 @@ function push_state(url, timestamp, capture_str, is_live) {
 
 function pop_state(state) {
     set_state(state);
-    
+
     window.frames[0].src = state.inner_url;
 }
 
 function extract_ts(url)
 {
-    var result = value.match(TS_REGEX);
+    var result = url.match(TS_REGEX);
     if (!result) {
         return "";
     }
@@ -112,7 +112,7 @@ function set_state(state) {
 
 window.onpopstate = function(event) {
     var state = event.state;
-    
+
     if (state) {
         pop_state(state);
     }
