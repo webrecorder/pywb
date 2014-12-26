@@ -1,16 +1,17 @@
 PyWb 0.7.0
 ==========
 
-.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=video
+.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=develop
       :target: https://travis-ci.org/ikreymer/pywb
-.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=video
-      :target: https://coveralls.io/r/ikreymer/pywb?branch=video
+.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=develop
+      :target: https://coveralls.io/r/ikreymer/pywb?branch=develop
 .. image:: https://img.shields.io/gratipay/ikreymer.svg
       :target: https://www.gratipay.com/ikreymer/
 
 pywb is a python implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
 
 pywb allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
+The replay system is designed to accurately replay complex dynamic sites, including video and audio content.
 
 pywb can be used as a traditional web application or an HTTP or HTTPS proxy server.
 
@@ -25,6 +26,8 @@ Several organizations run public services which use pywb that you may explore di
 * `Webenact <http://webenact.rhizome.org/excellences-and-perfections/>`_ from `rhizome.org <https://rhizome.org>`_, features artist focused social media reenactments. (Featured in `NYTimes Bits Blog <http://bits.blogs.nytimes.com/2014/10/19/a-new-tool-to-preserve-moments-on-the-internet>`_)
 
 * `Perma.cc <https://perma.cc>`_ embeds pywb as part of a larger `open source application <https://github.com/harvard-lil/perma>`_ to provide web archive replay for law libraries.
+
+* `Hypothes.is Annotations <https://via.hypothes.is>`_ uses the live rewrite feature to add an annotation editor into any page or PDF <https://github.com/hypothesis/via>_ .
 
 * `WebRecorder.io <https://webrecorder.io>`_ uses pywb and builds upon pywb-webrecorder to create a hosted web recording and replay system.
 
