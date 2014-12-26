@@ -45,6 +45,16 @@ r"""
 >>> _test_js('document_domain = "anotherdomain.com"; window.document.domain = "example.com"')
 'document_domain = "anotherdomain.com"; window.document.WB_wombat_domain = "example.com"'
 
+# top test
+>>> _test_js('window.top != window')
+'window.WB_wombat_top != window'
+
+>>> _test_js('top != window')
+'WB_wombat_top != window'
+
+>>> _test_js('top = top + 5')
+'top = top + 5'
+
 # protocol-rel escapes
 >>> _test_js('"//example.com/"')
 '"/web/20131010/http://example.com/"'
