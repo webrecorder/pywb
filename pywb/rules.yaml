@@ -148,12 +148,12 @@ rules:
 
     - url_prefix: 'com,youtube,c'
 
-      fuzzy_lookup: 'com,youtube,c.*/videogoodput.*(id=[^&]+)'
+      fuzzy_lookup: 'com,youtube,c.*/videogoodput.*([?&]id=[^&]+)'
 
     - url_prefix: 'com,googlevideo,'
 
       fuzzy_lookup:
-          match: 'com,googlevideo.*/videoplayback.*(id=[^&]+).*(itag=[^&]+).*(mime=[^&]+)'
+          match: 'com,googlevideo.*/videoplayback.*([?&]id=[^&]+).*([?&]itag=[^&]+).*([?&]mime=[^&]+)'
           filter:
               - '~urlkey:{0}'
               - '!mimetype:text/plain'

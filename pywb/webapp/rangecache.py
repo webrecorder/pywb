@@ -6,6 +6,7 @@ from tempfile import NamedTemporaryFile, mkdtemp
 
 import yaml
 import os
+from shutil import rmtree
 
 import atexit
 
@@ -19,9 +20,8 @@ class RangeCache(object):
 
     def cleanup(self):
         if self.temp_dir:  # pragma: no cover
-            import shutil
             print('Removing: ' + self.temp_dir)
-            shutil.rmtree(self.temp_dir, True)
+            rmtree(self.temp_dir, True)
             self.temp_dir = None
 
     def handle_range(self, wbrequest, digest, wbresponse_func,

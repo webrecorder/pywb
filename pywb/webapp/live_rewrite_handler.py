@@ -67,7 +67,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
     def render_content(self, wbrequest):
         if wbrequest.wb_url.mod == 'vi_':
-            return self.get_video_info(wbrequest)
+            return self._get_video_info(wbrequest)
 
         head_insert_func = self.head_insert_view.create_insert_func(wbrequest)
         req_headers = self._live_request_headers(wbrequest)
@@ -79,6 +79,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
         ignore_proxies = False
         use_206 = False
         url = None
+        rangeres = None
 
         readd_range = False
         cache_key = None
@@ -100,7 +101,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
                     ignore_proxies = True
 
                     # sets cache_key only if not already cached
-                    cache_key = self._check_url_cache(url)
+                    cache_key = self._get_cache_key('r:', url)
 
         result = self.rewriter.fetch_request(wbrequest.wb_url.url,
                                              wbrequest.urlrewriter,
@@ -124,6 +125,18 @@ class RewriteHandler(SearchPageWbUrlHandler):
         if cache_key:
             self._add_proxy_ping(cache_key, url, wbrequest, wbresponse)
 
+        if rangeres:
+            referrer = wbrequest.env.get('REL_REFERER')
+
+            # also ping video info
+            if referrer:
+                try:
+                    resp = self._get_video_info(wbrequest,
+                                                info_url=referrer,
+                                                video_url=url)
+                except:
+                    print('Error getting video info')
+
         return wbresponse
 
     def _make_response(self, wbrequest, status_headers, gen, is_rewritten):
@@ -138,22 +151,26 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
         return WbResponse(status_headers, gen)
 
-    def _check_url_cache(self, url):
+    def _get_cache_key(self, prefix, url):
         if not self._cache:
             self._cache = create_cache()
 
-        hash_ = hashlib.md5()
-        hash_.update(url)
-        key = hash_.hexdigest()
+        key = self.create_cache_key(prefix, url)
 
         if key in self._cache:
             return None
 
         return key
 
-    def _add_proxy_ping(self, key, url, wbrequest, wbresponse):
-        referrer = wbrequest.env.get('REL_REFERER')
+    @staticmethod
+    def create_cache_key(prefix, url):
+        hash_ = hashlib.md5()
+        hash_.update(url)
+        key = hash_.hexdigest()
+        key = prefix + key
+        return key
 
+    def _add_proxy_ping(self, key, url, wbrequest, wbresponse):
         def do_ping():
             headers = self._live_request_headers(wbrequest)
             headers['Connection'] = 'close'
@@ -175,12 +192,6 @@ class RewriteHandler(SearchPageWbUrlHandler):
                 del self._cache[key]
                 raise
 
-            # also ping video info
-            if referrer:
-                resp = self.get_video_info(wbrequest,
-                                           info_url=referrer,
-                                           video_url=url)
-
         def wrap_buff_gen(gen):
             for x in gen:
                 yield x
@@ -194,7 +205,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
         wbresponse.body = wrap_buff_gen(wbresponse.body)
         return wbresponse
 
-    def get_video_info(self, wbrequest, info_url=None, video_url=None):
+    def _get_video_info(self, wbrequest, info_url=None, video_url=None):
         if not self.youtubedl:
             self.youtubedl = YoutubeDLWrapper()
 
@@ -204,12 +215,18 @@ class RewriteHandler(SearchPageWbUrlHandler):
         if not info_url:
             info_url = wbrequest.wb_url.url
 
+        cache_key = None
+        if self.proxies:
+            cache_key = self._get_cache_key('v:', video_url)
+
         info = self.youtubedl.extract_info(video_url)
+
+        #if info and info.formats and len(info.formats) == 1:
 
         content_type = self.YT_DL_TYPE
         metadata = json.dumps(info)
 
-        if self.proxies:
+        if (self.proxies and cache_key):
             headers = self._live_request_headers(wbrequest)
             headers['Content-Type'] = content_type
 
@@ -221,6 +238,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
                                         headers=headers,
                                         proxies=self.proxies,
                                         verify=False)
+
+            self._cache[cache_key] = '1'
 
         return WbResponse.text_response(metadata, content_type=content_type)
 
