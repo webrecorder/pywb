@@ -27,7 +27,7 @@ Several organizations run public services which use pywb that you may explore di
 
 * `Perma.cc <https://perma.cc>`_ embeds pywb as part of a larger `open source application <https://github.com/harvard-lil/perma>`_ to provide web archive replay for law libraries.
 
-* `Hypothes.is Annotations <https://via.hypothes.is>`_ uses the live rewrite feature to add an annotation editor into any page or PDF <https://github.com/hypothesis/via>_ .
+* `Hypothes.is Annotations <https://via.hypothes.is>`_ uses the live rewrite feature to add `Hypothes.is <https://hypothes.is>`_ annotation editor into any page or PDF (https://github.com/hypothesis/via)
 
 * `WebRecorder.io <https://webrecorder.io>`_ uses pywb and builds upon pywb-webrecorder to create a hosted web recording and replay system.
 
@@ -75,6 +75,8 @@ Latest Changes
 --------------
 
 See `CHANGES.rst <https://github.com/ikreymer/pywb/blob/master/CHANGES.rst>`_ for up-to-date changelist.
+
+For latest on video archiving, see `Video Replay and Recording <https://github.com/ikreymer/pywb/wiki/Video-Replay-and-Recording>`_
 
 
 Quick Install & Run Samples
