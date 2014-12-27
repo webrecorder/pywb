@@ -1,10 +1,12 @@
-pywb 0.7.0 changelist
+pywb 0.7.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
+
+* (0.7.1 fixes some missing static files from 0.7.0 release)
 
 * Video/Audio Replay, Live Proxy and Recording Support (with pywb-webrecorder)!
 
   See: `Video Replay and Recording <https://github.com/ikreymer/pywb/wiki/Video-Replay-and-Recording>`_ for more detailed info.
-  
+
 * Support for replaying HTTP/1.1 range requests for any archived resorce (optional range cache be disabled via `enable_ranges: false`)
 
 * Support for on-the-fly video replacement of Flash with HTML5 using new video rewrite system ``vidrw.js``.
@@ -18,7 +20,7 @@ pywb 0.7.0 changelist
   - Date override sets date to replay timestamp
   - Image() object override
   - ability to disable dynamic attribute rewriting by setting `_no_rewrite` on an element.
-  
+
 * Type detection: resolve conflict between text/html that is served under js_ mod, resolve if html or js.
 
 
