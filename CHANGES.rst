@@ -7,7 +7,9 @@ pywb 0.7.0 changelist
   
 * Support for replaying HTTP/1.1 range requests for any archived resorce (optional range cache be disabled via `enable_ranges: false`)
 
-* Support for on-the-fly video replacement of flash with HTML5 video.
+* Support for on-the-fly video replacement of Flash with HTML5 using new video rewrite system ``vidrw.js``.
+
+  (Designed for all Flash videos, with varying levels of special cases for YouTube, Vimeo, Soundcloud and Dailymotion)
 
 * Use `youtube-dl <http://rg3.github.io/youtube-dl/>`_ to find actual video streams from page urls, record video info.
 
