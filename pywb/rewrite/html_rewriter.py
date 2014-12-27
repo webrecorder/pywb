@@ -26,6 +26,7 @@ class HTMLRewriterMixin(object):
             'applet':  {'codebase': 'oe_',
                         'archive': 'oe_'},
             'area':    {'href': defmod},
+            'audio':   {'src': 'oe_'},
             'base':    {'href': defmod},
             'blockquote': {'cite': defmod},
             'body':    {'background': 'im_'},
@@ -48,6 +49,8 @@ class HTMLRewriterMixin(object):
             'ref':     {'href': 'oe_'},
             'script':  {'src': 'js_'},
             'source':  {'src': 'oe_'},
+            'video':   {'src': 'oe_'},
+
             'div':     {'data-src': defmod,
                         'data-uri': defmod},
             'li':      {'data-src': defmod,
