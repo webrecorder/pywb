@@ -1,7 +1,23 @@
 pywb 0.7.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-Video/streaming content replay and buffering improvements!
+* Video/Audio Replay, Live Proxy and Recording Support (with pywb-webrecorder)!
+
+  See: `Video Replay and Recording <https://github.com/ikreymer/pywb/wiki/Video-Replay-and-Recording>`_ for more detailed info.
+  
+* Support for replaying HTTP/1.1 range requests for any archived resorce (optional range cache be disabled via `enable_ranges: false`)
+
+* Support for on-the-fly video replacement of flash with HTML5 video.
+
+* Use `youtube-dl <http://rg3.github.io/youtube-dl/>`_ to find actual video streams from page urls, record video info.
+
+* New, improved wombat 2.1 -- improved rewriting of dynamic content, including:
+  - setAttribute override
+  - Date override sets date to replay timestamp
+  - Image() object override
+  - ability to disable dynamic attribute rewriting by setting `_no_rewrite` on an element.
+  
+* Type detection: resolve conflict between text/html that is served under js_ mod, resolve if html or js.
 
 
 pywb 0.6.6 changelist
