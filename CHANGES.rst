@@ -1,3 +1,9 @@
+pywb 0.7.2 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Experiment with disabling DASH for YT
+
+
 pywb 0.7.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

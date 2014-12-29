@@ -187,6 +187,15 @@ rules:
           js_rewrite_location: location
 
 
+    # watch config changes
+    - url_prefix: 'com,youtube)/watch'
+
+      rewrite:
+
+        js_regexs:
+            - match: 'ytplayer.load\(\);'
+              replace: 'ytplayer.config.args.dash = "0"; ytplayer.config.args.dashmpd = ""; {0}'
+
     # testing rules -- not for valid domain
     #=================================================================
     # this rule block is a non-existent prefix merely for testing
