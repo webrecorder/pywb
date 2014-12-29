@@ -225,7 +225,7 @@ __wbvidrw = (function() {
                         }
 
                         // if no player or player is still buffering (is this ok), then replace
-                        if (state < 0 || state == 3) {
+                        if (state < 0) {
                             do_yt_video_replace(player_div);
                             return;
                         }
