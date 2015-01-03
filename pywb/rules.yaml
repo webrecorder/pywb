@@ -162,7 +162,7 @@ rules:
             args:
                 - id
                 - itag
-                - mime
+                  #- mime
 
           filter:
               - '~urlkey:{0}'
@@ -187,14 +187,23 @@ rules:
           js_rewrite_location: location
 
 
-    # watch config changes
-    - url_prefix: 'com,youtube)/watch'
+    # watch and embed config changes
+    - url_prefix: 'com,youtube)/'
 
       rewrite:
-
         js_regexs:
             - match: 'ytplayer.load\(\);'
               replace: 'ytplayer.config.args.dash = "0"; ytplayer.config.args.dashmpd = ""; {0}'
+
+            - match: 'yt\.setConfig.*PLAYER_CONFIG.*args": {'
+              replace: '{0} "dash": "0", dashmpd: "", '
+
+        req_cookie_rewrite:
+            - match: '^(((?!PREF).)*)$'
+              replace: '\1; PREF=f2=40000000'
+
+            - match: '(.*PREF=)([^ ;]*)(.*)'
+              replace: '\1&f2=40000000\3'
 
     # testing rules -- not for valid domain
     #=================================================================
@@ -217,6 +226,15 @@ rules:
       rewrite:
         js_rewrite_location: urls
 
+        req_cookie_rewrite:
+            - match: '^(((?!FOO).)*)$'
+              replace: '\1; FOO=bar=1'
+
+            - match: '(.*FOO=)([^ ;]*)(.*)'
+              replace: '\1&bar=1\3'
+
+            - match: ''
+              invalid_: ''
 
       # all domain rules -- fallback to this dataset
     #=================================================================

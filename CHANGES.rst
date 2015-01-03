@@ -3,6 +3,8 @@ pywb 0.7.2 changelist
 
 * Experiment with disabling DASH for YT
 
+* New ``req_cookie_rewrite`` rewrite directive to rewrite outgoing ``Cookie`` header, can be used to fix a certain cookie for a url prefix.
+
 
 pywb 0.7.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
@@ -25,7 +27,7 @@ pywb 0.7.1 changelist
   - setAttribute override
   - Date override sets date to replay timestamp
   - Image() object override
-  - ability to disable dynamic attribute rewriting by setting `_no_rewrite` on an element.
+  - ability to disable dynamic attribute rewriting by setting ``_no_rewrite`` on an element.
 
 * Type detection: resolve conflict between text/html that is served under js_ mod, resolve if html or js.
 

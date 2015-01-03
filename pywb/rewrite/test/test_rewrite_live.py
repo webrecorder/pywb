@@ -22,9 +22,42 @@ def test_csrf_token_headers():
     rewriter = LiveRewriter()
     env = {'HTTP_X_CSRFTOKEN': 'wrong', 'HTTP_COOKIE': 'csrftoken=foobar'}
 
-    req_headers = rewriter.translate_headers('http://example.com/', env)
+    req_headers = rewriter.translate_headers('http://example.com/', 'com,example)/', env)
 
     assert req_headers == {'X-CSRFToken': 'foobar', 'Cookie': 'csrftoken=foobar'}
+
+def test_req_cookie_rewrite_1():
+    rewriter = LiveRewriter()
+    env = {'HTTP_COOKIE': 'A=B'}
+
+    urlkey = 'example,example,test)/'
+    url = 'test.example.example/'
+
+    req_headers = rewriter.translate_headers(url, urlkey, env)
+
+    assert req_headers == {'Cookie': 'A=B; FOO=&bar=1'}
+
+def test_req_cookie_rewrite_2():
+    rewriter = LiveRewriter()
+    env = {'HTTP_COOKIE': 'FOO=goo'}
+
+    urlkey = 'example,example,test)/'
+    url = 'test.example.example/'
+
+    req_headers = rewriter.translate_headers(url, urlkey, env)
+
+    assert req_headers == {'Cookie': 'FOO=&bar=1'}
+
+def test_req_cookie_rewrite_3():
+    rewriter = LiveRewriter()
+    env = {}
+
+    urlkey = 'example,example,test)/'
+    url = 'test.example.example/'
+
+    req_headers = rewriter.translate_headers(url, urlkey, env)
+
+    assert req_headers == {'Cookie': '; FOO=&bar=1'}
 
 def test_local_1():
     status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html',

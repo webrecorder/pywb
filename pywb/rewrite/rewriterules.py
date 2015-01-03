@@ -8,6 +8,7 @@ from header_rewriter import HeaderRewriter
 from html_rewriter import HTMLRewriter
 
 import itertools
+import re
 
 
 #=================================================================
@@ -46,6 +47,12 @@ class RewriteRules(BaseRule):
 
         # cookie rewrite scope
         self.cookie_scope = config.get('cookie_scope', 'default')
+
+        req_cookie_rewrite = config.get('req_cookie_rewrite', [])
+        for rc in req_cookie_rewrite:
+            rc['rx'] = re.compile(rc.get('match', ''))
+
+        self.req_cookie_rewrite = req_cookie_rewrite
 
     def _add_custom_regexs(self, field, config):
         regexs = config.get(field + '_regexs')
