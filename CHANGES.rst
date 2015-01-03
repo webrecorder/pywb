@@ -5,6 +5,8 @@ pywb 0.7.2 changelist
 
 * New ``req_cookie_rewrite`` rewrite directive to rewrite outgoing ``Cookie`` header, can be used to fix a certain cookie for a url prefix.
 
+  A list of regex match/replace rules, applied in succession, can be set for each url prefix. See ``rules.yaml`` for more info.
+
 
 pywb 0.7.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
