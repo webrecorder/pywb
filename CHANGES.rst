@@ -1,3 +1,9 @@
+pywb 0.7.3 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* More compresensive client side ``src`` attribute rewriting (via wombat.js), additional server-side HTML tag rewriting.
+
+
 pywb 0.7.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
