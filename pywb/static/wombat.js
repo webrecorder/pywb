@@ -697,9 +697,6 @@ _WBWombat = (function() {
                 } else if (created.tagName && starts_with(created.tagName, SRC_TAGS)) {
                     override_attr(created, "src");
                 }
-//                } else if (created.tagName == "A") {
-//                    override_attr(created, "href");
-//                }
 
                 return created;
             }
