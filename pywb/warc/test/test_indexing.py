@@ -172,7 +172,7 @@ def read_fully(cdx):
 def cdx_index(warc, **options):
     buff = BytesIO()
 
-    with open(TEST_WARC_DIR + warc, 'rU') as fh:
+    with open(TEST_WARC_DIR + warc, 'rb') as fh:
         write_cdx_index(buff, fh,  warc, **options)
 
     return buff.getvalue()

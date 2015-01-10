@@ -189,7 +189,6 @@ class LiveRewriter(object):
             if not url.startswith('file:'):
                 url = os.path.abspath(url)
                 url = urljoin('file:', pathname2url(url))
-                print(url)
 
         # explicit urlkey may be passed in (say for testing)
         if not urlkey:
@@ -200,7 +199,7 @@ class LiveRewriter(object):
                                                        req_headers,
                                                        follow_redirects,
                                                        ignore_proxies)
-        else:   
+        else:
             (status_headers, stream) = self.fetch_local_file(url)
 
         if timestamp is None:
