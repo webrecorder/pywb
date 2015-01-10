@@ -129,13 +129,13 @@ class BlockLoader(object):
         # if starting with . or /, can only be a file path..
         file_only = url.startswith(('/', '.'))
 
-        if url.startswith('file://'):
-            url = url[len('file://'):]
-            file_only = True
-
         try:
             # first, try as file
-            afile = open(url, 'rb')
+            if url.startswith('file://'):
+                file_only = True
+                afile = urllib.urlopen(url)
+            else:
+                afile = open(url, 'rb')
 
         except IOError:
             if file_only:

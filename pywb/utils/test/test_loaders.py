@@ -25,7 +25,7 @@ True
 100
 
 # no length specified, read full amount requested
->>> len(BlockLoader().load('file://' + test_cdx_dir + 'example.cdx', 0, -1).read(400))
+>>> len(BlockLoader().load('file:' + pathname2url(test_cdx_dir + 'example.cdx'), 0, -1).read(400))
 400
 
 # HMAC Cookie Maker
@@ -64,6 +64,8 @@ import re
 from io import BytesIO
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker
 from pywb.utils.loaders import LimitReader, extract_client_cookie
+
+from urllib import pathname2url
 
 from pywb import get_test_dir
 
