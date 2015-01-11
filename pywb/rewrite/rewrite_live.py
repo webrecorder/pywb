@@ -8,10 +8,9 @@ import mimetypes
 import logging
 import os
 
-from urlparse import urlsplit, urljoin
-from urllib import pathname2url
+from urlparse import urlsplit
 
-from pywb.utils.loaders import is_http, LimitReader, BlockLoader
+from pywb.utils.loaders import is_http, LimitReader, BlockLoader, to_file_url
 from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.timeutils import datetime_to_timestamp
 from pywb.utils.statusandheaders import StatusAndHeaders
@@ -187,8 +186,7 @@ class LiveRewriter(object):
         else:
             is_remote = False
             if not url.startswith('file:'):
-                url = os.path.abspath(url)
-                url = urljoin('file:', pathname2url(url))
+                url = to_file_url(url)
 
         # explicit urlkey may be passed in (say for testing)
         if not urlkey:

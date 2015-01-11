@@ -25,7 +25,7 @@ True
 100
 
 # no length specified, read full amount requested
->>> len(BlockLoader().load(to_local_url(test_cdx_dir + 'example.cdx'), 0, -1).read(400))
+>>> len(BlockLoader().load(to_file_url(test_cdx_dir + 'example.cdx'), 0, -1).read(400))
 400
 
 # HMAC Cookie Maker
@@ -63,10 +63,8 @@ True
 import re
 import os
 from io import BytesIO
-from pywb.utils.loaders import BlockLoader, HMACCookieMaker
+from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
 from pywb.utils.loaders import LimitReader, extract_client_cookie
-
-from urllib import pathname2url
 
 from pywb import get_test_dir
 
@@ -84,9 +82,6 @@ def seek_read_full(seekable_reader, offset):
     seekable_reader.readline() #skip
     return seekable_reader.readline()
 
-def to_local_url(filename):
-    filename = os.path.abspath(filename)
-    return 'file://' + pathname2url(filename)
 
 if __name__ == "__main__":
     import doctest

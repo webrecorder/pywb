@@ -7,6 +7,7 @@ import os
 import hmac
 import urllib
 import urllib2
+import urlparse
 import time
 import pkg_resources
 from io import open
@@ -15,6 +16,15 @@ from io import open
 #=================================================================
 def is_http(filename):
     return filename.startswith(('http://', 'https://'))
+
+
+#=================================================================
+def to_file_url(filename):
+    """ Convert a filename to a file:// url
+    """
+    url = os.path.abspath(filename)
+    url = urlparse.urljoin('file:', urllib.pathname2url(url))
+    return url
 
 
 #=================================================================
@@ -129,13 +139,14 @@ class BlockLoader(object):
         # if starting with . or /, can only be a file path..
         file_only = url.startswith(('/', '.'))
 
+        # convert to filename
+        if url.startswith('file://'):
+            file_only = True
+            url = urllib.url2pathname(url[len('file://'):])
+
         try:
             # first, try as file
-            if url.startswith('file://'):
-                file_only = True
-                afile = urllib.urlopen(url)
-            else:
-                afile = open(url, 'rb')
+            afile = open(url, 'rb')
 
         except IOError:
             if file_only:
