@@ -13,8 +13,8 @@ from argparse import ArgumentParser
 
 
 #=================================================================
-# Duration of 100 years
-CERT_DURATION = 100 * 365 * 24 * 60 * 60
+# Duration of 10 years
+CERT_DURATION = 10 * 365 * 24 * 60 * 60
 
 CERTS_DIR = './ca/certs/'
 
