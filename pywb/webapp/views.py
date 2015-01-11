@@ -4,6 +4,7 @@ from pywb.framework.memento import make_timemap, LINK_FORMAT
 
 import urlparse
 import logging
+import time
 
 from os import path
 from itertools import imap
@@ -42,7 +43,10 @@ class template_filter(object):
 @template_filter
 def format_ts(value, format_='%a, %b %d %Y %H:%M:%S'):
     value = timestamp_to_datetime(value)
-    return value.strftime(format_)
+    if format_ == '%s':
+        return int(time.mktime(value.timetuple()) * 1000)
+    else:
+        return value.strftime(format_)
 
 
 @template_filter('urlsplit')

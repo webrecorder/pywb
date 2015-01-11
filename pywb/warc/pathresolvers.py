@@ -3,6 +3,7 @@ import redis
 from pywb.utils.binsearch import iter_exact
 
 import urlparse
+import urllib
 import os
 import logging
 
@@ -92,6 +93,7 @@ def make_best_resolver(param):
 
     if url_parts.scheme == 'file':
         path = url_parts.path
+        path = urllib.url2pathname(path)
 
     if os.path.isfile(path):
         logging.debug('Adding Path Index: ' + path)

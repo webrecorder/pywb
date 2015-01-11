@@ -33,13 +33,13 @@ PrefixResolver('http://myhost.example.com/warcs/', contains = '/')
 RedisResolver('redis://myhost.example.com:1234/1')
 
 # a file
->>> r = make_best_resolver('file://' + os.path.realpath(__file__))
+>>> r = make_best_resolver(to_local_url(os.path.realpath(__file__)))
 >>> r.__class__.__name__
 'PathIndexResolver'
 
 # a dir
 >>> path = os.path.realpath(__file__)
->>> r = make_best_resolver('file://' + os.path.dirname(path))
+>>> r = make_best_resolver(to_local_url(os.path.dirname(path)))
 >>> r.__class__.__name__
 'PrefixResolver'
 
@@ -56,6 +56,7 @@ from pywb.warc.pathresolvers import PrefixResolver, PathIndexResolver, RedisReso
 from pywb.warc.pathresolvers import make_best_resolver, make_best_resolvers
 import os
 
+from urllib import pathname2url
 
 from fakeredis import FakeStrictRedis
 from mock import patch
@@ -68,6 +69,11 @@ def init_redis_resolver():
 def hset_path(filename, path):
     redis_resolver.redis.hset(redis_resolver.key_prefix + filename, 'path', path)
 
+def to_local_url(filename):
+    filename = os.path.abspath(filename)
+    res = 'file:' + pathname2url(filename)
+    #print(res)
+    return res
 
 redis_resolver = init_redis_resolver()
 

@@ -116,7 +116,7 @@ def write_multi_cdx_index(output, inputs, **options):
             outpath = os.path.join(output, outpath)
 
             with open(outpath, 'w') as outfile:
-                with open(fullpath, 'r') as infile:
+                with open(fullpath, 'rb') as infile:
                     write_cdx_index(outfile, infile, filename, **options)
 
     # write to one cdx file
@@ -133,7 +133,7 @@ def write_multi_cdx_index(output, inputs, **options):
 
         with writer_cls(outfile, options.get('cdx09')) as writer:
             for fullpath, filename in iter_file_or_dir(inputs):
-                with open(fullpath, 'r') as infile:
+                with open(fullpath, 'rb') as infile:
                     entry_iter = create_index_iter(infile, **options)
 
                     for entry in entry_iter:
