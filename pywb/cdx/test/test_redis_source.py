@@ -26,7 +26,7 @@ test_cdx_dir = get_test_dir() + 'cdx/'
 
 def load_cdx_into_redis(source, filename, key=None):
     # load a cdx into mock redis
-    with open(test_cdx_dir + filename) as fh:
+    with open(test_cdx_dir + filename, 'rb') as fh:
         for line in fh:
             zadd_cdx(source, line, key)
 

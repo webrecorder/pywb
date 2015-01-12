@@ -1,4 +1,4 @@
-from pywb.utils.timeutils import timestamp_to_datetime
+from pywb.utils.timeutils import timestamp_to_datetime, timestamp_to_sec
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import make_timemap, LINK_FORMAT
 
@@ -22,11 +22,7 @@ class template_filter(object):
     Otherwise, the func name is the filter name
     """
     def __init__(self, param=None):
-        if hasattr(param, '__call__'):
-            self.name = None
-            self.__call__(param)
-        else:
-            self.name = param
+        self.name = param
 
     def __call__(self, func):
         name = self.name
@@ -39,10 +35,13 @@ class template_filter(object):
 
 #=================================================================
 # Filters
-@template_filter
+@template_filter()
 def format_ts(value, format_='%a, %b %d %Y %H:%M:%S'):
-    value = timestamp_to_datetime(value)
-    return value.strftime(format_)
+    if format_ == '%s':
+        return timestamp_to_sec(value)
+    else:
+        value = timestamp_to_datetime(value)
+        return value.strftime(format_)
 
 
 @template_filter('urlsplit')
@@ -52,16 +51,10 @@ def get_urlsplit(url):
 
 
 @template_filter()
-def request_hostname(env):
-    return env.get('HTTP_HOST', 'localhost')
-
-
-@template_filter()
 def is_wb_handler(obj):
     if not hasattr(obj, 'handler'):
         return False
 
-    #return isinstance(obj.handler, WBHandler)
     return obj.handler.__class__.__name__ == "WBHandler"
 
 

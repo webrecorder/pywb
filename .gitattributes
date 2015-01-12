@@ -1,0 +1,4 @@
+*.arc  -text
+*.warc -text
+*.cdx  -text
+*.gz   -text

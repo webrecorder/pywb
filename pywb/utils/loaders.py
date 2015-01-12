@@ -7,6 +7,7 @@ import os
 import hmac
 import urllib
 import urllib2
+import urlparse
 import time
 import pkg_resources
 from io import open
@@ -15,6 +16,15 @@ from io import open
 #=================================================================
 def is_http(filename):
     return filename.startswith(('http://', 'https://'))
+
+
+#=================================================================
+def to_file_url(filename):
+    """ Convert a filename to a file:// url
+    """
+    url = os.path.abspath(filename)
+    url = urlparse.urljoin('file:', urllib.pathname2url(url))
+    return url
 
 
 #=================================================================
@@ -39,12 +49,12 @@ def extract_post_query(method, mime, length, stream):
          not mime.lower().startswith('application/x-www-form-urlencoded'))):
         return None
 
-    if not length or length == '0':
-        return None
-
     try:
         length = int(length)
-    except ValueError:
+    except (ValueError, TypeError):
+        return None
+
+    if length <= 0:
         return None
 
     #todo: encoding issues?
@@ -129,9 +139,10 @@ class BlockLoader(object):
         # if starting with . or /, can only be a file path..
         file_only = url.startswith(('/', '.'))
 
+        # convert to filename
         if url.startswith('file://'):
-            url = url[len('file://'):]
             file_only = True
+            url = urllib.url2pathname(url[len('file://'):])
 
         try:
             # first, try as file

@@ -3,6 +3,7 @@ import redis
 from pywb.utils.binsearch import iter_exact
 
 import urlparse
+import urllib
 import os
 import logging
 
@@ -56,7 +57,7 @@ class RedisResolver:
 class PathIndexResolver:
     def __init__(self, pathindex_file):
         self.pathindex_file = pathindex_file
-        self.reader = open(pathindex_file)
+        self.reader = open(pathindex_file, 'rb')
 
     def __call__(self, filename):
         result = iter_exact(self.reader, filename, '\t')
@@ -92,6 +93,7 @@ def make_best_resolver(param):
 
     if url_parts.scheme == 'file':
         path = url_parts.path
+        path = urllib.url2pathname(path)
 
     if os.path.isfile(path):
         logging.debug('Adding Path Index: ' + path)

@@ -30,6 +30,8 @@ class HTMLRewriterMixin(object):
             'base':    {'href': defmod},
             'blockquote': {'cite': defmod},
             'body':    {'background': 'im_'},
+            'button':  {'formaction': defmod},
+            'command': {'icon': 'im_'},
             'del':     {'cite': defmod},
             'embed':   {'src': 'oe_'},
             'head':    {'': defmod},  # for head rewriting
@@ -37,7 +39,8 @@ class HTMLRewriterMixin(object):
             'img':     {'src': 'im_',
                         'srcset': 'im_'},
             'ins':     {'cite': defmod},
-            'input':   {'src': 'im_'},
+            'input':   {'src': 'im_',
+                        'formaction': defmod},
             'form':    {'action': defmod},
             'frame':   {'src': 'fr_'},
             'link':    {'href': 'oe_'},
@@ -49,7 +52,8 @@ class HTMLRewriterMixin(object):
             'ref':     {'href': 'oe_'},
             'script':  {'src': 'js_'},
             'source':  {'src': 'oe_'},
-            'video':   {'src': 'oe_'},
+            'video':   {'src': 'oe_',
+                        'poster': 'im_'},
 
             'div':     {'data-src': defmod,
                         'data-uri': defmod},

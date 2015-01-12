@@ -105,6 +105,8 @@ _WBWombat = (function() {
                         "http:/" + prefix, "https:/" + prefix];
     }
 
+    var SRC_TAGS = ["IMG", "SCRIPT", "VIDEO", "AUDIO", "SOURCE", "EMBED", "INPUT"];
+
     //============================================
     function rewrite_url_(url) {
         // If undefined, just return it
@@ -692,12 +694,9 @@ _WBWombat = (function() {
                     }
 
                     override_attr(created, "src");
-                } else if (created.tagName == "IMG" || created.tagName == "VIDEO" || created.tagName == "AUDIO") {
+                } else if (created.tagName && starts_with(created.tagName, SRC_TAGS)) {
                     override_attr(created, "src");
                 }
-//                } else if (created.tagName == "A") {
-//                    override_attr(created, "href");
-//                }
 
                 return created;
             }

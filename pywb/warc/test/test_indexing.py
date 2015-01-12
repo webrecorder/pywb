@@ -160,7 +160,7 @@ TEST_CDX_DIR = get_test_dir() + 'cdx/'
 TEST_WARC_DIR = get_test_dir() + 'warcs/'
 
 def read_fully(cdx):
-    with open(TEST_CDX_DIR + cdx) as fh:
+    with open(TEST_CDX_DIR + cdx, 'rb') as fh:
         curr = BytesIO()
         while True:
             b = fh.read()
@@ -172,7 +172,7 @@ def read_fully(cdx):
 def cdx_index(warc, **options):
     buff = BytesIO()
 
-    with open(TEST_WARC_DIR + warc) as fh:
+    with open(TEST_WARC_DIR + warc, 'rb') as fh:
         write_cdx_index(buff, fh,  warc, **options)
 
     return buff.getvalue()
@@ -213,7 +213,7 @@ def cli_lines_with_dir(input_):
 
         print filename
 
-        with open(os.path.join(tmp_dir, filename), 'r') as fh:
+        with open(os.path.join(tmp_dir, filename), 'rb') as fh:
             lines = fh.read(8192).rstrip().split('\n')
 
     finally:

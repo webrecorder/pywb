@@ -34,7 +34,7 @@ class PyTest(TestCommand):
 
 setup(
     name='pywb',
-    version='0.7.2',
+    version='0.7.5',
     url='https://github.com/ikreymer/pywb',
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
@@ -58,10 +58,10 @@ setup(
         'pywb': ['static/flowplayer/*', 'static/*.*', 'ui/*', '*.yaml'],
         },
     data_files=[
-        ('sample_archive/cdx/', glob.glob('sample_archive/cdx/*')),
-        ('sample_archive/zipcdx/', glob.glob('sample_archive/zipcdx/*')),
-        ('sample_archive/warcs/', glob.glob('sample_archive/warcs/*')),
-        ('sample_archive/text_content/',
+        ('sample_archive/cdx', glob.glob('sample_archive/cdx/*')),
+        ('sample_archive/zipcdx', glob.glob('sample_archive/zipcdx/*')),
+        ('sample_archive/warcs', glob.glob('sample_archive/warcs/*')),
+        ('sample_archive/text_content',
             glob.glob('sample_archive/text_content/*')),
         ],
     install_requires=[
@@ -90,7 +90,7 @@ setup(
         live-rewrite-server = pywb.apps.live_rewrite_server:main
         proxy-cert-auth = pywb.framework.certauth:main
         """,
-    zip_safe=False,
+    zip_safe=True,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',

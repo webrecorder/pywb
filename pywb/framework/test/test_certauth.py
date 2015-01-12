@@ -5,8 +5,8 @@ import shutil
 
 from pywb.framework.certauth import main, CertificateAuthority
 
-TEST_CA_DIR = './pywb/framework/test/pywb_test_ca_certs'
-TEST_CA_ROOT = './pywb/framework/test/pywb_test_ca.pem'
+TEST_CA_DIR = os.path.join('.', 'pywb', 'framework', 'test', 'pywb_test_ca_certs')
+TEST_CA_ROOT = os.path.join('.', 'pywb', 'framework', 'test', 'pywb_test_ca.pem')
 
 def setup_module():
     openssl_support = pytest.importorskip("OpenSSL")

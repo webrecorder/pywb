@@ -103,11 +103,16 @@
 'http://example.com/file.html?param=https://example.com/filename.html&other=value&a=b&param2=http://test.example.com'
 
 # HttpsUrlRewriter tests
->>> HttpsUrlRewriter('http://example.com/', None).rewrite('https://example.com/abc')
+>>> httpsrewriter = HttpsUrlRewriter('http://example.com/', None)
+>>> httpsrewriter.rewrite('https://example.com/abc')
 'http://example.com/abc'
 
->>> HttpsUrlRewriter('http://example.com/', None).rewrite('http://example.com/abc')
+>>> httpsrewriter.rewrite('http://example.com/abc')
 'http://example.com/abc'
+
+# rebase is identity
+>>> httpsrewriter.rebase_rewriter('https://example.com/') == httpsrewriter
+True
 
 """
 

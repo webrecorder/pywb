@@ -6,10 +6,11 @@ import requests
 import datetime
 import mimetypes
 import logging
+import os
 
 from urlparse import urlsplit
 
-from pywb.utils.loaders import is_http, LimitReader, BlockLoader
+from pywb.utils.loaders import is_http, LimitReader, BlockLoader, to_file_url
 from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.timeutils import datetime_to_timestamp
 from pywb.utils.statusandheaders import StatusAndHeaders
@@ -180,11 +181,18 @@ class LiveRewriter(object):
         if url.startswith('//'):
             url = 'http:' + url
 
+        if is_http(url):
+            is_remote = True
+        else:
+            is_remote = False
+            if not url.startswith('file:'):
+                url = to_file_url(url)
+
         # explicit urlkey may be passed in (say for testing)
         if not urlkey:
             urlkey = canonicalize(url)
 
-        if is_http(url):
+        if is_remote:
             (status_headers, stream) = self.fetch_http(url, urlkey, env,
                                                        req_headers,
                                                        follow_redirects,
