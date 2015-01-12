@@ -65,7 +65,7 @@ class RangeCache(object):
             maxlen = min(maxlen, end - start + 1)
 
         def read_range():
-            with open(spec['name']) as fh:
+            with open(spec['name'], 'rb') as fh:
                 fh.seek(start)
                 fh = LimitReader.wrap_stream(fh, maxlen)
                 while True:
