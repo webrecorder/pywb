@@ -6,8 +6,9 @@ class WbException(Exception):
         Exception.__init__(self, msg)
         self.url = url
 
-    def status(self):
-        return '500 Internal Server Error'
+# Default Error Code
+#    def status(self):
+#        return '500 Internal Server Error'
 
 
 #=================================================================

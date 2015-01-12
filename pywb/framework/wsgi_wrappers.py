@@ -118,7 +118,7 @@ class WSGIApp(object):
         if hasattr(exc, 'status'):
             status = exc.status()
         else:
-            status = '400 Bad Request'
+            status = '500 Internal Server Error'
 
         if hasattr(exc, 'url'):
             err_url = exc.url
