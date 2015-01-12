@@ -1,4 +1,4 @@
-*.arc binary
-*.warc binary
-*.cdx binary
-*.gz binary
+*.arc  -text
+*.warc -text
+*.cdx  -text
+*.gz   -text

@@ -1,5 +1,12 @@
-pywb 0.7.3 changelist
+pywb 0.7.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~
+
+* Cross platform fixes to support Windows -- all tests pass on Linux, OS X and Windows now. Improved cross-platform support includes:
+  - read all files as binary to avoid line ending issues
+  - properly convert url <-> file
+  - avoid platform dependent apis
+
+* Change any unhandled exceptions to result in a 500 error, instead of 400.
 
 * More compresensive client side ``src`` attribute rewriting (via wombat.js), additional server-side HTML tag rewriting.
 
