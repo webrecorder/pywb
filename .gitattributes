@@ -1,0 +1,4 @@
+*.arc binary
+*.warc binary
+*.cdx binary
+*.gz binary
