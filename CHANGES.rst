@@ -2,11 +2,15 @@ pywb 0.7.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
 * Cross platform fixes to support Windows -- all tests pass on Linux, OS X and Windows now. Improved cross-platform support includes:
+  
   - read all files as binary to avoid line ending issues
-  - properly convert url <-> file
-  - avoid platform dependent apis
+  - properly convert between platform dependent file paths and urls
+  - add .gitattributes to ensure line endings on *.warc*, *.arc*, *.cdx* files are unaltered
+  - avoid platform dependent apis (eg. %s for strftime)
 
 * Change any unhandled exceptions to result in a 500 error, instead of 400.
+
+* Setup: switch to ``zip_safe=True`` to allow for embedding pywb egg in one-file app with `pyinstaller <https://github.com/pyinstaller/pyinstaller>`_
 
 * More compresensive client side ``src`` attribute rewriting (via wombat.js), additional server-side HTML tag rewriting.
 
@@ -39,6 +43,7 @@ pywb 0.7.1 changelist
 * Use `youtube-dl <http://rg3.github.io/youtube-dl/>`_ to find actual video streams from page urls, record video info.
 
 * New, improved wombat 2.1 -- improved rewriting of dynamic content, including:
+
   - setAttribute override
   - Date override sets date to replay timestamp
   - Image() object override
