@@ -56,6 +56,32 @@ True
 >>> extract_client_cookie(dict(HTTP_COOKIE='x'), 'x')
 
 >>> extract_client_cookie({}, 'y')
+
+
+# extract_post_query tests
+
+# correct POST data
+>>> post_data = 'foo=bar&dir=%2Fbaz'
+>>> extract_post_query('POST', 'application/x-www-form-urlencoded', len(post_data), BytesIO(post_data))
+'foo=bar&dir=/baz'
+
+# unsupported method
+>>> extract_post_query('PUT', 'application/x-www-form-urlencoded', len(post_data), BytesIO(post_data))
+
+# unsupported type
+>>> extract_post_query('POST', 'text/plain', len(post_data), BytesIO(post_data))
+
+# invalid length
+>>> extract_post_query('POST', 'application/x-www-form-urlencoded', 'abc', BytesIO(post_data))
+>>> extract_post_query('POST', 'application/x-www-form-urlencoded', 0, BytesIO(post_data))
+
+# length too short
+>>> extract_post_query('POST', 'application/x-www-form-urlencoded', len(post_data) - 4, BytesIO(post_data))
+'foo=bar&dir=%2'
+
+# length too long
+>>> extract_post_query('POST', 'application/x-www-form-urlencoded', len(post_data) + 4, BytesIO(post_data))
+'foo=bar&dir=/baz'
 """
 
 
@@ -64,7 +90,7 @@ import re
 import os
 from io import BytesIO
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
-from pywb.utils.loaders import LimitReader, extract_client_cookie
+from pywb.utils.loaders import LimitReader, extract_client_cookie, extract_post_query
 
 from pywb import get_test_dir
 

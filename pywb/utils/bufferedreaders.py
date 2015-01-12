@@ -46,9 +46,6 @@ class BufferedReader(object):
         self.buff_size = 0
 
     def set_decomp(self, decomp_type):
-        if self.num_read > 0:
-            raise Exception('Attempting to change decompression mid-stream')
-
         self._init_decomp(decomp_type)
 
     def _init_decomp(self, decomp_type):

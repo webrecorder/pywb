@@ -49,12 +49,12 @@ def extract_post_query(method, mime, length, stream):
          not mime.lower().startswith('application/x-www-form-urlencoded'))):
         return None
 
-    if not length or length == '0':
-        return None
-
     try:
         length = int(length)
-    except ValueError:
+    except (ValueError, TypeError):
+        return None
+
+    if length <= 0:
         return None
 
     #todo: encoding issues?
