@@ -115,7 +115,7 @@ def write_multi_cdx_index(output, inputs, **options):
             outpath = cdx_filename(filename)
             outpath = os.path.join(output, outpath)
 
-            with open(outpath, 'w') as outfile:
+            with open(outpath, 'wb') as outfile:
                 with open(fullpath, 'rb') as infile:
                     write_cdx_index(outfile, infile, filename, **options)
 
@@ -124,7 +124,7 @@ def write_multi_cdx_index(output, inputs, **options):
         if output == '-':
             outfile = sys.stdout
         else:
-            outfile = open(output, 'w')
+            outfile = open(output, 'wb')
 
         if options.get('sort'):
             writer_cls = SortedCDXWriter

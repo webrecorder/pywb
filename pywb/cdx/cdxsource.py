@@ -30,7 +30,7 @@ class CDXFile(CDXSource):
     def load_cdx(self, query):
         def do_open():
             try:
-                source = open(self.filename)
+                source = open(self.filename, 'rb')
                 gen = iter_range(source, query.key, query.end_key)
                 for line in gen:
                     yield line

@@ -57,7 +57,7 @@ class RedisResolver:
 class PathIndexResolver:
     def __init__(self, pathindex_file):
         self.pathindex_file = pathindex_file
-        self.reader = open(pathindex_file)
+        self.reader = open(pathindex_file, 'rb')
 
     def __call__(self, filename):
         result = iter_exact(self.reader, filename, '\t')

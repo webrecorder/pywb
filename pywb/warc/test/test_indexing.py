@@ -160,7 +160,7 @@ TEST_CDX_DIR = get_test_dir() + 'cdx/'
 TEST_WARC_DIR = get_test_dir() + 'warcs/'
 
 def read_fully(cdx):
-    with open(TEST_CDX_DIR + cdx, 'rU') as fh:
+    with open(TEST_CDX_DIR + cdx, 'rb') as fh:
         curr = BytesIO()
         while True:
             b = fh.read()
@@ -213,7 +213,7 @@ def cli_lines_with_dir(input_):
 
         print filename
 
-        with open(os.path.join(tmp_dir, filename), 'rU') as fh:
+        with open(os.path.join(tmp_dir, filename), 'rb') as fh:
             lines = fh.read(8192).rstrip().split('\n')
 
     finally:

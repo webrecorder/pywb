@@ -334,7 +334,7 @@ class ProxyRouter(object):
                 return None
 
             buff = ''
-            with open(self.ca.ca_file) as fh:
+            with open(self.ca.ca_file, 'rb') as fh:
                 buff = fh.read()
 
             content_type = 'application/x-x509-ca-cert'

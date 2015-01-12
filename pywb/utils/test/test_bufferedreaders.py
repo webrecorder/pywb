@@ -3,11 +3,11 @@ r"""
 #=================================================================
 
 # DecompressingBufferedReader readline()
->>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rU')).readline()
+>>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb')).readline()
 ' CDX N b a m s k r M S V g\n'
 
 # detect not compressed
->>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rU'), decomp_type = 'gzip').readline()
+>>> DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb'), decomp_type = 'gzip').readline()
 ' CDX N b a m s k r M S V g\n'
 
 # decompress with on the fly compression, default gzip compression

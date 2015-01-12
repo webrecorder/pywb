@@ -84,7 +84,7 @@ class ZipNumCluster(CDXSource):
         self.loc_mtime = new_mtime
 
         logging.debug('Loading loc from: ' + self.loc_filename)
-        with open(self.loc_filename) as fh:
+        with open(self.loc_filename, 'rb') as fh:
             for line in fh:
                 parts = line.rstrip().split('\t')
                 self.loc_map[parts[0]] = parts[1:]
@@ -112,7 +112,7 @@ class ZipNumCluster(CDXSource):
     def load_cdx(self, query):
         self.load_loc()
 
-        reader = open(self.summary)
+        reader = open(self.summary, 'rb')
 
         idx_iter = iter_range(reader,
                               query.key,

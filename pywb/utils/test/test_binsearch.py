@@ -66,12 +66,12 @@ from pywb import get_test_dir
 test_cdx_dir = get_test_dir() + 'cdx/'
 
 def print_binsearch_results(key, iter_func):
-    with open(test_cdx_dir + 'iana.cdx') as cdx:
+    with open(test_cdx_dir + 'iana.cdx', 'rb') as cdx:
         for line in iter_func(cdx, key):
             print line
 
 def print_binsearch_results_range(key, end_key, iter_func, prev_size=0):
-    with open(test_cdx_dir + 'iana.cdx') as cdx:
+    with open(test_cdx_dir + 'iana.cdx', 'rb') as cdx:
         for line in iter_func(cdx, key, end_key, prev_size=prev_size):
             print line
 
