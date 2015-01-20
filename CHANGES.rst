@@ -1,3 +1,8 @@
+pywb 0.7.6 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* packaging: allow adding multiple packages for Jinja2 template resolving
+
 pywb 0.7.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

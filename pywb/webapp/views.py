@@ -61,7 +61,7 @@ def is_wb_handler(obj):
 #=================================================================
 class J2TemplateView(object):
     env_globals = {'static_path': 'static/default',
-                   'package': 'pywb'}
+                   'packages': ['pywb']}
 
     def __init__(self, filename):
         template_dir, template_file = path.split(filename)
@@ -84,8 +84,11 @@ class J2TemplateView(object):
         # add relative and absolute path loaders for banner support
         loaders.append(FileSystemLoader('.'))
         loaders.append(FileSystemLoader('/'))
-        loaders.append(PackageLoader(self.env_globals['package'],
-                                     template_dir))
+
+        # add loaders for all specified packages
+        for package in self.env_globals['packages']:
+            loaders.append(PackageLoader(package,
+                                         template_dir))
         return loaders
 
     def render_to_string(self, **kwargs):
