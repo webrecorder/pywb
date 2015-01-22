@@ -126,7 +126,15 @@ rules:
           - videoFileId
           - signature
 
+    # vine
+    - url_prefix: 'co,vine,cdn,'
 
+      rewrite:
+        js_rewrite_location: urls
+        js_regexs:
+            - match: 'window.location'
+              replace: 'WB_wombat_location'
+  
     # youtube rules
     #=================================================================
 
