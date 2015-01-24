@@ -24,7 +24,8 @@ function ts_to_date(ts, is_gmt)
 </script>
 </head>
 <body>
-  <h2>pywb Sample Calendar Results</h2>
+  <h2>pywb Query Results</h2>
+  {% if cdx_lines | length > 0 %}
   <b>{{ cdx_lines | length }}</b> captures of <b>{{ url }}</b>
   <table id="captures" style="border-spacing: 10px;">
     <tr>
@@ -47,5 +48,8 @@ function ts_to_date(ts, is_gmt)
   <p>
   <i><b>* Unique captures are bold.</b> Other captures are duplicates of a previous capture.</i>
   </p>
+  {% else %}
+  <i>No captures found for <b>{{ url }}</b></i>
+  {% endif %}
 </body>
 </html>

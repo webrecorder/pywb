@@ -77,6 +77,13 @@ class TestWb:
         # 17 Captures + header
         assert len(resp.html.find_all('tr')) == 18
 
+    def test_calendar_not_found(self):
+        # query with no results
+        resp = self.testapp.get('/pywb/*/http://not-exist.example.com')
+        self._assert_basic_html(resp)
+        assert 'No captures found' in resp.body, resp.body
+        assert len(resp.html.find_all('tr')) == 0
+
     def test_cdx_query(self):
         resp = self.testapp.get('/pywb/cdx_/*/http://www.iana.org/')
         self._assert_basic_text(resp)
@@ -373,6 +380,11 @@ class TestWb:
         resp = self.testapp.get('/pywb/http://www.iana.org/_img/bookmark_icon.ico', status = 403)
         assert resp.status_int == 403
         assert 'Excluded' in resp.body
+
+    def test_replay_not_found(self):
+        resp = self.testapp.head('/pywb/http://not-exist.example.com', status=404)
+        assert resp.content_type == 'text/html'
+        assert resp.status_int == 404
 
     def test_static_content(self):
         resp = self.testapp.get('/static/test/route/wb.css')
