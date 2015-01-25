@@ -1,4 +1,7 @@
-"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+ur"""
 # Replay Urls
 # ======================
 >>> repr(WbUrl('20131010000506/example.com'))
@@ -32,6 +35,32 @@
 
 >>> repr(WbUrl('2014/http%3A%2F%2Fexample.com/'))
 "('replay', '2014', '', 'http://example.com/', '2014/http://example.com/')"
+
+# Test IDNs
+>>> repr(WbUrl(u'http://пример.испытание'))
+"('latest_replay', '', '', 'http://xn--e1afmkfd.xn--80akhbyknj4f', 'http://xn--e1afmkfd.xn--80akhbyknj4f')"
+
+>>> repr(WbUrl(u'https://пример.испытание/abc/'))
+"('latest_replay', '', '', 'https://xn--e1afmkfd.xn--80akhbyknj4f/abc/', 'https://xn--e1afmkfd.xn--80akhbyknj4f/abc/')"
+
+>>> repr(WbUrl(u'//пример.испытание/abc/'))
+"('latest_replay', '', '', 'http://xn--e1afmkfd.xn--80akhbyknj4f/abc/', 'http://xn--e1afmkfd.xn--80akhbyknj4f/abc/')"
+
+>>> repr(WbUrl(u'2014id_/https://пример.испытание/abc'))
+"('replay', '2014', 'id_', 'https://xn--e1afmkfd.xn--80akhbyknj4f/abc', '2014id_/https://xn--e1afmkfd.xn--80akhbyknj4f/abc')"
+
+# percent-encoded form (as sent by browser usually)
+>>> repr(WbUrl('2014id_/http://' + quote_plus(u'пример.испытание'.encode('utf-8')) + '/abc'))
+"('replay', '2014', 'id_', 'http://xn--e1afmkfd.xn--80akhbyknj4f/abc', '2014id_/http://xn--e1afmkfd.xn--80akhbyknj4f/abc')"
+
+# percent-encoded form -- scheme relative
+>>> repr(WbUrl('2014id_///' + quote_plus(u'пример.испытание'.encode('utf-8')) + '/abc'))
+"('replay', '2014', 'id_', 'http://xn--e1afmkfd.xn--80akhbyknj4f/abc', '2014id_/http://xn--e1afmkfd.xn--80akhbyknj4f/abc')"
+
+# invalid: truncated and superfluous '%', ignore invalid (no exception)
+>>> repr(WbUrl('2014id_/http://' + quote_plus(u'пример.испытание'.encode('utf-8'))[1:] + '%' + '/abc'))
+"('replay', '2014', 'id_', 'http://xn--d0-olcluwd.xn--%-7sbpkb3ampk3g/abc', '2014id_/http://xn--d0-olcluwd.xn--%-7sbpkb3ampk3g/abc')"
+
 
 # Query Urls
 # ======================
@@ -102,7 +131,7 @@ Exception: ('Invalid WbUrl: ', '')
 """
 
 from pywb.rewrite.wburl import WbUrl
-
+from urllib import quote_plus
 
 if __name__ == "__main__":
     import doctest

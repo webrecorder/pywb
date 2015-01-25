@@ -87,30 +87,61 @@ class WbUrl(BaseWbUrl):
 
     DEFAULT_SCHEME = 'http://'
 
-    PARTIAL_ENC_RX = re.compile('(https?%3A)?(%2F%2F)?', re.I)
+    #PARTIAL_ENC_RX = re.compile('(https?%3A)?(%2F%2F)?', re.I)
+    FIRST_PATH = re.compile('(?<![:/])/(?![/])')
 
     # ======================
 
-    def __init__(self, url):
+    def __init__(self, orig_url):
         super(WbUrl, self).__init__()
 
-        self.original_url = url
+        was_uni = False
+        if isinstance(orig_url, unicode):
+            orig_url = orig_url.encode('utf-8')
+            was_uni = True
 
-        if not self._init_query(url):
-            if not self._init_replay(url):
-                raise Exception('Invalid WbUrl: ', url)
+        self.original_url = orig_url
+
+        if not self._init_query(orig_url):
+            if not self._init_replay(orig_url):
+                raise Exception('Invalid WbUrl: ', orig_url)
+
+        if was_uni or '%' in self.url:
+            parts = self.FIRST_PATH.split(self.url, 1)
+
+            if was_uni or '%' in parts[0]:
+                if not was_uni:
+                    scheme_dom = urllib.unquote_plus(parts[0])
+                else:
+                    scheme_dom = parts[0]
+
+                scheme_dom = scheme_dom.rsplit('/', 1)
+
+                dom = scheme_dom[-1]
+
+                dom = dom.decode('utf-8', 'ignore')
+                dom = dom.encode('idna')
+
+                if len(scheme_dom) > 1:
+                    self.url = scheme_dom[0] + '/' + dom
+                else:
+                    self.url = dom
+
+                if len(parts) > 1:
+                    self.url += '/' + parts[1]
+
 
         # protocol agnostic url -> http://
         # no protocol -> http://
         inx = self.url.find(':/')
-        if inx < 0:
+        #if inx < 0:
             # check for other partially encoded variants
-            m = self.PARTIAL_ENC_RX.match(self.url)
-            if m:
-                len_ = len(m.group(0))
-                self.url = (urllib.unquote_plus(self.url[:len_]) +
-                            self.url[len_:])
-                inx = self.url.find(':/')
+        #    m = self.PARTIAL_ENC_RX.match(self.url)
+        #    if m:
+        #        len_ = len(m.group(0))
+        #        self.url = (urllib.unquote_plus(self.url[:len_]) +
+        #                    self.url[len_:])
+        #        inx = self.url.find(':/')
 
         if inx < 0:
             self.url = self.DEFAULT_SCHEME + self.url
