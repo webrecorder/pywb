@@ -132,9 +132,12 @@ this.load = function() {
         var hash = window.location.hash;
 
         var loc = window.location.href.replace(window.location.hash, "");
+        loc = decodeURI(loc);
 
         if (wbinfo.top_url && (loc != wbinfo.top_url) && wbinfo.mod != "bn_") {
             // Auto-redirect to top frame
+            console.log(wbinfo.top_url);
+            console.log(loc);
             window.location.replace(wbinfo.top_url + hash);
         } else {
             // Init Banner (no frame or top frame)

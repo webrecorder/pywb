@@ -105,6 +105,18 @@ class WbRequest(object):
 
         self._parse_extra()
 
+    def get_url(self, url=None):
+        if not self.wb_url:
+            return None
+
+        if not url:
+            url = self.wb_url.url
+
+        if self.urlrewriter.rewrite_opts.get('rewrite_ascii_urls_only'):
+            return self.wb_url.url
+        else:
+            return self.wb_url.to_iri(url)
+
     def _is_ajax(self):
         value = self.env.get('HTTP_X_REQUESTED_WITH')
         if value and value.lower() == 'xmlhttprequest':

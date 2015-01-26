@@ -90,6 +90,79 @@ class WbUrl(BaseWbUrl):
     #PARTIAL_ENC_RX = re.compile('(https?%3A)?(%2F%2F)?', re.I)
     FIRST_PATH = re.compile('(?<![:/])/(?![/])')
 
+    @staticmethod
+    def to_iri(url):
+        if isinstance(url, str):
+            url = urllib.unquote_plus(url)
+            url = url.decode('utf-8')
+
+        parts = WbUrl.FIRST_PATH.split(url, 1)
+        scheme_dom = parts[0]
+
+        #scheme_dom = urllib.unquote_plus(parts[0])
+
+        #if isinstance(scheme_dom, str):
+        #    scheme_dom = scheme_dom.decode('utf-8', 'ignore')
+
+        scheme_dom = scheme_dom.rsplit(u'/', 1)
+        dom = scheme_dom[-1]
+
+        try:
+            dom = dom.decode('idna')
+        except:
+            pass
+
+        if len(scheme_dom) > 1:
+            url = scheme_dom[0] + u'/' + dom
+        else:
+            url = dom
+
+        if len(parts) > 1:
+            url += u'/' + parts[1]
+
+        return url
+
+
+    @staticmethod
+    def to_uri(url, was_uni=False):
+        #if not was_uni:
+        #    if isinstance(url, unicode):
+        #        was_uni = True
+
+        #if not was_uni and not '%' in url:
+        #    return url
+
+        parts = WbUrl.FIRST_PATH.split(url, 1)
+
+        #if not was_uni and not '%' in parts[0]:
+        #    return url
+
+        scheme_dom = urllib.unquote_plus(parts[0])
+
+        if isinstance(scheme_dom, str):
+            if scheme_dom == parts[0]:
+                return url
+
+            scheme_dom = scheme_dom.decode('utf-8', 'ignore')
+
+        scheme_dom = scheme_dom.rsplit('/', 1)
+        dom = scheme_dom[-1]
+
+        dom = dom.encode('idna')
+
+        if len(scheme_dom) > 1:
+            url = scheme_dom[0] + '/' + dom
+        else:
+            url = dom
+
+        if len(parts) > 1:
+            if isinstance(parts[1], unicode):
+                url += '/' + urllib.quote_plus(parts[1].encode('utf-8'))
+            else:
+                url += '/' + parts[1]
+
+        return url
+
     # ======================
 
     def __init__(self, orig_url):
@@ -106,30 +179,7 @@ class WbUrl(BaseWbUrl):
             if not self._init_replay(orig_url):
                 raise Exception('Invalid WbUrl: ', orig_url)
 
-        if was_uni or '%' in self.url:
-            parts = self.FIRST_PATH.split(self.url, 1)
-
-            if was_uni or '%' in parts[0]:
-                if not was_uni:
-                    scheme_dom = urllib.unquote_plus(parts[0])
-                else:
-                    scheme_dom = parts[0]
-
-                scheme_dom = scheme_dom.rsplit('/', 1)
-
-                dom = scheme_dom[-1]
-
-                dom = dom.decode('utf-8', 'ignore')
-                dom = dom.encode('idna')
-
-                if len(scheme_dom) > 1:
-                    self.url = scheme_dom[0] + '/' + dom
-                else:
-                    self.url = dom
-
-                if len(parts) > 1:
-                    self.url += '/' + parts[1]
-
+        self.url = WbUrl.to_uri(self.url, was_uni)
 
         # protocol agnostic url -> http://
         # no protocol -> http://
@@ -208,6 +258,8 @@ class WbUrl(BaseWbUrl):
         timestamp = overrides.get('timestamp', self.timestamp)
         end_timestamp = overrides.get('end_timestamp', self.end_timestamp)
         url = overrides.get('url', self.url)
+        if overrides.get('iri'):
+            url = WbUrl.to_iri(url)
 
         return self.to_wburl_str(url=url,
                                  type=type_,

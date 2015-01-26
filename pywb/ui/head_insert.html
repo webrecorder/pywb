@@ -2,7 +2,7 @@
 {% if rule.js_rewrite_location != 'urls' and include_wombat %}
 <script src='{{ wbrequest.host_prefix }}/{{ static_path }}/wombat.js'> </script>
 <script>
-  {% set urlsplit = cdx.original | urlsplit %}
+  {% set urlsplit = cdx.url | urlsplit %}
   if (window && window._WBWombat && !window._wb_js_inited) {
   var _wb_wombat = new _WBWombat("{{ wbrequest.wb_prefix}}",
                  "{{ cdx['timestamp'] if include_ts else ''}}",
@@ -15,7 +15,7 @@
 {% endif %}
 <script>
   wbinfo = {}
-  wbinfo.url = "{{ cdx.original }}";
+  wbinfo.url = "{{ cdx.url }}";
   wbinfo.timestamp = "{{ cdx.timestamp }}";
   wbinfo.prefix = "{{ wbrequest.wb_prefix }}";
   wbinfo.mod = "{{ wbrequest.wb_url.mod }}";

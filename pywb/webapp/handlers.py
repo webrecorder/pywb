@@ -72,7 +72,8 @@ class SearchPageWbUrlHandler(WbUrlHandler):
         return self.handle_request(wbrequest)
 
     def get_top_frame_params(self, wbrequest, mod=''):
-        embed_url = wbrequest.wb_url.to_str(mod=mod)
+        embed_url = wbrequest.wb_url.to_str(mod=mod, url='')
+        embed_url += wbrequest.get_url()
 
         if wbrequest.wb_url.timestamp:
             timestamp = wbrequest.wb_url.timestamp
@@ -82,7 +83,7 @@ class SearchPageWbUrlHandler(WbUrlHandler):
         params = dict(embed_url=embed_url,
                       wbrequest=wbrequest,
                       timestamp=timestamp,
-                      url=wbrequest.wb_url.url,
+                      url=wbrequest.get_url(),
                       banner_html=self.banner_html)
 
         return params

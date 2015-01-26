@@ -3,6 +3,7 @@ from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import make_timemap, LINK_FORMAT
 
 import urlparse
+import urllib
 import logging
 
 from os import path
@@ -128,12 +129,16 @@ class HeadInsertView(J2TemplateView):
     def create_insert_func(self, wbrequest,
                            include_ts=True):
 
+        url = wbrequest.get_url()
+
         top_url = wbrequest.wb_prefix
-        top_url += wbrequest.wb_url.to_str(mod=wbrequest.final_mod)
+        top_url += wbrequest.wb_url.to_str(mod=wbrequest.final_mod, url='')
+        top_url += url
 
         include_wombat = not wbrequest.wb_url.is_banner_only
 
         def make_head_insert(rule, cdx):
+            cdx['url'] = url
             return (self.render_to_string(wbrequest=wbrequest,
                                           cdx=cdx,
                                           top_url=top_url,
@@ -165,9 +170,14 @@ class HeadInsertView(J2TemplateView):
 #=================================================================
 class J2HtmlCapturesView(J2TemplateView):
     def render_response(self, wbrequest, cdx_lines, **kwargs):
+        def format_cdx_lines():
+            for cdx in cdx_lines:
+                cdx['url'] = wbrequest.get_url(url=cdx['original'])
+                yield cdx
+
         return J2TemplateView.render_response(self,
-                                    cdx_lines=list(cdx_lines),
-                                    url=wbrequest.wb_url.url,
+                                    cdx_lines=list(format_cdx_lines()),
+                                    url=wbrequest.get_url(),
                                     type=wbrequest.wb_url.type,
                                     prefix=wbrequest.wb_prefix,
                                     **kwargs)

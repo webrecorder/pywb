@@ -52,6 +52,9 @@ class UrlRewriter(object):
             is_abs = True
             url = 'http:' + url
 
+        # always convert any unicode urls to punycode
+        ascii_urls_only = self.rewrite_opts.get('rewrite_ascii_urls_only', False)
+
         # Optimized rewriter for
         # -rel urls that don't start with / and
         # do not contain ../ and no special mod
@@ -68,7 +71,11 @@ class UrlRewriter(object):
             if mod is None:
                 mod = wburl.mod
 
-            final_url = self.prefix + wburl.to_str(mod=mod, url=new_url)
+            final_url = self.prefix + wburl.to_str(mod=mod,
+                                                   url=new_url,
+                                                   iri=not ascii_urls_only)
+        if not ascii_urls_only:
+            final_url = final_url.encode('utf-8')
 
         return final_url
 

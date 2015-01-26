@@ -97,7 +97,7 @@ class TestWb:
         resp = self.testapp.get('/pywb/20140127171238tf_/http://www.iana.org/')
 
         assert '<iframe ' in resp.body
-        assert '/pywb/20140127171238/http://www.iana.org/' in resp.body
+        assert '/pywb/20140127171238/http://www.iana.org/' in resp.body, resp.body
 
     def test_replay_content(self):
         resp = self.testapp.get('/pywb/20140127171238/http://www.iana.org/')
