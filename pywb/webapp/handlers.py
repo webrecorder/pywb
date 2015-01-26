@@ -49,12 +49,9 @@ class SearchPageWbUrlHandler(WbUrlHandler):
             self.banner_html = None
 
     def render_search_page(self, wbrequest, **kwargs):
-        if self.search_view:
-            return self.search_view.render_response(wbrequest=wbrequest,
-                                                    prefix=wbrequest.wb_prefix,
-                                                    **kwargs)
-        else:
-            return WbResponse.text_response('No Lookup Url Specified')
+        return self.search_view.render_response(wbrequest=wbrequest,
+                                                prefix=wbrequest.wb_prefix,
+                                                **kwargs)
 
     def __call__(self, wbrequest):
         # root search page
@@ -110,6 +107,9 @@ class WBHandler(SearchPageWbUrlHandler):
         super(WBHandler, self).__init__(config)
 
         self.index_reader = query_handler
+        self.not_found_view = (J2TemplateView.
+                               create_template(config.get('not_found_html'),
+                               'Not Found Error'))
 
         cookie_maker = config.get('cookie_maker')
         record_loader = ArcWarcRecordLoader(cookie_maker=cookie_maker)
@@ -152,12 +152,19 @@ class WBHandler(SearchPageWbUrlHandler):
                                           cdx_callback)
 
     def handle_not_found(self, wbrequest, nfe):
-        if (not self.fallback_handler or
-             wbrequest.wb_url.is_query() or
-             wbrequest.wb_url.is_identity):
-            raise
+        # check fallback: only for replay queries and not for identity
+        if (self.fallback_handler and
+            not wbrequest.wb_url.is_query() and
+            not wbrequest.wb_url.is_identity):
+            return self.fallback_handler(wbrequest)
 
-        return self.fallback_handler(wbrequest)
+        # if capture query, just return capture page
+        if wbrequest.wb_url.is_query():
+            return self.index_reader.make_cdx_response(wbrequest, [], 'html')
+        else:
+            return self.not_found_view.render_response(status='404 Not Found',
+                                                       env=wbrequest.env,
+                                                       url=wbrequest.wb_url.url)
 
     def __str__(self):
         return 'Web Archive Replay Handler'

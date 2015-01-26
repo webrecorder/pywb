@@ -34,6 +34,7 @@ DEFAULTS = {
     'search_html': 'ui/search.html',
     'home_html': 'ui/index.html',
     'error_html': 'ui/error.html',
+    'not_found_html': 'ui/not_found.html',
 
     'proxy_select_html': 'ui/proxy_select.html',
     'proxy_cert_download_html': 'ui/proxy_cert_download.html',

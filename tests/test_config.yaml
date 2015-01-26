@@ -86,6 +86,10 @@ home_html: ui/index.html
 # if omitted, a text response is returned
 error_html: ui/error.html
 
+
+# template for 404 not found error, may be customized per collection
+not_found_html: ui/not_found.html
+
 # ==== Other Paths ====
 
 # Rewrite urls with absolute paths instead of relative

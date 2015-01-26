@@ -1,0 +1,10 @@
+<h2>Url Not Found</h2>
+
+The url <b>{{ url }}</b> could not be found in this collection.
+
+{% if env.pywb_proxy_magic and url %}
+<p>
+<a href="//select.{{ env.pywb_proxy_magic }}/{{ url }}">Try Different Collection</a>
+</p>
+{% endif %}
+
