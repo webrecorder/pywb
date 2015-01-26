@@ -1,12 +1,11 @@
 pywb 0.7.6 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* new not found Jinja2 template: Add per-collection-overridable ``not_found.html`` template, specified via ``not_found_html`` option. For missing resources, the ``not_found_html`` template is now used instead of the generic ``error_html``
+
+* client-side rewrite: improved wombat rewrite of postMessage events, unrewrite target on receive, improved Vine replay
+
 * packaging: allow adding multiple packages for Jinja2 template resolving
-
-* wombat rewrite: improved rewrite of postMessage events, unrewrite target on receive, improved Vine replay
-
-* not_found.html: Add collection overridable `not_found.html` template. For missing resources, the `not_found.html` template is now used instead of generic `error.html`
-
 
 pywb 0.7.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~
