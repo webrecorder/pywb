@@ -136,11 +136,16 @@ class JSLocationRewriterMixin(object):
             (r'(?<=document\.)cookie', RegexRewriter.add_prefix(prefix), 0),
 
             #todo: move to mixin?
-            (r'(?:[\s=(){]|^)(top)\s*(?:[!}()]|==|$)',
+            (r'(?<=[\s=(){])(parent|top)\s*(?:[!}()]|==|$)',
              RegexRewriter.add_prefix(prefix), 1),
 
-            (r'(?<=window\.)top',
-             RegexRewriter.add_prefix(prefix), 0),
+            (r'^(parent|top)\s*(?:[!}()]|==|$)',
+             RegexRewriter.add_prefix(prefix), 1),
+
+            (r'(?<=window\.)(parent|top)',
+             RegexRewriter.add_prefix(prefix), 1),
+
+
 
             #             (r'\b(top)\b[!=\W]+(?:self|window)',
             #              RegexRewriter.add_prefix(prefix), 1),

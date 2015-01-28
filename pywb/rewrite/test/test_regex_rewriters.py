@@ -49,6 +49,9 @@ r"""
 >>> _test_js('window.top != window')
 'window.WB_wombat_top != window'
 
+>>> _test_js('if(parent!=top)')
+'if(WB_wombat_parent!=WB_wombat_top)'
+
 >>> _test_js('top != window')
 'WB_wombat_top != window'
 

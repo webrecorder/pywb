@@ -940,12 +940,20 @@ _WBWombat = (function() {
 
                 window.WB_wombat_top = find_next_top(window.self);
 
+                if (window.parent == window.top) {
+                    window.WB_wombat_parent = window;
+                } else {
+                    window.WB_wombat_parent = window.parent;
+                }
+
             } else {
                 window.top.WB_wombat_location = new WombatLocation(window.top.location);
                 window.WB_wombat_top = window.top;
+                window.WB_wombat_parent = window.parent;
             }
         } else {
             window.WB_wombat_top = window.top;
+            window.WB_wombat_parent = window.parent;
         }
 
         //if (window.opener) {
