@@ -65,7 +65,17 @@ rules:
       fuzzy_lookup: '()'
 
 
-     # flickr rules
+    # instagram rules
+    #=================================================================
+    - url_prefix: 'org,wikimedia,meta)/'
+
+      rewrite:
+          js_regexs:
+              - match: '\burl\((\\?/\\?/[^)]+)\)'
+                rewrite: true
+                group: 1
+
+    # flickr rules
     #=================================================================
     - url_prefix: ['com,yimg,l)/g/combo', 'com,yimg,s)/pw/combo', 'com,yahooapis,yui)/combo']
       fuzzy_lookup: '([^/]+(?:\.css|\.js))'
