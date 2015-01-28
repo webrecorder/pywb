@@ -178,7 +178,7 @@ _WBWombat = (function() {
             // if already rewriting url, must still check scheme
             if (starts_with(url, prefix + window.location.host + '/')) {
                 var curr_scheme = window.location.protocol + '//';
-                
+
                 // replace scheme to ensure using the correct server scheme
                 if (starts_with(url, wb_orig_scheme) && (wb_orig_scheme != curr_scheme)) {
                     url = curr_scheme + url.substring(wb_orig_scheme.length);
@@ -751,7 +751,6 @@ _WBWombat = (function() {
             if (targetOrigin && targetOrigin != "*") {
                 targetOrigin = window.location.origin;
             }
-            
 
             return orig.call(this, message, targetOrigin, transfer);
         }
@@ -850,14 +849,30 @@ _WBWombat = (function() {
     //============================================
     function init_write_override()
     {
+        var orig_doc_write = document.write;
+
         document.write = function(string) {
             var doc = new DOMParser().parseFromString(string, "text/html");
 
             if (doc) {
-                var children = doc.body.children;
 
-                for (var i = 0; i < children.length; i++) {
-                    document.body.appendChild(children[i]);
+                if (doc.head && document.head) {
+                    var children = doc.head.children;
+
+                    for (var i = 0; i < children.length; i++) {
+                        //document.head.appendChild(children[i]);
+                        // in head, must call original write to ensure same execution order..
+                        rewrite_elem(children[i]);
+                        orig_doc_write.call(this, children[i].outerHTML);
+                    }
+                }
+
+                if (doc.body && document.body) {
+                    var children = doc.body.children;
+
+                    for (var i = 0; i < children.length; i++) {
+                        document.body.appendChild(children[i]);
+                    }
                 }
             }
         }
