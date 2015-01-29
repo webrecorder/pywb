@@ -537,16 +537,20 @@ _WBWombat = (function() {
     //============================================
     function init_createElementNS_fix()
     {
-        if (!document.createElementNS) {
+        if (!document.createElementNS ||
+            !Document.prototype.createElementNS) {
             return;
         }
 
         document._orig_createElementNS = document.createElementNS;
-        document.createElementNS = function(namespaceURI, qualifiedName)
+        var createElementNS_fix = function(namespaceURI, qualifiedName)
         {
             namespaceURI = extract_orig(namespaceURI);
             return document._orig_createElementNS(namespaceURI, qualifiedName);
         }
+
+        Document.prototype.createElementNS = createElementNS_fix;
+        document.createElementNS = createElementNS_fix;
     }
 
     //============================================
@@ -941,19 +945,15 @@ _WBWombat = (function() {
                 window.WB_wombat_top = find_next_top(window.self);
 
                 if (window.parent == window.top) {
-                    window.WB_wombat_parent = window;
-                } else {
-                    window.WB_wombat_parent = window.parent;
+                    window.parent = window;
                 }
 
             } else {
                 window.top.WB_wombat_location = new WombatLocation(window.top.location);
                 window.WB_wombat_top = window.top;
-                window.WB_wombat_parent = window.parent;
             }
         } else {
             window.WB_wombat_top = window.top;
-            window.WB_wombat_parent = window.parent;
         }
 
         //if (window.opener) {
