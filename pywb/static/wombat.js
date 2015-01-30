@@ -295,7 +295,10 @@ _WBWombat = (function() {
             return this._orig_loc.replace(rewrite_url(url));
         }
         this.assign = function(url) {
-            return this._orig_loc.assign(rewrite_url(url));
+            var new_url = rewrite_url(url);
+            if (new_url != url) {
+                return this._orig_loc.assign(new_url);
+            }
         }
         this.reload = loc.reload;
 
@@ -523,13 +526,16 @@ _WBWombat = (function() {
         Element.prototype.setAttribute = function(name, value) {
             if (name) {
                 var lowername = name.toLowerCase();
-                if (equals_any(lowername, REWRITE_ATTRS)) {
+                if (equals_any(lowername, REWRITE_ATTRS) && typeof(value) == "string") {
                     if (!this._no_rewrite) {
+                        var old_value = value;
                         value = rewrite_url(value);
+                        if (value != old_value) {
+                            this._no_rewrite = true;
+                        }
                     }
                 }
             }
-
             orig_setAttribute.call(this, name, value);
         };
     }

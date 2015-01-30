@@ -8,7 +8,7 @@ ur"""
 #=================================================================
 
 >>> parse('<HTML><A Href="page.html">Text</a></hTmL>')
-<HTML><a href="/web/20131226101010/http://example.com/some/path/page.html">Text</a></html>
+<html><a href="/web/20131226101010/http://example.com/some/path/page.html">Text</a></html>
 
 >>> parse('<body x="y"><img src="../img.gif"/><br/></body>')
 <body x="y"><img src="/web/20131226101010im_/http://example.com/some/img.gif"/><br/></body>
@@ -45,7 +45,7 @@ ur"""
 
 # Don't rewrite anchors
 >>> parse('<HTML><A Href="#abc">Text</a></hTmL>')
-<HTML><a href="#abc">Text</a></html>
+<html><a href="#abc">Text</a></html>
 
 # Ensure attr values are not unescaped
 >>> parse('<input value="&quot;X&quot;">X</input>')
@@ -100,6 +100,9 @@ ur"""
 
 >>> parse('<div style="background: url(\'abc.html\')" onblah onclick="location = \'redirect.html\'"></div>')
 <div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onblah="" onclick="WB_wombat_location = 'redirect.html'"></div>
+
+>>> parse('<i style="background-image: url(http://foo-.bar_.example.com/)"></i>')
+<i style="background-image: url(/web/20131226101010/http://foo-.bar_.example.com/)"></i>
 
 # Style
 >>> parse('<style>@import "styles.css" .a { font-face: url(\'myfont.ttf\') }</style>')

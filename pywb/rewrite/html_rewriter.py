@@ -168,10 +168,7 @@ class HTMLRewriterMixin(object):
         # attr rewriting
         handler = self.rewrite_tags.get(tag)
         if not handler:
-            handler = self.rewrite_tags.get('')
-
-        if not handler:
-            return False
+            handler = {}
 
         self.out.write('<' + tag)
 
