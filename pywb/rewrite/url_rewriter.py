@@ -151,7 +151,7 @@ class HttpsUrlRewriter(UrlRewriter):
         return self.remove_https(url)
 
     def get_new_url(self, **kwargs):
-        return kwargs.get('url')
+        return kwargs.get('url', self.wburl.url)
 
     def rebase_rewriter(self, new_url):
         return self

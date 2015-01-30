@@ -74,14 +74,23 @@ class MementoRespMixin(object):
 
         link = []
 
-        if is_memento and cdx:
-            http_date = timestamp_to_http_date(cdx['timestamp'])
-            self.status_headers.headers.append(('Memento-Datetime', http_date))
+        if is_memento:
+            if cdx:
+                http_date = timestamp_to_http_date(cdx['timestamp'])
+            # for top frame
+            elif wbrequest.wb_url.timestamp:
+                http_date = timestamp_to_http_date(wbrequest.wb_url.timestamp)
+            else:
+                http_date = None
 
-        elif is_memento and is_top_frame and wbrequest.wb_url.timestamp:
-            # top frame special case
-            canon_link = wbrequest.urlrewriter.get_new_url(mod='')
-            link.append(self.make_link(canon_link, 'memento'))
+            if http_date:
+                self.status_headers.headers.append(('Memento-Datetime',
+                                                http_date))
+
+                canon_link = wbrequest.urlrewriter.get_new_url(mod='')
+                link.append(self.make_memento_link(canon_link,
+                                                   'memento',
+                                                   http_date))
 
         req_url = wbrequest.wb_url.url
 
@@ -105,6 +114,9 @@ class MementoRespMixin(object):
     def make_link(self, url, type):
         return '<{0}>; rel="{1}"'.format(url, type)
 
+    def make_memento_link(self, url, type_, dt):
+        return '<{0}>; rel="{1}"; datetime="{2}"'.format(url, type_, dt)
+
     def make_timemap_link(self, wbrequest):
         format_ = '<{0}>; rel="timemap"; type="{1}"'
 
@@ -121,7 +133,7 @@ class MementoResponse(MementoRespMixin, WbResponse):
 
 
 #=================================================================
-def make_memento_link(cdx, prefix, datetime=None, rel='memento', end=',\n'):
+def make_timemap_memento_link(cdx, prefix, datetime=None, rel='memento', end=',\n'):
     memento = '<{0}>; rel="{1}"; datetime="{2}"' + end
 
     string = WbUrl.to_wburl_str(url=cdx['original'],
@@ -161,17 +173,17 @@ def make_timemap(wbrequest, cdx_lines):
     yield timegate.format(prefix + url)
 
     # first memento link
-    yield make_memento_link(first_cdx, prefix,
+    yield make_timemap_memento_link(first_cdx, prefix,
                             datetime=from_date)
 
     prev_cdx = None
 
     for cdx in cdx_lines:
         if prev_cdx:
-            yield make_memento_link(prev_cdx, prefix)
+            yield make_timemap_memento_link(prev_cdx, prefix)
 
         prev_cdx = cdx
 
     # last memento link, if any
     if prev_cdx:
-        yield make_memento_link(prev_cdx, prefix, end='')
+        yield make_timemap_memento_link(prev_cdx, prefix, end='')
