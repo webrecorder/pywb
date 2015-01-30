@@ -1,4 +1,6 @@
 import re
+import logging
+
 from io import BytesIO
 from urlparse import urlsplit
 
@@ -87,8 +89,9 @@ class ReplayView(object):
                                                       failed_files)
 
             except (CaptureException, ArchiveLoadFailed) as ce:
-                import traceback
-                traceback.print_exc()
+                #import traceback
+                #traceback.print_exc()
+                logging.debug(ce)
                 last_e = ce
                 pass
 
@@ -131,10 +134,10 @@ class ReplayView(object):
         return response
 
     def replay_capture(self, wbrequest, cdx, cdx_loader, failed_files):
-        (status_headers, stream) = (self.content_loader.
-                                    resolve_headers_and_payload(cdx,
-                                                                failed_files,
-                                                                cdx_loader))
+        (status_headers, stream) = (self.content_loader(cdx,
+                                                        failed_files,
+                                                        cdx_loader,
+                                                        wbrequest))
 
         # check and reject self-redirect
         self._reject_self_redirect(wbrequest, cdx, status_headers)

@@ -9,7 +9,7 @@ class ResolvingLoader:
         self.path_resolvers = make_best_resolvers(paths)
         self.record_loader = record_loader
 
-    def resolve_headers_and_payload(self, cdx, failed_files, cdx_loader):
+    def __call__(self, cdx, failed_files, cdx_loader, *args):
         """
         Resolve headers and payload for a given capture
         In the simple case, headers and payload are in the same record.

@@ -357,9 +357,7 @@ def load_from_cdx_test(cdx, revisit_func=load_orig_cdx, reraise=False,
     cdx = CDXObject(cdx)
 
     try:
-        (headers, stream) = resolve_loader.resolve_headers_and_payload(cdx,
-                                                                       failed_files,
-                                                                       revisit_func)
+        (headers, stream) = resolve_loader(cdx, failed_files, revisit_func)
         print headers
         sys.stdout.write(stream.readline())
         sys.stdout.write(stream.readline())

@@ -112,6 +112,12 @@ class WBHandler(SearchPageWbUrlHandler):
                                create_template(config.get('not_found_html'),
                                'Not Found Error'))
 
+        self.replay = self._init_replay_view(config)
+
+        self.fallback_handler = None
+        self.fallback_name = config.get('fallback')
+
+    def _init_replay_view(self, config):
         cookie_maker = config.get('cookie_maker')
         record_loader = ArcWarcRecordLoader(cookie_maker=cookie_maker)
 
@@ -120,10 +126,7 @@ class WBHandler(SearchPageWbUrlHandler):
         resolving_loader = ResolvingLoader(paths=paths,
                                            record_loader=record_loader)
 
-        self.replay = ReplayView(resolving_loader, config)
-
-        self.fallback_handler = None
-        self.fallback_name = config.get('fallback')
+        return ReplayView(resolving_loader, config)
 
     def resolve_refs(self, handler_dict):
         if self.fallback_name:
