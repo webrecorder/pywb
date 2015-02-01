@@ -129,6 +129,7 @@ class QueryHandler(object):
             wburl.QUERY:
                 {'collapseTime': collapse_time,
                  'filter': ['!statuscode:(500|502|504)'],
+                 'query_closest': wburl.timestamp,
                  'limit': limit,
                 },
 
