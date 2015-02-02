@@ -1,19 +1,19 @@
 <html>
 <head>
-<!-- Start WB Insert -->
 <script>
   wbinfo = {}
   wbinfo.prefix = "{{ wbrequest.wb_prefix }}";
   wbinfo.capture_url = "{{ url }}";
+  wbinfo.timestamp = "{{ wbrequest.wb_url.timestamp }}";
   wbinfo.is_frame = true;
 </script>
 <script src='{{ wbrequest.host_prefix }}/{{ static_path }}/wb.js'> </script>
+<link rel='stylesheet' href='{{ wbrequest.host_prefix }}/{{ static_path }}/wb.css'/>
 
 {% include banner_html ignore missing %}
 
 <script src='{{ wbrequest.host_prefix }}/{{ static_path }}/wb_frame.js'> </script>
-<link rel='stylesheet' href='{{ wbrequest.host_prefix }}/{{ static_path }}/wb.css'/>
-<!-- End WB Insert -->
+</head>
 <body style="margin: 0px; padding: 0px;">
 <div class="wb_iframe_div">
 <iframe src="{{ wbrequest.wb_prefix + embed_url }}" onload="iframe_loaded(event);" seamless="seamless" frameborder="0" scrolling="yes" class="wb_iframe"/>

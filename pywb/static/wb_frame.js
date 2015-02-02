@@ -44,7 +44,7 @@ function make_inner_url(url, ts)
 
 function push_state(url, timestamp, capture_str, is_live) {
     if (window.frames[0].WB_wombat_location) {
-        curr_href = window.frames[0].WB_wombat_location.href;
+        var curr_href = window.frames[0].WB_wombat_location.href;
 
         // If not current url, don't update
         if (url != curr_href) {
