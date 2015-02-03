@@ -1,3 +1,11 @@
+pywb 0.7.7 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* client-side rewrite: improved rewriting of all style changes using mutation observers
+
+* rules: fix YT rewrite rule, add rule for wikimedia
+
+
 pywb 0.7.6 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
