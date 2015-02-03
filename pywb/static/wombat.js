@@ -616,6 +616,36 @@ _WBWombat = (function() {
         window.Worker = undefined;
     }
 
+
+    //============================================
+    function init_mutation_obs() {
+        if (!window.MutationObserver) {
+            return;
+        }
+
+        var m = new MutationObserver(function(records, observer)
+        {
+            for (var i = 0; i < records.length; i++) {
+                var r = records[i];
+                if (r.type == "attributes" && r.attributeName == "style") {
+                    var style = r.target.style.cssText;
+                    if (style.indexOf("url(") > 0) {
+                        var new_style = rewrite_style(style);
+                        if (new_style != style) {
+                            r.target.style.cssText = new_style;
+                        }
+                    }
+                }
+            }
+        });
+
+        m.observe(document.documentElement, {childList: false,
+                                  attributes: true,
+                                  subtree: true,
+                                  //attributeOldValue: true,
+                                  attributeFilter: ["style"]});
+    }
+
     //============================================
     function rewrite_attr(elem, name, func) {
         if (!elem || !elem.getAttribute) {
@@ -958,6 +988,9 @@ _WBWombat = (function() {
         // Ajax
         init_ajax_rewrite();
         init_worker_override();
+
+        // Init mutation observer (for style only)
+        init_mutation_obs();
 
         // setAttribute
         init_setAttribute_override();

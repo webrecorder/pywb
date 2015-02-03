@@ -65,7 +65,17 @@ rules:
       fuzzy_lookup: '()'
 
 
-     # flickr rules
+    # wikimedia rules
+    #=================================================================
+    - url_prefix: 'org,wikimedia,meta)/'
+
+      rewrite:
+          js_regexs:
+              - match: '\burl\((\\?/\\?/[^)]+)\)'
+                rewrite: true
+                group: 1
+
+    # flickr rules
     #=================================================================
     - url_prefix: ['com,yimg,l)/g/combo', 'com,yimg,s)/pw/combo', 'com,yahooapis,yui)/combo']
       fuzzy_lookup: '([^/]+(?:\.css|\.js))'
@@ -134,7 +144,7 @@ rules:
         js_regexs:
             - match: 'window.location'
               replace: 'WB_wombat_location'
-  
+
     # youtube rules
     #=================================================================
 
@@ -203,7 +213,7 @@ rules:
             - match: 'ytplayer.load\(\);'
               replace: 'ytplayer.config.args.dash = "0"; ytplayer.config.args.dashmpd = ""; {0}'
 
-            - match: 'yt\.setConfig.*PLAYER_CONFIG.*args": {'
+            - match: 'yt\.setConfig.*PLAYER_CONFIG.*args":\s*{'
               replace: '{0} "dash": "0", dashmpd: "", '
 
         req_cookie_rewrite:
