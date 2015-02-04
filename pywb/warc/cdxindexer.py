@@ -108,6 +108,19 @@ def cdx_filename(filename):
 
 
 #=================================================================
+def get_cdx_writer_cls(options):
+    writer_cls = options.get('writer_cls')
+
+    if not writer_cls:
+        if options.get('sort'):
+            writer_cls = SortedCDXWriter
+        else:
+            writer_cls = CDXWriter
+
+    return writer_cls
+
+
+#=================================================================
 def write_multi_cdx_index(output, inputs, **options):
     # write one cdx per dir
     if output != '-' and os.path.isdir(output):
@@ -117,7 +130,7 @@ def write_multi_cdx_index(output, inputs, **options):
 
             with open(outpath, 'wb') as outfile:
                 with open(fullpath, 'rb') as infile:
-                    write_cdx_index(outfile, infile, filename, **options)
+                    return write_cdx_index(outfile, infile, filename, **options)
 
     # write to one cdx file
     else:
@@ -126,10 +139,7 @@ def write_multi_cdx_index(output, inputs, **options):
         else:
             outfile = open(output, 'wb')
 
-        if options.get('sort'):
-            writer_cls = SortedCDXWriter
-        else:
-            writer_cls = CDXWriter
+        writer_cls = get_cdx_writer_cls(options)
 
         with writer_cls(outfile, options.get('cdx09')) as writer:
             for fullpath, filename in iter_file_or_dir(inputs):
@@ -139,20 +149,15 @@ def write_multi_cdx_index(output, inputs, **options):
                     for entry in entry_iter:
                         writer.write(entry, filename)
 
+        return writer
+
 
 #=================================================================
 def write_cdx_index(outfile, infile, filename, **options):
-    writer_cls = options.get('writer_cls')
-
     if type(filename) is unicode:
         filename = filename.encode(sys.getfilesystemencoding())
 
-    if writer_cls:
-        pass
-    elif options.get('sort'):
-        writer_cls = SortedCDXWriter
-    else:
-        writer_cls = CDXWriter
+    writer_cls = get_cdx_writer_cls(options)
 
     with writer_cls(outfile, options.get('cdx09')) as writer:
         entry_iter = create_index_iter(infile, **options)

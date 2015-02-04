@@ -5,6 +5,8 @@ pywb 0.7.7 changelist
 
 * rules: fix YT rewrite rule, add rule for wikimedia
 
+* cdx-indexer: minor cleanup, add support for custom writer for batched cdx (write_multi_cdx_index)
+
 
 pywb 0.7.6 changelist
 ~~~~~~~~~~~~~~~~~~~~~
