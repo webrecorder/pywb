@@ -75,8 +75,9 @@ class LiveRewriter(object):
             elif name == 'HTTP_REFERER':
                 continue
 
-            elif name.startswith(('HTTP_X_', 'HTTP_VIA')):
-                continue
+            elif name == 'HTTP_X_FORWARDED_PROTO':
+                name = 'X-Forwarded-Proto'
+                value = splits.scheme
 
             elif name == 'HTTP_COOKIE':
                 name = 'Cookie'
@@ -147,8 +148,6 @@ class LiveRewriter(object):
                 else:
                     data = input_
 
-        print(url)
-        print(req_headers)
         response = requests.request(method=method,
                                     url=url,
                                     data=data,
