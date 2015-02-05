@@ -93,7 +93,7 @@ class LiveRewriter(object):
             elif name == 'REL_REFERER':
                 name = 'Referer'
             else:
-                continue
+                value = None
 
             if value:
                 headers[name] = value
