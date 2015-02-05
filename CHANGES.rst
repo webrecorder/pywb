@@ -1,3 +1,9 @@
+pywb 0.7.8 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* live rewrite fix: When forwarding ``X-Forwarded-Proto`` header, set scheme to actual url scheme to avoid possible redirect loops (#57)
+
+
 pywb 0.7.7 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
