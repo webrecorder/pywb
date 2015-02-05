@@ -75,6 +75,10 @@ class LiveRewriter(object):
             elif name == 'HTTP_REFERER':
                 continue
 
+            elif name == 'HTTP_X_FORWARDED_PROTO':
+                name = 'X-Forwarded-Proto'
+                value = splits.scheme
+
             elif name == 'HTTP_COOKIE':
                 name = 'Cookie'
                 value = self._req_cookie_rewrite(urlkey, value)
@@ -89,7 +93,7 @@ class LiveRewriter(object):
             elif name == 'REL_REFERER':
                 name = 'Referer'
             else:
-                continue
+                value = None
 
             if value:
                 headers[name] = value

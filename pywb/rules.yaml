@@ -65,7 +65,7 @@ rules:
       fuzzy_lookup: '()'
 
 
-    # instagram rules
+    # wikimedia rules
     #=================================================================
     - url_prefix: 'org,wikimedia,meta)/'
 
@@ -144,7 +144,7 @@ rules:
         js_regexs:
             - match: 'window.location'
               replace: 'WB_wombat_location'
-  
+
     # youtube rules
     #=================================================================
 
@@ -213,7 +213,7 @@ rules:
             - match: 'ytplayer.load\(\);'
               replace: 'ytplayer.config.args.dash = "0"; ytplayer.config.args.dashmpd = ""; {0}'
 
-            - match: 'yt\.setConfig.*PLAYER_CONFIG.*args": {'
+            - match: 'yt\.setConfig.*PLAYER_CONFIG.*args":\s*{'
               replace: '{0} "dash": "0", dashmpd: "", '
 
         req_cookie_rewrite:

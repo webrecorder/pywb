@@ -26,6 +26,14 @@ def test_csrf_token_headers():
 
     assert req_headers == {'X-CSRFToken': 'foobar', 'Cookie': 'csrftoken=foobar'}
 
+def test_forwarded_scheme():
+    rewriter = LiveRewriter()
+    env = {'HTTP_X_FORWARDED_PROTO': 'https', 'Other': 'Value'}
+
+    req_headers = rewriter.translate_headers('http://example.com/', 'com,example)/', env)
+
+    assert req_headers == {'X-Forwarded-Proto': 'http'}
+
 def test_req_cookie_rewrite_1():
     rewriter = LiveRewriter()
     env = {'HTTP_COOKIE': 'A=B'}

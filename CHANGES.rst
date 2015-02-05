@@ -1,6 +1,21 @@
 pywb 0.8.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+pywb 0.7.8 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* live rewrite fix: When forwarding ``X-Forwarded-Proto`` header, set scheme to actual url scheme to avoid possible redirect loops (#57)
+
+
+pywb 0.7.7 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* client-side rewrite: improved rewriting of all style changes using mutation observers
+
+* rules: fix YT rewrite rule, add rule for wikimedia
+
+* cdx-indexer: minor cleanup, add support for custom writer for batched cdx (write_multi_cdx_index)
+
 
 pywb 0.7.6 changelist
 ~~~~~~~~~~~~~~~~~~~~~
