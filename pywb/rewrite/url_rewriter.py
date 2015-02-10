@@ -75,7 +75,10 @@ class UrlRewriter(object):
                                                    url=new_url,
                                                    iri=not ascii_urls_only)
         if not ascii_urls_only:
-            final_url = final_url.encode('utf-8')
+            try:
+                final_url = final_url.encode('utf-8')
+            except UnicodeDecodeError:
+                pass
 
         return final_url
 
