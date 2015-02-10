@@ -107,7 +107,7 @@ function remove_event(name, func, object) {
 }
 
 function notify_top() {
-    if (window.parent != window.top) {
+    if (window.__orig_parent != window.top) {
         return;
     }
 
@@ -119,9 +119,11 @@ function notify_top() {
         return;
     }
 
-    window.parent.update_wb_url(window.WB_wombat_location.href,
-                                wbinfo.timestamp,
-                                wbinfo.is_live);
+    if (window.__orig_parent && window.__orig_parent.update_wb_url) {
+        window.__orig_parent.update_wb_url(window.WB_wombat_location.href,
+                                           wbinfo.timestamp,
+                                           wbinfo.is_live);
+    }
 
     remove_event("readystatechange", notify_top, document);
 }

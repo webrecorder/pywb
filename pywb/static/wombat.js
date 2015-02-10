@@ -975,6 +975,7 @@ _WBWombat = (function() {
         }
 
         if (window.self.location != window.top.location) {
+            window.__orig_parent = window.parent;
             if (is_framed) {
                 window.top.WB_wombat_location = window.WB_wombat_location;
 
