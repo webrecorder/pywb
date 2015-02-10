@@ -69,7 +69,10 @@ class SearchPageWbUrlHandler(WbUrlHandler):
             else:
                 wbrequest.final_mod = 'tf_'
 
-        return self.handle_request(wbrequest)
+        try:
+            return self.handle_request(wbrequest)
+        except NotFoundException as nfe:
+            return self.handle_not_found(wbrequest, nfe)
 
     def get_top_frame_params(self, wbrequest, mod=''):
         embed_url = wbrequest.wb_url.to_str(mod=mod, url='')
@@ -133,10 +136,7 @@ class WBHandler(SearchPageWbUrlHandler):
             self.fallback_handler = handler_dict.get(self.fallback_name)
 
     def handle_request(self, wbrequest):
-        try:
-            cdx_lines, output = self.index_reader.load_for_request(wbrequest)
-        except NotFoundException as nfe:
-            return self.handle_not_found(wbrequest, nfe)
+        cdx_lines, output = self.index_reader.load_for_request(wbrequest)
 
         if output != 'text' and wbrequest.wb_url.is_replay():
             return self.handle_replay(wbrequest, cdx_lines)
