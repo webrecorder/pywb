@@ -244,7 +244,6 @@ class WbUrl(BaseWbUrl):
         self.type = self.REPLAY
 
     def deprefix_url(self, prefix):
-        prefix = urllib.quote_plus(prefix)
         rex_query = '=' + re.escape(prefix) + '([0-9])*([\w]{2}_)?/?'
         new_url = re.sub(rex_query, '=', self.url)
         self.url = new_url

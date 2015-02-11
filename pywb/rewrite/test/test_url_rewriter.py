@@ -126,9 +126,6 @@ def do_rewrite(rel_url, base_url, prefix, mod=None, full_prefix=None):
 
 
 def do_deprefix(url, rel_prefix, full_prefix):
-    encoded = urllib.quote_plus(full_prefix)
-    url = url.replace(full_prefix, encoded)
-
     rewriter = UrlRewriter(url, rel_prefix, full_prefix)
     url = rewriter.deprefix_url()
     return urllib.unquote_plus(url)
