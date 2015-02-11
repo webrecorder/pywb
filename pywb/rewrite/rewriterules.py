@@ -2,7 +2,7 @@ from pywb.utils.dsrules import BaseRule
 
 from regex_rewriters import RegexRewriter, CSSRewriter, XMLRewriter
 from regex_rewriters import JSLinkAndLocationRewriter, JSLinkOnlyRewriter
-from regex_rewriters import JSLocationOnlyRewriter
+from regex_rewriters import JSLocationOnlyRewriter, JSNoneRewriter
 
 from header_rewriter import HeaderRewriter
 from html_rewriter import HTMLRewriter
@@ -36,6 +36,8 @@ class RewriteRules(BaseRule):
             js_default_class = JSLinkAndLocationRewriter
         elif self.js_rewrite_location == 'location':
             js_default_class = JSLocationOnlyRewriter
+        elif self.js_rewrite_location == 'none':
+            js_default_class = JSNoneRewriter
         else:
             js_default_class = JSLinkOnlyRewriter
 

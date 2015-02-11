@@ -166,6 +166,12 @@ class JSLinkAndLocationRewriter(JSLocationRewriterMixin,
 
 
 #=================================================================
+class JSNoneRewriter(RegexRewriter):
+    def __init__(self, rewriter, rules=[]):
+        super(JSNoneRewriter, self).__init__(rewriter, rules)
+
+
+#=================================================================
 # Set 'default' JSRewriter
 JSRewriter = JSLinkAndLocationRewriter
 

@@ -231,6 +231,11 @@ rules:
       rewrite:
         js_rewrite_location: location
 
+    - url_prefix: 'example,example,test,norewrite)/'
+
+      rewrite:
+        js_rewrite_location: none
+
     - url_prefix: 'example,example,test)/'
 
       canonicalize:

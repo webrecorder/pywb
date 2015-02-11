@@ -159,6 +159,21 @@ def test_local_2_js_loc_only_rewrite():
     # still link rewrite in HTML
     assert '"/pywb/20131226101010/http://example.com/some/path/another.html"' in buff
 
+def test_local_2_no_rewrite():
+    status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html',
+                                         urlrewriter,
+                                         head_insert_func,
+                                         'example,example,test,norewrite)/')
+
+    # wombat insert added
+    assert '<script src="/static/default/wombat.js"> </script>' in buff
+
+    # JS location NOT rewritten, JS link NOT rewritten
+    assert 'window.location = "http:\/\/example.com/dynamic_page.html"' in buff
+
+    # still link rewrite in HTML
+    assert '"/pywb/20131226101010/http://example.com/some/path/another.html"' in buff
+
 def test_example_1():
     status_headers, buff = get_rewritten('http://example.com/', urlrewriter, req_headers={'Connection': 'close'})
 
