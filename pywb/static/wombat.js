@@ -433,7 +433,7 @@ _WBWombat = (function() {
         check_location_change(window.WB_wombat_location, false);
 
         // Only check top if its a different window
-        if (window.self.WB_wombat_location != window.top.WB_wombat_location) {
+        if (window.WB_wombat_location != window.top.WB_wombat_location) {
             check_location_change(window.top.WB_wombat_location, true);
         }
 
@@ -939,7 +939,7 @@ _WBWombat = (function() {
         }
 
         // Location
-        var wombat_location = new WombatLocation(window.self.location);
+        var wombat_location = new WombatLocation(window.location);
 
         if (wombat_location._autooverride) {
 
@@ -974,12 +974,12 @@ _WBWombat = (function() {
             return win;
         }
 
-        if (window.self.location != window.top.location) {
+        if (window.location != window.top.location) {
             window.__orig_parent = window.parent;
             if (is_framed) {
                 window.top.WB_wombat_location = window.WB_wombat_location;
 
-                window.WB_wombat_top = find_next_top(window.self);
+                window.WB_wombat_top = find_next_top(window);
 
                 if (window.parent == window.top) {
                     window.parent = window;
