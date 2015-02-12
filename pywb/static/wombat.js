@@ -529,10 +529,11 @@ _WBWombat = (function() {
                 if (equals_any(lowername, REWRITE_ATTRS) && typeof(value) == "string") {
                     if (!this._no_rewrite) {
                         var old_value = value;
-                        value = rewrite_url(value);
-                        if (value != old_value) {
+                        var new_value = rewrite_url(value);
+                        if (new_value != old_value) {
                             this._no_rewrite = true;
                         }
+                        value = new_value;
                     }
                 }
             }
@@ -983,8 +984,12 @@ _WBWombat = (function() {
 
                 if (window.parent == window.top) {
                     window.parent = window;
+                
+                    // Disable frameElement also as this should be top frame
+                    if (Object.defineProperty) {
+                        Object.defineProperty(window, "frameElement", {value: undefined, configurable: false});
+                    }
                 }
-
             } else {
                 window.top.WB_wombat_location = new WombatLocation(window.top.location);
                 window.WB_wombat_top = window.top;
