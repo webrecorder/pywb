@@ -23,6 +23,9 @@ class ArchivalRouter(object):
         self.home_view = kwargs.get('home_view')
         self.error_view = kwargs.get('error_view')
 
+        self.urlrewriter_class = (kwargs.get('config', {}).
+                                  get('urlrewriter_class', UrlRewriter))
+
     def __call__(self, env):
         request_uri = env['REL_REQUEST_URI']
 
@@ -61,7 +64,7 @@ class ArchivalRouter(object):
                               coll=coll,
                               use_abs_prefix=use_abs_prefix,
                               wburl_class=route.handler.get_wburl_type(),
-                              urlrewriter_class=UrlRewriter,
+                              urlrewriter_class=self.urlrewriter_class,
                               cookie_scope=route.cookie_scope,
                               rewrite_opts=route.rewrite_opts)
 

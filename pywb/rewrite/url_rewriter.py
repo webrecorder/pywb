@@ -90,7 +90,10 @@ class UrlRewriter(object):
             new_url = new_url[len(self.prefix):]
 
         new_wburl = WbUrl(new_url)
-        return UrlRewriter(new_wburl, self.prefix)
+        return self._create_rebased_rewriter(new_wburl, self.prefix)
+
+    def _create_rebased_rewriter(self, new_wburl, prefix):
+        return UrlRewriter(new_wburl, prefix)
 
     def get_cookie_rewriter(self, scope=None):
         # collection scope overrides rule scope?
