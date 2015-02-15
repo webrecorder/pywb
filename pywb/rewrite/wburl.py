@@ -97,6 +97,10 @@ class WbUrl(BaseWbUrl):
         The rest of url should be unchanged
         """
 
+        # only continue if punycode encoded
+        if 'xn--' not in url:
+            return url
+
         parts = urlparse.urlsplit(url)
         domain = parts.netloc
         try:
@@ -107,10 +111,6 @@ class WbUrl(BaseWbUrl):
             pass
 
         domain = urllib.quote(domain)#, safe=r':\/')
-
-        # no changes
-        if parts.netloc == domain:
-            return url
 
         return urlparse.urlunsplit((parts[0], domain, parts[2], parts[3], parts[4]))
 

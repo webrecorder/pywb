@@ -53,7 +53,9 @@ ur"""
 
 # Unicode -- default with %-encoding
 >>> parse(u'<a href="http://испытание.испытание/">испытание</a>')
-<a href="/web/20131226101010/http://%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5/">испытание</a>
+<a href="/web/20131226101010/http://испытание.испытание/">испытание</a>
+
+#<a href="/web/20131226101010/http://%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5/">испытание</a>
 
 >>> parse(u'<a href="http://испытание.испытание/">испытание</a>', urlrewriter=urlrewriter_pencode)
 <a href="/web/20131226101010/http://испытание.испытание/">испытание</a>
@@ -171,6 +173,7 @@ from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.html_rewriter import HTMLRewriter
 
 import pprint
+import urllib
 
 urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html',
                           '/web/',
@@ -187,9 +190,12 @@ no_base_canon_rewriter = UrlRewriter('20131226101010/http://example.com/some/pat
                                                        rewrite_base=False))
 
 def parse(data, head_insert=None, urlrewriter=urlrewriter):
-    data = data.encode('utf-8')
     parser = HTMLRewriter(urlrewriter, head_insert = head_insert)
-    #data = data.decode('utf-8')
+
+    if isinstance(data, unicode):
+        data = data.encode('utf-8')
+        #data = urllib.quote(data, ':" =/-\\<>')
+
     result = parser.rewrite(data) + parser.close()
     # decode only for printing
     print result.decode('utf-8')

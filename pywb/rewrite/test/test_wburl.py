@@ -88,6 +88,9 @@ https://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B
 >>> print(to_uri_pencode('http://' + quote_plus(u'пример.испытание'.encode('utf-8'))[1:]))
 http://d0%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5
 
+# invalid
+>>> print(to_uri_pencode('http://xn--abcd'))
+http://xn--abcd
 
 # IRI representation
 >>> repr(WbUrl(u'http://пример.испытание'))
