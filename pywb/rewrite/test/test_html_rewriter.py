@@ -174,11 +174,11 @@ import pprint
 
 urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html',
                           '/web/',
-                          rewrite_opts=dict(punycode_links_only=False))
+                          rewrite_opts=dict(punycode_links=False))
 
 urlrewriter_pencode = UrlRewriter('20131226101010/http://example.com/some/path/index.html',
                                    '/web/',
-                                   rewrite_opts=dict(punycode_links_only=True))
+                                   rewrite_opts=dict(punycode_links=True))
 
 
 no_base_canon_rewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html',

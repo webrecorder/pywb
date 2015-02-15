@@ -105,14 +105,6 @@ class WbRequest(object):
 
         self._parse_extra()
 
-    def get_url(self, url=None):
-        if not self.wb_url:
-            return None
-
-        # pencode urls to force actual urls to appear, unless ascii_links_only set to true
-        pencode = self.urlrewriter.rewrite_opts.get('punycode_link_only', False)
-        return self.wb_url.get_url(url, pencode)
-
     def _is_ajax(self):
         value = self.env.get('HTTP_X_REQUESTED_WITH')
         if value and value.lower() == 'xmlhttprequest':

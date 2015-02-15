@@ -29,6 +29,9 @@ class UrlRewriter(object):
         self.cookie_scope = cookie_scope
         self.rewrite_opts = rewrite_opts
 
+        if rewrite_opts.get('punycode_links'):
+            self.wburl._do_percent_encode = False
+
     def rewrite(self, url, mod=None):
         # if special protocol, no rewriting at all
         if any(url.startswith(x) for x in self.NO_REWRITE_URI_PREFIX):
@@ -52,9 +55,6 @@ class UrlRewriter(object):
             is_abs = True
             url = 'http:' + url
 
-        # convert host to %-encoding instead of default punycode
-        peh = not self.rewrite_opts.get('punycode_links_only', False)
-
         # Optimized rewriter for
         # -rel urls that don't start with / and
         # do not contain ../ and no special mod
@@ -72,8 +72,7 @@ class UrlRewriter(object):
                 mod = wburl.mod
 
             final_url = self.prefix + wburl.to_str(mod=mod,
-                                                   url=new_url,
-                                                   percent_encode=peh)
+                                                   url=new_url)
         return final_url
 
     def get_new_url(self, **kwargs):

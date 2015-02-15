@@ -29,6 +29,9 @@ ur"""
 >>> repr(WbUrl('https://example.com/xyz?a=%2f&b=%2E'))
 "('latest_replay', '', '', 'https://example.com/xyz?a=%2f&b=%2E', 'https://example.com/xyz?a=%2f&b=%2E')"
 
+>>> repr(WbUrl('http://example.com?example=2'))
+"('latest_replay', '', '', 'http://example.com?example=2', 'http://example.com?example=2')"
+
 # Test scheme partially encoded urls
 >>> repr(WbUrl('https%3A//example.com/'))
 "('latest_replay', '', '', 'https://example.com/', 'https://example.com/')"
@@ -68,16 +71,16 @@ http://xn--d0-olcluwd.xn--80akhbyknj4f
 https://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5
 
 >>> print(to_uri_pencode(u'пример.испытание'))
-%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5
+http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5
 
 >>> print(to_uri_pencode('http://' + quote_plus(u'пример.испытание'.encode('utf-8'))))
 http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5
 
 >>> print(to_uri_pencode(u'//пример.испытание/abc/испытание'))
-//%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5/abc/%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5
+http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5/abc/%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5
 
 >>> print(to_uri_pencode(quote_plus(u'пример.испытание'.encode('utf-8')) + '/abc/' + quote_plus(u'пример'.encode('utf-8'))))
-%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5/abc/%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80
+http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5/abc/%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80
 
 >>> print(to_uri_pencode('https://xn--e1afmkfd.xn--80akhbyknj4f/foo/bar?abc=def'))
 https://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5/foo/bar?abc=def
@@ -88,28 +91,31 @@ http://d0%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%
 
 # IRI representation
 >>> repr(WbUrl(u'http://пример.испытание'))
+"('latest_replay', '', '', 'http://xn--e1afmkfd.xn--80akhbyknj4f', 'http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5')"
+
+>>> x = WbUrl(u'http://пример.испытание'); x._do_percent_encode = False; repr(x)
 "('latest_replay', '', '', 'http://xn--e1afmkfd.xn--80akhbyknj4f', 'http://xn--e1afmkfd.xn--80akhbyknj4f')"
 
 >>> repr(WbUrl(u'https://пример.испытание/abc/def_ghi/'))
-"('latest_replay', '', '', 'https://xn--e1afmkfd.xn--80akhbyknj4f/abc/def_ghi/', 'https://xn--e1afmkfd.xn--80akhbyknj4f/abc/def_ghi/')"
+"('latest_replay', '', '', 'https://xn--e1afmkfd.xn--80akhbyknj4f/abc/def_ghi/', 'https://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5/abc/def_ghi/')"
 
 >>> repr(WbUrl(u'//пример.испытание/abc/'))
-"('latest_replay', '', '', 'http://xn--e1afmkfd.xn--80akhbyknj4f/abc/', 'http://xn--e1afmkfd.xn--80akhbyknj4f/abc/')"
+"('latest_replay', '', '', 'http://xn--e1afmkfd.xn--80akhbyknj4f/abc/', 'http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5/abc/')"
 
 >>> repr(WbUrl(u'2014id_/https://пример.испытание/abc'))
-"('replay', '2014', 'id_', 'https://xn--e1afmkfd.xn--80akhbyknj4f/abc', '2014id_/https://xn--e1afmkfd.xn--80akhbyknj4f/abc')"
+"('replay', '2014', 'id_', 'https://xn--e1afmkfd.xn--80akhbyknj4f/abc', '2014id_/https://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5/abc')"
 
 # percent-encoded form (as sent by browser usually)
 >>> repr(WbUrl('2014id_/http://' + quote_plus(u'пример.испытание'.encode('utf-8')) + '/abc'))
-"('replay', '2014', 'id_', 'http://xn--e1afmkfd.xn--80akhbyknj4f/abc', '2014id_/http://xn--e1afmkfd.xn--80akhbyknj4f/abc')"
+"('replay', '2014', 'id_', 'http://xn--e1afmkfd.xn--80akhbyknj4f/abc', '2014id_/http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5/abc')"
 
 # percent-encoded form -- scheme relative
 >>> repr(WbUrl('2014id_///' + quote_plus(u'пример.испытание'.encode('utf-8')) + '/abc'))
-"('replay', '2014', 'id_', 'http://xn--e1afmkfd.xn--80akhbyknj4f/abc', '2014id_/http://xn--e1afmkfd.xn--80akhbyknj4f/abc')"
+"('replay', '2014', 'id_', 'http://xn--e1afmkfd.xn--80akhbyknj4f/abc', '2014id_/http://%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5/abc')"
 
 # invalid: truncated and superfluous '%', ignore invalid (no exception)
 >>> repr(WbUrl('2014id_/http://' + quote_plus(u'пример.испытание'.encode('utf-8'))[1:] + '%' + '/abc'))
-"('replay', '2014', 'id_', 'http://xn--d0-olcluwd.xn--%-7sbpkb3ampk3g/abc', '2014id_/http://xn--d0-olcluwd.xn--%-7sbpkb3ampk3g/abc')"
+"('replay', '2014', 'id_', 'http://xn--d0-olcluwd.xn--%-7sbpkb3ampk3g/abc', '2014id_/http://d0%D1%80%D0%B8%D0%BC%D0%B5%D1%80.%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5%25/abc')"
 
 
 # Query Urls
@@ -187,7 +193,7 @@ from StringIO import StringIO
 
 
 def to_uri_pencode(url):
-    return WbUrl.percent_encode_host(WbUrl.to_uri(url))
+    return WbUrl(url).get_url()
 
 
 if __name__ == "__main__":

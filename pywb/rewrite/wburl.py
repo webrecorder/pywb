@@ -40,7 +40,7 @@ wayback url format.
 
 import re
 import urllib
-
+import urlparse
 
 #=================================================================
 class BaseWbUrl(object):
@@ -96,30 +96,24 @@ class WbUrl(BaseWbUrl):
         to have a %-encoded host instead of punycode host
         The rest of url should be unchanged
         """
-        parts = WbUrl.FIRST_PATH.split(url, 1)
 
-        scheme_dom = parts[0].rsplit('/', 1)
-
-        dom = scheme_dom[-1]
-
+        parts = urlparse.urlsplit(url)
+        domain = parts.netloc
         try:
-            dom = dom.decode('idna')
-            dom = dom.encode('utf-8', 'ignore')
+            domain = domain.decode('idna')
+            domain = domain.encode('utf-8', 'ignore')
         except:
             # likely already encoded, so use as is
             pass
 
-        dom = urllib.quote(dom, safe=r':\/')
+        domain = urllib.quote(domain)#, safe=r':\/')
 
-        if len(scheme_dom) > 1:
-            url = scheme_dom[0] + '/' + dom
-        else:
-            url = dom
+        # no changes
+        if parts.netloc == domain:
+            return url
 
-        if len(parts) > 1:
-            url += '/' + parts[1]
+        return urlparse.urlunsplit((parts[0], domain, parts[2], parts[3], parts[4]))
 
-        return url
 
     @staticmethod
     def to_uri(url):
@@ -174,7 +168,11 @@ class WbUrl(BaseWbUrl):
             if not self._init_replay(orig_url):
                 raise Exception('Invalid WbUrl: ', orig_url)
 
-        self.url = WbUrl.to_uri(self.url)
+        new_uri = WbUrl.to_uri(self.url)
+
+        self._do_percent_encode = True
+
+        self.url = new_uri
 
         # protocol agnostic url -> http://
         # no protocol -> http://
@@ -244,13 +242,13 @@ class WbUrl(BaseWbUrl):
         self.url = new_url
         return self.url
 
-    def get_url(self, url=None, percent_encode=False):
+    def get_url(self, url=None):
         if url is not None:
             url = WbUrl.to_uri(url)
         else:
             url = self.url
 
-        if percent_encode:
+        if self._do_percent_encode:
             url = WbUrl.percent_encode_host(url)
 
         return url
@@ -264,8 +262,7 @@ class WbUrl(BaseWbUrl):
         timestamp = overrides.get('timestamp', self.timestamp)
         end_timestamp = overrides.get('end_timestamp', self.end_timestamp)
 
-        url = self.get_url(overrides.get('url'),
-                           overrides.get('percent_encode', False))
+        url = self.get_url(overrides.get('url', self.url))
 
         return self.to_wburl_str(url=url,
                                  type=type_,
