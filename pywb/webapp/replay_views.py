@@ -241,6 +241,7 @@ class ReplayView(object):
         else:
             statusline = '302 Internal Redirect'
 
+        new_url = new_url.encode('utf-8')
         status_headers = StatusAndHeaders(statusline,
                                           [('Location', new_url)])
 

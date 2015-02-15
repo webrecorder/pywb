@@ -87,55 +87,51 @@ class WbUrl(BaseWbUrl):
 
     DEFAULT_SCHEME = 'http://'
 
-    #PARTIAL_ENC_RX = re.compile('(https?%3A)?(%2F%2F)?', re.I)
     FIRST_PATH = re.compile('(?<![:/])/(?![/])')
 
+
     @staticmethod
-    def to_iri(url):
-        if isinstance(url, str):
-            url = urllib.unquote_plus(url)
-            url = url.decode('utf-8')
-
+    def percent_encode_host(url):
+        """ Convert the host of uri formatted with to_uri()
+        to have a %-encoded host instead of punycode host
+        The rest of url should be unchanged
+        """
         parts = WbUrl.FIRST_PATH.split(url, 1)
-        scheme_dom = parts[0]
 
-        #scheme_dom = urllib.unquote_plus(parts[0])
+        scheme_dom = parts[0].rsplit('/', 1)
 
-        #if isinstance(scheme_dom, str):
-        #    scheme_dom = scheme_dom.decode('utf-8', 'ignore')
-
-        scheme_dom = scheme_dom.rsplit(u'/', 1)
         dom = scheme_dom[-1]
 
         try:
             dom = dom.decode('idna')
+            dom = dom.encode('utf-8', 'ignore')
         except:
+            # likely already encoded, so use as is
             pass
 
+        dom = urllib.quote(dom, safe=r':\/')
+
         if len(scheme_dom) > 1:
-            url = scheme_dom[0] + u'/' + dom
+            url = scheme_dom[0] + '/' + dom
         else:
             url = dom
 
         if len(parts) > 1:
-            url += u'/' + parts[1]
+            url += '/' + parts[1]
 
         return url
 
-
     @staticmethod
-    def to_uri(url, was_uni=False):
-        #if not was_uni:
-        #    if isinstance(url, unicode):
-        #        was_uni = True
-
-        #if not was_uni and not '%' in url:
-        #    return url
-
+    def to_uri(url):
+        """ Converts a url to an ascii %-encoded form
+        where:
+        - scheme is ascii,
+        - host is punycode,
+        - and remainder is %-encoded
+        Not using urlsplit to also decode partially encoded
+        scheme urls
+        """
         parts = WbUrl.FIRST_PATH.split(url, 1)
-
-        #if not was_uni and not '%' in parts[0]:
-        #    return url
 
         scheme_dom = urllib.unquote_plus(parts[0])
 
@@ -146,18 +142,18 @@ class WbUrl(BaseWbUrl):
             scheme_dom = scheme_dom.decode('utf-8', 'ignore')
 
         scheme_dom = scheme_dom.rsplit('/', 1)
-        dom = scheme_dom[-1]
+        domain = scheme_dom[-1]
 
-        dom = dom.encode('idna')
+        domain = domain.encode('idna')
 
         if len(scheme_dom) > 1:
-            url = scheme_dom[0] + '/' + dom
+            url = scheme_dom[0].encode('utf-8') + '/' + domain
         else:
-            url = dom
+            url = domain
 
         if len(parts) > 1:
             if isinstance(parts[1], unicode):
-                url += '/' + urllib.quote_plus(parts[1].encode('utf-8'))
+                url += '/' + urllib.quote(parts[1].encode('utf-8'))
             else:
                 url += '/' + parts[1]
 
@@ -168,10 +164,9 @@ class WbUrl(BaseWbUrl):
     def __init__(self, orig_url):
         super(WbUrl, self).__init__()
 
-        was_uni = False
         if isinstance(orig_url, unicode):
             orig_url = orig_url.encode('utf-8')
-            was_uni = True
+            orig_url = urllib.quote(orig_url)
 
         self.original_url = orig_url
 
@@ -179,7 +174,7 @@ class WbUrl(BaseWbUrl):
             if not self._init_replay(orig_url):
                 raise Exception('Invalid WbUrl: ', orig_url)
 
-        self.url = WbUrl.to_uri(self.url, was_uni)
+        self.url = WbUrl.to_uri(self.url)
 
         # protocol agnostic url -> http://
         # no protocol -> http://
@@ -249,6 +244,18 @@ class WbUrl(BaseWbUrl):
         self.url = new_url
         return self.url
 
+    def get_url(self, url=None, percent_encode=False):
+        if url is not None:
+            url = WbUrl.to_uri(url)
+        else:
+            url = self.url
+
+        if percent_encode:
+            url = WbUrl.percent_encode_host(url)
+
+        return url
+
+
     # Str Representation
     # ====================
     def to_str(self, **overrides):
@@ -256,9 +263,9 @@ class WbUrl(BaseWbUrl):
         mod = overrides.get('mod', self.mod)
         timestamp = overrides.get('timestamp', self.timestamp)
         end_timestamp = overrides.get('end_timestamp', self.end_timestamp)
-        url = overrides.get('url', self.url)
-        if overrides.get('iri'):
-            url = WbUrl.to_iri(url)
+
+        url = self.get_url(overrides.get('url'),
+                           overrides.get('percent_encode', False))
 
         return self.to_wburl_str(url=url,
                                  type=type_,

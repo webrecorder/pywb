@@ -33,6 +33,9 @@ r"""
 >>> _test_js(r'location = /http:\/\/example.com/abc.html/')
 'WB_wombat_location = /http:\\/\\/example.com/abc.html/'
 
+>>> _test_js(r'location = \/http:\/\/example.com\/abc.html\/')
+'WB_wombat_location = \\/http:\\/\\/example.com\\/abc.html\\/'
+
 >>> _test_js('"/location" == some_location_val; locations = location;')
 '"/location" == some_location_val; locations = WB_wombat_location;'
 

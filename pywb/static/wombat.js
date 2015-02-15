@@ -323,7 +323,7 @@ _WBWombat = (function() {
             return url + this._orig_loc.hash;
         }
 
-        href = parser.href;
+        href = parser.getAttribute("href");
         var hash = parser.hash;
 
         if (hash) {

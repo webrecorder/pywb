@@ -52,8 +52,8 @@ class UrlRewriter(object):
             is_abs = True
             url = 'http:' + url
 
-        # always convert any unicode urls to punycode
-        ascii_urls_only = self.rewrite_opts.get('rewrite_ascii_urls_only', False)
+        # convert host to %-encoding instead of default punycode
+        peh = not self.rewrite_opts.get('punycode_links_only', False)
 
         # Optimized rewriter for
         # -rel urls that don't start with / and
@@ -73,13 +73,7 @@ class UrlRewriter(object):
 
             final_url = self.prefix + wburl.to_str(mod=mod,
                                                    url=new_url,
-                                                   iri=not ascii_urls_only)
-        if not ascii_urls_only:
-            try:
-                final_url = final_url.encode('utf-8')
-            except UnicodeDecodeError:
-                pass
-
+                                                   percent_encode=peh)
         return final_url
 
     def get_new_url(self, **kwargs):

@@ -109,13 +109,9 @@ class WbRequest(object):
         if not self.wb_url:
             return None
 
-        if not url:
-            url = self.wb_url.url
-
-        if self.urlrewriter.rewrite_opts.get('rewrite_ascii_urls_only'):
-            return self.wb_url.url
-        else:
-            return self.wb_url.to_iri(url)
+        # pencode urls to force actual urls to appear, unless ascii_links_only set to true
+        pencode = self.urlrewriter.rewrite_opts.get('punycode_link_only', False)
+        return self.wb_url.get_url(url, pencode)
 
     def _is_ajax(self):
         value = self.env.get('HTTP_X_REQUESTED_WITH')
