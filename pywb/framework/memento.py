@@ -29,6 +29,7 @@ class MementoReqMixin(object):
             raise BadRequestException('Invalid Accept-Datetime: ' +
                                       accept_datetime)
 
+        # note: this changes from LATEST_REPLAY -> REPLAY
         self.wb_url.set_replay_timestamp(timestamp)
 
 
@@ -68,26 +69,29 @@ class MementoRespMixin(object):
         elif wbrequest.options['is_proxy']:
             is_memento = True
 
-        # otherwise only for replay
-        else:
+        # otherwise only if timestamp replay (and not a timegate)
+        elif not is_timegate:
             is_memento = (wbrequest.wb_url.type == wbrequest.wb_url.REPLAY)
 
         link = []
 
-        if is_memento:
+        if is_memento or is_timegate:
             if cdx:
-                http_date = timestamp_to_http_date(cdx['timestamp'])
+                ts = cdx['timestamp']
             # for top frame
             elif wbrequest.wb_url.timestamp:
-                http_date = timestamp_to_http_date(wbrequest.wb_url.timestamp)
+                ts = wbrequest.wb_url.timestamp
             else:
-                http_date = None
+                ts = None
 
-            if http_date:
-                self.status_headers.headers.append(('Memento-Datetime',
-                                                http_date))
+            if ts:
+                http_date = timestamp_to_http_date(ts)
 
-                canon_link = wbrequest.urlrewriter.get_new_url(mod='')
+                if is_memento:
+                    self.status_headers.headers.append(('Memento-Datetime',
+                                                       http_date))
+
+                canon_link = wbrequest.urlrewriter.get_new_url(mod='', timestamp=ts)
                 link.append(self.make_memento_link(canon_link,
                                                    'memento',
                                                    http_date))

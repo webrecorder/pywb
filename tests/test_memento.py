@@ -39,6 +39,8 @@ class TestWb:
         """
         TimeGate with no Accept-Datetime header
         """
+
+        dt = 'Mon, 27 Jan 2014 17:12:39 GMT'
         resp = self.testapp.get('/pywb/http://www.iana.org/_css/2013.1/screen.css')
 
         assert resp.status_int == 302
@@ -48,6 +50,7 @@ class TestWb:
         links = self.get_links(resp)
         assert '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"' in links
         assert self.make_timemap_link('http://www.iana.org/_css/2013.1/screen.css') in links
+        assert self.make_memento_link('http://www.iana.org/_css/2013.1/screen.css', '20140127171239', dt) in links
 
         assert MEMENTO_DATETIME not in resp.headers
 
@@ -56,9 +59,10 @@ class TestWb:
 
     def test_timegate_accept_datetime(self):
         """
-        TimeGate with Accept-Datetime header
+        TimeGate with Accept-Datetime header, matching exactly
         """
-        headers = {ACCEPT_DATETIME: 'Sun, 26 Jan 2014 20:08:04'}
+        dt = 'Sun, 26 Jan 2014 20:08:04 GMT'
+        headers = {ACCEPT_DATETIME: dt}
         resp = self.testapp.get('/pywb//http://www.iana.org/_css/2013.1/screen.css', headers=headers)
 
         assert resp.status_int == 302
@@ -68,7 +72,7 @@ class TestWb:
         links = self.get_links(resp)
         assert '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"' in links
         assert self.make_timemap_link('http://www.iana.org/_css/2013.1/screen.css') in links
-
+        assert self.make_memento_link('http://www.iana.org/_css/2013.1/screen.css', '20140126200804', dt) == links[0], links[0]
 
         assert MEMENTO_DATETIME not in resp.headers
 
@@ -79,7 +83,7 @@ class TestWb:
         """
         Not a timegate, but an 'intermediate resource', redirect to closest timestamp
         """
-        headers = {ACCEPT_DATETIME: 'Sun, 26 Jan 2014 20:08:04'}
+        headers = {ACCEPT_DATETIME: 'Sun, 26 Jan 2014 20:08:04 GMT'}
         # not a timegate, partial timestamp /2014/ present
         resp = self.testapp.get('/pywb/2014/http://www.iana.org/_css/2013.1/screen.css', headers=headers)
 
@@ -286,7 +290,7 @@ rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"'
         # simulate proxy mode by setting REQUEST_URI
         request_uri = 'http://www.iana.org/_css/2013.1/screen.css'
         extra = dict(REQUEST_URI=request_uri, SCRIPT_NAME='')
-        headers = {ACCEPT_DATETIME: 'Sun, 26 Jan 2014 20:08:04'}
+        headers = {ACCEPT_DATETIME: 'Sun, 26 Jan 2014 20:08:04 GMT'}
 
         resp = self.testapp.get('/x-ignore-this-x', extra_environ=extra, headers=headers)
 
@@ -330,7 +334,7 @@ rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"'
         """
         Non WbUrl memento path -- just ignore ACCEPT_DATETIME
         """
-        headers = {ACCEPT_DATETIME: 'Sun, 26 Jan 2014 20:08:04'}
+        headers = {ACCEPT_DATETIME: 'Sun, 26 Jan 2014 20:08:04 GMT'}
         resp = self.testapp.get('/pywb/', headers=headers)
         assert resp.status_int == 200
 

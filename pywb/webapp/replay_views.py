@@ -219,7 +219,8 @@ class ReplayView(object):
         if wbrequest.custom_params.get('noredir'):
             return None
 
-        redir_needed = (wbrequest.options.get('is_timegate', False))
+        is_memento_timegate = (wbrequest.options.get('is_timegate', False))
+        redir_needed = is_memento_timegate
 
         if not redir_needed and self.redir_to_exact:
             redir_needed = (cdx['timestamp'] != wbrequest.wb_url.timestamp)
@@ -238,15 +239,19 @@ class ReplayView(object):
             #   FF shows a confirm dialog, so can't use 307 effectively
             #   was: statusline = '307 Same-Method Internal Redirect'
             return None
+        elif is_memento_timegate:
+            statusline = '302 Found'
         else:
+            # clear cdx line to indicate internal redirect
             statusline = '302 Internal Redirect'
+            cdx = None
 
         status_headers = StatusAndHeaders(statusline,
                                           [('Location', new_url)])
 
-        # don't include cdx to indicate internal redirect
         return self.response_class(status_headers,
-                                   wbrequest=wbrequest)
+                                   wbrequest=wbrequest,
+                                   cdx=cdx)
 
     def _reject_self_redirect(self, wbrequest, cdx, status_headers):
         """
