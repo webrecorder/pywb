@@ -122,6 +122,7 @@ function notify_top() {
     if (window.__orig_parent && window.__orig_parent.update_wb_url) {
         window.__orig_parent.update_wb_url(window.WB_wombat_location.href,
                                            wbinfo.timestamp,
+                                           wbinfo.request_ts,
                                            wbinfo.is_live);
     }
 

@@ -7,6 +7,7 @@ from urlparse import urlsplit
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.wbexception import WbException, NotFoundException
 from pywb.utils.loaders import LimitReader
+from pywb.utils.timeutils import timestamp_now
 
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import MementoResponse
@@ -219,8 +220,11 @@ class ReplayView(object):
         if wbrequest.custom_params.get('noredir'):
             return None
 
-        is_memento_timegate = (wbrequest.options.get('is_timegate', False))
-        redir_needed = is_memento_timegate
+        is_timegate = (wbrequest.options.get('is_timegate', False))
+        if not is_timegate:
+            is_timegate = wbrequest.wb_url.is_latest_replay()
+
+        redir_needed = is_timegate
 
         if not redir_needed and self.redir_to_exact:
             redir_needed = (cdx['timestamp'] != wbrequest.wb_url.timestamp)
@@ -231,15 +235,20 @@ class ReplayView(object):
         if self.enable_range_cache and wbrequest.extract_range():
             return None
 
+        if is_timegate and not self.redir_to_exact:
+            timestamp = timestamp_now()
+        else:
+            timestamp = cdx['timestamp']
+
         new_url = (wbrequest.urlrewriter.
-                   get_new_url(timestamp=cdx['timestamp'],
+                   get_new_url(timestamp=timestamp,
                                url=cdx['original']))
 
         if wbrequest.method == 'POST':
             #   FF shows a confirm dialog, so can't use 307 effectively
             #   was: statusline = '307 Same-Method Internal Redirect'
             return None
-        elif is_memento_timegate:
+        elif is_timegate:
             statusline = '302 Found'
         else:
             # clear cdx line to indicate internal redirect

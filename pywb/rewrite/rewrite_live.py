@@ -3,7 +3,6 @@ Fetch a url from live web and apply rewriting rules
 """
 
 import requests
-import datetime
 import mimetypes
 import logging
 import os
@@ -12,7 +11,7 @@ from urlparse import urlsplit
 
 from pywb.utils.loaders import is_http, LimitReader, BlockLoader, to_file_url
 from pywb.utils.loaders import extract_client_cookie
-from pywb.utils.timeutils import datetime_to_timestamp
+from pywb.utils.timeutils import timestamp_now
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.canonicalize import canonicalize
 
@@ -205,7 +204,7 @@ class LiveRewriter(object):
             (status_headers, stream) = self.fetch_local_file(url)
 
         if timestamp is None:
-            timestamp = datetime_to_timestamp(datetime.datetime.utcnow())
+            timestamp = timestamp_now()
 
         cdx = {'urlkey': urlkey,
                'timestamp': timestamp,

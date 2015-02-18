@@ -40,7 +40,13 @@ collections:
 
     pywb-norange:
         index_paths: ./sample_archive/cdx/
-        enable_ranges: False
+        enable_ranges: false
+
+    pywb-non-exact:
+        index_paths: ./sample_archive/cdx/
+        redir_to_exact: false
+
+
 
 # indicate if cdx files are sorted by SURT keys -- eg: com,example)/
 # SURT keys are recommended for future indices, but non-SURT cdxs

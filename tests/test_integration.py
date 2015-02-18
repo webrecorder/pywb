@@ -4,7 +4,7 @@ import base64
 from pywb.webapp.pywb_init import create_wb_router
 from pywb.framework.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
-
+from pywb.utils.timeutils import timestamp_now
 
 class TestWb:
     TEST_CONFIG = 'tests/test_config.yaml'
@@ -256,14 +256,24 @@ class TestWb:
         assert resp.content_length == 0
         assert resp.content_type == 'application/x-javascript'
 
-    def test_redirect_1(self):
+    def test_redirect_exact(self):
         resp = self.testapp.get('/pywb/20140127171237/http://www.iana.org/')
         assert resp.status_int == 302
 
         assert resp.headers['Location'].endswith('/pywb/20140127171238/http://iana.org')
 
+    def test_no_redirect_non_exact(self):
+        # non-exact mode, don't redirect to exact capture
+        resp = self.testapp.get('/pywb-non-exact/20140127171237/http://www.iana.org/')
+        assert resp.status_int == 200
 
-    def test_redirect_replay_2(self):
+        self._assert_basic_html(resp)
+        assert '"20140127171237"' in resp.body
+        # actual timestamp set in JS
+        assert 'timestamp = "20140127171238"' in resp.body
+        assert '/pywb-non-exact/20140127171237/http://www.iana.org/about/' in resp.body
+
+    def test_redirect_latest_replay(self):
         resp = self.testapp.get('/pywb/http://example.com/')
         assert resp.status_int == 302
 
@@ -274,6 +284,26 @@ class TestWb:
         self._assert_basic_html(resp)
         assert '"20140127171251"' in resp.body
         assert '/pywb/20140127171251/http://www.iana.org/domains/example' in resp.body
+
+    def test_redirect_non_exact_latest_replay_ts(self):
+        resp = self.testapp.get('/pywb-non-exact/http://example.com/')
+        assert resp.status_int == 302
+
+        assert resp.headers['Location'].endswith('/http://example.com')
+
+        # extract ts, which should be current time
+        ts = resp.headers['Location'].rsplit('/http://')[0].rsplit('/', 1)[-1]
+        assert len(ts) == 14, ts
+        resp = resp.follow()
+
+        self._assert_basic_html(resp)
+
+        # ensure the current ts is present in the links
+        assert '"{0}"'.format(ts) in resp.body
+        assert '/pywb-non-exact/{0}/http://www.iana.org/domains/example'.format(ts) in resp.body
+
+        # ensure ts is current ts
+        assert timestamp_now() >= ts, ts
 
     def test_redirect_relative_3(self):
         # webtest uses Host: localhost:80 by default

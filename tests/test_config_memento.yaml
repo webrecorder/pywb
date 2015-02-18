@@ -6,6 +6,10 @@
 collections:
     pywb: ./sample_archive/cdx/
 
+    pywb-non-exact:
+        index_paths: ./sample_archive/cdx/
+        redir_to_exact: false
+
 archive_paths: ['./sample_archive/warcs/']
 
 # Test memento

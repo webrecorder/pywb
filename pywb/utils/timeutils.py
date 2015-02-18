@@ -72,6 +72,14 @@ def datetime_to_timestamp(the_datetime):
     return the_datetime.strftime(TIMESTAMP_14)
 
 
+def timestamp_now():
+    """
+    >>> len(timestamp_now())
+    14
+    """
+    return datetime_to_timestamp(datetime.datetime.utcnow())
+
+
 def iso_date_to_timestamp(string):
     """
     >>> iso_date_to_timestamp('2013-12-26T10:11:12Z')

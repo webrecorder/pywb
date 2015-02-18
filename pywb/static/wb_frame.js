@@ -42,7 +42,7 @@ function make_inner_url(url, ts)
     }
 }
 
-function push_state(url, timestamp, capture_str, is_live) {
+function push_state(url, timestamp, request_ts, capture_str, is_live) {
     if (window.frames[0].WB_wombat_location) {
         var curr_href = window.frames[0].WB_wombat_location.href;
 
@@ -54,8 +54,9 @@ function push_state(url, timestamp, capture_str, is_live) {
 
     var state = {}
     state.timestamp = timestamp;
-    state.outer_url = make_outer_url(url, state.timestamp);
-    state.inner_url = make_inner_url(url, state.timestamp);
+    state.request_ts = request_ts;
+    state.outer_url = make_outer_url(url, state.request_ts);
+    state.inner_url = make_inner_url(url, state.request_ts);
     state.url = url;
     state.capture_str = capture_str;
     state.is_live = is_live;
@@ -130,6 +131,7 @@ function extract_ts_cookie(value) {
 function iframe_loaded(event) {
     var url;
     var ts;
+    var request_ts;
     var capture_str;
     var is_live = false;
     var iframe = window.frames[0];
@@ -142,6 +144,7 @@ function iframe_loaded(event) {
 
     if (iframe.wbinfo) {
         ts = iframe.wbinfo.timestamp;
+        request_ts = iframe.wbinfo.request_ts;
         is_live = iframe.wbinfo.is_live;
     } else {
         ts = extract_ts_cookie(iframe.document.cookie);
@@ -150,19 +153,20 @@ function iframe_loaded(event) {
         } else {
             ts = extract_ts(iframe.location.href);
         }
+        request_ts = ts;
     }
 
-    update_wb_url(url, ts, is_live);
+    update_wb_url(url, ts, request_ts, is_live);
 }
 
-function update_wb_url(url, ts, is_live) {
+function update_wb_url(url, ts, request_ts, is_live) {
     if (curr_state.url == url && curr_state.timestamp == ts) {
         return;
     }
 
     capture_str = _wb_js.ts_to_date(ts, true);
 
-    push_state(url, ts, capture_str, is_live);
+    push_state(url, ts, request_ts, capture_str, is_live);
 }
 
 // Load Banner

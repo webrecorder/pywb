@@ -61,6 +61,9 @@ class BaseWbUrl(object):
     def is_replay(self):
         return self.is_replay_type(self.type)
 
+    def is_latest_replay(self):
+        return (self.type == BaseWbUrl.LATEST_REPLAY)
+
     def is_query(self):
         return self.is_query_type(self.type)
 

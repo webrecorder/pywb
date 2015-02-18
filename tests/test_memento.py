@@ -3,6 +3,7 @@ import re
 from pywb.webapp.pywb_init import create_wb_router
 from pywb.framework.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
+from pywb.utils.timeutils import timestamp_now
 
 MEMENTO_DATETIME = 'Memento-Datetime'
 ACCEPT_DATETIME = 'Accept-Datetime'
@@ -23,13 +24,13 @@ class TestWb:
     def get_links(self, resp):
         return map(lambda x: x.strip(), re.split(', (?![0-9])', resp.headers[LINK]))
 
-    def make_timemap_link(self, url):
-        format_ = '<http://localhost:80/pywb/timemap/*/{0}>; rel="timemap"; type="{1}"'
-        return format_.format(url, LINK_FORMAT)
+    def make_timemap_link(self, url, coll='pywb'):
+        format_ = '<http://localhost:80/{2}/timemap/*/{0}>; rel="timemap"; type="{1}"'
+        return format_.format(url, LINK_FORMAT, coll)
 
-    def make_memento_link(self, url, ts, dt):
-        format_ = '<http://localhost:80/pywb/{1}/{0}>; rel="memento"; datetime="{2}"'
-        return format_.format(url, ts, dt)
+    def make_memento_link(self, url, ts, dt, coll='pywb'):
+        format_ = '<http://localhost:80/{3}/{1}/{0}>; rel="memento"; datetime="{2}"'
+        return format_.format(url, ts, dt, coll)
 
     # Below functionality is for archival (non-proxy) mode
     # It is designed to conform to Memento protocol Pattern 2.1
@@ -57,12 +58,62 @@ class TestWb:
         assert '/pywb/20140127171239/http://www.iana.org/_css/2013.1/screen.css' in resp.headers['Location']
 
 
-    def test_timegate_accept_datetime(self):
+    # timegate with latest memento, but redirect to current timestamp url instead of
+    # memento timestamp
+    def test_timegate_latest_request_timestamp(self):
+        """
+        TimeGate with no Accept-Datetime header
+        """
+
+        dt = 'Mon, 27 Jan 2014 17:12:39 GMT'
+        resp = self.testapp.get('/pywb-non-exact/http://www.iana.org/_css/2013.1/screen.css')
+
+        assert resp.status_int == 302
+
+        assert resp.headers[VARY] == 'accept-datetime'
+
+        links = self.get_links(resp)
+        assert '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"' in links
+        assert self.make_timemap_link('http://www.iana.org/_css/2013.1/screen.css', coll='pywb-non-exact') in links
+        assert self.make_memento_link('http://www.iana.org/_css/2013.1/screen.css', '20140127171239', dt, coll='pywb-non-exact') in links
+
+        assert MEMENTO_DATETIME not in resp.headers
+
+        assert '/pywb-non-exact/' in resp.headers['Location']
+
+        wburl = resp.headers['Location'].split('/pywb-non-exact/')[-1]
+        ts = wburl.split('/')[0]
+        assert len(ts) == 14
+        assert timestamp_now() >= ts
+
+    def test_timegate_accept_datetime_exact(self):
         """
         TimeGate with Accept-Datetime header, matching exactly
         """
         dt = 'Sun, 26 Jan 2014 20:08:04 GMT'
         headers = {ACCEPT_DATETIME: dt}
+        resp = self.testapp.get('/pywb//http://www.iana.org/_css/2013.1/screen.css', headers=headers)
+
+        assert resp.status_int == 302
+
+        assert resp.headers[VARY] == 'accept-datetime'
+
+        links = self.get_links(resp)
+        assert '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"' in links
+        assert self.make_timemap_link('http://www.iana.org/_css/2013.1/screen.css') in links
+        assert self.make_memento_link('http://www.iana.org/_css/2013.1/screen.css', '20140126200804', dt) == links[0], links[0]
+
+        assert MEMENTO_DATETIME not in resp.headers
+
+        assert '/pywb/20140126200804/http://www.iana.org/_css/2013.1/screen.css' in resp.headers['Location']
+
+    def test_timegate_accept_datetime_inexact(self):
+        """
+        TimeGate with Accept-Datetime header, not matching a memento exactly
+        """
+        dt = 'Sun, 26 Jan 2014 20:08:04 GMT'
+        request_dt = 'Sun, 26 Jan 2014 20:08:00 GMT'
+        headers = {ACCEPT_DATETIME: request_dt}
         resp = self.testapp.get('/pywb//http://www.iana.org/_css/2013.1/screen.css', headers=headers)
 
         assert resp.status_int == 302
