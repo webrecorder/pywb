@@ -145,8 +145,6 @@ this.load = function() {
 
         if (wbinfo.top_url && (loc != wbinfo.top_url) && wbinfo.mod != "bn_") {
             // Auto-redirect to top frame
-            console.log(wbinfo.top_url);
-            console.log(loc);
             window.location.replace(wbinfo.top_url + hash);
         } else {
             // Init Banner (no frame or top frame)

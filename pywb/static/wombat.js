@@ -984,7 +984,7 @@ _WBWombat = (function() {
 
                 if (window.parent == window.top) {
                     window.parent = window;
-                
+
                     // Disable frameElement also as this should be top frame
                     if (Object.defineProperty) {
                         Object.defineProperty(window, "frameElement", {value: undefined, configurable: false});
