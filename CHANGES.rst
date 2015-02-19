@@ -1,23 +1,24 @@
 pywb 0.8.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-Improvements to framed replay, memento support, and additional customization support in preparation for further config changes.
+Improvements to framed replay, memento support, IDN urls, and additional customization support in preparation for further config changes.
 
-
-* Feature: Full support for non-exact or sticky timestamp browsing in framed and non-framed mode.
+* Feature: Full support for 'non-exact' or sticky timestamp browsing in framed and non-framed mode.
  
-  - by setting `redir_to_exact: False` (per collection), no redirects will be issued to the exact timestamp of the capture.
+  - setting ``redir_to_exact: False`` (per collection), no redirects will be issued to the exact timestamp of the capture.
     The user-specified timestamp will be preserved and the number of redirects will be reduced.
  
-  - if no timestamp is present (latest-replay request), there is a redirect to the current time UTC timestamp, available via ``timestamp_now`` function.
+  - if no timestamp is present (latest-replay request), there is a redirect to the current time UTC timestamp,
+    available via ``pywb.utils.timeutils.timestamp_now()`` function.
 
-  - request timestamp included in ``wbinfo.request_ts`` and accessible by the banner or the top frame in framed mode.
+  - via head-insert, the exact request timestamp is provided as ``wbinfo.request_ts`` and accessible to the banner insert or the top frame when in framed mode.
  
 * Frame Mode Replay Improvements, including:
  
-  - wombat: override ``window.parent`` and ``window.frameElement`` to hide top-level non replay frame. 
+  - wombat: modify ``window.parent`` and ``window.frameElement`` to hide top-level non replay frame. 
  
-  - memento improvements: add same memento headers to top-level frame to match replay frame to ensure top-level frame passes memento header validation.
+  - memento improvements: add same memento headers to top-level frame to match replay frame to ensure top-level frame 
+    passes memento header validation.
  
   - frame mode uses the request timestamp instead of the capture timestamp to update frame url.
     By default, request timestamp == capture timestamp, unless ``redir_to_exact: False`` (see above).
@@ -34,7 +35,7 @@ Improvements to framed replay, memento support, and additional customization sup
   
   - ability to disable JS url and location rewrite via ``js_rewrite_location: none`` setting.
   
-  - ability to set a custom content loader in place of default ARC/WARC loader in `ReplayView._init_replay_view`
+  - ability to set a custom content loader in place of default ARC/WARC loader in ``ReplayView._init_replay_view``
  
 * Improved Memento compatibility, ensuring all responses have a ``rel=memento`` link.
 
