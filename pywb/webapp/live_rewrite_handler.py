@@ -45,6 +45,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
         self.live_cookie = config.get('live-cookie', self.LIVE_COOKIE)
 
+        self.verify = config.get('verify_ssl', True)
+
         self.ydl = None
 
         self._cache = None
@@ -108,7 +110,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
                                              head_insert_func=head_insert_func,
                                              req_headers=req_headers,
                                              env=wbrequest.env,
-                                             ignore_proxies=ignore_proxies)
+                                             ignore_proxies=ignore_proxies,
+                                             verify=self.verify)
 
         wbresponse = self._make_response(wbrequest, *result)
 

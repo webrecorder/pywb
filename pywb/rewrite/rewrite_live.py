@@ -15,8 +15,6 @@ from pywb.utils.timeutils import timestamp_now
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.canonicalize import canonicalize
 
-from url_rewriter import UrlRewriter
-from wburl import WbUrl
 from rewrite_content import RewriteContent
 
 
@@ -122,7 +120,8 @@ class LiveRewriter(object):
                    env=None,
                    req_headers=None,
                    follow_redirects=False,
-                   ignore_proxies=False):
+                   ignore_proxies=False,
+                   verify=True):
 
         method = 'GET'
         data = None
@@ -154,7 +153,7 @@ class LiveRewriter(object):
                                     allow_redirects=follow_redirects,
                                     proxies=proxies,
                                     stream=True,
-                                    verify=False)
+                                    verify=verify)
 
         statusline = str(response.status_code) + ' ' + response.reason
 
@@ -172,7 +171,8 @@ class LiveRewriter(object):
                       req_headers={},
                       timestamp=None,
                       follow_redirects=False,
-                      ignore_proxies=False):
+                      ignore_proxies=False,
+                      verify=True):
 
         ts_err = url.split('///')
 
@@ -199,7 +199,8 @@ class LiveRewriter(object):
             (status_headers, stream) = self.fetch_http(url, urlkey, env,
                                                        req_headers,
                                                        follow_redirects,
-                                                       ignore_proxies)
+                                                       ignore_proxies,
+                                                       verify)
         else:
             (status_headers, stream) = self.fetch_local_file(url)
 
