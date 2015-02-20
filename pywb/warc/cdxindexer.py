@@ -82,14 +82,23 @@ ALLOWED_EXT = ('.arc', '.arc.gz', '.warc', '.warc.gz')
 
 
 #=================================================================
-def iter_file_or_dir(inputs):
+def iter_file_or_dir(inputs, recursive=True):
     for input_ in inputs:
         if not os.path.isdir(input_):
             yield input_, os.path.basename(input_)
-        else:
+
+        elif not recursive:
             for filename in os.listdir(input_):
                 if filename.endswith(ALLOWED_EXT):
                     yield os.path.join(input_, filename), filename
+
+        else:
+            for root, dirs, files in os.walk(input_):
+                for filename in files:
+                    if filename.endswith(ALLOWED_EXT):
+                        full_path = os.path.join(root, filename)
+                        rel_path = os.path.relpath(full_path, input_)
+                        yield full_path, rel_path
 
 
 #=================================================================
@@ -122,15 +131,18 @@ def get_cdx_writer_cls(options):
 
 #=================================================================
 def write_multi_cdx_index(output, inputs, **options):
+    recurse = options.get('recurse', False)
+
     # write one cdx per dir
     if output != '-' and os.path.isdir(output):
-        for fullpath, filename in iter_file_or_dir(inputs):
+        for fullpath, filename in iter_file_or_dir(inputs, recurse):
             outpath = cdx_filename(filename)
             outpath = os.path.join(output, outpath)
 
             with open(outpath, 'wb') as outfile:
                 with open(fullpath, 'rb') as infile:
-                    return write_cdx_index(outfile, infile, filename, **options)
+                    return write_cdx_index(outfile, infile, filename,
+                                           **options)
 
     # write to one cdx file
     else:
@@ -142,7 +154,7 @@ def write_multi_cdx_index(output, inputs, **options):
         writer_cls = get_cdx_writer_cls(options)
 
         with writer_cls(outfile, options.get('cdx09')) as writer:
-            for fullpath, filename in iter_file_or_dir(inputs):
+            for fullpath, filename in iter_file_or_dir(inputs, recurse):
                 with open(fullpath, 'rb') as infile:
                     entry_iter = create_index_iter(infile, **options)
 
@@ -220,6 +232,9 @@ response records"""
     post_append_help = """for POST requests, append
 form query to url key. (Only applies to form url encoded posts)"""
 
+    recurse_dirs_help = """recurse through all subdirectories
+if input is a directory"""
+
     parser = ArgumentParser(description=description,
                             epilog=epilog,
                             formatter_class=RawTextHelpFormatter)
@@ -235,6 +250,10 @@ form query to url key. (Only applies to form url encoded posts)"""
     parser.add_argument('-p', '--postappend',
                         action='store_true',
                         help=post_append_help)
+
+    parser.add_argument('-r', '--recurse',
+                        action='store_true',
+                        help=recurse_dirs_help)
 
     parser.add_argument('-u', '--unsurt',
                         action='store_true',
@@ -254,6 +273,7 @@ form query to url key. (Only applies to form url encoded posts)"""
                           surt_ordered=not cmd.unsurt,
                           include_all=cmd.allrecords,
                           append_post=cmd.postappend,
+                          recurse=cmd.recurse,
                           cdx09=cmd.cdx09)
 
 
