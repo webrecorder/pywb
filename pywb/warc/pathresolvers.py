@@ -28,6 +28,8 @@ class PrefixResolver:
         self.contains = contains if contains else ''
 
     def __call__(self, filename):
+        # use os path seperator
+        filename = filename.replace('/', os.path.sep)
         return [self.prefix + filename] if (self.contains in filename) else []
 
     def __repr__(self):

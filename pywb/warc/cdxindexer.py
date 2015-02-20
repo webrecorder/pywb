@@ -98,6 +98,7 @@ def iter_file_or_dir(inputs, recursive=True):
                     if filename.endswith(ALLOWED_EXT):
                         full_path = os.path.join(root, filename)
                         rel_path = os.path.relpath(full_path, input_)
+                        rel_path = rel_path.replace(os.path.sep, '/')
                         yield full_path, rel_path
 
 
