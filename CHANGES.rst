@@ -1,50 +1,54 @@
+pywb 0.8.1 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+
 pywb 0.8.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
 Improvements to framed replay, memento support, IDN urls, and additional customization support in preparation for further config changes.
 
 * Feature: Full support for 'non-exact' or sticky timestamp browsing in framed and non-framed mode.
- 
+
   - setting ``redir_to_exact: False`` (per collection), no redirects will be issued to the exact timestamp of the capture.
     The user-specified timestamp will be preserved and the number of redirects will be reduced.
- 
+
   - if no timestamp is present (latest-replay request), there is a redirect to the current time UTC timestamp,
     available via ``pywb.utils.timeutils.timestamp_now()`` function.
 
   - via head-insert, the exact request timestamp is provided as ``wbinfo.request_ts`` and accessible to the banner insert or the top frame when in framed mode.
- 
+
 * Frame Mode Replay Improvements, including:
- 
-  - wombat: modify ``window.parent`` and ``window.frameElement`` to hide top-level non replay frame. 
- 
-  - memento improvements: add same memento headers to top-level frame to match replay frame to ensure top-level frame 
+
+  - wombat: modify ``window.parent`` and ``window.frameElement`` to hide top-level non replay frame.
+
+  - memento improvements: add same memento headers to top-level frame to match replay frame to ensure top-level frame
     passes memento header validation.
- 
+
   - frame mode uses the request timestamp instead of the capture timestamp to update frame url.
     By default, request timestamp == capture timestamp, unless ``redir_to_exact: False`` (see above).
-    
+
 * Client-Side Rewrite Improvements:
 
   - improved ``document.write`` override to also work when in ``<head>`` and append both ``<head>`` and ``<body>``
 
   - detect multiple calls to rewrite attribute to avoid rewrite loops.
- 
+
 * Customization improvements:
 
   - ability to override global UrlRewriter with custom class by setting ``urlrewriter_class`` config setting.
-  
+
   - ability to disable JS url and location rewrite via ``js_rewrite_location: none`` setting.
-  
+
   - ability to set a custom content loader in place of default ARC/WARC loader in ``ReplayView._init_replay_view``
- 
+
 * Improved Memento compatibility, ensuring all responses have a ``rel=memento`` link.
 
 * IDN support: Improved handling of non-ascii domains.
-  
+
   - all urls are internally converted to a Punycode host, percent encoded path using IDNA encoding (http://tools.ietf.org/html/rfc3490.html).
   - when rendering, return convert all urls to fully percent-encoded by default (to allow browser to convert to unicode characters).
   - ``punycode_links`` rewrite option can be enabled to keep ascii-punycode hostnames instead of percent-encoding.
- 
+
 
 pywb 0.7.8 changelist
 ~~~~~~~~~~~~~~~~~~~~~
