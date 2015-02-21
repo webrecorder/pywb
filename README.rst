@@ -32,6 +32,14 @@ Several organizations run public services which use pywb that you may explore di
 * `WebRecorder.io <https://webrecorder.io>`_ uses pywb and builds upon pywb-webrecorder to create a hosted web recording and replay system.
 
 
+Desktop Web Archive Player
+""""""""""""""""""""""""""
+
+There is now a downloadable point-and-click `Web Archive Player <https://github.com/ikreymer/webarchiveplayer>`_ which provides
+a native OS X and Windows application for browsing web archives, built using pywb. 
+You can use this tool to quickly check the contents of any WARC or ARC file with no configuration and installation.
+
+
 Usage Examples
 -----------------------------
 
