@@ -1,6 +1,13 @@
 pywb 0.8.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* wb.js top frame notification: use ``window.__orig_parent`` when referencing actual parent as ``window.parent`` now overriden.
+
+* live proxy security: enable ssl verification for live proxy by default, for use with python 2.7.9 ssl improvements. Was disabled
+  due to incomplete ssl support in previous versions of python. Can be disabled via ``verify_ssl: False`` per collection.
+
+* cdx-indexer: add recursive option to index warcs in all subdirectories with ``cdx-indexer -r <dir_name>``
+
 
 pywb 0.8.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
