@@ -26,7 +26,7 @@ function init_banner() {
     var PLAIN_BANNER_ID = "_wb_plain_banner";
     var FRAME_BANNER_ID = "_wb_frame_top_banner";
 
-    if (window.top != window.self) {
+    if (window.top != window) {
         return;
     }
 
@@ -136,7 +136,7 @@ this.load = function() {
 
     window._wb_js_inited = true;
 
-    if ((window.self == window.top) && wbinfo) {
+    if ((window == window.top) && wbinfo) {
 
         var hash = window.location.hash;
 
@@ -150,7 +150,7 @@ this.load = function() {
             // Init Banner (no frame or top frame)
             add_event("readystatechange", init_banner, document);
         }
-    } else if (window.self != window.parent && window.parent.update_wb_url) {
+    } else if (window != window.__orig_parent && window.__orig_parent.update_wb_url) {
         add_event("readystatechange", notify_top, document);
     }
 }
