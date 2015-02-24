@@ -74,10 +74,13 @@ class MementoRespMixin(object):
             is_memento = (wbrequest.wb_url.type == wbrequest.wb_url.REPLAY)
 
         link = []
+        req_url = wbrequest.wb_url.url
 
         if is_memento or is_timegate:
+            url = req_url
             if cdx:
                 ts = cdx['timestamp']
+                url = cdx['original']
             # for top frame
             elif wbrequest.wb_url.timestamp:
                 ts = wbrequest.wb_url.timestamp
@@ -91,12 +94,13 @@ class MementoRespMixin(object):
                     self.status_headers.headers.append(('Memento-Datetime',
                                                        http_date))
 
-                canon_link = wbrequest.urlrewriter.get_new_url(mod='', timestamp=ts)
+                canon_link = wbrequest.urlrewriter.get_new_url(mod='',
+                                                               timestamp=ts,
+                                                               url=url)
+
                 link.append(self.make_memento_link(canon_link,
                                                    'memento',
                                                    http_date))
-
-        req_url = wbrequest.wb_url.url
 
         if is_memento and is_timegate:
             link.append(self.make_link(req_url, 'original timegate'))
