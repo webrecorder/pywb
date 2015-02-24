@@ -8,7 +8,7 @@ collections_root: collections
 paths:
     archive_paths: warcs
     index_paths: cdx
-    static_paths: static
+    static_path: static
 
     templates_dir: templates
 
@@ -21,20 +21,20 @@ paths:
         search_html: search.html
 
 
-banner_html: banner.html
-head_insert_html: head_insert.html
-frame_insert_html: frame_insert.html
+banner_html: ui/banner.html
+head_insert_html: ui/head_insert.html
+frame_insert_html: ui/frame_insert.html
 
-home_html: index.html
+home_html: ui/index.html
 
-query_html: query.html
-search_html: search.html
+query_html: ui/query.html
+search_html: ui/search.html
 
-error_html: error.html
-not_found_html: not_found.html
+error_html: ui/error.html
+not_found_html: ui/not_found.html
 
-proxy_cert_download_html: proxy_cert_download.html
-proxy_select_html: proxy_select.html
+proxy_cert_download_html: ui/proxy_cert_download.html
+proxy_select_html: ui/proxy_select.html
 
 template_globals:
     static_path: static/default

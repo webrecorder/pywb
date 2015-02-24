@@ -124,8 +124,9 @@ def create_cdx_server_app(passed_config):
 
 #=================================================================
 class DirectoryCollsLoader(object):
-    def __init__(self, config):
+    def __init__(self, config, static_routes):
         self.config = config
+        self.static_routes = static_routes
 
     def __call__(self):
         colls = {}
@@ -139,7 +140,7 @@ class DirectoryCollsLoader(object):
             if not os.path.isdir(full):
                 continue
 
-            coll = self.load_dir(full)
+            coll = self.load_dir(full, name)
             if coll:
                 colls[name] = coll
 
@@ -151,7 +152,6 @@ class DirectoryCollsLoader(object):
             return False
 
         thedir = self.config.get('paths').get(dir_key)
-        print(thedir)
 
         if not thedir:
             msg = 'No "{0}" for collection {1}'.format(dir_key, root_dir)
@@ -171,7 +171,7 @@ class DirectoryCollsLoader(object):
 
         return False
 
-    def load_dir(self, root_dir):
+    def load_dir(self, root_dir, name):
         config_file = os.path.join(root_dir, 'config.yaml')
         if os.path.isfile(config_file):
             coll = load_yaml_file(config_file)
@@ -180,7 +180,9 @@ class DirectoryCollsLoader(object):
 
         self._add_if_exists(coll, root_dir, 'index_paths', True)
         self._add_if_exists(coll, root_dir, 'archive_paths', True)
-        self._add_if_exists(coll, root_dir, 'static_paths', False)
+
+        if self._add_if_exists(coll, root_dir, 'static_path', False):
+            self.static_routes['static/' + name] = coll['static_path'] + '/'
 
         # Add templates
         templates_dir = self.config.get('paths').get('templates_dir')
@@ -192,7 +194,7 @@ class DirectoryCollsLoader(object):
                         # Already set
                         continue
 
-                    full = os.path.join(root_dir, tfile)
+                    full = os.path.join(template_dir, tfile)
                     if os.path.isfile(full):
                         coll[tname] = full
 
@@ -212,8 +214,10 @@ def create_wb_router(passed_config={}):
 
     collections = config.get('collections', {})
 
+    static_routes = config.get('static_routes', {})
+
     # collections based on file system
-    dir_loader = DirectoryCollsLoader(config)
+    dir_loader = DirectoryCollsLoader(config, static_routes)
     collections.update(dir_loader())
 
     if config.get('enable_memento', False):
@@ -271,9 +275,6 @@ def create_wb_router(passed_config={}):
 
     if config.get('debug_echo_req', False):
         routes.append(Route('echo_req', DebugEchoHandler()))
-
-    static_routes = config.get('static_routes', {})
-    print(static_routes)
 
     for static_name, static_path in static_routes.iteritems():
         routes.append(Route(static_name, StaticHandler(static_path)))
