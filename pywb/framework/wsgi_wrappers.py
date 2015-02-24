@@ -176,7 +176,8 @@ def init_app(init_func, load_yaml=True, config_file=None, config={}):
             if not config_file:
                 config_file = DEFAULT_CONFIG_FILE
 
-            config = load_yaml_config(config_file)
+            if os.path.isfile(config_file):
+                config = load_yaml_config(config_file)
 
         wb_router = init_func(config)
     except:

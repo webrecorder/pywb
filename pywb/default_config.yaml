@@ -1,0 +1,48 @@
+#collections:
+#    pywb: ./sample_archive/cdx/
+
+#archive_paths: ./sample_archive/warcs/
+
+collections_root: collections
+
+paths:
+    archive_paths: warcs
+    index_paths: cdx
+    static_paths: static
+
+    templates_dir: templates
+
+    template_files:
+        banner_html: banner.html
+        head_insert: head_insert.html
+        frame_insert: frame_insert.html
+
+        query_html: query.html
+        search_html: search.html
+
+
+banner_html: banner.html
+head_insert_html: head_insert.html
+frame_insert_html: frame_insert.html
+
+home_html: index.html
+
+query_html: query.html
+search_html: search.html
+
+error_html: error.html
+not_found_html: not_found.html
+
+proxy_cert_download_html: proxy_cert_download.html
+proxy_select_html: proxy_select.html
+
+template_globals:
+    static_path: static/default
+
+static_routes:
+    static/default: pywb/static/
+
+enable_memento: true
+
+domain_specific_rules: pywb/rules.yaml
+

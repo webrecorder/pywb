@@ -1,4 +1,4 @@
-from pywb.utils.dsrules import DEFAULT_RULES_FILE
+from pywb.utils.loaders import load_yaml_config
 
 from pywb.framework.archivalrouter import ArchivalRouter, Route
 from pywb.framework.proxy import ProxyArchivalRouter
@@ -23,31 +23,7 @@ import logging
 
 
 #=================================================================
-DEFAULTS = {
-    'collections': {'pywb': './sample_archive/cdx/'},
-    'archive_paths': './sample_archive/warcs/',
-
-    'head_insert_html': 'ui/head_insert.html',
-    'banner_html': 'banner.html',
-
-    'query_html': 'ui/query.html',
-    'search_html': 'ui/search.html',
-    'home_html': 'ui/index.html',
-    'error_html': 'ui/error.html',
-    'not_found_html': 'ui/not_found.html',
-
-    'proxy_select_html': 'ui/proxy_select.html',
-    'proxy_cert_download_html': 'ui/proxy_cert_download.html',
-
-    'template_globals': {'static_path': 'static/default'},
-
-    'static_routes': {'static/default': 'pywb/static/'},
-
-    'domain_specific_rules': DEFAULT_RULES_FILE,
-
-    'enable_memento': True
-}
-
+DEFAULT_CONFIG = 'pywb/default_config.yaml'
 
 #=================================================================
 class DictChain:
@@ -147,16 +123,98 @@ def create_cdx_server_app(passed_config):
 
 
 #=================================================================
+class DirectoryCollsLoader(object):
+    def __init__(self, config):
+        self.config = config
+
+    def __call__(self):
+        colls = {}
+
+        root_dir = self.config.get('collections_root')
+        if not root_dir:
+            return colls
+
+        for name in os.listdir(root_dir):
+            full = os.path.join(root_dir, name)
+            if not os.path.isdir(full):
+                continue
+
+            coll = self.load_dir(full)
+            if coll:
+                colls[name] = coll
+
+        return colls
+
+    def _add_if_exists(self, coll, root_dir, dir_key, required=False):
+        if dir_key in coll:
+            # already set
+            return False
+
+        thedir = self.config.get('paths').get(dir_key)
+        print(thedir)
+
+        if not thedir:
+            msg = 'No "{0}" for collection {1}'.format(dir_key, root_dir)
+            if required:
+                raise Exception(msg)
+            else:
+                logging.warn(msg)
+            return False
+
+        fulldir = os.path.join(root_dir, thedir)
+        if os.path.isdir(fulldir):
+            coll[dir_key] = fulldir.rstrip('/')
+            return True
+        elif required:
+            msg = 'Dir "{0}" does not exist for "{1}"'.format(fulldir, dir_key)
+            raise Exception(msg)
+
+        return False
+
+    def load_dir(self, root_dir):
+        config_file = os.path.join(root_dir, 'config.yaml')
+        if os.path.isfile(config_file):
+            coll = load_yaml_file(config_file)
+        else:
+            coll = {}
+
+        self._add_if_exists(coll, root_dir, 'index_paths', True)
+        self._add_if_exists(coll, root_dir, 'archive_paths', True)
+        self._add_if_exists(coll, root_dir, 'static_paths', False)
+
+        # Add templates
+        templates_dir = self.config.get('paths').get('templates_dir')
+        if templates_dir:
+            template_dir = os.path.join(root_dir, templates_dir)
+            if template_dir:
+                for tname, tfile in self.config.get('paths')['template_files'].iteritems():
+                    if tname in coll:
+                        # Already set
+                        continue
+
+                    full = os.path.join(root_dir, tfile)
+                    if os.path.isfile(full):
+                        coll[tname] = full
+
+        return coll
+
+
+#=================================================================
 def create_wb_router(passed_config={}):
 
-    config = DictChain(passed_config, DEFAULTS)
+    defaults = load_yaml_config(DEFAULT_CONFIG)
+
+    config = DictChain(passed_config, defaults)
 
     routes = []
 
     port = config.get('port')
 
-    # collections based on cdx source
-    collections = config.get('collections')
+    collections = config.get('collections', {})
+
+    # collections based on file system
+    dir_loader = DirectoryCollsLoader(config)
+    collections.update(dir_loader())
 
     if config.get('enable_memento', False):
         request_class = MementoRequest
@@ -214,7 +272,8 @@ def create_wb_router(passed_config={}):
     if config.get('debug_echo_req', False):
         routes.append(Route('echo_req', DebugEchoHandler()))
 
-    static_routes = config.get('static_routes')
+    static_routes = config.get('static_routes', {})
+    print(static_routes)
 
     for static_name, static_path in static_routes.iteritems():
         routes.append(Route(static_name, StaticHandler(static_path)))
