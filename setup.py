@@ -34,7 +34,7 @@ class PyTest(TestCommand):
 
 setup(
     name='pywb',
-    version='0.8.2',
+    version='0.9.0-beta',
     url='https://github.com/ikreymer/pywb',
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
