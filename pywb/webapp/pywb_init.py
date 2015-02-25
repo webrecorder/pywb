@@ -105,7 +105,10 @@ def create_cdx_server_app(passed_config):
     For each collection, create a /<coll>-cdx access point
     which follows the cdx api
     """
-    config = DictChain(passed_config, DEFAULTS)
+
+    defaults = load_yaml_config(DEFAULT_CONFIG)
+
+    config = DictChain(passed_config, defaults)
 
     collections = config.get('collections')
 
@@ -163,7 +166,8 @@ class DirectoryCollsLoader(object):
 
         fulldir = os.path.join(root_dir, thedir)
         if os.path.isdir(fulldir):
-            coll[dir_key] = fulldir.rstrip('/')
+            fulldir = os.path.abspath(fulldir) + os.path.sep
+            coll[dir_key] = fulldir
             return True
         elif required:
             msg = 'Dir "{0}" does not exist for "{1}"'.format(fulldir, dir_key)
@@ -182,7 +186,7 @@ class DirectoryCollsLoader(object):
         self._add_if_exists(coll, root_dir, 'archive_paths', True)
 
         if self._add_if_exists(coll, root_dir, 'static_path', False):
-            self.static_routes['static/' + name] = coll['static_path'] + '/'
+            self.static_routes['static/' + name] = coll['static_path']
 
         # Add templates
         templates_dir = self.config.get('paths').get('templates_dir')
