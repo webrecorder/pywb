@@ -1,5 +1,5 @@
-PyWb 0.9.0
-==========
+PyWb 0.9.0 Beta
+===============
 
 .. image:: https://travis-ci.org/ikreymer/pywb.png?branch=develop
       :target: https://travis-ci.org/ikreymer/pywb
