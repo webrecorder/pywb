@@ -461,10 +461,10 @@ class TestWb:
         assert resp.status_int == 400
         assert 'Invalid Url: http://?abc' in resp.body
 
-    def test_invalid_config(self):
-        with raises(IOError):
-            init_app(create_wb_router,
-                     load_yaml=True,
-                     config_file='x-invalid-x')
+    #def test_invalid_config(self):
+    #    with raises(IOError):
+    #        init_app(create_wb_router,
+    #                 load_yaml=True,
+    #                 config_file='x-invalid-x')
 
 
