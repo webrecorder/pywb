@@ -5,20 +5,21 @@ from bisect import insort
 
 from io import BytesIO
 
-from archiveiterator import create_index_iter
-
+from archiveiterator import DefaultRecordIter
 
 #=================================================================
 class CDXWriter(object):
-    def __init__(self, out, cdx09=False):
+    def __init__(self, out, format_):
         self.out = out
-        self.cdx09 = cdx09
+        self.format_ = format_
 
     def __enter__(self):
-        if not self.cdx09:
-            self.out.write(' CDX N b a m s k r M S V g\n')
-        else:
+        if self.format_ == 'cdx09':
             self.out.write(' CDX N b a m s k r V g\n')
+        elif self.format_ == 'cdx06':
+            self.out.write(' CDX N b a S V g\n')
+        else:
+            self.out.write(' CDX N b a m s k r M S V g\n')
 
         return self
 
@@ -41,17 +42,24 @@ class CDXWriter(object):
         out.write(' ')
         out.write(entry.url)
         out.write(' ')
-        out.write(entry.mime)
-        out.write(' ')
-        out.write(entry.status)
-        out.write(' ')
-        out.write(entry.digest)
-        if self.cdx09:
+
+        if self.format_ != 'cdx06':
+            out.write(entry.mime)
+            out.write(' ')
+            out.write(entry.status)
+            out.write(' ')
+            out.write(entry.digest)
+
+        if self.format_ == 'cdx09':
             out.write(' - ')
+        elif self.format_ == 'cdx06':
+            out.write(entry.length)
+            out.write(' ')
         else:
             out.write(' - - ')
             out.write(entry.length)
             out.write(' ')
+
         out.write(entry.offset)
         out.write(' ')
         out.write(filename)
@@ -153,11 +161,12 @@ def write_multi_cdx_index(output, inputs, **options):
             outfile = open(output, 'wb')
 
         writer_cls = get_cdx_writer_cls(options)
+        record_iter = DefaultRecordIter(**options)
 
-        with writer_cls(outfile, options.get('cdx09')) as writer:
+        with writer_cls(outfile, options.get('format')) as writer:
             for fullpath, filename in iter_file_or_dir(inputs, recurse):
                 with open(fullpath, 'rb') as infile:
-                    entry_iter = create_index_iter(infile, **options)
+                    entry_iter = record_iter(infile)
 
                     for entry in entry_iter:
                         writer.write(entry, filename)
@@ -172,8 +181,8 @@ def write_cdx_index(outfile, infile, filename, **options):
 
     writer_cls = get_cdx_writer_cls(options)
 
-    with writer_cls(outfile, options.get('cdx09')) as writer:
-        entry_iter = create_index_iter(infile, **options)
+    with writer_cls(outfile, options.get('format')) as writer:
+        entry_iter = DefaultRecordIter(**options)(infile)
 
         for entry in entry_iter:
             writer.write(entry, filename)
@@ -260,7 +269,12 @@ if input is a directory"""
                         action='store_true',
                         help=unsurt_help)
 
-    parser.add_argument('-9', '--cdx09',
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-9', '--cdx09',
+                        action='store_true',
+                        help=cdx09_help)
+
+    group.add_argument('-6', '--cdx06',
                         action='store_true',
                         help=cdx09_help)
 
@@ -269,13 +283,20 @@ if input is a directory"""
 
     cmd = parser.parse_args(args=args)
 
+    format_ = 'cdx11'
+    if cmd.cdx09:
+        format_ = 'cdx09'
+    elif cmd.cdx06:
+        format_ = 'cdx06'
+
     write_multi_cdx_index(cmd.output, cmd.inputs,
                           sort=cmd.sort,
                           surt_ordered=not cmd.unsurt,
                           include_all=cmd.allrecords,
                           append_post=cmd.postappend,
                           recurse=cmd.recurse,
-                          cdx09=cmd.cdx09)
+                          format=format_,
+                          minimal=cmd.cdx06)
 
 
 if __name__ == '__main__':

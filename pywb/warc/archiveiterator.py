@@ -242,188 +242,194 @@ class ArchiveIndexEntry(object):
 
 
 #=================================================================
-def create_record_iter(arcv_iter, options):
-    append_post = options.get('append_post')
-    include_all = options.get('include_all')
-    block_size = options.get('block_size', 16384)
+class DefaultRecordIter(object):
+    def __init__(self, **options):
+        self.options = options
 
-    for record in arcv_iter.iter_records(block_size):
-        entry = None
+    def create_record_iter(self, arcv_iter):
+        append_post = self.options.get('append_post')
+        include_all = self.options.get('include_all')
+        block_size = self.options.get('block_size', 16384)
 
-        if not include_all and (record.status_headers.get_statuscode() == '-'):
-            continue
+        for record in arcv_iter.iter_records(block_size):
+            entry = None
 
-        if record.format == 'warc':
-            if (record.rec_type in ('request', 'warcinfo') and
-                 not include_all and
-                 not append_post):
+            if not include_all and (record.status_headers.get_statuscode() == '-'):
                 continue
 
-            elif (not include_all and
-                  record.content_type == 'application/warc-fields'):
+            if record.format == 'warc':
+                if (record.rec_type in ('request', 'warcinfo') and
+                     not include_all and
+                     not append_post):
+                    continue
+
+                elif (not include_all and
+                      record.content_type == 'application/warc-fields'):
+                    continue
+
+                entry = self.parse_warc_record(record)
+            elif record.format == 'arc':
+                entry = self.parse_arc_record(record)
+
+            if not entry:
                 continue
 
-            entry = parse_warc_record(record)
-        elif record.format == 'arc':
-            entry = parse_arc_record(record)
+            if entry.url and not entry.key:
+                entry.key = canonicalize(entry.url,
+                                         self.options.get('surt_ordered', True))
 
-        if not entry:
-            continue
+            compute_digest = False
 
-        if entry.url and not entry.key:
-            entry.key = canonicalize(entry.url,
-                                     options.get('surt_ordered', True))
+            if (entry.digest == '-' and
+                 record.rec_type not in ('revisit', 'request', 'warcinfo')):
 
-        compute_digest = False
+                compute_digest = True
 
-        if (entry.digest == '-' and
-             record.rec_type not in ('revisit', 'request', 'warcinfo')):
+            elif record.rec_type == 'request' and self.options.get('append_post'):
+                method = record.status_headers.protocol
+                len_ = record.status_headers.get_header('Content-Length')
 
-            compute_digest = True
+                post_query = extract_post_query(method,
+                                                entry.mime,
+                                                len_,
+                                                record.stream)
 
-        elif record.rec_type == 'request' and options.get('append_post'):
-            method = record.status_headers.protocol
-            len_ = record.status_headers.get_header('Content-Length')
+                entry.post_query = post_query
 
-            post_query = extract_post_query(method,
-                                            entry.mime,
-                                            len_,
-                                            record.stream)
+            #entry.set_rec_info(*arcv_iter.read_to_end(record, compute_digest))
+            arcv_iter.read_to_end(record, compute_digest)
+            entry.set_rec_info(*arcv_iter.member_info)
+            entry.record = record
 
-            entry.post_query = post_query
-
-        #entry.set_rec_info(*arcv_iter.read_to_end(record, compute_digest))
-        arcv_iter.read_to_end(record, compute_digest)
-        entry.set_rec_info(*arcv_iter.member_info)
-        entry.record = record
-
-        yield entry
-
-
-#=================================================================
-def join_request_records(entry_iter, options):
-    prev_entry = None
-
-    for entry in entry_iter:
-        if not prev_entry:
-            prev_entry = entry
-            continue
-
-        # check for url match
-        if (entry.url != prev_entry.url):
-            pass
-
-        # check for concurrency also
-        elif (entry.record.rec_headers.get_header('WARC-Concurrent-To') !=
-              prev_entry.record.rec_headers.get_header('WARC-Record-ID')):
-            pass
-
-        elif (entry.merge_request_data(prev_entry, options) or
-              prev_entry.merge_request_data(entry, options)):
-            yield prev_entry
             yield entry
-            prev_entry = None
-            continue
 
-        yield prev_entry
-        prev_entry = entry
+    def join_request_records(self, entry_iter):
+        prev_entry = None
 
-    if prev_entry:
-        yield prev_entry
+        for entry in entry_iter:
+            if not prev_entry:
+                prev_entry = entry
+                continue
+
+            # check for url match
+            if (entry.url != prev_entry.url):
+                pass
+
+            # check for concurrency also
+            elif (entry.record.rec_headers.get_header('WARC-Concurrent-To') !=
+                  prev_entry.record.rec_headers.get_header('WARC-Record-ID')):
+                pass
+
+            elif (entry.merge_request_data(prev_entry, self.options) or
+                  prev_entry.merge_request_data(entry, self.options)):
+                yield prev_entry
+                yield entry
+                prev_entry = None
+                continue
+
+            yield prev_entry
+            prev_entry = entry
+
+        if prev_entry:
+            yield prev_entry
 
 
-#=================================================================
-def parse_warc_record(record):
-    """ Parse warc record
-    """
+    #=================================================================
+    def parse_warc_record(self, record):
+        """ Parse warc record
+        """
 
-    entry = ArchiveIndexEntry()
+        entry = ArchiveIndexEntry()
 
-    if record.rec_type == 'warcinfo':
-        entry.url = record.rec_headers.get_header('WARC-Filename')
-        entry.key = entry.url
-        entry.warcinfo = record.stream.read(record.length)
+        if record.rec_type == 'warcinfo':
+            entry.url = record.rec_headers.get_header('WARC-Filename')
+            entry.key = entry.url
+            entry.warcinfo = record.stream.read(record.length)
+            return entry
+
+        entry.url = record.rec_headers.get_header('WARC-Target-Uri')
+
+        # timestamp
+        entry.timestamp = iso_date_to_timestamp(record.rec_headers.
+                                                get_header('WARC-Date'))
+
+        if self.options.get('minimal'):
+            return entry
+
+        # mime
+        if record.rec_type == 'revisit':
+            entry.mime = 'warc/revisit'
+        else:
+            def_mime = '-' if record.rec_type == 'request' else 'unk'
+            entry.extract_mime(record.status_headers.
+                               get_header('Content-Type'),
+                               def_mime)
+
+        # status -- only for response records (by convention):
+        if record.rec_type == 'response':
+            entry.extract_status(record.status_headers)
+        else:
+            entry.status = '-'
+
+        # digest
+        entry.digest = record.rec_headers.get_header('WARC-Payload-Digest')
+        if entry.digest and entry.digest.startswith('sha1:'):
+            entry.digest = entry.digest[len('sha1:'):]
+
+        if not entry.digest:
+            entry.digest = '-'
+
         return entry
 
-    entry.url = record.rec_headers.get_header('WARC-Target-Uri')
 
-    # timestamp
-    entry.timestamp = iso_date_to_timestamp(record.rec_headers.
-                                            get_header('WARC-Date'))
+    #=================================================================
+    def parse_arc_record(self, record):
+        """ Parse arc record
+        """
+        if record.rec_type == 'arc_header':
+            return None
 
-    # mime
-    if record.rec_type == 'revisit':
-        entry.mime = 'warc/revisit'
-    else:
-        def_mime = '-' if record.rec_type == 'request' else 'unk'
-        entry.extract_mime(record.status_headers.
-                           get_header('Content-Type'),
-                           def_mime)
+        url = record.rec_headers.get_header('uri')
+        url = url.replace('\r', '%0D')
+        url = url.replace('\n', '%0A')
+        # replace formfeed
+        url = url.replace('\x0c', '%0C')
+        # replace nulls
+        url = url.replace('\x00', '%00')
 
-    # status -- only for response records (by convention):
-    if record.rec_type == 'response':
+        entry = ArchiveIndexEntry()
+        entry.url = url
+
+        # timestamp
+        entry.timestamp = record.rec_headers.get_header('archive-date')
+        if len(entry.timestamp) > 14:
+            entry.timestamp = entry.timestamp[:14]
+
+        if self.options.get('minimal'):
+            return entry
+
+        # status
         entry.extract_status(record.status_headers)
-    else:
-        entry.status = '-'
 
-    # digest
-    entry.digest = record.rec_headers.get_header('WARC-Payload-Digest')
-    if entry.digest and entry.digest.startswith('sha1:'):
-        entry.digest = entry.digest[len('sha1:'):]
+        # mime
+        entry.extract_mime(record.rec_headers.get_header('content-type'))
 
-    if not entry.digest:
+        # digest
         entry.digest = '-'
 
-    return entry
+        return entry
 
+    def __call__(self, fh):
+        aiter = ArchiveIterator(fh)
 
-#=================================================================
-def parse_arc_record(record):
-    """ Parse arc record
-    """
-    if record.rec_type == 'arc_header':
-        return None
+        entry_iter = self.create_record_iter(aiter)
 
-    url = record.rec_headers.get_header('uri')
-    url = url.replace('\r', '%0D')
-    url = url.replace('\n', '%0A')
-    # replace formfeed
-    url = url.replace('\x0c', '%0C')
-    # replace nulls
-    url = url.replace('\x00', '%00')
+        if self.options.get('append_post'):
+            entry_iter = self.join_request_records(entry_iter)
 
-    entry = ArchiveIndexEntry()
-    entry.url = url
+        for entry in entry_iter:
+            if (entry.record.rec_type in ('request', 'warcinfo') and
+                 not self.options.get('include_all')):
+                continue
 
-    # timestamp
-    entry.timestamp = record.rec_headers.get_header('archive-date')
-    if len(entry.timestamp) > 14:
-        entry.timestamp = entry.timestamp[:14]
-
-    # status
-    entry.extract_status(record.status_headers)
-
-    # mime
-    entry.extract_mime(record.rec_headers.get_header('content-type'))
-
-    # digest
-    entry.digest = '-'
-
-    return entry
-
-
-#=================================================================
-def create_index_iter(fh, **options):
-    aiter = ArchiveIterator(fh)
-
-    entry_iter = create_record_iter(aiter, options)
-
-    if options.get('append_post'):
-        entry_iter = join_request_records(entry_iter, options)
-
-    for entry in entry_iter:
-        if (entry.record.rec_type in ('request', 'warcinfo') and
-             not options.get('include_all')):
-            continue
-
-        yield entry
+            yield entry
