@@ -134,8 +134,8 @@ class DirectoryCollsLoader(object):
     def __call__(self):
         colls = {}
 
-        root_dir = self.config.get('collections_root')
-        if not root_dir:
+        root_dir = self.config.get('collections_root', '')
+        if not root_dir or not os.path.isdir(root_dir):
             return colls
 
         for name in os.listdir(root_dir):
