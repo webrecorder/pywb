@@ -250,6 +250,9 @@ class DefaultRecordIter(object):
         append_post = self.options.get('append_post')
         include_all = self.options.get('include_all')
         block_size = self.options.get('block_size', 16384)
+        surt_ordered = self.options.get('surt_ordered', True)
+        minimal = self.options.get('minimal')
+        append_post = self.options.get('append_post')
 
         for record in arcv_iter.iter_records(block_size):
             entry = None
@@ -275,17 +278,17 @@ class DefaultRecordIter(object):
                 continue
 
             if entry.url and not entry.key:
-                entry.key = canonicalize(entry.url,
-                                         self.options.get('surt_ordered', True))
+                entry.key = canonicalize(entry.url, surt_ordered)
 
             compute_digest = False
 
-            if (entry.digest == '-' and
-                 record.rec_type not in ('revisit', 'request', 'warcinfo')):
+            if (not minimal and
+                entry.digest == '-' and
+                record.rec_type not in ('revisit', 'request', 'warcinfo')):
 
                 compute_digest = True
 
-            elif record.rec_type == 'request' and self.options.get('append_post'):
+            elif record.rec_type == 'request' and append_post:
                 method = record.status_headers.protocol
                 len_ = record.status_headers.get_header('Content-Length')
 
