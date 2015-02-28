@@ -34,7 +34,7 @@ class CaptureException(WbException):
 
 #=================================================================
 class ReplayView(object):
-    STRIP_SCHEME = re.compile('^([\w]+:[/]*)?(.*?)$')
+    STRIP_SCHEME_WWW = re.compile('^([\w]+:[/]*(?:www[\d]*\.)?)?(.*?)$')
 
     def __init__(self, content_loader, config):
         self.content_loader = content_loader
@@ -286,8 +286,8 @@ class ReplayView(object):
             host = urlsplit(cdx['original']).netloc
             location_url = host + location_url
 
-        if (ReplayView.strip_scheme(request_url) ==
-             ReplayView.strip_scheme(location_url)):
+        if (ReplayView.strip_scheme_www(request_url) ==
+             ReplayView.strip_scheme_www(location_url)):
             raise CaptureException('Self Redirect: ' + str(cdx))
 
     # TODO: reevaluate this, as it may reject valid refreshes of a page
@@ -307,39 +307,43 @@ class ReplayView(object):
         request_url = (wbrequest.host_prefix +
                        wbrequest.rel_prefix + str(wbrequest.wb_url))
 
-        if (ReplayView.strip_scheme(request_url) ==
-             ReplayView.strip_scheme(wbrequest.referrer)):
+        if (ReplayView.strip_scheme_www(request_url) ==
+             ReplayView.strip_scheme_www(wbrequest.referrer)):
             raise CaptureException('Self Redirect via Referrer: ' +
                                    str(wbrequest.wb_url))
 
     @staticmethod
-    def strip_scheme(url):
+    def strip_scheme_www(url):
         """
-        >>> ReplayView.strip_scheme('https://example.com') ==\
-            ReplayView.strip_scheme('http://example.com')
+        >>> ReplayView.strip_scheme_www('https://example.com') ==\
+            ReplayView.strip_scheme_www('http://example.com')
         True
 
-        >>> ReplayView.strip_scheme('https://example.com') ==\
-            ReplayView.strip_scheme('http:/example.com')
+        >>> ReplayView.strip_scheme_www('https://example.com') ==\
+            ReplayView.strip_scheme_www('http:/example.com')
         True
 
-        >>> ReplayView.strip_scheme('https://example.com') ==\
-            ReplayView.strip_scheme('example.com')
+        >>> ReplayView.strip_scheme_www('https://example.com') ==\
+            ReplayView.strip_scheme_www('example.com')
         True
 
-        >>> ReplayView.strip_scheme('about://example.com') ==\
-            ReplayView.strip_scheme('example.com')
+        >>> ReplayView.strip_scheme_www('https://example.com') ==\
+            ReplayView.strip_scheme_www('http://www2.example.com')
         True
 
-        >>> ReplayView.strip_scheme('http://') ==\
-            ReplayView.strip_scheme('')
+        >>> ReplayView.strip_scheme_www('about://example.com') ==\
+            ReplayView.strip_scheme_www('example.com')
         True
 
-        >>> ReplayView.strip_scheme('#!@?') ==\
-            ReplayView.strip_scheme('#!@?')
+        >>> ReplayView.strip_scheme_www('http://') ==\
+            ReplayView.strip_scheme_www('')
+        True
+
+        >>> ReplayView.strip_scheme_www('#!@?') ==\
+            ReplayView.strip_scheme_www('#!@?')
         True
         """
-        m = ReplayView.STRIP_SCHEME.match(url)
+        m = ReplayView.STRIP_SCHEME_WWW.match(url)
         match = m.group(2)
         return match
 

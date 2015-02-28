@@ -1,3 +1,11 @@
+pywb 0.8.2 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* rewrite: fix for redirect loop related to pages with 'www.' prefix. Since canonicalization removes the prefix, treat redirect to 'www.' as self-redirect (for now).
+
+* memento: ensure rel=memento url matches timegate redirect exactly (urls may differ due to canonicalization, use actual instead of requested for both)
+
+
 pywb 0.8.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

@@ -189,7 +189,7 @@ class J2HtmlCapturesView(J2TemplateView):
 
 #=================================================================
 class MementoTimemapView(object):
-    def render_response(self, wbrequest, cdx_lines):
+    def render_response(self, wbrequest, cdx_lines, **kwargs):
         memento_lines = make_timemap(wbrequest, cdx_lines)
         return WbResponse.text_stream(memento_lines,
                                       content_type=LINK_FORMAT)
