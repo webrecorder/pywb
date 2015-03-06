@@ -38,7 +38,7 @@ function make_inner_url(url, ts)
     if (ts) {
         return wbinfo.prefix + ts + "/" + url;
     } else {
-        return wbinfo.prefix + "/" + url;
+        return wbinfo.prefix + url;
     }
 }
 
