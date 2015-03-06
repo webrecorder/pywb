@@ -1,3 +1,9 @@
+pywb 0.8.3 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* cookie rewrite: remove cookie ``secure`` flag to allow equivalent replay via http as well as https
+
+
 pywb 0.8.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
