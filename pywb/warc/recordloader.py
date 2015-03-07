@@ -83,7 +83,9 @@ class ArcWarcRecordLoader:
         return self.parse_record_stream(stream)
 
     def parse_record_stream(self, stream,
-                            statusline=None, known_format=None):
+                            statusline=None,
+                            known_format=None,
+                            no_record_parse=False):
         """ Parse file-like stream and return an ArcWarcRecord
         encapsulating the record headers, http headers (if any),
         and a stream limited to the remainder of the record.
@@ -128,8 +130,12 @@ class ArcWarcRecordLoader:
         # limit stream to the length for all valid records
         stream = LimitReader.wrap_stream(stream, length)
 
+        # don't parse the http record at all
+        if no_record_parse:
+            status_headers = StatusAndHeaders('', [])
+
         # if empty record (error or otherwise) set status to 204
-        if length == 0:
+        elif length == 0:
             if is_err:
                 msg = '204 Possible Error'
             else:

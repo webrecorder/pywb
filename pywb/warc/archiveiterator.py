@@ -40,7 +40,7 @@ class ArchiveIterator(object):
     warc2warc -Z myfile.{0} > myfile.{0}.gz
     """
 
-    def __init__(self, fileobj):
+    def __init__(self, fileobj, no_record_parse=False):
         self.fh = fileobj
 
         self.loader = ArcWarcRecordLoader()
@@ -50,6 +50,7 @@ class ArchiveIterator(object):
         self.known_format = None
 
         self.member_info = None
+        self.no_record_parse = no_record_parse
 
     def iter_records(self, block_size=16384):
         """ iterate over each record
@@ -176,7 +177,8 @@ class ArchiveIterator(object):
         """
         record = self.loader.parse_record_stream(self.reader,
                                                  next_line,
-                                                 self.known_format)
+                                                 self.known_format,
+                                                 self.no_record_parse)
 
         self.member_info = None
 
@@ -253,6 +255,10 @@ class DefaultRecordIter(object):
         surt_ordered = self.options.get('surt_ordered', True)
         minimal = self.options.get('minimal')
         append_post = self.options.get('append_post')
+
+        if append_post and minimal:
+            raise Exception('Sorry, minimal index option and ' +
+                            'append POST options can not be used together')
 
         for record in arcv_iter.iter_records(block_size):
             entry = None
@@ -423,7 +429,7 @@ class DefaultRecordIter(object):
         return entry
 
     def __call__(self, fh):
-        aiter = ArchiveIterator(fh)
+        aiter = ArchiveIterator(fh, self.options.get('minimal', False))
 
         entry_iter = self.create_record_iter(aiter)
 

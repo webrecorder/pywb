@@ -173,7 +173,7 @@ def get_cdx_writer_cls(options):
 
     if options.get('cdx09'):
         format_mixin = CDX09
-    elif options.get('cdx06'):
+    elif options.get('minimal'):
         format_mixin = CDX06
     else:
         format_mixin = CDX11
@@ -270,6 +270,15 @@ Not-recommended for new cdx, use only for backwards-compatibility.
     cdx09_help = """
 Use older 9-field cdx format, default is 11-cdx field
 """
+    minimal_help = """
+Use a minimal 6-field cdx format, outputing only the basic fields
+needed to identiyfy record:
+canonicalized url, timestamp, original url, archive offset, archive length
+and archive filename.
+
+This option skips record parsing and will not work with
+POST append (-p) option
+"""
 
     output_help = """output file or directory.
 - If directory, each input file is written to a seperate output file
@@ -320,9 +329,9 @@ if input is a directory"""
                         action='store_true',
                         help=cdx09_help)
 
-    group.add_argument('-6', '--cdx06',
+    group.add_argument('-m', '--minimal',
                         action='store_true',
-                        help=cdx09_help)
+                        help=minimal_help)
 
     parser.add_argument('output', nargs='?', default='-', help=output_help)
     parser.add_argument('inputs', nargs='+', help=input_help)
@@ -336,8 +345,7 @@ if input is a directory"""
                           append_post=cmd.postappend,
                           recurse=cmd.recurse,
                           cdx09=cmd.cdx09,
-                          cdx06=cmd.cdx06,
-                          minimal=cmd.cdx06)
+                          minimal=cmd.minimal)
 
 
 if __name__ == '__main__':
