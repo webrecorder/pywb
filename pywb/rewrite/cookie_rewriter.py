@@ -32,6 +32,11 @@ class WbUrlBaseCookieRewriter(object):
         if morsel.get('max-age'):
             del morsel['max-age']
 
+        # for now, also remove secure to avoid issues when
+        # proxying over plain http (TODO: detect https?)
+        if morsel.get('secure'):
+            del morsel['secure']
+
 
 #=================================================================
 class MinimalScopeCookieRewriter(WbUrlBaseCookieRewriter):
