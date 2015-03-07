@@ -43,6 +43,10 @@ StatusAndHeaders(protocol = '', statusline = '204 No Content', headers = [])
 >>> StatusAndHeadersParser(['HTTP/1.0']).parse(BytesIO(status_headers_3))
 StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '204 Empty', headers = [('Content-Type', 'Value'), ('Content-Length', '0')])
 
+# case-insensitive match
+>>> StatusAndHeadersParser(['HTTP/1.0']).parse(BytesIO(status_headers_4))
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '204 empty', headers = [('Content-Type', 'Value'), ('Content-Length', '0')])
+
 
 """
 
@@ -68,6 +72,14 @@ status_headers_2 = """
 
 status_headers_3 = "\
 HTTP/1.0 204 Empty\r\n\
+Content-Type: Value\r\n\
+%Invalid%\r\n\
+\tMultiline\r\n\
+Content-Length: 0\r\n\
+\r\n"
+
+status_headers_4 = "\
+http/1.0 204 empty\r\n\
 Content-Type: Value\r\n\
 %Invalid%\r\n\
 \tMultiline\r\n\

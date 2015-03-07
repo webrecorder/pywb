@@ -204,10 +204,11 @@ class StatusAndHeadersParser(object):
         split key string into prefix and remainder
         for first matching prefix from a list
         """
+        key_upper = key.upper()
         for prefix in prefixs:
-            if key.startswith(prefix):
+            if key_upper.startswith(prefix):
                 plen = len(prefix)
-                return (key[:plen], key[plen:])
+                return (key_upper[:plen], key[plen:])
 
 
 #=================================================================
