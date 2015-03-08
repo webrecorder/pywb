@@ -189,36 +189,31 @@ class ArchiveIterator(object):
 
 
 #=================================================================
-class ArchiveIndexEntry(object):
+class ArchiveIndexEntry(dict):
     MIME_RE = re.compile('[; ]')
-
-    def __init__(self):
-        self.url = None
-        self.key = None
-        self.digest = '-'
 
     def extract_mime(self, mime, def_mime='unk'):
         """ Utility function to extract mimetype only
         from a full content type, removing charset settings
         """
-        self.mime = def_mime
+        self['mime'] = def_mime
         if mime:
-            self.mime = self.MIME_RE.split(mime, 1)[0]
+            self['mime'] = self.MIME_RE.split(mime, 1)[0]
 
     def extract_status(self, status_headers):
         """ Extract status code only from status line
         """
-        self.status = status_headers.get_statuscode()
-        if not self.status:
-            self.status = '-'
-        if self.status == '204' and 'Error' in status_headers.statusline:
-            self.status = '-'
+        self['status'] = status_headers.get_statuscode()
+        if not self['status']:
+            self['status'] = '-'
+        elif self['status'] == '204' and 'Error' in status_headers.statusline:
+            self['status'] = '-'
 
     def set_rec_info(self, offset, length, digest):
-        self.offset = str(offset)
-        self.length = str(length)
+        self['offset'] = str(offset)
+        self['length'] = str(length)
         if digest:
-            self.digest = digest
+            self['digest'] = digest
 
     def merge_request_data(self, other, options):
         surt_ordered = options.get('surt_ordered', True)
@@ -231,14 +226,15 @@ class ArchiveIndexEntry(object):
             return False
 
         # merge POST/PUT body query
-        if hasattr(other, 'post_query'):
-            url = append_post_query(self.url, other.post_query)
-            self.key = canonicalize(url, surt_ordered)
-            other.key = self.key
+        post_query = other.get('_post_query')
+        if post_query:
+            url = append_post_query(self['url'], post_query)
+            self['key'] = canonicalize(url, surt_ordered)
+            other['key'] = self['key']
 
         referer = other.record.status_headers.get_header('referer')
         if referer:
-            self.referer = referer
+            self['_referer'] = referer
 
         return True
 
@@ -263,7 +259,7 @@ class DefaultRecordIter(object):
         for record in arcv_iter.iter_records(block_size):
             entry = None
 
-            if not include_all and (record.status_headers.get_statuscode() == '-'):
+            if not include_all and not minimal and (record.status_headers.get_statuscode() == '-'):
                 continue
 
             if record.format == 'warc':
@@ -283,27 +279,27 @@ class DefaultRecordIter(object):
             if not entry:
                 continue
 
-            if entry.url and not entry.key:
-                entry.key = canonicalize(entry.url, surt_ordered)
+            if entry.get('url') and not entry.get('key'):
+                entry['key'] = canonicalize(entry['url'], surt_ordered)
 
             compute_digest = False
 
             if (not minimal and
-                entry.digest == '-' and
+                entry.get('digest', '-') == '-' and
                 record.rec_type not in ('revisit', 'request', 'warcinfo')):
 
                 compute_digest = True
 
-            elif record.rec_type == 'request' and append_post:
+            elif not minimal and record.rec_type == 'request' and append_post:
                 method = record.status_headers.protocol
                 len_ = record.status_headers.get_header('Content-Length')
 
                 post_query = extract_post_query(method,
-                                                entry.mime,
+                                                entry.get('mime'),
                                                 len_,
                                                 record.stream)
 
-                entry.post_query = post_query
+                entry['_post_query'] = post_query
 
             #entry.set_rec_info(*arcv_iter.read_to_end(record, compute_digest))
             arcv_iter.read_to_end(record, compute_digest)
@@ -321,7 +317,7 @@ class DefaultRecordIter(object):
                 continue
 
             # check for url match
-            if (entry.url != prev_entry.url):
+            if (entry['url'] != prev_entry['url']):
                 pass
 
             # check for concurrency also
@@ -351,23 +347,23 @@ class DefaultRecordIter(object):
         entry = ArchiveIndexEntry()
 
         if record.rec_type == 'warcinfo':
-            entry.url = record.rec_headers.get_header('WARC-Filename')
-            entry.key = entry.url
-            entry.warcinfo = record.stream.read(record.length)
+            entry['url'] = record.rec_headers.get_header('WARC-Filename')
+            entry['key'] = entry['url']
+            entry['_warcinfo'] = record.stream.read(record.length)
             return entry
 
-        entry.url = record.rec_headers.get_header('WARC-Target-Uri')
+        entry['url'] = record.rec_headers.get_header('WARC-Target-Uri')
 
         # timestamp
-        entry.timestamp = iso_date_to_timestamp(record.rec_headers.
-                                                get_header('WARC-Date'))
+        entry['timestamp'] = iso_date_to_timestamp(record.rec_headers.
+                                                   get_header('WARC-Date'))
 
         if self.options.get('minimal'):
             return entry
 
         # mime
         if record.rec_type == 'revisit':
-            entry.mime = 'warc/revisit'
+            entry['mime'] = 'warc/revisit'
         else:
             def_mime = '-' if record.rec_type == 'request' else 'unk'
             entry.extract_mime(record.status_headers.
@@ -378,15 +374,16 @@ class DefaultRecordIter(object):
         if record.rec_type == 'response':
             entry.extract_status(record.status_headers)
         else:
-            entry.status = '-'
+            entry['status'] = '-'
 
         # digest
-        entry.digest = record.rec_headers.get_header('WARC-Payload-Digest')
-        if entry.digest and entry.digest.startswith('sha1:'):
-            entry.digest = entry.digest[len('sha1:'):]
+        digest = record.rec_headers.get_header('WARC-Payload-Digest')
+        entry['digest'] = digest
+        if digest and digest.startswith('sha1:'):
+            entry['digest'] = digest[len('sha1:'):]
 
-        if not entry.digest:
-            entry.digest = '-'
+        elif not entry.get('digest'):
+            entry['digest'] = '-'
 
         return entry
 
@@ -407,12 +404,12 @@ class DefaultRecordIter(object):
         url = url.replace('\x00', '%00')
 
         entry = ArchiveIndexEntry()
-        entry.url = url
+        entry['url'] = url
 
         # timestamp
-        entry.timestamp = record.rec_headers.get_header('archive-date')
-        if len(entry.timestamp) > 14:
-            entry.timestamp = entry.timestamp[:14]
+        entry['timestamp'] = record.rec_headers.get_header('archive-date')
+        if len(entry['timestamp']) > 14:
+            entry['timestamp'] = entry['timestamp'][:14]
 
         if self.options.get('minimal'):
             return entry
@@ -424,7 +421,7 @@ class DefaultRecordIter(object):
         entry.extract_mime(record.rec_headers.get_header('content-type'))
 
         # digest
-        entry.digest = '-'
+        entry['digest'] = '-'
 
         return entry
 

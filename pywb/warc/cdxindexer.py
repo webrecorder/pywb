@@ -1,5 +1,7 @@
 import os
 import sys
+import json
+
 from argparse import ArgumentParser, RawTextHelpFormatter
 from bisect import insort
 
@@ -17,7 +19,7 @@ class BaseCDXWriter(object):
         return self
 
     def write(self, entry, filename):
-        if not entry.url or not entry.key:
+        if not entry.get('url') or not entry.get('key'):
             return
 
         if entry.record.rec_type == 'warcinfo':
@@ -30,20 +32,47 @@ class BaseCDXWriter(object):
 
 
 #=================================================================
+class CDXJ(object):
+    def _write_header(self):
+        pass
+
+    def write_cdx_line(self, out, entry, filename):
+        out.write(entry['key'])
+        out.write(' ')
+        out.write(entry['timestamp'])
+        out.write(' ')
+
+        outdict = {}
+        outdict['filename'] = filename
+
+        for n, v in entry.iteritems():
+            if n in ('key', 'timestamp'):
+                continue
+
+            if n.startswith('_'):
+                continue
+
+            outdict[n] = v
+
+        out.write(json.dumps(outdict))
+        out.write('\n')
+
+
+#=================================================================
 class CDX06(object):
     def _write_header(self):
         self.out.write(' CDX N b a S V g\n')
 
     def write_cdx_line(self, out, entry, filename):
-        out.write(entry.key)
+        out.write(entry['key'])
         out.write(' ')
-        out.write(entry.timestamp)
+        out.write(entry['timestamp'])
         out.write(' ')
-        out.write(entry.url)
+        out.write(entry['url'])
         out.write(' ')
-        out.write(entry.length)
+        out.write(entry['length'])
         out.write(' ')
-        out.write(entry.offset)
+        out.write(entry['offset'])
         out.write(' ')
         out.write(filename)
         out.write('\n')
@@ -55,19 +84,19 @@ class CDX09(object):
         self.out.write(' CDX N b a m s k r V g\n')
 
     def write_cdx_line(self, out, entry, filename):
-        out.write(entry.key)
+        out.write(entry['key'])
         out.write(' ')
-        out.write(entry.timestamp)
+        out.write(entry['timestamp'])
         out.write(' ')
-        out.write(entry.url)
+        out.write(entry['url'])
         out.write(' ')
-        out.write(entry.mime)
+        out.write(entry['mime'])
         out.write(' ')
-        out.write(entry.status)
+        out.write(entry['status'])
         out.write(' ')
-        out.write(entry.digest)
+        out.write(entry['digest'])
         out.write(' - ')
-        out.write(entry.offset)
+        out.write(entry['offset'])
         out.write(' ')
         out.write(filename)
         out.write('\n')
@@ -79,21 +108,21 @@ class CDX11(object):
         self.out.write(' CDX N b a m s k r M S V g\n')
 
     def write_cdx_line(self, out, entry, filename):
-        out.write(entry.key)
+        out.write(entry['key'])
         out.write(' ')
-        out.write(entry.timestamp)
+        out.write(entry['timestamp'])
         out.write(' ')
-        out.write(entry.url)
+        out.write(entry['url'])
         out.write(' ')
-        out.write(entry.mime)
+        out.write(entry['mime'])
         out.write(' ')
-        out.write(entry.status)
+        out.write(entry['status'])
         out.write(' ')
-        out.write(entry.digest)
+        out.write(entry['digest'])
         out.write(' - - ')
-        out.write(entry.length)
+        out.write(entry['length'])
         out.write(' ')
-        out.write(entry.offset)
+        out.write(entry['offset'])
         out.write(' ')
         out.write(filename)
         out.write('\n')
@@ -171,10 +200,12 @@ def get_cdx_writer_cls(options):
     else:
         writer_cls = BaseCDXWriter
 
-    if options.get('cdx09'):
-        format_mixin = CDX09
-    elif options.get('minimal'):
+    if options.get('cdxj'):
+        format_mixin = CDXJ
+    elif options.get('cdx06') or options.get('minimal'):
         format_mixin = CDX06
+    elif options.get('cdx09'):
+        format_mixin = CDX09
     else:
         format_mixin = CDX11
 
@@ -329,7 +360,13 @@ if input is a directory"""
                         action='store_true',
                         help=cdx09_help)
 
-    group.add_argument('-m', '--minimal',
+    group.add_argument('-6', '--cdx06',
+                        action='store_true')
+
+    group.add_argument('-j', '--cdxj',
+                        action='store_true')
+
+    parser.add_argument('-m', '--minimal',
                         action='store_true',
                         help=minimal_help)
 
@@ -345,6 +382,8 @@ if input is a directory"""
                           append_post=cmd.postappend,
                           recurse=cmd.recurse,
                           cdx09=cmd.cdx09,
+                          cdx06=cmd.cdx06,
+                          cdxj=cmd.cdxj,
                           minimal=cmd.minimal)
 
 

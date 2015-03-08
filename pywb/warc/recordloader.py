@@ -132,7 +132,7 @@ class ArcWarcRecordLoader:
 
         # don't parse the http record at all
         if no_record_parse:
-            status_headers = StatusAndHeaders('', [])
+            status_headers = None#StatusAndHeaders('', [])
 
         # if empty record (error or otherwise) set status to 204
         elif length == 0:

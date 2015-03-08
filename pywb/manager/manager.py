@@ -23,7 +23,7 @@ def get_input(msg):  #pragma: no cover
 
 
 #=============================================================================
-class CollectionsManager(object):
+class CollectionsManager(object):  #pragma: no cover
     """ This utility is designed to
 simplify the creation and management of web archive collections
 
