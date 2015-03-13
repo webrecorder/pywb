@@ -27,6 +27,10 @@ ur"""
 >>> parse('<base href="static/"/><img src="image.gif"/>')
 <base href="/web/20131226101010/http://example.com/some/path/static/"/><img src="/web/20131226101010im_/http://example.com/some/path/static/image.gif"/>
 
+# ensure trailing slash added
+>>> parse('<base href="http://example.com"/>')
+<base href="/web/20131226101010/http://example.com/"/>
+
 # Base Tests -- no rewrite
 >>> parse('<html><head><base href="http://example.com/diff/path/file.html"/>', urlrewriter=no_base_canon_rewriter)
 <html><head><base href="http://example.com/diff/path/file.html"/>
