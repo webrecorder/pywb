@@ -1,7 +1,13 @@
 pywb 0.8.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* cookie rewrite: remove cookie ``secure`` flag to allow equivalent replay via http as well as https
+* cookie rewrite: all cookie rewriters remove ``secure`` flag to allow equivalent replay of sites with cookies via HTTP and HTTPS.
+
+* html rewrite: fix ``<base>`` tag rewriting to add a trailing slash to the url if it is a hostname with no path, ex:
+
+  ``<base href="http://example.com" />`` -> ``<base href="http://localhost:8080/rewrite/http://example.com/" />``
+
+* framed replay: fix double slash that remainded when rewriting top frame url.
 
 
 pywb 0.8.2 changelist

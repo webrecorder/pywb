@@ -5,6 +5,7 @@ import sys
 import re
 
 from HTMLParser import HTMLParser, HTMLParseError
+from urlparse import urlsplit
 
 from url_rewriter import UrlRewriter
 from regex_rewriters import JSRewriter, CSSRewriter
@@ -121,7 +122,22 @@ class HTMLRewriterMixin(object):
                         meta_refresh[m.end(1):])
 
         return meta_refresh
-    # ===========================
+
+    def _rewrite_base(self, value, mod=''):
+        if not value.endswith('/'):
+            # check if hostname with no path,
+            # eg http://example.com
+            if not urlsplit(value).path:
+                value += '/'
+
+        base_value = self._rewrite_url(value, mod)
+
+        if self.opts.get('rewrite_base', True):
+            value = base_value
+
+        self.url_rewriter = (self.url_rewriter.
+                             rebase_rewriter(base_value))
+        return value
 
     def _rewrite_url(self, value, mod=None):
         if value:
@@ -221,12 +237,7 @@ class HTMLRewriterMixin(object):
             # special case: base tag
             elif (tag == 'base') and (attr_name == 'href') and attr_value:
                 rw_mod = handler.get(attr_name)
-                base_value = self._rewrite_url(attr_value, rw_mod)
-                if self.opts.get('rewrite_base', True):
-                    attr_value = base_value
-                self.url_rewriter = (self.url_rewriter.
-                                     rebase_rewriter(base_value))
-
+                attr_value = self._rewrite_base(attr_value, rw_mod)
             else:
                 # rewrite url using tag handler
                 rw_mod = handler.get(attr_name)
@@ -338,15 +349,15 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
         return s
 
     def handle_starttag(self, tag, attrs):
-        if not self._rewrite_tag_attrs(tag, attrs):
-            self.out.write(self.get_starttag_text())
-        elif tag != 'head' or not self._rewrite_head(False):
+        self._rewrite_tag_attrs(tag, attrs)
+
+        if tag != 'head' or not self._rewrite_head(False):
             self.out.write('>')
 
     def handle_startendtag(self, tag, attrs):
-        if not self._rewrite_tag_attrs(tag, attrs):
-            self.out.write(self.get_starttag_text())
-        elif tag != 'head' or not self._rewrite_head(True):
+        self._rewrite_tag_attrs(tag, attrs)
+
+        if tag != 'head' or not self._rewrite_head(True):
             self.out.write('/>')
 
     def handle_endtag(self, tag):
