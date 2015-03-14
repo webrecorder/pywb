@@ -8,6 +8,13 @@ com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 20
 com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 1864 example.warc.gz
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 example.warc.gz
 
+# warc.gz -- minimal cdx
+>>> print_cdx_index('example.warc.gz', minimal=True)
+ CDX N b a S V g
+com,example)/?example=1 20140103030321 http://example.com?example=1 1043 333 example.warc.gz
+com,example)/?example=1 20140103030341 http://example.com?example=1 553 1864 example.warc.gz
+org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example 577 2907 example.warc.gz
+
 # warc.gz -- parse all
 >>> print_cdx_index('example.warc.gz', include_all=True)
  CDX N b a m s k r M S V g
@@ -122,7 +129,7 @@ com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYA
 org,iana,example)/ 20130702195402 http://example.iana.org/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1001 353 warcs/example-url-agnostic-orig.warc.gz
 Total: 206
 
-# test sort, multiple inputs, all records + post query
+# test sort, 9-field, multiple inputs, all records + post query
 >>> cli_lines(['--sort', '-a', '-p', '-9', TEST_WARC_DIR])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - 355 example-url-agnostic-revisit.warc.gz
 org,iana,example)/ 20130702195402 http://example.iana.org/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - 353 example-url-agnostic-orig.warc.gz

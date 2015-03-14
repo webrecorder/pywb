@@ -154,17 +154,10 @@ class DirectoryCollsLoader(object):
             # already set
             return False
 
-        thedir = self.config.get('paths').get(dir_key)
-
-        if not thedir:
-            msg = 'No "{0}" for collection {1}'.format(dir_key, root_dir)
-            if required:
-                raise Exception(msg)
-            else:
-                logging.warn(msg)
-            return False
+        thedir = self.config.get('paths')[dir_key]
 
         fulldir = os.path.join(root_dir, thedir)
+
         if os.path.isdir(fulldir):
             fulldir = os.path.abspath(fulldir) + os.path.sep
             coll[dir_key] = fulldir
@@ -172,8 +165,8 @@ class DirectoryCollsLoader(object):
         elif required:
             msg = 'Dir "{0}" does not exist for "{1}"'.format(fulldir, dir_key)
             raise Exception(msg)
-
-        return False
+        else:
+            return False
 
     def load_dir(self, root_dir, name):
         config_file = os.path.join(root_dir, 'config.yaml')

@@ -50,6 +50,7 @@ setup(
         'pywb.warc',
         'pywb.rewrite',
         'pywb.framework',
+        'pywb.manager',
         'pywb.perms',
         'pywb.webapp',
         'pywb.apps'

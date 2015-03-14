@@ -33,10 +33,8 @@ directory structure expected by pywb
                             self.default_config['paths'][name])
 
     def _create_dir(self, dirname):
-        try:
+        if not os.path.isdir(dirname):
             os.mkdir(dirname)
-        except:
-            pass
 
         logging.info('Created Dir: ' + dirname)
 
@@ -54,7 +52,7 @@ directory structure expected by pywb
             raise Exception('Directory ' + warcdir + ' does not exist')
 
         if not warcs:
-            print('No WARCs specified')
+            logging.info('No WARCs specified')
             return
 
         for filename in warcs:
@@ -68,7 +66,7 @@ directory structure expected by pywb
         logging.info('Indexing ' + self.warc_dir + ' to ' + cdx_file)
         cdxindexer_main(['-p', '-s', '-r', cdx_file, self.warc_dir])
 
-def main():
+def main(args=None):
     description = """
 Create manage file based web archive collections
 """
@@ -99,7 +97,7 @@ Some examples:
     parser.add_argument('name')
     parser.add_argument('files', nargs='*')
 
-    r = parser.parse_args()
+    r = parser.parse_args(args=args)
 
     m = CollectionsManager(r.name)
     if r.init:
