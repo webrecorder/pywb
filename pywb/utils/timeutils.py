@@ -80,6 +80,22 @@ def timestamp_now():
     return datetime_to_timestamp(datetime.datetime.utcnow())
 
 
+def timestamp20_now():
+    """
+    Create 20-digit timestamp, useful to timestamping temp files
+
+    >>> n = timestamp20_now()
+    >>> timestamp20_now() >= n
+    True
+
+    >>> len(n)
+    20
+
+    """
+    now = datetime.datetime.utcnow()
+    return now.strftime('%Y%m%d%H%M%S%f')
+
+
 def iso_date_to_timestamp(string):
     """
     >>> iso_date_to_timestamp('2013-12-26T10:11:12Z')

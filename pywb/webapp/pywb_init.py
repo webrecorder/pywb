@@ -171,7 +171,7 @@ class DirectoryCollsLoader(object):
     def load_dir(self, root_dir, name):
         config_file = os.path.join(root_dir, 'config.yaml')
         if os.path.isfile(config_file):
-            coll = load_yaml_file(config_file)
+            coll = load_yaml_config(config_file)
         else:
             coll = {}
 
