@@ -6,10 +6,20 @@ import logging
 from pywb.utils.loaders import load_yaml_config
 from pywb.utils.timeutils import timestamp20_now
 from pywb.warc.cdxindexer import main as cdxindexer_main
+from pywb.webapp.pywb_init import DEFAULT_CONFIG
+
+from distutils.util import strtobool
+from pkg_resources import resource_string
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 import heapq
 import yaml
+
+
+#=============================================================================
+# to allow testing by mocking get_input
+def get_input(msg):  #pragma: no cover
+    return raw_input(msg)
 
 
 #=============================================================================
@@ -147,11 +157,113 @@ directory structure expected by pywb
             if len(v) != 2:
                 raise ValueError(msg)
 
+            print('Set {0}={1}'.format(v[0], v[1]))
             metadata[v[0]] = v[1]
 
         with open(metadata_yaml, 'w+b') as fh:
             fh.write(yaml.dump(metadata, default_flow_style=False))
 
+    def _load_templates_map(self):
+        defaults = load_yaml_config(DEFAULT_CONFIG)
+
+        # Coll Templates
+        templates = defaults['paths']['template_files']
+
+        for name, _ in templates.iteritems():
+            templates[name] = defaults[name]
+
+
+        # Shared Templates
+        shared_templates = defaults['paths']['shared_template_files']
+
+        for name, _ in shared_templates.iteritems():
+            shared_templates[name] = defaults[name]
+
+        return templates, shared_templates
+
+    def list_templates(self):
+        templates, shared_templates = self._load_templates_map()
+
+        print('Shared Templates')
+        for n, v in shared_templates.iteritems():
+            print('- {0}: (pywb/{1})'.format(n, v))
+
+        print('')
+
+        print('Collection Templates')
+        for n, v in templates.iteritems():
+            print('- {0}: (pywb/{1})'.format(n, v))
+
+    def _confirm_overwrite(self, full_path, msg):
+        if not os.path.isfile(full_path):
+            return True
+
+        res = get_input(msg)
+        try:
+            res = strtobool(res)
+        except ValueError:
+            res = False
+
+        if not res:
+            raise IOError('Skipping, {0} already exists'.format(full_path))
+
+    def _get_template_path(self, template_name, verb):
+        templates, shared_templates = self._load_templates_map()
+
+        try:
+            filename = templates[template_name]
+            if not self.coll_name:
+                msg = ('To {1} a "{0}" template, you must specify ' +
+                       'a collection name: template <coll> --{1} {0}')
+                raise IOError(msg.format(template_name, verb))
+
+            full_path = os.path.join(self.templates_dir,
+                                     os.path.basename(filename))
+
+        except KeyError:
+            try:
+                filename = shared_templates[template_name]
+                full_path = os.path.join(os.getcwd(),
+                                         os.path.basename(filename))
+            except KeyError:
+                msg = 'template name must be one of {0} or {1}'
+                msg.format(templates.keys(), shared_templates.keys())
+                raise KeyError(msg)
+
+        return full_path, filename
+
+    def add_template(self, template_name, force=False):
+        full_path, filename = self._get_template_path(template_name, 'add')
+
+        msg = ('Template file "{0}" ({1}) already exists. ' +
+               'Overwrite with default template? (y/n) ')
+        msg = msg.format(full_path, template_name)
+
+        if not force:
+            self._confirm_overwrite(full_path, msg)
+
+        data = resource_string('pywb', filename)
+        with open(full_path, 'w+b') as fh:
+            fh.write(data)
+
+        full_path = os.path.abspath(full_path)
+        print('Copied default template "{0}" to "{1}"'.format(filename, full_path))
+
+    def remove_template(self, template_name, force=False):
+        full_path, filename = self._get_template_path(template_name, 'remove')
+
+        if not os.path.isfile(full_path):
+            msg = 'Template "{0}" does not exist.'
+            raise IOError(msg.format(full_path))
+
+        msg = 'Delete template file "{0}" ({1})? (y/n) '
+        msg = msg.format(full_path, template_name)
+
+        if not force:
+            self._confirm_overwrite(full_path, msg)
+
+        os.remove(full_path)
+        print('Removed template file "{0}"'.format(full_path))
 
 #=============================================================================
 def main(args=None):
@@ -232,9 +344,37 @@ Create manage file based web archive collections
     metadata.add_argument('--set', nargs='+')
     metadata.set_defaults(func=do_metadata)
 
+    # Add default template
+    def do_add_template(r):
+        m = CollectionsManager(r.coll_name)
+        if r.add:
+            m.add_template(r.add, r.force)
+        elif r.remove:
+            m.remove_template(r.remove, r.force)
+        elif r.list:
+            m.list_templates()
+
+    template_help = 'Add default html template for customization'
+    template = subparsers.add_parser('template')
+    template.add_argument('coll_name', nargs='?', default='')
+    template.add_argument('-f', '--force', action='store_true')
+    template.add_argument('--add')
+    template.add_argument('--remove')
+    template.add_argument('--list', action='store_true')
+    template.set_defaults(func=do_add_template)
+
     r = parser.parse_args(args=args)
     r.func(r)
 
 
+# special wrapper for cli to avoid printing stack trace
+def main_wrap_exc():  #pragma: no cover
+    try:
+        main()
+    except Exception as e:
+        print('Error: ' + str(e))
+        sys.exit(2)
+
+
 if __name__ == "__main__":
-    main()
+    main_wrap_exc()

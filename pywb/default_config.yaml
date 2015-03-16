@@ -14,12 +14,19 @@ paths:
 
     template_files:
         banner_html: banner.html
-        head_insert: head_insert.html
-        frame_insert: frame_insert.html
+        head_insert_html: head_insert.html
+        frame_insert_html: frame_insert.html
 
         query_html: query.html
         search_html: search.html
+        not_found_html: not_found.html
 
+    shared_template_files:
+        home_html: index.html
+        error_html: error.html
+
+        proxy_cert_download_html: proxy_cert_download.html
+        proxy_select_html: proxy_select.html
 
 head_insert_html: ui/head_insert.html
 frame_insert_html: ui/frame_insert.html

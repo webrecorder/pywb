@@ -14,6 +14,7 @@ from pywb import get_test_dir
 from pywb.framework.wsgi_wrappers import init_app
 
 from pytest import raises
+from mock import patch
 
 
 #=============================================================================
@@ -37,6 +38,14 @@ def teardown_module():
 
     global orig_cwd
     os.chdir(orig_cwd)
+
+
+#=============================================================================
+mock_input_value = ''
+
+def mock_raw_input(*args):
+    global mock_input_value
+    return mock_input_value
 
 
 #=============================================================================
@@ -266,6 +275,59 @@ class TestManagedColls(object):
         resp = self.testapp.get('/test/20140103030321/http://example.com?example=1')
         assert resp.status_int == 200
 
+    def test_add_default_templates(self):
+        """ Test add default templates: shared, collection,
+        and overwrite collection template
+        """
+        # list
+        main(['template', 'foo', '--list'])
+
+        # Add shared template
+        main(['template', '--add', 'home_html'])
+        assert os.path.isfile(os.path.join(self.root_dir, 'index.html'))
+
+        # Add collection template
+        main(['template', 'foo', '--add', 'query_html'])
+        assert os.path.isfile(os.path.join(self.root_dir, 'collections', 'foo', 'templates', 'query.html'))
+
+        # overwrite -- force
+        main(['template', 'foo', '--add', 'query_html', '-f'])
+
+    @patch('pywb.manager.manager.get_input', lambda x: 'y')
+    def test_add_template_input_yes(self):
+        """ Test answer 'yes' to overwrite
+        """
+        mock_raw_input_value = 'y'
+        main(['template', 'foo', '--add', 'query_html'])
+
+
+    @patch('pywb.manager.manager.get_input', lambda x: 'n')
+    def test_add_template_input_no(self):
+        """ Test answer 'no' to overwrite
+        """
+        with raises(IOError):
+            main(['template', 'foo', '--add', 'query_html'])
+
+    @patch('pywb.manager.manager.get_input', lambda x: 'other')
+    def test_add_template_input_other(self):
+        """ Test answer 'other' to overwrite
+        """
+        with raises(IOError):
+            main(['template', 'foo', '--add', 'query_html'])
+
+    @patch('pywb.manager.manager.get_input', lambda x: 'no')
+    def test_remove_not_confirm(self):
+        """ Test answer 'no' to remove
+        """
+        # don't remove -- not confirmed
+        with raises(IOError):
+            main(['template', 'foo', '--remove', 'query_html'])
+
+    @patch('pywb.manager.manager.get_input', lambda x: 'yes')
+    def test_remove_confirm(self):
+        # remove -- confirm
+        main(['template', 'foo', '--remove', 'query_html'])
+
     def test_no_templates(self):
         """ Test removing templates dir, using default template again
         """
@@ -284,8 +346,11 @@ class TestManagedColls(object):
         orig_stdout = sys.stdout
         buff = BytesIO()
         sys.stdout = buff
-        main(['list'])
-        sys.stdout = orig_stdout
+
+        try:
+            main(['list'])
+        finally:
+            sys.stdout = orig_stdout
 
         output = sorted(buff.getvalue().splitlines())
         assert len(output) == 4
@@ -293,6 +358,23 @@ class TestManagedColls(object):
         assert '- foo' in output
         assert '- nested' in output
         assert '- test' in output
+
+    def test_err_template_remove(self):
+        """ Test various error conditions for templates:
+        invalid template name, no collection for collection template
+        no template file found
+        """
+        # no such template
+        with raises(KeyError):
+            main(['template', 'foo', '--remove', 'blah_html'])
+
+        # collection needed
+        with raises(IOError):
+            main(['template', '--remove', 'query_html'])
+
+        # already removed
+        with raises(IOError):
+            main(['template', 'foo', '--remove', 'query_html'])
 
     def test_err_no_such_coll(self):
         """ Test error adding warc to non-existant collection
