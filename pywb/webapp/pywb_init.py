@@ -149,9 +149,14 @@ class DirectoryCollsLoader(object):
 
         return colls
 
+    def _norm_path(self, root_dir, path):
+        result = os.path.normpath(os.path.join(root_dir, path))
+        print(result)
+        return result
+
     def _add_dir_if_exists(self, coll, root_dir, dir_key, required=False):
         if dir_key in coll:
-            # already set
+            coll[dir_key] = self._norm_path(root_dir, coll[dir_key])
             return False
 
         thedir = self.config.get('paths')[dir_key]
@@ -189,19 +194,22 @@ class DirectoryCollsLoader(object):
         if self._add_dir_if_exists(coll_config, root_dir, 'static_path', False):
             self.static_routes['static/' + name] = coll_config['static_path']
 
-        # Add templates
+        # Custom templates dir
         templates_dir = self.config.get('paths').get('templates_dir')
         if templates_dir:
             template_dir = os.path.join(root_dir, templates_dir)
-            if template_dir:
-                for tname, tfile in self.config.get('paths')['template_files'].iteritems():
-                    if tname in coll_config:
-                        # Already set
-                        continue
 
-                    full = os.path.join(template_dir, tfile)
-                    if os.path.isfile(full):
-                        coll_config[tname] = full
+        # Check all templates
+        template_files = self.config.get('paths')['template_files']
+        for tname, tfile in template_files.iteritems():
+            if tname in coll_config:
+                # Already set
+                coll_config[tname] = self._norm_path(root_dir, coll_config[tname])
+            # If templates override dir
+            elif templates_dir:
+                full = os.path.join(template_dir, tfile)
+                if os.path.isfile(full):
+                    coll_config[tname] = full
 
         return coll_config
 

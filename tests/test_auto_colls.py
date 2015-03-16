@@ -236,30 +236,44 @@ class TestManagedColls(object):
 
     def test_custom_config(self):
         """ Test custom created config.yaml which overrides auto settings
-        Template relative to root dir, not collection-specific so far
+        Template is relative to collection-specific dir
+        Add custom metadata and test its presence in custom search page
         """
         config_path = os.path.join(self.root_dir, 'collections', 'test', 'config.yaml')
         with open(config_path, 'w+b') as fh:
-            fh.write('search_html: ./custom_search.html\n')
+            fh.write('search_html: ./templates/custom_search.html\n')
+            fh.write('index_paths: ./cdx2/\n')
 
-        custom_search = os.path.join(self.root_dir, 'custom_search.html')
+        custom_search = os.path.join(self.root_dir, 'collections', 'test',
+                                     'templates', 'custom_search.html')
+
+        # add metadata
+        main(['metadata', 'test', '--set', 'some=value'])
+
         with open(custom_search, 'w+b') as fh:
-            fh.write('config.yaml overriden search page')
+            fh.write('config.yaml overriden search page: ')
+            fh.write('{{ wbrequest.user_metadata | tojson }}\n')
+
+        os.rename(os.path.join(self.root_dir, 'collections', 'test', 'cdx'),
+                  os.path.join(self.root_dir, 'collections', 'test', 'cdx2'))
 
         self._create_app()
         resp = self.testapp.get('/test/')
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'
-        assert 'config.yaml overriden search page' in resp.body
+        assert 'config.yaml overriden search page: {"some": "value"}' in resp.body
+
+        resp = self.testapp.get('/test/20140103030321/http://example.com?example=1')
+        assert resp.status_int == 200
 
     def test_no_templates(self):
         """ Test removing templates dir, using default template again
         """
-        shutil.rmtree(os.path.join(self.root_dir, 'collections', 'test', 'templates'))
+        shutil.rmtree(os.path.join(self.root_dir, 'collections', 'foo', 'templates'))
 
         self._create_app()
 
-        resp = self.testapp.get('/test/')
+        resp = self.testapp.get('/foo/')
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'
         assert 'pywb custom search page' not in resp.body
@@ -273,12 +287,12 @@ class TestManagedColls(object):
         main(['list'])
         sys.stdout = orig_stdout
 
-        output = buff.getvalue().splitlines()
+        output = sorted(buff.getvalue().splitlines())
         assert len(output) == 4
-        assert 'Collections' in output[0]
-        assert 'foo' in output[1]
-        assert 'nested' in output[2]
-        assert 'test' in output[3]
+        assert 'Collections:' in output
+        assert '- foo' in output
+        assert '- nested' in output
+        assert '- test' in output
 
     def test_err_no_such_coll(self):
         """ Test error adding warc to non-existant collection
@@ -309,6 +323,10 @@ class TestManagedColls(object):
         missing cdx dir, non dir cdx file, and missing collections root
         """
         colls = os.path.join(self.root_dir, 'collections')
+
+        # No Statics -- ignorable
+        shutil.rmtree(os.path.join(colls, 'foo', 'static'))
+        self._create_app()
 
         # No WARCS
         warcs_path = os.path.join(colls, 'foo', 'warcs')

@@ -61,7 +61,7 @@ def is_wb_handler(obj):
 
 
 @template_filter()
-def jsonify(obj):
+def tojson(obj):
     return json.dumps(obj)
 
 
