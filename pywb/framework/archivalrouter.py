@@ -75,13 +75,10 @@ class ArchivalRouter(object):
         return wbrequest
 
     def render_home_page(self, env):
-        # render the homepage!
         if self.home_view:
             return self.home_view.render_response(env=env, routes=self.routes)
         else:
-            # default home page template
-            text = '\n'.join(map(str, self.routes))
-            return WbResponse.text_response(text)
+            return WbResponse.text_response('No Home Page')
 
 
 #=================================================================
@@ -128,10 +125,6 @@ class Route(object):
 
     def _custom_init(self, config):
         self.filters = config.get('filters', [])
-
-    def __str__(self):
-        #return '* ' + self.regex_str + ' => ' + str(self.handler)
-        return str(self.handler)
 
 
 #=================================================================

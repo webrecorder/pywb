@@ -246,9 +246,6 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
         return WbResponse.text_response(metadata, content_type=content_type)
 
-    def __str__(self):
-        return 'Live Web Rewrite Handler'
-
 
 #=================================================================
 class YoutubeDLWrapper(object):

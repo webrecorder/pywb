@@ -169,9 +169,6 @@ class WBHandler(SearchPageWbUrlHandler):
                                                        env=wbrequest.env,
                                                        url=wbrequest.wb_url.url)
 
-    def __str__(self):
-        return 'Web Archive Replay Handler'
-
 
 #=================================================================
 # Static Content Handler
@@ -216,9 +213,6 @@ class StaticHandler(BaseHandler):
         except IOError:
             raise NotFoundException('Static File Not Found: ' +
                                     wbrequest.wb_url_str)
-
-    def __str__(self):  # pragma: no cover
-        return 'Static files from ' + self.static_path
 
 
 #=================================================================
