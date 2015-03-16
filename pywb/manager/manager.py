@@ -9,6 +9,7 @@ from pywb.warc.cdxindexer import main as cdxindexer_main
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 import heapq
+import yaml
 
 
 #=============================================================================
@@ -19,7 +20,7 @@ simplify the creation and management of web archive collections
 It may be used via cmdline to setup and maintain the
 directory structure expected by pywb
     """
-    def __init__(self, coll_name, root_dir='collections'):
+    def __init__(self, coll_name, root_dir='collections', must_exist=True):
         self.root_dir = root_dir
         self.default_config = load_yaml_config('pywb/default_config.yaml')
         self.coll_name = coll_name
@@ -30,6 +31,14 @@ directory structure expected by pywb
         self.cdx_dir = self._get_dir('index_paths')
         self.static_dir = self._get_dir('static_path')
         self.templates_dir = self._get_dir('templates_dir')
+        if must_exist:
+            self._assert_coll_exists()
+
+    def list_colls(self):
+        print('Collections:')
+        for d in os.listdir(self.root_dir):
+            if os.path.isdir(os.path.join(self.root_dir, d)):
+                print('- ' + d)
 
     def _get_dir(self, name):
         return os.path.join(self.coll_dir,
@@ -50,18 +59,15 @@ directory structure expected by pywb
         self._create_dir(self.static_dir)
         self._create_dir(self.templates_dir)
 
+    def _assert_coll_exists(self):
+        if not os.path.isdir(self.coll_dir):
+            raise IOError('Collection {0} does not exist'.
+                          format(self.coll_name))
+
     def add_warcs(self, warcs):
         if not os.path.isdir(self.warc_dir):
-            if not os.path.isdir(self.coll_dir):
-                raise IOError('Collection {0} does not exist'.
-                              format(self.coll_name))
-            else:
-                raise IOError('Directory {0} does not exist'.
-                              format(self.warc_dir))
-
-        if not warcs:
-            logging.info('No WARCs specified')
-            return
+            raise IOError('Directory {0} does not exist'.
+                          format(self.warc_dir))
 
         full_paths = []
         for filename in warcs:
@@ -99,9 +105,6 @@ directory structure expected by pywb
         self._index_merge_warcs(filtered_warcs)
 
     def _index_merge_warcs(self, new_warcs):
-        if not new_warcs:
-            return
-
         cdx_file = os.path.join(self.cdx_dir, 'index.cdx')
 
         # no existing file, just reindex all
@@ -128,50 +131,109 @@ directory structure expected by pywb
         os.rename(merged_file, cdx_file)
         os.remove(temp_file)
 
+    def set_metadata(self, namevalue_pairs):
+        metadata_yaml = os.path.join(self.coll_dir, 'metadata.yaml')
+        metadata = None
+        if os.path.isfile(metadata_yaml):
+            with open(metadata_yaml) as fh:
+                metadata = yaml.safe_load(fh)
 
+        if not metadata:
+            metadata = {}
+
+        msg = 'Metadata params must be in the form "name=value"'
+        for pair in namevalue_pairs:
+            v = pair.split('=', 1)
+            if len(v) != 2:
+                raise ValueError(msg)
+
+            metadata[v[0]] = v[1]
+
+        with open(metadata_yaml, 'w+b') as fh:
+            fh.write(yaml.dump(metadata, default_flow_style=False))
+
+
+#=============================================================================
 def main(args=None):
     description = """
 Create manage file based web archive collections
 """
-
-    epilog = """
-Some examples:
-
-* Create new collection 'my_coll'
-{0} create my_coll
-
-* Add warc mywarc1.warc.gz to my_coll (The warc will be copied to the collecton directory)
-{0} add my_coll mywarc1.warc.gz
-
-""".format(os.path.basename(sys.argv[0]))
+    #format(os.path.basename(sys.argv[0]))
 
     logging.basicConfig(format='%(asctime)s: [%(levelname)s]: %(message)s',
                         level=logging.DEBUG)
 
     parser = ArgumentParser(description=description,
-                            epilog=epilog,
+                            #epilog=epilog,
                             formatter_class=RawTextHelpFormatter)
 
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('--init', action='store_true')
-    group.add_argument('--addwarc', action='store_true')
-    group.add_argument('--reindex', action='store_true')
-    group.add_argument('--index-warcs', action='store_true')
+    subparsers = parser.add_subparsers(dest='type')
 
-    parser.add_argument('name')
-    parser.add_argument('files', nargs='*')
+    # Init Coll
+    def do_init(r):
+        m = CollectionsManager(r.coll_name, must_exist=False)
+        m.add_collection()
+
+    init_help = 'Init new collection, create all collection directories'
+    init = subparsers.add_parser('init', help=init_help)
+    init.add_argument('coll_name')
+    init.set_defaults(func=do_init)
+
+    # List Colls
+    def do_list(r):
+        m = CollectionsManager('', must_exist=False)
+        m.list_colls()
+
+    list_help = 'List Collections'
+    listcmd = subparsers.add_parser('list', help=list_help)
+    listcmd.set_defaults(func=do_list)
+
+    # Add Warcs
+    def do_add(r):
+        m = CollectionsManager(r.coll_name)
+        m.add_warcs(r.files)
+
+    addwarc_help = 'Copy ARCS/WARCS to collection directory and reindex'
+    addwarc = subparsers.add_parser('add', help=addwarc_help)
+    addwarc.add_argument('coll_name')
+    addwarc.add_argument('files', nargs='+')
+    addwarc.set_defaults(func=do_add)
+
+
+    # Reindex All
+    def do_reindex(r):
+        m = CollectionsManager(r.coll_name)
+        m.reindex()
+
+    reindex_help = 'Re-Index entire collection'
+    reindex = subparsers.add_parser('reindex', help=reindex_help)
+    reindex.add_argument('coll_name')
+    reindex.set_defaults(func=do_reindex)
+
+    # Index warcs
+    def do_index(r):
+        m = CollectionsManager(r.coll_name)
+        m.index_merge(r.files)
+
+    indexwarcs_help = 'Index specified ARC/WARC files in the collection'
+    indexwarcs = subparsers.add_parser('index', help=indexwarcs_help)
+    indexwarcs.add_argument('coll_name')
+    indexwarcs.add_argument('files', nargs='+')
+    indexwarcs.set_defaults(func=do_index)
+
+    # Set metadata
+    def do_metadata(r):
+        m = CollectionsManager(r.coll_name)
+        m.set_metadata(r.set)
+
+    metadata_help = 'Set Metadata'
+    metadata = subparsers.add_parser('metadata', help=metadata_help)
+    metadata.add_argument('coll_name')
+    metadata.add_argument('--set', nargs='+')
+    metadata.set_defaults(func=do_metadata)
 
     r = parser.parse_args(args=args)
-
-    m = CollectionsManager(r.name)
-    if r.init:
-        m.add_collection()
-    elif r.addwarc:
-        m.add_warcs(r.files)
-    elif r.index_warcs:
-        m.index_merge(r.files)
-    elif r.reindex:
-        m.reindex()
+    r.func(r)
 
 
 if __name__ == "__main__":

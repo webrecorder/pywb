@@ -143,13 +143,13 @@ class DirectoryCollsLoader(object):
             if not os.path.isdir(full):
                 continue
 
-            coll = self.load_dir(full, name)
-            if coll:
-                colls[name] = coll
+            coll_config = self.load_coll_dir(full, name)
+            if coll_config:
+                colls[name] = coll_config
 
         return colls
 
-    def _add_if_exists(self, coll, root_dir, dir_key, required=False):
+    def _add_dir_if_exists(self, coll, root_dir, dir_key, required=False):
         if dir_key in coll:
             # already set
             return False
@@ -168,18 +168,26 @@ class DirectoryCollsLoader(object):
         else:
             return False
 
-    def load_dir(self, root_dir, name):
-        config_file = os.path.join(root_dir, 'config.yaml')
-        if os.path.isfile(config_file):
-            coll = load_yaml_config(config_file)
+    def load_yaml_file(self, root_dir, filename):
+        filename = os.path.join(root_dir, filename)
+        if os.path.isfile(filename):
+            return load_yaml_config(filename)
         else:
-            coll = {}
+            return {}
 
-        self._add_if_exists(coll, root_dir, 'index_paths', True)
-        self._add_if_exists(coll, root_dir, 'archive_paths', True)
+    def load_coll_dir(self, root_dir, name):
+        # Load config.yaml
+        coll_config = self.load_yaml_file(root_dir, 'config.yaml')
 
-        if self._add_if_exists(coll, root_dir, 'static_path', False):
-            self.static_routes['static/' + name] = coll['static_path']
+        # Load metadata.yaml
+        metadata = self.load_yaml_file(root_dir, 'metadata.yaml')
+        coll_config['metadata'] = metadata
+
+        self._add_dir_if_exists(coll_config, root_dir, 'index_paths', True)
+        self._add_dir_if_exists(coll_config, root_dir, 'archive_paths', True)
+
+        if self._add_dir_if_exists(coll_config, root_dir, 'static_path', False):
+            self.static_routes['static/' + name] = coll_config['static_path']
 
         # Add templates
         templates_dir = self.config.get('paths').get('templates_dir')
@@ -187,15 +195,15 @@ class DirectoryCollsLoader(object):
             template_dir = os.path.join(root_dir, templates_dir)
             if template_dir:
                 for tname, tfile in self.config.get('paths')['template_files'].iteritems():
-                    if tname in coll:
+                    if tname in coll_config:
                         # Already set
                         continue
 
                     full = os.path.join(template_dir, tfile)
                     if os.path.isfile(full):
-                        coll[tname] = full
+                        coll_config[tname] = full
 
-        return coll
+        return coll_config
 
 
 #=================================================================

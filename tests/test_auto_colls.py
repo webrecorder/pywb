@@ -1,8 +1,11 @@
 import os
 import tempfile
 import shutil
+import sys
 
 import webtest
+
+from io import BytesIO
 
 from pywb.webapp.pywb_init import create_wb_router
 from pywb.manager.manager import main
@@ -53,7 +56,7 @@ class TestManagedColls(object):
     def test_create_first_coll(self):
         """ Test first collection creation, with all required dirs
         """
-        main(['--init', 'test'])
+        main(['init', 'test'])
 
         colls = os.path.join(self.root_dir, 'collections')
         assert os.path.isdir(colls)
@@ -68,7 +71,7 @@ class TestManagedColls(object):
         """
         warc1 = os.path.join(get_test_dir(), 'warcs', 'example.warc.gz')
 
-        main(['--addwarc', 'test', warc1])
+        main(['add', 'test', warc1])
 
         self._create_app()
         resp = self.testapp.get('/test/20140103030321/http://example.com?example=1')
@@ -79,9 +82,9 @@ class TestManagedColls(object):
         """
         warc1 = os.path.join(get_test_dir(), 'warcs', 'example.warc.gz')
 
-        main(['--init', 'foo'])
+        main(['init', 'foo'])
 
-        main(['--addwarc', 'foo', warc1])
+        main(['add', 'foo', warc1])
 
         self._create_app()
         resp = self.testapp.get('/foo/20140103030321/http://example.com?example=1')
@@ -93,17 +96,14 @@ class TestManagedColls(object):
         warc1 = os.path.join(get_test_dir(), 'warcs', 'iana.warc.gz')
         warc2 = os.path.join(get_test_dir(), 'warcs', 'example-extra.warc')
 
-        main(['--addwarc', 'test', warc1, warc2])
+        main(['add', 'test', warc1, warc2])
 
         # Spurrious file in collections
         with open(os.path.join(self.root_dir, 'collections', 'blah'), 'w+b') as fh:
             fh.write('foo\n')
 
         with raises(IOError):
-            main(['--addwarc', 'test', 'non-existent-file.warc.gz'])
-
-        # check adding no warc -- no op
-        main(['--addwarc', 'test'])
+            main(['add', 'test', 'non-existent-file.warc.gz'])
 
         # check new cdx
         self._create_app()
@@ -116,7 +116,7 @@ class TestManagedColls(object):
         Ensure CDX is relative to root archive dir, test replay
         """
 
-        main(['--init', 'nested'])
+        main(['init', 'nested'])
 
         nested_root = os.path.join(self.root_dir, 'collections', 'nested', 'warcs')
         nested_a = os.path.join(nested_root, 'A')
@@ -131,7 +131,7 @@ class TestManagedColls(object):
         shutil.copy2(warc1, nested_a)
         shutil.copy2(warc2, nested_b)
 
-        main(['--index-warcs',
+        main(['index',
               'nested',
               os.path.join(nested_a, 'iana.warc.gz'),
               os.path.join(nested_b, 'example.warc.gz')
@@ -162,7 +162,7 @@ class TestManagedColls(object):
 
         shutil.copy(orig, bak)
 
-        main(['--reindex', 'test'])
+        main(['reindex', 'test'])
 
         with open(orig) as orig_fh:
             merged_cdx = orig_fh.read()
@@ -186,6 +186,39 @@ class TestManagedColls(object):
         assert resp.status_int == 200
         assert resp.content_type == 'application/javascript'
         assert '/* Some JS File */' in resp.body
+
+    def test_add_title_metadata_index_page(self):
+        """ Test adding title metadata to a collection, test
+        retrieval on default index page
+        """
+        main(['metadata', 'foo', '--set', 'title=Collection Title'])
+
+        self._create_app()
+        resp = self.testapp.get('/')
+        assert resp.status_int == 200
+        assert resp.content_type == 'text/html'
+        assert '(Collection Title)' in resp.body
+
+    def test_other_metadata_search_page(self):
+        main(['metadata', 'foo', '--set',
+              'desc=Some Description Text',
+              'other=custom value'])
+
+        with raises(ValueError):
+            main(['metadata', 'foo', '--set', 'name_only'])
+
+        self._create_app()
+        resp = self.testapp.get('/foo/')
+        assert resp.status_int == 200
+        assert resp.content_type == 'text/html'
+
+        assert 'Collection Title' in resp.body
+
+        assert 'desc' in resp.body
+        assert 'Some Description Text' in resp.body
+
+        assert 'other' in resp.body
+        assert 'custom value' in resp.body
 
     def test_custom_template_search(self):
         """ Test manually added custom search template search.html
@@ -219,7 +252,6 @@ class TestManagedColls(object):
         assert resp.content_type == 'text/html'
         assert 'config.yaml overriden search page' in resp.body
 
-
     def test_no_templates(self):
         """ Test removing templates dir, using default template again
         """
@@ -232,28 +264,45 @@ class TestManagedColls(object):
         assert resp.content_type == 'text/html'
         assert 'pywb custom search page' not in resp.body
 
+    def test_list_colls(self):
+        """ Test collection listing, printed to stdout
+        """
+        orig_stdout = sys.stdout
+        buff = BytesIO()
+        sys.stdout = buff
+        main(['list'])
+        sys.stdout = orig_stdout
+
+        output = buff.getvalue().splitlines()
+        assert len(output) == 4
+        assert 'Collections' in output[0]
+        assert 'foo' in output[1]
+        assert 'nested' in output[2]
+        assert 'test' in output[3]
+
     def test_err_no_such_coll(self):
         """ Test error adding warc to non-existant collection
         """
         warc1 = os.path.join(get_test_dir(), 'warcs', 'example.warc.gz')
 
         with raises(IOError):
-            main(['--addwarc', 'bar', warc1])
+            main(['add', 'bar', warc1])
 
     def test_err_wrong_warcs(self):
         warc1 = os.path.join(get_test_dir(), 'warcs', 'example.warc.gz')
         invalid_warc = os.path.join(self.root_dir, 'collections', 'test', 'warcs', 'invalid.warc.gz')
 
-        # Empty
-        main(['--index-warcs', 'test'])
+        # Empty warc list, argparse calls exit
+        with raises(SystemExit):
+            main(['index', 'test'])
 
         # Wrong paths not in collection
         with raises(IOError):
-            main(['--index-warcs', 'test', warc1])
+            main(['index', 'test', warc1])
 
         # Non-existent
         with raises(IOError):
-            main(['--index-warcs', 'test', invalid_warc])
+            main(['index', 'test', invalid_warc])
 
     def test_err_missing_dirs(self):
         """ Test various errors with missing warcs dir,
@@ -266,7 +315,7 @@ class TestManagedColls(object):
         shutil.rmtree(warcs_path)
 
         with raises(IOError):
-            main(['--addwarc', 'foo', 'somewarc'])
+            main(['add', 'foo', 'somewarc'])
 
         # No CDX
         cdx_path = os.path.join(colls, 'foo', 'cdx')

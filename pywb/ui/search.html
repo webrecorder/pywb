@@ -1,6 +1,17 @@
-<h2>pywb Search Page</h2>
-Search Archived Content: 
+<h2>{{ wbrequest.user_metadata.title if wbrequest.user_metadata.title else wbrequest.coll }} Search Page</h2>
+
+<div>
+<table style="text-align: left">
+{% for key, val in wbrequest.user_metadata.iteritems() %}
+<tr><th>{{ key }}:</th><td>{{ val }}</td>
+{% endfor %}
+</table>
+</div>
+
+<p>
+Search this collection by url:
 <form onsubmit="url = document.getElementById('search').value; if (url != '') { document.location.href = '{{ wbrequest.wb_prefix }}' + '*/' + url; } return false;">
 <input id="search" name="search" placeholder="Enter url to search"/>
 <button type="submit">Search</button>
 </form>
+</p>

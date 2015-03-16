@@ -1,22 +1,17 @@
-<h2>pywb Sample Home Page</h2>
+<h2>pywb Wayback Machine</h2>
 
-The following archive collections are available:
+This archive contains the following collections:
 
 <ul>
 {% for route in routes %}
   {% if route | is_wb_handler %}
-  <li><a href="{{ '/' + route.path }}">{{ '/' + route.path }}</a>: {{ route | string }}</li>
-  {% endif %} 
-{% endfor %}
-</ul>
-
-Other endpoints in this deployment:
-
-<ul>
-{% for route in routes %}
-  {% if not route | is_wb_handler %}
-  <li><b>{{ '/' + route.path }}</b> - {{ route | string }}</li>
-  {% endif %} 
+    <li>
+    <a href="{{ '/' + route.path }}">{{ '/' + route.path }}</a>
+    {% if route.user_metadata.title is defined %}
+    ({{ route.user_metadata.title }})
+    {% endif %}
+    </li>
+  {% endif %}
 {% endfor %}
 </ul>
 

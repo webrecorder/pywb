@@ -5,6 +5,7 @@ from pywb.framework.memento import make_timemap, LINK_FORMAT
 import urlparse
 import urllib
 import logging
+import json
 
 from os import path
 from itertools import imap
@@ -57,6 +58,11 @@ def is_wb_handler(obj):
         return False
 
     return obj.handler.__class__.__name__ == "WBHandler"
+
+
+@template_filter()
+def jsonify(obj):
+    return json.dumps(obj)
 
 
 #=================================================================

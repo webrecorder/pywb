@@ -40,7 +40,9 @@ class WbRequest(object):
                  urlrewriter_class=None,
                  is_proxy=False,
                  cookie_scope=None,
-                 rewrite_opts={}):
+                 rewrite_opts={},
+                 user_metadata={},
+                 ):
 
         self.env = env
 
@@ -96,6 +98,7 @@ class WbRequest(object):
 
         self.query_filter = []
         self.custom_params = {}
+        self.user_metadata = user_metadata
 
         # PERF
         env['X_PERF'] = {}

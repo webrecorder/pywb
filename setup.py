@@ -42,7 +42,7 @@ setup(
     long_description=long_description,
     license='GPL',
     packages=find_packages(),
-    #include_package_data=True,
+    zip_safe=True,
     provides=[
         'pywb',
         'pywb.utils',
@@ -92,7 +92,6 @@ setup(
         proxy-cert-auth = pywb.framework.certauth:main
         wb-manager = pywb.manager.manager:main
         """,
-    zip_safe=True,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
