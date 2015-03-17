@@ -1,14 +1,16 @@
 Installation
 ============
 
-This section covers more detailed installation info for pywb.
+This section covers more detailed installation info for pywb. 
+
+*These instructions apply to older versions of pywb
+but will still work with pywb 0.9.0, although the directory based configuration system and ``wayback-manager`` utility
+remove some of these steps.*
 
 Requirements
 ~~~~~~~~~~~~
 
-pywb has tested in python 2.6, 2.7 and pypy.
-
-It runs best in python 2.7 currently.
+pywb has tested in python 2.6, 2.7. It runs best in python 2.7 currently.
 
 pywb tool suite provides several WSGI applications, which have been
 tested under *wsgiref* and *uWSGI*.
@@ -157,3 +159,23 @@ For more advanced use, the pywb init path can be customized further:
    `wayback.py <https://github.com/ikreymer/pywb/blob/master/pywb/apps/wayback.py>`_ and
    `pywb\_init.py <https://github.com/ikreymer/pywb/blob/master/pywb/core/pywb_init.py>`_ for examples of existing
    initialization paths.
+
+
+A note on CDX index files
+"""""""""""""""""""""""""
+
+The new ``wayback-manager`` tool will automatically generate CDX index files for all WARCs and ARCs, so
+manual updating of CDX indexes is no longer required.
+
+The ``cdx-indexer`` also creates files in the `SURT <http://crawler.archive.org/articles/user_manual/glossary.html#surt>`_ format by default. format
+
+However, if you need to use existing/legacy .cdx files, you may need to set a special config (for now).
+
+If you are using .cdx files where the key is *not* in SURT format (that is, the CDX line may start with ``example.com`` instaed of ``com,example)/``),
+simply add the following to the main ``config.yaml``
+::
+
+      surt_ordered: false
+
+A SURT CDX key reverses the order of domain and subdomains and allows for improved searching.
+Future versions of pywb may detect the format automatically.
