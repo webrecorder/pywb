@@ -1,14 +1,14 @@
 collections:
     all:
         - ./sample_archive/cdx/iana.cdx
-        - ./sample_archive/cdx/dupes.cdx 
+        - ./sample_archive/cdx/dupes.cdx
         - ./sample_archive/cdx/post-test.cdx
 
     older:
         - ./sample_archive/cdx/iana.cdx
 
     newer:
-        - ./sample_archive/cdx/dupes.cdx 
+        - ./sample_archive/cdx/dupes.cdx
 
 archive_paths: ./sample_archive/warcs/
 

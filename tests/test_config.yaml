@@ -70,31 +70,31 @@ archive_paths: ['./invalid/path/to/ignore/', './sample_archive/warcs/']
 # ==== Optional UI: HTML/Jinja2 Templates ====
 
 # template for <head> insert into replayed html content
-head_insert_html: ui/head_insert.html
+head_insert_html: templates/head_insert.html
 
 # template to for 'calendar' query,
 # eg, a listing of captures  in response to a ../*/<url>
 #
 # may be a simple listing or a more complex 'calendar' UI
 # if omitted, will list raw cdx in plain text
-query_html: ui/query.html
+query_html: templates/query.html
 
 # template for search page, which is displayed when no search url is entered
 # in a collection
-search_html: ui/search.html
+search_html: templates/search.html
 
 # template for home page.
 # if no other route is set, this will be rendered at /, /index.htm and /index.html
-home_html: ui/index.html
+home_html: templates/index.html
 
 
 # error page temlpate for may formatting error message and details
 # if omitted, a text response is returned
-error_html: ui/error.html
+error_html: templates/error.html
 
 
 # template for 404 not found error, may be customized per collection
-not_found_html: ui/not_found.html
+not_found_html: templates/not_found.html
 
 # ==== Other Paths ====
 

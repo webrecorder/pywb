@@ -6,8 +6,8 @@
 collections_root: collections
 
 paths:
-    archive_paths: warcs
-    index_paths: cdx
+    archive_paths: archive
+    index_paths: indexes
     static_path: static
 
     templates_dir: templates
@@ -28,20 +28,20 @@ paths:
         proxy_cert_download_html: proxy_cert_download.html
         proxy_select_html: proxy_select.html
 
-head_insert_html: ui/head_insert.html
-frame_insert_html: ui/frame_insert.html
+head_insert_html: templates/head_insert.html
+frame_insert_html: templates/frame_insert.html
 banner_html: banner.html
 
-home_html: ui/index.html
+home_html: templates/index.html
 
-query_html: ui/query.html
-search_html: ui/search.html
+query_html: templates/query.html
+search_html: templates/search.html
 
-error_html: ui/error.html
-not_found_html: ui/not_found.html
+error_html: templates/error.html
+not_found_html: templates/not_found.html
 
-proxy_cert_download_html: ui/proxy_cert_download.html
-proxy_select_html: ui/proxy_select.html
+proxy_cert_download_html: templates/proxy_cert_download.html
+proxy_select_html: templates/proxy_select.html
 
 template_globals:
     static_path: static/default

@@ -157,7 +157,7 @@ class HeadInsertView(J2TemplateView):
     def init_from_config(config):
         view = config.get('head_insert_view')
         if not view:
-            html = config.get('head_insert_html', 'ui/head_insert.html')
+            html = config.get('head_insert_html', 'templates/head_insert.html')
 
             if html:
                 banner_html = config.get('banner_html', 'banner.html')

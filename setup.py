@@ -34,7 +34,7 @@ class PyTest(TestCommand):
 
 setup(
     name='pywb',
-    version='0.9.0-beta',
+    version='0.9.0b',
     url='https://github.com/ikreymer/pywb',
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
@@ -56,7 +56,7 @@ setup(
         'pywb.apps'
         ],
     package_data={
-        'pywb': ['static/flowplayer/*', 'static/*.*', 'ui/*', '*.yaml'],
+        'pywb': ['static/flowplayer/*', 'static/*.*', 'templates/*', '*.yaml'],
         },
     data_files=[
         ('sample_archive/cdx', glob.glob('sample_archive/cdx/*')),
@@ -90,7 +90,7 @@ setup(
         cdx-indexer = pywb.warc.cdxindexer:main
         live-rewrite-server = pywb.apps.live_rewrite_server:main
         proxy-cert-auth = pywb.framework.certauth:main
-        wb-manager = pywb.manager.manager:main_wrap_exc
+        wayback-manager = pywb.manager.manager:main_wrap_exc
         """,
     classifiers=[
         'Development Status :: 4 - Beta',

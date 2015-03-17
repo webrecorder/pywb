@@ -35,7 +35,7 @@ class SearchPageWbUrlHandler(WbUrlHandler):
         self.response_class = WbResponse
 
         if self.is_frame_mode:
-            html = config.get('frame_insert_html', 'ui/frame_insert.html')
+            html = config.get('frame_insert_html', 'templates/frame_insert.html')
             self.frame_insert_view = (J2TemplateView.
                                       create_template(html, 'Frame Insert'))
 

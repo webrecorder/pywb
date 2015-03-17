@@ -18,6 +18,10 @@ from mock import patch
 
 
 #=============================================================================
+ARCHIVE_DIR = 'archive'
+INDEX_DIR = 'indexes'
+
+#=============================================================================
 root_dir = None
 orig_cwd = None
 
@@ -41,14 +45,6 @@ def teardown_module():
 
 
 #=============================================================================
-mock_input_value = ''
-
-def mock_raw_input(*args):
-    global mock_input_value
-    return mock_input_value
-
-
-#=============================================================================
 class TestManagedColls(object):
     def setup(self):
         global root_dir
@@ -62,6 +58,9 @@ class TestManagedColls(object):
         for dir_ in dirlist:
             assert os.path.isdir(os.path.join(base, dir_))
 
+    def _get_sample_warc(self, name):
+        return os.path.join(get_test_dir(), 'warcs', name)
+
     def test_create_first_coll(self):
         """ Test first collection creation, with all required dirs
         """
@@ -73,12 +72,12 @@ class TestManagedColls(object):
         test = os.path.join(colls, 'test')
         assert os.path.isdir(test)
 
-        self._check_dirs(test, ['cdx', 'warcs', 'static', 'templates'])
+        self._check_dirs(test, [INDEX_DIR, ARCHIVE_DIR, 'static', 'templates'])
 
     def test_add_warcs(self):
         """ Test adding warc to new coll, check replay
         """
-        warc1 = os.path.join(get_test_dir(), 'warcs', 'example.warc.gz')
+        warc1 = self._get_sample_warc('example.warc.gz')
 
         main(['add', 'test', warc1])
 
@@ -89,7 +88,7 @@ class TestManagedColls(object):
     def test_another_coll(self):
         """ Test adding warc to a new coll, check replay
         """
-        warc1 = os.path.join(get_test_dir(), 'warcs', 'example.warc.gz')
+        warc1 = self._get_sample_warc('example.warc.gz')
 
         main(['init', 'foo'])
 
@@ -102,8 +101,8 @@ class TestManagedColls(object):
     def test_add_more_warcs(self):
         """ Test adding additional warcs, check replay of added content
         """
-        warc1 = os.path.join(get_test_dir(), 'warcs', 'iana.warc.gz')
-        warc2 = os.path.join(get_test_dir(), 'warcs', 'example-extra.warc')
+        warc1 = self._get_sample_warc('iana.warc.gz')
+        warc2 = self._get_sample_warc('example-extra.warc')
 
         main(['add', 'test', warc1, warc2])
 
@@ -127,15 +126,15 @@ class TestManagedColls(object):
 
         main(['init', 'nested'])
 
-        nested_root = os.path.join(self.root_dir, 'collections', 'nested', 'warcs')
+        nested_root = os.path.join(self.root_dir, 'collections', 'nested', ARCHIVE_DIR)
         nested_a = os.path.join(nested_root, 'A')
         nested_b = os.path.join(nested_root, 'B', 'sub')
 
         os.makedirs(nested_a)
         os.makedirs(nested_b)
 
-        warc1 = os.path.join(get_test_dir(), 'warcs', 'iana.warc.gz')
-        warc2 = os.path.join(get_test_dir(), 'warcs', 'example.warc.gz')
+        warc1 = self._get_sample_warc('iana.warc.gz')
+        warc2 = self._get_sample_warc('example.warc.gz')
 
         shutil.copy2(warc1, nested_a)
         shutil.copy2(warc2, nested_b)
@@ -146,7 +145,7 @@ class TestManagedColls(object):
               os.path.join(nested_b, 'example.warc.gz')
              ])
 
-        nested_cdx = os.path.join(self.root_dir, 'collections', 'nested', 'cdx', 'index.cdx')
+        nested_cdx = os.path.join(self.root_dir, 'collections', 'nested', INDEX_DIR, 'index.cdx')
         with open(nested_cdx) as fh:
             nested_cdx_index = fh.read()
 
@@ -165,7 +164,7 @@ class TestManagedColls(object):
         to ensure equality of indexes
         """
         # ensure merged index is same as full reindex
-        coll_dir = os.path.join(self.root_dir, 'collections', 'test', 'cdx')
+        coll_dir = os.path.join(self.root_dir, 'collections', 'test', INDEX_DIR)
         orig = os.path.join(coll_dir, 'index.cdx')
         bak = os.path.join(coll_dir, 'index.bak')
 
@@ -263,7 +262,7 @@ class TestManagedColls(object):
             fh.write('config.yaml overriden search page: ')
             fh.write('{{ wbrequest.user_metadata | tojson }}\n')
 
-        os.rename(os.path.join(self.root_dir, 'collections', 'test', 'cdx'),
+        os.rename(os.path.join(self.root_dir, 'collections', 'test', INDEX_DIR),
                   os.path.join(self.root_dir, 'collections', 'test', 'cdx2'))
 
         self._create_app()
@@ -297,7 +296,6 @@ class TestManagedColls(object):
     def test_add_template_input_yes(self):
         """ Test answer 'yes' to overwrite
         """
-        mock_raw_input_value = 'y'
         main(['template', 'foo', '--add', 'query_html'])
 
 
@@ -379,14 +377,14 @@ class TestManagedColls(object):
     def test_err_no_such_coll(self):
         """ Test error adding warc to non-existant collection
         """
-        warc1 = os.path.join(get_test_dir(), 'warcs', 'example.warc.gz')
+        warc1 = self._get_sample_warc('example.warc.gz')
 
         with raises(IOError):
             main(['add', 'bar', warc1])
 
     def test_err_wrong_warcs(self):
-        warc1 = os.path.join(get_test_dir(), 'warcs', 'example.warc.gz')
-        invalid_warc = os.path.join(self.root_dir, 'collections', 'test', 'warcs', 'invalid.warc.gz')
+        warc1 = self._get_sample_warc('example.warc.gz')
+        invalid_warc = os.path.join(self.root_dir, 'collections', 'test', ARCHIVE_DIR, 'invalid.warc.gz')
 
         # Empty warc list, argparse calls exit
         with raises(SystemExit):
@@ -411,14 +409,14 @@ class TestManagedColls(object):
         self._create_app()
 
         # No WARCS
-        warcs_path = os.path.join(colls, 'foo', 'warcs')
+        warcs_path = os.path.join(colls, 'foo', ARCHIVE_DIR)
         shutil.rmtree(warcs_path)
 
         with raises(IOError):
             main(['add', 'foo', 'somewarc'])
 
         # No CDX
-        cdx_path = os.path.join(colls, 'foo', 'cdx')
+        cdx_path = os.path.join(colls, 'foo', INDEX_DIR)
         shutil.rmtree(cdx_path)
 
         with raises(Exception):
