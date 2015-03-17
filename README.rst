@@ -1,10 +1,10 @@
 PyWb 0.9.0 Beta
 ===============
 
-.. image:: https://travis-ci.org/ikreymer/pywb.png?branch=develop
+.. image:: https://travis-ci.org/ikreymer/pywb.svg?branch=0.9.0b
       :target: https://travis-ci.org/ikreymer/pywb
-.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.png?branch=develop
-      :target: https://coveralls.io/r/ikreymer/pywb?branch=develop
+.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.svg?branch=0.9.0b
+      :target: https://coveralls.io/r/ikreymer/pywb?branch=0.9.0b
 .. image:: https://img.shields.io/gratipay/ikreymer.svg
       :target: https://www.gratipay.com/ikreymer/
 
@@ -13,49 +13,79 @@ pywb is a python implementation of web archival replay tools, sometimes also kno
 pywb allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
 The replay system is designed to accurately replay complex dynamic sites, including video and audio content.
 
-pywb can be used as a traditional web application or an HTTP or HTTPS proxy server, and has been tested on Linux, OS X and Windows platforms.
+The software can run as a traditional web application or an HTTP or HTTPS proxy server, and has been tested on Linux, OS X and Windows platforms.
 
 pywb is also fully compliant with the `Memento <http://mementoweb.org/>`_ protocol (`RFC-7089 <http://tools.ietf.org/html/rfc7089>`_).
 
 
-Public Projects Using Pywb
----------------------------
+Getting Started -- Install and Run your own Wayback Machine
+-----------------------------------------------------------
 
-Several organizations run public services which use pywb that you may explore directly:
+With release 0.9.0, pywb provides new simplified, directory-based init system to create and
+run your own Wayback Machine directly from archive collections on disk.
 
-* `Webenact <http://webenact.rhizome.org/excellences-and-perfections/>`_ from `rhizome.org <https://rhizome.org>`_, features artist focused social media reenactments. (Featured in `NYTimes Bits Blog <http://bits.blogs.nytimes.com/2014/10/19/a-new-tool-to-preserve-moments-on-the-internet>`_)
+A new utility, ``wayback-manager`` performs the most common collection management tasks from the command line.
 
-* `Perma.cc <https://perma.cc>`_ embeds pywb as part of a larger `open source application <https://github.com/harvard-lil/perma>`_ to provide web archive replay for law libraries.
+0. Ensure that Python 2.6 or 2.7 is installed on your machine (Python 2.7.3+ strongly recommended).
+   
+1. (Optional) For best results, setup a clean environment with virtualenv: ``virtualenv /tmp/pywb-env; source /tmp/pywb-env/bin/activate``
 
-* `Hypothes.is Annotations <https://via.hypothes.is>`_ uses the live rewrite feature to add `Hypothes.is <https://hypothes.is>`_ annotation editor into any page or PDF (https://github.com/hypothesis/via)
+2. ``pip install pywb==0.9.0b1``
 
-* `WebRecorder.io <https://webrecorder.io>`_ uses pywb and builds upon pywb-webrecorder to create a hosted web recording and replay system.
+3. Create a new directory for your archive, eg: ``mkdir ~/myarchive; cd ~/myarchive``
+
+4. Init a collection: ``wayback-manager init my_coll``
+
+5. (Optional) If you do not have any archive files, (WARC or ARC), you may create one by recording a page.
+
+   Visit https://webrecorder.io and record a page, then select Download to download the WARC file.
+   
+6. If you have any existing archive files (WARC or ARC), add them to your collection with: ``wayback-manager add /path/to/mywarc.warc.gz``
+
+7. Run ``wayback`` (in the same directory).
+
+8. Point your browser to ``http://localhost:8080/my_coll/<url>/`` where ``<url>`` is a url in your WARC file. (If you just recorded a page, use that url).
+
+9. If all worked well, you should see replay of ``<url>``. Congrats, you are running your own Wayback Machine!
+
+
+A more `detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_.
+
+Legacy `installation instructions <https://github.com/ikreymer/pywb/blob/master/INSTALL.rst>`_ contains additional
+installation and testing examples, using a ``config.yaml`` file. These instructions are from pre 0.9.0 versions but will continue to work in this version.
+
+
+Running Samples / Other Projects
+---------------------------------
+
+To run the bundled samples  (also used by test suite), you'll need to clone pywb locally:
+
+1. ``git clone -b 0.9.0b https://github.com/ikreymer/pywb.git``
+
+2. ``python setup.py install``
+
+3. ``wayback`` to run samples
+
+4.  Browse to http://localhost:8080/pywb/\*/example.com to see capture of http://example.com
+
+Additional (older) samples can be found in the `pywb-samples <https://github.com/ikreymer/pywb-samples>`_ repository.
+
+You may also check a listing of `public projects using with pywb <https://github.com/ikreymer/pywb/wiki/Public-Projects-using-pywb>`_
 
 
 Desktop Web Archive Player
 """"""""""""""""""""""""""
 
 There is now a downloadable point-and-click `Web Archive Player <https://github.com/ikreymer/webarchiveplayer>`_ which provides
-a native OS X and Windows application for browsing web archives, built using pywb. 
-You can use this tool to quickly check the contents of any WARC or ARC file with no configuration and installation.
+a native OS X and Windows application for browsing web archives, built using pywb.
 
-
-Usage Examples
------------------------------
-
-This README contains a basic overview of using pywb. After reading this intro, consider also taking a look at these seperate projects:
-
-* `pywb-webrecorder <https://github.com/ikreymer/pywb-webrecorder>`_ demonstrates a way to use pywb and warcprox to record web content while browsing.
-
-* `pywb-samples <https://github.com/ikreymer/pywb-samples>`_ provides additional archive samples with difficult-to-replay content.
-
-* `pywb-proxy-demo <https://github.com/ikreymer/pywb-proxy-demo>`_ showcases the revamped HTTP/S proxy replay system (available from pywb 0.6.0)
+You can use this tool to quickly check the contents of any WARC or ARC file through a standard GUI interface (no command line).
 
 
 pywb Tools Overview
 -----------------------------
 
-In addition to the standard wayback machine (explained further below), pywb tool suite includes a
+In addition to the standard Wayback Machine, pywb tool suite includes a
 number of useful command-line and web server tools. The tools should be available to run after
 running ``python setup.py install``:
 
@@ -79,134 +109,111 @@ running ``python setup.py install``:
 * ``wayback`` -- The full Wayback Machine application, further explained below.
 
 
+* ``wayback-manager`` -- A command-line utility for managing collections, adding WARC/ARC files, metadata and UI templates.
+   See ``wayback-manager --help`` for an up-to-date listing of commands and options.
+
+
 Latest Changes
 --------------
 
-See `CHANGES.rst <https://github.com/ikreymer/pywb/blob/master/CHANGES.rst>`_ for up-to-date changelist.
-
-For latest on video archiving, see `Video Replay and Recording <https://github.com/ikreymer/pywb/wiki/Video-Replay-and-Recording>`_
+See `CHANGES.rst <https://github.com/ikreymer/pywb/blob/master/CHANGES.rst>`_ for an up-to-date changelist.
 
 
-Quick Install & Run Samples
----------------------------
+Running as Rewriting Live Web Proxy
+-----------------------------------
 
-1. ``git clone https://github.com/ikreymer/pywb.git``
+In addition to replaying archived web content, pywb can serve as a rewriting proxy to the live web. This allows pywb
+to server live content, and inject customize web pages on the fly. This allow for a variety of use cases beyond archive replay.
 
-2. ``python setup.py install``
+For example, the `pywb-webrecorder <https://github.com/ikreymer/pywb-webrecorder>`_ demonstrates a way to use pywb live web rewriting
+together with a recording proxy (warcprox) to record content while browsing.
 
-3. ``wayback`` to run samples
+The `via.hypothes.is <via.hypothes.is>`_ project uses pywb to inject annotations into any live web page.
 
-4.  Browse to http://localhost:8080/pywb/\*/example.com to see capture of http://example.com
+Running in HTTP/HTTPS Proxy Mode
+--------------------------------
 
-
-(The `installation page <https://github.com/ikreymer/pywb/blob/master/INSTALL.rst>`_ contains additional
-installation and testing examples.)
-
-Running in Proxy Mode
----------------------
-
-pywb can also be used as an HTTP and/or HTTPS proxy server. See `pywb Proxy Mode Usage <https://github.com/ikreymer/pywb/wiki/Pywb-Proxy-Mode-Usage>`_ for more details
+pywb can also be used as an actual HTTP and/or HTTPS proxy server. See `pywb Proxy Mode Usage <https://github.com/ikreymer/pywb/wiki/Pywb-Proxy-Mode-Usage>`_ for more details
 on configuring proxy mode.
+
+To run as an HTTPS server, pywb provides a facility for generating a custom self-signed root certificate, which can be used to replay HTTPS content from the archive.
+(The certificate should be used with caution within a controlled setting).
+
 The `pywb-proxy-demo <https://github.com/ikreymer/pywb-proxy-demo>`_ project also contains a working configuration of proxy mode deployment.
 
 
-Configure with Archived Content
--------------------------------
+WSGI Container
+---------------
 
-If you have existing WARC or ARC files (.warc, .warc.gz, .arc, .arc.gz), you should be able to view
-their contents in pywb after creating sorted .cdx index files of their contents.
-This process can be done by running the ``cdx-indexer`` script and only needs to be done once.
+The default ``wayback`` application starts pywb in a reference WSGI container.
 
-(See the note below if you already have .cdx files for your archives)
+However, for production use, running in a different container, such as `uWSGI <https://uwsgi-docs.readthedocs.org/en/latest/>`_ is strongly recommended.
 
+The module ``pywb.apps.wayback`` may be used as the entry point for WSGI.
 
-Given an archive of warcs at ``myarchive/warcs``
+For example, the ``uwsgi.ini and ``run-uwsgi.sh`` scripts in this repo provides examples of running pywb with uWSGI.
 
-1. Create a dir for indexes, .eg. ``myarchive/cdx``
-
-2. Run ``cdx-indexer --sort myarchive/cdx myarchive/warcs`` to generate .cdx files for each
-   warc/arc file in ``myarchive/warcs``
-
-3. Edit **config.yaml** to contain the following. You may replace ``pywb`` with
-   a name of your choice -- it will be the path to your collection. (Multiple collections can be added
-   for different sets of .cdx files as well)
-
-::
-
-    collections:
-       pywb: ./my_archive/cdx/
+pywb should run in any standards (PEP-333 and PEP-3333) compatible WSGI container.
 
 
-    archive_paths: ./my_archive/warcs/
+UI Customization
+""""""""""""""""
 
+pywb makes it easy to customize most aspects of the UI around archived content, including a custom banner insert, query calendar, search and home pages,
+via HTML Jinja2 templates.
 
-4. Run ``wayback`` to start session.
-   If your archives contain ``http://my-archive-page.example.com``, all captures should be accessible
-   by browsing to http://localhost:8080/pywb/\*/my-archived-page.example.com
+You can see a list of all available UI templates by running: ``wayback-manager template --list``
 
-   (You can also use ``run-uwsgi.sh`` or ``run-gunicorn.sh`` to launch using those WSGI containers)
+To copy a default template to the file system (for modification), you can run ``wayback-manager template <coll> --add <template_name>``
 
+See the `Wayback Manager Tutorial <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_ and the 
+and `UI Customization <https://github.com/ikreymer/pywb/wiki/UI-Customization>`_ page for more details.
 
-See `INSTALL.rst <https://github.com/ikreymer/pywb/blob/master/INSTALL.rst>`_ for additional installation info.
+A note on CDX index files
+"""""""""""""""""""""""""
 
+The new ``wayback-manager`` tool will automatically generate index files (currently in CDX format) for all WARCs and ARCs, so
+manual updating of CDX indexes is no longer required.
 
-Use existing .cdx index files
-"""""""""""""""""""""""""""""
+However, if you need to use existing/legacy .cdx files, you may need to set a special config (for now).
 
-If you already have .cdx files for your archive, you can skip the first two steps above.
-
-pywb recommends using `SURT <http://crawler.archive.org/articles/user_manual/glossary.html#surt>`_ (Sort-friendly URI Reordering Transform)
-sorted urls and the ``cdx-indexer`` automatically generates indexs in this format.
-
-However, pywb is compatible with regular url keyed indexes also.
-If you would like to use non-SURT ordered .cdx files, simply add this field to the config:
-
+If you are using .cdx files where the key is *not* in `SURT <http://crawler.archive.org/articles/user_manual/glossary.html#surt>`_ format,
+simply add the following to the main ``config.yaml``
 ::
 
       surt_ordered: false
 
-UI Customization
-"""""""""""""""""""""
+A SURT CDX key reverses the order of domain and subdomains and allows for improved searching.
+Future versions of pywb may detect the format automatically.
 
-pywb makes it easy to customize most aspects of the UI around archived content, including a custom banner insert, query calendar, search and home pages, via HTML Jinja2 templates.
-See the config file for comment examples or read more about
-`UI Customization <https://github.com/ikreymer/pywb/wiki/UI-Customization>`_.
 
 About Wayback Machine
 ---------------------
 
 pywb is compatible with the standard `Wayback Machine <http://en.wikipedia.org/wiki/Wayback_Machine>`_ url format:
 
-``http://<host>/<collection>/<timestamp>/<original url>``
+Replay: ``http://<host>/<collection>/<timestamp>/<original url>``
+ex: http://pywb.herokuapp.com/pywb/20140127171238/http://www.iana.org
+ex: http://web.archive.org/web/20150316213720/http://www.example.com/
 
-Some examples of this url from other wayback machines (not implemented via pywb):
-
-``http://web.archive.org/web/20140312103519/http://www.example.com``
-``http://www.webarchive.org.uk/wayback/archive/20100513010014/http://www.example.com/``
-
-
-A listing of archived content, often in calendar form, is available when
-a ``*`` is used instead of timestamp.
-
-The Wayback Machine often uses an html parser to rewrite relative and absolute
-links, as well as absolute links found in javascript, css and some xml.
-
-pywb provides these features as a starting point.
+Query Listing: ``http://<host>/<collection>/*/<original url>``
+ex: http://pywb.herokuapp.com/pywb/*/http://iana.org/
+ex: http://web.archive.org/web/*/http://www.example.com/
 
 
 Additional Documentation
 ------------------------
 
--  For additional/up-to-date configuration details, consult the current
-   `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_
-
 -  The `wiki <https://github.com/ikreymer/pywb/wiki>`_ will have
    additional technical documentation about various aspects of pywb
+   
+-  The sample config.yaml file, although not required, will provide a listing of various advanced configuration options:
+   `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_
 
 Contributions
 -------------
 
-You are encouraged to fork and contribute to this project to improve web
+Everyone is encouraged to fork and contribute to this project to improve web
 archiving replay!
 
 Please take a look at list of current
