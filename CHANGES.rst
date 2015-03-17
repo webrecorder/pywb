@@ -1,3 +1,19 @@
+pywb 0.9.0-beta1 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* New directory-based configuration-less init system! ``config.yaml`` no longer required.
+
+* New ``wayback-manager`` collection manager for adding warcs, indexing, adding/removing templates, setting metadata.
+
+  More details at: `Auto-Configuration and Wayback Collections Manager <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_
+
+* Support for user metadata via per-collection ``metadata.yaml``
+
+* Templates: improved/simpified home page and collection search page, show user metadata by default.
+
+* cdx-indexer: support for `-m` option, minimal 6-field cdx format (key, timestamp, original url, record length, offset, and filename). When indexing to this format
+  the HTTP record parsing is skipped.
+
 pywb 0.8.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
