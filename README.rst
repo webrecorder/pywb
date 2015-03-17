@@ -11,15 +11,17 @@ PyWb 0.9.0 Beta
 pywb is a python implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
 
 pywb allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
-The replay system is designed to accurately replay complex dynamic sites, including video and audio content.
+
+The replay system is designed to accurately replay complex dynamic sites, including ``video and audio content <https://github.com/ikreymer/pywb/wiki/Video-Replay-and-Recording>``_ and sites
+with complex JavaScript.
 
 The software can run as a traditional web application or an HTTP or HTTPS proxy server, and has been tested on Linux, OS X and Windows platforms.
 
 pywb is also fully compliant with the `Memento <http://mementoweb.org/>`_ protocol (`RFC-7089 <http://tools.ietf.org/html/rfc7089>`_).
 
 
-Getting Started -- Install and Run your own Wayback Machine
------------------------------------------------------------
+Getting Started -- Run your own Wayback Machine
+-----------------------------------------------
 
 With release 0.9.0, pywb provides new simplified, directory-based init system to create and
 run your own Wayback Machine directly from archive collections on disk.
@@ -36,15 +38,13 @@ A new utility, ``wayback-manager`` performs the most common collection managemen
 
 4. Init a collection: ``wayback-manager init my_coll``
 
-5. (Optional) If you do not have any archive files, (WARC or ARC), you may create one by using the free
-
-   https://webrecorder.io service. For example, you may visit https://webrecorder.io/record/http://example.com then
+5. (Optional) If you do not have any archive files, (WARCs or ARCs), you may create one by using the free
+   https://webrecorder.io service. For example, you may visit https://webrecorder.io/record/http://example.com, then (after a few seconds)
+   click "Download -> Web Archive (WARC)" to get the WARC file (.warc.gz)
    
-   click Download to download the WARC file (.warc.gz)
-   
-6. If you have any existing archive files (WARC or ARC), add them to your collection with: ``wayback-manager add /path/to/mywarc.warc.gz``
+6. If you have any existing archive files (WARCs or ARCs), add them to your collection with: ``wayback-manager add /path/to/mywarc.warc.gz``
 
-7. Run ``wayback``!
+7. Run ``wayback``
 
 8. Point your browser to ``http://localhost:8080/my_coll/<url>/`` where ``<url>`` is a url in your WARC file. 
 
@@ -56,8 +56,9 @@ Congrats, you are now running your own Wayback Machine!
 
 A more `detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_.
 
-Legacy `installation instructions <https://github.com/ikreymer/pywb/blob/master/INSTALL.rst>`_ contains additional
-installation and testing examples, using a ``config.yaml`` file. These instructions are from pre 0.9.0 versions but will continue to work in this version.
+Legacy `installation instructions <https://github.com/ikreymer/pywb/blob/0.9.0b/INSTALL.rst>`_ contains additional
+installation and testing examples, using a ``config.yaml`` file. These instructions are from previous releases but
+still apply for pywb 0.9.0.
 
 
 Running Samples / Other Projects
@@ -122,7 +123,7 @@ running ``python setup.py install``:
 Latest Changes
 --------------
 
-See `CHANGES.rst <https://github.com/ikreymer/pywb/blob/master/CHANGES.rst>`_ for an up-to-date changelist.
+See `CHANGES.rst <https://github.com/ikreymer/pywb/blob/0.9.0b/CHANGES.rst>`_ for an up-to-date changelist.
 
 
 Running as Rewriting Live Web Proxy
@@ -142,8 +143,11 @@ Running in HTTP/HTTPS Proxy Mode
 pywb can also be used as an actual HTTP and/or HTTPS proxy server. See `pywb Proxy Mode Usage <https://github.com/ikreymer/pywb/wiki/Pywb-Proxy-Mode-Usage>`_ for more details
 on configuring proxy mode.
 
-To run as an HTTPS server, pywb provides a facility for generating a custom self-signed root certificate, which can be used to replay HTTPS content from the archive.
+To run as an HTTPS proxy server, pywb provides a facility for generating a custom self-signed root certificate, which can be used to replay HTTPS content from the archive.
 (The certificate should be used with caution within a controlled setting).
+Using these features requiring an extra dependency: the pyopenssl library must be installed via ``pip install pyopenssl``
+
+For more info, see ``Proxy Mode Usage <https://github.com/ikreymer/pywb/wiki/Pywb-Proxy-Mode-Usage>``_
 
 The `pywb-proxy-demo <https://github.com/ikreymer/pywb-proxy-demo>`_ project also contains a working configuration of proxy mode deployment.
 
@@ -205,7 +209,7 @@ Additional Reference
    additional technical documentation about various aspects of pywb
    
 -  The sample config.yaml file, although not required, will provide a listing of various advanced configuration options:
-   `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_
+   `config.yaml <https://github.com/ikreymer/pywb/blob/0.9.0b/config.yaml>`_
 
 Contributions & Bug Reports
 ---------------------------
