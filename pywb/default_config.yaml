@@ -1,8 +1,3 @@
-#collections:
-#    pywb: ./sample_archive/cdx/
-
-#archive_paths: ./sample_archive/warcs/
-
 collections_root: collections
 
 paths:

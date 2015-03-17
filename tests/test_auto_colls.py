@@ -274,16 +274,12 @@ class TestManagedColls(object):
         resp = self.testapp.get('/test/20140103030321/http://example.com?example=1')
         assert resp.status_int == 200
 
-    def test_add_default_templates(self):
-        """ Test add default templates: shared, collection,
+    def test_add_default_coll_templates(self):
+        """ Test add default templates: collection,
         and overwrite collection template
         """
         # list
         main(['template', 'foo', '--list'])
-
-        # Add shared template
-        main(['template', '--add', 'home_html'])
-        assert os.path.isfile(os.path.join(self.root_dir, 'index.html'))
 
         # Add collection template
         main(['template', 'foo', '--add', 'query_html'])
@@ -291,6 +287,24 @@ class TestManagedColls(object):
 
         # overwrite -- force
         main(['template', 'foo', '--add', 'query_html', '-f'])
+
+    def test_add_modify_home_template(self):
+        # Add shared template
+        main(['template', '--add', 'home_html'])
+
+        filename = os.path.join(self.root_dir, 'templates', 'index.html')
+        assert os.path.isfile(filename)
+
+        with open(filename, 'r+b') as fh:
+            buf = fh.read()
+            buf = buf.replace('</html>', 'Custom Test Homepage</html>')
+            fh.seek(0)
+            fh.write(buf)
+
+        self._create_app()
+        resp = self.testapp.get('/')
+        assert resp.content_type == 'text/html'
+        assert 'Custom Test Homepage</html>' in resp.body, resp.body
 
     @patch('pywb.manager.manager.get_input', lambda x: 'y')
     def test_add_template_input_yes(self):

@@ -217,17 +217,20 @@ directory structure expected by pywb
                        'a collection name: template <coll> --{1} {0}')
                 raise IOError(msg.format(template_name, verb))
 
-            full_path = os.path.join(self.templates_dir,
-                                     os.path.basename(filename))
+            full_path = os.path.join(self.templates_dir, os.path.basename(filename))
 
         except KeyError:
             try:
                 filename = shared_templates[template_name]
-                full_path = os.path.join(os.getcwd(),
-                                         os.path.basename(filename))
+                full_path = os.path.join(os.getcwd(), filename)
+
+                # Create templates dir on demand
+                dir_ = os.path.dirname(full_path)
+                if not os.path.isdir(dir_):
+                    os.makedirs(dir_)
             except KeyError:
                 msg = 'template name must be one of {0} or {1}'
-                msg.format(templates.keys(), shared_templates.keys())
+                msg = msg.format(templates.keys(), shared_templates.keys())
                 raise KeyError(msg)
 
         return full_path, filename
