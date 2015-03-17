@@ -36,18 +36,23 @@ A new utility, ``wayback-manager`` performs the most common collection managemen
 
 4. Init a collection: ``wayback-manager init my_coll``
 
-5. (Optional) If you do not have any archive files, (WARC or ARC), you may create one by recording a page.
+5. (Optional) If you do not have any archive files, (WARC or ARC), you may create one by using the free
 
-   Visit https://webrecorder.io and record a page, then select Download to download the WARC file.
+   https://webrecorder.io service. For example, you may visit https://webrecorder.io/record/http://example.com then
+   
+   click Download to download the WARC file (.warc.gz)
    
 6. If you have any existing archive files (WARC or ARC), add them to your collection with: ``wayback-manager add /path/to/mywarc.warc.gz``
 
-7. Run ``wayback`` (in the same directory).
+7. Run ``wayback``!
 
-8. Point your browser to ``http://localhost:8080/my_coll/<url>/`` where ``<url>`` is a url in your WARC file. (If you just recorded a page, use that url).
+8. Point your browser to ``http://localhost:8080/my_coll/<url>/`` where ``<url>`` is a url in your WARC file. 
 
-9. If all worked well, you should see replay of ``<url>``. Congrats, you are running your own Wayback Machine!
+   (If you just recorded ``http://example.com/``, you should be able to view ``http://localhost:8080/my_coll/http://example.com/``)
 
+9. If all worked well, you should see replay of ``<url>``.
+
+Congrats, you are now running your own Wayback Machine!
 
 A more `detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_.
 
@@ -76,10 +81,11 @@ You may also check a listing of `public projects using with pywb <https://github
 Desktop Web Archive Player
 """"""""""""""""""""""""""
 
-There is now a downloadable point-and-click `Web Archive Player <https://github.com/ikreymer/webarchiveplayer>`_ which provides
+There is now alos a downloadable point-and-click `Web Archive Player <https://github.com/ikreymer/webarchiveplayer>`_ which provides
 a native OS X and Windows application for browsing web archives, built using pywb.
 
-You can use this tool to quickly check the contents of any WARC or ARC file through a standard GUI interface (no command line).
+You can use this tool to quickly check the contents of any WARC or ARC file through a standard point-and-click GUI interface, no
+command line tools needed.
 
 
 pywb Tools Overview
@@ -106,10 +112,10 @@ running ``python setup.py install``:
 * ``proxy-cert-auth`` -- a utility to support proxy mode. It can be used in CA root certificate, or per-host certificate with an existing root cert.
 
 
-* ``wayback`` -- The full Wayback Machine application, further explained below.
+* ``wayback`` -- The Wayback Machine application itself.
 
 
-* ``wayback-manager`` -- A command-line utility for managing collections, adding WARC/ARC files, metadata and UI templates.
+*  ``wayback-manager`` -- A command-line utility for managing collections, adding WARC/ARC files, metadata and UI templates.
    See ``wayback-manager --help`` for an up-to-date listing of commands and options.
 
 
@@ -145,19 +151,19 @@ The `pywb-proxy-demo <https://github.com/ikreymer/pywb-proxy-demo>`_ project als
 WSGI Container
 ---------------
 
-The default ``wayback`` application starts pywb in a reference WSGI container.
+The default ``wayback`` application starts pywb in a single-threaded single-process reference WSGI container.
 
-However, for production use, running in a different container, such as `uWSGI <https://uwsgi-docs.readthedocs.org/en/latest/>`_ is strongly recommended.
-
-The module ``pywb.apps.wayback`` may be used as the entry point for WSGI.
+For production use, running in a different container, such as `uWSGI <https://uwsgi-docs.readthedocs.org/en/latest/>`_ is strongly recommended.
 
 For example, the ``uwsgi.ini and ``run-uwsgi.sh`` scripts in this repo provides examples of running pywb with uWSGI.
+
+The module ``pywb.apps.wayback`` may be used as the entry point for WSGI.
 
 pywb should run in any standards (PEP-333 and PEP-3333) compatible WSGI container.
 
 
-UI Customization
-""""""""""""""""
+Custom UI and User Metadata
+"""""""""""""""""""""""""""
 
 pywb makes it easy to customize most aspects of the UI around archived content, including a custom banner insert, query calendar, search and home pages,
 via HTML Jinja2 templates.
@@ -166,25 +172,12 @@ You can see a list of all available UI templates by running: ``wayback-manager t
 
 To copy a default template to the file system (for modification), you can run ``wayback-manager template <coll> --add <template_name>``
 
+pywb now also supports custom user metadata for each collection. The metadata may be specified in the ``metadata.yaml`` in each collection's directory.
+
+The metadata is accessible to all UI templates and may be displayed to the user as needed.
+
 See the `Wayback Manager Tutorial <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_ and the 
 and `UI Customization <https://github.com/ikreymer/pywb/wiki/UI-Customization>`_ page for more details.
-
-A note on CDX index files
-"""""""""""""""""""""""""
-
-The new ``wayback-manager`` tool will automatically generate index files (currently in CDX format) for all WARCs and ARCs, so
-manual updating of CDX indexes is no longer required.
-
-However, if you need to use existing/legacy .cdx files, you may need to set a special config (for now).
-
-If you are using .cdx files where the key is *not* in `SURT <http://crawler.archive.org/articles/user_manual/glossary.html#surt>`_ format,
-simply add the following to the main ``config.yaml``
-::
-
-      surt_ordered: false
-
-A SURT CDX key reverses the order of domain and subdomains and allows for improved searching.
-Future versions of pywb may detect the format automatically.
 
 
 About Wayback Machine
@@ -193,16 +186,20 @@ About Wayback Machine
 pywb is compatible with the standard `Wayback Machine <http://en.wikipedia.org/wiki/Wayback_Machine>`_ url format:
 
 Replay: ``http://<host>/<collection>/<timestamp>/<original url>``
-ex: http://pywb.herokuapp.com/pywb/20140127171238/http://www.iana.org
-ex: http://web.archive.org/web/20150316213720/http://www.example.com/
+
+- ex: http://pywb.herokuapp.com/pywb/20140127171238/http://www.iana.org
+
+- ex: http://web.archive.org/web/20150316213720/http://www.example.com/
 
 Query Listing: ``http://<host>/<collection>/*/<original url>``
-ex: http://pywb.herokuapp.com/pywb/*/http://iana.org/
-ex: http://web.archive.org/web/*/http://www.example.com/
+
+- ex: http://pywb.herokuapp.com/pywb/*/http://iana.org/
+
+- ex: http://web.archive.org/web/*/http://www.example.com/
 
 
-Additional Documentation
-------------------------
+Additional Reference
+--------------------
 
 -  The `wiki <https://github.com/ikreymer/pywb/wiki>`_ will have
    additional technical documentation about various aspects of pywb
@@ -210,11 +207,11 @@ Additional Documentation
 -  The sample config.yaml file, although not required, will provide a listing of various advanced configuration options:
    `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_
 
-Contributions
--------------
+Contributions & Bug Reports
+---------------------------
 
-Everyone is encouraged to fork and contribute to this project to improve web
-archiving replay!
+Users are encouraged to fork and contribute to this project to improve any and all aspects of web archival
+replay and web proxy services.
 
 Please take a look at list of current
 `issues <https://github.com/ikreymer/pywb/issues?state=open>`_ and feel
