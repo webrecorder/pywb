@@ -61,8 +61,8 @@ installation and testing examples, using a ``config.yaml`` file. These instructi
 still apply for pywb 0.9.0.
 
 
-Running Samples / Other Projects
----------------------------------
+Running Samples and Tests
+"""""""""""""""""""""""""
 
 To run the bundled samples  (also used by test suite), you'll need to clone pywb locally:
 
@@ -74,9 +74,17 @@ To run the bundled samples  (also used by test suite), you'll need to clone pywb
 
 4.  Browse to http://localhost:8080/pywb/\*/example.com to see capture of http://example.com
 
+To run tests on your system, you may run ``python setup.py test``
+
+(A few tests require the optional ``pyopenssl`` package and are skipped if the package is not installed)
+
+
+Additional Samples and Other Projects
+""""""""""""""""""""""""""""""""""""""
+
 Additional (older) samples can be found in the `pywb-samples <https://github.com/ikreymer/pywb-samples>`_ repository.
 
-You may also check a listing of `public projects using with pywb <https://github.com/ikreymer/pywb/wiki/Public-Projects-using-pywb>`_
+For additional reference on how pywb is being used, you may check some of the `public projects using with pywb <https://github.com/ikreymer/pywb/wiki/Public-Projects-using-pywb>`_
 
 
 Desktop Web Archive Player
