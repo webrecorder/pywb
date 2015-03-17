@@ -12,7 +12,7 @@ pywb is a python implementation of web archival replay tools, sometimes also kno
 
 pywb allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_.
 
-The replay system is designed to accurately replay complex dynamic sites, including ``video and audio content <https://github.com/ikreymer/pywb/wiki/Video-Replay-and-Recording>``_ and sites
+The replay system is designed to accurately replay complex dynamic sites, including `video and audio content <https://github.com/ikreymer/pywb/wiki/Video-Replay-and-Recording>`_ and sites
 with complex JavaScript.
 
 The software can run as a traditional web application or an HTTP or HTTPS proxy server, and has been tested on Linux, OS X and Windows platforms.
@@ -29,7 +29,7 @@ run your own Wayback Machine directly from archive collections on disk.
 A new utility, ``wayback-manager`` performs the most common collection management tasks from the command line.
 
 0. Ensure that Python 2.6 or 2.7 is installed on your machine (Python 2.7.3+ strongly recommended).
-   
+
 1. (Optional) For best results, setup a clean environment with virtualenv: ``virtualenv /tmp/pywb-env; source /tmp/pywb-env/bin/activate``
 
 2. ``pip install pywb==0.9.0b1``
@@ -41,12 +41,12 @@ A new utility, ``wayback-manager`` performs the most common collection managemen
 5. (Optional) If you do not have any archive files, (WARCs or ARCs), you may create one by using the free
    https://webrecorder.io service. For example, you may visit https://webrecorder.io/record/http://example.com, then (after a few seconds)
    click "Download -> Web Archive (WARC)" to get the WARC file (.warc.gz)
-   
+
 6. If you have any existing archive files (WARCs or ARCs), add them to your collection with: ``wayback-manager add /path/to/mywarc.warc.gz``
 
 7. Run ``wayback``
 
-8. Point your browser to ``http://localhost:8080/my_coll/<url>/`` where ``<url>`` is a url in your WARC file. 
+8. Point your browser to ``http://localhost:8080/my_coll/<url>/`` where ``<url>`` is a url in your WARC file.
 
    (If you just recorded ``http://example.com/``, you should be able to view ``http://localhost:8080/my_coll/http://example.com/``)
 
@@ -56,13 +56,13 @@ Congrats, you are now running your own Wayback Machine!
 
 A more `detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_.
 
-Legacy `installation instructions <https://github.com/ikreymer/pywb/blob/0.9.0b/INSTALL.rst>`_ contains additional
-installation and testing examples, using a ``config.yaml`` file. These instructions are from previous releases but
+Legacy `installation instructions <https://github.com/ikreymer/pywb/blob/0.9.0b/INSTALL.rst>`_ contain additional
+information and testing examples, and use a custom ``config.yaml`` file. These instructions are from previous releases but
 still apply for pywb 0.9.0.
 
 
 Running Samples and Tests
-"""""""""""""""""""""""""
+-------------------------
 
 To run the bundled samples  (also used by test suite), you'll need to clone pywb locally:
 
@@ -155,7 +155,7 @@ To run as an HTTPS proxy server, pywb provides a facility for generating a custo
 (The certificate should be used with caution within a controlled setting).
 Using these features requiring an extra dependency: the pyopenssl library must be installed via ``pip install pyopenssl``
 
-For more info, see ``Proxy Mode Usage <https://github.com/ikreymer/pywb/wiki/Pywb-Proxy-Mode-Usage>``_
+For more info, see `Proxy Mode Usage <https://github.com/ikreymer/pywb/wiki/Pywb-Proxy-Mode-Usage>`_
 
 The `pywb-proxy-demo <https://github.com/ikreymer/pywb-proxy-demo>`_ project also contains a working configuration of proxy mode deployment.
 
@@ -188,7 +188,7 @@ pywb now also supports custom user metadata for each collection. The metadata ma
 
 The metadata is accessible to all UI templates and may be displayed to the user as needed.
 
-See the `Wayback Manager Tutorial <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_ and the 
+See the `Wayback Manager Tutorial <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_ and the
 and `UI Customization <https://github.com/ikreymer/pywb/wiki/UI-Customization>`_ page for more details.
 
 
@@ -205,9 +205,9 @@ Replay: ``http://<host>/<collection>/<timestamp>/<original url>``
 
 Query Listing: ``http://<host>/<collection>/*/<original url>``
 
-- ex: http://pywb.herokuapp.com/pywb/*/http://iana.org/
+- ex: http://pywb.herokuapp.com/pywb/\*/http://iana.org/
 
-- ex: http://web.archive.org/web/*/http://www.example.com/
+- ex: http://web.archive.org/web/\*/http://www.example.com/
 
 
 Additional Reference
@@ -215,7 +215,7 @@ Additional Reference
 
 -  The `wiki <https://github.com/ikreymer/pywb/wiki>`_ will have
    additional technical documentation about various aspects of pywb
-   
+
 -  The sample config.yaml file, although not required, will provide a listing of various advanced configuration options:
    `config.yaml <https://github.com/ikreymer/pywb/blob/0.9.0b/config.yaml>`_
 
