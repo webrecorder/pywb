@@ -15,6 +15,12 @@ com,example)/?example=1 20140103030321 http://example.com?example=1 1043 333 exa
 com,example)/?example=1 20140103030341 http://example.com?example=1 553 1864 example.warc.gz
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example 577 2907 example.warc.gz
 
+# warc.gz -- minimal CDXJ
+>>> print_cdx_index('example.warc.gz', minimal=True, cdxj=True)
+com,example)/?example=1 20140103030321 {"url": "http://example.com?example=1", "length": "1043", "offset": "333", "filename": "example.warc.gz"}
+com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "length": "553", "offset": "1864", "filename": "example.warc.gz"}
+org,iana)/domains/example 20140128051539 {"url": "http://www.iana.org/domains/example", "length": "577", "offset": "2907", "filename": "example.warc.gz"}
+
 # warc.gz -- parse all
 >>> print_cdx_index('example.warc.gz', include_all=True)
  CDX N b a m s k r M S V g
@@ -23,6 +29,14 @@ com,example)/?example=1 20140103030321 http://example.com?example=1 - - - - - 48
 com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 1864 example.warc.gz
 com,example)/?example=1 20140103030341 http://example.com?example=1 - - - - - 490 2417 example.warc.gz
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 example.warc.gz
+
+# warc.gz -- parse all -- CDXJ
+>>> print_cdx_index('example.warc.gz', include_all=True, cdxj=True)
+com,example)/?example=1 20140103030321 {"url": "http://example.com?example=1", "mime": "text/html", "status": "200", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "1043", "offset": "333", "filename": "example.warc.gz"}
+com,example)/?example=1 20140103030321 {"url": "http://example.com?example=1", "length": "488", "offset": "1376", "filename": "example.warc.gz"}
+com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "mime": "warc/revisit", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "553", "offset": "1864", "filename": "example.warc.gz"}
+com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "length": "490", "offset": "2417", "filename": "example.warc.gz"}
+org,iana)/domains/example 20140128051539 {"url": "http://www.iana.org/domains/example", "mime": "text/html", "status": "302", "digest": "JZ622UA23G5ZU6Y3XAKH4LINONUEICEG", "length": "577", "offset": "2907", "filename": "example.warc.gz"}
 
 # warc
 >>> print_cdx_index('example.warc')
@@ -44,6 +58,10 @@ org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example tex
 >>> print_cdx_index('example.arc.gz')
  CDX N b a m s k r M S V g
 com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 856 171 example.arc.gz
+
+# arc.gz -- json
+>>> print_cdx_index('example.arc.gz', cdxj=True)
+com,example)/ 20140216050221 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "856", "offset": "171", "filename": "example.arc.gz"}
 
 # arc
 >>> print_cdx_index('example.arc')

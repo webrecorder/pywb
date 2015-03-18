@@ -1,6 +1,13 @@
 import os
 import sys
-import json
+
+from json import dumps as json_encode
+
+try:  # pragma: no cover
+    from collections import OrderedDict
+except ImportError:  # pragma: no cover
+    from ordereddict import OrderedDict
+
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 from bisect import insort
@@ -42,8 +49,7 @@ class CDXJ(object):
         out.write(entry['timestamp'])
         out.write(' ')
 
-        outdict = {}
-        outdict['filename'] = filename
+        outdict = OrderedDict()
 
         for n, v in entry.iteritems():
             if n in ('key', 'timestamp'):
@@ -52,9 +58,13 @@ class CDXJ(object):
             if n.startswith('_'):
                 continue
 
+            if not v or v == '-':
+                continue
+
             outdict[n] = v
 
-        out.write(json.dumps(outdict))
+        outdict['filename'] = filename
+        out.write(json_encode(outdict))
         out.write('\n')
 
 

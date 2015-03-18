@@ -10,6 +10,11 @@ import base64
 
 import re
 
+try:  # pragma: no cover
+    from collections import OrderedDict
+except ImportError:  # pragma: no cover
+    from ordereddict import OrderedDict
+
 
 #=================================================================
 class ArchiveIterator(object):
@@ -189,7 +194,7 @@ class ArchiveIterator(object):
 
 
 #=================================================================
-class ArchiveIndexEntry(dict):
+class ArchiveIndexEntryMixin(object):
     MIME_RE = re.compile('[; ]')
 
     def extract_mime(self, mime, def_mime='unk'):
@@ -210,8 +215,8 @@ class ArchiveIndexEntry(dict):
             self['status'] = '-'
 
     def set_rec_info(self, offset, length, digest):
-        self['offset'] = str(offset)
         self['length'] = str(length)
+        self['offset'] = str(offset)
         if digest:
             self['digest'] = digest
 
@@ -243,6 +248,12 @@ class ArchiveIndexEntry(dict):
 class DefaultRecordIter(object):
     def __init__(self, **options):
         self.options = options
+
+    def _create_index_entry(self):
+        if self.options.get('cdxj'):
+            return OrderedArchiveIndexEntry()
+        else:
+            return ArchiveIndexEntry()
 
     def create_record_iter(self, arcv_iter):
         append_post = self.options.get('append_post')
@@ -344,7 +355,7 @@ class DefaultRecordIter(object):
         """ Parse warc record
         """
 
-        entry = ArchiveIndexEntry()
+        entry = self._create_index_entry()
 
         if record.rec_type == 'warcinfo':
             entry['url'] = record.rec_headers.get_header('WARC-Filename')
@@ -403,7 +414,7 @@ class DefaultRecordIter(object):
         # replace nulls
         url = url.replace('\x00', '%00')
 
-        entry = ArchiveIndexEntry()
+        entry = self._create_index_entry()
         entry['url'] = url
 
         # timestamp
@@ -414,11 +425,11 @@ class DefaultRecordIter(object):
         if self.options.get('minimal'):
             return entry
 
-        # status
-        entry.extract_status(record.status_headers)
-
         # mime
         entry.extract_mime(record.rec_headers.get_header('content-type'))
+
+        # status
+        entry.extract_status(record.status_headers)
 
         # digest
         entry['digest'] = '-'
@@ -439,3 +450,9 @@ class DefaultRecordIter(object):
                 continue
 
             yield entry
+
+class ArchiveIndexEntry(ArchiveIndexEntryMixin, dict):
+    pass
+
+class OrderedArchiveIndexEntry(ArchiveIndexEntryMixin, OrderedDict):
+    pass

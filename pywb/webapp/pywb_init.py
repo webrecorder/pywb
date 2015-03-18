@@ -126,7 +126,7 @@ def create_cdx_server_app(passed_config):
 
 
 #=================================================================
-class DirectoryCollsLoader(object):  #pragma: no cover
+class DirectoryCollsLoader(object):
     def __init__(self, config, static_routes):
         self.config = config
         self.static_routes = static_routes
