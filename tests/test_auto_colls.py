@@ -37,11 +37,11 @@ def setup_module():
     root_dir = os.getcwd()
 
 def teardown_module():
-    global root_dir
-    shutil.rmtree(root_dir)
-
     global orig_cwd
     os.chdir(orig_cwd)
+
+    global root_dir
+    shutil.rmtree(root_dir)
 
 
 #=============================================================================

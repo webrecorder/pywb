@@ -145,7 +145,8 @@ directory structure expected by pywb
                             merged.write(line)
                             last_line = line
 
-        os.rename(merged_file, cdx_file)
+        shutil.move(merged_file, cdx_file)
+        #os.rename(merged_file, cdx_file)
         os.remove(temp_file)
 
     def set_metadata(self, namevalue_pairs):
