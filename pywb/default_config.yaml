@@ -38,11 +38,14 @@ not_found_html: templates/not_found.html
 proxy_cert_download_html: templates/proxy_cert_download.html
 proxy_select_html: templates/proxy_select.html
 
+static_default_prefix: &static_default_prefix static/__pywb
+static_shared_prefix: static/__shared
+
 template_globals:
-    static_path: static/default
+    static_path: *static_default_prefix
 
 static_routes:
-    static/default: pywb/static/
+    *static_default_prefix: pywb/static/
 
 enable_memento: true
 

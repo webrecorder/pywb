@@ -171,7 +171,7 @@ class TestProxyHttpsCookie:
 
     # static replay
     def test_replay_static(self):
-        resp = self.get_url('https://pywb.proxy/static/default/wb.js')
+        resp = self.get_url('https://pywb.proxy/static/__pywb/wb.js')
         assert resp.status_code == 200
         assert 'function init_banner' in resp.text
 

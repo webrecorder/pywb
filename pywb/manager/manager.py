@@ -50,6 +50,10 @@ directory structure expected by pywb
             if os.path.isdir(os.path.join(self.root_dir, d)):
                 print('- ' + d)
 
+    def _get_root_dir(self, name):
+        return os.path.join(os.getcwd(),
+                            self.default_config['paths'][name])
+
     def _get_dir(self, name):
         return os.path.join(self.coll_dir,
                             self.default_config['paths'][name])
@@ -68,6 +72,9 @@ directory structure expected by pywb
         self._create_dir(self.cdx_dir)
         self._create_dir(self.static_dir)
         self._create_dir(self.templates_dir)
+
+        self._create_dir(self._get_root_dir('static_path'))
+        self._create_dir(self._get_root_dir('templates_dir'))
 
     def _assert_coll_exists(self):
         if not os.path.isdir(self.coll_dir):
@@ -224,10 +231,6 @@ directory structure expected by pywb
                 filename = shared_templates[template_name]
                 full_path = os.path.join(os.getcwd(), filename)
 
-                # Create templates dir on demand
-                dir_ = os.path.dirname(full_path)
-                if not os.path.isdir(dir_):
-                    os.makedirs(dir_)
             except KeyError:
                 msg = 'template name must be one of {0} or {1}'
                 msg = msg.format(templates.keys(), shared_templates.keys())

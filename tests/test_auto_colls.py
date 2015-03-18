@@ -195,6 +195,20 @@ class TestManagedColls(object):
         assert resp.content_type == 'application/javascript'
         assert '/* Some JS File */' in resp.body
 
+    def test_add_shared_static(self):
+        """ Test adding shared static file to root static/ dir, check access
+        """
+        a_static = os.path.join(self.root_dir, 'static', 'foo.css')
+
+        with open(a_static, 'w+b') as fh:
+            fh.write('/* Some CSS File */')
+
+        self._create_app()
+        resp = self.testapp.get('/static/__shared/foo.css')
+        assert resp.status_int == 200
+        assert resp.content_type == 'text/css'
+        assert '/* Some CSS File */' in resp.body
+
     def test_add_title_metadata_index_page(self):
         """ Test adding title metadata to a collection, test
         retrieval on default index page

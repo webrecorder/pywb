@@ -134,6 +134,13 @@ class DirectoryCollsLoader(object):
     def __call__(self):
         colls = {}
 
+        static_dir = self.config.get('paths')['static_path']
+        static_shared_prefix = self.config.get('static_shared_prefix')
+
+        if static_dir and static_shared_prefix and os.path.isdir(static_dir):
+            static_dir = os.path.abspath(static_dir) + os.path.sep
+            self.static_routes[static_shared_prefix] = static_dir
+
         root_dir = self.config.get('collections_root', '')
         if not root_dir or not os.path.isdir(root_dir):
             return colls
