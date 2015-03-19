@@ -167,7 +167,7 @@ class CDXServer(BaseCDXServer):
         if filename.startswith('redis://'):
             return RedisCDXSource(filename, config)
 
-        if filename.endswith('.cdx'):
+        if filename.endswith(('.cdx', '.cdxj')):
             return CDXFile(filename)
 
         if filename.endswith(('.summary', '.idx')):

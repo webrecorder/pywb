@@ -172,6 +172,8 @@ def cdx_filter(cdx_iter, filter_strings):
             # apply filter to cdx[field]
             else:
                 self.field = parts[0]
+                self.field = CDXObject.CDX_ALT_FIELDS.get(self.field,
+                                                          self.field)
                 string = parts[1]
 
             # make regex if regex mode
@@ -181,7 +183,10 @@ def cdx_filter(cdx_iter, filter_strings):
                 self.filter_str = string
 
         def __call__(self, cdx):
-            val = cdx[self.field] if self.field else str(cdx)
+            if not self.field:
+                val = str(cdx)
+            else:
+                val = cdx.get(self.field, '')
 
             matched = self.compare_func(val)
 
@@ -280,8 +285,8 @@ def cdx_resolve_revisits(cdx_iter):
         if original_cdx and is_revisit:
             fill_orig = lambda field: original_cdx[field]
             # Transfer mimetype and statuscode
-            cdx['mimetype'] = original_cdx['mimetype']
-            cdx['statuscode'] = original_cdx['statuscode']
+            cdx['mimetype'] = original_cdx.get('mimetype', 'none')
+            cdx['statuscode'] = original_cdx.get('statuscode', 'none')
         else:
             fill_orig = lambda field: '-'
 

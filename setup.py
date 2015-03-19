@@ -60,6 +60,8 @@ setup(
         },
     data_files=[
         ('sample_archive/cdx', glob.glob('sample_archive/cdx/*')),
+        ('sample_archive/cdxj', glob.glob('sample_archive/cdxj/*')),
+        ('sample_archive/non-surt-cdx', glob.glob('sample_archive/non-surt-cdx/*')),
         ('sample_archive/zipcdx', glob.glob('sample_archive/zipcdx/*')),
         ('sample_archive/warcs', glob.glob('sample_archive/warcs/*')),
         ('sample_archive/text_content',

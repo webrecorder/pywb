@@ -46,6 +46,8 @@ collections:
         index_paths: ./sample_archive/cdx/
         redir_to_exact: false
 
+    pywb-cdxj:
+        index_paths: ./sample_archive/cdxj/
 
 
 # indicate if cdx files are sorted by SURT keys -- eg: com,example)/

@@ -197,6 +197,9 @@ class ArchiveIterator(object):
 class ArchiveIndexEntryMixin(object):
     MIME_RE = re.compile('[; ]')
 
+    def reset_entry(self):
+        self['key'] = ''
+
     def extract_mime(self, mime, def_mime='unk'):
         """ Utility function to extract mimetype only
         from a full content type, removing charset settings
@@ -215,10 +218,11 @@ class ArchiveIndexEntryMixin(object):
             self['status'] = '-'
 
     def set_rec_info(self, offset, length, digest):
-        self['length'] = str(length)
-        self['offset'] = str(offset)
         if digest:
             self['digest'] = digest
+
+        self['length'] = str(length)
+        self['offset'] = str(offset)
 
     def merge_request_data(self, other, options):
         surt_ordered = options.get('surt_ordered', True)
@@ -248,12 +252,21 @@ class ArchiveIndexEntryMixin(object):
 class DefaultRecordIter(object):
     def __init__(self, **options):
         self.options = options
+        self.entry_cache = {}
 
-    def _create_index_entry(self):
-        if self.options.get('cdxj'):
-            return OrderedArchiveIndexEntry()
-        else:
-            return ArchiveIndexEntry()
+    def _create_index_entry(self, rec_type):
+        try:
+            entry = self.entry_cache[rec_type]
+            entry.reset_entry()
+        except:
+            if self.options.get('cdxj'):
+                entry = OrderedArchiveIndexEntry()
+            else:
+                entry = ArchiveIndexEntry()
+
+            self.entry_cache[rec_type] = entry
+
+        return entry
 
     def create_record_iter(self, arcv_iter):
         append_post = self.options.get('append_post')
@@ -295,8 +308,7 @@ class DefaultRecordIter(object):
 
             compute_digest = False
 
-            if (not minimal and
-                entry.get('digest', '-') == '-' and
+            if (entry.get('digest', '-') == '-' and
                 record.rec_type not in ('revisit', 'request', 'warcinfo')):
 
                 compute_digest = True
@@ -312,7 +324,6 @@ class DefaultRecordIter(object):
 
                 entry['_post_query'] = post_query
 
-            #entry.set_rec_info(*arcv_iter.read_to_end(record, compute_digest))
             arcv_iter.read_to_end(record, compute_digest)
             entry.set_rec_info(*arcv_iter.member_info)
             entry.record = record
@@ -355,7 +366,7 @@ class DefaultRecordIter(object):
         """ Parse warc record
         """
 
-        entry = self._create_index_entry()
+        entry = self._create_index_entry(record.rec_type)
 
         if record.rec_type == 'warcinfo':
             entry['url'] = record.rec_headers.get_header('WARC-Filename')
@@ -369,12 +380,11 @@ class DefaultRecordIter(object):
         entry['timestamp'] = iso_date_to_timestamp(record.rec_headers.
                                                    get_header('WARC-Date'))
 
-        if self.options.get('minimal'):
-            return entry
-
         # mime
         if record.rec_type == 'revisit':
             entry['mime'] = 'warc/revisit'
+        elif self.options.get('minimal'):
+            entry['mime'] = '-'
         else:
             def_mime = '-' if record.rec_type == 'request' else 'unk'
             entry.extract_mime(record.status_headers.
@@ -382,7 +392,7 @@ class DefaultRecordIter(object):
                                def_mime)
 
         # status -- only for response records (by convention):
-        if record.rec_type == 'response':
+        if record.rec_type == 'response' and not self.options.get('minimal'):
             entry.extract_status(record.status_headers)
         else:
             entry['status'] = '-'
@@ -414,7 +424,7 @@ class DefaultRecordIter(object):
         # replace nulls
         url = url.replace('\x00', '%00')
 
-        entry = self._create_index_entry()
+        entry = self._create_index_entry(record.rec_type)
         entry['url'] = url
 
         # timestamp
@@ -422,14 +432,12 @@ class DefaultRecordIter(object):
         if len(entry['timestamp']) > 14:
             entry['timestamp'] = entry['timestamp'][:14]
 
-        if self.options.get('minimal'):
-            return entry
+        if not self.options.get('minimal'):
+            # mime
+            entry.extract_mime(record.rec_headers.get_header('content-type'))
 
-        # mime
-        entry.extract_mime(record.rec_headers.get_header('content-type'))
-
-        # status
-        entry.extract_status(record.status_headers)
+            # status
+            entry.extract_status(record.status_headers)
 
         # digest
         entry['digest'] = '-'

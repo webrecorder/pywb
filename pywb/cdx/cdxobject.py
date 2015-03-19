@@ -10,6 +10,26 @@ from urlparse import parse_qs
 
 from pywb.utils.wbexception import WbException
 
+from json import loads as json_decode
+
+
+#=================================================================
+URLKEY = 'urlkey'
+TIMESTAMP = 'timestamp'
+ORIGINAL = 'original'
+MIMETYPE = 'mimetype'
+STATUSCODE = 'statuscode'
+DIGEST = 'digest'
+REDIRECT = 'redirect'
+ROBOTFLAGS = 'robotflags'
+LENGTH = 'length'
+OFFSET = 'offset'
+FILENAME = 'filename'
+
+ORIG_LENGTH = 'orig.length'
+ORIG_OFFSET = 'orig.offset'
+ORIG_FILENAME = 'orig.filename'
+
 
 #=================================================================
 class CDXException(WbException):
@@ -24,27 +44,52 @@ class CDXObject(OrderedDict):
     """
     CDX_FORMATS = [
         # Public CDX Format
-        ["urlkey", "timestamp", "original", "mimetype", "statuscode",
-         "digest", "length"],
+        [URLKEY, TIMESTAMP, ORIGINAL, MIMETYPE, STATUSCODE,
+         DIGEST, LENGTH],
 
         # CDX 11 Format
-        ["urlkey", "timestamp", "original", "mimetype", "statuscode",
-         "digest", "redirect", "robotflags", "length", "offset", "filename"],
+        [URLKEY, TIMESTAMP, ORIGINAL, MIMETYPE, STATUSCODE,
+         DIGEST, REDIRECT, ROBOTFLAGS, LENGTH, OFFSET, FILENAME],
 
         # CDX 9 Format
-        ["urlkey", "timestamp", "original", "mimetype", "statuscode",
-         "digest", "redirect", "offset", "filename"],
+        [URLKEY, TIMESTAMP, ORIGINAL, MIMETYPE, STATUSCODE,
+         DIGEST, REDIRECT, OFFSET, FILENAME],
 
         # CDX 11 Format + 3 revisit resolve fields
-        ["urlkey", "timestamp", "original", "mimetype", "statuscode",
-         "digest", "redirect", "robotflags", "length", "offset", "filename",
-         "orig.length", "orig.offset", "orig.filename"],
+        [URLKEY, TIMESTAMP, ORIGINAL, MIMETYPE, STATUSCODE,
+         DIGEST, REDIRECT, ROBOTFLAGS, LENGTH, OFFSET, FILENAME,
+         ORIG_LENGTH, ORIG_OFFSET, ORIG_FILENAME],
 
         # CDX 9 Format + 3 revisit resolve fields
-        ["urlkey", "timestamp", "original", "mimetype", "statuscode",
-         "digest", "redirect", "offset", "filename",
-         "orig.length", "orig.offset", "orig.filename"]
+        [URLKEY, TIMESTAMP, ORIGINAL, MIMETYPE, STATUSCODE,
+         DIGEST, REDIRECT, OFFSET, FILENAME,
+         ORIG_LENGTH, ORIG_OFFSET, ORIG_FILENAME],
     ]
+
+
+    CDX_ALT_FIELDS = {
+                  'u': ORIGINAL,
+                  'url': ORIGINAL,
+
+                  'status': STATUSCODE,
+                  's': STATUSCODE,
+
+                  'mime': MIMETYPE,
+                  'm': MIMETYPE,
+
+                  'l': LENGTH,
+                  's': LENGTH,
+
+                  'o': OFFSET,
+
+                  'd': DIGEST,
+
+                  't': TIMESTAMP,
+
+                  'k': URLKEY,
+
+                  'f': FILENAME
+    }
 
     def __init__(self, cdxline=''):
         OrderedDict.__init__(self)
@@ -56,7 +101,20 @@ class CDXObject(OrderedDict):
             self.cdxline = cdxline
             return
 
-        fields = cdxline.split(' ')
+        fields = cdxline.split(' ' , 2)
+        # Check for CDX JSON
+        if fields[-1].startswith('{'):
+            self[URLKEY] = fields[0]
+            self[TIMESTAMP] = fields[1]
+            json_fields = json_decode(fields[-1])
+            for n, v in json_fields.iteritems():
+                n = self.CDX_ALT_FIELDS.get(n, n)
+                self[n] = str(v)
+            self.cdxline = cdxline
+            return
+
+        more_fields = fields.pop().split(' ')
+        fields.extend(more_fields)
 
         cdxformat = None
         for i in self.CDX_FORMATS:
@@ -80,8 +138,8 @@ class CDXObject(OrderedDict):
 
     def is_revisit(self):
         """return ``True`` if this record is a revisit record."""
-        return (self['mimetype'] == 'warc/revisit' or
-                self['filename'] == '-')
+        return (self.get(MIMETYPE) == 'warc/revisit' or
+                self.get(FILENAME) == '-')
 
     def to_text(self, fields=None):
         """

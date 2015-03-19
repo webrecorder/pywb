@@ -8,18 +8,11 @@ com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 20
 com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 1864 example.warc.gz
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 example.warc.gz
 
-# warc.gz -- minimal cdx
->>> print_cdx_index('example.warc.gz', minimal=True)
- CDX N b a S V g
-com,example)/?example=1 20140103030321 http://example.com?example=1 1043 333 example.warc.gz
-com,example)/?example=1 20140103030341 http://example.com?example=1 553 1864 example.warc.gz
-org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example 577 2907 example.warc.gz
-
 # warc.gz -- minimal CDXJ
 >>> print_cdx_index('example.warc.gz', minimal=True, cdxj=True)
-com,example)/?example=1 20140103030321 {"url": "http://example.com?example=1", "length": "1043", "offset": "333", "filename": "example.warc.gz"}
-com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "length": "553", "offset": "1864", "filename": "example.warc.gz"}
-org,iana)/domains/example 20140128051539 {"url": "http://www.iana.org/domains/example", "length": "577", "offset": "2907", "filename": "example.warc.gz"}
+com,example)/?example=1 20140103030321 {"url": "http://example.com?example=1", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "1043", "offset": "333", "filename": "example.warc.gz"}
+com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "mime": "warc/revisit", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "553", "offset": "1864", "filename": "example.warc.gz"}
+org,iana)/domains/example 20140128051539 {"url": "http://www.iana.org/domains/example", "digest": "JZ622UA23G5ZU6Y3XAKH4LINONUEICEG", "length": "577", "offset": "2907", "filename": "example.warc.gz"}
 
 # warc.gz -- parse all
 >>> print_cdx_index('example.warc.gz', include_all=True)
@@ -62,6 +55,10 @@ com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ
 # arc.gz -- json
 >>> print_cdx_index('example.arc.gz', cdxj=True)
 com,example)/ 20140216050221 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "856", "offset": "171", "filename": "example.arc.gz"}
+
+# arc.gz -- minimal + json
+>>> print_cdx_index('example.arc.gz', cdxj=True, minimal=True)
+com,example)/ 20140216050221 {"url": "http://example.com/", "digest": "PEWDX5GTH66WU74WBPGFECIYBMPMP3FP", "length": "856", "offset": "171", "filename": "example.arc.gz"}
 
 # arc
 >>> print_cdx_index('example.arc')

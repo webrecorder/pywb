@@ -16,6 +16,7 @@ from io import BytesIO
 
 from archiveiterator import DefaultRecordIter
 
+
 #=================================================================
 class BaseCDXWriter(object):
     def __init__(self, out):
@@ -65,26 +66,6 @@ class CDXJ(object):
 
         outdict['filename'] = filename
         out.write(json_encode(outdict))
-        out.write('\n')
-
-
-#=================================================================
-class CDX06(object):
-    def _write_header(self):
-        self.out.write(' CDX N b a S V g\n')
-
-    def write_cdx_line(self, out, entry, filename):
-        out.write(entry['key'])
-        out.write(' ')
-        out.write(entry['timestamp'])
-        out.write(' ')
-        out.write(entry['url'])
-        out.write(' ')
-        out.write(entry['length'])
-        out.write(' ')
-        out.write(entry['offset'])
-        out.write(' ')
-        out.write(filename)
         out.write('\n')
 
 
@@ -201,6 +182,8 @@ def cdx_filename(filename):
 #=================================================================
 def get_cdx_writer_cls(options):
     writer_cls = options.get('writer_cls')
+    if options.get('minimal'):
+        options['cdxj'] = True
 
     if writer_cls:
         if not options.get('writer_add_mixin'):
@@ -212,8 +195,6 @@ def get_cdx_writer_cls(options):
 
     if options.get('cdxj'):
         format_mixin = CDXJ
-    elif options.get('cdx06') or options.get('minimal'):
-        format_mixin = CDX06
     elif options.get('cdx09'):
         format_mixin = CDX09
     else:
@@ -311,14 +292,20 @@ Not-recommended for new cdx, use only for backwards-compatibility.
     cdx09_help = """
 Use older 9-field cdx format, default is 11-cdx field
 """
-    minimal_help = """
-Use a minimal 6-field cdx format, outputing only the basic fields
-needed to identiyfy record:
-canonicalized url, timestamp, original url, archive offset, archive length
-and archive filename.
+    minimal_json_help = """
+CDX JSON output, but with minimal fields only, available  w/o parsing
+http record. The fields are:
+canonicalized url, timestamp, original url, digest, archive offset, archive length
+and archive filename. mimetype is included to indicate warc/revisit only.
 
 This option skips record parsing and will not work with
 POST append (-p) option
+"""
+
+    json_help = """
+Output CDX JSON format per line, with url timestamp first, followed by json dict
+for all other fields:
+url timestamp { ... }
 """
 
     output_help = """output file or directory.
@@ -370,15 +357,13 @@ if input is a directory"""
                         action='store_true',
                         help=cdx09_help)
 
-    group.add_argument('-6', '--cdx06',
-                        action='store_true')
-
     group.add_argument('-j', '--cdxj',
-                        action='store_true')
-
-    parser.add_argument('-m', '--minimal',
                         action='store_true',
-                        help=minimal_help)
+                        help=json_help)
+
+    parser.add_argument('-mj', '--minimal-cdxj',
+                        action='store_true',
+                        help=minimal_json_help)
 
     parser.add_argument('output', nargs='?', default='-', help=output_help)
     parser.add_argument('inputs', nargs='+', help=input_help)
@@ -392,9 +377,8 @@ if input is a directory"""
                           append_post=cmd.postappend,
                           recurse=cmd.recurse,
                           cdx09=cmd.cdx09,
-                          cdx06=cmd.cdx06,
                           cdxj=cmd.cdxj,
-                          minimal=cmd.minimal)
+                          minimal=cmd.minimal_cdxj)
 
 
 if __name__ == '__main__':

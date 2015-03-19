@@ -124,6 +124,14 @@ class TestWb:
         assert 'wb.js' in resp.body
         assert '/pywb-nosurt/20140103030321/http://www.iana.org/domains/example' in resp.body
 
+    def test_replay_cdxj(self):
+        resp = self.testapp.get('/pywb-cdxj/20140103030321/http://example.com?example=1')
+        self._assert_basic_html(resp)
+
+        assert '"20140103030321"' in resp.body
+        assert 'wb.js' in resp.body
+        assert '/pywb-cdxj/20140103030321/http://www.iana.org/domains/example' in resp.body
+
     def test_zero_len_revisit(self):
         resp = self.testapp.get('/pywb/20140603030341/http://example.com?example=2')
         self._assert_basic_html(resp)

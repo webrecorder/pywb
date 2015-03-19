@@ -48,6 +48,19 @@ org,iana)/domains/root/servers 20140126201227 http://www.iana.org/domains/root/s
 >>> cdx_ops_test(url = 'http://iana.org/_css/2013.1/screen.css', filter = 'statuscode:200')
 org,iana)/_css/2013.1/screen.css 20140126200625 http://www.iana.org/_css/2013.1/screen.css text/css 200 BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 8754 41238 iana.warc.gz
 
+# Filter Alt field name
+>>> cdx_ops_test(url = 'http://iana.org/_css/2013.1/screen.css', filter = 'status:200')
+org,iana)/_css/2013.1/screen.css 20140126200625 http://www.iana.org/_css/2013.1/screen.css text/css 200 BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 8754 41238 iana.warc.gz
+
+# Filter -- no field specified, match regex on entire line
+>>> cdx_ops_test(url = 'http://iana.org/_css/2013.1/screen.css', filter = '~screen.css 20140126200625')
+org,iana)/_css/2013.1/screen.css 20140126200625 http://www.iana.org/_css/2013.1/screen.css text/css 200 BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 8754 41238 iana.warc.gz
+
+# Filter -- no such field, no matches
+>>> cdx_ops_test(url = 'http://iana.org/_css/2013.1/screen.css', filter = 'blah:200')
+Traceback (most recent call last):
+NotFoundException: No Captures found for: http://iana.org/_css/2013.1/screen.css
+
 # Filter exact
 >>> cdx_ops_test(url = 'http://example.com', sources = [test_cdx_dir], matchType = 'prefix', filter = '=urlkey:com,example)/?example=1')
 com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 333 example.warc.gz
@@ -81,7 +94,6 @@ org,iana)/_css/2013.1/screen.css 20140126201054 http://www.iana.org/_css/2013.1/
 >>> cdx_ops_test(url = 'http://iana.org/_css/2013.1/screen.css', collapseTime = '11', resolveRevisits = True)
 org,iana)/_css/2013.1/screen.css 20140126200625 http://www.iana.org/_css/2013.1/screen.css text/css 200 BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 8754 41238 iana.warc.gz - - -
 org,iana)/_css/2013.1/screen.css 20140126201054 http://www.iana.org/_css/2013.1/screen.css text/css 200 BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 543 706476 iana.warc.gz 8754 41238 iana.warc.gz
-
 
 # Sort by closest timestamp + field select output
 >>> cdx_ops_test(closest = '20140126200826', url = 'http://iana.org/_css/2013.1/fonts/opensans-bold.ttf', fields = 'timestamp', limit = 10)
@@ -138,6 +150,12 @@ org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126201249 http://www.iana.org/_
 >>> cdx_ops_test('http://iana.org/domains/root/db', resolveRevisits = True)
 org,iana)/domains/root/db 20140126200927 http://www.iana.org/domains/root/db/ text/html 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 446 671278 iana.warc.gz - - -
 org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db text/html 200 DHXA725IW5VJJFRTWBQT6BEZKRE7H57S - - 18365 672225 iana.warc.gz - - -
+
+# Resolve Revisit -- cdxj minimal
+#>>> cdx_ops_test(url = 'http://example.com/?example=1', sources=[get_test_dir() + 'cdxj/example.cdxj'], resolveRevisits=True)
+
+
+
 """
 
 #=================================================================
