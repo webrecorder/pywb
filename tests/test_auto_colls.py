@@ -20,6 +20,8 @@ from mock import patch
 #=============================================================================
 ARCHIVE_DIR = 'archive'
 INDEX_DIR = 'indexes'
+INDEX_FILE = 'index.cdxj'
+
 
 #=============================================================================
 root_dir = None
@@ -145,7 +147,7 @@ class TestManagedColls(object):
               os.path.join(nested_b, 'example.warc.gz')
              ])
 
-        nested_cdx = os.path.join(self.root_dir, 'collections', 'nested', INDEX_DIR, 'index.cdx')
+        nested_cdx = os.path.join(self.root_dir, 'collections', 'nested', INDEX_DIR, INDEX_FILE)
         with open(nested_cdx) as fh:
             nested_cdx_index = fh.read()
 
@@ -170,7 +172,7 @@ class TestManagedColls(object):
         """
         # ensure merged index is same as full reindex
         coll_dir = os.path.join(self.root_dir, 'collections', 'test', INDEX_DIR)
-        orig = os.path.join(coll_dir, 'index.cdx')
+        orig = os.path.join(coll_dir, INDEX_FILE)
         bak = os.path.join(coll_dir, 'index.bak')
 
         shutil.copy(orig, bak)
