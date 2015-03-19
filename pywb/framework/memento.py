@@ -80,7 +80,7 @@ class MementoRespMixin(object):
             url = req_url
             if cdx:
                 ts = cdx['timestamp']
-                url = cdx['original']
+                url = cdx['url']
             # for top frame
             elif wbrequest.wb_url.timestamp:
                 ts = wbrequest.wb_url.timestamp
@@ -144,7 +144,7 @@ class MementoResponse(MementoRespMixin, WbResponse):
 def make_timemap_memento_link(cdx, prefix, datetime=None, rel='memento', end=',\n'):
     memento = '<{0}>; rel="{1}"; datetime="{2}"' + end
 
-    string = WbUrl.to_wburl_str(url=cdx['original'],
+    string = WbUrl.to_wburl_str(url=cdx['url'],
                                 mod='',
                                 timestamp=cdx['timestamp'],
                                 type=WbUrl.REPLAY)

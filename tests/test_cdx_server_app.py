@@ -7,6 +7,8 @@ from pywb.cdx.cdxobject import CDXObject
 from pywb.apps.cdx_server import application
 
 import pytest
+import json
+
 
 #================================================================
 @pytest.fixture
@@ -28,8 +30,20 @@ def test_exact_url(client):
     resp = query(client, 'http://www.iana.org/')
 
     assert resp.status_code == 200
-    print resp.body
+    assert len(resp.body.splitlines()) == 3, resp.body
 
+
+#================================================================
+def test_exact_url_json(client):
+    """
+    basic exact match, no filters, etc.
+    """
+    resp = query(client, 'http://www.iana.org/', output='json')
+
+    assert resp.status_code == 200
+    lines = resp.body.splitlines()
+    assert len(lines) == 3, resp.body
+    assert len(map(json.loads, lines)) == 3
 
 #================================================================
 def test_prefix_match(client):
@@ -55,7 +69,7 @@ def test_filters(client):
     filter cdxes by mimetype and filename field, exact match.
     """
     resp = query(client, 'http://www.iana.org/_css/2013.1/screen.css',
-                 filter=('mimetype:warc/revisit', 'filename:dupes.warc.gz'))
+                 filter=('mime:warc/revisit', 'filename:dupes.warc.gz'))
 
     assert resp.status_code == 200
     assert resp.content_type == 'text/plain'
@@ -102,7 +116,7 @@ def test_fields(client):
     retrieve subset of fields with ``fields`` parameter.
     """
     resp = query(client, 'http://www.iana.org/_css/2013.1/print.css',
-                 fields='urlkey,timestamp,statuscode')
+                 fields='urlkey,timestamp,status')
 
     assert resp.status_code == 200
 
@@ -117,6 +131,27 @@ def test_fields(client):
 
 
 #================================================================
+def test_fields_json(client):
+    """
+    retrieve subset of fields with ``fields`` parameter, in json
+    """
+    resp = query(client, 'http://www.iana.org/_css/2013.1/print.css',
+                 fields='urlkey,timestamp,status',
+                 output='json')
+
+    assert resp.status_code == 200
+
+    cdxes = resp.body.splitlines()
+
+    for cdx in cdxes:
+        fields = json.loads(cdx)
+        assert len(fields) == 3
+        assert fields['urlkey'] == 'org,iana)/_css/2013.1/print.css'
+        assert re.match(r'\d{14}$', fields['timestamp'])
+        assert re.match(r'\d{3}|-', fields['status'])
+
+
+#================================================================
 def test_fields_undefined(client):
     """
     server shall respond with Bad Request and name of undefined
@@ -128,6 +163,19 @@ def test_fields_undefined(client):
 
     resp.status_code == 400
 
+
+#================================================================
+def test_fields_undefined_json(client):
+    """
+    server shall respond with Bad Request and name of undefined
+    when ``fields`` parameter contains undefined name(s).
+    """
+    resp = query(client, 'http://www.iana.org/_css/2013.1/print.css',
+                 is_error=True,
+                 fields='urlkey,nosuchfield',
+                 output='json')
+
+    resp.status_code == 400
 
 #================================================================
 def test_resolveRevisits(client):

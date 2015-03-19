@@ -209,9 +209,9 @@ class LiveRewriter(object):
 
         cdx = {'urlkey': urlkey,
                'timestamp': timestamp,
-               'original': url,
-               'statuscode': status_headers.get_statuscode(),
-               'mimetype': status_headers.get_header('Content-Type'),
+               'url': url,
+               'status': status_headers.get_statuscode(),
+               'mime': status_headers.get_header('Content-Type'),
                'is_live': True,
               }
 

@@ -95,9 +95,15 @@ directory structure expected by pywb
         self._index_merge_warcs(full_paths)
 
     def reindex(self):
-        cdx_file = os.path.join(self.cdx_dir, 'index.cdx')
+        cdx_file = os.path.join(self.cdx_dir, 'index.cdxj')
         logging.info('Indexing ' + self.warc_dir + ' to ' + cdx_file)
-        cdxindexer_main(['-p', '-s', '-r', cdx_file, self.warc_dir])
+        self._cdx_index(cdx_file, [self.warc_dir])
+
+    def _cdx_index(self, out, input_):
+        def_args = ['-p', '-j', '-s', '-r']
+        def_args.append(out)
+        def_args.extend(input_)
+        cdxindexer_main(def_args)
 
     def index_merge(self, filelist):
         wrongdir = 'Skipping {0}, must be in {1} archive directory'
@@ -129,9 +135,7 @@ directory structure expected by pywb
             return self.reindex()
 
         temp_file = cdx_file + '.tmp.' + timestamp20_now()
-        args = ['-p', '-s', '-r', temp_file]
-        args.extend(new_warcs)
-        cdxindexer_main(args)
+        self._cdx_index(temp_file, new_warcs)
 
         merged_file = temp_file + '.merged'
 

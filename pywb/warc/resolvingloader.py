@@ -22,7 +22,9 @@ class ResolvingLoader:
         from a different url to find the original record.
         """
         has_curr = (cdx['filename'] != '-')
-        has_orig = (cdx.get('orig.filename', '-') != '-')
+        #has_orig = (cdx.get('orig.filename', '-') != '-')
+        orig_f = cdx.get('orig.filename')
+        has_orig = orig_f and orig_f != '-'
 
         # load headers record from cdx['filename'] unless it is '-' (rare)
         headers_record = None
@@ -31,7 +33,7 @@ class ResolvingLoader:
 
         # two index lookups
         # Case 1: if mimetype is still warc/revisit
-        if cdx.get('mimetype') == 'warc/revisit' and headers_record:
+        if cdx.get('mime') == 'warc/revisit' and headers_record:
             payload_record = self._load_different_url_payload(cdx,
                                                               headers_record,
                                                               failed_files,

@@ -11,14 +11,15 @@ from urlparse import parse_qs
 from pywb.utils.wbexception import WbException
 
 from json import loads as json_decode
+from json import dumps as json_encode
 
 
 #=================================================================
 URLKEY = 'urlkey'
 TIMESTAMP = 'timestamp'
-ORIGINAL = 'original'
-MIMETYPE = 'mimetype'
-STATUSCODE = 'statuscode'
+ORIGINAL = 'url'
+MIMETYPE = 'mime'
+STATUSCODE = 'status'
 DIGEST = 'digest'
 REDIRECT = 'redirect'
 ROBOTFLAGS = 'robotflags'
@@ -69,12 +70,12 @@ class CDXObject(OrderedDict):
 
     CDX_ALT_FIELDS = {
                   'u': ORIGINAL,
-                  'url': ORIGINAL,
+                  'original': ORIGINAL,
 
-                  'status': STATUSCODE,
+                  'statuscode': STATUSCODE,
                   's': STATUSCODE,
 
-                  'mime': MIMETYPE,
+                  'mimetype': MIMETYPE,
                   'm': MIMETYPE,
 
                   'l': LENGTH,
@@ -95,6 +96,7 @@ class CDXObject(OrderedDict):
         OrderedDict.__init__(self)
 
         cdxline = cdxline.rstrip()
+        self._from_json = False
 
         # Allows for filling the fields later or in a custom way
         if not cdxline:
@@ -111,6 +113,7 @@ class CDXObject(OrderedDict):
                 n = self.CDX_ALT_FIELDS.get(n, n)
                 self[n] = str(v)
             self.cdxline = cdxline
+            self._from_json = True
             return
 
         more_fields = fields.pop().split(' ')
@@ -161,12 +164,35 @@ class CDXObject(OrderedDict):
 
         return result
 
+    def to_json(self, fields=None):
+        """
+        return cdx as json dictionary string
+        if ``fields`` is ``None``, output will include all fields
+        in order stored, otherwise only specified fields will be
+        included
+
+        :param fields: list of field names to output
+        """
+        if fields is None:
+            return json_encode(self) + '\n'
+
+        try:
+            result = json_encode(OrderedDict((x, self[x]) for x in fields)) + '\n'
+        except KeyError as ke:
+            msg = 'Invalid field "{0}" found in fields= argument'
+            msg = msg.format(ke.message)
+            raise CDXException(msg)
+
+        return result
+
     def __str__(self):
         if self.cdxline:
             return self.cdxline
 
-        return ' '.join(val for n, val in self.iteritems())
-
+        if not self._from_json:
+            return ' '.join(val for n, val in self.iteritems())
+        else:
+            return json_encode(self)
 
 #=================================================================
 class IDXObject(OrderedDict):

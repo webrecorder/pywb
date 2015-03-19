@@ -35,7 +35,7 @@ function ts_to_date(ts, is_gmt)
       <th>Archive File</th>
     </tr>
     {% for cdx in cdx_lines  %}
-    <tr style="{{ 'font-weight: bold' if cdx['mimetype'] != 'warc/revisit' else '' }}">
+    <tr style="{{ 'font-weight: bold' if cdx.mime != 'warc/revisit' else '' }}">
       <td><a href="{{ prefix }}{{ cdx.timestamp }}/{{ cdx.url }}">
       <script>document.write(ts_to_date("{{ cdx['timestamp']}}", true))</script>
       </a></td>

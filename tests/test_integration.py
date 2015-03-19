@@ -132,6 +132,14 @@ class TestWb:
         assert 'wb.js' in resp.body
         assert '/pywb-cdxj/20140103030321/http://www.iana.org/domains/example' in resp.body
 
+    def test_replay_cdxj_revisit(self):
+        resp = self.testapp.get('/pywb-cdxj/20140103030341/http://example.com?example=1')
+        self._assert_basic_html(resp)
+
+        assert '"20140103030341"' in resp.body
+        assert 'wb.js' in resp.body
+        assert '/pywb-cdxj/20140103030341/http://www.iana.org/domains/example' in resp.body
+
     def test_zero_len_revisit(self):
         resp = self.testapp.get('/pywb/20140603030341/http://example.com?example=2')
         self._assert_basic_html(resp)
@@ -442,7 +450,7 @@ class TestWb:
         assert resp.status_int == 404
 
     def test_cdx_server_filters(self):
-        resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mimetype:warc/revisit&filter=filename:dupes.warc.gz')
+        resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mime:warc/revisit&filter=filename:dupes.warc.gz')
         self._assert_basic_text(resp)
         actual_len = len(resp.body.rstrip().split('\n'))
         assert actual_len == 1, actual_len

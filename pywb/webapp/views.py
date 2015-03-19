@@ -177,7 +177,8 @@ class J2HtmlCapturesView(J2TemplateView):
     def render_response(self, wbrequest, cdx_lines, **kwargs):
         def format_cdx_lines():
             for cdx in cdx_lines:
-                cdx['url'] = wbrequest.wb_url.get_url(url=cdx['original'])
+                cdx['_orig_url'] = cdx['url']
+                cdx['url'] = wbrequest.wb_url.get_url(url=cdx['url'])
                 yield cdx
 
         return J2TemplateView.render_response(self,

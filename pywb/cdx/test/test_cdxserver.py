@@ -1,5 +1,6 @@
 from pywb.apps.cdx_server import application
 from pywb.cdx.cdxserver import CDXServer, RemoteCDXServer
+import pywb.cdx.cdxobject as obj
 
 from pywb.utils.dsrules import DEFAULT_RULES_FILE
 from pywb.utils.wbexception import AccessException, NotFoundException
@@ -18,17 +19,17 @@ TEST_CDX_DIR = get_test_dir() + 'cdx/'
 CDX_SERVER_URL = 'http://localhost/pywb-cdx'
 
 CDX_RESULT = [
- ('urlkey', 'com,example)/'),
- ('timestamp', '20140127171200'),
- ('original', 'http://example.com'),
- ('mimetype', 'text/html'),
- ('statuscode', '200'),
- ('digest', 'B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A'),
- ('redirect', '-'),
- ('robotflags', '-'),
- ('length', '1046'),
- ('offset', '334'),
- ('filename', 'dupes.warc.gz')
+ (obj.URLKEY, 'com,example)/'),
+ (obj.TIMESTAMP, '20140127171200'),
+ (obj.ORIGINAL, 'http://example.com'),
+ (obj.MIMETYPE, 'text/html'),
+ (obj.STATUSCODE, '200'),
+ (obj.DIGEST, 'B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A'),
+ (obj.REDIRECT, '-'),
+ (obj.ROBOTFLAGS, '-'),
+ (obj.LENGTH, '1046'),
+ (obj.OFFSET, '334'),
+ (obj.FILENAME, 'dupes.warc.gz')
 ]
 
 testapp = None

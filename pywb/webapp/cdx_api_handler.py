@@ -41,7 +41,7 @@ class CDXAPIHandler(BaseHandler):
 
         if 'output' not in params:
             params['output'] = 'text'
-        elif params['output'] not in ('text'):
+        elif params['output'] not in ('text', 'json'):
             params['output'] = 'text'
 
         return params

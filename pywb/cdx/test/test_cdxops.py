@@ -151,10 +151,10 @@ org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126201249 http://www.iana.org/_
 org,iana)/domains/root/db 20140126200927 http://www.iana.org/domains/root/db/ text/html 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 446 671278 iana.warc.gz - - -
 org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db text/html 200 DHXA725IW5VJJFRTWBQT6BEZKRE7H57S - - 18365 672225 iana.warc.gz - - -
 
-# Resolve Revisit -- cdxj minimal
-#>>> cdx_ops_test(url = 'http://example.com/?example=1', sources=[get_test_dir() + 'cdxj/example.cdxj'], resolveRevisits=True)
-
-
+# Resolve Revisit -- cdxj minimal -- output also json
+>>> cdx_ops_test(url = 'http://example.com/?example=1', sources=[get_test_dir() + 'cdxj/example.cdxj'], resolveRevisits=True)
+{"urlkey": "com,example)/?example=1", "timestamp": "20140103030321", "url": "http://example.com?example=1", "length": "1043", "filename": "example.warc.gz", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "offset": "333", "orig.length": "-", "orig.offset": "-", "orig.filename": "-"}
+{"urlkey": "com,example)/?example=1", "timestamp": "20140103030341", "url": "http://example.com?example=1", "filename": "example.warc.gz", "length": "553", "mime": "", "offset": "1864", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "orig.length": "1043", "orig.offset": "333", "orig.filename": "example.warc.gz"}
 
 """
 

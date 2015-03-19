@@ -149,8 +149,13 @@ class TestManagedColls(object):
         with open(nested_cdx) as fh:
             nested_cdx_index = fh.read()
 
-        assert '- 1043 333 B/sub/example.warc.gz' in nested_cdx_index
-        assert '- 2258 334 A/iana.warc.gz' in nested_cdx_index
+        assert '1043' in nested_cdx_index
+        assert '333' in nested_cdx_index
+        assert 'B/sub/example.warc.gz' in nested_cdx_index
+
+        assert '2258' in nested_cdx_index
+        assert '334' in nested_cdx_index
+        assert 'A/iana.warc.gz' in nested_cdx_index
 
         self._create_app()
         resp = self.testapp.get('/nested/20140126200624/http://www.iana.org/')

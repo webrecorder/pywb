@@ -160,7 +160,7 @@ class ReplayView(object):
 
         # if using url rewriter, use original url for rewriting purposes
         if wbrequest and wbrequest.wb_url:
-            wbrequest.wb_url.url = cdx['original']
+            wbrequest.wb_url.url = cdx['url']
 
         head_insert_func = None
         if self.head_insert_view:
@@ -242,7 +242,7 @@ class ReplayView(object):
 
         new_url = (wbrequest.urlrewriter.
                    get_new_url(timestamp=timestamp,
-                               url=cdx['original']))
+                               url=cdx['url']))
 
         if wbrequest.method == 'POST':
             #   FF shows a confirm dialog, so can't use 307 effectively
@@ -283,7 +283,7 @@ class ReplayView(object):
 
         location_url = location_url.lower()
         if location_url.startswith('/'):
-            host = urlsplit(cdx['original']).netloc
+            host = urlsplit(cdx['url']).netloc
             location_url = host + location_url
 
         if (ReplayView.strip_scheme_www(request_url) ==

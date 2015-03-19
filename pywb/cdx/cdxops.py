@@ -1,4 +1,7 @@
 from cdxobject import CDXObject, IDXObject
+from cdxobject import TIMESTAMP, STATUSCODE, MIMETYPE, DIGEST
+from cdxobject import OFFSET, LENGTH, FILENAME
+
 from query import CDXQuery
 from pywb.utils.timeutils import timestamp_to_sec
 
@@ -31,6 +34,8 @@ def cdx_load(sources, query, process=True):
 
     if query.output == 'text':
         cdx_iter = cdx_to_text(cdx_iter, query.fields)
+    elif query.output == 'json':
+        cdx_iter = cdx_to_json(cdx_iter, query.fields)
 
     return cdx_iter
 
@@ -39,6 +44,12 @@ def cdx_load(sources, query, process=True):
 def cdx_to_text(cdx_iter, fields):
     for cdx in cdx_iter:
         yield cdx.to_text(fields)
+
+
+#=================================================================
+def cdx_to_json(cdx_iter, fields):
+    for cdx in cdx_iter:
+        yield cdx.to_json(fields)
 
 
 #=================================================================
@@ -218,7 +229,7 @@ def cdx_collapse_time_status(cdx_iter, timelen=10):
     last_token = None
 
     for cdx in cdx_iter:
-        curr_token = (cdx['timestamp'][:timelen], cdx['statuscode'])
+        curr_token = (cdx[TIMESTAMP][:timelen], cdx[STATUSCODE])
 
         # yield if last_dedup_time is diff, otherwise skip
         if curr_token != last_token:
@@ -236,7 +247,7 @@ def cdx_sort_closest(closest, cdx_iter, limit=10):
     closest_sec = timestamp_to_sec(closest)
 
     for cdx in cdx_iter:
-        sec = timestamp_to_sec(cdx['timestamp'])
+        sec = timestamp_to_sec(cdx[TIMESTAMP])
         key = abs(closest_sec - sec)
 
         # create tuple to sort by key
@@ -258,7 +269,7 @@ def cdx_sort_closest(closest, cdx_iter, limit=10):
 # resolve revisits
 
 # Fields to append from cdx original to revisit
-ORIG_TUPLE = ['length', 'offset', 'filename']
+ORIG_TUPLE = [LENGTH, OFFSET, FILENAME]
 
 
 def cdx_resolve_revisits(cdx_iter):
@@ -275,7 +286,7 @@ def cdx_resolve_revisits(cdx_iter):
     for cdx in cdx_iter:
         is_revisit = cdx.is_revisit()
 
-        digest = cdx['digest']
+        digest = cdx[DIGEST]
 
         original_cdx = originals.get(digest)
 
@@ -285,8 +296,10 @@ def cdx_resolve_revisits(cdx_iter):
         if original_cdx and is_revisit:
             fill_orig = lambda field: original_cdx[field]
             # Transfer mimetype and statuscode
-            cdx['mimetype'] = original_cdx.get('mimetype', 'none')
-            cdx['statuscode'] = original_cdx.get('statuscode', 'none')
+            if MIMETYPE in cdx:
+                cdx[MIMETYPE] = original_cdx.get(MIMETYPE, '')
+            if STATUSCODE in cdx:
+                cdx[STATUSCODE] = original_cdx.get(STATUSCODE, '')
         else:
             fill_orig = lambda field: '-'
 
