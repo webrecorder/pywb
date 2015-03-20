@@ -10,6 +10,8 @@ from io import BytesIO
 from pywb.webapp.pywb_init import create_wb_router
 from pywb.manager.manager import main
 
+from pywb.warc.cdxindexer import main as cdxindexer_main
+
 from pywb import get_test_dir
 from pywb.framework.wsgi_wrappers import init_app
 
@@ -391,6 +393,44 @@ class TestManagedColls(object):
         assert '- foo' in output
         assert '- nested' in output
         assert '- test' in output
+
+    def test_migrate(self):
+        """ Create non-surt cdx, then convert to cdxj
+        """
+        migrate_dir = os.path.join(self.root_dir, '_migrate')
+
+        os.mkdir(migrate_dir)
+
+        cdxindexer_main(['-u', migrate_dir, self._get_sample_warc('')])
+
+        # try one file with -9
+        cdxindexer_main(['-u', '-9', migrate_dir, self._get_sample_warc('example.warc.gz')])
+
+        cdxs = os.listdir(migrate_dir)
+        assert all(x.endswith('.cdx') for x in cdxs)
+
+        @patch('pywb.manager.manager.get_input', lambda x: 'blah')
+        def do_migrate_no():
+            main(['migrate', migrate_dir])
+
+        do_migrate_no()
+        assert os.listdir(migrate_dir) == cdxs
+
+        @patch('pywb.manager.manager.get_input', lambda x: 'y')
+        def do_migrate_yes():
+            main(['migrate', migrate_dir])
+
+        do_migrate_yes()
+        cdxjs = os.listdir(migrate_dir)
+
+        assert len(cdxs) == len(cdxjs)
+        assert all(x.endswith('.cdxj') for x in cdxjs)
+
+        with open(os.path.join(migrate_dir, 'iana.cdxj')) as fh:
+            assert fh.readline().startswith('org,iana)/ 20140126200624 {"url": "http://www.iana.org/",')
+
+        # Nothing else to migrate
+        main(['migrate', migrate_dir])
 
     def test_err_template_remove(self):
         """ Test various error conditions for templates:

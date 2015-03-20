@@ -7,6 +7,7 @@ from pywb.utils.loaders import load_yaml_config
 from pywb.utils.timeutils import timestamp20_now
 from pywb.warc.cdxindexer import main as cdxindexer_main
 from pywb.webapp.pywb_init import DEFAULT_CONFIG
+from migrate import MigrateCDX
 
 from distutils.util import strtobool
 from pkg_resources import resource_string
@@ -30,6 +31,8 @@ simplify the creation and management of web archive collections
 It may be used via cmdline to setup and maintain the
 directory structure expected by pywb
     """
+    DEF_INDEX_FILE = 'index.cdxj'
+
     def __init__(self, coll_name, root_dir='collections', must_exist=True):
         self.root_dir = root_dir
         self.default_config = load_yaml_config('pywb/default_config.yaml')
@@ -95,7 +98,7 @@ directory structure expected by pywb
         self._index_merge_warcs(full_paths)
 
     def reindex(self):
-        cdx_file = os.path.join(self.cdx_dir, 'index.cdxj')
+        cdx_file = os.path.join(self.cdx_dir, self.DEF_INDEX_FILE)
         logging.info('Indexing ' + self.warc_dir + ' to ' + cdx_file)
         self._cdx_index(cdx_file, [self.warc_dir])
 
@@ -128,7 +131,7 @@ directory structure expected by pywb
         self._index_merge_warcs(filtered_warcs)
 
     def _index_merge_warcs(self, new_warcs):
-        cdx_file = os.path.join(self.cdx_dir, 'index.cdx')
+        cdx_file = os.path.join(self.cdx_dir, self.DEF_INDEX_FILE)
 
         # no existing file, just reindex all
         if not os.path.isfile(cdx_file):
@@ -276,6 +279,27 @@ directory structure expected by pywb
         os.remove(full_path)
         print('Removed template file "{0}"'.format(full_path))
 
+    def migrate_cdxj(self, path, force=False):
+        migrate = MigrateCDX(path)
+        count = migrate.count_cdx()
+        if count == 0:
+            print('Index files up-to-date, nothing to migrate')
+            return
+
+        msg = 'Migrate {0} index files? (y/n)'.format(count)
+        if not force:
+            res = get_input(msg)
+            try:
+                res = strtobool(res)
+            except ValueError:
+                res = False
+
+            if not res:
+                return
+
+        migrate.convert_to_cdxj()
+
+
 #=============================================================================
 def main(args=None):
     description = """
@@ -373,6 +397,15 @@ Create manage file based web archive collections
     template.add_argument('--remove')
     template.add_argument('--list', action='store_true')
     template.set_defaults(func=do_add_template)
+
+    def do_migrate(r):
+        m = CollectionsManager('', must_exist=False)
+        m.migrate_cdxj(r.path, r.force)
+
+    template = subparsers.add_parser('migrate')
+    template.add_argument('path', default='./', nargs='?')
+    template.add_argument('-f', '--force', action='store_true')
+    template.set_defaults(func=do_migrate)
 
     r = parser.parse_args(args=args)
     r.func(r)

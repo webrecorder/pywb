@@ -198,7 +198,7 @@ class ArchiveIndexEntryMixin(object):
     MIME_RE = re.compile('[; ]')
 
     def reset_entry(self):
-        self['key'] = ''
+        self['urlkey'] = ''
 
     def extract_mime(self, mime, def_mime='unk'):
         """ Utility function to extract mimetype only
@@ -238,8 +238,8 @@ class ArchiveIndexEntryMixin(object):
         post_query = other.get('_post_query')
         if post_query:
             url = append_post_query(self['url'], post_query)
-            self['key'] = canonicalize(url, surt_ordered)
-            other['key'] = self['key']
+            self['urlkey'] = canonicalize(url, surt_ordered)
+            other['urlkey'] = self['urlkey']
 
         referer = other.record.status_headers.get_header('referer')
         if referer:
@@ -303,8 +303,8 @@ class DefaultRecordIter(object):
             if not entry:
                 continue
 
-            if entry.get('url') and not entry.get('key'):
-                entry['key'] = canonicalize(entry['url'], surt_ordered)
+            if entry.get('url') and not entry.get('urlkey'):
+                entry['urlkey'] = canonicalize(entry['url'], surt_ordered)
 
             compute_digest = False
 
@@ -370,7 +370,7 @@ class DefaultRecordIter(object):
 
         if record.rec_type == 'warcinfo':
             entry['url'] = record.rec_headers.get_header('WARC-Filename')
-            entry['key'] = entry['url']
+            entry['urlkey'] = entry['url']
             entry['_warcinfo'] = record.stream.read(record.length)
             return entry
 

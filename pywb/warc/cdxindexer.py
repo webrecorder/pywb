@@ -27,7 +27,7 @@ class BaseCDXWriter(object):
         return self
 
     def write(self, entry, filename):
-        if not entry.get('url') or not entry.get('key'):
+        if not entry.get('url') or not entry.get('urlkey'):
             return
 
         if entry.record.rec_type == 'warcinfo':
@@ -45,7 +45,7 @@ class CDXJ(object):
         pass
 
     def write_cdx_line(self, out, entry, filename):
-        out.write(entry['key'])
+        out.write(entry['urlkey'])
         out.write(' ')
         out.write(entry['timestamp'])
         out.write(' ')
@@ -53,7 +53,7 @@ class CDXJ(object):
         outdict = OrderedDict()
 
         for n, v in entry.iteritems():
-            if n in ('key', 'timestamp'):
+            if n in ('urlkey', 'timestamp'):
                 continue
 
             if n.startswith('_'):
@@ -75,7 +75,7 @@ class CDX09(object):
         self.out.write(' CDX N b a m s k r V g\n')
 
     def write_cdx_line(self, out, entry, filename):
-        out.write(entry['key'])
+        out.write(entry['urlkey'])
         out.write(' ')
         out.write(entry['timestamp'])
         out.write(' ')
@@ -99,7 +99,7 @@ class CDX11(object):
         self.out.write(' CDX N b a m s k r M S V g\n')
 
     def write_cdx_line(self, out, entry, filename):
-        out.write(entry['key'])
+        out.write(entry['urlkey'])
         out.write(' ')
         out.write(entry['timestamp'])
         out.write(' ')
@@ -218,8 +218,10 @@ def write_multi_cdx_index(output, inputs, **options):
 
             with open(outpath, 'wb') as outfile:
                 with open(fullpath, 'rb') as infile:
-                    return write_cdx_index(outfile, infile, filename,
-                                           **options)
+                    writer = write_cdx_index(outfile, infile, filename,
+                                             **options)
+
+        return writer
 
     # write to one cdx file
     else:
