@@ -26,6 +26,12 @@ r"""
 >>> _test_js(r'location = http://example.com/abc.html/')
 'WB_wombat_location = http://example.com/abc.html/'
 
+>>> _test_js(r'location = "http://example.com/abc.html?^foo=~bar!@#abc"')
+'WB_wombat_location = "/web/20131010/http://example.com/abc.html?^foo=~bar!@#abc"'
+
+>>> _test_js(r'location = "http://example.com/abc.html?^foo=http://abc.example.com"')
+'WB_wombat_location = "/web/20131010/http://example.com/abc.html?^foo=http://abc.example.com"'
+
 # not rewritten -- to be handled on client side
 >>> _test_js(r'location = "/abc.html"')
 'WB_wombat_location = "/abc.html"'
