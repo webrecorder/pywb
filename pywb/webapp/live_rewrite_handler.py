@@ -286,7 +286,7 @@ class YoutubeDLWrapper(object):
 #=================================================================
 def create_live_rewriter_app(config={}):
     routes = [Route('rewrite', RewriteHandler(config)),
-              Route('static/default', StaticHandler('pywb/static/'))
+              Route('static/__pywb', StaticHandler('pywb/static/'))
              ]
 
     return ArchivalRouter(routes, hostpaths=['http://localhost:8080'])

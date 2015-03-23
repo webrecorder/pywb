@@ -106,9 +106,9 @@ enable_http_proxy: true
 
 # List of route names:
 # <route>: <package or file path>
-# default route static/default for pywb defaults
+# default route static/__pywb for pywb bundled static files
 #static_routes:
-#          static/default: pywb/static/
+#          static/__pywb: pywb/static/
 
 # enable cdx server api for querying cdx directly (experimental)
 enable_cdx_api: true

@@ -67,7 +67,7 @@ def tojson(obj):
 
 #=================================================================
 class J2TemplateView(object):
-    env_globals = {'static_path': 'static/default',
+    env_globals = {'static_path': 'static/__pywb',
                    'packages': ['pywb']}
 
     def __init__(self, filename):
