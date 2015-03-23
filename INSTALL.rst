@@ -4,20 +4,20 @@ Installation
 This section covers more detailed installation info for pywb. 
 
 *These instructions apply to older versions of pywb
-but will still work with pywb 0.9.0, although the directory based configuration system and ``wayback-manager`` utility
+but will still work with pywb 0.9.0, although the directory based configuration system and ``wb-manager`` utility
 remove some of these steps.*
 
 Requirements
 ~~~~~~~~~~~~
 
-pywb has tested in python 2.6, 2.7. It runs best in python 2.7 currently.
+pywb has tested in python 2.6, 2.7. It runs best in python 2.7.3+
 
 pywb tool suite provides several WSGI applications, which have been
-tested under *wsgiref* and *uWSGI*.
+tested under *wsgiref*, *waitress*, and uWSGI.
 
 For best results, the *uWSGI* container is recommended.
 
-Support for Python 3 is planned.
+Support for Python 3 is planned but not yet implemented.
 
 Sample Data
 ~~~~~~~~~~~
@@ -34,28 +34,30 @@ and ``http://iana.org``
 Runnable Apps
 ~~~~~~~~~~~~~
 
-The pywb tool suite currently includes two runnable applications, installed
-as command-line scripts via setuptools
+The pywb tool suite currently includes several runnable applications, installed
+as command-line scripts via setuptools, including:
 
--  ``wayback`` or ``python -m pywb.apps.wayback`` -- start the full wayback on port
+
+-  ``wayback`` -- start the full wayback on port
    8080
 
--  ``cdx-server`` or ``python -m pywb.apps.cdx_server`` -- start standalone cdx server on
-   port 8090
+-  ``cdx-server`` -- start standalone cdx server on port 8090
    
--  ``cdx-indexer`` or ``python -m pywb.warc.archiveindexer`` -- create .cdx indexs for
-one more more archive files.
+-  ``wb-manager`` -- manages creation of collections, adding warcs, indexing, adding metadata, etc...
+
+-  ``cdx-indexer`` -- a low-level tool specifically for creating .cdx and .cdxj indexes from web archive files (WARC and ARC).
+
 
 Step-By-Step Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To start a pywb with sample data:
+To start a pywb with bundled sample data:
 
 1. Clone this repo
 
 2. Install with ``python setup.py install``
 
-3. Run ``wayback`` (shorthand for ``python -m pywb.apps.wayback``) to start the pywb wayback server with reference WSGI implementation.
+3. Run ``wayback`` to start the pywb wayback server with reference WSGI implementation.
 
 OR run ``run-uwsgi.sh`` or ``run-gunicorn.sh`` to start with uWSGI or gunicorn (see below for more info).
 
@@ -131,7 +133,7 @@ The py.test coverage plugin is used to keep track of test coverage.
 Sample Setup
 ~~~~~~~~~~~~
 
-pywb is configurable via yaml.
+pywb is optionally configurable via yaml.
 
 The simplest `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_ is roughly as follows:
 
@@ -164,12 +166,16 @@ For more advanced use, the pywb init path can be customized further:
 A note on CDX index files
 """""""""""""""""""""""""
 
-The new ``wayback-manager`` tool will automatically generate CDX index files for all WARCs and ARCs, so
+The new ``wb-manager`` tool will automatically generate CDX index files for all WARCs and ARCs, so
 manual updating of CDX indexes is no longer required.
+
+Running ``wb-manager convert-cdx <path/to/cdx>`` will also automatically convert any .cdx files to SURT, JSON based format.
+*This is the recommended approach for pywb 0.9.0+*
 
 The ``cdx-indexer`` also creates files in the `SURT <http://crawler.archive.org/articles/user_manual/glossary.html#surt>`_ format by default. format
 
-However, if you need to use existing/legacy .cdx files, you may need to set a special config (for now).
+However, if you need to use existing/legacy .cdx files (and you are unable to convert them as explained above), 
+you may need to set a special config option.
 
 If you are using .cdx files where the key is *not* in SURT format (that is, the CDX line may start with ``example.com`` instaed of ``com,example)/``),
 simply add the following to the main ``config.yaml``
@@ -178,4 +184,5 @@ simply add the following to the main ``config.yaml``
       surt_ordered: false
 
 A SURT CDX key reverses the order of domain and subdomains and allows for improved searching.
-Future versions of pywb may detect the format automatically.
+
+Again, this is provided strictly for compatibility, when older cdx files can not be converted to the new format.
