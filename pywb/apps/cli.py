@@ -1,12 +1,48 @@
 import os
 import logging
-from argparse import ArgumentParser, RawTextHelpFormatter
+from argparse import ArgumentParser
+
+
+#=================================================================
+def cdx_server(args=None):  #pragma: no cover
+    def load():
+        import pywb.apps.cdx_server as mod
+        return mod
+
+    cli(appload=load,
+        args=args,
+        default_port=8090,
+        desc='pywb CDX Index Server')
+
+
+#=================================================================
+def live_rewrite_server(args=None):  #pragma: no cover
+    def load():
+        import pywb.apps.live_rewrite_server as mod
+        return mod
+
+    cli(appload=load,
+        args=args,
+        default_port=8090,
+        desc='pywb Live Rewrite Proxy Server')
 
 
 #=================================================================
 def wayback(args=None):
-    parser = ArgumentParser('pywb Wayback Web Archive Replay')
-    parser.add_argument('-p', '--port', type=int, default=8080)
+    def load():
+        import pywb.apps.wayback as mod
+        return mod
+
+    cli(appload=load,
+        args=args,
+        default_port=8080,
+        desc='pywb Wayback Web Archive Replay')
+
+
+#=================================================================
+def cli(appload, args=None, default_port=8080, desc=''):
+    parser = ArgumentParser(desc)
+    parser.add_argument('-p', '--port', type=int, default=default_port)
     parser.add_argument('-t', '--threads', type=int, default=4)
     parser.add_argument('-a', '--autoindex', action='store_true')
 
@@ -18,7 +54,8 @@ def wayback(args=None):
         os.chdir(r.directory)
 
     # Load App
-    from pywb.apps.wayback import application
+    #from pywb.apps.wayback import application
+    application = appload().application
 
     if r.autoindex:
         from pywb.manager.manager import CollectionsManager
@@ -38,11 +75,10 @@ def wayback(args=None):
         serve(application, port=r.port, threads=r.threads)
     except ImportError:  # pragma: no cover
         # Shouldn't ever happen as installing waitress, but just in case..
-        from pywb.framework.wsgi_wrappers import start_wsgi_server
-        start_wsgi_server(application, 'Wayback', default_port=r.port)
+        from pywb.framework.wsgi_wrappers import start_wsgi_ref_server
+        start_wsgi_ref_server(application, desc, port=r.port)
 
 
 #=================================================================
 if __name__ == "__main__":
     wayback()
-

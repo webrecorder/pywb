@@ -1,5 +1,4 @@
 from pywb.framework.wsgi_wrappers import init_app
-from pywb.framework.wsgi_wrappers import start_wsgi_server
 
 from pywb.utils.wbexception import AccessException
 

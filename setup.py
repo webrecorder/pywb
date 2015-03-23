@@ -90,9 +90,9 @@ setup(
     entry_points="""
         [console_scripts]
         wayback = pywb.apps.cli:wayback
-        cdx-server = pywb.apps.cdx_server:main
+        cdx-server = pywb.apps.cli:cdx_server
+        live-rewrite-server = pywb.apps.cli:live_rewrite_server
         cdx-indexer = pywb.warc.cdxindexer:main
-        live-rewrite-server = pywb.apps.live_rewrite_server:main
         proxy-cert-auth = pywb.framework.certauth:main
         wb-manager = pywb.manager.manager:main_wrap_exc
         """,

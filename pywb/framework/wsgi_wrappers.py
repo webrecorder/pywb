@@ -44,9 +44,6 @@ def rel_request_uri(environ, include_query=1):
 class WSGIApp(object):
     def __init__(self, wb_router):
         self.wb_router = wb_router
-        self.port = DEFAULT_PORT
-        if hasattr(wb_router, 'port'):
-            self.port = wb_router.port
 
     # Top-level wsgi application
     def __call__(self, env, start_response):
@@ -192,20 +189,15 @@ def init_app(init_func, load_yaml=True, config_file=None, config={}):
 
 
 #=================================================================
-def start_wsgi_server(the_app, name, default_port=None):  # pragma: no cover
+def start_wsgi_ref_server(the_app, name, port):  # pragma: no cover
     from wsgiref.simple_server import make_server
 
     # disable is_hop_by_hop restrictions
     import wsgiref.handlers
     wsgiref.handlers.is_hop_by_hop = lambda x: False
 
-    port = the_app.port
-
     if not port:
-        if default_port:
-            port = default_port
-        else:
-            port = DEFAULT_PORT
+        port = DEFAULT_PORT
 
     logging.info('Starting %s on port %s', name, port)
 

@@ -108,7 +108,12 @@ def create_cdx_server_app(passed_config):
 
     config = DictChain(passed_config, defaults)
 
-    collections = config.get('collections')
+    collections = config.get('collections', {})
+
+    static_routes = {}
+    # collections based on file system
+    dir_loader = DirectoryCollsLoader(config, static_routes)
+    collections.update(dir_loader())
 
     routes = []
 
