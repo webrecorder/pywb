@@ -28,6 +28,11 @@ pywb 0.9.0 changelist
 * Switch default ``wayback``,  ``cdx-server``, ``live-rewrite-server`` cli apps to use ``waitress`` WSGI container instead of wsgi ref. 
 
   New cli options, including ``-p`` (port), ``-t`` (num threads), and ``-d`` (working directory)
+  
+* url rewrite: fixes to JS url rewrite (some urls with unencoded chars were not being rewritten), 
+  fixes to WbUrl parsing of urls starting with digits (eg. 1234.example.com) not being parsed properly.
+  
+* framed replay: update frame_insert.html to be html5 compliant.
 
 
 pywb 0.8.3 changelist
