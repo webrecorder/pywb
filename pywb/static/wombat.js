@@ -296,7 +296,7 @@ _WBWombat = (function() {
         }
         this.assign = function(url) {
             var new_url = rewrite_url(url);
-            if (new_url != url) {
+            if (new_url != this._orig_href) {
                 return this._orig_loc.assign(new_url);
             }
         }
