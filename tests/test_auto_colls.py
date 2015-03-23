@@ -70,6 +70,13 @@ class TestManagedColls(object):
     def _get_sample_warc(self, name):
         return os.path.join(get_test_dir(), 'warcs', name)
 
+    @patch('waitress.serve', lambda *args, **kwargs: None)
+    def test_run_cli(self):
+        """ test new wayback cli interface
+        """
+        from pywb.apps.cli import wayback
+        wayback([])
+
     def test_create_first_coll(self):
         """ Test first collection creation, with all required dirs
         """
@@ -560,6 +567,10 @@ class TestManagedColls(object):
             self._create_app()
 
         shutil.rmtree(colls)
+
+        # No Collections to list
+        with raises(IOError):
+            main(['list'])
 
         # No Collections
         self._create_app()

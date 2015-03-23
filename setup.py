@@ -75,6 +75,7 @@ setup(
         'surt',
         'pyyaml',
         'youtube_dl',
+        'waitress',
         'watchdog'
        ],
     tests_require=[
@@ -88,7 +89,7 @@ setup(
     test_suite='',
     entry_points="""
         [console_scripts]
-        wayback = pywb.apps.wayback:main
+        wayback = pywb.apps.cli:wayback
         cdx-server = pywb.apps.cdx_server:main
         cdx-indexer = pywb.warc.cdxindexer:main
         live-rewrite-server = pywb.apps.live_rewrite_server:main

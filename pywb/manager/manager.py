@@ -55,6 +55,10 @@ directory structure expected by pywb
 
     def list_colls(self):
         print('Collections:')
+        if not os.path.isdir(self.colls_dir):
+            msg = ('"Collections" directory not found. ' +
+                   'To create a new collection, run:\n\n{0} init <name>')
+            raise IOError(msg.format(sys.argv[0]))
         for d in os.listdir(self.colls_dir):
             if os.path.isdir(os.path.join(self.colls_dir, d)):
                 print('- ' + d)
@@ -87,8 +91,9 @@ directory structure expected by pywb
 
     def _assert_coll_exists(self):
         if not os.path.isdir(self.curr_coll_dir):
-            raise IOError('Collection {0} does not exist'.
-                          format(self.coll_name))
+            msg = ('Collection {0} does not exist. ' +
+                   'To create a new collection, run\n\n{1} init {0}')
+            raise IOError(msg.format(self.coll_name, sys.argv[0]))
 
     def add_warcs(self, warcs):
         if not os.path.isdir(self.archive_dir):
@@ -466,7 +471,6 @@ def main_wrap_exc():  #pragma: no cover
     try:
         main()
     except Exception as e:
-        raise
         print('Error: ' + str(e))
         sys.exit(2)
 
