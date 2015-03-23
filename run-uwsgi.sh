@@ -2,6 +2,7 @@
 
 # requires uwsgi
 pip install uwsgi
+pip install gevent
 
 if [ $? -ne 0 ]; then
     "uwsgi install failed"
@@ -13,8 +14,8 @@ mypath=$(cd `dirname $0` && pwd)
 
 params="$mypath/uwsgi.ini"
 
-if [ -n "$VIRTUAL_ENV" ] ; then
-    params="$params -H $VIRTUAL_ENV"
-fi
+#if [ -n "$VIRTUAL_ENV" ] ; then
+#    params="$params -H $VIRTUAL_ENV"
+#fi
 
 uwsgi $params
