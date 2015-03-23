@@ -1,9 +1,9 @@
-pywb 0.9.0-beta1 changelist
+pywb 0.9.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
 * New directory-based configuration-less init system! ``config.yaml`` no longer required.
 
-* New ``wayback-manager`` collection manager for adding warcs, indexing, adding/removing templates, setting metadata.
+* New ``wb-manager`` collection manager for adding warcs, indexing, adding/removing templates, setting metadata.
 
   More details at: `Auto-Configuration and Wayback Collections Manager <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_
 
@@ -11,8 +11,24 @@ pywb 0.9.0-beta1 changelist
 
 * Templates: improved/simpified home page and collection search page, show user metadata by default.
 
-* cdx-indexer: support for `-m` option, minimal 6-field cdx format (key, timestamp, original url, record length, offset, and filename). When indexing to this format
-  the HTTP record parsing is skipped.
+* Support for writing and reading new cdx JSON format (.cdxj), with searchable key followed by json dictionary: ``urlkey timestamp { ... }`` on each line
+
+* ``cdx-indexer -j``: support for generating cdxj format
+
+* ``cdx-indexer -mj``: support for minimal cdx format (in JSON format) only which skips reading the HTTP record.
+
+    Fields included in minimal format are: urlkey, timestamp, original url, record length, digest, offset, and filename
+    
+* ``cdx-indexer --root-dir <dir>``: option for custom root dir for cdx filenames to be relative to this directory. 
+
+* ``wb-manager cdx-convert``: option to convert any existing cdx to new cdxj format, including ensuring cdx key is in SURT canonicalized.
+
+* ``wb-manager autoindex `` / ``wayback -a`` -- Support for auto-updating the cdx indexes whenever any WARC/ARC files are modified or created.
+
+* Switch default ``wayback``,  ``cdx-server``, ``live-rewrite-server`` cli apps to use ``waitress`` WSGI container instead of wsgi ref. 
+
+  New cli options, including ``-p`` (port), ``-t`` (num threads), and ``-d`` (working directory)
+
 
 pywb 0.8.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
