@@ -11,7 +11,7 @@ PyWb 0.9.0 Beta
 pywb is a python implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
 
 pywb allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_,
-and it can also server as a rewriting proxy to live web content.
+and it can also serve as a customizable rewriting proxy to live web content.
 
 The replay system is designed to accurately replay complex dynamic sites, including `video and audio content <https://github.com/ikreymer/pywb/wiki/Video-Replay-and-Recording>`_ and sites
 with complex JavaScript.
@@ -32,30 +32,31 @@ A new utility, ``wb-manager`` performs the most common collection management tas
 Archive a Web Page
 """"""""""""""""""
 
-If you do not have any web archive files, you can create easiely record one from any page by using the free
-https://webrecorder.io/ service (also powered by pywb).
+If you do not have any web archive files (WARCS), you can create easiely create one from any page by using the free
+https://webrecorder.io/ service
 
 For example, you may visit https://webrecorder.io/record/http://example.com, then (after a few seconds),
-click "Download -> Web Archive (WARC)" to get the WARC file (.warc.gz)
+click *Download -> Web Archive (WARC)* to get the WARC file (.warc.gz)
 
 
 Create a new Collection
 """""""""""""""""""""""
-If you have an existing WARC/ARC file(s), you can set up a quick collection as follows, including installing
+
+Once you have an existing WARC/ARC file(s), you can set up a quick collection as follows, including installing
 pywb:
 
-```
-pip install pywb==0.9.0b2
-wb-manager init my_coll
-wb-manager add my_coll <path/to/warc>
-wayback
-```
+::
 
-Point your browser to ``http://localhost:8080/my_coll/<url>/`` where ``<url>`` is a url in your WARC/ARC file.
+      pip install pywb==0.9.0b2
+      wb-manager init my_coll
+      wb-manager add my_coll <path/to/warc>
+      wayback
 
-(If you just recorded ``http://example.com/``, you should be able to view ``http://localhost:8080/my_coll/http://example.com/``)
+
+Point your browser to ``http://localhost:8080/my_coll/<url>/`` where ``<url>`` is a url in your WARC/ARC file. (If you just recorded ``http://example.com/``, you should be able to view ``http://localhost:8080/my_coll/http://example.com/``)
 
 If all worked well, you should see replay of ``<url>``. Congrats, you are now running your own web archive!
+
 
 A more `detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_.
 
@@ -176,16 +177,18 @@ For more info, see `Proxy Mode Usage <https://github.com/ikreymer/pywb/wiki/Pywb
 The `pywb-proxy-demo <https://github.com/ikreymer/pywb-proxy-demo>`_ project also contains a working configuration of proxy mode deployment.
 
 
-Running with WSGI
-"""""""""""""""""
+Running with any WSGI Container
+"""""""""""""""""""""""""""""""
 
-The command-line ``wayback`` utility starts pywb using the waitress WSGI server by default. It is sufficient for basic usage and testing.
+The command-line ``wayback`` utility starts pywb using the `waitress <>`_ server. This should be sufficient for basic usage and testing.
 
-However, pywb can be configured to run with any standard WSGI container/server, using ``application`` in ``pywb.apps.wayback`` module as the entry point.
+However, since pywb conforms to the Python `WSGI <http://wsgi.readthedocs.org/en/latest/>`_ specification, it can be run with any standard WSGI container/server
+and can be embedded in larger applications.
 
-The `uWSGI <https://uwsgi-docs.readthedocs.org/en/latest/>`_ is recommended for most production deployments.
+When running with a different container, specify ``pywb.apps.wayback`` as the WSGI application module.
 
-The ``uwsgi.ini and ``run-uwsgi.sh`` scripts in this repo provides examples of running pywb with uWSGI.
+For production deployments, `uWSGI <https://uwsgi-docs.readthedocs.org/en/latest/>`_ with gevent is the recommended container and the ``uwsgi.ini and ``run-uwsgi.sh`` 
+scripts in this repo provides examples of running pywb with uWSGI.
 
 
 Custom UI and User Metadata
@@ -209,13 +212,14 @@ and `UI Customization <https://github.com/ikreymer/pywb/wiki/UI-Customization>`_
 Automatic Indexing
 """"""""""""""""""
 
-pywb now also includes a new (still experimental) automatic indexing of any web archive files (WARC or ARC).
-Whenever a WARC or ARC file is added or changed, pywb will update the internal index automatically and make the archived content
+pywb now also includes support for automatic indexing of any web archive files (WARC or ARC).
+
+Whenever a WARC/ARC file is added or changed, pywb will update the internal index automatically and make the archived content
 instantly available for replay, without manual intervention or restart. (Of course, indexing will take some time if adding
 many gigabytes of data all at once, but is quite useful for smaller archive updates).
 
 To enable auto-indexing, you can run the `wayback -a` when running command line, or run 
-`wb-manager autoindex <path/to/coll>` seperately.
+`wb-manager autoindex <path/to/coll>` as a seperate program.
 
 
 About Wayback Machine
