@@ -34,6 +34,11 @@ pywb 0.9.0 changelist
   
 * framed replay: update frame_insert.html to be html5 compliant.
 
+* wombat: fixed to WB_wombat_location.href assignment, properly redirects to dest page even if url is already rewritten
+
+* static paths: static content included with pywb moved from ``static/default`` -> ``static/__pywb`` to free up default as possible collection name
+  and avoid any naming conflicts. For example, wombat.js can be accessed via ``/static/__pywb/wombat.js``
+
 
 pywb 0.8.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
