@@ -419,7 +419,7 @@ class TestManagedColls(object):
         assert '- nested' in output
         assert '- test' in output
 
-    def test_migrate(self):
+    def test_convert_cdx(self):
         """ Create non-surt cdx, then convert to cdxj
         """
         migrate_dir = os.path.join(self.root_dir, '_migrate')
@@ -436,14 +436,14 @@ class TestManagedColls(object):
 
         @patch('pywb.manager.manager.get_input', lambda x: 'blah')
         def do_migrate_no():
-            main(['migrate', migrate_dir])
+            main(['convert-cdx', migrate_dir])
 
         do_migrate_no()
         assert os.listdir(migrate_dir) == cdxs
 
         @patch('pywb.manager.manager.get_input', lambda x: 'y')
         def do_migrate_yes():
-            main(['migrate', migrate_dir])
+            main(['convert-cdx', migrate_dir])
 
         do_migrate_yes()
         cdxjs = os.listdir(migrate_dir)
@@ -455,7 +455,7 @@ class TestManagedColls(object):
             assert fh.readline().startswith('org,iana)/ 20140126200624 {"url": "http://www.iana.org/",')
 
         # Nothing else to migrate
-        main(['migrate', migrate_dir])
+        main(['convert-cdx', migrate_dir])
 
     def test_auto_index(self):
         main(['init', 'auto'])
