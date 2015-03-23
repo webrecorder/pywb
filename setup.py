@@ -74,7 +74,8 @@ setup(
         'jinja2',
         'surt',
         'pyyaml',
-        'youtube_dl'
+        'youtube_dl',
+        'watchdog'
        ],
     tests_require=[
         'pytest',
