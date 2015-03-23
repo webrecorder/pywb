@@ -318,7 +318,7 @@ directory structure expected by pywb
 
         migrate.convert_to_cdxj()
 
-    def autoindex(self):
+    def autoindex(self, do_loop=True):
         from autoindex import CDXAutoIndexer
 
         if self.coll_name:
@@ -340,7 +340,9 @@ directory structure expected by pywb
 
 
         indexer = CDXAutoIndexer(do_index, path)
-        indexer.do_watch()
+        indexer.start_watch()
+        if do_loop:
+            indexer.do_loop()
 
 
 #=============================================================================
@@ -455,7 +457,7 @@ Create manage file based web archive collections
     # Auto Index
     def do_autoindex(r):
         m = CollectionsManager(r.coll_name, must_exist=False)
-        m.autoindex()
+        m.autoindex(True)
 
     autoindex_help = 'Automatically index any change archive files'
     autoindex = subparsers.add_parser('autoindex', help=autoindex_help)

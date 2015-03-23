@@ -23,11 +23,12 @@ class CDXAutoIndexer(RegexMatchingEventHandler):
     def on_modified(self, event):
         self.updater(event.src_path)
 
-    def do_watch(self, sleep_time=1):
-        observer = Observer()
-        observer.schedule(self, self.cdx_path, recursive=True)
-        observer.start()
+    def start_watch(self):
+        self.observer = Observer()
+        self.observer.schedule(self, self.cdx_path, recursive=True)
+        self.observer.start()
 
+    def do_loop(self, sleep_time=1):
         try:
             while keep_running:
                 time.sleep(sleep_time)

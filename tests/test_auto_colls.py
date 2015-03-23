@@ -13,6 +13,8 @@ from io import BytesIO
 from pywb.webapp.pywb_init import create_wb_router
 from pywb.manager.manager import main
 
+import pywb.manager.autoindex
+
 from pywb.warc.cdxindexer import main as cdxindexer_main
 
 from pywb import get_test_dir
@@ -73,9 +75,20 @@ class TestManagedColls(object):
     @patch('waitress.serve', lambda *args, **kwargs: None)
     def test_run_cli(self):
         """ test new wayback cli interface
+        test autoindex error before collections inited
         """
         from pywb.apps.cli import wayback
         wayback([])
+
+        # Nothing to auto-index.. yet
+        with raises(SystemExit):
+            wayback(['-a'])
+
+        colls = os.path.join(self.root_dir, 'collections')
+        os.mkdir(colls)
+
+        pywb.manager.autoindex.keep_running = False
+        wayback(['-a'])
 
     def test_create_first_coll(self):
         """ Test first collection creation, with all required dirs
@@ -452,6 +465,8 @@ class TestManagedColls(object):
         archive_sub_dir = os.path.join(archive_dir, 'sub')
         os.makedirs(archive_sub_dir)
 
+        pywb.manager.autoindex.keep_running = True
+
         def do_copy():
             try:
                 time.sleep(1)
@@ -459,7 +474,6 @@ class TestManagedColls(object):
                 shutil.copy(self._get_sample_warc('example-extra.warc'), archive_sub_dir)
                 time.sleep(1)
             finally:
-                import pywb.manager.autoindex
                 pywb.manager.autoindex.keep_running = False
 
         thread = threading.Thread(target=do_copy)
@@ -480,7 +494,6 @@ class TestManagedColls(object):
         mtime = os.path.getmtime(index_file)
 
         # Update
-        import pywb.manager.autoindex
         pywb.manager.autoindex.keep_running = True
 
         os.remove(index_file)
