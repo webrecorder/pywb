@@ -144,22 +144,32 @@ ALLOWED_EXT = ('.arc', '.arc.gz', '.warc', '.warc.gz')
 
 
 #=================================================================
-def iter_file_or_dir(inputs, recursive=True):
+def iter_file_or_dir(inputs, recursive=True, rel_root=None):
     for input_ in inputs:
         if not os.path.isdir(input_):
-            yield input_, os.path.basename(input_)
+            if not rel_root:
+                filename = os.path.basename(input_)
+            else:
+                filename = os.path.relpath(input_, rel_root)
+
+            yield input_, filename
 
         elif not recursive:
             for filename in os.listdir(input_):
                 if filename.endswith(ALLOWED_EXT):
-                    yield os.path.join(input_, filename), filename
+                    full_path = os.path.join(input_, filename)
+                    if rel_root:
+                        filename = os.path.relpath(full_path, rel_root)
+                    yield full_path, filename
 
         else:
             for root, dirs, files in os.walk(input_):
                 for filename in files:
                     if filename.endswith(ALLOWED_EXT):
                         full_path = os.path.join(root, filename)
-                        rel_path = os.path.relpath(full_path, input_)
+                        if not rel_root:
+                            rel_root = input_
+                        rel_path = os.path.relpath(full_path, rel_root)
                         rel_path = rel_path.replace(os.path.sep, '/')
                         yield full_path, rel_path
 
@@ -181,10 +191,10 @@ def cdx_filename(filename):
 
 #=================================================================
 def get_cdx_writer_cls(options):
-    writer_cls = options.get('writer_cls')
     if options.get('minimal'):
         options['cdxj'] = True
 
+    writer_cls = options.get('writer_cls')
     if writer_cls:
         if not options.get('writer_add_mixin'):
             return writer_cls
@@ -209,10 +219,13 @@ def get_cdx_writer_cls(options):
 #=================================================================
 def write_multi_cdx_index(output, inputs, **options):
     recurse = options.get('recurse', False)
+    rel_root = options.get('rel_root')
 
     # write one cdx per dir
     if output != '-' and os.path.isdir(output):
-        for fullpath, filename in iter_file_or_dir(inputs, recurse):
+        for fullpath, filename in iter_file_or_dir(inputs,
+                                                   recurse,
+                                                   rel_root):
             outpath = cdx_filename(filename)
             outpath = os.path.join(output, outpath)
 
@@ -234,7 +247,9 @@ def write_multi_cdx_index(output, inputs, **options):
         record_iter = DefaultRecordIter(**options)
 
         with writer_cls(outfile) as writer:
-            for fullpath, filename in iter_file_or_dir(inputs, recurse):
+            for fullpath, filename in iter_file_or_dir(inputs,
+                                                       recurse,
+                                                       rel_root):
                 with open(fullpath, 'rb') as infile:
                     entry_iter = record_iter(infile)
 
@@ -282,7 +297,7 @@ Some examples:
 """.format(os.path.basename(sys.argv[0]))
 
     sort_help = """
-sort the output to each file before writing to create a total ordering
+Sort the output to each file before writing to create a total ordering
 """
 
     unsurt_help = """
@@ -296,8 +311,8 @@ Use older 9-field cdx format, default is 11-cdx field
 """
     minimal_json_help = """
 CDX JSON output, but with minimal fields only, available  w/o parsing
-http record. The fields are:
-canonicalized url, timestamp, original url, digest, archive offset, archive length
+http record. The fields are: canonicalized url, timestamp,
+original url, digest, archive offset, archive length
 and archive filename. mimetype is included to indicate warc/revisit only.
 
 This option skips record parsing and will not work with
@@ -305,30 +320,42 @@ POST append (-p) option
 """
 
     json_help = """
-Output CDX JSON format per line, with url timestamp first, followed by json dict
-for all other fields:
+Output CDX JSON format per line, with url timestamp first,
+followed by a json dict for all other fields:
 url timestamp { ... }
 """
 
-    output_help = """output file or directory.
+    output_help = """
+Output file or directory.
 - If directory, each input file is written to a seperate output file
   with a .cdx extension
 - If output is '-', output is written to stdout
 """
 
-    input_help = """input file or directory
+    input_help = """
+Input file or directory.
 - If directory, all archive files from that directory are read
 """
 
-    allrecords_help = """include all records.
+    allrecords_help = """
+Include All records.
 currently includes the 'request' records in addition to all
-response records"""
+response records
+"""
 
-    post_append_help = """for POST requests, append
-form query to url key. (Only applies to form url encoded posts)"""
+    post_append_help = """
+For POST requests, append form query to url key.
+(Only applies to form url encoded posts)
+"""
 
-    recurse_dirs_help = """recurse through all subdirectories
-if input is a directory"""
+    recurse_dirs_help = """
+Recurse through all subdirectories if the input is a directory
+"""
+
+    dir_root_help = """
+Make CDX filenames relative to specified root directory,
+instead of current working directory
+"""
 
     parser = ArgumentParser(description=description,
                             epilog=epilog,
@@ -349,6 +376,9 @@ if input is a directory"""
     parser.add_argument('-r', '--recurse',
                         action='store_true',
                         help=recurse_dirs_help)
+
+    parser.add_argument('-d', '--dir-root',
+                        help=dir_root_help)
 
     parser.add_argument('-u', '--unsurt',
                         action='store_true',
@@ -378,6 +408,7 @@ if input is a directory"""
                           include_all=cmd.allrecords,
                           append_post=cmd.postappend,
                           recurse=cmd.recurse,
+                          rel_root=cmd.dir_root,
                           cdx09=cmd.cdx09,
                           cdxj=cmd.cdxj,
                           minimal=cmd.minimal_cdxj)

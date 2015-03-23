@@ -2,19 +2,18 @@ import os
 import shutil
 import sys
 import logging
-
-from pywb.utils.loaders import load_yaml_config
-from pywb.utils.timeutils import timestamp20_now
-from pywb.warc.cdxindexer import main as cdxindexer_main
-from pywb.webapp.pywb_init import DEFAULT_CONFIG
-from migrate import MigrateCDX
+import heapq
+import yaml
 
 from distutils.util import strtobool
 from pkg_resources import resource_string
 
 from argparse import ArgumentParser, RawTextHelpFormatter
-import heapq
-import yaml
+
+from pywb.utils.loaders import load_yaml_config
+from pywb.utils.timeutils import timestamp20_now
+
+from pywb import DEFAULT_CONFIG
 
 
 #=============================================================================
@@ -32,25 +31,32 @@ It may be used via cmdline to setup and maintain the
 directory structure expected by pywb
     """
     DEF_INDEX_FILE = 'index.cdxj'
+    AUTO_INDEX_FILE = 'autoindex.cdxj'
 
-    def __init__(self, coll_name, root_dir='collections', must_exist=True):
-        self.root_dir = root_dir
-        self.default_config = load_yaml_config('pywb/default_config.yaml')
-        self.coll_name = coll_name
+    def __init__(self, coll_name, colls_dir='collections', must_exist=True):
+        self.default_config = load_yaml_config(DEFAULT_CONFIG)
 
-        self.coll_dir = os.path.join(self.root_dir, coll_name)
+        self.colls_dir = colls_dir
 
-        self.warc_dir = self._get_dir('archive_paths')
-        self.cdx_dir = self._get_dir('index_paths')
-        self.static_dir = self._get_dir('static_path')
-        self.templates_dir = self._get_dir('templates_dir')
+        self._set_coll_dirs(coll_name)
+
         if must_exist:
             self._assert_coll_exists()
 
+    def _set_coll_dirs(self, coll_name):
+        self.coll_name = coll_name
+        self.curr_coll_dir = os.path.join(self.colls_dir, coll_name)
+
+        self.archive_dir = self._get_dir('archive_paths')
+
+        self.indexes_dir = self._get_dir('index_paths')
+        self.static_dir = self._get_dir('static_path')
+        self.templates_dir = self._get_dir('templates_dir')
+
     def list_colls(self):
         print('Collections:')
-        for d in os.listdir(self.root_dir):
-            if os.path.isdir(os.path.join(self.root_dir, d)):
+        for d in os.listdir(self.colls_dir):
+            if os.path.isdir(os.path.join(self.colls_dir, d)):
                 print('- ' + d)
 
     def _get_root_dir(self, name):
@@ -58,7 +64,7 @@ directory structure expected by pywb
                             self.default_config['paths'][name])
 
     def _get_dir(self, name):
-        return os.path.join(self.coll_dir,
+        return os.path.join(self.curr_coll_dir,
                             self.default_config['paths'][name])
 
     def _create_dir(self, dirname):
@@ -68,11 +74,11 @@ directory structure expected by pywb
         logging.info('Created Dir: ' + dirname)
 
     def add_collection(self):
-        os.makedirs(self.coll_dir)
-        logging.info('Created directory: ' + self.coll_dir)
+        os.makedirs(self.curr_coll_dir)
+        logging.info('Created directory: ' + self.curr_coll_dir)
 
-        self._create_dir(self.warc_dir)
-        self._create_dir(self.cdx_dir)
+        self._create_dir(self.archive_dir)
+        self._create_dir(self.indexes_dir)
         self._create_dir(self.static_dir)
         self._create_dir(self.templates_dir)
 
@@ -80,65 +86,71 @@ directory structure expected by pywb
         self._create_dir(self._get_root_dir('templates_dir'))
 
     def _assert_coll_exists(self):
-        if not os.path.isdir(self.coll_dir):
+        if not os.path.isdir(self.curr_coll_dir):
             raise IOError('Collection {0} does not exist'.
                           format(self.coll_name))
 
     def add_warcs(self, warcs):
-        if not os.path.isdir(self.warc_dir):
+        if not os.path.isdir(self.archive_dir):
             raise IOError('Directory {0} does not exist'.
-                          format(self.warc_dir))
+                          format(self.archive_dir))
 
         full_paths = []
         for filename in warcs:
-            shutil.copy2(filename, self.warc_dir)
-            full_paths.append(os.path.join(self.warc_dir, filename))
-            logging.info('Copied ' + filename + ' to ' + self.warc_dir)
+            shutil.copy2(filename, self.archive_dir)
+            full_paths.append(os.path.join(self.archive_dir, filename))
+            logging.info('Copied ' + filename + ' to ' + self.archive_dir)
 
-        self._index_merge_warcs(full_paths)
+        self._index_merge_warcs(full_paths, self.DEF_INDEX_FILE)
 
     def reindex(self):
-        cdx_file = os.path.join(self.cdx_dir, self.DEF_INDEX_FILE)
-        logging.info('Indexing ' + self.warc_dir + ' to ' + cdx_file)
-        self._cdx_index(cdx_file, [self.warc_dir])
+        cdx_file = os.path.join(self.indexes_dir, self.DEF_INDEX_FILE)
+        logging.info('Indexing ' + self.archive_dir + ' to ' + cdx_file)
+        self._cdx_index(cdx_file, [self.archive_dir])
 
-    def _cdx_index(self, out, input_):
-        def_args = ['-p', '-j', '-s', '-r']
-        def_args.append(out)
-        def_args.extend(input_)
-        cdxindexer_main(def_args)
+    def _cdx_index(self, out, input_, rel_root=None):
+        from pywb.warc.cdxindexer import write_multi_cdx_index
 
-    def index_merge(self, filelist):
+        options = dict(append_post=True,
+                       cdxj=True,
+                       sort=True,
+                       recurse=True,
+                       rel_root=rel_root)
+
+        write_multi_cdx_index(out, input_, **options)
+
+    def index_merge(self, filelist, index_file):
         wrongdir = 'Skipping {0}, must be in {1} archive directory'
         notfound = 'Skipping {0}, file not found'
 
         filtered_warcs = []
 
-        # Check that warcs are actually in warcs dir
-        abs_warc_dir = os.path.abspath(self.warc_dir)
+        # Check that warcs are actually in archive dir
+        abs_archive_dir = os.path.abspath(self.archive_dir)
 
         for f in filelist:
             abs_filepath = os.path.abspath(f)
-            prefix = os.path.commonprefix([abs_warc_dir, abs_filepath])
+            prefix = os.path.commonprefix([abs_archive_dir, abs_filepath])
 
-            if prefix != abs_warc_dir:
-                raise IOError(wrongdir.format(abs_filepath, abs_warc_dir))
+            if prefix != abs_archive_dir:
+                raise IOError(wrongdir.format(abs_filepath, abs_archive_dir))
             elif not os.path.isfile(abs_filepath):
                 raise IOError(notfound.format(f))
             else:
-                filtered_warcs.append(abs_filepath.split(prefix)[1])
+                filtered_warcs.append(abs_filepath)
 
-        self._index_merge_warcs(filtered_warcs)
+        self._index_merge_warcs(filtered_warcs, index_file, abs_archive_dir)
 
-    def _index_merge_warcs(self, new_warcs):
-        cdx_file = os.path.join(self.cdx_dir, self.DEF_INDEX_FILE)
-
-        # no existing file, just reindex all
-        if not os.path.isfile(cdx_file):
-            return self.reindex()
+    def _index_merge_warcs(self, new_warcs, index_file, rel_root=None):
+        cdx_file = os.path.join(self.indexes_dir, index_file)
 
         temp_file = cdx_file + '.tmp.' + timestamp20_now()
-        self._cdx_index(temp_file, new_warcs)
+        self._cdx_index(temp_file, new_warcs, rel_root)
+
+        # no existing file, so just make it the new file
+        if not os.path.isfile(cdx_file):
+            shutil.move(temp_file, cdx_file)
+            return
 
         merged_file = temp_file + '.merged'
 
@@ -157,7 +169,7 @@ directory structure expected by pywb
         os.remove(temp_file)
 
     def set_metadata(self, namevalue_pairs):
-        metadata_yaml = os.path.join(self.coll_dir, 'metadata.yaml')
+        metadata_yaml = os.path.join(self.curr_coll_dir, 'metadata.yaml')
         metadata = None
         if os.path.isfile(metadata_yaml):
             with open(metadata_yaml) as fh:
@@ -280,6 +292,8 @@ directory structure expected by pywb
         print('Removed template file "{0}"'.format(full_path))
 
     def migrate_cdxj(self, path, force=False):
+        from migrate import MigrateCDX
+
         migrate = MigrateCDX(path)
         count = migrate.count_cdx()
         if count == 0:
@@ -298,6 +312,30 @@ directory structure expected by pywb
                 return
 
         migrate.convert_to_cdxj()
+
+    def autoindex(self):
+        from autoindex import CDXAutoIndexer
+
+        if self.coll_name:
+            any_coll = False
+            path = self.archive_dir
+        else:
+            path = self.colls_dir
+            any_coll = True
+
+        def do_index(warc):
+            if any_coll:
+                coll_name = warc.split(self.colls_dir + os.path.sep)[-1].split('/')[0]
+                if coll_name != self.coll_name:
+                    self._set_coll_dirs(coll_name)
+
+            print('Auto-Indexing: ' + warc)
+            self.index_merge([warc], self.AUTO_INDEX_FILE)
+            print('Done.. Waiting for file updates')
+
+
+        indexer = CDXAutoIndexer(do_index, path)
+        indexer.do_watch()
 
 
 #=============================================================================
@@ -360,7 +398,7 @@ Create manage file based web archive collections
     # Index warcs
     def do_index(r):
         m = CollectionsManager(r.coll_name)
-        m.index_merge(r.files)
+        m.index_merge(r.files, m.DEF_INDEX_FILE)
 
     indexwarcs_help = 'Index specified ARC/WARC files in the collection'
     indexwarcs = subparsers.add_parser('index', help=indexwarcs_help)
@@ -390,7 +428,7 @@ Create manage file based web archive collections
             m.list_templates()
 
     template_help = 'Add default html template for customization'
-    template = subparsers.add_parser('template')
+    template = subparsers.add_parser('template', help=template_help)
     template.add_argument('coll_name', nargs='?', default='')
     template.add_argument('-f', '--force', action='store_true')
     template.add_argument('--add')
@@ -398,14 +436,26 @@ Create manage file based web archive collections
     template.add_argument('--list', action='store_true')
     template.set_defaults(func=do_add_template)
 
+    # Migrate CDX
     def do_migrate(r):
         m = CollectionsManager('', must_exist=False)
         m.migrate_cdxj(r.path, r.force)
 
-    template = subparsers.add_parser('migrate')
-    template.add_argument('path', default='./', nargs='?')
-    template.add_argument('-f', '--force', action='store_true')
-    template.set_defaults(func=do_migrate)
+    migrate_help = 'Convert any existing archive indexes to new json format'
+    migrate = subparsers.add_parser('migrate', help=migrate_help)
+    migrate.add_argument('path', default='./', nargs='?')
+    migrate.add_argument('-f', '--force', action='store_true')
+    migrate.set_defaults(func=do_migrate)
+
+    # Auto Index
+    def do_autoindex(r):
+        m = CollectionsManager(r.coll_name, must_exist=False)
+        m.autoindex()
+
+    autoindex_help = 'Automatically index any change archive files'
+    autoindex = subparsers.add_parser('autoindex', help=autoindex_help)
+    autoindex.add_argument('coll_name', nargs='?', default='')
+    autoindex.set_defaults(func=do_autoindex)
 
     r = parser.parse_args(args=args)
     r.func(r)
@@ -416,6 +466,7 @@ def main_wrap_exc():  #pragma: no cover
     try:
         main()
     except Exception as e:
+        raise
         print('Error: ' + str(e))
         sys.exit(2)
 

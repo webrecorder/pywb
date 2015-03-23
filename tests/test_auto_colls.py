@@ -5,6 +5,9 @@ import sys
 
 import webtest
 
+import time
+import threading
+
 from io import BytesIO
 
 from pywb.webapp.pywb_init import create_wb_router
@@ -22,7 +25,9 @@ from mock import patch
 #=============================================================================
 ARCHIVE_DIR = 'archive'
 INDEX_DIR = 'indexes'
+
 INDEX_FILE = 'index.cdxj'
+AUTOINDEX_FILE = 'autoindex.cdxj'
 
 
 #=============================================================================
@@ -431,6 +436,56 @@ class TestManagedColls(object):
 
         # Nothing else to migrate
         main(['migrate', migrate_dir])
+
+    def test_auto_index(self):
+        main(['init', 'auto'])
+        auto_dir = os.path.join(self.root_dir, 'collections', 'auto')
+        archive_dir = os.path.join(auto_dir, ARCHIVE_DIR)
+
+        archive_sub_dir = os.path.join(archive_dir, 'sub')
+        os.makedirs(archive_sub_dir)
+
+        def do_copy():
+            try:
+                time.sleep(1)
+                shutil.copy(self._get_sample_warc('example.warc.gz'), archive_dir)
+                shutil.copy(self._get_sample_warc('example-extra.warc'), archive_sub_dir)
+                time.sleep(1)
+            finally:
+                import pywb.manager.autoindex
+                pywb.manager.autoindex.keep_running = False
+
+        thread = threading.Thread(target=do_copy)
+        thread.daemon = True
+        thread.start()
+
+        main(['autoindex'])
+
+        index_file = os.path.join(auto_dir, INDEX_DIR, AUTOINDEX_FILE)
+        assert os.path.isfile(index_file)
+
+        with open(index_file) as fh:
+            index = fh.read()
+
+        assert '"example.warc.gz' in index
+        assert '"sub/example-extra.warc' in index, index
+
+        mtime = os.path.getmtime(index_file)
+
+        # Update
+        import pywb.manager.autoindex
+        pywb.manager.autoindex.keep_running = True
+
+        os.remove(index_file)
+
+        thread = threading.Thread(target=do_copy)
+        thread.daemon = True
+        thread.start()
+
+        main(['autoindex', 'auto'])
+
+        # assert file was update
+        assert os.path.getmtime(index_file) > mtime
 
     def test_err_template_remove(self):
         """ Test various error conditions for templates:

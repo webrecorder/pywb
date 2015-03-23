@@ -162,6 +162,18 @@ com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 20
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 example.warc.gz
 Total: 4
 
+# test custom root dir for cdx filenames, singlw warc
+>>> cli_lines(['--dir-root', get_test_dir() + 'other/', TEST_WARC_DIR + 'example.warc.gz'])
+com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 333 ../warcs/example.warc.gz
+org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 ../warcs/example.warc.gz
+Total: 4
+
+# test custom root dir for cdx filenames, dir input
+>>> cli_lines(['--sort', '--dir-root', get_test_dir() + 'other/', TEST_WARC_DIR])
+com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 ../warcs/example-url-agnostic-revisit.warc.gz
+org,iana,example)/ 20130702195402 http://example.iana.org/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1001 353 ../warcs/example-url-agnostic-orig.warc.gz
+Total: 206
+
 # test writing to temp dir, also use unicode filename
 >>> cli_lines_with_dir(unicode(TEST_WARC_DIR + 'example.warc.gz'))
 example.cdx
