@@ -32,6 +32,13 @@ r"""
 >>> _test_js(r'location = "http://example.com/abc.html?^foo=http://abc.example.com"')
 'WB_wombat_location = "/web/20131010/http://example.com/abc.html?^foo=http://abc.example.com"'
 
+# don't rewrite comments, only scheme rel urls
+>>> _test_js(r'location = "http://example.com/abc.html?^foo=http://abc.example.com";//some comments')
+'WB_wombat_location = "/web/20131010/http://example.com/abc.html?^foo=http://abc.example.com";//some comments'
+
+>>> _test_js(r'location = "//example.com/abc.html?^foo=http://abc.example.com"//some comments')
+'WB_wombat_location = "/web/20131010/http://example.com/abc.html?^foo=http://abc.example.com"//some comments'
+
 # not rewritten -- to be handled on client side
 >>> _test_js(r'location = "/abc.html"')
 'WB_wombat_location = "/abc.html"'
