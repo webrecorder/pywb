@@ -12,8 +12,6 @@ from pywb.utils.wbexception import BadRequestException
 
 from pywb.utils.bufferedreaders import BufferedReader
 
-from certauth import CertificateAuthority, openssl_avail
-
 from proxy_resolvers import ProxyAuthResolver, CookieResolver
 
 
@@ -91,6 +89,8 @@ class ProxyRouter(object):
         if not proxy_options.get('enable_https_proxy'):
             self.ca = None
             return
+
+        from certauth import CertificateAuthority, openssl_avail
 
         if not openssl_avail:  # pragma: no cover
             print('HTTPS proxy not available as pyopenssl is not installed')

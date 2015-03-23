@@ -17,13 +17,11 @@ from handlers import StaticHandler
 from handlers import DebugEchoHandler, DebugEchoEnvHandler
 from cdx_api_handler import CDXAPIHandler
 
+from pywb import DEFAULT_CONFIG
 
 import os
 import logging
 
-
-#=================================================================
-DEFAULT_CONFIG = 'pywb/default_config.yaml'
 
 #=================================================================
 class DictChain:
