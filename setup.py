@@ -5,6 +5,8 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import glob
 
+from pywb import __version__
+
 
 # Fix for TypeError: 'NoneType' object is not callable" error
 # when running 'python setup.py test'
@@ -34,11 +36,11 @@ class PyTest(TestCommand):
 
 setup(
     name='pywb',
-    version='0.9.0b2',
+    version=__version__,
     url='https://github.com/ikreymer/pywb',
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
-    description='Python WayBack Machine for web archive replay',
+    description='Python WayBack for web archive replay and live web proxy',
     long_description=long_description,
     license='GPL',
     packages=find_packages(),
