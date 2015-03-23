@@ -20,6 +20,18 @@ ur"""
 >>> repr(WbUrl('cs_/example.com'))
 "('latest_replay', '', 'cs_', 'http://example.com', 'cs_/http://example.com')"
 
+>>> repr(WbUrl('im_/20130102.org'))
+"('latest_replay', '', 'im_', 'http://20130102.org', 'im_/http://20130102.org')"
+
+>>> repr(WbUrl('20130102.example.com'))
+"('latest_replay', '', '', 'http://20130102.example.com', 'http://20130102.example.com')"
+
+>>> repr(WbUrl('20130102.org/1'))
+"('latest_replay', '', '', 'http://20130102.org/1', 'http://20130102.org/1')"
+
+>>> repr(WbUrl('20130102/1.com'))
+"('replay', '20130102', '', 'http://1.com', '20130102/http://1.com')"
+
 >>> repr(WbUrl('https://example.com/xyz'))
 "('latest_replay', '', '', 'https://example.com/xyz', 'https://example.com/xyz')"
 

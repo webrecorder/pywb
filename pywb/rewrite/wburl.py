@@ -86,7 +86,8 @@ class WbUrl(BaseWbUrl):
     # Regexs
     # ======================
     QUERY_REGEX = re.compile('^(?:([\w\-:]+)/)?(\d*)(?:-(\d+))?\*/?(.+)$')
-    REPLAY_REGEX = re.compile('^(\d*)([a-z]+_)?/{0,3}(.+)$')
+    REPLAY_REGEX = re.compile('^(\d*)([a-z]+_)?/{1,3}(.+)$')
+    #LATEST_REPLAY_REGEX = re.compile('^\w_)')
 
     DEFAULT_SCHEME = 'http://'
 
@@ -221,7 +222,14 @@ class WbUrl(BaseWbUrl):
     def _init_replay(self, url):
         replay = self.REPLAY_REGEX.match(url)
         if not replay:
-            return None
+            if not url:
+                return None
+
+            self.timestamp = ''
+            self.mod = ''
+            self.url = url
+            self.type = self.LATEST_REPLAY
+            return True
 
         res = replay.groups('')
 

@@ -1,10 +1,11 @@
 [run]
-omit = 
+omit =
     */test/*
     */tests/*
     *.html
     *.js
     *.css
+    pywb/__init__.py
 
 [report]
 exclude_lines =
