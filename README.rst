@@ -105,7 +105,7 @@ For additional reference on how pywb is being used, you may check some of the `p
 
 
 Desktop Web Archive Player
-""""""""""""""""""""""""""
+--------------------------
 
 There is now also a downloadable point-and-click `Web Archive Player <https://github.com/ikreymer/webarchiveplayer>`_ which provides
 a native OS X and Windows application for browsing web archives, built using pywb.
@@ -115,7 +115,7 @@ command line tools needed.
 
 
 pywb Tools Overview
------------------------------
+-------------------
 
 In addition to the standard Wayback Machine, pywb tool suite includes a
 number of useful command-line and web server tools. The tools should be available to use after installing with
@@ -178,9 +178,9 @@ The `pywb-proxy-demo <https://github.com/ikreymer/pywb-proxy-demo>`_ project als
 
 
 Running with any WSGI Container
-"""""""""""""""""""""""""""""""
+-------------------------------
 
-The command-line ``wayback`` utility starts pywb using the `waitress <>`_ server. This should be sufficient for basic usage and testing.
+The command-line ``wayback`` utility starts pywb using the `waitress <http://waitress.readthedocs.org/en/latest/>`_ server. This should be sufficient for basic usage and testing.
 
 However, since pywb conforms to the Python `WSGI <http://wsgi.readthedocs.org/en/latest/>`_ specification, it can be run with any standard WSGI container/server
 and can be embedded in larger applications.
@@ -192,7 +192,7 @@ scripts in this repo provides examples of running pywb with uWSGI.
 
 
 Custom UI and User Metadata
-"""""""""""""""""""""""""""
+---------------------------
 
 pywb makes it easy to customize most aspects of the UI around archived content, including a custom banner insert, query calendar, search and home pages,
 via HTML Jinja2 templates.
@@ -210,7 +210,7 @@ and `UI Customization <https://github.com/ikreymer/pywb/wiki/UI-Customization>`_
 
 
 Automatic Indexing
-""""""""""""""""""
+------------------
 
 pywb now also includes support for automatic indexing of any web archive files (WARC or ARC).
 
