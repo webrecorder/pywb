@@ -164,7 +164,7 @@ For more advanced use, the pywb init path can be customized further:
 
 
 A note on CDX index files
-"""""""""""""""""""""""""
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The new ``wb-manager`` tool will automatically generate CDX index files for all WARCs and ARCs, so
 manual updating of CDX indexes is no longer required.
@@ -172,7 +172,7 @@ manual updating of CDX indexes is no longer required.
 Running ``wb-manager convert-cdx <path/to/cdx>`` will also automatically convert any .cdx files to SURT, JSON based format.
 *This is the recommended approach for pywb 0.9.0+*
 
-The ``cdx-indexer`` also creates files in the `SURT <http://crawler.archive.org/articles/user_manual/glossary.html#surt>`_ format by default. format
+The ``cdx-indexer`` also creates files in the `SURT <http://crawler.archive.org/articles/user_manual/glossary.html#surt>`_ format by default.
 
 However, if you need to use existing/legacy .cdx files (and you are unable to convert them as explained above), 
 you may need to set a special config option.
