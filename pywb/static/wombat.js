@@ -893,27 +893,29 @@ _WBWombat = (function() {
         var orig_doc_write = document.write;
 
         document.write = function(string) {
-            var doc = new DOMParser().parseFromString(string, "text/html");
+            var write_doc = new DOMParser().parseFromString(string, "text/html");
 
-            if (doc) {
+            if (!write_doc) {
+                return;
+            }
 
-                if (doc.head && document.head) {
-                    var children = doc.head.children;
+            if (write_doc.head && document.head) {
+                var elems = write_doc.head.children;
 
-                    for (var i = 0; i < children.length; i++) {
-                        //document.head.appendChild(children[i]);
-                        // in head, must call original write to ensure same execution order..
-                        rewrite_elem(children[i]);
-                        orig_doc_write.call(this, children[i].outerHTML);
-                    }
+                for (var i = 0; i < elems.length; i++) {
+                    // Call orig write to ensure same execution order and placement
+                    rewrite_elem(elems[i]);
+                    orig_doc_write.call(this, elems[i].outerHTML);
                 }
+            }
 
-                if (doc.body && document.body) {
-                    var children = doc.body.children;
+            if (write_doc.body && document.body) {
+                var elems = write_doc.body.children;
 
-                    for (var i = 0; i < children.length; i++) {
-                        document.body.appendChild(children[i]);
-                    }
+                for (var i = 0; i < elems.length; i++) {
+                    // Call orig write to ensure same execution order and placement
+                    rewrite_elem(elems[i]);
+                    orig_doc_write.call(this, elems[i].outerHTML);
                 }
             }
         }
