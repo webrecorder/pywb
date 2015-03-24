@@ -18,26 +18,28 @@ pywb 0.9.0 changelist
 * ``cdx-indexer -mj``: support for minimal cdx format (in JSON format) only which skips reading the HTTP record.
 
     Fields included in minimal format are: urlkey, timestamp, original url, record length, digest, offset, and filename
-    
-* ``cdx-indexer --root-dir <dir>``: option for custom root dir for cdx filenames to be relative to this directory. 
+
+* ``cdx-indexer --root-dir <dir>``: option for custom root dir for cdx filenames to be relative to this directory.
 
 * ``wb-manager cdx-convert``: option to convert any existing cdx to new cdxj format, including ensuring cdx key is in SURT canonicalized.
 
 * ``wb-manager autoindex `` / ``wayback -a`` -- Support for auto-updating the cdx indexes whenever any WARC/ARC files are modified or created.
 
-* Switch default ``wayback``,  ``cdx-server``, ``live-rewrite-server`` cli apps to use ``waitress`` WSGI container instead of wsgi ref. 
+* Switch default ``wayback``,  ``cdx-server``, ``live-rewrite-server`` cli apps to use ``waitress`` WSGI container instead of wsgi ref.
 
   New cli options, including ``-p`` (port), ``-t`` (num threads), and ``-d`` (working directory)
-  
-* url rewrite: fixes to JS url rewrite (some urls with unencoded chars were not being rewritten), 
+
+* url rewrite: fixes to JS url rewrite (some urls with unencoded chars were not being rewritten),
   fixes to WbUrl parsing of urls starting with digits (eg. 1234.example.com) not being parsed properly.
-  
+
 * framed replay: update frame_insert.html to be html5 compliant.
 
 * wombat: fixed to WB_wombat_location.href assignment, properly redirects to dest page even if url is already rewritten
 
 * static paths: static content included with pywb moved from ``static/default`` -> ``static/__pywb`` to free up default as possible collection name
   and avoid any naming conflicts. For example, wombat.js can be accessed via ``/static/__pywb/wombat.js``
+
+* default to replay with framed mode enabled: ``framed_replay: true``
 
 
 pywb 0.8.3 changelist

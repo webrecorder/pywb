@@ -38,11 +38,10 @@ The pywb tool suite currently includes several runnable applications, installed
 as command-line scripts via setuptools, including:
 
 
--  ``wayback`` -- start the full wayback on port
-   8080
+-  ``wayback`` -- start the full wayback on port 8080
 
 -  ``cdx-server`` -- start standalone cdx server on port 8090
-   
+
 -  ``wb-manager`` -- manages creation of collections, adding warcs, indexing, adding metadata, etc...
 
 -  ``cdx-indexer`` -- a low-level tool specifically for creating .cdx and .cdxj indexes from web archive files (WARC and ARC).
