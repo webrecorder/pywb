@@ -82,6 +82,37 @@ information and testing examples, and use a custom ``config.yaml`` file. These i
 still compatible with pywb 0.9.0.
 
 
+Custom UI and User Metadata
+---------------------------
+
+**pywb** makes it easy to customize most aspects of the UI around archived content, including a custom banner insert, query calendar, search and home pages,
+via HTML Jinja2 templates.
+
+You can see a list of all available UI templates by running: ``wayback-manager template --list``
+
+To copy a default template to the file system (for modification), you can run ``wayback-manager template <collection> --add <template_name>``
+
+**pywb** now supports custom user metadata for each collection. The metadata may be specified in the ``metadata.yaml`` in each collection's directory.
+
+The metadata is accessible to all UI templates and may be displayed to the user as needed.
+
+See the `Wayback Manager Tutorial <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_ and the
+and `UI Customization <https://github.com/ikreymer/pywb/wiki/UI-Customization>`_ page for more details.
+
+
+Automatic Indexing
+------------------
+
+**pywb** now also includes support for automatic indexing of any web archive files (WARC or ARC).
+
+Whenever a WARC/ARC file is added or changed, pywb will update the internal index automatically and make the archived content
+instantly available for replay, without manual intervention or restart. (Of course, indexing will take some time if adding
+many gigabytes of data all at once, but is quite useful for smaller archive updates).
+
+To enable auto-indexing, you can run the `wayback -a` when running command line, or run
+`wb-manager autoindex <path/to/coll>` as a seperate program.
+
+
 Samples and Tests
 -------------------------
 
@@ -194,37 +225,6 @@ When running with a different container, specify ``pywb.apps.wayback`` as the WS
 
 For production deployments, `uWSGI <https://uwsgi-docs.readthedocs.org/en/latest/>`_ with gevent is the recommended container and the ``uwsgi.ini and ``run-uwsgi.sh`` 
 scripts in this repo provides examples of running pywb with uWSGI.
-
-
-Custom UI and User Metadata
----------------------------
-
-**pywb** makes it easy to customize most aspects of the UI around archived content, including a custom banner insert, query calendar, search and home pages,
-via HTML Jinja2 templates.
-
-You can see a list of all available UI templates by running: ``wayback-manager template --list``
-
-To copy a default template to the file system (for modification), you can run ``wayback-manager template <collection> --add <template_name>``
-
-**pywb** now supports custom user metadata for each collection. The metadata may be specified in the ``metadata.yaml`` in each collection's directory.
-
-The metadata is accessible to all UI templates and may be displayed to the user as needed.
-
-See the `Wayback Manager Tutorial <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_ and the
-and `UI Customization <https://github.com/ikreymer/pywb/wiki/UI-Customization>`_ page for more details.
-
-
-Automatic Indexing
-------------------
-
-**pywb** now also includes support for automatic indexing of any web archive files (WARC or ARC).
-
-Whenever a WARC/ARC file is added or changed, pywb will update the internal index automatically and make the archived content
-instantly available for replay, without manual intervention or restart. (Of course, indexing will take some time if adding
-many gigabytes of data all at once, but is quite useful for smaller archive updates).
-
-To enable auto-indexing, you can run the `wayback -a` when running command line, or run 
-`wb-manager autoindex <path/to/coll>` as a seperate program.
 
 
 Wayback Machine Compatibility
