@@ -1,10 +1,10 @@
-PyWb 0.9.0 Beta
-===============
+PyWb 0.9.0
+==========
 
-.. image:: https://travis-ci.org/ikreymer/pywb.svg?branch=0.9.0b
+.. image:: https://travis-ci.org/ikreymer/pywb.svg?branch=master
       :target: https://travis-ci.org/ikreymer/pywb
-.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.svg?branch=0.9.0b
-      :target: https://coveralls.io/r/ikreymer/pywb?branch=0.9.0b
+.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.svg?branch=master
+      :target: https://coveralls.io/r/ikreymer/pywb?branch=master
 .. image:: https://img.shields.io/gratipay/ikreymer.svg
       :target: https://www.gratipay.com/ikreymer/
 
@@ -51,7 +51,7 @@ Once you have at least one WARC/ARC file, you can set up a quick collection as f
 
 ::
 
-      pip install pywb==0.9.0b2
+      pip install pywb
       wb-manager init my_coll
       wb-manager add my_coll <path/to/warc>
       wayback
@@ -77,7 +77,7 @@ It is recommended that any index files be converted to the latest JSON based for
 The index files can then be placed in the ``collections/<coll name>/indexes`` directory and the ARC/WARC files in ``collections/<coll name>/archive``
 and your collection is ready to use with pywb!
 
-`Legacy installation instructions <https://github.com/ikreymer/pywb/blob/0.9.0b/INSTALL.rst>`_ contain additional
+`Legacy installation instructions <https://github.com/ikreymer/pywb/blob/master/INSTALL.rst>`_ contain additional
 information and testing examples, and use a custom ``config.yaml`` file. These instructions are from previous releases but
 still compatible with pywb 0.9.0.
 
@@ -87,7 +87,7 @@ Samples and Tests
 
 To run with the bundled sample and test suite, you'll need to clone pywb locally:
 
-1. ``git clone -b 0.9.0b https://github.com/ikreymer/pywb.git``
+1. ``git clone https://github.com/ikreymer/pywb.git``
 
 2. ``python setup.py install``
 
@@ -153,7 +153,7 @@ number of useful command-line and web server tools. The tools should be availabl
 Latest Changes
 --------------
 
-See `CHANGES.rst <https://github.com/ikreymer/pywb/blob/0.9.0b/CHANGES.rst>`_ for an up-to-date changelist.
+See `CHANGES.rst <https://github.com/ikreymer/pywb/blob/master/CHANGES.rst>`_ for an up-to-date changelist.
 
 
 Running as Rewriting Live Web Proxy
@@ -252,7 +252,7 @@ Additional Reference
    additional technical documentation about various aspects of pywb
 
 -  The sample config.yaml file, although not required, will provide a listing of various advanced configuration options:
-   `config.yaml <https://github.com/ikreymer/pywb/blob/0.9.0b/config.yaml>`_
+   `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_
 
 Contributions & Bug Reports
 ---------------------------
