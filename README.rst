@@ -1,4 +1,4 @@
-PyWb 0.9.0
+PyWb 0.9.1
 ==========
 
 .. image:: https://travis-ci.org/ikreymer/pywb.svg?branch=master
@@ -15,6 +15,8 @@ and it can also serve as a customizable rewriting proxy to live web content.
 
 The replay system is designed to accurately replay complex dynamic sites, including `video and audio content <https://github.com/ikreymer/pywb/wiki/Video-Replay-and-Recording>`_ and sites
 with complex JavaScript.
+
+Additionally, **pywb** includes an extensive `index query api <https://github.com/ikreymer/pywb/wiki/CDX-Server-API>`_ for querying information about archived content.
 
 The software can run as a traditional web application or an HTTP or HTTPS proxy server, and has been tested on Linux, OS X and Windows platforms.
 
@@ -77,7 +79,7 @@ It is recommended that any index files be converted to the latest JSON based for
 To setup a collection with existing ARC/WARCs and CDX index files, you can:
 
 1. Run ``wb-manager init <coll name>``. This will initialize all the required collection directories.
-2. Copy any archive files (WARCs and ARCs) to ``collections/<coll name>/archive/`
+2. Copy any archive files (WARCs and ARCs) to ``collections/<coll name>/archive/``
 3. Copy any existing cdx indexes to ``collections/<coll name>/indexes/``
 4. Run ``wb-maanger cdx-convert collections/<coll name>/indexes/``. This step is optional but strongly recommended, as it will
 ensure that the CDX indexes are in a consistent format.
