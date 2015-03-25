@@ -24,7 +24,7 @@ import logging
 
 
 #=================================================================
-class DictChain:
+class DictChain(object):
     def __init__(self, *dicts):
         self.dicts = dicts
 
@@ -34,6 +34,12 @@ class DictChain:
             if val is not None:
                 return val
         return default_val
+
+    def __contains__(self, key):
+        return self.get(key) is not None
+
+    def __setitem__(self, key, value):
+        self.dicts[0][key] = value
 
 
 #=================================================================
@@ -199,7 +205,10 @@ class DirectoryCollsLoader(object):
         coll_config['metadata'] = metadata
 
         self._add_dir_if_exists(coll_config, root_dir, 'index_paths', True)
-        self._add_dir_if_exists(coll_config, root_dir, 'archive_paths', True)
+
+        # inherit these properties from base, in case archive_paths is shared
+        shared_config = DictChain(coll_config, self.config)
+        self._add_dir_if_exists(shared_config, root_dir, 'archive_paths', True)
 
         if self._add_dir_if_exists(coll_config, root_dir, 'static_path', False):
             self.static_routes['static/' + name] = coll_config['static_path']
