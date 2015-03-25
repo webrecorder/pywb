@@ -170,7 +170,8 @@ test_cdx_dir = get_test_dir() + 'cdx/'
 
 def cdx_ops_test(url, sources = [test_cdx_dir + 'iana.cdx'], **kwparams):
     kwparams['url'] = url
-    kwparams['output'] = 'cdxobject'
+    if not 'output' in kwparams:
+        kwparams['output'] = 'cdxobject'
     fields = kwparams.get('fields')
     if fields:
         fields = fields.split(',')
@@ -179,7 +180,10 @@ def cdx_ops_test(url, sources = [test_cdx_dir + 'iana.cdx'], **kwparams):
     results = server.load_cdx(**kwparams)
 
     for x in results:
-        l = x.to_text(fields).replace('\t', '    ')
+        if not isinstance(x, str):
+            l = x.to_text(fields).replace('\t', '    ')
+        else:
+            l = x
         sys.stdout.write(l)
 
 

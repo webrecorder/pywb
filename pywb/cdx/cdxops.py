@@ -23,6 +23,11 @@ def cdx_load(sources, query, process=True):
     :param process: bool, perform processing sorting/filtering/grouping ops
     """
     cdx_iter = create_merged_cdx_gen(sources, query)
+
+    # page count is a special case, no further processing
+    if query.page_count:
+        return cdx_iter
+
     cdx_iter = make_obj_iter(cdx_iter, query)
 
     if process and not query.secondary_index_only:

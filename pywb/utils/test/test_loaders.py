@@ -82,6 +82,24 @@ True
 # length too long
 >>> extract_post_query('POST', 'application/x-www-form-urlencoded', len(post_data) + 4, BytesIO(post_data))
 'foo=bar&dir=/baz'
+
+
+# test read_last_line
+>>> read_last_line(BytesIO('A\nB\nC'))
+'C'
+
+>>> read_last_line(BytesIO('Some Line\nLonger Line\nLongest Last Line LL'), offset=8)
+'Longest Last Line LL'
+
+>>> read_last_line(BytesIO('A\nBC'))
+'BC'
+
+>>> read_last_line(BytesIO('A\nBC\n'))
+'BC\n'
+
+>>> read_last_line(BytesIO('ABC'))
+'ABC'
+
 """
 
 
@@ -91,6 +109,7 @@ import os
 from io import BytesIO
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
 from pywb.utils.loaders import LimitReader, extract_client_cookie, extract_post_query
+from pywb.utils.loaders import read_last_line
 
 from pywb import get_test_dir
 

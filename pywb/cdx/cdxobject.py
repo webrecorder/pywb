@@ -229,5 +229,8 @@ class IDXObject(OrderedDict):
         """
         return str(self) + '\n'
 
+    def to_json(self, fields=None):
+        return json_encode(self) + '\n'
+
     def __str__(self):
         return self.idxline

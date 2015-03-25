@@ -53,6 +53,21 @@ org,iana)/_js/2013.1/jquery.js 20140126201307 https://www.iana.org/_js/2013.1/jq
 org,iana)/about 20140126200706 http://www.iana.org/about text/html 200 6G77LZKFAVKH4PCWWKMW6TRJPSHWUBI3 - - 2962 483588 iana.warc.gz
 
 
+# Test at boundary
+>>> print_binsearch_results('a)/', iter_exact)
+>>> print_binsearch_results_range('a)/', 'a-', iter_range)
+
+>>> print_binsearch_results_range('a)/', 'org,iana)/_css/2013.1/fonts/inconsolata.otf ', iter_range)
+org,iana)/ 20140126200624 http://www.iana.org/ text/html 200 OSSAPWJ23L56IYVRW3GFEAR4MCJMGPTB - - 2258 334 iana.warc.gz
+
+>>> print_binsearch_results('z)/', iter_exact)
+>>> print_binsearch_results_range('z)/', 'z-', iter_range)
+
+>>> print_binsearch_results_range('org,iana)/protocols', 'z-', iter_range)
+org,iana)/protocols 20140126200715 http://www.iana.org/protocols text/html 200 IRUJZEUAXOUUG224ZMI4VWTUPJX6XJTT - - 63663 496277 iana.warc.gz
+org,iana)/time-zones 20140126200737 http://www.iana.org/time-zones text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
+
+
 """
 
 

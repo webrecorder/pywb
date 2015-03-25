@@ -84,7 +84,7 @@ def linearsearch(iter_, key, prev_size=0, compare_func=cmp):
 
     # no matches, so return empty iterator
     if not matched:
-        return []
+        return iter([])
 
     return itertools.chain(prev_deque, iter_)
 

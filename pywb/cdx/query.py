@@ -86,6 +86,18 @@ class CDXQuery(object):
     def secondary_index_only(self):
         return self._get_bool('showPagedIndex')
 
+    @property
+    def page(self):
+        return int(self.params.get('page', 0))
+
+    @property
+    def page_size(self):
+        return self.params.get('pageSize')
+
+    @property
+    def page_count(self):
+        return self._get_bool('showNumPages')
+
     def _get_bool(self, name, def_val=False):
         v = self.params.get(name)
         if v:

@@ -113,6 +113,27 @@ def extract_client_cookie(env, cookie_name):
 
 
 #=================================================================
+def read_last_line(fh, offset=256):
+    """ Read last line from a seekable file. Start reading
+    from buff before end of file, and double backwards seek
+    until line break is found. If reached beginning of file
+    (no lines), just return whole file
+    """
+    fh.seek(0, 2)
+    size = fh.tell()
+
+    while offset < size:
+        fh.seek(-offset, 2)
+        lines = fh.readlines()
+        if len(lines) > 1:
+            return lines[-1]
+        offset *= 2
+
+    fh.seek(0, 0)
+    return fh.readlines()[-1]
+
+
+#=================================================================
 class BlockLoader(object):
     """
     a loader which can stream blocks of content

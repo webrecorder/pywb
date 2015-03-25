@@ -4,13 +4,14 @@ import itertools
 import logging
 from io import BytesIO
 import datetime
+import json
 
 from cdxsource import CDXSource
 from cdxobject import IDXObject
 
-from pywb.utils.loaders import BlockLoader
+from pywb.utils.loaders import BlockLoader, read_last_line
 from pywb.utils.bufferedreaders import gzip_decompressor
-from pywb.utils.binsearch import iter_range, linearsearch
+from pywb.utils.binsearch import iter_range, linearsearch, search
 
 
 #=================================================================
@@ -23,23 +24,9 @@ class ZipBlocks:
 
 
 #=================================================================
-def readline_to_iter(stream):
-    try:
-        count = 0
-        buff = stream.readline()
-        while buff:
-            count += 1
-            yield buff
-            buff = stream.readline()
-
-    finally:
-        stream.close()
-
-
-#=================================================================
 class ZipNumCluster(CDXSource):
     DEFAULT_RELOAD_INTERVAL = 10  # in minutes
-    DEFAULT_MAX_BLOCKS = 50
+    DEFAULT_MAX_BLOCKS = 10
 
     def __init__(self, summary, config=None):
 
@@ -114,22 +101,91 @@ class ZipNumCluster(CDXSource):
 
         reader = open(self.summary, 'rb')
 
-        idx_iter = iter_range(reader,
-                              query.key,
-                              query.end_key,
-                              prev_size=1)
+        idx_iter = self.compute_page_range(reader, query)
 
-        if query.secondary_index_only:
+        if query.secondary_index_only or query.page_count:
             return idx_iter
+
+        blocks = self.idx_to_cdx(idx_iter, query)
+
+        def gen_cdx():
+            for blk in blocks:
+                for cdx in blk:
+                    yield cdx
+
+        return gen_cdx()
+
+
+    def compute_page_range(self, reader, query):
+
+        # Get End
+        end_iter = search(reader, query.end_key, prev_size=1)
+
+        try:
+            end_line = end_iter.next()
+        except StopIteration:
+            end_line = read_last_line(reader)
+
+        # Get Start
+
+        first_iter = iter_range(reader,
+                                query.key,
+                                query.end_key,
+                                prev_size=1)
+
+        try:
+            first_line = first_iter.next()
+        except StopIteration:
+            raise
+
+        first = IDXObject(first_line)
+
+        end = IDXObject(end_line)
+        diff = end['lineno'] - first['lineno']
+
+        pagesize = query.page_size
+        if not pagesize:
+            pagesize = self.max_blocks
+
+        total_pages = diff / pagesize + 1
+
+        if query.page_count:
+            info = dict(pages=total_pages,
+                        pageSize=pagesize,
+                        blocks=diff)
+            yield json.dumps(info)
+            reader.close()
+            return
+
+        curr_page = query.page
+        if curr_page >= total_pages or curr_page < 0:
+            msg = 'Page {0} invalid: First Page is 0, Last Page is {1}'
+            reader.close()
+            raise Exception(msg.format(curr_page, total_pages - 1))
+
+        startline = curr_page * pagesize
+        endline = min(startline + pagesize - 1, diff)
+
+        if curr_page == 0:
+            yield first_line
         else:
-            blocks = self.idx_to_cdx(idx_iter, query)
+            startline -= 1
 
-            def gen_cdx():
-                for blk in blocks:
-                    for cdx in blk:
-                        yield cdx
+        idxiter = itertools.islice(first_iter, startline, endline)
+        for idx in idxiter:
+            yield idx
 
-            return gen_cdx()
+        reader.close()
+
+
+    def search_by_line_num(self, reader, line):  # pragma: no cover
+        def line_cmp(line1, line2):
+            line1_no = int(line1.rsplit('\t', 1)[-1])
+            line2_no = int(line2.rsplit('\t', 1)[-1])
+            return cmp(line1_no, line2_no)
+
+        line_iter = search(reader, line, compare_func=line_cmp)
+        yield line_iter.next()
 
     def idx_to_cdx(self, idx_iter, query):
         blocks = None
@@ -178,6 +234,10 @@ class ZipNumCluster(CDXSource):
             raise Exception('No Locations Found for: ' + block.part)
 
     def load_blocks(self, location, blocks, ranges, query):
+        """ Load one or more blocks of compressed cdx lines, return
+        a line iterator which decompresses and returns one line at a time,
+        bounded by query.key and query.end_key
+        """
 
         if (logging.getLogger().getEffectiveLevel() <= logging.DEBUG):
             msg = 'Loading {b.count} blocks from {loc}:{b.offset}+{b.length}'
@@ -188,7 +248,8 @@ class ZipNumCluster(CDXSource):
         def decompress_block(range_):
             decomp = gzip_decompressor()
             buff = decomp.decompress(reader.read(range_))
-            return readline_to_iter(BytesIO(buff))
+            for line in BytesIO(buff):
+                yield line
 
         iter_ = itertools.chain(*itertools.imap(decompress_block, ranges))
 
