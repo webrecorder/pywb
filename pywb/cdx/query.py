@@ -6,6 +6,14 @@ from cdxobject import CDXException
 class CDXQuery(object):
     def __init__(self, **kwargs):
         self.params = kwargs
+        if not self.params.get('matchType'):
+            url = self.params.get('url', '')
+            if url.startswith('*.'):
+                self.params['url'] = url[2:]
+                self.params['matchType'] = 'domain'
+            elif url.endswith('*'):
+                self.params['url'] = url[:-1]
+                self.params['matchType'] = 'prefix'
 
     @property
     def key(self):

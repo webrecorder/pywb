@@ -61,8 +61,8 @@ org,iana)/_css/2013.1/screen.css 20140126200625 http://www.iana.org/_css/2013.1/
 Traceback (most recent call last):
 NotFoundException: No Captures found for: http://iana.org/_css/2013.1/screen.css
 
-# Filter exact
->>> cdx_ops_test(url = 'http://example.com', sources = [test_cdx_dir], matchType = 'prefix', filter = '=urlkey:com,example)/?example=1')
+# Filter exact -- (* prefix)
+>>> cdx_ops_test(url = 'http://example.com*', sources = [test_cdx_dir], filter = '=urlkey:com,example)/?example=1')
 com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 333 example.warc.gz
 com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 1864 example.warc.gz
 

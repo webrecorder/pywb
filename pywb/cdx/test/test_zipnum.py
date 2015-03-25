@@ -10,7 +10,7 @@ org,iana)/dnssec 20140126201307    zipnum    8511    373    35
 org,iana)/domains/int 20140126201239    zipnum    8884    353    36
 org,iana)/domains/root/servers 20140126201227    zipnum    9237    386    37
 
->>> zip_ops_test(url='http://iana.org/domains/', matchType='prefix')
+>>> zip_ops_test(url='http://iana.org/domains/*')
 org,iana)/domains/arpa 20140126201248 http://www.iana.org/domains/arpa text/html 200 QOFZZRN6JIKAL2JRL6ZC2VVG42SPKGHT - - 2939 759039 iana.warc.gz
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 example.warc.gz
 org,iana)/domains/idn-tables 20140126201127 http://www.iana.org/domains/idn-tables text/html 200 HNCUFTJMOQOGAEY6T56KVC3T7TVLKGEW - - 8118 715878 iana.warc.gz
@@ -29,8 +29,19 @@ org,iana)/domains/root/servers 20140126201227 http://www.iana.org/domains/root/s
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', pageSize=4, showNumPages=True)
 {"blocks": 37, "pages": 10, "pageSize": 4}
 
+# set page size -- alt domain query
+>>> zip_ops_test(url='*.iana.org', pageSize=4, showNumPages=True)
+{"blocks": 37, "pages": 10, "pageSize": 4}
+
 # first page
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', showPagedIndex=True, pageSize=4, page=0)
+com,example)/ 20140127171200    zipnum    0    276    1
+org,iana)/ 20140127171238    zipnum    276    328    2
+org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126201055    zipnum    604    312    3
+org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200718    zipnum    916    235    4
+
+# first page -- simplified query
+>>> zip_ops_test(url='*.iana.org/path_part_ignored/', showPagedIndex=True, pageSize=4)
 com,example)/ 20140127171200    zipnum    0    276    1
 org,iana)/ 20140127171238    zipnum    276    328    2
 org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126201055    zipnum    604    312    3
