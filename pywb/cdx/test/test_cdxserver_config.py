@@ -71,7 +71,7 @@ def test_cdxserver_config():
 
     assert type(sources[4]) == ZipNumCluster
     assert sources[4].summary.endswith('zipnum-sample.idx')
-    assert sources[4].loc_filename.endswith('zipnum-sample.loc')
+    assert sources[4].loc_resolver.loc_filename.endswith('zipnum-sample.loc')
 
 
 def assert_remote_cdxserver(config_name):

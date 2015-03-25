@@ -7,7 +7,7 @@ import datetime
 import json
 
 from cdxsource import CDXSource
-from cdxobject import IDXObject
+from cdxobject import IDXObject, CDXException
 
 from pywb.utils.loaders import BlockLoader, read_last_line
 from pywb.utils.bufferedreaders import gzip_decompressor
@@ -22,44 +22,24 @@ class ZipBlocks:
         self.length = length
         self.count = count
 
-
 #=================================================================
-class ZipNumCluster(CDXSource):
-    DEFAULT_RELOAD_INTERVAL = 10  # in minutes
-    DEFAULT_MAX_BLOCKS = 10
+#TODO: see if these could be combined with warc path resolvers
 
-    def __init__(self, summary, config=None):
-
-        loc = None
-        cookie_maker = None
-        self.max_blocks = self.DEFAULT_MAX_BLOCKS
-        reload_ival = self.DEFAULT_RELOAD_INTERVAL
-
-        if config:
-            loc = config.get('zipnum_loc')
-            cookie_maker = config.get('cookie_maker')
-
-            self.max_blocks = config.get('max_blocks', self.max_blocks)
-
-            reload_ival = config.get('reload_interval', reload_ival)
-
-        if not loc:
-            splits = os.path.splitext(summary)
-            loc = splits[0] + '.loc'
-
-        self.summary = summary
-        self.loc_filename = loc
-
+class LocMapResolver(object):
+    """ Lookup shards based on a file mapping
+    shard name to one or more paths. The entries are
+    tab delimited.
+    """
+    def __init__(self, loc_summary, loc_filename):
         # initial loc map
         self.loc_map = {}
         self.loc_mtime = 0
+        if not loc_filename:
+            splits = os.path.splitext(loc_summary)
+            loc_filename = splits[0] + '.loc'
+        self.loc_filename = loc_filename
+
         self.load_loc()
-
-        # reload interval
-        self.loc_update_time = datetime.datetime.now()
-        self.reload_interval = datetime.timedelta(minutes=reload_ival)
-
-        self.blk_loader = BlockLoader(cookie_maker=cookie_maker)
 
     def load_loc(self):
         # check modified time of current file before loading
@@ -75,6 +55,65 @@ class ZipNumCluster(CDXSource):
             for line in fh:
                 parts = line.rstrip().split('\t')
                 self.loc_map[parts[0]] = parts[1:]
+
+    def __call__(self, part):
+        return self.loc_map[part]
+
+
+#=================================================================
+class LocPrefixResolver(object):
+    """ Use a prefix lookup, where the prefix can either be a fixed
+    string or can be a regex replacement of the index summary path
+    """
+    def __init__(self, loc_summary, loc_config):
+        import re
+        loc_match = loc_config.get('match', '().*')
+        loc_replace = loc_config['replace']
+        loc_summary = os.path.dirname(loc_summary) + '/'
+        self.prefix = re.sub(loc_match, loc_replace, loc_summary)
+
+    def load_loc(self):
+        pass
+
+    def __call__(self, part):
+        return [self.prefix + part]
+
+
+#=================================================================
+class ZipNumCluster(CDXSource):
+    DEFAULT_RELOAD_INTERVAL = 10  # in minutes
+    DEFAULT_MAX_BLOCKS = 10
+
+    def __init__(self, summary, config=None):
+        self.max_blocks = self.DEFAULT_MAX_BLOCKS
+
+        self.loc_resolver = None
+
+        loc = None
+        cookie_maker = None
+        reload_ival = self.DEFAULT_RELOAD_INTERVAL
+
+        if config:
+            loc = config.get('shard_index_loc')
+            cookie_maker = config.get('cookie_maker')
+
+            self.max_blocks = config.get('max_blocks', self.max_blocks)
+
+            reload_ival = config.get('reload_interval', reload_ival)
+
+
+        if isinstance(loc, dict):
+            self.loc_resolver = LocPrefixResolver(summary, loc)
+        else:
+            self.loc_resolver = LocMapResolver(summary, loc)
+
+        self.summary = summary
+
+        # reload interval
+        self.loc_update_time = datetime.datetime.now()
+        self.reload_interval = datetime.timedelta(minutes=reload_ival)
+
+        self.blk_loader = BlockLoader(cookie_maker=cookie_maker)
 
 #    @staticmethod
 #    def reload_timed(timestamp, val, delta, func):
@@ -93,11 +132,8 @@ class ZipNumCluster(CDXSource):
 #        if reload_time:
 #            self.loc_update_time = reload_time
 
-    def lookup_loc(self, part):
-        return self.loc_map[part]
-
     def load_cdx(self, query):
-        self.load_loc()
+        self.loc_resolver.load_loc()
 
         reader = open(self.summary, 'rb')
 
@@ -161,7 +197,7 @@ class ZipNumCluster(CDXSource):
         if curr_page >= total_pages or curr_page < 0:
             msg = 'Page {0} invalid: First Page is 0, Last Page is {1}'
             reader.close()
-            raise Exception(msg.format(curr_page, total_pages - 1))
+            raise CDXException(msg.format(curr_page, total_pages - 1))
 
         startline = curr_page * pagesize
         endline = min(startline + pagesize - 1, diff)
@@ -220,7 +256,7 @@ class ZipNumCluster(CDXSource):
         last_exc = None
         last_traceback = None
 
-        for location in self.lookup_loc(blocks.part):
+        for location in self.loc_resolver(blocks.part):
             try:
                 return self.load_blocks(location, blocks, ranges, query)
             except Exception as exc:
@@ -263,4 +299,4 @@ class ZipNumCluster(CDXSource):
 
     def __str__(self):
         return 'ZipNum Cluster: {0}, {1}'.format(self.summary,
-                                                 self.loc_filename)
+                                                 self.loc_resolver)

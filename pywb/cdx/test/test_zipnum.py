@@ -88,7 +88,7 @@ org,iana)/domains/root/servers 20140126201227 http://www.iana.org/domains/root/s
 # invalid page
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', showPagedIndex=True, pageSize=4, page=10)
 Traceback (most recent call last):
-Exception: Page 10 invalid: First Page is 0, Last Page is 9
+CDXException: Page 10 invalid: First Page is 0, Last Page is 9
 
 
 >>> zip_ops_test(url='http://aaa.aaa/', matchType='exact', showPagedIndex=True)
@@ -107,6 +107,13 @@ NotFoundException: No Captures found for: http://aaa.zz/
 
 from test_cdxops import cdx_ops_test
 from pywb import get_test_dir
+from pywb.cdx.cdxserver import CDXServer
+
+
+import shutil
+import tempfile
+import os
+import json
 
 
 test_zipnum = get_test_dir() + 'zipcdx/zipnum-sample.idx'
@@ -114,6 +121,44 @@ test_zipnum = get_test_dir() + 'zipcdx/zipnum-sample.idx'
 def zip_ops_test(url, **kwargs):
     sources = test_zipnum
     cdx_ops_test(url, sources, **kwargs)
+
+
+def test_zip_prefix_load():
+
+    tmpdir = tempfile.mkdtemp()
+    try:
+        shutil.copy(test_zipnum, tmpdir)
+        shutil.copy(get_test_dir() + 'zipcdx/zipnum-sample.cdx.gz',
+                    os.path.join(tmpdir, 'zipnum'))
+
+        config={}
+        config['shard_index_loc'] = dict(match='(.*)',
+                                         replace=r'\1')
+        server = CDXServer(os.path.join(tmpdir, 'zipnum-sample.idx'),
+                           config=config)
+
+
+        # Test Page Count
+        results = server.load_cdx(url='iana.org/',
+                                  matchType='domain',
+                                  showNumPages=True)
+
+        results = list(results)
+        assert len(results) == 1, results
+        assert json.loads(results[0]) == {"blocks": 37, "pages": 4, "pageSize": 10}
+
+
+        # Test simple query
+        results = server.load_cdx(url='iana.org/')
+        results = list(results)
+        assert len(results) ==3, results
+        assert '20140126200624' in results[0]
+        assert '20140127171238' in results[1]
+        assert 'warc/revisit' in results[2]
+
+    finally:
+        shutil.rmtree(tmpdir)
+
 
 
 if __name__ == "__main__":
