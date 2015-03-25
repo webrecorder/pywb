@@ -35,8 +35,11 @@ class DictChain(object):
                 return val
         return default_val
 
-    def __contains__(self, key):
-        return self.get(key) is not None
+#    def __contains__(self, key):
+#        return self.get(key) is not None
+
+#    def __getitem__(self, key):
+#        return self.get(key)
 
     def __setitem__(self, key, value):
         self.dicts[0][key] = value
@@ -170,9 +173,10 @@ class DirectoryCollsLoader(object):
         return result
 
     def _add_dir_if_exists(self, coll, root_dir, dir_key, required=False):
-        if dir_key in coll:
-            if not is_http(coll[dir_key]):
-                coll[dir_key] = self._norm_path(root_dir, coll[dir_key]) + os.path.sep
+        curr_val = coll.get(dir_key)
+        if curr_val:
+            if not is_http(curr_val):
+                coll[dir_key] = self._norm_path(root_dir, curr_val) + os.path.sep
             return False
 
         thedir = self.config.get('paths')[dir_key]
