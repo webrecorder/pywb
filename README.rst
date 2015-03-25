@@ -61,8 +61,8 @@ Point your browser to ``http://localhost:8080/my_coll/<url>/`` where ``<url>`` i
 
 If all worked well, you should see your archived version of ``<url>``. Congrats, you are now running your own web archive!
 
-A more `detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_.
 
+A `more detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Web-Archive-Collections-Manager>`_.
 
 Using Existing Collections
 """""""""""""""""""""""""""
@@ -70,12 +70,20 @@ Using Existing Collections
 Existing archives of WARCs/ARCs files can be used with pywb with minimal amount of setup. By using ``wb-manager add``,
 WARC/ARC files will automatically be placed in the collection archive directory and indexed.
 
-If you have a large number of existing CDX index files, pywb will be able to read them as well.
+If you have a large number of existing CDX index files, pywb will be able to read them as well without having to reindex.
 It is recommended that any index files be converted to the latest JSON based format, which can be done by running:
 ``wb-manager cdx-convert <path/to/cdx>``
 
-The index files can then be placed in the ``collections/<coll name>/indexes`` directory and the ARC/WARC files in ``collections/<coll name>/archive``
-and your collection is ready to use with pywb!
+To setup a collection with existing ARC/WARCs and CDX index files, you can:
+
+1. Run ``wb-manager init <coll name>``. This will initialize all the required collection directories.
+2. Copy any archive files (WARCs and ARCs) to ``collections/<coll name>/archive/`
+3. Copy any existing cdx indexes to ``collections/<coll name>/indexes/``
+4. Run ``wb-maanger cdx-convert collections/<coll name>/indexes/``. This step is optional but strongly recommended, as it will
+ensure that the CDX indexes are in a consistent format.
+
+This will fully migrate your archive and indexes the collection. Any new WARCs added with `wb-manager add` will be indexed and added to the existing collection.
+Additionall, you may use the auto-indexing features (explained below) to add new content to the existing collection.
 
 `Legacy installation instructions <https://github.com/ikreymer/pywb/blob/master/INSTALL.rst>`_ contain additional
 information and testing examples, and use a custom ``config.yaml`` file. These instructions are from previous releases but
