@@ -20,7 +20,7 @@ Additionally, **pywb** includes an extensive `index query api <https://github.co
 
 The software can run as a traditional web application or an HTTP or HTTPS proxy server, and has been tested on Linux, OS X and Windows platforms.
 
-**pywb** is fully compliant with the `Memento <http://mementoweb.org/>`_ protocol (`RFC-7089 <http://tools.ietf.org/html/rfc7089>`_), offering aggregate searches over many web archives.
+**pywb** is fully compliant with the `Memento <http://mementoweb.org/>`_ protocol (`RFC-7089 <http://tools.ietf.org/html/rfc7089>`_).
 
 
 Getting Started -- Run your own Web Archive
@@ -30,6 +30,7 @@ With release 0.9.0, **pywb** provides new simplified, directory-based init syste
 run your own web archive replay system (wayback machine) directly from archive collections on disk.
 
 A new utility, ``wb-manager`` performs the most common collection management tasks from the command line.
+
 
 1. Archive a Web Page
 """""""""""""""""""""
@@ -64,10 +65,10 @@ Point your browser to ``http://localhost:8080/my_coll/<url>/`` where ``<url>`` i
 If all worked well, you should see your archived version of ``<url>``. Congrats, you are now running your own web archive!
 
 
-A `more detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Web-Archive-Collections-Manager>`_.
+`A more detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Web-Archive-Collections-Manager>`_.
 
-Using Existing Collections
-"""""""""""""""""""""""""""
+Using Existing Web Archive Collections
+--------------------------------------
 
 Existing archives of WARCs/ARCs files can be used with pywb with minimal amount of setup. By using ``wb-manager add``,
 WARC/ARC files will automatically be placed in the collection archive directory and indexed.
