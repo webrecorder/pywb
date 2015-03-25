@@ -249,7 +249,8 @@ directory structure expected by pywb
                        'a collection name: template <coll> --{1} {0}')
                 raise IOError(msg.format(template_name, verb))
 
-            full_path = os.path.join(self.templates_dir, os.path.basename(filename))
+            full_path = os.path.join(self.templates_dir,
+                                     os.path.basename(filename))
 
         except KeyError:
             try:
@@ -278,7 +279,8 @@ directory structure expected by pywb
             fh.write(data)
 
         full_path = os.path.abspath(full_path)
-        print('Copied default template "{0}" to "{1}"'.format(filename, full_path))
+        msg = 'Copied default template "{0}" to "{1}"'
+        print(msg.format(filename, full_path))
 
     def remove_template(self, template_name, force=False):
         full_path, filename = self._get_template_path(template_name, 'remove')
@@ -330,7 +332,9 @@ directory structure expected by pywb
 
         def do_index(warc):
             if any_coll:
-                coll_name = warc.split(self.colls_dir + os.path.sep)[-1].split('/')[0]
+                coll_name = warc.split(self.colls_dir + os.path.sep)
+                coll_name = coll_name[-1].split(os.path.sep)[0]
+
                 if coll_name != self.coll_name:
                     self._set_coll_dirs(coll_name)
 

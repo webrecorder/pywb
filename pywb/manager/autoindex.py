@@ -33,8 +33,10 @@ class CDXAutoIndexer(RegexMatchingEventHandler):
             while keep_running:
                 time.sleep(sleep_time)
         except KeyboardInterrupt:  # pragma: no cover
-            observer.stop()
-            observer.join()
+            pass
+	finally:
+            self.observer.stop()
+            self.observer.join()
 
 
 #=============================================================================

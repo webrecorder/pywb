@@ -144,13 +144,21 @@ ALLOWED_EXT = ('.arc', '.arc.gz', '.warc', '.warc.gz')
 
 
 #=================================================================
+def _resolve_rel_path(path, rel_root):
+    path = os.path.relpath(path, rel_root)
+    if os.path.sep != '/':  #pragma: no cover
+        path = path.replace(os.path.sep, '/')
+    return path
+
+
+#=================================================================
 def iter_file_or_dir(inputs, recursive=True, rel_root=None):
     for input_ in inputs:
         if not os.path.isdir(input_):
             if not rel_root:
                 filename = os.path.basename(input_)
             else:
-                filename = os.path.relpath(input_, rel_root)
+	        filename = _resolve_rel_path(input_, rel_root)
 
             yield input_, filename
 
@@ -159,7 +167,7 @@ def iter_file_or_dir(inputs, recursive=True, rel_root=None):
                 if filename.endswith(ALLOWED_EXT):
                     full_path = os.path.join(input_, filename)
                     if rel_root:
-                        filename = os.path.relpath(full_path, rel_root)
+                        filename = _resolve_rel_path(full_path, rel_root)
                     yield full_path, filename
 
         else:
@@ -169,8 +177,7 @@ def iter_file_or_dir(inputs, recursive=True, rel_root=None):
                         full_path = os.path.join(root, filename)
                         if not rel_root:
                             rel_root = input_
-                        rel_path = os.path.relpath(full_path, rel_root)
-                        rel_path = rel_path.replace(os.path.sep, '/')
+                        rel_path = _resolve_rel_path(full_path, rel_root)
                         yield full_path, rel_path
 
 

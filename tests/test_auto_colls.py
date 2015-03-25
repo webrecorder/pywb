@@ -482,6 +482,8 @@ class TestManagedColls(object):
 
         main(['autoindex'])
 
+        thread.join()
+
         index_file = os.path.join(auto_dir, INDEX_DIR, AUTOINDEX_FILE)
         assert os.path.isfile(index_file)
 
@@ -504,7 +506,9 @@ class TestManagedColls(object):
 
         main(['autoindex', 'auto'])
 
-        # assert file was update
+        thread.join()
+        
+	# assert file was update
         assert os.path.getmtime(index_file) > mtime
 
     def test_err_template_remove(self):
