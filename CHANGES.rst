@@ -1,3 +1,20 @@
+pywb 0.9.1 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Implement pagination support for zipnum cluster and added to cdx server api:
+
+  https://github.com/ikreymer/pywb/wiki/CDX-Server-API
+  
+* cdx server query: add support for ``url=*.host`` and ``url=host/*`` as shortcuts for ``matchType=domain`` and ``matchType=prefix``
+
+* zipnum cdx cluster: support loading index shared from prefix path instead of seperate location file.
+
+  The ``shard_index_loc`` config property may contain match and replace properties.
+  Regex replacement is then used to obtain path prefix from the shard prefix path.
+ 
+* wombat: fix `document.write()` rewriting to rewrite each element at a time and use underlying write for better compatibility.
+
+
 pywb 0.9.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
