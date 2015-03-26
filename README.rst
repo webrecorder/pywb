@@ -65,7 +65,7 @@ Point your browser to ``http://localhost:8080/my_coll/<url>/`` where ``<url>`` i
 If all worked well, you should see your archived version of ``<url>``. Congrats, you are now running your own web archive!
 
 
-`A more detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Web-Archive-Collections-Manager>`_.
+`A more detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Web-Archive-Collections-Manager>`_ .
 
 Using Existing Web Archive Collections
 --------------------------------------
@@ -82,7 +82,7 @@ To setup a collection with existing ARC/WARCs and CDX index files, you can:
 1. Run ``wb-manager init <coll name>``. This will initialize all the required collection directories.
 2. Copy any archive files (WARCs and ARCs) to ``collections/<coll name>/archive/``
 3. Copy any existing cdx indexes to ``collections/<coll name>/indexes/``
-4. Run ``wb-maanger cdx-convert collections/<coll name>/indexes/``. This step is optional but strongly recommended, as it will
+4. Run ``wb-manager cdx-convert collections/<coll name>/indexes/``. This step is optional but strongly recommended, as it will
 ensure that the CDX indexes are in a consistent format.
 
 This will fully migrate your archive and indexes the collection. Any new WARCs added with `wb-manager add` will be indexed and added to the existing collection.
@@ -107,7 +107,7 @@ To copy a default template to the file system (for modification), you can run ``
 
 The metadata is accessible to all UI templates and may be displayed to the user as needed.
 
-See the `Wayback Manager Tutorial <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Wayback-Collections-Manager>`_ and the
+See the `Collections Manager Tutorial <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Web-Archive-Collections-Manager>`_ and the
 and `UI Customization <https://github.com/ikreymer/pywb/wiki/UI-Customization>`_ page for more details.
 
 
