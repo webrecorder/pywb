@@ -22,16 +22,19 @@ org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db tex
 org,iana)/domains/root/servers 20140126201227 http://www.iana.org/domains/root/servers text/html 200 AFW34N3S4NK2RJ6QWMVPB5E2AIUETAHU - - 3137 733840 iana.warc.gz
 
 # Pages -- default page size
+>>> zip_ops_test(url='http://iana.org/domains/example', matchType='exact', showNumPages=True)
+{"blocks": 1, "pages": 1, "pageSize": 10}
+
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', showNumPages=True)
-{"blocks": 37, "pages": 4, "pageSize": 10}
+{"blocks": 38, "pages": 4, "pageSize": 10}
 
 # set page size
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', pageSize=4, showNumPages=True)
-{"blocks": 37, "pages": 10, "pageSize": 4}
+{"blocks": 38, "pages": 10, "pageSize": 4}
 
 # set page size -- alt domain query
 >>> zip_ops_test(url='*.iana.org', pageSize=4, showNumPages=True)
-{"blocks": 37, "pages": 10, "pageSize": 4}
+{"blocks": 38, "pages": 10, "pageSize": 4}
 
 # first page
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', showPagedIndex=True, pageSize=4, page=0)
@@ -145,7 +148,7 @@ def test_zip_prefix_load():
 
         results = list(results)
         assert len(results) == 1, results
-        assert json.loads(results[0]) == {"blocks": 37, "pages": 4, "pageSize": 10}
+        assert json.loads(results[0]) == {"blocks": 38, "pages": 4, "pageSize": 10}
 
 
         # Test simple query

@@ -234,7 +234,7 @@ def cdx_collapse_time_status(cdx_iter, timelen=10):
     last_token = None
 
     for cdx in cdx_iter:
-        curr_token = (cdx[TIMESTAMP][:timelen], cdx[STATUSCODE])
+        curr_token = (cdx[TIMESTAMP][:timelen], cdx.get(STATUSCODE, ''))
 
         # yield if last_dedup_time is diff, otherwise skip
         if curr_token != last_token:

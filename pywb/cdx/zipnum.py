@@ -172,6 +172,7 @@ class ZipNumCluster(CDXSource):
         try:
             first_line = first_iter.next()
         except StopIteration:
+            reader.close()
             raise
 
         first = IDXObject(first_line)
@@ -188,7 +189,7 @@ class ZipNumCluster(CDXSource):
         if query.page_count:
             info = dict(pages=total_pages,
                         pageSize=pagesize,
-                        blocks=diff)
+                        blocks=diff + 1)
             yield json.dumps(info)
             reader.close()
             return
