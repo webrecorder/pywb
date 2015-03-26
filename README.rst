@@ -67,6 +67,7 @@ If all worked well, you should see your archived version of ``<url>``. Congrats,
 
 `A more detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Web-Archive-Collections-Manager>`_ .
 
+
 Using Existing Web Archive Collections
 --------------------------------------
 
@@ -83,14 +84,14 @@ To setup a collection with existing ARC/WARCs and CDX index files, you can:
 2. Copy any archive files (WARCs and ARCs) to ``collections/<coll name>/archive/``
 3. Copy any existing cdx indexes to ``collections/<coll name>/indexes/``
 4. Run ``wb-manager cdx-convert collections/<coll name>/indexes/``. This step is optional but strongly recommended, as it will
-ensure that the CDX indexes are in a consistent format.
+   ensure that the CDX indexes are in a consistent format.
 
-This will fully migrate your archive and indexes the collection. Any new WARCs added with `wb-manager add` will be indexed and added to the existing collection.
-Additionall, you may use the auto-indexing features (explained below) to add new content to the existing collection.
+This will fully migrate your archive and indexes the collection. Any new WARCs added with ``wb-manager add`` will be indexed and added to the existing collection.
+You may use the auto-indexing features (explained below) to add new content to the existing collection.
 
 `Legacy installation instructions <https://github.com/ikreymer/pywb/blob/master/INSTALL.rst>`_ contain additional
 information and testing examples, and use a custom ``config.yaml`` file. These instructions are from previous releases but
-still compatible with pywb 0.9.0.
+still compatible with pywb 0.9.x.
 
 
 Custom UI and User Metadata
@@ -120,8 +121,8 @@ Whenever a WARC/ARC file is added or changed, pywb will update the internal inde
 instantly available for replay, without manual intervention or restart. (Of course, indexing will take some time if adding
 many gigabytes of data all at once, but is quite useful for smaller archive updates).
 
-To enable auto-indexing, you can run the `wayback -a` when running command line, or run
-`wb-manager autoindex <path/to/coll>` as a seperate program.
+To enable auto-indexing, you can run the ``wayback -a`` when running command line, or run
+``wb-manager autoindex <path/to/coll>`` as a seperate program.
 
 
 Samples and Tests
@@ -184,9 +185,9 @@ number of useful command-line and web server tools. The tools should be availabl
   for all options.
 
 
-* ``cdx-server`` -- a CDX API only server which returns a responses about CDX captures in bulk.
-  Includes most of the features of the `original cdx server implementation <https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server>`_,
-  updated documentation coming soon.
+* ``cdx-server`` -- a CDX API only server which returns a responses about CDX captures in bulk. See `CDX Server API <https://github.com/ikreymer/pywb/wiki/CDX-Server-API>`_
+  for an updated documentation on the latest query api.
+
 
 * ``proxy-cert-auth`` -- a utility to support proxy mode. It can be used in CA root certificate, or per-host certificate with an existing root cert.
 
@@ -208,6 +209,7 @@ For example, the `pywb-webrecorder <https://github.com/ikreymer/pywb-webrecorder
 together with a recording proxy (warcprox) to record content while browsing.
 
 The `via.hypothes.is <via.hypothes.is>`_ project uses pywb to inject annotations into any live web page.
+
 
 Running in HTTP/HTTPS Proxy Mode
 --------------------------------
@@ -264,6 +266,7 @@ Additional Reference
 
 -  The sample config.yaml file, although not required, will provide a listing of various advanced configuration options:
    `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_
+
 
 Contributions & Bug Reports
 ---------------------------
