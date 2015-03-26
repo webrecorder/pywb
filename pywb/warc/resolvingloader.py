@@ -1,10 +1,13 @@
 from pywb.utils.timeutils import iso_date_to_timestamp
 from recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
 from pathresolvers import make_best_resolvers
+from pywb.utils.wbexception import NotFoundException
 
 
 #=================================================================
-class ResolvingLoader:
+class ResolvingLoader(object):
+    MISSING_REVISIT_MSG = 'Original for revisit record could not be loaded'
+
     def __init__(self, paths, record_loader=ArcWarcRecordLoader()):
         self.path_resolvers = make_best_resolvers(paths)
         self.record_loader = record_loader
@@ -141,10 +144,9 @@ class ResolvingLoader:
 
         target_uri = headers_record.rec_headers.get_header('WARC-Target-URI')
 
-        # Check for unresolved revisit error,
-        # if refers to target uri not present or same as the current url
-        if not ref_target_uri or (ref_target_uri == target_uri):
-            raise ArchiveLoadFailed('Missing Revisit Original')
+        # if no target uri, no way to find the original
+        if not ref_target_uri:
+            raise ArchiveLoadFailed(self.MISSING_REVISIT_MSG)
 
         ref_target_date = (headers_record.rec_headers.
                            get_header('WARC-Refers-To-Date'))
@@ -154,23 +156,26 @@ class ResolvingLoader:
         else:
             ref_target_date = iso_date_to_timestamp(ref_target_date)
 
-        digest = cdx['digest']
+        digest = cdx.get('digest', '-')
 
-        orig_cdx_lines = self.load_cdx_for_dupe(ref_target_uri,
-                                                ref_target_date,
-                                                digest,
-                                                cdx_loader)
+        try:
+            orig_cdx_lines = self.load_cdx_for_dupe(ref_target_uri,
+                                                    ref_target_date,
+                                                    digest,
+                                                    cdx_loader)
+        except NotFoundException:
+            raise ArchiveLoadFailed(self.MISSING_REVISIT_MSG)
 
-        for cdx in orig_cdx_lines:
+        for orig_cdx in orig_cdx_lines:
             try:
-                payload_record = self._resolve_path_load(cdx, False,
+                payload_record = self._resolve_path_load(orig_cdx, False,
                                                          failed_files)
                 return payload_record
 
             except ArchiveLoadFailed as e:
                 pass
 
-        raise ArchiveLoadFailed('Original for revisit could not be loaded')
+        raise ArchiveLoadFailed(self.MISSING_REVISIT_MSG)
 
     def load_cdx_for_dupe(self, url, timestamp, digest, cdx_loader):
         """
@@ -178,12 +183,18 @@ class ResolvingLoader:
         otherwise empty list
         """
         if not cdx_loader:
-            return []
+            return iter([])
 
-        params = dict(url=url,
-                      closest=timestamp)
+        filters = []
+
+        filters.append('!mime:warc/revisit')
 
         if digest and digest != '-':
-            params['filter'] = 'digest:' + digest
+            filters.append('digest:' + digest)
 
+        params = dict(url=url,
+                      closest=timestamp,
+                      filter=filters)
+        import sys
+        sys.stderr.write(str(params) + '\n')
         return cdx_loader(params)

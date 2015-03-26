@@ -272,25 +272,23 @@ Exception: ArchiveLoadFailed
 Exception: ArchiveLoadFailed
 
 # Revisit Errors
-# original missing
->>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - - 1864 example.warc.gz - - -', reraise=True)
-Traceback (most recent call last):
-ArchiveLoadFailed: Missing Revisit Original
+# original missing, no match
+>>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - - 1864 example.warc.gz - - -', revisit_func=lambda x: [])
+Exception: ArchiveLoadFailed
 
-# original warc not found
->>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - - 1864 example.warc.gz 100 10 someunknown.warc.gz', reraise=True)
-Traceback (most recent call last):
-ArchiveLoadFailed: Missing Revisit Original
+# revisit fallback: original warc in cdx not found, try lookup
+>>> load_from_cdx_test('com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - - 1864 example.warc.gz 100 10 someunknown.warc.gz', revisit_func=load_orig_bad_cdx)
+Exception: ArchiveLoadFailed
 
 # no revisit func available
->>> load_from_cdx_test(URL_AGNOSTIC_REVISIT_CDX, revisit_func=None, reraise=True)
-Traceback (most recent call last):
-ArchiveLoadFailed: Original for revisit could not be loaded
+>>> load_from_cdx_test(URL_AGNOSTIC_REVISIT_CDX, revisit_func=None)
+Exception: ArchiveLoadFailed
+
 
 # url-agnostic original found, but could not be loaded
->>> load_from_cdx_test(URL_AGNOSTIC_REVISIT_CDX, revisit_func=load_orig_bad_cdx, reraise=True)
-Traceback (most recent call last):
-ArchiveLoadFailed: Original for revisit could not be loaded
+>>> load_from_cdx_test(URL_AGNOSTIC_REVISIT_CDX, revisit_func=load_orig_bad_cdx)
+Exception: ArchiveLoadFailed
+
 
 """
 
@@ -339,13 +337,13 @@ def load_test_archive(test_file, offset, length):
 
 
 #==============================================================================
-def load_orig_bad_cdx(self):
+def load_orig_bad_cdx(_):
     return [CDXObject(BAD_ORIG_CDX),
             CDXObject(BAD_ORIG_CDX)]
 
 
 #==============================================================================
-def load_orig_cdx(self):
+def load_orig_cdx(_):
     return [CDXObject(BAD_ORIG_CDX),
             CDXObject(URL_AGNOSTIC_ORIG_CDX)]
 
