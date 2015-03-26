@@ -156,6 +156,14 @@ org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db tex
 {"urlkey": "com,example)/?example=1", "timestamp": "20140103030321", "url": "http://example.com?example=1", "length": "1043", "filename": "example.warc.gz", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "offset": "333", "orig.length": "-", "orig.offset": "-", "orig.filename": "-"}
 {"urlkey": "com,example)/?example=1", "timestamp": "20140103030341", "url": "http://example.com?example=1", "filename": "example.warc.gz", "length": "553", "mime": "", "offset": "1864", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "orig.length": "1043", "orig.offset": "333", "orig.filename": "example.warc.gz"}
 
+# Resolve Revisit -- cdxj minimal -- output also json
+>>> cdx_ops_test(url = 'http://example.com/?example=1', sources=[get_test_dir() + 'cdxj/example-no-digest.cdxj'], resolveRevisits=True)
+{"urlkey": "com,example)/?example=1", "timestamp": "20140103030321", "url": "http://example.com?example=1", "length": "1043", "filename": "example.warc.gz", "offset": "333", "orig.length": "-", "orig.offset": "-", "orig.filename": "-"}
+{"urlkey": "com,example)/?example=1", "timestamp": "20140103030341", "url": "http://example.com?example=1", "length": "553", "filename": "example.warc.gz", "mime": "warc/revisit", "offset": "1864", "orig.length": "-", "orig.offset": "-", "orig.filename": "-"}
+
+
+
+
 """
 
 #=================================================================

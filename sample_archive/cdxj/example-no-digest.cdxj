@@ -1,0 +1,3 @@
+com,example)/?example=1 20140103030321 {"url": "http://example.com?example=1", "length": "1043", "offset": "333", "filename": "example.warc.gz"}
+com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "mime": "warc/revisit", "length": "553", "offset": "1864", "filename": "example.warc.gz"}
+org,iana)/domains/example 20140128051539 {"url": "http://www.iana.org/domains/example", "length": "577", "offset": "2907", "filename": "example.warc.gz"}

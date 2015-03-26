@@ -291,12 +291,16 @@ def cdx_resolve_revisits(cdx_iter):
     for cdx in cdx_iter:
         is_revisit = cdx.is_revisit()
 
-        digest = cdx[DIGEST]
+        digest = cdx.get(DIGEST)
 
-        original_cdx = originals.get(digest)
+        original_cdx = None
 
-        if not original_cdx and not is_revisit:
-            originals[digest] = cdx
+        # only set if digest is valid, otherwise no way to resolve
+        if digest:
+            original_cdx = originals.get(digest)
+
+            if not original_cdx and not is_revisit:
+                originals[digest] = cdx
 
         if original_cdx and is_revisit:
             fill_orig = lambda field: original_cdx[field]
