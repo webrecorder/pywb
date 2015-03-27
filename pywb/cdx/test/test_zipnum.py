@@ -100,11 +100,11 @@ NotFoundException: No Captures found for: http://aaa.aaa/
 
 >>> zip_ops_test(url='http://aaa.aaa/', matchType='domain', showPagedIndex=True)
 Traceback (most recent call last):
-NotFoundException: No Captures found for: http://aaa.aaa/
+NotFoundException: No Captures found for: http://aaa.aaa/ (domain query)
 
 >>> zip_ops_test(url='http://aaa.zz/', matchType='domain', showPagedIndex=True)
 Traceback (most recent call last):
-NotFoundException: No Captures found for: http://aaa.zz/
+NotFoundException: No Captures found for: http://aaa.zz/ (domain query)
 
 """
 
