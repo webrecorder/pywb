@@ -246,12 +246,10 @@ directory structure expected by pywb
         try:
             filename = templates[template_name]
             if not self.coll_name:
-                msg = ('To {1} a "{0}" template, you must specify ' +
-                       'a collection name: template <coll> --{1} {0}')
-                raise IOError(msg.format(template_name, verb))
-
-            full_path = os.path.join(self.templates_dir,
-                                     os.path.basename(filename))
+                full_path = os.path.join(os.getcwd(), filename)
+            else:
+                full_path = os.path.join(self.templates_dir,
+                                         os.path.basename(filename))
 
         except KeyError:
             try:
