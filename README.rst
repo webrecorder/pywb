@@ -155,7 +155,7 @@ Desktop Web Archive Player
 --------------------------
 
 There is now also a downloadable point-and-click `Web Archive Player <https://github.com/ikreymer/webarchiveplayer>`_ which provides
-a native OS X and Windows application for browsing web archives, built using pywb.
+a native OS X and Windows desktop client application for browsing web archives, built using **pywb**.
 
 You can use this tool to quickly check the contents of any WARC or ARC file through a simple point-and-click GUI interface, no command line tools needed.
 
@@ -208,7 +208,7 @@ to serve live content, and inject customized code into any web page on the fly. 
 For example, the `pywb-webrecorder <https://github.com/ikreymer/pywb-webrecorder>`_ demonstrates a way to use pywb live web rewriting
 together with a recording proxy (warcprox) to record content while browsing.
 
-The `via.hypothes.is <via.hypothes.is>`_ project uses pywb to inject annotations into any live web page.
+The `via.hypothes.is <via.hypothes.is>`_ project provides an example of using pywb to inject annotations into any live web page.
 
 
 Running in HTTP/HTTPS Proxy Mode
