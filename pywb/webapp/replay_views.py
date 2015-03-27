@@ -148,8 +148,8 @@ class ReplayView(object):
         if redir_response:
             return redir_response
 
-        length = status_headers.get_header('content-length')
-        stream = LimitReader.wrap_stream(stream, length)
+        #length = status_headers.get_header('content-length')
+        #stream = LimitReader.wrap_stream(stream, length)
 
         # one more check for referrer-based self-redirect
         # TODO: evaluate this, as refreshing in browser may sometimes cause
