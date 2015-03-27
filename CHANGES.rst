@@ -1,6 +1,13 @@
 pywb 0.9.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* Collections Manager: Allow adding any templates to shared directory, fix adding WARCs with relative path.
+
+* Replay: Remove limit by HTTP ``Content-Length`` as it may be invalid (only using the record length).
+
+* WARC Revisit-Resolution Improvements: Support indexes and warcs without any ``digest`` field. If no digest is found, attempt to look up
+  the original WARC record from the ``WARC-Refers-To-Target-URI`` and ``WARC-Refers-To-Date`` only, even for same url revisits.
+  (Previously, only used this lookup original url was different from revisit url)
 
 
 pywb 0.9.1 changelist

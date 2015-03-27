@@ -58,6 +58,9 @@ class BaseCDXServer(object):
                 return self.load_cdx(**fuzzy_query_params)
 
         msg = 'No Captures found for: ' + query.url
+        if not query.is_exact:
+            msg += ' (' + query.match_type + ' query)'
+
         raise NotFoundException(msg, url=query.url)
 
     def _calc_search_keys(self, query):
