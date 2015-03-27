@@ -102,6 +102,7 @@ directory structure expected by pywb
 
         full_paths = []
         for filename in warcs:
+            filename = os.path.abspath(filename)
             shutil.copy2(filename, self.archive_dir)
             full_paths.append(os.path.join(self.archive_dir, filename))
             logging.info('Copied ' + filename + ' to ' + self.archive_dir)
