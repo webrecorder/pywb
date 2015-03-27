@@ -100,9 +100,9 @@ Custom UI and User Metadata
 **pywb** makes it easy to customize most aspects of the UI around archived content, including a custom banner insert, query calendar, search and home pages,
 via HTML Jinja2 templates.
 
-You can see a list of all available UI templates by running: ``wayback-manager template --list``
+You can see a list of all available UI templates by running: ``wb-manager template --list``
 
-To copy a default template to the file system (for modification), you can run ``wayback-manager template <collection> --add <template_name>``
+To copy a default template to the file system (for modification), you can run ``wb-manager template --add <template_name> <collection>``
 
 **pywb** now supports custom user metadata for each collection. The metadata may be specified in the ``metadata.yaml`` in each collection's directory.
 
