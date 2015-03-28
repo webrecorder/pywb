@@ -6,7 +6,8 @@ local and remote access
 import os
 import hmac
 import urllib
-import urllib2
+#import urllib2
+import requests
 import urlparse
 import time
 import pkg_resources
@@ -142,6 +143,7 @@ class BlockLoader(object):
     """
     def __init__(self, cookie_maker=None):
         self.cookie_maker = cookie_maker
+        self.session = None
 
     def load(self, url, offset=0, length=-1):
         """
@@ -208,8 +210,13 @@ class BlockLoader(object):
             else:
                 headers['Cookie'] = self.cookie_maker.make()
 
-        request = urllib2.Request(url, headers=headers)
-        return urllib2.urlopen(request)
+        if not self.session:
+            self.session = requests.Session()
+
+        r = self.session.get(url, headers=headers, stream=True)
+        return r.raw
+        #request = urllib2.Request(url, headers=headers)
+        #return urllib2.urlopen(request)
 
 
 #=================================================================
