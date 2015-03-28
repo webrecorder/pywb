@@ -152,7 +152,18 @@ class ZipNumCluster(CDXSource):
         return gen_cdx()
 
 
+    def _page_info(self, pages, pagesize, blocks):
+        info = dict(pages=pages,
+                    pageSize=pagesize,
+                    blocks=blocks)
+        return json.dumps(info)
+
     def compute_page_range(self, reader, query):
+        pagesize = query.page_size
+        if not pagesize:
+            pagesize = self.max_blocks
+        else:
+            pagesize = int(pagesize)
 
         # Get End
         end_iter = search(reader, query.end_key, prev_size=1)
@@ -163,7 +174,6 @@ class ZipNumCluster(CDXSource):
             end_line = read_last_line(reader)
 
         # Get Start
-
         first_iter = iter_range(reader,
                                 query.key,
                                 query.end_key,
@@ -173,24 +183,33 @@ class ZipNumCluster(CDXSource):
             first_line = first_iter.next()
         except StopIteration:
             reader.close()
-            raise
+            if query.page_count:
+                yield self._page_info(0, pagesize, 0)
+                return
+            else:
+                raise
 
         first = IDXObject(first_line)
 
         end = IDXObject(end_line)
         diff = end['lineno'] - first['lineno']
 
-        pagesize = query.page_size
-        if not pagesize:
-            pagesize = self.max_blocks
-
         total_pages = diff / pagesize + 1
 
         if query.page_count:
-            info = dict(pages=total_pages,
-                        pageSize=pagesize,
-                        blocks=diff + 1)
-            yield json.dumps(info)
+            blocks = diff + 1
+            # same line, so actually need to look at cdx
+            # to determine if it exists
+            if total_pages == 1:
+                try:
+                    block_cdx_iter = self.idx_to_cdx([first_line], query)
+                    block = block_cdx_iter.next()
+                    cdx = block.next()
+                except StopIteration:
+                    total_pages = 0
+                    blocks = 0
+
+            yield self._page_info(total_pages, pagesize, blocks)
             reader.close()
             return
 

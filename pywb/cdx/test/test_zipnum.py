@@ -33,8 +33,16 @@ org,iana)/domains/root/servers 20140126201227 http://www.iana.org/domains/root/s
 {"blocks": 38, "pages": 10, "pageSize": 4}
 
 # set page size -- alt domain query
->>> zip_ops_test(url='*.iana.org', pageSize=4, showNumPages=True)
+>>> zip_ops_test(url='*.iana.org', pageSize='4', showNumPages=True)
 {"blocks": 38, "pages": 10, "pageSize": 4}
+
+# page size for non-existent, but secondary index match
+>>> zip_ops_test(url='iana.org/domains/int/blah', pageSize=4, showNumPages=True)
+{"blocks": 0, "pages": 0, "pageSize": 4}
+
+# page size for non-existent, no secondary index match
+>>> zip_ops_test(url='*.foo.bar', showNumPages=True)
+{"blocks": 0, "pages": 0, "pageSize": 10}
 
 # first page
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', showPagedIndex=True, pageSize=4, page=0)
