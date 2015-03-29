@@ -5,7 +5,7 @@ except ImportError:  # pragma: no cover
 
 import itertools
 
-from urllib import urlencode
+from urllib import urlencode, quote
 from urlparse import parse_qs
 
 from pywb.utils.wbexception import WbException
@@ -111,7 +111,15 @@ class CDXObject(OrderedDict):
             json_fields = json_decode(fields[-1])
             for n, v in json_fields.iteritems():
                 n = self.CDX_ALT_FIELDS.get(n, n)
-                self[n] = str(v)
+
+                try:
+                    self[n] = str(v)
+                except UnicodeEncodeError:
+                    v = v.encode('utf-8')
+                    parts = v.split('//', 1)
+                    v = parts[0] + '//' + quote(parts[1])
+                    self[n] = v
+
             self.cdxline = cdxline
             self._from_json = True
             return
