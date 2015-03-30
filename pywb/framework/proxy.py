@@ -109,12 +109,12 @@ class ProxyRouter(object):
 
         # attempt to create the root_ca_file if doesn't exist
         # (generally recommended to create this seperately)
-        certname = proxy_options.get('root_ca_name', self.CA_ROOT_NAME)
-        CertificateAuthority.generate_ca_root(ca_file, certname)
+        ca_name = proxy_options.get('root_ca_name', self.CA_ROOT_NAME)
 
         certs_dir = proxy_options.get('certs_dir', self.CA_CERTS_DIR)
         self.ca = CertificateAuthority(ca_file=ca_file,
-                                       certs_dir=certs_dir)
+                                       certs_dir=certs_dir,
+                                       ca_name=ca_name)
 
         self.use_wildcard = proxy_options.get('use_wildcard_certs', True)
 
@@ -252,7 +252,7 @@ class ProxyRouter(object):
         hostname, port = env['REL_REQUEST_URI'].split(':')
 
         if not self.use_wildcard:
-            _, certfile = self.ca.get_cert_for_host(hostname)
+            certfile = self.ca.get_cert_for_host(hostname)
         else:
             certfile = self.ca.get_wildcard_cert(hostname)
 

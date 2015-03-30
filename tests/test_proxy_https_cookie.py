@@ -22,7 +22,7 @@ sesh_key = None
 #=================================================================
 # Inited once per module
 def setup_module():
-    openssl_support = pytest.importorskip("OpenSSL")
+    certauth = pytest.importorskip("certauth")
 
     def make_httpd(app):
         return make_server('', 0, app)
