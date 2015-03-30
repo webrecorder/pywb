@@ -189,10 +189,6 @@ number of useful command-line and web server tools. The tools should be availabl
   for an updated documentation on the latest query api.
 
 
-* ``proxy-cert-auth`` -- a utility to support proxy mode. It can be used in CA root certificate, or per-host certificate with an existing root cert.
-
-
-
 Latest Changes
 --------------
 
@@ -217,9 +213,10 @@ Running in HTTP/HTTPS Proxy Mode
 **pywb** can also be used as an actual HTTP and/or HTTPS proxy server. See `pywb Proxy Mode Usage <https://github.com/ikreymer/pywb/wiki/Pywb-Proxy-Mode-Usage>`_ for more details
 on configuring proxy mode.
 
-To run as an HTTPS proxy server, pywb provides a facility for generating a custom self-signed root certificate, which can be used to replay HTTPS content from the archive.
-(The certificate should be used with caution within a controlled setting).
-Using these features requiring an extra dependency: the pyopenssl library must be installed via ``pip install pyopenssl``
+To run as an HTTPS proxy server, pywb uses the `certauth <https://github.com/ikreymer/certauth>`_ tool for generating a custom self-signed root certificate, which can be used to replay HTTPS content from the archive. (The certificate should be used with caution within a controlled setting).
+
+Using these features requiring an extra dependency: installing *certauth* with ``pip install certauth``. (This will also install the ``pyOpenSSL`` package which is used to handle the
+ssl functionality).
 
 For more info, see `Proxy Mode Usage <https://github.com/ikreymer/pywb/wiki/Pywb-Proxy-Mode-Usage>`_
 

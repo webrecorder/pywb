@@ -57,6 +57,10 @@ class ProxyRouter(object):
     CERT_DL_PEM = '/pywb-ca.pem'
     CERT_DL_P12 = '/pywb-ca.p12'
 
+    CA_ROOT_FILE = './ca/pywb-ca.pem'
+    CA_ROOT_NAME = 'pywb https proxy replay CA'
+    CA_CERTS_DIR = './ca/certs/'
+
     EXTRA_HEADERS = {'cache-control': 'no-cache',
                      'p3p': 'CP="NOI ADM DEV COM NAV OUR STP"'}
 
@@ -90,24 +94,25 @@ class ProxyRouter(object):
             self.ca = None
             return
 
-        from certauth import CertificateAuthority, openssl_avail
-
-        if not openssl_avail:  # pragma: no cover
-            print('HTTPS proxy not available as pyopenssl is not installed')
-            print('Please install via "pip install pyopenssl" ' +
+        try:
+            from certauth.certauth import CertificateAuthority
+        except ImportError:  #pragma: no cover
+            print('HTTPS proxy is not available as the "certauth" module ' +
+                  'is not installed')
+            print('Please install via "pip install certauth" ' +
                   'to enable HTTPS support')
             self.ca = None
             return
 
         # HTTPS Only Options
-        ca_file = proxy_options.get('root_ca_file')
+        ca_file = proxy_options.get('root_ca_file', self.CA_ROOT_FILE)
 
         # attempt to create the root_ca_file if doesn't exist
         # (generally recommended to create this seperately)
-        certname = proxy_options.get('root_ca_name')
+        certname = proxy_options.get('root_ca_name', self.CA_ROOT_NAME)
         CertificateAuthority.generate_ca_root(ca_file, certname)
 
-        certs_dir = proxy_options.get('certs_dir')
+        certs_dir = proxy_options.get('certs_dir', self.CA_CERTS_DIR)
         self.ca = CertificateAuthority(ca_file=ca_file,
                                        certs_dir=certs_dir)
 

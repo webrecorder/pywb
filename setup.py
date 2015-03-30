@@ -95,7 +95,6 @@ setup(
         cdx-server = pywb.apps.cli:cdx_server
         live-rewrite-server = pywb.apps.cli:live_rewrite_server
         cdx-indexer = pywb.warc.cdxindexer:main
-        proxy-cert-auth = pywb.framework.certauth:main
         wb-manager = pywb.manager.manager:main_wrap_exc
         """,
     classifiers=[
