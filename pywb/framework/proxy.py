@@ -252,7 +252,7 @@ class ProxyRouter(object):
         hostname, port = env['REL_REQUEST_URI'].split(':')
 
         if not self.use_wildcard:
-            certfile = self.ca.get_cert_for_host(hostname)
+            certfile = self.ca.cert_for_host(hostname)
         else:
             certfile = self.ca.get_wildcard_cert(hostname)
 
