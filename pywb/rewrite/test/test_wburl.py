@@ -44,6 +44,10 @@ ur"""
 >>> repr(WbUrl('http://example.com?example=2'))
 "('latest_replay', '', '', 'http://example.com?example=2', 'http://example.com?example=2')"
 
+# support urn: prefix
+>>> repr(WbUrl('urn:X-wpull:log'))
+"('latest_replay', '', '', 'urn:X-wpull:log', 'urn:X-wpull:log')"
+
 # Test scheme partially encoded urls
 >>> repr(WbUrl('https%3A//example.com/'))
 "('latest_replay', '', '', 'https://example.com/', 'https://example.com/')"

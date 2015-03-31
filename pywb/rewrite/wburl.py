@@ -178,6 +178,9 @@ class WbUrl(BaseWbUrl):
 
         self.url = new_uri
 
+        if self.url.startswith('urn:'):
+            return
+
         # protocol agnostic url -> http://
         # no protocol -> http://
         inx = self.url.find(':/')

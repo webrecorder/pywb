@@ -33,10 +33,17 @@ def canonicalize(url, surt_ordered=True):
 
     >>> canonicalize('http://example.com/path/file.html', surt_ordered=False)
     'example.com/path/file.html'
+
+    >>> canonicalize('urn:some:id')
+    'urn:some:id'
     """
     try:
         key = surt.surt(url)
     except Exception as e:
+        # urn is already canonical, so just use as-is
+        if url.startswith('urn:'):
+            return url
+
         raise UrlCanonicalizeException('Invalid Url: ' + url)
 
     # if not surt, unsurt the surt to get canonicalized non-surt url
