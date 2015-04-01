@@ -9,6 +9,7 @@
 dist
 build
 eggs
+.eggs
 parts
 bin
 var
@@ -34,8 +35,5 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
-
-# Other
-globalwb.py
 
 .vagrant
