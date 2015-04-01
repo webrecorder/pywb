@@ -24,21 +24,16 @@ var TS_REGEX = /\/([\d]{1,14})\//;
 var curr_state = {};
 
 
-function make_outer_url(url, ts)
+function make_url(url, ts, mod)
 {
-    if (ts) {
-        return wbinfo.prefix + ts + "tf_/" + url;
-    } else {
-        return wbinfo.prefix + "tf_/" + url;
+    if (mod) {
+        mod += "/";
     }
-}
 
-function make_inner_url(url, ts)
-{
     if (ts) {
-        return wbinfo.prefix + ts + "/" + url;
+        return wbinfo.prefix + ts + mod + url;
     } else {
-        return wbinfo.prefix + url;
+        return wbinfo.prefix + mod + url;
     }
 }
 
@@ -55,13 +50,15 @@ function push_state(url, timestamp, request_ts, capture_str, is_live) {
     var state = {}
     state.timestamp = timestamp;
     state.request_ts = request_ts;
-    state.outer_url = make_outer_url(url, state.request_ts);
-    state.inner_url = make_inner_url(url, state.request_ts);
+    state.outer_url = make_url(url, state.request_ts, wbinfo.frame_mod);
+    state.inner_url = make_url(url, state.request_ts, wbinfo.replay_mod);
     state.url = url;
     state.capture_str = capture_str;
     state.is_live = is_live;
 
-    window.history.replaceState(state, "", state.inner_url);
+    if (wbinfo.replay_mod == "") {
+        window.history.replaceState(state, "", state.inner_url);
+    }
 
     set_state(state);
 }

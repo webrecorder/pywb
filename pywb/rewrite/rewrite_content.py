@@ -31,8 +31,8 @@ class RewriteContent:
                                default_rule_config={},
                                ds_rules_file=ds_rules_file)
 
-        if is_framed_replay:
-            self.defmod = ''
+        if is_framed_replay == 'inverse':
+            self.defmod = 'mp_'
         else:
             self.defmod = ''
 

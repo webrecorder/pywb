@@ -32,6 +32,9 @@ class SearchPageWbUrlHandler(WbUrlHandler):
                            'Search Page'))
 
         self.is_frame_mode = config.get('framed_replay', False)
+        self.frame_mod = 'tf_'
+        self.replay_mod = ''
+
         self.response_class = WbResponse
 
         if self.is_frame_mode:
@@ -43,6 +46,10 @@ class SearchPageWbUrlHandler(WbUrlHandler):
 
             if config.get('enable_memento', False):
                 self.response_class = MementoResponse
+
+            if self.is_frame_mode == 'inverse':
+                self.frame_mod = ''
+                self.replay_mod = 'mp_'
 
         else:
             self.frame_insert_view = None
@@ -64,11 +71,12 @@ class SearchPageWbUrlHandler(WbUrlHandler):
              not wbrequest.wb_url.is_query() and
              not wbrequest.options['is_proxy']):
 
-            if wbrequest.wb_url.is_top_frame:
+            if wbrequest.wb_url.mod == self.frame_mod:
+                wbrequest.options['is_top_frame'] = True
                 return self.get_top_frame_response(wbrequest)
             else:
                 wbrequest.options['is_framed'] = True
-                wbrequest.final_mod = 'tf_'
+                wbrequest.final_mod = self.frame_mod
         else:
             wbrequest.options['is_framed'] = False
 
@@ -77,7 +85,7 @@ class SearchPageWbUrlHandler(WbUrlHandler):
         except NotFoundException as nfe:
             return self.handle_not_found(wbrequest, nfe)
 
-    def get_top_frame_params(self, wbrequest, mod=''):
+    def get_top_frame_params(self, wbrequest, mod):
         embed_url = wbrequest.wb_url.to_str(mod=mod)
 
         if wbrequest.wb_url.timestamp:
@@ -89,12 +97,14 @@ class SearchPageWbUrlHandler(WbUrlHandler):
                       wbrequest=wbrequest,
                       timestamp=timestamp,
                       url=wbrequest.wb_url.get_url(),
-                      banner_html=self.banner_html)
+                      banner_html=self.banner_html,
+                      frame_mod=self.frame_mod,
+                      replay_mod=self.replay_mod)
 
         return params
 
     def get_top_frame_response(self, wbrequest):
-        params = self.get_top_frame_params(wbrequest)
+        params = self.get_top_frame_params(wbrequest, mod=self.replay_mod)
 
         headers = [('Content-Type', 'text/html; charset=utf-8')]
         status_headers = StatusAndHeaders('200 OK', headers)

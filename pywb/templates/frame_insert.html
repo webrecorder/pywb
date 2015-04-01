@@ -18,6 +18,8 @@ html, body
   wbinfo.capture_url = "{{ url }}";
   wbinfo.timestamp = "{{ wbrequest.wb_url.timestamp }}";
   wbinfo.is_frame = true;
+  wbinfo.frame_mod = "{{ frame_mod }}";
+  wbinfo.replay_mod = "{{ replay_mod }}";
 </script>
 <script src='{{ wbrequest.host_prefix }}/{{ static_path }}/wb.js'> </script>
 <link rel='stylesheet' href='{{ wbrequest.host_prefix }}/{{ static_path }}/wb.css'/>

@@ -47,7 +47,8 @@ class MementoRespMixin(object):
         if not wbrequest or not wbrequest.wb_url:
             return
 
-        is_top_frame = wbrequest.wb_url.is_top_frame
+        #is_top_frame = wbrequest.wb_url.is_top_frame
+        is_top_frame = wbrequest.options.get('is_top_frame')
 
         is_timegate = (wbrequest.options.get('is_timegate', False) and
                        not is_top_frame)
