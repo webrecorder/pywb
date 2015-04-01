@@ -1,6 +1,22 @@
 pywb 0.9.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* support ``framed_replay: inverse`` where the top frame is the unmodified url and the inner frame has ``mp_`` modifier.
+
+* wb.js: improved redirect check: only redirect to top frame in framed mode and compare decoded urls.
+
+* charset detection: read first 1024 bytes to determine charset and add to ``Content-Type`` header if no charset is specified there.
+
+* indexing: support indexing of WARC records with ``urn:`` values as target uris, such as those created by `wpull <https://github.com/chfoo/wpull>`_
+
+* remove certauth module: now using standalon `certauth <http://github.com/ikreymer/certauth>`_ package.
+
+* BlockLoader: use requests instead of urllib2.
+
+* cdx: %-encode any non-ascii chars found in cdx fields.
+
+* cdx: showNumPages query always return valid result (not 404) for 0 pages. If <1 block, load cdx to determine if 1 page or none.
+
 
 pywb 0.9.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
