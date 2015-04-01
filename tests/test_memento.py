@@ -5,13 +5,9 @@ from pywb.framework.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
 from pywb.utils.timeutils import timestamp_now
 
-MEMENTO_DATETIME = 'Memento-Datetime'
-ACCEPT_DATETIME = 'Accept-Datetime'
-LINK = 'Link'
-VARY = 'Vary'
-LINK_FORMAT = 'application/link-format'
+from memento_fixture import *
 
-class TestWb:
+class TestMemento(MementoMixin):
     TEST_CONFIG = 'tests/test_config_memento.yaml'
 
     def setup(self):
@@ -20,17 +16,6 @@ class TestWb:
                             config_file=self.TEST_CONFIG)
 
         self.testapp = webtest.TestApp(self.app)
-
-    def get_links(self, resp):
-        return map(lambda x: x.strip(), re.split(', (?![0-9])', resp.headers[LINK]))
-
-    def make_timemap_link(self, url, coll='pywb'):
-        format_ = '<http://localhost:80/{2}/timemap/*/{0}>; rel="timemap"; type="{1}"'
-        return format_.format(url, LINK_FORMAT, coll)
-
-    def make_memento_link(self, url, ts, dt, coll='pywb'):
-        format_ = '<http://localhost:80/{3}/{1}/{0}>; rel="memento"; datetime="{2}"'
-        return format_.format(url, ts, dt, coll)
 
     # Below functionality is for archival (non-proxy) mode
     # It is designed to conform to Memento protocol Pattern 2.1

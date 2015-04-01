@@ -26,7 +26,7 @@ var curr_state = {};
 
 function make_url(url, ts, mod)
 {
-    if (mod) {
+    if (ts || mod) {
         mod += "/";
     }
 

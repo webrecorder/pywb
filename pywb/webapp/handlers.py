@@ -65,6 +65,9 @@ class SearchPageWbUrlHandler(WbUrlHandler):
         if wbrequest.wb_url_str == '/':
             return self.render_search_page(wbrequest)
 
+        wbrequest.options['replay_mod'] = self.replay_mod
+        wbrequest.options['frame_mod'] = self.frame_mod
+
         # render top level frame if in frame mode
         # (not supported in proxy mode)
         if (self.is_frame_mode and wbrequest.wb_url and
@@ -97,9 +100,7 @@ class SearchPageWbUrlHandler(WbUrlHandler):
                       wbrequest=wbrequest,
                       timestamp=timestamp,
                       url=wbrequest.wb_url.get_url(),
-                      banner_html=self.banner_html,
-                      frame_mod=self.frame_mod,
-                      replay_mod=self.replay_mod)
+                      banner_html=self.banner_html)
 
         return params
 
@@ -198,15 +199,12 @@ class StaticHandler(BaseHandler):
         full_path = self.static_path + url
 
         try:
-            data = self.block_loader.load(full_path)
+            data = self.block_loader.load_file_or_resource(full_path)
 
-            try:
-                data.seek(0, 2)
-                size = data.tell()
-                data.seek(0)
-                headers = [('Content-Length', str(size))]
-            except IOError:
-                headers = None
+            data.seek(0, 2)
+            size = data.tell()
+            data.seek(0)
+            headers = [('Content-Length', str(size))]
 
             if 'wsgi.file_wrapper' in wbrequest.env:
                 reader = wbrequest.env['wsgi.file_wrapper'](data)
