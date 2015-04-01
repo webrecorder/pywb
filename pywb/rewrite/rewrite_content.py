@@ -149,7 +149,6 @@ class RewriteContent:
             if head_insert_func:
                 if not charset:
                     charset = 'utf-8'
-                print(charset)
                 head_insert_str = head_insert_func(rule, cdx)
                 head_insert_str = head_insert_str.encode(charset)
 
@@ -185,11 +184,16 @@ class RewriteContent:
             # apply one of (js, css, xml) rewriters
             rewriter = rewriter_class(urlrewriter)
 
+
+        # align to line end for all non-html rewriting
+        align = (text_type != 'html')
+
         # Create rewriting generator
         gen = self.rewrite_text_stream_to_gen(stream,
                                               rewrite_func=rewriter.rewrite,
                                               final_read_func=rewriter.close,
-                                              first_buff=first_buff)
+                                              first_buff=first_buff,
+                                              align_to_line=align)
 
         return (status_headers, gen, True)
 
@@ -278,26 +282,31 @@ class RewriteContent:
 
     @staticmethod
     def rewrite_text_stream_to_gen(stream, rewrite_func,
-                                   final_read_func, first_buff):
+                                   final_read_func, first_buff,
+                                   align_to_line):
         """
         Convert stream to generator using applying rewriting func
-        to each portion of the stream. Align to line boundaries
+        to each portion of the stream.
+        Align to line boundaries if needed.
         """
         try:
-            if first_buff:
-                buff = first_buff
-            else:
+            has_closed = hasattr(stream, 'closed')
+            buff = first_buff
+
+            while True:
+                if buff:
+                    buff = rewrite_func(buff)
+                    yield buff
+
                 buff = stream.read(RewriteContent.BUFF_SIZE)
-                if buff and (not hasattr(stream, 'closed') or
-                             not stream.closed):
+                # on 2.6, readline() (but not read()) throws an exception
+                # if stream already closed, so check stream.closed if present
+                if (buff and align_to_line and
+                    (not has_closed or not stream.closed)):
                     buff += stream.readline()
 
-            while buff:
-                buff = rewrite_func(buff)
-                yield buff
-                buff = stream.read(RewriteContent.BUFF_SIZE)
-                if buff:
-                    buff += stream.readline()
+                if not buff:
+                    break
 
             # For adding a tail/handling final buffer
             buff = final_read_func()
