@@ -277,3 +277,23 @@ class ChunkedDataReader(BufferedReader):
 
         # hand to base class for further processing
         self._process_read(data)
+
+    def read(self, length=None):
+        """ read bytes from stream, if length specified,
+        may read across multiple chunks to get exact length
+        """
+        buf = super(ChunkedDataReader, self).read(length)
+        if not length:
+            return buf
+
+        # if length specified, attempt to read exact length
+        rem = length - len(buf)
+        while rem > 0:
+            new_buf = super(ChunkedDataReader, self).read(rem)
+            if not new_buf:
+                break
+
+            buf += new_buf
+            rem -= len(new_buf)
+
+        return buf

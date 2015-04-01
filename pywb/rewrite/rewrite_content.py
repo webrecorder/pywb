@@ -22,6 +22,8 @@ class RewriteContent:
 
     TAG_REGEX = re.compile(r'^\s*\<')
 
+    CHARSET_REGEX = re.compile(r'<meta[^>]*?[\s;"\']charset\s*=[\s"\']*([^\s"\'/>]*)')
+
     BUFF_SIZE = 16384
 
     def __init__(self, ds_rules_file=None, is_framed_replay=False):
@@ -110,7 +112,7 @@ class RewriteContent:
 
         stream_raw = False
         encoding = None
-        first_buff = None
+        first_buff = ''
 
         if (rewritten_headers.
              contains_removed_header('content-encoding', 'gzip')):
@@ -136,13 +138,25 @@ class RewriteContent:
         # rewriters
         if text_type == 'html':
             head_insert_str = ''
+            charset = rewritten_headers.charset
+
+            # if no charset set, attempt to extract from first 1024
+            if not rewritten_headers.charset:
+                first_buff = stream.read(1024)
+                charset = self._extract_html_charset(first_buff,
+                                                     status_headers)
 
             if head_insert_func:
+                if not charset:
+                    charset = 'utf-8'
+                print(charset)
                 head_insert_str = head_insert_func(rule, cdx)
-                head_insert_str = head_insert_str.encode('utf-8')
+                head_insert_str = head_insert_str.encode(charset)
 
             if wb_url.is_banner_only:
-                gen = self._head_insert_only_gen(head_insert_str, stream)
+                gen = self._head_insert_only_gen(head_insert_str,
+                                                 stream,
+                                                 first_buff)
 
                 content_len = headers.get_header('Content-Length')
                 try:
@@ -180,6 +194,16 @@ class RewriteContent:
         return (status_headers, gen, True)
 
     @staticmethod
+    def _extract_html_charset(buff, status_headers):
+        charset = None
+        m = RewriteContent.CHARSET_REGEX.search(buff)
+        if m:
+            charset = m.group(1)
+            content_type = 'text/html; charset=' + charset
+            status_headers.replace_header('content-type', content_type)
+        return charset
+
+    @staticmethod
     def _resolve_text_type(mod, text_type, stream):
         # only attempt to resolve between html and other text types
         if text_type != 'html':
@@ -195,9 +219,9 @@ class RewriteContent:
 
         return mod, wrapped_stream
 
-    def _head_insert_only_gen(self, insert_str, stream):
-        max_len = 1024
-        buff = ''
+    def _head_insert_only_gen(self, insert_str, stream, first_buff=''):
+        buff = first_buff
+        max_len = 1024 - len(first_buff)
         while max_len > 0:
             curr = stream.read(max_len)
             if not curr:

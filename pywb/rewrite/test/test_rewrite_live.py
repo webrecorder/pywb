@@ -180,6 +180,9 @@ def test_example_1():
     # verify header rewriting
     assert (('X-Archive-Orig-connection', 'close') in status_headers.headers), status_headers
 
+    # verify utf-8 charset detection
+    assert status_headers.get_header('content-type') == 'text/html; charset=utf-8'
+
     assert '/pywb/20131226101010/http://www.iana.org/domains/example' in buff, buff
 
 def test_example_2_redirect():
