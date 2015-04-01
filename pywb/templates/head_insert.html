@@ -21,6 +21,7 @@
   wbinfo.prefix = "{{ wbrequest.wb_prefix }}";
   wbinfo.mod = "{{ wbrequest.wb_url.mod }}";
   wbinfo.top_url = "{{ top_url }}";
+  wbinfo.is_framed = {{ "true" if wbrequest.options.is_framed else "false" }};
   wbinfo.is_live = {{ "true" if cdx.is_live else "false" }};
   wbinfo.coll = "{{ wbrequest.coll }}";
   wbinfo.proxy_magic = "{{ wbrequest.env.pywb_proxy_magic }}";

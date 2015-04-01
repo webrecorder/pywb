@@ -67,7 +67,10 @@ class SearchPageWbUrlHandler(WbUrlHandler):
             if wbrequest.wb_url.is_top_frame:
                 return self.get_top_frame_response(wbrequest)
             else:
+                wbrequest.options['is_framed'] = True
                 wbrequest.final_mod = 'tf_'
+        else:
+            wbrequest.options['is_framed'] = False
 
         try:
             return self.handle_request(wbrequest)

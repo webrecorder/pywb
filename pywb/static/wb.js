@@ -137,19 +137,23 @@ this.load = function() {
     window._wb_js_inited = true;
 
     if ((window == window.top) && wbinfo) {
+        if (wbinfo.is_framed && wbinfo.mod != "bn_") {
+            var hash = window.location.hash;
 
-        var hash = window.location.hash;
+            var loc = window.location.href.replace(window.location.hash, "");
+            loc = decodeURI(loc);
 
-        var loc = window.location.href.replace(window.location.hash, "");
-        loc = decodeURI(loc);
+            var top_url = wbinfo.top_url;
 
-        if (wbinfo.top_url && (loc != wbinfo.top_url) && wbinfo.mod != "bn_") {
-            // Auto-redirect to top frame
-            window.location.replace(wbinfo.top_url + hash);
-        } else {
-            // Init Banner (no frame or top frame)
-            add_event("readystatechange", init_banner, document);
+            if (wbinfo.top_url && (loc != decodeURI(wbinfo.top_url))) {
+                // Auto-redirect to top frame
+                window.location.replace(wbinfo.top_url + hash);
+                return;
+            }
         }
+        // Init Banner (no frame or top frame)
+        add_event("readystatechange", init_banner, document);
+
     } else if (window != window.__orig_parent && window.__orig_parent.update_wb_url) {
         add_event("readystatechange", notify_top, document);
     }
