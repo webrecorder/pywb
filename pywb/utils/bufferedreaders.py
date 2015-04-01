@@ -289,7 +289,12 @@ class ChunkedDataReader(BufferedReader):
         # if length specified, attempt to read exact length
         rem = length - len(buf)
         while rem > 0:
-            new_buf = super(ChunkedDataReader, self).read(rem)
+            try:
+                new_buf = super(ChunkedDataReader, self).read(rem)
+            except ValueError:
+                # in case already closed, seems to happen in 2.6, just return
+                break
+
             if not new_buf:
                 break
 
