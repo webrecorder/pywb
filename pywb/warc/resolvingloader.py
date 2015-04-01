@@ -195,6 +195,5 @@ class ResolvingLoader(object):
         params = dict(url=url,
                       closest=timestamp,
                       filter=filters)
-        import sys
-        sys.stderr.write(str(params) + '\n')
+
         return cdx_loader(params)

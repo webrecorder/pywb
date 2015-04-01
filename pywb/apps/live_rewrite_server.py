@@ -16,9 +16,14 @@ def create_app():
                         action='store',
                         help='Specify host:port to use as HTTP/S proxy')
 
+    parser.add_argument('-f', '--framed',
+                        action='store_true',
+                        help='Replay using framed wrapping mode')
+
     result, unknown = parser.parse_known_args()
 
-    config = dict(proxyhostport=result.proxy, framed_replay=True)
+    config = dict(proxyhostport=result.proxy,
+                  framed_replay=result.framed)
 
     app = init_app(create_live_rewriter_app, load_yaml=False,
                    config=config)
