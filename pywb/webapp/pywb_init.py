@@ -252,8 +252,10 @@ def create_wb_router(passed_config={}):
 
     static_routes = config.get('static_routes', {})
 
+    colls_loader_cls = config.get('colls_loader_cls', DirectoryCollsLoader)
+
     # collections based on file system
-    dir_loader = DirectoryCollsLoader(config, static_routes)
+    dir_loader = colls_loader_cls(config, static_routes)
     collections.update(dir_loader())
 
     if config.get('enable_memento', False):
