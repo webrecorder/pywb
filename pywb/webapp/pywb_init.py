@@ -125,8 +125,6 @@ def create_cdx_server_app(passed_config):
         dir_loader = colls_loader_cls(config, static_routes)
         collections.update(dir_loader())
 
-    config['jinja_env'] = J2TemplateView.init_env(config.get('jinja_env'))
-
     routes = []
 
     for name, value in collections.iteritems():
@@ -272,8 +270,8 @@ def create_wb_router(passed_config=None):
     handler_dict = {}
 
     # setup template globals
-    config['jinja_env'] = J2TemplateView.init_env(config.get('jinja_env'))
-    config['jinja_env'].globals.update(config.get('template_globals', {}))
+    jinja_env = J2TemplateView.init_shared_env()
+    jinja_env.globals.update(config.get('template_globals', {}))
 
     for name, value in collections.iteritems():
         if isinstance(value, BaseHandler):

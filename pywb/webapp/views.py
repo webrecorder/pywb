@@ -74,22 +74,28 @@ class FileOnlyPackageLoader(PackageLoader):
 
 #=================================================================
 class J2TemplateView(object):
-    def __init__(self, filename, jinja_env):
+    shared_jinja_env = None
+
+    def __init__(self, filename):
         self.template_file = filename
-        self.jinja_env = jinja_env
+        self.jinja_env = self.init_shared_env()
 
     @staticmethod
-    def init_env(jinja_env=None, packages=['pywb']):
+    def init_shared_env(overlay_env=None, packages=['pywb']):
+        if J2TemplateView.shared_jinja_env:
+            return J2TemplateView.shared_jinja_env
+
         loaders = []
         J2TemplateView._add_loaders(loaders, packages)
         loader = ChoiceLoader(loaders)
 
-        if jinja_env:
-            jinja_env = jinja_env.overlay(loader=loader, trim_blocks=True)
+        if overlay_env:
+            jinja_env = overlay_env.overlay(loader=loader, trim_blocks=True)
         else:
             jinja_env = Environment(loader=loader, trim_blocks=True)
 
         jinja_env.filters.update(FILTERS)
+        J2TemplateView.shared_jinja_env = jinja_env
         return jinja_env
 
     @staticmethod
@@ -126,7 +132,7 @@ def init_view(config, key, view_class=J2TemplateView):
         return None
 
     logging.debug('Adding {0}: {1}'.format(key, filename))
-    return view_class(filename, config['jinja_env'])
+    return view_class(filename)
 
 
 #=================================================================
@@ -160,7 +166,7 @@ class HeadInsertView(J2TemplateView):
 
             if html:
                 banner_html = config.get('banner_html', 'banner.html')
-                view = HeadInsertView(html, config['jinja_env'])
+                view = HeadInsertView(html)
                 logging.debug('Adding HeadInsert: {0}, Banner {1}'.
                               format(html, banner_html))
 

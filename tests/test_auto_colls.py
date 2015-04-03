@@ -19,6 +19,7 @@ from pywb.warc.cdxindexer import main as cdxindexer_main
 
 from pywb import get_test_dir
 from pywb.framework.wsgi_wrappers import init_app
+from pywb.webapp.views import J2TemplateView
 
 from pytest import raises
 from mock import patch
@@ -71,6 +72,9 @@ class TestManagedColls(object):
 
     def _get_sample_warc(self, name):
         return os.path.join(get_test_dir(), 'warcs', name)
+
+    def teardown(self):
+        J2TemplateView.shared_jinja_env = None
 
     @patch('waitress.serve', lambda *args, **kwargs: None)
     def test_run_cli(self):
