@@ -6,8 +6,8 @@ import urlparse
 import urllib
 import logging
 import json
+import os
 
-from os import path
 from itertools import imap
 from jinja2 import Environment
 from jinja2 import FileSystemLoader, PackageLoader, ChoiceLoader
@@ -66,36 +66,41 @@ def tojson(obj):
 
 
 #=================================================================
+class FileOnlyPackageLoader(PackageLoader):
+    def get_source(self, env, template):
+        dir_, file_ = os.path.split(template)
+        return super(FileOnlyPackageLoader, self).get_source(env, file_)
+
+
+#=================================================================
 class J2TemplateView(object):
-    env_globals = {'static_path': 'static/__pywb',
-                   'packages': ['pywb']}
+    def __init__(self, filename, jinja_env):
+        self.template_file = filename
+        self.jinja_env = jinja_env
 
-    def __init__(self, filename):
-        template_dir, template_file = path.split(filename)
-        self.template_file = template_file
-
-        self.jinja_env = self.make_jinja_env(template_dir)
-
-    def make_jinja_env(self, template_dir):
-        loaders = self._make_loaders(template_dir)
+    @staticmethod
+    def init_env(jinja_env=None, packages=['pywb']):
+        loaders = []
+        J2TemplateView._add_loaders(loaders, packages)
         loader = ChoiceLoader(loaders)
 
-        jinja_env = Environment(loader=loader, trim_blocks=True)
+        if jinja_env:
+            jinja_env = jinja_env.overlay(loader=loader, trim_blocks=True)
+        else:
+            jinja_env = Environment(loader=loader, trim_blocks=True)
+
         jinja_env.filters.update(FILTERS)
-        jinja_env.globals.update(self.env_globals)
         return jinja_env
 
-    def _make_loaders(self, template_dir):
-        loaders = []
-        loaders.append(FileSystemLoader(template_dir))
-        # add relative and absolute path loaders for banner support
-        loaders.append(FileSystemLoader('.'))
+    @staticmethod
+    def _add_loaders(loaders, packages):
+        loaders.append(FileSystemLoader(os.getcwd()))
         loaders.append(FileSystemLoader('/'))
 
         # add loaders for all specified packages
-        for package in self.env_globals['packages']:
-            loaders.append(PackageLoader(package,
-                                         template_dir))
+        for package in packages:
+            loaders.append(FileOnlyPackageLoader(package))
+
         return loaders
 
     def render_to_string(self, **kwargs):
@@ -113,21 +118,15 @@ class J2TemplateView(object):
                                         status=status,
                                         content_type=content_type)
 
-    @staticmethod
-    def create_template(filename, desc='', view_class=None):
-        if not filename:
-            return None
-
-        if not view_class:
-            view_class = J2TemplateView
-
-        logging.debug('Adding {0}: {1}'.format(desc, filename))
-        return view_class(filename)
-
 
 #=================================================================
-def add_env_globals(glb):
-    J2TemplateView.env_globals.update(glb)
+def init_view(config, key, view_class=J2TemplateView):
+    filename = config.get(key)
+    if not filename:
+        return None
+
+    logging.debug('Adding {0}: {1}'.format(key, filename))
+    return view_class(filename, config['jinja_env'])
 
 
 #=================================================================
@@ -161,7 +160,7 @@ class HeadInsertView(J2TemplateView):
 
             if html:
                 banner_html = config.get('banner_html', 'banner.html')
-                view = HeadInsertView(html)
+                view = HeadInsertView(html, config['jinja_env'])
                 logging.debug('Adding HeadInsert: {0}, Banner {1}'.
                               format(html, banner_html))
 
@@ -187,11 +186,6 @@ class J2HtmlCapturesView(J2TemplateView):
                                     type=wbrequest.wb_url.type,
                                     prefix=wbrequest.wb_prefix,
                                     **kwargs)
-
-    @staticmethod
-    def create_template(filename, desc=''):
-        return J2TemplateView.create_template(filename, desc,
-                                              J2HtmlCapturesView)
 
 
 #=================================================================

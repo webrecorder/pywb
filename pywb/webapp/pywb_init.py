@@ -6,8 +6,8 @@ from pywb.framework.wbrequestresponse import WbRequest
 from pywb.framework.memento import MementoRequest
 from pywb.framework.basehandlers import BaseHandler
 
-from views import J2TemplateView, add_env_globals
-from views import J2HtmlCapturesView, HeadInsertView
+from views import J2TemplateView
+from views import J2HtmlCapturesView, init_view
 
 from live_rewrite_handler import RewriteHandler
 
@@ -35,11 +35,11 @@ class DictChain(object):
                 return val
         return default_val
 
-#    def __contains__(self, key):
-#        return self.get(key) is not None
+    def __contains__(self, key):
+        return self.get(key) is not None
 
-#    def __getitem__(self, key):
-#        return self.get(key)
+    def __getitem__(self, key):
+        return self.get(key)
 
     def __setitem__(self, key, value):
         self.dicts[0][key] = value
@@ -79,9 +79,7 @@ def init_route_config(value, config):
 def init_collection(route_config):
     ds_rules_file = route_config.get('domain_specific_rules', None)
 
-    html_view = (J2HtmlCapturesView.
-                 create_template(route_config.get('query_html'),
-                                 'Captures Page'))
+    html_view = init_view(route_config, 'query_html', J2HtmlCapturesView)
 
     server_cls = route_config.get('server_cls')
 
@@ -120,9 +118,14 @@ def create_cdx_server_app(passed_config):
     collections = config.get('collections', {})
 
     static_routes = {}
+
     # collections based on file system
-    dir_loader = DirectoryCollsLoader(config, static_routes)
-    collections.update(dir_loader())
+    if config.get('enable_auto_colls', True):
+        colls_loader_cls = config.get('colls_loader_cls', DirectoryCollsLoader)
+        dir_loader = colls_loader_cls(config, static_routes)
+        collections.update(dir_loader())
+
+    config['jinja_env'] = J2TemplateView.init_env(config.get('jinja_env'))
 
     routes = []
 
@@ -228,6 +231,7 @@ class DirectoryCollsLoader(object):
             if tname in coll_config:
                 # Already set
                 coll_config[tname] = self._norm_path(root_dir, coll_config[tname])
+
             # If templates override dir
             elif templates_dir:
                 full = os.path.join(template_dir, tfile)
@@ -238,7 +242,8 @@ class DirectoryCollsLoader(object):
 
 
 #=================================================================
-def create_wb_router(passed_config={}):
+def create_wb_router(passed_config=None):
+    passed_config = passed_config or {}
 
     defaults = load_yaml_config(DEFAULT_CONFIG)
 
@@ -252,11 +257,11 @@ def create_wb_router(passed_config={}):
 
     static_routes = config.get('static_routes', {})
 
-    colls_loader_cls = config.get('colls_loader_cls', DirectoryCollsLoader)
-
     # collections based on file system
-    dir_loader = colls_loader_cls(config, static_routes)
-    collections.update(dir_loader())
+    if config.get('enable_auto_colls', True):
+        colls_loader_cls = config.get('colls_loader_cls', DirectoryCollsLoader)
+        dir_loader = colls_loader_cls(config, static_routes)
+        collections.update(dir_loader())
 
     if config.get('enable_memento', False):
         request_class = MementoRequest
@@ -267,14 +272,13 @@ def create_wb_router(passed_config={}):
     handler_dict = {}
 
     # setup template globals
-    template_globals = config.get('template_globals')
-    if template_globals:
-        add_env_globals(template_globals)
+    config['jinja_env'] = J2TemplateView.init_env(config.get('jinja_env'))
+    config['jinja_env'].globals.update(config.get('template_globals', {}))
 
     for name, value in collections.iteritems():
         if isinstance(value, BaseHandler):
             handler_dict[name] = value
-            routes.append(Route(name, value, config=route_config))
+            routes.append(Route(name, value, config=config))
             continue
 
         route_config = init_route_config(value, config)
@@ -328,9 +332,7 @@ def create_wb_router(passed_config={}):
     if config.get('enable_http_proxy', False):
         router = ProxyArchivalRouter
 
-        view = J2TemplateView.create_template(
-            config.get('proxy_select_html'),
-            'Proxy Coll Selector')
+        view = init_view(config, 'proxy_select_html')
 
         if 'proxy_options' not in passed_config:
             passed_config['proxy_options'] = {}
@@ -338,9 +340,7 @@ def create_wb_router(passed_config={}):
         if view:
             passed_config['proxy_options']['proxy_select_view'] = view
 
-        view = J2TemplateView.create_template(
-            config.get('proxy_cert_download_html'),
-            'Proxy Cert Download')
+        view = init_view(config, 'proxy_cert_download_html')
 
         if view:
             passed_config['proxy_options']['proxy_cert_download_view'] = view
@@ -349,13 +349,8 @@ def create_wb_router(passed_config={}):
     return router(
         routes,
         port=port,
-
         abs_path=config.get('absolute_paths', True),
-
-        home_view=J2TemplateView.create_template(config.get('home_html'),
-                                                 'Home Page'),
-
-        error_view=J2TemplateView.create_template(config.get('error_html'),
-                                                 'Error Page'),
+        home_view=init_view(config, 'home_html'),
+        error_view=init_view(config, 'error_html'),
         config=config
     )

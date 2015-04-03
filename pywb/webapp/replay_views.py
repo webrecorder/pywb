@@ -15,8 +15,7 @@ from pywb.framework.memento import MementoResponse
 from pywb.rewrite.rewrite_content import RewriteContent
 from pywb.warc.recordloader import ArchiveLoadFailed
 
-from views import J2TemplateView, add_env_globals
-from views import J2HtmlCapturesView, HeadInsertView
+from views import HeadInsertView
 
 from rangecache import range_cache
 

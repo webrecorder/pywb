@@ -14,7 +14,7 @@ from pywb.framework.wbrequestresponse import WbResponse
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
 
-from views import J2TemplateView
+from views import J2TemplateView, init_view
 from replay_views import ReplayView
 from pywb.framework.memento import MementoResponse
 from pywb.utils.timeutils import datetime_to_timestamp
@@ -27,9 +27,7 @@ class SearchPageWbUrlHandler(WbUrlHandler):
     the wb_url is empty
     """
     def __init__(self, config):
-        self.search_view = (J2TemplateView.
-                            create_template(config.get('search_html'),
-                           'Search Page'))
+        self.search_view = init_view(config, 'search_html')
 
         self.is_frame_mode = config.get('framed_replay', False)
         self.frame_mod = 'tf_'
@@ -38,9 +36,10 @@ class SearchPageWbUrlHandler(WbUrlHandler):
         self.response_class = WbResponse
 
         if self.is_frame_mode:
-            html = config.get('frame_insert_html', 'templates/frame_insert.html')
-            self.frame_insert_view = (J2TemplateView.
-                                      create_template(html, 'Frame Insert'))
+            #html = config.get('frame_insert_html', 'templates/frame_insert.html')
+            #self.search_view = J2TemplateView(html, config.get('jinja_env'))
+            self.frame_insert_view = init_view(config, 'frame_insert_html')
+            assert(self.frame_insert_view)
 
             self.banner_html = config.get('banner_html', 'banner.html')
 
@@ -124,9 +123,7 @@ class WBHandler(SearchPageWbUrlHandler):
         super(WBHandler, self).__init__(config)
 
         self.index_reader = query_handler
-        self.not_found_view = (J2TemplateView.
-                               create_template(config.get('not_found_html'),
-                               'Not Found Error'))
+        self.not_found_view = init_view(config, 'not_found_html')
 
         self.replay = self._init_replay_view(config)
 
