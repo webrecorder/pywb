@@ -3,7 +3,8 @@ from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
 from server_thread import ServerThreadRunner
 
-from pywb.webapp.live_rewrite_handler import create_live_rewriter_app, RewriteHandler
+from pywb.webapp.live_rewrite_handler import RewriteHandler
+from pywb.webapp.pywb_init import create_wb_router
 
 from pywb.framework.wsgi_wrappers import init_app
 import webtest
@@ -61,9 +62,13 @@ class TestProxyLiveRewriter:
 
         self.server = ServerThreadRunner(make_httpd)
 
-        self.app = init_app(create_live_rewriter_app, load_yaml=False,
-                           config=dict(framed_replay=True,
-                           proxyhostport=self.server.proxy_dict))
+        config = dict(collections=dict(rewrite='$liveweb'),
+                      framed_replay=True,
+                      proxyhostport=self.server.proxy_dict)
+
+        self.app = init_app(create_wb_router,
+                            load_yaml=False,
+                            config=config)
 
         def create_cache():
             return self.cache

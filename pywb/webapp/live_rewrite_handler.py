@@ -1,6 +1,4 @@
-from pywb.framework.basehandlers import WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
-from pywb.framework.archivalrouter import ArchivalRouter, Route
 from pywb.framework.cache import create_cache
 
 from pywb.rewrite.rewrite_live import LiveRewriter
@@ -281,12 +279,3 @@ class YoutubeDLWrapper(object):
             self.htmlparser.locatestarttagend = self.orig_tagregex
 
         return info
-
-
-#=================================================================
-def create_live_rewriter_app(config={}):
-    routes = [Route('rewrite', RewriteHandler(config)),
-              Route('static/__pywb', StaticHandler('pywb/static/'))
-             ]
-
-    return ArchivalRouter(routes, hostpaths=['http://localhost:8080'])

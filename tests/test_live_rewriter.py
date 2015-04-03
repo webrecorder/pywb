@@ -1,11 +1,11 @@
-from pywb.webapp.live_rewrite_handler import create_live_rewriter_app, RewriteHandler
+from pywb.webapp.live_rewrite_handler import RewriteHandler
+from pywb.apps.cli import LiveCli
 from pywb.framework.wsgi_wrappers import init_app
 import webtest
 
 class TestLiveRewriter:
     def setup(self):
-        self.app = init_app(create_live_rewriter_app, load_yaml=False,
-                            config=dict(framed_replay=True))
+        self.app = LiveCli(['-f']).application
         self.testapp = webtest.TestApp(self.app)
 
     def test_live_rewrite_1(self):
@@ -28,7 +28,7 @@ class TestLiveRewriter:
         resp = self.testapp.get('/rewrite/tf_/http://example.com/')
         assert resp.status_int == 200
         assert '<iframe ' in resp.body
-        assert 'src="/rewrite/http://example.com/"' in resp.body
+        assert 'src="http://localhost:80/rewrite/http://example.com/"' in resp.body, resp.body
 
     def test_live_invalid(self):
         resp = self.testapp.get('/rewrite/http://abcdef', status=400)
