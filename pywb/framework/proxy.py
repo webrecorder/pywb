@@ -120,6 +120,7 @@ class ProxyRouter(object):
 
     def __call__(self, env):
         is_https = (env['REQUEST_METHOD'] == 'CONNECT')
+        ArchivalRouter.ensure_rel_uri_set(env)
 
         # for non-https requests, check non-proxy urls
         if not is_https:

@@ -1,5 +1,6 @@
 import urlparse
 import re
+from urllib import quote
 
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.wburl import WbUrl
@@ -27,7 +28,7 @@ class ArchivalRouter(object):
                                   get('urlrewriter_class', UrlRewriter))
 
     def __call__(self, env):
-        request_uri = env['REL_REQUEST_URI']
+        request_uri = self.ensure_rel_uri_set(env)
 
         for route in self.routes:
             matcher, coll = route.is_handling(request_uri)
@@ -78,7 +79,33 @@ class ArchivalRouter(object):
         if self.home_view:
             return self.home_view.render_response(env=env, routes=self.routes)
         else:
-            return WbResponse.text_response('No Home Page')
+            return None
+
+    #=================================================================
+    # adapted from wsgiref.request_uri, but doesn't include domain name
+    # and allows all characters which are allowed in the path segment
+    # according to: http://tools.ietf.org/html/rfc3986#section-3.3
+    # explained here:
+    # http://stackoverflow.com/questions/4669692/
+    #   valid-characters-for-directory-part-of-a-url-for-short-links
+
+    @staticmethod
+    def ensure_rel_uri_set(env):
+        """ Return the full requested path, including the query string
+        """
+        if 'REL_REQUEST_URI' in env:
+            return env['REL_REQUEST_URI']
+
+        if not env.get('SCRIPT_NAME') and env.get('REQUEST_URI'):
+            env['REL_REQUEST_URI'] = env['REQUEST_URI']
+            return
+
+        url = quote(env.get('PATH_INFO', ''), safe='/~!$&\'()*+,;=:@')
+        if env.get('QUERY_STRING'):
+            url += '?' + env['QUERY_STRING']
+
+        env['REL_REQUEST_URI'] = url
+        return url
 
 
 #=================================================================
@@ -89,10 +116,11 @@ class Route(object):
     # match upto next / or ? or end
     SLASH_QUERY_LOOKAHEAD = '(?=/|$|\?)'
 
-    def __init__(self, regex, handler, coll_group=0, config={},
+    def __init__(self, regex, handler, coll_group=0, config=None,
                  request_class=WbRequest,
                  lookahead=SLASH_QUERY_LOOKAHEAD):
 
+        config = config or {}
         self.path = regex
         if regex:
             self.regex = re.compile(regex + lookahead)

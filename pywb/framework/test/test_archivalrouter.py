@@ -75,6 +75,17 @@ False
 >>> _test_redir('http://localhost:8080/', '/other.html', 'http://localhost:8080/pywb-access/http://example.com/path/page.html', '/pywb-access', coll='')
 'http://localhost:8080/pywb-access/http://example.com/other.html'
 
+## Test ensure_rel_uri_set
+
+# Simple test:
+>>> ArchivalRouter.ensure_rel_uri_set({'PATH_INFO': '/pywb/example.com'})
+'/pywb/example.com'
+
+# Test all unecoded special chars and double-quote
+# (double-quote must be encoded but not single quote)
+>>> ArchivalRouter.ensure_rel_uri_set({'PATH_INFO': "/pywb/example.com/0~!+$&'()*+,;=:\\\""})
+"/pywb/example.com/0~!+$&'()*+,;=:%22"
+
 """
 
 from pywb.framework.archivalrouter import Route, ReferRedirect, ArchivalRouter

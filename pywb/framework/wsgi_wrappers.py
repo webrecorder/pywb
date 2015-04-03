@@ -10,40 +10,12 @@ import logging
 
 DEFAULT_PORT = 8080
 
-#=================================================================
-# adapted from wsgiref.request_uri, but doesn't include domain name
-# and allows all characters which are allowed in the path segment
-# according to: http://tools.ietf.org/html/rfc3986#section-3.3
-# explained here:
-# http://stackoverflow.com/questions/4669692/
-#   valid-characters-for-directory-part-of-a-url-for-short-links
-
-
-def rel_request_uri(environ, include_query=1):
-    """
-    Return the requested path, optionally including the query string
-
-    # Simple test:
-    >>> rel_request_uri({'PATH_INFO': '/web/example.com'})
-    '/web/example.com'
-
-    # Test all unecoded special chars and double-quote
-    # (double-quote must be encoded but not single quote)
-    >>> rel_request_uri({'PATH_INFO': "/web/example.com/0~!+$&'()*+,;=:\\\""})
-    "/web/example.com/0~!+$&'()*+,;=:%22"
-    """
-    from urllib import quote
-    url = quote(environ.get('PATH_INFO', ''), safe='/~!$&\'()*+,;=:@')
-    if include_query and environ.get('QUERY_STRING'):
-        url += '?' + environ['QUERY_STRING']
-
-    return url
-
 
 #=================================================================
 class WSGIApp(object):
-    def __init__(self, wb_router):
+    def __init__(self, wb_router, fallback_app=None):
         self.wb_router = wb_router
+        self.fallback_app = fallback_app
 
     # Top-level wsgi application
     def __call__(self, env, start_response):
@@ -83,11 +55,6 @@ class WSGIApp(object):
         return []
 
     def handle_methods(self, env, start_response):
-        if env.get('SCRIPT_NAME') or not env.get('REQUEST_URI'):
-            env['REL_REQUEST_URI'] = rel_request_uri(env)
-        else:
-            env['REL_REQUEST_URI'] = env['REQUEST_URI']
-
         wb_router = self.wb_router
         response = None
 
@@ -95,8 +62,11 @@ class WSGIApp(object):
             response = wb_router(env)
 
             if not response:
-                msg = 'No handler for "{0}".'.format(env['REL_REQUEST_URI'])
-                raise NotFoundException(msg)
+                if self.fallback_app:
+                    return self.fallback_app(env, start_response)
+                else:
+                    msg = 'No handler for "{0}".'.format(env['REL_REQUEST_URI'])
+                    raise NotFoundException(msg)
 
         except WbException as e:
             response = self.handle_exception(env, e, False)
@@ -158,12 +128,13 @@ DEFAULT_CONFIG_FILE = 'config.yaml'
 
 
 #=================================================================
-def init_app(init_func, load_yaml=True, config_file=None, config={}):
+def init_app(init_func, load_yaml=True, config_file=None, config=None):
     logging.basicConfig(format='%(asctime)s: [%(levelname)s]: %(message)s',
                         level=logging.DEBUG)
     logging.debug('')
 
     try:
+        config = config or {}
         if load_yaml:
             # env setting overrides all others
             env_config = os.environ.get('PYWB_CONFIG_FILE')
