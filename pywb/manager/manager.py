@@ -4,6 +4,7 @@ import sys
 import logging
 import heapq
 import yaml
+import re
 
 from distutils.util import strtobool
 from pkg_resources import resource_string
@@ -33,10 +34,15 @@ directory structure expected by pywb
     DEF_INDEX_FILE = 'index.cdxj'
     AUTO_INDEX_FILE = 'autoindex.cdxj'
 
+    COLL_RX = re.compile('^[\w][-\w]*$')
+
     def __init__(self, coll_name, colls_dir='collections', must_exist=True):
         self.default_config = load_yaml_config(DEFAULT_CONFIG)
 
-        self.colls_dir = colls_dir
+        if coll_name and not self.COLL_RX.match(coll_name):
+            raise ValueError('Invalid Collection Name: ' + coll_name)
+
+        self.colls_dir = os.path.join(os.getcwd(), colls_dir)
 
         self._set_coll_dirs(coll_name)
 
@@ -75,11 +81,11 @@ directory structure expected by pywb
         if not os.path.isdir(dirname):
             os.mkdir(dirname)
 
-        logging.info('Created Dir: ' + dirname)
+        logging.info('Created Directory: ' + dirname)
 
     def add_collection(self):
         os.makedirs(self.curr_coll_dir)
-        logging.info('Created directory: ' + self.curr_coll_dir)
+        logging.info('Created Directory: ' + self.curr_coll_dir)
 
         self._create_dir(self.archive_dir)
         self._create_dir(self.indexes_dir)
@@ -429,7 +435,7 @@ Create manage file based web archive collections
 
     # Add default template
     def do_add_template(r):
-        m = CollectionsManager(r.coll_name)
+        m = CollectionsManager(r.coll_name, must_exist=False)
         if r.add:
             m.add_template(r.add, r.force)
         elif r.remove:

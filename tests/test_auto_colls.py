@@ -507,7 +507,7 @@ class TestManagedColls(object):
         main(['autoindex', 'auto'])
 
         thread.join()
-        
+
 	# assert file was update
         assert os.path.getmtime(index_file) > mtime
 
@@ -551,6 +551,15 @@ class TestManagedColls(object):
         # Non-existent
         with raises(IOError):
             main(['index', 'test', invalid_warc])
+
+    def test_err_invalid_name(self):
+        """ Invalid collection name
+        """
+        with raises(ValueError):
+            main(['init', '../abc%'])
+
+        with raises(ValueError):
+            main(['init', '45^23'])
 
     def test_err_missing_dirs(self):
         """ Test various errors with missing warcs dir,
