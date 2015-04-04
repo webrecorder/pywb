@@ -132,7 +132,7 @@ class RedisCDXSource(CDXSource):
                                           '[' + query.key,
                                           '(' + query.end_key)
 
-        return cdx_list
+        return iter(cdx_list)
 
     def load_single_key(self, key):
         # ensure only url/surt is part of key
