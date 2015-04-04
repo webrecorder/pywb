@@ -270,8 +270,12 @@ def create_wb_router(passed_config=None):
     handler_dict = {}
 
     # setup template globals
-    jinja_env = J2TemplateView.init_shared_env()
+    templates_dirs = config['templates_dirs']
+    jinja_env = J2TemplateView.init_shared_env(paths=templates_dirs)
     jinja_env.globals.update(config.get('template_globals', {}))
+
+    for static_name, static_path in static_routes.iteritems():
+        routes.append(Route(static_name, StaticHandler(static_path)))
 
     for name, value in collections.iteritems():
         if isinstance(value, BaseHandler):
@@ -280,11 +284,12 @@ def create_wb_router(passed_config=None):
             continue
 
         route_config = init_route_config(value, config)
+        route_class = route_config.get('route_class', Route)
 
         if route_config.get('index_paths') == '$liveweb':
             live = create_live_handler(route_config)
             handler_dict[name] = live
-            routes.append(Route(name, live, config=route_config))
+            routes.append(route_class(name, live, config=route_config))
             continue
 
         query_handler = init_collection(route_config)
@@ -297,8 +302,6 @@ def create_wb_router(passed_config=None):
         handler_dict[name] = wb_handler
 
         logging.debug('Adding Collection: ' + name)
-
-        route_class = route_config.get('route_class', Route)
 
         routes.append(route_class(name, wb_handler,
                                   config=route_config,
@@ -315,9 +318,6 @@ def create_wb_router(passed_config=None):
 
     if config.get('debug_echo_req', False):
         routes.append(Route('echo_req', DebugEchoHandler()))
-
-    for static_name, static_path in static_routes.iteritems():
-        routes.append(Route(static_name, StaticHandler(static_path)))
 
     # resolve any cross handler references
     for route in routes:

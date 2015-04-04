@@ -23,20 +23,27 @@ paths:
         proxy_cert_download_html: proxy_cert_download.html
         proxy_select_html: proxy_select.html
 
-head_insert_html: templates/head_insert.html
-frame_insert_html: templates/frame_insert.html
+
+templates_dirs:
+    - templates
+    - '.'
+    - '/'
+
+head_insert_html: head_insert.html
+frame_insert_html: frame_insert.html
 banner_html: banner.html
 
-home_html: templates/index.html
+home_html: index.html
 
-query_html: templates/query.html
-search_html: templates/search.html
+query_html: query.html
+search_html: search.html
 
-error_html: templates/error.html
-not_found_html: templates/not_found.html
+error_html: error.html
+not_found_html: not_found.html
 
-proxy_cert_download_html: templates/proxy_cert_download.html
-proxy_select_html: templates/proxy_select.html
+proxy_cert_download_html: proxy_cert_download.html
+proxy_select_html: proxy_select.html
+
 
 static_default_prefix: &static_default_prefix static/__pywb
 static_shared_prefix: static/__shared

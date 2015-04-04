@@ -81,12 +81,14 @@ class J2TemplateView(object):
         self.jinja_env = self.init_shared_env()
 
     @staticmethod
-    def init_shared_env(overlay_env=None, packages=['pywb']):
+    def init_shared_env(paths=['templates', '.', '/'],
+                        packages=['pywb'],
+                        overlay_env=None):
+
         if J2TemplateView.shared_jinja_env:
             return J2TemplateView.shared_jinja_env
 
-        loaders = []
-        J2TemplateView._add_loaders(loaders, packages)
+        loaders = J2TemplateView._add_loaders(paths, packages)
         loader = ChoiceLoader(loaders)
 
         if overlay_env:
@@ -99,9 +101,11 @@ class J2TemplateView(object):
         return jinja_env
 
     @staticmethod
-    def _add_loaders(loaders, packages):
-        loaders.append(FileSystemLoader(os.getcwd()))
-        loaders.append(FileSystemLoader('/'))
+    def _add_loaders(paths, packages):
+        loaders = []
+        # add loaders for paths
+        for path in paths:
+            loaders.append(FileSystemLoader(path))
 
         # add loaders for all specified packages
         for package in packages:

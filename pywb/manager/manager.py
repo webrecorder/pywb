@@ -205,18 +205,19 @@ directory structure expected by pywb
     def _load_templates_map(self):
         defaults = load_yaml_config(DEFAULT_CONFIG)
 
+        temp_dir = defaults['paths']['templates_dir']
+
         # Coll Templates
         templates = defaults['paths']['template_files']
 
         for name, _ in templates.iteritems():
-            templates[name] = defaults[name]
-
+            templates[name] = os.path.join(temp_dir, defaults[name])
 
         # Shared Templates
         shared_templates = defaults['paths']['shared_template_files']
 
         for name, _ in shared_templates.iteritems():
-            shared_templates[name] = defaults[name]
+            shared_templates[name] = os.path.join(temp_dir, defaults[name])
 
         return templates, shared_templates
 
