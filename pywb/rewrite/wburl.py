@@ -142,7 +142,11 @@ class WbUrl(BaseWbUrl):
         scheme_dom = scheme_dom.rsplit('/', 1)
         domain = scheme_dom[-1]
 
-        domain = domain.encode('idna')
+        try:
+            domain = domain.encode('idna')
+        except UnicodeError:
+            # the url is invalid and this is probably not a domain
+            pass
 
         if len(scheme_dom) > 1:
             url = scheme_dom[0].encode('utf-8') + '/' + domain
