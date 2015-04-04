@@ -98,11 +98,12 @@ class ArchivalRouter(object):
 
         if not env.get('SCRIPT_NAME') and env.get('REQUEST_URI'):
             env['REL_REQUEST_URI'] = env['REQUEST_URI']
-            return
+            return env['REL_REQUEST_URI']
 
         url = quote(env.get('PATH_INFO', ''), safe='/~!$&\'()*+,;=:@')
-        if env.get('QUERY_STRING'):
-            url += '?' + env['QUERY_STRING']
+        query = env.get('QUERY_STRING')
+        if query:
+            url += '?' + query
 
         env['REL_REQUEST_URI'] = url
         return url
