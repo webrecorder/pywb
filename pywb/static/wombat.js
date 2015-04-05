@@ -608,6 +608,8 @@ _WBWombat = (function() {
             }
         }(window.Date);
 
+        window.Date.prototype = window.__Date.prototype;
+
         window.Date.now = function() {
             return __Date_now() - timediff;
         }
