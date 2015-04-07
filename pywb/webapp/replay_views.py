@@ -123,7 +123,7 @@ class ReplayView(object):
 
         range_status, range_iter = (range_cache.
             handle_range(wbrequest,
-                         cdx.get('digest'),
+                         cdx.get('digest', cdx['urlkey']),
                          get_capture,
                          *range_info))
 

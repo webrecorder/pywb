@@ -24,10 +24,10 @@ class RangeCache(object):
             rmtree(self.temp_dir, True)
             self.temp_dir = None
 
-    def handle_range(self, wbrequest, digest, wbresponse_func,
+    def handle_range(self, wbrequest, key, wbresponse_func,
                      url, start, end, use_206):
-
-        key = digest
+        # key must be set
+        assert(key)
         if key not in self.cache:
             wbrequest.custom_params['noredir'] = True
             response = wbresponse_func()
