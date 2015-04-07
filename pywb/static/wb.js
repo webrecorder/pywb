@@ -107,7 +107,7 @@ function remove_event(name, func, object) {
 }
 
 function notify_top() {
-    if (window.__orig_parent != window.top) {
+    if (!window.__orig_parent || window.__orig_parent != window.top) {
         return;
     }
 
@@ -119,7 +119,7 @@ function notify_top() {
         return;
     }
 
-    if (window.__orig_parent && window.__orig_parent.update_wb_url) {
+    if (window.__orig_parent.update_wb_url) {
         window.__orig_parent.update_wb_url(window.WB_wombat_location.href,
                                            wbinfo.timestamp,
                                            wbinfo.request_ts,
@@ -154,7 +154,7 @@ this.load = function() {
         // Init Banner (no frame or top frame)
         add_event("readystatechange", init_banner, document);
 
-    } else if (window != window.__orig_parent && window.__orig_parent.update_wb_url) {
+    } else if (window.__orig_parent && window != window.__orig_parent && window.__orig_parent.update_wb_url) {
         add_event("readystatechange", notify_top, document);
     }
 }
