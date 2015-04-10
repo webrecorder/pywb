@@ -116,6 +116,12 @@ class J2TemplateView(object):
     def render_to_string(self, **kwargs):
         template = self.jinja_env.get_template(self.template_file)
 
+        wbrequest = kwargs.get('wbrequest')
+        if wbrequest:
+            params = wbrequest.env.get('pywb.template_params')
+            if params:
+                kwargs.update(params)
+
         template_result = template.render(**kwargs)
 
         return template_result

@@ -75,6 +75,10 @@ False
 >>> _test_redir('http://localhost:8080/', '/other.html', 'http://localhost:8080/pywb-access/http://example.com/path/page.html', '/pywb-access', coll='')
 'http://localhost:8080/pywb-access/http://example.com/other.html'
 
+
+>>> _test_redir('http://localhost:8080/', '/some/example/other.html', 'http://localhost:8080/user/coll/http://example.com/path/page.html', '/user/coll', coll='')
+'http://localhost:8080/user/coll/http://example.com/some/example/other.html'
+
 ## Test ensure_rel_uri_set
 
 # Simple test:

@@ -77,7 +77,8 @@ class ArchivalRouter(object):
 
     def render_home_page(self, env):
         if self.home_view:
-            return self.home_view.render_response(env=env, routes=self.routes)
+            params = env.get('pywb.template_params', {})
+            return self.home_view.render_response(env=env, routes=self.routes, **params)
         else:
             return None
 
@@ -117,7 +118,7 @@ class Route(object):
     # match upto next / or ? or end
     SLASH_QUERY_LOOKAHEAD = '(?=/|$|\?)'
 
-    def __init__(self, regex, handler, coll_group=0, config=None,
+    def __init__(self, regex, handler, config=None,
                  request_class=WbRequest,
                  lookahead=SLASH_QUERY_LOOKAHEAD):
 
@@ -132,7 +133,7 @@ class Route(object):
         self.request_class = request_class
 
         # collection id from regex group (default 0)
-        self.coll_group = coll_group
+        self.coll_group = int(config.get('coll_group', 0))
         self.cookie_scope = config.get('cookie_scope')
         self.rewrite_opts = config.get('rewrite_opts', {})
         self.user_metadata = config.get('metadata', {})

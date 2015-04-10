@@ -255,6 +255,8 @@ def create_wb_router(passed_config=None):
 
     static_routes = config.get('static_routes', {})
 
+    root_route = None
+
     # collections based on file system
     if config.get('enable_auto_colls', True):
         colls_loader_cls = config.get('colls_loader_cls', DirectoryCollsLoader)
@@ -303,9 +305,14 @@ def create_wb_router(passed_config=None):
 
         logging.debug('Adding Collection: ' + name)
 
-        routes.append(route_class(name, wb_handler,
-                                  config=route_config,
-                                  request_class=request_class))
+        new_route = route_class(name, wb_handler,
+                                config=route_config,
+                                request_class=request_class)
+
+        if name != '':
+            routes.append(new_route)
+        else:
+            root_route = new_route
 
         # cdx query handler
         cdx_api_suffix = route_config.get('enable_cdx_api', False)
@@ -318,6 +325,9 @@ def create_wb_router(passed_config=None):
 
     if config.get('debug_echo_req', False):
         routes.append(Route('echo_req', DebugEchoHandler()))
+
+    if root_route:
+        routes.append(root_route)
 
     # resolve any cross handler references
     for route in routes:
