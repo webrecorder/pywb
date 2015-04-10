@@ -12,10 +12,10 @@ class UrlRewriter(object):
     instance and an optional full path prefix
     """
 
-    NO_REWRITE_URI_PREFIX = ['#', 'javascript:', 'data:',
-                             'mailto:', 'about:', 'file:']
+    NO_REWRITE_URI_PREFIX = ('#', 'javascript:', 'data:',
+                             'mailto:', 'about:', 'file:')
 
-    PROTOCOLS = ['http:', 'https:', 'ftp:', 'mms:', 'rtsp:', 'wais:']
+    PROTOCOLS = ('http:', 'https:', 'ftp:', 'mms:', 'rtsp:', 'wais:')
 
     REL_SCHEME = ('//', r'\/\/', r'\\/\\/')
 
@@ -34,7 +34,7 @@ class UrlRewriter(object):
 
     def rewrite(self, url, mod=None):
         # if special protocol, no rewriting at all
-        if any(url.startswith(x) for x in self.NO_REWRITE_URI_PREFIX):
+        if url.startswith(self.NO_REWRITE_URI_PREFIX):
             return url
 
         if (self.prefix and
@@ -49,7 +49,7 @@ class UrlRewriter(object):
 
         wburl = self.wburl
 
-        is_abs = any(url.startswith(x) for x in self.PROTOCOLS)
+        is_abs = url.startswith(self.PROTOCOLS)
 
         if url.startswith(self.REL_SCHEME):
             is_abs = True
