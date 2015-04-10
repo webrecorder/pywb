@@ -28,14 +28,14 @@ class CDXFile(CDXSource):
         self.filename = filename
 
     def load_cdx(self, query):
-        def do_open():
-            with open(self.filename, 'rb') as source:
-                gen = iter_range(source, query.key, query.end_key)
-                for line in gen:
-                    yield line
+        return self._do_load_file(self.filename, query)
 
-        return do_open()
-        #return iter_range(do_open(), query.key, query.end_key)
+    @staticmethod
+    def _do_load_file(filename, query):
+        with open(filename, 'rb') as source:
+            gen = iter_range(source, query.key, query.end_key)
+            for line in gen:
+                yield line
 
     def __str__(self):
         return 'CDX File - ' + self.filename
@@ -103,6 +103,7 @@ class RedisCDXSource(CDXSource):
         parts = redis_url.split('/')
         if len(parts) > 4:
             self.cdx_key = parts[4]
+            redis_url = 'redis://' + parts[2] + '/' + parts[3]
         else:
             self.cdx_key = None
 
@@ -123,12 +124,12 @@ class RedisCDXSource(CDXSource):
         """
 
         if self.cdx_key:
-            return self.load_sorted_range(query)
+            return self.load_sorted_range(query, self.cdx_key)
         else:
             return self.load_single_key(query.key)
 
-    def load_sorted_range(self, query):
-        cdx_list = self.redis.zrangebylex(self.cdx_key,
+    def load_sorted_range(self, query, cdx_key):
+        cdx_list = self.redis.zrangebylex(cdx_key,
                                           '[' + query.key,
                                           '(' + query.end_key)
 
