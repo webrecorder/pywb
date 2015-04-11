@@ -177,7 +177,7 @@ class WBHandler(SearchPageWbUrlHandler):
             return self.index_reader.make_cdx_response(wbrequest, [], 'html')
         else:
             return self.not_found_view.render_response(status='404 Not Found',
-                                                       env=wbrequest.env,
+                                                       wbrequest=wbrequest,
                                                        url=wbrequest.wb_url.url)
 
 
