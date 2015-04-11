@@ -91,7 +91,7 @@ class WbUrl(BaseWbUrl):
 
     DEFAULT_SCHEME = 'http://'
 
-    FIRST_PATH = re.compile('(?<![:/])/(?![/])')
+    FIRST_PATH = re.compile('(?<![:/])[/?](?![/])')
 
 
     @staticmethod

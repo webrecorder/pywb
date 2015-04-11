@@ -76,6 +76,12 @@ http://xn--e1afmkfd.xn--80akhbyknj4f
 >>> print(WbUrl.to_uri('https://xn--e1afmkfd.xn--80akhbyknj4f/foo/bar?abc=def'))
 https://xn--e1afmkfd.xn--80akhbyknj4f/foo/bar?abc=def
 
+>>> print(WbUrl.to_uri('somescheme://test?foo=bar%9F'))
+somescheme://test?foo=bar%9F
+
+>>> print(WbUrl.to_uri('/test/foo=bar%9F'))
+/test/foo=bar%9F
+
 # truncated
 >>> print(WbUrl.to_uri('http://' + quote_plus(u'пример.испытание'.encode('utf-8'))[1:]))
 http://xn--d0-olcluwd.xn--80akhbyknj4f
