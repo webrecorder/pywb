@@ -55,24 +55,16 @@ class UrlRewriter(object):
             is_abs = True
             url = 'http:' + url
 
-        # Optimized rewriter for
-        # -rel urls that don't start with / and
-        # do not contain ../ and no special mod
-        if not (is_abs or mod or url.startswith('/') or ('../' in url)):
-            final_url = urlparse.urljoin(self.prefix + wburl.original_url, url)
-
+        # optimize: join if not absolute url, otherwise just use as is
+        if not is_abs:
+            new_url = self.urljoin(wburl.url, url)
         else:
-            # optimize: join if not absolute url, otherwise just use that
-            if not is_abs:
-                new_url = self.urljoin(wburl.url, url)
-            else:
-                new_url = url
+            new_url = url
 
-            if mod is None:
-                mod = wburl.mod
+        if mod is None:
+            mod = wburl.mod
 
-            final_url = self.prefix + wburl.to_str(mod=mod,
-                                                   url=new_url)
+        final_url = self.prefix + wburl.to_str(mod=mod, url=new_url)
         return final_url
 
     def get_new_url(self, **kwargs):

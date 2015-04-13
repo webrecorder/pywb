@@ -170,7 +170,7 @@ class WbUrl(BaseWbUrl):
             orig_url = orig_url.encode('utf-8')
             orig_url = urllib.quote(orig_url)
 
-        self.original_url = orig_url
+        self._original_url = orig_url
 
         if not self._init_query(orig_url):
             if not self._init_replay(orig_url):
@@ -311,10 +311,6 @@ class WbUrl(BaseWbUrl):
                 return tsmod + "/" + url
             else:
                 return url
-
-    @property
-    def is_top_frame(self):
-        return (self.mod == 'tf_')
 
     @property
     def is_embed(self):
