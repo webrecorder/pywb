@@ -99,7 +99,7 @@ class FuzzyQuery:
 
         inx = url.rfind(repl)
         if inx > 0:
-            url = url[:inx + 1]
+            url = url[:inx + len(repl)]
 
         if matched_rule.match_type == 'domain':
             host = urlparse.urlsplit(url).netloc
