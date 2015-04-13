@@ -242,4 +242,4 @@ def test_post():
 
 
 def get_rewritten(*args, **kwargs):
-    return LiveRewriter().get_rewritten(*args, **kwargs)
+    return LiveRewriter().get_rewritten(remote_only=False, *args, **kwargs)

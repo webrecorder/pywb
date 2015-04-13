@@ -172,7 +172,8 @@ class LiveRewriter(object):
                       timestamp=None,
                       follow_redirects=False,
                       ignore_proxies=False,
-                      verify=True):
+                      verify=True,
+                      remote_only=True):
 
         ts_err = url.split('///')
 
@@ -184,7 +185,7 @@ class LiveRewriter(object):
         if url.startswith('//'):
             url = 'http:' + url
 
-        if is_http(url):
+        if remote_only or is_http(url):
             is_remote = True
         else:
             is_remote = False
