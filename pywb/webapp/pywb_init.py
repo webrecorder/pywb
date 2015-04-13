@@ -92,7 +92,8 @@ def init_collection(route_config):
 
 
 #=================================================================
-def add_cdx_api_handler(name, cdx_api_suffix, routes, query_handler):
+def add_cdx_api_handler(name, cdx_api_suffix, routes, query_handler,
+                        route_class=Route):
     # if bool, use -cdx suffix, else use custom string
     # as the suffix
     if isinstance(cdx_api_suffix, bool):
@@ -100,7 +101,8 @@ def add_cdx_api_handler(name, cdx_api_suffix, routes, query_handler):
     else:
         name += str(cdx_api_suffix)
 
-    routes.append(Route(name, CDXAPIHandler(query_handler)))
+    logging.debug('Adding CDX API Handler: ' + name)
+    routes.append(route_class(name, CDXAPIHandler(query_handler)))
 
 
 #=================================================================
@@ -318,7 +320,8 @@ def create_wb_router(passed_config=None):
         cdx_api_suffix = route_config.get('enable_cdx_api', False)
 
         if cdx_api_suffix:
-            add_cdx_api_handler(name, cdx_api_suffix, routes, query_handler)
+            add_cdx_api_handler(name, cdx_api_suffix, routes, query_handler,
+                                route_class=route_class)
 
     if config.get('debug_echo_env', False):
         routes.append(Route('echo_env', DebugEchoEnvHandler()))
