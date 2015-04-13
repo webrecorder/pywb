@@ -8,37 +8,37 @@ class TestLiveRewriter:
         self.app = LiveCli(['-f']).application
         self.testapp = webtest.TestApp(self.app)
 
-    def test_live_rewrite_1(self):
-        headers = [('User-Agent', 'python'), ('Referer', 'http://localhost:80/rewrite/other.example.com')]
-        resp = self.testapp.get('/rewrite/http://example.com/', headers=headers)
+    def test_live_live_1(self):
+        headers = [('User-Agent', 'python'), ('Referer', 'http://localhost:80/live/other.example.com')]
+        resp = self.testapp.get('/live/mp_/http://example.com/', headers=headers)
         assert resp.status_int == 200
 
-    def test_live_rewrite_redirect_2(self):
-        resp = self.testapp.get('/rewrite/http://httpbin.org/redirect-to?url=http://example.com/')
+    def test_live_live_redirect_2(self):
+        resp = self.testapp.get('/live/mp_/http://httpbin.org/redirect-to?url=http://example.com/')
         assert resp.status_int == 302
 
-    def test_live_rewrite_post(self):
-        resp = self.testapp.post('/rewrite/httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
+    def test_live_live_post(self):
+        resp = self.testapp.post('/live/mp_/httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
         assert resp.status_int == 200
         assert '"foo": "bar"' in resp.body
         assert '"test": "abc"' in resp.body
         assert resp.status_int == 200
 
-    def test_live_rewrite_frame(self):
-        resp = self.testapp.get('/rewrite/tf_/http://example.com/')
+    def test_live_live_frame(self):
+        resp = self.testapp.get('/live/http://example.com/')
         assert resp.status_int == 200
         assert '<iframe ' in resp.body
-        assert 'src="http://localhost:80/rewrite/http://example.com/"' in resp.body, resp.body
+        assert 'src="http://localhost:80/live/mp_/http://example.com/"' in resp.body, resp.body
 
     def test_live_invalid(self):
-        resp = self.testapp.get('/rewrite/http://abcdef', status=400)
+        resp = self.testapp.get('/live/mp_/http://abcdef', status=400)
         assert resp.status_int == 400
 
     def test_live_invalid_2(self):
-        resp = self.testapp.get('/rewrite/@#$@#$', status=400)
+        resp = self.testapp.get('/live/mp_/@#$@#$', status=400)
         assert resp.status_int == 400
 
     def test_live_video_info(self):
-        resp = self.testapp.get('/rewrite/vi_/https://www.youtube.com/watch?v=DjFZyFWSt1M')
+        resp = self.testapp.get('/live/vi_/https://www.youtube.com/watch?v=DjFZyFWSt1M')
         assert resp.status_int == 200
         assert resp.content_type == RewriteHandler.YT_DL_TYPE, resp.content_type

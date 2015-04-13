@@ -69,9 +69,9 @@ class LiveCli(BaseCli):
 
     def load(self):
         config = dict(proxyhostport=self.r.proxy,
-                      framed_replay=self.r.framed,
+                      framed_replay='inverse' if self.r.framed else False,
                       enable_auto_colls=False,
-                      collections=dict(rewrite='$liveweb'))
+                      collections={'live': '$liveweb'})
 
         return init_app(create_wb_router, load_yaml=False, config=config)
 
