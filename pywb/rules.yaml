@@ -145,6 +145,10 @@ rules:
             - match: 'window.location'
               replace: 'WB_wombat_location'
 
+      fuzzy_lookup:
+        replace: 'videos'
+        match: 'videos(?:_[^/]+)?/([^?]+)'
+
     # youtube rules
     #=================================================================
 
