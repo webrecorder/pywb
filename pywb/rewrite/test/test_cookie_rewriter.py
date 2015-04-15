@@ -40,6 +40,12 @@ r"""
 >>> rewrite_cookie('some=value; Domain=.example.com; Path=/diff/path/; Max-Age=1500', urlrewriter, 'root')
 [('Set-Cookie', 'some=value; Path=/')]
 
+# RemoveAllCookiesRewriter -- remove all cookies
+>>> rewrite_cookie('some=value; Path=/diff/path/;', urlrewriter, 'removeall')
+[]
+
+>>> rewrite_cookie('some=value; Domain=.example.com; Path=/diff/path/; Max-Age=1500', urlrewriter, 'removeall')
+[]
 
 
 """

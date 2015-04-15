@@ -39,6 +39,12 @@ class WbUrlBaseCookieRewriter(object):
 
 
 #=================================================================
+class RemoveAllCookiesRewriter(WbUrlBaseCookieRewriter):
+    def rewrite(self, cookie_str, header='Set-Cookie'):
+        return []
+
+
+#=================================================================
 class MinimalScopeCookieRewriter(WbUrlBaseCookieRewriter):
     """
     Attempt to rewrite cookies to minimal scope possible
@@ -106,5 +112,7 @@ def get_cookie_rewriter(cookie_scope):
         return RootScopeCookieRewriter
     elif cookie_scope == 'exact':
         return ExactPathCookieRewriter
+    elif cookie_scope == 'removeall':
+        return RemoveAllCookiesRewriter
     else:
         return MinimalScopeCookieRewriter
