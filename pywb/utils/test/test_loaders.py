@@ -106,14 +106,19 @@ True
 #=================================================================
 import re
 import os
+import pytest
+
 from io import BytesIO
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
 from pywb.utils.loaders import LimitReader, extract_client_cookie, extract_post_query
 from pywb.utils.loaders import read_last_line
 
+from pywb.utils.bufferedreaders import DecompressingBufferedReader
+
 from pywb import get_test_dir
 
 test_cdx_dir = get_test_dir() + 'cdx/'
+
 
 def read_multiple(reader, inc_reads):
     result = None
@@ -127,6 +132,19 @@ def seek_read_full(seekable_reader, offset):
     seekable_reader.readline() #skip
     return seekable_reader.readline()
 
+def test_s3_read_1():
+    pytest.importorskip('boto')
+
+    res = BlockLoader().load('s3://aws-publicdatasets/common-crawl/crawl-data/CC-MAIN-2015-11/segments/1424936462700.28/warc/CC-MAIN-20150226074102-00159-ip-10-28-5-156.ec2.internal.warc.gz',
+                             offset=53235662,
+                             length=2526)
+
+    buff = res.read()
+    assert len(buff) == 2526
+
+    reader = DecompressingBufferedReader(BytesIO(buff))
+    assert reader.readline() == 'WARC/1.0\r\n'
+    assert reader.readline() == 'WARC-Type: response\r\n'
 
 if __name__ == "__main__":
     import doctest

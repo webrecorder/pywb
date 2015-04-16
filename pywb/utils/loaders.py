@@ -11,12 +11,17 @@ import requests
 import urlparse
 import time
 import pkg_resources
-from io import open
+from io import open, BytesIO
 
 
 #=================================================================
 def is_http(filename):
     return filename.startswith(('http://', 'https://'))
+
+
+#=================================================================
+def is_s3(filename):
+    return filename.startswith('s3://')
 
 
 #=================================================================
@@ -144,6 +149,7 @@ class BlockLoader(object):
     def __init__(self, cookie_maker=None):
         self.cookie_maker = cookie_maker
         self.session = None
+        self.s3conn = None
 
     def load(self, url, offset=0, length=-1):
         """
@@ -151,6 +157,8 @@ class BlockLoader(object):
         """
         if is_http(url):
             return self.load_http(url, offset, length)
+        elif is_s3(url):
+            return self.load_s3(url, offset, length)
         else:
             return self.load_file_or_resource(url, offset, length)
 
@@ -191,18 +199,21 @@ class BlockLoader(object):
         else:
             return afile
 
-    def load_http(self, url, offset, length):
-        """
-        Load a file-like reader over http using range requests
-        and an optional cookie created via a cookie_maker
-        """
+    @staticmethod
+    def _make_range_header(offset, length):
         if length > 0:
             range_header = 'bytes={0}-{1}'.format(offset, offset + length - 1)
         else:
             range_header = 'bytes={0}-'.format(offset)
 
-        headers = {}
-        headers['Range'] = range_header
+        return range_header
+
+    def load_http(self, url, offset, length):
+        """
+        Load a file-like reader over http using range requests
+        and an optional cookie created via a cookie_maker
+        """
+        headers = {'Range': self._make_range_header(offset, length)}
 
         if self.cookie_maker:
             if isinstance(self.cookie_maker, basestring):
@@ -215,8 +226,32 @@ class BlockLoader(object):
 
         r = self.session.get(url, headers=headers, stream=True)
         return r.raw
-        #request = urllib2.Request(url, headers=headers)
-        #return urllib2.urlopen(request)
+
+    def load_s3(self, url, offset, length):
+        try:
+            import boto
+        except ImportError:
+            raise IOError('To load from s3 paths, ' +
+                          'you must install boto: pip install boto')
+
+        if not self.s3conn:
+            try:
+                self.s3conn = boto.connect_s3()
+            except Exception:
+                self.s3conn = boto.connect_s3(anon=True)
+
+        parts = urlparse.urlsplit(url)
+
+        bucket = self.s3conn.get_bucket(parts.netloc)
+
+        headers = {'Range': self._make_range_header(offset, length)}
+
+        key = bucket.get_key(parts.path)
+
+        result = key.get_contents_as_string(headers=headers)
+        key.close()
+
+        return BytesIO(result)
 
 
 #=================================================================
