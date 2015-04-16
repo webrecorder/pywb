@@ -924,23 +924,23 @@ _WBWombat = (function() {
     }
 
     //============================================
-    function wombat_init(replay_prefix, capture_date, orig_scheme, orig_host, timestamp, mod) {
-        wb_replay_prefix = replay_prefix;
+    function wombat_init(wbinfo) {
+        wb_replay_prefix = wbinfo.prefix;
 
         if (wb_replay_prefix) {
-            wb_replay_date_prefix = replay_prefix + capture_date + mod + "/";
+            wb_replay_date_prefix = wb_replay_prefix + wbinfo.wombat_ts + wbinfo.mod + "/";
 
-            if (capture_date.length > 0) {
-                wb_capture_date_part = "/" + capture_date + "/";
+            if (wbinfo.wombat_ts.length > 0) {
+                wb_capture_date_part = "/" + wbinfo.wombat_ts + "/";
             } else {
                 wb_capture_date_part = "";
             }
 
-            wb_orig_scheme = orig_scheme + '://';
+            wb_orig_scheme = wbinfo.wombat_scheme + '://';
 
-            wb_orig_host = wb_orig_scheme + orig_host;
+            wb_orig_host = wb_orig_scheme + wbinfo.wombat_host;
 
-            init_bad_prefixes(replay_prefix);
+            init_bad_prefixes(wb_replay_prefix);
         }
 
         // Location
@@ -1007,7 +1007,7 @@ _WBWombat = (function() {
         //}
 
         // Domain
-        document.WB_wombat_domain = orig_host;
+        document.WB_wombat_domain = wbinfo.wombat_host;
         document.WB_wombat_referrer = extract_orig(document.referrer);
 
 
@@ -1047,10 +1047,10 @@ _WBWombat = (function() {
         init_dom_override();
 
         // Random
-        init_seeded_random(timestamp);
+        init_seeded_random(wbinfo.wombat_sec);
 
         // Date
-        init_date_override(timestamp);
+        init_date_override(wbinfo.wombat_sec);
 
         // expose functions
         this.extract_orig = extract_orig;
