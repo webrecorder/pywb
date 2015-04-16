@@ -31,6 +31,9 @@ _WBWombat = (function() {
 
     var wb_wombat_updating = false;
 
+    // custom options
+    var wb_opts;
+
     //============================================
     function is_host_url(str) {
         // Good guess that's its a hostname
@@ -150,6 +153,13 @@ _WBWombat = (function() {
         // ignore anchors, about, data
         if (starts_with(url, IGNORE_PREFIXES)) {
             return url;
+        }
+
+        // OPTS: additional ignore prefixes
+        if (wb_opts.norewrite_prefixes) {
+            if (starts_with(url, wb_opts.no_rewrite_prefixes)) {
+                return url;
+            }
         }
 
         // If starts with prefix, no rewriting needed
@@ -927,6 +937,8 @@ _WBWombat = (function() {
     function wombat_init(wbinfo) {
         wb_replay_prefix = wbinfo.prefix;
 
+        wb_opts = wbinfo.wombat_opts || {};
+
         if (wb_replay_prefix) {
             wb_replay_date_prefix = wb_replay_prefix + wbinfo.wombat_ts + wbinfo.mod + "/";
 
@@ -1019,7 +1031,10 @@ _WBWombat = (function() {
         init_open_override();
 
         // postMessage
-        init_postmessage_override();
+        // OPT skip
+        if (!wb_opts.skip_postmessage) {
+            init_postmessage_override();
+        }
 
         // write
         init_write_override();
@@ -1032,8 +1047,9 @@ _WBWombat = (function() {
         init_mutation_obs();
 
         // setAttribute
-        init_setAttribute_override();
-
+        if (!wb_opts.skip_setAttribute) {
+            init_setAttribute_override();
+        }
         // ensure namespace urls are NOT rewritten
         init_createElementNS_fix();
 
@@ -1044,7 +1060,10 @@ _WBWombat = (function() {
         init_cookies_override();
 
         // DOM
-        init_dom_override();
+        // OPT skip
+        if (!wb_opts.skip_dom) {
+            init_dom_override();
+        }
 
         // Random
         init_seeded_random(wbinfo.wombat_sec);

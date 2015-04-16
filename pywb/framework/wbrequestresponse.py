@@ -99,6 +99,7 @@ class WbRequest(object):
         self.query_filter = []
         self.custom_params = {}
         self.user_metadata = user_metadata
+        self.rewrite_opts = rewrite_opts
 
         # PERF
         env['X_PERF'] = {}

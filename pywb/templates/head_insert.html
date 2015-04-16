@@ -23,7 +23,7 @@
   wbinfo.wombat_host = "{{ urlsplit.netloc }}";
   wbinfo.wombat_sec = "{{ cdx.timestamp | format_ts('%s') }}";
 
-  wbinfo.wombat_opts = {{ wbrequest.rewrite_opts.client | tojson if wbrequest.rewrite_opts.client else 'undefined' }};
+  wbinfo.wombat_opts = {{ wbrequest.rewrite_opts.client | tojson if wbrequest.rewrite_opts.client else '{}' }};
 
   if (window && window._WBWombat && !window._wb_js_inited) {
     var _wb_wombat = new _WBWombat(wbinfo);
