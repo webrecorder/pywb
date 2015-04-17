@@ -1,0 +1,10 @@
+collections:
+    # root handler!
+    '':
+        index_paths: ./sample_archive/cdx/
+
+    foo: !!python/object:tests.test_root_coll.RedirHandler { redir_path: '/' }
+      
+archive_paths: ./sample_archive/warcs/
+
+framed_replay: false
