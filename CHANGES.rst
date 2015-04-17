@@ -3,14 +3,28 @@ pywb 0.9.5 changelist
 
 * s3 loading: support ``s3://`` scheme in block loader, allowing for loading index and archive files from s3. ``boto`` library must be installed seperately
   via ``pip install boto``. Attempt default boto auth path, and if that fails, attempt anonymous s3 connection.
+  
+* Wombat/Client-Side Rewrite Customizations: New ``rewrite_opts.client`` settings from ``config.yaml`` are passed directly to wombat as json. 
+  
+  Allows for customizing wombat as needed. Currently supported options are: ``no_rewrite_prefixes`` for ignoring rewrite
+  on certain domains, and ``skip_dom``, ``skip_setAttribute`` and ``skip_postmessage`` options for disabling 
+  those overrides. Example usage in config:
+  
+  ::
 
-* Wombat Customizations: Pass ``rewrite_opts.client`` settings from ``config.yaml`` directly to wombat as json. Allow for customizing wombat as needed.
-  Currently supported: ``no_rewrite_prefixes`` list for skipping rewrite of certain path, and ``skip_dom``, ``skip_setAttribute`` and ``skip_postmessage``
-  for disabling these overrides, respectively.
-
+    rewrite_opts:
+        ...
+        client:
+            no_rewrite_prefixes: ['http://dont-rewrite-this.example.com/']
+  
+            skip_setAttribute: true
+            skip_dom: true
+            skip_postmessage: true
+  
+  
 * Revamp template setup: All templates now use shared env, which is created on first use or can be explicitly set (if embedding)
   via ``J2TemplateView.init_shared_env()`` call. Support for specifiying a base env, as well as custom template lookup paths also provided
-
+  
 * Template lookup paths can also be set via config options ``templates_dirs``. The default list is: ``templates``, ``.``, ``/`` in that order.
 
 * Embedding improvements: move custom env (``REL_REQUEST_URI`` setup) into routers, should be able to call router created by ``create_wb_router()`` 
@@ -34,12 +48,12 @@ pywb 0.9.5 changelist
 
 * Fuzzy match: better support for custom replace string >1 character: leave string, and strip remainder before fuzzy query.
 
-* Urlrewriter and wburl fixes for various corner cases
+* Urlrewriter and wburl fixes for various corner cases.
 
-* Rangecache: use url as key if digest not present
+* Rangecache: use url as key if digest not present.
 
-* Framed replay: attempt to mitigate chrome OS X scrolling issue by disabling `-webkit-transform: none` in framed mode. Improves scrolling
-  capability but not yet consistent (a chrome bug).
+* Framed replay: attempt to mitigate chrome OS X scrolling issue by disabling ``-webkit-transform: none`` in framed mode. 
+  Improves scrolling on many pages but not always consistent (a chrome bug).
 
 
 pywb 0.9.3 changelist
