@@ -13,6 +13,12 @@ import time
 import pkg_resources
 from io import open, BytesIO
 
+try:
+    from boto import connect_s3
+    s3_avail = True
+except ImportError:  #pragma: no cover
+    s3_avail = False
+
 
 #=================================================================
 def is_http(filename):
@@ -228,17 +234,15 @@ class BlockLoader(object):
         return r.raw
 
     def load_s3(self, url, offset, length):
-        try:
-            import boto
-        except ImportError:
-            raise IOError('To load from s3 paths, ' +
+        if not s3_avail:  #pragma: no cover
+           raise IOError('To load from s3 paths, ' +
                           'you must install boto: pip install boto')
 
         if not self.s3conn:
             try:
-                self.s3conn = boto.connect_s3()
-            except Exception:
-                self.s3conn = boto.connect_s3(anon=True)
+                self.s3conn = connect_s3()
+            except Exception:  #pragma: no cover
+                self.s3conn = connect_s3(anon=True)
 
         parts = urlparse.urlsplit(url)
 
