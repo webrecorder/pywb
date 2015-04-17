@@ -7,6 +7,9 @@ r"""
 >>> LimitReader(BytesIO('abcdefghjiklmnopqrstuvwxyz'), 8).readline(26)
 'abcdefgh'
 
+>>> LimitReader.wrap_stream(LimitReader(BytesIO('abcdefghjiklmnopqrstuvwxyz'), 8), 4).readline(26)
+'abcd'
+
 >>> read_multiple(LimitReader(BytesIO('abcdefghjiklmnopqrstuvwxyz'), 10), [2, 2, 20])
 'efghji'
 
@@ -27,6 +30,11 @@ True
 # no length specified, read full amount requested
 >>> len(BlockLoader().load(to_file_url(test_cdx_dir + 'example.cdx'), 0, -1).read(400))
 400
+
+# no such file
+>>> len(BlockLoader().load('_x_no_such_file_', 0, 100).read('400'))
+Traceback (most recent call last):
+IOError: [Errno 2] No such file or directory: '_x_no_such_file_'
 
 # HMAC Cookie Maker
 >>> BlockLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read()
@@ -57,6 +65,15 @@ True
 
 >>> extract_client_cookie({}, 'y')
 
+# append_post_query
+>>> append_post_query('http://example.com/?abc=def', 'foo=bar')
+'http://example.com/?abc=def&foo=bar'
+
+>>> append_post_query('http://example.com/', '')
+'http://example.com/'
+
+>>> append_post_query('http://example.com/', 'foo=bar')
+'http://example.com/?foo=bar'
 
 # extract_post_query tests
 
@@ -111,7 +128,7 @@ import pytest
 from io import BytesIO
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
 from pywb.utils.loaders import LimitReader, extract_client_cookie, extract_post_query
-from pywb.utils.loaders import read_last_line
+from pywb.utils.loaders import append_post_query, read_last_line
 
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 
