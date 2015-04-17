@@ -1,3 +1,47 @@
+pywb 0.9.5 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* s3 loading: support ``s3://`` scheme in block loader, allowing for loading index and archive files from s3. ``boto`` library must be installed seperately
+  via ``pip install boto``. Attempt default boto auth path, and if that fails, attempt anonymous s3 connection.
+
+* Wombat Customizations: Pass ``rewrite_opts.client`` settings from ``config.yaml`` directly to wombat as json. Allow for customizing wombat as needed.
+  Currently supported: ``no_rewrite_prefixes`` list for skipping rewrite of certain path, and ``skip_dom``, ``skip_setAttribute`` and ``skip_postmessage``
+  for disabling these overrides, respectively.
+
+* Revamp template setup: All templates now use shared env, which is created on first use or can be explicitly set (if embedding)
+  via ``J2TemplateView.init_shared_env()`` call. Support for specifiying a base env, as well as custom template lookup paths also provided
+
+* Template lookup paths can also be set via config options ``templates_dirs``. The default list is: ``templates``, ``.``, ``/`` in that order.
+
+* Embedding improvements: move custom env (``REL_REQUEST_URI`` setup) into routers, should be able to call router created by ``create_wb_router()`` directly
+  with WSGI enviorn and receive a callable response.
+
+* Embedding improvements: If set, contents of ``environ['pywb.template_params']`` dictionary are added directly to Jinja context, allowing for custom template
+params to be passed to pywb jinja templates.
+
+* Root collection support: Can specify a route with `''` which will be the root collection. Fix routing paths to ensure root collection is checked last.
+
+* Customization: support custom route_class for cdx server and pass wbrequest to ``not_found_html``  error handlers.
+
+* Manager: Validate collection names to start with word char and contain alphanum or dash only.
+
+* CLI refactor: easier to create custom cli apps and pass params, inherit shared params. ``live-rewrite-server`` uses new system and accepts `-f` and `-x`
+params along with standard. Also runs on ``/live/`` path by default. See ``live-rewrite-server -h`` for more details.
+
+* Add ``removeall`` cookie rewriter, which, removes all cookies (from replay)!
+
+* Security: disable file:// altogether for live rewrite path.
+
+* Fuzzy match: better support for custom replace string >1 character: leave string, and strip remainder before fuzzy query.
+
+* Urlrewriter and wburl fixes for various corner cases
+
+* Rangecache: use url as key if digest not present
+
+* Framed replay: attempt to mitigate chrome OS X scrolling issue by disabling `-webkit-transform: none` in framed mode. Improves scrolling
+  capability but not yet consistent (a chrome bug).
+
+
 pywb 0.9.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

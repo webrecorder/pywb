@@ -1,4 +1,4 @@
-PyWb 0.9.4-dev
+PyWb 0.9.5-dev
 ==============
 
 .. image:: https://travis-ci.org/ikreymer/pywb.svg?branch=develop
@@ -65,7 +65,7 @@ Point your browser to ``http://localhost:8080/my_coll/<url>/`` where ``<url>`` i
 If all worked well, you should see your archived version of ``<url>``. Congrats, you are now running your own web archive!
 
 
-`A more detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Web-Archive-Collections-Manager>`_ .
+`A more detailed tutorial is available on the wiki <https://github.com/ikreymer/pywb/wiki/Auto-Configuration-and-Web-Archive-Collections-Manager>`_
 
 
 Using Existing Web Archive Collections
@@ -140,7 +140,7 @@ To run with the bundled sample and test suite, you'll need to clone pywb locally
 
 To run tests on your system, you may run ``python setup.py test``
 
-(A few tests require the optional ``pyopenssl`` package and are skipped if the package is not installed)
+(The HTTPS proxy tests require the optional ``certauth`` package and are skipped if the package is not installed)
 
 
 Additional Samples and Other Projects
@@ -175,14 +175,14 @@ number of useful command-line and web server tools. The tools should be availabl
    See ``wb-manager --help`` for an up-to-date listing of commands and options.
 
 
-* ``live-rewrite-server`` -- a demo live rewriting web server which accepts requests using wayback machine url format at ``/rewrite/`` path, eg, ``/rewrite/http://example.com/`` and applies the same url rewriting rules as are used for archived content.
+* ``live-rewrite-server`` -- a demo live rewriting web server which accepts requests using wayback machine url format at ``/live/`` path, eg, ``/live/http://example.com/`` and applies the same url rewriting rules as are used for archived content.
   This is useful for checking how live content will appear when archived before actually creating any archive files, or for recording data.
-  The `webrecorder.io <https://webrecorder.io>`_ service is built using this tool.
+  The `webrecorder.io <https://webrecorder.io>`_ service extends upon this functionality.
 
 
-* ``cdx-indexer`` -- a command-line tool for creating CDX indexs from WARC and ARC files. Supports SURT and
-  non-SURT based cdx files and optional sorting. See ``cdx-indexer -h`` for all options.
-  for all options.
+* ``cdx-indexer`` -- a command-line tool for manually creating CDX indexs from WARC and ARC files. Supports SURT and
+  non-SURT based cdx files, optional sorting, and several formats. See ``cdx-indexer -h`` for all options. Using ``wb-manager`` is recommended
+  for higher-level collection file management, but this tool can be used for any custom indexing needs.
 
 
 * ``cdx-server`` -- a CDX API only server which returns a responses about CDX captures in bulk. See `CDX Server API <https://github.com/ikreymer/pywb/wiki/CDX-Server-API>`_
@@ -204,7 +204,7 @@ to serve live content, and inject customized code into any web page on the fly. 
 For example, the `pywb-webrecorder <https://github.com/ikreymer/pywb-webrecorder>`_ demonstrates a way to use pywb live web rewriting
 together with a recording proxy (warcprox) to record content while browsing.
 
-The `via.hypothes.is <via.hypothes.is>`_ project provides an example of using pywb to inject annotations into any live web page.
+The `via.hypothes.is <https://via.hypothes.is>`_ project provides an example of using pywb to inject annotations into any live web page.
 
 
 Running in HTTP/HTTPS Proxy Mode
@@ -261,7 +261,7 @@ Additional Reference
 -  The `wiki <https://github.com/ikreymer/pywb/wiki>`_ will have
    additional technical documentation about various aspects of pywb
 
--  The sample config.yaml file, although not required, will provide a listing of various advanced configuration options:
+-  The sample ``config.yaml`` file, although not required, provides a listing of various advanced configuration options:
    `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_
 
 
