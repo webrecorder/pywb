@@ -13,11 +13,11 @@ pywb 0.9.5 changelist
 
 * Template lookup paths can also be set via config options ``templates_dirs``. The default list is: ``templates``, ``.``, ``/`` in that order.
 
-* Embedding improvements: move custom env (``REL_REQUEST_URI`` setup) into routers, should be able to call router created by ``create_wb_router()`` directly
-  with WSGI enviorn and receive a callable response.
+* Embedding improvements: move custom env (``REL_REQUEST_URI`` setup) into routers, should be able to call router created by ``create_wb_router()`` 
+  directly with WSGI enviorn and receive a callable response.
 
-* Embedding improvements: If set, contents of ``environ['pywb.template_params']`` dictionary are added directly to Jinja context, allowing for custom template
-params to be passed to pywb jinja templates.
+* Embedding improvements: If set, the contents of ``environ['pywb.template_params']`` dictionary are added directly to Jinja context, allowing for custom template
+  params to be passed to pywb jinja templates.
 
 * Root collection support: Can specify a route with `''` which will be the root collection. Fix routing paths to ensure root collection is checked last.
 
@@ -25,10 +25,10 @@ params to be passed to pywb jinja templates.
 
 * Manager: Validate collection names to start with word char and contain alphanum or dash only.
 
-* CLI refactor: easier to create custom cli apps and pass params, inherit shared params. ``live-rewrite-server`` uses new system and accepts `-f` and `-x`
-params along with standard. Also runs on ``/live/`` path by default. See ``live-rewrite-server -h`` for more details.
+* CLI refactor: easier to create custom cli apps and pass params, inherit shared params. ``live-rewrite-server`` uses new system cli system,
+  defaults to framed inverse mode. Also runs on ``/live/`` path by default. See ``live-rewrite-server -h`` for a list of current options.
 
-* Add ``removeall`` cookie rewriter, which, removes all cookies (from replay)!
+* Add ``cookie_scope: removeall`` cookie rewriter, which will, remove all cookies from replay headers.
 
 * Security: disable file:// altogether for live rewrite path.
 
