@@ -73,7 +73,7 @@ class QueryHandler(object):
         # get metadata
         if wb_url.mod == 'vi_':
             # matching metadata explicitly with special scheme
-            schema, rest = wb_url.url.split('://')
+            schema, rest = wb_url.url.split('://', 1)
             params['url'] = 'metadata://' + rest
             params['filter'].append('~original:metadata://')
 
