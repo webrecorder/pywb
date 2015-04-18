@@ -1,5 +1,5 @@
-PyWb 0.9.6-dev
-==============
+PyWb 0.9.6
+==========
 
 .. image:: https://travis-ci.org/ikreymer/pywb.svg?branch=master
       :target: https://travis-ci.org/ikreymer/pywb
