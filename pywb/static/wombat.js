@@ -156,7 +156,7 @@ _WBWombat = (function() {
         }
 
         // OPTS: additional ignore prefixes
-        if (wb_opts.norewrite_prefixes) {
+        if (wb_opts.no_rewrite_prefixes) {
             if (starts_with(url, wb_opts.no_rewrite_prefixes)) {
                 return url;
             }
