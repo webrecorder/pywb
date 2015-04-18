@@ -23,6 +23,7 @@ var TS_REGEX = /\/([\d]{1,14})\//;
 
 var curr_state = {};
 
+var IFRAME_ID = "replay_iframe";
 
 function make_url(url, ts, mod)
 {
@@ -38,8 +39,9 @@ function make_url(url, ts, mod)
 }
 
 function push_state(url, timestamp, request_ts, capture_str, is_live) {
-    if (window.frames[0].WB_wombat_location) {
-        var curr_href = window.frames[0].WB_wombat_location.href;
+    var frame = document.getElementById(IFRAME_ID).contentWindow;
+    if (frame.WB_wombat_location) {
+        var curr_href = frame.WB_wombat_location.href;
 
         // If not current url, don't update
         if (url != curr_href) {
@@ -56,8 +58,9 @@ function push_state(url, timestamp, request_ts, capture_str, is_live) {
     state.capture_str = capture_str;
     state.is_live = is_live;
 
-    if (wbinfo.replay_mod == "") {
-        window.history.replaceState(state, "", state.inner_url);
+    var canon_url = make_url(url, state.request_ts, "");
+    if (window.location.href != canon_url) {
+        window.history.replaceState(state, "", canon_url);
     }
 
     set_state(state);
@@ -66,7 +69,8 @@ function push_state(url, timestamp, request_ts, capture_str, is_live) {
 function pop_state(state) {
     set_state(state);
 
-    window.frames[0].src = state.inner_url;
+    var frame = document.getElementById(IFRAME_ID).contentWindow;
+    frame.src = state.inner_url;
 }
 
 function extract_ts(url)
@@ -131,7 +135,7 @@ function iframe_loaded(event) {
     var request_ts;
     var capture_str;
     var is_live = false;
-    var iframe = window.frames[0];
+    var iframe = document.getElementById(IFRAME_ID).contentWindow;
 
     if (iframe.WB_wombat_location) {
         url = iframe.WB_wombat_location.href;
