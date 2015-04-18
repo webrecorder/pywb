@@ -1,3 +1,13 @@
+pywb 0.9.6 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* framed replay: fix bug where outer frame url was not updated (in inverse mode) after navigating inner frame.
+
+* framed replay: lookup frame by id, ``replay_iframe``, instead of by using ``window.frames[0]`` to allow for more customization.
+
+* fix typo in wombat ``no_rewrite_prefixes``
+
+
 pywb 0.9.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
