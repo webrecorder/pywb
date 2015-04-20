@@ -313,6 +313,12 @@ urls for the cdx key. Default is to use SURT keys.
 Not-recommended for new cdx, use only for backwards-compatibility.
 """
 
+    verify_help = """
+Verify HTTP protocol (1.0/1.1) status in response records and http verb
+on request records, ensuring the protocol or verb matches the expected list.
+Raise an exception on failure. (This was previously the default behavior).
+"""
+
     cdx09_help = """
 Use older 9-field cdx format, default is 11-cdx field
 """
@@ -391,6 +397,10 @@ instead of current working directory
                         action='store_true',
                         help=unsurt_help)
 
+    parser.add_argument('-v', '--verify',
+                        action='store_true',
+                        help=verify_help)
+
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-9', '--cdx09',
                         action='store_true',
@@ -416,6 +426,7 @@ instead of current working directory
                           append_post=cmd.postappend,
                           recurse=cmd.recurse,
                           rel_root=cmd.dir_root,
+                          verify_http=cmd.verify,
                           cdx09=cmd.cdx09,
                           cdxj=cmd.cdxj,
                           minimal=cmd.minimal_cdxj)

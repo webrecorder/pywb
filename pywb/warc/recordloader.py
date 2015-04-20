@@ -49,7 +49,8 @@ class ArcWarcRecordLoader:
 
     NON_HTTP_RECORDS = ('warcinfo', 'arc_header', 'metadata', 'resource')
 
-    def __init__(self, loader=None, cookie_maker=None, block_size=8192):
+    def __init__(self, loader=None, cookie_maker=None, block_size=8192,
+                 verify_http=True):
         if not loader:
             loader = BlockLoader(cookie_maker)
 
@@ -59,9 +60,9 @@ class ArcWarcRecordLoader:
         self.arc_parser = ARCHeadersParser(self.ARC_HEADERS)
 
         self.warc_parser = StatusAndHeadersParser(self.WARC_TYPES)
-        self.http_parser = StatusAndHeadersParser(self.HTTP_TYPES)
+        self.http_parser = StatusAndHeadersParser(self.HTTP_TYPES, verify_http)
 
-        self.http_req_parser = StatusAndHeadersParser(self.HTTP_VERBS)
+        self.http_req_parser = StatusAndHeadersParser(self.HTTP_VERBS, verify_http)
 
     def load(self, url, offset, length):
         """ Load a single record from given url at offset with length

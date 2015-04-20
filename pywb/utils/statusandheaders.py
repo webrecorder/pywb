@@ -133,8 +133,9 @@ class StatusAndHeadersParser(object):
     Parser which consumes a stream support readline() to read
     status and headers and return a StatusAndHeaders object
     """
-    def __init__(self, statuslist):
+    def __init__(self, statuslist, verify=True):
         self.statuslist = statuslist
+        self.verify = verify
 
     def parse(self, stream, full_statusline=None):
         """
@@ -160,12 +161,16 @@ class StatusAndHeadersParser(object):
                                     protocol='',
                                     total_len=total_read)
 
-        protocol_status = self.split_prefix(statusline, self.statuslist)
+        # validate only if verify is set
+        if self.verify:
+            protocol_status = self.split_prefix(statusline, self.statuslist)
 
-        if not protocol_status:
-            msg = 'Expected Status Line starting with {0} - Found: {1}'
-            msg = msg.format(self.statuslist, statusline)
-            raise StatusAndHeadersParserException(msg, full_statusline)
+            if not protocol_status:
+                msg = 'Expected Status Line starting with {0} - Found: {1}'
+                msg = msg.format(self.statuslist, statusline)
+                raise StatusAndHeadersParserException(msg, full_statusline)
+        else:
+            protocol_status = statusline.split(' ', 1)
 
         line, total_read = _strip_count(stream.readline(), total_read)
         while line:

@@ -45,10 +45,11 @@ class ArchiveIterator(object):
     warc2warc -Z myfile.{0} > myfile.{0}.gz
     """
 
-    def __init__(self, fileobj, no_record_parse=False):
+    def __init__(self, fileobj, no_record_parse=False,
+                 verify_http=False):
         self.fh = fileobj
 
-        self.loader = ArcWarcRecordLoader()
+        self.loader = ArcWarcRecordLoader(verify_http=verify_http)
         self.reader = None
 
         self.offset = 0
@@ -445,7 +446,8 @@ class DefaultRecordIter(object):
         return entry
 
     def __call__(self, fh):
-        aiter = ArchiveIterator(fh, self.options.get('minimal', False))
+        aiter = ArchiveIterator(fh, self.options.get('minimal', False),
+                                    self.options.get('verify_http', False))
 
         entry_iter = self.create_record_iter(aiter)
 
