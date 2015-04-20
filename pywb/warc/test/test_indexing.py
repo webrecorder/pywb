@@ -134,6 +134,20 @@ org,httpbin)/post?data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar 
 org,httpbin)/post?data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/x-www-form-urlencoded - - - - 475 3118 post-test.warc.gz
 
 
+# Test with custom verbs/protocol
+#================================================================
+# no validation
+>>> print_cdx_index('example-extra.warc')
+ CDX N b a m s k r M S V g
+com,example)/?example=2 20140103030321 http://example.com?example=2 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1987 0 example-extra.warc
+com,example)/?example=2 20140603030341 http://example.com?example=2 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 504 2701 example-extra.warc
+com,example)/?example=2 20140103030321 http://example.com?example=2 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1987 3207 example-extra.warc
+com,example)/?example=2 20140603030341 http://example.com?example=2 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 504 5910 example-extra.warc
+
+>>> print_cdx_index('example-extra.warc', verify_http=True)
+Traceback (most recent call last):
+StatusAndHeadersParserException: Expected Status Line starting with ['HTTP/1.0', 'HTTP/1.1'] - Found: HTTPX/1.1 200 OK
+
 
 # Test CLI interface -- (check for num lines)
 #=================================================================
@@ -142,19 +156,19 @@ org,httpbin)/post?data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar 
 >>> cli_lines(['--sort', '-',  TEST_WARC_DIR])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
 urn:X-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - - 557 3181 example-wpull.warc.gz
-Total: 208
+Total: 210
 
 # test sort, multiple inputs, recursive, from base test dir
 >>> cli_lines(['--sort', '-r', '-',  get_test_dir()])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 warcs/example-url-agnostic-revisit.warc.gz
 urn:X-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - - 557 3181 warcs/example-wpull.warc.gz
-Total: 208
+Total: 210
 
 # test sort, 9-field, multiple inputs, all records + post query
 >>> cli_lines(['--sort', '-a', '-p', '-9', TEST_WARC_DIR])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - 355 example-url-agnostic-revisit.warc.gz
 urn:X-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - 3181 example-wpull.warc.gz
-Total: 401
+Total: 404
 
 # test writing to stdout
 >>> cli_lines(['-', TEST_WARC_DIR + 'example.warc.gz'])
@@ -178,7 +192,7 @@ Total: 4
 >>> cli_lines(['--sort', '--dir-root', get_test_dir() + 'other/', TEST_WARC_DIR])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 ../warcs/example-url-agnostic-revisit.warc.gz
 urn:X-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - - 557 3181 ../warcs/example-wpull.warc.gz
-Total: 208
+Total: 210
 
 # test writing to temp dir, also use unicode filename
 >>> cli_lines_with_dir(unicode(TEST_WARC_DIR + 'example.warc.gz'))
