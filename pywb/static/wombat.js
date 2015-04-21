@@ -250,9 +250,9 @@ _WBWombat = (function() {
         }
 
         // remove trailing slash
-        if (ends_with(href, "/")) {
-            href = href.substring(0, href.length - 1);
-        }
+        //if (ends_with(href, "/")) {
+        //    href = href.substring(0, href.length - 1);
+        //}
 
         return href;
     }
