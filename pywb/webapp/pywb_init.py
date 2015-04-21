@@ -1,4 +1,4 @@
-from pywb.utils.loaders import load_yaml_config, is_http
+from pywb.utils.loaders import load_yaml_config
 
 from pywb.framework.archivalrouter import ArchivalRouter, Route
 from pywb.framework.proxy import ProxyArchivalRouter
@@ -178,7 +178,8 @@ class DirectoryCollsLoader(object):
     def _add_dir_if_exists(self, coll, root_dir, dir_key, required=False):
         curr_val = coll.get(dir_key)
         if curr_val:
-            if not is_http(curr_val):
+            # add collection path only if relative path, and not a url
+            if '://' not in curr_val and not os.path.isabs(curr_val):
                 coll[dir_key] = self._norm_path(root_dir, curr_val) + os.path.sep
             return False
 
