@@ -169,6 +169,15 @@ _WBWombat = (function() {
             return url;
         }
 
+        // A special case where the port somehow gets dropped
+        // Check for this and add it back in, eg http://localhost/path/ -> http://localhost:8080/path/
+        if (window.location.host != window.location.hostname) {
+            if (starts_with(url, window.location.protocol + '//' + window.location.hostname + "/")) {
+                url = url.replace("/" + window.location.hostname + "/", "/" + window.location.host + "/");
+                return url;
+            }
+        }
+
         // If server relative url, add prefix and original host
         if (url.charAt(0) == "/" && !starts_with(url, REL_PREFIX)) {
 
@@ -300,15 +309,22 @@ _WBWombat = (function() {
         this._orig_loc = loc;
         this._orig_href = loc.href;
 
+
         // Rewrite replace and assign functions
         this.replace = function(url) {
-            return this._orig_loc.replace(rewrite_url(url));
+            var new_url = rewrite_url(url);
+            var orig = extract_orig(new_url);
+            if (orig == this.href) {
+                return orig;
+            }
+            return this._orig_loc.replace(new_url);
         }
         this.assign = function(url) {
             var new_url = rewrite_url(url);
-            if (new_url != this._orig_href) {
-                return this._orig_loc.assign(new_url);
+            if (orig == this.href) {
+                return orig;
             }
+            return this._orig_loc.assign(new_url);
         }
         this.reload = loc.reload;
 
@@ -523,7 +539,7 @@ _WBWombat = (function() {
     }
 
     //============================================
-    function init_setAttribute_override()
+    function init_setAttribute_override(use_obs)
     {
         if (!window.Element ||
             !window.Element.prototype ||
@@ -532,6 +548,13 @@ _WBWombat = (function() {
         }
 
         var orig_setAttribute = window.Element.prototype.setAttribute;
+
+        Element.prototype._orig_setAttribute = orig_setAttribute;
+
+        if (use_obs) {
+            init_href_src_obs();
+            return;
+        }
 
         Element.prototype.setAttribute = function(name, value) {
             if (name) {
@@ -662,12 +685,46 @@ _WBWombat = (function() {
             }
         });
 
-        m.observe(document.documentElement, {childList: false,
+        m.observe(document.documentElement, {
+                                  childList: false,
                                   attributes: true,
                                   subtree: true,
                                   //attributeOldValue: true,
                                   attributeFilter: ["style"]});
     }
+
+
+    //============================================
+    function init_href_src_obs()
+    {
+        if (!window.MutationObserver) {
+            return;
+        }
+
+        var m = new MutationObserver(function(records, observer)
+        {
+            for (var i = 0; i < records.length; i++) {
+                var r = records[i];
+                if (r.type == "attributes") {
+                    var curr = r.target.getAttribute(r.attributeName);
+                    var new_url = rewrite_url(curr);
+                    if (curr != new_url) {
+                        console.log("REWRITE " + r.attributeName);
+                        r.target._orig_setAttribute(r.attributeName, new_url);
+                    }
+                }
+            }
+        });
+
+        m.observe(document.documentElement, {
+                                  childList: false,
+                                  attributes: true,
+                                  subtree: true,
+                                  //attributeOldValue: true,
+                                  attributeFilter: ["src", "href"]});
+             
+    }
+
 
     //============================================
     function rewrite_attr(elem, name, func) {
@@ -690,7 +747,7 @@ _WBWombat = (function() {
         }
 
         // this now handles the actual rewrite
-        elem.setAttribute(name, value);
+        elem._orig_setAttribute(name, value);
     }
 
     //============================================
@@ -722,7 +779,7 @@ _WBWombat = (function() {
         var setter = function(orig) {
             //var val = rewrite_url(orig);
             var val = orig;
-            this.setAttribute(attr, val);
+            this._orig_setAttribute(attr, val);
             return val;
         }
 
@@ -752,10 +809,13 @@ _WBWombat = (function() {
 
                 var desc;
 
-                if (child instanceof DocumentFragment) {
-                    desc = child.querySelectorAll("a[href], iframe[src]");
-                } else if (child.getElementsByTagName) {
-                    desc = child.getElementsByTagName("*");
+                //if (child instanceof DocumentFragment) {
+                //    desc = child.querySelectorAll("a[href], iframe[src]");
+                //} else if (child.getElementsByTagName) {
+                //    desc = child.getElementsByTagName("*");
+                //}
+                if (child.querySelectorAll) {
+                    desc = child.querySelectorAll("[href], [src]");
                 }
 
                 if (desc) {
@@ -771,8 +831,8 @@ _WBWombat = (function() {
                 }
 
                 if (created.tagName == "IFRAME") {
-                    if (created.contentWindow) {
-                        created.contentWindow.window.WB_wombat_location = created.contentWindow.window.location;
+                    if (created.contentWindow && !created.contentWindow.WB_wombat_location) {
+                        created.contentWindow.WB_wombat_location = created.contentWindow.location;
                     }
 
                     override_attr(created, "src");
@@ -1048,7 +1108,7 @@ _WBWombat = (function() {
 
         // setAttribute
         if (!wb_opts.skip_setAttribute) {
-            init_setAttribute_override();
+            init_setAttribute_override(true);
         }
         // ensure namespace urls are NOT rewritten
         init_createElementNS_fix();
