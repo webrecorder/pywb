@@ -1102,14 +1102,17 @@ _WBWombat = (function() {
 
         // Ajax
         init_ajax_rewrite();
-        init_worker_override();
+
+        if (!wb_opts.skip_disable_worker) {
+            init_worker_override();
+        }
 
         // Init mutation observer (for style only)
         init_mutation_obs();
 
         // setAttribute
         if (!wb_opts.skip_setAttribute) {
-            init_setAttribute_override(true);
+            init_setAttribute_override(wb_opts.use_attr_observers);
         }
         // ensure namespace urls are NOT rewritten
         init_createElementNS_fix();
