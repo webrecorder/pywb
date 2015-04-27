@@ -98,6 +98,16 @@ def test_local_no_head():
     # link rewritten
     assert '"/pywb/20131226101010/http://example.com/some/path/another.html"' in buff
 
+def test_local_no_head_only_title():
+    status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample_no_head_2.html',
+                                         urlrewriter,
+                                         head_insert_func,
+                                         'com,example,test)/')
+
+    # wombat insert added
+    assert '<script src="/static/__pywb/wombat.js"> </script>' in buff
+
+
 def test_local_no_head_banner_only():
     status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample_no_head.html',
                                          bn_urlrewriter,
