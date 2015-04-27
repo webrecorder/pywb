@@ -321,6 +321,7 @@ _WBWombat = (function() {
         }
         this.assign = function(url) {
             var new_url = rewrite_url(url);
+            var orig = extract_orig(new_url);
             if (orig == this.href) {
                 return orig;
             }
