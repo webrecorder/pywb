@@ -1,7 +1,7 @@
 pywb 0.9.7 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* wombat enchancements: support for mutation observers instead of setAttribute override with ``client.use_attr_observers`` setting.
+* wombat enchancements: support for mutation observers instead of ``setAttribute`` override with ``client.use_attr_observers`` setting.
   Can also disable worker override with ``skip_disable_worker``
   
 * wombat fixes: Better check for self-redirect when proxying ``replace()`` and ``assign()``, use ``querySelectorAll()`` for dom selection
@@ -9,7 +9,7 @@ pywb 0.9.7 changelist
 * wombat fixes: Don't remove trailing slash in ``extract_orig()``, treat slash and no-slash urls as distinct on the client (as expected).
 
 * cdx-indexer: Validation of HTTP protocol and request verbs now optional. Any protocol and verb will be accepted, unless ``-v`` flag is used,
-allowing for indexing of content with custom verbs, unexpected protocol, etc...
+  allowing for indexing of content with custom verbs, unexpected protocol, etc...
 
 
 pywb 0.9.6 changelist
