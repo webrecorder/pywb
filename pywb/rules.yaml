@@ -32,6 +32,11 @@ rules:
           - lgnrnd
           - lsd
 
+    - url_prefix: 'com,facebook)/ajax/timezone/update.php'
+
+      fuzzy_lookup:
+          - __user
+
     # fallback for all /ajax/
     - url_prefix: 'com,facebook)/ajax/'
 
