@@ -49,6 +49,11 @@ __wbvidrw = (function() {
 
     var FLASH_PLAYER = wbinfo.static_prefix + "/flowplayer/flowplayer-3.2.18.swf";
 
+    var replay_prefix = wbinfo.prefix;
+    if (wbinfo.mod) {
+        replay_prefix += wbinfo.mod + "/";
+    }
+
     function check_videos() {
         if (found_embeds) {
             return;
@@ -339,7 +344,7 @@ __wbvidrw = (function() {
         var thumb_url = null;
 
         if (info.thumbnail) {
-            thumb_url = wbinfo.prefix + info.thumbnail;
+            thumb_url = replay_prefix + info.thumbnail;
         }
 
         var tag_name = elem.tagName.toLowerCase();
@@ -479,7 +484,7 @@ __wbvidrw = (function() {
                 format = get_format_ext(info.formats[i]);
             }
 
-            url = wbinfo.prefix + url;
+            url = replay_prefix + url;
             format = type + "/" + format;
 
             source.setAttribute("src", url);
@@ -514,7 +519,7 @@ __wbvidrw = (function() {
             url = info.url;
         }
 
-        url = wbinfo.prefix + url;
+        url = replay_prefix + url;
 
         var config = {
             clip: {
