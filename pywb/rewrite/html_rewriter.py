@@ -83,6 +83,7 @@ class HTMLRewriterMixin(object):
         def getvalue(self):
             return b''.join(self.ls)
 
+
     # ===========================
     def __init__(self, url_rewriter,
                  head_insert=None,
@@ -104,6 +105,8 @@ class HTMLRewriterMixin(object):
 
         # get opts from urlrewriter
         self.opts = url_rewriter.rewrite_opts
+
+        self.parsed_any = False
 
     # ===========================
     META_REFRESH_REGEX = re.compile('^[\\d.]+\\s*;\\s*url\\s*=\\s*(.+?)\\s*$',
@@ -288,6 +291,9 @@ class HTMLRewriterMixin(object):
 
         result = self.out.getvalue()
 
+        # track that something was parsed
+        self.parsed_any = self.parsed_any or bool(string)
+
         # Clear buffer to create new one for next rewrite()
         self.out = None
 
@@ -337,6 +343,12 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
             end_tag = '</' + self._wb_parse_context + '>'
             self.feed(end_tag)
             self._wb_parse_context = None
+
+        # if haven't insert head_insert, but wrote some content
+        # out, then insert head_insert now
+        if self.head_insert and self.parsed_any:
+            self.out.write(self.head_insert)
+            self.head_insert = None
 
         try:
             HTMLParser.close(self)
