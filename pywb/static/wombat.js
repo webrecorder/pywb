@@ -891,7 +891,10 @@ _WBWombat = (function() {
                 var orig_listener = listener;
                 listener = function(event) {
 
-                    var ne = new MessageEvent("message",
+                    var ne = event;
+
+                    if (event.data.origin && event.data.message) {
+                        ne = new MessageEvent("message",
                                     {"bubbles": event.bubbles,
                                      "cancelable": event.cancelable,
                                      "data": event.data.message,
@@ -899,6 +902,7 @@ _WBWombat = (function() {
                                      "lastEventId": event.lastEventId,
                                      "source": event.source,
                                      "ports": event.ports});
+                    }
 
                     return orig_listener(ne);
                 }
