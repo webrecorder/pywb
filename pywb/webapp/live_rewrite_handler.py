@@ -65,6 +65,9 @@ class RewriteHandler(SearchPageWbUrlHandler):
     def _live_request_headers(self, wbrequest):
         return {}
 
+    def _ignore_proxies(self, wbrequest):
+        return False
+
     def render_content(self, wbrequest):
         if wbrequest.wb_url.mod == 'vi_':
             return self._get_video_info(wbrequest)
@@ -76,7 +79,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
         if ref_wburl_str:
             wbrequest.env['REL_REFERER'] = WbUrl(ref_wburl_str).url
 
-        ignore_proxies = False
+        ignore_proxies = self._ignore_proxies(wbrequest)
+
         use_206 = False
         url = None
         rangeres = None
@@ -84,7 +88,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
         readd_range = False
         cache_key = None
 
-        if self.proxies:
+        if self.proxies and not ignore_proxies:
             rangeres = wbrequest.extract_range()
 
             if rangeres:
