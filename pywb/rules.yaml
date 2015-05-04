@@ -157,7 +157,7 @@ rules:
     # youtube rules
     #=================================================================
 
-    - url_prefix: 'com,youtube)/get_video_info'
+    - url_prefix: ['com,youtube)/get_video_info', 'com,youtube-nocookie)/get_video_info']
 
       fuzzy_lookup:
           - video_id
@@ -215,7 +215,7 @@ rules:
 
 
     # watch and embed config changes
-    - url_prefix: 'com,youtube)/'
+    - url_prefix: ['com,youtube)/', 'com,youtube-nocookie)/']
 
       rewrite:
         js_regexs:
