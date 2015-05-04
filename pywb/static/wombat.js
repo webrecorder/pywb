@@ -778,8 +778,8 @@ _WBWombat = (function() {
     //============================================
     function override_attr(obj, attr) {
         var setter = function(orig) {
-            //var val = rewrite_url(orig);
-            var val = orig;
+            var val = rewrite_url(orig);
+            //var val = orig;
             this._orig_setAttribute(attr, val);
             return val;
         }

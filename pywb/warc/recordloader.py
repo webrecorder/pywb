@@ -157,7 +157,7 @@ class ArcWarcRecordLoader:
         # everything else: create a no-status entry, set content-type
         else:
             content_type_header = [('Content-Type', content_type),
-                                   ('Content-Length', length)]
+                                   ('Content-Length', str(length))]
 
             status_headers = StatusAndHeaders('200 OK', content_type_header)
 
