@@ -133,6 +133,27 @@ __wbvidrw = (function() {
                     var value = child.getAttribute("value");
                     obj_url = value;
                 }
+
+                //flashvars extraction: work in progress
+                if (name == "flashvars") {
+                    var value = child.getAttribute("value");
+
+                    var pairs = value.split('&');
+
+                    var result = {};
+                    pairs.forEach(function(pair) {
+                        if (obj_url) {
+                            return;
+                        }
+                        pair = pair.split('=');
+                        var qval = decodeURIComponent(pair[1] || '');
+                        //TODO: allow for picking from multiple urls
+                        if (qval.indexOf("http") == 0) {
+                            obj_url = qval;
+                            return;
+                        }
+                    });
+                }
             }
         }
 
@@ -275,11 +296,24 @@ __wbvidrw = (function() {
             if (xhr.status == 200) {
                 var videoinfo = JSON.parse(xhr.responseText);
 
-                // special case
+                // special cases
+                // Soundcloud
                 if (videoinfo._type == "playlist" && videoinfo.extractor == "soundcloud:playlist") {
                     var player_url = "https://w.soundcloud.com/player/?visual=true&show_artwork=true&url=" + encodeURIComponent(videoinfo.webpage_url);
                     do_replace_iframe(elem, player_url);
                     return;
+                }
+
+                // UStream
+                if (videoinfo.extractor == "ustream") {
+                    if (!videoinfo.formats) {
+                        videoinfo.formats = [{ext: videoinfo.ext,
+                                              url: videoinfo.url,
+                                              format_id: videoinfo.format_id
+                                             }];
+                    }
+
+                    do_replace_video(elem, videoinfo);
                 }
 
                 // end special case
@@ -325,7 +359,7 @@ __wbvidrw = (function() {
     function do_replace_elem(elem, replacement) {
         var tag_name = elem.tagName.toLowerCase();
 
-        if (tag_name == "iframe" || tag_name == "object") {
+        if (tag_name == "iframe" || tag_name == "object" && elem.parentNode) {
             elem.parentNode.replaceChild(replacement, elem);
         } else if (tag_name == "embed") {
             if (elem.parentElement && elem.parentElement.tagName.toLowerCase() == "object") {
