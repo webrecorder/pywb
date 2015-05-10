@@ -92,6 +92,9 @@ r"""
 >>> _test_js('cool_Location = "//example.com/abc.html" //comment')
 'cool_Location = "/web/20131010/http://example.com/abc.html" //comment'
 
+>>> _test_js('A = B;//C + D;')
+'A = B;//C + D;'
+
 # document.cookie test
 >>> _test_js('document.cookie = "a=b; Path=/"')
 'document.WB_wombat_cookie = "a=b; Path=/"'
@@ -103,6 +106,8 @@ r"""
 >>> _test_js('"http:\/\/sub-site.example.com\/path-dashes\/path_other\/foo_bar.txt"')
 '"/web/20131010/http:\\/\\/sub-site.example.com\\/path-dashes\\/path_other\\/foo_bar.txt"'
 
+>>> _test_js('"a=b&amp;http:\/\/example.com/;c=d"')
+'"a=b&amp;/web/20131010/http:\\/\\/example.com/;c=d"'
 
 #=================================================================
 # XML Rewriting
