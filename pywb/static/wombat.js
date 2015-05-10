@@ -747,7 +747,6 @@ _WBWombat = (function() {
             value = func(value);
         }
 
-        // this now handles the actual rewrite
         elem._orig_setAttribute(name, value);
     }
 
@@ -766,8 +765,8 @@ _WBWombat = (function() {
     //============================================
     function rewrite_elem(elem)
     {
-        rewrite_attr(elem, "src");
-        rewrite_attr(elem, "href");
+        rewrite_attr(elem, "src", rewrite_url);
+        rewrite_attr(elem, "href", rewrite_url);
         rewrite_attr(elem, "style", rewrite_style);
 
         if (elem && elem.getAttribute && elem.getAttribute("crossorigin")) {
@@ -826,6 +825,7 @@ _WBWombat = (function() {
                 }
 
                 var created = orig.apply(this, arguments);
+
 
                 if (!created) {
                     return;
@@ -1005,9 +1005,23 @@ _WBWombat = (function() {
         wb_opts = wbinfo.wombat_opts || {};
 
         if (wb_replay_prefix) {
-            wb_replay_date_prefix = wb_replay_prefix + wbinfo.wombat_ts + wbinfo.mod + "/";
 
-            if (wbinfo.wombat_ts.length > 0) {
+            var ts_mod;
+
+            // if live, don't add the timestamp
+            if (wbinfo.is_live) {
+                ts_mod = wbinfo.mod;
+            } else {
+                ts_mod = wbinfo.wombat_ts + wbinfo.mod;
+            }
+
+            if (ts_mod != "") {
+                ts_mod += "/";
+            }
+
+            wb_replay_date_prefix = wb_replay_prefix + ts_mod;
+
+            if (!wbinfo.is_live && wbinfo.wombat_ts.length > 0) {
                 wb_capture_date_part = "/" + wbinfo.wombat_ts + "/";
             } else {
                 wb_capture_date_part = "";
