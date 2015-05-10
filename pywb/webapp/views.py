@@ -150,6 +150,9 @@ class HeadInsertView(J2TemplateView):
     def create_insert_func(self, wbrequest,
                            include_ts=True):
 
+        if wbrequest.options['is_ajax']:
+            return None
+
         url = wbrequest.wb_url.get_url()
 
         top_url = wbrequest.wb_prefix
