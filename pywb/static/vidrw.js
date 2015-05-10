@@ -135,7 +135,7 @@ __wbvidrw = (function() {
                 }
 
                 //flashvars extraction: work in progress: for now, only ustream
-                if (name == "flashvars" && wbinfo.url.indexOf("ustream.com") >= 0) {
+                if (name == "flashvars" && wbinfo.url.indexOf("ustream") >= 0) {
                     var value = child.getAttribute("value");
 
                     var pairs = value.split('&');
