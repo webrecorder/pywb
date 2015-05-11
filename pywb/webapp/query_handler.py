@@ -131,6 +131,7 @@ class QueryHandler(object):
                  'filter': ['!statuscode:(500|502|504)'],
                  'query_closest': wburl.timestamp,
                  'limit': limit,
+                 'matchType': 'exact',
                 },
 
             wburl.URL_QUERY:
@@ -151,6 +152,7 @@ class QueryHandler(object):
                  'limit': replay_closest,
                  'closest': wburl.timestamp,
                  'resolveRevisits': True,
+                 'matchType': 'exact',
                 },
 
             wburl.LATEST_REPLAY:
@@ -161,6 +163,7 @@ class QueryHandler(object):
                  'filter': [],
                  'limit': '1',
                  'resolveRevisits': True,
+                 'matchType': 'exact',
                 }
 
         }[wburl.type]
