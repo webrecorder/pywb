@@ -743,6 +743,10 @@ _WBWombat = (function() {
             return;
         }
 
+        if (elem._no_rewrite) {
+            return;
+        }
+
         if (func) {
             value = func(value);
         }
