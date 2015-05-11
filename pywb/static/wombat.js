@@ -609,7 +609,9 @@ _WBWombat = (function() {
     //============================================
     function init_date_override(timestamp) {
         timestamp = parseInt(timestamp) * 1000;
-        var timezone = new Date().getTimezoneOffset() * 60 * 1000;
+        //var timezone = new Date().getTimezoneOffset() * 60 * 1000;
+        // Already UTC!
+        var timezone = 0;
         var timediff = Date.now() - (timestamp - timezone);
 
         window.__Date = window.Date;
