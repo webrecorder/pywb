@@ -154,6 +154,13 @@ rules:
         replace: 'videos'
         match: 'videos(?:_[^/]+)?/([^?]+)'
 
+    # disqus
+    - url_prefix: 'com,disqus'
+
+      rewrite:
+        js_rewrite_location: location
+
+
     # youtube rules
     #=================================================================
 

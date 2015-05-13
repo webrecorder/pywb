@@ -1137,7 +1137,10 @@ _WBWombat = (function() {
         // setAttribute
         if (!wb_opts.skip_setAttribute) {
             init_setAttribute_override(wb_opts.use_attr_observers);
+        } else {
+            Element.prototype._orig_setAttribute = Element.prototype.setAttribute;
         }
+
         // ensure namespace urls are NOT rewritten
         init_createElementNS_fix();
 
