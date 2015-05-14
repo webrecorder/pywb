@@ -130,7 +130,7 @@ Samples and Tests
 
 To run with the bundled sample and test suite, you'll need to clone pywb locally:
 
-1. ``git clone https://github.com/ikreymer/pywb.git``
+1. ``git clone https://github.com/ikreymer/pywb.git; cd pywb``
 
 2. ``python setup.py install``
 
