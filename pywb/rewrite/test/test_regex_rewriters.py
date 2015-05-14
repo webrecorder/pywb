@@ -37,7 +37,7 @@ r"""
 'WB_wombat_location = "/web/20131010/http://example.com/abc.html?^foo=http://abc.example.com";//some comments'
 
 >>> _test_js(r'location = "//example.com/abc.html?^foo=http://abc.example.com"//some comments')
-'WB_wombat_location = "/web/20131010/http://example.com/abc.html?^foo=http://abc.example.com"//some comments'
+'WB_wombat_location = "/web/20131010/https://example.com/abc.html?^foo=http://abc.example.com"//some comments'
 
 # not rewritten -- to be handled on client side
 >>> _test_js(r'location = "/abc.html"')
@@ -74,15 +74,15 @@ r"""
 >>> _test_js('top = top + 5')
 'top = top + 5'
 
-# protocol-rel escapes
+# protocol-rel escapes -- use protocol of full prefix
 >>> _test_js('"//example.com/"')
-'"/web/20131010/http://example.com/"'
+'"/web/20131010/https://example.com/"'
 
 >>> _test_js(r'"\/\/example.com/"')
-'"/web/20131010/http:\\/\\/example.com/"'
+'"/web/20131010/https:\\/\\/example.com/"'
 
 >>> _test_js(r'"\\/\\/example.com/"')
-'"/web/20131010/http:\\\\/\\\\/example.com/"'
+'"/web/20131010/https:\\\\/\\\\/example.com/"'
 
 # custom rules added
 >>> _test_js('window.location = "http://example.com/abc.html"; some_func(); ', [('some_func\(\).*', RegexRewriter.format('/*{0}*/'), 0)])
@@ -90,7 +90,7 @@ r"""
 
 # scheme-agnostic
 >>> _test_js('cool_Location = "//example.com/abc.html" //comment')
-'cool_Location = "/web/20131010/http://example.com/abc.html" //comment'
+'cool_Location = "/web/20131010/https://example.com/abc.html" //comment'
 
 >>> _test_js('A = B;//C + D;')
 'A = B;//C + D;'
@@ -185,7 +185,7 @@ from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.regex_rewriters import RegexRewriter, JSRewriter, CSSRewriter, XMLRewriter
 
 
-urlrewriter = UrlRewriter('20131010/http://example.com/', '/web/')
+urlrewriter = UrlRewriter('20131010/http://example.com/', '/web/', 'https://localhost/web/')
 
 
 def _test_js(string, extra = []):
