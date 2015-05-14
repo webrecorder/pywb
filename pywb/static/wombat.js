@@ -533,7 +533,8 @@ _WBWombat = (function() {
                 async = true;
             }
 
-            return orig.call(this, method, url, async, user, password);
+            result = orig.call(this, method, url, async, user, password);
+            this.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
         }
 
         window.XMLHttpRequest.prototype.open = open_rewritten;
@@ -741,6 +742,11 @@ _WBWombat = (function() {
                 var r = records[i];
                 if (r.type == "childList") {
                     for (var j = 0; j < r.addedNodes.length; j++) {
+                        // skip canonical link tag, should have been handled by server-side rewrite
+                        // (maybe skip all links?)
+                        if (r.addedNodes[j].tagName == "LINK" && r.addedNodes[j].rel == "canonical") {
+                            continue;
+                        }
                         rewrite_attr(r.addedNodes[j], "href", rewrite_url);
                         rewrite_attr(r.addedNodes[j], "src", rewrite_url);
                     }
@@ -870,7 +876,6 @@ _WBWombat = (function() {
                     if (created.contentWindow && !created.contentWindow.WB_wombat_location) {
                         created.contentWindow.WB_wombat_location = created.contentWindow.location;
                     }
-
 
                     override_attr(created, "src");
                 } else if (created.tagName && equals_any(created.tagName, SRC_TAGS)) {
