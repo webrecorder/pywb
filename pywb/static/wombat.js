@@ -1,5 +1,5 @@
 /*
-Copyright(c) 2013-2014 Ilya Kreymer. Released under the GNU General Public License.
+Copyright(c) 2013-2015 Ilya Kreymer. Released under the GNU General Public License.
 
 This file is part of pywb, https://github.com/ikreymer/pywb
 
@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.2
+// Wombat JS-Rewriting Library v2.3
 //============================================
 _WBWombat = (function() {
 
@@ -712,7 +712,6 @@ _WBWombat = (function() {
                     var curr = r.target.getAttribute(r.attributeName);
                     var new_url = rewrite_url(curr);
                     if (curr != new_url) {
-                        console.log("REWRITE " + r.attributeName);
                         r.target._orig_setAttribute(r.attributeName, new_url);
                     }
                 }
@@ -728,6 +727,32 @@ _WBWombat = (function() {
              
     }
 
+
+    //============================================
+    function init_node_insert_obs()
+    {
+        if (!window.MutationObserver) {
+            return;
+        }
+
+        var m = new MutationObserver(function(records, observer)
+        {
+            for (var i = 0; i < records.length; i++) {
+                var r = records[i];
+                if (r.type == "childList") {
+                    for (var j = 0; j < r.addedNodes.length; j++) {
+                        rewrite_attr(r.addedNodes[j], "href", rewrite_url);
+                        rewrite_attr(r.addedNodes[j], "src", rewrite_url);
+                    }
+                }
+            }
+        });
+
+        m.observe(document.documentElement, {
+                                  childList: true,
+                                  subtree: true,
+                                  });
+    }
 
     //============================================
     function rewrite_attr(elem, name, func) {
@@ -749,11 +774,15 @@ _WBWombat = (function() {
             return;
         }
 
+        var new_value = value;
+
         if (func) {
-            value = func(value);
+            new_value = func(value);
         }
 
-        elem._orig_setAttribute(name, value);
+        if (value != new_value) {
+            elem._orig_setAttribute(name, new_value);
+        }
     }
 
     //============================================
@@ -841,6 +870,7 @@ _WBWombat = (function() {
                     if (created.contentWindow && !created.contentWindow.WB_wombat_location) {
                         created.contentWindow.WB_wombat_location = created.contentWindow.location;
                     }
+
 
                     override_attr(created, "src");
                 } else if (created.tagName && equals_any(created.tagName, SRC_TAGS)) {
@@ -1139,6 +1169,11 @@ _WBWombat = (function() {
             init_setAttribute_override(wb_opts.use_attr_observers);
         } else {
             Element.prototype._orig_setAttribute = Element.prototype.setAttribute;
+        }
+
+        // Node insert observer
+        if (!wb_opts.skip_node_obs) {
+            init_node_insert_obs();
         }
 
         // ensure namespace urls are NOT rewritten
