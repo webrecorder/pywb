@@ -1176,8 +1176,8 @@ _WBWombat = (function() {
             Element.prototype._orig_setAttribute = Element.prototype.setAttribute;
         }
 
-        // Node insert observer
-        if (!wb_opts.skip_node_obs) {
+        // Node insert observer -- not enabled by default
+        if (wb_opts.use_node_observers) {
             init_node_insert_obs();
         }
 
