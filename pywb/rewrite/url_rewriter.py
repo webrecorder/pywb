@@ -23,9 +23,13 @@ class UrlRewriter(object):
                  root_path=None, cookie_scope=None, rewrite_opts={}):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
         self.prefix = prefix
-        self.full_prefix = full_prefix
-        self.rel_prefix = rel_prefix if rel_prefix else prefix
-        self.root_path = root_path if root_path else '/'
+        self.full_prefix = full_prefix or prefix
+        self.rel_prefix = rel_prefix or prefix
+        self.root_path = root_path or '/'
+        if self.full_prefix and self.full_prefix.startswith(self.PROTOCOLS):
+            self.prefix_scheme = self.full_prefix.split(':')[0]
+        else:
+            self.prefix_scheme = None
         self.cookie_scope = cookie_scope
         self.rewrite_opts = rewrite_opts
 
@@ -53,7 +57,9 @@ class UrlRewriter(object):
 
         if url.startswith(self.REL_SCHEME):
             is_abs = True
-            url = 'http:' + url
+            # if prefix starts with a scheme
+            if self.prefix_scheme:
+                url = self.prefix_scheme + ':' + url
 
         # optimize: join if not absolute url, otherwise just use as is
         if not is_abs:
@@ -65,6 +71,10 @@ class UrlRewriter(object):
             mod = wburl.mod
 
         final_url = self.prefix + wburl.to_str(mod=mod, url=new_url)
+        # experiment for setting scheme rel url
+        #if scheme_rel and self.prefix.startswith(self.PROTOCOLS):
+        #    final_url = final_url.split(':', 1)[1]
+
         return final_url
 
     def get_new_url(self, **kwargs):
