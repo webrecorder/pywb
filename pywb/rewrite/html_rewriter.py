@@ -101,6 +101,7 @@ class HTMLRewriterMixin(object):
         self.head_insert = head_insert
         self.parse_comments = parse_comments
 
+        self.defmod = defmod
         self.rewrite_tags = self._init_rewrite_tags(defmod)
 
         # get opts from urlrewriter
@@ -391,7 +392,14 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
     def handle_comment(self, data):
         self.out.write('<!--')
         if self.parse_comments:
-            data = self._rewrite_script(data)
+            #data = self._rewrite_script(data)
+
+            # Rewrite with seperate HTMLRewriter
+            comment_rewriter = HTMLRewriter(self.url_rewriter,
+                                            defmod=self.defmod)
+
+            data = comment_rewriter.rewrite(data)
+            data += comment_rewriter.close()
             self.out.write(data)
         else:
             self.parse_data(data)
