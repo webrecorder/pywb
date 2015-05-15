@@ -1,3 +1,22 @@
+pywb 0.9.8 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* wombat fixes: fixes situation where setAttribute was not being rewritten.
+
+* wombat fixes: follow ``_no_rewrite`` more consistently, remove incorrect timezone offset.
+
+* wombat: new 'node added' mutation observer which will rewrite any newly added elements, may simplify other
+  rewriting cases. Not enabled by default yet requires setting ``client.use_node_observers`` to use.
+
+* html rewrite: handle ``parse_comments`` by rewriting as html, instead of as javascript.
+
+* html rewrite: if html content has no <head> tags and no body tags, insert head_insert at end of document.
+
+* html rewrite: don't insert banner in ajax requests, wombat always adds ``X-Requested-With: XMLHttpRequest``.
+
+* scheme relative urls: rewrite to current scheme, if known, otherwise keep scheme relative, instead of defaulting to http.
+
+
 pywb 0.9.7 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
