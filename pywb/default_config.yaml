@@ -33,6 +33,8 @@ head_insert_html: head_insert.html
 frame_insert_html: frame_insert.html
 banner_html: banner.html
 
+#archive_paths: ./
+
 home_html: index.html
 
 query_html: query.html
