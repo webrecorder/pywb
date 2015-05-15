@@ -124,8 +124,9 @@ def create_cdx_server_app(passed_config):
     # collections based on file system
     if config.get('enable_auto_colls', True):
         colls_loader_cls = config.get('colls_loader_cls', DirectoryCollsLoader)
-        dir_loader = colls_loader_cls(config, static_routes)
-        collections.update(dir_loader())
+        dir_loader = colls_loader_cls(config, static_routes, collections)
+        dir_loader()
+        #collections.update(dir_loader())
 
     routes = []
 
@@ -142,12 +143,13 @@ def create_cdx_server_app(passed_config):
 
 #=================================================================
 class DirectoryCollsLoader(object):
-    def __init__(self, config, static_routes):
+    def __init__(self, config, static_routes, colls):
         self.config = config
         self.static_routes = static_routes
+        self.colls = colls
 
     def __call__(self):
-        colls = {}
+        colls = self.colls
 
         static_dir = self.config.get('paths')['static_path']
         static_shared_prefix = self.config.get('static_shared_prefix')
@@ -167,7 +169,11 @@ class DirectoryCollsLoader(object):
 
             coll_config = self.load_coll_dir(full, name)
             if coll_config:
-                colls[name] = coll_config
+                # if already exists, override existing config with coll specific
+                if name in colls:
+                    colls[name].update(coll_config)
+                else:
+                    colls[name] = coll_config
 
         return colls
 
@@ -263,8 +269,9 @@ def create_wb_router(passed_config=None):
     # collections based on file system
     if config.get('enable_auto_colls', True):
         colls_loader_cls = config.get('colls_loader_cls', DirectoryCollsLoader)
-        dir_loader = colls_loader_cls(config, static_routes)
-        collections.update(dir_loader())
+        dir_loader = colls_loader_cls(config, static_routes, collections)
+        dir_loader()
+        #collections.update(dir_loader())
 
     if config.get('enable_memento', False):
         request_class = MementoRequest
