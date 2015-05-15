@@ -1,12 +1,13 @@
 pywb 0.9.8 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* auto config: allow custom settings in shared ``config.yaml`` to be combined with automatic collection settings
-  per collection ``config.yaml``
+* auto config: allow custom settings set in shared ``config.yaml`` to be used with automatic collections.
 
 * wombat fixes: fixes situation where setAttribute was not being rewritten.
 
-* wombat fixes: follow ``_no_rewrite`` more consistently, remove incorrect timezone offset.
+* wombat fixes: obey ``_no_rewrite==true`` more consistently in rewrite_elem
+
+* wombat fixes: remove incorrect timezone offset in Date override.
 
 * wombat: new 'node added' mutation observer which will rewrite any newly added elements, may simplify other
   rewriting cases. Not enabled by default yet requires setting ``client.use_node_observers`` to use.
