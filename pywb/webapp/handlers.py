@@ -1,6 +1,7 @@
 import pkgutil
 import mimetypes
 import time
+import logging
 
 from datetime import datetime
 
@@ -144,6 +145,7 @@ class WBHandler(SearchPageWbUrlHandler):
     def resolve_refs(self, handler_dict):
         if self.fallback_name:
             self.fallback_handler = handler_dict.get(self.fallback_name)
+            logging.debug('Fallback Handler: ' + self.fallback_name)
 
     def handle_request(self, wbrequest):
         cdx_lines, output = self.index_reader.load_for_request(wbrequest)
