@@ -1,12 +1,17 @@
 pywb 0.9.8 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* auto config: allow custom settings in shared ``config.yaml`` to be combined with automatic collection settings
+  per collection ``config.yaml``
+
 * wombat fixes: fixes situation where setAttribute was not being rewritten.
 
 * wombat fixes: follow ``_no_rewrite`` more consistently, remove incorrect timezone offset.
 
 * wombat: new 'node added' mutation observer which will rewrite any newly added elements, may simplify other
   rewriting cases. Not enabled by default yet requires setting ``client.use_node_observers`` to use.
+
+* regex rewrite: tweak ``top`` and scheme relative regexes to better avoid false positives
 
 * html rewrite: handle ``parse_comments`` by rewriting as html, instead of as javascript.
 
