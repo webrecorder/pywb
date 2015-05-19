@@ -243,6 +243,9 @@ var wombat_internal = function(window) {
         href = href.toString();
 
         var index = href.indexOf("/http", 1);
+        if (index < 0) {
+            index = href.indexOf("///", 1);
+        }
 
         // extract original url from wburl
         if (index > 0) {

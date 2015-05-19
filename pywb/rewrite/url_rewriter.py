@@ -55,11 +55,14 @@ class UrlRewriter(object):
 
         is_abs = url.startswith(self.PROTOCOLS)
 
+        scheme_rel = False
         if url.startswith(self.REL_SCHEME):
             is_abs = True
+            scheme_rel = True
             # if prefix starts with a scheme
-            if self.prefix_scheme:
-                url = self.prefix_scheme + ':' + url
+            #if self.prefix_scheme:
+            #    url = self.prefix_scheme + ':' + url
+            #url = 'http:' + url
 
         # optimize: join if not absolute url, otherwise just use as is
         if not is_abs:
@@ -72,8 +75,8 @@ class UrlRewriter(object):
 
         final_url = self.prefix + wburl.to_str(mod=mod, url=new_url)
         # experiment for setting scheme rel url
-        #if scheme_rel and self.prefix.startswith(self.PROTOCOLS):
-        #    final_url = final_url.split(':', 1)[1]
+        if scheme_rel and self.prefix.startswith(self.PROTOCOLS):
+            final_url = final_url.split(':', 1)[1]
 
         return final_url
 
