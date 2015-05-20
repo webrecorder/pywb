@@ -930,8 +930,8 @@ var wombat_internal = function(window) {
                     //override_attr(created, "src");
                 } else if (equals_any(created.tagName, SRC_TAGS)) {
                     override_attr(created, "src");
-                //} else if (equals_any(created.tagName, HREF_TAGS)) {
-                //    override_attr(created, "href");
+                } else if (equals_any(created.tagName, HREF_TAGS)) {
+                    override_attr(created, "href");
                 }
 
                 return created;
