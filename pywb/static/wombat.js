@@ -301,7 +301,6 @@ var wombat_internal = function(window) {
             //if (obj && obj.tagName) {
             //    info += " on " + obj.tagName;
             //}
-            //console.log(info);
             if (value != obj[prop]) {
                 obj[prop] = value;
             }
@@ -391,7 +390,8 @@ var wombat_internal = function(window) {
 
         this.pathname = parser.pathname;
         this.port = parser.port
-        this.protocol = parser.protocol;
+        //this.protocol = parser.protocol;
+        this.protocol = window.location.protocol;
         this.search = parser.search;
 
         this.toString = function() {
@@ -582,6 +582,31 @@ var wombat_internal = function(window) {
             orig_setAttribute.call(this, name, value);
         };
     }
+
+    //============================================
+    function init_createElement_override()
+    {
+        if (!window.document.createElement ||
+            !Document.prototype.createElement) {
+            return;
+        }
+
+        window.document._orig_createElement = window.document.createElement;
+        var createElement_override = function(tagName)
+        {
+            var created = window.document._orig_createElement(tagName);
+            if (!created) {
+                return;
+            }
+
+            add_attr_overrides(tagName.toUpperCase(), created);
+
+            return created;
+        }
+
+        Document.prototype.createElement = createElement_override;
+        window.document.createElement = createElement_override;
+     }
 
     //============================================
     function init_createElementNS_fix()
@@ -830,11 +855,55 @@ var wombat_internal = function(window) {
     }
 
     //============================================
+    function rewrite_innerHTML(string) {
+        var inner_doc = new DOMParser().parseFromString(string, "text/html");
+
+        if (!inner_doc) {
+            return string;
+        }
+
+        var new_html = "";
+
+        if (inner_doc.head.innerHTML) {
+            var elems = inner_doc.head.children;
+
+            for (var i = 0; i < elems.length; i++) {
+                // Call orig write to ensure same execution order and placement
+                rewrite_elem(elems[i]);
+            }
+            new_html += inner_doc.head.innerHTML;
+        }
+
+        if (inner_doc.body.innerHTML) {
+            var elems = inner_doc.body.children;
+
+            for (var i = 0; i < elems.length; i++) {
+                // Call orig write to ensure same execution order and placement
+                rewrite_elem(elems[i]);
+            }
+            new_html += inner_doc.body.innerHTML;
+        }
+
+        return new_html;
+    }
+
+    //============================================
+    function add_attr_overrides(tagName, created)
+    {
+        if (equals_any(tagName, SRC_TAGS)) {
+            override_attr(created, "src");
+        } else if (equals_any(tagName, HREF_TAGS)) {
+            override_attr(created, "href");
+        }
+
+        override_innerHTML(created);
+    }
+
+    //============================================
     function override_attr(obj, attr) {
         var setter = function(orig) {
             var val = rewrite_url(orig);
-            //var val = orig;
-            this._orig_setAttribute(attr, val);
+            this.setAttribute(attr, val);
             return val;
         }
 
@@ -846,6 +915,27 @@ var wombat_internal = function(window) {
         var curr_src = obj.getAttribute(attr);
 
         def_prop(obj, attr, curr_src, setter, getter);
+    }
+
+    //============================================
+    function override_innerHTML(obj) {
+        if (!window.DOMParser) {
+            return;
+        }
+
+        var orig_getter = obj.__lookupGetter__("innerHTML");
+        var orig_setter = obj.__lookupSetter__("innerHTML");
+
+        var setter = function(orig) {
+            var res = rewrite_innerHTML(orig);
+            orig_setter.call(this, res);
+        }
+
+        var getter = function() {
+            return orig_getter.call(this);
+        }
+
+        def_prop(obj, "innerHTML", undefined, setter, getter);
     }
 
     //============================================
@@ -884,6 +974,23 @@ var wombat_internal = function(window) {
     }
 
     //============================================
+    function rewrite_fragment(child) {
+        var desc;
+        rewrite_elem(child);
+
+        if (child.querySelectorAll) {
+            desc = child.querySelectorAll("[href], [src]");
+        }
+
+        if (desc) {
+            for (var i = 0; i < desc.length; i++) {
+                rewrite_elem(desc[i]);
+            }
+        }
+    }
+
+
+    //============================================
     function init_dom_override() {
         if (!Node || !Node.prototype) {
             return;
@@ -895,43 +1002,27 @@ var wombat_internal = function(window) {
             Node.prototype[funcname] = function() {
                 var child = arguments[0];
 
-                rewrite_elem(child);
 
-                var desc;
+                var need_attr_overrides = false;
 
-                //if (child instanceof DocumentFragment) {
-                //    desc = child.querySelectorAll("a[href], iframe[src]");
-                //} else if (child.getElementsByTagName) {
-                //    desc = child.getElementsByTagName("*");
-                //}
-                if (child.querySelectorAll) {
-                    desc = child.querySelectorAll("[href], [src]");
-                }
-
-                if (desc) {
-                    for (var i = 0; i < desc.length; i++) {
-                        rewrite_elem(desc[i]);
-                    }
+                // if fragment, rewrite children before adding
+                if (child instanceof DocumentFragment) {
+                    rewrite_fragment(child);
+                    need_attr_overrides = true;
                 }
 
                 var created = orig.apply(this, arguments);
 
-
-                if (!created) {
+                if (!created || !created.tagName) {
                     return;
-                }
-
-                if (!created.tagName) {
-                    return created;
                 }
 
                 if (created.tagName == "IFRAME") {
                     wombat_init_all(created.contentWindow);
-                    //override_attr(created, "src");
-                } else if (equals_any(created.tagName, SRC_TAGS)) {
-                    override_attr(created, "src");
-                } else if (equals_any(created.tagName, HREF_TAGS)) {
-                    override_attr(created, "href");
+                }
+
+                if (need_attr_overrides) {
+                    add_attr_overrides(created.tagName, created);
                 }
 
                 return created;
@@ -1060,6 +1151,10 @@ var wombat_internal = function(window) {
     //============================================
     function init_write_override()
     {
+        if (!window.DOMParser) {
+            return;
+        }
+
         var orig_doc_write = window.document.write;
 
         window.document.write = function(string) {
@@ -1215,9 +1310,12 @@ var wombat_internal = function(window) {
         }
 
         // Node insert observer -- not enabled by default
-        if (true || wb_opts.use_node_observers) {
+        if (wb_opts.use_node_observers) {
             init_node_insert_obs();
         }
+
+        // createElement attr override
+        init_createElement_override();
 
         // ensure namespace urls are NOT rewritten
         init_createElementNS_fix();
