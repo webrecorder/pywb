@@ -25,8 +25,9 @@
 
   wbinfo.wombat_opts = {{ wbrequest.rewrite_opts.client | tojson if wbrequest.rewrite_opts.client else '{}' }};
 
-  if (window && window._WBWombat && !window._wb_js_inited) {
-    var _wb_wombat = new _WBWombat(wbinfo);
+
+  if (window && window._WBWombat && !window._wb_js_inited && !window._wb_wombat) {
+    window._wb_wombat = new _WBWombat(wbinfo);
   }
 </script>
 {% endif %}
