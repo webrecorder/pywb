@@ -25,7 +25,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
 _wb_js.create_banner_element = function(banner_id)
 {
 
-    var banner = document.createElement("wb_div");
+    var banner = document.createElement("wb_div", true);
     banner.setAttribute("id", banner_id);
     banner.setAttribute("lang", "en");
 
