@@ -895,12 +895,11 @@ var wombat_internal = function(window) {
         } else if (equals_any(tagName, HREF_TAGS)) {
             override_attr(created, "href");
         }
-
-        override_innerHTML(created);
     }
 
     //============================================
     function override_attr(obj, attr) {
+        return;
         var setter = function(orig) {
             var val = rewrite_url(orig);
             this.setAttribute(attr, val);
@@ -918,16 +917,37 @@ var wombat_internal = function(window) {
     }
 
     //============================================
-    function override_innerHTML(obj) {
+    function override_proto_prop(obj, prop) {
         if (!window.DOMParser) {
             return;
         }
 
-        var orig_getter = obj.__lookupGetter__("innerHTML");
-        var orig_setter = obj.__lookupSetter__("innerHTML");
+        var orig_getter;
+        var orig_setter;
+
+        if (obj.__lookupGetter__) {
+            orig_getter = obj.__lookupGetter__(prop);
+        }
+
+        if (obj.__lookupSetter__) {
+            orig_setter = obj.__lookupSetter__(prop);
+        }
+
+        if ((!orig_getter || !orig_setter) && Object.getOwnPropertyDescriptor) {
+            var props = Object.getOwnPropertyDescriptor(obj, prop);
+            if (props) {
+                orig_getter = props.get;
+                orig_setter = props.set;
+            }
+        }
+
+        if (!orig_getter || !orig_setter) {
+            return;
+        }
 
         var setter = function(orig) {
             var res = rewrite_innerHTML(orig);
+            console.log(prop);
             orig_setter.call(this, res);
         }
 
@@ -935,7 +955,7 @@ var wombat_internal = function(window) {
             return orig_getter.call(this);
         }
 
-        def_prop(obj, "innerHTML", undefined, setter, getter);
+        Object.defineProperty(obj, prop, {set: setter, get: getter, configurable: false, enumerable: true});
     }
 
     //============================================
@@ -1302,6 +1322,11 @@ var wombat_internal = function(window) {
         // Init mutation observer (for style only)
         init_mutation_obs();
 
+
+        // innerHTML and outerHTML can be overriden on prototype!
+        override_proto_prop(HTMLElement.prototype, "innerHTML");
+        override_proto_prop(HTMLElement.prototype, "outerHTML");
+
         // setAttribute
         if (!wb_opts.skip_setAttribute) {
             init_setAttribute_override(wb_opts.use_attr_observers);
@@ -1329,7 +1354,7 @@ var wombat_internal = function(window) {
         // DOM
         // OPT skip
         if (!wb_opts.skip_dom) {
-            init_dom_override();
+            //init_dom_override();
         }
 
         // Random
