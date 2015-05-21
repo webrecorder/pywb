@@ -37,7 +37,7 @@ r"""
 'WB_wombat_location = "/web/20131010/http://example.com/abc.html?^foo=http://abc.example.com";//some comments'
 
 >>> _test_js(r'location = "//example.com/abc.html?^foo=http://abc.example.com"//some comments')
-'WB_wombat_location = "/web/20131010/https://example.com/abc.html?^foo=http://abc.example.com"//some comments'
+'WB_wombat_location = "/web/20131010///example.com/abc.html?^foo=http://abc.example.com"//some comments'
 
 # not rewritten -- to be handled on client side
 >>> _test_js(r'location = "/abc.html"')
@@ -55,11 +55,12 @@ r"""
 >>> _test_js('cool_Location = "http://example.com/abc.html"')
 'cool_Location = "/web/20131010/http://example.com/abc.html"'
 
->>> _test_js('window.location = "http://example.com/abc.html" document.domain = "anotherdomain.com"')
-'window.WB_wombat_location = "/web/20131010/http://example.com/abc.html" document.WB_wombat_domain = "anotherdomain.com"'
+# not rewriting WB_wombat_domain
+#>>> _test_js('window.location = "http://example.com/abc.html" document.domain = "anotherdomain.com"')
+#'window.WB_wombat_location = "/web/20131010/http://example.com/abc.html" document.WB_wombat_domain = "anotherdomain.com"'
 
->>> _test_js('document_domain = "anotherdomain.com"; window.document.domain = "example.com"')
-'document_domain = "anotherdomain.com"; window.document.WB_wombat_domain = "example.com"'
+#>>> _test_js('document_domain = "anotherdomain.com"; window.document.domain = "example.com"')
+#'document_domain = "anotherdomain.com"; window.document.WB_wombat_domain = "example.com"'
 
 # top test
 >>> _test_js('window.top != window')
@@ -74,15 +75,15 @@ r"""
 >>> _test_js('top = top + 5')
 'top = top + 5'
 
-# protocol-rel escapes -- use protocol of full prefix
+# protocol-rel escapes -- keep protocol relative
 >>> _test_js('"//example.com/"')
-'"/web/20131010/https://example.com/"'
+'"/web/20131010///example.com/"'
 
 >>> _test_js(r'"\/\/example.com/"')
-'"/web/20131010/https:\\/\\/example.com/"'
+'"/web/20131010/\\/\\/example.com/"'
 
 >>> _test_js(r'"\\/\\/example.com/"')
-'"/web/20131010/https:\\\\/\\\\/example.com/"'
+'"/web/20131010/\\\\/\\\\/example.com/"'
 
 # custom rules added
 >>> _test_js('window.location = "http://example.com/abc.html"; some_func(); ', [('some_func\(\).*', RegexRewriter.format('/*{0}*/'), 0)])
@@ -90,14 +91,15 @@ r"""
 
 # scheme-agnostic
 >>> _test_js('cool_Location = "//example.com/abc.html" //comment')
-'cool_Location = "/web/20131010/https://example.com/abc.html" //comment'
+'cool_Location = "/web/20131010///example.com/abc.html" //comment'
 
 >>> _test_js('A = B;//C + D;')
 'A = B;//C + D;'
 
+# not rewriting document.cookie
 # document.cookie test
->>> _test_js('document.cookie = "a=b; Path=/"')
-'document.WB_wombat_cookie = "a=b; Path=/"'
+#>>> _test_js('document.cookie = "a=b; Path=/"')
+#'document.WB_wombat_cookie = "a=b; Path=/"'
 
 # js-escaped
 >>> _test_js('&quot;http:\\/\\/www.example.com\\/some\\/path\\/?query=1&quot;')
