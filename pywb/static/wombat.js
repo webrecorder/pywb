@@ -121,7 +121,7 @@ var wombat_internal = function(window) {
                         "http:/" + prefix, "https:/" + prefix];
     }
 
-    var SRC_TAGS = ["IMG", "SCRIPT", "VIDEO", "AUDIO", "SOURCE", "EMBED", "INPUT"];
+    var SRC_TAGS = ["IFRAME", "IMG", "SCRIPT", "VIDEO", "AUDIO", "SOURCE", "EMBED", "INPUT"];
 
     var HREF_TAGS = ["LINK", "A"];
 
@@ -199,13 +199,14 @@ var wombat_internal = function(window) {
         var prefix = starts_with(url, VALID_PREFIXES);
 
         if (prefix) {
-            // if already rewriting url, must still check scheme
+            // if already rewritten url, must still check scheme
             if (starts_with(url, prefix + window.location.host + '/')) {
                 var curr_scheme = window.location.protocol + '//';
 
                 // replace scheme to ensure using the correct server scheme
-                if (starts_with(url, wb_orig_scheme) && (wb_orig_scheme != curr_scheme)) {
-                    url = curr_scheme + url.substring(wb_orig_scheme.length);
+                //if (starts_with(url, wb_orig_scheme) && (wb_orig_scheme != curr_scheme)) {
+                if (prefix != curr_scheme && prefix != REL_PREFIX) {
+                    url = curr_scheme + url.substring(prefix.length);
                 }
                 return url;
             }
@@ -300,8 +301,9 @@ var wombat_internal = function(window) {
             });
             return true;
         } catch (e) {
-            //var info = "Can't redefine prop " + prop;
-            //if (obj && obj.tagName) {
+            var info = "Can't redefine prop " + prop;
+            console.log(info);
+            //f (obj && obj.tagName) {
             //    info += " on " + obj.tagName;
             //}
             if (value != obj[prop]) {
@@ -551,7 +553,7 @@ var wombat_internal = function(window) {
     }
 
     //============================================
-    function init_setAttribute_override(use_obs)
+    function init_setAttribute_override()
     {
         if (!window.Element ||
             !window.Element.prototype ||
@@ -561,14 +563,9 @@ var wombat_internal = function(window) {
 
         var orig_setAttribute = window.Element.prototype.setAttribute;
 
-        Element.prototype._orig_setAttribute = orig_setAttribute;
+        window.Element.prototype._orig_setAttribute = orig_setAttribute;
 
-        if (use_obs) {
-            init_href_src_obs();
-            return;
-        }
-
-        Element.prototype.setAttribute = function(name, value) {
+        window.Element.prototype.setAttribute = function(name, value) {
             if (name) {
                 var lowername = name.toLowerCase();
                 if (equals_any(lowername, REWRITE_ATTRS) && typeof(value) == "string") {
@@ -590,24 +587,24 @@ var wombat_internal = function(window) {
     function init_createElement_override()
     {
         if (!window.document.createElement ||
-            !Document.prototype.createElement) {
+            !window.Document.prototype.createElement) {
             return;
         }
 
-        window.document._orig_createElement = window.document.createElement;
+        var orig_createElement = window.document.createElement;
+        
         var createElement_override = function(tagName)
         {
-            var created = window.document._orig_createElement(tagName);
-            if (!created) {
-                return;
+            var created = orig_createElement.call(this, tagName);
+            
+            if (created) {
+                add_attr_overrides(tagName.toUpperCase(), created);
             }
-
-            add_attr_overrides(tagName.toUpperCase(), created);
 
             return created;
         }
 
-        Document.prototype.createElement = createElement_override;
+        window.Document.prototype.createElement = createElement_override;
         window.document.createElement = createElement_override;
      }
 
@@ -615,18 +612,19 @@ var wombat_internal = function(window) {
     function init_createElementNS_fix()
     {
         if (!window.document.createElementNS ||
-            !Document.prototype.createElementNS) {
+            !window.Document.prototype.createElementNS) {
             return;
         }
 
-        window.document._orig_createElementNS = window.document.createElementNS;
+        var orig_createElementNS = window.document.createElementNS;
+
         var createElementNS_fix = function(namespaceURI, qualifiedName)
         {
             namespaceURI = extract_orig(namespaceURI);
-            return window.document._orig_createElementNS(namespaceURI, qualifiedName);
+            return orig_createElementNS.call(this, namespaceURI, qualifiedName);
         }
 
-        Document.prototype.createElementNS = createElementNS_fix;
+        window.Document.prototype.createElementNS = createElementNS_fix;
         window.document.createElementNS = createElementNS_fix;
     }
 
@@ -703,7 +701,7 @@ var wombat_internal = function(window) {
 
 
     //============================================
-    function init_mutation_obs() {
+    function init_mutation_obs(window) {
         if (!window.MutationObserver) {
             return;
         }
@@ -734,7 +732,7 @@ var wombat_internal = function(window) {
 
 
     //============================================
-    function init_href_src_obs()
+    function init_href_src_obs(window)
     {
         if (!window.MutationObserver) {
             return;
@@ -748,7 +746,7 @@ var wombat_internal = function(window) {
                     var curr = r.target.getAttribute(r.attributeName);
                     var new_url = rewrite_url(curr);
                     if (curr != new_url) {
-                        r.target._orig_setAttribute(r.attributeName, new_url);
+                        r.target.setAttribute(r.attributeName, new_url);
                     }
                 }
             }
@@ -765,7 +763,7 @@ var wombat_internal = function(window) {
 
 
     //============================================
-    function init_node_insert_obs()
+    function init_node_insert_obs(window)
     {
         if (!window.MutationObserver) {
             return;
@@ -785,7 +783,7 @@ var wombat_internal = function(window) {
                         rewrite_attr(r.addedNodes[j], "href", rewrite_url);
                         rewrite_attr(r.addedNodes[j], "src", rewrite_url);
                         if (r.addedNodes[j].tagName == "IFRAME") {
-                            wombat_init_all(r.addedNodes[j].contentWindow);
+                            init_iframe_wombat(r.addedNodes[j]);
                         }
                     }
                 }
@@ -825,11 +823,7 @@ var wombat_internal = function(window) {
         }
 
         if (value != new_value) {
-            if (elem._orig_setAttribute) {
-                elem._orig_setAttribute(name, new_value);
-            } else {
-                elem.setAttribute(name, new_value);
-            }
+            elem.setAttribute(name, new_value);
         }
     }
 
@@ -893,6 +887,10 @@ var wombat_internal = function(window) {
     //============================================
     function add_attr_overrides(tagName, created)
     {
+        if (created._src || created._href) {
+           return;
+        }
+
         if (equals_any(tagName, SRC_TAGS)) {
             override_attr(created, "src");
         } else if (equals_any(tagName, HREF_TAGS)) {
@@ -902,7 +900,6 @@ var wombat_internal = function(window) {
 
     //============================================
     function override_attr(obj, attr) {
-        return;
         var setter = function(orig) {
             var val = rewrite_url(orig);
             this.setAttribute(attr, val);
@@ -911,6 +908,7 @@ var wombat_internal = function(window) {
 
         var getter = function(val) {
             var res = this.getAttribute(attr);
+            //res = extract_orig(res);
             return res;
         }
 
@@ -950,7 +948,6 @@ var wombat_internal = function(window) {
 
         var setter = function(orig) {
             var res = rewrite_innerHTML(orig);
-            console.log(prop);
             orig_setter.call(this, res);
         }
 
@@ -964,7 +961,7 @@ var wombat_internal = function(window) {
     //============================================
     function init_wombat_loc(win) {
 
-        if (!win || win.WB_wombat_location) {
+        if (!win || (win.WB_wombat_location && win.document.WB_wombat_location)) {
             return;
         }
 
@@ -975,9 +972,9 @@ var wombat_internal = function(window) {
 
             var setter = function(val) {
                 if (typeof(val) == "string") {
-                    //if (starts_with(val, "about:")) {
-                    //    return ;
-                    //}
+                    if (starts_with(val, "about:")) {
+                        return null;
+                    }
                     this._WB_wombat_location.href = val;
                 }
             }
@@ -997,9 +994,8 @@ var wombat_internal = function(window) {
     }
 
     //============================================
-    function rewrite_fragment(child) {
+    function rewrite_children(child) {       
         var desc;
-        rewrite_elem(child);
 
         if (child.querySelectorAll) {
             desc = child.querySelectorAll("[href], [src]");
@@ -1015,39 +1011,31 @@ var wombat_internal = function(window) {
 
     //============================================
     function init_dom_override() {
-        if (!Node || !Node.prototype) {
+        if (!window.Node || !window.Node.prototype) {
             return;
         }
 
         function replace_dom_func(funcname) {
-            var orig = Node.prototype[funcname];
+            var orig = window.Node.prototype[funcname];
 
-            Node.prototype[funcname] = function() {
+            window.Node.prototype[funcname] = function() {
                 var child = arguments[0];
-
-
-                var need_attr_overrides = false;
 
                 // if fragment, rewrite children before adding
                 if (child instanceof DocumentFragment) {
-                    rewrite_fragment(child);
-                    need_attr_overrides = true;
+                    rewrite_elem(child);
+                    rewrite_children(child);
+                }
+
+                if (child && child.tagName) {
+                    if (child.tagName == "IFRAME") { 
+                        init_iframe_wombat(child);
+                    }
+
+                    add_attr_overrides(child.tagName, child);
                 }
 
                 var created = orig.apply(this, arguments);
-
-                if (!created || !created.tagName) {
-                    return;
-                }
-
-                if (created.tagName == "IFRAME") {
-                    wombat_init_all(created.contentWindow);
-                }
-
-                if (need_attr_overrides) {
-                    add_attr_overrides(created.tagName, created);
-                }
-
                 return created;
             }
         }
@@ -1070,7 +1058,7 @@ var wombat_internal = function(window) {
             message = {"origin": targetOrigin, "message": message};
 
             if (targetOrigin && targetOrigin != "*") {
-                targetOrigin = window.location.origin;
+                targetOrigin = this.location.origin;
             }
 
             return orig.call(this, message, targetOrigin, transfer);
@@ -1078,7 +1066,7 @@ var wombat_internal = function(window) {
 
         window.postMessage = postmessage_rewritten;
 
-        if (Window.prototype.postMessage) {
+        if (window.Window.prototype.postMessage) {
             window.Window.prototype.postMessage = postmessage_rewritten;
         }
 
@@ -1093,7 +1081,7 @@ var wombat_internal = function(window) {
 
         window._orig_addEventListener = window.addEventListener;
 
-        window.addEventListener = function(type, listener, useCapture) {
+        var addEventListener_rewritten = function(type, listener, useCapture) {
             if (type == "message") {
                 var orig_listener = listener;
                 listener = function(event) {
@@ -1115,18 +1103,21 @@ var wombat_internal = function(window) {
                 }
             }
 
-            return window._orig_addEventListener(type, listener, useCapture);
+            return _orig_addEventListener.call(this, type, listener, useCapture);
         }
+
+        window.addEventListener = addEventListener_rewritten;
+        window.Window.prototype.addEventListener = addEventListener_rewritten;
     }
 
     //============================================
     function init_open_override()
     {
-        if (!Window.prototype.open) {
+        if (!window.Window.prototype.open) {
             return;
         }
 
-        var orig = Window.prototype.open;
+        var orig = window.Window.prototype.open;
 
         var open_rewritten = function(strUrl, strWindowName, strWindowFeatures) {
             strUrl = rewrite_url(strUrl);
@@ -1146,13 +1137,13 @@ var wombat_internal = function(window) {
     }
 
     //============================================
-    function init_cookies_override()
+    function init_cookies_override(window)
     {
         var cookie_path_regex = /\bPath=\'?\"?([^;'"\s]+)/i;
 
-        var get_cookie = function() {
-            return window.document.cookie;
-        }
+        //var get_cookie = function() {
+        //    return window.document.cookie;
+        //}
 
         var set_cookie = function(value) {
             var matched = value.match(cookie_path_regex);
@@ -1163,12 +1154,10 @@ var wombat_internal = function(window) {
                 value = value.replace(matched[1], rewritten);
             }
 
-            window.document.cookie = value;
+            return value;
         }
 
-        def_prop(window.document, "WB_wombat_cookie", window.document.cookie,
-                set_cookie,
-                get_cookie);
+        def_prop(window.document, "cookie", window.document.cookie, set_cookie);
     }
 
     //============================================
@@ -1180,14 +1169,14 @@ var wombat_internal = function(window) {
 
         var orig_doc_write = window.document.write;
 
-        window.document.write = function(string) {
+        var new_write = function(string) {
             var write_doc = new DOMParser().parseFromString(string, "text/html");
 
             if (!write_doc) {
                 return;
             }
 
-            if (write_doc.head && window.document.head) {
+            if (write_doc.head && this.head) {
                 var elems = write_doc.head.children;
 
                 for (var i = 0; i < elems.length; i++) {
@@ -1197,7 +1186,7 @@ var wombat_internal = function(window) {
                 }
             }
 
-            if (write_doc.body && window.document.body) {
+            if (write_doc.body && this.body) {
                 var elems = write_doc.body.children;
 
                 for (var i = 0; i < elems.length; i++) {
@@ -1207,15 +1196,85 @@ var wombat_internal = function(window) {
                 }
             }
         }
+
+        window.document.write = new_write;
+        window.Document.prototype.write = new_write;
     }
 
     //============================================
-    function wombat_init_all(win) {
-        if (!win || win == window || win._wb_wombat) {
+    function init_iframe_wombat(iframe) {
+//        if (win && !win.WB_wombat_location) {
+//            win.WB_wombat_location = win.location;
+//        }
+//        return
+
+        function do_init(the_iframe) {
+            var win = the_iframe.contentWindow;
+
+            if (!win || win == window) {
+                return;
+            }
+
+            if (!win._wb_wombat || !win.WB_wombat_location) {
+                console.log(win.location.href);
+                win._WBWombat = wombat_internal(win);
+                win._wb_wombat = new win._WBWombat(wb_info);
+            } else if (!win.document.WB_wombat_location) {
+                //init_wombat_loc(win);
+                win.document.WB_wombat_location = win.WB_wombat_location;
+                init_doc_overrides(win, wb_info.wombat_opts);
+            }
+        }
+
+        function init_doc() {
+            do_init(this);
+        }
+
+        //do_init(iframe);
+
+        if (iframe.addEventListener) {
+            iframe.addEventListener('load', init_doc, true);
+        } else if (iframe.attachEvent) {
+            iframe.attachEvent('onload', init_doc);
+        }
+    }
+
+
+    //============================================
+    function init_doc_overrides(window) {
+        if (!Object.defineProperty) {
             return;
         }
-        win._WBWombat = wombat_internal(win);
-        win._wb_wombat = new win._WBWombat(wb_info);
+
+        if (window.document._wb_override) {
+            return;
+        }
+
+        var orig_referrer = extract_orig(window.document.referrer);
+
+        Object.defineProperty(window.document, "domain", {set: function() {}, configurable: false,
+            get: function() { return wbinfo.wombat_host }});
+
+        Object.defineProperty(window.document, "referrer", {set: function() {}, configurable: false,
+            get: function() { return orig_referrer; }});
+
+        // Cookies
+        init_cookies_override(window);
+
+        // Init mutation observer (for style only)
+        init_mutation_obs(window);
+
+        // Attr observers
+        if (!wb_opts.skip_attr_observers) {
+            init_href_src_obs(window);
+        }
+
+        // Node insert observer -- not enabled by default
+        if (wb_opts.use_node_observers) {
+            init_node_insert_obs(window);
+        }
+
+        window.document._wb_override = true;
     }
 
 
@@ -1225,7 +1284,8 @@ var wombat_internal = function(window) {
 
         wb_replay_prefix = wbinfo.prefix;
 
-        wb_opts = wbinfo.wombat_opts || {};
+        wbinfo.wombat_opts = wbinfo.wombat_opts || {};
+        wb_opts = wbinfo.wombat_opts;
 
         if (wb_replay_prefix) {
             var ts_mod;
@@ -1295,9 +1355,10 @@ var wombat_internal = function(window) {
         //}
 
         // Domain
-        window.document.WB_wombat_domain = wbinfo.wombat_host;
-        window.document.WB_wombat_referrer = extract_orig(window.document.referrer);
+        //window.document.WB_wombat_domain = wbinfo.wombat_host;
+        //window.document.WB_wombat_referrer = extract_orig(window.document.referrer);
 
+        init_doc_overrides(window, wb_opts);
 
         // History
         copy_history_func(window.history, 'pushState');
@@ -1322,28 +1383,21 @@ var wombat_internal = function(window) {
             init_worker_override();
         }
 
-        // Init mutation observer (for style only)
-        init_mutation_obs();
-
-
         // innerHTML and outerHTML can be overriden on prototype!
-        override_proto_prop(HTMLElement.prototype, "innerHTML");
-        override_proto_prop(HTMLElement.prototype, "outerHTML");
+        override_proto_prop(window.HTMLElement.prototype, "innerHTML");
+        //override_proto_prop(window.HTMLElement.prototype, "outerHTML");
 
         // setAttribute
         if (!wb_opts.skip_setAttribute) {
-            init_setAttribute_override(wb_opts.use_attr_observers);
+            init_setAttribute_override();
         } else {
-            Element.prototype._orig_setAttribute = Element.prototype.setAttribute;
-        }
-
-        // Node insert observer -- not enabled by default
-        if (wb_opts.use_node_observers) {
-            init_node_insert_obs();
+            //window.Element.prototype._orig_setAttribute = window.Element.prototype.setAttribute;
         }
 
         // createElement attr override
-        init_createElement_override();
+        if (!wb_opts.skip_createElement) {
+            init_createElement_override();
+        }
 
         // ensure namespace urls are NOT rewritten
         init_createElementNS_fix();
@@ -1351,13 +1405,10 @@ var wombat_internal = function(window) {
         // Image
         init_image_override();
 
-        // Cookies
-        init_cookies_override();
-
         // DOM
         // OPT skip
         if (!wb_opts.skip_dom) {
-            //init_dom_override();
+            init_dom_override();
         }
 
         // Random
