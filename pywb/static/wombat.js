@@ -593,11 +593,11 @@ var wombat_internal = function(window) {
 
         var orig_createElement = window.document.createElement;
         
-        var createElement_override = function(tagName)
+        var createElement_override = function(tagName, skip)
         {
             var created = orig_createElement.call(this, tagName);
             
-            if (created) {
+            if (created && !skip) {
                 add_attr_overrides(tagName.toUpperCase(), created);
             }
 
@@ -1021,13 +1021,20 @@ var wombat_internal = function(window) {
             window.Node.prototype[funcname] = function() {
                 var child = arguments[0];
 
+                if (!child) {
+                    return child;
+                }
+
+                if (!child._src && !child._href) {
+                    rewrite_elem(child);
+                }
+
                 // if fragment, rewrite children before adding
                 if (child instanceof DocumentFragment) {
-                    rewrite_elem(child);
                     rewrite_children(child);
                 }
 
-                if (child && child.tagName) {
+                if (child.tagName) {
                     if (child.tagName == "IFRAME") { 
                         init_iframe_wombat(child);
                     }
