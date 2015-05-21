@@ -97,7 +97,7 @@ class FuzzyQuery:
         if matched_rule.replace:
             repl = matched_rule.replace
 
-        inx = url.rfind(repl)
+        inx = url.find(repl)
         if inx > 0:
             url = url[:inx + len(repl)]
 
@@ -120,6 +120,7 @@ class FuzzyQuery:
         if 'end_key' in params:
             del params['end_key']
 
+        print(params)
         return params
 
 

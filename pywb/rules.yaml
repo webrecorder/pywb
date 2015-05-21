@@ -188,6 +188,13 @@ rules:
             args:
                 - id
 
+    - url_prefix: 'com,youtube)/watch_fragments_ajax'
+
+      fuzzy_lookup:
+        - v
+        - frags
+        #- client_url
+
     - url_prefix: 'com,googlevideo,'
 
       fuzzy_lookup:
