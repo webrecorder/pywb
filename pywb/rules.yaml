@@ -188,12 +188,21 @@ rules:
             args:
                 - id
 
+    # yt comments POST
     - url_prefix: 'com,youtube)/watch_fragments_ajax'
 
       fuzzy_lookup:
         - v
         - frags
-        #- client_url
+
+    - url_prefix: 'com,youtube)/comment_ajax'
+
+      fuzzy_lookup:
+        - video_id
+        - page_token
+        - action_load_comments
+        - filter
+
 
     - url_prefix: 'com,googlevideo,'
 
