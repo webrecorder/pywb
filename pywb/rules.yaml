@@ -103,7 +103,8 @@ rules:
 
     - url_prefix: 'com,google,plus)/_/stream/squarestream'
 
-      fuzzy_lookup: '(cai[^"]+).*(f.sid=[^&]+)'
+      #fuzzy_lookup: '(cai[^"]+).*(f.sid=[^&]+)'
+      fuzzy_lookup: 'f.req=.*?\"([^"]+).*(f.sid=[^&]+)'
 
     - url_prefix: 'com,google,plus)/_/communities/rt/landing'
 
