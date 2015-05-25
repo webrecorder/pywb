@@ -407,6 +407,11 @@ class DefaultRecordIter(object):
         elif not entry.get('digest'):
             entry['digest'] = '-'
 
+        # optional json metadata, if present
+        metadata = record.rec_headers.get_header('WARC-Json-Metadata')
+        if metadata:
+            entry['metadata'] = metadata
+
         return entry
 
 
