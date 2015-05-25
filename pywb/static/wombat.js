@@ -596,9 +596,13 @@ var wombat_internal = function(window) {
         var createElement_override = function(tagName, skip)
         {
             var created = orig_createElement.call(this, tagName);
-            
-            if (created && !skip) {
+            if (!created) {
+                return created;
+            }
+            if (!skip) {
                 add_attr_overrides(tagName.toUpperCase(), created);
+            } else {
+                created._no_rewrite = true;
             }
 
             return created;
@@ -802,6 +806,11 @@ var wombat_internal = function(window) {
             return;
         }
 
+        // already overwritten
+        if (elem["_" + name]) {
+            return;
+        }
+
         var value = elem.getAttribute(name);
 
         if (!value) {
@@ -887,7 +896,7 @@ var wombat_internal = function(window) {
     //============================================
     function add_attr_overrides(tagName, created)
     {
-        if (created._src || created._href) {
+        if (created._src != undefined || created._href != undefined) {
            return;
         }
 
@@ -947,7 +956,10 @@ var wombat_internal = function(window) {
         }
 
         var setter = function(orig) {
-            var res = rewrite_innerHTML(orig);
+            var res = orig;
+            if (!this._no_rewrite) {
+               res = rewrite_innerHTML(orig);
+            }
             orig_setter.call(this, res);
         }
 
@@ -1021,19 +1033,16 @@ var wombat_internal = function(window) {
             window.Node.prototype[funcname] = function() {
                 var child = arguments[0];
 
-                if (!child) {
-                    return child;
-                }
-
-                if (!child._src && !child._href) {
+                if (child) {
                     rewrite_elem(child);
+
+                    // if fragment, rewrite children before adding
+                    if (child instanceof DocumentFragment) {
+                        rewrite_children(child);
+                    }
                 }
 
-                // if fragment, rewrite children before adding
-                if (child instanceof DocumentFragment) {
-                    rewrite_children(child);
-                }
-
+/*
                 if (child.tagName) {
                     if (child.tagName == "IFRAME") { 
                         init_iframe_wombat(child);
@@ -1041,8 +1050,18 @@ var wombat_internal = function(window) {
 
                     add_attr_overrides(child.tagName, child);
                 }
-
+*/
                 var created = orig.apply(this, arguments);
+
+                if (created && created.tagName == "IFRAME") {
+                    var src = created.src;
+                    if (src == "" || src == "about:blank") {
+                        created.contentWindow.WB_wombat_location = created.contentWindow.location;
+                        created.contentWindow.document.WB_wombat_location = created.contentWindow.document.location;
+                        created.contentWindow.WB_wombat_top = window.WB_wombat_top;
+                    }
+                }
+
                 return created;
             }
         }
@@ -1210,20 +1229,14 @@ var wombat_internal = function(window) {
 
     //============================================
     function init_iframe_wombat(iframe) {
-//        if (win && !win.WB_wombat_location) {
-//            win.WB_wombat_location = win.location;
-//        }
-//        return
-
         function do_init(the_iframe) {
             var win = the_iframe.contentWindow;
 
-            if (!win || win == window) {
+            if (!win || win == window || win._skip_wombat) {
                 return;
             }
 
             if (!win._wb_wombat || !win.WB_wombat_location) {
-                console.log(win.location.href);
                 win._WBWombat = wombat_internal(win);
                 win._wb_wombat = new win._WBWombat(wb_info);
             } else if (!win.document.WB_wombat_location) {
@@ -1259,11 +1272,13 @@ var wombat_internal = function(window) {
 
         var orig_referrer = extract_orig(window.document.referrer);
 
+
         Object.defineProperty(window.document, "domain", {set: function() {}, configurable: false,
             get: function() { return wbinfo.wombat_host }});
 
         Object.defineProperty(window.document, "referrer", {set: function() {}, configurable: false,
             get: function() { return orig_referrer; }});
+
 
         // Cookies
         init_cookies_override(window);
@@ -1390,9 +1405,8 @@ var wombat_internal = function(window) {
             init_worker_override();
         }
 
-        // innerHTML and outerHTML can be overriden on prototype!
+        // innerHTML can be overriden on prototype!
         override_proto_prop(window.HTMLElement.prototype, "innerHTML");
-        //override_proto_prop(window.HTMLElement.prototype, "outerHTML");
 
         // setAttribute
         if (!wb_opts.skip_setAttribute) {

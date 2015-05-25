@@ -210,7 +210,7 @@ __wbvidrw = (function() {
             }
 
             //add placeholder child to remove
-            var placeholder = document.createElement("div");
+            var placeholder = document.createElement("div", true);
             elem.appendChild(placeholder);
             check_replacement(placeholder, wbinfo.url);
         }
@@ -228,7 +228,11 @@ __wbvidrw = (function() {
                 if (_pywbvid == "html" || _pywbvid == "flash") {
                     do_yt_video_replace(player_div);
                 } else if (!wbinfo.is_live) {
-                    var player = window.yt.player.getPlayerByElement(player_div);
+                    var player = undefined;
+
+                    if (window.yt && window.yt.player && window.yt.player.getPlayerByElement) {
+                        player = window.yt.player.getPlayerByElement(player_div);
+                    }
 
                     if (player) {
                         _pywb_yt_err = function() {
@@ -313,7 +317,8 @@ __wbvidrw = (function() {
                                              }];
                     }
 
-                    do_replace_video(elem, videoinfo);
+                    //do_replace_video(elem, videoinfo);
+                    //return;
                 }
 
                 // end special case
@@ -333,7 +338,7 @@ __wbvidrw = (function() {
     }
 
     function do_replace_iframe(elem, url) {
-        var iframe = document.createElement("iframe");
+        var iframe = document.createElement("iframe", true);
         var dim = get_dim(elem);
         iframe.width = dim[0];
         iframe.height = dim[1];
@@ -359,7 +364,12 @@ __wbvidrw = (function() {
     function do_replace_elem(elem, replacement) {
         var tag_name = elem.tagName.toLowerCase();
 
-        if (tag_name == "iframe" || tag_name == "object" && elem.parentNode) {
+        if (!elem.parentNode) {
+            console.warn("vidrw: Missing Parent Node for Video Replace!");
+            return;
+        }
+
+        if (tag_name == "iframe" || tag_name == "object") {
             elem.parentNode.replaceChild(replacement, elem);
         } else if (tag_name == "embed") {
             if (elem.parentElement && elem.parentElement.tagName.toLowerCase() == "object") {
@@ -394,7 +404,7 @@ __wbvidrw = (function() {
         });
 
         // Try HTML5 Video
-        var htmlelem = document.createElement("video");
+        var htmlelem = document.createElement("video", true);
 
         var replacement = null;
 
@@ -403,7 +413,7 @@ __wbvidrw = (function() {
 
             if (type) {
                 if (type == "audio") {
-                    htmlelem = document.createElement("audio");
+                    htmlelem = document.createElement("audio", true);
                 }
                 if (_pywbvid != "flash") {
                     replacement = init_html_player(htmlelem, type, width, height, info, thumb_url);
@@ -414,7 +424,7 @@ __wbvidrw = (function() {
         var vidId = undefined;
 
         if (!replacement) {
-            replacement = document.createElement("div");
+            replacement = document.createElement("div", true);
 
             vidId = "_wb_vid" + Date.now() + Math.random();
             replacement.setAttribute("id", vidId);
@@ -492,7 +502,7 @@ __wbvidrw = (function() {
                 return;
             }
 
-            var replacement = document.createElement("div");
+            var replacement = document.createElement("div", true);
 
             var vidId = "_wb_vid" + Date.now();
             replacement.setAttribute("id", vidId);
@@ -503,7 +513,7 @@ __wbvidrw = (function() {
         };
 
         for (var i = -1; i < info.formats.length; i++) {
-            var source = document.createElement("source");
+            var source = document.createElement("source", true);
 
             var url, format;
 
@@ -571,11 +581,11 @@ __wbvidrw = (function() {
         };
 
         var do_embed = function() {
-            window.flashembed(div_id, opts, {"config": config});
+            var flash = window.flashembed(div_id, opts, {"config": config});
         };
 
         if (!window.flashembed) {
-            var script = document.createElement("script");
+            var script = document.createElement("script", true);
             script._no_rewrite = true;
             script.onload = do_embed;
             script.setAttribute("src", wbinfo.static_prefix + "/flowplayer/toolbox.flashembed.js");
