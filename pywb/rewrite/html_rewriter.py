@@ -70,6 +70,8 @@ class HTMLRewriterMixin(object):
     HEAD_TAGS = ['html', 'head', 'base', 'link', 'meta',
                  'title', 'style', 'script', 'object', 'bgsound']
 
+    BEFORE_HEAD_TAGS = ['html', 'head']
+
     DATA_RW_PROTOCOLS = ('http://', 'https://', '//')
 
     #===========================
@@ -178,10 +180,10 @@ class HTMLRewriterMixin(object):
         if ((tag in self.STATE_TAGS) and not self._wb_parse_context):
             self._wb_parse_context = tag
 
-        # special case: head insertion, non-head tags
+        # special case: head insertion, before-head tags
         elif (self.head_insert and
               not self._wb_parse_context
-              and (tag not in self.HEAD_TAGS)):
+              and (tag not in self.BEFORE_HEAD_TAGS)):
             self.out.write(self.head_insert)
             self.head_insert = None
 

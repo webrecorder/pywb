@@ -133,7 +133,10 @@ ur"""
 /* Insert */<body><div style="">SomeTest</div>
 
 >>> parse('<link href="abc.txt"><div>SomeTest</div>', head_insert = '<script>load_stuff();</script>')
-<link href="/web/20131226101010oe_/http://example.com/some/path/abc.txt"><script>load_stuff();</script><div>SomeTest</div>
+<script>load_stuff();</script><link href="/web/20131226101010oe_/http://example.com/some/path/abc.txt"><div>SomeTest</div>
+
+>>> parse('<!DOCTYPE html>Some Text without any tags <!-- comments -->', head_insert = '<script>load_stuff();</script>')
+<!DOCTYPE html>Some Text without any tags <!-- comments --><script>load_stuff();</script>
 
 # rel=canonical: rewrite (default)
 >>> parse('<link rel=canonical href="http://example.com/">')
