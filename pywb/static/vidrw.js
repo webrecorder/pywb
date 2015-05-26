@@ -113,6 +113,8 @@ __wbvidrw = (function() {
     {
         var obj_url = undefined;
 
+        console.log(elem);
+
         // already rewritten
         if (elem.outerHTML.indexOf(FLASH_PLAYER) >= 0) {
             return false;
@@ -135,24 +137,31 @@ __wbvidrw = (function() {
                 }
 
                 //flashvars extraction: work in progress: for now, only ustream
-                if (name == "flashvars" && wbinfo.url.indexOf("ustream") >= 0) {
-                    var value = child.getAttribute("value");
+                if (name == "flashvars") {
+                    if (wbinfo.url.indexOf("ustream") >= 0) {
+                        var value = child.getAttribute("value");
 
-                    var pairs = value.split('&');
+                        var pairs = value.split('&');
 
-                    var result = {};
-                    pairs.forEach(function(pair) {
-                        if (obj_url) {
-                            return;
-                        }
-                        pair = pair.split('=');
-                        var qval = decodeURIComponent(pair[1] || '');
-                        //TODO: allow for picking from multiple urls
-                        if (qval.indexOf("http") == 0) {
-                            obj_url = qval;
-                            return;
-                        }
-                    });
+                        var result = {};
+                        pairs.forEach(function(pair) {
+                            if (obj_url) {
+                                return;
+                            }
+                            pair = pair.split('=');
+                            var qval = decodeURIComponent(pair[1] || '');
+                            //TODO: allow for picking from multiple urls
+                            if (qval.indexOf("http") == 0) {
+                                obj_url = qval;
+                                return;
+                            }
+                        });
+                    }
+
+
+                    if (wbinfo.url.indexOf("livestream") >= 0) {
+                        obj_url = wbinfo.url;
+                    }
                 }
             }
         }
@@ -308,20 +317,19 @@ __wbvidrw = (function() {
                     return;
                 }
 
-                // UStream
-                if (videoinfo.extractor == "ustream") {
-                    if (!videoinfo.formats) {
-                        videoinfo.formats = [{ext: videoinfo.ext,
-                                              url: videoinfo.url,
-                                              format_id: videoinfo.format_id
-                                             }];
+                if (videoinfo._type == "playlist" && videoinfo.extractor == "livestream") {
+                    if (videoinfo.entries && videoinfo.entries.length > 0) {
+                        do_replace_video(elem, videoinfo.entries[0]);
+                        return;
                     }
-
-                    //do_replace_video(elem, videoinfo);
-                    //return;
                 }
 
-                // end special case
+                if (!videoinfo.formats && videoinfo.url && videoinfo.ext && videoinfo.format_id) {
+                    videoinfo.formats = [{ext: videoinfo.ext,
+                                          url: videoinfo.url,
+                                          format_id: videoinfo.format_id
+                                         }];
+                }
 
                 if (videoinfo.formats) {
                     do_replace_video(elem, videoinfo);
@@ -488,6 +496,7 @@ __wbvidrw = (function() {
         htmlelem.setAttribute("height", height);
         htmlelem.setAttribute("controls", "1");
         htmlelem.style.backgroundColor = "#000";
+        htmlelem.style.visibility = "visible";
 
         if (thumb_url) {
             htmlelem.setAttribute("poster", thumb_url);
@@ -551,7 +560,7 @@ __wbvidrw = (function() {
             height += "px";
         }
 
-        var style = 'width: ' + width + '; height: ' + height + '; display: block';
+        var style = 'width: ' + width + '; height: ' + height + '; display: block; visibility: visible !important';
 
         elem.style.cssText += ';' + style;
 
@@ -595,8 +604,47 @@ __wbvidrw = (function() {
         }
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
-        window.setTimeout(check_videos, 200);
-    });
+    //============================================
+    function init_node_insert_obs(window)
+    {
+        function do_handle(te, func)
+        {
+            setTimeout(function() { func(te); }, 100);
+        }
+
+        var m = new MutationObserver(function(records, observer)
+        {
+            for (var i = 0; i < records.length; i++) {
+                var r = records[i];
+                if (r.type == "childList") {
+                    for (var j = 0; j < r.addedNodes.length; j++) {
+                        var elem = r.addedNodes[j];
+                        if (elem.tagName) {
+                            if (elem.tagName == "OBJECT") {
+                                do_handle(elem, handle_object_tag);
+                            } else if (elem.tagName == "EMBED") {
+                                do_handle(elem, handle_embed_tag);
+                            }
+                        }                           
+                    }
+                }
+            }
+        });
+
+        m.observe(window.document.documentElement, {
+                  childList: true,
+                  subtree: true,
+                });
+    }
+
+
+    if (!window.MutationObserver) {
+        document.addEventListener("DOMContentLoaded", function() {
+            window.setTimeout(check_videos, 200);
+        });
+    } else {
+        init_node_insert_obs(window);
+    }
+
 
 })();
