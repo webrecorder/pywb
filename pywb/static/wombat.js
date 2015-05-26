@@ -30,6 +30,9 @@ var wombat_internal = function(window) {
     var wb_orig_scheme;
     var wb_orig_host;
 
+    var wb_setAttribute = window.Element.prototype.setAttribute;
+    var wb_getAttribute = window.Element.prototype.getAttribute;
+
     var wb_info;
 
     var wb_wombat_updating = false;
@@ -562,6 +565,7 @@ var wombat_internal = function(window) {
         }
 
         var orig_setAttribute = window.Element.prototype.setAttribute;
+        wb_setAttribute = orig_setAttribute;
 
         window.Element.prototype._orig_setAttribute = orig_setAttribute;
 
@@ -581,6 +585,30 @@ var wombat_internal = function(window) {
             }
             orig_setAttribute.call(this, name, value);
         };
+    }
+
+    //============================================
+    function init_getAttribute_override()
+    {
+        if (!window.Element ||
+            !window.Element.prototype ||
+            !window.Element.prototype.setAttribute) {
+            return;
+        }
+
+        var orig_getAttribute = window.Element.prototype.getAttribute;
+        wb_getAttribute = orig_getAttribute;
+
+        window.Element.prototype.getAttribute = function(name) {
+            var result = orig_getAttribute.call(this, name);
+
+            if (equals_any(name.toLowerCase(), REWRITE_ATTRS)) {
+                result = extract_orig(result);
+            }
+
+            return result;
+        }
+
     }
 
     //============================================
@@ -747,10 +775,11 @@ var wombat_internal = function(window) {
             for (var i = 0; i < records.length; i++) {
                 var r = records[i];
                 if (r.type == "attributes") {
+                    //var curr = wb_getAttribute(r.target, r.attributeName);
                     var curr = r.target.getAttribute(r.attributeName);
                     var new_url = rewrite_url(curr);
                     if (curr != new_url) {
-                        r.target.setAttribute(r.attributeName, new_url);
+                        wb_setAttribute.call(r.target, r.attributeName, new_url);
                     }
                 }
             }
@@ -784,11 +813,12 @@ var wombat_internal = function(window) {
                         if (r.addedNodes[j].tagName == "LINK" && r.addedNodes[j].rel == "canonical") {
                             continue;
                         }
-                        rewrite_attr(r.addedNodes[j], "href", rewrite_url);
-                        rewrite_attr(r.addedNodes[j], "src", rewrite_url);
-                        if (r.addedNodes[j].tagName == "IFRAME") {
-                            init_iframe_wombat(r.addedNodes[j]);
-                        }
+                        add_attr_overrides(r.addedNodes[j].tagName, r.addedNodes[j]);
+                        //rewrite_attr(r.addedNodes[j], "href", rewrite_url);
+                        //rewrite_attr(r.addedNodes[j], "src", rewrite_url);
+                        //if (r.addedNodes[j].tagName == "IFRAME") {
+                        //    init_iframe_wombat(r.addedNodes[j]);
+                        //}
                     }
                 }
             }
@@ -806,22 +836,18 @@ var wombat_internal = function(window) {
             return;
         }
 
+        if (elem._no_rewrite) {
+            return;
+        }
+
         // already overwritten
         if (elem["_" + name]) {
             return;
         }
 
-        var value = elem.getAttribute(name);
+        var value = wb_getAttribute.call(elem, name);
 
-        if (!value) {
-            return;
-        }
-
-        if (starts_with(value, "javascript:")) {
-            return;
-        }
-
-        if (elem._no_rewrite) {
+        if (!value || starts_with(value, "javascript:")) {
             return;
         }
 
@@ -832,7 +858,7 @@ var wombat_internal = function(window) {
         }
 
         if (value != new_value) {
-            elem.setAttribute(name, new_value);
+            wb_setAttribute.call(elem, name, new_value);
         }
     }
 
@@ -896,7 +922,7 @@ var wombat_internal = function(window) {
     //============================================
     function add_attr_overrides(tagName, created)
     {
-        if (created._src != undefined || created._href != undefined) {
+        if (!created || created._src != undefined || created._href != undefined) {
            return;
         }
 
@@ -911,7 +937,7 @@ var wombat_internal = function(window) {
     function override_attr(obj, attr) {
         var setter = function(orig) {
             var val = rewrite_url(orig);
-            this.setAttribute(attr, val);
+            wb_setAttribute.call(this, attr, val);
             return val;
         }
 
@@ -1034,18 +1060,21 @@ var wombat_internal = function(window) {
                 var child = arguments[0];
 
                 if (child) {
-                    rewrite_elem(child);
+                    //if (child.tagName != "SCRIPT" || child.src.indexOf("boot") < 0) {
+                        rewrite_elem(child);
+                    //}
+
+                    console.log(child);
 
                     // if fragment, rewrite children before adding
                     if (child instanceof DocumentFragment) {
                         rewrite_children(child);
                     }
                 }
-
 /*
                 if (child.tagName) {
                     if (child.tagName == "IFRAME") { 
-                        init_iframe_wombat(child);
+                        //init_iframe_wombat(child);
                     }
 
                     add_attr_overrides(child.tagName, child);
@@ -1055,10 +1084,14 @@ var wombat_internal = function(window) {
 
                 if (created && created.tagName == "IFRAME") {
                     var src = created.src;
-                    if (src == "" || src == "about:blank") {
-                        created.contentWindow.WB_wombat_location = created.contentWindow.location;
-                        created.contentWindow.document.WB_wombat_location = created.contentWindow.document.location;
-                        created.contentWindow.WB_wombat_top = window.WB_wombat_top;
+                    if (!src || src == "about:blank" || src.indexOf("javascript:") >= 0) {
+                        var win = created.contentWindow;
+                        win.WB_wombat_location = win.location;
+                        win.document.WB_wombat_location = win.document.location;
+                        win.WB_wombat_top = window.WB_wombat_top;
+
+                        win._WBWombat = wombat_internal(win);
+                        win._wb_wombat = new win._WBWombat(wb_info);
                     }
                 }
 
@@ -1081,6 +1114,7 @@ var wombat_internal = function(window) {
         var orig = window.postMessage;
 
         var postmessage_rewritten = function(message, targetOrigin, transfer) {
+            console.log("TARGET: " + targetOrigin);
             message = {"origin": targetOrigin, "message": message};
 
             if (targetOrigin && targetOrigin != "*") {
@@ -1119,6 +1153,7 @@ var wombat_internal = function(window) {
                                     {"bubbles": event.bubbles,
                                      "cancelable": event.cancelable,
                                      "data": event.data.message,
+                                     //"origin": event.source.WB_wombat_location.origin,
                                      "origin": event.data.origin,
                                      "lastEventId": event.lastEventId,
                                      "source": event.source,
@@ -1402,7 +1437,7 @@ var wombat_internal = function(window) {
         init_ajax_rewrite();
 
         if (!wb_opts.skip_disable_worker) {
-            init_worker_override();
+           //init_worker_override();
         }
 
         // innerHTML can be overriden on prototype!
@@ -1411,8 +1446,7 @@ var wombat_internal = function(window) {
         // setAttribute
         if (!wb_opts.skip_setAttribute) {
             init_setAttribute_override();
-        } else {
-            //window.Element.prototype._orig_setAttribute = window.Element.prototype.setAttribute;
+            //init_getAttribute_override();
         }
 
         // createElement attr override

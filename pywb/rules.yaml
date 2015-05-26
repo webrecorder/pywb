@@ -7,6 +7,22 @@ rules:
 
       fuzzy_lookup: '/profiles/show/.*with_replies\?.*(max_id=[^&]+)'
 
+    - url_prefix: 'com,twimg,abs)/c/'
+
+      rewrite:
+        js_rewrite_location: urls
+
+
+    - url_prefix: 'com,twimg,ton)/'
+
+      rewrite:
+        js_rewrite_location: urls
+
+    - url_prefix: 'com,twimg,amp)/'
+
+      rewrite:
+        js_rewrite_location: none
+
 
     # facebook rules
     #=================================================================
