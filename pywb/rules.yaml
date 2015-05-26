@@ -1,4 +1,3 @@
-
 rules:
 
     # twitter rules
@@ -18,10 +17,13 @@ rules:
       rewrite:
         js_rewrite_location: urls
 
-    - url_prefix: 'com,twimg,amp)/'
+    - url_prefix: 'com,twimg,amp)/amplify-web-player/prod/js/build.min.js'
 
       rewrite:
-        js_rewrite_location: none
+        #js_rewrite_location: all
+        js_regexs:
+            - match: ';$'
+              replace: '; $(function() {{ var div = $(".poster-image")[0]; window._wb_wombat.watch_elem(div, function(elem) {{ if (elem.tagName == "IMG") {{ elem.setAttribute("width", $(div).width()); elem.setAttribute("height", $(div).height()); }}  }}) }}  );'
 
 
     # facebook rules
