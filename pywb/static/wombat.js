@@ -20,9 +20,14 @@ This file is part of pywb, https://github.com/ikreymer/pywb
 //============================================
 // Wombat JS-Rewriting Library v2.3
 //============================================
+
+
+
 _WBWombat = (function() {
 
 var wombat_internal = function(window) {
+
+
     // Globals
     var wb_replay_prefix;
     var wb_replay_date_prefix;
@@ -39,6 +44,7 @@ var wombat_internal = function(window) {
 
     // custom options
     var wb_opts;
+
 
     //============================================
     function is_host_url(str) {
@@ -194,6 +200,15 @@ var wombat_internal = function(window) {
                 return url;
             }
 
+            // relative collection 
+            if (url.indexOf(wb_info.coll + "/http") == 1) {
+                var scheme_sep = url.indexOf(":/");
+                if (scheme_sep > 0 && url[scheme_sep + 2] != '/') {
+                    url = url.substring(0, scheme_sep + 2) + "/" + url.substring(scheme_sep + 2);
+                }
+                return url;
+            }
+
             return wb_replay_date_prefix + wb_orig_host + url;
         }
 
@@ -304,8 +319,8 @@ var wombat_internal = function(window) {
             });
             return true;
         } catch (e) {
-            var info = "Can't redefine prop " + prop;
-            console.log(info);
+            //var info = "Can't redefine prop " + prop;
+            //console.log(info);
             //f (obj && obj.tagName) {
             //    info += " on " + obj.tagName;
             //}
@@ -376,12 +391,12 @@ var wombat_internal = function(window) {
 
         if (Object.defineProperty) {
             var res1 = def_prop(this, "href", href,
-                               this.assign,
-                               _get_url_with_hash);
+                                this.assign,
+                                _get_url_with_hash);
 
             var res2 = def_prop(this, "hash", parser.hash,
-                               _set_hash,
-                               _get_hash);
+                                _set_hash,
+                                _get_hash);
 
             this._autooverride = res1 && res2;
         } else {
@@ -479,15 +494,15 @@ var wombat_internal = function(window) {
             check_location_change(window.top.WB_wombat_location, true);
         }
 
-//        lochash = window.WB_wombat_location.hash;
-//
-//        if (lochash) {
-//            window.location.hash = lochash;
-//
-//            //if (window.top.update_wb_url) {
-//            //    window.top.location.hash = lochash;
-//            //}
-//        }
+        //        lochash = window.WB_wombat_location.hash;
+        //
+        //        if (lochash) {
+        //            window.location.hash = lochash;
+        //
+        //            //if (window.top.update_wb_url) {
+        //            //    window.top.location.hash = lochash;
+        //            //}
+        //        }
 
         wb_wombat_updating = false;
     }
@@ -509,21 +524,28 @@ var wombat_internal = function(window) {
     }
 
     //============================================
-    function copy_history_func(history, func_name) {
-        var orig_func = history[func_name];
+    function override_history_func(func_name) {
+        if (!window.history) {
+            return;
+        }
+
+        var orig_func = window.history[func_name];
 
         if (!orig_func) {
             return;
         }
 
-        history['_orig_' + func_name] = orig_func;
+        window.history['_orig_' + func_name] = orig_func;
 
         function rewritten_func(state_obj, title, url) {
             url = rewrite_url(url);
-            return orig_func.call(history, state_obj, title, url);
+            return orig_func.call(this, state_obj, title, url);
         }
 
-        history[func_name] = rewritten_func;
+        window.history[func_name] = rewritten_func;
+        if (window.History && window.History.prototype) {
+            window.History.prototype[func_name] = rewritten_func;
+        }
 
         return rewritten_func;
     }
@@ -620,7 +642,7 @@ var wombat_internal = function(window) {
         }
 
         var orig_createElement = window.document.createElement;
-        
+
         var createElement_override = function(tagName, skip)
         {
             var created = orig_createElement.call(this, tagName);
@@ -638,7 +660,7 @@ var wombat_internal = function(window) {
 
         window.Document.prototype.createElement = createElement_override;
         window.document.createElement = createElement_override;
-     }
+    }
 
     //============================================
     function init_createElementNS_fix()
@@ -739,7 +761,7 @@ var wombat_internal = function(window) {
         }
 
         var m = new MutationObserver(function(records, observer)
-        {
+                                     {
             for (var i = 0; i < records.length; i++) {
                 var r = records[i];
                 if (r.type == "attributes" && r.attributeName == "style") {
@@ -755,11 +777,11 @@ var wombat_internal = function(window) {
         });
 
         m.observe(window.document.documentElement, {
-                                  childList: false,
-                                  attributes: true,
-                                  subtree: true,
-                                  //attributeOldValue: true,
-                                  attributeFilter: ["style"]});
+            childList: false,
+            attributes: true,
+            subtree: true,
+            //attributeOldValue: true,
+            attributeFilter: ["style"]});
     }
 
 
@@ -771,7 +793,7 @@ var wombat_internal = function(window) {
         }
 
         var m = new MutationObserver(function(records, observer)
-        {
+                                     {
             for (var i = 0; i < records.length; i++) {
                 var r = records[i];
                 if (r.type == "attributes") {
@@ -786,12 +808,12 @@ var wombat_internal = function(window) {
         });
 
         m.observe(window.document.documentElement, {
-                                  childList: false,
-                                  attributes: true,
-                                  subtree: true,
-                                  //attributeOldValue: true,
-                                  attributeFilter: ["src", "href"]});
-             
+            childList: false,
+            attributes: true,
+            subtree: true,
+            //attributeOldValue: true,
+            attributeFilter: ["src", "href"]});
+
     }
 
 
@@ -803,7 +825,7 @@ var wombat_internal = function(window) {
         }
 
         var m = new MutationObserver(function(records, observer)
-        {
+                                     {
             for (var i = 0; i < records.length; i++) {
                 var r = records[i];
                 if (r.type == "childList") {
@@ -825,9 +847,9 @@ var wombat_internal = function(window) {
         });
 
         m.observe(window.document.documentElement, {
-                  childList: true,
-                  subtree: true,
-                });
+            childList: true,
+            subtree: true,
+        });
     }
 
     //============================================
@@ -923,7 +945,7 @@ var wombat_internal = function(window) {
     function add_attr_overrides(tagName, created)
     {
         if (!created || created._src != undefined || created._href != undefined) {
-           return;
+            return;
         }
 
         if (equals_any(tagName, SRC_TAGS)) {
@@ -984,7 +1006,7 @@ var wombat_internal = function(window) {
         var setter = function(orig) {
             var res = orig;
             if (!this._no_rewrite) {
-               res = rewrite_innerHTML(orig);
+                res = rewrite_innerHTML(orig);
             }
             orig_setter.call(this, res);
         }
@@ -1032,7 +1054,7 @@ var wombat_internal = function(window) {
     }
 
     //============================================
-    function rewrite_children(child) {       
+    function rewrite_children(child) {
         var desc;
 
         if (child.querySelectorAll) {
@@ -1060,18 +1082,14 @@ var wombat_internal = function(window) {
                 var child = arguments[0];
 
                 if (child) {
-                    //if (child.tagName != "SCRIPT" || child.src.indexOf("boot") < 0) {
-                        rewrite_elem(child);
-                    //}
-
-                    console.log(child);
+                    rewrite_elem(child);
 
                     // if fragment, rewrite children before adding
                     if (child instanceof DocumentFragment) {
                         rewrite_children(child);
                     }
                 }
-/*
+                /*
                 if (child.tagName) {
                     if (child.tagName == "IFRAME") { 
                         //init_iframe_wombat(child);
@@ -1086,6 +1104,7 @@ var wombat_internal = function(window) {
                     var src = created.src;
                     if (!src || src == "about:blank" || src.indexOf("javascript:") >= 0) {
                         var win = created.contentWindow;
+
                         win.WB_wombat_location = win.location;
                         win.document.WB_wombat_location = win.document.location;
                         win.WB_wombat_top = window.WB_wombat_top;
@@ -1114,7 +1133,6 @@ var wombat_internal = function(window) {
         var orig = window.postMessage;
 
         var postmessage_rewritten = function(message, targetOrigin, transfer) {
-            console.log("TARGET: " + targetOrigin);
             message = {"origin": targetOrigin, "message": message};
 
             if (targetOrigin && targetOrigin != "*") {
@@ -1144,24 +1162,23 @@ var wombat_internal = function(window) {
         var addEventListener_rewritten = function(type, listener, useCapture) {
             if (type == "message") {
                 var orig_listener = listener;
-                listener = function(event) {
-
+                var new_listener = function(event) {
                     var ne = event;
 
                     if (event.data.origin && event.data.message) {
                         ne = new MessageEvent("message",
-                                    {"bubbles": event.bubbles,
-                                     "cancelable": event.cancelable,
-                                     "data": event.data.message,
-                                     //"origin": event.source.WB_wombat_location.origin,
-                                     "origin": event.data.origin,
-                                     "lastEventId": event.lastEventId,
-                                     "source": event.source,
-                                     "ports": event.ports});
+                                              {"bubbles": event.bubbles,
+                                               "cancelable": event.cancelable,
+                                               "data": event.data.message,
+                                               "origin": event.data.origin,
+                                               "lastEventId": event.lastEventId,
+                                               "source": event.source,
+                                               "ports": event.ports});
                     }
 
                     return orig_listener(ne);
                 }
+                listener = new_listener;
             }
 
             return _orig_addEventListener.call(this, type, listener, useCapture);
@@ -1308,11 +1325,16 @@ var wombat_internal = function(window) {
         var orig_referrer = extract_orig(window.document.referrer);
 
 
-        Object.defineProperty(window.document, "domain", {set: function() {}, configurable: false,
-            get: function() { return wbinfo.wombat_host }});
+        try {
 
-        Object.defineProperty(window.document, "referrer", {set: function() {}, configurable: false,
-            get: function() { return orig_referrer; }});
+            Object.defineProperty(window.document, "domain", {set: function() {}, configurable: false,
+                                                              get: function() { return wbinfo.wombat_host }});
+
+            Object.defineProperty(window.document, "referrer", {set: function() {}, configurable: false,
+                                                                get: function() { return orig_referrer; }});
+        } catch (e) {
+
+        }
 
 
         // Cookies
@@ -1418,8 +1440,8 @@ var wombat_internal = function(window) {
         init_doc_overrides(window, wb_opts);
 
         // History
-        copy_history_func(window.history, 'pushState');
-        copy_history_func(window.history, 'replaceState');
+        override_history_func("pushState");
+        override_history_func("replaceState");
 
         // open
         init_open_override();
@@ -1437,7 +1459,7 @@ var wombat_internal = function(window) {
         init_ajax_rewrite();
 
         if (!wb_opts.skip_disable_worker) {
-           //init_worker_override();
+            //init_worker_override();
         }
 
         // innerHTML can be overriden on prototype!
@@ -1474,7 +1496,32 @@ var wombat_internal = function(window) {
 
         // expose functions
         this.extract_orig = extract_orig;
+        this.watch_elem = watch_elem;
     }
+
+    // Utility functions used by rewriting rules
+    function watch_elem(elem, func)
+    {
+        if (!window.MutationObserver) {
+            return false;
+        }
+
+        var m = new MutationObserver(function(records, observer) {
+            for (var i = 0; i < records.length; i++) {
+                var r = records[i];
+                if (r.type == "childList") {
+                    for (var j = 0; j < r.addedNodes.length; j++) {
+                        func(r.addedNodes[j]);
+                    }
+                }
+            }
+        });
+
+        m.observe(elem, {
+            childList: true,
+            subtree: true,
+        });
+    };
 
     return wombat_init;
 };
