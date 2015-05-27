@@ -31,6 +31,7 @@ var wombat_internal = function(window) {
     // Globals
     var wb_replay_prefix;
     var wb_replay_date_prefix;
+    var wb_coll_prefix;
     var wb_capture_date_part;
     var wb_orig_scheme;
     var wb_orig_host;
@@ -201,7 +202,7 @@ var wombat_internal = function(window) {
             }
 
             // relative collection 
-            if (url.indexOf(wb_info.coll + "/http") == 1) {
+            if ((url.indexOf(wb_info.coll) == 1) && (url.indexOf("http") > 1)) {
                 var scheme_sep = url.indexOf(":/");
                 if (scheme_sep > 0 && url[scheme_sep + 2] != '/') {
                     url = url.substring(0, scheme_sep + 2) + "/" + url.substring(scheme_sep + 2);
@@ -217,15 +218,33 @@ var wombat_internal = function(window) {
         var prefix = starts_with(url, VALID_PREFIXES);
 
         if (prefix) {
+            var prefix_host = prefix + window.location.host + '/';
             // if already rewritten url, must still check scheme
-            if (starts_with(url, prefix + window.location.host + '/')) {
-                var curr_scheme = window.location.protocol + '//';
+            if (starts_with(url, prefix_host)) {
+                if (starts_with(url, wb_replay_prefix)) {
+                    return url;
+                }
 
+                var curr_scheme = window.location.protocol + '//';
+                var host = window.location.host + '/';
+                var path = url.substring(prefix_host.length);
+                var rebuild = false;
+
+                if (path.indexOf(wb_coll_prefix) != 0 && url.indexOf("static") != 0) {
+                    path = wb_coll_prefix + WB_wombat_location.origin + "/" + path;
+                    rebuild = true;
+                }
+                
                 // replace scheme to ensure using the correct server scheme
                 //if (starts_with(url, wb_orig_scheme) && (wb_orig_scheme != curr_scheme)) {
                 if (prefix != curr_scheme && prefix != REL_PREFIX) {
-                    url = curr_scheme + url.substring(prefix.length);
+                    rebuild = true;
                 }
+
+                if (rebuild) {
+                    url = curr_scheme + host + path;
+                }
+
                 return url;
             }
             return wb_replay_date_prefix + url;
@@ -1362,6 +1381,11 @@ var wombat_internal = function(window) {
         wb_info = wbinfo;
 
         wb_replay_prefix = wbinfo.prefix;
+        if (wb_replay_prefix.indexOf(window.location.origin) == 0) {
+            wb_coll_prefix = wb_replay_prefix.substring(window.location.origin.length + 1);
+        } else {
+            wb_coll_prefix = wb_replay_prefix;
+        }
 
         wbinfo.wombat_opts = wbinfo.wombat_opts || {};
         wb_opts = wbinfo.wombat_opts;
@@ -1381,6 +1405,7 @@ var wombat_internal = function(window) {
             }
 
             wb_replay_date_prefix = wb_replay_prefix + ts_mod;
+            wb_coll_prefix += ts_mod;
 
             if (!wbinfo.is_live && wbinfo.wombat_ts.length > 0) {
                 wb_capture_date_part = "/" + wbinfo.wombat_ts + "/";
