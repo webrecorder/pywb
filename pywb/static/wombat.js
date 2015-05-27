@@ -32,6 +32,7 @@ var wombat_internal = function(window) {
     var wb_replay_prefix;
     var wb_replay_date_prefix;
     var wb_coll_prefix;
+    var wb_coll_prefix_check;
     var wb_capture_date_part;
     var wb_orig_scheme;
     var wb_orig_host;
@@ -230,7 +231,7 @@ var wombat_internal = function(window) {
                 var path = url.substring(prefix_host.length);
                 var rebuild = false;
 
-                if (path.indexOf(wb_coll_prefix) != 0 && url.indexOf("static") != 0) {
+                if (path.indexOf(wb_coll_prefix_check) < 0 && url.indexOf("/static/") < 0) {
                     path = wb_coll_prefix + WB_wombat_location.origin + "/" + path;
                     rebuild = true;
                 }
@@ -1386,6 +1387,7 @@ var wombat_internal = function(window) {
         } else {
             wb_coll_prefix = wb_replay_prefix;
         }
+        wb_coll_prefix_check = wb_coll_prefix;
 
         wbinfo.wombat_opts = wbinfo.wombat_opts || {};
         wb_opts = wbinfo.wombat_opts;
