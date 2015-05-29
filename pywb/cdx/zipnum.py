@@ -57,7 +57,7 @@ class LocMapResolver(object):
                 parts = line.rstrip().split('\t')
                 self.loc_map[parts[0]] = parts[1:]
 
-    def __call__(self, part):
+    def __call__(self, part, query):
         return self.loc_map[part]
 
 
@@ -76,7 +76,7 @@ class LocPrefixResolver(object):
     def load_loc(self):
         pass
 
-    def __call__(self, part):
+    def __call__(self, part, query):
         return [self.prefix + part]
 
 
@@ -290,7 +290,7 @@ class ZipNumCluster(CDXSource):
         last_exc = None
         last_traceback = None
 
-        for location in self.loc_resolver(blocks.part):
+        for location in self.loc_resolver(blocks.part, query):
             try:
                 return self.load_blocks(location, blocks, ranges, query)
             except Exception as exc:
