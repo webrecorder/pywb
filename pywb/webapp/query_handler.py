@@ -90,6 +90,7 @@ class QueryHandler(object):
                 else:
                     params['filter'] = wbrequest.query_filter
 
+            params['coll'] = wbrequest.coll
             if wbrequest.custom_params:
                 params.update(wbrequest.custom_params)
 
