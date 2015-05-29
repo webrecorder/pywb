@@ -22,6 +22,7 @@ class ZipBlocks:
         self.length = length
         self.count = count
 
+
 #=================================================================
 #TODO: see if these could be combined with warc path resolvers
 
@@ -134,8 +135,10 @@ class ZipNumCluster(CDXSource):
 
     def load_cdx(self, query):
         self.loc_resolver.load_loc()
+        return self._do_load_cdx(self.summary, query)
 
-        reader = open(self.summary, 'rb')
+    def _do_load_cdx(self, filename, query):
+        reader = open(filename, 'rb')
 
         idx_iter = self.compute_page_range(reader, query)
 
@@ -165,13 +168,16 @@ class ZipNumCluster(CDXSource):
         else:
             pagesize = int(pagesize)
 
+        last_line = None
+
         # Get End
         end_iter = search(reader, query.end_key, prev_size=1)
 
         try:
             end_line = end_iter.next()
         except StopIteration:
-            end_line = read_last_line(reader)
+            last_line = read_last_line(reader)
+            end_line = last_line
 
         # Get Start
         first_iter = iter_range(reader,
@@ -182,34 +188,40 @@ class ZipNumCluster(CDXSource):
         try:
             first_line = first_iter.next()
         except StopIteration:
-            reader.close()
-            if query.page_count:
-                yield self._page_info(0, pagesize, 0)
-                return
+            if end_line == last_line and query.key >= last_line:
+                first_line = last_line
             else:
-                raise
+                reader.close()
+                if query.page_count:
+                    yield self._page_info(0, pagesize, 0)
+                    return
+                else:
+                    raise
 
         first = IDXObject(first_line)
 
         end = IDXObject(end_line)
-        diff = end['lineno'] - first['lineno']
 
-        total_pages = diff / pagesize + 1
+        try:
+            blocks = end['lineno'] - first['lineno']
+            total_pages = blocks / pagesize + 1
+        except:
+            blocks = -1
+            total_pages = 1
 
         if query.page_count:
-            blocks = diff + 1
             # same line, so actually need to look at cdx
             # to determine if it exists
-            if total_pages == 1:
+            if blocks == 0:
                 try:
                     block_cdx_iter = self.idx_to_cdx([first_line], query)
                     block = block_cdx_iter.next()
                     cdx = block.next()
                 except StopIteration:
                     total_pages = 0
-                    blocks = 0
+                    blocks = -1
 
-            yield self._page_info(total_pages, pagesize, blocks)
+            yield self._page_info(total_pages, pagesize, blocks + 1)
             reader.close()
             return
 
@@ -220,7 +232,9 @@ class ZipNumCluster(CDXSource):
             raise CDXException(msg.format(curr_page, total_pages - 1))
 
         startline = curr_page * pagesize
-        endline = min(startline + pagesize - 1, diff)
+        endline = startline + pagesize - 1
+        if blocks >= 0:
+            endline = min(endline, blocks)
 
         if curr_page == 0:
             yield first_line

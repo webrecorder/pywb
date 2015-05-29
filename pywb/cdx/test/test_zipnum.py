@@ -6,9 +6,10 @@ org,iana)/ 20140127171238 http://www.iana.org/ warc/revisit - OSSAPWJ23L56IYVRW3
 
 # test idx index (tabs replacad with 4 spaces)
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='prefix', showPagedIndex=True)
-org,iana)/dnssec 20140126201307    zipnum    8511    373    35
-org,iana)/domains/int 20140126201239    zipnum    8884    353    36
-org,iana)/domains/root/servers 20140126201227    zipnum    9237    386    37
+org,iana)/dnssec 20140126201307    zipnum    8517    373    35
+org,iana)/domains/int 20140126201239    zipnum    8890    355    36
+org,iana)/domains/root/servers 20140126201227    zipnum    9245    386    37
+
 
 >>> zip_ops_test(url='http://iana.org/domains/*')
 org,iana)/domains/arpa 20140126201248 http://www.iana.org/domains/arpa text/html 200 QOFZZRN6JIKAL2JRL6ZC2VVG42SPKGHT - - 2939 759039 iana.warc.gz
@@ -46,29 +47,30 @@ org,iana)/domains/root/servers 20140126201227 http://www.iana.org/domains/root/s
 
 # first page
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', showPagedIndex=True, pageSize=4, page=0)
-com,example)/ 20140127171200    zipnum    0    276    1
-org,iana)/ 20140127171238    zipnum    276    328    2
-org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126201055    zipnum    604    312    3
-org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200718    zipnum    916    235    4
+com,example)/ 20140127171200    zipnum    0    275    1
+org,iana)/ 20140127171238    zipnum    275    328    2
+org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126201055    zipnum    603    312    3
+org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200718    zipnum    915    235    4
+
 
 # first page -- simplified query
 >>> zip_ops_test(url='*.iana.org/path_part_ignored/', showPagedIndex=True, pageSize=4)
-com,example)/ 20140127171200    zipnum    0    276    1
-org,iana)/ 20140127171238    zipnum    276    328    2
-org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126201055    zipnum    604    312    3
-org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200718    zipnum    916    235    4
+com,example)/ 20140127171200    zipnum    0    275    1
+org,iana)/ 20140127171238    zipnum    275    328    2
+org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126201055    zipnum    603    312    3
+org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200718    zipnum    915    235    4
 
 # next page + json
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', output='json', showPagedIndex=True, pageSize=4, page=1)
-{"urlkey": "org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200912", "part": "zipnum", "offset": 1151, "length": 235, "lineno": 5}
-{"urlkey": "org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126201240", "part": "zipnum", "offset": 1386, "length": 306, "lineno": 6}
+{"urlkey": "org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200912", "part": "zipnum", "offset": 1150, "length": 235, "lineno": 5}
+{"urlkey": "org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126201240", "part": "zipnum", "offset": 1385, "length": 307, "lineno": 6}
 {"urlkey": "org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126200654", "part": "zipnum", "offset": 1692, "length": 235, "lineno": 7}
 {"urlkey": "org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126200816", "part": "zipnum", "offset": 1927, "length": 231, "lineno": 8}
 
 # last page
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', showPagedIndex=True, pageSize=4, page=9)
-org,iana)/domains/root/servers 20140126201227    zipnum    9237    386    37
-org,iana)/time-zones 20140126200737    zipnum    9623    145    38
+org,iana)/domains/root/servers 20140126201227    zipnum    9245    386    37
+org,iana)/time-zones 20140126200737    zipnum    9631    166    38
 
 # last page cdx
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', pageSize=4, page=9)
@@ -78,7 +80,8 @@ org,iana)/performance/ietf-draft-status 20140126200815 http://www.iana.org/perfo
 org,iana)/performance/ietf-statistics 20140126200804 http://www.iana.org/performance/ietf-statistics text/html 200 XOFML5WNBQMTSULLIIPLSP6U5MX33HN6 - - 3712 582987 iana.warc.gz
 org,iana)/protocols 20140126200715 http://www.iana.org/protocols text/html 200 IRUJZEUAXOUUG224ZMI4VWTUPJX6XJTT - - 63663 496277 iana.warc.gz
 org,iana)/time-zones 20140126200737 http://www.iana.org/time-zones text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
-
+org,iana)/time-zones/x 20140126200737 http://www.iana.org/time-zones/X text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
+org,iana)/time-zones/y 20140126200737 http://www.iana.org/time-zones/Y text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
 
 # last page reverse -- not yet supported
 #>>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', reverse=True, showPagedIndex=True, pageSize=4, page=9)
@@ -88,6 +91,8 @@ org,iana)/time-zones 20140126200737 http://www.iana.org/time-zones text/html 200
 
 # last page reverse CDX
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', reverse=True, pageSize=4, page=9)
+org,iana)/time-zones/y 20140126200737 http://www.iana.org/time-zones/Y text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
+org,iana)/time-zones/x 20140126200737 http://www.iana.org/time-zones/X text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
 org,iana)/time-zones 20140126200737 http://www.iana.org/time-zones text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
 org,iana)/protocols 20140126200715 http://www.iana.org/protocols text/html 200 IRUJZEUAXOUUG224ZMI4VWTUPJX6XJTT - - 63663 496277 iana.warc.gz
 org,iana)/performance/ietf-statistics 20140126200804 http://www.iana.org/performance/ietf-statistics text/html 200 XOFML5WNBQMTSULLIIPLSP6U5MX33HN6 - - 3712 582987 iana.warc.gz
@@ -95,6 +100,20 @@ org,iana)/performance/ietf-draft-status 20140126200815 http://www.iana.org/perfo
 org,iana)/numbers 20140126200651 http://www.iana.org/numbers text/html 200 HWT5UZKURYLW5QNWVZCWFCANGEMU7XWK - - 3498 321385 iana.warc.gz
 org,iana)/domains/root/servers 20140126201227 http://www.iana.org/domains/root/servers text/html 200 AFW34N3S4NK2RJ6QWMVPB5E2AIUETAHU - - 3137 733840 iana.warc.gz
 
+# last url prefix
+>>> zip_ops_test(url='http://iana.org/time-zones*')
+org,iana)/time-zones 20140126200737 http://www.iana.org/time-zones text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
+org,iana)/time-zones/x 20140126200737 http://www.iana.org/time-zones/X text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
+org,iana)/time-zones/y 20140126200737 http://www.iana.org/time-zones/Y text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
+
+# last url prefix w/ slash
+>>> zip_ops_test(url='http://iana.org/time-zones/*')
+org,iana)/time-zones/x 20140126200737 http://www.iana.org/time-zones/X text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
+org,iana)/time-zones/y 20140126200737 http://www.iana.org/time-zones/Y text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
+
+# last url exact
+>>> zip_ops_test(url='http://iana.org/time-zones/Y')
+org,iana)/time-zones/y 20140126200737 http://www.iana.org/time-zones/Y text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
 
 # invalid page
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', showPagedIndex=True, pageSize=4, page=10)
@@ -110,7 +129,16 @@ NotFoundException: No Captures found for: http://aaa.aaa/
 Traceback (most recent call last):
 NotFoundException: No Captures found for: http://aaa.aaa/ (domain query)
 
+# list last index line, as we don't know if there are any captures at end
 >>> zip_ops_test(url='http://aaa.zz/', matchType='domain', showPagedIndex=True)
+org,iana)/time-zones 20140126200737    zipnum    9631    166    38
+
+# read cdx to find 0 pages
+>>> zip_ops_test(url='http://aaa.zz/', matchType='domain', showNumPages=True)
+{"blocks": 0, "pages": 0, "pageSize": 10}
+
+# read cdx to find no captures
+>>> zip_ops_test(url='http://aaa.zz/', matchType='domain')
 Traceback (most recent call last):
 NotFoundException: No Captures found for: http://aaa.zz/ (domain query)
 
