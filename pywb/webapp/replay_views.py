@@ -3,6 +3,7 @@ import logging
 
 from io import BytesIO
 from urlparse import urlsplit
+from itertools import chain
 
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.wbexception import WbException, NotFoundException
@@ -44,6 +45,7 @@ class ReplayView(object):
         self.head_insert_view = HeadInsertView.init_from_config(config)
 
         self.buffer_response = config.get('buffer_response', True)
+        self.buffer_max_size = config.get('buffer_max_size', 16384)
 
         self.redir_to_exact = config.get('redir_to_exact', True)
 
@@ -178,8 +180,16 @@ class ReplayView(object):
 
         # buffer response if buffering enabled
         if self.buffer_response:
-            response_iter = self.buffered_response(status_headers,
-                                                   response_iter)
+            content_len = status_headers.get_header('content-length')
+            try:
+                content_len = int(content_len)
+            except:
+                content_len = 0
+
+            if content_len <= 0:
+                response_iter = self.buffered_response(status_headers,
+                                                       response_iter,
+                                                       self.buffer_max_size)
 
         response = self.response_class(status_headers,
                                        response_iter,
@@ -193,24 +203,34 @@ class ReplayView(object):
         return response
 
     # Buffer rewrite iterator and return a response from a string
-    def buffered_response(self, status_headers, iterator):
+    def buffered_response(self, status_headers, iterator, max_size):
         out = BytesIO()
+        size = 0
+        read_all = True
 
         try:
             for buff in iterator:
-                out.write(bytes(buff))
+                buff = bytes(buff)
+                size += len(buff)
+                out.write(buff)
+                if max_size > 0 and size > max_size:
+                    read_all = False
+                    break
 
         finally:
             content = out.getvalue()
+            out.close()
 
+        if read_all:
             content_length_str = str(len(content))
 
             # remove existing content length
             status_headers.replace_header('Content-Length',
                                           content_length_str)
-            out.close()
-
-        return [content]
+            return [content]
+        else:
+            status_headers.remove_header('Content-Length')
+            return chain(iter([content]), iterator)
 
     def _redirect_if_needed(self, wbrequest, cdx):
         if wbrequest.options['is_proxy']:
