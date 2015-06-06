@@ -73,6 +73,14 @@ class FileOnlyPackageLoader(PackageLoader):
 
 
 #=================================================================
+class RelEnvironment(Environment):
+    """Override join_path() to enable relative template paths."""
+    def join_path(self, template, parent):
+        print(parent)
+        return os.path.join(os.path.dirname(parent), template)
+
+
+#=================================================================
 class J2TemplateView(object):
     shared_jinja_env = None
 
@@ -94,7 +102,7 @@ class J2TemplateView(object):
         if overlay_env:
             jinja_env = overlay_env.overlay(loader=loader, trim_blocks=True)
         else:
-            jinja_env = Environment(loader=loader, trim_blocks=True)
+            jinja_env = RelEnvironment(loader=loader, trim_blocks=True)
 
         jinja_env.filters.update(FILTERS)
         J2TemplateView.shared_jinja_env = jinja_env
