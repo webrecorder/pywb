@@ -290,6 +290,11 @@ class ZipNumCluster(CDXSource):
         last_exc = None
         last_traceback = None
 
+        try:
+            locations = self.loc_resolver(blocks.part, query)
+        except:
+            raise Exception('No Locations Found for: ' + blocks.part)
+
         for location in self.loc_resolver(blocks.part, query):
             try:
                 return self.load_blocks(location, blocks, ranges, query)
@@ -299,9 +304,9 @@ class ZipNumCluster(CDXSource):
                 last_traceback = sys.exc_info()[2]
 
         if last_exc:
-            raise exc, None, last_traceback
+            raise last_exc, None, last_traceback
         else:
-            raise Exception('No Locations Found for: ' + block.part)
+            raise Exception('No Locations Found for: ' + blocks.part)
 
     def load_blocks(self, location, blocks, ranges, query):
         """ Load one or more blocks of compressed cdx lines, return

@@ -142,6 +142,22 @@ org,iana)/time-zones 20140126200737    zipnum    9631    166    38
 Traceback (most recent call last):
 NotFoundException: No Captures found for: http://aaa.zz/ (domain query)
 
+# Invalid .idx filesor or missing loc
+
+>>> zip_test_err(url='http://example.com/', matchType='exact')
+Traceback (most recent call last):
+Exception: No Locations Found for: foo
+
+
+>>> zip_test_err(url='http://iana.org/x', matchType='exact')
+Traceback (most recent call last):
+IOError: [Errno 2] No such file or directory: './sample_archive/invalid'
+
+
+>>> zip_test_err(url='http://example.zz/x', matchType='exact')
+Traceback (most recent call last):
+Exception: No Locations Found for: foo2
+
 """
 
 from test_cdxops import cdx_ops_test
@@ -159,6 +175,10 @@ test_zipnum = get_test_dir() + 'zipcdx/zipnum-sample.idx'
 
 def zip_ops_test(url, **kwargs):
     sources = test_zipnum
+    cdx_ops_test(url, sources, **kwargs)
+
+def zip_test_err(url, **kwargs):
+    sources = get_test_dir() + 'zipcdx/zipnum-bad.idx'
     cdx_ops_test(url, sources, **kwargs)
 
 
