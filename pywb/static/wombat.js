@@ -1125,6 +1125,10 @@ var wombat_internal = function(window) {
                     if (!src || src == "about:blank" || src.indexOf("javascript:") >= 0) {
                         var win = created.contentWindow;
 
+                        if (!win) {
+                            return created;
+                        }
+
                         win.WB_wombat_location = win.location;
                         win.document.WB_wombat_location = win.document.location;
                         win.WB_wombat_top = window.WB_wombat_top;
