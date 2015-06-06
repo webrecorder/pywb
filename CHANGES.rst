@@ -1,3 +1,31 @@
+pywb 0.10.0 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* Per-collection cacheing settings: ``rewrite_opts.http_cache`` can be set to:
+
+    - ``pass`` - keep cacheing headers as-is (applies to ``Cache-Control``, ``Expires``, ``Etag`` and ``Last-Modified``)
+    - ``0`` - add ``Cache-Control: no-cache; no-store``
+    - ``N`` - add ``Cache-Control: max-age=N`` and corresponding ``Expires`` header
+    - None (default) -- Rewrite cache headers, effectively removing them (current behavior)
+  
+* New improved Wombat, including:
+
+    - better handling of new iframes set to ``about:blank``, add all overrides
+    - createElement() override (can be disabled)
+    - innerHTML prototype override (can be disabled)
+    
+* Rules: Improved rewriting for Google+, Twitter, YT comments
+
+* Video: Improved support for LiveStream playlist, detect newly added <object> and <embed> videos (with mutation observers)
+
+* Indexing: Add contents of ``WARC-Json-Metadata`` to ``metadata`` field in cdx-json
+
+* Buffering: Only buffer when content-length is missing and only up-to first 16K
+
+* ZipNum: Fix bug with contents of last block being inaccessible, improved test coverage for zipnum.
+    
+
+
 pywb 0.9.8 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
