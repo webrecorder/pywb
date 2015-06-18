@@ -174,10 +174,18 @@ rules:
         match: 'videos(?:_[^/]+)?/([^?]+)'
 
     # disqus
-    - url_prefix: 'com,disqus'
+    - url_prefix: 'xcom,disqus'
 
       rewrite:
         js_rewrite_location: location
+
+    - aurl_prefix: 'xcom,disqus)/embed/comments'
+
+      fuzzy_lookup:
+          - base
+          - version
+          - t_i
+
 
 
     # youtube rules
