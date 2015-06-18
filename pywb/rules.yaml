@@ -179,7 +179,7 @@ rules:
       rewrite:
         js_rewrite_location: location
 
-    - aurl_prefix: 'com,disqus)/embed/comments'
+    - url_prefix: 'com,disqus)/embed/comments'
 
       fuzzy_lookup:
           - base
