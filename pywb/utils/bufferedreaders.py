@@ -10,6 +10,14 @@ def gzip_decompressor():
     return zlib.decompressobj(16 + zlib.MAX_WBITS)
 
 
+def deflate_decompressor():
+    return zlib.decompressobj()
+
+
+def deflate_decompressor_alt():
+    return zlib.decompressobj(-zlib.MAX_WBITS)
+
+
 #=================================================================
 class BufferedReader(object):
     """
@@ -30,7 +38,9 @@ class BufferedReader(object):
 
     """
 
-    DECOMPRESSORS = {'gzip': gzip_decompressor}
+    DECOMPRESSORS = {'gzip': gzip_decompressor,
+                     'deflate': deflate_decompressor,
+                     'deflate_alt': deflate_decompressor_alt}
 
     def __init__(self, stream, block_size=1024,
                  decomp_type=None,
@@ -91,7 +101,11 @@ class BufferedReader(object):
             except Exception:
                 # if first read attempt, assume non-gzipped stream
                 if self.num_read == 0:
-                    self.decompressor = None
+                    if self.decomp_type == 'deflate':
+                        self._init_decomp('deflate_alt')
+                        data = self._decompress(data)
+                    else:
+                        self.decompressor = None
                 # otherwise (partly decompressed), something is wrong
                 else:
                     raise

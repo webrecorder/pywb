@@ -42,3 +42,7 @@ class TestLiveRewriter:
         resp = self.testapp.get('/live/vi_/https://www.youtube.com/watch?v=DjFZyFWSt1M')
         assert resp.status_int == 200
         assert resp.content_type == RewriteHandler.YT_DL_TYPE, resp.content_type
+
+    def test_deflate(self):
+        resp = self.testapp.get('/live/mp_/http://httpbin.org/deflate')
+        assert '"deflated": true' in resp.body

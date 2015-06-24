@@ -73,6 +73,21 @@ class RewriteContent:
 
         return (rewritten_headers, stream)
 
+
+    def _check_encoding(self, rewritten_headers, stream, enc):
+        if (rewritten_headers.
+             contains_removed_header('content-encoding', enc)):
+
+            #optimize: if already a ChunkedDataReader, add the encoding
+            if isinstance(stream, ChunkedDataReader):
+                stream.set_decomp(enc)
+            else:
+                stream = DecompressingBufferedReader(stream, decomp_type=enc)
+
+        return stream
+
+
+
     def rewrite_content(self, urlrewriter, headers, stream,
                         head_insert_func=None, urlkey='',
                         cdx=None):
@@ -114,14 +129,8 @@ class RewriteContent:
         encoding = None
         first_buff = ''
 
-        if (rewritten_headers.
-             contains_removed_header('content-encoding', 'gzip')):
-
-            #optimize: if already a ChunkedDataReader, add gzip
-            if isinstance(stream, ChunkedDataReader):
-                stream.set_decomp('gzip')
-            else:
-                stream = DecompressingBufferedReader(stream)
+        stream = self._check_encoding(rewritten_headers, stream, 'gzip')
+        stream = self._check_encoding(rewritten_headers, stream, 'deflate')
 
         if mod == 'js_':
             text_type, stream = self._resolve_text_type('js',
