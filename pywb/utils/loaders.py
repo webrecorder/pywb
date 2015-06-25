@@ -48,7 +48,7 @@ def load_yaml_config(config_file):
 
 
 #=================================================================
-def extract_post_query(method, mime, length, stream):
+def extract_post_query(method, mime, length, stream, buffered_stream=None):
     """
     Extract a url-encoded form POST from stream
     If not a application/x-www-form-urlencoded, or no missing
@@ -80,6 +80,10 @@ def extract_post_query(method, mime, length, stream):
             break
 
         post_query += buff
+
+    if buffered_stream:
+        buffered_stream.write(post_query)
+        buffered_stream.seek(0)
 
     post_query = urllib.unquote_plus(post_query)
     return post_query
