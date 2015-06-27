@@ -76,7 +76,6 @@ setup(
         'jinja2',
         'surt',
         'pyyaml',
-        'youtube_dl',
         'waitress',
         'watchdog'
        ],

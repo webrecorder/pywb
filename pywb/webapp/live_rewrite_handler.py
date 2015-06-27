@@ -225,6 +225,11 @@ class RewriteHandler(SearchPageWbUrlHandler):
             cache_key = self._get_cache_key('v:', video_url)
 
         info = self.youtubedl.extract_info(video_url)
+        if info is None:
+            msg = ('youtube-dl is not installed, pip install youtube-dl to ' +
+                   'enable improved video proxy')
+
+            return WbResponse.text_response(msg=msg, status='404 Not Found')
 
         #if info and info.formats and len(info.formats) == 1:
 
@@ -251,35 +256,22 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
 #=================================================================
 class YoutubeDLWrapper(object):
-    """ Used to wrap youtubedl import, since youtubedl currently overrides
-    global HTMLParser.locatestarttagend regex with a different regex
-    that doesn't quite work.
-
-    This wrapper ensures that this regex is only set for YoutubeDL and unset
-    otherwise
+    """ YoutubeDL wrapper, inits youtubee-dil if it is available
     """
     def __init__(self):
-        import HTMLParser as htmlparser
-        self.htmlparser = htmlparser
-
-        self.orig_tagregex = htmlparser.locatestarttagend
-
-        from youtube_dl import YoutubeDL as YoutubeDL
-
-        self.ydl_tagregex = htmlparser.locatestarttagend
-
-        htmlparser.locatestarttagend = self.orig_tagregex
+        try:
+            from youtube_dl import YoutubeDL as YoutubeDL
+        except ImportError:
+            self.ydl = None
+            pass
 
         self.ydl = YoutubeDL(dict(simulate=True,
                                   youtube_include_dash_manifest=False))
         self.ydl.add_default_info_extractors()
 
     def extract_info(self, url):
-        info = None
-        try:
-            self.htmlparser.locatestarttagend = self.ydl_tagregex
-            info = self.ydl.extract_info(url)
-        finally:
-            self.htmlparser.locatestarttagend = self.orig_tagregex
+        if not self.ydl:
+            return None
 
+        info = self.ydl.extract_info(url)
         return info

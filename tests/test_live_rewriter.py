@@ -2,6 +2,8 @@ from pywb.webapp.live_rewrite_handler import RewriteHandler
 from pywb.apps.cli import LiveCli
 from pywb.framework.wsgi_wrappers import init_app
 import webtest
+import pytest
+
 
 class TestLiveRewriter:
     def setup(self):
@@ -39,6 +41,7 @@ class TestLiveRewriter:
         assert resp.status_int == 400
 
     def test_live_video_info(self):
+        yt = pytest.importorskip('youtube_dl')
         resp = self.testapp.get('/live/vi_/https://www.youtube.com/watch?v=DjFZyFWSt1M')
         assert resp.status_int == 200
         assert resp.content_type == RewriteHandler.YT_DL_TYPE, resp.content_type

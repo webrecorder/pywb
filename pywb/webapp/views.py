@@ -76,7 +76,6 @@ class FileOnlyPackageLoader(PackageLoader):
 class RelEnvironment(Environment):
     """Override join_path() to enable relative template paths."""
     def join_path(self, template, parent):
-        print(parent)
         return os.path.join(os.path.dirname(parent), template)
 
 
