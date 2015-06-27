@@ -225,7 +225,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
             cache_key = self._get_cache_key('v:', video_url)
 
         info = self.youtubedl.extract_info(video_url)
-        if info is None:
+        if info is None:  #pragma: no cover
             msg = ('youtube-dl is not installed, pip install youtube-dl to ' +
                    'enable improved video proxy')
 
@@ -261,7 +261,7 @@ class YoutubeDLWrapper(object):
     def __init__(self):
         try:
             from youtube_dl import YoutubeDL as YoutubeDL
-        except ImportError:
+        except ImportError:  #pragma: no cover
             self.ydl = None
             pass
 
@@ -270,7 +270,7 @@ class YoutubeDLWrapper(object):
         self.ydl.add_default_info_extractors()
 
     def extract_info(self, url):
-        if not self.ydl:
+        if not self.ydl:  #pragma: no cover
             return None
 
         info = self.ydl.extract_info(url)
