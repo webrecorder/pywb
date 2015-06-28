@@ -9,7 +9,6 @@ from pywb.webapp.pywb_init import create_wb_router
 from pywb.framework.wsgi_wrappers import init_app
 import webtest
 import shutil
-import pytest
 
 import pywb.webapp.live_rewrite_handler
 
@@ -47,6 +46,14 @@ class ProxyRequest(BaseHTTPRequestHandler):
     def do_PUTMETA(self):
         self.do_GET()
 
+
+#=================================================================
+class MockYTDWrapper(object):
+    def extract_info(self, url):
+        return {'mock': 'youtube_dl_data'}
+
+
+pywb.webapp.live_rewrite_handler.YoutubeDLWrapper = MockYTDWrapper
 
 #=================================================================
 class TestProxyLiveRewriter:
@@ -163,8 +170,6 @@ class TestProxyLiveRewriter:
         assert len(self.cache) == 1
 
     def test_echo_proxy_video_info(self):
-        yt = pytest.importorskip('youtube_dl')
-
         resp = self.testapp.get('/rewrite/vi_/https://www.youtube.com/watch?v=DjFZyFWSt1M')
         assert resp.status_int == 200
         assert resp.content_type == RewriteHandler.YT_DL_TYPE, resp.content_type
@@ -181,8 +186,6 @@ class TestProxyLiveRewriter:
         assert RewriteHandler.create_cache_key('v:', 'https://www.youtube.com/watch?v=DjFZyFWSt1M') in self.cache
 
     def test_echo_proxy_video_with_referrer(self):
-        yt = pytest.importorskip('youtube_dl')
-
         headers = [('Range', 'bytes=1000-2000'), ('Referer', 'http://localhost:80/rewrite/https://example.com/')]
         resp = self.testapp.get('/rewrite/http://www.youtube.com/watch?v=DjFZyFWSt1M', headers=headers)
 

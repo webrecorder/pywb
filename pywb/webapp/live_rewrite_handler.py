@@ -229,7 +229,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
             msg = ('youtube-dl is not installed, pip install youtube-dl to ' +
                    'enable improved video proxy')
 
-            return WbResponse.text_response(msg=msg, status='404 Not Found')
+            return WbResponse.text_response(text=msg, status='404 Not Found')
 
         #if info and info.formats and len(info.formats) == 1:
 
@@ -256,14 +256,14 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
 #=================================================================
 class YoutubeDLWrapper(object):
-    """ YoutubeDL wrapper, inits youtubee-dil if it is available
+    """ YoutubeDL wrapper, inits youtubee-dl if it is available
     """
     def __init__(self):
         try:
             from youtube_dl import YoutubeDL as YoutubeDL
         except ImportError:  #pragma: no cover
             self.ydl = None
-            pass
+            return
 
         self.ydl = YoutubeDL(dict(simulate=True,
                                   youtube_include_dash_manifest=False))
