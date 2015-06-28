@@ -255,13 +255,13 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
 
 #=================================================================
-class YoutubeDLWrapper(object):
+class YoutubeDLWrapper(object):  #pragma: no cover
     """ YoutubeDL wrapper, inits youtubee-dl if it is available
     """
     def __init__(self):
         try:
             from youtube_dl import YoutubeDL as YoutubeDL
-        except ImportError:  #pragma: no cover
+        except ImportError:
             self.ydl = None
             return
 
@@ -270,7 +270,7 @@ class YoutubeDLWrapper(object):
         self.ydl.add_default_info_extractors()
 
     def extract_info(self, url):
-        if not self.ydl:  #pragma: no cover
+        if not self.ydl:
             return None
 
         info = self.ydl.extract_info(url)
