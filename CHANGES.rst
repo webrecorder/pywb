@@ -1,3 +1,13 @@
+pywb 0.10.1 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+- Support ``Content-Encoding: deflate`` which was not being handled.
+
+- Fix issues with ``fallback`` handlers: A POST request could result in double read of POST input data.
+
+- ``youtube-dl`` removed from dependency as it is only needed for live proxy. (related tests only run if ``youtube-dl`` is installed).
+
+
 pywb 0.10.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
