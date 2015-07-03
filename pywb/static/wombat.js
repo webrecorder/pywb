@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.3
+// Wombat JS-Rewriting Library v2.5
 //============================================
 
 
@@ -35,7 +35,7 @@ var wombat_internal = function(window) {
     var wb_coll_prefix_check;
     var wb_capture_date_part;
     var wb_orig_scheme;
-    var wb_orig_host;
+    var wb_orig_origin;
 
     var wb_setAttribute = window.Element.prototype.setAttribute;
     var wb_getAttribute = window.Element.prototype.getAttribute;
@@ -211,7 +211,7 @@ var wombat_internal = function(window) {
                 return url;
             }
 
-            return wb_replay_date_prefix + wb_orig_host + url;
+            return wb_replay_date_prefix + wb_orig_origin + url;
         }
 
         // If full url starting with http://, https:// or //
@@ -598,6 +598,40 @@ var wombat_internal = function(window) {
     }
 
     //============================================
+    function init_base_override()
+    {
+        if (!Object.defineProperty) {
+            return;
+        }
+
+        // <base> element
+        Object.defineProperty(window.HTMLBaseElement.prototype, "href",
+            {get: function() { return this.getAttribute("href"); }, configurable: false});
+
+
+        orig_getAttribute = window.HTMLBaseElement.prototype.getAttribute;
+
+        window.HTMLBaseElement.prototype.getAttribute = function(name) {
+            var result = orig_getAttribute.call(this, name);
+            if (name == "href") {
+                result = extract_orig(result);
+            }
+            return result;
+        }
+
+        // Shared baseURI
+        var orig_getter = document.__lookupGetter__("baseURI");
+
+        var get_baseURI = function() {
+            var res = orig_getter.call(this);
+            return extract_orig(res);
+        }
+
+        Object.defineProperty(window.HTMLElement.prototype, "baseURI", {get: get_baseURI, configurable: false, set: function() {}});
+        Object.defineProperty(window.HTMLDocument.prototype, "baseURI", {get: get_baseURI, configurable: false, set: function() {}});
+    }
+
+    //============================================
     function init_setAttribute_override()
     {
         if (!window.Element ||
@@ -838,35 +872,27 @@ var wombat_internal = function(window) {
 
 
     //============================================
-    function init_node_insert_obs(window)
+    function init_iframe_insert_obs(root)
     {
         if (!window.MutationObserver) {
             return;
         }
 
         var m = new MutationObserver(function(records, observer)
-                                     {
+        {
             for (var i = 0; i < records.length; i++) {
                 var r = records[i];
                 if (r.type == "childList") {
                     for (var j = 0; j < r.addedNodes.length; j++) {
-                        // skip canonical link tag, should have been handled by server-side rewrite
-                        // (maybe skip all links?)
-                        if (r.addedNodes[j].tagName == "LINK" && r.addedNodes[j].rel == "canonical") {
-                            continue;
+                        if (r.addedNodes[j].tagName == "IFRAME") {
+                            init_iframe_wombat(r.addedNodes[j]);
                         }
-                        add_attr_overrides(r.addedNodes[j].tagName, r.addedNodes[j]);
-                        //rewrite_attr(r.addedNodes[j], "href", rewrite_url);
-                        //rewrite_attr(r.addedNodes[j], "src", rewrite_url);
-                        //if (r.addedNodes[j].tagName == "IFRAME") {
-                        //    init_iframe_wombat(r.addedNodes[j]);
-                        //}
                     }
                 }
             }
         });
 
-        m.observe(window.document.documentElement, {
+        m.observe(root, {
             childList: true,
             subtree: true,
         });
@@ -976,67 +1002,154 @@ var wombat_internal = function(window) {
     }
 
     //============================================
-    function override_attr(obj, attr) {
-        var setter = function(orig) {
-            var val = rewrite_url(orig);
-            wb_setAttribute.call(this, attr, val);
-            return val;
-        }
-
-        var getter = function(val) {
-            var res = this.getAttribute(attr);
-            //res = extract_orig(res);
-            return res;
-        }
-
-        var curr_src = obj.getAttribute(attr);
-
-        def_prop(obj, attr, curr_src, setter, getter);
-    }
-
-    //============================================
-    function override_proto_prop(obj, prop) {
-        if (!window.DOMParser) {
-            return;
-        }
-
+    function get_orig_getter(obj, prop) {
         var orig_getter;
-        var orig_setter;
 
         if (obj.__lookupGetter__) {
             orig_getter = obj.__lookupGetter__(prop);
         }
 
+        if (!orig_getter && Object.getOwnPropertyDescriptor) {
+            var props = Object.getOwnPropertyDescriptor(obj, prop);
+            if (props) {
+                orig_getter = props.get;
+            }
+        }
+
+        return orig_getter;
+    }
+
+    //============================================
+    function get_orig_setter(obj, prop) {
+        var orig_setter;
+
         if (obj.__lookupSetter__) {
             orig_setter = obj.__lookupSetter__(prop);
         }
 
-        if ((!orig_getter || !orig_setter) && Object.getOwnPropertyDescriptor) {
+        if (!orig_setter && Object.getOwnPropertyDescriptor) {
             var props = Object.getOwnPropertyDescriptor(obj, prop);
             if (props) {
-                orig_getter = props.get;
                 orig_setter = props.set;
             }
         }
 
-        if (!orig_getter || !orig_setter) {
+        return orig_setter;
+    }
+
+    //============================================
+    function override_attr(obj, attr) {
+        var orig_getter = get_orig_getter(obj, attr);
+        var orig_setter = get_orig_setter(obj, attr);
+
+        if (!orig_setter) {
+            return;
+        }
+
+        var setter = function(orig) {
+            var val = rewrite_url(orig);
+            //wb_setAttribute.call(this, attr, val);
+            orig_setter.call(this, val);
+            return val;
+        }
+
+        //var getter = function(val) {
+            //var res = this.getAttribute(attr);
+            //res = extract_orig(res);
+        //    return orig_getter.call(this);
+        //}
+
+        var curr_src = obj.getAttribute(attr);
+
+        def_prop(obj, attr, curr_src, setter, orig_getter);
+    }
+
+    //============================================
+    function override_innerHTML() {
+        if (!window.DOMParser ||
+            !window.HTMLElement ||
+            !window.HTMLElement.prototype) {
+            return;
+        }
+
+        var obj = window.HTMLElement.prototype;
+        var prop = "innerHTML";
+
+        var orig_getter = get_orig_getter(obj, prop);
+        var orig_setter = get_orig_setter(obj, prop);
+
+        if (!orig_setter) {
             return;
         }
 
         var setter = function(orig) {
             var res = orig;
             if (!this._no_rewrite) {
+                //init_iframe_insert_obs(this);
                 res = rewrite_innerHTML(orig);
             }
             orig_setter.call(this, res);
         }
 
-        var getter = function() {
-            return orig_getter.call(this);
+        Object.defineProperty(obj, prop, {set: setter, get: orig_getter, configurable: false, enumerable: true});
+    }
+
+
+    //============================================
+    function override_iframe_content_access(prop)
+    {
+        if (!window.HTMLIFrameElement ||
+            !window.HTMLIFrameElement.prototype) {
+            return;
         }
 
-        Object.defineProperty(obj, prop, {set: setter, get: getter, configurable: false, enumerable: true});
+        var obj = window.HTMLIFrameElement.prototype;
+
+        var orig_getter = get_orig_getter(obj, prop);
+        var orig_setter = get_orig_setter(obj, prop);
+
+        if (!orig_getter) {
+            return;
+        }
+
+        var getter = function() {
+            if (!this._wombat) {
+                init_iframe_wombat(this);
+            }
+            return orig_getter.call(this);
+        };
+        
+        Object.defineProperty(obj, prop, {set: orig_setter, get: getter, configurable: false, enumerable: true});
     }
+
+    //============================================
+    function init_insertAdjacentHTML_override()
+    {
+        if (!window.Element ||
+            !window.Element.prototype ||
+            !window.Element.prototype.insertAdjacentHTML) {
+            return;
+        }
+
+        var orig_insertAdjacentHTML = window.Element.prototype.insertAdjacentHTML;
+
+        var insertAdjacent_override = function(position, text)
+        {
+            if (!this._no_rewrite) {
+                // inserting adjacent, so must observe parent
+                //if (this.parentElement) {
+                //    init_iframe_insert_obs(this.parentElement);
+                //}
+                text = rewrite_innerHTML(text);
+            }
+ 
+            return orig_insertAdjacentHTML.call(this, position, text);
+        }
+
+        window.Element.prototype.insertAdjacentHTML = insertAdjacent_override;
+    }
+
+
 
     //============================================
     function init_wombat_loc(win) {
@@ -1050,17 +1163,30 @@ var wombat_internal = function(window) {
 
         if (wombat_location._autooverride) {
 
-            var setter = function(val) {
-                if (typeof(val) == "string") {
-                    if (starts_with(val, "about:")) {
-                        return null;
-                    }
-                    this._WB_wombat_location.href = val;
+            var setter = function(value) {
+                if (this._WB_wombat_location) {
+                    this._WB_wombat_location.href = value;
+                } else {
+                    this.location = value;
                 }
             }
 
-            def_prop(win, "WB_wombat_location", wombat_location, setter);
-            def_prop(win.document, "WB_wombat_location", wombat_location, setter);
+            var getter = function() {
+                if (this._WB_wombat_location) {
+                    return this._WB_wombat_location;
+                } else {
+                    return this.location;
+                }
+            }
+
+            win.Object.defineProperty(win.Object.prototype, "WB_wombat_location",
+                                      {set: setter, configurable: false,
+                                       get: getter});
+
+            win._WB_wombat_location = wombat_location;
+            win.document._WB_wombat_location = wombat_location;
+            //def_prop(win, "WB_wombat_location", wombat_location, setter);
+            //def_prop(win.document, "WB_wombat_location", wombat_location, setter);
         } else {
             win.WB_wombat_location = wombat_location;
             win.document.WB_wombat_location = wombat_location;
@@ -1109,33 +1235,11 @@ var wombat_internal = function(window) {
                         rewrite_children(child);
                     }
                 }
-                /*
-                if (child.tagName) {
-                    if (child.tagName == "IFRAME") { 
-                        //init_iframe_wombat(child);
-                    }
 
-                    add_attr_overrides(child.tagName, child);
-                }
-*/
                 var created = orig.apply(this, arguments);
 
                 if (created && created.tagName == "IFRAME") {
-                    var src = created.src;
-                    if (!src || src == "about:blank" || src.indexOf("javascript:") >= 0) {
-                        var win = created.contentWindow;
-
-                        if (!win) {
-                            return created;
-                        }
-
-                        win.WB_wombat_location = win.location;
-                        win.document.WB_wombat_location = win.document.location;
-                        win.WB_wombat_top = window.WB_wombat_top;
-
-                        win._WBWombat = wombat_internal(win);
-                        win._wb_wombat = new win._WBWombat(wb_info);
-                    }
+                    init_iframe_wombat(created);
                 }
 
                 return created;
@@ -1157,6 +1261,13 @@ var wombat_internal = function(window) {
         var orig = window.postMessage;
 
         var postmessage_rewritten = function(message, targetOrigin, transfer) {
+            if (targetOrigin == this.location.origin) {
+                return orig.call(this, message, targetOrigin, transfer);
+            } else if (targetOrigin.split("//")[1] == window.location.host) {
+                targetOrigin = window.location.protocol + "//" + window.location.host;
+                return orig.call(this, message, targetOrigin, transfer);
+            }
+
             message = {"origin": targetOrigin, "message": message};
 
             if (targetOrigin && targetOrigin != "*") {
@@ -1305,33 +1416,28 @@ var wombat_internal = function(window) {
 
     //============================================
     function init_iframe_wombat(iframe) {
-        function do_init(the_iframe) {
-            var win = the_iframe.contentWindow;
-
-            if (!win || win == window || win._skip_wombat) {
-                return;
-            }
-
-            if (!win._wb_wombat || !win.WB_wombat_location) {
-                win._WBWombat = wombat_internal(win);
-                win._wb_wombat = new win._WBWombat(wb_info);
-            } else if (!win.document.WB_wombat_location) {
-                //init_wombat_loc(win);
-                win.document.WB_wombat_location = win.WB_wombat_location;
-                init_doc_overrides(win, wb_info.wombat_opts);
-            }
+        if (iframe._wombat) {
+            return;
         }
 
-        function init_doc() {
-            do_init(this);
+        iframe._wombat = true;
+
+        var win = iframe.contentWindow;
+
+        if (!win || win == window || win._skip_wombat || win._wb_wombat) {
+            return iframe;
         }
 
-        //do_init(iframe);
-
-        if (iframe.addEventListener) {
-            iframe.addEventListener('load', init_doc, true);
-        } else if (iframe.attachEvent) {
-            iframe.attachEvent('onload', init_doc);
+        var src = iframe.src;
+        
+        if (!src || src == "" || src == "about:blank" || src.indexOf("javascript:") >= 0) {
+            win._WBWombat = wombat_internal(win);
+            win._wb_wombat = new win._WBWombat(wb_info);
+        } else {
+            // These should get overriden when content is loaded, but just in case...
+            win.WB_wombat_location = win.location;
+            win.document.WB_wombat_location = win.document.location;
+            win.WB_wombat_top = window.WB_wombat_top;
         }
     }
 
@@ -1350,7 +1456,6 @@ var wombat_internal = function(window) {
 
 
         try {
-
             Object.defineProperty(window.document, "domain", {set: function() {}, configurable: false,
                                                               get: function() { return wbinfo.wombat_host }});
 
@@ -1370,11 +1475,6 @@ var wombat_internal = function(window) {
         // Attr observers
         if (!wb_opts.skip_attr_observers) {
             init_href_src_obs(window);
-        }
-
-        // Node insert observer -- not enabled by default
-        if (wb_opts.use_node_observers) {
-            init_node_insert_obs(window);
         }
 
         window.document._wb_override = true;
@@ -1421,7 +1521,7 @@ var wombat_internal = function(window) {
 
             wb_orig_scheme = wbinfo.wombat_scheme + '://';
 
-            wb_orig_host = wb_orig_scheme + wbinfo.wombat_host;
+            wb_orig_origin = wb_orig_scheme + wbinfo.wombat_host;
 
             init_bad_prefixes(wb_replay_prefix);
         }
@@ -1440,7 +1540,7 @@ var wombat_internal = function(window) {
         if (window.location != window.top.location) {
             window.__orig_parent = window.parent;
             if (is_framed) {
-                window.top.WB_wombat_location = window.WB_wombat_location;
+                window.top._WB_wombat_location = window._WB_wombat_location;
 
                 window.WB_wombat_top = find_next_top(window);
 
@@ -1453,7 +1553,7 @@ var wombat_internal = function(window) {
                     }
                 }
             } else {
-                window.top.WB_wombat_location = new WombatLocation(window.top.location);
+                window.top._WB_wombat_location = new WombatLocation(window.top.location);
                 window.WB_wombat_top = window.top;
             }
         } else {
@@ -1494,7 +1594,19 @@ var wombat_internal = function(window) {
         }
 
         // innerHTML can be overriden on prototype!
-        override_proto_prop(window.HTMLElement.prototype, "innerHTML");
+        override_innerHTML();
+
+
+        // init insertAdjacentHTML() override
+        init_insertAdjacentHTML_override();
+
+        // iframe.contentWindow and iframe.contentDocument overrides to 
+        // ensure wombat is inited on the iframe window!
+        override_iframe_content_access("contentWindow");
+        override_iframe_content_access("contentDocument");
+
+        // base override
+        init_base_override();
 
         // setAttribute
         if (!wb_opts.skip_setAttribute) {

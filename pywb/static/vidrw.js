@@ -113,8 +113,6 @@ __wbvidrw = (function() {
     {
         var obj_url = undefined;
 
-        console.log(elem);
-
         // already rewritten
         if (elem.outerHTML.indexOf(FLASH_PLAYER) >= 0) {
             return false;
