@@ -6,16 +6,21 @@ rules:
 
       fuzzy_lookup: '/profiles/show/.*with_replies\?.*(max_id=[^&]+)'
 
-#    - url_prefix: 'com,twimg,abs)/c/'
-
-#      rewrite:
-#        js_rewrite_location: urls
-
-
-    - url_prefix: 'com,twimg,ton)/'
+    - url_prefix: 'com,twimg,abs)/c/swift/en/bundle/boot'
 
       rewrite:
         js_rewrite_location: urls
+        js_regexs:
+            - match: 'window.location'
+              replace: 'window.WB_wombat_location'
+
+            - match: 'document.location'
+              replace: 'document.WB_wombat_location'
+
+    #- url_prefix: 'com,twimg,ton)/'
+
+    #  rewrite:
+    #    js_rewrite_location: all
 
     - url_prefix: 'com,twimg,amp)/amplify-web-player/prod/js/build.min.js'
 
