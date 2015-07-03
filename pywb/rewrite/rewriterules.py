@@ -36,8 +36,10 @@ class RewriteRules(BaseRule):
             js_default_class = JSLinkAndLocationRewriter
         elif self.js_rewrite_location == 'location':
             js_default_class = JSLocationOnlyRewriter
+            self.rewriters['json'] = JSNoneRewriter
         elif self.js_rewrite_location == 'none':
             js_default_class = JSNoneRewriter
+            self.rewriters['json'] = JSNoneRewriter
         else:
             js_default_class = JSLinkOnlyRewriter
 
