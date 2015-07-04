@@ -90,23 +90,31 @@ __wbvidrw = (function() {
     function handle_embed_tag(elem)
     {
         var src = elem.getAttribute("src");
-        if (src) {
-            if (elem._vidrw) {
-                return false;
-            }
-
-            // already rewritten
-            if (elem.outerHTML.indexOf(FLASH_PLAYER) >= 0) {
-                return false;
-            }
-
-            elem._vidrw = true;
-
-            check_replacement(elem, src);
-            return true;
+        if (!src) {
+            return false;
+        }
+        
+        if (elem._vidrw) {
+            return false;
         }
 
-        return false;
+        // already rewritten
+        if (elem.outerHTML.indexOf(FLASH_PLAYER) >= 0) {
+            return false;
+        }
+
+        elem._vidrw = true;
+        
+        if (src.indexOf("ustream.tv/flash") >= 0) {
+            var flashvars = elem.getAttribute("flashvars");
+            var res = flashvars.match(/[vc]id=([\d]+)/);
+            if (res) {
+                src = "http://www.ustream.tv/recorded/" + res[1];
+            }
+        }
+
+        check_replacement(elem, src);
+        return true;
     }
 
     function handle_object_tag(elem)
@@ -258,7 +266,7 @@ __wbvidrw = (function() {
                         var state = -1;
 
                         if (player && player.getPlayerState) {
-                           state = player.getPlayerState();
+                            state = player.getPlayerState();
                         }
 
                         // if no player or player is still buffering (is this ok), then replace
@@ -385,7 +393,7 @@ __wbvidrw = (function() {
             elem.parentNode.replaceChild(replacement, elem);
 
         } else {
-           elem.parentNode.replaceChild(replacement, elem);
+            elem.parentNode.replaceChild(replacement, elem);
         }
     }
 
@@ -611,7 +619,7 @@ __wbvidrw = (function() {
         }
 
         var m = new MutationObserver(function(records, observer)
-        {
+                                     {
             for (var i = 0; i < records.length; i++) {
                 var r = records[i];
                 if (r.type == "childList") {
@@ -630,9 +638,9 @@ __wbvidrw = (function() {
         });
 
         m.observe(window.document.documentElement, {
-                  childList: true,
-                  subtree: true,
-                });
+            childList: true,
+            subtree: true,
+        });
     }
 
 
