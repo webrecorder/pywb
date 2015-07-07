@@ -114,6 +114,14 @@
 >>> do_deprefix('http://example.com/file.html?param=http://localhost:8080/pywb/https%3A//example.com/filename.html&other=value&a=b&param2=http://localhost:8080/pywb/http://test.example.com', '/pywb/', 'http://localhost:8080/pywb/')
 'http://example.com/file.html?param=https://example.com/filename.html&other=value&a=b&param2=http://test.example.com'
 
+# urlencoded
+>>> do_deprefix('http://example.com/file.html?foo=bar&url=' + urllib.quote_plus('http://localhost:8080/pywb/http://example.com/filename.html') + '&foo2=bar2', '/pywb/', 'http://localhost:8080/pywb/')
+'http://example.com/file.html?foo=bar&url=http://example.com/filename.html&foo2=bar2'
+
+# with extra path
+>>> do_deprefix('http://example.com/file.html?foo=bar&url=' + urllib.quote_plus('http://localhost:8080/pywb/extra/path/http://example.com/filename.html') + '&foo2=bar2', '/pywb/', 'http://localhost:8080/pywb/')
+'http://example.com/file.html?foo=bar&url=http://example.com/filename.html&foo2=bar2'
+
 # HttpsUrlRewriter tests
 >>> httpsrewriter = HttpsUrlRewriter('http://example.com/', None)
 >>> httpsrewriter.rewrite('https://example.com/abc')

@@ -243,6 +243,7 @@ class WbUrl(BaseWbUrl):
         self.timestamp = res[0]
         self.mod = res[1]
         self.url = res[2]
+
         if self.timestamp:
             self.type = self.REPLAY
         else:
@@ -256,8 +257,11 @@ class WbUrl(BaseWbUrl):
 
     def deprefix_url(self, prefix):
         rex_query = '=' + re.escape(prefix) + '([0-9])*([\w]{2}_)?/?'
-        new_url = re.sub(rex_query, '=', self.url)
-        self.url = new_url
+        self.url = re.sub(rex_query, '=', self.url)
+
+        rex_query = '=(' + urllib.quote_plus(prefix) + '.*?)((?:https?%3A)?%2F%2F[^&]+)'
+        self.url = re.sub(rex_query, '=\\2', self.url)
+
         return self.url
 
     def get_url(self, url=None):
