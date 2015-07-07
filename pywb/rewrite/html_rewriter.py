@@ -275,7 +275,7 @@ class HTMLRewriterMixin(object):
         # parser doesn't differentiate between 'attr=""' and just 'attr'
         # 'attr=""' is more common, so use that form
         if value:
-            self.out.write(' ' + name + '="' + value + '"')
+            self.out.write(' ' + name + '="' + value.replace('"', '&quot;') + '"')
         else:
             self.out.write(' ' + name + '=""')
 
