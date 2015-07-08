@@ -123,7 +123,7 @@ var wombat_internal = function(window) {
     var REL_PREFIX = "//";
 
     var VALID_PREFIXES = [HTTP_PREFIX, HTTPS_PREFIX, REL_PREFIX];
-    var IGNORE_PREFIXES = ["#", "about:", "data:", "mailto:", "javascript:"];
+    var IGNORE_PREFIXES = ["#", "about:", "data:", "mailto:", "javascript:", "{"];
 
     var BAD_PREFIXES;
 
@@ -315,38 +315,25 @@ var wombat_internal = function(window) {
 
     //============================================
     // Define custom property
-    function def_prop(obj, prop, value, set_func, get_func) {
-        var key = "_" + prop;
-        obj[key] = value;
-
+    function def_prop(obj, prop, set_func, get_func) {
         try {
             Object.defineProperty(obj, prop, {
                 configurable: false,
-                enumerable: true,
-                set: function(newval) {
-                    var result = set_func.call(obj, newval);
-                    if (result != undefined) {
-                        obj[key] = result;
-                    }
-                },
-                get: function() {
-                    if (get_func) {
-                        return get_func.call(obj, obj[key]);
-                    } else {
-                        return obj[key];
-                    }
-                }
+//                enumerable: true,
+                set: set_func,
+                get: get_func
             });
+
             return true;
         } catch (e) {
-            //var info = "Can't redefine prop " + prop;
-            //console.log(info);
+            var info = "Can't redefine prop " + prop;
+            console.warn(info);
             //f (obj && obj.tagName) {
             //    info += " on " + obj.tagName;
             //}
-            if (value != obj[prop]) {
-                obj[prop] = value;
-            }
+            //if (value != obj[prop]) {
+            //    obj[prop] = value;
+            //}
             return false;
         }
     }
@@ -368,6 +355,7 @@ var wombat_internal = function(window) {
             }
             return this._orig_loc.replace(new_url);
         }
+
         this.assign = function(url) {
             var new_url = rewrite_url(url);
             var orig = extract_orig(new_url);
@@ -376,11 +364,12 @@ var wombat_internal = function(window) {
             }
             return this._orig_loc.assign(new_url);
         }
+
         this.reload = loc.reload;
 
         // Adapted from:
         // https://gist.github.com/jlong/2428561
-        var parser = window.document.createElement('a');
+        var parser = window.document.createElement('a', true);
         var href = extract_orig(this._orig_href);
         parser.href = href;
 
@@ -395,8 +384,9 @@ var wombat_internal = function(window) {
             return this._orig_loc.hash;
         }
 
-        var _get_url_with_hash = function(url) {
-            return url + this._orig_loc.hash;
+        var _get_href = function() {
+            return extract_orig(this._orig_loc.href);
+            //return extract_orig(this._orig_href);
         }
 
         href = parser.getAttribute("href");
@@ -410,11 +400,11 @@ var wombat_internal = function(window) {
         }
 
         if (Object.defineProperty) {
-            var res1 = def_prop(this, "href", href,
+            var res1 = def_prop(this, "href",
                                 this.assign,
-                                _get_url_with_hash);
+                                _get_href);
 
-            var res2 = def_prop(this, "hash", parser.hash,
+            var res2 = def_prop(this, "hash",
                                 _set_hash,
                                 _get_hash);
 
@@ -559,7 +549,19 @@ var wombat_internal = function(window) {
 
         function rewritten_func(state_obj, title, url) {
             url = rewrite_url(url);
-            return orig_func.call(this, state_obj, title, url);
+
+            if (url == window.location.href) {
+                return;
+            }
+
+            orig_func.call(this, state_obj, title, url);
+
+            if (window.__orig_parent && window != window.__orig_parent && window.__orig_parent.update_wb_url) {
+                window.__orig_parent.update_wb_url(window.WB_wombat_location.href,
+                                                   wb_info.timestamp,
+                                                   wb_info.request_ts,
+                                                   wb_info.is_live);
+            }
         }
 
         window.history[func_name] = rewritten_func;
@@ -604,11 +606,7 @@ var wombat_internal = function(window) {
             return;
         }
 
-        // <base> element
-        Object.defineProperty(window.HTMLBaseElement.prototype, "href",
-            {get: function() { return this.getAttribute("href"); }, configurable: false});
-
-
+        // <base> element .getAttribute()
         orig_getAttribute = window.HTMLBaseElement.prototype.getAttribute;
 
         window.HTMLBaseElement.prototype.getAttribute = function(name) {
@@ -619,6 +617,13 @@ var wombat_internal = function(window) {
             return result;
         }
 
+        // <base> element .href
+        var base_href_get = function() {
+            return this.getAttribute("href");
+        };
+
+        def_prop(window.HTMLBaseElement.prototype, "href", undefined, base_href_get);
+
         // Shared baseURI
         var orig_getter = document.__lookupGetter__("baseURI");
 
@@ -627,8 +632,8 @@ var wombat_internal = function(window) {
             return extract_orig(res);
         }
 
-        Object.defineProperty(window.HTMLElement.prototype, "baseURI", {get: get_baseURI, configurable: false, set: function() {}});
-        Object.defineProperty(window.HTMLDocument.prototype, "baseURI", {get: get_baseURI, configurable: false, set: function() {}});
+        def_prop(window.HTMLElement.prototype, "baseURI", undefined, get_baseURI);
+        def_prop(window.HTMLDocument.prototype, "baseURI", undefined, get_baseURI);
     }
 
     //============================================
@@ -1053,15 +1058,14 @@ var wombat_internal = function(window) {
             return val;
         }
 
-        //var getter = function(val) {
-            //var res = this.getAttribute(attr);
-            //res = extract_orig(res);
-        //    return orig_getter.call(this);
-        //}
+        var getter = function(val) {
+            var res = orig_getter.call(this);
+            res = extract_orig(res);
+            return res;
+        }
 
-        var curr_src = obj.getAttribute(attr);
-
-        def_prop(obj, attr, curr_src, setter, orig_getter);
+        //var curr_src = obj.getAttribute(attr);
+        def_prop(obj, attr, setter, getter);
     }
 
     //============================================
@@ -1091,7 +1095,7 @@ var wombat_internal = function(window) {
             orig_setter.call(this, res);
         }
 
-        Object.defineProperty(obj, prop, {set: setter, get: orig_getter, configurable: false, enumerable: true});
+        def_prop(obj, prop, setter, orig_getter);
     }
 
 
@@ -1119,7 +1123,7 @@ var wombat_internal = function(window) {
             return orig_getter.call(this);
         };
         
-        Object.defineProperty(obj, prop, {set: orig_setter, get: getter, configurable: false, enumerable: true});
+        def_prop(obj, prop, orig_setter, getter);
     }
 
     //============================================
@@ -1179,14 +1183,10 @@ var wombat_internal = function(window) {
                 }
             }
 
-            win.Object.defineProperty(win.Object.prototype, "WB_wombat_location",
-                                      {set: setter, configurable: false,
-                                       get: getter});
+            def_prop(win.Object.prototype, "WB_wombat_location", setter, getter);
 
             win._WB_wombat_location = wombat_location;
             win.document._WB_wombat_location = wombat_location;
-            //def_prop(win, "WB_wombat_location", wombat_location, setter);
-            //def_prop(win.document, "WB_wombat_location", wombat_location, setter);
         } else {
             win.WB_wombat_location = wombat_location;
             win.document.WB_wombat_location = wombat_location;
@@ -1354,9 +1354,9 @@ var wombat_internal = function(window) {
     {
         var cookie_path_regex = /\bPath=\'?\"?([^;'"\s]+)/i;
 
-        //var get_cookie = function() {
-        //    return window.document.cookie;
-        //}
+        var orig_get_cookie = get_orig_getter(document, "cookie");
+        var orig_set_cookie = get_orig_setter(document, "cookie");
+
 
         var set_cookie = function(value) {
             var matched = value.match(cookie_path_regex);
@@ -1367,10 +1367,10 @@ var wombat_internal = function(window) {
                 value = value.replace(matched[1], rewritten);
             }
 
-            return value;
+            return orig_set_cookie.call(this, value);
         }
 
-        def_prop(window.document, "cookie", window.document.cookie, set_cookie);
+        def_prop(window.document, "cookie", set_cookie, orig_get_cookie);
     }
 
     //============================================
@@ -1455,15 +1455,9 @@ var wombat_internal = function(window) {
         var orig_referrer = extract_orig(window.document.referrer);
 
 
-        try {
-            Object.defineProperty(window.document, "domain", {set: function() {}, configurable: false,
-                                                              get: function() { return wbinfo.wombat_host }});
+        def_prop(window.document, "domain", undefined, function() { return wbinfo.wombat_host });
 
-            Object.defineProperty(window.document, "referrer", {set: function() {}, configurable: false,
-                                                                get: function() { return orig_referrer; }});
-        } catch (e) {
-
-        }
+        def_prop(window.document, "referrer", undefined, function() { return orig_referrer; });
 
 
         // Cookies
