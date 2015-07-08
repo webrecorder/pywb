@@ -13,7 +13,7 @@ class UrlRewriter(object):
     """
 
     NO_REWRITE_URI_PREFIX = ('#', 'javascript:', 'data:',
-                             'mailto:', 'about:', 'file:')
+                             'mailto:', 'about:', 'file:', '{')
 
     PROTOCOLS = ('http:', 'https:', 'ftp:', 'mms:', 'rtsp:', 'wais:')
 
