@@ -174,3 +174,43 @@ function update_wb_url(url, ts, request_ts, is_live) {
 if (_wb_js) {
     _wb_js.load();
 }
+
+function init_hash_connect() {
+    var frame = document.getElementById(IFRAME_ID).contentWindow;
+    
+    if (window.location.hash) {
+        var curr_url = wbinfo.capture_url + window.location.hash;
+        
+        frame.location.href = make_url(curr_url, wbinfo.request_ts, wbinfo.replay_mod);
+        //frame.location.hash = window.location.hash;
+    }
+    
+    function outer_hash_changed() {             
+        var the_frame = document.getElementById(IFRAME_ID).contentWindow;
+
+        if (window.location.hash == the_frame.location.hash) {
+            return;
+        }
+              
+        the_frame.location.hash = window.location.hash;
+        //the_frame.location.href = make_url(curr_url, curr_state.request_ts, wbinfo.replay_mod);
+    }
+    
+    function inner_hash_changed() {
+        var the_frame = document.getElementById(IFRAME_ID).contentWindow;
+
+        if (window.location.hash == the_frame.location.hash) {
+            return;
+        }
+ 
+        window.location.hash = the_frame.location.hash;
+    }
+
+    if ("onhashchange" in window) {
+        window.addEventListener("hashchange", outer_hash_changed, false);
+        frame.addEventListener("hashchange", inner_hash_changed, false);
+    }
+}
+
+
+document.addEventListener("DOMContentLoaded", init_hash_connect);
