@@ -1353,6 +1353,7 @@ var wombat_internal = function(window) {
     function init_cookies_override(window)
     {
         var cookie_path_regex = /\bPath=\'?\"?([^;'"\s]+)/i;
+        var cookie_domain_regex = /\bDomain=([^;'"\s]+)/i;
 
         var orig_get_cookie = get_orig_getter(document, "cookie");
         var orig_set_cookie = get_orig_setter(document, "cookie");
@@ -1366,6 +1367,13 @@ var wombat_internal = function(window) {
                 var rewritten = rewrite_url(matched[1]);
                 value = value.replace(matched[1], rewritten);
             }
+
+            matched = value.match(cookie_domain_regex);
+            if (matched) {
+                value = value.replace(matched[0], "");
+            }
+
+            value = value.replace("secure", "");
 
             return orig_set_cookie.call(this, value);
         }
