@@ -36,6 +36,7 @@ var wombat_internal = function(window) {
     var wb_capture_date_part;
     var wb_orig_scheme;
     var wb_orig_origin;
+    var wb_curr_host;
 
     var wb_setAttribute = window.Element.prototype.setAttribute;
     var wb_getAttribute = window.Element.prototype.getAttribute;
@@ -1353,27 +1354,57 @@ var wombat_internal = function(window) {
     function init_cookies_override(window)
     {
         var cookie_path_regex = /\bPath=\'?\"?([^;'"\s]+)/i;
-        var cookie_domain_regex = /\bDomain=([^;'"\s]+)/i;
+        var cookie_domain_regex = /\b(Domain=)([^;'"\s]+)/i;
+        var cookie_expires_regex = /\bExpires=([^;'"]+)/ig;
 
         var orig_get_cookie = get_orig_getter(document, "cookie");
         var orig_set_cookie = get_orig_setter(document, "cookie");
 
 
-        var set_cookie = function(value) {
-            var matched = value.match(cookie_path_regex);
+        function rewrite_cookie(cookie) {
+            var matched = cookie.match(cookie_path_regex);
 
-            // if has cookie path, rewrite and replace
+            // rewrite path
             if (matched) {
                 var rewritten = rewrite_url(matched[1]);
-                value = value.replace(matched[1], rewritten);
+
+                if (rewritten.indexOf(wb_curr_host) == 0) {
+                    rewritten = rewritten.substring(wb_curr_host.length);
+                }
+
+                cookie = cookie.replace(matched[1], rewritten);
             }
 
-            matched = value.match(cookie_domain_regex);
-            if (matched) {
-                value = value.replace(matched[0], "");
+            // if no subdomain, eg. "localhost", just remove domain altogether
+            if (window.location.hostname.indexOf(".") >= 0) {
+                cookie = cookie.replace(cookie_domain_regex, "$`$1." + window.location.hostname + "$'");
+            } else {
+                cookie = cookie.replace(cookie_domain_regex, "$`$'");
             }
 
-            value = value.replace("secure", "");
+            // rewrite secure, if needed
+            if (window.location.protocol != "https:") {
+                cookie = cookie.replace("secure", "");
+            }
+
+            return cookie;
+        }
+
+
+        var set_cookie = function(value) {
+            if (!value) {
+                return;
+            }
+
+            value = value.replace(cookie_expires_regex, "");
+
+            var cookies = value.split(",");
+
+            for (var i = 0; i < cookies.length; i++) {
+                cookies[i] = rewrite_cookie(cookies[i]);
+            }
+
+            value = cookies.join(",")
 
             return orig_set_cookie.call(this, value);
         }
@@ -1497,6 +1528,8 @@ var wombat_internal = function(window) {
 
         wbinfo.wombat_opts = wbinfo.wombat_opts || {};
         wb_opts = wbinfo.wombat_opts;
+
+        wb_curr_host = window.location.protocol + "//" + window.location.host;
 
         if (wb_replay_prefix) {
             var ts_mod;
