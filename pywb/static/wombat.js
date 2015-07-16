@@ -760,7 +760,7 @@ var wombat_internal = function(window) {
         //var timezone = new Date().getTimezoneOffset() * 60 * 1000;
         // Already UTC!
         var timezone = 0;
-        var timediff = Date.now() - (timestamp - timezone);
+        var timediff = window.Date.now() - (timestamp - timezone);
 
         window.__Date = window.Date;
         window.__Date_now = window.Date.now;
@@ -773,7 +773,7 @@ var wombat_internal = function(window) {
                 // seem to like undefined args, so must explicitly
                 // call constructor for each possible args 0..7
                 if (A === undefined) {
-                    return new Date(window.Date.now());
+                    return new Date(Date.now());
                 } else if (B === undefined) {
                     return new Date(A);
                 } else if (C === undefined) {
