@@ -139,7 +139,7 @@ class JSLocationRewriterMixin(object):
           #  (r'(?<=document\.)cookie', RegexRewriter.add_prefix(prefix), 0),
 
             #todo: move to mixin?
-           (r'(?<=[\s=(){])(top)\s*(?:[!})]|==|$)',
+           (r'(?<=[\s=(){])(top)\s*(?:[!}?)]|==|$)',
             RegexRewriter.add_prefix(prefix), 1),
 
            (r'^(top)\s*(?:[!})]|==|$)',

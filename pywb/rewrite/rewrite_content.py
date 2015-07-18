@@ -218,6 +218,9 @@ class RewriteContent:
 
     @staticmethod
     def _resolve_text_type(mod, text_type, stream):
+        if text_type == 'css' and mod == 'js':
+            return 'css', stream
+
         # only attempt to resolve between html and other text types
         if text_type != 'html':
             return mod, stream

@@ -352,7 +352,7 @@ __wbvidrw = (function() {
     }
 
     function do_replace_iframe(elem, url) {
-        var iframe = document.createElement("iframe", true);
+        var iframe = document.createElement("iframe");
         var dim = get_dim(elem);
         iframe.width = dim[0];
         iframe.height = dim[1];
