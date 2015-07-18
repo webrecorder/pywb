@@ -438,6 +438,12 @@ __wbvidrw = (function() {
         var vidId = undefined;
 
         if (!replacement) {
+
+            // check format, if this is just an swf file, and not a video, nothing to replace!
+            if (get_format_ext(info) == "swf") {
+                return;
+            }
+
             replacement = document.createElement("div", true);
 
             vidId = "_wb_vid" + Date.now() + Math.random();
