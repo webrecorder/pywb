@@ -1,23 +1,24 @@
 pywb 0.10.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
-- wombat 2.5 update -- significant wombat improvements:
+* wombat 2.5 update -- significant wombat improvements:
 
-- Cookies: more comprehensive client-side cookie overriding, including Path, Domain, and expires removal.
+    - Cookies: more comprehensive client-side cookie overriding, including Path, Domain, and expires removal.
 
-- ``WB_wombat_location`` overriden on Object prototype, defaults to ``location`` if ``_WB_wombat_location``, the actual, property is not set.
+    - ``WB_wombat_location`` overriden on Object prototype, defaults to ``location`` if ``_WB_wombat_location``, the actual,     property is not set.
 
-- ``WB_wombat_location.href`` proxies to actual location, responsive to ``pushState`` / ``replaceState`` location changes.
+    - ``WB_wombat_location.href`` proxies to actual location, responsive to ``pushState`` / ``replaceState`` location changes.
+    - ``.href`` and ``.src`` attributes correctly return original url in JavaScript.
+    
+    - More consistent and ``lookupGetter/lookupSetter`` overrides with ``Object.defineProperty``.
 
-- More consistent and ``lookupGetter/lookupSetter`` overrides with ``Object.defineProperty``.
+    - Added baseURI override, ``Element.prototype and ``document``.
 
-- Added baseURI override, ``Element.prototype and ``document``.
+    - Added ``insertAdjacentHTML()`` override.
 
-- Added ``insertAdjacentHTML()`` override.
+    - Improved iframe override, including check for `contentDocument` changes.
 
-- Improved iframe override, including check for `contentDocument` changes.
-
-- Don't rewrite urls that start with ``{``
+    - Don't rewrite urls that start with ``{``
 
 - Frames mode: ensure hash changes synchronized between inner and outer frames.
 
