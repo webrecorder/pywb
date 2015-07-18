@@ -762,10 +762,17 @@ var wombat_internal = function(window) {
         var timezone = 0;
         var timediff = window.Date.now() - (timestamp - timezone);
 
-        window.__Date = window.Date;
-        window.__Date_now = window.Date.now;
-        var utc = window.Date.UTC;
-        var parse = window.Date.parse;
+        if (window.__wb_Date_now) {
+            return;
+        }
+
+        var orig_date = window.Date;
+
+        var orig_utc = window.Date.UTC;
+        var orig_parse = window.Date.parse;
+        var orig_now = window.Date.now;
+
+        window.__wb_Date_now = orig_now;
 
         window.Date = function (Date) {
             return function (A, B, C, D, E, F, G) {
@@ -773,7 +780,7 @@ var wombat_internal = function(window) {
                 // seem to like undefined args, so must explicitly
                 // call constructor for each possible args 0..7
                 if (A === undefined) {
-                    return new Date(Date.now());
+                    return new Date(orig_now() - timediff);
                 } else if (B === undefined) {
                     return new Date(A);
                 } else if (C === undefined) {
@@ -792,14 +799,14 @@ var wombat_internal = function(window) {
             }
         }(window.Date);
 
-        window.Date.prototype = window.__Date.prototype;
+        window.Date.prototype = orig_date.prototype;
 
         window.Date.now = function() {
-            return __Date_now() - timediff;
+            return orig_now() - timediff;
         }
 
-        window.Date.UTC = utc;
-        window.Date.parse = parse;
+        window.Date.UTC = orig_utc;
+        window.Date.parse = orig_parse;
     }
 
     //============================================
@@ -961,7 +968,7 @@ var wombat_internal = function(window) {
     }
 
     //============================================
-    function rewrite_innerHTML(string) {
+    function rewrite_html(string) {
         var inner_doc = new DOMParser().parseFromString(string, "text/html");
 
         if (!inner_doc) {
@@ -1091,7 +1098,7 @@ var wombat_internal = function(window) {
             var res = orig;
             if (!this._no_rewrite) {
                 //init_iframe_insert_obs(this);
-                res = rewrite_innerHTML(orig);
+                res = rewrite_html(orig);
             }
             orig_setter.call(this, res);
         }
@@ -1145,7 +1152,7 @@ var wombat_internal = function(window) {
                 //if (this.parentElement) {
                 //    init_iframe_insert_obs(this.parentElement);
                 //}
-                text = rewrite_innerHTML(text);
+                text = rewrite_html(text);
             }
  
             return orig_insertAdjacentHTML.call(this, position, text);
@@ -1422,31 +1429,8 @@ var wombat_internal = function(window) {
         var orig_doc_write = window.document.write;
 
         var new_write = function(string) {
-            var write_doc = new DOMParser().parseFromString(string, "text/html");
-
-            if (!write_doc) {
-                return;
-            }
-
-            if (write_doc.head && this.head) {
-                var elems = write_doc.head.children;
-
-                for (var i = 0; i < elems.length; i++) {
-                    // Call orig write to ensure same execution order and placement
-                    rewrite_elem(elems[i]);
-                    orig_doc_write.call(this, elems[i].outerHTML);
-                }
-            }
-
-            if (write_doc.body && this.body) {
-                var elems = write_doc.body.children;
-
-                for (var i = 0; i < elems.length; i++) {
-                    // Call orig write to ensure same execution order and placement
-                    rewrite_elem(elems[i]);
-                    orig_doc_write.call(this, elems[i].outerHTML);
-                }
-            }
+            new_buff = rewrite_html(string);
+            orig_doc_write.call(this, new_buff);
         }
 
         window.document.write = new_write;

@@ -223,7 +223,9 @@ class BlockLoader(object):
         Load a file-like reader over http using range requests
         and an optional cookie created via a cookie_maker
         """
-        headers = {'Range': self._make_range_header(offset, length)}
+        headers = {}
+        if offset != 0 or length != -1:
+            headers['Range'] = self._make_range_header(offset, length)
 
         if self.cookie_maker:
             if isinstance(self.cookie_maker, basestring):
