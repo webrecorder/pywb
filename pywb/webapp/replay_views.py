@@ -191,6 +191,16 @@ class ReplayView(object):
                                                        response_iter,
                                                        self.buffer_max_size)
 
+        # Set Content-Location if not exact capture
+        if not self.redir_to_exact:
+            mod = wbrequest.options.get('replay_mod', wbrequest.wb_url.mod)
+            canon_url = (wbrequest.urlrewriter.
+                         get_new_url(timestamp=cdx['timestamp'],
+                                     url=cdx['url'],
+                                     mod=mod))
+
+            status_headers.headers.append(('Content-Location', canon_url))
+
         response = self.response_class(status_headers,
                                        response_iter,
                                        wbrequest=wbrequest,

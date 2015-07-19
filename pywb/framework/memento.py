@@ -106,10 +106,10 @@ class MementoRespMixin(object):
                                                                timestamp=ts,
                                                                url=url)
 
-                # Must set content location
-                if is_memento and is_timegate:
-                    self.status_headers.headers.append(('Content-Location',
-                                                        canon_link))
+                # set in replay_views -- Must set content location
+                #if is_memento and is_timegate:
+                #    self.status_headers.headers.append(('Content-Location',
+                #                                        canon_link))
 
                 # don't set memento link for very long urls...
                 if len(canon_link) < 512:
