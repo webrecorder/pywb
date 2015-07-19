@@ -43,30 +43,29 @@ class TestMemento(MementoMixin):
         assert '/pywb/20140127171239/http://www.iana.org/_css/2013.1/screen.css' in resp.headers['Location']
 
 
-    # timegate with latest memento, but redirect to current timestamp url instead of
-    # memento timestamp
-    def test_timegate_latest_request_timestamp(self):
+    # timegate with latest memento, but no redirect
+    def test_timegate_memento_no_redir_latest(self):
         """
         TimeGate with no Accept-Datetime header
         """
 
         dt = 'Mon, 27 Jan 2014 17:12:39 GMT'
-        resp = self.testapp.get('/pywb-non-exact/http://www.iana.org/_css/2013.1/screen.css')
+        resp = self.testapp.get('/pywb-no-redir/http://www.iana.org/_css/2013.1/screen.css')
 
-        assert resp.status_int == 302
+        assert resp.status_int == 200
 
         assert resp.headers[VARY] == 'accept-datetime'
 
         links = self.get_links(resp)
         assert '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"' in links
-        assert self.make_timemap_link('http://www.iana.org/_css/2013.1/screen.css', coll='pywb-non-exact') in links
-        assert self.make_memento_link('http://www.iana.org/_css/2013.1/screen.css', '20140127171239', dt, coll='pywb-non-exact') in links
+        assert self.make_timemap_link('http://www.iana.org/_css/2013.1/screen.css', coll='pywb-no-redir') in links
+        assert self.make_memento_link('http://www.iana.org/_css/2013.1/screen.css', '20140127171239', dt, coll='pywb-no-redir') in links
 
-        assert MEMENTO_DATETIME not in resp.headers
+        assert MEMENTO_DATETIME in resp.headers
 
-        assert '/pywb-non-exact/' in resp.headers['Location']
+        assert '/pywb-no-redir/' in resp.headers['Content-Location']
 
-        wburl = resp.headers['Location'].split('/pywb-non-exact/')[-1]
+        wburl = resp.headers['Content-Location'].split('/pywb-no-redir/')[-1]
         ts = wburl.split('/')[0]
         assert len(ts) == 14
         assert timestamp_now() >= ts
@@ -114,6 +113,28 @@ class TestMemento(MementoMixin):
 
         assert '/pywb/20140126200804/http://www.iana.org/_css/2013.1/screen.css' in resp.headers['Location']
 
+
+    def test_timegate_memento_no_redir_accept_datetime_inexact(self):
+        """
+        TimeGate with Accept-Datetime header, not matching a memento exactly, no redirect
+        """
+        dt = 'Sun, 26 Jan 2014 20:08:04 GMT'
+        request_dt = 'Sun, 26 Jan 2014 20:08:00 GMT'
+        headers = {ACCEPT_DATETIME: request_dt}
+        resp = self.testapp.get('/pywb-no-redir/http://www.iana.org/_css/2013.1/screen.css', headers=headers)
+
+        assert resp.status_int == 200
+
+        assert resp.headers[VARY] == 'accept-datetime'
+
+        links = self.get_links(resp)
+        assert '<http://www.iana.org/_css/2013.1/screen.css>; rel="original"' in links
+        assert self.make_timemap_link('http://www.iana.org/_css/2013.1/screen.css', coll='pywb-no-redir') in links
+        assert self.make_memento_link('http://www.iana.org/_css/2013.1/screen.css', '20140126200804', dt, coll='pywb-no-redir') == links[0], links[0]
+
+        assert MEMENTO_DATETIME in resp.headers
+
+        assert '/pywb-no-redir/20140126200804/http://www.iana.org/_css/2013.1/screen.css' in resp.headers['Content-Location']
 
     def test_non_timegate_intermediate_redir(self):
         """

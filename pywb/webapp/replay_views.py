@@ -233,6 +233,9 @@ class ReplayView(object):
             return chain(iter([content]), iterator)
 
     def _redirect_if_needed(self, wbrequest, cdx):
+        if not self.redir_to_exact:
+            return None
+
         if wbrequest.options['is_proxy']:
             return None
 
@@ -243,10 +246,7 @@ class ReplayView(object):
         if not is_timegate:
             is_timegate = wbrequest.wb_url.is_latest_replay()
 
-        redir_needed = is_timegate
-
-        if not redir_needed and self.redir_to_exact:
-            redir_needed = (cdx['timestamp'] != wbrequest.wb_url.timestamp)
+        redir_needed = is_timegate or (cdx['timestamp'] != wbrequest.wb_url.timestamp)
 
         if not redir_needed:
             return None
@@ -254,10 +254,10 @@ class ReplayView(object):
         if self.enable_range_cache and wbrequest.extract_range():
             return None
 
-        if is_timegate and not self.redir_to_exact:
-            timestamp = timestamp_now()
-        else:
-            timestamp = cdx['timestamp']
+        #if is_timegate:
+        #    timestamp = timestamp_now()
+        #else:
+        timestamp = cdx['timestamp']
 
         new_url = (wbrequest.urlrewriter.
                    get_new_url(timestamp=timestamp,
@@ -279,7 +279,8 @@ class ReplayView(object):
 
         return self.response_class(status_headers,
                                    wbrequest=wbrequest,
-                                   cdx=cdx)
+                                   cdx=cdx,
+                                   memento_is_redir=True)
 
     def _reject_self_redirect(self, wbrequest, cdx, status_headers):
         """

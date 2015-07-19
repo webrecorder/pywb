@@ -6,7 +6,7 @@
 collections:
     pywb: ./sample_archive/cdx/
 
-    pywb-non-exact:
+    pywb-no-redir:
         index_paths: ./sample_archive/cdx/
         redir_to_exact: false
 

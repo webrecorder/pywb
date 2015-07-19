@@ -42,6 +42,7 @@ class MementoRequest(MementoReqMixin, WbRequest):
 class MementoRespMixin(object):
     def _init_derived(self, params):
         wbrequest = params.get('wbrequest')
+        is_redirect = params.get('memento_is_redir', False)
         cdx = params.get('cdx')
 
         if not wbrequest or not wbrequest.wb_url:
@@ -50,7 +51,7 @@ class MementoRespMixin(object):
         mod = wbrequest.options.get('replay_mod', '')
 
         #is_top_frame = wbrequest.wb_url.is_top_frame
-        is_top_frame = wbrequest.options.get('is_top_frame')
+        is_top_frame = wbrequest.options.get('is_top_frame', False)
 
         is_timegate = (wbrequest.options.get('is_timegate', False) and
                        not is_top_frame)
@@ -60,6 +61,7 @@ class MementoRespMixin(object):
 
         # Determine if memento:
         is_memento = False
+        is_original = False
 
         # if no cdx included, not a memento, unless top-frame special
         if not cdx:
@@ -71,10 +73,13 @@ class MementoRespMixin(object):
         # otherwise, if in proxy mode, then always a memento
         elif wbrequest.options['is_proxy']:
             is_memento = True
+            is_original = True
 
         # otherwise only if timestamp replay (and not a timegate)
-        elif not is_timegate:
-            is_memento = (wbrequest.wb_url.type == wbrequest.wb_url.REPLAY)
+        #elif not is_timegate:
+        #    is_memento = (wbrequest.wb_url.type == wbrequest.wb_url.REPLAY)
+        elif not is_redirect:
+            is_memento = (wbrequest.wb_url.is_replay())
 
         link = []
         req_url = wbrequest.wb_url.url
@@ -101,11 +106,18 @@ class MementoRespMixin(object):
                                                                timestamp=ts,
                                                                url=url)
 
-                link.append(self.make_memento_link(canon_link,
-                                                   'memento',
-                                                   http_date))
+                # Must set content location
+                if is_memento and is_timegate:
+                    self.status_headers.headers.append(('Content-Location',
+                                                        canon_link))
 
-        if is_memento and is_timegate:
+                # don't set memento link for very long urls...
+                if len(canon_link) < 512:
+                    link.append(self.make_memento_link(canon_link,
+                                                       'memento',
+                                                       http_date))
+
+        if is_original and is_timegate:
             link.append(self.make_link(req_url, 'original timegate'))
         else:
             link.append(self.make_link(req_url, 'original'))
