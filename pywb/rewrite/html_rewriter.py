@@ -109,6 +109,8 @@ class HTMLRewriterMixin(object):
         # get opts from urlrewriter
         self.opts = url_rewriter.rewrite_opts
 
+        self.force_decl = self.opts.get('force_html_decl', None)
+
         self.parsed_any = False
 
     # ===========================
@@ -300,6 +302,10 @@ class HTMLRewriterMixin(object):
         # Clear buffer to create new one for next rewrite()
         self.out = None
 
+        if self.force_decl:
+            result = self.force_decl + '\n' + result
+            self.force_decl = None
+
         return result
 
     def close(self):
@@ -409,6 +415,7 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
 
     def handle_decl(self, data):
         self.out.write('<!' + data + '>')
+        self.force_decl = None
 
     def handle_pi(self, data):
         self.out.write('<?' + data + '>')
