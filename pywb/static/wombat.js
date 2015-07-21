@@ -282,6 +282,11 @@ var wombat_internal = function(window) {
 
         href = href.toString();
 
+        // ignore certain urls
+        if (starts_with(href, IGNORE_PREFIXES)) {
+            return href;
+        }
+
         var index = href.indexOf("/http", 1);
         if (index < 0) {
             index = href.indexOf("///", 1);
@@ -342,9 +347,9 @@ var wombat_internal = function(window) {
     //============================================
     //Define WombatLocation
 
-    function WombatLocation(loc) {
-        this._orig_loc = loc;
-        this._orig_href = loc.href;
+    function WombatLocation(orig_loc) {
+        this._orig_loc = orig_loc;
+        this._orig_href = orig_loc.href;
 
 
         // Rewrite replace and assign functions
@@ -366,80 +371,115 @@ var wombat_internal = function(window) {
             return this._orig_loc.assign(new_url);
         }
 
-        this.reload = loc.reload;
+        this.reload = orig_loc.reload;
 
-        // Adapted from:
-        // https://gist.github.com/jlong/2428561
-        var parser = window.document.createElement('a', true);
-        var href = extract_orig(this._orig_href);
-        parser.href = href;
+        this._parser = window.document.createElement('a', true);
 
-        this._autooverride = false;
+        var init_loc = function(loc, orig_href) {
+            // Adapted from:
+            // https://gist.github.com/jlong/2428561
 
-        var _set_hash = function(hash) {
-            this._orig_loc.hash = hash;
-            return this._orig_loc.hash;
-        }
+            var href = extract_orig(orig_href);
+            var parser = loc._parser;
 
-        var _get_hash = function() {
-            return this._orig_loc.hash;
-        }
+            parser.href = href;
 
-        var _get_href = function() {
-            return extract_orig(this._orig_loc.href);
-            //return extract_orig(this._orig_href);
-        }
+            href = parser.getAttribute("href");
+            loc._hash = parser.hash;
 
-        href = parser.getAttribute("href");
-        var hash = parser.hash;
+            /*if (hash) {
+                var hidx = href.lastIndexOf("#");
+                if (hidx > 0) {
+                    href = href.substring(0, hidx);
+                }
+            }*/
 
-        if (hash) {
-            var hidx = href.lastIndexOf("#");
-            if (hidx > 0) {
-                href = href.substring(0, hidx);
+            loc._href = href;
+
+            loc._host = parser.host;
+            loc._hostname = parser.hostname;
+
+            if (parser.origin) {
+                loc._origin = parser.origin;
+            }
+
+            loc._pathname = parser.pathname;
+            loc._port = parser.port
+            //this.protocol = parser.protocol;
+            loc._protocol = loc._orig_loc.protocol;
+            loc._search = parser.search;
+
+            if (!Object.defineProperty) {
+                loc.href = href;
+                loc.hash = parser.hash;
+
+                loc.host = loc._host;
+                loc.hostname = loc._hostname;
+                loc.origin = loc._origin;
+                loc.pathname = loc._pathname;
+                loc.port = loc._port;
+                loc.protocol = loc._protocol;
+                loc.search = loc._search;
             }
         }
 
+        var make_get_loc_prop = function(loc, prop) {
+            function getter() {
+                if (loc._orig_href != loc._orig_loc.href) {
+                    init_loc(loc, loc._orig_loc.href);
+                }
+
+                return loc["_" + prop];
+            }
+
+            return getter;
+        }
+
+        var make_set_loc_prop = function(loc, prop) {
+            function setter(value) {
+                loc["_" + prop] = value;
+                loc._parser[prop] = value;
+
+                if (prop == "hash") {
+                    loc._orig_loc.hash = hash;
+                } else {
+                    loc._orig_loc.href = rewrite_url(loc._parser.href);
+                }
+            }
+
+            return setter;
+        }
+
+        function add_loc_prop(loc, prop) {
+            def_prop(loc, prop, make_set_loc_prop(loc, prop), make_get_loc_prop(loc, prop));
+        }
+
+        init_loc(this, orig_loc.href);
+
         if (Object.defineProperty) {
-            var res1 = def_prop(this, "href",
-                                this.assign,
-                                _get_href);
-
-            var res2 = def_prop(this, "hash",
-                                _set_hash,
-                                _get_hash);
-
-            this._autooverride = res1 && res2;
-        } else {
-            this.href = href;
-            this.hash = parser.hash;
+            add_loc_prop(this, "href");
+            add_loc_prop(this, "hash");
+            add_loc_prop(this, "host");
+            add_loc_prop(this, "hostname");
+            add_loc_prop(this, "pathname");
+            add_loc_prop(this, "origin");
+            add_loc_prop(this, "port");
+            add_loc_prop(this, "protocol");
+            add_loc_prop(this, "search");
         }
-
-        this.host = parser.host;
-        this.hostname = parser.hostname;
-
-        if (parser.origin) {
-            this.origin = parser.origin;
-        }
-
-        this.pathname = parser.pathname;
-        this.port = parser.port
-        //this.protocol = parser.protocol;
-        this.protocol = window.location.protocol;
-        this.search = parser.search;
 
         this.toString = function() {
             return this.href;
         }
 
         // Copy any remaining properties
-        for (prop in loc) {
+        for (prop in orig_loc) {
             if (this.hasOwnProperty(prop)) {
                 continue;
             }
 
-            if ((typeof loc[prop]) != "function") {
-                this[prop] = loc[prop];
+            if ((typeof orig_loc[prop]) != "function") {
+                this[prop] = orig_loc[prop];
             }
         }
     }
@@ -1173,7 +1213,7 @@ var wombat_internal = function(window) {
         // Location
         var wombat_location = new WombatLocation(win.location);
 
-        if (wombat_location._autooverride) {
+        if (Object.defineProperty) {
 
             var setter = function(value) {
                 if (this._WB_wombat_location) {
