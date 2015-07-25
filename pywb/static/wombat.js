@@ -49,17 +49,6 @@ var wombat_internal = function($wbwindow) {
     var wb_opts;
 
     //============================================
-    function load_url_js() {
-        var s = $wbwindow.document.createElement("script");
-        s.src = wbinfo.static_prefix + "/url.js";
-        $wbwindow.document.head.appendChild(s);
-    }
-
-    if (!$wbwindow.URL) {
-        load_url_js();
-    }
-
-    //============================================
     function is_host_url(str) {
         // Good guess that's its a hostname
         if (str.indexOf("www.") == 0) {
@@ -155,6 +144,8 @@ var wombat_internal = function($wbwindow) {
     var HREF_TAGS = ["LINK", "A"];
 
     var REWRITE_ATTRS = ["src", "href", "poster"];
+
+    var URL_PROPS = ["href", "hash", "pathname", "host", "hostname", "protocol", "origin", "search", "port"];
 
     //============================================
     function rewrite_url_(url) {
@@ -366,16 +357,9 @@ var wombat_internal = function($wbwindow) {
     function make_parser(href) {
         href = extract_orig(href);
 
-        if (!$wbwindow.URL) {
-            var p = $wbwindow.document.createElement("a");
-            p.href = href;
-            return p;
-        }
-
-        if (href.indexOf("//") == 0) {
-            href = $wbwindow.location.protocol + href;
-        }
-        return new $wbwindow.URL(href);
+        var p = $wbwindow.document.createElement("a", true);
+        p.href = href;
+        return p;
     }
 
 
@@ -422,7 +406,11 @@ var wombat_internal = function($wbwindow) {
     function init_loc_override(loc_obj, orig_setter, orig_getter) {
         var make_get_loc_prop = function(prop) {
             function getter() {
-                var curr_orig_href = orig_getter.call(this);
+                if (this._no_rewrite) {
+                    return orig_getter.call(this, prop);
+                }
+
+                var curr_orig_href = orig_getter.call(this, "href");
 
                 if (prop == "href") {
                     return extract_orig(curr_orig_href);
@@ -442,13 +430,23 @@ var wombat_internal = function($wbwindow) {
 
         var make_set_loc_prop = function(prop) {
             function setter(value) {
+                if (this._no_rewrite) {
+                    orig_setter.call(this, prop, value);
+                    return;
+                }
+
                 this["_" + prop] = value;
 
                 if (!this._parser) {
                     var href = orig_getter.call(this);
                     this._parser = make_parser(href);
                 }
-                this._parser[prop] = value;
+
+                try {
+                    this._parser[prop] = value;
+                } catch (e) {
+                    console.log('Error setting ' + prop + ' = ' + value);
+                }
 
                 if (prop == "hash") {
                     value = this._parser[prop];
@@ -468,15 +466,9 @@ var wombat_internal = function($wbwindow) {
         }
 
         if (Object.defineProperty) {
-            add_loc_prop(loc_obj, "href");
-            add_loc_prop(loc_obj, "hash");
-            add_loc_prop(loc_obj, "host");
-            add_loc_prop(loc_obj, "hostname");
-            add_loc_prop(loc_obj, "pathname");
-            add_loc_prop(loc_obj, "origin");
-            add_loc_prop(loc_obj, "port");
-            add_loc_prop(loc_obj, "protocol");
-            add_loc_prop(loc_obj, "search");
+            for (var i = 0; i < URL_PROPS.length; i++) {
+               add_loc_prop(loc_obj, URL_PROPS[i]);
+            }
         }
     }
 
@@ -508,8 +500,8 @@ var wombat_internal = function($wbwindow) {
 
         this.reload = orig_loc.reload;
        
-        this.orig_getter = function() {
-            return this._orig_loc.href;
+        this.orig_getter = function(prop) {
+            return this._orig_loc[prop];
         }
 
         this.orig_setter = function(prop, value) {
@@ -1188,22 +1180,33 @@ var wombat_internal = function($wbwindow) {
         
         //override_attr($wbwindow.HTMLAnchorElement.prototype, "href");
         //return;
+        var anchor_orig = {}
 
-        var anchor_orig_getter = get_orig_getter($wbwindow.HTMLAnchorElement.prototype, "href");
-        var anchor_orig_setter_href = get_orig_setter($wbwindow.HTMLAnchorElement.prototype, "href");
-        var anchor_orig_setter_hash = get_orig_setter($wbwindow.HTMLAnchorElement.prototype, "hash");
+        function save_prop(prop) {
+            anchor_orig["get_" + prop] = get_orig_getter($wbwindow.HTMLAnchorElement.prototype, prop);
+            anchor_orig["set_" + prop] = get_orig_setter($wbwindow.HTMLAnchorElement.prototype, prop);
+        }
+
+        for (var i = 0; i < URL_PROPS.length; i++) {
+            save_prop(URL_PROPS[i]);
+        } 
 
         var anchor_setter = function(prop, value) {
-            if (prop == "href") {
-                anchor_orig_setter_href.call(this, value);
+            var func = anchor_orig["set_" + prop];
+            if (func) {
+                return func.call(this, value);
             } else {
-                anchor_orig_setter_hash.call(this, value);
+                return "";
             }
         }
 
-        var anchor_getter = function() {
-            var value = anchor_orig_getter.call(this);
-            return value;
+        var anchor_getter = function(prop) {
+            var func = anchor_orig["get_" + prop];
+            if (func) {
+                return func.call(this);
+            } else {
+                return "";
+            }
         }
 
         init_loc_override($wbwindow.HTMLAnchorElement.prototype, anchor_setter, anchor_getter);
@@ -1462,8 +1465,8 @@ var wombat_internal = function($wbwindow) {
 /*
         for (var i = 0; i < $wbwindow.frames.length; i++) {
             try {
-                init_postmessage_override($wbwindow.frames[i]);
-                //$wbwindow.frames[i].postMessage = postmessage_rewritten;
+                //init_postmessage_override($wbwindow.frames[i]);
+                $wbwindow.frames[i].postMessage = postmessage_rewritten;
             } catch (e) {
                 console.log(e);
             }
@@ -1644,9 +1647,9 @@ var wombat_internal = function($wbwindow) {
             win._wb_wombat = new win._WBWombat(wb_info);
         } else {
             // These should get overriden when content is loaded, but just in case...
-            //win.WB_wombat_location = win.location;
+            //win._WB_wombat_location = win.location;
             //win.document.WB_wombat_location = win.document.location;
-            //win.WB_wombat_top = $wbwindow.WB_wombat_top;
+            //win._WB_wombat_top = $wbwindow.WB_wombat_top;
 
             init_proto_pm_origin(win);
             //init_postmessage_override(win);
