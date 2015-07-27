@@ -1607,15 +1607,36 @@ var wombat_internal = function($wbwindow) {
             return;
         }
 
+        var check_wombat = function(win) {
+            if (win && !win._wb_wombat) {
+                win._WBWombat = wombat_internal(win);
+                win._wb_wombat = new win._WBWombat(wb_info);
+                console.log("Reinit Wombat");
+            }
+        }
+
+        // Write
         var orig_doc_write = $wbwindow.document.write;
 
         var new_write = function(string) {
             new_buff = rewrite_html(string);
             orig_doc_write.call(this, new_buff);
+            check_wombat(this.defaultView);
         }
 
         $wbwindow.document.write = new_write;
         $wbwindow.Document.prototype.write = new_write;
+
+        // Open
+        var orig_doc_open = $wbwindow.document.open;
+
+        var new_open = function() {
+            orig_doc_open.call(this);
+            check_wombat(this.defaultView);
+        }
+
+        $wbwindow.document.write = new_open;
+        $wbwindow.Document.prototype.write = new_open;
     }
 
     //============================================
@@ -1636,11 +1657,16 @@ var wombat_internal = function($wbwindow) {
             win = iframe.contentWindow;
         }
 
-        if (!win || win == $wbwindow || win._skip_wombat || win._wb_wombat) {
-            return iframe;
+        try {
+            if (!win || win == $wbwindow || win._skip_wombat || win._wb_wombat) {
+                return iframe;
+            }
+        } catch (e) {
+            console.log(e);
         }
 
-        var src = iframe.src;
+        //var src = iframe.src;
+        var src = orig_getAttribute.call(this, "src");
         
         if (!src || src == "" || src == "about:blank" || src.indexOf("javascript:") >= 0) {
             win._WBWombat = wombat_internal(win);
