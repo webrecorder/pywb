@@ -110,11 +110,6 @@ var wombat_internal = function($wbwindow) {
     var rewrite_url = rewrite_url_;
 
     function rewrite_url_debug(url) {
-
-        if (url.indexOf("avatar") >= 0) {
-            console.log("av");
-        }
-
         var rewritten = rewrite_url_(url);
         if (url != rewritten) {
             console.log('REWRITE: ' + url + ' -> ' + rewritten);
@@ -1611,7 +1606,6 @@ var wombat_internal = function($wbwindow) {
             if (win && !win._wb_wombat) {
                 win._WBWombat = wombat_internal(win);
                 win._wb_wombat = new win._WBWombat(wb_info);
-                console.log("Reinit Wombat");
             }
         }
 
@@ -1666,7 +1660,7 @@ var wombat_internal = function($wbwindow) {
         }
 
         //var src = iframe.src;
-        var src = orig_getAttribute.call(this, "src");
+        var src = wb_getAttribute.call(iframe, "src");
         
         if (!src || src == "" || src == "about:blank" || src.indexOf("javascript:") >= 0) {
             win._WBWombat = wombat_internal(win);
