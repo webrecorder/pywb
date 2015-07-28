@@ -84,11 +84,13 @@ class RewriteContent:
             else:
                 stream = DecompressingBufferedReader(stream, decomp_type=enc)
 
+            rewritten_headers.status_headers.remove_header('content-length')
+
         return stream
 
 
 
-    def rewrite_content(self, urlrewriter, headers, stream,
+    def rewrite_content(self, urlrewriter, status_headers, stream,
                         head_insert_func=None, urlkey='',
                         cdx=None):
 
@@ -96,7 +98,8 @@ class RewriteContent:
 
         if (wb_url.is_identity or
              (not head_insert_func and wb_url.is_banner_only)):
-            status_headers, stream = self.sanitize_content(headers, stream)
+            status_headers, stream = self.sanitize_content(status_headers,
+                                                           stream)
             return (status_headers, self.stream_to_gen(stream), False)
 
         if wb_url.is_banner_only:
@@ -106,7 +109,7 @@ class RewriteContent:
 
         (rewritten_headers, stream) = self._rewrite_headers(urlrewriter,
                                                             rule,
-                                                            headers,
+                                                            status_headers,
                                                             stream)
 
         status_headers = rewritten_headers.status_headers
@@ -166,7 +169,7 @@ class RewriteContent:
                                                  stream,
                                                  first_buff)
 
-                content_len = headers.get_header('Content-Length')
+                content_len = status_headers.get_header('Content-Length')
                 try:
                     content_len = int(content_len)
                 except Exception:
