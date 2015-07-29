@@ -223,15 +223,19 @@ var wombat_internal = function($wbwindow) {
         var prefix = starts_with(url, VALID_PREFIXES);
 
         if (prefix) {
-            var prefix_host = prefix + $wbwindow.location.host + '/';
+            var orig_host = $wbwindow.top.location.host;
+            var orig_protocol = $wbwindow.top.location.protocol;
+
+            var prefix_host = prefix + orig_host + '/';
+
             // if already rewritten url, must still check scheme
             if (starts_with(url, prefix_host)) {
                 if (starts_with(url, wb_replay_prefix)) {
                     return url;
                 }
 
-                var curr_scheme = $wbwindow.location.protocol + '//';
-                var host = $wbwindow.location.host + '/';
+                var curr_scheme = orig_protocol + '//';
+                var host = orig_host + '/';
                 var path = url.substring(prefix_host.length);
                 var rebuild = false;
 
@@ -239,7 +243,7 @@ var wombat_internal = function($wbwindow) {
                     path = wb_coll_prefix + WB_wombat_location.origin + "/" + path;
                     rebuild = true;
                 }
-                
+
                 // replace scheme to ensure using the correct server scheme
                 //if (starts_with(url, wb_orig_scheme) && (wb_orig_scheme != curr_scheme)) {
                 if (prefix != curr_scheme && prefix != REL_PREFIX) {
@@ -1057,6 +1061,8 @@ var wombat_internal = function($wbwindow) {
         }
 
         var new_html = "";
+        var head = "";
+        var body = "";
 
         if (inner_doc.head.innerHTML) {
             var elems = inner_doc.head.children;
@@ -1065,7 +1071,7 @@ var wombat_internal = function($wbwindow) {
                 // Call orig write to ensure same execution order and placement
                 rewrite_elem(elems[i]);
             }
-            new_html += inner_doc.head.innerHTML;
+            head += inner_doc.head.innerHTML;
         }
 
         if (inner_doc.body.innerHTML) {
@@ -1075,7 +1081,23 @@ var wombat_internal = function($wbwindow) {
                 // Call orig write to ensure same execution order and placement
                 rewrite_elem(elems[i]);
             }
-            new_html += inner_doc.body.innerHTML;
+            body += inner_doc.body.innerHTML;
+        }
+
+        if (string && string.indexOf("<head") >= 0) {
+            new_html += "<head>" + head + "</head>";
+        } else {
+            new_html += head;
+        }
+
+        if (string && string.indexOf("<body") >= 0) {
+            new_html += "<body>" + body + "</body>";
+        } else {
+            new_html += body;
+        }
+
+        if (string && string.indexOf("<html") >= 0) {
+            new_html = "<html>" + new_html + "</html>";
         }
 
         return new_html;
@@ -1614,8 +1636,9 @@ var wombat_internal = function($wbwindow) {
 
         var new_write = function(string) {
             new_buff = rewrite_html(string);
-            orig_doc_write.call(this, new_buff);
+            var res = orig_doc_write.call(this, new_buff);
             check_wombat(this.defaultView);
+            return res;
         }
 
         $wbwindow.document.write = new_write;
@@ -1625,12 +1648,13 @@ var wombat_internal = function($wbwindow) {
         var orig_doc_open = $wbwindow.document.open;
 
         var new_open = function() {
-            orig_doc_open.call(this);
+            var res = orig_doc_open.call(this);
             check_wombat(this.defaultView);
+            return res;
         }
 
-        $wbwindow.document.write = new_open;
-        $wbwindow.Document.prototype.write = new_open;
+        $wbwindow.document.open = new_open;
+        $wbwindow.Document.prototype.open = new_open;
     }
 
     //============================================
@@ -1719,8 +1743,8 @@ var wombat_internal = function($wbwindow) {
         wb_info = wbinfo;
 
         wb_replay_prefix = wbinfo.prefix;
-        if (wb_replay_prefix.indexOf($wbwindow.location.origin) == 0) {
-            wb_coll_prefix = wb_replay_prefix.substring($wbwindow.location.origin.length + 1);
+        if (wb_replay_prefix.indexOf($wbwindow.top.location.origin) == 0) {
+            wb_coll_prefix = wb_replay_prefix.substring($wbwindow.top.location.origin.length + 1);
         } else {
             wb_coll_prefix = wb_replay_prefix;
         }
@@ -1874,6 +1898,7 @@ var wombat_internal = function($wbwindow) {
 
         // expose functions
         this.extract_orig = extract_orig;
+        this.rewrite_url = rewrite_url;
         this.watch_elem = watch_elem;
     }
 
