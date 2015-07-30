@@ -49,15 +49,18 @@ class TestProxyHttpCookie:
                                  data=data,
                                  proxies=server.proxy_dict)
 
+    def _test_basic(self, resp, url):
+        assert resp.status_code == 200
+        assert 'Content-Length' in resp.headers
+        assert resp.url == url
+
     def test_replay_no_coll(self):
         resp = self.get_url('http://iana.org/')
-        assert resp.url == 'http://select.pywb.proxy/http://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'http://select.pywb.proxy/http://iana.org/')
 
     def test_replay_set_older_coll(self):
         resp = self.get_url('http://older-set.pywb.proxy/http://iana.org/')
-        assert resp.url == 'http://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'http://iana.org/')
         assert '20140126200624' in resp.text
 
         sesh1 = self.session.cookies.get('__pywb_proxy_sesh', domain='.pywb.proxy')
@@ -73,15 +76,13 @@ class TestProxyHttpCookie:
 
     def test_replay_same_coll(self):
         resp = self.get_url('http://iana.org/')
-        assert resp.url == 'http://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'http://iana.org/')
         assert 'wbinfo.proxy_magic = "pywb.proxy";' in resp.text
         assert '20140126200624' in resp.text
 
     def test_replay_set_change_coll(self):
         resp = self.get_url('http://all-set.pywb.proxy/http://iana.org/')
-        assert resp.url == 'http://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'http://iana.org/')
         assert '20140127171238' in resp.text
 
         # verify still same session cookie
@@ -91,8 +92,7 @@ class TestProxyHttpCookie:
 
     def test_query(self):
         resp = self.get_url('http://query.pywb.proxy/*/http://iana.org/')
-        assert resp.url == 'http://query.pywb.proxy/*/http://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'http://query.pywb.proxy/*/http://iana.org/')
         assert 'text/html' in resp.headers['content-type']
         assert '20140126200624' in resp.text
         assert '20140127171238' in resp.text
@@ -101,33 +101,33 @@ class TestProxyHttpCookie:
     # testing via http here
     def test_change_timestamp(self):
         resp = self.get_url('http://query.pywb.proxy/20140126200624/http://iana.org/')
-        assert resp.url == 'http://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'http://iana.org/')
+        assert 'Content-Length' in resp.headers
         assert '20140126200624' in resp.text
 
     def test_change_coll_same_ts(self):
         resp = self.get_url('http://all-set.pywb.proxy/iana.org/')
-        assert resp.url == 'http://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'http://iana.org/')
+        assert 'Content-Length' in resp.headers
         assert '20140126200624' in resp.text
 
     # testing via http here
     def test_change_latest_ts(self):
         resp = self.get_url('http://query.pywb.proxy/http://iana.org/?_=1234')
-        assert resp.url == 'http://iana.org/?_=1234'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'http://iana.org/?_=1234')
+        assert 'Content-Length' in resp.headers
         assert '20140127171238' in resp.text
 
     def test_diff_url(self):
         resp = self.get_url('http://example.com/')
-        assert resp.url == 'http://example.com/'
+        self._test_basic(resp, 'http://example.com/')
+        assert 'Content-Length' in resp.headers
         assert '20140127171251' in resp.text
 
     def test_post_replay_all_coll(self):
         resp = self.post_url('http://httpbin.org/post', data={'foo': 'bar', 'test': 'abc'})
-        assert resp.url == 'http://httpbin.org/post'
+        self._test_basic(resp, 'http://httpbin.org/post')
         assert 'application/json' in resp.headers['content-type']
-        assert resp.status_code == 200
 
     # Bounce back to select.pywb.proxy due to missing session
     def test_clear_key(self):

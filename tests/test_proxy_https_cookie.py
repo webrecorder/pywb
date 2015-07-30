@@ -65,15 +65,18 @@ class TestProxyHttpsCookie:
                            proxies=server.proxy_dict,
                            verify=TEST_CA_ROOT)
 
+    def _test_basic(self, resp, url):
+        assert resp.status_code == 200
+        assert 'Content-Length' in resp.headers
+        assert resp.url == url
+
     def test_replay_no_coll(self):
         resp = self.get_url('https://iana.org/')
-        assert resp.url == 'https://select.pywb.proxy/https://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'https://select.pywb.proxy/https://iana.org/')
 
     def test_replay_set_older_coll(self):
         resp = self.get_url('https://older-set.pywb.proxy/https://iana.org/')
-        assert resp.url == 'https://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'https://iana.org/')
         assert '20140126200624' in resp.text
 
         sesh1 = self.session.cookies.get('__pywb_proxy_sesh', domain='.pywb.proxy')
@@ -89,15 +92,13 @@ class TestProxyHttpsCookie:
 
     def test_replay_same_coll(self):
         resp = self.get_url('https://iana.org/')
-        assert resp.url == 'https://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'https://iana.org/')
         assert 'wbinfo.proxy_magic = "pywb.proxy";' in resp.text
         assert '20140126200624' in resp.text
 
     def test_replay_set_change_coll(self):
         resp = self.get_url('https://all-set.pywb.proxy/https://iana.org/')
-        assert resp.url == 'https://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'https://iana.org/')
         assert '20140127171238' in resp.text
 
         # verify still same session cookie
@@ -107,8 +108,7 @@ class TestProxyHttpsCookie:
 
     def test_query(self):
         resp = self.get_url('https://query.pywb.proxy/*/https://iana.org/')
-        assert resp.url == 'https://query.pywb.proxy/*/https://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'https://query.pywb.proxy/*/https://iana.org/')
         assert 'text/html' in resp.headers['content-type']
         assert '20140126200624' in resp.text
         assert '20140127171238' in resp.text
@@ -117,35 +117,31 @@ class TestProxyHttpsCookie:
     # testing via http here
     def test_change_timestamp(self):
         resp = self.get_url('http://query.pywb.proxy/20140126200624/http://iana.org/')
-        assert resp.url == 'http://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'http://iana.org/')
         assert '20140126200624' in resp.text
 
     def test_change_coll_same_ts(self):
         resp = self.get_url('https://all-set.pywb.proxy/iana.org/')
-        assert resp.url == 'https://iana.org/'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'https://iana.org/')
         assert '20140126200624' in resp.text
 
     # testing via http here
     def test_change_latest_ts(self):
         resp = self.get_url('http://query.pywb.proxy/http://iana.org/?_=1234')
-        assert resp.url == 'http://iana.org/?_=1234'
-        assert resp.status_code == 200
+        self._test_basic(resp, 'http://iana.org/?_=1234')
         assert '20140127171238' in resp.text
 
     def test_diff_url(self):
         resp = self.get_url('https://example.com/')
-        assert resp.url == 'https://example.com/'
+        self._test_basic(resp, 'https://example.com/')
         assert '20140127171251' in resp.text
 
     @pytest.mark.skipif(sys.version_info < (2,7),
                         reason="doesn't work in 2.6")
     def test_post_replay_all_coll(self):
         resp = self.post_url('https://httpbin.org/post', data={'foo': 'bar', 'test': 'abc'})
-        assert resp.url == 'https://httpbin.org/post'
+        self._test_basic(resp, 'https://httpbin.org/post')
         assert 'application/json' in resp.headers['content-type']
-        assert resp.status_code == 200
 
     # Bounce back to select.pywb.proxy due to missing session
     def test_clear_key(self):
@@ -155,19 +151,19 @@ class TestProxyHttpsCookie:
 
     def test_no_sesh_latest_bounce(self):
         resp = self.get_url('https://query.pywb.proxy/https://iana.org/')
-        assert resp.url == 'https://select.pywb.proxy/https://iana.org/'
+        self._test_basic(resp, 'https://select.pywb.proxy/https://iana.org/')
 
     def test_no_sesh_coll_change_bounce(self):
         resp = self.get_url('https://auto.pywb.proxy/https://iana.org/')
-        assert resp.url == 'https://select.pywb.proxy/https://iana.org/'
+        self._test_basic(resp, 'https://select.pywb.proxy/https://iana.org/')
 
     def test_no_sesh_ts_bounce(self):
         resp = self.get_url('https://query.pywb.proxy/20140126200624/https://iana.org/')
-        assert resp.url == 'https://select.pywb.proxy/20140126200624/https://iana.org/'
+        self._test_basic(resp, 'https://select.pywb.proxy/20140126200624/https://iana.org/')
 
     def test_no_sesh_query_bounce(self):
         resp = self.get_url('https://query.pywb.proxy/*/https://iana.org/')
-        assert resp.url == 'https://select.pywb.proxy/https://query.pywb.proxy/*/https://iana.org/'
+        self._test_basic(resp, 'https://select.pywb.proxy/https://query.pywb.proxy/*/https://iana.org/')
 
     # static replay
     def test_replay_static(self):
