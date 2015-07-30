@@ -20,6 +20,10 @@ lib
 lib64
 __pycache__
 
+# ignore auto-gen certs
+ca/pywb-ca.pem
+ca/certs/
+
 # Installer logs
 pip-log.txt
 
