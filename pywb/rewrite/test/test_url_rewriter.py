@@ -21,10 +21,10 @@
 
 # UrlRewriter tests
 >>> do_rewrite('other.html', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/')
-'https://web.archive.org/web/20131010/http://example.com/path/other.html'
+'/web/20131010/http://example.com/path/other.html'
 
 >>> do_rewrite('file.js', '20131010/http://example.com/path/page.html', 'https://web.archive.org/web/', 'js_')
-'https://web.archive.org/web/20131010js_/http://example.com/path/file.js'
+'/web/20131010js_/http://example.com/path/file.js'
 
 >>> do_rewrite('file.js', '20131010/http://example.com/', '/coll/')
 '/coll/20131010/http://example.com/file.js'
@@ -34,6 +34,9 @@
 
 >>> do_rewrite('file.js', '20131010/http://example.com', '/coll/', '')
 '/coll/20131010/http://example.com/file.js'
+
+>>> do_rewrite('/other.html', '20130907*/http://example.com/path/page.html', 'http://localhost:8080/coll/')
+'/coll/20130907*/http://example.com/other.html'
 
 >>> do_rewrite('/other.html', '20130907*/http://example.com/path/page.html', '/coll/')
 '/coll/20130907*/http://example.com/other.html'

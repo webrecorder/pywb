@@ -143,7 +143,7 @@ var wombat_internal = function($wbwindow) {
     var URL_PROPS = ["href", "hash", "pathname", "host", "hostname", "protocol", "origin", "search", "port"];
 
     //============================================
-    function rewrite_url_(url) {
+    function rewrite_url_(url, use_rel) {
         // If undefined, just return it
         if (!url) {
             return url;
@@ -215,7 +215,7 @@ var wombat_internal = function($wbwindow) {
                 return url;
             }
 
-            return wb_replay_date_prefix + wb_orig_origin + url;
+            return (use_rel ? wb_coll_prefix : wb_replay_date_prefix) + wb_orig_origin + url;
         }
 
         // If full url starting with http://, https:// or //
@@ -235,7 +235,6 @@ var wombat_internal = function($wbwindow) {
                 }
 
                 var curr_scheme = orig_protocol + '//';
-                var host = orig_host + '/';
                 var path = url.substring(prefix_host.length);
                 var rebuild = false;
 
@@ -251,7 +250,12 @@ var wombat_internal = function($wbwindow) {
                 }
 
                 if (rebuild) {
-                    url = curr_scheme + host + path;
+                    if (!use_rel) {
+                        url = curr_scheme + orig_host;
+                    } else {
+                        url = "";
+                    }
+                    url += "/" + path;
                 }
 
                 return url;
@@ -451,7 +455,8 @@ var wombat_internal = function($wbwindow) {
                     value = this._parser[prop];
                 } else {
                     prop = "href";
-                    value = rewrite_url(this._parser.href);
+                    var rel = (value == this._parser.pathname);
+                    value = rewrite_url(this._parser.href, rel);
                 }
 
                 orig_setter.call(this, prop, value);

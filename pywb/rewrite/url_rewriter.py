@@ -30,6 +30,7 @@ class UrlRewriter(object):
             self.prefix_scheme = self.full_prefix.split(':')[0]
         else:
             self.prefix_scheme = None
+        self.prefix_abs = self.prefix and self.prefix.startswith(self.PROTOCOLS)
         self.cookie_scope = cookie_scope
         self.rewrite_opts = rewrite_opts
 
@@ -74,8 +75,15 @@ class UrlRewriter(object):
             mod = wburl.mod
 
         final_url = self.prefix + wburl.to_str(mod=mod, url=new_url)
+
+        if not is_abs and self.prefix_abs and not self.rewrite_opts.get('no_match_rel'):
+            parts = final_url.split('/', 3)
+            final_url = '/'
+            if len(parts) == 4:
+                final_url += parts[3]
+
         # experiment for setting scheme rel url
-        if scheme_rel and self.prefix.startswith(self.PROTOCOLS):
+        elif scheme_rel and self.prefix_abs:
             final_url = final_url.split(':', 1)[1]
 
         return final_url
