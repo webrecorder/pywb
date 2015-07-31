@@ -1,3 +1,42 @@
+pywb 0.10.5 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* wombat 2.6 client side rewriting improvements:
+    - Override prototype properties on ``href`` and ``src`` attributes on elements that have these properties, such as that
+      JS accesses the original url, not the rewritten version.
+    
+    - For `<a>` element override other url properties ``href``, ``hostname``, ``host``, ``pathname``, ``origin``, ``search``, ``port``, ``protocol``
+    
+    - Improved ``postMessage`` emulation: Ensure the original ``origin`` of the caller is saved, by wrapping ``X.postMessage`` in a special ``X.__WB_pmw(window).postMessage()`` call which will save origin of current window in X. Store origin and destination hosts.
+    
+    - Improved ``message`` listener emulation: Add filtering to skip messages that were not inteded for destination host.
+    
+    - Restored wombat if wiped by ``document.write`` / ``document.open`` (happens on FF)
+    
+    - When rewriting html for ``document.write``, keep ``<html>``, ``<head>``, ``<body>`` tags in rewritten html.
+    
+    
+* Relative urls rewritten to stay relative, eg. ``/path/file.html`` -> ``/coll/http://example.com/path/file.html``
+  Can be disabled with ``no_match_rel=True`` in ``rewrite_opts``.
+    
+* Optional ``force_html_decl`` option to add a ``<!DOCTYPE>`` or other HTML declaration if none is present.
+    
+* Improved handling for `redir_to_exact=False`` mode. When set, no redirect on memento timegate, and serve ``Content-Location   `` headers for actual memento, in conformance with Mememnto RFC Pattern 2.2 (http://tools.ietf.org/html/rfc7089#section-4.2.2)
+
+
+* Proxy Mode Fixes: Ensure ``Content-Length`` header is always added and correct in proxy mode, needed for proper HTTPS      
+  handling in ``CONNECT`` envelope.
+
+
+* New default ``HostScopeCookieRewriter`` sets cookies with domain ``/coll/https://example.com/`` instead of ``/coll/``.
+  Can be specified with ``cookie_scope: host`` per collection.
+  This is now the default live rewrite proxy and should be much safer/secure. For rare login use cases, the collection
+  root scope can be specified with ``cookie_scope: coll``
+
+* Default WSGI handler for ``wayback`` back to ``wsgiref``, as ``waitress`` does not support proxy mode.
+
+
+
 pywb 0.10.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
