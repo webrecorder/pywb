@@ -94,6 +94,8 @@ class UrlRewriter(object):
     def rebase_rewriter(self, new_url):
         if new_url.startswith(self.prefix):
             new_url = new_url[len(self.prefix):]
+        elif new_url.startswith(self.rel_prefix):
+            new_url = new_url[len(self.rel_prefix):]
 
         new_wburl = WbUrl(new_url)
         return self._create_rebased_rewriter(new_wburl, self.prefix)
