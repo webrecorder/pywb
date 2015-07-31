@@ -34,11 +34,14 @@ r"""
 
 
 # HostCookieRewriter -- set path to host
->>> rewrite_cookie('some=value; Path=/diff/path/;', urlrewriter, 'host')
+>>> rewrite_cookie('some=value; Path=/diff/path/', urlrewriter, 'host')
 [('Set-Cookie', 'some=value; Path=/pywb/20131226101010/http://example.com/diff/path/')]
 
 >>> rewrite_cookie('some=value; Domain=.example.com; Path=/diff/path/; Max-Age=1500', urlrewriter, 'host')
 [('Set-Cookie', 'some=value; Path=/pywb/20131226101010/http://example.com/')]
+
+>>> rewrite_cookie('some=value; Domain=.example.com; Secure; Path=/diff/path/; HttpOnly; Max-Age=1500', urlrewriter, 'host')
+[('Set-Cookie', 'some=value; httponly; Path=/pywb/20131226101010/http://example.com/')]
 
 
 # RootCookieRewriter -- always sets Path=/, removes Domain
@@ -62,7 +65,7 @@ r"""
 from pywb.rewrite.cookie_rewriter import MinimalScopeCookieRewriter, get_cookie_rewriter
 from pywb.rewrite.url_rewriter import UrlRewriter
 
-urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html', '/pywb/')
+urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html', 'http://localhost:8080/pywb/', rel_prefix='/pywb/')
 
 urlrewriter2 = UrlRewriter('em_/http://example.com/', '/preview/')
 

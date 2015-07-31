@@ -24,6 +24,14 @@ ur"""
 >>> parse('<html><head><base href="http://example.com/diff/path/file.html"/>')
 <html><head><base href="/web/20131226101010/http://example.com/diff/path/file.html"/>
 
+# Full Path
+>>> parse('<html><head><base href="http://example.com/diff/path/file.html"/>', urlrewriter=full_path_urlrewriter)
+<html><head><base href="http://localhost:80/web/20131226101010/http://example.com/diff/path/file.html"/>
+
+# Rel Base
+>>> parse('<html><head><base href="/other/file.html"/>', urlrewriter=full_path_urlrewriter)
+<html><head><base href="/web/20131226101010/http://example.com/other/file.html"/>
+
 >>> parse('<base href="static/"/><img src="image.gif"/>')
 <base href="/web/20131226101010/http://example.com/some/path/static/"/><img src="/web/20131226101010im_/http://example.com/some/path/static/image.gif"/>
 
@@ -185,6 +193,10 @@ import urllib
 urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html',
                           '/web/',
                           rewrite_opts=dict(punycode_links=False))
+
+full_path_urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html',
+                                   'http://localhost:80/web/',
+                                   rewrite_opts=dict(punycode_links=False))
 
 urlrewriter_pencode = UrlRewriter('20131226101010/http://example.com/some/path/index.html',
                                    '/web/',
