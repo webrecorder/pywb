@@ -76,7 +76,8 @@ class TestManagedColls(object):
     def teardown(self):
         J2TemplateView.shared_jinja_env = None
 
-    @patch('waitress.serve', lambda *args, **kwargs: None)
+    #@patch('waitress.serve', lambda *args, **kwargs: None)
+    @patch('BaseHTTPServer.HTTPServer.serve_forever', lambda *args, **kwargs: None)
     def test_run_cli(self):
         """ test new wayback cli interface
         test autoindex error before collections inited
