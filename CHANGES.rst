@@ -2,10 +2,10 @@ pywb 0.10.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
 * wombat 2.6 client side rewriting improvements:
-    - Override prototype properties on ``href`` and ``src`` attributes on elements that have these properties, such as that
-      JS accesses the original url, not the rewritten version.
+
+    - Override JS prototype getters and setters on ``href`` and ``src`` attributes of standard HTML elements, so that JavaScript access receives and sets the original url, but the element actually contains the rewritten url internally.
     
-    - For `<a>` element override other url properties ``href``, ``hostname``, ``host``, ``pathname``, ``origin``, ``search``, ``port``, ``protocol``
+    - For ``<a>`` element override other url properties ``href``, ``hostname``, ``host``, ``pathname``, ``origin``, ``search``, ``port``, ``protocol``
     
     - Improved ``postMessage`` emulation: Ensure the original ``origin`` of the caller is saved, by wrapping ``X.postMessage`` in a special ``X.__WB_pmw(window).postMessage()`` call which will save origin of current window in X. Store origin and destination hosts.
     
@@ -25,8 +25,7 @@ pywb 0.10.5 changelist
 
 
 * Proxy Mode Fixes: Ensure ``Content-Length`` header is always added and correct in proxy mode, needed for proper HTTPS      
-  handling in ``CONNECT`` envelope.
-
+  handling within ``CONNECT`` envelope.
 
 * New default ``HostScopeCookieRewriter`` sets cookies with domain ``/coll/https://example.com/`` instead of ``/coll/``.
   Can be specified with ``cookie_scope: host`` per collection.
@@ -34,7 +33,6 @@ pywb 0.10.5 changelist
   root scope can be specified with ``cookie_scope: coll``
 
 * Default WSGI handler for ``wayback`` back to ``wsgiref``, as ``waitress`` does not support proxy mode.
-
 
 
 pywb 0.10.2 changelist
