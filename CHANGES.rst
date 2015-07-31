@@ -11,7 +11,7 @@ pywb 0.10.5 changelist
     
     - Improved ``message`` listener emulation: Add filtering to skip messages that were not inteded for destination host.
     
-    - Restored wombat if wiped by ``document.write`` / ``document.open`` (happens on FF)
+    - Restored wombat if wiped by ``document.write`` / ``document.open`` (happens on FF).
     
     - When rewriting html for ``document.write``, keep ``<html>``, ``<head>``, ``<body>`` tags in rewritten html.
     
@@ -30,7 +30,9 @@ pywb 0.10.5 changelist
 * New default ``HostScopeCookieRewriter`` sets cookies with domain ``/coll/https://example.com/`` instead of ``/coll/``.
   Can be specified with ``cookie_scope: host`` per collection.
   This is now the default live rewrite proxy and should be much safer/secure. For rare login use cases, the collection
-  root scope can be specified with ``cookie_scope: coll``
+  root scope can be specified with ``cookie_scope: coll``.
+  
+* Cookie ``Path=`` value always a relative path for all cookie scopes, previously were often absolute paths.
 
 * Default WSGI handler for ``wayback`` back to ``wsgiref``, as ``waitress`` does not support proxy mode.
 
