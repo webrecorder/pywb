@@ -18,7 +18,14 @@ class WbUrlBaseCookieRewriter(object):
 
         for name, morsel in cookie.iteritems():
             morsel = self.rewrite_cookie(name, morsel)
+
             if morsel:
+                path = morsel.get('path')
+                if path:
+                    inx = path.find(self.url_rewriter.rel_prefix)
+                    if inx > 0:
+                        morsel['path'] = path[inx:]
+
                 results.append((header, morsel.OutputString()))
 
         return results
@@ -78,23 +85,14 @@ class HostScopeCookieRewriter(WbUrlBaseCookieRewriter):
     """
 
     def rewrite_cookie(self, name, morsel):
-        new_path = None
-
         # if domain set, expand cookie to host prefix
         if morsel.get('domain'):
             del morsel['domain']
-            new_path = self.url_rewriter.rewrite('/')
+            morsel['path'] = self.url_rewriter.rewrite('/')
 
         # set cookie to rewritten path
         elif morsel.get('path'):
-            new_path = self.url_rewriter.rewrite(morsel['path'])
-
-        if new_path:
-            inx = new_path.find(self.url_rewriter.rel_prefix)
-            if inx > 0:
-                new_path = new_path[inx:]
-
-            morsel['path'] = new_path
+            morsel['path'] = self.url_rewriter.rewrite(morsel['path'])
 
         self._remove_age_opts(morsel)
         return morsel

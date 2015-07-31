@@ -49,12 +49,12 @@ class BaseCli(object):
         pass
 
     def run(self):
-        if self.r.server == 'waitress':
+        if self.r.server == 'waitress':  #pragma: no cover
             self.run_waitress()
         else:
             self.run_wsgiref()
 
-    def run_waitress(self):
+    def run_waitress(self):  #pragma: no cover
         from waitress import serve
         print(self.desc)
         serve(self.application, port=self.r.port, threads=self.r.threads)
