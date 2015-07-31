@@ -67,6 +67,40 @@ class MinimalScopeCookieRewriter(WbUrlBaseCookieRewriter):
 
 
 #=================================================================
+class HostScopeCookieRewriter(WbUrlBaseCookieRewriter):
+    """
+    Attempt to rewrite cookies to current host url..
+
+    If path present, rewrite path to current host. Only makes sense in live
+    proxy or no redirect mode, as otherwise timestamp may change.
+
+    If domain present, remove domain and set to path prefix
+    """
+
+    def rewrite_cookie(self, name, morsel):
+        new_path = None
+
+        # if domain set, expand cookie to host prefix
+        if morsel.get('domain'):
+            del morsel['domain']
+            new_path = self.url_rewriter.rewrite('/')
+
+        # set cookie to rewritten path
+        elif morsel.get('path'):
+            new_path = self.url_rewriter.rewrite(morsel['path'])
+
+        if new_path:
+            inx = new_path.find(self.url_rewriter.rel_prefix)
+            if inx > 0:
+                new_path = new_path[inx:]
+
+            morsel['path'] = new_path
+
+        self._remove_age_opts(morsel)
+        return morsel
+
+
+#=================================================================
 class ExactPathCookieRewriter(WbUrlBaseCookieRewriter):
     """
     Rewrite cookies only using exact path, useful for live rewrite
@@ -112,7 +146,11 @@ def get_cookie_rewriter(cookie_scope):
         return RootScopeCookieRewriter
     elif cookie_scope == 'exact':
         return ExactPathCookieRewriter
+    elif cookie_scope == 'host':
+        return HostScopeCookieRewriter
     elif cookie_scope == 'removeall':
         return RemoveAllCookiesRewriter
-    else:
+    elif cookie_scope == 'coll':
         return MinimalScopeCookieRewriter
+    else:
+        return HostScopeCookieRewriter

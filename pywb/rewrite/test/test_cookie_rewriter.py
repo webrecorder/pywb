@@ -1,27 +1,27 @@
 r"""
-# Default -- MinimalScopeRewriter
+# Default -- MinimalScopeRewriter (Collection scope)
 # No rewriting
 >>> rewrite_cookie('a=b; c=d;')
 [('Set-Cookie', 'a=b'), ('Set-Cookie', 'c=d')]
 
->>> rewrite_cookie('some=value; Path=/;')
+>>> rewrite_cookie('some=value; Path=/;', urlrewriter, 'coll')
 [('Set-Cookie', 'some=value; Path=/pywb/20131226101010/http://example.com/')]
 
->>> rewrite_cookie('some=value; Path=../;', rewriter=urlrewriter2)
+>>> rewrite_cookie('some=value; Path=../;', urlrewriter2, 'coll')
 [('Set-Cookie', 'some=value; Path=/preview/em_/http://example.com/')]
 
->>> rewrite_cookie('some=value; Path=/diff/path/;')
+>>> rewrite_cookie('some=value; Path=/diff/path/;', urlrewriter, 'coll')
 [('Set-Cookie', 'some=value; Path=/pywb/20131226101010/http://example.com/diff/path/')]
 
 # if domain set, set path to root
->>> rewrite_cookie('some=value; Domain=.example.com; Path=/diff/path/; Max-Age=1500')
+>>> rewrite_cookie('some=value; Domain=.example.com; Path=/diff/path/; Max-Age=1500', urlrewriter, 'coll')
 [('Set-Cookie', 'some=value; Path=/pywb/')]
 
->>> rewrite_cookie('abc=def; Path=file.html; Expires=Wed, 13 Jan 2021 22:23:01 GMT')
+>>> rewrite_cookie('abc=def; Path=file.html; Expires=Wed, 13 Jan 2021 22:23:01 GMT', urlrewriter, 'coll')
 [('Set-Cookie', 'abc=def; Path=/pywb/20131226101010/http://example.com/some/path/file.html')]
 
 # Cookie with invalid chars, not parsed
->>> rewrite_cookie('abc@def=123')
+>>> rewrite_cookie('abc@def=123', urlrewriter, 'coll')
 []
 
 
@@ -31,6 +31,14 @@ r"""
 
 >>> rewrite_cookie('some=value; Domain=.example.com; Path=/diff/path/; Max-Age=1500', urlrewriter, 'exact')
 [('Set-Cookie', 'some=value')]
+
+
+# HostCookieRewriter -- set path to host
+>>> rewrite_cookie('some=value; Path=/diff/path/;', urlrewriter, 'host')
+[('Set-Cookie', 'some=value; Path=/pywb/20131226101010/http://example.com/diff/path/')]
+
+>>> rewrite_cookie('some=value; Domain=.example.com; Path=/diff/path/; Max-Age=1500', urlrewriter, 'host')
+[('Set-Cookie', 'some=value; Path=/pywb/20131226101010/http://example.com/')]
 
 
 # RootCookieRewriter -- always sets Path=/, removes Domain

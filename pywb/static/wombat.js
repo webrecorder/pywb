@@ -1054,11 +1054,17 @@ var wombat_internal = function($wbwindow) {
 
     //============================================
     function rewrite_html(string) {
+        if (!string) {
+            return string;
+        }
+
         var inner_doc = new DOMParser().parseFromString(string, "text/html");
 
         if (!inner_doc) {
             return string;
         }
+
+        string = string.toString();
 
         var new_html = "";
         var head = "";
