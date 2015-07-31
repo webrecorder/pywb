@@ -161,7 +161,8 @@ def init_app(init_func, load_yaml=True, config_file=None, config=None):
 
 #=================================================================
 def start_wsgi_ref_server(the_app, name, port):  # pragma: no cover
-    from wsgiref.simple_server import make_server
+    from wsgiref.simple_server import make_server, WSGIServer
+    from SocketServer import ThreadingMixIn
 
     # disable is_hop_by_hop restrictions
     import wsgiref.handlers
@@ -172,8 +173,11 @@ def start_wsgi_ref_server(the_app, name, port):  # pragma: no cover
 
     logging.info('Starting %s on port %s', name, port)
 
+    class ThreadingWSGIServer(ThreadingMixIn, WSGIServer):
+        pass
+
     try:
-        httpd = make_server('', port, the_app)
+        httpd = make_server('', port, the_app, ThreadingWSGIServer)
         httpd.serve_forever()
     except KeyboardInterrupt as ex:
         pass

@@ -32,6 +32,7 @@ class BaseCli(object):
         parser = ArgumentParser(desc)
         parser.add_argument('-p', '--port', type=int, default=default_port)
         parser.add_argument('-t', '--threads', type=int, default=4)
+        parser.add_argument('-s', '--server')
 
         self.desc = desc
 
@@ -48,14 +49,19 @@ class BaseCli(object):
         pass
 
     def run(self):
-        try:
-            from waitress import serve
-            print(self.desc)
-            serve(self.application, port=self.r.port, threads=self.r.threads)
-        except ImportError:  # pragma: no cover
-            # Shouldn't ever happen as installing waitress, but just in case..
-            from pywb.framework.wsgi_wrappers import start_wsgi_ref_server
-            start_wsgi_ref_server(self.application, self.desc, port=self.r.port)
+        if self.r.server == 'waitress':
+            self.run_waitress()
+        else:
+            self.run_wsgiref()
+
+    def run_waitress(self):
+        from waitress import serve
+        print(self.desc)
+        serve(self.application, port=self.r.port, threads=self.r.threads)
+
+    def run_wsgiref(self):  #pragma: no cover
+        from pywb.framework.wsgi_wrappers import start_wsgi_ref_server
+        start_wsgi_ref_server(self.application, self.desc, port=self.r.port)
 
 
 #=============================================================================
