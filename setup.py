@@ -76,7 +76,6 @@ setup(
         'jinja2',
         'surt',
         'pyyaml',
-        'waitress',
         'watchdog'
        ],
     tests_require=[
