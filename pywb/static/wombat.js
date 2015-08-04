@@ -746,9 +746,6 @@ var wombat_internal = function($wbwindow) {
                     if (!this._no_rewrite) {
                         var old_value = value;
                         var new_value = rewrite_url(value);
-                        if (new_value != old_value) {
-                            this._no_rewrite = true;
-                        }
                         value = new_value;
                     }
                 }
@@ -1071,44 +1068,19 @@ var wombat_internal = function($wbwindow) {
 
         string = string.toString();
 
+        for (var i = 0; i < inner_doc.all.length; i++) {
+            rewrite_elem(inner_doc.all[i]);
+        }
+
         var new_html = "";
-        var head = "";
-        var body = "";
-
-        if (inner_doc.head.innerHTML) {
-            var elems = inner_doc.head.children;
-
-            for (var i = 0; i < elems.length; i++) {
-                // Call orig write to ensure same execution order and placement
-                rewrite_elem(elems[i]);
-            }
-            head += inner_doc.head.innerHTML;
-        }
-
-        if (inner_doc.body.innerHTML) {
-            var elems = inner_doc.body.children;
-
-            for (var i = 0; i < elems.length; i++) {
-                // Call orig write to ensure same execution order and placement
-                rewrite_elem(elems[i]);
-            }
-            body += inner_doc.body.innerHTML;
-        }
-
-        if (string && string.indexOf("<head") >= 0) {
-            new_html += "<head>" + head + "</head>";
-        } else {
-            new_html += head;
-        }
-
-        if (string && string.indexOf("<body") >= 0) {
-            new_html += "<body>" + body + "</body>";
-        } else {
-            new_html += body;
-        }
-
+        
+        // if original had <html> tag, add full document HTML
         if (string && string.indexOf("<html") >= 0) {
-            new_html = "<html>" + new_html + "</html>";
+            new_html = inner_doc.documentElement.outerHTML;
+        } else {
+        // otherwise, just add contents of head and body
+            new_html = inner_doc.head.innerHTML;
+            new_html += inner_doc.body.innerHTML;
         }
 
         return new_html;
@@ -1242,15 +1214,14 @@ var wombat_internal = function($wbwindow) {
 
 
     //============================================
-    function override_innerHTML() {
+    function override_html_assign(elemtype, prop) {
         if (!$wbwindow.DOMParser ||
-            !$wbwindow.HTMLElement ||
-            !$wbwindow.HTMLElement.prototype) {
+            !elemtype ||
+            !elemtype.prototype) {
             return;
         }
 
-        var obj = $wbwindow.HTMLElement.prototype;
-        var prop = "innerHTML";
+        var obj = elemtype.prototype;
 
         var orig_getter = get_orig_getter(obj, prop);
         var orig_setter = get_orig_setter(obj, prop);
@@ -1864,7 +1835,8 @@ var wombat_internal = function($wbwindow) {
         }
 
         // innerHTML can be overriden on prototype!
-        override_innerHTML();
+        override_html_assign($wbwindow.HTMLElement, "innerHTML");
+        override_html_assign($wbwindow.HTMLIFrameElement, "srcdoc");
 
 
         // init insertAdjacentHTML() override
