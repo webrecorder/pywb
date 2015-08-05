@@ -72,8 +72,9 @@ r"""
 >>> _test_js('top != window')
 'WB_wombat_top != window'
 
+# all 'top' now rewritten, WB_wombat_top defaults to top
 >>> _test_js('top = top + 5')
-'top = top + 5'
+'WB_wombat_top = WB_wombat_top + 5'
 
 # protocol-rel escapes -- keep protocol relative
 >>> _test_js('"//example.com/"')
