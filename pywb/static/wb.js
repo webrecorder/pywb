@@ -26,7 +26,7 @@ function init_banner() {
     var PLAIN_BANNER_ID = "_wb_plain_banner";
     var FRAME_BANNER_ID = "_wb_frame_top_banner";
 
-    if (window.top != window) {
+    if (!window.wbinfo || (window.__WB_replay_top && window != window.__WB_replay_top)) {
         return;
     }
 
@@ -107,7 +107,7 @@ function remove_event(name, func, object) {
 }
 
 function notify_top() {
-    if (!window.__orig_parent || window.__orig_parent != window.top) {
+    if (!window.__WB_top_frame) {
         return;
     }
 
@@ -119,11 +119,11 @@ function notify_top() {
         return;
     }
 
-    if (window.__orig_parent.update_wb_url) {
-        window.__orig_parent.update_wb_url(window.WB_wombat_location.href,
-                                           wbinfo.timestamp,
-                                           wbinfo.request_ts,
-                                           wbinfo.is_live);
+    if (window.__WB_top_frame.update_wb_url) {
+        window.__WB_top_frame.update_wb_url(window.WB_wombat_location.href,
+                                            wbinfo.timestamp,
+                                            wbinfo.request_ts,
+                                            wbinfo.is_live);
     }
 
     remove_event("readystatechange", notify_top, document);
@@ -136,7 +136,7 @@ this.load = function() {
 
     window._wb_js_inited = true;
 
-    if ((window == window.top) && wbinfo) {
+    if (window.wbinfo && (!window.__WB_top_frame || window.__WB_top_frame == window)) {
         if (wbinfo.is_framed && wbinfo.mod != "bn_") {
             var hash = window.location.hash;
 
@@ -154,7 +154,7 @@ this.load = function() {
         // Init Banner (no frame or top frame)
         add_event("readystatechange", init_banner, document);
 
-    } else if (window.__orig_parent && window != window.__orig_parent && window.__orig_parent.update_wb_url) {
+    } else if (window.__WB_top_frame && window != window.__WB_top_frame && window.__WB_top_frame.update_wb_url) {
         add_event("readystatechange", notify_top, document);
     }
 }

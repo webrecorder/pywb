@@ -113,7 +113,9 @@ class JSLinkRewriterMixin(object):
     """
     #JS_HTTPX = r'(?:(?:(?<=["\';])https?:)|(?<=["\']))\\{0,4}/\\{0,4}/[A-Za-z0-9:_@.-]+.*(?=["\s\';&\\])'
     #JS_HTTPX = r'(?<=["\';])(?:https?:)?\\{0,4}/\\{0,4}/[A-Za-z0-9:_@.\-/\\?&#]+(?=["\';&\\])'
-    JS_HTTPX = r'(?:(?<=["\';])https?:|(?<=["\']))\\{0,4}/\\{0,4}/[A-Za-z0-9:_@.-][^"\s\';&\\]*(?=["\';&\\])'
+
+    #JS_HTTPX = r'(?:(?<=["\';])https?:|(?<=["\']))\\{0,4}/\\{0,4}/[A-Za-z0-9:_@.-][^"\s\';&\\]*(?=["\';&\\])'
+    JS_HTTPX = r'(?:(?<=["\';])https?:|(?<=["\']))\\{0,4}/\\{0,4}/[A-Za-z0-9:_@%.-]+/'
 
     def __init__(self, rewriter, rules=[]):
         rules = rules + [
@@ -132,7 +134,7 @@ class JSLocationRewriterMixin(object):
     def __init__(self, rewriter, rules=[], prefix='WB_wombat_'):
         rules = rules + [
           #  (r'(?<![/$])\blocation\b(?!\":)', RegexRewriter.add_prefix(prefix), 0),
-          (r'(?<![/$\'"-])\blocation\b(?!(?:\":|:|=\d|-))', RegexRewriter.add_prefix(prefix), 0),
+          (r'(?<![/$\'"-])\b(?:location|top)\b(?!(?:\":|:|=\d|-))', RegexRewriter.add_prefix(prefix), 0),
 
           (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(window).'), 0),
 
@@ -141,14 +143,15 @@ class JSLocationRewriterMixin(object):
           #  (r'(?<=document\.)cookie', RegexRewriter.add_prefix(prefix), 0),
 
             #todo: move to mixin?
-           (r'(?<=[\s=(){])(top)\s*(?:[!}?)]|==|$)',
-            RegexRewriter.add_prefix(prefix), 1),
+          #(r'(?<=[\s=(){])(top)\s*(?:[!}?)]|==|$)',
+          # (r'(?<=[\s=(){.])(top)\s*(?:[,!}?)]|==|$)',
+          #  RegexRewriter.add_prefix(prefix), 1),
 
-           (r'^(top)\s*(?:[!})]|==|$)',
-            RegexRewriter.add_prefix(prefix), 1),
+          # (r'^(top)\s*(?:[!})]|==|$)',
+          #  RegexRewriter.add_prefix(prefix), 1),
 
-           (r'(?<=window\.)(top)',
-            RegexRewriter.add_prefix(prefix), 1),
+          # (r'(?<=window\.)(top)',
+          #  RegexRewriter.add_prefix(prefix), 1),
         ]
         super(JSLocationRewriterMixin, self).__init__(rewriter, rules)
 

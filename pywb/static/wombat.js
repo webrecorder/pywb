@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.6
+// Wombat JS-Rewriting Library v2.7
 //============================================
 
 
@@ -223,8 +223,8 @@ var wombat_internal = function($wbwindow) {
         var prefix = starts_with(url, VALID_PREFIXES);
 
         if (prefix) {
-            var orig_host = $wbwindow.top.location.host;
-            var orig_protocol = $wbwindow.top.location.protocol;
+            var orig_host = $wbwindow.__WB_replay_top.location.host;
+            var orig_protocol = $wbwindow.__WB_replay_top.location.protocol;
 
             var prefix_host = prefix + orig_host + '/';
 
@@ -565,7 +565,7 @@ var wombat_internal = function($wbwindow) {
     function check_location_change(wombat_loc, is_top) {
         var locType = (typeof wombat_loc);
 
-        var actual_location = (is_top ? $wbwindow.top.location : $wbwindow.location);
+        var actual_location = (is_top ? $wbwindow.__WB_replay_top.location : $wbwindow.location);
 
         // String has been assigned to location, so assign it
         if (locType == "string") {
@@ -589,8 +589,8 @@ var wombat_internal = function($wbwindow) {
         check_location_change($wbwindow.WB_wombat_location, false);
 
         // Only check top if its a different $wbwindow
-        if ($wbwindow.WB_wombat_location != $wbwindow.top.WB_wombat_location) {
-            check_location_change($wbwindow.top.WB_wombat_location, true);
+        if ($wbwindow.WB_wombat_location != $wbwindow.__WB_replay_top.WB_wombat_location) {
+            check_location_change($wbwindow.__WB_replay_top.WB_wombat_location, true);
         }
 
         //        lochash = $wbwindow.WB_wombat_location.hash;
@@ -645,8 +645,8 @@ var wombat_internal = function($wbwindow) {
 
             orig_func.call(this, state_obj, title, url);
 
-            if ($wbwindow.__orig_parent && $wbwindow != $wbwindow.__orig_parent && $wbwindow.__orig_parent.update_wb_url) {
-                $wbwindow.__orig_parent.update_wb_url($wbwindow.WB_wombat_location.href,
+            if ($wbwindow.__WB_top_frame && $wbwindow != $wbwindow.__WB_top_frame && $wbwindow.__WB_top_frame.update_wb_url) {
+                $wbwindow.__WB_top_frame.update_wb_url($wbwindow.WB_wombat_location.href,
                                                    wb_info.timestamp,
                                                    wb_info.request_ts,
                                                    wb_info.is_live);
@@ -1722,11 +1722,13 @@ var wombat_internal = function($wbwindow) {
 
     //============================================
     function wombat_init(wbinfo) {
+        init_top_frame($wbwindow);
+
         wb_info = wbinfo;
 
         wb_replay_prefix = wbinfo.prefix;
-        if (wb_replay_prefix.indexOf($wbwindow.top.location.origin) == 0) {
-            wb_coll_prefix = wb_replay_prefix.substring($wbwindow.top.location.origin.length + 1);
+        if (wb_replay_prefix.indexOf($wbwindow.__WB_replay_top.location.origin) == 0) {
+            wb_coll_prefix = wb_replay_prefix.substring($wbwindow.__WB_replay_top.location.origin.length + 1);
         } else {
             wb_coll_prefix = wb_replay_prefix;
         }
@@ -1768,38 +1770,6 @@ var wombat_internal = function($wbwindow) {
         }
 
         init_wombat_loc($wbwindow);
-
-        var is_framed = ($wbwindow.top.wbinfo && $wbwindow.top.wbinfo.is_frame);
-
-        function find_next_top(nextwin) {
-            while ((nextwin.parent != nextwin) && (nextwin.parent != nextwin.top)) {
-                nextwin = nextwin.parent;
-            }
-            return nextwin;
-        }
-
-        if ($wbwindow.location != $wbwindow.top.location) {
-            $wbwindow.__orig_parent = $wbwindow.parent;
-            if (is_framed) {
-                $wbwindow.top._WB_wombat_location = $wbwindow._WB_wombat_location;
-
-                $wbwindow.WB_wombat_top = find_next_top($wbwindow);
-
-                if ($wbwindow.parent == $wbwindow.top) {
-                    $wbwindow.parent = $wbwindow;
-
-                    // Disable frameElement also as this should be top frame
-                    if (Object.defineProperty) {
-                        Object.defineProperty($wbwindow, "frameElement", {value: undefined, configurable: false});
-                    }
-                }
-            } else {
-                $wbwindow.top._WB_wombat_location = new WombatLocation($wbwindow.top.location);
-                $wbwindow.WB_wombat_top = $wbwindow.top;
-            }
-        } else {
-            $wbwindow.WB_wombat_top = $wbwindow.top;
-        }
 
         //if ($wbwindow.opener) {
         //    $wbwindow.opener.WB_wombat_location = copy_location_obj($wbwindow.opener.location);
@@ -1884,6 +1854,67 @@ var wombat_internal = function($wbwindow) {
         this.rewrite_url = rewrite_url;
         this.watch_elem = watch_elem;
     }
+
+    function init_top_frame($wbwindow) {
+        function check_frame(win, frame) {
+            try {
+                return (win && win.wbinfo && (!win.wbinfo.is_frame == !frame));
+            } catch (e) {
+                return false;
+            }
+        }
+    
+        var replay_parent = $wbwindow;
+        var replay_top = $wbwindow;
+
+        while ((replay_top.parent != replay_top) && check_frame(replay_top.parent, false)) {
+            replay_top = replay_top.parent;
+            // Update parent first time
+            if (replay_parent == $wbwindow) {
+                replay_parent = replay_top;
+            }
+        }
+
+        var real_parent = replay_top.__WB_orig_parent || replay_top.parent;
+
+        if (real_parent != $wbwindow && check_frame(real_parent, true)) {
+            $wbwindow.__WB_top_frame = real_parent;
+
+            // Disable frameElement also as this should be top frame
+            if (replay_top == $wbwindow && Object.defineProperty) {
+                Object.defineProperty($wbwindow, "frameElement", {value: undefined, configurable: false});
+            }
+
+        } else {
+            $wbwindow.__WB_top_frame = undefined;
+        }
+
+        $wbwindow.__WB_replay_top = replay_top;
+
+        $wbwindow.__WB_orig_parent = $wbwindow.parent;
+
+        $wbwindow.parent = replay_parent;
+
+        if (Object.defineProperty) {
+            var getter = function() {
+                if (this.__WB_replay_top) {
+                    return this.__WB_replay_top;
+                } else if (this instanceof Window) {
+                    return this;
+                } else {
+                    return this.top;
+                }
+            }
+
+            var setter = function(val) {
+                this.top = val;
+            }
+
+            def_prop($wbwindow.Object.prototype, "WB_wombat_top", setter, getter);
+        }
+    }
+
+
 
     // Utility functions used by rewriting rules
     function watch_elem(elem, func)
