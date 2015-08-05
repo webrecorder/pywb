@@ -1882,7 +1882,9 @@ var wombat_internal = function($wbwindow) {
 
             // Disable frameElement also as this should be top frame
             if (replay_top == $wbwindow && Object.defineProperty) {
-                Object.defineProperty($wbwindow, "frameElement", {value: undefined, configurable: false});
+                try {
+                    Object.defineProperty($wbwindow, "frameElement", {value: undefined, configurable: false});
+                } catch (e) {}
             }
 
         } else {
