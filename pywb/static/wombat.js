@@ -1402,8 +1402,7 @@ var wombat_internal = function($wbwindow) {
 
     function init_proto_pm_origin(win) {
         function pm_origin(origin_window) {
-            this.__WB_pm_origin = (origin_window && origin_window.WB_wombat_location && origin_window.WB_wombat_location.origin);
-            //console.log("Origin " + this.__WB_pm_origin);
+            this.__WB_source = origin_window;
             return this;
         }
 
@@ -1425,12 +1424,26 @@ var wombat_internal = function($wbwindow) {
         $wbwindow.__orig_postMessage = orig;
 
         var postmessage_rewritten = function(message, targetOrigin, transfer) {
-
             var from = undefined;
-            
-            if (window.__WB_pm_origin) {
-                from = window.__WB_pm_origin;
-                window.__WB_pm_origin = undefined;
+            var src_id = undefined;
+
+            if (window.__WB_source && window.__WB_source.WB_wombat_location) {
+                var source = window.__WB_source;
+
+                var from = source.WB_wombat_location.origin;
+
+                if (!source.__WB_id) {
+                    source.__WB_id = Math.round(Math.random() * 1000) + source.WB_wombat_location.href;
+                }
+                if (!this.__WB_win_id) {
+                    this.__WB_win_id = {};
+                }
+
+                this.__WB_win_id[source.__WB_id] = source;
+
+                src_id = source.__WB_id;
+                
+                window.__WB_source = undefined;
             } else {
                 from = window.WB_wombat_location.origin;
             }
@@ -1448,6 +1461,7 @@ var wombat_internal = function($wbwindow) {
 
             var new_message = {"from": from,
                                "to_host": to,
+                               "src_id":  src_id,
                                "message": message};
 
             if (targetOrigin != "*") {
@@ -1474,42 +1488,72 @@ var wombat_internal = function($wbwindow) {
             }
         }
 */
-        $wbwindow._orig_addEventListener = $wbwindow.addEventListener;
+        function WrappedListener(event, orig_listener, win) {
+            var ne = event;
 
-        var addEventListener_rewritten = function(type, listener, useCapture) {
-            if (type == "message") {
-                var orig_listener = listener;
-                var new_listener = function(event) {
-                    var ne = event;
+            if (event.data.from && event.data.message) {
 
-                    if (event.data.from && event.data.message) {
-
-                        if (event.data.to_host != "*" && this.WB_wombat_location && event.data.to_host != this.WB_wombat_location.host) {
-                            console.log("Skipping " + this.WB_wombat_location.host + " not " + event.data.to_host);
-                            return;
-                        }
-
-                        ne = new MessageEvent("message",
-                                              {"bubbles": event.bubbles,
-                                               "cancelable": event.cancelable,
-                                               "data": event.data.message,
-                                               "origin": event.data.from,
-                                               "lastEventId": event.lastEventId,
-                                               "source": event.source,
-                                               "ports": event.ports});
-
-                    }
- 
-                    return orig_listener(ne);
+                if (event.data.to_host != "*" && win.WB_wombat_location && event.data.to_host != win.WB_wombat_location.host) {
+                    console.log("Skipping " + win.WB_wombat_location.host + " not " + event.data.to_host);
+                    return;
                 }
-                listener = new_listener;
+
+                var source = event.source;
+
+                if (event.data.src_id && win.__WB_win_id && win.__WB_win_id[event.data.src_id]) {
+                    source = win.__WB_win_id[event.data.src_id];
+                }
+
+                ne = new MessageEvent("message",
+                                      {"bubbles": event.bubbles,
+                                       "cancelable": event.cancelable,
+                                       "data": event.data.message,
+                                       "origin": event.data.from,
+                                       "lastEventId": event.lastEventId,
+                                       "source": source,
+                                       "ports": event.ports});
+
             }
 
-            return _orig_addEventListener.call(this, type, listener, useCapture);
+            return orig_listener(ne);
+        }
+
+        var listen_map = {};
+
+        // ADD
+        var _orig_addEventListener = $wbwindow.addEventListener;
+        
+        var addEventListener_rewritten = function(type, listener, useCapture) {
+            if (type == "message") {
+                var win = this;
+                var wrapped_listener = function(event) { return WrappedListener(event, listener, win); }
+
+                listen_map[listener] = wrapped_listener;
+
+                return _orig_addEventListener.call(this, type, wrapped_listener, useCapture);
+            } else {
+                return _orig_addEventListener.call(this, type, listener, useCapture);
+            }
         }
  
         $wbwindow.addEventListener = addEventListener_rewritten;
-        //$wbwindow.Window.prototype.addEventListener = addEventListener_rewritten;
+
+        // REMOVE
+        var _orig_removeEventListener = $wbwindow.removeEventListener;
+        
+        var removeEventListener_rewritten = function(type, listener, useCapture) {
+            if (type == "message") {
+                var mapped = listen_map[listener];
+                if (mapped) {
+                    delete listen_map[listener];
+                    return _orig_removeEventListener.call(this, type, mapped, useCapture);
+                }
+            } else {
+                return _orig_removeEventListener.call(this, type, listener, useCapture);
+            }
+        }
+
+        $wbwindow.removeEventListener = removeEventListener_rewritten;
     }
 
     //============================================
