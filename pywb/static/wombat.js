@@ -1039,7 +1039,10 @@ var wombat_internal = function($wbwindow) {
             return n1 + rewrite_url(n2) + n3;
         }
 
-        return value.replace(STYLE_REGEX, style_replacer);
+
+        value = value.replace(STYLE_REGEX, style_replacer);
+        value = value.replace('WB_wombat_', '');
+        return value;
     }
 
     //============================================
