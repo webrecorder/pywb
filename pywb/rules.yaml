@@ -292,6 +292,12 @@ rules:
     # testing rules -- not for valid domain
     #=================================================================
     # this rule block is a non-existent prefix merely for testing
+
+    - url_prefix: 'example,example,test,all)/'
+
+      rewrite:
+        js_rewrite_location: all
+
     - url_prefix: 'example,example,test,loconly)/'
 
       rewrite:

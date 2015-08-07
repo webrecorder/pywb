@@ -71,7 +71,7 @@ def test_local_1():
     status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html',
                                          urlrewriter,
                                          head_insert_func,
-                                         'com,example,test)/')
+                                         'example,example,test,all)/')
 
     # wombat insert added
     assert '<head><script src="/static/__pywb/wombat.js"> </script>' in buff, buff
@@ -188,7 +188,7 @@ def test_local_unclosed_script():
     status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample_unclosed_script.html',
                                          urlrewriter,
                                          head_insert_func,
-                                         'com,example,test)/')
+                                         'example,example,test,all)/')
 
     # wombat insert added
     assert '<head><script src="/static/__pywb/wombat.js"> </script>' in buff, buff
