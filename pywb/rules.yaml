@@ -181,10 +181,10 @@ rules:
 
     # disqus
     #- url_prefix: ['com,disqus', 'com,disquscdn']
-    - url_prefix: 'com,disqus'
+    #- url_prefix: 'com,disqus'
 
-      rewrite:
-        js_rewrite_location: location
+    #  rewrite:
+    #    js_rewrite_location: location
 
     - url_prefix: 'com,disqus)/embed/comments'
 
