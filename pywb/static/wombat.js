@@ -1769,9 +1769,10 @@ var wombat_internal = function($wbwindow) {
 
     //============================================
     function wombat_init(wbinfo) {
-        init_top_frame($wbwindow);
-
         wb_info = wbinfo;
+        wb_opts = wbinfo.wombat_opts;
+
+        init_top_frame($wbwindow);
 
         wb_replay_prefix = wbinfo.prefix;
         if (wb_replay_prefix.indexOf($wbwindow.__WB_replay_top.location.origin) == 0) {
@@ -1782,7 +1783,6 @@ var wombat_internal = function($wbwindow) {
         wb_coll_prefix_check = wb_coll_prefix;
 
         wbinfo.wombat_opts = wbinfo.wombat_opts || {};
-        wb_opts = wbinfo.wombat_opts;
 
         wb_curr_host = $wbwindow.location.protocol + "//" + $wbwindow.location.host;
 
@@ -1911,16 +1911,13 @@ var wombat_internal = function($wbwindow) {
             }
         }
     
-        var replay_parent = $wbwindow;
         var replay_top = $wbwindow;
 
         while ((replay_top.parent != replay_top) && check_frame(replay_top.parent, false)) {
             replay_top = replay_top.parent;
-            // Update parent first time
-            if (replay_parent == $wbwindow) {
-                replay_parent = replay_top;
-            }
         }
+
+        $wbwindow.__WB_replay_top = replay_top;
 
         var real_parent = replay_top.__WB_orig_parent || replay_top.parent;
 
@@ -1938,11 +1935,11 @@ var wombat_internal = function($wbwindow) {
             $wbwindow.__WB_top_frame = undefined;
         }
 
-        $wbwindow.__WB_replay_top = replay_top;
-
-        $wbwindow.__WB_orig_parent = $wbwindow.parent;
-
-        $wbwindow.parent = replay_parent;
+        // Fix .parent only if not embeddable, otherwise leave for accessing embedding window
+        if (!wb_opts.embedded && (replay_top == $wbwindow)) {
+            $wbwindow.__WB_orig_parent = $wbwindow.parent;
+            $wbwindow.parent = replay_top;
+        }
 
         if (Object.defineProperty) {
             var getter = function() {
