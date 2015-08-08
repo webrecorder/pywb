@@ -895,6 +895,8 @@ var wombat_internal = function($wbwindow) {
 
         $wbwindow.Date.UTC = orig_utc;
         $wbwindow.Date.parse = orig_parse;
+
+        $wbwindow.Date.__WB_timediff = timediff;
     }
 
     //============================================
@@ -1630,7 +1632,11 @@ var wombat_internal = function($wbwindow) {
                 return;
             }
 
-            value = value.replace(cookie_expires_regex, "");
+            value = value.replace(cookie_expires_regex, function(m, d1) {
+                var date = new Date(d1);
+                date = new Date(date.getTime() + Date.__WB_timediff);
+                return "Expires=" + date.toUTCString();
+            });
 
             var cookies = value.split(",");
 
