@@ -30,9 +30,11 @@ var wombat_internal = function($wbwindow) {
 
     // Globals
     var wb_replay_prefix;
-    var wb_replay_date_prefix;
-    var wb_coll_prefix;
-    var wb_coll_prefix_check;
+
+    var wb_abs_prefix;
+    var wb_rel_prefix;
+    var wb_rel_prefix_check;
+
     var wb_capture_date_part;
     var wb_orig_scheme;
     var wb_orig_origin;
@@ -109,8 +111,8 @@ var wombat_internal = function($wbwindow) {
     //============================================
     var rewrite_url = rewrite_url_;
 
-    function rewrite_url_debug(url) {
-        var rewritten = rewrite_url_(url);
+    function rewrite_url_debug(url, use_rel, mod) {
+        var rewritten = rewrite_url_(url, use_rel, mod);
         if (url != rewritten) {
             console.log('REWRITE: ' + url + ' -> ' + rewritten);
         } else {
@@ -143,7 +145,7 @@ var wombat_internal = function($wbwindow) {
     var URL_PROPS = ["href", "hash", "pathname", "host", "hostname", "protocol", "origin", "search", "port"];
 
     //============================================
-    function rewrite_url_(url, use_rel) {
+    function rewrite_url_(url, use_rel, mod) {
         // If undefined, just return it
         if (!url) {
             return url;
@@ -215,7 +217,7 @@ var wombat_internal = function($wbwindow) {
                 return url;
             }
 
-            return (use_rel ? wb_coll_prefix : wb_replay_date_prefix) + wb_orig_origin + url;
+            return get_final_url(use_rel ? wb_rel_prefix : wb_abs_prefix, mod, wb_orig_origin + url);
         }
 
         // If full url starting with http://, https:// or //
@@ -238,8 +240,8 @@ var wombat_internal = function($wbwindow) {
                 var path = url.substring(prefix_host.length);
                 var rebuild = false;
 
-                if (path.indexOf(wb_coll_prefix_check) < 0 && url.indexOf("/static/") < 0) {
-                    path = wb_coll_prefix + WB_wombat_location.origin + "/" + path;
+                if (path.indexOf(wb_rel_prefix_check) < 0 && url.indexOf("/static/") < 0) {
+                    path = get_final_url(wb_rel_prefix, mod, WB_wombat_location.origin + "/" + path);
                     rebuild = true;
                 }
 
@@ -260,7 +262,7 @@ var wombat_internal = function($wbwindow) {
 
                 return url;
             }
-            return wb_replay_date_prefix + url;
+            return get_final_url(wb_abs_prefix, mod, url);
         }
 
         // Check for common bad prefixes and remove them
@@ -268,13 +270,13 @@ var wombat_internal = function($wbwindow) {
 
         if (prefix) {
             url = extract_orig(url);
-            return wb_replay_date_prefix + url;
+            return get_final_url(wb_abs_prefix, mod, url);
         }
 
         // May or may not be a hostname, call function to determine
         // If it is, add the prefix and make sure port is removed
         if (is_host_url(url) && !starts_with(url, $wbwindow.location.host + '/')) {
-            return wb_replay_date_prefix + wb_orig_scheme + url;
+            return get_final_url(wb_abs_prefix, mod, wb_orig_scheme + url);
         }
 
         return url;
@@ -682,7 +684,7 @@ var wombat_internal = function($wbwindow) {
             }
 
             result = orig.call(this, method, url, async, user, password);
-            this.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            //this.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
         }
 
         $wbwindow.XMLHttpRequest.prototype.open = open_rewritten;
@@ -745,8 +747,12 @@ var wombat_internal = function($wbwindow) {
                 if (equals_any(lowername, REWRITE_ATTRS) && typeof(value) == "string") {
                     if (!this._no_rewrite) {
                         var old_value = value;
-                        var new_value = rewrite_url(value);
-                        value = new_value;
+
+                        var mod = undefined;
+                        if (this.tagName == "SCRIPT") {
+                            mod = "js_";
+                        }
+                        value = rewrite_url(value, false, mod);
                     }
                 }
             }
@@ -942,7 +948,7 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
-    function init_href_src_obs($wbwindow)
+/*    function init_href_src_obs($wbwindow)
     {
         if (!$wbwindow.MutationObserver) {
             return;
@@ -999,9 +1005,9 @@ var wombat_internal = function($wbwindow) {
             subtree: true,
         });
     }
-
+*/
     //============================================
-    function rewrite_attr(elem, name, func) {
+    function rewrite_attr(elem, name) {
         if (!elem || !elem.getAttribute) {
             return;
         }
@@ -1021,14 +1027,13 @@ var wombat_internal = function($wbwindow) {
             return;
         }
 
-        var new_value = value;
-
-        if (func) {
-            new_value = func(value);
-        }
-
-        if (value != new_value) {
-            wb_setAttribute.call(elem, name, new_value);
+        if (name == "style") {
+            var new_value = rewrite_style(value);
+            if (new_value != value) {
+                wb_setAttribute.call(elem, "style", new_value);
+            }
+        } else {
+            elem[name] = value;
         }
     }
 
@@ -1050,8 +1055,9 @@ var wombat_internal = function($wbwindow) {
     //============================================
     function rewrite_elem(elem)
     {
-        rewrite_attr(elem, "src", rewrite_url);
-        rewrite_attr(elem, "href", rewrite_url);
+        rewrite_attr(elem, "src");
+        rewrite_attr(elem, "href");
+
         rewrite_attr(elem, "style", rewrite_style);
 
         if (elem && elem.getAttribute && elem.getAttribute("crossorigin")) {
@@ -1092,7 +1098,7 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
-    function add_attr_overrides(tagName, created)
+/*    function add_attr_overrides(tagName, created)
     {
         if (!created || created._src != undefined || created._href != undefined) {
             return;
@@ -1104,7 +1110,7 @@ var wombat_internal = function($wbwindow) {
             override_attr(created, "href");
         }
     }
-
+*/
     //============================================
     function get_orig_getter(obj, prop) {
         var orig_getter;
@@ -1142,7 +1148,7 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
-    function override_attr(obj, attr) {
+    function override_attr(obj, attr, mod) {
         var orig_getter = get_orig_getter(obj, attr);
         var orig_setter = get_orig_setter(obj, attr);
 
@@ -1151,7 +1157,7 @@ var wombat_internal = function($wbwindow) {
 
         if (orig_setter) {
             setter = function(orig) {
-                var val = rewrite_url(orig);
+                var val = rewrite_url(orig, false, mod);
                 //wb_setAttribute.call(this, attr, val);
                 orig_setter.call(this, val);
                 return val;
@@ -1173,15 +1179,15 @@ var wombat_internal = function($wbwindow) {
 
     //============================================
     function init_attr_overrides($wbwindow) {
-        override_attr($wbwindow.HTMLLinkElement.prototype, "href");
-        override_attr($wbwindow.HTMLImageElement.prototype, "src");
-        override_attr($wbwindow.HTMLIFrameElement.prototype, "src");
-        override_attr($wbwindow.HTMLScriptElement.prototype, "src");
-        override_attr($wbwindow.HTMLMediaElement.prototype, "src");
-        override_attr($wbwindow.HTMLMediaElement.prototype, "poster");
-        override_attr($wbwindow.HTMLSourceElement.prototype, "src");
-        override_attr($wbwindow.HTMLInputElement.prototype, "src");
-        override_attr($wbwindow.HTMLEmbedElement.prototype, "src");
+        override_attr($wbwindow.HTMLLinkElement.prototype, "href", "cs_");
+        override_attr($wbwindow.HTMLImageElement.prototype, "src", "im_");
+        override_attr($wbwindow.HTMLIFrameElement.prototype, "src", "if_");
+        override_attr($wbwindow.HTMLScriptElement.prototype, "src", "js_");
+        override_attr($wbwindow.HTMLMediaElement.prototype, "src", "oe_");
+        override_attr($wbwindow.HTMLMediaElement.prototype, "poster", "im_");
+        override_attr($wbwindow.HTMLSourceElement.prototype, "src", "oe_");
+        override_attr($wbwindow.HTMLInputElement.prototype, "src", "oe_");
+        override_attr($wbwindow.HTMLEmbedElement.prototype, "src", "oe_");
         
         //override_attr($wbwindow.HTMLAnchorElement.prototype, "href");
         //return;
@@ -1350,7 +1356,7 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
-    function rewrite_children(child) {
+/*    function rewrite_children(child) {
         var desc;
 
         if (child.querySelectorAll) {
@@ -1363,7 +1369,7 @@ var wombat_internal = function($wbwindow) {
             }
         }
     }
-
+*/
 
     //============================================
     function init_dom_override() {
@@ -1772,6 +1778,25 @@ var wombat_internal = function($wbwindow) {
         $wbwindow.document._wb_override = true;
     }
 
+    //============================================
+    function get_final_url(prefix, mod, url) {
+        if (!mod) {
+            mod = wb_info.mod;
+        }
+
+        // if live, don't add the timestamp
+        if (!wb_info.is_live) {
+            prefix += wb_info.wombat_ts;
+        }
+
+        prefix += mod;
+
+        if (prefix[prefix.length - 1] != "/") {
+            prefix += "/";
+        }
+
+        return prefix + url
+    }
 
     //============================================
     function wombat_init(wbinfo) {
@@ -1782,32 +1807,20 @@ var wombat_internal = function($wbwindow) {
 
         wb_replay_prefix = wbinfo.prefix;
         if (wb_replay_prefix.indexOf($wbwindow.__WB_replay_top.location.origin) == 0) {
-            wb_coll_prefix = wb_replay_prefix.substring($wbwindow.__WB_replay_top.location.origin.length + 1);
+            wb_rel_prefix = wb_replay_prefix.substring($wbwindow.__WB_replay_top.location.origin.length + 1);
         } else {
-            wb_coll_prefix = wb_replay_prefix;
+            wb_rel_prefix = wb_replay_prefix;
         }
-        wb_coll_prefix_check = wb_coll_prefix;
+        wb_rel_prefix_check = wb_rel_prefix;
 
         wbinfo.wombat_opts = wbinfo.wombat_opts || {};
 
         wb_curr_host = $wbwindow.location.protocol + "//" + $wbwindow.location.host;
 
         if (wb_replay_prefix) {
-            var ts_mod;
-
-            // if live, don't add the timestamp
-            if (wbinfo.is_live) {
-                ts_mod = wbinfo.mod;
-            } else {
-                ts_mod = wbinfo.wombat_ts + wbinfo.mod;
-            }
-
-            if (ts_mod != "") {
-                ts_mod += "/";
-            }
-
-            wb_replay_date_prefix = wb_replay_prefix + ts_mod;
-            wb_coll_prefix += ts_mod;
+            wb_abs_prefix = wb_replay_prefix;
+            //wb_replay_date_prefix = wb_replay_prefix + ts_mod;
+            //wb_coll_prefix += ts_mod;
 
             if (!wbinfo.is_live && wbinfo.wombat_ts.length > 0) {
                 wb_capture_date_part = "/" + wbinfo.wombat_ts + "/";
