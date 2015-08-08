@@ -283,7 +283,9 @@ def create_wb_router(passed_config=None):
 
     # setup template globals
     templates_dirs = config['templates_dirs']
-    jinja_env = J2TemplateView.init_shared_env(paths=templates_dirs)
+    jinja_env = J2TemplateView.init_shared_env(paths=templates_dirs,
+                                               packages=config['template_packages'])
+
     jinja_env.globals.update(config.get('template_globals', {}))
 
     for static_name, static_path in static_routes.iteritems():

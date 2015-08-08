@@ -29,6 +29,9 @@ templates_dirs:
     - '.'
     - '/'
 
+template_packages:
+    - pywb
+
 head_insert_html: head_insert.html
 frame_insert_html: frame_insert.html
 banner_html: banner.html
