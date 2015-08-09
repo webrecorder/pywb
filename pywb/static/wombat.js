@@ -1183,7 +1183,7 @@ var wombat_internal = function($wbwindow) {
         }
 
         if (orig_getter) {
-            getter = function(val) {
+            getter = function() {
                 var res = orig_getter.call(this);
                 res = extract_orig(res);
                 return res;
@@ -1211,7 +1211,7 @@ var wombat_internal = function($wbwindow) {
             return val;
         }
 
-        var getter = function(val) {
+        var getter = function() {
             if (orig_getter) {
                 return orig_getter.call(this);
             } else {
@@ -1240,19 +1240,26 @@ var wombat_internal = function($wbwindow) {
         override_attr($wbwindow.HTMLEmbedElement.prototype, "src", "oe_");
      
         override_anchor_elem();
-/*
-        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "cssText");
 
-        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "background", "background");
-        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "backgroundImage", "background-image");
+        var style_proto = $wbwindow.CSSStyleDeclaration.prototype;
 
-        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "listStyle", "list-style");
-        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "listStyleImage", "list-style-image");
+        // For FF
+        if ($wbwindow.CSS2Properties) {
+            style_proto = $wbwindow.CSS2Properties.prototype;
+        }
 
-        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "border", "border");
-        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "borderImage", "border-image");
-        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "borderImageSource", "border-image-source");
-*/    }
+        override_style_attr(style_proto, "cssText");
+
+        override_style_attr(style_proto, "background", "background");
+        override_style_attr(style_proto, "backgroundImage", "background-image");
+
+        override_style_attr(style_proto, "listStyle", "list-style");
+        override_style_attr(style_proto, "listStyleImage", "list-style-image");
+
+        override_style_attr(style_proto, "border", "border");
+        override_style_attr(style_proto, "borderImage", "border-image");
+        override_style_attr(style_proto, "borderImageSource", "border-image-source");
+    }
 
     //============================================
     function override_anchor_elem() {
