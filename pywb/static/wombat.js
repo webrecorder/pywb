@@ -1683,6 +1683,12 @@ var wombat_internal = function($wbwindow) {
         var orig_get_cookie = get_orig_getter($wbwindow.document, "cookie");
         var orig_set_cookie = get_orig_setter($wbwindow.document, "cookie");
 
+        if (!orig_get_cookie) {
+            orig_get_cookie = get_orig_getter($wbwindow.Document.prototype, "cookie");
+        }
+        if (!orig_set_cookie) {
+            orig_set_cookie = get_orig_setter($wbwindow.Document.prototype, "cookie");
+        }
 
         function rewrite_cookie(cookie) {
             var matched = cookie.match(cookie_path_regex);
@@ -1839,8 +1845,8 @@ var wombat_internal = function($wbwindow) {
 
         var orig_referrer = extract_orig($wbwindow.document.referrer);
 
-
-        def_prop($wbwindow.document, "domain", undefined, function() { return wbinfo.wombat_host });
+        // changing domain disallowed, but set as no-op to avoid errors
+        def_prop($wbwindow.document, "domain", function() {}, function() { return wbinfo.wombat_host });
 
         def_prop($wbwindow.document, "referrer", undefined, function() { return orig_referrer; });
 

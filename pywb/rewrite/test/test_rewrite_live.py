@@ -194,7 +194,9 @@ def test_local_unclosed_script():
     assert '<head><script src="/static/__pywb/wombat.js"> </script>' in buff, buff
 
     # JS location and JS link rewritten
-    assert 'window.WB_wombat_location = "/pywb/20131226101010/http:\/\/example.com/dynamic_page.html";\n}\n</script>' in buff, buff
+    assert 'window.WB_wombat_location = "/pywb/20131226101010/http:\/\/example.com/dynamic_page.html";' in buff, buff
+
+    assert '</script>' in buff, buff
 
 
 def test_example_1():
