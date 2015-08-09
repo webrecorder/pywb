@@ -918,7 +918,7 @@ var wombat_internal = function($wbwindow) {
 
 
     //============================================
-    function init_mutation_obs($wbwindow) {
+/*    function init_mutation_obs($wbwindow) {
         if (!$wbwindow.MutationObserver) {
             return;
         }
@@ -946,7 +946,7 @@ var wombat_internal = function($wbwindow) {
             //attributeOldValue: true,
             attributeFilter: ["style"]});
     }
-
+*/
     //============================================
 /*    function init_href_src_obs($wbwindow)
     {
@@ -1027,13 +1027,21 @@ var wombat_internal = function($wbwindow) {
             return;
         }
 
+        var new_value;
+
         if (name == "style") {
-            var new_value = rewrite_style(value);
-            if (new_value != value) {
-                wb_setAttribute.call(elem, "style", new_value);
-            }
+            new_value = rewrite_style(value);
         } else {
-            elem[name] = value;
+            var mod = undefined;
+
+            if (elem.tagName == "SCRIPT") {
+                mod = "js_";
+            }
+            new_value = rewrite_url(value, false, mod);
+        }
+
+        if (new_value != value) {
+            wb_setAttribute.call(elem, name, new_value);
         }
     }
 
@@ -1046,21 +1054,31 @@ var wombat_internal = function($wbwindow) {
             return n1 + rewrite_url(n2) + n3;
         }
 
+        if (typeof(value) === "string") {
+            value = value.replace(STYLE_REGEX, style_replacer);
+            value = value.replace('WB_wombat_', '');
+        }
 
-        value = value.replace(STYLE_REGEX, style_replacer);
-        value = value.replace('WB_wombat_', '');
         return value;
     }
 
     //============================================
     function rewrite_elem(elem)
     {
-        rewrite_attr(elem, "src");
-        rewrite_attr(elem, "href");
+        if (!elem) {
+            return;
+        }
 
-        rewrite_attr(elem, "style", rewrite_style);
+        if (elem.tagName == "STYLE") {
+            elem.textContent = rewrite_style(elem.textContent);
+        } else {
+            rewrite_attr(elem, "src");
+            rewrite_attr(elem, "href");
 
-        if (elem && elem.getAttribute && elem.getAttribute("crossorigin")) {
+            rewrite_attr(elem, "style", rewrite_style);
+        }
+
+        if (elem.getAttribute && elem.getAttribute("crossorigin")) {
             elem.removeAttribute("crossorigin");
         }
     }
@@ -1178,19 +1196,66 @@ var wombat_internal = function($wbwindow) {
 
 
     //============================================
+    function override_style_attr(obj, attr, prop_name) {
+        var orig_getter = get_orig_getter(obj, attr);
+        var orig_setter = get_orig_setter(obj, attr);
+
+        var setter = function(orig) {
+            var val = rewrite_style(orig);
+            if (orig_setter) {
+                orig_setter.call(this, val);
+            } else {
+                this.setProperty(prop_name, val);
+            }
+
+            return val;
+        }
+
+        var getter = function(val) {
+            if (orig_getter) {
+                return orig_getter.call(this);
+            } else {
+                return this.getPropertyValue(prop_name);
+            }
+        }
+
+        if ((orig_setter && orig_getter) || prop_name) {
+            def_prop(obj, attr, setter, getter);
+        }
+    }
+
+
+    //============================================
     function init_attr_overrides($wbwindow) {
         override_attr($wbwindow.HTMLLinkElement.prototype, "href", "cs_");
         override_attr($wbwindow.HTMLImageElement.prototype, "src", "im_");
         override_attr($wbwindow.HTMLIFrameElement.prototype, "src", "if_");
         override_attr($wbwindow.HTMLScriptElement.prototype, "src", "js_");
-        override_attr($wbwindow.HTMLMediaElement.prototype, "src", "oe_");
-        override_attr($wbwindow.HTMLMediaElement.prototype, "poster", "im_");
+        override_attr($wbwindow.HTMLVideoElement.prototype, "src", "oe_");
+        override_attr($wbwindow.HTMLVideoElement.prototype, "poster", "im_");
+        override_attr($wbwindow.HTMLAudioElement.prototype, "src", "oe_");
+        override_attr($wbwindow.HTMLAudioElement.prototype, "poster", "im_");
         override_attr($wbwindow.HTMLSourceElement.prototype, "src", "oe_");
         override_attr($wbwindow.HTMLInputElement.prototype, "src", "oe_");
         override_attr($wbwindow.HTMLEmbedElement.prototype, "src", "oe_");
-        
-        //override_attr($wbwindow.HTMLAnchorElement.prototype, "href");
-        //return;
+     
+        override_anchor_elem();
+/*
+        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "cssText");
+
+        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "background", "background");
+        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "backgroundImage", "background-image");
+
+        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "listStyle", "list-style");
+        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "listStyleImage", "list-style-image");
+
+        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "border", "border");
+        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "borderImage", "border-image");
+        override_style_attr($wbwindow.CSSStyleDeclaration.prototype, "borderImageSource", "border-image-source");
+*/    }
+
+    //============================================
+    function override_anchor_elem() {
         var anchor_orig = {}
 
         function save_prop(prop) {
@@ -1245,7 +1310,11 @@ var wombat_internal = function($wbwindow) {
             var res = orig;
             if (!this._no_rewrite) {
                 //init_iframe_insert_obs(this);
-                res = rewrite_html(orig);
+                if (this.tagName == "STYLE") {
+                    res = rewrite_style(orig);
+                } else {
+                    res = rewrite_html(orig);
+                }
             }
             orig_setter.call(this, res);
         }
@@ -1384,7 +1453,14 @@ var wombat_internal = function($wbwindow) {
                 var child = arguments[0];
 
                 if (child) {
-                    rewrite_elem(child);
+
+                    if (child instanceof $wbwindow.Element) {
+                        rewrite_elem(child);
+                    } else if (child instanceof $wbwindow.Text) {
+                        if (this.tagName == "STYLE") {
+                            child.textContent = rewrite_style(child.textContent);
+                        }
+                    }
 
                     // if fragment, rewrite children before adding
                     //if (child instanceof DocumentFragment) {
@@ -1627,8 +1703,6 @@ var wombat_internal = function($wbwindow) {
                 cookie = cookie.replace("secure", "");
             }
 
-            //console.log(cookie);
-
             return cookie;
         }
 
@@ -1640,6 +1714,10 @@ var wombat_internal = function($wbwindow) {
 
             value = value.replace(cookie_expires_regex, function(m, d1) {
                 var date = new Date(d1);
+                if (isNaN(date.getTime())) {
+                    return "Expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                }
+
                 date = new Date(date.getTime() + Date.__WB_timediff);
                 return "Expires=" + date.toUTCString();
             });
@@ -1764,7 +1842,7 @@ var wombat_internal = function($wbwindow) {
         init_cookies_override($wbwindow);
 
         // Init mutation observer (for style only)
-        init_mutation_obs($wbwindow);
+        //init_mutation_obs($wbwindow);
 
         // override href and src attrs
         init_attr_overrides($wbwindow);

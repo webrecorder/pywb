@@ -81,13 +81,13 @@ rules:
 
     # instagram rules
     #=================================================================
-    - url_prefix: 'net,cloudfront,'
+#    - url_prefix: 'net,cloudfront,'
 
-      rewrite:
-          js_regexs:
-              - match: '\burl\((//[^)]+)\)'
-                rewrite: true
-                group: 1
+#      rewrite:
+#          js_regexs:
+#              - match: '\burl\((//[^)]+)\)'
+#                rewrite: true
+#                group: 1
 
     - url_prefix: 'com,instagram)/p/'
 
@@ -96,13 +96,13 @@ rules:
 
     # wikimedia rules
     #=================================================================
-    - url_prefix: 'org,wikimedia,meta)/'
+#    - url_prefix: 'org,wikimedia,meta)/'
 
-      rewrite:
-          js_regexs:
-              - match: '\burl\((\\?/\\?/[^)]+)\)'
-                rewrite: true
-                group: 1
+#      rewrite:
+#          js_regexs:
+#              - match: '\burl\((\\?/\\?/[^)]+)\)'
+#                rewrite: true
+#                group: 1
 
     # flickr rules
     #=================================================================
