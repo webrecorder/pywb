@@ -330,7 +330,8 @@ __wbvidrw = (function() {
                     }
                 }
 
-                if (!videoinfo.formats && videoinfo.url && videoinfo.ext && videoinfo.format_id) {
+                if (!videoinfo.formats && videoinfo.url && videoinfo.ext && videoinfo.format_id &&
+                    !(videoinfo.ext == "swf" && videoinfo.format_id == "0")) {
                     videoinfo.formats = [{ext: videoinfo.ext,
                                           url: videoinfo.url,
                                           format_id: videoinfo.format_id

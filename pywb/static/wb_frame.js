@@ -160,6 +160,27 @@ function iframe_loaded(event) {
     update_wb_url(url, ts, request_ts, is_live);
 }
 
+
+function init_pm() {
+    var frame = document.getElementById(IFRAME_ID).contentWindow;
+
+    window.addEventListener("message", function(event) {
+        // Pass to replay frame
+        if (event.source == window.parent) {
+            frame.postMessage(event.data, "*");
+        } else if (event.source == frame) {
+        // Pass to parent
+            window.parent.postMessage(event.data, "*");
+        }
+    });
+
+    window.__WB_pmw = function(win) {
+        this.pm_source = win;
+        return this;
+    }
+}
+
+
 function update_wb_url(url, ts, request_ts, is_live) {
     if (curr_state.url == url && curr_state.timestamp == ts) {
         return;
@@ -210,7 +231,9 @@ function init_hash_connect() {
         window.addEventListener("hashchange", outer_hash_changed, false);
         frame.addEventListener("hashchange", inner_hash_changed, false);
     }
-}
 
+    // Init Post Message connect
+    init_pm();
+}
 
 document.addEventListener("DOMContentLoaded", init_hash_connect);

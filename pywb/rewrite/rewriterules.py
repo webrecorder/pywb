@@ -29,7 +29,7 @@ class RewriteRules(BaseRule):
         self.parse_comments = config.get('parse_comments', False)
 
         # Custom handling for js rewriting, often the most complex
-        self.js_rewrite_location = config.get('js_rewrite_location', 'all')
+        self.js_rewrite_location = config.get('js_rewrite_location', 'location')
 
         # ability to toggle rewriting
         if self.js_rewrite_location == 'all':

@@ -96,13 +96,13 @@ rules:
 
     # wikimedia rules
     #=================================================================
-    - url_prefix: 'org,wikimedia,meta)/'
+#    - url_prefix: 'org,wikimedia,meta)/'
 
-      rewrite:
-          js_regexs:
-              - match: '\burl\((\\?/\\?/[^)]+)\)'
-                rewrite: true
-                group: 1
+#      rewrite:
+#          js_regexs:
+#              - match: '\burl\((\\?/\\?/[^)]+)\)'
+#                rewrite: true
+#                group: 1
 
     # flickr rules
     #=================================================================
@@ -181,10 +181,10 @@ rules:
 
     # disqus
     #- url_prefix: ['com,disqus', 'com,disquscdn']
-    - url_prefix: 'com,disqus'
+    #- url_prefix: 'com,disqus'
 
-      rewrite:
-        js_rewrite_location: location
+    #  rewrite:
+    #    js_rewrite_location: location
 
     - url_prefix: 'com,disqus)/embed/comments'
 
@@ -292,6 +292,12 @@ rules:
     # testing rules -- not for valid domain
     #=================================================================
     # this rule block is a non-existent prefix merely for testing
+
+    - url_prefix: 'example,example,test,all)/'
+
+      rewrite:
+        js_rewrite_location: all
+
     - url_prefix: 'example,example,test,loconly)/'
 
       rewrite:

@@ -1,3 +1,29 @@
+pywb 0.10.6 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* Disable url rewriting in JS by default! No longer needed due to improved client side rewriting of all urls.
+
+* wombat 2.7 more rewriting improvements:
+
+    - ``document.write`` override rewrites all elements, not just one top level elements.
+
+    - iframe ``srcdoc`` also rewritten.
+
+    - support for custom modifiers, such as ``js_`` for ``SCRIPT`` tag rewriting, otherwise for element overrides.
+
+    - improved css rewriting, override standard css attributes on ``CSSStyleDeclaration`` to avoid mutation observers, rewrite ``STYLE`` text content.
+    
+    - ``postMessage``: original ``source`` window now also preserved along with origin.
+
+    - cookie rewrite: don't remove expires, but adjust by date offset. Allow cookies to be deleted by setting to expired date.
+
+* Embed mode, pywb framed replay can now be embedded in an iframe when ``embeddable: True`` option is set. ``postMessage`` on framed replay proxies between replay frame and embedded frame, and ``window.parent`` is not set to top replay frame, allowing access to containing frame.
+
+* vidrw: don't replace video with generic swf, find better match.
+
+* path index loader: ensure each request handled by own file reader.
+
+
 pywb 0.10.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
