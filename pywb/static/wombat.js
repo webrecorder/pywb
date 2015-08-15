@@ -1087,7 +1087,7 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
-    function rewrite_html(string) {
+    function rewrite_html(string, check_end_tag) {
         if (!string) {
             return string;
         }
@@ -1113,6 +1113,13 @@ var wombat_internal = function($wbwindow) {
         // otherwise, just add contents of head and body
             new_html = inner_doc.head.innerHTML;
             new_html += inner_doc.body.innerHTML;
+
+            if (check_end_tag && inner_doc.all.length > 3) {
+                var end_tag = "</" + inner_doc.all[3].tagName.toLowerCase() + ">";
+                if (ends_with(new_html, end_tag) && !ends_with(string, end_tag)) {
+                    new_html = new_html.substring(0, new_html.length - end_tag.length);
+                }
+            }
         }
 
         return new_html;
@@ -1176,11 +1183,11 @@ var wombat_internal = function($wbwindow) {
         var setter = function(orig) {
             var val = rewrite_url(orig, false, mod);
             if (orig_setter) {
-                orig_setter.call(this, val);
+                return orig_setter.call(this, val);
             } else {
-                wb_setAttribute.call(this, attr, val);
+                //wb_setAttribute.call(this, attr, val);
             }
-            return val;
+            //return val;
         }
 
         var getter = function() {
@@ -1188,7 +1195,8 @@ var wombat_internal = function($wbwindow) {
             if (orig_getter) {
                 res = orig_getter.call(this);
             } else {
-                res = wb_getAttribute.call(this, attr);
+                //res = wb_getAttribute.call(this, attr);
+                return undefined;
             }
             res = extract_orig(res);
 
@@ -1781,7 +1789,7 @@ var wombat_internal = function($wbwindow) {
         var orig_doc_write = $wbwindow.document.write;
 
         var new_write = function(string) {
-            new_buff = rewrite_html(string);
+            new_buff = rewrite_html(string, true);
             var res = orig_doc_write.call(this, new_buff);
             check_wombat(this.defaultView);
             return res;
