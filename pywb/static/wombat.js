@@ -1813,14 +1813,6 @@ var wombat_internal = function($wbwindow) {
 
     //============================================
     function init_iframe_wombat(iframe) {
-        /*
-        if (iframe._wombat) {
-            return;
-        }
-
-        iframe._wombat = true;
-        */
-
         var win;
 
         if (iframe._get_contentWindow) {
@@ -1831,10 +1823,10 @@ var wombat_internal = function($wbwindow) {
 
         try {
             if (!win || win == $wbwindow || win._skip_wombat || win._wb_wombat) {
-                return iframe;
+                return;
             }
         } catch (e) {
-            console.log(e);
+            return;
         }
 
         //var src = iframe.src;
