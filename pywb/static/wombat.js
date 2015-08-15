@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.7
+// Wombat JS-Rewriting Library v2.8
 //============================================
 
 
@@ -805,9 +805,12 @@ var wombat_internal = function($wbwindow) {
             if (skip) {
                 created._no_rewrite = true;
             }
-            // else {
-            //    add_attr_overrides(tagName.toUpperCase(), created);
-            //}
+            else {
+                // form override
+                if (created.tagName == "FORM") {
+                    override_attr(created, "action");
+                }
+            }
 
             return created;
         }
@@ -1170,27 +1173,28 @@ var wombat_internal = function($wbwindow) {
         var orig_getter = get_orig_getter(obj, attr);
         var orig_setter = get_orig_setter(obj, attr);
 
-        var setter = undefined;
-        var getter = undefined;
-
-        if (orig_setter) {
-            setter = function(orig) {
-                var val = rewrite_url(orig, false, mod);
-                //wb_setAttribute.call(this, attr, val);
+        var setter = function(orig) {
+            var val = rewrite_url(orig, false, mod);
+            if (orig_setter) {
                 orig_setter.call(this, val);
-                return val;
+            } else {
+                wb_setAttribute.call(this, attr, val);
             }
+            return val;
         }
 
-        if (orig_getter) {
-            getter = function() {
-                var res = orig_getter.call(this);
-                res = extract_orig(res);
-                return res;
+        var getter = function() {
+            var res;
+            if (orig_getter) {
+                res = orig_getter.call(this);
+            } else {
+                res = wb_getAttribute.call(this, attr);
             }
+            res = extract_orig(res);
+
+            return res;
         }
 
-        //var curr_src = obj.getAttribute(attr);
         def_prop(obj, attr, setter, getter);
     }
 
@@ -1677,7 +1681,7 @@ var wombat_internal = function($wbwindow) {
     function init_cookies_override($wbwindow)
     {
         var cookie_path_regex = /\bPath=\'?\"?([^;'"\s]+)/i;
-        var cookie_domain_regex = /\b(Domain=)([^;'"\s]+)/i;
+        var cookie_domain_regex = /\bDomain=([^;'"\s]+)/i;
         var cookie_expires_regex = /\bExpires=([^;'"]+)/ig;
 
         var orig_get_cookie = get_orig_getter($wbwindow.document, "cookie");
@@ -1691,30 +1695,37 @@ var wombat_internal = function($wbwindow) {
         }
 
         function rewrite_cookie(cookie) {
-            var matched = cookie.match(cookie_path_regex);
+
+            cookie = cookie.replace(wb_abs_prefix, '');
+            cookie = cookie.replace(wb_rel_prefix, '');
 
             // rewrite path
-            if (matched) {
-                var rewritten = rewrite_url(matched[1]);
+            cookie = cookie.replace(cookie_path_regex, function(m, m1) {
+                var rewritten = rewrite_url(m1);
 
                 if (rewritten.indexOf(wb_curr_host) == 0) {
                     rewritten = rewritten.substring(wb_curr_host.length);
                 }
 
-                cookie = cookie.replace(matched[1], rewritten);
-            }
+                return "Path=" + rewritten;
+            });
 
-            // if no subdomain, eg. "localhost", just remove domain altogether
-            if ($wbwindow.location.hostname.indexOf(".") >= 0) {
-                cookie = cookie.replace(cookie_domain_regex, "$`$1." + $wbwindow.location.hostname + "$'");
-            } else {
-                cookie = cookie.replace(cookie_domain_regex, "$`$'");
-            }
+            // rewrite domain
+            cookie = cookie.replace(cookie_domain_regex, function(m, m1) {
+                // if no subdomain, eg. "localhost", just remove domain altogether
+                if ($wbwindow.location.hostname.indexOf(".") >= 0) {
+                    return "Domain=." + $wbwindow.location.hostname;
+                } else {
+                    return "";
+                }
+            });
 
             // rewrite secure, if needed
             if ($wbwindow.location.protocol != "https:") {
                 cookie = cookie.replace("secure", "");
             }
+
+            cookie = cookie.replace(",|", ",");
 
             return cookie;
         }
@@ -1725,17 +1736,20 @@ var wombat_internal = function($wbwindow) {
                 return;
             }
 
+            var orig_value = value;
+
             value = value.replace(cookie_expires_regex, function(m, d1) {
                 var date = new Date(d1);
+
                 if (isNaN(date.getTime())) {
-                    return "Expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                    return "Expires=Thu,| 01 Jan 1970 00:00:00 GMT";
                 }
 
                 date = new Date(date.getTime() + Date.__WB_timediff);
-                return "Expires=" + date.toUTCString();
+                return "Expires=" + date.toUTCString().replace(",", ",|");
             });
 
-            var cookies = value.split(",");
+            var cookies = value.split(/,(?![|])/);
 
             for (var i = 0; i < cookies.length; i++) {
                 cookies[i] = rewrite_cookie(cookies[i]);
@@ -1861,12 +1875,52 @@ var wombat_internal = function($wbwindow) {
         init_attr_overrides($wbwindow);
 
 
+        init_form_overrides($wbwindow);
+
+
         // Attr observers
         //if (!wb_opts.skip_attr_observers) {
            // init_href_src_obs($wbwindow);
         //}
 
         $wbwindow.document._wb_override = true;
+    }
+
+
+    //============================================
+    // Necessary since HTMLFormElement.prototype.action is not consistently
+    // overridable
+    function init_form_override($wbwindow) {
+        var do_init_forms = function() {
+            for (var i = 0; i < $wbwindow.document.forms.length; i++) {
+                var new_action = rewrite_url($wbwindow.document.forms[i].action);
+                if (new_action != $wbwindow.document.forms[i].action) {
+                    $wbwindow.document.forms[i].action = new_action;
+                }
+                override_attr($wbwindow.document.forms[i], "action");
+            }
+        }
+
+        if (document.readyState == "loading") {
+            document.addEventListener("DOMContentLoaded", do_init_forms);
+        } else {
+            do_init_forms();
+        }
+    }
+
+
+    //============================================
+    function init_registerPH_override()
+    {
+        if (!$wbwindow.navigator.registerProtocolHandler) {
+            return;
+        }
+
+        var orig_registerPH = $wbwindow.navigator.registerProtocolHandler;
+
+        $wbwindow.navigator.registerProtocolHandler = function(protocol, uri, title) {
+            return orig_registerPH.call(this, protocol, rewrite_url(uri), title);
+        }
     }
 
     //============================================
@@ -1964,6 +2018,7 @@ var wombat_internal = function($wbwindow) {
         // innerHTML can be overriden on prototype!
         override_html_assign($wbwindow.HTMLElement, "innerHTML");
         override_html_assign($wbwindow.HTMLIFrameElement, "srcdoc");
+        override_html_assign($wbwindow.HTMLStyleElement, "textContent");
 
 
         // init insertAdjacentHTML() override
@@ -2005,6 +2060,10 @@ var wombat_internal = function($wbwindow) {
 
         // Date
         init_date_override(wbinfo.wombat_sec);
+
+
+        // registerProtocolHandler override
+        init_registerPH_override();
 
         // expose functions
         this.extract_orig = extract_orig;
