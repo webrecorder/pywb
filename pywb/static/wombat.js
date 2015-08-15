@@ -1890,7 +1890,7 @@ var wombat_internal = function($wbwindow) {
     //============================================
     // Necessary since HTMLFormElement.prototype.action is not consistently
     // overridable
-    function init_form_override($wbwindow) {
+    function init_form_overrides($wbwindow) {
         var do_init_forms = function() {
             for (var i = 0; i < $wbwindow.document.forms.length; i++) {
                 var new_action = rewrite_url($wbwindow.document.forms[i].action);
