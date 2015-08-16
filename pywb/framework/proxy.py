@@ -90,7 +90,7 @@ class ProxyRouter(object):
         else:
             self.resolver = ProxyAuthResolver(routes, proxy_options)
 
-        self.use_banner = proxy_options.get('use_banners', True)
+        self.use_banner = proxy_options.get('use_banner', True)
         self.use_wombat = proxy_options.get('use_client_rewrite', True)
 
         self.proxy_cert_dl_view = proxy_options.get('proxy_cert_download_view')

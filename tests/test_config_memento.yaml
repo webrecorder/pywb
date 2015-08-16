@@ -20,7 +20,8 @@ enable_http_proxy: true
 
 # test unaltered replay for proxy as well
 proxy_options:
-    unaltered_replay: true
+    use_banner: false
+    use_client_rewrite: false
 
 # enable cdx server api for timemap
 enable_cdx_api: true
