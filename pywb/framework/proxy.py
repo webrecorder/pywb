@@ -90,8 +90,8 @@ class ProxyRouter(object):
         else:
             self.resolver = ProxyAuthResolver(routes, proxy_options)
 
-        self.unaltered = proxy_options.get('unaltered_replay', False)
-        self.banner_only = proxy_options.get('banner_only_replay', False)
+        self.use_banner = proxy_options.get('use_banners', True)
+        self.use_wombat = proxy_options.get('use_client_rewrite', True)
 
         self.proxy_cert_dl_view = proxy_options.get('proxy_cert_download_view')
 
@@ -208,10 +208,15 @@ class ProxyRouter(object):
         if matcher:
             route.apply_filters(wbrequest, matcher)
 
-        if self.unaltered:
-            wbrequest.wb_url.mod = 'id_'
-        elif self.banner_only:
+        # full rewrite and banner
+        if self.use_wombat and self.use_banner:
+            wbrequest.wb_url.mod = ''
+        elif self.use_banner:
+        # banner only, no rewrite
             wbrequest.wb_url.mod = 'bn_'
+        else:
+        # unaltered, no rewrite or banner
+            wbrequest.wb_url.mod = 'id_'
 
         response = route.handler(wbrequest)
 
