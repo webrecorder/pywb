@@ -9,6 +9,7 @@ from basehandlers import WbUrlHandler
 import urlparse
 import base64
 import os
+import json
 
 
 #=================================================================
@@ -101,6 +102,49 @@ class ProxyAuthResolver(BaseCollResolver):
 
         user_pass = base64.b64decode(parts[1])
         return user_pass.split(':')[0]
+
+
+#=================================================================
+class IPCacheResolver(BaseCollResolver):
+    def __init__(self, routes, config):
+        super(IPCacheResolver, self).__init__(routes, config)
+        self.cache = create_cache()
+        self.magic_name = config['magic_name']
+
+    def get_proxy_coll_ts(self, env):
+        ip = env['REMOTE_ADDR']
+        coll = self.cache[ip + ':c']
+        ts = self.cache[ip + ':t']
+        return coll, ts
+
+    def resolve(self, env):
+        server_name = env['pywb.proxy_host']
+
+        if self.magic_name in server_name:
+            response = self.handle_magic_page(env)
+            if response:
+                return None, None, None, None, response
+
+        return super(IPCacheResolver, self).resolve(env)
+
+    def handle_magic_page(self, env):
+        ip = env['REMOTE_ADDR']
+        qs = env.get('QUERY_STRING')
+        if qs:
+            res = urlparse.parse_qs(qs)
+
+            if 'ip' in res:
+                ip = res[ip]
+
+            if 'coll' in res:
+                self.cache[ip + ':c'] = res['coll'][0]
+
+            if 'ts' in res:
+                self.cache[ip + ':t'] = res['ts'][0]
+
+        coll, ts = self.get_proxy_coll_ts(env)
+        res = json.dumps({'ip': ip, 'coll': coll, 'ts': ts})
+        return WbResponse.text_response(res, content_type='application/json')
 
 
 #=================================================================
