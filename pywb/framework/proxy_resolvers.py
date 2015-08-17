@@ -134,7 +134,7 @@ class IPCacheResolver(BaseCollResolver):
             res = urlparse.parse_qs(qs)
 
             if 'ip' in res:
-                ip = res[ip]
+                ip = res['ip']
 
             if 'coll' in res:
                 self.cache[ip + ':c'] = res['coll'][0]
