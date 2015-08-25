@@ -441,14 +441,14 @@ class TestManagedColls(object):
 
         @patch('pywb.manager.manager.get_input', lambda x: 'blah')
         def do_migrate_no():
-            main(['convert-cdx', migrate_dir])
+            main(['cdx-convert', migrate_dir])
 
         do_migrate_no()
         assert os.listdir(migrate_dir) == cdxs
 
         @patch('pywb.manager.manager.get_input', lambda x: 'y')
         def do_migrate_yes():
-            main(['convert-cdx', migrate_dir])
+            main(['cdx-convert', migrate_dir])
 
         do_migrate_yes()
         cdxjs = os.listdir(migrate_dir)
@@ -460,7 +460,7 @@ class TestManagedColls(object):
             assert fh.readline().startswith('org,iana)/ 20140126200624 {"url": "http://www.iana.org/",')
 
         # Nothing else to migrate
-        main(['convert-cdx', migrate_dir])
+        main(['cdx-convert', migrate_dir])
 
     def test_auto_index(self):
         main(['init', 'auto'])
