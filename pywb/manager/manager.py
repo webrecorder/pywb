@@ -459,7 +459,7 @@ Create manage file based web archive collections
         m.migrate_cdxj(r.path, r.force)
 
     migrate_help = 'Convert any existing archive indexes to new json format'
-    migrate = subparsers.add_parser('convert-cdx', help=migrate_help)
+    migrate = subparsers.add_parser('cdx-convert', help=migrate_help)
     migrate.add_argument('path', default='./', nargs='?')
     migrate.add_argument('-f', '--force', action='store_true')
     migrate.set_defaults(func=do_migrate)
