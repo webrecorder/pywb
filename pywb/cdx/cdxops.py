@@ -303,7 +303,7 @@ def cdx_resolve_revisits(cdx_iter):
                 originals[digest] = cdx
 
         if original_cdx and is_revisit:
-            fill_orig = lambda field: original_cdx[field]
+            fill_orig = lambda field: original_cdx.get(field, '-')
             # Transfer mimetype and statuscode
             if MIMETYPE in cdx:
                 cdx[MIMETYPE] = original_cdx.get(MIMETYPE, '')
