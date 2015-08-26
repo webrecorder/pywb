@@ -91,7 +91,7 @@ class ResolvingLoader(object):
         else:
             (filename, offset, length) = (cdx['filename'],
                                           cdx['offset'],
-                                          cdx['length'])
+                                          cdx.get('length', '-'))
 
         # optimization: if same file already failed this request,
         # don't try again
