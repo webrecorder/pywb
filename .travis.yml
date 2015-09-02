@@ -6,7 +6,7 @@ python:
 
 os:
   - linux
-  - osx
+#  - osx
 
 sudo: false
 
