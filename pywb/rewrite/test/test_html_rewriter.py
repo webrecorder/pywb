@@ -60,8 +60,8 @@ ur"""
 <html><a href="#abc">Text</a></html>
 
 # Ensure attr values are not unescaped
->>> parse('<input value="&quot;X&quot;">X</input>')
-<input value="&quot;X&quot;">X</input>
+>>> parse('<input value="&amp;X&amp;">X</input>')
+<input value="&amp;X&amp;">X</input>
 
 # Unicode -- default with %-encoding
 >>> parse(u'<a href="http://испытание.испытание/">испытание</a>')
@@ -71,6 +71,10 @@ ur"""
 
 >>> parse(u'<a href="http://испытание.испытание/">испытание</a>', urlrewriter=urlrewriter_pencode)
 <a href="/web/20131226101010/http://испытание.испытание/">испытание</a>
+
+# entity unescaping
+>>> parse('<a href="http&#x3a;&#x2f;&#x2f;www&#x2e;example&#x2e;com&#x2f;path&#x2f;file.html">')
+<a href="/web/20131226101010/http://www.example.com/path/file.html">
 
 
 # Meta tag

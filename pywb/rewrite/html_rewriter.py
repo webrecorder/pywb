@@ -149,7 +149,12 @@ class HTMLRewriterMixin(object):
 
     def _rewrite_url(self, value, mod=None):
         if value:
-            return self.url_rewriter.rewrite(value, mod)
+            new_value = HTMLParser.unescape(self, value)
+            if value != new_value:
+                # ensure utf-8 encoded to avoid %-encoding query here
+                if isinstance(new_value, unicode):
+                    new_value = new_value.encode('utf-8')
+            return self.url_rewriter.rewrite(new_value, mod)
         else:
             return None
 
@@ -197,7 +202,6 @@ class HTMLRewriterMixin(object):
         self.out.write('<' + tag)
 
         for attr_name, attr_value in tag_attrs:
-
             # special case: inline JS/event handler
             if ((attr_value and attr_value.startswith('javascript:'))
                  or attr_name.startswith('on')):
