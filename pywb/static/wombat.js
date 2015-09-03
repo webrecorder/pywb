@@ -1812,6 +1812,22 @@ var wombat_internal = function($wbwindow) {
         $wbwindow.document.write = new_write;
         $wbwindow.Document.prototype.write = new_write;
 
+        // Writeln
+        var orig_doc_writeln = $wbwindow.document.writeln;
+
+        var new_writeln = function(string) {
+            new_buff = rewrite_html(string, true);
+            if (!new_buff) {
+                return;
+            }
+            var res = orig_doc_writeln.call(this, new_buff);
+            check_wombat(this.defaultView);
+            return res;
+        }
+
+        $wbwindow.document.writeln = new_writeln;
+        $wbwindow.Document.prototype.writeln = new_writeln;
+
         // Open
         var orig_doc_open = $wbwindow.document.open;
 
