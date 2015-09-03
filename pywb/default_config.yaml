@@ -63,4 +63,4 @@ enable_memento: true
 
 domain_specific_rules: pywb/rules.yaml
 
-framed_replay: true
+framed_replay: inverse
