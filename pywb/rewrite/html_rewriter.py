@@ -55,11 +55,6 @@ class HTMLRewriterMixin(object):
             'source':  {'src': 'oe_'},
             'video':   {'src': 'oe_',
                         'poster': 'im_'},
-
-            'div':     {'data-src': defmod,
-                        'data-uri': defmod},
-            'li':      {'data-src': defmod,
-                        'data-uri': defmod},
         }
 
         return rewrite_tags
@@ -210,6 +205,11 @@ class HTMLRewriterMixin(object):
             # special case: inline CSS/style attribute
             elif attr_name == 'style':
                 attr_value = self._rewrite_css(attr_value)
+
+            # special case: deprecated background attribute
+            elif attr_name == 'background':
+                rw_mod = 'im_'
+                attr_value = self._rewrite_url(attr_value, rw_mod)
 
             # special case: srcset list
             elif attr_name == 'srcset':

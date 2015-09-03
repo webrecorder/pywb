@@ -16,6 +16,9 @@ ur"""
 >>> parse('<body x="y"><img src="/img.gif"/><br/></body>')
 <body x="y"><img src="/web/20131226101010im_/http://example.com/img.gif"/><br/></body>
 
+>>> parse('<table background="/img.gif">')
+<table background="/web/20131226101010im_/http://example.com/img.gif">
+
 # malformed html -- (2.6 parser raises exception)
 #>>> parse('<input "selected"><img src></div>')
 #<input "selected"=""><img src=""></div>
