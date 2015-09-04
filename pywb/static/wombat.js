@@ -1012,7 +1012,7 @@ var wombat_internal = function($wbwindow) {
     }
 */
     //============================================
-    function rewrite_attr(elem, name) {
+    function rewrite_attr(elem, name, full_url_only) {
         if (!elem || !elem.getAttribute) {
             return;
         }
@@ -1029,6 +1029,10 @@ var wombat_internal = function($wbwindow) {
         var value = wb_getAttribute.call(elem, name);
 
         if (!value || starts_with(value, "javascript:")) {
+            return;
+        }
+
+        if (full_url_only && !starts_with(value, VALID_PREFIXES)) {
             return;
         }
 
@@ -1076,6 +1080,8 @@ var wombat_internal = function($wbwindow) {
 
         if (elem.tagName == "STYLE") {
             elem.textContent = rewrite_style(elem.textContent);
+        } else if (elem.tagName == "OBJECT") {
+            rewrite_attr(elem, "data", true);
         } else {
             rewrite_attr(elem, "src");
             rewrite_attr(elem, "href");
@@ -1263,6 +1269,7 @@ var wombat_internal = function($wbwindow) {
         override_attr($wbwindow.HTMLSourceElement.prototype, "src", "oe_");
         override_attr($wbwindow.HTMLInputElement.prototype, "src", "oe_");
         override_attr($wbwindow.HTMLEmbedElement.prototype, "src", "oe_");
+        override_attr($wbwindow.HTMLObjectElement.prototype, "data", "oe_");
      
         override_anchor_elem();
 
