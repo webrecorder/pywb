@@ -1057,7 +1057,7 @@ var wombat_internal = function($wbwindow) {
     //============================================
     function rewrite_style(value)
     {
-        STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/g;
+        STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
 
         function style_replacer(match, n1, n2, n3, offset, string) {
             return n1 + rewrite_url(n2) + n3;
