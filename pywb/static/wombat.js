@@ -754,6 +754,8 @@ var wombat_internal = function($wbwindow) {
                         }
                         value = rewrite_url(value, false, mod);
                     }
+                } else if (lowername == "style" && typeof(value) == "string") {
+                    value = rewrite_style(value);
                 }
             }
             orig_setAttribute.call(this, name, value);
