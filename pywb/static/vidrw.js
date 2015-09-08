@@ -45,7 +45,7 @@ if (window.location.hash) {
 
 __wbvidrw = (function() {
 
-    var found_embeds = false;
+    var checked_embeds = false;
 
     var FLASH_PLAYER = wbinfo.static_prefix + "/flowplayer/flowplayer-3.2.18.swf";
 
@@ -55,7 +55,7 @@ __wbvidrw = (function() {
     }
 
     function check_videos() {
-        if (found_embeds) {
+        if (checked_embeds) {
             return;
         }
 
@@ -78,13 +78,37 @@ __wbvidrw = (function() {
         handle_all_embeds();
         handle_all_objects();
 
-        found_embeds = true;
+        checked_embeds = true;
 
         handle_yt_videos(_pywbvid);
 
         //window.setInterval(handle_all_embeds, 2000);
         //_wb_wombat.add_tag_handler("embed", handle_all_embeds);
         //_wb_wombat.add_tag_handler("object", handle_all_objects);
+    }
+
+    function check_broken_vimeo()
+    {
+        if (document.querySelector("video")) {
+            return;
+        }
+
+        if (document.querySelector("object") || document.querySelector("embed")) {
+            return;
+        }
+
+        var player = document.getElementById("player");
+
+        if (!player) {
+            return;
+        }
+
+        player.classList.remove("loading");
+
+        // Add placeholder embed
+        var embed = document.createElement("embed");
+        embed.src = wbinfo.url;
+        player.appendChild(embed);
     }
 
     function handle_embed_tag(elem)
@@ -659,5 +683,12 @@ __wbvidrw = (function() {
         init_node_insert_obs(window);
     }
 
+
+    // VIMEO FIX
+    if (wbinfo && wbinfo.url.indexOf("player.vimeo.com/") >= 0) {
+        document.addEventListener("DOMContentLoaded", function() {
+            window.setTimeout(check_broken_vimeo, 500);
+        });
+    }
 
 })();
