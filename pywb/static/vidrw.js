@@ -109,6 +109,10 @@ __wbvidrw = (function() {
         var embed = document.createElement("embed");
         embed.src = wbinfo.url;
         player.appendChild(embed);
+
+        if (!window.MutationObserver) {
+            handle_embed_tag(embed);
+        }
     }
 
     function handle_embed_tag(elem)
