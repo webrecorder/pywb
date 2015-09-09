@@ -226,9 +226,9 @@ The `pywb-proxy-demo <https://github.com/ikreymer/pywb-proxy-demo>`_ project als
 Running with any WSGI Container
 -------------------------------
 
-The command-line ``wayback`` utility starts pywb using the `waitress <http://waitress.readthedocs.org/en/latest/>`_ server. This should be sufficient for basic usage and testing.
+The command-line ``wayback`` utility starts pywb using the standard Python library `WSGIRef <https://docs.python.org/2/library/wsgiref.html>`_ server. This should be sufficient for basic usage and testing, but is not recommended for production. In the future, a different default option will be provided.
 
-However, since pywb conforms to the Python `WSGI <http://wsgi.readthedocs.org/en/latest/>`_ specification, it can be run with any standard WSGI container/server
+Since pywb conforms to the Python `WSGI <http://wsgi.readthedocs.org/en/latest/>`_ specification, it can be run with any standard WSGI container/server
 and can be embedded in larger applications.
 
 When running with a different container, specify ``pywb.apps.wayback`` as the WSGI application module.
