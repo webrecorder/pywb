@@ -1,3 +1,23 @@
+pywb 0.10.7 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* wombat 2.8 improvements, including:
+
+    - cookies: fixed rewriting with respect to comma, proper path and domain replacement
+    - form action and textContent rewriting
+    - document.write() improvements, buffering split tag and removing extraneous end tag
+    - document.writeln() rewriting
+    - object data attr conditional rewriting
+    - proper ``setAttribute("style", ...`` rewriting
+    - style rewrite regex now case-insensitive
+    
+* 10-field CDX format fully supported.
+ 
+* rewrite: "background" attr rewriting, proper rewriting of entity-encoded attributes.
+ 
+* Fix for regression for Vimeo videos that were recorded as Flash but replay as HTML.
+  
+
 pywb 0.10.6 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
