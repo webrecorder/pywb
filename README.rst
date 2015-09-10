@@ -42,7 +42,7 @@ running ``python setup.py install``:
   The `webrecorder.io <https://webrecorder.io>`_ service is built using this tool.
 
 
-* ``cdx-indexer`` -- a command-line tool for creating CDX indexs from WARC and ARC files. Supports SURT and
+* ``cdx-indexer`` -- a command-line tool for creating CDX indexes from WARC and ARC files. Supports SURT and
   non-SURT based cdx files and optional sorting. See ``cdx-indexer -h`` for all options.
   for all options.
 
