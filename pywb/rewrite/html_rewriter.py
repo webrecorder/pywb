@@ -144,14 +144,26 @@ class HTMLRewriterMixin(object):
 
     def _rewrite_url(self, value, mod=None):
         if value:
-            new_value = HTMLParser.unescape(self, value)
-            if value != new_value:
-                # ensure utf-8 encoded to avoid %-encoding query here
-                if isinstance(new_value, unicode):
-                    new_value = new_value.encode('utf-8')
-            return self.url_rewriter.rewrite(new_value, mod)
+            value = self.try_unescape(value)
+            return self.url_rewriter.rewrite(value, mod)
         else:
             return None
+
+    def try_unescape(self, value):
+        if not value.startswith('http'):
+            return value
+
+        try:
+            new_value = HTMLParser.unescape(self, value)
+        except:
+            return value
+
+        if value != new_value:
+            # ensure utf-8 encoded to avoid %-encoding query here
+            if isinstance(new_value, unicode):
+                new_value = new_value.encode('utf-8')
+
+        return new_value
 
     def _rewrite_srcset(self, value, mod=''):
         values = value.split(',')
