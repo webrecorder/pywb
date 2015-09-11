@@ -447,6 +447,12 @@ var wombat_internal = function($wbwindow) {
                     this._parser = make_parser(href);
                 }
 
+                //Special case for href="." assignment
+                if (prop == "href" && typeof(value) == "string" && value[0] == ".") {
+                    this._parser.href = $wbwindow.document.baseURI;
+                    value = this._parser.href;
+                }
+
                 try {
                     this._parser[prop] = value;
                 } catch (e) {
