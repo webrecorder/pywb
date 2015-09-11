@@ -180,7 +180,7 @@ number of useful command-line and web server tools. The tools should be availabl
   The `webrecorder.io <https://webrecorder.io>`_ service extends upon this functionality.
 
 
-* ``cdx-indexer`` -- a command-line tool for manually creating CDX indexs from WARC and ARC files. Supports SURT and
+* ``cdx-indexer`` -- a command-line tool for manually creating CDX indexes from WARC and ARC files. Supports SURT and
   non-SURT based cdx files, optional sorting, and several formats. See ``cdx-indexer -h`` for all options. Using ``wb-manager`` is recommended
   for higher-level collection file management, but this tool can be used for any custom indexing needs.
 
