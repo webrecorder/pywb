@@ -1,3 +1,13 @@
+pywb 0.10.8 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* Rewrite: url attribute entity unencoding only if attr starts with 'http', catch any exceptions.
+
+* Fix top frame detection to avoid occasional banner insertion into intermediate frames.
+
+* Fix special case ``href = "."`` rewriting.
+
+
 pywb 0.10.7 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
