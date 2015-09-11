@@ -136,6 +136,7 @@ this.load = function() {
 
     window._wb_js_inited = true;
 
+    // Non-Framed Replay OR top frame for framed replay!
     if (window.wbinfo && (!window.__WB_top_frame || window.__WB_top_frame == window)) {
         if (wbinfo.is_framed && wbinfo.mod != "bn_") {
             var hash = window.location.hash;
@@ -154,6 +155,7 @@ this.load = function() {
         // Init Banner (no frame or top frame)
         add_event("readystatechange", init_banner, document);
 
+    // Framed Replay
     } else if (window.__WB_top_frame && window != window.__WB_top_frame && window.__WB_top_frame.update_wb_url) {
         add_event("readystatechange", notify_top, document);
     }

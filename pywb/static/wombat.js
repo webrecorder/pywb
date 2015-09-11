@@ -2111,17 +2111,28 @@ var wombat_internal = function($wbwindow) {
     }
 
     function init_top_frame($wbwindow) {
-        function check_frame(win, frame) {
+        function next_parent(win) {
             try {
-                return (win && win.wbinfo && (!win.wbinfo.is_frame == !frame));
+                if (!win) {
+                    return false;
+                }
+
+                // if no wbinfo, see if _wb_wombat was set (eg. if about:blank page)
+                if (!win.wbinfo) {
+                    return (win._wb_wombat != undefined);
+                } else {
+                // otherwise, ensure that it is not a top container frame
+                    return !win.wbinfo.is_frame;
+                }
+
             } catch (e) {
                 return false;
             }
         }
-    
+
         var replay_top = $wbwindow;
 
-        while ((replay_top.parent != replay_top) && check_frame(replay_top.parent, false)) {
+        while ((replay_top.parent != replay_top) && next_parent(replay_top.parent)) {
             replay_top = replay_top.parent;
         }
 
@@ -2129,7 +2140,7 @@ var wombat_internal = function($wbwindow) {
 
         var real_parent = replay_top.__WB_orig_parent || replay_top.parent;
 
-        if (real_parent != $wbwindow && check_frame(real_parent, true)) {
+        if (real_parent != $wbwindow && real_parent && real_parent.wbinfo && real_parent.wbinfo.is_frame) {
             $wbwindow.__WB_top_frame = real_parent;
 
             // Disable frameElement also as this should be top frame
