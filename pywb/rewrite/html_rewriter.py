@@ -5,7 +5,7 @@ import sys
 import re
 
 from HTMLParser import HTMLParser, HTMLParseError
-from urlparse import urlsplit
+from urlparse import urlsplit, urlunsplit
 
 from url_rewriter import UrlRewriter
 from regex_rewriters import JSRewriter, CSSRewriter
@@ -107,6 +107,7 @@ class HTMLRewriterMixin(object):
         self.force_decl = self.opts.get('force_html_decl', None)
 
         self.parsed_any = False
+        self.has_base = False
 
     # ===========================
     META_REFRESH_REGEX = re.compile('^[\\d.]+\\s*;\\s*url\\s*=\\s*(.+?)\\s*$',
@@ -126,21 +127,53 @@ class HTMLRewriterMixin(object):
 
         return meta_refresh
 
-    def _rewrite_base(self, value, mod=''):
-        if not value.endswith('/'):
-            # check if hostname with no path,
-            # eg http://example.com
-            if not urlsplit(value).path:
-                value += '/'
+    def _rewrite_base(self, url, mod=''):
+        url = self._ensure_url_has_path(url)
 
-        base_value = self._rewrite_url(value, mod)
-
-        if self.opts.get('rewrite_base', True):
-            value = base_value
+        base_url = self._rewrite_url(url, mod)
 
         self.url_rewriter = (self.url_rewriter.
-                             rebase_rewriter(base_value))
-        return value
+                             rebase_rewriter(base_url))
+        self.has_base = True
+
+        if self.opts.get('rewrite_base', True):
+            return base_url
+        else:
+            return url
+
+    def _write_default_base(self):
+        url = self.url_rewriter.wburl.url
+
+        base_url = self._ensure_url_has_path(url)
+
+        # write default base only if different from implicit base
+        if url != base_url:
+            base_url = self._rewrite_url(base_url)
+            self.out.write('<base href="{0}"/>'.format(base_url))
+
+        self.has_base = True
+
+    def _ensure_url_has_path(self, url):
+        """ ensure the url has a path component
+        eg. http://example.com#abc converted to http://example.com/#abc
+        """
+        inx = url.find('://')
+        if inx > 0:
+            rest = url[inx + 3:]
+        elif url.startswith('//'):
+            rest = url[2:]
+        else:
+            rest = url
+
+        if '/' in rest:
+            return url
+
+        scheme, netloc, path, query, frag = urlsplit(url)
+        if not path:
+            path = '/'
+
+        url = urlunsplit((scheme, netloc, path, query, frag))
+        return url
 
     def _rewrite_url(self, value, mod=None):
         if value:
@@ -285,6 +318,9 @@ class HTMLRewriterMixin(object):
         self.head_insert = None
 
         if start_end:
+            if not self.has_base:
+                self._write_default_base()
+
             self.out.write('</head>')
 
         return True
@@ -400,6 +436,9 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
     def handle_endtag(self, tag):
         if (tag == self._wb_parse_context):
             self._wb_parse_context = None
+
+        if tag == 'head' and not self.has_base:
+            self._write_default_base()
 
         self.out.write('</' + tag + '>')
 
