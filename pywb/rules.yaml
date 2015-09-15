@@ -258,18 +258,19 @@ rules:
     - url_prefix: 'com,googleapis,plus)/u/0/_/widget/render/comments'
 
       rewrite:
-          js_rewrite_location: location
+        js_rewrite_location: location
 
       fuzzy_lookup:
           - href
           - stream_id
           - substream_id
 
-    - url_prefix: 'com,ytimg,s)/yts/jsbin/'
+    - url_prefix: 'com,ytimg,s)/yts/jsbin/html5player-new'
 
       rewrite:
-          js_rewrite_location: location
-
+        js_regexs:
+            - match: '\"0\"\=\=c\.dash'
+              replace: 'c.dash="0";c.dashmpd="";{0}'
 
     # watch and embed config changes
     - url_prefix: ['com,youtube)/', 'com,youtube-nocookie)/']
