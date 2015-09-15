@@ -12,7 +12,7 @@ from pywb.utils.wbexception import BadRequestException
 
 from pywb.utils.bufferedreaders import BufferedReader
 
-from proxy_resolvers import ProxyAuthResolver, CookieResolver
+from proxy_resolvers import ProxyAuthResolver, CookieResolver, IPCacheResolver
 
 
 #=================================================================
@@ -62,6 +62,7 @@ class ProxyRouter(object):
     CA_CERTS_DIR = './ca/certs/'
 
     EXTRA_HEADERS = {'cache-control': 'no-cache',
+                     'connection': 'close',
                      'p3p': 'CP="NOI ADM DEV COM NAV OUR STP"'}
 
     def __init__(self, routes, **kwargs):
@@ -81,12 +82,16 @@ class ProxyRouter(object):
             self.extra_headers = self.EXTRA_HEADERS
             proxy_options['extra_headers'] = self.extra_headers
 
-        if proxy_options.get('cookie_resolver', True):
+        res_type = proxy_options.get('cookie_resolver')
+        if res_type == True or res_type == 'cookie':
             self.resolver = CookieResolver(routes, proxy_options)
+        elif res_type == 'ip':
+            self.resolver = IPCacheResolver(routes, proxy_options)
         else:
             self.resolver = ProxyAuthResolver(routes, proxy_options)
 
-        self.unaltered = proxy_options.get('unaltered_replay', False)
+        self.use_banner = proxy_options.get('use_banner', True)
+        self.use_wombat = proxy_options.get('use_client_rewrite', True)
 
         self.proxy_cert_dl_view = proxy_options.get('proxy_cert_download_view')
 
@@ -203,10 +208,15 @@ class ProxyRouter(object):
         if matcher:
             route.apply_filters(wbrequest, matcher)
 
-        if self.unaltered:
-            wbrequest.wb_url.mod = 'id_'
-        elif is_https:
+        # full rewrite and banner
+        if self.use_wombat and self.use_banner:
+            wbrequest.wb_url.mod = ''
+        elif self.use_banner:
+        # banner only, no rewrite
             wbrequest.wb_url.mod = 'bn_'
+        else:
+        # unaltered, no rewrite or banner
+            wbrequest.wb_url.mod = 'id_'
 
         response = route.handler(wbrequest)
 

@@ -118,7 +118,8 @@ proxy_options:
 
     cookie_resolver: false
 
-    unaltered_replay: false
+    use_client_rewrite: true
+    use_wombat: true
 
 # enable cdx server api for querying cdx directly (experimental)
 #enable_cdx_api: True
