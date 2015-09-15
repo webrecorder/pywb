@@ -220,6 +220,11 @@ var wombat_internal = function($wbwindow) {
             return get_final_url(use_rel ? wb_rel_prefix : wb_abs_prefix, mod, wb_orig_origin + url);
         }
 
+        // Use a parser
+        if (url.charAt(0) == ".") {
+            url = resolve_rel_url(url);
+        }
+
         // If full url starting with http://, https:// or //
         // add rewrite prefix
         var prefix = starts_with(url, VALID_PREFIXES);
@@ -279,6 +284,19 @@ var wombat_internal = function($wbwindow) {
             return get_final_url(wb_abs_prefix, mod, wb_orig_scheme + url);
         }
 
+        return url;
+    }
+
+    //============================================
+    function resolve_rel_url(url) {
+        var parser = make_parser(extract_orig($wbwindow.document.baseURI));
+        var href = parser.href;
+        var hash = href.lastIndexOf("#");
+        if (hash >= 0) {
+            href = href.substring(0, hash);
+        }
+        parser.href = href + url;
+        url = parser.href;
         return url;
     }
 
@@ -449,8 +467,7 @@ var wombat_internal = function($wbwindow) {
 
                 //Special case for href="." assignment
                 if (prop == "href" && typeof(value) == "string" && value[0] == ".") {
-                    this._parser.href = $wbwindow.document.baseURI;
-                    value = this._parser.href;
+                    value = resolve_rel_url(value);
                 }
 
                 try {
