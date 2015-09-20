@@ -833,7 +833,7 @@ var wombat_internal = function($wbwindow) {
             else {
                 // form override
                 if (created.tagName == "FORM") {
-                    override_attr(created, "action");
+                    override_attr(created, "action", "", true);
                 }
             }
 
@@ -1218,7 +1218,7 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
-    function override_attr(obj, attr, mod) {
+    function override_attr(obj, attr, mod, default_to_setget) {
         var orig_getter = get_orig_getter(obj, attr);
         var orig_setter = get_orig_setter(obj, attr);
 
@@ -1226,19 +1226,18 @@ var wombat_internal = function($wbwindow) {
             var val = rewrite_url(orig, false, mod);
             if (orig_setter) {
                 return orig_setter.call(this, val);
-            } else {
-                //wb_setAttribute.call(this, attr, val);
+            } else if (default_setget) {
+                return wb_setAttribute.call(this, attr, val);
             }
-            //return val;
         }
 
         var getter = function() {
-            var res;
+            var res = undefined;
+
             if (orig_getter) {
                 res = orig_getter.call(this);
-            } else {
-                //res = wb_getAttribute.call(this, attr);
-                return undefined;
+            } else if (default_to_setget) {
+                res = wb_getAttribute.call(this, attr);
             }
             res = extract_orig(res);
 
@@ -1959,7 +1958,7 @@ var wombat_internal = function($wbwindow) {
                 if (new_action != $wbwindow.document.forms[i].action) {
                     $wbwindow.document.forms[i].action = new_action;
                 }
-                override_attr($wbwindow.document.forms[i], "action");
+                override_attr($wbwindow.document.forms[i], "action", "", true);
             }
         }
 
