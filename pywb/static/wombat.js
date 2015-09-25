@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.8
+// Wombat JS-Rewriting Library v2.9
 //============================================
 
 
@@ -295,6 +295,15 @@ var wombat_internal = function($wbwindow) {
         if (hash >= 0) {
             href = href.substring(0, hash);
         }
+
+        var lastslash = href.lastIndexOf("/");
+
+        if (lastslash >= 0 && lastslash != (href.length - 1)) {
+            href = href.substring(0, lastslash + 1);
+        } else {
+            href += "/";
+        }
+
         parser.href = href + url;
         url = parser.href;
         return url;
@@ -1074,6 +1083,7 @@ var wombat_internal = function($wbwindow) {
 
         if (new_value != value) {
             wb_setAttribute.call(elem, name, new_value);
+            return true;
         }
     }
 
@@ -1101,20 +1111,29 @@ var wombat_internal = function($wbwindow) {
             return;
         }
 
-        if (elem.tagName == "STYLE") {
-            elem.textContent = rewrite_style(elem.textContent);
-        } else if (elem.tagName == "OBJECT") {
-            rewrite_attr(elem, "data", true);
-        } else {
-            rewrite_attr(elem, "src");
-            rewrite_attr(elem, "href");
+        var changed;
 
-            rewrite_attr(elem, "style", rewrite_style);
+        if (elem.tagName == "STYLE") {
+            var new_content = rewrite_style(elem.textContent);
+            if (elem.textContent != new_content) {
+                changed = true;
+            }
+        } else if (elem.tagName == "OBJECT") {
+            changed = rewrite_attr(elem, "data", true);
+        } else {
+            changed = rewrite_attr(elem, "src");
+            var changed2 = rewrite_attr(elem, "href");
+
+            var changed3 = rewrite_attr(elem, "style", rewrite_style);
+            changed = changed || changed2 || changed3;
         }
 
         if (elem.getAttribute && elem.getAttribute("crossorigin")) {
             elem.removeAttribute("crossorigin");
+            changed = true;
         }
+
+        return changed;
     }
 
     var write_buff = "";
@@ -1137,8 +1156,14 @@ var wombat_internal = function($wbwindow) {
 
         string = string.toString();
 
+        var changed = false;
+
         for (var i = 0; i < inner_doc.all.length; i++) {
-            rewrite_elem(inner_doc.all[i]);
+            changed = changed || rewrite_elem(inner_doc.all[i]);
+        }
+
+        if (!changed) {
+            return string;
         }
 
         var new_html = "";
@@ -2183,10 +2208,20 @@ var wombat_internal = function($wbwindow) {
         }
 
         if (Object.defineProperty) {
+
+            // from http://stackoverflow.com/a/6229603
+            function isWindow(obj) {
+                if (typeof(window.constructor) === 'undefined') {
+                    return obj instanceof window.constructor;
+                } else {
+                    return obj.window === obj;
+                }
+            }
+
             var getter = function() {
                 if (this.__WB_replay_top) {
                     return this.__WB_replay_top;
-                } else if (this instanceof Window) {
+                } else if (isWindow(this)) {
                     return this;
                 } else {
                     return this.top;
