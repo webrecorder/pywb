@@ -1122,10 +1122,8 @@ var wombat_internal = function($wbwindow) {
             changed = rewrite_attr(elem, "data", true);
         } else {
             changed = rewrite_attr(elem, "src");
-            var changed2 = rewrite_attr(elem, "href");
-
-            var changed3 = rewrite_attr(elem, "style", rewrite_style);
-            changed = changed || changed2 || changed3;
+            changed = rewrite_attr(elem, "href") || changed;
+            changed = rewrite_attr(elem, "style", rewrite_style) || changed;
         }
 
         if (elem.getAttribute && elem.getAttribute("crossorigin")) {
@@ -1159,7 +1157,7 @@ var wombat_internal = function($wbwindow) {
         var changed = false;
 
         for (var i = 0; i < inner_doc.all.length; i++) {
-            changed = changed || rewrite_elem(inner_doc.all[i]);
+            changed = rewrite_elem(inner_doc.all[i]) || changed;
         }
 
         if (!changed) {
