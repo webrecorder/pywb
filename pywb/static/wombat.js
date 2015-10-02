@@ -1249,7 +1249,7 @@ var wombat_internal = function($wbwindow) {
             var val = rewrite_url(orig, false, mod);
             if (orig_setter) {
                 return orig_setter.call(this, val);
-            } else if (default_setget) {
+            } else if (default_to_setget) {
                 return wb_setAttribute.call(this, attr, val);
             }
         }
