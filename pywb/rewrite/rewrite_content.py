@@ -186,6 +186,7 @@ class RewriteContent:
                                       js_rewriter_class=rule.rewriters['js'],
                                       css_rewriter_class=rule.rewriters['css'],
                                       head_insert=head_insert_str,
+                                      url=wb_url.url,
                                       defmod=self.defmod,
                                       parse_comments=rule.parse_comments)
 

@@ -86,6 +86,7 @@ class HTMLRewriterMixin(object):
                  head_insert=None,
                  js_rewriter_class=JSRewriter,
                  css_rewriter_class=CSSRewriter,
+                 url = '',
                  defmod='',
                  parse_comments=False):
 
@@ -98,6 +99,7 @@ class HTMLRewriterMixin(object):
         self.head_insert = head_insert
         self.parse_comments = parse_comments
 
+        self.orig_url = url
         self.defmod = defmod
         self.rewrite_tags = self._init_rewrite_tags(defmod)
 
@@ -142,12 +144,13 @@ class HTMLRewriterMixin(object):
             return url
 
     def _write_default_base(self):
-        url = self.url_rewriter.wburl.url
+        if not self.orig_url:
+            return
 
-        base_url = self._ensure_url_has_path(url)
+        base_url = self._ensure_url_has_path(self.orig_url)
 
         # write default base only if different from implicit base
-        if url != base_url:
+        if self.orig_url != base_url:
             base_url = self._rewrite_url(base_url)
             self.out.write('<base href="{0}"/>'.format(base_url))
 
