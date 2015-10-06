@@ -267,7 +267,7 @@ class HTMLRewriterMixin(object):
             # special case: disable crossorigin and integrity attr
             # as they may interfere with rewriting semantics
             elif attr_name in ('crossorigin', 'integrity'):
-                attr_name += '_'
+                attr_name = '_' + attr_name
 
             # special case: if rewrite_canon not set,
             # don't rewrite rel=canonical
