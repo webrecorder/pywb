@@ -104,6 +104,20 @@ rules:
 #                rewrite: true
 #                group: 1
 
+
+    # blogspot rules
+    #=================================================================
+    - url_prefix: ['com,blogspot,']
+
+      fuzzy_lookup:
+        match:
+            - path
+            - action
+            - widgettype
+
+        replace: '.com/'
+
+
     # flickr rules
     #=================================================================
     - url_prefix: ['com,yimg,l)/g/combo', 'com,yimg,s)/pw/combo', 'com,yahooapis,yui)/combo']
