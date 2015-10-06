@@ -1126,9 +1126,16 @@ var wombat_internal = function($wbwindow) {
             changed = rewrite_attr(elem, "style", rewrite_style) || changed;
         }
 
-        if (elem.getAttribute && elem.getAttribute("crossorigin")) {
-            elem.removeAttribute("crossorigin");
-            changed = true;
+        if (elem.getAttribute) {
+            if (elem.getAttribute("crossorigin")) {
+                elem.removeAttribute("crossorigin");
+                changed = true;
+            }
+
+            if (elem.getAttribute("integrity")) {
+                elem.removeAttribute("integrity");
+                changed = true;
+            }
         }
 
         return changed;

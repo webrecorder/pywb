@@ -264,10 +264,10 @@ class HTMLRewriterMixin(object):
                 rw_mod = handler.get(attr_name, '')
                 attr_value = self._rewrite_srcset(attr_value, rw_mod)
 
-            # special case: disable crossorigin attr
+            # special case: disable crossorigin and integrity attr
             # as they may interfere with rewriting semantics
-            elif attr_name == 'crossorigin':
-                attr_name = '_crossorigin'
+            elif attr_name in ('crossorigin', 'integrity'):
+                attr_name += '_'
 
             # special case: if rewrite_canon not set,
             # don't rewrite rel=canonical
