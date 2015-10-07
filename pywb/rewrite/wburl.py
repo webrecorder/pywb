@@ -85,7 +85,7 @@ class BaseWbUrl(object):
 class WbUrl(BaseWbUrl):
     # Regexs
     # ======================
-    QUERY_REGEX = re.compile('^(?:([\w\-:]+)/)?(\d*)[*-](\d*)?/?(.+)$')
+    QUERY_REGEX = re.compile('^(?:([\w\-:]+)/)?(\d*)[*-](\d*)/?(.+)$')
     REPLAY_REGEX = re.compile('^(\d*)([a-z]+_)?/{1,3}(.+)$')
     #LATEST_REPLAY_REGEX = re.compile('^\w_)')
 
