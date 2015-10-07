@@ -3,7 +3,8 @@ from cdxobject import TIMESTAMP, STATUSCODE, MIMETYPE, DIGEST
 from cdxobject import OFFSET, LENGTH, FILENAME
 
 from query import CDXQuery
-from pywb.utils.timeutils import timestamp_to_sec
+from pywb.utils.timeutils import timestamp_to_sec, pad_timestamp
+from pywb.utils.timeutils import PAD_14_DOWN, PAD_14_UP
 
 import bisect
 import itertools
@@ -65,6 +66,9 @@ def process_cdx(cdx_iter, query):
     filters = query.filters
     if filters:
         cdx_iter = cdx_filter(cdx_iter, filters)
+
+    if query.from_ts or query.to_ts:
+        cdx_iter = cdx_clamp(cdx_iter, query.from_ts, query.to_ts)
 
     collapse_time = query.collapse_time
     if collapse_time:
@@ -222,6 +226,27 @@ def cdx_filter(cdx_iter, filter_strings):
     for cdx in cdx_iter:
         if all(x(cdx) for x in filters):
             yield cdx
+
+
+#=================================================================
+def cdx_clamp(cdx_iter, from_ts, to_ts):
+    """
+    Clamp by start and end ts
+    """
+    if from_ts and len(from_ts) < 14:
+        from_ts = pad_timestamp(from_ts, PAD_14_DOWN)
+
+    if to_ts and len(to_ts) < 14:
+        to_ts = pad_timestamp(to_ts, PAD_14_UP)
+
+    for cdx in cdx_iter:
+        if from_ts and cdx[TIMESTAMP] < from_ts:
+            continue
+
+        if to_ts and cdx[TIMESTAMP] > to_ts:
+            continue
+
+        yield cdx
 
 
 #=================================================================

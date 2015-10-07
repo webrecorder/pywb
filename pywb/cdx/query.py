@@ -76,6 +76,14 @@ class CDXQuery(object):
         return v.split(',') if v else None
 
     @property
+    def from_ts(self):
+        return self.params.get('from') or self.params.get('from_ts')
+
+    @property
+    def to_ts(self):
+        return self.params.get('to')
+
+    @property
     def closest(self):
         # sort=closest is not required
         return self.params.get('closest')

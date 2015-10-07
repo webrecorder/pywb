@@ -23,6 +23,18 @@ org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126201240 http://www.iana.org
 >>> cdx_ops_test('http://iana.org/_js/2013.1/jquery.js', reverse = True, resolveRevisits = True, limit = 1)
 org,iana)/_js/2013.1/jquery.js 20140126201307 https://www.iana.org/_js/2013.1/jquery.js application/x-javascript 200 AAW2RS7JB7HTF666XNZDQYJFA6PDQBPO - - 543 778507 iana.warc.gz 33449 7311 iana.warc.gz
 
+# From & To
+>>> cdx_ops_test('http://example.com/', sources = [test_cdx_dir], from_ts='2013', to='2013')
+com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
+
+>>> cdx_ops_test('http://example.com/', sources = [test_cdx_dir], from_ts='2014')
+com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz
+com,example)/ 20140127171251 http://example.com warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 11875 dupes.warc.gz
+
+>>> cdx_ops_test('http://example.com/', sources = [test_cdx_dir], to='2012')
+Traceback (most recent call last):
+NotFoundException: No Captures found for: http://example.com/
+
 # No matching results
 >>> cdx_ops_test('http://iana.org/dont_have_this', reverse = True, resolveRevisits = True, limit = 2)
 Traceback (most recent call last):

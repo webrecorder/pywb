@@ -85,7 +85,7 @@ class BaseWbUrl(object):
 class WbUrl(BaseWbUrl):
     # Regexs
     # ======================
-    QUERY_REGEX = re.compile('^(?:([\w\-:]+)/)?(\d*)(?:-(\d+))?\*/?(.+)$')
+    QUERY_REGEX = re.compile('^(?:([\w\-:]+)/)?(\d*)[*-](\d*)?/?(.+)$')
     REPLAY_REGEX = re.compile('^(\d*)([a-z]+_)?/{1,3}(.+)$')
     #LATEST_REPLAY_REGEX = re.compile('^\w_)')
 
@@ -300,12 +300,12 @@ class WbUrl(BaseWbUrl):
             tsmod = ''
             if mod:
                 tsmod += mod + "/"
-            if timestamp:
-                tsmod += timestamp
-                if end_timestamp:
-                    tsmod += '-' + end_timestamp
 
-            tsmod += "*/" + url
+            tsmod += timestamp
+            tsmod += '*'
+            tsmod += end_timestamp
+
+            tsmod += "/" + url
             if type == BaseWbUrl.URL_QUERY:
                 tsmod += "*"
             return tsmod

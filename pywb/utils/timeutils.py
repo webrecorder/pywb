@@ -18,8 +18,9 @@ DATE_TIMESPLIT = re.compile(r'[^\d]')
 
 TIMESTAMP_14 = '%Y%m%d%H%M%S'
 
-#PAD_STAMP_END = '29991231235959'
-PAD_6 = '299912'
+PAD_14_DOWN = '10000101000000'
+PAD_14_UP =   '29991231235959'
+PAD_6_UP =    '299912'
 
 
 def iso_date_to_datetime(string):
@@ -120,18 +121,18 @@ def http_date_to_timestamp(string):
 
 
 # pad to certain length (default 6)
-def _pad_timestamp(string, pad_str=PAD_6):
+def pad_timestamp(string, pad_str=PAD_6_UP):
     """
-    >>> _pad_timestamp('20')
+    >>> pad_timestamp('20')
     '209912'
 
-    >>> _pad_timestamp('2014')
+    >>> pad_timestamp('2014')
     '201412'
 
-    >>> _pad_timestamp('20141011')
+    >>> pad_timestamp('20141011')
     '20141011'
 
-    >>> _pad_timestamp('201410110010')
+    >>> pad_timestamp('201410110010')
     '201410110010'
      """
 
@@ -229,7 +230,7 @@ def timestamp_to_datetime(string):
     """
 
     # pad to 6 digits
-    string = _pad_timestamp(string, PAD_6)
+    string = pad_timestamp(string, PAD_6_UP)
 
     def clamp(val, min_, max_):
         try:

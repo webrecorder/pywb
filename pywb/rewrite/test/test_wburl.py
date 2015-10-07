@@ -159,8 +159,23 @@ http://xn--abcd
 "('query', '2010', '', 'http://example.com/abc?def=a', '2010*/http://example.com/abc?def=a')"
 
 # timestamp range query
->>> repr(WbUrl('2009-2015*/http://example.com/abc?def=a'))
-"('query', '2009', '', 'http://example.com/abc?def=a', '2009-2015*/http://example.com/abc?def=a')"
+>>> repr(WbUrl('2010-/http://example.com/abc?def=a'))
+"('query', '2010', '', 'http://example.com/abc?def=a', '2010*/http://example.com/abc?def=a')"
+
+>>> repr(WbUrl('2009-2015/http://example.com/abc?def=a'))
+"('query', '2009', '', 'http://example.com/abc?def=a', '2009*2015/http://example.com/abc?def=a')"
+
+>>> repr(WbUrl('2009*2015/http://example.com/abc?def=a'))
+"('query', '2009', '', 'http://example.com/abc?def=a', '2009*2015/http://example.com/abc?def=a')"
+
+>>> repr(WbUrl('2009*/http://example.com/abc?def=a'))
+"('query', '2009', '', 'http://example.com/abc?def=a', '2009*/http://example.com/abc?def=a')"
+
+>>> repr(WbUrl('-2015/http://example.com/abc?def=a'))
+"('query', '', '', 'http://example.com/abc?def=a', '*2015/http://example.com/abc?def=a')"
+
+>>> repr(WbUrl('*2015/http://example.com/abc?def=a'))
+"('query', '', '', 'http://example.com/abc?def=a', '*2015/http://example.com/abc?def=a')"
 
 >>> repr(WbUrl('json/*/http://example.com/abc?def=a'))
 "('query', '', 'json', 'http://example.com/abc?def=a', 'json/*/http://example.com/abc?def=a')"
