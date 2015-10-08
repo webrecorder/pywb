@@ -159,7 +159,7 @@ class ZipNumCluster(CDXSource):
         info = dict(pages=pages,
                     pageSize=pagesize,
                     blocks=blocks)
-        return json.dumps(info)
+        return json.dumps(info) + '\n'
 
     def compute_page_range(self, reader, query):
         pagesize = query.page_size

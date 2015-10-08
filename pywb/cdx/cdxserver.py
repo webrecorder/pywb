@@ -176,7 +176,10 @@ class CDXServer(BaseCDXServer):
         if filename.endswith(('.summary', '.idx')):
             return ZipNumCluster(filename, config)
 
-        logging.warn('skipping unrecognized URI:%s', filename)
+        # no warning for .loc
+        if not filename.endswith('.loc'):
+            logging.warn('skipping unrecognized URI: %s', filename)
+
         return None
 
 
