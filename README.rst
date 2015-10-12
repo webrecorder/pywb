@@ -1,12 +1,10 @@
-PyWb 0.10.8
+PyWb 0.10.9
 ===========
 
 .. image:: https://travis-ci.org/ikreymer/pywb.svg?branch=master
       :target: https://travis-ci.org/ikreymer/pywb
 .. image:: https://coveralls.io/repos/ikreymer/pywb/badge.svg?branch=master
       :target: https://coveralls.io/r/ikreymer/pywb?branch=master
-.. image:: https://img.shields.io/gratipay/ikreymer.svg
-      :target: https://www.gratipay.com/ikreymer/
 
 **pywb** is a python implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
 
@@ -274,7 +272,4 @@ replay and web proxy services.
 Please take a look at list of current
 `issues <https://github.com/ikreymer/pywb/issues?state=open>`_ and feel
 free to open new ones.
-
-.. image:: https://cdn.rawgit.com/gratipay/gratipay-badge/2.0.1/dist/gratipay.png
-      :target: https://www.gratipay.com/ikreymer/
 
