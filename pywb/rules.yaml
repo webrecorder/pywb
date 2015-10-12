@@ -7,30 +7,6 @@ rules:
 
       fuzzy_lookup: '/profiles/show/.*with_replies\?.*(max_id=[^&]+)'
 
-#    - url_prefix: 'comx,twimg,abs)/c/swift/en/bundle/boot'
-
-#      rewrite:
-#        js_rewrite_location: urls
-#        js_regexs:
-#            - match: 'window.location'
-#              replace: 'window.WB_wombat_location'
-
-#            - match: 'document.location'
-#              replace: 'document.WB_wombat_location'
-
-    #- url_prefix: 'com,twimg,ton)/'
-
-    #  rewrite:
-    #    js_rewrite_location: all
-
-#    - url_prefix: 'comx,twimg,amp)/amplify-web-player/prod/js/build.min.js'
-
-#      rewrite:
-        #js_rewrite_location: all
-#        js_regexs:
-#            - match: ';$'
-#              replace: '; $(function() {{ var div = $(".poster-image")[0]; window._wb_wombat.watch_elem(div, function(elem) {{ if (elem.tagName == "IMG") {{ elem.setAttribute("width", $(div).width()); elem.setAttribute("height", $(div).height()); }}  }}) }}  );'
-
 
     # facebook rules
     #=================================================================
@@ -92,17 +68,6 @@ rules:
     - url_prefix: 'com,instagram)/p/'
 
       fuzzy_lookup: '()'
-
-
-    # wikimedia rules
-    #=================================================================
-#    - url_prefix: 'org,wikimedia,meta)/'
-
-#      rewrite:
-#          js_regexs:
-#              - match: '\burl\((\\?/\\?/[^)]+)\)'
-#                rewrite: true
-#                group: 1
 
 
     # blogspot rules
@@ -183,22 +148,10 @@ rules:
     # vine
     - url_prefix: 'co,vine,cdn,'
 
-#      rewrite:
-#        js_rewrite_location: urls
-#        js_regexs:
-#            - match: 'window.location'
-#              replace: 'WB_wombat_location'
-
       fuzzy_lookup:
         replace: 'videos'
         match: 'videos(?:_[^/]+)?/([^?]+)'
 
-    # disqus
-    #- url_prefix: ['com,disqus', 'com,disquscdn']
-    #- url_prefix: 'com,disqus'
-
-    #  rewrite:
-    #    js_rewrite_location: location
 
     - url_prefix: 'com,disqus)/embed/comments'
 
