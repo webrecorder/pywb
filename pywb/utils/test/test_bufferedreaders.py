@@ -14,6 +14,10 @@ r"""
 >>> DecompressingBufferedReader(BytesIO(compress('ABC\n1234\n'))).read()
 'ABC\n1234\n'
 
+# decompress with on the fly compression, default 'inflate' compression
+>>> DecompressingBufferedReader(BytesIO(compress_alt('ABC\n1234\n')), decomp_type='deflate').read()
+'ABC\n1234\n'
+
 # error: invalid compress type
 >>> DecompressingBufferedReader(BytesIO(compress('ABC')), decomp_type = 'bzip2').read()
 Traceback (most recent call last):
@@ -125,6 +129,16 @@ def compress(buff):
     compressobj = zlib.compressobj(6, zlib.DEFLATED, zlib.MAX_WBITS + 16)
     compressed = compressobj.compress(buff)
     compressed += compressobj.flush()
+
+    return compressed
+
+# plain "inflate"
+def compress_alt(buff):
+    compressobj = zlib.compressobj(6, zlib.DEFLATED)
+    compressed = compressobj.compress(buff)
+    compressed += compressobj.flush()
+    # drop gzip headers/tail
+    compressed = compressed[2:-4]
 
     return compressed
 
