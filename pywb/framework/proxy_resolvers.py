@@ -16,8 +16,11 @@ import json
 class BaseCollResolver(object):
     def __init__(self, routes, config):
         self.routes = routes
-        self.pre_connect = config.get('pre_connect', False)
         self.use_default_coll = config.get('use_default_coll', True)
+
+    @property
+    def pre_connect(self):
+        return False
 
     def resolve(self, env):
         route = None
@@ -66,9 +69,12 @@ class ProxyAuthResolver(BaseCollResolver):
     DEFAULT_MSG = 'Please enter name of a collection to use with proxy mode'
 
     def __init__(self, routes, config):
-        config['pre_connect'] = True
         super(ProxyAuthResolver, self).__init__(routes, config)
         self.auth_msg = config.get('auth_msg', self.DEFAULT_MSG)
+
+    @property
+    def pre_connect(self):
+        return True
 
     def get_proxy_coll_ts(self, env):
         proxy_auth = env.get('HTTP_PROXY_AUTHORIZATION')
@@ -111,8 +117,32 @@ class IPCacheResolver(BaseCollResolver):
         self.cache = create_cache()
         self.magic_name = config['magic_name']
 
+    def _get_ip(self, env):
+        ip = env['REMOTE_ADDR']
+        qs = env.get('pywb.proxy_query')
+        if qs:
+            res = urlparse.parse_qs(qs)
+
+            if 'ip' in res:
+                ip = res['ip'][0]
+
+        return ip
+
     def get_proxy_coll_ts(self, env):
         ip = env['REMOTE_ADDR']
+        qs = env.get('pywb.proxy_query')
+        if qs:
+            res = urlparse.parse_qs(qs)
+
+            if 'ip' in res:
+                ip = res['ip'][0]
+
+            if 'coll' in res:
+                self.cache[ip + ':c'] = res['coll'][0]
+
+            if 'ts' in res:
+                self.cache[ip + ':t'] = res['ts'][0]
+
         coll = self.cache[ip + ':c']
         ts = self.cache[ip + ':t']
         return coll, ts
@@ -128,21 +158,8 @@ class IPCacheResolver(BaseCollResolver):
         return super(IPCacheResolver, self).resolve(env)
 
     def handle_magic_page(self, env):
-        ip = env['REMOTE_ADDR']
-        qs = env.get('QUERY_STRING')
-        if qs:
-            res = urlparse.parse_qs(qs)
-
-            if 'ip' in res:
-                ip = res['ip'][0]
-
-            if 'coll' in res:
-                self.cache[ip + ':c'] = res['coll'][0]
-
-            if 'ts' in res:
-                self.cache[ip + ':t'] = res['ts'][0]
-
         coll, ts = self.get_proxy_coll_ts(env)
+        ip = self._get_ip(env)
         res = json.dumps({'ip': ip, 'coll': coll, 'ts': ts})
         return WbResponse.text_response(res, content_type='application/json')
 
@@ -152,7 +169,6 @@ class CookieResolver(BaseCollResolver):
     SESH_COOKIE_NAME = '__pywb_proxy_sesh'
 
     def __init__(self, routes, config):
-        config['pre_connect'] = False
         super(CookieResolver, self).__init__(routes, config)
         self.magic_name = config['magic_name']
         self.sethost_prefix = '-sethost.' + self.magic_name + '.'
@@ -309,10 +325,7 @@ class CookieResolver(BaseCollResolver):
         ts = None
         if sesh_id:
             coll = self.cache[sesh_id + ':c']
-            try:
-                ts = self.cache[sesh_id + ':t']
-            except KeyError:
-                pass
+            ts = self.cache[sesh_id + ':t']
 
         return coll, ts, sesh_id
 

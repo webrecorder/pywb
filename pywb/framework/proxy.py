@@ -163,6 +163,7 @@ class ProxyRouter(object):
             env['pywb.proxy_req_uri'] = parts.path
             if parts.query:
                 env['pywb.proxy_req_uri'] += '?' + parts.query
+                env['pywb.proxy_query'] = parts.query
 
         env['pywb_proxy_magic'] = self.magic_name
 
@@ -305,6 +306,7 @@ class ProxyRouter(object):
         queryparts = env['REL_REQUEST_URI'].split('?', 1)
         env['PATH_INFO'] = queryparts[0]
         env['QUERY_STRING'] = queryparts[1] if len(queryparts) > 1 else ''
+        env['pywb.proxy_query'] = env['QUERY_STRING']
 
         while True:
             line = buffreader.readline()

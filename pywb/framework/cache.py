@@ -21,8 +21,14 @@ class UwsgiCache(object):  # pragma: no cover
 
 
 #=================================================================
+class DefaultCache(dict):
+    def __getitem__(self, item):
+        return self.get(item)
+
+
+#=================================================================
 def create_cache():
     if uwsgi_cache:  # pragma: no cover
         return UwsgiCache()
     else:
-        return {}
+        return DefaultCache()

@@ -1,0 +1,18 @@
+collections:
+    all:
+        - ./sample_archive/cdx/iana.cdx
+        - ./sample_archive/cdx/dupes.cdx
+        - ./sample_archive/cdx/post-test.cdx
+
+archive_paths: ./sample_archive/warcs/
+
+enable_http_proxy: true
+
+proxy_options:
+    enable_https_proxy: false
+
+    cookie_resolver: ip
+    use_default_coll: all
+
+    use_banner: true
+    use_client_rewrite: false
