@@ -327,13 +327,16 @@ var wombat_internal = function($wbwindow) {
             return href;
         }
 
-        var index = href.indexOf("/http", 1);
+        // if no coll, start from beginning, otherwise could be part of coll..
+        var start = wbinfo.coll ? 1 : 0;
+
+        var index = href.indexOf("/http", start);
         if (index < 0) {
-            index = href.indexOf("///", 1);
+            index = href.indexOf("///", start);
         }
 
         // extract original url from wburl
-        if (index > 0) {
+        if (index >= 0) {
             href = href.substr(index + 1);
         } else {
             index = href.indexOf(wb_replay_prefix);
@@ -475,8 +478,12 @@ var wombat_internal = function($wbwindow) {
                 }
 
                 //Special case for href="." assignment
-                if (prop == "href" && typeof(value) == "string" && value[0] == ".") {
-                    value = resolve_rel_url(value);
+                if (prop == "href" && typeof(value) == "string") {
+                    if (value[0] == ".") {
+                        value = resolve_rel_url(value);
+                    } else if (value[0] == "/") {
+                        value = WB_wombat_location.origin + value;
+                    }
                 }
 
                 try {
@@ -2038,11 +2045,10 @@ var wombat_internal = function($wbwindow) {
     function wombat_init(wbinfo) {
         wb_info = wbinfo;
         wb_opts = wbinfo.wombat_opts;
+        wb_replay_prefix = wbinfo.prefix;
 
         init_top_frame($wbwindow);
         init_wombat_top($wbwindow);
-
-        wb_replay_prefix = wbinfo.prefix;
 
         if (wb_replay_prefix && wb_replay_prefix.indexOf($wbwindow.__WB_replay_top.location.origin) == 0) {
             wb_rel_prefix = wb_replay_prefix.substring($wbwindow.__WB_replay_top.location.origin.length + 1);
