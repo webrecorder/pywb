@@ -338,7 +338,20 @@ __wbvidrw = (function() {
 
         var xhr = new XMLHttpRequest();
         xhr._no_rewrite = true;
-        xhr.open('GET', wbinfo.prefix + 'vi_/' + src, true);
+
+        var info_url;
+
+        // if in proxy mode, access video info via special proxy magic path
+        // eg: http://pywb.proxy/<coll>/vi_/<url>
+        if (wbinfo.proxy_magic) {
+            info_url = "http://" + wbinfo.proxy_magic + "/" + wbinfo.coll + "/";
+        } else {
+            info_url = wbinfo.prefix;
+        }
+
+        info_url += "vi_/" + src;
+
+        xhr.open('GET', info_url, true);
         xhr.onload = function() {
             if (xhr.status == 200) {
                 var videoinfo = JSON.parse(xhr.responseText);
@@ -659,11 +672,21 @@ __wbvidrw = (function() {
                 var r = records[i];
                 if (r.type == "childList") {
                     for (var j = 0; j < r.addedNodes.length; j++) {
-                        var elem = r.addedNodes[j];
-                        if (elem.tagName) {
-                            if (elem.tagName == "OBJECT") {
+
+                        var elem = undefined;
+                        var tag_name = undefined;
+
+                        try {
+                            elem = r.addedNodes[j];
+                            tag_name = elem.tagName;
+                        } catch (e) {
+                            continue;
+                        }
+
+                        if (tag_name) {
+                            if (tag_name == "OBJECT") {
                                 do_handle(elem, handle_object_tag);
-                            } else if (elem.tagName == "EMBED") {
+                            } else if (tag_name == "EMBED") {
                                 do_handle(elem, handle_embed_tag);
                             }
                         }                           

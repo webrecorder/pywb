@@ -207,6 +207,9 @@ class ReplayView(object):
 
             status_headers.headers.append(('Content-Location', canon_url))
 
+        if wbrequest.wb_url.mod == 'vi_':
+            status_headers.headers.append(('access-control-allow-origin', '*'))
+
         response = self.response_class(status_headers,
                                        response_iter,
                                        wbrequest=wbrequest,

@@ -95,7 +95,7 @@ class WbRequest(object):
 
         self.options = dict()
         self.options['is_ajax'] = self._is_ajax()
-        self.options['is_proxy'] = is_proxy
+        self.options['is_proxy'] = is_proxy or env.get('pywb_proxy_magic')
 
         self.query_filter = []
         self.custom_params = {}

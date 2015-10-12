@@ -2040,9 +2040,11 @@ var wombat_internal = function($wbwindow) {
         wb_opts = wbinfo.wombat_opts;
 
         init_top_frame($wbwindow);
+        init_wombat_top($wbwindow);
 
         wb_replay_prefix = wbinfo.prefix;
-        if (wb_replay_prefix.indexOf($wbwindow.__WB_replay_top.location.origin) == 0) {
+
+        if (wb_replay_prefix && wb_replay_prefix.indexOf($wbwindow.__WB_replay_top.location.origin) == 0) {
             wb_rel_prefix = wb_replay_prefix.substring($wbwindow.__WB_replay_top.location.origin.length + 1);
         } else {
             wb_rel_prefix = wb_replay_prefix;
@@ -2163,6 +2165,13 @@ var wombat_internal = function($wbwindow) {
     }
 
     function init_top_frame($wbwindow) {
+        // proxy mode
+        if (!wb_replay_prefix) {
+            $wbwindow.__WB_replay_top = $wbwindow.top;
+            $wbwindow.__WB_top_frame = undefined;
+            return;
+        }
+
         function next_parent(win) {
             try {
                 if (!win) {
@@ -2211,35 +2220,40 @@ var wombat_internal = function($wbwindow) {
             $wbwindow.__WB_orig_parent = $wbwindow.parent;
             $wbwindow.parent = replay_top;
         }
-
-        if (Object.defineProperty) {
-
-            // from http://stackoverflow.com/a/6229603
-            function isWindow(obj) {
-                if (typeof(window.constructor) === 'undefined') {
-                    return obj instanceof window.constructor;
-                } else {
-                    return obj.window === obj;
-                }
-            }
-
-            var getter = function() {
-                if (this.__WB_replay_top) {
-                    return this.__WB_replay_top;
-                } else if (isWindow(this)) {
-                    return this;
-                } else {
-                    return this.top;
-                }
-            }
-
-            var setter = function(val) {
-                this.top = val;
-            }
-
-            def_prop($wbwindow.Object.prototype, "WB_wombat_top", setter, getter);
-        }
     }
+
+
+    function init_wombat_top($wbwindow) {
+        if (!Object.defineProperty) {
+            return;
+        }
+
+        // from http://stackoverflow.com/a/6229603
+        function isWindow(obj) {
+            if (typeof(window.constructor) === 'undefined') {
+                return obj instanceof window.constructor;
+            } else {
+                return obj.window === obj;
+            }
+        }
+
+        var getter = function() {
+            if (this.__WB_replay_top) {
+                return this.__WB_replay_top;
+            } else if (isWindow(this)) {
+                return this;
+            } else {
+                return this.top;
+            }
+        }
+
+        var setter = function(val) {
+            this.top = val;
+        }
+
+        def_prop($wbwindow.Object.prototype, "WB_wombat_top", setter, getter);
+    }
+
 
 
 
