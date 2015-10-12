@@ -216,7 +216,18 @@ To run as an HTTPS proxy server, pywb uses the `certauth <https://github.com/ikr
 Using these features requiring an extra dependency: installing *certauth* with ``pip install certauth``. (This will also install the ``pyOpenSSL`` package which is used to handle the
 ssl functionality).
 
-For more info, see `Proxy Mode Usage <https://github.com/ikreymer/pywb/wiki/Pywb-Proxy-Mode-Usage>`_
+Collection and Timestamp Selection In Proxy Mode
+""""""""""""""""""""""""""""""""""""""""""""""""
+
+When running in proxy mode, the current collection and current timestamp are not included in the page url and need to be set separeately. pywb provides several options for 'resolving' the collection and timestamp:
+
+  - By Proxy Auth: Proxy Authorization settings are used to select a (fixed) collection and Memento API can be used to pick the timestamp.
+  
+  - By IP: Settings for current collection and timestamp can be set per-IP using a seperate HTTP request to the proxy. Useful for fixed-IP deployments, such as when running in Docker.
+  
+  - By Cookie: The most complex but dynamic option, this allows a user to switch collection and current timestamp through cookies that are propagated across domains.
+  
+For more info, see `Proxy Mode Usage <https://github.com/ikreymer/pywb/wiki/Pywb-Proxy-Mode-Usage>`_.
 
 The `pywb-proxy-demo <https://github.com/ikreymer/pywb-proxy-demo>`_ project also contains a working configuration of proxy mode deployment.
 
