@@ -1,13 +1,13 @@
 pywb 0.10.9 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
-* IPProxyResolver: Support new simple proxy resolver where collection and timestamp stored in server-side cache by IP and set via a rest api through `pywb.proxy` eg: `curl -x "localhost:8080" http://pywb.proxy/set?ts=2015&coll=all`. No cookies or proxy auth needed in this mode. Useful for Docker-based deployments where virtual IP is fixed.
+* IPProxyResolver: Support new simple proxy resolver where collection and timestamp stored in server-side cache by IP and set via a rest api through `pywb.proxy` eg: ``curl -x "localhost:8080" http://pywb.proxy/set?ts=2015&coll=all``. No cookies or proxy auth needed in this mode. Useful for Docker-based deployments where virtual IP is fixed. Enabled with ``cookie_resolver: ip`` in ``proxy_options``.
 
-* Proxy settings: add `use_banner` to toggle banner insert, and `use_client_rewrite` to toggle wombat rewriting in proxy mode. (Client rewriting requires banner insert).
+* Proxy options: add ``use_banner`` to toggle banner insert, and ``use_client_rewrite`` to toggle wombat rewriting in proxy mode. (Client rewriting requires banner insert).
 
-* Proxy and Video: When in proxy mode, load youtube-dl video info via proxy magic host `pywb.proxy`
+* Proxy and Video: When in proxy mode, load youtube-dl video info via proxy magic host `pywb.proxy`, and ensure CORS support.
 
-* Rewrite: ensure `<base>` tag has trailing slash, or add `<base>` with trailing slash for host-name only urls, eg: `localhost:8080/example.com`
+* Rewrite: ensure ``<base>`` tag has trailing slash, or add ``<base>`` with trailing slash for host-name only urls, eg: ``http://localhost:8080/example.com``
 
 * Rules: improved blogspot nav and yt rules, rule file cleanup
 
