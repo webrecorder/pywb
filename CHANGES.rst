@@ -3,6 +3,8 @@ pywb 0.10.9 changelist
 
 * IPProxyResolver: Support new simple proxy resolver where collection and timestamp stored in server-side cache by IP and set via a rest api through `pywb.proxy` eg: ``curl -x "localhost:8080" http://pywb.proxy/set?ts=2015&coll=all``. No cookies or proxy auth needed in this mode. Useful for Docker-based deployments where virtual IP is fixed. Enabled with ``cookie_resolver: ip`` in ``proxy_options``.
 
+* CDX Server: Add support for timestamp-bounded queries CDX queries ``from=`` and ``to=``, also support calendar query with (inclusive) ranges, eg. ``/2010-2015/example.com``, ``/2010-/example.com/``, ``/-2015/example.com/``.
+
 * Proxy options: add ``use_banner`` to toggle banner insert, and ``use_client_rewrite`` to toggle wombat rewriting in proxy mode. (Client rewriting requires banner insert).
 
 * Proxy and Video: When in proxy mode, load youtube-dl video info via proxy magic host `pywb.proxy`, and ensure CORS support.
