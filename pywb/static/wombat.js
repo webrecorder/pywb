@@ -479,10 +479,12 @@ var wombat_internal = function($wbwindow) {
 
                 //Special case for href="." assignment
                 if (prop == "href" && typeof(value) == "string") {
-                    if (value[0] == ".") {
-                        value = resolve_rel_url(value);
-                    } else if (value[0] == "/") {
-                        value = WB_wombat_location.origin + value;
+                    if (value) {
+                        if (value[0] == ".") {
+                            value = resolve_rel_url(value);
+                        } else if (value[0] == "/" && (value.length <= 1 || value[1] != "/")) {
+                            value = WB_wombat_location.origin + value;
+                        }
                     }
                 }
 
