@@ -1,3 +1,9 @@
+pywb 0.10.9.1 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* wombat: fix relative '/' rewrite which incorrectly handles rel scheme '//' urls
+
+
 pywb 0.10.9 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
