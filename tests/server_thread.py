@@ -3,6 +3,10 @@ import threading
 from pywb.webapp.pywb_init import create_wb_router
 from pywb.framework.wsgi_wrappers import init_app
 
+# disable is_hop_by_hop restrictions
+import wsgiref.handlers
+wsgiref.handlers.is_hop_by_hop = lambda x: False
+
 
 class ServerThreadRunner(object):
     def __init__(self, make_httpd, config_file=None):

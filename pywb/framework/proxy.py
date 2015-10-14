@@ -1,5 +1,7 @@
-from wbrequestresponse import WbResponse, WbRequest
-from archivalrouter import ArchivalRouter
+from __future__ import absolute_import
+
+from pywb.framework.wbrequestresponse import WbResponse, WbRequest
+from pywb.framework.archivalrouter import ArchivalRouter
 
 import urlparse
 import base64
@@ -12,7 +14,7 @@ from pywb.utils.wbexception import BadRequestException
 
 from pywb.utils.bufferedreaders import BufferedReader
 
-from proxy_resolvers import ProxyAuthResolver, CookieResolver, IPCacheResolver
+from pywb.framework.proxy_resolvers import ProxyAuthResolver, CookieResolver, IPCacheResolver
 
 
 #=================================================================
