@@ -1053,7 +1053,7 @@ var wombat_internal = function($wbwindow) {
     }
 */
     //============================================
-    function rewrite_attr(elem, name, full_url_only) {
+    function rewrite_attr(elem, name, abs_url_only) {
         if (!elem || !elem.getAttribute) {
             return;
         }
@@ -1073,15 +1073,16 @@ var wombat_internal = function($wbwindow) {
             return;
         }
 
-        if (full_url_only && !starts_with(value, VALID_PREFIXES)) {
-            return;
-        }
-
         var new_value;
 
         if (name == "style") {
             new_value = rewrite_style(value);
         } else {
+            // Only rewrite if absolute url
+            if (abs_url_only && !starts_with(value, VALID_PREFIXES)) {
+                return;
+            }
+
             var mod = undefined;
 
             if (elem.tagName == "SCRIPT") {
@@ -1132,7 +1133,7 @@ var wombat_internal = function($wbwindow) {
         } else {
             changed = rewrite_attr(elem, "src");
             changed = rewrite_attr(elem, "href") || changed;
-            changed = rewrite_attr(elem, "style", rewrite_style) || changed;
+            changed = rewrite_attr(elem, "style") || changed;
         }
 
         if (elem.getAttribute) {
