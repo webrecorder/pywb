@@ -159,10 +159,18 @@ class RewriteContent:
                                                      status_headers)
 
             if head_insert_func:
-                if not charset:
+                head_insert_orig = head_insert_func(rule, cdx)
+                head_insert_str = None
+
+                if charset:
+                    try:
+                        head_insert_str = head_insert_orig.encode(charset)
+                    except:
+                        pass
+
+                if not head_insert_str:
                     charset = 'utf-8'
-                head_insert_str = head_insert_func(rule, cdx)
-                head_insert_str = head_insert_str.encode(charset)
+                    head_insert_str = head_insert_orig.encode(charset)
 
             if wb_url.is_banner_only:
                 gen = self._head_insert_only_gen(head_insert_str,
