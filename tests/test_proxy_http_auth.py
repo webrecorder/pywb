@@ -6,17 +6,12 @@ from pywb.webapp.pywb_init import create_wb_router
 from pywb.framework.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
 
+from server_mock import make_setup_module, BaseIntegration
 
-class TestProxyHttpAuth:
-    TEST_CONFIG = 'tests/test_config.yaml'
+setup_module = make_setup_module('tests/test_config.yaml')
 
-    def setup(self):
-        self.app = init_app(create_wb_router,
-                            load_yaml=True,
-                            config_file=self.TEST_CONFIG)
 
-        self.testapp = webtest.TestApp(self.app)
-
+class TestProxyHttpAuth(BaseIntegration):
     def _assert_basic_html(self, resp):
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'

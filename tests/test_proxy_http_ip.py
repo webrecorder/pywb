@@ -8,17 +8,12 @@ from pywb.cdx.cdxobject import CDXObject
 
 from urlparse import urlsplit
 
+from server_mock import make_setup_module, BaseIntegration
 
-class TestProxyIPResolver(object):
-    TEST_CONFIG = 'tests/test_config_proxy_ip.yaml'
+setup_module = make_setup_module('tests/test_config_proxy_ip.yaml')
 
-    def setup(self):
-        self.app = init_app(create_wb_router,
-                            load_yaml=True,
-                            config_file=self.TEST_CONFIG)
 
-        self.testapp = webtest.TestApp(self.app)
-
+class TestProxyIPResolver(BaseIntegration):
     def _assert_basic_html(self, resp):
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'
@@ -58,12 +53,13 @@ class TestProxyIPResolver(object):
         assert resp.json == {'ip': '127.0.0.1', 'coll': 'all', 'ts': '1996'}
 
     def test_proxy_ip_set_ts_coll_diff_ip(self):
-        resp = self.get_url('http://info.pywb.proxy/set?ts=1996&coll=all', '127.0.0.2')
+        resp = self.get_url('http://info.pywb.proxy/set?ts=2006&coll=all', '127.0.0.2')
         assert resp.content_type == 'application/json'
-        assert resp.json == {'ip': '127.0.0.2', 'coll': 'all', 'ts': '1996'}
+        assert resp.json == {'ip': '127.0.0.2', 'coll': 'all', 'ts': '2006'}
 
+        # from previous response
         resp = self.get_url('http://info.pywb.proxy/')
-        assert resp.json == {'ip': '127.0.0.1', 'coll': None, 'ts': None}
+        assert resp.json == {'ip': '127.0.0.1', 'coll': 'all', 'ts': '1996'}
 
         resp = self.get_url('http://info.pywb.proxy/set?ip=127.0.0.2&ts=2005')
         assert resp.json == {'ip': '127.0.0.2', 'coll': 'all', 'ts': '2005'}
@@ -82,6 +78,6 @@ class TestProxyIPResolver(object):
         assert '"20140126200624"' in resp.body
 
         # defaults for any other ip
-        resp = self.get_url('http://www.iana.org/')
+        resp = self.get_url('http://www.iana.org/', '127.0.0.3')
         self._assert_basic_html(resp)
         assert '"20140127171238"' in resp.body

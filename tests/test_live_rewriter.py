@@ -14,11 +14,18 @@ class MockYTDWrapper(object):
 pywb.webapp.live_rewrite_handler.YoutubeDLWrapper = MockYTDWrapper
 
 
+def setup_module():
+    global app
+    global testapp
+    app = LiveCli(['-f']).application
+    testapp = webtest.TestApp(app)
+
+
 #=================================================================
 class TestLiveRewriter:
     def setup(self):
-        self.app = LiveCli(['-f']).application
-        self.testapp = webtest.TestApp(self.app)
+        self.app = app
+        self.testapp = testapp
 
     def test_live_live_1(self):
         headers = [('User-Agent', 'python'), ('Referer', 'http://localhost:80/live/other.example.com')]

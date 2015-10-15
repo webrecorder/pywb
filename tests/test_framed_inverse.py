@@ -4,16 +4,12 @@ from pywb.framework.wsgi_wrappers import init_app
 
 from memento_fixture import *
 
-class TestMementoFrameInverse(MementoMixin):
-    TEST_CONFIG = 'tests/test_config_frames.yaml'
+from server_mock import make_setup_module, BaseIntegration
 
-    def setup(self):
-        self.app = init_app(create_wb_router,
-                            load_yaml=True,
-                            config_file=self.TEST_CONFIG)
+setup_module = make_setup_module('tests/test_config_frames.yaml')
 
-        self.testapp = webtest.TestApp(self.app)
 
+class TestMementoFrameInverse(MementoMixin, BaseIntegration):
     def test_top_frame_replay(self):
         resp = self.testapp.get('/pywb/20140127171238/http://www.iana.org/')
 

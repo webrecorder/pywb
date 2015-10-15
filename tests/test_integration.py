@@ -1,25 +1,15 @@
 from pytest import raises
-import webtest
-import base64
-from pywb.webapp.pywb_init import create_wb_router
-from pywb.framework.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
 from pywb.utils.timeutils import timestamp_now
 
-class TestWb:
-    TEST_CONFIG = 'tests/test_config.yaml'
+from server_mock import make_setup_module, BaseIntegration
 
-    def setup(self):
-        #self.app = pywb.wbapp.create_wb_app(pywb.pywb_init.pywb_config())
-        # save it in self - useful for debugging
-        self.app = init_app(create_wb_router,
-                            load_yaml=True,
-                            config_file=self.TEST_CONFIG)
+setup_module = make_setup_module('tests/test_config.yaml')
 
-        #self.router = pywb_config(self.TEST_CONFIG)
-        #self.app = create_wb_app(self.router)
-
-        self.testapp = webtest.TestApp(self.app)
+class TestWbIntegration(BaseIntegration):
+    #def setup(self):
+    #    self.app = app
+    #    self.testapp = testapp
 
     def _assert_basic_html(self, resp):
         assert resp.status_int == 200
@@ -385,6 +375,16 @@ class TestWb:
     def test_live_frame(self):
         resp = self.testapp.get('/live/http://example.com/?test=test')
         assert resp.status_int == 200
+
+    def test_live_redir_1(self):
+        resp = self.testapp.get('/live/*/http://example.com/?test=test')
+        assert resp.status_int == 302
+        assert resp.headers['Location'].endswith('/live/http://example.com/?test=test')
+
+    def test_live_redir_2(self):
+        resp = self.testapp.get('/live/2010-2011/http://example.com/?test=test')
+        assert resp.status_int == 302
+        assert resp.headers['Location'].endswith('/live/http://example.com/?test=test')
 
     def test_live_fallback(self):
         resp = self.testapp.get('/pywb-fallback//http://example.com/?test=test')

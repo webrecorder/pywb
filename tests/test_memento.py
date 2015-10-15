@@ -7,16 +7,12 @@ from pywb.utils.timeutils import timestamp_now
 
 from memento_fixture import *
 
-class TestMemento(MementoMixin):
-    TEST_CONFIG = 'tests/test_config_memento.yaml'
+from server_mock import make_setup_module, BaseIntegration
 
-    def setup(self):
-        self.app = init_app(create_wb_router,
-                            load_yaml=True,
-                            config_file=self.TEST_CONFIG)
+setup_module = make_setup_module('tests/test_config_memento.yaml')
 
-        self.testapp = webtest.TestApp(self.app)
 
+class TestMemento(MementoMixin, BaseIntegration):
     # Below functionality is for archival (non-proxy) mode
     # It is designed to conform to Memento protocol Pattern 2.1
     # http://www.mementoweb.org/guide/rfc/#Pattern2.1

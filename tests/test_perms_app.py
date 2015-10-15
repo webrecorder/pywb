@@ -4,17 +4,11 @@ from pywb.perms.perms_handler import create_perms_checker_app
 from pywb.perms.perms_handler import ALLOW, BLOCK
 from pywb.framework.wsgi_wrappers import init_app
 
-class TestPermsApp:
-    TEST_CONFIG = 'tests/test_config.yaml'
+from server_mock import make_setup_module, BaseIntegration
 
-    def setup(self):
-        self.app = init_app(create_perms_checker_app,
-                            load_yaml=True,
-                            config_file=self.TEST_CONFIG)
+setup_module = make_setup_module('tests/test_config.yaml', create_perms_checker_app)
 
-        self.testapp = webtest.TestApp(self.app)
-
-
+class TestPermsApp(BaseIntegration):
     def test_allow(self):
         resp = self.testapp.get('/check-access/http://example.com')
 

@@ -55,38 +55,57 @@ class MockYTDWrapper(object):
 
 pywb.webapp.live_rewrite_handler.YoutubeDLWrapper = MockYTDWrapper
 
+
+#=================================================================
+def setup_module():
+    global requestlog
+    requestlog = []
+
+    def make_httpd(app):
+        global proxyserv
+        proxyserv = ProxyServer(('', 0), ProxyRequest)
+        proxyserv.requestlog = requestlog
+        proxyserv.force_err = False
+        return proxyserv
+
+    global server
+    server = ServerThreadRunner(make_httpd)
+
+    config = dict(collections=dict(rewrite='$liveweb'),
+                  framed_replay=True,
+                  proxyhostport=server.proxy_dict)
+
+    global cache
+    cache = {}
+
+    def create_cache():
+        return cache
+
+    pywb.webapp.live_rewrite_handler.create_cache = create_cache
+
+    global app
+    app = init_app(create_wb_router,
+                   load_yaml=False,
+                   config=config)
+
+    global testapp
+    testapp = webtest.TestApp(app)
+
+
+def teardown_module(self):
+    server.stop_thread()
+
 #=================================================================
 class TestProxyLiveRewriter:
     def setup(self):
-        self.requestlog = []
-        self.cache = {}
+        self.requestlog = requestlog
+        del self.requestlog[:]
 
-        def make_httpd(app):
-            proxyserv = ProxyServer(('', 0), ProxyRequest)
-            proxyserv.requestlog = self.requestlog
-            proxyserv.force_err = False
-            self.proxyserv = proxyserv
-            return proxyserv
+        self.cache = cache
+        self.cache.clear()
 
-        self.server = ServerThreadRunner(make_httpd)
-
-        config = dict(collections=dict(rewrite='$liveweb'),
-                      framed_replay=True,
-                      proxyhostport=self.server.proxy_dict)
-
-        self.app = init_app(create_wb_router,
-                            load_yaml=False,
-                            config=config)
-
-        def create_cache():
-            return self.cache
-
-        pywb.webapp.live_rewrite_handler.create_cache = create_cache
-
-        self.testapp = webtest.TestApp(self.app)
-
-    def teardown(self):
-        self.server.stop_thread()
+        self.app = app
+        self.testapp = testapp
 
     def test_echo_proxy_referrer(self):
         headers = [('User-Agent', 'python'), ('Referer', 'http://localhost:80/rewrite/other.example.com')]
@@ -211,7 +230,7 @@ class TestProxyLiveRewriter:
     def test_echo_proxy_error(self):
         headers = [('Range', 'bytes=1000-2000'), ('Referer', 'http://localhost:80/rewrite/https://example.com/')]
 
-        self.proxyserv.force_err = True
+        proxyserv.force_err = True
         resp = self.testapp.get('/rewrite/http://www.youtube.com/watch?v=DjFZyFWSt1M', headers=headers)
 
         # not from proxy
