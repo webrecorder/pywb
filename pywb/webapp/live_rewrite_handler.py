@@ -50,6 +50,11 @@ class RewriteHandler(SearchPageWbUrlHandler):
         self._cache = None
 
     def handle_request(self, wbrequest):
+        if wbrequest.wb_url.is_query():
+            type_ = wbrequest.wb_url.LATEST_REPLAY
+            url = wbrequest.urlrewriter.get_new_url(type=type_, timestamp='')
+            return WbResponse.redir_response(url)
+
         try:
             return self.render_content(wbrequest)
 
