@@ -70,24 +70,46 @@ class ArchiveIterator(object):
 
         self.next_line = None
 
-        is_valid = True
+        raise_invalid_gzip = False
+        empty_record = False
 
         while True:
             try:
+                curr_offset = self.fh.tell()
                 record = self._next_record(self.next_line)
-                if not is_valid:
-                    self._raise_err()
+                if raise_invalid_gzip:
+                    self._raise_invalid_gzip_err()
 
                 yield record
+
             except EOFError:
-                break
+                empty_record = True
 
             self.read_to_end(record)
 
             if self.reader.decompressor:
-                is_valid = self.reader.read_next_member()
+                # if another gzip member, continue
+                if self.reader.read_next_member():
+                    continue
 
-    def _raise_err(self):
+                # if empty record, then we're done
+                elif empty_record:
+                    break
+
+                # otherwise, probably a gzip
+                # containing multiple non-chunked records
+                # raise this as an error
+                else:
+                    raise_invalid_gzip = True
+
+            # non-gzip, so we're done
+            elif empty_record:
+                break
+
+    def _raise_invalid_gzip_err(self):
+        """ A gzip file with multiple ARC/WARC records, non-chunked
+        has been detected. This is not valid for replay, so notify user
+        """
         frmt = 'warc/arc'
         if self.known_format:
             frmt = self.known_format
@@ -200,6 +222,7 @@ class ArchiveIndexEntryMixin(object):
 
     def reset_entry(self):
         self['urlkey'] = ''
+        self['metadata'] = ''
 
     def extract_mime(self, mime, def_mime='unk'):
         """ Utility function to extract mimetype only

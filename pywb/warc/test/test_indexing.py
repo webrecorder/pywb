@@ -133,6 +133,10 @@ org,httpbin)/post?a=1&b=[]&c=3 20140610001151 http://httpbin.org/post applicatio
 org,httpbin)/post?data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/json 200 B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ - - 723 2395 post-test.warc.gz
 org,httpbin)/post?data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/x-www-form-urlencoded - - - - 475 3118 post-test.warc.gz
 
+# post append + minimal = error
+>>> print_cdx_index('example.arc.gz', append_post=True, minimal=True)
+Traceback (most recent call last):
+Exception: Sorry, minimal index option and append POST options can not be used together
 
 # Test with custom verbs/protocol
 #================================================================
