@@ -1,4 +1,4 @@
-import urlparse
+import urlparse, urllib
 
 from wburl import WbUrl
 from cookie_rewriter import get_cookie_rewriter
@@ -119,7 +119,12 @@ class UrlRewriter(object):
 
     @staticmethod
     def urljoin(orig_url, url):
-        new_url = urlparse.urljoin(orig_url, url)
+        try:
+            new_url = urlparse.urljoin(orig_url, url)
+        except UnicodeDecodeError:
+            # unicode in url -- see http://stackoverflow.com/a/4494314/307769
+            new_url = urlparse.urljoin(orig_url.decode('utf8'), url.decode('utf8'))
+            new_url = urllib.quote(new_url.encode('utf8'), safe=b"/#%[]=:;$&()+,!?*@'~")
         if '../' not in new_url:
             return new_url
 
