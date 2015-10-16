@@ -55,6 +55,13 @@ rules:
           cookie_scope: root
 
 
+    # fastly
+    #=================================================================
+    - url_prefix: ['net,fastly,']
+
+      fuzzy_lookup: '()'
+
+
     # instagram rules
     #=================================================================
     - url_prefix: 'net,cloudfront,'
