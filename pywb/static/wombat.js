@@ -209,7 +209,7 @@ var wombat_internal = function($wbwindow) {
             }
 
             // relative collection 
-            if ((url.indexOf(wb_info.coll) == 1) && (url.indexOf("http") > 1)) {
+            if ((url.indexOf(wb_rel_prefix) == 1) && (url.indexOf("http") > 1)) {
                 var scheme_sep = url.indexOf(":/");
                 if (scheme_sep > 0 && url[scheme_sep + 2] != '/') {
                     url = url.substring(0, scheme_sep + 2) + "/" + url.substring(scheme_sep + 2);
@@ -328,7 +328,7 @@ var wombat_internal = function($wbwindow) {
         }
 
         // if no coll, start from beginning, otherwise could be part of coll..
-        var start = wbinfo.coll ? 1 : 0;
+        var start = wb_rel_prefix ? 1 : 0;
 
         var index = href.indexOf("/http", start);
         if (index < 0) {
