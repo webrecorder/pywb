@@ -6,7 +6,7 @@ import logging
 from datetime import datetime
 
 from pywb.utils.wbexception import NotFoundException
-from pywb.utils.loaders import BlockLoader
+from pywb.utils.loaders import LocalFileLoader
 from pywb.utils.statusandheaders import StatusAndHeaders
 
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
@@ -191,14 +191,14 @@ class StaticHandler(BaseHandler):
         mimetypes.init()
 
         self.static_path = static_path
-        self.block_loader = BlockLoader()
+        self.block_loader = LocalFileLoader()
 
     def __call__(self, wbrequest):
         url = wbrequest.wb_url_str.split('?')[0]
         full_path = self.static_path + url
 
         try:
-            data = self.block_loader.load_file_or_resource(full_path)
+            data = self.block_loader.load(full_path)
 
             data.seek(0, 2)
             size = data.tell()

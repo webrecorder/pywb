@@ -10,7 +10,7 @@ import os
 
 from urlparse import urlsplit
 
-from pywb.utils.loaders import is_http, LimitReader, BlockLoader, to_file_url
+from pywb.utils.loaders import is_http, LimitReader, LocalFileLoader, to_file_url
 from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.timeutils import timestamp_now
 from pywb.utils.statusandheaders import StatusAndHeaders
@@ -40,7 +40,7 @@ class LiveRewriter(object):
 
     def fetch_local_file(self, uri):
         #fh = open(uri)
-        fh = BlockLoader().load_file_or_resource(uri)
+        fh = LocalFileLoader().load(uri)
 
         content_type, _ = mimetypes.guess_type(uri)
 

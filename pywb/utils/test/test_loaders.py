@@ -48,6 +48,11 @@ IOError: [Errno 2] No such file or directory: '_x_no_such_file_'
 >>> BlockLoader().load('http://example.com', 1262).read()
 '</html>\n'
 
+# unknown loader error
+>>> BlockLoader().load('foo://example.com', 10).read()
+Traceback (most recent call last):
+IOError: No Loader for type: foo
+
 # test with extra id, ensure 4 parts of the A-B=C-D form are present
 >>> len(re.split('[-=]', HMACCookieMaker('test', 'test', 5).make('extra')))
 4

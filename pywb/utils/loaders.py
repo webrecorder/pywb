@@ -26,11 +26,6 @@ def is_http(filename):
 
 
 #=================================================================
-def is_s3(filename):
-    return filename.startswith('s3://')
-
-
-#=================================================================
 def to_file_url(filename):
     """ Convert a filename to a file:// url
     """
@@ -156,23 +151,52 @@ class BlockLoader(object):
     given a uri, offset and optional length.
     Currently supports: http/https and file/local file system
     """
-    def __init__(self, cookie_maker=None):
-        self.cookie_maker = cookie_maker
-        self.session = None
-        self.s3conn = None
+
+    def __init__(self, *args, **kwargs):
+        self.cached = {}
+        self.args = args
+        self.kwargs = kwargs
 
     def load(self, url, offset=0, length=-1):
+        loader = self._get_loader_for(url)
+        return loader.load(url, offset, length)
+
+    def _get_loader_for(self, url):
         """
         Determine loading method based on uri
         """
-        if is_http(url):
-            return self.load_http(url, offset, length)
-        elif is_s3(url):
-            return self.load_s3(url, offset, length)
+        parts = url.split('://', 1)
+        if len(parts) < 2:
+            type_ = 'file'
         else:
-            return self.load_file_or_resource(url, offset, length)
+            type_ = parts[0]
 
-    def load_file_or_resource(self, url, offset=0, length=-1):
+        loader = self.cached.get(type_)
+        if loader:
+            return loader
+
+        loader_cls = LOADERS.get(type_)
+        if not loader_cls:
+            raise IOError('No Loader for type: ' + type_)
+
+        loader = loader_cls(*self.args, **self.kwargs)
+        self.cached[type_] = loader
+        return loader
+
+
+    @staticmethod
+    def _make_range_header(offset, length):
+        if length > 0:
+            range_header = 'bytes={0}-{1}'.format(offset, offset + length - 1)
+        else:
+            range_header = 'bytes={0}-'.format(offset)
+
+        return range_header
+
+
+#=================================================================
+class LocalFileLoader(BlockLoader):
+    def load(self, url, offset=0, length=-1):
         """
         Load a file-like reader from the local file system
         """
@@ -209,23 +233,21 @@ class BlockLoader(object):
         else:
             return afile
 
-    @staticmethod
-    def _make_range_header(offset, length):
-        if length > 0:
-            range_header = 'bytes={0}-{1}'.format(offset, offset + length - 1)
-        else:
-            range_header = 'bytes={0}-'.format(offset)
 
-        return range_header
+#=================================================================
+class HttpLoader(BlockLoader):
+    def __init__(self, cookie_maker=None):
+        self.cookie_maker = cookie_maker
+        self.session = None
 
-    def load_http(self, url, offset, length):
+    def load(self, url, offset, length):
         """
         Load a file-like reader over http using range requests
         and an optional cookie created via a cookie_maker
         """
         headers = {}
         if offset != 0 or length != -1:
-            headers['Range'] = self._make_range_header(offset, length)
+            headers['Range'] = BlockLoader._make_range_header(offset, length)
 
         if self.cookie_maker:
             if isinstance(self.cookie_maker, basestring):
@@ -239,7 +261,13 @@ class BlockLoader(object):
         r = self.session.get(url, headers=headers, stream=True)
         return r.raw
 
-    def load_s3(self, url, offset, length):
+
+#=================================================================
+class S3Loader(BlockLoader):
+    def __init__(self):
+        self.s3conn = None
+
+    def load(self, url, offset, length):
         if not s3_avail:  #pragma: no cover
            raise IOError('To load from s3 paths, ' +
                           'you must install boto: pip install boto')
@@ -254,7 +282,7 @@ class BlockLoader(object):
 
         bucket = self.s3conn.get_bucket(parts.netloc)
 
-        headers = {'Range': self._make_range_header(offset, length)}
+        headers = {'Range': BlockLoader._make_range_header(offset, length)}
 
         key = bucket.get_key(parts.path)
 
@@ -360,3 +388,13 @@ class LimitReader(object):
             pass
 
         return stream
+
+
+#=================================================================
+LOADERS = {'http': HttpLoader,
+           'https': HttpLoader,
+           's3': S3Loader,
+           'file': LocalFileLoader
+          }
+
+
