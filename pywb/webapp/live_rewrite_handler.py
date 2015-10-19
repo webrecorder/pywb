@@ -34,8 +34,11 @@ class RewriteHandler(SearchPageWbUrlHandler):
         super(RewriteHandler, self).__init__(config)
 
         proxyhostport = config.get('proxyhostport')
-        self.rewriter = LiveRewriter(is_framed_replay=self.is_frame_mode,
-                                     proxies=proxyhostport)
+
+        live_rewriter_cls = config.get('live_rewriter_cls', LiveRewriter)
+
+        self.rewriter = live_rewriter_cls(is_framed_replay=self.is_frame_mode,
+                                          proxies=proxyhostport)
 
         self.proxies = self.rewriter.proxies
 

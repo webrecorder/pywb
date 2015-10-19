@@ -2,7 +2,8 @@
 Fetch a url from live web and apply rewriting rules
 """
 
-import requests
+from requests import request as live_request
+
 import mimetypes
 import logging
 import os
@@ -24,6 +25,8 @@ class LiveRewriter(object):
         self.rewriter = RewriteContent(is_framed_replay=is_framed_replay)
 
         self.proxies = proxies
+
+        self.live_request = live_request
 
         if self.proxies:
             logging.debug('Live Rewrite via proxy ' + str(proxies))
@@ -146,14 +149,14 @@ class LiveRewriter(object):
                 else:
                     data = input_
 
-        response = requests.request(method=method,
-                                    url=url,
-                                    data=data,
-                                    headers=req_headers,
-                                    allow_redirects=follow_redirects,
-                                    proxies=proxies,
-                                    stream=True,
-                                    verify=verify)
+        response = self.live_request(method=method,
+                                     url=url,
+                                     data=data,
+                                     headers=req_headers,
+                                     allow_redirects=follow_redirects,
+                                     proxies=proxies,
+                                     stream=True,
+                                     verify=verify)
 
         statusline = str(response.status_code) + ' ' + response.reason
 
