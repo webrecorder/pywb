@@ -179,11 +179,15 @@ class HTMLRewriterMixin(object):
         return url
 
     def _rewrite_url(self, value, mod=None):
-        if value:
-            value = self.try_unescape(value)
-            return self.url_rewriter.rewrite(value, mod)
-        else:
+        if not value:
             return None
+
+        value = value.strip()
+        if not value:
+            return None
+
+        value = self.try_unescape(value)
+        return self.url_rewriter.rewrite(value, mod)
 
     def try_unescape(self, value):
         if not value.startswith('http'):

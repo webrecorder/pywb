@@ -180,6 +180,19 @@ ur"""
 >>> parse('<!-- <a href="http://example.com"></a> -->')
 <!-- <a href="http://example.com"></a> -->
 
+# remove extra spaces
+>>> parse('<HTML><A Href="  page.html  ">Text</a></hTmL>')
+<html><a href="/web/20131226101010/http://example.com/some/path/page.html">Text</a></html>
+
+>>> parse('<HTML><A Href="  ">Text</a></hTmL>')
+<html><a href="">Text</a></html>
+
+>>> parse('<HTML><A Href="">Text</a></hTmL>')
+<html><a href="">Text</a></html>
+
+
+
+
 # Test blank
 >>> parse('')
 <BLANKLINE>
