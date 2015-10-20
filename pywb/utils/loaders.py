@@ -195,7 +195,10 @@ class BlockLoader(object):
 
 
 #=================================================================
-class LocalFileLoader(BlockLoader):
+class LocalFileLoader(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
     def load(self, url, offset=0, length=-1):
         """
         Load a file-like reader from the local file system
@@ -235,8 +238,8 @@ class LocalFileLoader(BlockLoader):
 
 
 #=================================================================
-class HttpLoader(BlockLoader):
-    def __init__(self, cookie_maker=None):
+class HttpLoader(object):
+    def __init__(self, cookie_maker=None, *args, **kwargs):
         self.cookie_maker = cookie_maker
         self.session = None
 
@@ -263,8 +266,8 @@ class HttpLoader(BlockLoader):
 
 
 #=================================================================
-class S3Loader(BlockLoader):
-    def __init__(self):
+class S3Loader(object):
+    def __init__(self, *args, **kwargs):
         self.s3conn = None
 
     def load(self, url, offset, length):
