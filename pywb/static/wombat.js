@@ -2210,7 +2210,16 @@ var wombat_internal = function($wbwindow) {
 
         var real_parent = replay_top.__WB_orig_parent || replay_top.parent;
 
-        if (real_parent != $wbwindow && real_parent && real_parent.wbinfo && real_parent.wbinfo.is_frame) {
+        // Check to ensure top frame is different window and directly accessible (later refactor to support postMessage)
+        try {
+            if ((real_parent == $wbwindow) || !real_parent.wbinfo || !real_parent.wbinfo.is_frame) {
+                real_parent = undefined;
+            }
+        } catch (e) {
+            real_parent = undefined;
+        }
+
+        if (real_parent) {
             $wbwindow.__WB_top_frame = real_parent;
 
             // Disable frameElement also as this should be top frame
