@@ -1,7 +1,12 @@
 import os
 import sys
 
-from json import dumps as json_encode
+# Use ujson if available
+try:
+    from ujson import dumps as json_encode
+except:
+    from json import dumps as json_encode
+
 
 try:  # pragma: no cover
     from collections import OrderedDict
