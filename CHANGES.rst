@@ -1,3 +1,21 @@
+pywb 0.10.10 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* extensible BlockLoadres: supported 'http', 'https', 's3' and local file system, additional
+  loaders can now be registered by scheme.
+  
+* rewriting fixes:
+   - wombat: fix occasional style rewrite bug that resulted in leaks.
+   - strip leading or trailing spaces in url
+   - charset: default to utf-8 if unknown charset specified in HTML
+
+* live rewrite: LiveRewriter class overridable in config
+
+* WARC indexing: ignore empty records when indexing and continue, rather than stopping at first empty record.
+
+* tests: refactor integration tests to run signficantly faster.
+
+
 pywb 0.10.9.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
