@@ -1,5 +1,6 @@
 #import chardet
 import pkgutil
+import webencodings
 import yaml
 import re
 
@@ -164,7 +165,7 @@ class RewriteContent:
 
                 if charset:
                     try:
-                        head_insert_str = head_insert_orig.encode(charset)
+                        head_insert_str = webencodings.encode(head_insert_orig, charset)
                     except:
                         pass
 

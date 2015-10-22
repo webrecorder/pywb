@@ -76,7 +76,8 @@ setup(
         'jinja2',
         'surt',
         'pyyaml',
-        'watchdog'
+        'watchdog',
+        'webencodings',
        ],
     tests_require=[
         'pytest',
