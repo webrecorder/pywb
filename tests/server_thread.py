@@ -22,6 +22,7 @@ class ServerThreadRunner(object):
         self.port = self.httpd.socket.getsockname()[1]
 
         proxy_str = 'http://localhost:' + str(self.port)
+        self.proxy_str = proxy_str
         self.proxy_dict = {'http': proxy_str,
                            'https': proxy_str}
 
