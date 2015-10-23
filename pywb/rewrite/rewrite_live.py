@@ -284,7 +284,6 @@ class YoutubeDLWrapper(object):  #pragma: no cover
         self.ydl.add_default_info_extractors()
 
     def extract_info(self, url):
-        print('YDL', self.ydl)
         if not self.ydl:
             return None
 
