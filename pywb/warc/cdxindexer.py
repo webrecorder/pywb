@@ -3,10 +3,22 @@ import sys
 
 # Use ujson if available
 try:
-    from ujson import dumps as json_encode
-except:
-    from json import dumps as json_encode
+    from ujson import dumps as ujson_dumps
 
+    try:
+        assert (ujson_dumps('http://example.com/',
+                            escape_forward_slashes=False) ==
+                '"http://example.com/"')
+    except Exception as e:  # pragma: no cover
+        sys.stderr.write('ujson w/o forward-slash escaping not available,\
+defaulting to regular json\n')
+        raise
+
+    def json_encode(obj):
+        return ujson_dumps(obj, escape_forward_slashes=False)
+
+except:  # pragma: no cover
+    from json import dumps as json_encode
 
 try:  # pragma: no cover
     from collections import OrderedDict

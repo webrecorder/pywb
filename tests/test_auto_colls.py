@@ -16,6 +16,7 @@ from pywb.manager.manager import main
 import pywb.manager.autoindex
 
 from pywb.warc.cdxindexer import main as cdxindexer_main
+from pywb.cdx.cdxobject import CDXObject
 
 from pywb import get_test_dir
 from pywb.framework.wsgi_wrappers import init_app
@@ -457,7 +458,11 @@ class TestManagedColls(object):
         assert all(x.endswith('.cdxj') for x in cdxjs)
 
         with open(os.path.join(migrate_dir, 'iana.cdxj')) as fh:
-            assert fh.readline().startswith('org,iana)/ 20140126200624 {"url": "http://www.iana.org/",')
+            cdx = CDXObject(fh.readline())
+            assert cdx['urlkey'] == 'org,iana)/'
+            assert cdx['timestamp'] == '20140126200624'
+            assert cdx['url'] == 'http://www.iana.org/'
+            #assert fh.readline().startswith('org,iana)/ 20140126200624 {"url": "http://www.iana.org/",')
 
         # Nothing else to migrate
         main(['cdx-convert', migrate_dir])
