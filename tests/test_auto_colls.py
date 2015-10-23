@@ -84,17 +84,18 @@ class TestManagedColls(object):
         test autoindex error before collections inited
         """
         from pywb.apps.cli import wayback
-        wayback([])
+
+        wayback(['-p', '0'])
 
         # Nothing to auto-index.. yet
         with raises(SystemExit):
-            wayback(['-a'])
+            wayback(['-a', '-p', '0'])
 
         colls = os.path.join(self.root_dir, 'collections')
         os.mkdir(colls)
 
         pywb.manager.autoindex.keep_running = False
-        wayback(['-a'])
+        wayback(['-a', '-p', '0'])
 
     def test_create_first_coll(self):
         """ Test first collection creation, with all required dirs
