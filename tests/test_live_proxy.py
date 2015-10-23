@@ -73,7 +73,7 @@ def setup_module():
 
     config = dict(collections=dict(rewrite='$liveweb'),
                   framed_replay=True,
-                  proxyhostport=server.proxy_dict)
+                  proxyhostport=server.proxy_str)
 
     global cache
     cache = {}
