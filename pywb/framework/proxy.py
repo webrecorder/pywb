@@ -9,7 +9,7 @@ import base64
 import socket
 import ssl
 
-from pywb.rewrite.url_rewriter import HttpsUrlRewriter
+from pywb.rewrite.url_rewriter import SchemeOnlyUrlRewriter
 from pywb.utils.wbexception import BadRequestException
 
 from pywb.utils.bufferedreaders import BufferedReader
@@ -204,7 +204,7 @@ class ProxyRouter(object):
                               host_prefix=host_prefix,
                               rel_prefix=rel_prefix,
                               wburl_class=route.handler.get_wburl_type(),
-                              urlrewriter_class=HttpsUrlRewriter,
+                              urlrewriter_class=SchemeOnlyUrlRewriter,
                               use_abs_prefix=False,
                               is_proxy=True)
 
@@ -219,7 +219,7 @@ class ProxyRouter(object):
             wbrequest.wb_url.mod = 'bn_'
         else:
         # unaltered, no rewrite or banner
-            wbrequest.wb_url.mod = 'id_'
+            wbrequest.wb_url.mod = 'uo_'
 
         response = route.handler(wbrequest)
 

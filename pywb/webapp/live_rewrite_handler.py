@@ -3,7 +3,6 @@ from pywb.framework.cache import create_cache
 
 from pywb.rewrite.rewrite_live import LiveRewriter
 from pywb.rewrite.wburl import WbUrl
-from pywb.rewrite.url_rewriter import HttpsUrlRewriter
 
 from handlers import StaticHandler, SearchPageWbUrlHandler
 from views import HeadInsertView
@@ -235,7 +234,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
             headers = self._live_request_headers(wbrequest)
             headers['Content-Type'] = content_type
 
-            info_url = HttpsUrlRewriter.remove_https(info_url)
+            if info_url.startswith('https://'):
+                info_url = info_url.replace('https', 'http', 1)
 
             response = self.live_fetcher.add_metadata(info_url, headers, metadata)
 

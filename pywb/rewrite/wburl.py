@@ -326,6 +326,10 @@ class WbUrl(BaseWbUrl):
         return (self.mod == 'bn_')
 
     @property
+    def is_url_rewrite_only(self):
+        return (self.mod == 'uo_')
+
+    @property
     def is_identity(self):
         return (self.mod == 'id_')
 

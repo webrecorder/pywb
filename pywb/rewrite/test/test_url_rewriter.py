@@ -125,22 +125,33 @@
 >>> do_deprefix('http://example.com/file.html?foo=bar&url=' + urllib.quote_plus('http://localhost:8080/pywb/extra/path/http://example.com/filename.html') + '&foo2=bar2', '/pywb/', 'http://localhost:8080/pywb/')
 'http://example.com/file.html?foo=bar&url=http://example.com/filename.html&foo2=bar2'
 
-# HttpsUrlRewriter tests
->>> httpsrewriter = HttpsUrlRewriter('http://example.com/', None)
->>> httpsrewriter.rewrite('https://example.com/abc')
+# SchemeOnlyUrlRewriter tests
+>>> SchemeOnlyUrlRewriter('http://example.com/').rewrite('https://example.com/abc')
 'http://example.com/abc'
 
->>> httpsrewriter.rewrite('http://example.com/abc')
+>>> SchemeOnlyUrlRewriter('http://example.com/abc').rewrite('http://example.com/abc')
 'http://example.com/abc'
+
+>>> SchemeOnlyUrlRewriter('https://example.com/abc').rewrite('http://example.com/abc')
+'https://example.com/abc'
+
+>>> SchemeOnlyUrlRewriter('https://example.com/abc').rewrite('https://example.com/abc')
+'https://example.com/abc'
+
+>>> SchemeOnlyUrlRewriter('http://example.com/abc').rewrite('//example.com/abc')
+'//example.com/abc'
+
+>>> SchemeOnlyUrlRewriter('https://example.com/abc').rewrite('//example.com/abc')
+'//example.com/abc'
 
 # rebase is identity
->>> httpsrewriter.rebase_rewriter('https://example.com/') == httpsrewriter
+>>> x = SchemeOnlyUrlRewriter('http://example.com'); x.rebase_rewriter('https://example.com/') == x
 True
 
 """
 
 
-from pywb.rewrite.url_rewriter import UrlRewriter, HttpsUrlRewriter
+from pywb.rewrite.url_rewriter import UrlRewriter, SchemeOnlyUrlRewriter
 import urllib
 
 def do_rewrite(rel_url, base_url, prefix, mod=None, full_prefix=None):
