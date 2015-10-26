@@ -187,12 +187,7 @@ class ReplayView(object):
                 content_len = 0
 
             if content_len <= 0:
-                # if proxy mode, must set content-length (or use chunked)
-                if wbrequest.options.get('is_proxy'):
-                    max_size = 0
-                else:
-                    max_size = self.buffer_max_size
-
+                max_size = self.buffer_max_size
                 response_iter = self.buffered_response(status_headers,
                                                        response_iter,
                                                        max_size)
