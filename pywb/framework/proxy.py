@@ -314,7 +314,7 @@ class ProxyRouter(object):
             return WbResponse.text_response('HTTPS Proxy Not Supported',
                                             '405 HTTPS Proxy Not Supported')
 
-        sock.send('HTTP/1.1 200 Connection Established\r\n')
+        sock.send('HTTP/1.0 200 Connection Established\r\n')
         sock.send('Proxy-Connection: close\r\n')
         sock.send('Server: pywb proxy\r\n')
         sock.send('\r\n')
