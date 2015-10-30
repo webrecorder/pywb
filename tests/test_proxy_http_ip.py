@@ -81,3 +81,14 @@ class TestProxyIPResolver(BaseIntegration):
         resp = self.get_url('http://www.iana.org/', '127.0.0.3')
         self._assert_basic_html(resp)
         assert '"20140127171238"' in resp.body
+
+    def test_proxy_ip_delete_ip(self):
+        resp = self.get_url('http://info.pywb.proxy/')
+        assert resp.json == {'ip': '127.0.0.1', 'coll': 'all', 'ts': '1996'}
+
+        resp = self.get_url('http://info.pywb.proxy/set?delete=true')
+        assert resp.json == {'ip': '127.0.0.1', 'coll': None, 'ts': None}
+
+        resp = self.get_url('http://info.pywb.proxy/')
+        assert resp.json == {'ip': '127.0.0.1', 'coll': None, 'ts': None}
+
