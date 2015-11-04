@@ -121,6 +121,10 @@ proxy_options:
     use_client_rewrite: true
     use_wombat: true
 
+
+#enable coll info JSON
+enable_coll_info: true
+
 # enable cdx server api for querying cdx directly (experimental)
 #enable_cdx_api: True
 # or specify suffix

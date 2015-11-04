@@ -1,0 +1,15 @@
+[
+{% for route in routes %}
+{% if route | is_wb_handler %}
+{{ ',' if notfirst else '' }}
+{
+    "id": "{{ route.path }}",
+    "name": "{{ route.user_metadata.title if route.user_metadata.title else route.path }}", 
+    "timegate": "{{ host }}/{{route.path}}/",
+    "timemap": "{{ host }}/{{route.path}}/timemap/*/"
+
+}
+{% set notfirst = true %}
+{% endif %}
+{% endfor %}
+]

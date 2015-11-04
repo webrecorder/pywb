@@ -23,6 +23,7 @@ paths:
         proxy_cert_download_html: proxy_cert_download.html
         proxy_select_html: proxy_select.html
 
+        info_json: collinfo.json
 
 templates_dirs:
     - templates
@@ -49,6 +50,7 @@ not_found_html: not_found.html
 proxy_cert_download_html: proxy_cert_download.html
 proxy_select_html: proxy_select.html
 
+info_json: collinfo.json
 
 static_default_prefix: &static_default_prefix static/__pywb
 static_shared_prefix: static/__shared
