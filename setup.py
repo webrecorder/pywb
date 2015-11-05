@@ -20,9 +20,13 @@ long_description = open('README.rst').read()
 
 
 class PyTest(TestCommand):
+    user_options = []
+    def initialize_options(self):
+        self._argv = []
+        pass
+
     def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_suite = True
+        pass
 
     def run_tests(self):
         import pytest
@@ -31,7 +35,9 @@ class PyTest(TestCommand):
         os.environ.pop('PYWB_CONFIG_FILE', None)
         cmdline = ' --cov-config .coveragerc --cov pywb'
         cmdline += ' -v --doctest-module ./pywb/ tests/'
+
         errcode = pytest.main(cmdline)
+
         sys.exit(errcode)
 
 setup(
@@ -74,7 +80,7 @@ setup(
         'requests',
         'redis',
         'jinja2',
-        'surt',
+        'surt==0.2',
         'pyyaml',
         'watchdog',
         'webencodings',
