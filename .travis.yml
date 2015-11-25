@@ -15,9 +15,11 @@ install:
   - pip install boto certauth
   - python setup.py -q install
   - pip install coverage pytest-cov coveralls --use-mirrors
+  - npm install
 
 script:
-    python setup.py test
+  - python setup.py test
+  - cd karma-tests && make test
 
 after_success:
     coveralls
