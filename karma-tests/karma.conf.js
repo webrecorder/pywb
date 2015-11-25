@@ -1,18 +1,56 @@
+if (!process.env['SAUCE_USERNAME'] || !process.env['SAUCE_ACCESS_KEY']) {
+    console.error('Sauce Labs account details not set, skipping Karma tests');
+    process.exit(0);
+}
+
+var sauceLabsConfig = {
+    testName: 'PyWB Client Tests',
+};
+
+// see https://github.com/karma-runner/karma-sauce-launcher/issues/73
+if (process.env.TRAVIS_JOB_NUMBER) {
+    sauceLabsConfig.startConnect = false;
+    sauceLabsConfig.tunnelIdentifier = process.env.TRAVIS_JOB_NUMBER;
+}
+
 var WOMBAT_JS_PATH = 'pywb/static/wombat.js';
+
+var customLaunchers = {
+    sl_chrome: {
+        base: 'SauceLabs',
+        browserName: 'chrome',
+    },
+
+    sl_firefox: {
+        base: 'SauceLabs',
+        browserName: 'firefox',
+    },
+
+/*  Safari and Edge are currently broken in
+    pywb.
+
+    See: https://github.com/ikreymer/pywb/issues/148 (Edge)
+         https://github.com/ikreymer/pywb/issues/147 (Safari)
+
+    sl_safari: {
+        base: 'SauceLabs',
+        browserName: 'safari',
+        platform: 'OS X 10.11',
+        version: '9.0',
+    },
+    sl_edge: {
+        base: 'SauceLabs',
+        browserName: 'MicrosoftEdge',
+    },
+*/
+};
 
 module.exports = function(config) {
   config.set({
-
-    // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: '../',
 
-
-    // frameworks to use
-    // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['mocha', 'chai'],
 
-
-    // list of files / patterns to load in the browser
     files: [
       {
         pattern: WOMBAT_JS_PATH,
@@ -23,46 +61,30 @@ module.exports = function(config) {
       'karma-tests/*.spec.js',
     ],
 
-
-    // preprocess matching files before serving them to the browser
-    // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {},
 
-
-    // test results reporter to use
-    // possible values: 'dots', 'progress'
-    // available reporters: https://npmjs.org/browse/keyword/karma-reporter
     reporters: ['progress'],
 
-
-    // web server port
     port: 9876,
 
-
-    // enable / disable colors in the output (reporters and logs)
     colors: true,
 
-
-    // level of logging
-    // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
     logLevel: config.LOG_INFO,
 
-
-    // enable / disable watching file and executing tests whenever any file changes
     autoWatch: true,
 
+    sauceLabs: sauceLabsConfig,
 
-    // start these browsers
-    // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
+    // use an extended timeout for capturing Sauce Labs
+    // browsers in case the service is busy
+    captureTimeout: 3 * 60000,
 
+    customLaunchers: customLaunchers,
 
-    // Continuous Integration mode
-    // if true, Karma captures browsers, runs the tests and exits
+    browsers: Object.keys(customLaunchers),
+
     singleRun: false,
 
-    // Concurrency level
-    // how many browser should be started simultanous
     concurrency: Infinity
   })
-}
+};

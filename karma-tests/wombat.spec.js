@@ -1,4 +1,5 @@
 var WOMBAT_SRC = '../pywb/static/wombat.js';
+var DEFAULT_TIMEOUT = 20000;
 
 // creates a new document in an <iframe> and runs
 // a WombatJS test case in it.
@@ -80,6 +81,8 @@ function runWombatTest(testCase, done) {
 }
 
 describe('WombatJS', function () {
+    this.timeout(DEFAULT_TIMEOUT);
+
     var wombatScript;
 
     before(function (done) {
