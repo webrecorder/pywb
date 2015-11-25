@@ -1,3 +1,5 @@
+import requests
+
 from pywb.rewrite.rewrite_live import LiveRewriter
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.wburl import WbUrl
@@ -200,10 +202,17 @@ def test_local_unclosed_script():
 
 
 def test_example_1():
-    status_headers, buff = get_rewritten('http://example.com/', urlrewriter, req_headers={'Connection': 'close'})
+    TEST_URL = 'http://example.com'
+
+    original_response = requests.get(TEST_URL)
+    status_headers, buff = get_rewritten(TEST_URL, urlrewriter, req_headers={'Connection': 'close'})
+
 
     # verify header rewriting
-    assert (('X-Archive-Orig-Content-Length', '1270') in status_headers.headers), status_headers
+    def header_match(name):
+        return name.lower() == 'x-archive-orig-content-length'
+    content_length = [header[1] for header in status_headers.headers if header_match(header[0])]
+    assert content_length == [original_response.headers['content-length']]
 
 
     # verify utf-8 charset detection
