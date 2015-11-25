@@ -7,6 +7,10 @@ python:
 os:
   - linux
 
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - node_modules
 
 sudo: false
 
