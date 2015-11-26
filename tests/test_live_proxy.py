@@ -10,7 +10,7 @@ from pywb.framework.wsgi_wrappers import init_app
 import webtest
 import shutil
 
-import pywb.webapp.live_rewrite_handler
+import pywb.rewrite.rewrite_live
 
 
 #=================================================================
@@ -53,7 +53,7 @@ class MockYTDWrapper(object):
         return {'mock': 'youtube_dl_data'}
 
 
-pywb.webapp.live_rewrite_handler.YoutubeDLWrapper = MockYTDWrapper
+pywb.rewrite.rewrite_live.youtubedl = MockYTDWrapper()
 
 
 #=================================================================
@@ -73,7 +73,7 @@ def setup_module():
 
     config = dict(collections=dict(rewrite='$liveweb'),
                   framed_replay=True,
-                  proxyhostport=server.proxy_dict)
+                  proxyhostport=server.proxy_str)
 
     global cache
     cache = {}

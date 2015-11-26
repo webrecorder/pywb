@@ -168,7 +168,7 @@ def start_wsgi_ref_server(the_app, name, port):  # pragma: no cover
     import wsgiref.handlers
     wsgiref.handlers.is_hop_by_hop = lambda x: False
 
-    if not port:
+    if port is None:
         port = DEFAULT_PORT
 
     logging.info('Starting %s on port %s', name, port)

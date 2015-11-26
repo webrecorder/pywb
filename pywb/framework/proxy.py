@@ -9,12 +9,15 @@ import base64
 import socket
 import ssl
 
-from pywb.rewrite.url_rewriter import HttpsUrlRewriter
+from pywb.rewrite.url_rewriter import SchemeOnlyUrlRewriter
+from pywb.rewrite.rewrite_content import RewriteContent
 from pywb.utils.wbexception import BadRequestException
 
 from pywb.utils.bufferedreaders import BufferedReader
 
 from pywb.framework.proxy_resolvers import ProxyAuthResolver, CookieResolver, IPCacheResolver
+
+from tempfile import SpooledTemporaryFile
 
 
 #=================================================================
@@ -55,6 +58,7 @@ class ProxyRouter(object):
 
     BLOCK_SIZE = 4096
     DEF_MAGIC_NAME = 'pywb.proxy'
+    BUFF_RESPONSE_MEM_SIZE = 1024*1024
 
     CERT_DL_PEM = '/pywb-ca.pem'
     CERT_DL_P12 = '/pywb-ca.p12'
@@ -204,7 +208,7 @@ class ProxyRouter(object):
                               host_prefix=host_prefix,
                               rel_prefix=rel_prefix,
                               wburl_class=route.handler.get_wburl_type(),
-                              urlrewriter_class=HttpsUrlRewriter,
+                              urlrewriter_class=SchemeOnlyUrlRewriter,
                               use_abs_prefix=False,
                               is_proxy=True)
 
@@ -219,14 +223,65 @@ class ProxyRouter(object):
             wbrequest.wb_url.mod = 'bn_'
         else:
         # unaltered, no rewrite or banner
-            wbrequest.wb_url.mod = 'id_'
+            wbrequest.wb_url.mod = 'uo_'
 
         response = route.handler(wbrequest)
+        if not response:
+            return None
 
+        # add extra headers for replay responses
         if wbrequest.wb_url and wbrequest.wb_url.is_replay():
             response.status_headers.replace_headers(self.extra_headers)
 
+        # check for content-length
+        res = response.status_headers.get_header('content-length')
+        try:
+            if int(res) > 0:
+                return response
+        except:
+            pass
+
+        # need to either chunk or buffer to get content-length
+        if env.get('SERVER_PROTOCOL') == 'HTTP/1.1':
+            response.status_headers.remove_header('content-length')
+            response.status_headers.headers.append(('Transfer-Encoding', 'chunked'))
+            response.body = self._chunk_encode(response.body)
+        else:
+            response.body = self._buffer_response(response.status_headers,
+                                                  response.body)
+
         return response
+
+    @staticmethod
+    def _chunk_encode(orig_iter):
+        for buff in orig_iter:
+            chunk = bytes(buff)
+            if not len(chunk):
+                continue
+            chunk_len = '%X\r\n' % len(chunk)
+            yield chunk_len
+            yield chunk
+            yield '\r\n'
+
+        yield '0\r\n\r\n'
+
+    @staticmethod
+    def _buffer_response(status_headers, iterator):
+        out = SpooledTemporaryFile(ProxyRouter.BUFF_RESPONSE_MEM_SIZE)
+        size = 0
+
+        for buff in iterator:
+            buff = bytes(buff)
+            size += len(buff)
+            out.write(buff)
+
+        content_length_str = str(size)
+        # remove existing content length
+        status_headers.replace_header('Content-Length',
+                                      content_length_str)
+
+        out.seek(0)
+        return RewriteContent.stream_to_gen(out)
 
     def get_request_socket(self, env):
         if not self.ca:
@@ -260,6 +315,7 @@ class ProxyRouter(object):
                                             '405 HTTPS Proxy Not Supported')
 
         sock.send('HTTP/1.0 200 Connection Established\r\n')
+        sock.send('Proxy-Connection: close\r\n')
         sock.send('Server: pywb proxy\r\n')
         sock.send('\r\n')
 

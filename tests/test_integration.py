@@ -477,7 +477,13 @@ class TestWbIntegration(BaseIntegration):
         assert resp.status_int == 400
         assert 'Invalid Url: http://?abc' in resp.body
 
-    #def test_invalid_config(self):
+
+    def test_coll_info_json(self):
+        resp = self.testapp.get('/collinfo.json')
+        assert resp.content_type == 'application/json'
+        assert len(resp.json) == 9
+
+   #def test_invalid_config(self):
     #    with raises(IOError):
     #        init_app(create_wb_router,
     #                 load_yaml=True,

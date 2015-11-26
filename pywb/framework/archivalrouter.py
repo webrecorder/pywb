@@ -23,9 +23,12 @@ class ArchivalRouter(object):
 
         self.home_view = kwargs.get('home_view')
         self.error_view = kwargs.get('error_view')
+        self.info_view = kwargs.get('info_view')
 
-        self.urlrewriter_class = (kwargs.get('config', {}).
-                                  get('urlrewriter_class', UrlRewriter))
+        config = kwargs.get('config', {})
+        self.urlrewriter_class = config.get('urlrewriter_class', UrlRewriter)
+
+        self.enable_coll_info = config.get('enable_coll_info', False)
 
     def __call__(self, env):
         request_uri = self.ensure_rel_uri_set(env)
@@ -42,6 +45,13 @@ class ArchivalRouter(object):
         # Default Home Page
         if request_uri in ['/', '/index.html', '/index.htm']:
             return self.render_home_page(env)
+
+        if self.enable_coll_info and request_uri in ['/collinfo.json']:
+            params = env.get('pywb.template_params', {})
+            host = WbRequest.make_host_prefix(env)
+            return self.info_view.render_response(env=env, host=host, routes=self.routes,
+                                                  content_type='application/json',
+                                                  **params)
 
         return self.fallback(env, self) if self.fallback else None
 

@@ -1,5 +1,6 @@
 #import chardet
 import pkgutil
+import webencodings
 import yaml
 import re
 
@@ -14,6 +15,8 @@ from pywb.utils.dsrules import RuleSet
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 from pywb.utils.bufferedreaders import ChunkedDataReader, BufferedReader
+
+from regex_rewriters import JSNoneRewriter, JSLinkOnlyRewriter
 
 
 #=================================================================
@@ -158,13 +161,12 @@ class RewriteContent:
                 charset = self._extract_html_charset(first_buff,
                                                      status_headers)
 
-            if head_insert_func:
+            if head_insert_func and not wb_url.is_url_rewrite_only:
                 head_insert_orig = head_insert_func(rule, cdx)
-                head_insert_str = None
 
                 if charset:
                     try:
-                        head_insert_str = head_insert_orig.encode(charset)
+                        head_insert_str = webencodings.encode(head_insert_orig, charset)
                     except:
                         pass
 
@@ -190,9 +192,15 @@ class RewriteContent:
 
                 return (status_headers, gen, False)
 
+            js_rewriter_class = rule.rewriters['js']
+            css_rewriter_class = rule.rewriters['css']
+
+            if wb_url.is_url_rewrite_only:
+                js_rewriter_class = JSNoneRewriter
+
             rewriter = rewriter_class(urlrewriter,
-                                      js_rewriter_class=rule.rewriters['js'],
-                                      css_rewriter_class=rule.rewriters['css'],
+                                      js_rewriter_class=js_rewriter_class,
+                                      css_rewriter_class=css_rewriter_class,
                                       head_insert=head_insert_str,
                                       url=wb_url.url,
                                       defmod=self.defmod,
@@ -201,6 +209,11 @@ class RewriteContent:
         else:
             if wb_url.is_banner_only:
                 return (status_headers, self.stream_to_gen(stream), False)
+
+            # url-only rewriter, but not rewriting urls in JS, so return
+            if wb_url.is_url_rewrite_only and text_type == 'js':
+                #return (status_headers, self.stream_to_gen(stream), False)
+                rewriter_class = JSLinkOnlyRewriter
 
             # apply one of (js, css, xml) rewriters
             rewriter = rewriter_class(urlrewriter)

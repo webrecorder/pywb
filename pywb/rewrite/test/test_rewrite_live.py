@@ -200,10 +200,10 @@ def test_local_unclosed_script():
 
 
 def test_example_1():
-    status_headers, buff = get_rewritten('http://example.com/', urlrewriter, req_headers={'Connection': 'close'})
+    status_headers, buff = get_rewritten('http://example.com/', urlrewriter, req_headers={'Connection': 'close', 'Accept-Encoding': 'identity'})
 
     # verify header rewriting
-    assert (('X-Archive-Orig-Content-Length', '1270') in status_headers.headers), status_headers
+    assert status_headers.get_header('x-archive-orig-content-length') == '1270', status_headers
 
 
     # verify utf-8 charset detection

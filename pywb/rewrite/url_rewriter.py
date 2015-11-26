@@ -19,7 +19,7 @@ class UrlRewriter(object):
 
     REL_SCHEME = ('//', r'\/\/', r'\\/\\/')
 
-    def __init__(self, wburl, prefix, full_prefix=None, rel_prefix=None,
+    def __init__(self, wburl, prefix='', full_prefix=None, rel_prefix=None,
                  root_path=None, cookie_scope=None, rewrite_opts={}):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
         self.prefix = prefix
@@ -152,17 +152,26 @@ class UrlRewriter(object):
 
 
 #=================================================================
-class HttpsUrlRewriter(UrlRewriter):
+class SchemeOnlyUrlRewriter(UrlRewriter):
     """
-    A url rewriter which urls that start with https:// to http://
+    A url rewriter which ensures that any urls have the same
+    scheme (http or https) as the base url.
     Other urls/input is unchanged.
     """
 
-    HTTP = 'http://'
-    HTTPS = 'https://'
+    def __init__(self, *args, **kwargs):
+        super(SchemeOnlyUrlRewriter, self).__init__(*args, **kwargs)
+        self.url_scheme = self.wburl.url.split(':')[0]
+        if self.url_scheme == 'https':
+            self.opposite_scheme = 'http'
+        else:
+            self.opposite_scheme = 'https'
 
     def rewrite(self, url, mod=None):
-        return self.remove_https(url)
+        if url.startswith(self.opposite_scheme + '://'):
+            url = self.url_scheme + url[len(self.opposite_scheme):]
+
+        return url
 
     def get_new_url(self, **kwargs):
         return kwargs.get('url', self.wburl.url)
@@ -175,12 +184,3 @@ class HttpsUrlRewriter(UrlRewriter):
 
     def deprefix_url(self):
         return self.wburl.url
-
-    @staticmethod
-    def remove_https(url):
-        rw = HttpsUrlRewriter
-        if url.startswith(rw.HTTPS):
-            result = rw.HTTP + url[len(rw.HTTPS):]
-            return result
-        else:
-            return url

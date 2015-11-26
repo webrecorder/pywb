@@ -23,6 +23,7 @@ html, body
 </script>
 <script src='{{ wbrequest.host_prefix }}/{{ static_path }}/wb.js'> </script>
 <link rel='stylesheet' href='{{ wbrequest.host_prefix }}/{{ static_path }}/wb.css'/>
+<link rel='stylesheet' href='{{ wbrequest.host_prefix }}/{{ static_path }}/scroll-webkit.css'/>
 
 {% include banner_html ignore missing %}
 
@@ -30,7 +31,7 @@ html, body
 </head>
 <body style="margin: 0px; padding: 0px;">
 <div class="wb_iframe_div">
-<iframe id="replay_iframe" src="{{ wbrequest.wb_prefix + embed_url }}" onload="iframe_loaded(event);" seamless="seamless" frameborder="0" scrolling="yes" class="wb_iframe"></iframe>
+<iframe id="replay_iframe" src="{{ wbrequest.wb_prefix + embed_url }}" onload="iframe_loaded(event);" frameborder="0" seamless="seamless" scrolling="yes" class="wb_iframe"></iframe>
 </div>
 </body>
 </html>

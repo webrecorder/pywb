@@ -10,10 +10,14 @@ from urlparse import urlsplit
 
 from server_mock import make_setup_module, BaseIntegration
 
-setup_module = make_setup_module('tests/test_config_proxy_ip.yaml')
+setup_module = make_setup_module('tests/test_config_proxy_ip_redis.yaml')
 
+from fakeredis import FakeStrictRedis
 
-class TestProxyIPResolver(BaseIntegration):
+import pywb.framework.cache
+pywb.framework.cache.StrictRedis = FakeStrictRedis
+
+class TestProxyIPRedisResolver(BaseIntegration):
     def _assert_basic_html(self, resp):
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'

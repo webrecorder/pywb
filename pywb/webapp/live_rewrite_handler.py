@@ -3,7 +3,6 @@ from pywb.framework.cache import create_cache
 
 from pywb.rewrite.rewrite_live import LiveRewriter
 from pywb.rewrite.wburl import WbUrl
-from pywb.rewrite.url_rewriter import HttpsUrlRewriter
 
 from handlers import StaticHandler, SearchPageWbUrlHandler
 from views import HeadInsertView
@@ -11,7 +10,6 @@ from views import HeadInsertView
 from pywb.utils.wbexception import WbException
 
 import json
-import requests
 import hashlib
 
 
@@ -28,8 +26,6 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
     YT_DL_TYPE = 'application/vnd.youtube-dl_formats+json'
 
-    youtubedl = None
-
     def __init__(self, config):
         super(RewriteHandler, self).__init__(config)
 
@@ -37,10 +33,10 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
         live_rewriter_cls = config.get('live_rewriter_cls', LiveRewriter)
 
-        self.rewriter = live_rewriter_cls(is_framed_replay=self.is_frame_mode,
-                                          proxies=proxyhostport)
+        self.live_fetcher = live_rewriter_cls(is_framed_replay=self.is_frame_mode,
+                                              proxies=proxyhostport)
 
-        self.proxies = self.rewriter.proxies
+        self.recording = self.live_fetcher.is_recording()
 
         self.head_insert_view = HeadInsertView.init_from_config(config)
 
@@ -73,7 +69,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
     def _live_request_headers(self, wbrequest):
         return {}
 
-    def _ignore_proxies(self, wbrequest):
+    def _skip_recording(self, wbrequest):
         return False
 
     def render_content(self, wbrequest):
@@ -87,7 +83,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
         if ref_wburl_str:
             wbrequest.env['REL_REFERER'] = WbUrl(ref_wburl_str).url
 
-        ignore_proxies = self._ignore_proxies(wbrequest)
+        skip_recording = self._skip_recording(wbrequest)
 
         use_206 = False
         url = None
@@ -96,7 +92,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
         readd_range = False
         cache_key = None
 
-        if self.proxies and not ignore_proxies:
+        if self.recording and not skip_recording:
             rangeres = wbrequest.extract_range()
 
             if rangeres:
@@ -110,17 +106,17 @@ class RewriteHandler(SearchPageWbUrlHandler):
                     readd_range = True
                 else:
                     # disables proxy
-                    ignore_proxies = True
+                    skip_recording = True
 
                     # sets cache_key only if not already cached
                     cache_key = self._get_cache_key('r:', url)
 
-        result = self.rewriter.fetch_request(wbrequest.wb_url.url,
+        result = self.live_fetcher.fetch_request(wbrequest.wb_url.url,
                                              wbrequest.urlrewriter,
                                              head_insert_func=head_insert_func,
                                              req_headers=req_headers,
                                              env=wbrequest.env,
-                                             ignore_proxies=ignore_proxies,
+                                             skip_recording=skip_recording,
                                              verify=self.verify)
 
         wbresponse = self._make_response(wbrequest, *result)
@@ -135,8 +131,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
             except (ValueError, TypeError):
                 pass
 
-        if cache_key:
-            self._add_proxy_ping(cache_key, url, wbrequest, wbresponse)
+        if self.recording and cache_key:
+            self._add_rec_ping(cache_key, url, wbrequest, wbresponse)
 
         if rangeres:
             referrer = wbrequest.env.get('REL_REFERER')
@@ -183,7 +179,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
         key = prefix + key
         return key
 
-    def _add_proxy_ping(self, key, url, wbrequest, wbresponse):
+    def _add_rec_ping(self, key, url, wbrequest, wbresponse):
         def do_ping():
             headers = self._live_request_headers(wbrequest)
             headers['Connection'] = 'close'
@@ -192,15 +188,8 @@ class RewriteHandler(SearchPageWbUrlHandler):
                 # mark as pinged
                 self._cache[key] = '1'
 
-                resp = requests.get(url=url,
-                                    headers=headers,
-                                    proxies=self.proxies,
-                                    verify=False,
-                                    stream=True)
+                self.live_fetcher.fetch_async(url, headers)
 
-                # don't actually read whole response,
-                # proxy response for writing it
-                resp.close()
             except:
                 del self._cache[key]
                 raise
@@ -219,9 +208,6 @@ class RewriteHandler(SearchPageWbUrlHandler):
         return wbresponse
 
     def _get_video_info(self, wbrequest, info_url=None, video_url=None):
-        if not self.youtubedl:
-            self.youtubedl = YoutubeDLWrapper()
-
         if not video_url:
             video_url = wbrequest.wb_url.url
 
@@ -229,10 +215,10 @@ class RewriteHandler(SearchPageWbUrlHandler):
             info_url = wbrequest.wb_url.url
 
         cache_key = None
-        if self.proxies:
+        if self.recording:
             cache_key = self._get_cache_key('v:', video_url)
 
-        info = self.youtubedl.extract_info(video_url)
+        info = self.live_fetcher.get_video_info(video_url)
         if info is None:  #pragma: no cover
             msg = ('youtube-dl is not installed, pip install youtube-dl to ' +
                    'enable improved video proxy')
@@ -244,42 +230,15 @@ class RewriteHandler(SearchPageWbUrlHandler):
         content_type = self.YT_DL_TYPE
         metadata = json.dumps(info)
 
-        if (self.proxies and cache_key):
+        if (self.recording and cache_key):
             headers = self._live_request_headers(wbrequest)
             headers['Content-Type'] = content_type
 
-            info_url = HttpsUrlRewriter.remove_https(info_url)
+            if info_url.startswith('https://'):
+                info_url = info_url.replace('https', 'http', 1)
 
-            response = requests.request(method='PUTMETA',
-                                        url=info_url,
-                                        data=metadata,
-                                        headers=headers,
-                                        proxies=self.proxies,
-                                        verify=False)
+            response = self.live_fetcher.add_metadata(info_url, headers, metadata)
 
             self._cache[cache_key] = '1'
 
         return WbResponse.text_response(metadata, content_type=content_type)
-
-
-#=================================================================
-class YoutubeDLWrapper(object):  #pragma: no cover
-    """ YoutubeDL wrapper, inits youtubee-dl if it is available
-    """
-    def __init__(self):
-        try:
-            from youtube_dl import YoutubeDL as YoutubeDL
-        except ImportError:
-            self.ydl = None
-            return
-
-        self.ydl = YoutubeDL(dict(simulate=True,
-                                  youtube_include_dash_manifest=False))
-        self.ydl.add_default_info_extractors()
-
-    def extract_info(self, url):
-        if not self.ydl:
-            return None
-
-        info = self.ydl.extract_info(url)
-        return info

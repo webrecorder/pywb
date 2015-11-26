@@ -381,5 +381,6 @@ def create_wb_router(passed_config=None):
         abs_path=config.get('absolute_paths', True),
         home_view=init_view(config, 'home_html'),
         error_view=init_view(config, 'error_html'),
+        info_view=init_view(config, 'info_json'),
         config=config
     )

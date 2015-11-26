@@ -41,3 +41,6 @@ nosetests.xml
 .pydevproject
 
 .vagrant
+
+# Node
+node_modules/

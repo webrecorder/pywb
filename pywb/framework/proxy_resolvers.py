@@ -114,7 +114,7 @@ class ProxyAuthResolver(BaseCollResolver):
 class IPCacheResolver(BaseCollResolver):
     def __init__(self, routes, config):
         super(IPCacheResolver, self).__init__(routes, config)
-        self.cache = create_cache()
+        self.cache = create_cache(config.get('redis_cache_key'))
         self.magic_name = config['magic_name']
 
     def _get_ip(self, env):
@@ -131,17 +131,22 @@ class IPCacheResolver(BaseCollResolver):
     def get_proxy_coll_ts(self, env):
         ip = env['REMOTE_ADDR']
         qs = env.get('pywb.proxy_query')
+
         if qs:
             res = urlparse.parse_qs(qs)
 
             if 'ip' in res:
                 ip = res['ip'][0]
 
-            if 'coll' in res:
-                self.cache[ip + ':c'] = res['coll'][0]
+            if 'delete' in res:
+                del self.cache[ip + ':c']
+                del self.cache[ip + ':t']
+            else:
+                if 'coll' in res:
+                    self.cache[ip + ':c'] = res['coll'][0]
 
-            if 'ts' in res:
-                self.cache[ip + ':t'] = res['ts'][0]
+                if 'ts' in res:
+                    self.cache[ip + ':t'] = res['ts'][0]
 
         coll = self.cache[ip + ':c']
         ts = self.cache[ip + ':t']

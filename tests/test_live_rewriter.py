@@ -2,7 +2,7 @@ from pywb.webapp.live_rewrite_handler import RewriteHandler
 from pywb.apps.cli import LiveCli
 from pywb.framework.wsgi_wrappers import init_app
 import webtest
-import pywb.webapp.live_rewrite_handler
+import pywb.rewrite.rewrite_live
 
 
 #=================================================================
@@ -11,7 +11,7 @@ class MockYTDWrapper(object):
         return {'mock': 'youtube_dl_data'}
 
 
-pywb.webapp.live_rewrite_handler.YoutubeDLWrapper = MockYTDWrapper
+pywb.rewrite.rewrite_live.youtubedl = MockYTDWrapper()
 
 
 def setup_module():
