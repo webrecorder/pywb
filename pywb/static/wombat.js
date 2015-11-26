@@ -379,11 +379,16 @@ var wombat_internal = function($wbwindow) {
         }
 
         try {
-            Object.defineProperty(obj, prop, {
-                configurable: false,
-                set: set_func,
-                get: get_func
-            });
+            var descriptor = {
+                configurable: true,
+                get: get_func,
+            };
+
+            if (set_func) {
+                descriptor.set = set_func;
+            }
+
+            Object.defineProperty(obj, prop, descriptor);
 
             return true;
         } catch (e) {
@@ -762,15 +767,14 @@ var wombat_internal = function($wbwindow) {
         def_prop($wbwindow.HTMLBaseElement.prototype, "href", undefined, base_href_get);
 
         // Shared baseURI
-        var orig_getter = get_orig_getter($wbwindow.Node, "baseURI");
+        var orig_getter = get_orig_getter($wbwindow.Node.prototype, "baseURI");
         if (orig_getter) {
             var get_baseURI = function() {
                 var res = orig_getter.call(this);
                 return extract_orig(res);
             }
 
-            def_prop($wbwindow.HTMLElement.prototype, "baseURI", undefined, get_baseURI);
-            def_prop($wbwindow.HTMLDocument.prototype, "baseURI", undefined, get_baseURI);
+            def_prop($wbwindow.Node.prototype, "baseURI", undefined, get_baseURI);
         }
     }
 

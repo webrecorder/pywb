@@ -1,4 +1,3 @@
-var WOMBAT_SRC = '../pywb/static/wombat.js';
 var DEFAULT_TIMEOUT = 20000;
 
 // creates a new document in an <iframe> and runs
@@ -12,7 +11,7 @@ var DEFAULT_TIMEOUT = 20000;
 function runWombatTest(testCase, done) {
     // create an <iframe>
     var testFrame = document.createElement('iframe');
-    testFrame.src = '/dummy.html';
+    testFrame.src = '/base/karma-tests/dummy.html';
     document.body.appendChild(testFrame);
 
     testFrame.contentWindow.addEventListener('load', function () {
@@ -27,8 +26,20 @@ function runWombatTest(testCase, done) {
             done(new Error(ex));
         };
 
-        // expose chai assertions to the <iframe>
-        window.assert = assert;
+        // expose utility methods for assertion testing in tests.
+        // (We used to expose chai asserts here but Karma's default
+        //  error reporter replaces URLs in exception messages with
+        //  the corresponding file paths, which is unhelpful for us
+        //  since assert.equal() will often be called with URLs in our tests)
+        window.assert = {
+            equal: function (a, b) {
+                if (a !== b) {
+                    x.equal(a, b);
+                    console.error('Mismatch between', a, 'and', b);
+                    throw new Error('AssertionError');
+                }
+            }
+        };
 
         runFunctionInIFrame(function () {
             // re-assign the iframe's console object to the parent window's
@@ -44,8 +55,21 @@ function runWombatTest(testCase, done) {
             };
 
             // expose chai's assertion testing API to the test script
-            assert = window.parent.assert;
-            reportError = window.parent.reportError;
+            window.assert = window.parent.assert;
+            window.reportError = window.parent.reportError;
+
+            // helpers which check whether DOM property overrides are supported
+            // in the current browser
+            window.domTests = {
+                areDOMPropertiesConfigurable: function () {
+                    var descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'baseURI');
+                    if (descriptor && !descriptor.configurable) {
+                        return false;
+                    } else {
+                        return true;
+                    }
+                }
+            };
         });
 
         try {
@@ -108,41 +132,66 @@ describe('WombatJS', function () {
         }, done);
     });
 
-    it('should rewrite document.baseURI', function (done) {
-        runWombatTest({
-            initScript: function () {
-                wbinfo = {
-                    wombat_opts: {},
-                    prefix: window.location.origin,
-                    wombat_ts: '',
-                };
-            },
-            wombatScript: wombatScript,
-            testScript: function () {
-                var baseURI = document.baseURI;
-                if (typeof baseURI !== 'string') {
-                    throw new Error('baseURI is not a string');
-                }
-                assert.equal(baseURI, 'http:///dummy.html');
-            },
-        }, done);
+    describe('anchor rewriting', function () {
+        it('should rewrite links in dynamically injected <a> tags', function (done) {
+            runWombatTest({
+                initScript: function () {
+                    wbinfo = {
+                        wombat_opts: {},
+                        prefix: window.location.origin,
+                        wombat_ts: '',
+                    };
+                },
+                wombatScript: wombatScript,
+                html: '<a href="foobar.html" id="link">A link</a>',
+                testScript: function () {
+                    var link = document.getElementById('link');
+                    if (domTests.areDOMPropertiesConfigurable()) {
+                        assert.equal(link.href, 'http:///base/karma-tests/foobar.html');
+                    }
+                },
+            }, done);
+        });
     });
 
-    it('should rewrite links in dynamically injected <a> tags', function (done) {
-        runWombatTest({
-            initScript: function () {
-                wbinfo = {
-                    wombat_opts: {},
-                    prefix: window.location.origin,
-                    wombat_ts: '',
-                };
-            },
-            wombatScript: wombatScript,
-            html: '<a href="foobar.html" id="link">A link</a>',
-            testScript: function () {
-                var link = document.getElementById('link');
-                assert.equal(link.href, 'http:///foobar.html');
-            },
-        }, done);
+    describe('base URL overrides', function () {
+        it('document.baseURI should return the original URL', function (done) {
+            runWombatTest({
+                initScript: function () {
+                    wbinfo = {
+                        wombat_opts: {},
+                        prefix: window.location.origin,
+                        wombat_ts: '',
+                    };
+                },
+                wombatScript: wombatScript,
+                testScript: function () {
+                    var baseURI = document.baseURI;
+                    if (typeof baseURI !== 'string') {
+                        throw new Error('baseURI is not a string');
+                    }
+                    if (domTests.areDOMPropertiesConfigurable()) {
+                        assert.equal(baseURI, 'http:///base/karma-tests/dummy.html');
+                    }
+                },
+            }, done);
+        });
+
+        it('should allow base.href to be assigned', function (done) {
+            runWombatTest({
+                initScript: function () {
+                    wbinfo = {
+                        wombat_opts: {},
+                    };
+                },
+                wombatScript: wombatScript,
+                testScript: function () {
+                    'use strict';
+                    var baseElement = document.createElement('base');
+                    baseElement.href = 'http://foobar.com/base';
+                    assert.equal(baseElement.href, 'http://foobar.com/base');
+                },
+            }, done);
+        });
     });
 });
