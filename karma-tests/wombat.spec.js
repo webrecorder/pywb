@@ -121,45 +121,66 @@ describe('WombatJS', function () {
         }, done);
     });
 
-    it('should rewrite document.baseURI', function (done) {
-        runWombatTest({
-            initScript: function () {
-                wbinfo = {
-                    wombat_opts: {},
-                    prefix: window.location.origin,
-                    wombat_ts: '',
-                };
-            },
-            wombatScript: wombatScript,
-            testScript: function () {
-                var baseURI = document.baseURI;
-                if (typeof baseURI !== 'string') {
-                    throw new Error('baseURI is not a string');
-                }
-                if (domTests.areDOMPropertiesConfigurable()) {
-                    assert.equal(baseURI, 'http:///dummy.html');
-                }
-            },
-        }, done);
+    describe('anchor rewriting', function () {
+        it('should rewrite links in dynamically injected <a> tags', function (done) {
+            runWombatTest({
+                initScript: function () {
+                    wbinfo = {
+                        wombat_opts: {},
+                        prefix: window.location.origin,
+                        wombat_ts: '',
+                    };
+                },
+                wombatScript: wombatScript,
+                html: '<a href="foobar.html" id="link">A link</a>',
+                testScript: function () {
+                    var link = document.getElementById('link');
+                    if (domTests.areDOMPropertiesConfigurable()) {
+                        assert.equal(link.href, 'http:///foobar.html');
+                    }
+                },
+            }, done);
+        });
     });
 
-    it('should rewrite links in dynamically injected <a> tags', function (done) {
-        runWombatTest({
-            initScript: function () {
-                wbinfo = {
-                    wombat_opts: {},
-                    prefix: window.location.origin,
-                    wombat_ts: '',
-                };
-            },
-            wombatScript: wombatScript,
-            html: '<a href="foobar.html" id="link">A link</a>',
-            testScript: function () {
-                var link = document.getElementById('link');
-                if (domTests.areDOMPropertiesConfigurable()) {
-                    assert.equal(link.href, 'http:///foobar.html');
-                }
-            },
-        }, done);
+    describe('base URL overrides', function () {
+        it('document.baseURI should return the original URL', function (done) {
+            runWombatTest({
+                initScript: function () {
+                    wbinfo = {
+                        wombat_opts: {},
+                        prefix: window.location.origin,
+                        wombat_ts: '',
+                    };
+                },
+                wombatScript: wombatScript,
+                testScript: function () {
+                    var baseURI = document.baseURI;
+                    if (typeof baseURI !== 'string') {
+                        throw new Error('baseURI is not a string');
+                    }
+                    if (domTests.areDOMPropertiesConfigurable()) {
+                        assert.equal(baseURI, 'http:///dummy.html');
+                    }
+                },
+            }, done);
+        });
+
+        it('should allow base.href to be assigned', function (done) {
+            runWombatTest({
+                initScript: function () {
+                    wbinfo = {
+                        wombat_opts: {},
+                    };
+                },
+                wombatScript: wombatScript,
+                testScript: function () {
+                    'use strict';
+                    var baseElement = document.createElement('base');
+                    baseElement.href = 'http://foobar.com/base';
+                    assert.equal(baseElement.href, 'http://foobar.com/base');
+                },
+            }, done);
+        });
     });
 });

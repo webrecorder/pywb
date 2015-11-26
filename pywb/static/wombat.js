@@ -379,11 +379,16 @@ var wombat_internal = function($wbwindow) {
         }
 
         try {
-            Object.defineProperty(obj, prop, {
-                configurable: false,
-                set: set_func,
-                get: get_func
-            });
+            var descriptor = {
+                configurable: true,
+                get: get_func,
+            };
+
+            if (set_func) {
+                descriptor.set = set_func;
+            }
+
+            Object.defineProperty(obj, prop, descriptor);
 
             return true;
         } catch (e) {
