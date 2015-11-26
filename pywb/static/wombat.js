@@ -774,8 +774,7 @@ var wombat_internal = function($wbwindow) {
                 return extract_orig(res);
             }
 
-            def_prop($wbwindow.HTMLElement.prototype, "baseURI", undefined, get_baseURI);
-            def_prop($wbwindow.HTMLDocument.prototype, "baseURI", undefined, get_baseURI);
+            def_prop($wbwindow.Node.prototype, "baseURI", undefined, get_baseURI);
         }
     }
 
