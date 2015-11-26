@@ -44,8 +44,21 @@ function runWombatTest(testCase, done) {
             };
 
             // expose chai's assertion testing API to the test script
-            assert = window.parent.assert;
-            reportError = window.parent.reportError;
+            window.assert = window.parent.assert;
+            window.reportError = window.parent.reportError;
+
+            // helpers which check whether DOM property overrides are supported
+            // in the current browser
+            window.domTests = {
+                areDOMPropertiesConfigurable: function () {
+                    var descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'baseURI');
+                    if (descriptor && !descriptor.configurable) {
+                        return false;
+                    } else {
+                        return true;
+                    }
+                }
+            };
         });
 
         try {
@@ -123,7 +136,9 @@ describe('WombatJS', function () {
                 if (typeof baseURI !== 'string') {
                     throw new Error('baseURI is not a string');
                 }
-                assert.equal(baseURI, 'http:///dummy.html');
+                if (domTests.areDOMPropertiesConfigurable()) {
+                    assert.equal(baseURI, 'http:///dummy.html');
+                }
             },
         }, done);
     });
@@ -141,7 +156,9 @@ describe('WombatJS', function () {
             html: '<a href="foobar.html" id="link">A link</a>',
             testScript: function () {
                 var link = document.getElementById('link');
-                assert.equal(link.href, 'http:///foobar.html');
+                if (domTests.areDOMPropertiesConfigurable()) {
+                    assert.equal(link.href, 'http:///foobar.html');
+                }
             },
         }, done);
     });
