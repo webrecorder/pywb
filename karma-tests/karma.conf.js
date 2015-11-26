@@ -91,8 +91,11 @@ module.exports = function(config) {
     sauceLabs: sauceLabsConfig,
 
     // use an extended timeout for capturing Sauce Labs
-    // browsers in case the service is busy
+    // browsers and waiting for activity
+    // in case the service is busy
     captureTimeout: 3 * 60000,
+
+    browserNoActivityTimeout: 30 * 1000,
 
     customLaunchers: customLaunchers,
 
