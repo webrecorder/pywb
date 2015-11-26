@@ -7,6 +7,9 @@ python:
 os:
   - linux
 
+addons:
+  sauce_connect: true
+
 cache:
   directories:
     - $HOME/.cache/pip
