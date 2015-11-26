@@ -1,0 +1,34 @@
+{
+  "name": "pywb",
+  "version": "1.0.0",
+  "description": "Web archival replay tools",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ikreymer/pywb.git"
+  },
+  "author": "",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/ikreymer/pywb/issues"
+  },
+  "homepage": "https://github.com/ikreymer/pywb#readme",
+  "devDependencies": {
+    "chai": "^3.4.1",
+    "karma": "^0.13.15",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^0.2.1",
+    "karma-firefox-launcher": "^0.1.7",
+    "karma-html2js-preprocessor": "^0.1.0",
+    "karma-mocha": "^0.2.1",
+    "karma-sauce-launcher": "^0.3.0",
+    "mocha": "^2.3.4"
+  }
+}

@@ -6,7 +6,11 @@ python:
 
 os:
   - linux
-#  - osx
+
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - node_modules
 
 sudo: false
 
@@ -16,9 +20,11 @@ install:
   - pip install git+https://github.com/esnme/ultrajson.git
   - python setup.py -q install
   - pip install coverage pytest-cov coveralls --use-mirrors
+  - npm install
 
 script:
-    python setup.py test
+  - python setup.py test
+  - cd karma-tests && make test
 
 after_success:
     coveralls
