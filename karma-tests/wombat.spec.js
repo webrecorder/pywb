@@ -1,4 +1,3 @@
-var WOMBAT_SRC = '../pywb/static/wombat.js';
 var DEFAULT_TIMEOUT = 20000;
 
 // creates a new document in an <iframe> and runs
@@ -12,7 +11,7 @@ var DEFAULT_TIMEOUT = 20000;
 function runWombatTest(testCase, done) {
     // create an <iframe>
     var testFrame = document.createElement('iframe');
-    testFrame.src = '/dummy.html';
+    testFrame.src = '/base/karma-tests/dummy.html';
     document.body.appendChild(testFrame);
 
     testFrame.contentWindow.addEventListener('load', function () {
@@ -27,8 +26,20 @@ function runWombatTest(testCase, done) {
             done(new Error(ex));
         };
 
-        // expose chai assertions to the <iframe>
-        window.assert = assert;
+        // expose utility methods for assertion testing in tests.
+        // (We used to expose chai asserts here but Karma's default
+        //  error reporter replaces URLs in exception messages with
+        //  the corresponding file paths, which is unhelpful for us
+        //  since assert.equal() will often be called with URLs in our tests)
+        window.assert = {
+            equal: function (a, b) {
+                if (a !== b) {
+                    x.equal(a, b);
+                    console.error('Mismatch between', a, 'and', b);
+                    throw new Error('AssertionError');
+                }
+            }
+        };
 
         runFunctionInIFrame(function () {
             // re-assign the iframe's console object to the parent window's
@@ -136,7 +147,7 @@ describe('WombatJS', function () {
                 testScript: function () {
                     var link = document.getElementById('link');
                     if (domTests.areDOMPropertiesConfigurable()) {
-                        assert.equal(link.href, 'http:///foobar.html');
+                        assert.equal(link.href, 'http:///base/karma-tests/foobar.html');
                     }
                 },
             }, done);
@@ -160,7 +171,7 @@ describe('WombatJS', function () {
                         throw new Error('baseURI is not a string');
                     }
                     if (domTests.areDOMPropertiesConfigurable()) {
-                        assert.equal(baseURI, 'http:///dummy.html');
+                        assert.equal(baseURI, 'http:///base/karma-tests/dummy.html');
                     }
                 },
             }, done);

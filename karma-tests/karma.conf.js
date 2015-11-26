@@ -28,18 +28,10 @@ var sauceLaunchers = {
         version: '9.0',
     },
 
-/*  Edge is currently broken in
-    pywb.
-
-    See: https://github.com/ikreymer/pywb/issues/148 (Edge)
-         https://github.com/ikreymer/pywb/issues/147 (Safari)
-
-
     sl_edge: {
         base: 'SauceLabs',
         browserName: 'MicrosoftEdge',
     },
-*/
 };
 
 var localLaunchers = {
@@ -73,6 +65,11 @@ module.exports = function(config) {
         included: false,
         served: true,
       },
+      {
+        pattern: 'karma-tests/dummy.html',
+        included: false,
+        served: true,
+      },
       'karma-tests/*.spec.js',
     ],
 
@@ -90,12 +87,15 @@ module.exports = function(config) {
 
     sauceLabs: sauceLabsConfig,
 
-    // use an extended timeout for capturing Sauce Labs
-    // browsers and waiting for activity
-    // in case the service is busy
+    // Set extended timeouts to account for the slowness
+    // in connecting to remote browsers (eg. when using
+    // Sauce Labs)
+    //
+    // See https://oligofren.wordpress.com/2014/05/27/running-karma-tests-on-browserstack/
     captureTimeout: 3 * 60000,
-
     browserNoActivityTimeout: 30 * 1000,
+    browserDisconnectTimeout: 10 * 1000,
+    browserDisconnectTolerance: 1,
 
     customLaunchers: customLaunchers,
 
