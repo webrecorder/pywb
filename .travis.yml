@@ -9,8 +9,6 @@ os:
 
 addons:
   sauce_connect: true
-  username: ikreymer
-  access_key: 4cab0a14-413d-432f-a8ec-ae1ac7980a56
 
 cache:
   directories:
