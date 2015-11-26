@@ -762,7 +762,7 @@ var wombat_internal = function($wbwindow) {
         def_prop($wbwindow.HTMLBaseElement.prototype, "href", undefined, base_href_get);
 
         // Shared baseURI
-        var orig_getter = get_orig_getter($wbwindow.Node, "baseURI");
+        var orig_getter = get_orig_getter($wbwindow.Node.prototype, "baseURI");
         if (orig_getter) {
             var get_baseURI = function() {
                 var res = orig_getter.call(this);
