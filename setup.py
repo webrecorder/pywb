@@ -21,13 +21,9 @@ long_description = open('README.rst').read()
 
 class PyTest(TestCommand):
     user_options = []
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self._argv = []
-
     def finalize_options(self):
         TestCommand.finalize_options(self)
-        self.test_suite = True
+        self.test_suite = ' '
 
     def run_tests(self):
         import pytest
