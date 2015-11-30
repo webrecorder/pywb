@@ -176,7 +176,8 @@ class WBHandler(SearchPageWbUrlHandler):
 
         # if capture query, just return capture page
         if wbrequest.wb_url.is_query():
-            return self.index_reader.make_cdx_response(wbrequest, [], 'html')
+            output = self.index_reader.get_output_type(wbrequest.wb_url)
+            return self.index_reader.make_cdx_response(wbrequest, iter([]), output)
         else:
             return self.not_found_view.render_response(status='404 Not Found',
                                                        wbrequest=wbrequest,

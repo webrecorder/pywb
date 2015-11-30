@@ -46,11 +46,7 @@ class QueryHandler(object):
 
         return QueryHandler(cdx_server, html_view, perms_policy)
 
-    def load_for_request(self, wbrequest):
-        wbrequest.normalize_post_query()
-
-        wb_url = wbrequest.wb_url
-
+    def get_output_type(self, wb_url):
         # cdx server only supports text and cdxobject for now
         if wb_url.mod == 'cdx_':
             output = 'text'
@@ -60,6 +56,14 @@ class QueryHandler(object):
             output = 'html'
         else:
             output = 'cdxobject'
+
+        return output
+
+    def load_for_request(self, wbrequest):
+        wbrequest.normalize_post_query()
+
+        wb_url = wbrequest.wb_url
+        output = self.get_output_type(wb_url)
 
         # init standard params
         params = self.get_query_params(wb_url)

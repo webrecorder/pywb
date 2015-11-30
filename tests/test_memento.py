@@ -306,6 +306,44 @@ rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"'
 
         assert len(lines) == 3 + 3
 
+
+    def test_timemap_not_found(self):
+        """
+        Test application/link-format timemap
+        """
+
+        resp = self.testapp.get('/pywb/timemap/*/http://example.com/blah/not_found')
+        assert resp.status_int == 200
+        assert resp.content_type == LINK_FORMAT
+
+        lines = resp.body.split('\n')
+
+        assert len(lines) == 3
+
+        assert lines[0] == '<http://example.com/blah/not_found>; rel="original",'
+
+        assert lines[1] == '<http://localhost:80/pywb/http://example.com/blah/not_found>; rel="timegate",'
+
+        assert lines[2] == '<http://localhost:80/pywb/timemap/*/http://example.com/blah/not_found>; \
+rel="self"; type="application/link-format"'
+
+
+    def test_timemap_2(self):
+        """
+        Test application/link-format timemap total count
+        """
+
+        resp = self.testapp.get('/pywb/timemap/*/http://example.com')
+        assert resp.status_int == 200
+        assert resp.content_type == LINK_FORMAT
+
+        lines = resp.body.split('\n')
+
+        assert len(lines) == 3 + 3
+
+
+
+
     # Below functions test pywb proxy mode behavior
     # They are designed to roughly conform to Memento protocol Pattern 1.3
     # with the exception that the original resource is not available
