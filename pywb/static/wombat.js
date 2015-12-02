@@ -1397,6 +1397,9 @@ var wombat_internal = function($wbwindow) {
         }
 
         init_loc_override($wbwindow.HTMLAnchorElement.prototype, anchor_setter, anchor_getter);
+        $wbwindow.HTMLAnchorElement.prototype.toString = function () {
+            return this.href;
+        };
     }
 
 
