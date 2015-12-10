@@ -5,7 +5,7 @@ import sys
 import re
 
 from HTMLParser import HTMLParser, HTMLParseError
-from urlparse import urlsplit, urlunsplit
+from urlparse import urljoin, urlsplit, urlunsplit
 
 from url_rewriter import UrlRewriter
 from regex_rewriters import JSRewriter, CSSRewriter
@@ -276,9 +276,18 @@ class HTMLRewriterMixin(object):
             # special case: if rewrite_canon not set,
             # don't rewrite rel=canonical
             elif tag == 'link' and attr_name == 'href':
-                if (self.opts.get('rewrite_rel_canon', True) or
-                     not self.has_attr(tag_attrs, ('rel', 'canonical'))):
-                    rw_mod = handler.get(attr_name)
+                rw_mod = handler.get(attr_name)
+
+                if self.has_attr(tag_attrs, ('rel', 'canonical')):
+                    if self.opts.get('rewrite_rel_canon', True):
+                        attr_value = self._rewrite_url(attr_value, rw_mod)
+                    else:
+                        # resolve relative rel=canonical URLs so that they
+                        # refer to the same absolute URL as on the original
+                        # page (see https://github.com/hypothesis/via/issues/65
+                        # for context)
+                        attr_value = urljoin(self.orig_url, attr_value)
+                else:
                     attr_value = self._rewrite_url(attr_value, rw_mod)
 
             # special case: meta tag
