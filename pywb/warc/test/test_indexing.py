@@ -25,12 +25,13 @@ com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 854 4771 example.warc
 
 # warc all
+# note: length of request record set to 1 byte less then record to test truncation handling
 >>> print_cdx_index('example.warc', include_all=True)
  CDX N b a m s k r M S V g
 com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1987 460 example.warc
 com,example)/?example=1 20140103030321 http://example.com?example=1 - - - - - 706 2451 example.warc
 com,example)/?example=1 20140103030341 http://example.com?example=1 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 896 3161 example.warc
-com,example)/?example=1 20140103030341 http://example.com?example=1 - - - - - 706 4061 example.warc
+com,example)/?example=1 20140103030341 http://example.com?example=1 - - - - - 703 4061 example.warc
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 854 4771 example.warc
 
 # arc.gz

@@ -140,7 +140,7 @@ WARC/1.0
 WARC-Type: request
 WARC-Record-ID: <urn:uuid:c59f3330-b241-4fca-8513-d687cd85bcfb>
 WARC-Date: 2014-01-03T03:03:41Z
-Content-Length: 323
+Content-Length: 320
 Content-Type: application/http; msgtype=request
 WARC-Concurrent-To: <urn:uuid:3619f5b0-d967-44be-8f24-762098d427c4>
 WARC-Target-URI: http://example.com?example=1

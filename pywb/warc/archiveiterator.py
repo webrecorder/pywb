@@ -9,6 +9,7 @@ import hashlib
 import base64
 
 import re
+import sys
 
 try:  # pragma: no cover
     from collections import OrderedDict
