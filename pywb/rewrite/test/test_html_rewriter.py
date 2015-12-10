@@ -158,8 +158,12 @@ ur"""
 <link rel="canonical" href="/web/20131226101010oe_/http://example.com/">
 
 # rel=canonical: no_rewrite
->>> parse('<link rel=canonical href="http://example.com/">', urlrewriter=no_base_canon_rewriter)
-<link rel="canonical" href="http://example.com/">
+>>> parse('<link rel=canonical href="http://example.com/canon/path">', urlrewriter=no_base_canon_rewriter)
+<link rel="canonical" href="http://example.com/canon/path">
+
+# rel=canonical: no_rewrite
+>>> parse('<link rel=canonical href="/relative/path">', urlrewriter=no_base_canon_rewriter)
+<link rel="canonical" href="http://example.com/relative/path">
 
 # doctype
 >>> parse('<!doctype html PUBLIC "public">')
@@ -210,26 +214,24 @@ from pywb.rewrite.html_rewriter import HTMLRewriter
 import pprint
 import urllib
 
-urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html',
-                          '/web/',
-                          rewrite_opts=dict(punycode_links=False))
+ORIGINAL_URL = 'http://example.com/some/path/index.html'
 
-full_path_urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html',
-                                   'http://localhost:80/web/',
-                                   rewrite_opts=dict(punycode_links=False))
+def new_rewriter(prefix='/web/', rewrite_opts=dict()):
+    PROXY_PATH = '20131226101010/{0}'.format(ORIGINAL_URL)
+    return UrlRewriter(PROXY_PATH, prefix, rewrite_opts=rewrite_opts)
 
-urlrewriter_pencode = UrlRewriter('20131226101010/http://example.com/some/path/index.html',
-                                   '/web/',
-                                   rewrite_opts=dict(punycode_links=True))
+urlrewriter = new_rewriter(rewrite_opts=dict(punycode_links=False))
 
+full_path_urlrewriter = new_rewriter(prefix='http://localhost:80/web/',
+                                     rewrite_opts=dict(punycode_links=False))
 
-no_base_canon_rewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html',
-                                     '/web/',
-                                     rewrite_opts=dict(rewrite_rel_canon=False,
-                                                       rewrite_base=False))
+urlrewriter_pencode = new_rewriter(rewrite_opts=dict(punycode_links=True))
+
+no_base_canon_rewriter = new_rewriter(rewrite_opts=dict(rewrite_rel_canon=False,
+                                                        rewrite_base=False))
 
 def parse(data, head_insert=None, urlrewriter=urlrewriter):
-    parser = HTMLRewriter(urlrewriter, head_insert = head_insert)
+    parser = HTMLRewriter(urlrewriter, head_insert = head_insert, url = ORIGINAL_URL)
 
     if isinstance(data, unicode):
         data = data.encode('utf-8')
