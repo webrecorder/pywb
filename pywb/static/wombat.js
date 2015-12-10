@@ -363,26 +363,36 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
-    // Define custom property
+    // Override a DOM property
     function def_prop(obj, prop, set_func, get_func) {
+        // if the property is marked as non-configurable in the current
+        // browser, skip the override
+        var existingDescriptor = Object.getOwnPropertyDescriptor(obj, prop);
+        if (existingDescriptor && !existingDescriptor.configurable) {
+            return;
+        }
+
+        // if no getter function was supplied, skip the override.
+        // See https://github.com/ikreymer/pywb/issues/147 for context
+        if (!get_func) {
+            return;
+        }
+
         try {
-            Object.defineProperty(obj, prop, {
-                configurable: false,
-//                enumerable: true,
-                set: set_func,
-                get: get_func
-            });
+            var descriptor = {
+                configurable: true,
+                get: get_func,
+            };
+
+            if (set_func) {
+                descriptor.set = set_func;
+            }
+
+            Object.defineProperty(obj, prop, descriptor);
 
             return true;
         } catch (e) {
-            var info = "Can't redefine prop " + prop;
-            console.warn(info);
-            //f (obj && obj.tagName) {
-            //    info += " on " + obj.tagName;
-            //}
-            //if (value != obj[prop]) {
-            //    obj[prop] = value;
-            //}
+            console.warn('Failed to redefine property %s', prop, e.message);
             return false;
         }
     }
@@ -757,15 +767,15 @@ var wombat_internal = function($wbwindow) {
         def_prop($wbwindow.HTMLBaseElement.prototype, "href", undefined, base_href_get);
 
         // Shared baseURI
-        var orig_getter = $wbwindow.document.__lookupGetter__("baseURI");
+        var orig_getter = get_orig_getter($wbwindow.Node.prototype, "baseURI");
+        if (orig_getter) {
+            var get_baseURI = function() {
+                var res = orig_getter.call(this);
+                return extract_orig(res);
+            }
 
-        var get_baseURI = function() {
-            var res = orig_getter.call(this);
-            return extract_orig(res);
+            def_prop($wbwindow.Node.prototype, "baseURI", undefined, get_baseURI);
         }
-
-        def_prop($wbwindow.HTMLElement.prototype, "baseURI", undefined, get_baseURI);
-        def_prop($wbwindow.HTMLDocument.prototype, "baseURI", undefined, get_baseURI);
     }
 
     //============================================
@@ -1387,6 +1397,9 @@ var wombat_internal = function($wbwindow) {
         }
 
         init_loc_override($wbwindow.HTMLAnchorElement.prototype, anchor_setter, anchor_getter);
+        $wbwindow.HTMLAnchorElement.prototype.toString = function () {
+            return this.href;
+        };
     }
 
 
