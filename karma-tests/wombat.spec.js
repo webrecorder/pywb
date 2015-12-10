@@ -34,7 +34,6 @@ function runWombatTest(testCase, done) {
         window.assert = {
             equal: function (a, b) {
                 if (a !== b) {
-                    x.equal(a, b);
                     console.error('Mismatch between', a, 'and', b);
                     throw new Error('AssertionError');
                 }
@@ -133,8 +132,9 @@ describe('WombatJS', function () {
     });
 
     describe('anchor rewriting', function () {
-        it('should rewrite links in dynamically injected <a> tags', function (done) {
-            runWombatTest({
+        var config;
+        beforeEach(function () {
+            config = {
                 initScript: function () {
                     wbinfo = {
                         wombat_opts: {},
@@ -144,13 +144,28 @@ describe('WombatJS', function () {
                 },
                 wombatScript: wombatScript,
                 html: '<a href="foobar.html" id="link">A link</a>',
-                testScript: function () {
+            };
+        });
+
+        it('should rewrite links in dynamically injected <a> tags', function (done) {
+            config.testScript = function () {
+                if (domTests.areDOMPropertiesConfigurable()) {
                     var link = document.getElementById('link');
-                    if (domTests.areDOMPropertiesConfigurable()) {
-                        assert.equal(link.href, 'http:///base/karma-tests/foobar.html');
-                    }
-                },
-            }, done);
+                    assert.equal(link.href, 'http:///base/karma-tests/foobar.html');
+                }
+            };
+
+            runWombatTest(config, done);
+        });
+
+        it('toString() should return the rewritten URL', function (done) {
+            config.testScript = function () {
+                if (domTests.areDOMPropertiesConfigurable()) {
+                    var link = document.getElementById('link');
+                    assert.equal(link.href, link.toString());
+                }
+            };
+            runWombatTest(config, done);
         });
     });
 
