@@ -1,5 +1,5 @@
 var sauceLabsConfig = {
-    testName: 'PyWB Client Tests',
+    testName: 'pywb Client Tests',
 };
 
 // see https://github.com/karma-runner/karma-sauce-launcher/issues/73

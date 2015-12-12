@@ -1331,6 +1331,7 @@ var wombat_internal = function($wbwindow) {
     //============================================
     function init_attr_overrides($wbwindow) {
         override_attr($wbwindow.HTMLLinkElement.prototype, "href", "cs_");
+        override_attr($wbwindow.CSSStyleSheet.prototype, "href", "cs_");
         override_attr($wbwindow.HTMLImageElement.prototype, "src", "im_");
         override_attr($wbwindow.HTMLIFrameElement.prototype, "src", "if_");
         override_attr($wbwindow.HTMLScriptElement.prototype, "src", "js_");
