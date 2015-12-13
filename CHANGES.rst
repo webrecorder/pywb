@@ -4,33 +4,34 @@ pywb 0.11.0 changelist
 * New client-side test system for Wombat.js in place using Karma and SauceLabs with initial set of tests and travis integration.
 
 * Wombat Improvements:
-  - Better Safari/IE support: accessors overriden only when actually supported in browser, override gracefully skipped otherwise
-  - Use getOwnPropertyDescriptor() to get properties in addition to __lookupGetter__, __lookupSetter__
-  - baseURI overriden on correct prototype
-  - CSSStyleSheet.href override
-  - HTMLAnchorElement.toString() override
-  - Avoid making <base>.href read-only
+   - Better Safari/IE support: accessors overriden only when actually supported in browser, override gracefully skipped otherwise
+   - Use ``getOwnPropertyDescriptor()`` to get properties in addition to ``__lookupGetter__``, ``__lookupSetter__``
+   - ``baseURI`` overriden on correct prototype
+   - ``CSSStyleSheet.href`` override
+   - ``HTMLAnchorElement.toString()`` override
+   - Avoid making ``<base>.href`` read-only
   
 * Proxy Mode Improvements:
-  - To avoid breaking HTTPS envelope, if no content-length provided, chunked encoding is used (HTTP/1.1) or response is buffered and content-length is computed (HTTP/1.0)
-  - Rewriter: Scheme-only rewriter converts embedded urls to http or https to match the scheme of containing page.
-  - IP Resolver: Supports IP cache in Redis
-  - Default resolver set to cookie resolver, collection/datetime switching options removed from UI in auth or ip resolvers.
+   - To avoid breaking HTTPS envelope, if no content-length provided, chunked encoding is used (HTTP/1.1) or response is buffered and content-length is computed (HTTP/1.0)
+   - Rewriter: Scheme-only rewriter converts embedded urls to http or https to match the scheme of containing page.
+   - IP Resolver: Supports IP cache in Redis
+   - Default resolver set to cookie resolver, eg. ``cookie_resolver: true`` is the default.
+   - Collection/datetime switching options removed from UI when auth or ip resolvers.
   
-Encoding: Use webencoding lib to better encode head-insert to match page encoding
+* Encoding: Use webencoding lib to better encode head-insert to match page encoding
 
-Live Proxy: Support for explicit 'recording' mode, decoupled from using http/https proxy. (Before using proxy implied recording)
+* Live Proxy: Support for explicit 'recording' mode, decoupled from using http/https proxy. (Before using proxy implied recording)
 
-Rewriting: Convert relative urls for `rel=canonical` to absolute urls, even if not rewriting to ensure correct url.
+* Rewriting: Convert relative urls for ``rel=canonical`` to absolute urls, even if not rewriting to ensure correct url.
 
-UI: Use custom webkit scrollbars to minimize scrollbar-in-iframe issues that sometimes occur in Chrome.
+* UI: Use custom webkit scrollbars to minimize scrollbar-in-iframe issues that sometimes occur in Chrome.
 
-Memento Improvements:
-  - Add /collinfo.json endpoint which by default returns a JSON spec for all collections as Memento endpoints, in a format compatible with MemGator.
-  - /collinfo.json endpoint customizable via `templates/collinfo.json` and must be enabled with `enable_coll_info: true`
-  - 'Not Found' error for timemap query returns empty timemap instead of standard HTML 404.
+* Memento Improvements:
+   - ``/collinfo.json`` by default returns a JSON spec for all collections as Memento endpoints, in a format compatible with MemGator.
+   - ``Add /collinfo.json`` endpoint customizable via ``templates/collinfo.json`` and must be enabled with ``enable_coll_info: true``
+   - 'Not Found' error for timemap query returns empty timemap instead of standard HTML 404.
   
-WARC Indexing:
+* WARC Indexing:
   - Better detection of content-length < payload, skip to next record boundary and warn, if possible.
   - Use ujson if proper version (without forward-slash escaping) is available when writing CDXJ
 
