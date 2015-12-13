@@ -88,13 +88,15 @@ class ProxyRouter(object):
             self.extra_headers = self.EXTRA_HEADERS
             proxy_options['extra_headers'] = self.extra_headers
 
-        res_type = proxy_options.get('cookie_resolver')
-        if res_type == True or res_type == 'cookie':
-            self.resolver = CookieResolver(routes, proxy_options)
+        res_type = proxy_options.get('cookie_resolver', True)
+        if res_type == 'auth' or not res_type:
+            self.resolver = ProxyAuthResolver(routes, proxy_options)
         elif res_type == 'ip':
             self.resolver = IPCacheResolver(routes, proxy_options)
+        #elif res_type == True or res_type == 'cookie':
+        #    self.resolver = CookieResolver(routes, proxy_options)
         else:
-            self.resolver = ProxyAuthResolver(routes, proxy_options)
+            self.resolver = CookieResolver(routes, proxy_options)
 
         self.use_banner = proxy_options.get('use_banner', True)
         self.use_wombat = proxy_options.get('use_client_rewrite', True)
@@ -171,7 +173,8 @@ class ProxyRouter(object):
                 env['pywb.proxy_req_uri'] += '?' + parts.query
                 env['pywb.proxy_query'] = parts.query
 
-        env['pywb_proxy_magic'] = self.magic_name
+        if self.resolver.supports_switching:
+            env['pywb_proxy_magic'] = self.magic_name
 
         # route (static) and other resources to archival replay
         if env['pywb.proxy_host'] == self.magic_name:

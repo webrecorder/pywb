@@ -76,6 +76,10 @@ class ProxyAuthResolver(BaseCollResolver):
     def pre_connect(self):
         return True
 
+    @property
+    def supports_switching(self):
+        return False
+
     def get_proxy_coll_ts(self, env):
         proxy_auth = env.get('HTTP_PROXY_AUTHORIZATION')
 
@@ -116,6 +120,10 @@ class IPCacheResolver(BaseCollResolver):
         super(IPCacheResolver, self).__init__(routes, config)
         self.cache = create_cache(config.get('redis_cache_key'))
         self.magic_name = config['magic_name']
+
+    @property
+    def supports_switching(self):
+        return True
 
     def _get_ip(self, env):
         ip = env['REMOTE_ADDR']
@@ -185,6 +193,10 @@ class CookieResolver(BaseCollResolver):
         self.extra_headers = config.get('extra_headers')
 
         self.cache = create_cache()
+
+    @property
+    def supports_switching(self):
+        return True
 
     def get_proxy_coll_ts(self, env):
         coll, ts, sesh_id = self.get_coll(env)
