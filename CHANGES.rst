@@ -20,7 +20,7 @@ pywb 0.11.0 changelist
   
 * Encoding: Use webencoding lib to better encode head-insert to match page encoding
 
-* Live Proxy: Support for explicit 'recording' mode, decoupled from using http/https proxy. (Before using proxy implied recording)
+* Live Proxy: Support for explicit recording mode, decoupled from using http/https proxy. Enabled when ``LiveRewriter.is_recording()`` is true. By default, http/s proxies imply recording but can be overriden in derived class.
 
 * Rewriting: Convert relative urls for ``rel=canonical`` to absolute urls, even if not rewriting to ensure correct url.
 
