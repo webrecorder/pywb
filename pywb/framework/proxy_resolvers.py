@@ -123,7 +123,7 @@ class IPCacheResolver(BaseCollResolver):
 
     @property
     def supports_switching(self):
-        return True
+        return False
 
     def _get_ip(self, env):
         ip = env['REMOTE_ADDR']

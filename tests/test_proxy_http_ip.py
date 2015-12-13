@@ -18,6 +18,7 @@ class TestProxyIPResolver(BaseIntegration):
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'
         assert resp.content_length > 0
+        assert 'proxy_magic = ""' in resp.body
 
     def _assert_basic_text(self, resp):
         assert resp.status_int == 200

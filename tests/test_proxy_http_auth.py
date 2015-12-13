@@ -22,6 +22,9 @@ class TestProxyHttpAuth(BaseIntegration):
         assert resp.content_type == 'text/plain'
         assert resp.content_length > 0
 
+        assert 'proxy_magic = ""' in resp.body
+        assert 'wb.js' in resp.body
+
     # 'Simulating' proxy by settings REQUEST_URI explicitly to http:// url and no SCRIPT_NAME
     # would be nice to be able to test proxy more
     def test_proxy_replay(self):
@@ -29,7 +32,6 @@ class TestProxyHttpAuth(BaseIntegration):
         self._assert_basic_html(resp)
 
         assert '"20140126201127"' in resp.body
-        assert 'wb.js' in resp.body
 
     def test_proxy_replay_auth_filtered(self):
         headers = [('Proxy-Authorization', 'Basic ' + base64.b64encode('pywb-filt-2:'))]
@@ -39,7 +41,6 @@ class TestProxyHttpAuth(BaseIntegration):
         self._assert_basic_html(resp)
 
         assert '"20140126200624"' in resp.body
-        assert 'wb.js' in resp.body
 
     def test_proxy_replay_auth(self):
         headers = [('Proxy-Authorization', 'Basic ' + base64.b64encode('pywb'))]
@@ -49,7 +50,6 @@ class TestProxyHttpAuth(BaseIntegration):
         self._assert_basic_html(resp)
 
         assert '"20140127171238"' in resp.body
-        assert 'wb.js' in resp.body
 
     def test_proxy_replay_auth_no_coll(self):
         headers = [('Proxy-Authorization', 'Basic ' + base64.b64encode('no-such-coll'))]
