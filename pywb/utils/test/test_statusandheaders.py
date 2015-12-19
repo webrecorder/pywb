@@ -11,9 +11,28 @@ StatusAndHeaders(protocol = '', statusline = '206 Partial Content', headers = [ 
   ('Content-Range', 'bytes 10-13/100'),
   ('Accept-Ranges', 'bytes')])
 
+# other protocol expected
 >>> StatusAndHeadersParser(['Other']).parse(BytesIO(status_headers_1))
 Traceback (most recent call last):
 StatusAndHeadersParserException: Expected Status Line starting with ['Other'] - Found: HTTP/1.0 200 OK
+
+>>> StatusAndHeadersParser(['Other'], verify=False).parse(BytesIO(status_headers_1))
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [ ('Content-Type', 'ABC'),
+  ('Some', 'Value'),
+  ('Multi-Line', 'Value1    Also This')])
+
+
+# verify protocol line
+>>> StatusAndHeadersParser(['HTTP/1.0'], verify=True).parse(BytesIO(unknown_protocol_headers))
+Traceback (most recent call last):
+StatusAndHeadersParserException: Expected Status Line starting with ['HTTP/1.0'] - Found: OtherBlah
+
+
+# allow unexpected/invalid protocol line
+>>> StatusAndHeadersParser(['HTTP/1.0'], verify=False).parse(BytesIO(unknown_protocol_headers))
+StatusAndHeaders(protocol = 'OtherBlah', statusline = 'OtherBlah', headers = [('Foo', 'Bar')])
+
+
 
 # test equality op
 >>> st1 == StatusAndHeadersParser(['HTTP/1.0']).parse(BytesIO(status_headers_1))
@@ -85,6 +104,12 @@ Content-Type: Value\r\n\
 \tMultiline\r\n\
 Content-Length: 0\r\n\
 \r\n"
+
+unknown_protocol_headers = "\
+OtherBlah\r\n\
+Foo: Bar\r\n\
+\r\n"
+
 
 
 if __name__ == "__main__":

@@ -198,7 +198,7 @@ class StatusAndHeadersParser(object):
 
             line = next_line
 
-        return StatusAndHeaders(statusline=protocol_status[1].strip(),
+        return StatusAndHeaders(statusline=protocol_status[-1].strip(),
                                 headers=headers,
                                 protocol=protocol_status[0],
                                 total_len=total_read)
