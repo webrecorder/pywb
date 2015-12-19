@@ -364,7 +364,7 @@ var wombat_internal = function($wbwindow) {
 
     //============================================
     // Override a DOM property
-    function def_prop(obj, prop, set_func, get_func) {
+    function def_prop(obj, prop, set_func, get_func, enumerable) {
         // if the property is marked as non-configurable in the current
         // browser, skip the override
         var existingDescriptor = Object.getOwnPropertyDescriptor(obj, prop);
@@ -381,6 +381,7 @@ var wombat_internal = function($wbwindow) {
         try {
             var descriptor = {
                 configurable: true,
+                enumerable: enumerable || false,
                 get: get_func,
             };
 
@@ -519,7 +520,7 @@ var wombat_internal = function($wbwindow) {
         }
 
         function add_loc_prop(loc, prop) {
-            def_prop(loc, prop, make_set_loc_prop(prop), make_get_loc_prop(prop));
+            def_prop(loc, prop, make_set_loc_prop(prop), make_get_loc_prop(prop), true);
         }
 
         if (Object.defineProperty) {
