@@ -9,7 +9,7 @@ import base64
 import socket
 import ssl
 
-from pywb.rewrite.url_rewriter import SchemeOnlyUrlRewriter
+from pywb.rewrite.url_rewriter import SchemeOnlyUrlRewriter, UrlRewriter
 from pywb.rewrite.rewrite_content import RewriteContent
 from pywb.utils.wbexception import BadRequestException
 
@@ -193,8 +193,17 @@ class ProxyRouter(object):
             if response:
                 return response
 
-        host_prefix = env['pywb.proxy_scheme'] + '://' + self.magic_name
         rel_prefix = ''
+
+        custom_prefix = env.get('HTTP_PYWB_REWRITE_PREFIX', '')
+        if custom_prefix:
+            host_prefix = custom_prefix
+            urlrewriter_class = UrlRewriter
+            abs_prefix = True
+        else:
+            host_prefix = env['pywb.proxy_scheme'] + '://' + self.magic_name
+            urlrewriter_class = SchemeOnlyUrlRewriter
+            abs_prefix = False
 
         # special case for proxy calendar
         if (env['pywb.proxy_host'] == 'query.' + self.magic_name):
@@ -211,8 +220,8 @@ class ProxyRouter(object):
                               host_prefix=host_prefix,
                               rel_prefix=rel_prefix,
                               wburl_class=route.handler.get_wburl_type(),
-                              urlrewriter_class=SchemeOnlyUrlRewriter,
-                              use_abs_prefix=False,
+                              urlrewriter_class=urlrewriter_class,
+                              use_abs_prefix=abs_prefix,
                               is_proxy=True)
 
         if matcher:
