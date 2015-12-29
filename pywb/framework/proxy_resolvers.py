@@ -1,5 +1,6 @@
 from wbrequestresponse import WbResponse
 from pywb.utils.loaders import extract_client_cookie
+from pywb.utils.wbexception import WbException
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.rewrite.wburl import WbUrl
 
@@ -32,16 +33,16 @@ class BaseCollResolver(object):
 
         # invalid parsing
         if proxy_coll == '':
-            return None, None, None, None, self.select_coll_response(env)
+            return None, None, None, None, self.select_coll_response(env, proxy_coll)
 
         if proxy_coll is None and isinstance(self.use_default_coll, str):
             proxy_coll = self.use_default_coll
 
         if proxy_coll:
-            proxy_coll = '/' + proxy_coll + '/'
+            path = '/' + proxy_coll + '/'
 
             for r in self.routes:
-                matcher, c = r.is_handling(proxy_coll)
+                matcher, c = r.is_handling(path)
                 if matcher:
                     route = r
                     coll = c
@@ -49,7 +50,7 @@ class BaseCollResolver(object):
 
             # if no match, return coll selection response
             if not route:
-                return None, None, None, None, self.select_coll_response(env)
+                return None, None, None, None, self.select_coll_response(env, proxy_coll)
 
         # if 'use_default_coll', find first WbUrl-handling collection
         elif self.use_default_coll:
@@ -59,7 +60,7 @@ class BaseCollResolver(object):
 
         # otherwise, return the appropriate coll selection response
         else:
-            return None, None, None, None, self.select_coll_response(env)
+            return None, None, None, None, self.select_coll_response(env, proxy_coll)
 
         return route, coll, matcher, ts, None
 
@@ -89,7 +90,7 @@ class ProxyAuthResolver(BaseCollResolver):
         proxy_coll = self.read_basic_auth_coll(proxy_auth)
         return proxy_coll, None
 
-    def select_coll_response(self, env):
+    def select_coll_response(self, env, default_coll=None):
         proxy_msg = 'Basic realm="{0}"'.format(self.auth_msg)
 
         headers = [('Content-Type', 'text/plain'),
@@ -135,6 +136,9 @@ class IPCacheResolver(BaseCollResolver):
                 ip = res['ip'][0]
 
         return ip
+
+    def select_coll_response(self, env, default_coll=None):
+        raise WbException('Invalid Proxy Collection Specified: ' + str(default_coll))
 
     def get_proxy_coll_ts(self, env):
         ip = env['REMOTE_ADDR']
@@ -202,7 +206,7 @@ class CookieResolver(BaseCollResolver):
         coll, ts, sesh_id = self.get_coll(env)
         return coll, ts
 
-    def select_coll_response(self, env):
+    def select_coll_response(self, env, default_coll=None):
         return self.make_magic_response('auto',
                                         env['REL_REQUEST_URI'],
                                         env)

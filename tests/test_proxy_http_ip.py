@@ -25,11 +25,11 @@ class TestProxyIPResolver(BaseIntegration):
         assert resp.content_type == 'text/plain'
         assert resp.content_length > 0
 
-    def get_url(self, uri, addr='127.0.0.1'):
+    def get_url(self, uri, addr='127.0.0.1', status='*'):
         parts = urlsplit(uri)
         env = dict(REQUEST_URI=uri, QUERY_STRING=parts.query, SCRIPT_NAME='', REMOTE_ADDR=addr)
         # 'Simulating' proxy by settings REQUEST_URI explicitly to full url with empty SCRIPT_NAME
-        return self.testapp.get('/x-ignore-this-x', extra_environ=env)
+        return self.testapp.get('/x-ignore-this-x', extra_environ=env, status=status)
 
     def test_proxy_ip_default_ts(self):
         resp = self.get_url('http://www.iana.org/')
@@ -92,4 +92,14 @@ class TestProxyIPResolver(BaseIntegration):
 
         resp = self.get_url('http://info.pywb.proxy/')
         assert resp.json == {'ip': '127.0.0.1', 'coll': None, 'ts': None}
+
+    def test_proxy_set_coll_invalid(self):
+        resp = self.get_url('http://info.pywb.proxy/set?coll=invalid')
+        assert resp.content_type == 'application/json'
+        assert resp.json == {'ip': '127.0.0.1', 'coll': 'invalid', 'ts': None}
+
+    def test_proxy_ip_invalid_coll(self):
+        resp = self.get_url('http://www.iana.org/', status=500)
+        assert 'Invalid Proxy Collection Specified: invalid' in resp.body
+
 
