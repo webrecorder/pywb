@@ -200,10 +200,13 @@ class ProxyRouter(object):
             host_prefix = custom_prefix
             urlrewriter_class = UrlRewriter
             abs_prefix = True
+            # always rewrite to absolute here
+            rewrite_opts = dict(no_match_rel=True)
         else:
             host_prefix = env['pywb.proxy_scheme'] + '://' + self.magic_name
             urlrewriter_class = SchemeOnlyUrlRewriter
             abs_prefix = False
+            rewrite_opts = {}
 
         # special case for proxy calendar
         if (env['pywb.proxy_host'] == 'query.' + self.magic_name):
@@ -222,6 +225,7 @@ class ProxyRouter(object):
                               wburl_class=route.handler.get_wburl_type(),
                               urlrewriter_class=urlrewriter_class,
                               use_abs_prefix=abs_prefix,
+                              rewrite_opts=rewrite_opts,
                               is_proxy=True)
 
         if matcher:
