@@ -556,7 +556,9 @@ var wombat_internal = function($wbwindow) {
             return this._orig_loc.assign(new_url);
         }
 
-        this.reload = orig_loc.reload;
+        this.reload = function() {
+            return this._orig_loc.reload();
+        }
        
         this.orig_getter = function(prop) {
             return this._orig_loc[prop];
