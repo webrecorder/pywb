@@ -1,3 +1,17 @@
+pywb 0.11.1 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* WombatLocation: overriden properties (href, host, etc...) are enumerable to match Location to support cloning methods.
+
+* WombatLocation: reload() override now works.
+   
+* Proxy: Custom ``Pywb-Rewrite-Prefix`` allows adding a custom prefix for proxy mode rewriting
+
+* Proxy: Better error for invalid collection in ip resolve mode
+   
+* Warc Indexing Refactor: Allow custom iterators to buffer payload by overriding ``create_payload_buffer()`` to return a writable buffer.
+
+
 pywb 0.11.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
