@@ -122,7 +122,7 @@ class ArcWarcRecordLoader:
             length = int(length) - sub_len
             if length < 0:
                 is_err = True
-        except ValueError:
+        except (ValueError, TypeError):
             is_err = True
 
         # err condition
