@@ -2,9 +2,9 @@
 """
 
 import surt
-import urlparse
+import six.moves.urllib.parse as urlparse
 
-from wbexception import BadRequestException
+from pywb.utils.wbexception import BadRequestException
 
 
 #=================================================================
@@ -128,11 +128,11 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
     ('example.com/', 'example.com0')
 
     # errors: domain range not supported
-    >>> calc_search_range('http://example.com/path/file.html', 'domain', False)
+    >>> calc_search_range('http://example.com/path/file.html', 'domain', False)  # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
     UrlCanonicalizeException: matchType=domain unsupported for non-surt
 
-    >>> calc_search_range('http://example.com/path/file.html', 'blah', False)
+    >>> calc_search_range('http://example.com/path/file.html', 'blah', False)   # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
     UrlCanonicalizeException: Invalid match_type: blah
 

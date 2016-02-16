@@ -47,7 +47,7 @@ setup(
     long_description=long_description,
     license='GPL',
     packages=find_packages(),
-    zip_safe=True,
+    zip_safe=False,
     provides=[
         'pywb',
         'pywb.utils',
@@ -73,11 +73,12 @@ setup(
             glob.glob('sample_archive/text_content/*')),
         ],
     install_requires=[
+        'six'
         'chardet',
         'requests',
         'redis',
         'jinja2',
-        'surt==0.2',
+        'surt==0.3b4',
         'pyyaml',
         'watchdog',
         'webencodings',

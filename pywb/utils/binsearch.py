@@ -4,6 +4,13 @@ Utility functions for performing binary search over a sorted text file
 
 from collections import deque
 import itertools
+import six
+
+import sys
+
+if six.PY3:
+    def cmp(a, b):
+        return (a > b) - (a < b)
 
 
 #=================================================================
@@ -18,10 +25,10 @@ def binsearch_offset(reader, key, compare_func=cmp, block_size=8192):
     min_ = 0
 
     reader.seek(0, 2)
-    max_ = reader.tell() / block_size
+    max_ = int(reader.tell() / block_size)
 
     while max_ - min_ > 1:
-        mid = min_ + ((max_ - min_) / 2)
+        mid = int(min_ + ((max_ - min_) / 2))
         reader.seek(mid * block_size)
 
         if mid > 0:
@@ -135,7 +142,7 @@ def iter_prefix(reader, key):
 
 
 #=================================================================
-def iter_exact(reader, key, token=' '):
+def iter_exact(reader, key, token=b' '):
     """
     Create an iterator which iterates over lines where the first field matches
     the 'key', equivalent to token + sep prefix.

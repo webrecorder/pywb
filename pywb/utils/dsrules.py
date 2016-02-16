@@ -1,5 +1,5 @@
 import pkgutil
-from loaders import load_yaml_config
+from pywb.utils.loaders import load_yaml_config
 
 
 #=================================================================

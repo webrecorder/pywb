@@ -4,6 +4,7 @@ Representation and parsing of HTTP-style status + headers
 
 import pprint
 from copy import copy
+from six.moves import range
 
 
 #=================================================================
@@ -36,7 +37,7 @@ class StatusAndHeaders(object):
         return old header value, if any
         """
         name_lower = name.lower()
-        for index in xrange(len(self.headers) - 1, -1, -1):
+        for index in range(len(self.headers) - 1, -1, -1):
             curr_name, curr_value = self.headers[index]
             if curr_name.lower() == name_lower:
                 self.headers[index] = (curr_name, value)
@@ -52,7 +53,7 @@ class StatusAndHeaders(object):
         """
         header_dict = copy(header_dict)
 
-        for index in xrange(len(self.headers) - 1, -1, -1):
+        for index in range(len(self.headers) - 1, -1, -1):
             curr_name, curr_value = self.headers[index]
             name_lower = curr_name.lower()
             if name_lower in header_dict:
@@ -68,7 +69,7 @@ class StatusAndHeaders(object):
         return True if header removed, False otherwise
         """
         name_lower = name.lower()
-        for index in xrange(len(self.headers) - 1, -1, -1):
+        for index in range(len(self.headers) - 1, -1, -1):
             if self.headers[index][0].lower() == name_lower:
                 del self.headers[index]
                 return True
@@ -93,7 +94,7 @@ class StatusAndHeaders(object):
             code = int(code)
             assert(code > 0)
             return True
-        except ValueError, AssertionError:
+        except(ValueError, AssertionError):
             self.statusline = valid_statusline
             return False
 

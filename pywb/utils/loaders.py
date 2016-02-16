@@ -5,12 +5,15 @@ local and remote access
 
 import os
 import hmac
-import urllib
-#import urllib2
 import requests
-import urlparse
+
+import six
+import six.moves.urllib.request as urllib_req
+import six.moves.urllib.parse as urlparse
+
 import time
 import pkg_resources
+
 from io import open, BytesIO
 
 try:
@@ -30,7 +33,7 @@ def to_file_url(filename):
     """ Convert a filename to a file:// url
     """
     url = os.path.abspath(filename)
-    url = urlparse.urljoin('file:', urllib.pathname2url(url))
+    url = urlparse.urljoin('file:', urllib_req.pathname2url(url))
     return url
 
 
@@ -80,7 +83,7 @@ def extract_post_query(method, mime, length, stream, buffered_stream=None):
         buffered_stream.write(post_query)
         buffered_stream.seek(0)
 
-    post_query = urllib.unquote_plus(post_query)
+    post_query = urlparse.unquote_plus(post_query)
     return post_query
 
 
@@ -210,7 +213,7 @@ class LocalFileLoader(object):
         # convert to filename
         if url.startswith('file://'):
             file_only = True
-            url = urllib.url2pathname(url[len('file://'):])
+            url = urllib_req.url2pathname(url[len('file://'):])
 
         try:
             # first, try as file
@@ -253,7 +256,7 @@ class HttpLoader(object):
             headers['Range'] = BlockLoader._make_range_header(offset, length)
 
         if self.cookie_maker:
-            if isinstance(self.cookie_maker, basestring):
+            if isinstance(self.cookie_maker, six.string_types):
                 headers['Cookie'] = self.cookie_maker
             else:
                 headers['Cookie'] = self.cookie_maker.make()
@@ -311,14 +314,14 @@ class HMACCookieMaker(object):
         self.duration = duration
 
     def make(self, extra_id=''):
-        expire = str(long(time.time() + self.duration))
+        expire = str(int(time.time() + self.duration))
 
         if extra_id:
             msg = extra_id + '-' + expire
         else:
             msg = expire
 
-        hmacdigest = hmac.new(self.key, msg)
+        hmacdigest = hmac.new(self.key.encode('utf-8'), msg.encode('utf-8'))
         hexdigest = hmacdigest.hexdigest()
 
         if extra_id:
@@ -349,7 +352,7 @@ class LimitReader(object):
             length = self.limit
 
         if length == 0:
-            return ''
+            return b''
 
         buff = self.stream.read(length)
         self.limit -= len(buff)
@@ -362,7 +365,7 @@ class LimitReader(object):
             length = self.limit
 
         if length == 0:
-            return ''
+            return b''
 
         buff = self.stream.readline(length)
         self.limit -= len(buff)

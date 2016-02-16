@@ -82,13 +82,13 @@ test_cdx_dir = get_test_dir() + 'cdx/'
 
 def print_binsearch_results(key, iter_func):
     with open(test_cdx_dir + 'iana.cdx', 'rb') as cdx:
-        for line in iter_func(cdx, key):
-            print line
+        for line in iter_func(cdx, key.encode('utf-8')):
+            print(line.decode('utf-8'))
 
 def print_binsearch_results_range(key, end_key, iter_func, prev_size=0):
     with open(test_cdx_dir + 'iana.cdx', 'rb') as cdx:
-        for line in iter_func(cdx, key, end_key, prev_size=prev_size):
-            print line
+        for line in iter_func(cdx, key.encode('utf-8'), end_key.encode('utf-8'), prev_size=prev_size):
+            print(line.decode('utf-8'))
 
 
 if __name__ == "__main__":
