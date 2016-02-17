@@ -73,7 +73,7 @@ setup(
             glob.glob('sample_archive/text_content/*')),
         ],
     install_requires=[
-        'six'
+        'six',
         'chardet',
         'requests',
         'redis',
