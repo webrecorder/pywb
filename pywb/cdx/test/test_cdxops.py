@@ -31,17 +31,17 @@ com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYA
 com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz
 com,example)/ 20140127171251 http://example.com warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 11875 dupes.warc.gz
 
->>> cdx_ops_test('http://example.com/', sources = [test_cdx_dir], to='2012')
+>>> cdx_ops_test('http://example.com/', sources = [test_cdx_dir], to='2012')  # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
 NotFoundException: No Captures found for: http://example.com/
 
 # No matching results
->>> cdx_ops_test('http://iana.org/dont_have_this', reverse = True, resolveRevisits = True, limit = 2)
+>>> cdx_ops_test('http://iana.org/dont_have_this', reverse = True, resolveRevisits = True, limit = 2)  # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
 NotFoundException: No Captures found for: http://iana.org/dont_have_this
 
 # No matching -- limit=1
->>> cdx_ops_test('http://iana.org/dont_have_this', reverse = True, resolveRevisits = True, limit = 1)
+>>> cdx_ops_test('http://iana.org/dont_have_this', reverse = True, resolveRevisits = True, limit = 1)  # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
 NotFoundException: No Captures found for: http://iana.org/dont_have_this
 
@@ -69,7 +69,7 @@ org,iana)/_css/2013.1/screen.css 20140126200625 http://www.iana.org/_css/2013.1/
 org,iana)/_css/2013.1/screen.css 20140126200625 http://www.iana.org/_css/2013.1/screen.css text/css 200 BUAEPXZNN44AIX3NLXON4QDV6OY2H5QD - - 8754 41238 iana.warc.gz
 
 # Filter -- no such field, no matches
->>> cdx_ops_test(url = 'http://iana.org/_css/2013.1/screen.css', filter = 'blah:200')
+>>> cdx_ops_test(url = 'http://iana.org/_css/2013.1/screen.css', filter = 'blah:200')  # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
 NotFoundException: No Captures found for: http://iana.org/_css/2013.1/screen.css
 
@@ -163,48 +163,64 @@ org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126201249 http://www.iana.org/_
 org,iana)/domains/root/db 20140126200927 http://www.iana.org/domains/root/db/ text/html 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 446 671278 iana.warc.gz - - -
 org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db text/html 200 DHXA725IW5VJJFRTWBQT6BEZKRE7H57S - - 18365 672225 iana.warc.gz - - -
 
-# Resolve Revisit -- cdxj minimal -- output also json
->>> cdx_ops_test(url = 'http://example.com/?example=1', sources=[get_test_dir() + 'cdxj/example.cdxj'], resolveRevisits=True)
-{"urlkey": "com,example)/?example=1", "timestamp": "20140103030321", "url": "http://example.com?example=1", "length": "1043", "filename": "example.warc.gz", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "offset": "333", "orig.length": "-", "orig.offset": "-", "orig.filename": "-"}
-{"urlkey": "com,example)/?example=1", "timestamp": "20140103030341", "url": "http://example.com?example=1", "filename": "example.warc.gz", "length": "553", "mime": "", "offset": "1864", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "orig.length": "1043", "orig.offset": "333", "orig.filename": "example.warc.gz"}
-
-# Resolve Revisit -- cdxj minimal -- output also json
->>> cdx_ops_test(url = 'http://example.com/?example=1', sources=[get_test_dir() + 'cdxj/example-no-digest.cdxj'], resolveRevisits=True)
-{"urlkey": "com,example)/?example=1", "timestamp": "20140103030321", "url": "http://example.com?example=1", "length": "1043", "filename": "example.warc.gz", "offset": "333", "orig.length": "-", "orig.offset": "-", "orig.filename": "-"}
-{"urlkey": "com,example)/?example=1", "timestamp": "20140103030341", "url": "http://example.com?example=1", "length": "553", "filename": "example.warc.gz", "mime": "warc/revisit", "offset": "1864", "orig.length": "-", "orig.offset": "-", "orig.filename": "-"}
-
-
-
-
 """
 
 #=================================================================
 from pywb.cdx.cdxserver import CDXServer
 import os
 import sys
+import six
 
 from pywb import get_test_dir
 
 test_cdx_dir = get_test_dir() + 'cdx/'
 
 
-def cdx_ops_test(url, sources = [test_cdx_dir + 'iana.cdx'], **kwparams):
+def cdx_ops_test_data(url, sources = [test_cdx_dir + 'iana.cdx'], **kwparams):
     kwparams['url'] = url
     if not 'output' in kwparams:
         kwparams['output'] = 'cdxobject'
-    fields = kwparams.get('fields')
-    if fields:
-        fields = fields.split(',')
 
     server = CDXServer(sources)
     results = server.load_cdx(**kwparams)
+    return list(results)
+
+
+def cdx_ops_test(*args, **kwargs):
+    results = cdx_ops_test_data(*args, **kwargs)
+
+    fields = kwargs.get('fields')
+    if fields:
+        fields = fields.split(',')
 
     for x in results:
         if not isinstance(x, str):
             l = x.to_text(fields).replace('\t', '    ')
         else:
             l = x
+
         sys.stdout.write(l)
+
+
+
+def test_cdxj_resolve_revisit():
+    # Resolve Revisit -- cdxj minimal -- output also json
+    results = cdx_ops_test_data(url = 'http://example.com/?example=1', sources=[get_test_dir() + 'cdxj/example.cdxj'], resolveRevisits=True)
+    assert(len(results) == 2)
+    assert(dict(results[0]) == {"urlkey": "com,example)/?example=1", "timestamp": "20140103030321", "url": "http://example.com?example=1", "length": "1043", "filename": "example.warc.gz", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "offset": "333", "orig.length": "-", "orig.offset": "-", "orig.filename": "-"})
+
+    assert(dict(results[1]) == {"urlkey": "com,example)/?example=1", "timestamp": "20140103030341", "url": "http://example.com?example=1", "filename": "example.warc.gz", "length": "553", "mime": "", "offset": "1864", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "orig.length": "1043", "orig.offset": "333", "orig.filename": "example.warc.gz"})
+
+
+
+def test_cdxj_resolve_revisit_2():
+    # Resolve Revisit -- cdxj minimal -- output also json
+    results = cdx_ops_test_data(url = 'http://example.com/?example=1', sources=[get_test_dir() + 'cdxj/example-no-digest.cdxj'], resolveRevisits=True)
+    assert(len(results) == 2)
+    assert(dict(results[0]) == {"urlkey": "com,example)/?example=1", "timestamp": "20140103030321", "url": "http://example.com?example=1", "length": "1043", "filename": "example.warc.gz", "offset": "333", "orig.length": "-", "orig.offset": "-", "orig.filename": "-"})
+
+    assert(dict(results[1]) == {"urlkey": "com,example)/?example=1", "timestamp": "20140103030341", "url": "http://example.com?example=1", "length": "553", "filename": "example.warc.gz", "mime": "warc/revisit", "offset": "1864", "orig.length": "-", "orig.offset": "-", "orig.filename": "-"})
+
 
 
 if __name__ == "__main__":

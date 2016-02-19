@@ -1,9 +1,11 @@
 import redis
 
 from pywb.utils.binsearch import iter_exact
+from pywb.utils.loaders import to_native_str
 
-import urlparse
-import urllib
+from six.moves.urllib.parse import urlsplit
+from six.moves.urllib.request import url2pathname
+
 import os
 import logging
 
@@ -49,7 +51,7 @@ class RedisResolver:
 
     def __call__(self, filename):
         redis_val = self.redis.hget(self.key_prefix + filename, 'path')
-        return [redis_val] if redis_val else []
+        return [to_native_str(redis_val)] if redis_val else []
 
     def __repr__(self):
         return "RedisResolver('{0}')".format(self.redis_url)
@@ -62,12 +64,12 @@ class PathIndexResolver:
 
     def __call__(self, filename):
         with open(self.pathindex_file, 'rb') as reader:
-            result = iter_exact(reader, filename, '\t')
+            result = iter_exact(reader, filename.encode('utf-8'), b'\t')
 
             for pathline in result:
-                paths = pathline.split('\t')[1:]
+                paths = pathline.split(b'\t')[1:]
                 for path in paths:
-                    yield path
+                    yield to_native_str(path)
 
     def __repr__(self):  # pragma: no cover
         return "PathIndexResolver('{0}')".format(self.pathindex_file)
@@ -84,7 +86,7 @@ def make_best_resolver(param):
         path = param
         arg = None
 
-    url_parts = urlparse.urlsplit(path)
+    url_parts = urlsplit(path)
 
     if url_parts.scheme == 'redis':
         logging.debug('Adding Redis Index: ' + path)
@@ -92,7 +94,7 @@ def make_best_resolver(param):
 
     if url_parts.scheme == 'file':
         path = url_parts.path
-        path = urllib.url2pathname(path)
+        path = url2pathname(path)
 
     if os.path.isfile(path):
         logging.debug('Adding Path Index: ' + path)
@@ -106,7 +108,7 @@ def make_best_resolver(param):
 
 #=================================================================
 def make_best_resolvers(paths):
-    if hasattr(paths, '__iter__'):
-        return map(make_best_resolver, paths)
+    if isinstance(paths, list) or isinstance(paths, set):
+        return list(map(make_best_resolver, paths))
     else:
         return [make_best_resolver(paths)]

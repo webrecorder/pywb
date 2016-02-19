@@ -4,8 +4,8 @@ from pywb.framework.cache import create_cache
 from pywb.rewrite.rewrite_live import LiveRewriter
 from pywb.rewrite.wburl import WbUrl
 
-from handlers import StaticHandler, SearchPageWbUrlHandler
-from views import HeadInsertView
+from pywb.webapp.handlers import StaticHandler, SearchPageWbUrlHandler
+from pywb.webapp.views import HeadInsertView
 
 from pywb.utils.wbexception import WbException
 
@@ -60,7 +60,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
         except Exception as exc:
             import traceback
             err_details = traceback.format_exc(exc)
-            print err_details
+            print(err_details)
 
             url = wbrequest.wb_url.url
             msg = 'Could not load the url from the live web: ' + url

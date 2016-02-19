@@ -22,29 +22,6 @@ org,iana)/domains/root/db 20140126200927 http://www.iana.org/domains/root/db/ te
 org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db text/html 200 DHXA725IW5VJJFRTWBQT6BEZKRE7H57S - - 18365 672225 iana.warc.gz
 org,iana)/domains/root/servers 20140126201227 http://www.iana.org/domains/root/servers text/html 200 AFW34N3S4NK2RJ6QWMVPB5E2AIUETAHU - - 3137 733840 iana.warc.gz
 
-# Pages -- default page size
->>> zip_ops_test(url='http://iana.org/domains/example', matchType='exact', showNumPages=True)
-{"blocks": 1, "pages": 1, "pageSize": 10}
-
->>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', showNumPages=True)
-{"blocks": 38, "pages": 4, "pageSize": 10}
-
-# set page size
->>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', pageSize=4, showNumPages=True)
-{"blocks": 38, "pages": 10, "pageSize": 4}
-
-# set page size -- alt domain query
->>> zip_ops_test(url='*.iana.org', pageSize='4', showNumPages=True)
-{"blocks": 38, "pages": 10, "pageSize": 4}
-
-# page size for non-existent, but secondary index match
->>> zip_ops_test(url='iana.org/domains/int/blah', pageSize=4, showNumPages=True)
-{"blocks": 0, "pages": 0, "pageSize": 4}
-
-# page size for non-existent, no secondary index match
->>> zip_ops_test(url='*.foo.bar', showNumPages=True)
-{"blocks": 0, "pages": 0, "pageSize": 10}
-
 # first page
 >>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', showPagedIndex=True, pageSize=4, page=0)
 com,example)/ 20140127171200    zipnum    0    275    1
@@ -116,16 +93,16 @@ org,iana)/time-zones/y 20140126200737 http://www.iana.org/time-zones/Y text/html
 org,iana)/time-zones/y 20140126200737 http://www.iana.org/time-zones/Y text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
 
 # invalid page
->>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', showPagedIndex=True, pageSize=4, page=10)
+>>> zip_ops_test(url='http://iana.org/domains/', matchType='domain', showPagedIndex=True, pageSize=4, page=10)   # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
 CDXException: Page 10 invalid: First Page is 0, Last Page is 9
 
 
->>> zip_ops_test(url='http://aaa.aaa/', matchType='exact', showPagedIndex=True)
+>>> zip_ops_test(url='http://aaa.aaa/', matchType='exact', showPagedIndex=True)  # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
 NotFoundException: No Captures found for: http://aaa.aaa/
 
->>> zip_ops_test(url='http://aaa.aaa/', matchType='domain', showPagedIndex=True)
+>>> zip_ops_test(url='http://aaa.aaa/', matchType='domain', showPagedIndex=True)  # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
 NotFoundException: No Captures found for: http://aaa.aaa/ (domain query)
 
@@ -133,34 +110,26 @@ NotFoundException: No Captures found for: http://aaa.aaa/ (domain query)
 >>> zip_ops_test(url='http://aaa.zz/', matchType='domain', showPagedIndex=True)
 org,iana)/time-zones 20140126200737    zipnum    9631    166    38
 
-# read cdx to find 0 pages
->>> zip_ops_test(url='http://aaa.zz/', matchType='domain', showNumPages=True)
-{"blocks": 0, "pages": 0, "pageSize": 10}
-
 # read cdx to find no captures
->>> zip_ops_test(url='http://aaa.zz/', matchType='domain')
+>>> zip_ops_test(url='http://aaa.zz/', matchType='domain')  # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
 NotFoundException: No Captures found for: http://aaa.zz/ (domain query)
 
 # Invalid .idx filesor or missing loc
 
->>> zip_test_err(url='http://example.com/', matchType='exact')
+>>> zip_test_err(url='http://example.com/', matchType='exact')  # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
 Exception: No Locations Found for: foo
 
 
->>> zip_test_err(url='http://iana.org/x', matchType='exact')
-Traceback (most recent call last):
-IOError: [Errno 2] No such file or directory: './sample_archive/invalid'
 
-
->>> zip_test_err(url='http://example.zz/x', matchType='exact')
+>>> zip_test_err(url='http://example.zz/x', matchType='exact')  # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
 Exception: No Locations Found for: foo2
 
 """
 
-from test_cdxops import cdx_ops_test
+from test_cdxops import cdx_ops_test, cdx_ops_test_data
 from pywb import get_test_dir
 from pywb.cdx.cdxserver import CDXServer
 
@@ -170,8 +139,14 @@ import tempfile
 import os
 import json
 
+import pytest
+
 
 test_zipnum = get_test_dir() + 'zipcdx/zipnum-sample.idx'
+
+def zip_ops_test_data(url, **kwargs):
+    sources = test_zipnum
+    return json.loads(cdx_ops_test_data(url, sources, **kwargs)[0])
 
 def zip_ops_test(url, **kwargs):
     sources = test_zipnum
@@ -217,6 +192,50 @@ def test_zip_prefix_load():
 
     finally:
         shutil.rmtree(tmpdir)
+
+
+
+def test_blocks_def_page_size():
+    # Pages -- default page size
+    res = zip_ops_test_data(url='http://iana.org/domains/example', matchType='exact', showNumPages=True)
+    assert(res == {"blocks": 1, "pages": 1, "pageSize": 10})
+
+def test_blocks_def_size_2():
+    res = zip_ops_test_data(url='http://iana.org/domains/', matchType='domain', showNumPages=True)
+    assert(res == {"blocks": 38, "pages": 4, "pageSize": 10})
+
+def test_blocks_set_page_size():
+    # set page size
+    res = zip_ops_test_data(url='http://iana.org/domains/', matchType='domain', pageSize=4, showNumPages=True)
+    assert(res == {"blocks": 38, "pages": 10, "pageSize": 4})
+
+def test_blocks_alt_q():
+    # set page size -- alt domain query
+    res = zip_ops_test_data(url='*.iana.org', pageSize='4', showNumPages=True)
+    assert(res == {"blocks": 38, "pages": 10, "pageSize": 4})
+
+def test_blocks_secondary_match():
+    # page size for non-existent, but secondary index match
+    res = zip_ops_test_data(url='iana.org/domains/int/blah', pageSize=4, showNumPages=True)
+    assert(res == {"blocks": 0, "pages": 0, "pageSize": 4})
+
+def test_blocks_no_match():
+    # page size for non-existent, no secondary index match
+    res = zip_ops_test_data(url='*.foo.bar', showNumPages=True)
+    assert(res == {"blocks": 0, "pages": 0, "pageSize": 10})
+
+def test_blocks_zero_pages():
+    # read cdx to find 0 pages
+    res = zip_ops_test_data(url='http://aaa.zz/', matchType='domain', showNumPages=True)
+    assert(res == {"blocks": 0, "pages": 0, "pageSize": 10})
+
+
+# Errors
+
+def test_err_file_not_found():
+    with pytest.raises(IOError):
+        zip_test_err(url='http://iana.org/x', matchType='exact')  # doctest: +IGNORE_EXCEPTION_DETAIL
+
 
 
 

@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from pywb.framework.wbrequestresponse import WbResponse, WbRequest
 from pywb.framework.archivalrouter import ArchivalRouter
 
-import urlparse
+from six.moves.urllib.parse import urlsplit
 import base64
 
 import socket
@@ -164,7 +164,7 @@ class ProxyRouter(object):
 
             url = env['REL_REQUEST_URI']
         else:
-            parts = urlparse.urlsplit(env['REL_REQUEST_URI'])
+            parts = urlsplit(env['REL_REQUEST_URI'])
             hostport = parts.netloc.split(':', 1)
             env['pywb.proxy_host'] = hostport[0]
             env['pywb.proxy_port'] = hostport[1] if len(hostport) == 2 else ''

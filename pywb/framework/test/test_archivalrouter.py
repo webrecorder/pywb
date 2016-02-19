@@ -94,8 +94,10 @@ False
 
 from pywb.framework.archivalrouter import Route, ReferRedirect, ArchivalRouter
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
+
 import pprint
-import urlparse
+
+from six.moves.urllib.parse import urlsplit
 
 def _test_route_req(route, env, abs_path=False):
     matcher, coll = route.is_handling(env['REL_REQUEST_URI'])

@@ -1,5 +1,5 @@
-from urllib import urlencode
-from cdxobject import CDXException
+from six.moves.urllib.parse import urlencode
+from pywb.cdx.cdxobject import CDXException
 
 
 #=================================================================

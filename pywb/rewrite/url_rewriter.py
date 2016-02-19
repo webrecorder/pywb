@@ -1,7 +1,7 @@
-import urlparse
+from six.moves.urllib.parse import urljoin, urlsplit, urlunsplit
 
-from wburl import WbUrl
-from cookie_rewriter import get_cookie_rewriter
+from pywb.rewrite.wburl import WbUrl
+from pywb.rewrite.cookie_rewriter import get_cookie_rewriter
 
 
 #=================================================================
@@ -119,11 +119,11 @@ class UrlRewriter(object):
 
     @staticmethod
     def urljoin(orig_url, url):
-        new_url = urlparse.urljoin(orig_url, url)
+        new_url = urljoin(orig_url, url)
         if '../' not in new_url:
             return new_url
 
-        parts = urlparse.urlsplit(new_url)
+        parts = urlsplit(new_url)
         scheme, netloc, path, query, frag = parts
 
         path_parts = path.split('/')
@@ -147,7 +147,7 @@ class UrlRewriter(object):
 
         parts = (scheme, netloc, path, query, frag)
 
-        new_url = urlparse.urlunsplit(parts)
+        new_url = urlunsplit(parts)
         return new_url
 
 

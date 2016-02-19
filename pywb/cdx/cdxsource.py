@@ -3,11 +3,11 @@ from pywb.utils.binsearch import iter_range
 from pywb.utils.wbexception import AccessException, NotFoundException
 from pywb.utils.wbexception import BadRequestException, WbException
 
-from query import CDXQuery
+from pywb.cdx.query import CDXQuery
 
-import urllib
-import urllib2
-import itertools
+from six.moves.urllib.request import urlopen, Request
+from six.moves.urllib.error import HTTPError
+from six.moves import map
 
 
 #=================================================================
@@ -33,7 +33,8 @@ class CDXFile(CDXSource):
     @staticmethod
     def _do_load_file(filename, query):
         with open(filename, 'rb') as source:
-            gen = iter_range(source, query.key, query.end_key)
+            gen = iter_range(source, query.key.encode('utf-8'),
+                                     query.end_key.encode('utf-8'))
             for line in gen:
                 yield line
 
@@ -65,14 +66,14 @@ class RemoteCDXSource(CDXSource):
         urlparams = remote_query.urlencode()
 
         try:
-            request = urllib2.Request(self.remote_url + '?' + urlparams)
+            request = Request(self.remote_url + '?' + urlparams)
 
             if self.cookie:
                 request.add_header('Cookie', self.cookie)
 
-            response = urllib2.urlopen(request)
+            response = urlopen(request)
 
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             if e.code == 403:
                 raise AccessException('Access Denied')
             elif e.code == 404:
@@ -95,14 +96,14 @@ class RemoteCDXSource(CDXSource):
 
 #=================================================================
 class RedisCDXSource(CDXSource):
-    DEFAULT_KEY_PREFIX = 'c:'
+    DEFAULT_KEY_PREFIX = b'c:'
 
     def __init__(self, redis_url, config=None):
         import redis
 
         parts = redis_url.split('/')
         if len(parts) > 4:
-            self.cdx_key = parts[4]
+            self.cdx_key = parts[4].encode('utf-8')
             redis_url = 'redis://' + parts[2] + '/' + parts[3]
         else:
             self.cdx_key = None
@@ -126,7 +127,7 @@ class RedisCDXSource(CDXSource):
         if self.cdx_key:
             return self.load_sorted_range(query, self.cdx_key)
         else:
-            return self.load_single_key(query.key)
+            return self.load_single_key(query.key.encode('utf-8'))
 
     def load_sorted_range(self, query, cdx_key):
         cdx_list = self.redis.zrangebylex(cdx_key,
@@ -137,12 +138,12 @@ class RedisCDXSource(CDXSource):
 
     def load_single_key(self, key):
         # ensure only url/surt is part of key
-        key = key.split(' ')[0]
+        key = key.split(b' ')[0]
         cdx_list = self.redis.zrange(self.key_prefix + key, 0, -1)
 
         # key is not part of list, so prepend to each line
-        key += ' '
-        cdx_list = itertools.imap(lambda x: key + x, cdx_list)
+        key += b' '
+        cdx_list = map(lambda x: key + x, cdx_list)
         return cdx_list
 
     def __str__(self):

@@ -1,5 +1,3 @@
-import itertools
-import urlparse
 import collections
 
 from pywb.utils.statusandheaders import StatusAndHeaders
@@ -7,9 +5,13 @@ from pywb.utils.statusandheaders import StatusAndHeadersParser
 from pywb.utils.statusandheaders import StatusAndHeadersParserException
 
 from pywb.utils.loaders import BlockLoader, LimitReader
+from pywb.utils.loaders import to_native_str
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 
 from pywb.utils.wbexception import WbException
+
+from six.moves import zip
+import six
 
 
 #=================================================================
@@ -34,7 +36,7 @@ class ArchiveLoadFailed(WbException):
 
 
 #=================================================================
-class ArcWarcRecordLoader:
+class ArcWarcRecordLoader(object):
     # Standard ARC v1.0 headers
     # TODO: support ARC v2.0 also?
     ARC_HEADERS = ["uri", "ip-address", "archive-date",
@@ -73,7 +75,7 @@ class ArcWarcRecordLoader:
         except:
             length = -1
 
-        stream = self.loader.load(url, long(offset), length)
+        stream = self.loader.load(url, int(offset), length)
         decomp_type = 'gzip'
 
         # Create decompressing stream
@@ -200,16 +202,21 @@ class ArcWarcRecordLoader:
 
 
 #=================================================================
-class ARCHeadersParser:
+class ARCHeadersParser(object):
     def __init__(self, headernames):
         self.headernames = headernames
 
     def parse(self, stream, headerline=None):
         total_read = 0
 
+        def readline():
+            return to_native_str(stream.readline())
+
         # if headerline passed in, use that
         if headerline is None:
-            headerline = stream.readline()
+            headerline = readline()
+        else:
+            headerline = to_native_str(headerline)
 
         header_len = len(headerline)
 
@@ -222,8 +229,8 @@ class ARCHeadersParser:
 
         # if arc header, consume next two lines
         if headerline.startswith('filedesc://'):
-            version = stream.readline()  # skip version
-            spec = stream.readline()  # skip header spec, use preset one
+            version = readline()  # skip version
+            spec = readline()  # skip header spec, use preset one
             total_read += len(version)
             total_read += len(spec)
 
@@ -236,7 +243,7 @@ class ARCHeadersParser:
 
         headers = []
 
-        for name, value in itertools.izip(headernames, parts):
+        for name, value in zip(headernames, parts):
             headers.append((name, value))
 
         return StatusAndHeaders(statusline='',

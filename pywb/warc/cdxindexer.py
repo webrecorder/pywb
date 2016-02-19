@@ -29,15 +29,18 @@ except ImportError:  # pragma: no cover
 from argparse import ArgumentParser, RawTextHelpFormatter
 from bisect import insort
 
-from io import BytesIO
+from six import StringIO
 
-from archiveiterator import DefaultRecordIter
+from pywb.warc.archiveiterator import DefaultRecordParser
+import codecs
+import six
 
 
 #=================================================================
 class BaseCDXWriter(object):
     def __init__(self, out):
-        self.out = out
+        self.out = codecs.getwriter('utf-8')(out)
+        #self.out = out
 
     def __enter__(self):
         self._write_header()
@@ -69,7 +72,7 @@ class CDXJ(object):
 
         outdict = OrderedDict()
 
-        for n, v in entry.iteritems():
+        for n, v in six.iteritems(entry):
             if n in ('urlkey', 'timestamp'):
                 continue
 
@@ -145,7 +148,7 @@ class SortedCDXWriter(BaseCDXWriter):
         return res
 
     def write(self, entry, filename):
-        self.out = BytesIO()
+        self.out = StringIO()
         super(SortedCDXWriter, self).write(entry, filename)
         line = self.out.getvalue()
         if line:
@@ -175,7 +178,7 @@ def iter_file_or_dir(inputs, recursive=True, rel_root=None):
             if not rel_root:
                 filename = os.path.basename(input_)
             else:
-	        filename = _resolve_rel_path(input_, rel_root)
+                filename = _resolve_rel_path(input_, rel_root)
 
             yield input_, filename
 
@@ -268,7 +271,7 @@ def write_multi_cdx_index(output, inputs, **options):
             outfile = open(output, 'wb')
 
         writer_cls = get_cdx_writer_cls(options)
-        record_iter = DefaultRecordIter(**options)
+        record_iter = DefaultRecordParser(**options)
 
         with writer_cls(outfile) as writer:
             for fullpath, filename in iter_file_or_dir(inputs,
@@ -285,13 +288,12 @@ def write_multi_cdx_index(output, inputs, **options):
 
 #=================================================================
 def write_cdx_index(outfile, infile, filename, **options):
-    if type(filename) is unicode:
-        filename = filename.encode(sys.getfilesystemencoding())
+    #filename = filename.encode(sys.getfilesystemencoding())
 
     writer_cls = get_cdx_writer_cls(options)
 
     with writer_cls(outfile) as writer:
-        entry_iter = DefaultRecordIter(**options)(infile)
+        entry_iter = DefaultRecordParser(**options)(infile)
 
         for entry in entry_iter:
             writer.write(entry, filename)

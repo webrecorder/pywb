@@ -6,11 +6,14 @@ from pywb.utils.dsrules import DEFAULT_RULES_FILE
 from pywb.utils.wbexception import AccessException, NotFoundException
 from pywb.utils.wbexception import BadRequestException, WbException
 
-from urllib2 import HTTPError
+from six.moves.urllib.error import HTTPError
 
 from mock import patch
 from pytest import raises
 import webtest
+import unittest
+
+import six
 
 from pywb import get_test_dir
 
@@ -41,7 +44,7 @@ def setup_module(self):
 
 def mock_urlopen(req):
     resp = testapp.get(req.get_full_url())
-    return resp.body.split('\n')
+    return resp.body.split(b'\n')
 
 def mock_urlopen_err(err):
     def make_err(req):
@@ -58,45 +61,44 @@ def mock_urlopen_fuzzy(req):
     resp = testapp.get(req.get_full_url(), status=status)
 
     if status == 200:
-        return resp.body.split('\n')
+        return resp.body.split(b'\n')
     else:
         raise mock_urlopen_err(404)(req)
 
-@patch('pywb.cdx.cdxsource.urllib2.urlopen', mock_urlopen)
+@patch('pywb.cdx.cdxsource.urlopen', mock_urlopen)
 def assert_cdx_match(server):
     x = server.load_cdx(url='example.com',
                         limit=2,
                         output='cdxobject')
-    x.next()
-    assert x.next().items() == CDX_RESULT
-
+    x = list(x)
+    assert(list(x[1].items()) == CDX_RESULT)
 
 def assert_cdx_fuzzy_match(server, mock=mock_urlopen):
-    with patch('pywb.cdx.cdxsource.urllib2.urlopen', mock):
+    with patch('pywb.cdx.cdxsource.urlopen', mock):
         x = server.load_cdx(url='http://example.com?_=123',
                             limit=2,
                             output='cdxobject',
                             allowFuzzy=True)
-    x.next()
-    assert x.next().items() == CDX_RESULT
+    x = list(x)
+    assert(list(x[1].items()) == CDX_RESULT)
 
 
-@patch('pywb.cdx.cdxsource.urllib2.urlopen', mock_urlopen_err(404))
+@patch('pywb.cdx.cdxsource.urlopen', mock_urlopen_err(404))
 def assert_404(server):
     server.load_cdx(url='http://notfound.example.com')
 
 
-@patch('pywb.cdx.cdxsource.urllib2.urlopen', mock_urlopen_err(403))
+@patch('pywb.cdx.cdxsource.urlopen', mock_urlopen_err(403))
 def assert_403(server):
     server.load_cdx(url='http://notfound.example.com')
 
 
-@patch('pywb.cdx.cdxsource.urllib2.urlopen', mock_urlopen_err(400))
+@patch('pywb.cdx.cdxsource.urlopen', mock_urlopen_err(400))
 def assert_400(server):
     server.load_cdx(url='http://notfound.example.com')
 
 
-@patch('pywb.cdx.cdxsource.urllib2.urlopen', mock_urlopen_err(502))
+@patch('pywb.cdx.cdxsource.urlopen', mock_urlopen_err(502))
 def assert_502(server):
     server.load_cdx(url='http://notfound.example.com')
 
@@ -131,7 +133,7 @@ def test_fuzzy_match():
 
 def test_fuzzy_no_match_1():
     # no match, no fuzzy
-    with patch('pywb.cdx.cdxsource.urllib2.urlopen', mock_urlopen):
+    with patch('pywb.cdx.cdxsource.urlopen', mock_urlopen):
         server = CDXServer([TEST_CDX_DIR], ds_rules_file=DEFAULT_RULES_FILE)
         with raises(NotFoundException):
             server.load_cdx(url='http://notfound.example.com/',
@@ -141,7 +143,7 @@ def test_fuzzy_no_match_1():
 
 def test_fuzzy_no_match_2():
     # fuzzy rule, but no actual match
-    with patch('pywb.cdx.cdxsource.urllib2.urlopen', mock_urlopen):
+    with patch('pywb.cdx.cdxsource.urlopen', mock_urlopen):
         server = CDXServer([TEST_CDX_DIR], ds_rules_file=DEFAULT_RULES_FILE)
         with raises(NotFoundException):
             server.load_cdx(url='http://notfound.example.com/?_=1234',
@@ -153,7 +155,7 @@ def test_fuzzy_no_match_2():
 def test2_fuzzy_no_match_3():
     # special fuzzy rule, matches prefix test.example.example.,
     # but doesn't match rule regex
-    with patch('pywb.cdx.cdxsource.urllib2.urlopen', mock_urlopen):
+    with patch('pywb.cdx.cdxsource.urlopen', mock_urlopen):
         server = CDXServer([TEST_CDX_DIR], ds_rules_file=DEFAULT_RULES_FILE)
         with raises(NotFoundException):
             server.load_cdx(url='http://test.example.example/',

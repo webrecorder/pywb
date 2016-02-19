@@ -1,8 +1,6 @@
 import re
-import sys
-import itertools
 
-from url_rewriter import UrlRewriter
+from pywb.rewrite.url_rewriter import UrlRewriter
 
 
 #=================================================================

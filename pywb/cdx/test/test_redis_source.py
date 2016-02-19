@@ -35,13 +35,13 @@ def zadd_cdx(source, cdx, key):
         source.redis.zadd(key, 0, cdx)
         return
 
-    parts = cdx.split(' ', 2)
+    parts = cdx.split(b' ', 2)
 
     key = parts[0]
     timestamp = parts[1]
-    rest = timestamp + ' ' + parts[2]
+    rest = timestamp + b' ' + parts[2]
 
-    score = timestamp_to_sec(timestamp)
+    score = timestamp_to_sec(timestamp.decode('utf-8'))
     source.redis.zadd(source.key_prefix + key, score, rest)
 
 

@@ -15,8 +15,8 @@ from pywb.framework.wbrequestresponse import WbResponse
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
 
-from views import J2TemplateView, init_view
-from replay_views import ReplayView
+from pywb.webapp.views import J2TemplateView, init_view
+from pywb.webapp.replay_views import ReplayView
 from pywb.framework.memento import MementoResponse
 from pywb.utils.timeutils import datetime_to_timestamp
 

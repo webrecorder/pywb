@@ -48,9 +48,9 @@ com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ
 >>> print_cdx_index('example-wget-1-14.warc.gz')
  CDX N b a m s k r M S V g
 com,example)/ 20140216012908 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1151 792 example-wget-1-14.warc.gz
-metadata)/gnu.org/software/wget/warc/manifest.txt 20140216012908 metadata://gnu.org/software/wget/warc/MANIFEST.txt text/plain - SWUF4CK2XMZSOKSA7SDT7M7NUGWH2TRE - - 315 1943 example-wget-1-14.warc.gz
-metadata)/gnu.org/software/wget/warc/wget_arguments.txt 20140216012908 metadata://gnu.org/software/wget/warc/wget_arguments.txt text/plain - UCXDCGORD6K4RJT5NUQGKE2PKEG4ZZD6 - - 340 2258 example-wget-1-14.warc.gz
-metadata)/gnu.org/software/wget/warc/wget.log 20140216012908 metadata://gnu.org/software/wget/warc/wget.log text/plain - 2ULE2LD5UOWDXGACCT624TU5BVKACRQ4 - - 599 2598 example-wget-1-14.warc.gz
+org,gnu)/software/wget/warc/manifest.txt 20140216012908 metadata://gnu.org/software/wget/warc/MANIFEST.txt text/plain - SWUF4CK2XMZSOKSA7SDT7M7NUGWH2TRE - - 315 1943 example-wget-1-14.warc.gz
+org,gnu)/software/wget/warc/wget_arguments.txt 20140216012908 metadata://gnu.org/software/wget/warc/wget_arguments.txt text/plain - UCXDCGORD6K4RJT5NUQGKE2PKEG4ZZD6 - - 340 2258 example-wget-1-14.warc.gz
+org,gnu)/software/wget/warc/wget.log 20140216012908 metadata://gnu.org/software/wget/warc/wget.log text/plain - 2ULE2LD5UOWDXGACCT624TU5BVKACRQ4 - - 599 2598 example-wget-1-14.warc.gz
 
 
 # wget warc, includes metadata and request
@@ -58,9 +58,9 @@ metadata)/gnu.org/software/wget/warc/wget.log 20140216012908 metadata://gnu.org/
  CDX N b a m s k r M S V g
 com,example)/ 20140216012908 http://example.com/ - - - - - 394 398 example-wget-1-14.warc.gz
 com,example)/ 20140216012908 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1151 792 example-wget-1-14.warc.gz
-metadata)/gnu.org/software/wget/warc/manifest.txt 20140216012908 metadata://gnu.org/software/wget/warc/MANIFEST.txt text/plain - SWUF4CK2XMZSOKSA7SDT7M7NUGWH2TRE - - 315 1943 example-wget-1-14.warc.gz
-metadata)/gnu.org/software/wget/warc/wget_arguments.txt 20140216012908 metadata://gnu.org/software/wget/warc/wget_arguments.txt text/plain - UCXDCGORD6K4RJT5NUQGKE2PKEG4ZZD6 - - 340 2258 example-wget-1-14.warc.gz
-metadata)/gnu.org/software/wget/warc/wget.log 20140216012908 metadata://gnu.org/software/wget/warc/wget.log text/plain - 2ULE2LD5UOWDXGACCT624TU5BVKACRQ4 - - 599 2598 example-wget-1-14.warc.gz
+org,gnu)/software/wget/warc/manifest.txt 20140216012908 metadata://gnu.org/software/wget/warc/MANIFEST.txt text/plain - SWUF4CK2XMZSOKSA7SDT7M7NUGWH2TRE - - 315 1943 example-wget-1-14.warc.gz
+org,gnu)/software/wget/warc/wget_arguments.txt 20140216012908 metadata://gnu.org/software/wget/warc/wget_arguments.txt text/plain - UCXDCGORD6K4RJT5NUQGKE2PKEG4ZZD6 - - 340 2258 example-wget-1-14.warc.gz
+org,gnu)/software/wget/warc/wget.log 20140216012908 metadata://gnu.org/software/wget/warc/wget.log text/plain - 2ULE2LD5UOWDXGACCT624TU5BVKACRQ4 - - 599 2598 example-wget-1-14.warc.gz
 
 # wpull warc, includes metadata by default
 >>> print_cdx_index('example-wpull.warc.gz')
@@ -127,7 +127,7 @@ com,example)/?example=2 20140603030341 http://example.com?example=2 warc/revisit
 com,example)/?example=2 20140103030321 http://example.com?example=2 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1987 3207 example-extra.warc
 com,example)/?example=2 20140603030341 http://example.com?example=2 warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 504 5910 example-extra.warc
 
->>> print_cdx_index('example-extra.warc', verify_http=True)
+>>> print_cdx_index('example-extra.warc', verify_http=True)  # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
 StatusAndHeadersParserException: Expected Status Line starting with ['HTTP/1.0', 'HTTP/1.1'] - Found: HTTPX/1.1 200 OK
 
@@ -178,7 +178,7 @@ urn:X-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX
 Total: 210
 
 # test writing to temp dir, also use unicode filename
->>> cli_lines_with_dir(unicode(TEST_WARC_DIR + 'example.warc.gz'))
+>>> cli_lines_with_dir(TEST_WARC_DIR + 'example.warc.gz')
 example.cdx
 com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 333 example.warc.gz
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 example.warc.gz
@@ -223,7 +223,7 @@ def cdx_index(warc, **options):
     return buff.getvalue()
 
 def print_cdx_index(*args, **kwargs):
-    sys.stdout.write(cdx_index(*args, **kwargs))
+    sys.stdout.write(cdx_index(*args, **kwargs).decode('utf-8'))
 
 def assert_cdx_match(cdx, warc, sort=False):
     assert read_fully(cdx) == cdx_index(warc, sort=sort)
@@ -239,11 +239,11 @@ def cli_lines(cmds):
     sys.stdout = buff
     main(cmds)
     sys.stdout = orig
-    lines = buff.getvalue().rstrip().split('\n')
+    lines = buff.getvalue().rstrip().split(b'\n')
 
     # print first, last, num lines
-    print(lines[1])
-    print(lines[-1])
+    print(lines[1].decode('utf-8'))
+    print(lines[-1].decode('utf-8'))
     print('Total: ' + str(len(lines)))
 
 def cli_lines_with_dir(input_):
@@ -256,10 +256,10 @@ def cli_lines_with_dir(input_):
 
         filename = cdx_filename(os.path.basename(input_))
 
-        print filename
+        print(filename)
 
         with open(os.path.join(tmp_dir, filename), 'rb') as fh:
-            lines = fh.read(8192).rstrip().split('\n')
+            lines = fh.read(8192).rstrip().split(b'\n')
 
     finally:
         try:
@@ -273,8 +273,8 @@ def cli_lines_with_dir(input_):
         return
 
     # print first, last, num lines
-    print (lines[1])
-    print (lines[-1])
+    print(lines[1].decode('utf-8'))
+    print(lines[-1].decode('utf-8'))
     print('Total: ' + str(len(lines)))
 
 
@@ -284,18 +284,18 @@ def test_non_chunked_gzip_err():
 
 
 def parse_cdxj(string):
-    lines = string.split('\n')
-    if lines[0] == '':
+    lines = string.split(b'\n')
+    if lines[0] == b'':
         lines = lines[1:]
-    cdxlist = map(CDXObject, lines)
-    return map(dict, cdxlist)
+    cdxlist = list(map(CDXObject, lines))
+    return list(map(dict, cdxlist))
 
 
 def test_cdxj_warc_minimal():
     # cdxj minimal
     res = cdx_index('example.warc.gz', minimal=True, cdxj=True)
 
-    assert parse_cdxj(res) == parse_cdxj("""
+    assert parse_cdxj(res) == parse_cdxj(b"""
 com,example)/?example=1 20140103030321 {"url": "http://example.com?example=1", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "1043", "offset": "333", "filename": "example.warc.gz"}
 com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "mime": "warc/revisit", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "553", "offset": "1864", "filename": "example.warc.gz"}
 org,iana)/domains/example 20140128051539 {"url": "http://www.iana.org/domains/example", "digest": "JZ622UA23G5ZU6Y3XAKH4LINONUEICEG", "length": "577", "offset": "2907", "filename": "example.warc.gz"}
@@ -306,7 +306,7 @@ def test_cdxj_warc_all():
     # warc.gz -- parse all -- CDXJ
     res = cdx_index('example.warc.gz', include_all=True, cdxj=True)
 
-    assert parse_cdxj(res) == parse_cdxj("""
+    assert parse_cdxj(res) == parse_cdxj(b"""
 com,example)/?example=1 20140103030321 {"url": "http://example.com?example=1", "mime": "text/html", "status": "200", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "1043", "offset": "333", "filename": "example.warc.gz"}
 com,example)/?example=1 20140103030321 {"url": "http://example.com?example=1", "length": "488", "offset": "1376", "filename": "example.warc.gz"}
 com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "mime": "warc/revisit", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "553", "offset": "1864", "filename": "example.warc.gz"}
@@ -317,14 +317,14 @@ org,iana)/domains/example 20140128051539 {"url": "http://www.iana.org/domains/ex
 def test_cdxj_arc():
     # arc.gz -- json
     res = cdx_index('example.arc.gz', cdxj=True)
-    assert parse_cdxj(res) == parse_cdxj("""
+    assert parse_cdxj(res) == parse_cdxj(b"""
 com,example)/ 20140216050221 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "856", "offset": "171", "filename": "example.arc.gz"}
 """)
 
 def test_cdxj_arc_minimal():
     # arc.gz -- minimal + json
     res = cdx_index('example.arc.gz', cdxj=True, minimal=True)
-    assert parse_cdxj(res) == parse_cdxj("""
+    assert parse_cdxj(res) == parse_cdxj(b"""
 com,example)/ 20140216050221 {"url": "http://example.com/", "digest": "PEWDX5GTH66WU74WBPGFECIYBMPMP3FP", "length": "856", "offset": "171", "filename": "example.arc.gz"}
 """)
 

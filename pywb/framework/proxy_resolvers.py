@@ -1,13 +1,14 @@
-from wbrequestresponse import WbResponse
+from pywb.framework.wbrequestresponse import WbResponse
 from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.wbexception import WbException
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.rewrite.wburl import WbUrl
 
-from cache import create_cache
-from basehandlers import WbUrlHandler
+from pywb.framework.cache import create_cache
+from pywb.framework.basehandlers import WbUrlHandler
 
-import urlparse
+from six.moves.urllib.parse import parse_qs, urlsplit
+
 import base64
 import os
 import json
@@ -130,7 +131,7 @@ class IPCacheResolver(BaseCollResolver):
         ip = env['REMOTE_ADDR']
         qs = env.get('pywb.proxy_query')
         if qs:
-            res = urlparse.parse_qs(qs)
+            res = parse_qs(qs)
 
             if 'ip' in res:
                 ip = res['ip'][0]
@@ -145,7 +146,7 @@ class IPCacheResolver(BaseCollResolver):
         qs = env.get('pywb.proxy_query')
 
         if qs:
-            res = urlparse.parse_qs(qs)
+            res = parse_qs(qs)
 
             if 'ip' in res:
                 ip = res['ip'][0]
@@ -223,7 +224,7 @@ class CookieResolver(BaseCollResolver):
 
     def handle_magic_page(self, env):
         request_url = env['REL_REQUEST_URI']
-        parts = urlparse.urlsplit(request_url)
+        parts = urlsplit(request_url)
         server_name = env['pywb.proxy_host']
 
         path_url = parts.path[1:]
@@ -309,7 +310,7 @@ class CookieResolver(BaseCollResolver):
         if '://' not in path_url:
             path_url = 'http://' + path_url
 
-        path_parts = urlparse.urlsplit(path_url)
+        path_parts = urlsplit(path_url)
 
         new_url = path_parts.path[1:]
         if path_parts.query:

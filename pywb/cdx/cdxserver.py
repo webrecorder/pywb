@@ -1,19 +1,18 @@
 from pywb.utils.canonicalize import UrlCanonicalizer, calc_search_range
 from pywb.utils.wbexception import NotFoundException
 
-from cdxops import cdx_load
-from cdxsource import CDXSource, CDXFile, RemoteCDXSource, RedisCDXSource
-from zipnum import ZipNumCluster
-from cdxobject import CDXObject, CDXException
-from query import CDXQuery
-from cdxdomainspecific import load_domain_specific_cdx_rules
+from pywb.cdx.cdxops import cdx_load
+from pywb.cdx.cdxsource import CDXSource, CDXFile, RemoteCDXSource, RedisCDXSource
+from pywb.cdx.zipnum import ZipNumCluster
+from pywb.cdx.cdxobject import CDXObject, CDXException
+from pywb.cdx.query import CDXQuery
+from pywb.cdx.cdxdomainspecific import load_domain_specific_cdx_rules
 
 from pywb.utils.loaders import is_http
 
 from itertools import chain
 import logging
 import os
-import urlparse
 
 
 #=================================================================

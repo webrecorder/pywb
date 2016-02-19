@@ -39,8 +39,11 @@ wayback url format.
 """
 
 import re
-import urllib
-import urlparse
+import six
+
+from six.moves.urllib.parse import urlsplit, urlunsplit
+from six.moves.urllib.parse import quote_plus, quote, unquote_plus
+
 
 #=================================================================
 class BaseWbUrl(object):
@@ -105,7 +108,7 @@ class WbUrl(BaseWbUrl):
         if 'xn--' not in url:
             return url
 
-        parts = urlparse.urlsplit(url)
+        parts = urlsplit(url)
         domain = parts.netloc
         try:
             domain = domain.decode('idna')
@@ -114,9 +117,9 @@ class WbUrl(BaseWbUrl):
             # likely already encoded, so use as is
             pass
 
-        domain = urllib.quote(domain)#, safe=r':\/')
+        domain = quote(domain)#, safe=r':\/')
 
-        return urlparse.urlunsplit((parts[0], domain, parts[2], parts[3], parts[4]))
+        return urlunsplit((parts[0], domain, parts[2], parts[3], parts[4]))
 
 
     @staticmethod
@@ -131,7 +134,7 @@ class WbUrl(BaseWbUrl):
         """
         parts = WbUrl.FIRST_PATH.split(url, 1)
 
-        scheme_dom = urllib.unquote_plus(parts[0])
+        scheme_dom = unquote_plus(parts[0])
 
         if isinstance(scheme_dom, str):
             if scheme_dom == parts[0]:
@@ -155,7 +158,7 @@ class WbUrl(BaseWbUrl):
 
         if len(parts) > 1:
             if isinstance(parts[1], unicode):
-                url += '/' + urllib.quote(parts[1].encode('utf-8'))
+                url += '/' + quote(parts[1].encode('utf-8'))
             else:
                 url += '/' + parts[1]
 
@@ -168,7 +171,7 @@ class WbUrl(BaseWbUrl):
 
         if isinstance(orig_url, unicode):
             orig_url = orig_url.encode('utf-8')
-            orig_url = urllib.quote(orig_url)
+            orig_url = quote(orig_url)
 
         self._original_url = orig_url
 
@@ -259,7 +262,7 @@ class WbUrl(BaseWbUrl):
         rex_query = '=' + re.escape(prefix) + '([0-9])*([\w]{2}_)?/?'
         self.url = re.sub(rex_query, '=', self.url)
 
-        rex_query = '=(' + urllib.quote_plus(prefix) + '.*?)((?:https?%3A)?%2F%2F[^&]+)'
+        rex_query = '=(' + quote_plus(prefix) + '.*?)((?:https?%3A)?%2F%2F[^&]+)'
         self.url = re.sub(rex_query, '=\\2', self.url)
 
         return self.url

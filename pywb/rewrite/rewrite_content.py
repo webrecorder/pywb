@@ -7,16 +7,16 @@ import re
 from chardet.universaldetector import UniversalDetector
 from io import BytesIO
 
-from header_rewriter import RewrittenStatusAndHeaders
+from pywb.rewrite.header_rewriter import RewrittenStatusAndHeaders
 
-from rewriterules import RewriteRules
+from pywb.rewrite.rewriterules import RewriteRules
 
 from pywb.utils.dsrules import RuleSet
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 from pywb.utils.bufferedreaders import ChunkedDataReader, BufferedReader
 
-from regex_rewriters import JSNoneRewriter, JSLinkOnlyRewriter
+from pywb.rewrite.regex_rewriters import JSNoneRewriter, JSLinkOnlyRewriter
 
 
 #=================================================================
@@ -288,7 +288,7 @@ class RewriteContent:
     def _decode_buff(buff, stream, encoding):  # pragma: no coverage
         try:
             buff = buff.decode(encoding)
-        except UnicodeDecodeError, e:
+        except UnicodeDecodeError as e:
             # chunk may have cut apart unicode bytes -- add 1-3 bytes and retry
             for i in range(3):
                 buff += stream.read(1)

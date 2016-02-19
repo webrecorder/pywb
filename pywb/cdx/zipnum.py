@@ -5,9 +5,12 @@ import logging
 from io import BytesIO
 import datetime
 import json
+import six
 
-from cdxsource import CDXSource
-from cdxobject import IDXObject, CDXException
+from six.moves import map
+
+from pywb.cdx.cdxsource import CDXSource
+from pywb.cdx.cdxobject import IDXObject, CDXException
 
 from pywb.utils.loaders import BlockLoader, read_last_line
 from pywb.utils.bufferedreaders import gzip_decompressor
@@ -52,7 +55,7 @@ class LocMapResolver(object):
         self.loc_mtime = new_mtime
 
         logging.debug('Loading loc from: ' + self.loc_filename)
-        with open(self.loc_filename, 'rb') as fh:
+        with open(self.loc_filename, 'r') as fh:
             for line in fh:
                 parts = line.rstrip().split('\t')
                 self.loc_map[parts[0]] = parts[1:]
@@ -170,25 +173,28 @@ class ZipNumCluster(CDXSource):
 
         last_line = None
 
+        start_key = query.key.encode('utf-8')
+        end_key = query.end_key.encode('utf-8')
+
         # Get End
-        end_iter = search(reader, query.end_key, prev_size=1)
+        end_iter = search(reader, end_key, prev_size=1)
 
         try:
-            end_line = end_iter.next()
+            end_line = six.next(end_iter)
         except StopIteration:
             last_line = read_last_line(reader)
             end_line = last_line
 
         # Get Start
         first_iter = iter_range(reader,
-                                query.key,
-                                query.end_key,
+                                start_key,
+                                end_key,
                                 prev_size=1)
 
         try:
-            first_line = first_iter.next()
+            first_line = six.next(first_iter)
         except StopIteration:
-            if end_line == last_line and query.key >= last_line:
+            if end_line == last_line and start_key >= last_line:
                 first_line = last_line
             else:
                 reader.close()
@@ -204,7 +210,7 @@ class ZipNumCluster(CDXSource):
 
         try:
             blocks = end['lineno'] - first['lineno']
-            total_pages = blocks / pagesize + 1
+            total_pages = int(blocks / pagesize) + 1
         except:
             blocks = -1
             total_pages = 1
@@ -215,8 +221,8 @@ class ZipNumCluster(CDXSource):
             if blocks == 0:
                 try:
                     block_cdx_iter = self.idx_to_cdx([first_line], query)
-                    block = block_cdx_iter.next()
-                    cdx = block.next()
+                    block = six.next(block_cdx_iter)
+                    cdx = six.next(block)
                 except StopIteration:
                     total_pages = 0
                     blocks = -1
@@ -250,12 +256,12 @@ class ZipNumCluster(CDXSource):
 
     def search_by_line_num(self, reader, line):  # pragma: no cover
         def line_cmp(line1, line2):
-            line1_no = int(line1.rsplit('\t', 1)[-1])
-            line2_no = int(line2.rsplit('\t', 1)[-1])
+            line1_no = int(line1.rsplit(b'\t', 1)[-1])
+            line2_no = int(line2.rsplit(b'\t', 1)[-1])
             return cmp(line1_no, line2_no)
 
         line_iter = search(reader, line, compare_func=line_cmp)
-        yield line_iter.next()
+        yield six.next(line_iter)
 
     def idx_to_cdx(self, idx_iter, query):
         blocks = None
@@ -304,7 +310,8 @@ class ZipNumCluster(CDXSource):
                 last_traceback = sys.exc_info()[2]
 
         if last_exc:
-            raise last_exc, None, last_traceback
+            six.reraise(Exception, last_exc, last_traceback)
+            #raise last_exc
         else:
             raise Exception('No Locations Found for: ' + blocks.part)
 
@@ -326,13 +333,13 @@ class ZipNumCluster(CDXSource):
             for line in BytesIO(buff):
                 yield line
 
-        iter_ = itertools.chain(*itertools.imap(decompress_block, ranges))
+        iter_ = itertools.chain(*map(decompress_block, ranges))
 
         # start bound
-        iter_ = linearsearch(iter_, query.key)
+        iter_ = linearsearch(iter_, query.key.encode('utf-8'))
 
         # end bound
-        end = query.end_key
+        end = query.end_key.encode('utf-8')
         iter_ = itertools.takewhile(lambda line: line < end, iter_)
         return iter_
 

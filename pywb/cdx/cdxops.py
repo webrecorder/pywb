@@ -1,14 +1,17 @@
-from cdxobject import CDXObject, IDXObject
-from cdxobject import TIMESTAMP, STATUSCODE, MIMETYPE, DIGEST
-from cdxobject import OFFSET, LENGTH, FILENAME
+from pywb.cdx.cdxobject import CDXObject, IDXObject
+from pywb.cdx.cdxobject import TIMESTAMP, STATUSCODE, MIMETYPE, DIGEST
+from pywb.cdx.cdxobject import OFFSET, LENGTH, FILENAME
 
-from query import CDXQuery
+from pywb.cdx.query import CDXQuery
 from pywb.utils.timeutils import timestamp_to_sec, pad_timestamp
 from pywb.utils.timeutils import PAD_14_DOWN, PAD_14_UP
 
 import bisect
-import itertools
+
+from six.moves import zip, range, map
 import re
+
+
 
 from heapq import merge
 from collections import deque
@@ -127,7 +130,7 @@ def cdx_limit(cdx_iter, limit):
     """
 #    for cdx, _ in itertools.izip(cdx_iter, xrange(limit)):
 #        yield cdx
-    return (cdx for cdx, _ in itertools.izip(cdx_iter, xrange(limit)))
+    return (cdx for cdx, _ in zip(cdx_iter, range(limit)))
 
 
 #=================================================================
@@ -221,7 +224,7 @@ def cdx_filter(cdx_iter, filter_strings):
         def regex(self, val):
             return self.regex.match(val) is not None
 
-    filters = map(Filter, filter_strings)
+    filters = list(map(Filter, filter_strings))
 
     for cdx in cdx_iter:
         if all(x(cdx) for x in filters):
@@ -273,7 +276,7 @@ def cdx_sort_closest(closest, cdx_iter, limit=10):
     sort CDXCaptureResult by closest to timestamp.
     """
     closest_cdx = []
-
+    closest_keys = []
     closest_sec = timestamp_to_sec(closest)
 
     for cdx in cdx_iter:
@@ -281,18 +284,25 @@ def cdx_sort_closest(closest, cdx_iter, limit=10):
         key = abs(closest_sec - sec)
 
         # create tuple to sort by key
-        bisect.insort(closest_cdx, (key, cdx))
+        #bisect.insort(closest_cdx, (key, cdx))
+
+        i = bisect.bisect_right(closest_keys, key)
+        closest_keys.insert(i, key)
+        closest_cdx.insert(i, cdx)
 
         if len(closest_cdx) == limit:
             # assuming cdx in ascending order and keys have started increasing
-            if key > closest_cdx[-1]:
+            if key > closest_keys[-1]:
                 break
 
         if len(closest_cdx) > limit:
             closest_cdx.pop()
 
-    for cdx in itertools.imap(lambda x: x[1], closest_cdx):
+    for cdx in closest_cdx:
         yield cdx
+
+    #for cdx in map(lambda x: x[1], closest_cdx):
+    #    yield cdx
 
 
 #=================================================================

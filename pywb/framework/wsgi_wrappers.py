@@ -1,7 +1,7 @@
 from pywb.utils.wbexception import WbException, NotFoundException
 from pywb.utils.loaders import load_yaml_config
 
-from wbrequestresponse import WbResponse, StatusAndHeaders
+from pywb.framework.wbrequestresponse import WbResponse, StatusAndHeaders
 
 
 import os
@@ -92,12 +92,13 @@ class WSGIApp(object):
         else:
             err_url = None
 
-        err_msg = exc.message
+        if len(exc.args):
+            err_msg = exc.args[0]
 
         if print_trace:
             import traceback
-            err_details = traceback.format_exc(exc)
-            print err_details
+            err_details = traceback.format_exc()
+            print(err_details)
         else:
             logging.info(err_msg)
             err_details = None

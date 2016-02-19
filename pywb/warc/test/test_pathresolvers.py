@@ -47,7 +47,7 @@ RedisResolver('redis://myhost.example.com:1234/1')
 # make_best_resolvers
 >>> r = make_best_resolvers(['http://example.com/warcs/',\
                             'redis://example.com:1234/1'])
->>> map(lambda x: x.__class__.__name__, r)
+>>> list(map(lambda x: x.__class__.__name__, r))
 ['PrefixResolver', 'RedisResolver']
 """
 

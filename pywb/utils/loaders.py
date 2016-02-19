@@ -46,6 +46,17 @@ def load_yaml_config(config_file):
 
 
 #=================================================================
+def to_native_str(value, encoding='iso-8859-1'):
+    if isinstance(value, str):
+        return value
+
+    if six.PY3 and isinstance(value, six.binary_type):
+        return value.decode(encoding)
+    elif six.PY2 and isinstance(value, six.text_type):
+        return value.encode(encoding)
+
+
+#=================================================================
 def extract_post_query(method, mime, length, stream, buffered_stream=None):
     """
     Extract a url-encoded form POST from stream
@@ -77,7 +88,7 @@ def extract_post_query(method, mime, length, stream, buffered_stream=None):
         if not buff:
             break
 
-        post_query += buff
+        post_query += to_native_str(buff)
 
     if buffered_stream:
         buffered_stream.write(post_query)

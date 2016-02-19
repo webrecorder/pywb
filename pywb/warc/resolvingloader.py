@@ -1,7 +1,9 @@
 from pywb.utils.timeutils import iso_date_to_timestamp
-from recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
-from pathresolvers import make_best_resolvers
+from pywb.warc.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
+from pywb.warc.pathresolvers import make_best_resolvers
 from pywb.utils.wbexception import NotFoundException
+
+import six
 
 
 #=================================================================
@@ -104,6 +106,9 @@ class ResolvingLoader(object):
         for resolver in self.path_resolvers:
             possible_paths = resolver(filename)
 
+            #import sys
+            #sys.stderr.write(str(possible_paths))
+
             if possible_paths:
                 for path in possible_paths:
                     any_found = True
@@ -125,7 +130,8 @@ class ResolvingLoader(object):
         else:
             msg = 'Archive File Not Found'
 
-        raise ArchiveLoadFailed(msg, filename), None, last_traceback
+        #raise ArchiveLoadFailed(msg, filename), None, last_traceback
+        six.reraise(ArchiveLoadFailed, ArchiveLoadFailed(msg, filename), last_traceback)
 
     def _load_different_url_payload(self, cdx, headers_record,
                                     failed_files, cdx_loader):

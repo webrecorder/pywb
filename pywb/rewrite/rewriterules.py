@@ -1,13 +1,12 @@
 from pywb.utils.dsrules import BaseRule
 
-from regex_rewriters import RegexRewriter, CSSRewriter, XMLRewriter
-from regex_rewriters import JSLinkAndLocationRewriter, JSLinkOnlyRewriter
-from regex_rewriters import JSLocationOnlyRewriter, JSNoneRewriter
+from pywb.rewrite.regex_rewriters import RegexRewriter, CSSRewriter, XMLRewriter
+from pywb.rewrite.regex_rewriters import JSLinkAndLocationRewriter, JSLinkOnlyRewriter
+from pywb.rewrite.regex_rewriters import JSLocationOnlyRewriter, JSNoneRewriter
 
-from header_rewriter import HeaderRewriter
-from html_rewriter import HTMLRewriter
+from pywb.rewrite.header_rewriter import HeaderRewriter
+from pywb.rewrite.html_rewriter import HTMLRewriter
 
-import itertools
 import re
 
 

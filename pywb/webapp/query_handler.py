@@ -1,12 +1,9 @@
-import urllib
-import urllib2
-
 from pywb.utils.dsrules import DEFAULT_RULES_FILE
 
 from pywb.perms.perms_filter import make_perms_cdx_filter
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.cdx.cdxserver import create_cdx_server
-from views import MementoTimemapView
+from pywb.webapp.views import MementoTimemapView
 
 
 #=================================================================

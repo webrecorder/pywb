@@ -2,7 +2,7 @@ import re
 import logging
 
 from io import BytesIO
-from urlparse import urlsplit
+from six.moves.urllib.parse import urlsplit
 from itertools import chain
 
 from pywb.utils.statusandheaders import StatusAndHeaders
@@ -16,9 +16,9 @@ from pywb.framework.memento import MementoResponse
 from pywb.rewrite.rewrite_content import RewriteContent
 from pywb.warc.recordloader import ArchiveLoadFailed
 
-from views import HeadInsertView
+from pywb.webapp.views import HeadInsertView
 
-from rangecache import range_cache
+from pywb.webapp.rangecache import range_cache
 
 
 #=================================================================

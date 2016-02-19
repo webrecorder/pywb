@@ -2,13 +2,14 @@ import yaml
 import re
 import logging
 import pkg_resources
-import urlparse
+
+from six.moves.urllib.parse import urlsplit
 
 from pywb.utils.dsrules import BaseRule, RuleSet
 
 from pywb.utils.canonicalize import unsurt, UrlCanonicalizer
 
-from query import CDXQuery
+from pywb.cdx.query import CDXQuery
 
 
 #=================================================================
@@ -102,7 +103,7 @@ class FuzzyQuery:
             url = url[:inx + len(repl)]
 
         if matched_rule.match_type == 'domain':
-            host = urlparse.urlsplit(url).netloc
+            host = urlsplit(url).netloc
             # remove the subdomain
             url = host.split('.', 1)[1]
 

@@ -2,13 +2,12 @@ from pywb.utils.timeutils import timestamp_to_datetime, timestamp_to_sec
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import make_timemap, LINK_FORMAT
 
-import urlparse
-import urllib
+from six.moves.urllib.parse import urlsplit
+
 import logging
 import json
 import os
 
-from itertools import imap
 from jinja2 import Environment
 from jinja2 import FileSystemLoader, PackageLoader, ChoiceLoader
 
@@ -48,7 +47,7 @@ def format_ts(value, format_='%a, %b %d %Y %H:%M:%S'):
 
 @template_filter('urlsplit')
 def get_urlsplit(url):
-    split = urlparse.urlsplit(url)
+    split = urlsplit(url)
     return split
 
 

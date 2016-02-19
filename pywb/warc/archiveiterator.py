@@ -3,7 +3,7 @@ from pywb.utils.bufferedreaders import DecompressingBufferedReader
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.loaders import extract_post_query, append_post_query
 
-from recordloader import ArcWarcRecordLoader
+from pywb.warc.recordloader import ArcWarcRecordLoader
 
 import hashlib
 import base64
@@ -66,7 +66,10 @@ class ArchiveIterator(object):
         self.member_info = None
         self.no_record_parse = no_record_parse
 
-    def iter_records(self, block_size=16384):
+    def __iter__(self):
+        return self
+
+    def __call__(self, block_size=16384):
         """ iterate over each record
         """
 
@@ -152,10 +155,10 @@ class ArchiveIterator(object):
 
             stripped = line.rstrip()
 
-            if stripped == '' or first_line:
+            if len(stripped) == 0 or first_line:
                 empty_size += len(line)
 
-                if stripped != '':
+                if len(stripped) != 0:
                     # if first line is not blank,
                     # likely content-length was invalid, display warning
                     err_offset = self.fh.tell() - self.reader.rem_length() - empty_size
@@ -290,7 +293,7 @@ class ArchiveIndexEntryMixin(object):
 
 
 #=================================================================
-class DefaultRecordIter(object):
+class DefaultRecordParser(object):
     def __init__(self, **options):
         self.options = options
         self.entry_cache = {}
@@ -329,14 +332,14 @@ class DefaultRecordIter(object):
 
     def end_payload(self, entry):
         if self.digester:
-            entry['digest'] = base64.b32encode(self.digester.digest())
+            entry['digest'] = base64.b32encode(self.digester.digest()).decode('ascii')
 
         self.entry = None
 
     def create_payload_buffer(self, entry):
         return None
 
-    def create_record_iter(self, arcv_iter):
+    def create_record_iter(self, raw_iter):
         append_post = self.options.get('append_post')
         include_all = self.options.get('include_all')
         block_size = self.options.get('block_size', 16384)
@@ -347,7 +350,7 @@ class DefaultRecordIter(object):
             raise Exception('Sorry, minimal index option and ' +
                             'append POST options can not be used together')
 
-        for record in arcv_iter.iter_records(block_size):
+        for record in raw_iter(block_size):
             entry = None
 
             if not include_all and not minimal and (record.status_headers.get_statuscode() == '-'):
@@ -394,9 +397,9 @@ class DefaultRecordIter(object):
             entry.record = record
 
             self.begin_payload(compute_digest, entry)
-            arcv_iter.read_to_end(record, self.handle_payload)
+            raw_iter.read_to_end(record, self.handle_payload)
 
-            entry.set_rec_info(*arcv_iter.member_info)
+            entry.set_rec_info(*raw_iter.member_info)
             self.end_payload(entry)
 
             yield entry
@@ -536,8 +539,15 @@ class DefaultRecordIter(object):
 
             yield entry
 
+    def open(self, filename):
+        with open(filename, 'rb') as fh:
+            for entry in self(fh):
+                yield entry
+
 class ArchiveIndexEntry(ArchiveIndexEntryMixin, dict):
     pass
 
 class OrderedArchiveIndexEntry(ArchiveIndexEntryMixin, OrderedDict):
     pass
+
+

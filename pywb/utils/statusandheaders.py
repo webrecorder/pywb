@@ -5,7 +5,11 @@ Representation and parsing of HTTP-style status + headers
 import pprint
 from copy import copy
 from six.moves import range
+import six
+from pywb.utils.loaders import to_native_str
 
+
+WRAP_WIDTH = 80
 
 #=================================================================
 class StatusAndHeaders(object):
@@ -112,7 +116,7 @@ class StatusAndHeaders(object):
         return self
 
     def __repr__(self):
-        headers_str = pprint.pformat(self.headers, indent=2)
+        headers_str = pprint.pformat(self.headers, indent=2, width=WRAP_WIDTH)
         return "StatusAndHeaders(protocol = '{0}', statusline = '{1}', \
 headers = {2})".format(self.protocol, self.statusline, headers_str)
 
@@ -145,9 +149,15 @@ class StatusAndHeadersParser(object):
 
         support continuation headers starting with space or tab
         """
+
+        def readline():
+            return to_native_str(stream.readline())
+
         # status line w newlines intact
         if full_statusline is None:
-            full_statusline = stream.readline()
+            full_statusline = readline()
+        else:
+            full_statusline = to_native_str(full_statusline)
 
         statusline, total_read = _strip_count(full_statusline, 0)
 
@@ -173,7 +183,7 @@ class StatusAndHeadersParser(object):
         else:
             protocol_status = statusline.split(' ', 1)
 
-        line, total_read = _strip_count(stream.readline(), total_read)
+        line, total_read = _strip_count(readline(), total_read)
         while line:
             result = line.split(':', 1)
             if len(result) == 2:
@@ -183,14 +193,14 @@ class StatusAndHeadersParser(object):
                 name = result[0]
                 value = None
 
-            next_line, total_read = _strip_count(stream.readline(),
+            next_line, total_read = _strip_count(readline(),
                                                  total_read)
 
             # append continuation lines, if any
             while next_line and next_line.startswith((' ', '\t')):
                 if value is not None:
                     value += next_line
-                next_line, total_read = _strip_count(stream.readline(),
+                next_line, total_read = _strip_count(readline(),
                                                      total_read)
 
             if value is not None:

@@ -37,8 +37,7 @@ Test loading different types of records from a variety of formats
   ('WARC-Payload-Digest', 'sha1:B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A'),
   ('WARC-Target-URI', 'http://example.com?example=1'),
   ('WARC-Warcinfo-ID', '<urn:uuid:fbd6cf0a-6160-4550-b343-12188dc05234>'),
-  ( 'WARC-Profile',
-    'http://netpreserve.org/warc/0.18/revisit/identical-payload-digest'),
+  ('WARC-Profile', 'http://netpreserve.org/warc/0.18/revisit/identical-payload-digest'),
   ('WARC-Refers-To-Target-URI', 'http://example.com?example=1'),
   ('WARC-Refers-To-Date', '2014-01-03T03:03:21Z')]),
  StatusAndHeaders(protocol = 'HTTP/1.1', statusline = '200 OK', headers = [ ('Accept-Ranges', 'bytes'),
@@ -66,15 +65,11 @@ Test loading different types of records from a variety of formats
   ('WARC-Target-URI', 'http://example.com?example=1'),
   ('WARC-Warcinfo-ID', '<urn:uuid:fbd6cf0a-6160-4550-b343-12188dc05234>')]),
  StatusAndHeaders(protocol = 'GET', statusline = '/?example=1 HTTP/1.1', headers = [ ('Connection', 'close'),
-  ( 'Accept',
-    'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
+  ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
   ('Accept-Language', 'en-US,en;q=0.8'),
-  ( 'User-Agent',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36 (via Wayback Save Page)'),
+  ('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) \
+Chrome/31.0.1650.57 Safari/537.36 (via Wayback Save Page)'),
   ('Host', 'example.com')]))
-
-
-StatusAndHeaders(protocol = '', statusline = '204 No Content', headers = []))
 
 
 # Test of record loading based on cdx line
@@ -233,7 +228,7 @@ failed_files=failed_files)
 Exception: ArchiveLoadFailed
 
 # ensure failed_files being filled
->>> failed_files
+>>> print_strs(failed_files)
 ['x-not-found-x.warc.gz']
 
 >>> load_from_cdx_test('com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 856 170 x-not-found-x.warc.gz',\
@@ -295,11 +290,14 @@ Exception: ArchiveLoadFailed
 import os
 import sys
 import pprint
+import six
 
 from pywb.warc.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
 from pywb.warc.pathresolvers import make_best_resolvers
 from pywb.warc.resolvingloader import ResolvingLoader
 from pywb.cdx.cdxobject import CDXObject
+
+import pywb.utils.statusandheaders
 
 from pywb import get_test_dir
 
@@ -319,7 +317,7 @@ URL_AGNOSTIC_REVISIT_NO_DIGEST_CDX = 'com,example)/ 20130729195151 http://test@e
 warc/revisit - - - - \
 591 355 example-url-agnostic-revisit.warc.gz'
 
-BAD_ORIG_CDX = 'org,iana,example)/ 20130702195401 http://example.iana.org/ \
+BAD_ORIG_CDX = b'org,iana,example)/ 20130702195401 http://example.iana.org/ \
 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - \
 1001 353 someunknown.warc.gz'
 
@@ -332,8 +330,10 @@ def load_test_archive(test_file, offset, length):
 
     archive = testloader.load(path, offset, length)
 
+    pywb.utils.statusandheaders.WRAP_WIDTH = 160
+
     pprint.pprint(((archive.format, archive.rec_type),
-                   archive.rec_headers, archive.status_headers))
+                   archive.rec_headers, archive.status_headers), indent=1, width=160)
 
 
 #==============================================================================
@@ -345,25 +345,25 @@ def load_orig_bad_cdx(_):
 #==============================================================================
 def load_orig_cdx(_):
     return [CDXObject(BAD_ORIG_CDX),
-            CDXObject(URL_AGNOSTIC_ORIG_CDX)]
+            CDXObject(URL_AGNOSTIC_ORIG_CDX.encode('utf-8'))]
 
 
 #==============================================================================
 def load_from_cdx_test(cdx, revisit_func=load_orig_cdx, reraise=False,
                        failed_files=None):
     resolve_loader = ResolvingLoader(test_warc_dir)
-    cdx = CDXObject(cdx)
+    cdx = CDXObject(cdx.encode('utf-8'))
 
     try:
         (headers, stream) = resolve_loader(cdx, failed_files, revisit_func)
-        print headers
-        sys.stdout.write(stream.readline())
-        sys.stdout.write(stream.readline())
+        print(headers)
+        sys.stdout.write(stream.readline().decode('utf-8'))
+        sys.stdout.write(stream.readline().decode('utf-8'))
     except ArchiveLoadFailed as e:
         if reraise:
             raise
         else:
-            print 'Exception: ' + e.__class__.__name__
+            print('Exception: ' + e.__class__.__name__)
 
 
 #==============================================================================
@@ -371,7 +371,14 @@ def parse_stream_error(**params):
     try:
         return ArcWarcRecordLoader().parse_record_stream(**params)
     except Exception as e:
-        print 'Exception: ' + e.__class__.__name__
+        print('Exception: ' + e.__class__.__name__)
+
+
+#==============================================================================
+def print_strs(strings):
+    return list(map(lambda string: string.encode('utf-8') if six.PY2 else string, strings))
+
+
 
 
 if __name__ == "__main__":

@@ -6,21 +6,22 @@ from pywb.framework.wbrequestresponse import WbRequest
 from pywb.framework.memento import MementoRequest
 from pywb.framework.basehandlers import BaseHandler
 
-from views import J2TemplateView
-from views import J2HtmlCapturesView, init_view
+from pywb.webapp.views import J2TemplateView
+from pywb.webapp.views import J2HtmlCapturesView, init_view
 
-from live_rewrite_handler import RewriteHandler
+from pywb.webapp.live_rewrite_handler import RewriteHandler
 
-from query_handler import QueryHandler
-from handlers import WBHandler
-from handlers import StaticHandler
-from handlers import DebugEchoHandler, DebugEchoEnvHandler
-from cdx_api_handler import CDXAPIHandler
+from pywb.webapp.query_handler import QueryHandler
+from pywb.webapp.handlers import WBHandler
+from pywb.webapp.handlers import StaticHandler
+from pywb.webapp.handlers import DebugEchoHandler, DebugEchoEnvHandler
+from pywb.webapp.cdx_api_handler import CDXAPIHandler
 
 from pywb import DEFAULT_CONFIG
 
 import os
 import logging
+import six
 
 
 #=================================================================
@@ -130,7 +131,7 @@ def create_cdx_server_app(passed_config):
 
     routes = []
 
-    for name, value in collections.iteritems():
+    for name, value in six.iteritems(collections):
         route_config = init_route_config(value, config)
         query_handler = init_collection(route_config)
 
@@ -234,7 +235,7 @@ class DirectoryCollsLoader(object):
 
         # Check all templates
         template_files = self.config.get('paths')['template_files']
-        for tname, tfile in template_files.iteritems():
+        for tname, tfile in six.iteritems(template_files):
             if tname in coll_config:
                 # Already set
                 coll_config[tname] = self._norm_path(root_dir, coll_config[tname])
@@ -288,10 +289,10 @@ def create_wb_router(passed_config=None):
 
     jinja_env.globals.update(config.get('template_globals', {}))
 
-    for static_name, static_path in static_routes.iteritems():
+    for static_name, static_path in six.iteritems(static_routes):
         routes.append(Route(static_name, StaticHandler(static_path)))
 
-    for name, value in collections.iteritems():
+    for name, value in six.iteritems(collections):
         if isinstance(value, BaseHandler):
             handler_dict[name] = value
             new_route = Route(name, value, config=config)

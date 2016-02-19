@@ -4,6 +4,8 @@ from pywb.cdx.query import CDXQuery
 
 from pytest import raises
 
+import six
+
 KEY = 'com,example)/'
 
 #================================================================
@@ -30,7 +32,7 @@ def lazy_cdx_load(**params):
 
     # exception happens on first access attempt
     with raises(AccessException):
-        cdx_iter.next()
+        six.next(cdx_iter)
 
 
 def test_no_process():

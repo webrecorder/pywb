@@ -1,4 +1,4 @@
-from Cookie import SimpleCookie, CookieError
+from six.moves.http_cookies import SimpleCookie, CookieError
 
 
 #=================================================================

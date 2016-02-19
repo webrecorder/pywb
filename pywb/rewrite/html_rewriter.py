@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import re
 
-from HTMLParser import HTMLParser, HTMLParseError
-from urlparse import urljoin, urlsplit, urlunsplit
+from six.moves.html_parser import HTMLParser
+from six.moves.urllib.parse import urljoin, urlsplit, urlunsplit
 
-from url_rewriter import UrlRewriter
-from regex_rewriters import JSRewriter, CSSRewriter
 
-import cgi
+from pywb.rewrite.url_rewriter import UrlRewriter
+from pywb.rewrite.regex_rewriters import JSRewriter, CSSRewriter
 
 
 #=================================================================
@@ -411,7 +409,7 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
     def feed(self, string):
         try:
             HTMLParser.feed(self, string)
-        except HTMLParseError:  # pragma: no cover
+        except Exception:  # pragma: no cover
             # only raised in 2.6
             self.out.write(string)
 
@@ -429,7 +427,7 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
 
         try:
             HTMLParser.close(self)
-        except HTMLParseError:  # pragma: no cover
+        except Exception:  # pragma: no cover
             # only raised in 2.6
             pass
 

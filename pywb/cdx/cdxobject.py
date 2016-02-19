@@ -3,10 +3,11 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     from ordereddict import OrderedDict
 
-import itertools
+import six
+from six.moves import zip
 
-from urllib import urlencode, quote
-from urlparse import parse_qs
+from six.moves.urllib.parse import urlencode, quote
+from six.moves.urllib.parse import parse_qs
 
 from pywb.utils.wbexception import WbException
 
@@ -101,7 +102,7 @@ class CDXObject(OrderedDict):
                   'f': FILENAME
     }
 
-    def __init__(self, cdxline=''):
+    def __init__(self, cdxline=b''):
         OrderedDict.__init__(self)
 
         cdxline = cdxline.rstrip()
@@ -112,28 +113,28 @@ class CDXObject(OrderedDict):
             self.cdxline = cdxline
             return
 
-        fields = cdxline.split(' ' , 2)
+        fields = cdxline.split(b' ' , 2)
         # Check for CDX JSON
-        if fields[-1].startswith('{'):
-            self[URLKEY] = fields[0]
-            self[TIMESTAMP] = fields[1]
-            json_fields = json_decode(fields[-1])
-            for n, v in json_fields.iteritems():
+        if fields[-1].startswith(b'{'):
+            self[URLKEY] = fields[0].decode('utf-8')
+            self[TIMESTAMP] = fields[1].decode('utf-8')
+            json_fields = json_decode(fields[-1].decode('utf-8'))
+            for n, v in six.iteritems(json_fields):
                 n = self.CDX_ALT_FIELDS.get(n, n)
 
                 try:
-                    self[n] = str(v)
+                    v.encode('ascii')
                 except UnicodeEncodeError:
-                    v = v.encode('utf-8')
-                    parts = v.split('//', 1)
-                    v = parts[0] + '//' + quote(parts[1])
-                    self[n] = v
+                    parts = v.encode('utf-8').split(b'//', 1)
+                    v = parts[0].decode('utf-8') + '//' + quote(parts[1])
+
+                self[n] = v
 
             self.cdxline = cdxline
             self._from_json = True
             return
 
-        more_fields = fields.pop().split(' ')
+        more_fields = fields.pop().split(b' ')
         fields.extend(more_fields)
 
         cdxformat = None
@@ -145,8 +146,8 @@ class CDXObject(OrderedDict):
             msg = 'unknown {0}-field cdx format'.format(len(fields))
             raise CDXException(msg)
 
-        for header, field in itertools.izip(cdxformat, fields):
-            self[header] = field
+        for header, field in zip(cdxformat, fields):
+            self[header] = field.decode('utf-8')
 
         self.cdxline = cdxline
 
@@ -204,12 +205,13 @@ class CDXObject(OrderedDict):
 
     def __str__(self):
         if self.cdxline:
-            return self.cdxline
+            return self.cdxline.decode('utf-8')
 
         if not self._from_json:
-            return ' '.join(val for n, val in self.iteritems())
+            return ' '.join(val for n, val in six.iteritems(self))
         else:
             return json_encode(self)
+
 
 #=================================================================
 class IDXObject(OrderedDict):
@@ -221,14 +223,14 @@ class IDXObject(OrderedDict):
         OrderedDict.__init__(self)
 
         idxline = idxline.rstrip()
-        fields = idxline.split('\t')
+        fields = idxline.split(b'\t')
 
         if len(fields) < self.NUM_REQ_FIELDS:
             msg = 'invalid idx format: {0} fields found, {1} required'
             raise CDXException(msg.format(len(fields), self.NUM_REQ_FIELDS))
 
-        for header, field in itertools.izip(self.FORMAT, fields):
-            self[header] = field
+        for header, field in zip(self.FORMAT, fields):
+            self[header] = field.decode('utf-8')
 
         self['offset'] = int(self['offset'])
         self['length'] = int(self['length'])
@@ -250,4 +252,4 @@ class IDXObject(OrderedDict):
         return json_encode(self) + '\n'
 
     def __str__(self):
-        return self.idxline
+        return self.idxline.decode('utf-8')
