@@ -14,6 +14,7 @@ from pywb.framework.wbrequestresponse import WbResponse
 
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
+from pywb.warc.pathresolvers import PathResolverMapper
 
 from pywb.webapp.views import J2TemplateView, init_view
 from pywb.webapp.replay_views import ReplayView
@@ -137,7 +138,7 @@ class WBHandler(SearchPageWbUrlHandler):
 
         paths = config.get('archive_paths')
 
-        resolving_loader = ResolvingLoader(paths=paths,
+        resolving_loader = ResolvingLoader(PathResolverMapper()(paths),
                                            record_loader=record_loader)
 
         return ReplayView(resolving_loader, config)

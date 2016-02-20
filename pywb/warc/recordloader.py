@@ -66,7 +66,7 @@ class ArcWarcRecordLoader(object):
 
         self.http_req_parser = StatusAndHeadersParser(self.HTTP_VERBS, verify_http)
 
-    def load(self, url, offset, length):
+    def load(self, url, offset, length, no_record_parse=False):
         """ Load a single record from given url at offset with length
         and parse as either warc or arc record
         """
@@ -83,7 +83,7 @@ class ArcWarcRecordLoader(object):
                                              decomp_type=decomp_type,
                                              block_size=self.block_size)
 
-        return self.parse_record_stream(stream)
+        return self.parse_record_stream(stream, no_record_parse=no_record_parse)
 
     def parse_record_stream(self, stream,
                             statusline=None,

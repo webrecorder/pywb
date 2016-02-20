@@ -24,12 +24,12 @@ make_best_resolver() attempts to guess the resolver method for given uri
 # PrefixResolver - convert cdx file entry to url with prefix
 # if url contains specified string
 #=================================================================
-class PrefixResolver:
+class PrefixResolver(object):
     def __init__(self, prefix, contains):
         self.prefix = prefix
         self.contains = contains if contains else ''
 
-    def __call__(self, filename):
+    def __call__(self, filename, cdx=None):
         # use os path seperator
         filename = filename.replace('/', os.path.sep)
         return [self.prefix + filename] if (self.contains in filename) else []
@@ -43,13 +43,13 @@ class PrefixResolver:
 
 
 #=================================================================
-class RedisResolver:
+class RedisResolver(object):
     def __init__(self, redis_url, key_prefix=None):
         self.redis_url = redis_url
         self.key_prefix = key_prefix if key_prefix else 'w:'
         self.redis = redis.StrictRedis.from_url(redis_url)
 
-    def __call__(self, filename):
+    def __call__(self, filename, cdx=None):
         redis_val = self.redis.hget(self.key_prefix + filename, 'path')
         return [to_native_str(redis_val)] if redis_val else []
 
@@ -58,11 +58,11 @@ class RedisResolver:
 
 
 #=================================================================
-class PathIndexResolver:
+class PathIndexResolver(object):
     def __init__(self, pathindex_file):
         self.pathindex_file = pathindex_file
 
-    def __call__(self, filename):
+    def __call__(self, filename, cdx=None):
         with open(self.pathindex_file, 'rb') as reader:
             result = iter_exact(reader, filename.encode('utf-8'), b'\t')
 
@@ -76,39 +76,37 @@ class PathIndexResolver:
 
 
 #=================================================================
-#TODO: more options (remote files, contains param, etc..)
-# find best resolver given the path
-def make_best_resolver(param):
-    if isinstance(param, list):
-        path = param[0]
-        arg = param[1]
-    else:
-        path = param
-        arg = None
+class PathResolverMapper(object):
+    def make_best_resolver(self, param):
+        if isinstance(param, list):
+            path = param[0]
+            arg = param[1]
+        else:
+            path = param
+            arg = None
 
-    url_parts = urlsplit(path)
+        url_parts = urlsplit(path)
 
-    if url_parts.scheme == 'redis':
-        logging.debug('Adding Redis Index: ' + path)
-        return RedisResolver(path, arg)
+        if url_parts.scheme == 'redis':
+            logging.debug('Adding Redis Index: ' + path)
+            return RedisResolver(path, arg)
 
-    if url_parts.scheme == 'file':
-        path = url_parts.path
-        path = url2pathname(path)
+        if url_parts.scheme == 'file':
+            path = url_parts.path
+            path = url2pathname(path)
 
-    if os.path.isfile(path):
-        logging.debug('Adding Path Index: ' + path)
-        return PathIndexResolver(path)
+        if os.path.isfile(path):
+            logging.debug('Adding Path Index: ' + path)
+            return PathIndexResolver(path)
 
-    # non-file paths always treated as prefix for now
-    else:
-        logging.debug('Adding Archive Path Source: ' + path)
-        return PrefixResolver(path, arg)
+        # non-file paths always treated as prefix for now
+        else:
+            logging.debug('Adding Archive Path Source: ' + path)
+            return PrefixResolver(path, arg)
 
+    def __call__(self, paths):
+        if isinstance(paths, list) or isinstance(paths, set):
+            return list(map(self.make_best_resolver, paths))
+        else:
+            return [self.make_best_resolver(paths)]
 
-#=================================================================
-def make_best_resolvers(paths):
-    if isinstance(paths, list) or isinstance(paths, set):
-        return list(map(make_best_resolver, paths))
-    else:
-        return [make_best_resolver(paths)]

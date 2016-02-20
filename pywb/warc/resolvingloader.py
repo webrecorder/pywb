@@ -1,6 +1,5 @@
 from pywb.utils.timeutils import iso_date_to_timestamp
 from pywb.warc.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
-from pywb.warc.pathresolvers import make_best_resolvers
 from pywb.utils.wbexception import NotFoundException
 
 import six
@@ -10,11 +9,12 @@ import six
 class ResolvingLoader(object):
     MISSING_REVISIT_MSG = 'Original for revisit record could not be loaded'
 
-    def __init__(self, paths, record_loader=ArcWarcRecordLoader()):
-        self.path_resolvers = make_best_resolvers(paths)
+    def __init__(self, path_resolvers, record_loader=ArcWarcRecordLoader(), no_record_parse=False):
+        self.path_resolvers = path_resolvers
         self.record_loader = record_loader
+        self.no_record_parse = no_record_parse
 
-    def __call__(self, cdx, failed_files, cdx_loader, *args):
+    def __call__(self, cdx, failed_files, cdx_loader, *args, **kwargs):
         """
         Resolve headers and payload for a given capture
         In the simple case, headers and payload are in the same record.
@@ -104,21 +104,22 @@ class ResolvingLoader(object):
         last_exc = None
         last_traceback = None
         for resolver in self.path_resolvers:
-            possible_paths = resolver(filename)
+            possible_paths = resolver(filename, cdx)
 
-            #import sys
-            #sys.stderr.write(str(possible_paths))
+            if not possible_paths:
+                continue
 
-            if possible_paths:
-                for path in possible_paths:
-                    any_found = True
-                    try:
-                        return self.record_loader.load(path, offset, length)
+            for path in possible_paths:
+                any_found = True
+                try:
+                    return (self.record_loader.
+                             load(path, offset, length,
+                               no_record_parse=self.no_record_parse))
 
-                    except Exception as ue:
-                        last_exc = ue
-                        import sys
-                        last_traceback = sys.exc_info()[2]
+                except Exception as ue:
+                    last_exc = ue
+                    import sys
+                    last_traceback = sys.exc_info()[2]
 
         # Unsuccessful if reached here
         if failed_files is not None:
