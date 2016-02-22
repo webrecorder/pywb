@@ -1,4 +1,4 @@
-from pywb.utils.canonicalize import UrlCanonicalizer, calc_search_range
+from pywb.utils.canonicalize import UrlCanonicalizer
 from pywb.utils.wbexception import NotFoundException
 
 from pywb.cdx.cdxops import cdx_load
@@ -62,17 +62,17 @@ class BaseCDXServer(object):
 
         raise NotFoundException(msg, url=query.url)
 
-    def _calc_search_keys(self, query):
-        return calc_search_range(url=query.url,
-                                 match_type=query.match_type,
-                                 url_canon=self.url_canon)
+    #def _calc_search_keys(self, query):
+    #    return calc_search_range(url=query.url,
+    #                             match_type=query.match_type,
+    #                             url_canon=self.url_canon)
 
     def load_cdx(self, **params):
+        params['_url_canon'] = self.url_canon
         query = CDXQuery(**params)
 
-        key, end_key = self._calc_search_keys(query)
-
-        query.set_key(key, end_key)
+        #key, end_key = self._calc_search_keys(query)
+        #query.set_key(key, end_key)
 
         cdx_iter = self._load_cdx_query(query)
 

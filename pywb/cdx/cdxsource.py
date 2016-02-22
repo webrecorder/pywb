@@ -33,8 +33,8 @@ class CDXFile(CDXSource):
     @staticmethod
     def _do_load_file(filename, query):
         with open(filename, 'rb') as source:
-            gen = iter_range(source, query.key.encode('utf-8'),
-                                     query.end_key.encode('utf-8'))
+            gen = iter_range(source, query.key,
+                                     query.end_key)
             for line in gen:
                 yield line
 
@@ -61,7 +61,7 @@ class RemoteCDXSource(CDXSource):
         else:
             # Only send url and matchType to remote
             remote_query = CDXQuery(url=query.url,
-                                    match_type=query.match_type)
+                                    matchType=query.match_type)
 
         urlparams = remote_query.urlencode()
 
@@ -127,7 +127,7 @@ class RedisCDXSource(CDXSource):
         if self.cdx_key:
             return self.load_sorted_range(query, self.cdx_key)
         else:
-            return self.load_single_key(query.key.encode('utf-8'))
+            return self.load_single_key(query.key)
 
     def load_sorted_range(self, query, cdx_key):
         cdx_list = self.redis.zrangebylex(cdx_key,

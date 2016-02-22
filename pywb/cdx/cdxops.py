@@ -11,8 +11,6 @@ import bisect
 from six.moves import zip, range, map
 import re
 
-
-
 from heapq import merge
 from collections import deque
 

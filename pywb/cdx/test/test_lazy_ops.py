@@ -6,11 +6,13 @@ from pytest import raises
 
 import six
 
-KEY = 'com,example)/'
+
+URL = 'http://example.com/'
+
 
 #================================================================
 def raise_access_exception(cdx_iter, query):
-    if query.key == KEY:
+    if query.url == URL:
         raise AccessException
 
     for cdx in cdx_iter:
@@ -36,22 +38,22 @@ def lazy_cdx_load(**params):
 
 
 def test_no_process():
-    lazy_cdx_load(key=KEY)
+    lazy_cdx_load(url=URL)
 
 def test_reverse():
-    lazy_cdx_load(key=KEY, reverse=True)
+    lazy_cdx_load(url=URL, reverse=True)
 
 def test_closest():
-    lazy_cdx_load(key=KEY, closest='2013')
+    lazy_cdx_load(url=URL, closest='2013')
 
 def test_limit():
-    lazy_cdx_load(key=KEY, limit=10)
+    lazy_cdx_load(url=URL, limit=10)
 
 def test_limit_1_reverse():
-    lazy_cdx_load(key=KEY, limit=1, reverse=True)
+    lazy_cdx_load(url=URL, limit=1, reverse=True)
 
 def test_multi_ops():
-    lazy_cdx_load(key=KEY,
+    lazy_cdx_load(url=URL,
                   resolveRevisits=True,
                   filters=['=filename:A'],
                   collapseTime=10,

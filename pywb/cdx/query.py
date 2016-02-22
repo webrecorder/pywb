@@ -1,5 +1,6 @@
 from six.moves.urllib.parse import urlencode
 from pywb.cdx.cdxobject import CDXException
+from pywb.utils.canonicalize import calc_search_range
 
 
 #=================================================================
@@ -14,6 +15,15 @@ class CDXQuery(object):
             elif url.endswith('*'):
                 self.params['url'] = url[:-1]
                 self.params['matchType'] = 'prefix'
+            else:
+                self.params['matchType'] = 'exact'
+
+        start, end = calc_search_range(url=self.params['url'],
+                                       match_type=self.params['matchType'],
+                                       url_canon=self.params.get('_url_canon'))
+
+        self.params['key'] = start.encode('utf-8')
+        self.params['end_key'] = end.encode('utf-8')
 
     @property
     def key(self):

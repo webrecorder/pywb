@@ -173,11 +173,8 @@ class ZipNumCluster(CDXSource):
 
         last_line = None
 
-        start_key = query.key.encode('utf-8')
-        end_key = query.end_key.encode('utf-8')
-
         # Get End
-        end_iter = search(reader, end_key, prev_size=1)
+        end_iter = search(reader, query.end_key, prev_size=1)
 
         try:
             end_line = six.next(end_iter)
@@ -187,14 +184,14 @@ class ZipNumCluster(CDXSource):
 
         # Get Start
         first_iter = iter_range(reader,
-                                start_key,
-                                end_key,
+                                query.key,
+                                query.end_key,
                                 prev_size=1)
 
         try:
             first_line = six.next(first_iter)
         except StopIteration:
-            if end_line == last_line and start_key >= last_line:
+            if end_line == last_line and query.key >= last_line:
                 first_line = last_line
             else:
                 reader.close()
@@ -336,11 +333,10 @@ class ZipNumCluster(CDXSource):
         iter_ = itertools.chain(*map(decompress_block, ranges))
 
         # start bound
-        iter_ = linearsearch(iter_, query.key.encode('utf-8'))
+        iter_ = linearsearch(iter_, query.key)
 
         # end bound
-        end = query.end_key.encode('utf-8')
-        iter_ = itertools.takewhile(lambda line: line < end, iter_)
+        iter_ = itertools.takewhile(lambda line: line < query.end_key, iter_)
         return iter_
 
     def __str__(self):

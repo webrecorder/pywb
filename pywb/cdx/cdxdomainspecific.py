@@ -8,8 +8,7 @@ from six.moves.urllib.parse import urlsplit
 from pywb.utils.dsrules import BaseRule, RuleSet
 
 from pywb.utils.canonicalize import unsurt, UrlCanonicalizer
-
-from pywb.cdx.query import CDXQuery
+from pywb.utils.loaders import to_native_str
 
 
 #=================================================================
@@ -65,14 +64,14 @@ class CustomUrlCanonicalizer(UrlCanonicalizer):
 
 
 #=================================================================
-class FuzzyQuery:
+class FuzzyQuery(object):
     def __init__(self, rules):
         self.rules = rules
 
     def __call__(self, query):
         matched_rule = None
 
-        urlkey = query.key
+        urlkey = to_native_str(query.key, 'utf-8')
         url = query.url
         filter_ = query.filters
         output = query.output
@@ -149,7 +148,7 @@ class CDXDomainSpecificRule(BaseRule):
         In the case of non-surt format, this method is called
         to desurt any urls
         """
-        self.url_prefix = map(unsurt, self.url_prefix)
+        self.url_prefix = list(map(unsurt, self.url_prefix))
         if self.regex:
             self.regex = re.compile(unsurt(self.regex.pattern))
 
@@ -181,6 +180,6 @@ class CDXDomainSpecificRule(BaseRule):
         def conv(value):
             return '[?&]({0}=[^&]+)'.format(re.escape(value))
 
-        params_list = map(conv, params_list)
+        params_list = list(map(conv, params_list))
         final_str = '.*'.join(params_list)
         return final_str

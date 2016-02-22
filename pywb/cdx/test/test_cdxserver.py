@@ -55,6 +55,7 @@ def mock_urlopen_err(err):
 # Second time expect a 200 for fuzzy match
 def mock_urlopen_fuzzy(req):
     status = 200
+    print(req.get_full_url())
     if 'exact' in req.get_full_url():
         status = 404
 

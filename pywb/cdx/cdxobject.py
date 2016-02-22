@@ -182,7 +182,12 @@ class CDXObject(OrderedDict):
 
         return result
 
+
     def to_json(self, fields=None):
+        return self.conv_to_json(self, fields)
+
+    @staticmethod
+    def conv_to_json(obj, fields=None):
         """
         return cdx as json dictionary string
         if ``fields`` is ``None``, output will include all fields
@@ -192,10 +197,10 @@ class CDXObject(OrderedDict):
         :param fields: list of field names to output
         """
         if fields is None:
-            return json_encode(self) + '\n'
+            return json_encode(obj) + '\n'
 
         try:
-            result = json_encode(OrderedDict((x, self[x]) for x in fields)) + '\n'
+            result = json_encode(OrderedDict([(x, obj[x]) for x in fields if x in obj])) + '\n'
         except KeyError as ke:
             msg = 'Invalid field "{0}" found in fields= argument'
             msg = msg.format(ke.message)
@@ -211,6 +216,14 @@ class CDXObject(OrderedDict):
             return ' '.join(val for n, val in six.iteritems(self))
         else:
             return json_encode(self)
+
+    def to_cdxj(self, fields=None):
+        prefix = self['urlkey'] + ' ' + self['timestamp'] + ' '
+        dupe = OrderedDict(list(self.items())[2:])
+        return prefix + self.conv_to_json(dupe, fields)
+
+    def __lt__(self, other):
+        return str(self) < str(other)
 
 
 #=================================================================
