@@ -1,6 +1,5 @@
-from indexloader import FileIndexSource, RemoteIndexSource, MementoIndexSource, RedisIndexSource
-from indexloader import LiveIndexSource
-from indexloader import query_index
+from indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource, RedisIndexSource
+from indexsource import LiveIndexSource
 
 from pywb.utils.timeutils import timestamp_now
 
@@ -42,11 +41,10 @@ remote_sources = [
 
 # Url Match -- Local Loaders
 # ============================================================================
-@pytest.mark.parametrize("source1", local_sources, ids=["file", "redis"])
-def test_local_cdxj_loader(source1):
+@pytest.mark.parametrize("source", local_sources, ids=["file", "redis"])
+def test_local_cdxj_loader(source):
     url = 'http://www.iana.org/_css/2013.1/fonts/Inconsolata.otf'
-    res = query_index(source1, dict(url=url,
-                                    limit=3))
+    res = source(dict(url=url, limit=3))
 
     expected = """\
 org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126200826 iana.warc.gz
@@ -58,12 +56,12 @@ org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126200930 iana.warc.gz"""
 
 # Closest -- Local Loaders
 # ============================================================================
-@pytest.mark.parametrize("source1", local_sources, ids=["file", "redis"])
-def test_local_closest_loader(source1):
+@pytest.mark.parametrize("source", local_sources, ids=["file", "redis"])
+def test_local_closest_loader(source):
     url = 'http://www.iana.org/_css/2013.1/fonts/Inconsolata.otf'
-    res = query_index(source1, dict(url=url,
-                                    closest='20140126200930',
-                                    limit=3))
+    res = source(dict(url=url,
+                  closest='20140126200930',
+                  limit=3))
 
     expected = """\
 org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126200930 iana.warc.gz
@@ -75,9 +73,9 @@ org,iana)/_css/2013.1/fonts/inconsolata.otf 20140126200826 iana.warc.gz"""
 
 # Prefix -- Local Loaders
 # ============================================================================
-@pytest.mark.parametrize("source1", local_sources, ids=["file", "redis"])
-def test_file_prefix_loader(source1):
-    res = query_index(source1, dict(url='http://iana.org/domains/root/*'))
+@pytest.mark.parametrize("source", local_sources, ids=["file", "redis"])
+def test_file_prefix_loader(source):
+    res = source(dict(url='http://iana.org/domains/root/*'))
 
     expected = """\
 org,iana)/domains/root/db 20140126200927 iana.warc.gz
@@ -89,10 +87,10 @@ org,iana)/domains/root/servers 20140126201227 iana.warc.gz"""
 
 # Url Match -- Remote Loaders
 # ============================================================================
-@pytest.mark.parametrize("source2", remote_sources, ids=["remote_cdx", "memento"])
-def test_remote_loader(source2):
+@pytest.mark.parametrize("source", remote_sources, ids=["remote_cdx", "memento"])
+def test_remote_loader(source):
     url = 'http://instagram.com/amaliaulman'
-    res = query_index(source2, dict(url=url))
+    res = source(dict(url=url))
 
     expected = """\
 com,instagram)/amaliaulman 20141014150552 http://webenact.rhizome.org/all/20141014150552id_/http://instagram.com/amaliaulman
@@ -105,10 +103,10 @@ com,instagram)/amaliaulman 20141014171636 http://webenact.rhizome.org/all/201410
 
 # Url Match -- Remote Loaders
 # ============================================================================
-@pytest.mark.parametrize("source2", remote_sources, ids=["remote_cdx", "memento"])
-def test_remote_closest_loader(source2):
+@pytest.mark.parametrize("source", remote_sources, ids=["remote_cdx", "memento"])
+def test_remote_closest_loader(source):
     url = 'http://instagram.com/amaliaulman'
-    res = query_index(source2, dict(url=url, closest='20141014162332', limit=1))
+    res = source(dict(url=url, closest='20141014162332', limit=1))
 
     expected = """\
 com,instagram)/amaliaulman 20141014162333 http://webenact.rhizome.org/all/20141014162333id_/http://instagram.com/amaliaulman"""
@@ -116,12 +114,24 @@ com,instagram)/amaliaulman 20141014162333 http://webenact.rhizome.org/all/201410
     assert(key_ts_res(res, 'load_url') == expected)
 
 
+# Url Match -- Memento
+# ============================================================================
+@pytest.mark.parametrize("source", remote_sources, ids=["remote_cdx", "memento"])
+def test_remote_closest_loader(source):
+    url = 'http://instagram.com/amaliaulman'
+    res = source(dict(url=url, closest='20141014162332', limit=1))
+
+    expected = """\
+com,instagram)/amaliaulman 20141014162333 http://webenact.rhizome.org/all/20141014162333id_/http://instagram.com/amaliaulman"""
+
+    assert(key_ts_res(res, 'load_url') == expected)
+
 # Live Index -- No Load!
 # ============================================================================
 def test_live():
     url = 'http://example.com/'
     source = LiveIndexSource()
-    res = query_index(source, dict(url=url))
+    res = source(dict(url=url))
 
     expected = 'com,example)/ {0} http://example.com/'.format(timestamp_now())
 
@@ -130,5 +140,26 @@ def test_live():
 
 
 
+# Errors -- Not Found All
+# ============================================================================
+@pytest.mark.parametrize("source", local_sources + remote_sources, ids=["file", "redis", "remote_cdx", "memento"])
+def test_all_not_found(source):
+    url = 'http://x-not-found-x.notfound/'
+    res = source(dict(url=url, limit=3))
+
+    expected = ''
+    assert(key_ts_res(res) == expected)
+
+
+
+# ============================================================================
+def test_another_remote_not_found():
+    source = MementoIndexSource.from_timegate_url('http://www.webarchive.org.uk/wayback/archive/')
+    url = 'http://x-not-found-x.notfound/'
+    res = source(dict(url=url, limit=3))
+
+
+    expected = ''
+    assert(key_ts_res(res) == expected)
 
 

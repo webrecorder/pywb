@@ -3,10 +3,12 @@ import redis
 from pywb.utils.binsearch import iter_range
 from pywb.utils.timeutils import timestamp_to_http_date, http_date_to_timestamp
 from pywb.utils.timeutils import timestamp_to_sec, timestamp_now
-from pywb.utils.canonicalize import calc_search_range
+from pywb.utils.canonicalize import canonicalize, calc_search_range
+from pywb.utils.wbexception import NotFoundException
 
 from pywb.cdx.cdxobject import CDXObject
-from pywb.cdx.cdxops import cdx_sort_closest, cdx_limit
+from pywb.cdx.query import CDXQuery
+from pywb.cdx.cdxops import process_cdx
 
 import requests
 
@@ -21,6 +23,17 @@ class BaseIndexSource(object):
     def get_index(self, params):
         return self.index_template.format(params.get('coll'))
 
+    def __call__(self, params):
+        query = CDXQuery(**params)
+
+        try:
+            cdx_iter = self.load_index(query.params)
+        except NotFoundException as nf:
+            cdx_iter = iter([])
+
+        cdx_iter = process_cdx(cdx_iter, query)
+        return cdx_iter
+
 
 #=============================================================================
 class FileIndexSource(BaseIndexSource):
@@ -28,7 +41,7 @@ class FileIndexSource(BaseIndexSource):
         filename = self.get_index(params)
 
         with open(filename, 'rb') as fh:
-            gen = iter_range(fh, params['start_key'], params['end_key'])
+            gen = iter_range(fh, params['key'], params['end_key'])
             for line in gen:
                 yield CDXObject(line)
 
@@ -43,21 +56,28 @@ class RemoteIndexSource(BaseIndexSource):
         url = self.get_index(params)
         url += '?url=' + params['url']
         r = requests.get(url)
+        if r.status_code >= 400:
+            raise NotFoundException(url)
+
         lines = r.content.strip().split(b'\n')
-        for line in lines:
-            cdx = CDXObject(line)
-            cdx['load_url'] = self.replay_url.format(timestamp=cdx['timestamp'], url=cdx['url'])
-            yield cdx
+        def do_load(lines):
+            for line in lines:
+                cdx = CDXObject(line)
+                cdx['load_url'] = self.replay_url.format(timestamp=cdx['timestamp'], url=cdx['url'])
+                yield cdx
+
+        return do_load(lines)
 
 
 #=============================================================================
 class LiveIndexSource(BaseIndexSource):
     def load_index(self, params):
         cdx = CDXObject()
-        cdx['urlkey'] = params.get('start_key').decode('utf-8')
+        cdx['urlkey'] = params.get('key').decode('utf-8')
         cdx['timestamp'] = timestamp_now()
         cdx['url'] = params['url']
         cdx['load_url'] = params['url']
+        cdx['is_live'] = True
         def live():
             yield cdx
 
@@ -80,7 +100,7 @@ class RedisIndexSource(BaseIndexSource):
     def load_index(self, params):
         z_key = self.get_index(params)
         index_list = self.redis.zrangebylex(z_key,
-                                            b'[' + params['start_key'],
+                                            b'[' + params['key'],
                                             b'(' + params['end_key'])
 
         for line in index_list:
@@ -94,66 +114,84 @@ class MementoIndexSource(BaseIndexSource):
         self.timemap_url = timemap_url
         self.replay_url = replay_url
 
-    def make_iter(self, links, def_name):
-        original, link_iter = MementoUtils.links_to_json(links, def_name)
+    def links_to_cdxobject(self, link_header, def_name, sort=False):
+        results = MementoUtils.parse_links(link_header, def_name)
 
-        for cdx in link_iter():
-            cdx['load_url'] = self.replay_url.format(timestamp=cdx['timestamp'], url=original)
+        #meta = MementoUtils.meta_field('timegate', results)
+        #if meta:
+        #    yield meta
+
+        #meta = MementoUtils.meta_field('timemap', results)
+        #if meta:
+        #    yield meta
+
+        #meta = MementoUtils.meta_field('original', results)
+        #if meta:
+        #    yield meta
+
+        original = results['original']['url']
+        key = canonicalize(original)
+
+        mementos = results['mementos']
+        if sort:
+            mementos = sorted(mementos)
+
+        for val in mementos:
+            dt = val.get('datetime')
+            if not dt:
+                continue
+
+            ts = http_date_to_timestamp(dt)
+            cdx = CDXObject()
+            cdx['urlkey'] = key
+            cdx['timestamp'] = ts
+            cdx['url'] = original
+            cdx['mem_rel'] = val.get('rel', '')
+            cdx['memento_url'] = val['url']
+
+            load_url = self.replay_url.format(timestamp=cdx['timestamp'],
+                                              url=original)
+
+            cdx['load_url'] = load_url
             yield cdx
 
-    def load_timegate(self, params, closest):
+    def get_timegate_links(self, params, closest):
         url = self.timegate_url.format(coll=params.get('coll')) + params['url']
         accept_dt = timestamp_to_http_date(closest)
         res = requests.head(url, headers={'Accept-Datetime': accept_dt})
-        return self.make_iter(res.headers.get('Link'), 'timegate')
+        if res.status_code >= 400:
+            raise NotFoundException(url)
 
-    def load_timemap(self, params):
+        return res.headers.get('Link')
+
+    def get_timemap_links(self, params):
         url = self.timemap_url + params['url']
-        r = requests.get(url)
-        return self.make_iter(r.text, 'timemap')
+        res = requests.get(url)
+        if res.status_code >= 400:
+            raise NotFoundException(url)
+
+        return res.text
 
     def load_index(self, params):
         closest = params.get('closest')
+
         if not closest:
-            return self.load_timemap(params)
+            links = self.get_timemap_links(params)
+            def_name = 'timemap'
         else:
-            return self.load_timegate(params, closest)
+            links = self.get_timegate_links(params, closest)
+            def_name = 'timegate'
+
+        #if not links:
+        #    return iter([])
+
+        return self.links_to_cdxobject(links, def_name)
 
     @staticmethod
-    def from_timegate_url(timegate_url, type_='link'):
+    def from_timegate_url(timegate_url, path='link'):
         return MementoIndexSource(timegate_url,
-                                  timegate_url + 'timemap/' + type_ + '/',
+                                  timegate_url + 'timemap/' + path + '/',
                                   timegate_url + '{timestamp}id_/{url}')
 
 
 
-def query_index(source, params):
-    url = params.get('url', '')
-
-    if not params.get('matchType'):
-        if url.startswith('*.'):
-            params['url'] = url[2:]
-            params['matchType'] = 'domain'
-        elif url.endswith('*'):
-            params['url'] = url[:-1]
-            params['matchType'] = 'prefix'
-        else:
-            params['matchType'] = 'exact'
-
-    start, end = calc_search_range(url=params['url'],
-                                   match_type=params['matchType'])
-
-    params['start_key'] = start.encode('utf-8')
-    params['end_key'] = end.encode('utf-8')
-
-    res = source.load_index(params)
-
-    limit = int(params.get('limit', 10))
-    closest = params.get('closest')
-    if closest:
-        res = cdx_sort_closest(closest, res, limit)
-    elif limit:
-        res = cdx_limit(res, limit)
-
-
-    return res

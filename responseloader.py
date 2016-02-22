@@ -2,7 +2,8 @@ from liverec import BaseRecorder
 from liverec import request as remote_request
 
 from pywb.warc.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
-from pywb.utils.timeutils import timestamp_to_datetime
+from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_http_date
+from pywb.warc.resolvingloader import ResolvingLoader
 
 from io import BytesIO
 from bottle import response
@@ -25,22 +26,26 @@ def incr_reader(stream, header=None, size=8192):
 
 #=============================================================================
 class WARCPathPrefixLoader(object):
-    def __init__(self, prefix):
+    def __init__(self, prefix, cdx_loader):
         self.prefix = prefix
-        self.record_loader = ArcWarcRecordLoader()
+
+        def add_prefix(filename, cdx):
+            return [self.prefix + filename]
+
+        self.resolve_loader = ResolvingLoader([add_prefix], no_record_parse=True)
+        self.cdx_loader = cdx_loader
 
     def __call__(self, cdx):
-        filename = cdx.get('filename')
-        offset = cdx.get('offset')
-        length = cdx.get('length', -1)
+        if not cdx.get('filename') or cdx.get('offset') is None:
+            return None
 
-        if filename is None or offset is None:
-            raise Exception
+        failed_files = []
+        headers, payload = self.resolve_loader.load_headers_and_payload(cdx, failed_files, self.cdx_loader)
 
-        record = self.record_loader.load(self.prefix + filename,
-                                         offset,
-                                         length,
-                                         no_record_parse=True)
+        if headers != payload:
+            headers.stream.close()
+
+        record = payload
 
         for n, v in record.rec_headers.headers:
             response.headers[n] = v
@@ -75,40 +80,50 @@ class LiveWebLoader(object):
     SKIP_HEADERS = (b'link',
                     b'memento-datetime',
                     b'content-location',
-                    b'x-archive',
-                    b'set-cookie')
+                    b'x-archive')
 
     def __call__(self, cdx):
         load_url = cdx.get('load_url')
         if not load_url:
-            raise Exception
+            return None
 
         recorder = HeaderRecorder(self.SKIP_HEADERS)
 
-        upstream_res = remote_request(load_url, recorder=recorder, stream=True,
-                                      headers={'Accept-Encoding': 'identity'})
+        req_headers = {}
+
+        dt = timestamp_to_datetime(cdx['timestamp'])
+
+        if not cdx.get('is_live'):
+            req_headers['Accept-Datetime'] = datetime_to_http_date(dt)
+
+        upstream_res = remote_request(load_url,
+                                      recorder=recorder,
+                                      stream=True,
+                                      headers=req_headers)
+
+        resp_headers = recorder.get_header()
 
         response.headers['Content-Type'] = 'application/http; msgtype=response'
 
-        response.headers['WARC-Type'] = 'response'
-        response.headers['WARC-Record-ID'] = self._make_warc_id()
+        #response.headers['WARC-Type'] = 'response'
+        #response.headers['WARC-Record-ID'] = self._make_warc_id()
         response.headers['WARC-Target-URI'] = cdx['url']
-        response.headers['WARC-Date'] = self._make_date(cdx['timestamp'])
+        response.headers['WARC-Date'] = self._make_date(dt)
 
         # Try to set content-length, if it is available and valid
         try:
             content_len = int(upstream_res.headers.get('content-length', 0))
             if content_len > 0:
-                content_len += len(recorder.get_header())
+                content_len += len(resp_headers)
                 response.headers['Content-Length'] = content_len
         except:
-            pass
+            raise
 
-        return incr_reader(upstream_res.raw, header=recorder.get_header())
+        return incr_reader(upstream_res.raw, header=resp_headers)
 
     @staticmethod
-    def _make_date(ts):
-        return timestamp_to_datetime(ts).strftime('%Y-%m-%dT%H:%M:%SZ')
+    def _make_date(dt):
+        return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     @staticmethod
     def _make_warc_id(id_=None):
