@@ -7,8 +7,8 @@ from pywb.utils.canonicalize import calc_search_range
 class CDXQuery(object):
     def __init__(self, **kwargs):
         self.params = kwargs
+        url = self.url
         if not self.params.get('matchType'):
-            url = self.params.get('url', '')
             if url.startswith('*.'):
                 self.params['url'] = url[2:]
                 self.params['matchType'] = 'domain'
@@ -18,7 +18,7 @@ class CDXQuery(object):
             else:
                 self.params['matchType'] = 'exact'
 
-        start, end = calc_search_range(url=self.params['url'],
+        start, end = calc_search_range(url=url,
                                        match_type=self.params['matchType'],
                                        url_canon=self.params.get('_url_canon'))
 
