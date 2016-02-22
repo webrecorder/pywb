@@ -157,6 +157,7 @@ class BaseRecorder(object):
     def finish_response(self, incomplete=False):
         pass
 
+
 #=================================================================
 class ReadFullyStream(object):
     def __init__(self, stream):
