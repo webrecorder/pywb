@@ -69,7 +69,7 @@ class BaseCDXServer(object):
 
     def load_cdx(self, **params):
         params['_url_canon'] = self.url_canon
-        query = CDXQuery(**params)
+        query = CDXQuery(params)
 
         #key, end_key = self._calc_search_keys(query)
         #query.set_key(key, end_key)

@@ -107,6 +107,7 @@ class CDXObject(OrderedDict):
 
         cdxline = cdxline.rstrip()
         self._from_json = False
+        self._cached_json = None
 
         # Allows for filling the fields later or in a custom way
         if not cdxline:
@@ -157,6 +158,9 @@ class CDXObject(OrderedDict):
         # force regen on next __str__ call
         self.cdxline = None
 
+        # force regen on next to_json() call
+        self._cached_json = None
+
     def is_revisit(self):
         """return ``True`` if this record is a revisit record."""
         return (self.get(MIMETYPE) == 'warc/revisit' or
@@ -174,14 +178,13 @@ class CDXObject(OrderedDict):
             return str(self) + '\n'
 
         try:
-            result = ' '.join(self[x] for x in fields) + '\n'
+            result = ' '.join(str(self[x]) for x in fields) + '\n'
         except KeyError as ke:
             msg = 'Invalid field "{0}" found in fields= argument'
             msg = msg.format(ke.message)
             raise CDXException(msg)
 
         return result
-
 
     def to_json(self, fields=None):
         return self.conv_to_json(self, fields)
@@ -213,7 +216,7 @@ class CDXObject(OrderedDict):
             return self.cdxline.decode('utf-8')
 
         if not self._from_json:
-            return ' '.join(val for n, val in six.iteritems(self))
+            return ' '.join(str(val) for val in six.itervalues(self))
         else:
             return json_encode(self)
 
@@ -223,7 +226,13 @@ class CDXObject(OrderedDict):
         return prefix + self.conv_to_json(dupe, fields)
 
     def __lt__(self, other):
-        return str(self) < str(other)
+        if not self._cached_json:
+            self._cached_json = self.to_json()
+
+        if not other._cached_json:
+            other._cached_json = other.to_json()
+
+        return self._cached_json < other._cached_json
 
 
 #=================================================================

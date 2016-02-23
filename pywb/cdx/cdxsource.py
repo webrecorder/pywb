@@ -60,8 +60,8 @@ class RemoteCDXSource(CDXSource):
             remote_query = query
         else:
             # Only send url and matchType to remote
-            remote_query = CDXQuery(url=query.url,
-                                    matchType=query.match_type)
+            remote_query = CDXQuery(dict(url=query.url,
+                                         matchType=query.match_type))
 
         urlparams = remote_query.urlencode()
 

@@ -29,7 +29,7 @@ def lazy_cdx_load(**params):
     params['custom_ops'] = [raise_access_exception]
 
     cdx_iter = cdx_load(['bogus ignored'],
-                        CDXQuery(**params),
+                        CDXQuery(params),
                         process=True)
 
     # exception happens on first access attempt
