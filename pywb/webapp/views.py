@@ -136,7 +136,7 @@ class J2TemplateView(object):
         template_result = self.render_to_string(**kwargs)
         status = kwargs.get('status', '200 OK')
         content_type = kwargs.get('content_type', 'text/html; charset=utf-8')
-        return WbResponse.text_response(template_result.encode('utf-8'),
+        return WbResponse.text_response(template_result,
                                         status=status,
                                         content_type=content_type)
 
@@ -217,5 +217,6 @@ class J2HtmlCapturesView(J2TemplateView):
 class MementoTimemapView(object):
     def render_response(self, wbrequest, cdx_lines, **kwargs):
         memento_lines = make_timemap(wbrequest, cdx_lines)
+
         return WbResponse.text_stream(memento_lines,
                                       content_type=LINK_FORMAT)

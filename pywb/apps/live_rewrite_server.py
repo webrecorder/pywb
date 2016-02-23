@@ -1,4 +1,4 @@
-from cli import LiveCli
+from pywb.apps.cli import LiveCli
 
 #=================================================================
 # init default live rewrite server app

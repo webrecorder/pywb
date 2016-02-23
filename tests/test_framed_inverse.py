@@ -2,9 +2,9 @@ import webtest
 from pywb.webapp.pywb_init import create_wb_router
 from pywb.framework.wsgi_wrappers import init_app
 
-from memento_fixture import *
+from .memento_fixture import *
 
-from server_mock import make_setup_module, BaseIntegration
+from .server_mock import make_setup_module, BaseIntegration
 
 setup_module = make_setup_module('tests/test_config_frames.yaml')
 
@@ -28,8 +28,8 @@ class TestMementoFrameInverse(MementoMixin, BaseIntegration):
         assert '<http://localhost:80/pywb/mp_/http://www.iana.org/>; rel="timegate"' in links
 
         # Body
-        assert '<iframe ' in resp.body
-        assert '/pywb/20140127171238mp_/http://www.iana.org/' in resp.body, resp.body
+        assert '<iframe ' in resp.text
+        assert '/pywb/20140127171238mp_/http://www.iana.org/' in resp.text, resp.text
 
     def test_inner_replay(self):
         resp = self.testapp.get('/pywb/20140127171238mp_/http://www.iana.org/')
@@ -49,7 +49,7 @@ class TestMementoFrameInverse(MementoMixin, BaseIntegration):
         assert '<http://localhost:80/pywb/mp_/http://www.iana.org/>; rel="timegate"' in links
 
         # Body
-        assert '"20140127171238"' in resp.body
-        assert 'wb.js' in resp.body
-        assert 'new _WBWombat' in resp.body, resp.body
-        assert '/pywb/20140127171238mp_/http://www.iana.org/time-zones"' in resp.body
+        assert '"20140127171238"' in resp.text
+        assert 'wb.js' in resp.text
+        assert 'new _WBWombat' in resp.text, resp.text
+        assert '/pywb/20140127171238mp_/http://www.iana.org/time-zones"' in resp.text

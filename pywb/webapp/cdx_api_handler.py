@@ -23,11 +23,8 @@ class CDXAPIHandler(BaseHandler):
 
         cdx_iter = self.index_handler.load_cdx(wbrequest, params)
 
-        def to_utf8():
-            for cdx in cdx_iter:
-                yield cdx.encode('utf-8')
-
-        return WbResponse.text_stream(to_utf8())
+        return WbResponse.text_stream(cdx_iter,
+                                      content_type='text/plain')
 
     @staticmethod
     def extract_params_from_wsgi_env(env):

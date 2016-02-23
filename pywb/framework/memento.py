@@ -5,6 +5,7 @@ from pywb.utils.timeutils import timestamp_to_http_date
 from pywb.framework.wbrequestresponse import WbRequest, WbResponse
 from pywb.rewrite.wburl import WbUrl
 
+import six
 LINK_FORMAT = 'application/link-format'
 
 
@@ -182,7 +183,7 @@ def make_timemap(wbrequest, cdx_lines):
 
     # get first memento as it'll be used for 'from' field
     try:
-        first_cdx = cdx_lines.next()
+        first_cdx = six.next(cdx_lines)
         from_date = timestamp_to_http_date(first_cdx['timestamp'])
     except StopIteration:
         first_cdx = None

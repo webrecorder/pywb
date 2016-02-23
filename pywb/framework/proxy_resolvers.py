@@ -8,6 +8,9 @@ from pywb.framework.cache import create_cache
 from pywb.framework.basehandlers import WbUrlHandler
 
 from six.moves.urllib.parse import parse_qs, urlsplit
+import six
+
+from pywb.utils.loaders import to_native_str
 
 import base64
 import os
@@ -101,7 +104,7 @@ class ProxyAuthResolver(BaseCollResolver):
 
         value = self.auth_msg
 
-        return WbResponse(status_headers, value=[value])
+        return WbResponse(status_headers, value=[value.encode('utf-8')])
 
     @staticmethod
     def read_basic_auth_coll(value):
@@ -112,8 +115,8 @@ class ProxyAuthResolver(BaseCollResolver):
         if len(parts) != 2:
             return ''
 
-        user_pass = base64.b64decode(parts[1])
-        return user_pass.split(':')[0]
+        user_pass = base64.b64decode(parts[1].encode('utf-8'))
+        return to_native_str(user_pass.split(b':')[0])
 
 
 #=================================================================
@@ -357,14 +360,14 @@ class CookieResolver(BaseCollResolver):
             return sesh_id
 
         sesh_id = base64.b32encode(os.urandom(5)).lower()
-        return sesh_id
+        return to_native_str(sesh_id)
 
     def make_redir_response(self, url, headers=None):
         if not headers:
             headers = []
 
         if self.extra_headers:
-            for name, value in self.extra_headers.iteritems():
+            for name, value in six.iteritems(self.extra_headers):
                 headers.append((name, value))
 
         return WbResponse.redir_response(url, headers=headers)

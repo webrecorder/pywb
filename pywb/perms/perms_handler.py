@@ -33,6 +33,7 @@ class PermsHandler(WbUrlHandler):
 
     def check_single_url(self, wbrequest, perms_checker):
         urlkey = self.url_canon(wbrequest.wb_url.url)
+        urlkey = urlkey.encode('utf-8')
 
         if not perms_checker.allow_url_lookup(urlkey):
             response_text = BLOCK

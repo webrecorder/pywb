@@ -118,11 +118,11 @@
 'http://example.com/file.html?param=https://example.com/filename.html&other=value&a=b&param2=http://test.example.com'
 
 # urlencoded
->>> do_deprefix('http://example.com/file.html?foo=bar&url=' + urllib.quote_plus('http://localhost:8080/pywb/http://example.com/filename.html') + '&foo2=bar2', '/pywb/', 'http://localhost:8080/pywb/')
+>>> do_deprefix('http://example.com/file.html?foo=bar&url=' + quote_plus('http://localhost:8080/pywb/http://example.com/filename.html') + '&foo2=bar2', '/pywb/', 'http://localhost:8080/pywb/')
 'http://example.com/file.html?foo=bar&url=http://example.com/filename.html&foo2=bar2'
 
 # with extra path
->>> do_deprefix('http://example.com/file.html?foo=bar&url=' + urllib.quote_plus('http://localhost:8080/pywb/extra/path/http://example.com/filename.html') + '&foo2=bar2', '/pywb/', 'http://localhost:8080/pywb/')
+>>> do_deprefix('http://example.com/file.html?foo=bar&url=' + quote_plus('http://localhost:8080/pywb/extra/path/http://example.com/filename.html') + '&foo2=bar2', '/pywb/', 'http://localhost:8080/pywb/')
 'http://example.com/file.html?foo=bar&url=http://example.com/filename.html&foo2=bar2'
 
 # SchemeOnlyUrlRewriter tests
@@ -152,7 +152,8 @@ True
 
 
 from pywb.rewrite.url_rewriter import UrlRewriter, SchemeOnlyUrlRewriter
-import urllib
+from six.moves.urllib.parse import quote_plus, unquote_plus
+
 
 def do_rewrite(rel_url, base_url, prefix, mod=None, full_prefix=None):
     rewriter = UrlRewriter(base_url, prefix, full_prefix=full_prefix)
@@ -162,7 +163,7 @@ def do_rewrite(rel_url, base_url, prefix, mod=None, full_prefix=None):
 def do_deprefix(url, rel_prefix, full_prefix):
     rewriter = UrlRewriter(url, rel_prefix, full_prefix)
     url = rewriter.deprefix_url()
-    return urllib.unquote_plus(url)
+    return unquote_plus(url)
 
 
 if __name__ == "__main__":

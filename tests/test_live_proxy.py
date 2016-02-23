@@ -1,7 +1,7 @@
-from SocketServer import ThreadingMixIn
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+from six.moves.socketserver import ThreadingMixIn
+from six.moves.BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
-from server_thread import ServerThreadRunner
+from .server_thread import ServerThreadRunner
 
 from pywb.webapp.live_rewrite_handler import RewriteHandler
 from pywb.webapp.pywb_init import create_wb_router
@@ -38,9 +38,9 @@ class ProxyRequest(BaseHTTPRequestHandler):
 
         self.send_header('x-proxy', 'test')
         self.send_header('content-length', str(len(buff)))
-        self.send_header('content-type', 'text/plain')
+        self.send_header('content-type', 'text/plain; charset=utf-8')
         self.end_headers()
-        self.wfile.write(buff)
+        self.wfile.write(buff.encode('utf-8'))
         self.wfile.close()
 
     def do_PUTMETA(self):
@@ -115,11 +115,11 @@ class TestProxyLiveRewriter:
         assert len(self.requestlog) == 1
 
         # equal to returned response (echo)
-        assert self.requestlog[0] == resp.body
+        assert self.requestlog[0] == resp.text
         assert resp.headers['x-archive-orig-x-proxy'] == 'test'
 
-        assert resp.body.startswith('GET http://example.com/ HTTP/1.1')
-        assert 'referer: http://other.example.com' in resp.body
+        assert resp.text.startswith('GET http://example.com/ HTTP/1.1')
+        assert 'referer: http://other.example.com' in resp.text.lower()
 
         assert len(self.cache) == 0
 
@@ -135,7 +135,7 @@ class TestProxyLiveRewriter:
         assert len(self.requestlog) == 1
 
         # proxied, but without range
-        assert self.requestlog[0] == resp.body
+        assert self.requestlog[0] == resp.text
         assert resp.headers['x-archive-orig-x-proxy'] == 'test'
 
         assert self.requestlog[0].startswith('GET http://example.com/ HTTP/1.1')
@@ -159,7 +159,7 @@ class TestProxyLiveRewriter:
         assert len(self.requestlog) == 1
 
         # proxy receives different request than our response
-        assert self.requestlog[0] != resp.body
+        assert self.requestlog[0] != resp.text
 
         assert self.requestlog[0].startswith('GET http://example.com/foobar HTTP/1.1')
 

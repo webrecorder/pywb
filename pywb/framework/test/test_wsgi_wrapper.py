@@ -8,7 +8,7 @@ class TestOkApp:
     def __call__(self, env):
         def response(env, start_response):
             start_response('200 OK', [])
-            return ['Test']
+            return [b'Test']
         return response
 
 class TestErrApp:
@@ -32,7 +32,7 @@ def test_ok_app():
     resp = testapp.get('/')
 
     assert resp.status_int == 200
-    assert 'Test' in resp.body
+    assert b'Test' in resp.body, resp.body
 
 def test_err_app():
     the_app = init_app(initer(TestErrApp), load_yaml=False)

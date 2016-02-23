@@ -8,7 +8,7 @@ LINK_FORMAT = 'application/link-format'
 
 class MementoMixin(object):
     def get_links(self, resp):
-        return map(lambda x: x.strip(), re.split(', (?![0-9])', resp.headers[LINK]))
+        return list(map(lambda x: x.strip(), re.split(', (?![0-9])', resp.headers[LINK])))
 
     def make_timemap_link(self, url, coll='pywb'):
         format_ = '<http://localhost:80/{2}/timemap/*/{0}>; rel="timemap"; type="{1}"'

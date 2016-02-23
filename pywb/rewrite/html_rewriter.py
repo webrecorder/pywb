@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+import sys
 
 from six.moves.html_parser import HTMLParser
 from six.moves.urllib.parse import urljoin, urlsplit, urlunsplit
@@ -9,6 +10,10 @@ from six.moves.urllib.parse import urljoin, urlsplit, urlunsplit
 
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.regex_rewriters import JSRewriter, CSSRewriter
+
+import six.moves.html_parser
+six.moves.html_parser.unescape = lambda x: x
+from six import text_type
 
 
 #=================================================================
@@ -73,10 +78,10 @@ class HTMLRewriterMixin(object):
             self.ls = []
 
         def write(self, string):
-            self.ls.append(bytes(string))
+            self.ls.append(string)
 
         def getvalue(self):
-            return b''.join(self.ls)
+            return ''.join(self.ls)
 
 
     # ===========================
@@ -198,7 +203,7 @@ class HTMLRewriterMixin(object):
 
         if value != new_value:
             # ensure utf-8 encoded to avoid %-encoding query here
-            if isinstance(new_value, unicode):
+            if isinstance(new_value, text_type):
                 new_value = new_value.encode('utf-8')
 
         return new_value
@@ -395,7 +400,11 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
     PARSETAG = re.compile('[<]')
 
     def __init__(self, *args, **kwargs):
-        HTMLParser.__init__(self)
+        if sys.version_info > (3,4):  #pragma: no cover
+            HTMLParser.__init__(self, convert_charrefs=False)
+        else:  #pragma: no cover
+            HTMLParser.__init__(self)
+
         super(HTMLRewriter, self).__init__(*args, **kwargs)
 
     def reset(self):
@@ -462,7 +471,7 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
     # overriding regex so that these are no longer called
     #def handle_entityref(self, data):
     #    self.out.write('&' + data + ';')
-    #
+
     #def handle_charref(self, data):
     #    self.out.write('&#' + data + ';')
 

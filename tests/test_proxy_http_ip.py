@@ -6,9 +6,9 @@ from pywb.webapp.pywb_init import create_wb_router
 from pywb.framework.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
 
-from urlparse import urlsplit
+from six.moves.urllib.parse import urlsplit
 
-from server_mock import make_setup_module, BaseIntegration
+from .server_mock import make_setup_module, BaseIntegration
 
 setup_module = make_setup_module('tests/test_config_proxy_ip.yaml')
 
@@ -18,7 +18,7 @@ class TestProxyIPResolver(BaseIntegration):
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'
         assert resp.content_length > 0
-        assert 'proxy_magic = ""' in resp.body
+        assert 'proxy_magic = ""' in resp.text
 
     def _assert_basic_text(self, resp):
         assert resp.status_int == 200
@@ -35,8 +35,8 @@ class TestProxyIPResolver(BaseIntegration):
         resp = self.get_url('http://www.iana.org/')
         self._assert_basic_html(resp)
 
-        assert '"20140127171238"' in resp.body
-        assert 'wb.js' in resp.body
+        assert '"20140127171238"' in resp.text
+        assert 'wb.js' in resp.text
 
     def test_proxy_ip_get_defaults(self):
         resp = self.get_url('http://info.pywb.proxy/')
@@ -76,12 +76,12 @@ class TestProxyIPResolver(BaseIntegration):
         resp = self.get_url('http://www.iana.org/', '1.2.3.4')
         self._assert_basic_html(resp)
 
-        assert '"20140126200624"' in resp.body
+        assert '"20140126200624"' in resp.text
 
         # defaults for any other ip
         resp = self.get_url('http://www.iana.org/', '127.0.0.3')
         self._assert_basic_html(resp)
-        assert '"20140127171238"' in resp.body
+        assert '"20140127171238"' in resp.text
 
     def test_proxy_ip_delete_ip(self):
         resp = self.get_url('http://info.pywb.proxy/')
@@ -100,6 +100,6 @@ class TestProxyIPResolver(BaseIntegration):
 
     def test_proxy_ip_invalid_coll(self):
         resp = self.get_url('http://www.iana.org/', status=500)
-        assert 'Invalid Proxy Collection Specified: invalid' in resp.body
+        assert 'Invalid Proxy Collection Specified: invalid' in resp.text
 
 

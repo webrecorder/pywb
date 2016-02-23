@@ -118,11 +118,12 @@ class UrlRewriter(object):
         return "UrlRewriter('{0}', '{1}')".format(self.wburl, self.prefix)
 
     @staticmethod
-    def urljoin(orig_url, url):
+    def urljoin(orig_url, url):  # pragma: no cover
         new_url = urljoin(orig_url, url)
         if '../' not in new_url:
             return new_url
 
+        # only needed in py2 as py3 urljoin resolves '../'
         parts = urlsplit(new_url)
         scheme, netloc, path, query, frag = parts
 

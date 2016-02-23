@@ -24,4 +24,4 @@ def test_excluded(testconfig):
 
     with raises(AccessException):
         cdxobjs = list(query_handler.load_cdx(None, params))
-        print cdxobjs
+        print(cdxobjs)

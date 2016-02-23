@@ -59,7 +59,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
 
         except Exception as exc:
             import traceback
-            err_details = traceback.format_exc(exc)
+            err_details = traceback.format_exc()
             print(err_details)
 
             url = wbrequest.wb_url.url
@@ -174,7 +174,7 @@ class RewriteHandler(SearchPageWbUrlHandler):
     @staticmethod
     def create_cache_key(prefix, url):
         hash_ = hashlib.md5()
-        hash_.update(url)
+        hash_.update(url.encode('utf-8'))
         key = hash_.hexdigest()
         key = prefix + key
         return key

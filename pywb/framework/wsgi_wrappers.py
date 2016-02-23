@@ -1,5 +1,5 @@
 from pywb.utils.wbexception import WbException, NotFoundException
-from pywb.utils.loaders import load_yaml_config
+from pywb.utils.loaders import load_yaml_config, to_native_str
 
 from pywb.framework.wbrequestresponse import WbResponse, StatusAndHeaders
 
@@ -33,9 +33,12 @@ class WSGIApp(object):
 
             env['pywb.proxy_statusline'] = statusline
 
-            ssl_sock.write('HTTP/1.1 ' + statusline + '\r\n')
+            status_line = 'HTTP/1.1 ' + statusline + '\r\n'
+            ssl_sock.write(status_line.encode('iso-8859-1'))
+
             for name, value in headers:
-                ssl_sock.write(name + ': ' + value + '\r\n')
+                line = name + ': ' + value + '\r\n'
+                ssl_sock.write(line.encode('iso-8859-1'))
 
         resp_iter = self.handle_methods(env, ssl_start_response)
 
@@ -43,7 +46,7 @@ class WSGIApp(object):
         if not ssl_sock:
             return resp_iter
 
-        ssl_sock.write('\r\n')
+        ssl_sock.write(b'\r\n')
 
         for obj in resp_iter:
             if obj:
@@ -105,9 +108,9 @@ class WSGIApp(object):
 
         if error_view:
             if err_url and isinstance(err_url, str):
-                err_url = err_url.decode('utf-8', 'ignore')
+                err_url = to_native_str(err_url, 'utf-8')
             if err_msg and isinstance(err_msg, str):
-                err_msg = err_msg.decode('utf-8', 'ignore')
+                err_msg = to_native_str(err_msg, 'utf-8')
 
             return error_view.render_response(exc_type=type(exc).__name__,
                                               err_msg=err_msg,
@@ -120,9 +123,9 @@ class WSGIApp(object):
             if err_msg:
                 msg += err_msg
 
-            msg = msg.encode('utf-8', 'ignore')
+            #msg = msg.encode('utf-8', 'ignore')
             return WbResponse.text_response(msg,
-                                            status=status)
+                                           status=status)
 
 #=================================================================
 DEFAULT_CONFIG_FILE = 'config.yaml'
@@ -163,7 +166,7 @@ def init_app(init_func, load_yaml=True, config_file=None, config=None):
 #=================================================================
 def start_wsgi_ref_server(the_app, name, port):  # pragma: no cover
     from wsgiref.simple_server import make_server, WSGIServer
-    from SocketServer import ThreadingMixIn
+    from six.moves.socketserver import ThreadingMixIn
 
     # disable is_hop_by_hop restrictions
     import wsgiref.handlers

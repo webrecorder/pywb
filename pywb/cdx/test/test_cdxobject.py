@@ -34,6 +34,8 @@ def test_unicode_url():
     assert x['timestamp'] == '123'
     assert x['url'] == 'http://example.com/caf%C3%A9/path'
 
+    assert x.to_cdxj() == 'com,example,cafe)/ 123 {"url": "http://example.com/caf%C3%A9/path"}\n'
+
 def test_invalid_idx_format():
     with raises(CDXException):
         x = IDXObject(b'a b c')

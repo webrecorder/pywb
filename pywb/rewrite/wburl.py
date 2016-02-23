@@ -44,6 +44,8 @@ import six
 from six.moves.urllib.parse import urlsplit, urlunsplit
 from six.moves.urllib.parse import quote_plus, quote, unquote_plus
 
+from pywb.utils.loaders import to_native_str
+
 
 #=================================================================
 class BaseWbUrl(object):
@@ -109,10 +111,11 @@ class WbUrl(BaseWbUrl):
             return url
 
         parts = urlsplit(url)
-        domain = parts.netloc
+        domain = parts.netloc.encode('utf-8')
         try:
             domain = domain.decode('idna')
-            domain = domain.encode('utf-8', 'ignore')
+            if six.PY2:
+                domain = domain.encode('utf-8', 'ignore')
         except:
             # likely already encoded, so use as is
             pass
@@ -134,9 +137,11 @@ class WbUrl(BaseWbUrl):
         """
         parts = WbUrl.FIRST_PATH.split(url, 1)
 
+        sep = url[len(parts[0])] if len(parts) > 1 else None
+
         scheme_dom = unquote_plus(parts[0])
 
-        if isinstance(scheme_dom, str):
+        if six.PY2 and isinstance(scheme_dom, six.binary_type):
             if scheme_dom == parts[0]:
                 return url
 
@@ -146,21 +151,26 @@ class WbUrl(BaseWbUrl):
         domain = scheme_dom[-1]
 
         try:
-            domain = domain.encode('idna')
+            domain = to_native_str(domain.encode('idna'), 'utf-8')
         except UnicodeError:
             # the url is invalid and this is probably not a domain
             pass
 
         if len(scheme_dom) > 1:
-            url = scheme_dom[0].encode('utf-8') + '/' + domain
+            url = to_native_str(scheme_dom[0], 'utf-8') + '/' + domain
         else:
             url = domain
 
         if len(parts) > 1:
-            if isinstance(parts[1], unicode):
-                url += '/' + quote(parts[1].encode('utf-8'))
-            else:
-                url += '/' + parts[1]
+            url += sep
+
+            rest = parts[1]
+            try:
+                rest.encode('ascii')
+            except UnicodeEncodeError:
+                rest = quote(to_native_str(rest, 'utf-8'))
+
+            url += rest
 
         return url
 
@@ -169,7 +179,7 @@ class WbUrl(BaseWbUrl):
     def __init__(self, orig_url):
         super(WbUrl, self).__init__()
 
-        if isinstance(orig_url, unicode):
+        if six.PY2 and isinstance(orig_url, six.text_type):
             orig_url = orig_url.encode('utf-8')
             orig_url = quote(orig_url)
 

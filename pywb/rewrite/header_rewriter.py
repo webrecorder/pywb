@@ -1,6 +1,7 @@
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.timeutils import datetime_to_http_date
 from datetime import datetime, timedelta
+import six
 
 
 #=================================================================
@@ -103,7 +104,7 @@ class HeaderRewriter(object):
             new_headers.append(('Expires', datetime_to_http_date(dt)))
 
     def _extract_text_type(self, content_type):
-        for ctype, mimelist in self.REWRITE_TYPES.iteritems():
+        for ctype, mimelist in six.iteritems(self.REWRITE_TYPES):
             if any((mime in content_type) for mime in mimelist):
                 return ctype
 

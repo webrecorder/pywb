@@ -1,7 +1,7 @@
 import re
 import webtest
 
-from urllib import urlencode
+from six.moves.urllib.parse import urlencode
 
 from pywb.cdx.cdxobject import CDXObject
 from pywb.apps.cdx_server import application
@@ -30,7 +30,7 @@ def test_exact_url(client):
     resp = query(client, 'http://www.iana.org/')
 
     assert resp.status_code == 200
-    assert len(resp.body.splitlines()) == 3, resp.body
+    assert len(resp.text.splitlines()) == 3, resp.text
 
 
 #================================================================
@@ -41,9 +41,9 @@ def test_exact_url_json(client):
     resp = query(client, 'http://www.iana.org/', output='json')
 
     assert resp.status_code == 200
-    lines = resp.body.splitlines()
-    assert len(lines) == 3, resp.body
-    assert len(map(json.loads, lines)) == 3
+    lines = resp.text.splitlines()
+    assert len(lines) == 3, resp.text
+    assert len(list(map(json.loads, lines))) == 3
 
 #================================================================
 def test_prefix_match(client):
@@ -52,11 +52,11 @@ def test_prefix_match(client):
     """
     resp = query(client, 'http://www.iana.org/', matchType='prefix')
 
-    print resp.body.splitlines()
+    print(resp.text.splitlines())
     assert resp.status_code == 200
 
     suburls = 0
-    for l in resp.body.splitlines():
+    for l in resp.text.splitlines():
         fields = l.split(' ')
         if len(fields[0]) > len('org,iana)/'):
             suburls += 1
@@ -74,7 +74,7 @@ def test_filters(client):
     assert resp.status_code == 200
     assert resp.content_type == 'text/plain'
 
-    for l in resp.body.splitlines():
+    for l in resp.text.splitlines():
         fields = l.split(' ')
         assert fields[0] == 'org,iana)/_css/2013.1/screen.css'
         assert fields[3] == 'warc/revisit'
@@ -89,7 +89,7 @@ def test_limit(client):
     assert resp.status_code == 200
     assert resp.content_type == 'text/plain'
 
-    cdxes = resp.body.splitlines()
+    cdxes = resp.text.splitlines()
     assert len(cdxes) == 1
     fields = cdxes[0].split(' ')
     assert fields[0] == 'org,iana)/_css/2013.1/screen.css'
@@ -102,7 +102,7 @@ def test_limit(client):
     assert resp.status_code == 200
     assert resp.content_type == 'text/plain'
 
-    cdxes = resp.body.splitlines()
+    cdxes = resp.text.splitlines()
     assert len(cdxes) == 1
     fields = cdxes[0].split(' ')
     assert fields[0] == 'org,iana)/_css/2013.1/screen.css'
@@ -120,7 +120,7 @@ def test_fields(client):
 
     assert resp.status_code == 200
 
-    cdxes = resp.body.splitlines()
+    cdxes = resp.text.splitlines()
 
     for cdx in cdxes:
         fields = cdx.split(' ')
@@ -141,7 +141,7 @@ def test_fields_json(client):
 
     assert resp.status_code == 200
 
-    cdxes = resp.body.splitlines()
+    cdxes = resp.text.splitlines()
 
     for cdx in cdxes:
         fields = json.loads(cdx)
@@ -189,7 +189,7 @@ def test_resolveRevisits(client):
     assert resp.status_code == 200
     assert resp.content_type == 'text/plain'
 
-    cdxes = resp.body.splitlines()
+    cdxes = resp.text.splitlines()
     originals = {}
     for cdx in cdxes:
         fields = cdx.split(' ')
@@ -221,7 +221,7 @@ def test_resolveRevisits_orig_fields(client):
     assert resp.status_code == 200
     assert resp.content_type == 'text/plain'
 
-    cdxes = resp.body.splitlines()
+    cdxes = resp.text.splitlines()
     for cdx in cdxes:
         fields = cdx.split(' ')
         assert len(fields) == 4

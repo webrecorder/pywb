@@ -2,7 +2,7 @@ from pytest import raises
 from pywb.cdx.cdxobject import CDXObject
 from pywb.utils.timeutils import timestamp_now
 
-from server_mock import make_setup_module, BaseIntegration
+from .server_mock import make_setup_module, BaseIntegration
 
 setup_module = make_setup_module('tests/test_config.yaml')
 
@@ -24,12 +24,12 @@ class TestWbIntegration(BaseIntegration):
     def test_home(self):
         resp = self.testapp.get('/')
         self._assert_basic_html(resp)
-        assert '/pywb' in resp.body
+        assert '/pywb' in resp.text
 
     def test_pywb_root(self):
         resp = self.testapp.get('/pywb/')
         self._assert_basic_html(resp)
-        assert 'Search' in resp.body
+        assert 'Search' in resp.text
 
     def test_pywb_root_head(self):
         resp = self.testapp.head('/pywb/')
@@ -71,7 +71,7 @@ class TestWbIntegration(BaseIntegration):
         # query with no results
         resp = self.testapp.get('/pywb/*/http://not-exist.example.com')
         self._assert_basic_html(resp)
-        assert 'No captures found' in resp.body, resp.body
+        assert 'No captures found' in resp.text, resp.text
         assert len(resp.html.find_all('tr')) == 0
 
     def test_cdx_query(self):
@@ -80,71 +80,71 @@ class TestWbIntegration(BaseIntegration):
 
         assert '20140127171238 http://www.iana.org/ warc/revisit - OSSAPWJ23L56IYVRW3GFEAR4MCJMGPTB' in resp
         # check for 3 cdx lines (strip final newline)
-        actual_len = len(str(resp.body).rstrip().split('\n'))
+        actual_len = len(str(resp.text).rstrip().split('\n'))
         assert actual_len == 3, actual_len
 
     def test_replay_top_frame(self):
         resp = self.testapp.get('/pywb/20140127171238tf_/http://www.iana.org/')
 
-        assert '<iframe ' in resp.body
-        assert '/pywb/20140127171238/http://www.iana.org/' in resp.body, resp.body
+        assert '<iframe ' in resp.text
+        assert '/pywb/20140127171238/http://www.iana.org/' in resp.text, resp.text
 
     def test_replay_content(self):
         resp = self.testapp.get('/pywb/20140127171238/http://www.iana.org/')
         self._assert_basic_html(resp)
 
-        assert '"20140127171238"' in resp.body
-        assert 'wb.js' in resp.body
-        assert 'new _WBWombat' in resp.body, resp.body
-        assert '/pywb/20140127171238/http://www.iana.org/time-zones"' in resp.body
+        assert '"20140127171238"' in resp.text
+        assert 'wb.js' in resp.text
+        assert 'new _WBWombat' in resp.text, resp.text
+        assert '/pywb/20140127171238/http://www.iana.org/time-zones"' in resp.text
 
     def test_replay_non_frame_content(self):
         resp = self.testapp.get('/pywb-nonframe/20140127171238/http://www.iana.org/')
         self._assert_basic_html(resp)
 
-        assert '"20140127171238"' in resp.body
-        assert 'wb.js' in resp.body
-        assert '/pywb-nonframe/20140127171238/http://www.iana.org/time-zones"' in resp.body
+        assert '"20140127171238"' in resp.text
+        assert 'wb.js' in resp.text
+        assert '/pywb-nonframe/20140127171238/http://www.iana.org/time-zones"' in resp.text
 
     def test_replay_non_surt(self):
         resp = self.testapp.get('/pywb-nosurt/20140103030321/http://example.com?example=1')
         self._assert_basic_html(resp)
 
-        assert '"20140103030321"' in resp.body
-        assert 'wb.js' in resp.body
-        assert '/pywb-nosurt/20140103030321/http://www.iana.org/domains/example' in resp.body
+        assert '"20140103030321"' in resp.text
+        assert 'wb.js' in resp.text
+        assert '/pywb-nosurt/20140103030321/http://www.iana.org/domains/example' in resp.text
 
     def test_replay_cdxj(self):
         resp = self.testapp.get('/pywb-cdxj/20140103030321/http://example.com?example=1')
         self._assert_basic_html(resp)
 
-        assert '"20140103030321"' in resp.body
-        assert 'wb.js' in resp.body
-        assert '/pywb-cdxj/20140103030321/http://www.iana.org/domains/example' in resp.body
+        assert '"20140103030321"' in resp.text
+        assert 'wb.js' in resp.text
+        assert '/pywb-cdxj/20140103030321/http://www.iana.org/domains/example' in resp.text
 
     def test_replay_cdxj_revisit(self):
         resp = self.testapp.get('/pywb-cdxj/20140103030341/http://example.com?example=1')
         self._assert_basic_html(resp)
 
-        assert '"20140103030341"' in resp.body
-        assert 'wb.js' in resp.body
-        assert '/pywb-cdxj/20140103030341/http://www.iana.org/domains/example' in resp.body
+        assert '"20140103030341"' in resp.text
+        assert 'wb.js' in resp.text
+        assert '/pywb-cdxj/20140103030341/http://www.iana.org/domains/example' in resp.text
 
     def test_zero_len_revisit(self):
         resp = self.testapp.get('/pywb/20140603030341/http://example.com?example=2')
         self._assert_basic_html(resp)
 
-        assert '"20140603030341"' in resp.body
-        assert 'wb.js' in resp.body
-        assert '/pywb/20140603030341/http://www.iana.org/domains/example' in resp.body
+        assert '"20140603030341"' in resp.text
+        assert 'wb.js' in resp.text
+        assert '/pywb/20140603030341/http://www.iana.org/domains/example' in resp.text
 
     def test_replay_url_agnostic_revisit(self):
         resp = self.testapp.get('/pywb/20130729195151/http://www.example.com/')
         self._assert_basic_html(resp)
 
-        assert '"20130729195151"' in resp.body
-        assert 'wb.js' in resp.body
-        assert '/pywb/20130729195151/http://www.iana.org/domains/example"' in resp.body
+        assert '"20130729195151"' in resp.text
+        assert 'wb.js' in resp.text
+        assert '/pywb/20130729195151/http://www.iana.org/domains/example"' in resp.text
 
     def test_video_info_not_found(self):
         # not actually archived, but ensure video info path is tested
@@ -155,7 +155,7 @@ class TestWbIntegration(BaseIntegration):
         resp = self.testapp.get('/pywb/20140127171239cdx_/http://www.iana.org/_css/2013.1/print.css')
         self._assert_basic_text(resp)
 
-        lines = resp.body.rstrip().split('\n')
+        lines = resp.text.rstrip().split('\n')
         assert len(lines) == 17
         assert lines[0].startswith('org,iana)/_css/2013.1/print.css 20140127171239')
 
@@ -164,25 +164,25 @@ class TestWbIntegration(BaseIntegration):
         resp = self.testapp.get('/pywb/20140126201054bn_/http://www.iana.org/domains/reserved')
 
         # wb.js header insertion
-        assert 'wb.js' in resp.body
+        assert 'wb.js' in resp.text
 
         # no wombat present
-        assert '_WBWombat' not in resp.body
+        assert '_WBWombat' not in resp.text
 
         # url not rewritten
-        #assert '"http://www.iana.org/domains/example"' in resp.body
-        assert '"/_css/2013.1/screen.css"' in resp.body
+        #assert '"http://www.iana.org/domains/example"' in resp.text
+        assert '"/_css/2013.1/screen.css"' in resp.text
 
     def test_replay_identity_1(self):
         resp = self.testapp.get('/pywb/20140127171251id_/http://example.com')
 
         # no wb header insertion
-        assert 'wb.js' not in resp.body
+        assert 'wb.js' not in resp.text
 
         assert resp.content_length == 1270, resp.content_length
 
         # original unrewritten url present
-        assert '"http://www.iana.org/domains/example"' in resp.body
+        assert '"http://www.iana.org/domains/example"' in resp.text
 
     def test_replay_range_cache_content(self):
         headers = [('Range', 'bytes=0-200')]
@@ -193,7 +193,7 @@ class TestWbIntegration(BaseIntegration):
         assert resp.headers['Content-Range'] == 'bytes 0-200/1270', resp.headers['Content-Range']
         assert resp.content_length == 201, resp.content_length
 
-        assert 'wb.js' not in resp.body
+        assert 'wb.js' not in resp.text
 
     def test_replay_content_ignore_range(self):
         headers = [('Range', 'bytes=0-200')]
@@ -206,7 +206,7 @@ class TestWbIntegration(BaseIntegration):
         assert resp.content_length == 1270, resp.content_length
 
         # identity, no header insertion
-        assert 'wb.js' not in resp.body
+        assert 'wb.js' not in resp.text
 
     def test_replay_range_cache_content_bound_end(self):
         headers = [('Range', 'bytes=10-10000')]
@@ -216,9 +216,9 @@ class TestWbIntegration(BaseIntegration):
         assert resp.headers['Accept-Ranges'] == 'bytes'
         assert resp.headers['Content-Range'] == 'bytes 10-1269/1270', resp.headers['Content-Range']
         assert resp.content_length == 1260, resp.content_length
-        assert len(resp.body) == resp.content_length
+        assert len(resp.text) == resp.content_length
 
-        assert 'wb.js' not in resp.body
+        assert 'wb.js' not in resp.text
 
     def test_replay_redir_no_cache(self):
         headers = [('Range', 'bytes=10-10000')]
@@ -231,24 +231,24 @@ class TestWbIntegration(BaseIntegration):
         resp = self.testapp.get('/pywb/20140216050221id_/http://arc.gz.test.example.com')
 
         # no wb header insertion
-        assert 'wb.js' not in resp.body
+        assert 'wb.js' not in resp.text
 
         # original unrewritten url present
-        assert '"http://www.iana.org/domains/example"' in resp.body
+        assert '"http://www.iana.org/domains/example"' in resp.text
 
     def test_replay_identity_2_arc(self):
         resp = self.testapp.get('/pywb/20140216050221id_/http://arc.test.example.com')
 
         # no wb header insertion
-        assert 'wb.js' not in resp.body
+        assert 'wb.js' not in resp.text
 
         # original unrewritten url present
-        assert '"http://www.iana.org/domains/example"' in resp.body
+        assert '"http://www.iana.org/domains/example"' in resp.text
 
     def test_replay_content_length_1(self):
         # test larger file, rewritten file (svg!)
         resp = self.testapp.get('/pywb/20140126200654/http://www.iana.org/_img/2013.1/rir-map.svg')
-        assert resp.headers['Content-Length'] == str(len(resp.body))
+        assert resp.headers['Content-Length'] == str(len(resp.text))
 
     def test_replay_css_mod(self):
         resp = self.testapp.get('/pywb/20140127171239cs_/http://www.iana.org/_css/2013.1/screen.css')
@@ -274,10 +274,10 @@ class TestWbIntegration(BaseIntegration):
         assert resp.status_int == 200
 
         self._assert_basic_html(resp)
-        assert '"20140127171237"' in resp.body
+        assert '"20140127171237"' in resp.text
         # actual timestamp set in JS
-        assert 'timestamp = "20140127171238"' in resp.body
-        assert '/pywb-non-exact/20140127171237/http://www.iana.org/about/' in resp.body
+        assert 'timestamp = "20140127171238"' in resp.text
+        assert '/pywb-non-exact/20140127171237/http://www.iana.org/about/' in resp.text
 
     def test_redirect_latest_replay(self):
         resp = self.testapp.get('/pywb/http://example.com/')
@@ -288,8 +288,8 @@ class TestWbIntegration(BaseIntegration):
 
         #check resp
         self._assert_basic_html(resp)
-        assert '"20140127171251"' in resp.body
-        assert '/pywb/20140127171251/http://www.iana.org/domains/example' in resp.body
+        assert '"20140127171251"' in resp.text
+        assert '/pywb/20140127171251/http://www.iana.org/domains/example' in resp.text
 
     def test_redirect_non_exact_latest_replay_ts(self):
         resp = self.testapp.get('/pywb-non-exact/http://example.com/')
@@ -305,8 +305,8 @@ class TestWbIntegration(BaseIntegration):
         #self._assert_basic_html(resp)
 
         # ensure the current ts is present in the links
-        assert '"{0}"'.format(ts) in resp.body
-        assert '/pywb-non-exact/http://www.iana.org/domains/example' in resp.body
+        assert '"{0}"'.format(ts) in resp.text
+        assert '/pywb-non-exact/http://www.iana.org/domains/example' in resp.text
 
         # ensure ts is current ts
         #assert timestamp_now() >= ts, ts
@@ -402,13 +402,13 @@ class TestWbIntegration(BaseIntegration):
         #resp = self.testapp.post(resp.headers['Location'], {'foo': 'bar', 'test': 'abc'})
 
         assert resp.status_int == 200
-        assert '"foo": "bar"' in resp.body
-        assert '"test": "abc"' in resp.body
+        assert '"foo": "bar"' in resp.text
+        assert '"test": "abc"' in resp.text
 
     def test_post_2(self):
         resp = self.testapp.post('/pywb/20140610001255/http://httpbin.org/post?foo=bar', {'data': '^'})
         assert resp.status_int == 200
-        assert '"data": "^"' in resp.body
+        assert '"data": "^"' in resp.text
 
     def test_post_invalid(self):
         # not json
@@ -419,13 +419,13 @@ class TestWbIntegration(BaseIntegration):
         # post handled without redirect (since 307 not allowed)
         resp = self.testapp.post('/post', {'foo': 'bar', 'test': 'abc'}, headers=[('Referer', 'http://localhost:80/pywb/2014/http://httpbin.org/post')])
         assert resp.status_int == 200
-        assert '"foo": "bar"' in resp.body
-        assert '"test": "abc"' in resp.body
+        assert '"foo": "bar"' in resp.text
+        assert '"test": "abc"' in resp.text
 
     def test_excluded_content(self):
-        resp = self.testapp.get('/pywb/http://www.iana.org/_img/bookmark_icon.ico', status = 403)
+        resp = self.testapp.get('/pywb/http://www.iana.org/_img/bookmark_icon.ico', status=403)
         assert resp.status_int == 403
-        assert 'Excluded' in resp.body
+        assert 'Excluded' in resp.text
 
     def test_replay_not_found(self):
         resp = self.testapp.head('/pywb/http://not-exist.example.com', status=404)
@@ -452,7 +452,7 @@ class TestWbIntegration(BaseIntegration):
     def test_cdx_server_filters(self):
         resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mime:warc/revisit&filter=filename:dupes.warc.gz')
         self._assert_basic_text(resp)
-        actual_len = len(resp.body.rstrip().split('\n'))
+        actual_len = len(resp.text.rstrip().split('\n'))
         assert actual_len == 1, actual_len
 
     def test_cdx_server_advanced(self):
@@ -460,22 +460,23 @@ class TestWbIntegration(BaseIntegration):
         resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/print.css&collapseTime=11&resolveRevisits=true&reverse=true')
 
         # convert back to CDXObject
-        cdxs = map(CDXObject, resp.body.rstrip().split('\n'))
+        cdxs = list(map(CDXObject, resp.body.rstrip().split(b'\n')))
         assert len(cdxs) == 3, len(cdxs)
 
         # verify timestamps
-        timestamps = map(lambda cdx: cdx['timestamp'], cdxs)
+        timestamps = list(map(lambda cdx: cdx['timestamp'], cdxs))
         assert timestamps == ['20140127171239', '20140126201054', '20140126200625']
 
         # verify orig filenames (2 revisits, one non)
-        origfilenames = map(lambda cdx: cdx['orig.filename'], cdxs)
+        origfilenames = list(map(lambda cdx: cdx['orig.filename'], cdxs))
         assert origfilenames == ['iana.warc.gz', 'iana.warc.gz', '-']
 
 
-    def test_error(self):
-        resp = self.testapp.get('/pywb/?abc', status = 400)
-        assert resp.status_int == 400
-        assert 'Invalid Url: http://?abc' in resp.body
+    # surt() no longer errors on this in 0.3b
+    #def test_error(self):
+    #    resp = self.testapp.get('/pywb/?abc', status = 400)
+    #    assert resp.status_int == 400
+    #    assert 'Invalid Url: http://?abc' in resp.text
 
 
     def test_coll_info_json(self):

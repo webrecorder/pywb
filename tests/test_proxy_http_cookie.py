@@ -1,7 +1,7 @@
 from wsgiref.simple_server import make_server
 
 import requests
-from server_thread import ServerThreadRunner
+from .server_thread import ServerThreadRunner
 
 
 #=================================================================

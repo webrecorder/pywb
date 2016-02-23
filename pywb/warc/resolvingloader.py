@@ -15,6 +15,33 @@ class ResolvingLoader(object):
         self.no_record_parse = no_record_parse
 
     def __call__(self, cdx, failed_files, cdx_loader, *args, **kwargs):
+        headers_record, payload_record = self.load_headers_and_payload(cdx, failed_files, cdx_loader)
+
+        # Default handling logic when loading http status/headers
+
+        # special case: set header to payload if old-style revisit
+        # with missing header
+        if not headers_record:
+            headers_record = payload_record
+        elif headers_record != payload_record:
+            # close remainder of stream as this record only used for
+            # (already parsed) headers
+            headers_record.stream.close()
+
+            # special case: check if headers record is actually empty
+            # (eg empty revisit), then use headers from revisit
+            if not headers_record.status_headers.headers:
+                headers_record = payload_record
+
+        if not headers_record or not payload_record:
+            raise ArchiveLoadFailed('Could not load ' + str(cdx))
+
+        # ensure status line is valid from here
+        headers_record.status_headers.validate_statusline('204 No Content')
+
+        return (headers_record.status_headers, payload_record.stream)
+
+    def load_headers_and_payload(self, cdx, failed_files, cdx_loader):
         """
         Resolve headers and payload for a given capture
         In the simple case, headers and payload are in the same record.
@@ -53,27 +80,8 @@ class ResolvingLoader(object):
         elif (has_orig):
             payload_record = self._resolve_path_load(cdx, True, failed_files)
 
-        # special case: set header to payload if old-style revisit
-        # with missing header
-        if not headers_record:
-            headers_record = payload_record
-        elif headers_record != payload_record:
-            # close remainder of stream as this record only used for
-            # (already parsed) headers
-            headers_record.stream.close()
+        return headers_record, payload_record
 
-            # special case: check if headers record is actually empty
-            # (eg empty revisit), then use headers from revisit
-            if not headers_record.status_headers.headers:
-                headers_record = payload_record
-
-        if not headers_record or not payload_record:
-            raise ArchiveLoadFailed('Could not load ' + str(cdx))
-
-        # ensure status line is valid from here
-        headers_record.status_headers.validate_statusline('204 No Content')
-
-        return (headers_record.status_headers, payload_record.stream)
 
     def _resolve_path_load(self, cdx, is_original, failed_files):
         """
@@ -108,6 +116,9 @@ class ResolvingLoader(object):
 
             if not possible_paths:
                 continue
+
+            if isinstance(possible_paths, str):
+                possible_paths = [possible_paths]
 
             for path in possible_paths:
                 any_found = True

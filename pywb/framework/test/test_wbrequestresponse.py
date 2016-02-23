@@ -1,28 +1,28 @@
 """
 # WbRequest Tests
 # =================
->>> print_req_from_uri('/save/_embed/example.com/?a=b')
+#>>> get_req_from_uri('/save/_embed/example.com/?a=b')
 {'wb_url': ('latest_replay', '', '', 'http://_embed/example.com/?a=b', 'http://_embed/example.com/?a=b'), 'coll': 'save', 'wb_prefix': '/save/', 'request_uri': '/save/_embed/example.com/?a=b'}
 
->>> print_req_from_uri('/2345/20101024101112im_/example.com/?b=c')
+#>>> get_req_from_uri('/2345/20101024101112im_/example.com/?b=c')
 {'wb_url': ('replay', '20101024101112', 'im_', 'http://example.com/?b=c', '20101024101112im_/http://example.com/?b=c'), 'coll': '2345', 'wb_prefix': '/2345/', 'request_uri': '/2345/20101024101112im_/example.com/?b=c'}
 
->>> print_req_from_uri('/2010/example.com')
+#>>> get_req_from_uri('/2010/example.com')
 {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
 
 # ajax
->>> print_req_from_uri('', {'REL_REQUEST_URI': '/2010/example.com', 'HTTP_HOST': 'localhost:8080', 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'})
+#>>> get_req_from_uri('', {'REL_REQUEST_URI': '/2010/example.com', 'HTTP_HOST': 'localhost:8080', 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'})
 {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': '/2010/', 'request_uri': '/2010/example.com'}
 
->>> print_req_from_uri('../example.com')
+#>>> get_req_from_uri('../example.com')
 {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '', 'wb_prefix': '/', 'request_uri': '../example.com'}
 
 # Abs path
->>> print_req_from_uri('/2010/example.com', {'wsgi.url_scheme': 'https', 'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
+#>>> get_req_from_uri('/2010/example.com', {'wsgi.url_scheme': 'https', 'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
 {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': 'https://localhost:8080/2010/', 'request_uri': '/2010/example.com'}
 
 # No Scheme, default to http (shouldn't happen per WSGI standard)
->>> print_req_from_uri('/2010/example.com', {'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
+#>>> get_req_from_uri('/2010/example.com', {'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
 {'wb_url': ('latest_replay', '', '', 'http://example.com', 'http://example.com'), 'coll': '2010', 'wb_prefix': 'http://localhost:8080/2010/', 'request_uri': '/2010/example.com'}
 
 # Referrer extraction
@@ -56,23 +56,6 @@
 
 >>> req_from_uri('/web/www.googlevideo.com/videoplayback?id=123&range=100-').extract_range()
 
-# WbResponse Tests
-# =================
->>> WbResponse.text_response('Test')
-{'body': ['Test'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [('Content-Type', 'text/plain'), ('Content-Length', '4')])}
-
->>> WbResponse.text_stream(['Test', 'Another'], '404')
-{'body': ['Test', 'Another'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '404', headers = [('Content-Type', 'text/plain')])}
-
->>> WbResponse.redir_response('http://example.com/otherfile')
-{'body': [], 'status_headers': StatusAndHeaders(protocol = '', statusline = '302 Redirect', headers = [('Location', 'http://example.com/otherfile'), ('Content-Length', '0')])}
-
->>> WbResponse.text_response('Test').add_range(10, 4, 100)
-{'body': ['Test'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '206 Partial Content', headers = [ ('Content-Type', 'text/plain'),
-  ('Content-Length', '4'),
-  ('Content-Range', 'bytes 10-13/100'),
-  ('Accept-Ranges', 'bytes')])}
-
 """
 
 
@@ -83,12 +66,12 @@ from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.framework.wbrequestresponse import WbRequest, WbResponse
 
 
-def print_req_from_uri(request_uri, env={}, use_abs_prefix=False):
+def get_req_from_uri(request_uri, env={}, use_abs_prefix=False):
     response = req_from_uri(request_uri, env, use_abs_prefix)
     varlist = vars(response)
     the_dict = dict((k, varlist[k]) for k in ('request_uri', 'wb_prefix', 'wb_url', 'coll'))
-    print(the_dict)
-
+    #print(the_dict)
+    return the_dict
 
 def req_from_uri(request_uri, env={}, use_abs_prefix=False):
     if not request_uri:
@@ -119,6 +102,114 @@ def req_from_uri(request_uri, env={}, use_abs_prefix=False):
                      wburl_class=WbUrl,
                      urlrewriter_class=UrlRewriter,
                      use_abs_prefix=use_abs_prefix)
+
+
+def test_req_1():
+    res = get_req_from_uri('/save/_embed/example.com/?a=b')
+
+    assert(repr(res['wb_url']) == "('latest_replay', '', '', 'http://_embed/example.com/?a=b', 'http://_embed/example.com/?a=b')")
+    assert(res['coll'] == 'save')
+    assert(res['wb_prefix'] == '/save/')
+    assert(res['request_uri'] == '/save/_embed/example.com/?a=b')
+
+def test_req_2():
+    res = get_req_from_uri('/2345/20101024101112im_/example.com/?b=c')
+
+    assert(repr(res['wb_url']) == "('replay', '20101024101112', 'im_', 'http://example.com/?b=c', '20101024101112im_/http://example.com/?b=c')")
+    assert(res['coll'] == '2345')
+    assert(res['wb_prefix'] == '/2345/')
+    assert(res['request_uri'] == '/2345/20101024101112im_/example.com/?b=c')
+
+def test_req_3():
+    res = get_req_from_uri('/2010/example.com')
+
+    assert(repr(res['wb_url']) == "('latest_replay', '', '', 'http://example.com', 'http://example.com')")
+    assert(res['coll'] == '2010')
+    assert(res['wb_prefix'] == '/2010/')
+    assert(res['request_uri'] == '/2010/example.com')
+
+
+def test_req_4():
+    # ajax
+    res = get_req_from_uri('', {'REL_REQUEST_URI': '/2010/example.com', 'HTTP_HOST': 'localhost:8080', 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'})
+
+    assert(repr(res['wb_url']) == "('latest_replay', '', '', 'http://example.com', 'http://example.com')")
+    assert(res['coll'] == '2010')
+    assert(res['wb_prefix'] == '/2010/')
+    assert(res['request_uri'] == '/2010/example.com')
+
+
+def test_req_5():
+    res = get_req_from_uri('../example.com')
+
+    assert(repr(res['wb_url']) == "('latest_replay', '', '', 'http://example.com', 'http://example.com')")
+    assert(res['coll'] == '')
+    assert(res['wb_prefix'] == '/')
+    assert(res['request_uri'] == '../example.com')
+
+
+
+def test_req_6():
+    # Abs path
+    res = get_req_from_uri('/2010/example.com', {'wsgi.url_scheme': 'https', 'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
+
+    assert(repr(res['wb_url']) == "('latest_replay', '', '', 'http://example.com', 'http://example.com')")
+    assert(res['coll'] == '2010')
+    assert(res['wb_prefix'] == 'https://localhost:8080/2010/')
+    assert(res['request_uri'] == '/2010/example.com')
+
+
+def test_req_7():
+    # No Scheme, default to http (shouldn't happen per WSGI standard)
+    res = get_req_from_uri('/2010/example.com', {'HTTP_HOST': 'localhost:8080'}, use_abs_prefix = True)
+
+    assert(repr(res['wb_url']) == "('latest_replay', '', '', 'http://example.com', 'http://example.com')")
+    assert(res['coll'] == '2010')
+    assert(res['wb_prefix'] == 'http://localhost:8080/2010/')
+    assert(res['request_uri'] == '/2010/example.com')
+
+
+
+
+
+#Response tests
+
+def test_resp_1():
+    resp = vars(WbResponse.text_response('Test'))
+
+    expected = {'body': [b'Test'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK',
+                headers = [('Content-Type', 'text/plain; charset=utf-8'), ('Content-Length', '4')])}
+
+    assert(resp == expected)
+
+
+def test_resp_2():
+    resp = vars(WbResponse.bin_stream([b'Test', b'Another'], content_type='text/plain; charset=utf-8', status='404'))
+
+    expected = {'body': [b'Test', b'Another'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '404',
+                headers = [('Content-Type', 'text/plain; charset=utf-8')])}
+
+    assert(resp == expected)
+
+def test_resp_3():
+
+    resp = vars(WbResponse.redir_response('http://example.com/otherfile'))
+
+    expected = {'body': [], 'status_headers': StatusAndHeaders(protocol = '', statusline = '302 Redirect',
+                 headers = [('Location', 'http://example.com/otherfile'), ('Content-Length', '0')])}
+
+    assert(resp == expected)
+
+def test_resp_4():
+    resp = vars(WbResponse.text_response('Test').add_range(10, 4, 100))
+
+    expected = {'body': [b'Test'], 'status_headers': StatusAndHeaders(protocol = '', statusline = '206 Partial Content',
+                headers = [ ('Content-Type', 'text/plain; charset=utf-8'),
+                  ('Content-Length', '4'),
+                  ('Content-Range', 'bytes 10-13/100'),
+                  ('Accept-Ranges', 'bytes')])}
+
+    assert(resp == expected)
 
 
 if __name__ == "__main__":

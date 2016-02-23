@@ -1,6 +1,6 @@
 import pytest
 
-from server_thread import ServerThreadRunner
+from .server_thread import ServerThreadRunner
 from wsgiref.simple_server import make_server
 
 import requests

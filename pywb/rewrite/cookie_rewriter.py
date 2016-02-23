@@ -1,4 +1,5 @@
 from six.moves.http_cookies import SimpleCookie, CookieError
+import six
 
 
 #=================================================================
@@ -16,7 +17,7 @@ class WbUrlBaseCookieRewriter(object):
         except CookieError:
             return results
 
-        for name, morsel in cookie.iteritems():
+        for name, morsel in six.iteritems(cookie):
             morsel = self.rewrite_cookie(name, morsel)
 
             if morsel:

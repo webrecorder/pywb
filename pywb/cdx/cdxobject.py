@@ -181,7 +181,7 @@ class CDXObject(OrderedDict):
             result = ' '.join(str(self[x]) for x in fields) + '\n'
         except KeyError as ke:
             msg = 'Invalid field "{0}" found in fields= argument'
-            msg = msg.format(ke.message)
+            msg = msg.format(str(ke))
             raise CDXException(msg)
 
         return result
@@ -202,12 +202,7 @@ class CDXObject(OrderedDict):
         if fields is None:
             return json_encode(obj) + '\n'
 
-        try:
-            result = json_encode(OrderedDict([(x, obj[x]) for x in fields if x in obj])) + '\n'
-        except KeyError as ke:
-            msg = 'Invalid field "{0}" found in fields= argument'
-            msg = msg.format(ke.message)
-            raise CDXException(msg)
+        result = json_encode(OrderedDict([(x, obj[x]) for x in fields if x in obj])) + '\n'
 
         return result
 

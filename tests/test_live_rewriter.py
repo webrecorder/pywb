@@ -39,15 +39,16 @@ class TestLiveRewriter:
     def test_live_live_post(self):
         resp = self.testapp.post('/live/mp_/httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
         assert resp.status_int == 200
-        assert '"foo": "bar"' in resp.body
-        assert '"test": "abc"' in resp.body
+        resp.charset = 'utf-8'
+        assert '"foo": "bar"' in resp.text
+        assert '"test": "abc"' in resp.text
         assert resp.status_int == 200
 
     def test_live_live_frame(self):
         resp = self.testapp.get('/live/http://example.com/')
         assert resp.status_int == 200
-        assert '<iframe ' in resp.body
-        assert 'src="http://localhost:80/live/mp_/http://example.com/"' in resp.body, resp.body
+        assert '<iframe ' in resp.text
+        assert 'src="http://localhost:80/live/mp_/http://example.com/"' in resp.text, resp.text
 
     def test_live_invalid(self):
         resp = self.testapp.get('/live/mp_/http://abcdef', status=400)
@@ -64,4 +65,4 @@ class TestLiveRewriter:
 
     def test_deflate(self):
         resp = self.testapp.get('/live/mp_/http://httpbin.org/deflate')
-        assert '"deflated": true' in resp.body
+        assert b'"deflated": true' in resp.body

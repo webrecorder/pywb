@@ -6,6 +6,7 @@ except ImportError:
 
 
 from redis import StrictRedis
+from pywb.utils.loaders import to_native_str
 
 
 #=================================================================
@@ -41,7 +42,7 @@ class RedisCache(object):
         self.redis.hset(self.key, item, value)
 
     def __getitem__(self, item):
-        return self.redis.hget(self.key, item)
+        return to_native_str(self.redis.hget(self.key, item), 'utf-8')
 
     def __contains__(self, item):
         return self.redis.hexists(self.key, item)

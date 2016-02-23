@@ -39,7 +39,8 @@ def canonicalize(url, surt_ordered=True):
     """
     try:
         key = surt.surt(url)
-    except Exception as e:
+    except Exception as e:  #pragma: no cover
+        # doesn't happen with surt from 0.3b
         # urn is already canonical, so just use as-is
         if url.startswith('urn:'):
             return url

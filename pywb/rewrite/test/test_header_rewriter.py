@@ -20,20 +20,6 @@ HTTP Headers Rewriting
   ('Location', '/web/20131010/http://example.com/other.html')]),
  'text_type': None}
 
-# cookie, host/origin rewriting
->>> _test_headers([('Connection', 'close'), ('Set-Cookie', 'foo=bar; Path=/; abc=def; Path=somefile.html'), ('Host', 'example.com'), ('Origin', 'https://example.com')])
-{'charset': None,
- 'removed_header_dict': {},
- 'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('X-Archive-Orig-Connection', 'close'),
-  ('Set-Cookie', 'foo=bar; Path=/web/20131010/http://example.com/'),
-  ( 'Set-Cookie',
-    'abc=def; Path=/web/20131010/http://example.com/somefile.html'),
-  ('X-Archive-Orig-Host', 'example.com'),
-  ('X-Archive-Orig-Origin', 'https://example.com')]),
- 'text_type': None}
-
-
-
 # gzip
 >>> _test_headers([('Content-Length', '199999'), ('Content-Type', 'text/javascript'), ('Content-Encoding', 'gzip'), ('Transfer-Encoding', 'chunked')])
 {'charset': None,
@@ -73,9 +59,33 @@ urlrewriter = UrlRewriter('20131010/http://example.com/', '/web/')
 
 headerrewriter = HeaderRewriter()
 
-def _test_headers(headers, status = '200 OK', rewriter=urlrewriter):
+def _test_headers(headers, status='200 OK', rewriter=urlrewriter):
     rewritten = headerrewriter.rewrite(StatusAndHeaders(status, headers), rewriter, rewriter.get_cookie_rewriter())
     return pprint.pprint(vars(rewritten))
+
+
+def _test_head_data(headers, status='200 OK', rewriter=urlrewriter):
+    rewritten = headerrewriter.rewrite(StatusAndHeaders(status, headers),
+                                       rewriter,
+                                       rewriter.get_cookie_rewriter())
+    return rewritten.status_headers
+
+
+
+def test_cookie_headers():
+    # cookie, host/origin rewriting
+    res = _test_head_data([('Connection', 'close'),
+                           ('Set-Cookie', 'foo=bar; Path=/; abc=def; Path=somefile.html'),
+                           ('Host', 'example.com'),
+                           ('Origin', 'https://example.com')])
+
+    assert(('Set-Cookie', 'foo=bar; Path=/web/20131010/http://example.com/') in res.headers)
+    assert(('Set-Cookie', 'abc=def; Path=/web/20131010/http://example.com/somefile.html') in res.headers)
+
+    assert(('X-Archive-Orig-Connection', 'close') in res.headers)
+    assert(('X-Archive-Orig-Host', 'example.com') in res.headers)
+    assert(('X-Archive-Orig-Origin', 'https://example.com') in res.headers)
+
 
 
 def _make_cache_headers():

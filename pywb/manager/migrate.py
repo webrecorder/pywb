@@ -31,10 +31,10 @@ class MigrateCDX(object):
 
             print('Converting {0} -> {1}'.format(filename, outfile))
 
-            with open(outfile + '.tmp', 'w+b') as out:
-                with open(filename) as fh:
+            with open(outfile + '.tmp', 'w+') as out:
+                with open(filename, 'rb') as fh:
                     for line in fh:
-                        if line.startswith(' CDX'):
+                        if line.startswith(b' CDX'):
                             continue
                         cdx = CDXObject(line)
                         cdx[URLKEY] = canonicalize(cdx[ORIGINAL])

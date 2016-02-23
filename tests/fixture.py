@@ -20,6 +20,6 @@ class PrintReporter:
     """Reporter callback for replay view.
     """
     def __call__(self, wbrequest, cdx, response):
-        print wbrequest
-        print cdx
+        print(wbrequest)
+        print(cdx)
         pass

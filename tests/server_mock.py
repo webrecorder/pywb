@@ -1,6 +1,6 @@
 from pywb.webapp.pywb_init import create_wb_router
 from pywb.framework.wsgi_wrappers import init_app
-from webtest import TestApp
+from webtest import TestApp, TestResponse
 
 app = None
 testapp = None
@@ -11,6 +11,14 @@ def make_app(config_file, pywb_router=create_wb_router):
                    config_file=config_file)
 
     testapp = TestApp(app)
+
+    class Resp(TestResponse):
+        def __init__(self, *args, **kwargs):
+            super(Resp, self).__init__(*args, **kwargs)
+            if self.headers.get('Content-Type'):
+                self.charset = 'utf-8'
+
+    TestApp.RequestClass.ResponseClass = Resp
 
     return app, testapp
 

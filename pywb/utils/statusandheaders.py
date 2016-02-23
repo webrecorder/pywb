@@ -64,7 +64,7 @@ class StatusAndHeaders(object):
                 self.headers[index] = (curr_name, header_dict[name_lower])
                 del header_dict[name_lower]
 
-        for name, value in header_dict.iteritems():
+        for name, value in six.iteritems(header_dict):
             self.headers.append((name, value))
 
     def remove_header(self, name):

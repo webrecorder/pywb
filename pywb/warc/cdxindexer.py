@@ -266,7 +266,10 @@ def write_multi_cdx_index(output, inputs, **options):
     # write to one cdx file
     else:
         if output == '-':
-            outfile = sys.stdout
+            if hasattr(sys.stdout, 'buffer'):
+                outfile = sys.stdout.buffer
+            else:
+                outfile = sys.stdout
         else:
             outfile = open(output, 'wb')
 

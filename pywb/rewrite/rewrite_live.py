@@ -9,6 +9,7 @@ import logging
 import os
 
 from six.moves.urllib.parse import urlsplit
+import six
 
 from pywb.utils.loaders import is_http, LimitReader, LocalFileLoader, to_file_url
 from pywb.utils.loaders import extract_client_cookie
@@ -60,7 +61,7 @@ class LiveRewriter(object):
         splits = urlsplit(url)
         has_cookies = False
 
-        for name, value in env.iteritems():
+        for name, value in six.iteritems(env):
             if name == 'HTTP_HOST':
                 name = 'Host'
                 value = splits.netloc
@@ -260,7 +261,7 @@ class LiveRewriter(object):
 
         status_headers, gen, is_rewritten = result
 
-        buff = ''.join(gen)
+        buff = b''.join(gen)
 
         return (status_headers, buff)
 

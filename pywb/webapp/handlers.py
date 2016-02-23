@@ -210,7 +210,7 @@ class StaticHandler(BaseHandler):
             if 'wsgi.file_wrapper' in wbrequest.env:
                 reader = wbrequest.env['wsgi.file_wrapper'](data)
             else:
-                reader = iter(lambda: data.read(), '')
+                reader = iter(lambda: data.read(), b'')
 
             content_type = 'application/octet-stream'
 
@@ -218,9 +218,9 @@ class StaticHandler(BaseHandler):
             if guessed[0]:
                 content_type = guessed[0]
 
-            return WbResponse.text_stream(reader,
-                                          content_type=content_type,
-                                          headers=headers)
+            return WbResponse.bin_stream(reader,
+                                         content_type=content_type,
+                                         headers=headers)
 
         except IOError:
             raise NotFoundException('Static File Not Found: ' +

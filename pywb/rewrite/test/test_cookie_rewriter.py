@@ -1,8 +1,12 @@
 r"""
 # Default -- MinimalScopeRewriter (Collection scope)
 # No rewriting
->>> rewrite_cookie('a=b; c=d;')
-[('Set-Cookie', 'a=b'), ('Set-Cookie', 'c=d')]
+>>> x = rewrite_cookie('a=b; c=d;')
+>>> ('Set-Cookie', 'a=b') in x
+True
+
+>>> ('Set-Cookie', 'c=d') in x
+True
 
 >>> rewrite_cookie('some=value; Path=/;', urlrewriter, 'coll')
 [('Set-Cookie', 'some=value; Path=/pywb/20131226101010/http://example.com/')]

@@ -6,9 +6,9 @@ from pywb.webapp.pywb_init import create_wb_router
 from pywb.framework.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
 
-from urlparse import urlsplit
+from six.moves.urllib.parse import urlsplit
 
-from server_mock import make_setup_module, BaseIntegration
+from .server_mock import make_setup_module, BaseIntegration
 
 setup_module = make_setup_module('tests/test_config_proxy_ip_redis.yaml')
 
@@ -38,8 +38,8 @@ class TestProxyIPRedisResolver(BaseIntegration):
         resp = self.get_url('http://www.iana.org/')
         self._assert_basic_html(resp)
 
-        assert '"20140127171238"' in resp.body
-        assert 'wb.js' in resp.body
+        assert '"20140127171238"' in resp.text
+        assert 'wb.js' in resp.text
 
     def test_proxy_ip_get_defaults(self):
         resp = self.get_url('http://info.pywb.proxy/')
@@ -79,12 +79,12 @@ class TestProxyIPRedisResolver(BaseIntegration):
         resp = self.get_url('http://www.iana.org/', '1.2.3.4')
         self._assert_basic_html(resp)
 
-        assert '"20140126200624"' in resp.body
+        assert '"20140126200624"' in resp.text
 
         # defaults for any other ip
         resp = self.get_url('http://www.iana.org/', '127.0.0.3')
         self._assert_basic_html(resp)
-        assert '"20140127171238"' in resp.body
+        assert '"20140127171238"' in resp.text
 
     def test_proxy_ip_delete_ip(self):
         resp = self.get_url('http://info.pywb.proxy/')

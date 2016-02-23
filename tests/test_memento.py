@@ -5,9 +5,9 @@ from pywb.framework.wsgi_wrappers import init_app
 from pywb.cdx.cdxobject import CDXObject
 from pywb.utils.timeutils import timestamp_now
 
-from memento_fixture import *
+from .memento_fixture import *
 
-from server_mock import make_setup_module, BaseIntegration
+from .server_mock import make_setup_module, BaseIntegration
 
 setup_module = make_setup_module('tests/test_config_memento.yaml')
 
@@ -276,7 +276,8 @@ class TestMemento(MementoMixin, BaseIntegration):
         assert resp.status_int == 200
         assert resp.content_type == LINK_FORMAT
 
-        lines = resp.body.split('\n')
+        resp.charset = 'utf-8'
+        lines = resp.text.split('\n')
 
         assert len(lines) == 5
 
@@ -302,7 +303,7 @@ rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"'
         assert resp.status_int == 200
         assert resp.content_type == LINK_FORMAT
 
-        lines = resp.body.split('\n')
+        lines = resp.content.split('\n')
 
         assert len(lines) == 3 + 3
 
@@ -316,7 +317,8 @@ rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"'
         assert resp.status_int == 200
         assert resp.content_type == LINK_FORMAT
 
-        lines = resp.body.split('\n')
+        resp.charset = 'utf-8'
+        lines = resp.text.split('\n')
 
         assert len(lines) == 3
 
@@ -337,7 +339,8 @@ rel="self"; type="application/link-format"'
         assert resp.status_int == 200
         assert resp.content_type == LINK_FORMAT
 
-        lines = resp.body.split('\n')
+        resp.charset = 'utf-8'
+        lines = resp.text.split('\n')
 
         assert len(lines) == 3 + 3
 

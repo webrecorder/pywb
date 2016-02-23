@@ -99,7 +99,7 @@ class RegexRewriter(object):
                 result = (match, replace, group)
                 return result
 
-            return map(parse_rule, config)
+            return list(map(parse_rule, config))
         return run_parse_rules
 
 

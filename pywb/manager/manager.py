@@ -5,6 +5,7 @@ import logging
 import heapq
 import yaml
 import re
+import six
 
 from distutils.util import strtobool
 from pkg_resources import resource_string
@@ -168,8 +169,8 @@ directory structure expected by pywb
 
         last_line = None
 
-        with open(cdx_file) as orig_index:
-            with open(temp_file) as new_index:
+        with open(cdx_file, 'rb') as orig_index:
+            with open(temp_file, 'rb') as new_index:
                 with open(merged_file, 'w+b') as merged:
                     for line in heapq.merge(orig_index, new_index):
                         if last_line != line:
@@ -184,7 +185,7 @@ directory structure expected by pywb
         metadata_yaml = os.path.join(self.curr_coll_dir, 'metadata.yaml')
         metadata = None
         if os.path.isfile(metadata_yaml):
-            with open(metadata_yaml) as fh:
+            with open(metadata_yaml, 'rb') as fh:
                 metadata = yaml.safe_load(fh)
 
         if not metadata:
@@ -200,7 +201,7 @@ directory structure expected by pywb
             metadata[v[0]] = v[1]
 
         with open(metadata_yaml, 'w+b') as fh:
-            fh.write(yaml.dump(metadata, default_flow_style=False))
+            fh.write(yaml.dump(metadata, default_flow_style=False).encode('utf-8'))
 
     def _load_templates_map(self):
         defaults = load_yaml_config(DEFAULT_CONFIG)
@@ -210,13 +211,13 @@ directory structure expected by pywb
         # Coll Templates
         templates = defaults['paths']['template_files']
 
-        for name, _ in templates.iteritems():
+        for name, _ in six.iteritems(templates):
             templates[name] = os.path.join(temp_dir, defaults[name])
 
         # Shared Templates
         shared_templates = defaults['paths']['shared_template_files']
 
-        for name, _ in shared_templates.iteritems():
+        for name, _ in six.iteritems(shared_templates):
             shared_templates[name] = os.path.join(temp_dir, defaults[name])
 
         return templates, shared_templates
@@ -225,13 +226,13 @@ directory structure expected by pywb
         templates, shared_templates = self._load_templates_map()
 
         print('Shared Templates')
-        for n, v in shared_templates.iteritems():
+        for n, v in six.iteritems(shared_templates):
             print('- {0}: (pywb/{1})'.format(n, v))
 
         print('')
 
         print('Collection Templates')
-        for n, v in templates.iteritems():
+        for n, v in six.iteritems(templates):
             print('- {0}: (pywb/{1})'.format(n, v))
 
     def _confirm_overwrite(self, full_path, msg):
@@ -305,7 +306,7 @@ directory structure expected by pywb
         print('Removed template file "{0}"'.format(full_path))
 
     def migrate_cdxj(self, path, force=False):
-        from migrate import MigrateCDX
+        from pywb.manager.migrate import MigrateCDX
 
         migrate = MigrateCDX(path)
         count = migrate.count_cdx()
@@ -327,7 +328,7 @@ directory structure expected by pywb
         migrate.convert_to_cdxj()
 
     def autoindex(self, do_loop=True):
-        from autoindex import CDXAutoIndexer
+        from pywb.manager.autoindex import CDXAutoIndexer
 
         if self.coll_name:
             any_coll = False

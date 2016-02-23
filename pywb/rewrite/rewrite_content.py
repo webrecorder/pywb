@@ -15,17 +15,18 @@ from pywb.utils.dsrules import RuleSet
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 from pywb.utils.bufferedreaders import ChunkedDataReader, BufferedReader
+from pywb.utils.loaders import to_native_str
 
 from pywb.rewrite.regex_rewriters import JSNoneRewriter, JSLinkOnlyRewriter
 
 
 #=================================================================
 class RewriteContent:
-    HEAD_REGEX = re.compile(r'<\s*head\b[^>]*[>]+', re.I)
+    HEAD_REGEX = re.compile(b'<\s*head\\b[^>]*[>]+', re.I)
 
-    TAG_REGEX = re.compile(r'^\s*\<')
+    TAG_REGEX = re.compile(b'^\s*\<')
 
-    CHARSET_REGEX = re.compile(r'<meta[^>]*?[\s;"\']charset\s*=[\s"\']*([^\s"\'/>]*)')
+    CHARSET_REGEX = re.compile(b'<meta[^>]*?[\s;"\']charset\s*=[\s"\']*([^\s"\'/>]*)')
 
     BUFF_SIZE = 16384
 
@@ -133,7 +134,7 @@ class RewriteContent:
 
         stream_raw = False
         encoding = None
-        first_buff = ''
+        first_buff = b''
 
         stream = self._check_encoding(rewritten_headers, stream, 'gzip')
         stream = self._check_encoding(rewritten_headers, stream, 'deflate')
@@ -173,6 +174,9 @@ class RewriteContent:
                 if not head_insert_str:
                     charset = 'utf-8'
                     head_insert_str = head_insert_orig.encode(charset)
+
+                head_insert_str = to_native_str(head_insert_str, 'utf-8')
+
 
             if wb_url.is_banner_only:
                 gen = self._head_insert_only_gen(head_insert_str,
@@ -237,7 +241,7 @@ class RewriteContent:
         m = RewriteContent.CHARSET_REGEX.search(buff)
         if m:
             charset = m.group(1)
-            content_type = 'text/html; charset=' + charset
+            content_type = 'text/html; charset=' + to_native_str(charset, 'utf-8')
             status_headers.replace_header('content-type', content_type)
         return charset
 
@@ -260,7 +264,7 @@ class RewriteContent:
 
         return mod, wrapped_stream
 
-    def _head_insert_only_gen(self, insert_str, stream, first_buff=''):
+    def _head_insert_only_gen(self, insert_str, stream, first_buff=b''):
         buff = first_buff
         max_len = 1024 - len(first_buff)
         while max_len > 0:
@@ -275,10 +279,10 @@ class RewriteContent:
 
         if matcher:
             yield buff[:matcher.end()]
-            yield insert_str
+            yield insert_str.encode('utf-8')
             yield buff[matcher.end():]
         else:
-            yield insert_str
+            yield insert_str.encode('utf-8')
             yield buff
 
         for buff in self.stream_to_gen(stream):
@@ -332,8 +336,8 @@ class RewriteContent:
 
             while True:
                 if buff:
-                    buff = rewrite_func(buff)
-                    yield buff
+                    buff = rewrite_func(to_native_str(buff, 'utf-8'))
+                    yield buff.encode('utf-8')
 
                 buff = stream.read(RewriteContent.BUFF_SIZE)
                 # on 2.6, readline() (but not read()) throws an exception
@@ -348,7 +352,7 @@ class RewriteContent:
             # For adding a tail/handling final buffer
             buff = final_read_func()
             if buff:
-                yield buff
+                yield buff.encode('utf-8')
 
         finally:
             stream.close()

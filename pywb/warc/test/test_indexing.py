@@ -235,10 +235,10 @@ def test_sorted_warc_gz():
 
 def cli_lines(cmds):
     buff = BytesIO()
-    orig = sys.stdout
-    sys.stdout = buff
+    orig = sys.stdout.buffer if hasattr(sys.stdout, 'buffer') else None
+    sys.stdout.buffer = buff
     main(cmds)
-    sys.stdout = orig
+    sys.stdout.buffer = orig
     lines = buff.getvalue().rstrip().split(b'\n')
 
     # print first, last, num lines
