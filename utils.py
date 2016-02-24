@@ -1,4 +1,8 @@
 import re
+import six
+
+from pywb.utils.timeutils import timestamp_to_http_date
+
 
 LINK_SPLIT = re.compile(',\s*(?=[<])')
 LINK_SEG_SPLIT = re.compile(';\s*')
@@ -50,3 +54,42 @@ class MementoUtils(object):
 
         results['mementos'] = mementos
         return results
+
+    @staticmethod
+    def make_timemap_memento_link(cdx, datetime=None, rel='memento', end=',\n'):
+
+        url = cdx.get('load_url')
+        if not url:
+            url = 'filename://' + cdx.get('filename')
+
+        memento = '<{0}>; rel="{1}"; datetime="{2}"; src="{3}"' + end
+
+        if not datetime:
+            datetime = timestamp_to_http_date(cdx['timestamp'])
+
+        return memento.format(url, rel, datetime, cdx.get('source', ''))
+
+
+    @staticmethod
+    def make_timemap(cdx_iter):
+        # get first memento as it'll be used for 'from' field
+        try:
+            first_cdx = six.next(cdx_iter)
+            from_date = timestamp_to_http_date(first_cdx['timestamp'])
+        except StopIteration:
+            first_cdx = None
+
+        # first memento link
+        yield MementoUtils.make_timemap_memento_link(first_cdx, datetime=from_date)
+
+        prev_cdx = None
+
+        for cdx in cdx_iter:
+            if prev_cdx:
+                yield MementoUtils.make_timemap_memento_link(prev_cdx)
+
+            prev_cdx = cdx
+
+        # last memento link, if any
+        if prev_cdx:
+            yield MementoUtils.make_timemap_memento_link(prev_cdx, end='')

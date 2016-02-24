@@ -21,10 +21,14 @@ class BaseIndexSource(object):
         self.index_template = index_template
 
     def get_index(self, params):
-        return self.index_template.format(params.get('coll'))
+        res = self.index_template.format(**params)
+        return res
+
+    def load_index(self, params):
+        raise NotImplemented()
 
     def __call__(self, params):
-        query = CDXQuery(**params)
+        query = CDXQuery(params)
 
         try:
             cdx_iter = self.load_index(query.params)
@@ -34,16 +38,28 @@ class BaseIndexSource(object):
         cdx_iter = process_cdx(cdx_iter, query)
         return cdx_iter
 
+    def _include_post_query(self, params):
+        input_req = params.get('_input_req')
+        if input_req:
+            orig_url = params['url']
+            params['url'] = input_req.include_post_query(params['url'])
+            return (params['url'] != orig_url)
+
 
 #=============================================================================
 class FileIndexSource(BaseIndexSource):
     def load_index(self, params):
+        if self._include_post_query(params):
+            params = CDXQuery(params).params
+
         filename = self.get_index(params)
 
         with open(filename, 'rb') as fh:
             gen = iter_range(fh, params['key'], params['end_key'])
             for line in gen:
                 yield CDXObject(line)
+
+        #return do_load(filename)
 
 
 #=============================================================================
@@ -53,11 +69,14 @@ class RemoteIndexSource(BaseIndexSource):
         self.replay_url = replay_url
 
     def load_index(self, params):
-        url = self.get_index(params)
-        url += '?url=' + params['url']
-        r = requests.get(url)
+        if self._include_post_query(params):
+            params = CDXQuery(**params).params
+
+        api_url = self.get_index(params)
+        api_url += '?url=' + params['url']
+        r = requests.get(api_url, timeout=params.get('_timeout'))
         if r.status_code >= 400:
-            raise NotFoundException(url)
+            raise NotFoundException(api_url)
 
         lines = r.content.strip().split(b'\n')
         def do_load(lines):
@@ -103,8 +122,11 @@ class RedisIndexSource(BaseIndexSource):
                                             b'[' + params['key'],
                                             b'(' + params['end_key'])
 
-        for line in index_list:
-            yield CDXObject(line)
+        def do_load(index_list):
+            for line in index_list:
+                yield CDXObject(line)
+
+        return do_load(index_list)
 
 
 #=============================================================================
@@ -166,7 +188,7 @@ class MementoIndexSource(BaseIndexSource):
 
     def get_timemap_links(self, params):
         url = self.timemap_url + params['url']
-        res = requests.get(url)
+        res = requests.get(url, timeout=params.get('_timeout'))
         if res.status_code >= 400:
             raise NotFoundException(url)
 
@@ -181,9 +203,6 @@ class MementoIndexSource(BaseIndexSource):
         else:
             links = self.get_timegate_links(params, closest)
             def_name = 'timegate'
-
-        #if not links:
-        #    return iter([])
 
         return self.links_to_cdxobject(links, def_name)
 
