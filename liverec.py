@@ -95,7 +95,7 @@ class RecordingHTTPConnection(httplib.HTTPConnection):
         if hasattr(data,'read') and not isinstance(data, array):
             url = None
             while True:
-                buff = data.read(self.BUFF_SIZE)
+                buff = data.read(BUFF_SIZE)
                 if not buff:
                     break
 

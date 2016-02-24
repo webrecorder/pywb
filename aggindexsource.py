@@ -2,29 +2,27 @@ from gevent.pool import Pool
 import gevent
 import json
 import time
+import os
 
 from heapq import merge
 from collections import deque
 
-from indexsource import BaseIndexSource
+from indexsource import BaseIndexSource, FileIndexSource
 from pywb.utils.wbexception import NotFoundException
 
 
 #=============================================================================
 class BaseAggIndexSource(BaseIndexSource):
-    def __init__(self, sources):
-        self.sources = sources
-
     def do_query(self, name, source, params):
         try:
-            cdx_iter = source.load_index(params)
+            cdx_iter = source.load_index(dict(params))
         except NotFoundException as nf:
             print('Not found in ' + name)
             cdx_iter = iter([])
 
         def add_name(cdx_iter):
             for cdx in cdx_iter:
-                cdx['source_name'] = name
+                cdx['source'] = name
                 yield cdx
 
         return add_name(cdx_iter)
@@ -35,6 +33,9 @@ class BaseAggIndexSource(BaseIndexSource):
         cdx_iter = merge(*(iter_list))
 
         return cdx_iter
+
+    def _load_all(self):
+        raise NotImplemented()
 
 
 #=============================================================================
@@ -63,7 +64,7 @@ class TimingOutMixin(object):
         return False
 
     def get_valid_sources(self, sources):
-        for name in sources.keys():
+        for name in sources:
             if not self.is_timed_out(name):
                 yield name
 
@@ -79,9 +80,18 @@ class TimingOutMixin(object):
 #=============================================================================
 class GeventAggIndexSource(BaseAggIndexSource):
     def __init__(self, sources, timeout=5.0, size=None):
-        super(GeventAggIndexSource, self).__init__(sources)
+        self.sources = sources
         self.pool = Pool(size=size)
         self.timeout = timeout
+
+    def get_sources(self, params):
+        srcs_list = params.get('sources')
+        if not srcs_list:
+            return self.sources
+
+        sel_sources = tuple(srcs_list.split(','))
+
+        return [src for src in self.sources if src in sel_sources]
 
     def get_valid_sources(self, sources):
         return sources.keys()
@@ -90,15 +100,18 @@ class GeventAggIndexSource(BaseAggIndexSource):
         pass
 
     def _load_all(self, params):
+        params['_timeout'] = self.timeout
+
         def do_spawn(n):
             return self.pool.spawn(self.do_query, n, self.sources[n], params)
 
-        jobs = [do_spawn(src) for src in self.get_valid_sources(self.sources)]
+        sources = self.get_sources(params)
+        jobs = [do_spawn(src) for src in self.get_valid_sources(sources)]
 
         gevent.joinall(jobs, timeout=self.timeout)
 
         res = []
-        for name, job in zip(self.sources.keys(), jobs):
+        for name, job in zip(sources, jobs):
             if job.value:
                 res.append(job.value)
             else:
@@ -113,29 +126,30 @@ class AggIndexSource(TimingOutMixin, GeventAggIndexSource):
 
 
 #=============================================================================
-class SimpleAggIndexSource(BaseAggIndexSource):
+class DirAggIndexSource(BaseAggIndexSource):
+    CDX_EXT = ('.cdx', '.cdxj')
+
+    def __init__(self, base_dir):
+        self.index_template = base_dir
+
+    def _init_files(self, the_dir):
+        sources = {}
+        for name in os.listdir(the_dir):
+            filename = os.path.join(the_dir, name)
+
+            if filename.endswith(self.CDX_EXT):
+                print('Adding ' + filename)
+                sources[name] = FileIndexSource(filename)
+
+        return sources
+
     def _load_all(self, params):
-        return list(map(lambda n: self.do_query(n, self.sources[n], params),
-                        self.sources))
+        the_dir = self.get_index(params)
 
+        try:
+            sources = self._init_files(the_dir)
+        except Exception:
+            raise NotFoundException(the_dir)
 
-#=============================================================================
-class ResourceLoadAgg(object):
-    def __init__(self, load_index, load_resource):
-        self.load_index = load_index
-        self.load_resource = load_resource
-
-    def __call__(self, params):
-        cdx_iter = self.load_index(params)
-        for cdx in cdx_iter:
-            for loader in self.load_resource:
-                try:
-                    resp = loader(cdx)
-                    if resp:
-                        return resp
-                except Exception:
-                    pass
-
-                raise Exception('Not Found')
-
-
+        return list([self.do_query(src, sources[src], params)
+                     for src in sources.keys()])
