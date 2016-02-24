@@ -175,11 +175,13 @@ class RewriteContent:
                     charset = 'utf-8'
                     head_insert_str = head_insert_orig.encode(charset)
 
-                head_insert_str = to_native_str(head_insert_str, 'utf-8')
+                head_insert_buf = head_insert_str
+                #head_insert_str = to_native_str(head_insert_str)
+                head_insert_str = head_insert_str.decode('iso-8859-1')
 
 
             if wb_url.is_banner_only:
-                gen = self._head_insert_only_gen(head_insert_str,
+                gen = self._head_insert_only_gen(head_insert_buf,
                                                  stream,
                                                  first_buff)
 
@@ -241,7 +243,8 @@ class RewriteContent:
         m = RewriteContent.CHARSET_REGEX.search(buff)
         if m:
             charset = m.group(1)
-            content_type = 'text/html; charset=' + to_native_str(charset, 'utf-8')
+            charset = to_native_str(charset)
+            content_type = 'text/html; charset=' + charset
             status_headers.replace_header('content-type', content_type)
         return charset
 
@@ -279,10 +282,10 @@ class RewriteContent:
 
         if matcher:
             yield buff[:matcher.end()]
-            yield insert_str.encode('utf-8')
+            yield insert_str
             yield buff[matcher.end():]
         else:
-            yield insert_str.encode('utf-8')
+            yield insert_str
             yield buff
 
         for buff in self.stream_to_gen(stream):
@@ -336,8 +339,8 @@ class RewriteContent:
 
             while True:
                 if buff:
-                    buff = rewrite_func(to_native_str(buff, 'utf-8'))
-                    yield buff.encode('utf-8')
+                    buff = rewrite_func(buff.decode('iso-8859-1'))
+                    yield buff.encode('iso-8859-1')
 
                 buff = stream.read(RewriteContent.BUFF_SIZE)
                 # on 2.6, readline() (but not read()) throws an exception
@@ -352,7 +355,7 @@ class RewriteContent:
             # For adding a tail/handling final buffer
             buff = final_read_func()
             if buff:
-                yield buff.encode('utf-8')
+                yield buff.encode('iso-8859-1')
 
         finally:
             stream.close()
