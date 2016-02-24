@@ -21,7 +21,7 @@ import json
 class BaseCollResolver(object):
     def __init__(self, routes, config):
         self.routes = routes
-        self.use_default_coll = config.get('use_default_coll', True)
+        self.use_default_coll = config.get('use_default_coll')
 
     @property
     def pre_connect(self):
@@ -58,9 +58,10 @@ class BaseCollResolver(object):
 
         # if 'use_default_coll', find first WbUrl-handling collection
         elif self.use_default_coll:
-            for route in self.routes:
-                if isinstance(route.handler, WbUrlHandler):
-                    return route, route.path, matcher, ts, None
+            raise Exception('use_default_coll: true no longer supported, please specify collection name')
+            #for route in self.routes:
+            #    if isinstance(route.handler, WbUrlHandler):
+            #        return route, route.path, matcher, ts, None
 
         # otherwise, return the appropriate coll selection response
         else:

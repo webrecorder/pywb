@@ -441,9 +441,11 @@ class ProxyRouter(object):
                 buff = fh.read()
 
             content_type = 'application/x-x509-ca-cert'
+            headers = [('Content-Length', str(len(buff)))]
 
             return WbResponse.bin_stream([buff],
-                                         content_type=content_type)
+                                         content_type=content_type,
+                                         headers=headers)
 
         elif env['pywb.proxy_req_uri'] == self.CERT_DL_P12:
             if not self.ca:
@@ -452,6 +454,8 @@ class ProxyRouter(object):
             buff = self.ca.get_root_PKCS12()
 
             content_type = 'application/x-pkcs12'
+            headers = [('Content-Length', str(len(buff)))]
 
             return WbResponse.bin_stream([buff],
-                                         content_type=content_type)
+                                         content_type=content_type,
+                                         headers=headers)

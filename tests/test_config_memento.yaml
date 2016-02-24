@@ -22,6 +22,7 @@ enable_http_proxy: true
 proxy_options:
     use_banner: false
     use_client_rewrite: false
+    use_default_coll: pywb
 
 # enable cdx server api for timemap
 enable_cdx_api: true
