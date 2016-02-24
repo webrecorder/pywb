@@ -25,7 +25,7 @@ install:
   - pip install boto certauth
   - pip install git+https://github.com/esnme/ultrajson.git
   - python setup.py -q install
-  - pip install coverage pytest-cov coveralls --use-mirrors
+  - pip install coverage pytest-cov coveralls
   - npm install
 
 before_script:
