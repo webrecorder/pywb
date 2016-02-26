@@ -207,7 +207,7 @@ def test_example_1():
 
 
     # verify utf-8 charset detection
-    assert status_headers.get_header('content-type') == 'text/html; charset=utf-8'
+    assert status_headers.get_header('content-type') == 'text/html'
 
     assert '/pywb/20131226101010/http://www.iana.org/domains/example' in buff, buff
 

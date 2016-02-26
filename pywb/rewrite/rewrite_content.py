@@ -237,8 +237,9 @@ class RewriteContent:
         m = RewriteContent.CHARSET_REGEX.search(buff)
         if m:
             charset = m.group(1)
-            content_type = 'text/html; charset=' + charset
-            status_headers.replace_header('content-type', content_type)
+        #    content_type = 'text/html; charset=' + charset
+        #    status_headers.replace_header('content-type', content_type)
+
         return charset
 
     @staticmethod

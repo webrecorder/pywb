@@ -107,7 +107,7 @@ class SearchPageWbUrlHandler(WbUrlHandler):
     def get_top_frame_response(self, wbrequest):
         params = self.get_top_frame_params(wbrequest, mod=self.replay_mod)
 
-        headers = [('Content-Type', 'text/html; charset=utf-8')]
+        headers = [('Content-Type', 'text/html')]
         status_headers = StatusAndHeaders('200 OK', headers)
 
         template_result = self.frame_insert_view.render_to_string(**params)
