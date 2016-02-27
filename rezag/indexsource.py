@@ -8,71 +8,52 @@ from pywb.utils.wbexception import NotFoundException
 
 from pywb.cdx.cdxobject import CDXObject
 from pywb.cdx.query import CDXQuery
-from pywb.cdx.cdxops import process_cdx
 
 import requests
 
-from utils import MementoUtils
+from rezag.utils import MementoUtils
 
 
 #=============================================================================
 class BaseIndexSource(object):
-    def __init__(self, index_template=''):
-        self.index_template = index_template
-
-    def get_index(self, params):
-        res = self.index_template.format(**params)
-        return res
-
-    def load_index(self, params):
+    def load_index(self, params):  #pragma: no cover
         raise NotImplemented()
 
-    def __call__(self, params):
-        query = CDXQuery(params)
-
-        try:
-            cdx_iter = self.load_index(query.params)
-        except NotFoundException as nf:
-            cdx_iter = iter([])
-
-        cdx_iter = process_cdx(cdx_iter, query)
-        return cdx_iter
-
-    def _include_post_query(self, params):
-        input_req = params.get('_input_req')
-        if input_req:
-            orig_url = params['url']
-            params['url'] = input_req.include_post_query(params['url'])
-            return (params['url'] != orig_url)
+    @staticmethod
+    def res_template(template, params):
+        src_params = params.get('_src_params')
+        if src_params:
+            res = template.format(**src_params)
+        else:
+            res = template
+        return res
 
 
 #=============================================================================
 class FileIndexSource(BaseIndexSource):
-    def load_index(self, params):
-        if self._include_post_query(params):
-            params = CDXQuery(params).params
+    def __init__(self, filename):
+        self.filename_template = filename
 
-        filename = self.get_index(params)
+    def load_index(self, params):
+        filename = self.res_template(self.filename_template, params)
 
         with open(filename, 'rb') as fh:
             gen = iter_range(fh, params['key'], params['end_key'])
             for line in gen:
                 yield CDXObject(line)
 
-        #return do_load(filename)
+    def __str__(self):
+        return 'file'
 
 
 #=============================================================================
 class RemoteIndexSource(BaseIndexSource):
-    def __init__(self, cdx_url, replay_url):
-        self.index_template = cdx_url
+    def __init__(self, api_url, replay_url):
+        self.api_url_template = api_url
         self.replay_url = replay_url
 
     def load_index(self, params):
-        if self._include_post_query(params):
-            params = CDXQuery(**params).params
-
-        api_url = self.get_index(params)
+        api_url = self.res_template(self.api_url_template, params)
         api_url += '?url=' + params['url']
         r = requests.get(api_url, timeout=params.get('_timeout'))
         if r.status_code >= 400:
@@ -86,6 +67,9 @@ class RemoteIndexSource(BaseIndexSource):
                 yield cdx
 
         return do_load(lines)
+
+    def __str__(self):
+        return 'remote'
 
 
 #=============================================================================
@@ -102,6 +86,9 @@ class LiveIndexSource(BaseIndexSource):
 
         return live()
 
+    def __str__(self):
+        return 'live'
+
 
 #=============================================================================
 class RedisIndexSource(BaseIndexSource):
@@ -113,11 +100,11 @@ class RedisIndexSource(BaseIndexSource):
             redis_url = 'redis://' + parts[2] + '/' + parts[3]
 
         self.redis_url = redis_url
-        self.index_template = key_prefix
+        self.redis_key_template = key_prefix
         self.redis = redis.StrictRedis.from_url(redis_url)
 
     def load_index(self, params):
-        z_key = self.get_index(params)
+        z_key = self.res_template(self.redis_key_template, params)
         index_list = self.redis.zrangebylex(z_key,
                                             b'[' + params['key'],
                                             b'(' + params['end_key'])
@@ -128,6 +115,9 @@ class RedisIndexSource(BaseIndexSource):
 
         return do_load(index_list)
 
+    def __str__(self):
+        return 'redis'
+
 
 #=============================================================================
 class MementoIndexSource(BaseIndexSource):
@@ -136,7 +126,7 @@ class MementoIndexSource(BaseIndexSource):
         self.timemap_url = timemap_url
         self.replay_url = replay_url
 
-    def links_to_cdxobject(self, link_header, def_name, sort=False):
+    def links_to_cdxobject(self, link_header, def_name):
         results = MementoUtils.parse_links(link_header, def_name)
 
         #meta = MementoUtils.meta_field('timegate', results)
@@ -155,14 +145,9 @@ class MementoIndexSource(BaseIndexSource):
         key = canonicalize(original)
 
         mementos = results['mementos']
-        if sort:
-            mementos = sorted(mementos)
 
         for val in mementos:
-            dt = val.get('datetime')
-            if not dt:
-                continue
-
+            dt = val['datetime']
             ts = http_date_to_timestamp(dt)
             cdx = CDXObject()
             cdx['urlkey'] = key
@@ -178,7 +163,8 @@ class MementoIndexSource(BaseIndexSource):
             yield cdx
 
     def get_timegate_links(self, params, closest):
-        url = self.timegate_url.format(coll=params.get('coll')) + params['url']
+        url = self.res_template(self.timegate_url, params)
+        url += params['url']
         accept_dt = timestamp_to_http_date(closest)
         res = requests.head(url, headers={'Accept-Datetime': accept_dt})
         if res.status_code >= 400:
@@ -187,7 +173,8 @@ class MementoIndexSource(BaseIndexSource):
         return res.headers.get('Link')
 
     def get_timemap_links(self, params):
-        url = self.timemap_url + params['url']
+        url = self.res_template(self.timemap_url, params)
+        url += params['url']
         res = requests.get(url, timeout=params.get('_timeout'))
         if res.status_code >= 400:
             raise NotFoundException(url)
@@ -212,5 +199,7 @@ class MementoIndexSource(BaseIndexSource):
                                   timegate_url + 'timemap/' + path + '/',
                                   timegate_url + '{timestamp}id_/{url}')
 
+    def __str__(self):
+        return 'memento'
 
 

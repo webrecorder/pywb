@@ -57,7 +57,6 @@ class MementoUtils(object):
 
     @staticmethod
     def make_timemap_memento_link(cdx, datetime=None, rel='memento', end=',\n'):
-
         url = cdx.get('load_url')
         if not url:
             url = 'filename://' + cdx.get('filename')

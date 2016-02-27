@@ -1,7 +1,6 @@
-from liverec import BaseRecorder
-from liverec import request as remote_request
+from rezag.liverec import BaseRecorder
+from rezag.liverec import request as remote_request
 
-from pywb.warc.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
 from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_http_date
 from pywb.warc.resolvingloader import ResolvingLoader
 
@@ -9,7 +8,6 @@ from io import BytesIO
 from bottle import response
 
 import uuid
-from utils import MementoUtils
 
 
 #=============================================================================
@@ -31,7 +29,7 @@ def incr_reader(stream, header=None, size=8192):
 
 
 #=============================================================================
-class WARCPathLoader(object):
+class WARCPathHandler(object):
     def __init__(self, paths, cdx_source):
         self.paths = paths
         if isinstance(paths, str):
@@ -101,7 +99,7 @@ class HeaderRecorder(BaseRecorder):
 
 
 #=============================================================================
-class LiveWebLoader(object):
+class LiveWebHandler(object):
     SKIP_HEADERS = (b'link',
                     b'memento-datetime',
                     b'content-location',
@@ -165,111 +163,3 @@ class LiveWebLoader(object):
         if not id_:
             id_ = uuid.uuid1()
         return '<urn:uuid:{0}>'.format(id_)
-
-
-#=============================================================================
-def to_cdxj(cdx_iter, fields):
-    response.headers['Content-Type'] = 'text/x-cdxj'
-    return [cdx.to_cdxj(fields) for cdx in cdx_iter]
-
-def to_json(cdx_iter, fields):
-    response.headers['Content-Type'] = 'application/x-ndjson'
-    return [cdx.to_json(fields) for cdx in cdx_iter]
-
-def to_text(cdx_iter, fields):
-    response.headers['Content-Type'] = 'text/plain'
-    return [cdx.to_text(fields) for cdx in cdx_iter]
-
-def to_link(cdx_iter, fields):
-    response.headers['Content-Type'] = 'application/link'
-    return MementoUtils.make_timemap(cdx_iter)
-
-
-#=============================================================================
-class IndexLoader(object):
-    OUTPUTS = {
-        'cdxj': to_cdxj,
-        'json': to_json,
-        'text': to_text,
-        'link': to_link,
-    }
-
-    DEF_OUTPUT = 'cdxj'
-
-    def __init__(self, index_source):
-        self.index_source = index_source
-
-    def __call__(self, params):
-        cdx_iter = self.index_source(params)
-
-        output = params.get('output', self.DEF_OUTPUT)
-        fields = params.get('fields')
-
-        handler = self.OUTPUTS.get(output)
-        if not handler:
-            handler = self.OUTPUTS[self.DEF_OUTPUT]
-
-        res = handler(cdx_iter, fields)
-        return res
-
-
-#=============================================================================
-class ResourceLoader(IndexLoader):
-    def __init__(self, index_source, resource_loaders):
-        super(ResourceLoader, self).__init__(index_source)
-        self.resource_loaders = resource_loaders
-
-    def __call__(self, params):
-        output = params.get('output')
-        if output != 'resource':
-            return super(ResourceLoader, self).__call__(params)
-
-        cdx_iter = self.index_source(params)
-
-        any_found = False
-
-        for cdx in cdx_iter:
-            any_found = True
-            cdx['coll'] = params.get('coll', '')
-
-            for loader in self.resource_loaders:
-                try:
-                    resp = loader(cdx, params)
-                    if resp:
-                        return resp
-                except ArchiveLoadFailed as e:
-                    print(e)
-                    pass
-
-        if any_found:
-            raise ArchiveLoadFailed('Resource Found, could not be Loaded')
-        else:
-            raise ArchiveLoadFailed('No Resource Found')
-
-
-#=============================================================================
-class DefaultResourceLoader(ResourceLoader):
-    def __init__(self, index_source, warc_paths=''):
-        loaders = [WARCPathLoader(warc_paths, index_source),
-                   LiveWebLoader()
-                  ]
-        super(DefaultResourceLoader, self).__init__(index_source, loaders)
-
-
-#=============================================================================
-class LoaderSeq(object):
-    def __init__(self, loaders):
-        self.loaders = loaders
-
-    def __call__(self, params):
-        for loader in self.loaders:
-            try:
-                res = loader(params)
-                if res:
-                    return res
-            except ArchiveLoadFailed:
-                pass
-
-        raise ArchiveLoadFailed('No Resource Found')
-
-
