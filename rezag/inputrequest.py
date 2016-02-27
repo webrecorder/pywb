@@ -4,8 +4,7 @@ from pywb.utils.loaders import LimitReader
 from pywb.utils.statusandheaders import StatusAndHeadersParser
 
 from six.moves.urllib.parse import urlsplit
-from six import StringIO
-import six
+from six import StringIO, iteritems
 
 
 #=============================================================================
