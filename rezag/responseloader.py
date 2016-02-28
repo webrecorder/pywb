@@ -45,7 +45,11 @@ class WARCPathHandler(object):
         for path in self.paths:
             def check(filename, cdx):
                 try:
-                    full_path = path.format(**cdx)
+                    if hasattr(cdx, '_src_params') and cdx._src_params:
+                        full_path = path.format(**cdx._src_params)
+                    else:
+                        full_path = path
+                    full_path += filename
                     return full_path
                 except KeyError:
                     return None
@@ -57,14 +61,12 @@ class WARCPathHandler(object):
         if not cdx.get('filename') or cdx.get('offset') is None:
             return None
 
+        cdx._src_params = params.get('_src_params')
         failed_files = []
         headers, payload = (self.resolve_loader.
                              load_headers_and_payload(cdx,
                                                       failed_files,
                                                       self.cdx_source))
-
-        if headers != payload:
-            headers.stream.close()
 
         record = payload
 
@@ -72,6 +74,13 @@ class WARCPathHandler(object):
             response.headers[n] = v
 
         response.headers['WARC-Coll'] = cdx.get('source')
+
+        if headers != payload:
+            response.headers['WARC-Target-URI'] = headers.rec_headers.get_header('WARC-Target-URI')
+            response.headers['WARC-Date'] = headers.rec_headers.get_header('WARC-Date')
+            response.headers['WARC-Refers-To-Target-URI'] = payload.rec_headers.get_header('WARC-Target-URI')
+            response.headers['WARC-Refers-To-Date'] = payload.rec_headers.get_header('WARC-Date')
+            headers.stream.close()
 
         return incr_reader(record.stream)
 
@@ -114,12 +123,19 @@ class LiveWebHandler(object):
 
         input_req = params['_input_req']
 
-        req_headers = input_req.get_req_headers(cdx['url'])
+        req_headers = input_req.get_req_headers()
 
         dt = timestamp_to_datetime(cdx['timestamp'])
 
         if not cdx.get('is_live'):
             req_headers['Accept-Datetime'] = datetime_to_http_date(dt)
+
+        # if different url, ensure origin is not set
+        # may need to add other headers
+        if load_url != cdx['url']:
+            if 'Origin' in req_headers:
+                splits = urlsplit(load_url)
+                req_headers['Origin'] = splits.scheme + '://' + splits.netloc
 
         method = input_req.get_req_method()
         data = input_req.get_req_body()

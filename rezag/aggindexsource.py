@@ -1,9 +1,13 @@
 from gevent.pool import Pool
 import gevent
+
+from concurrent import futures
+
 import json
 import time
 import os
 
+from pywb.utils.timeutils import timestamp_now
 from pywb.cdx.cdxops import process_cdx
 from pywb.cdx.query import CDXQuery
 
@@ -19,6 +23,9 @@ import glob
 #=============================================================================
 class BaseAggregator(object):
     def __call__(self, params):
+        if params.get('closest') == 'now':
+            params['closest'] = timestamp_now()
+
         query = CDXQuery(params)
         self._set_src_params(params)
 
@@ -55,32 +62,21 @@ class BaseAggregator(object):
     def load_child_source(self, name, source, all_params):
         try:
             _src_params = all_params['_all_src_params'].get(name)
+            all_params['_src_params'] = _src_params
 
-            #params = dict(url=all_params['url'],
-            #              key=all_params['key'],
-            #              end_key=all_params['end_key'],
-            #              closest=all_params.get('closest'),
-            #              _input_req=all_params.get('_input_req'),
-            #              _timeout=all_params.get('_timeout'),
-            #              _all_src_params=all_params.get('_all_src_params'),
-            #              _src_params=_src_params)
-
-            params = all_params
-            params['_src_params'] = _src_params
-            cdx_iter = source.load_index(params)
+            cdx_iter = source.load_index(all_params)
         except NotFoundException as nf:
             print('Not found in ' + name)
             cdx_iter = iter([])
 
-        def add_name(cdx_iter):
-            for cdx in cdx_iter:
-                if 'source' in cdx:
-                    cdx['source'] = name + '.' + cdx['source']
-                else:
-                    cdx['source'] = name
-                yield cdx
+        def add_name(cdx):
+            if cdx.get('source'):
+                cdx['source'] = name + ':' + cdx['source']
+            else:
+                cdx['source'] = name
+            return cdx
 
-        return add_name(cdx_iter)
+        return [add_name(cdx) for cdx in cdx_iter]
 
     def load_index(self, params):
         iter_list = list(self._load_all(params))
@@ -92,6 +88,9 @@ class BaseAggregator(object):
             cdx_iter = merge(*(iter_list))
 
         return cdx_iter
+
+    def _on_source_error(self, name):
+        pass
 
     def _load_all(self, params):  #pragma: no cover
         raise NotImplemented()
@@ -167,7 +166,7 @@ class TimeoutMixin(object):
             if not self.is_timed_out(name):
                 yield name, source
 
-    def track_source_error(self, name):
+    def _on_source_error(self, name):
         the_time = time.time()
         if name not in self.timeouts:
             self.timeouts[name] = deque()
@@ -177,14 +176,11 @@ class TimeoutMixin(object):
 
 
 #=============================================================================
-class GeventAggMixin(object):
+class GeventMixin(object):
     def __init__(self, *args, **kwargs):
-        super(GeventAggMixin, self).__init__(*args, **kwargs)
+        super(GeventMixin, self).__init__(*args, **kwargs)
         self.pool = Pool(size=kwargs.get('size'))
         self.timeout = kwargs.get('timeout', 5.0)
-
-    def track_source_error(self, name):
-        pass
 
     def _load_all(self, params):
         params['_timeout'] = self.timeout
@@ -198,18 +194,58 @@ class GeventAggMixin(object):
 
         gevent.joinall(jobs, timeout=self.timeout)
 
-        res = []
-        for name, job in zip(sources, jobs):
-            if job.value:
-                res.append(job.value)
+        results = []
+        for (name, source), job in zip(sources, jobs):
+            if job.value is not None:
+                results.append(job.value)
             else:
-                self.track_source_error(name)
+                self._on_source_error(name)
 
-        return res
+        return results
 
 
 #=============================================================================
-class GeventTimeoutAggregator(TimeoutMixin, GeventAggMixin, BaseSourceListAggregator):
+class GeventTimeoutAggregator(TimeoutMixin, GeventMixin, BaseSourceListAggregator):
+    pass
+
+
+#=============================================================================
+class ConcurrentMixin(object):
+    def __init__(self, *args, **kwargs):
+        super(ConcurrentMixin, self).__init__(*args, **kwargs)
+        if kwargs.get('use_processes'):
+            self.pool_class = futures.ThreadPoolExecutor
+        else:
+            self.pool_class = futures.ProcessPoolExecutor
+        self.timeout = kwargs.get('timeout', 5.0)
+        self.size = kwargs.get('size')
+
+    def _load_all(self, params):
+        params['_timeout'] = self.timeout
+
+        sources = list(self.get_sources(params))
+
+        with self.pool_class(max_workers=self.size) as executor:
+            def do_spawn(name, source):
+                return executor.submit(self.load_child_source,
+                                       name, source, params), name
+
+            jobs = dict([do_spawn(name, source) for name, source in sources])
+
+            res_done, res_not_done = futures.wait(jobs.keys(), timeout=self.timeout)
+
+            results = []
+            for job in res_done:
+                results.append(job.result())
+
+            for job in res_not_done:
+                self._on_source_error(jobs[job])
+
+        return results
+
+
+#=============================================================================
+class ThreadedTimeoutAggregator(TimeoutMixin, ConcurrentMixin, BaseSourceListAggregator):
     pass
 
 
@@ -244,13 +280,14 @@ class BaseDirectoryIndexAggregator(BaseAggregator):
 
     def _load_files(self, glob_dir):
         for the_dir in glob.iglob(glob_dir):
-            print(the_dir)
             for name in os.listdir(the_dir):
                 filename = os.path.join(the_dir, name)
 
                 if filename.endswith(self.CDX_EXT):
                     print('Adding ' + filename)
                     rel_path = os.path.relpath(the_dir, self.base_prefix)
+                    if rel_path == '.':
+                        rel_path = ''
                     yield rel_path, FileIndexSource(filename)
 
 class DirectoryIndexAggregator(SeqAggMixin, BaseDirectoryIndexAggregator):

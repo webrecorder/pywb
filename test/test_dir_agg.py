@@ -3,13 +3,16 @@ import os
 import shutil
 import json
 
+from .testutils import to_path
+
 from rezag.aggindexsource import DirectoryIndexAggregator, SimpleAggregator
+from rezag.indexsource import MementoIndexSource
 
 
 #=============================================================================
 root_dir = None
 orig_cwd = None
-dir_agg = None
+dir_loader = None
 
 def setup_module():
     global root_dir
@@ -17,18 +20,21 @@ def setup_module():
 
     coll_A = to_path(root_dir + '/colls/A/indexes')
     coll_B = to_path(root_dir + '/colls/B/indexes')
+    coll_C = to_path(root_dir + '/colls/C/indexes')
 
     os.makedirs(coll_A)
     os.makedirs(coll_B)
+    os.makedirs(coll_C)
 
     dir_prefix = to_path(root_dir)
     dir_path ='colls/{coll}/indexes'
 
     shutil.copy(to_path('testdata/example.cdxj'), coll_A)
     shutil.copy(to_path('testdata/iana.cdxj'), coll_B)
+    shutil.copy(to_path('testdata/dupes.cdxj'), coll_C)
 
-    global dir_agg
-    dir_agg = DirectoryIndexAggregator(dir_prefix, dir_path)
+    global dir_loader
+    dir_loader = DirectoryIndexAggregator(dir_prefix, dir_path)
 
     global orig_cwd
     orig_cwd = os.getcwd()
@@ -45,57 +51,103 @@ def teardown_module():
     shutil.rmtree(root_dir)
 
 
-def to_path(path):
-    if os.path.sep != '/':
-        path = path.replace('/', os.path.sep)
-
-    return path
-
-
 def to_json_list(cdxlist, fields=['timestamp', 'load_url', 'filename', 'source']):
     return list([json.loads(cdx.to_json(fields)) for cdx in cdxlist])
 
 
 def test_agg_no_coll_set():
-    res = dir_agg(dict(url='example.com/'))
+    res = dir_loader(dict(url='example.com/'))
     assert(to_json_list(res) == [])
 
 
 def test_agg_collA_found():
-    res = dir_agg({'url': 'example.com/', 'param.coll': 'A'})
+    res = dir_loader({'url': 'example.com/', 'param.coll': 'A'})
 
     exp = [{'source': 'colls/A/indexes', 'timestamp': '20160225042329', 'filename': 'example.warc.gz'}]
 
     assert(to_json_list(res) == exp)
 
 def test_agg_collB():
-    res = dir_agg({'url': 'example.com/', 'param.coll': 'B'})
+    res = dir_loader({'url': 'example.com/', 'param.coll': 'B'})
 
     exp = []
 
     assert(to_json_list(res) == exp)
 
 def test_agg_collB_found():
-    res = dir_agg({'url': 'iana.org/', 'param.coll': 'B'})
+    res = dir_loader({'url': 'iana.org/', 'param.coll': 'B'})
 
     exp = [{'source': 'colls/B/indexes', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'}]
 
     assert(to_json_list(res) == exp)
 
 
-def test_agg_all_found():
-    res = dir_agg({'url': 'iana.org/', 'param.coll': '*'})
+def test_extra_agg_collB():
+    agg_source = SimpleAggregator({'dir': dir_loader})
+    res = agg_source({'url': 'iana.org/', 'param.coll': 'B'})
 
-    exp = [{'source': 'colls/B/indexes', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'}]
+    exp = [{'source': 'dir:colls/B/indexes', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'}]
 
     assert(to_json_list(res) == exp)
 
 
-def test_extra_agg_all():
-    agg_dir_agg = SimpleAggregator({'dir': dir_agg})
-    res = agg_dir_agg({'url': 'iana.org/', 'param.coll': '*'})
+def test_agg_all_found_1():
+    res = dir_loader({'url': 'iana.org/', 'param.coll': '*'})
 
-    exp = [{'source': 'dir.colls/B/indexes', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'}]
+    exp = [
+        {'source': 'colls/B/indexes', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'},
+        {'source': 'colls/C/indexes', 'timestamp': '20140127171238', 'filename': 'dupes.warc.gz'},
+        {'source': 'colls/C/indexes', 'timestamp': '20140127171238', 'filename': 'dupes.warc.gz'},
+    ]
+
+    assert(to_json_list(res) == exp)
+
+
+def test_agg_all_found_2():
+    res = dir_loader({'url': 'example.com/', 'param.coll': '*'})
+
+    exp = [
+        {'source': 'colls/C/indexes', 'timestamp': '20140127171200', 'filename': 'dupes.warc.gz'},
+        {'source': 'colls/C/indexes', 'timestamp': '20140127171251', 'filename': 'dupes.warc.gz'},
+        {'source': 'colls/A/indexes', 'timestamp': '20160225042329', 'filename': 'example.warc.gz'}
+    ]
+
+    assert(to_json_list(res) == exp)
+
+
+
+def test_agg_dir_and_memento():
+    sources = {'ia': MementoIndexSource.from_timegate_url('http://web.archive.org/web/'),
+               'local': dir_loader}
+    agg_source = SimpleAggregator(sources)
+
+    res = agg_source({'url': 'example.com/', 'param.coll': '*', 'closest': '20100512', 'limit': 6})
+
+    exp = [
+        {'source': 'ia', 'timestamp': '20100513052358', 'load_url': 'http://web.archive.org/web/20100513052358id_/http://example.com/'},
+        {'source': 'ia', 'timestamp': '20100514231857', 'load_url': 'http://web.archive.org/web/20100514231857id_/http://example.com/'},
+        {'source': 'ia', 'timestamp': '20100506013442', 'load_url': 'http://web.archive.org/web/20100506013442id_/http://example.com/'},
+        {'source': 'local:colls/C/indexes', 'timestamp': '20140127171200', 'filename': 'dupes.warc.gz'},
+        {'source': 'local:colls/C/indexes', 'timestamp': '20140127171251', 'filename': 'dupes.warc.gz'},
+        {'source': 'local:colls/A/indexes', 'timestamp': '20160225042329', 'filename': 'example.warc.gz'}
+    ]
+
+    assert(to_json_list(res) == exp)
+
+
+def test_agg_no_dir_1():
+    res = dir_loader({'url': 'example.com/', 'param.coll': 'X'})
+
+    exp = []
+
+    assert(to_json_list(res) == exp)
+
+
+def test_agg_no_dir_2():
+    loader = DirectoryIndexAggregator(root_dir, 'no_such')
+    res = loader({'url': 'example.com/', 'param.coll': 'X'})
+
+    exp = []
 
     assert(to_json_list(res) == exp)
 

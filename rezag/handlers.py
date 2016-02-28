@@ -1,6 +1,6 @@
+from rezag.responseloader import  WARCPathHandler, LiveWebHandler
 from rezag.utils import MementoUtils
 from pywb.warc.recordloader import ArchiveLoadFailed
-from rezag.responseloader import  WARCPathHandler, LiveWebHandler
 from bottle import response
 
 
@@ -46,7 +46,7 @@ class IndexHandler(object):
 
         input_req = params.get('_input_req')
         if input_req:
-            params['url'] = input_req.include_post_query()
+            params['alt_url'] = input_req.include_post_query(params.get('url'))
 
         cdx_iter = self.index_source(params)
 
@@ -71,13 +71,16 @@ class ResourceHandler(IndexHandler):
         if params.get('mode', 'resource') != 'resource':
             return super(ResourceHandler, self).__call__(params)
 
+        input_req = params.get('_input_req')
+        if input_req:
+            params['alt_url'] = input_req.include_post_query(params.get('url'))
+
         cdx_iter = self.index_source(params)
 
         any_found = False
 
         for cdx in cdx_iter:
             any_found = True
-            cdx['coll'] = params.get('coll', '')
 
             for loader in self.resource_loaders:
                 try:

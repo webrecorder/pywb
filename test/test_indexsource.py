@@ -5,6 +5,9 @@ from rezag.aggindexsource import SimpleAggregator
 
 from pywb.utils.timeutils import timestamp_now
 
+from .testutils import key_ts_res
+
+
 import pytest
 
 import redis
@@ -12,9 +15,6 @@ import fakeredis
 
 redis.StrictRedis = fakeredis.FakeStrictRedis
 redis.Redis = fakeredis.FakeRedis
-
-def key_ts_res(cdxlist, extra='filename'):
-    return '\n'.join([cdx['urlkey'] + ' ' + cdx['timestamp'] + ' ' + cdx[extra] for cdx in cdxlist])
 
 def setup_module():
     global r
@@ -168,5 +168,18 @@ def test_another_remote_not_found():
 
     expected = ''
     assert(key_ts_res(res) == expected)
+
+
+# ============================================================================
+def test_file_not_found():
+    source = FileIndexSource('testdata/not-found-x')
+    url = 'http://x-not-found-x.notfound/'
+    res = query_single_source(source, dict(url=url, limit=3))
+
+
+    expected = ''
+    assert(key_ts_res(res) == expected)
+
+
 
 
