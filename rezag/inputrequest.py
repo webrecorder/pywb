@@ -5,6 +5,7 @@ from pywb.utils.statusandheaders import StatusAndHeadersParser
 
 from six.moves.urllib.parse import urlsplit
 from six import StringIO, iteritems
+from io import BytesIO
 
 
 #=============================================================================
@@ -15,19 +16,19 @@ class WSGIInputRequest(object):
     def get_req_method(self):
         return self.env['REQUEST_METHOD'].upper()
 
-    def get_req_headers(self, url):
+    def get_req_headers(self):
         headers = {}
 
-        splits = urlsplit(url)
-
-        for name, value in six.iteritems(self.env):
+        for name, value in iteritems(self.env):
             if name == 'HTTP_HOST':
-                name = 'Host'
-                value = splits.netloc
+                #name = 'Host'
+                #value = splits.netloc
+                # will be set automatically
+                continue
 
-            elif name == 'HTTP_ORIGIN':
-                name = 'Origin'
-                value = (splits.scheme + '://' + splits.netloc)
+            #elif name == 'HTTP_ORIGIN':
+            #    name = 'Origin'
+            #    value = (splits.scheme + '://' + splits.netloc)
 
             elif name == 'HTTP_X_CSRFTOKEN':
                 name = 'X-CSRFToken'
@@ -35,9 +36,9 @@ class WSGIInputRequest(object):
                 if cookie_val:
                     value = cookie_val
 
-            elif name == 'HTTP_X_FORWARDED_PROTO':
-                name = 'X-Forwarded-Proto'
-                value = splits.scheme
+            #elif name == 'HTTP_X_FORWARDED_PROTO':
+            #    name = 'X-Forwarded-Proto'
+            #    value = splits.scheme
 
             elif name.startswith('HTTP_'):
                 name = name[5:].title().replace('_', '-')
@@ -83,7 +84,7 @@ class WSGIInputRequest(object):
         return self.env.get('HTTP_' + name.upper().replace('-', '_'))
 
     def include_post_query(self, url):
-        if self.get_req_method() != 'POST':
+        if not url or self.get_req_method() != 'POST':
             return url
 
         mime = self._get_content_type()
@@ -91,7 +92,7 @@ class WSGIInputRequest(object):
         length = self._get_content_length()
         stream = self.env['wsgi.input']
 
-        buffered_stream = StringIO()
+        buffered_stream = BytesIO()
 
         post_query = extract_post_query('POST', mime, length, stream,
                                         buffered_stream=buffered_stream)
@@ -115,7 +116,7 @@ class POSTInputRequest(WSGIInputRequest):
     def get_req_method(self):
         return self.status_headers.protocol
 
-    def get_req_headers(self, url):
+    def get_req_headers(self):
         headers = {}
         for n, v in self.status_headers.headers:
             headers[n] = v

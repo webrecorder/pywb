@@ -9,7 +9,7 @@ from pywb.utils.wbexception import NotFoundException
 from pywb.cdx.cdxobject import CDXObject
 from pywb.cdx.query import CDXQuery
 
-import requests
+from rezag.liverec import patched_requests as requests
 
 from rezag.utils import MementoUtils
 
@@ -37,7 +37,12 @@ class FileIndexSource(BaseIndexSource):
     def load_index(self, params):
         filename = self.res_template(self.filename_template, params)
 
-        with open(filename, 'rb') as fh:
+        try:
+            fh = open(filename, 'rb')
+        except IOError:
+            raise NotFoundException(filename)
+
+        with fh:
             gen = iter_range(fh, params['key'], params['end_key'])
             for line in gen:
                 yield CDXObject(line)

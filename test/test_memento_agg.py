@@ -1,7 +1,11 @@
-from gevent import monkey; monkey.patch_all()
+from gevent import monkey; monkey.patch_all(thread=False)
+
 from rezag.aggindexsource import SimpleAggregator, GeventTimeoutAggregator
+from rezag.aggindexsource import ThreadedTimeoutAggregator
 
 from rezag.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource
+from .testutils import json_list, to_path
+
 import json
 import pytest
 
@@ -9,26 +13,23 @@ from rezag.handlers import IndexHandler
 
 
 sources = {
-    'local': FileIndexSource('testdata/iana.cdxj'),
+    'local': FileIndexSource(to_path('testdata/iana.cdxj')),
     'ia': MementoIndexSource.from_timegate_url('http://web.archive.org/web/'),
     'ait': MementoIndexSource.from_timegate_url('http://wayback.archive-it.org/all/'),
     'bl': MementoIndexSource.from_timegate_url('http://www.webarchive.org.uk/wayback/archive/'),
     'rhiz': MementoIndexSource.from_timegate_url('http://webenact.rhizome.org/vvork/', path='*')
 }
 
+
+aggs = {'simple': SimpleAggregator(sources),
+        'gevent': GeventTimeoutAggregator(sources, timeout=5.0),
+        'threaded': ThreadedTimeoutAggregator(sources, timeout=5.0),
+        'processes': ThreadedTimeoutAggregator(sources, timeout=5.0, use_processes=True),
+       }
+
 #@pytest.mark.parametrize("agg", aggs, ids=["simple", "gevent_timeout"])
 def pytest_generate_tests(metafunc):
-    metafunc.parametrize("agg", aggs, ids=["simple", "gevent_timeout"])
-
-
-aggs = [SimpleAggregator(sources),
-        GeventTimeoutAggregator(sources, timeout=5.0)
-       ]
-
-
-def json_list(cdxlist, fields=['timestamp', 'load_url', 'filename', 'source']):
-    return list([json.loads(cdx.to_json(fields)) for cdx in cdxlist])
-
+    metafunc.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
 
 def test_mem_agg_index_1(agg):
     url = 'http://iana.org/'
