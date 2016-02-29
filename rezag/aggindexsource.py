@@ -63,7 +63,6 @@ class BaseAggregator(object):
         try:
             _src_params = all_params['_all_src_params'].get(name)
             all_params['_src_params'] = _src_params
-
             cdx_iter = source.load_index(all_params)
         except NotFoundException as nf:
             print('Not found in ' + name)
@@ -89,14 +88,20 @@ class BaseAggregator(object):
 
         return cdx_iter
 
-    def _on_source_error(self, name):
+    def _on_source_error(self, name):  #pragma: no cover
         pass
 
     def _load_all(self, params):  #pragma: no cover
         raise NotImplemented()
 
-    def get_sources(self, params):  #pragma: no cover
+    def _iter_sources(self, params):  #pragma: no cover
         raise NotImplemented()
+
+    def get_source_list(self, params):
+        srcs = self._iter_sources(params)
+        result = [(name, str(value)) for name, value in srcs]
+        result = {'sources': dict(result)}
+        return result
 
 
 #=============================================================================
@@ -107,7 +112,7 @@ class BaseSourceListAggregator(BaseAggregator):
     def get_all_sources(self, params):
         return self.sources
 
-    def get_sources(self, params):
+    def _iter_sources(self, params):
         sources = self.get_all_sources(params)
         srcs_list = params.get('sources')
         if not srcs_list:
@@ -125,7 +130,7 @@ class SeqAggMixin(object):
 
 
     def _load_all(self, params):
-        sources = list(self.get_sources(params))
+        sources = list(self._iter_sources(params))
         return list([self.load_child_source(name, source, params)
                      for name, source in sources])
 
@@ -160,8 +165,8 @@ class TimeoutMixin(object):
 
         return False
 
-    def get_sources(self, params):
-        sources = super(TimeoutMixin, self).get_sources(params)
+    def _iter_sources(self, params):
+        sources = super(TimeoutMixin, self)._iter_sources(params)
         for name, source in sources:
             if not self.is_timed_out(name):
                 yield name, source
@@ -185,7 +190,7 @@ class GeventMixin(object):
     def _load_all(self, params):
         params['_timeout'] = self.timeout
 
-        sources = list(self.get_sources(params))
+        sources = list(self._iter_sources(params))
 
         def do_spawn(name, source):
             return self.pool.spawn(self.load_child_source, name, source, params)
@@ -223,7 +228,7 @@ class ConcurrentMixin(object):
     def _load_all(self, params):
         params['_timeout'] = self.timeout
 
-        sources = list(self.get_sources(params))
+        sources = list(self._iter_sources(params))
 
         with self.pool_class(max_workers=self.size) as executor:
             def do_spawn(name, source):
@@ -257,7 +262,8 @@ class BaseDirectoryIndexAggregator(BaseAggregator):
         self.base_prefix = base_prefix
         self.base_dir = base_dir
 
-    def get_sources(self, params):
+    def _iter_sources(self, params):
+        self._set_src_params(params)
         # see if specific params (when part of another agg)
         src_params = params.get('_src_params')
         if not src_params:
@@ -270,7 +276,6 @@ class BaseDirectoryIndexAggregator(BaseAggregator):
             the_dir = self.base_dir
 
         the_dir = os.path.join(self.base_prefix, the_dir)
-
         try:
             sources = list(self._load_files(the_dir))
         except Exception:
@@ -289,6 +294,10 @@ class BaseDirectoryIndexAggregator(BaseAggregator):
                     if rel_path == '.':
                         rel_path = ''
                     yield rel_path, FileIndexSource(filename)
+
+    def __str__(self):
+        return 'file_dir'
+
 
 class DirectoryIndexAggregator(SeqAggMixin, BaseDirectoryIndexAggregator):
     pass

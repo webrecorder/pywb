@@ -33,6 +33,9 @@ def setup_module():
     shutil.copy(to_path('testdata/iana.cdxj'), coll_B)
     shutil.copy(to_path('testdata/dupes.cdxj'), coll_C)
 
+    with open(to_path(root_dir) + 'somefile', 'w') as fh:
+        fh.write('foo')
+
     global dir_loader
     dir_loader = DirectoryIndexAggregator(dir_prefix, dir_path)
 
@@ -121,7 +124,7 @@ def test_agg_dir_and_memento():
                'local': dir_loader}
     agg_source = SimpleAggregator(sources)
 
-    res = agg_source({'url': 'example.com/', 'param.coll': '*', 'closest': '20100512', 'limit': 6})
+    res = agg_source({'url': 'example.com/', 'param.local.coll': '*', 'closest': '20100512', 'limit': 6})
 
     exp = [
         {'source': 'ia', 'timestamp': '20100513052358', 'load_url': 'http://web.archive.org/web/20100513052358id_/http://example.com/'},
@@ -144,12 +147,39 @@ def test_agg_no_dir_1():
 
 
 def test_agg_no_dir_2():
-    loader = DirectoryIndexAggregator(root_dir, 'no_such')
+    loader = DirectoryIndexAggregator(root_dir, '')
     res = loader({'url': 'example.com/', 'param.coll': 'X'})
 
     exp = []
 
     assert(to_json_list(res) == exp)
 
+
+def test_agg_dir_sources_1():
+    res = dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '*'})
+    exp = {'sources': {'colls/A/indexes': 'file',
+                       'colls/B/indexes': 'file',
+                       'colls/C/indexes': 'file'}
+          }
+
+    assert(res == exp)
+
+
+def test_agg_dir_sources_2():
+    res = dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '[A,C]'})
+    exp = {'sources': {'colls/A/indexes': 'file',
+                       'colls/C/indexes': 'file'}
+          }
+
+    assert(res == exp)
+
+
+def test_agg_dir_sources_single_dir():
+    loader = DirectoryIndexAggregator('testdata/', '')
+    res = loader.get_source_list({'url': 'example.com/'})
+
+    exp = {'sources': {}}
+
+    assert(res == exp)
 
 

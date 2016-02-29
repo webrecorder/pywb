@@ -32,8 +32,11 @@ setup(
         'rezag',
         ],
     install_requires=[
-        'pywb',
+        'pywb==1.0b',
         ],
+    dependency_links=[
+        'git+https://github.com/ikreymer/pywb.git@py3#egg=pywb-1.0b-py3',
+    ],
     zip_safe=True,
     entry_points="""
         [console_scripts]

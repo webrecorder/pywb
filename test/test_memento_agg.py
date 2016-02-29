@@ -27,10 +27,11 @@ aggs = {'simple': SimpleAggregator(sources),
         'processes': ThreadedTimeoutAggregator(sources, timeout=5.0, use_processes=True),
        }
 
-#@pytest.mark.parametrize("agg", aggs, ids=["simple", "gevent_timeout"])
-def pytest_generate_tests(metafunc):
-    metafunc.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
+#def pytest_generate_tests(metafunc):
+#    metafunc.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
 
+
+@pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
 def test_mem_agg_index_1(agg):
     url = 'http://iana.org/'
     res = agg(dict(url=url, closest='20140126000000', limit=5))
@@ -46,6 +47,7 @@ def test_mem_agg_index_1(agg):
     assert(json_list(res) == exp)
 
 
+@pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
 def test_mem_agg_index_2(agg):
     url = 'http://example.com/'
     res = agg(dict(url=url, closest='20100512', limit=6))
@@ -60,6 +62,7 @@ def test_mem_agg_index_2(agg):
     assert(json_list(res) == exp)
 
 
+@pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
 def test_mem_agg_index_3(agg):
     url = 'http://vvork.com/'
     res = agg(dict(url=url, closest='20141001', limit=5))
@@ -73,6 +76,7 @@ def test_mem_agg_index_3(agg):
     assert(json_list(res) == exp)
 
 
+@pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
 def test_mem_agg_index_4(agg):
     url = 'http://vvork.com/'
     res = agg(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait'))
@@ -83,10 +87,11 @@ def test_mem_agg_index_4(agg):
     assert(json_list(res) == exp)
 
 
-def test_handler_output_cdxj(agg):
-    loader = IndexHandler(agg)
+def test_handler_output_cdxj():
+    agg = GeventTimeoutAggregator(sources, timeout=5.0)
+    handler = IndexHandler(agg)
     url = 'http://vvork.com/'
-    res = loader(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait'))
+    res = handler(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait'))
 
     exp = """\
 com,vvork)/ 20141006184357 {"url": "http://www.vvork.com/", "mem_rel": "memento", "memento_url": "http://webenact.rhizome.org/vvork/20141006184357/http://www.vvork.com/", "load_url": "http://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"}
@@ -96,10 +101,11 @@ com,vvork)/ 20131004231540 {"url": "http://vvork.com/", "mem_rel": "last memento
     assert(''.join(res) == exp)
 
 
-def test_handler_output_json(agg):
-    loader = IndexHandler(agg)
+def test_handler_output_json():
+    agg = GeventTimeoutAggregator(sources, timeout=5.0)
+    handler = IndexHandler(agg)
     url = 'http://vvork.com/'
-    res = loader(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait', output='json'))
+    res = handler(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait', output='json'))
 
     exp = """\
 {"urlkey": "com,vvork)/", "timestamp": "20141006184357", "url": "http://www.vvork.com/", "mem_rel": "memento", "memento_url": "http://webenact.rhizome.org/vvork/20141006184357/http://www.vvork.com/", "load_url": "http://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"}
@@ -109,22 +115,50 @@ def test_handler_output_json(agg):
     assert(''.join(res) == exp)
 
 
-def test_handler_output_link(agg):
-    loader = IndexHandler(agg)
+def test_handler_output_link():
+    agg = GeventTimeoutAggregator(sources, timeout=5.0)
+    handler = IndexHandler(agg)
     url = 'http://vvork.com/'
-    res = loader(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait', output='link'))
+    res = handler(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait', output='link'))
 
     exp = """\
 <http://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/>; rel="memento"; datetime="Mon, 06 Oct 2014 18:43:57 GMT"; src="rhiz",
-<http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/>; rel="memento"; datetime="Fri, 04 Oct 2013 23:15:40 GMT"; src="ait"\
+<http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/>; rel="memento"; datetime="Fri, 04 Oct 2013 23:15:40 GMT"; src="ait"
 """
     assert(''.join(res) == exp)
 
 
-def test_handler_output_text(agg):
-    loader = IndexHandler(agg)
+def test_handler_output_link_2():
+    agg = GeventTimeoutAggregator(sources, timeout=5.0)
+    handler = IndexHandler(agg)
+    url = 'http://iana.org/'
+    res = handler(dict(url=url, closest='20140126000000', limit=5, output='link'))
+
+    exp = """\
+<http://web.archive.org/web/20140126093743id_/http://iana.org/>; rel="memento"; datetime="Sun, 26 Jan 2014 09:37:43 GMT"; src="ia",
+<filename://iana.warc.gz>; rel="memento"; datetime="Sun, 26 Jan 2014 20:06:24 GMT"; src="local",
+<http://web.archive.org/web/20140123034755id_/http://iana.org/>; rel="memento"; datetime="Thu, 23 Jan 2014 03:47:55 GMT"; src="ia",
+<http://web.archive.org/web/20140129175203id_/http://iana.org/>; rel="memento"; datetime="Wed, 29 Jan 2014 17:52:03 GMT"; src="ia",
+<http://wayback.archive-it.org/all/20140107040552id_/http://iana.org/>; rel="memento"; datetime="Tue, 07 Jan 2014 04:05:52 GMT"; src="ait"
+"""
+    assert(''.join(res) == exp)
+
+
+def test_handler_output_link_3():
+    agg = GeventTimeoutAggregator(sources, timeout=5.0)
+    handler = IndexHandler(agg)
+    url = 'http://foo.bar.non-existent'
+    res = handler(dict(url=url, closest='20140126000000', limit=5, output='link'))
+
+    exp = ''
+
+    assert(''.join(res) == exp)
+
+def test_handler_output_text():
+    agg = GeventTimeoutAggregator(sources, timeout=5.0)
+    handler = IndexHandler(agg)
     url = 'http://vvork.com/'
-    res = loader(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait', output='text'))
+    res = handler(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait', output='text'))
 
     exp = """\
 com,vvork)/ 20141006184357 http://www.vvork.com/ memento http://webenact.rhizome.org/vvork/20141006184357/http://www.vvork.com/ http://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/ rhiz
@@ -133,14 +167,14 @@ com,vvork)/ 20131004231540 http://vvork.com/ last memento http://wayback.archive
     assert(''.join(res) == exp)
 
 
-def test_handler_list_sources(agg):
-    loader = IndexHandler(agg)
-    res = loader(dict(mode='sources'))
+def test_handler_list_sources():
+    agg = GeventTimeoutAggregator(sources, timeout=5.0)
+    handler = IndexHandler(agg)
+    res = handler(dict(mode='list_sources'))
 
     assert(res == {'sources': {'bl': 'memento',
                                'ait': 'memento',
                                'ia': 'memento',
                                'rhiz': 'memento',
                                'local': 'file'}})
-
 
