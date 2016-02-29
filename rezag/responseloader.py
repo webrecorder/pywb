@@ -2,6 +2,7 @@ from rezag.liverec import BaseRecorder
 from rezag.liverec import request as remote_request
 
 from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_http_date
+from pywb.utils.wbexception import LiveResourceException
 from pywb.warc.resolvingloader import ResolvingLoader
 
 from io import BytesIO
@@ -29,7 +30,7 @@ def incr_reader(stream, header=None, size=8192):
 
 
 #=============================================================================
-class WARCPathHandler(object):
+class WARCPathLoader(object):
     def __init__(self, paths, cdx_source):
         self.paths = paths
         if isinstance(paths, str):
@@ -108,7 +109,7 @@ class HeaderRecorder(BaseRecorder):
 
 
 #=============================================================================
-class LiveWebHandler(object):
+class LiveWebLoader(object):
     SKIP_HEADERS = (b'link',
                     b'memento-datetime',
                     b'content-location',
@@ -140,14 +141,17 @@ class LiveWebHandler(object):
         method = input_req.get_req_method()
         data = input_req.get_req_body()
 
-        upstream_res = remote_request(url=load_url,
-                                      method=method,
-                                      recorder=recorder,
-                                      stream=True,
-                                      allow_redirects=False,
-                                      headers=req_headers,
-                                      data=data,
-                                      timeout=params.get('_timeout'))
+        try:
+            upstream_res = remote_request(url=load_url,
+                                          method=method,
+                                          recorder=recorder,
+                                          stream=True,
+                                          allow_redirects=False,
+                                          headers=req_headers,
+                                          data=data,
+                                          timeout=params.get('_timeout'))
+        except Exception:
+            raise LiveResourceException(load_url)
 
         resp_headers = recorder.get_header()
 
@@ -175,7 +179,7 @@ class LiveWebHandler(object):
         return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     @staticmethod
-    def _make_warc_id(id_=None):
+    def _make_warc_id(id_=None):  #pragma: no cover
         if not id_:
             id_ = uuid.uuid1()
         return '<urn:uuid:{0}>'.format(id_)

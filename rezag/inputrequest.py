@@ -1,4 +1,3 @@
-from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.loaders import extract_post_query, append_post_query
 from pywb.utils.loaders import LimitReader
 from pywb.utils.statusandheaders import StatusAndHeadersParser
@@ -9,7 +8,7 @@ from io import BytesIO
 
 
 #=============================================================================
-class WSGIInputRequest(object):
+class DirectWSGIInputRequest(object):
     def __init__(self, env):
         self.env = env
 
@@ -20,25 +19,9 @@ class WSGIInputRequest(object):
         headers = {}
 
         for name, value in iteritems(self.env):
+            # will be set by requests to match actual host
             if name == 'HTTP_HOST':
-                #name = 'Host'
-                #value = splits.netloc
-                # will be set automatically
                 continue
-
-            #elif name == 'HTTP_ORIGIN':
-            #    name = 'Origin'
-            #    value = (splits.scheme + '://' + splits.netloc)
-
-            elif name == 'HTTP_X_CSRFTOKEN':
-                name = 'X-CSRFToken'
-                cookie_val = extract_client_cookie(env, 'csrftoken')
-                if cookie_val:
-                    value = cookie_val
-
-            #elif name == 'HTTP_X_FORWARDED_PROTO':
-            #    name = 'X-Forwarded-Proto'
-            #    value = splits.scheme
 
             elif name.startswith('HTTP_'):
                 name = name[5:].title().replace('_', '-')
@@ -55,10 +38,7 @@ class WSGIInputRequest(object):
         return headers
 
     def get_req_body(self):
-        input_ = self.env.get('wsgi.input')
-        if not input_:
-            return None
-
+        input_ = self.env['wsgi.input']
         len_ = self._get_content_length()
         enc = self._get_header('Transfer-Encoding')
 
@@ -70,9 +50,6 @@ class WSGIInputRequest(object):
             data = None
 
         return data
-        #buf = data.read().decode('utf-8')
-        #print(buf)
-        #return StringIO(buf)
 
     def _get_content_type(self):
         return self.env.get('CONTENT_TYPE')
@@ -105,7 +82,7 @@ class WSGIInputRequest(object):
 
 
 #=============================================================================
-class POSTInputRequest(WSGIInputRequest):
+class POSTInputRequest(DirectWSGIInputRequest):
     def __init__(self, env):
         self.env = env
 

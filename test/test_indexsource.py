@@ -32,16 +32,20 @@ local_sources = [
 
 
 remote_sources = [
-    RemoteIndexSource('http://webenact.rhizome.org/all-cdx',
+    RemoteIndexSource('http://webenact.rhizome.org/all-cdx?url={url}',
                       'http://webenact.rhizome.org/all/{timestamp}id_/{url}'),
 
-    MementoIndexSource('http://webenact.rhizome.org/all/',
-                       'http://webenact.rhizome.org/all/timemap/*/',
+    MementoIndexSource('http://webenact.rhizome.org/all/{url}',
+                       'http://webenact.rhizome.org/all/timemap/*/{url}',
                        'http://webenact.rhizome.org/all/{timestamp}id_/{url}')
 ]
 
+ait_source = RemoteIndexSource('http://wayback.archive-it.org/cdx?url={url}',
+                               'http://wayback.archive-it.org/all/{timestamp}id_/{url}')
+
 
 def query_single_source(source, params):
+    string = str(source)
     return SimpleAggregator({'source': source})(params)
 
 
@@ -182,4 +186,22 @@ def test_file_not_found():
 
 
 
+def test_ait_filters():
+    ait_source = RemoteIndexSource('http://wayback.archive-it.org/cdx/search/cdx?url={url}&filter=filename:ARCHIVEIT-({colls})-.*',
+                                   'http://wayback.archive-it.org/all/{timestamp}id_/{url}')
+
+    cdxlist = query_single_source(ait_source, {'url': 'http://iana.org/', 'param.source.colls': '5610|933'})
+    filenames = [cdx['filename'] for cdx in cdxlist]
+
+    prefix = ('ARCHIVEIT-5610-', 'ARCHIVEIT-933-')
+
+    assert(all([x.startswith(prefix) for x in filenames]))
+
+
+    cdxlist = query_single_source(ait_source, {'url': 'http://iana.org/', 'param.source.colls': '1883|366|905'})
+    filenames = [cdx['filename'] for cdx in cdxlist]
+
+    prefix = ('ARCHIVEIT-1883-', 'ARCHIVEIT-366-', 'ARCHIVEIT-905-')
+
+    assert(all([x.startswith(prefix) for x in filenames]))
 

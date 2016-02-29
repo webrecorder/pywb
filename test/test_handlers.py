@@ -42,13 +42,17 @@ def setup_module(self):
     source3 = SimpleAggregator({'example': FileIndexSource(to_path('testdata/example.cdxj'))})
     handler3 = DefaultResourceHandler(source3, to_path('testdata/'))
 
-
     add_route('/fallback', HandlerSeq([handler3,
                                        handler2,
                                        live_handler]))
 
+    add_route('/seq', HandlerSeq([handler3,
+                                  handler2]))
 
-    bottle.debug = True
+    add_route('/empty', HandlerSeq([]))
+    add_route('/invalid', HandlerSeq(['foo']))
+
+    application.debug = True
     global testapp
     testapp = webtest.TestApp(application)
 
@@ -61,8 +65,23 @@ class TestResAgg(object):
     def setup(self):
         self.testapp = testapp
 
+    def test_list_handlers(self):
+        resp = self.testapp.get('/many?mode=list_modes')
+        assert resp.json == {'modes': ['list_modes', 'list_sources', 'index', 'resource']}
+
+        resp = self.testapp.get('/many?mode=other')
+        assert resp.json == {'modes': ['list_modes', 'list_sources', 'index', 'resource']}
+
+        # defaults to resource, must specify url
+        resp = self.testapp.get('/many', status=400)
+        assert resp.json == {'message': 'The "url" param is required'}
+
+    def test_list_sources(self):
+        resp = self.testapp.get('/many?mode=list_sources')
+        assert resp.json == {'sources': {'local': 'file_dir', 'ia': 'memento', 'rhiz': 'memento', 'live': 'live'}}
+
     def test_live_index(self):
-        resp = self.testapp.get('/live?url=http://httpbin.org/get&mode=index&output=json')
+        resp = self.testapp.get('/live?mode=index&url=http://httpbin.org/get&output=json')
         resp.charset = 'utf-8'
 
         res = to_json_list(resp.text)
@@ -71,7 +90,8 @@ class TestResAgg(object):
                         'load_url': 'http://httpbin.org/get', 'source': 'live', 'timestamp': '2016'}])
 
     def test_live_resource(self):
-        resp = self.testapp.get('/live?url=http://httpbin.org/get?foo=bar&mode=resource')
+        headers = {'foo': 'bar'}
+        resp = self.testapp.get('/live?url=http://httpbin.org/get?foo=bar', headers=headers)
 
         assert resp.headers['WARC-Coll'] == 'live'
         assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/get?foo=bar'
@@ -82,7 +102,7 @@ class TestResAgg(object):
 
 
     def test_live_post_resource(self):
-        resp = self.testapp.post('/live?url=http://httpbin.org/post&mode=resource',
+        resp = self.testapp.post('/live?url=http://httpbin.org/post',
                                  OrderedDict([('foo', 'bar')]))
 
         assert resp.headers['WARC-Coll'] == 'live'
@@ -204,6 +224,11 @@ foo=bar&test=abc"""
         assert resp.headers['WARC-Target-URI'] == 'http://example.com/'
         assert b'HTTP/1.1 200 OK' in resp.body
 
+    def test_error_fallback_live_not_found(self):
+        resp = self.testapp.get('/fallback?url=http://invalid.url-not-found', status=400)
+
+        assert resp.json == {'message': 'http://invalid.url-not-found'}
+
     def test_agg_local_revisit(self):
         resp = self.testapp.get('/many?url=http://www.example.com/&closest=20140127171251&sources=local')
 
@@ -214,3 +239,24 @@ foo=bar&test=abc"""
         assert resp.headers['WARC-Refers-To-Date'] == '2014-01-27T17:12:00Z'
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'<!doctype html>' in resp.body
+
+    def test_error_invalid_index_output(self):
+        resp = self.testapp.get('/live?mode=index&url=http://httpbin.org/get&output=foobar', status=400)
+
+        assert resp.json == {'message': 'output=foobar not supported'}
+
+    def test_error_local_not_found(self):
+        resp = self.testapp.get('/many?url=http://not-found.error/&sources=local', status=404)
+
+        assert resp.json == {'message': 'No Resource Found'}
+
+    def test_error_empty(self):
+        resp = self.testapp.get('/empty?url=http://example.com/', status=404)
+
+        assert resp.json == {'message': 'No Resource Found'}
+
+    def test_error_invalid(self):
+        resp = self.testapp.get('/invalid?url=http://example.com/', status=500)
+
+        assert resp.json['message'].startswith('Internal Error')
+

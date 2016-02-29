@@ -77,6 +77,7 @@ class MementoUtils(object):
             from_date = timestamp_to_http_date(first_cdx['timestamp'])
         except StopIteration:
             first_cdx = None
+            return
 
         # first memento link
         yield MementoUtils.make_timemap_memento_link(first_cdx, datetime=from_date)
@@ -91,4 +92,4 @@ class MementoUtils(object):
 
         # last memento link, if any
         if prev_cdx:
-            yield MementoUtils.make_timemap_memento_link(prev_cdx, end='')
+            yield MementoUtils.make_timemap_memento_link(prev_cdx, end='\n')

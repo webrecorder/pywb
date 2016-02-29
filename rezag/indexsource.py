@@ -14,6 +14,9 @@ from rezag.liverec import patched_requests as requests
 from rezag.utils import MementoUtils
 
 
+WAYBACK_ORIG_SUFFIX = '{timestamp}id_/{url}'
+
+
 #=============================================================================
 class BaseIndexSource(object):
     def load_index(self, params):  #pragma: no cover
@@ -22,10 +25,10 @@ class BaseIndexSource(object):
     @staticmethod
     def res_template(template, params):
         src_params = params.get('_src_params')
-        if src_params:
-            res = template.format(**src_params)
+        if not src_params:
+            res = template.format(url=params['url'])
         else:
-            res = template
+            res = template.format(url=params['url'], **src_params)
         return res
 
 
@@ -59,7 +62,7 @@ class RemoteIndexSource(BaseIndexSource):
 
     def load_index(self, params):
         api_url = self.res_template(self.api_url_template, params)
-        api_url += '?url=' + params['url']
+        print('API URL', api_url)
         r = requests.get(api_url, timeout=params.get('_timeout'))
         if r.status_code >= 400:
             raise NotFoundException(api_url)
@@ -169,7 +172,6 @@ class MementoIndexSource(BaseIndexSource):
 
     def get_timegate_links(self, params, closest):
         url = self.res_template(self.timegate_url, params)
-        url += params['url']
         accept_dt = timestamp_to_http_date(closest)
         res = requests.head(url, headers={'Accept-Datetime': accept_dt})
         if res.status_code >= 400:
@@ -179,7 +181,6 @@ class MementoIndexSource(BaseIndexSource):
 
     def get_timemap_links(self, params):
         url = self.res_template(self.timemap_url, params)
-        url += params['url']
         res = requests.get(url, timeout=params.get('_timeout'))
         if res.status_code >= 400:
             raise NotFoundException(url)
@@ -200,9 +201,9 @@ class MementoIndexSource(BaseIndexSource):
 
     @staticmethod
     def from_timegate_url(timegate_url, path='link'):
-        return MementoIndexSource(timegate_url,
-                                  timegate_url + 'timemap/' + path + '/',
-                                  timegate_url + '{timestamp}id_/{url}')
+        return MementoIndexSource(timegate_url + '{url}',
+                                  timegate_url + 'timemap/' + path + '/{url}',
+                                  timegate_url + WAYBACK_ORIG_SUFFIX)
 
     def __str__(self):
         return 'memento'
