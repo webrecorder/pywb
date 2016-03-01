@@ -27,6 +27,13 @@ aggs = {'simple': SimpleAggregator(sources),
         'processes': ThreadedTimeoutAggregator(sources, timeout=5.0, use_processes=True),
        }
 
+nf = {'notfound': FileIndexSource(to_path('testdata/not-found-x'))}
+agg_nf = {'simple': SimpleAggregator(nf),
+          'gevent': GeventTimeoutAggregator(nf, timeout=5.0),
+          'threaded': ThreadedTimeoutAggregator(nf, timeout=5.0),
+          'processes': ThreadedTimeoutAggregator(nf, timeout=5.0, use_processes=True),
+         }
+
 #def pytest_generate_tests(metafunc):
 #    metafunc.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
 
@@ -87,6 +94,14 @@ def test_mem_agg_index_4(agg):
     assert(json_list(res) == exp)
 
 
+@pytest.mark.parametrize("agg", list(agg_nf.values()), ids=list(agg_nf.keys()))
+def test_mem_agg_not_found(agg):
+    url = 'http://vvork.com/'
+    res = agg(dict(url=url, closest='20141001', limit=2))
+
+    assert(json_list(res) == [])
+
+
 def test_handler_output_cdxj():
     agg = GeventTimeoutAggregator(sources, timeout=5.0)
     handler = IndexHandler(agg)
@@ -136,7 +151,7 @@ def test_handler_output_link_2():
 
     exp = """\
 <http://web.archive.org/web/20140126093743id_/http://iana.org/>; rel="memento"; datetime="Sun, 26 Jan 2014 09:37:43 GMT"; src="ia",
-<filename://iana.warc.gz>; rel="memento"; datetime="Sun, 26 Jan 2014 20:06:24 GMT"; src="local",
+<file://iana.warc.gz:334:2258>; rel="memento"; datetime="Sun, 26 Jan 2014 20:06:24 GMT"; src="local",
 <http://web.archive.org/web/20140123034755id_/http://iana.org/>; rel="memento"; datetime="Thu, 23 Jan 2014 03:47:55 GMT"; src="ia",
 <http://web.archive.org/web/20140129175203id_/http://iana.org/>; rel="memento"; datetime="Wed, 29 Jan 2014 17:52:03 GMT"; src="ia",
 <http://wayback.archive-it.org/all/20140107040552id_/http://iana.org/>; rel="memento"; datetime="Tue, 07 Jan 2014 04:05:52 GMT"; src="ait"

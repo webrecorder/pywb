@@ -45,10 +45,13 @@ class FileIndexSource(BaseIndexSource):
         except IOError:
             raise NotFoundException(filename)
 
-        with fh:
-            gen = iter_range(fh, params['key'], params['end_key'])
-            for line in gen:
-                yield CDXObject(line)
+        def do_load(fh):
+            with fh:
+                gen = iter_range(fh, params['key'], params['end_key'])
+                for line in gen:
+                    yield CDXObject(line)
+
+        return do_load(fh)
 
     def __str__(self):
         return 'file'
@@ -62,7 +65,6 @@ class RemoteIndexSource(BaseIndexSource):
 
     def load_index(self, params):
         api_url = self.res_template(self.api_url_template, params)
-        print('API URL', api_url)
         r = requests.get(api_url, timeout=params.get('_timeout'))
         if r.status_code >= 400:
             raise NotFoundException(api_url)

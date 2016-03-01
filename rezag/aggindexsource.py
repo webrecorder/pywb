@@ -59,11 +59,14 @@ class BaseAggregator(object):
 
         params['_all_src_params'] = src_params
 
-    def load_child_source(self, name, source, all_params):
+    def load_child_source_list(self, name, source, params):
+        return list(self.load_child_source(name, source, params))
+
+    def load_child_source(self, name, source, params):
         try:
-            _src_params = all_params['_all_src_params'].get(name)
-            all_params['_src_params'] = _src_params
-            cdx_iter = source.load_index(all_params)
+            _src_params = params['_all_src_params'].get(name)
+            params['_src_params'] = _src_params
+            cdx_iter = source.load_index(params)
         except NotFoundException as nf:
             print('Not found in ' + name)
             cdx_iter = iter([])
@@ -75,10 +78,10 @@ class BaseAggregator(object):
                 cdx['source'] = name
             return cdx
 
-        return [add_name(cdx) for cdx in cdx_iter]
+        return (add_name(cdx) for cdx in cdx_iter)
 
     def load_index(self, params):
-        iter_list = list(self._load_all(params))
+        iter_list = self._load_all(params)
 
         #optimization: if only a single entry (or empty) just load directly
         if len(iter_list) <= 1:
@@ -130,9 +133,9 @@ class SeqAggMixin(object):
 
 
     def _load_all(self, params):
-        sources = list(self._iter_sources(params))
-        return list([self.load_child_source(name, source, params)
-                     for name, source in sources])
+        sources = self._iter_sources(params)
+        return [self.load_child_source(name, source, params)
+                for name, source in sources]
 
 
 #=============================================================================
@@ -232,7 +235,7 @@ class ConcurrentMixin(object):
 
         with self.pool_class(max_workers=self.size) as executor:
             def do_spawn(name, source):
-                return executor.submit(self.load_child_source,
+                return executor.submit(self.load_child_source_list,
                                        name, source, params), name
 
             jobs = dict([do_spawn(name, source) for name, source in sources])
@@ -255,10 +258,10 @@ class ThreadedTimeoutAggregator(TimeoutMixin, ConcurrentMixin, BaseSourceListAgg
 
 
 #=============================================================================
-class BaseDirectoryIndexAggregator(BaseAggregator):
+class BaseDirectoryIndexSource(BaseAggregator):
     CDX_EXT = ('.cdx', '.cdxj')
 
-    def __init__(self, base_prefix, base_dir):
+    def __init__(self, base_prefix, base_dir=''):
         self.base_prefix = base_prefix
         self.base_dir = base_dir
 
@@ -299,7 +302,7 @@ class BaseDirectoryIndexAggregator(BaseAggregator):
         return 'file_dir'
 
 
-class DirectoryIndexAggregator(SeqAggMixin, BaseDirectoryIndexAggregator):
+class DirectoryIndexSource(SeqAggMixin, BaseDirectoryIndexSource):
     pass
 
 

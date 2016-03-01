@@ -162,7 +162,6 @@ def test_all_not_found(source):
     assert(key_ts_res(res) == expected)
 
 
-
 # ============================================================================
 def test_another_remote_not_found():
     source = MementoIndexSource.from_timegate_url('http://www.webarchive.org.uk/wayback/archive/')
@@ -180,12 +179,11 @@ def test_file_not_found():
     url = 'http://x-not-found-x.notfound/'
     res = query_single_source(source, dict(url=url, limit=3))
 
-
     expected = ''
     assert(key_ts_res(res) == expected)
 
 
-
+# ============================================================================
 def test_ait_filters():
     ait_source = RemoteIndexSource('http://wayback.archive-it.org/cdx/search/cdx?url={url}&filter=filename:ARCHIVEIT-({colls})-.*',
                                    'http://wayback.archive-it.org/all/{timestamp}id_/{url}')

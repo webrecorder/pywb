@@ -12,21 +12,37 @@ import uuid
 
 
 #=============================================================================
-def incr_reader(stream, header=None, size=8192):
-    if header:
-        yield header
+class StreamIter(object):
+    def __init__(self, stream, header=None, size=8192):
+        self.stream = stream
+        self.header = header
+        self.size = size
 
-    while True:
-        data = stream.read(size)
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.header:
+            header = self.header
+            self.header = None
+            return header
+
+        data = self.stream.read(self.size)
         if data:
-            yield data
-        else:
-            break
+            return data
 
-    try:
-        stream.close()
-    except:
-        pass
+        self.close()
+        raise StopIteration
+
+    def close(self):
+        if not self.stream:
+            return
+
+        try:
+            self.stream.close()
+            self.stream = None
+        except Exception:
+            pass
 
 
 #=============================================================================
@@ -83,7 +99,8 @@ class WARCPathLoader(object):
             response.headers['WARC-Refers-To-Date'] = payload.rec_headers.get_header('WARC-Date')
             headers.stream.close()
 
-        return incr_reader(record.stream)
+        res = StreamIter(record.stream)
+        return res
 
 
 #=============================================================================
@@ -172,7 +189,7 @@ class LiveWebLoader(object):
         except:
             raise
 
-        return incr_reader(upstream_res.raw, header=resp_headers)
+        return StreamIter(upstream_res.raw, header=resp_headers)
 
     @staticmethod
     def _make_date(dt):
