@@ -6,7 +6,7 @@ from rezag.handlers import DefaultResourceHandler, HandlerSeq
 
 from rezag.indexsource import MementoIndexSource, FileIndexSource, LiveIndexSource
 from rezag.aggindexsource import GeventTimeoutAggregator, SimpleAggregator
-from rezag.aggindexsource import DirectoryIndexAggregator
+from rezag.aggindexsource import DirectoryIndexSource
 
 from rezag.app import add_route, application
 
@@ -18,7 +18,7 @@ from .testutils import to_path
 import json
 
 sources = {
-    'local': DirectoryIndexAggregator(to_path('testdata/'), ''),
+    'local': DirectoryIndexSource(to_path('testdata/'), ''),
     'ia': MementoIndexSource.from_timegate_url('http://web.archive.org/web/'),
     'rhiz': MementoIndexSource.from_timegate_url('http://webenact.rhizome.org/vvork/', path='*'),
     'live': LiveIndexSource(),

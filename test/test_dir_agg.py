@@ -5,7 +5,7 @@ import json
 
 from .testutils import to_path
 
-from rezag.aggindexsource import DirectoryIndexAggregator, SimpleAggregator
+from rezag.aggindexsource import DirectoryIndexSource, SimpleAggregator
 from rezag.indexsource import MementoIndexSource
 
 
@@ -37,7 +37,7 @@ def setup_module():
         fh.write('foo')
 
     global dir_loader
-    dir_loader = DirectoryIndexAggregator(dir_prefix, dir_path)
+    dir_loader = DirectoryIndexSource(dir_prefix, dir_path)
 
     global orig_cwd
     orig_cwd = os.getcwd()
@@ -147,7 +147,7 @@ def test_agg_no_dir_1():
 
 
 def test_agg_no_dir_2():
-    loader = DirectoryIndexAggregator(root_dir, '')
+    loader = DirectoryIndexSource(root_dir, '')
     res = loader({'url': 'example.com/', 'param.coll': 'X'})
 
     exp = []
@@ -175,7 +175,7 @@ def test_agg_dir_sources_2():
 
 
 def test_agg_dir_sources_single_dir():
-    loader = DirectoryIndexAggregator('testdata/', '')
+    loader = DirectoryIndexSource('testdata/', '')
     res = loader.get_source_list({'url': 'example.com/'})
 
     exp = {'sources': {}}

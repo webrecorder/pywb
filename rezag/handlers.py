@@ -7,7 +7,7 @@ from bottle import response
 
 #=============================================================================
 def to_cdxj(cdx_iter, fields):
-    response.headers['Content-Type'] = 'application/x-cdxj'
+    response.headers['Content-Type'] = 'text/x-cdxj'
     return [cdx.to_cdxj(fields) for cdx in cdx_iter]
 
 def to_json(cdx_iter, fields):
@@ -119,6 +119,10 @@ class DefaultResourceHandler(ResourceHandler):
 class HandlerSeq(object):
     def __init__(self, handlers):
         self.handlers = handlers
+
+    def get_supported_modes(self):
+        return []
+    #    return zip([self.handlers.get_supported_modes()]
 
     def __call__(self, params):
         last_exc = None
