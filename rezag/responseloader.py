@@ -1,7 +1,10 @@
 from rezag.liverec import BaseRecorder
 from rezag.liverec import request as remote_request
 
+from rezag.utils import MementoUtils
+
 from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_http_date
+from pywb.utils.timeutils import iso_date_to_datetime
 from pywb.utils.wbexception import LiveResourceException
 from pywb.warc.resolvingloader import ResolvingLoader
 
@@ -46,7 +49,28 @@ class StreamIter(object):
 
 
 #=============================================================================
-class WARCPathLoader(object):
+class BaseLoader(object):
+    def __call__(self, cdx, params):
+        res = self._load_resource(cdx, params)
+        if not res:
+            return res
+
+        response.headers['WARC-Coll'] = cdx.get('source', '')
+
+        response.headers['Link'] = MementoUtils.make_link(
+                                     response.headers['WARC-Target-URI'],
+                                     'original')
+
+        memento_dt = iso_date_to_datetime(response.headers['WARC-Date'])
+        response.headers['Memento-Datetime'] = datetime_to_http_date(memento_dt)
+        return res
+
+    def _load_resource(self, cdx, params):  #pragma: no cover
+        raise NotImplemented()
+
+
+#=============================================================================
+class WARCPathLoader(BaseLoader):
     def __init__(self, paths, cdx_source):
         self.paths = paths
         if isinstance(paths, str):
@@ -77,8 +101,7 @@ class WARCPathLoader(object):
 
             yield check
 
-
-    def __call__(self, cdx, params):
+    def _load_resource(self, cdx, params):
         if not cdx.get('filename') or cdx.get('offset') is None:
             return None
 
@@ -94,8 +117,6 @@ class WARCPathLoader(object):
         for n, v in record.rec_headers.headers:
             response.headers[n] = v
 
-        response.headers['WARC-Coll'] = cdx.get('source')
-
         if headers != payload:
             response.headers['WARC-Target-URI'] = headers.rec_headers.get_header('WARC-Target-URI')
             response.headers['WARC-Date'] = headers.rec_headers.get_header('WARC-Date')
@@ -103,8 +124,7 @@ class WARCPathLoader(object):
             response.headers['WARC-Refers-To-Date'] = payload.rec_headers.get_header('WARC-Date')
             headers.stream.close()
 
-        res = StreamIter(record.stream)
-        return res
+        return StreamIter(record.stream)
 
     def __str__(self):
         return  'WARCPathLoader'
@@ -133,13 +153,13 @@ class HeaderRecorder(BaseRecorder):
 
 
 #=============================================================================
-class LiveWebLoader(object):
+class LiveWebLoader(BaseLoader):
     SKIP_HEADERS = (b'link',
                     b'memento-datetime',
                     b'content-location',
                     b'x-archive')
 
-    def __call__(self, cdx, params):
+    def _load_resource(self, cdx, params):
         load_url = cdx.get('load_url')
         if not load_url:
             return None
@@ -185,7 +205,6 @@ class LiveWebLoader(object):
         #response.headers['WARC-Record-ID'] = self._make_warc_id()
         response.headers['WARC-Target-URI'] = cdx['url']
         response.headers['WARC-Date'] = self._make_date(dt)
-        response.headers['WARC-Coll'] = cdx.get('source', '')
 
         # Try to set content-length, if it is available and valid
         try:
@@ -193,8 +212,8 @@ class LiveWebLoader(object):
             if content_len > 0:
                 content_len += len(resp_headers)
                 response.headers['Content-Length'] = content_len
-        except:
-            raise
+        except (KeyError, TypeError):
+            pass
 
         return StreamIter(upstream_res.raw, header=resp_headers)
 

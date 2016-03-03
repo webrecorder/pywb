@@ -98,3 +98,7 @@ class MementoUtils(object):
         # last memento link, if any
         if prev_cdx:
             yield MementoUtils.make_timemap_memento_link(prev_cdx, end='\n')
+
+    @staticmethod
+    def make_link(url, type):
+        return '<{0}>; rel="{1}"'.format(url, type)

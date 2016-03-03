@@ -9,6 +9,7 @@ from rezag.aggindexsource import GeventTimeoutAggregator, SimpleAggregator
 from rezag.aggindexsource import DirectoryIndexSource
 
 from rezag.app import add_route, application
+from rezag.utils import MementoUtils
 
 import webtest
 import bottle
@@ -121,7 +122,10 @@ class TestResAgg(object):
 
         assert resp.headers['WARC-Coll'] == 'live'
         assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/get?foo=bar'
-        assert 'WARC-Date' in resp.headers
+        assert resp.headers['WARC-Date'] != ''
+
+        assert resp.headers['Link'] == MementoUtils.make_link('http://httpbin.org/get?foo=bar', 'original')
+        assert resp.headers['Memento-Datetime'] != ''
 
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
@@ -134,7 +138,10 @@ class TestResAgg(object):
 
         assert resp.headers['WARC-Coll'] == 'live'
         assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/post'
-        assert 'WARC-Date' in resp.headers
+        assert resp.headers['WARC-Date'] != ''
+
+        assert resp.headers['Link'] == MementoUtils.make_link('http://httpbin.org/post', 'original')
+        assert resp.headers['Memento-Datetime'] != ''
 
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
@@ -149,6 +156,9 @@ class TestResAgg(object):
         assert resp.headers['WARC-Date'] == '2014-10-06T18:43:57Z'
         assert b'HTTP/1.1 200 OK' in resp.body
 
+        assert resp.headers['Link'] == MementoUtils.make_link('http://www.vvork.com/', 'original')
+        assert resp.headers['Memento-Datetime'] == 'Mon, 06 Oct 2014 18:43:57 GMT'
+
         assert 'ResErrors' not in resp.headers
 
     def test_agg_select_mem_2(self):
@@ -159,6 +169,9 @@ class TestResAgg(object):
         assert resp.headers['WARC-Date'] == '2016-01-10T13:48:55Z'
         assert b'HTTP/1.1 200 OK' in resp.body
 
+        assert resp.headers['Link'] == MementoUtils.make_link('http://vvork.com/', 'original')
+        assert resp.headers['Memento-Datetime'] == 'Sun, 10 Jan 2016 13:48:55 GMT'
+
         assert 'ResErrors' not in resp.headers
 
     def test_agg_select_live(self):
@@ -168,6 +181,9 @@ class TestResAgg(object):
         assert resp.headers['WARC-Target-URI'] == 'http://vvork.com/'
         assert resp.headers['WARC-Date'] != ''
 
+        assert resp.headers['Link'] == MementoUtils.make_link('http://vvork.com/', 'original')
+        assert resp.headers['Memento-Datetime'] != ''
+
         assert 'ResErrors' not in resp.headers
 
     def test_agg_select_local(self):
@@ -176,6 +192,9 @@ class TestResAgg(object):
         assert resp.headers['WARC-Coll'] == 'local'
         assert resp.headers['WARC-Target-URI'] == 'http://www.iana.org/'
         assert resp.headers['WARC-Date'] == '2014-01-26T20:06:24Z'
+
+        assert resp.headers['Link'] == MementoUtils.make_link('http://www.iana.org/', 'original')
+        assert resp.headers['Memento-Datetime'] == 'Sun, 26 Jan 2014 20:06:24 GMT'
 
         assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('http://webenact.rhizome.org/vvork/http://iana.org/',)"}
 
@@ -193,6 +212,9 @@ Host: iana.org
         assert resp.headers['WARC-Target-URI'] == 'http://www.iana.org/'
         assert resp.headers['WARC-Date'] == '2014-01-26T20:06:24Z'
 
+        assert resp.headers['Link'] == MementoUtils.make_link('http://www.iana.org/', 'original')
+        assert resp.headers['Memento-Datetime'] == 'Sun, 26 Jan 2014 20:06:24 GMT'
+
         assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('http://webenact.rhizome.org/vvork/http://iana.org/',)"}
 
     def test_agg_live_postreq(self):
@@ -207,7 +229,10 @@ Host: httpbin.org
 
         assert resp.headers['WARC-Coll'] == 'live'
         assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/get?foo=bar'
-        assert 'WARC-Date' in resp.headers
+        assert resp.headers['WARC-Date'] != ''
+
+        assert resp.headers['Link'] == MementoUtils.make_link('http://httpbin.org/get?foo=bar', 'original')
+        assert resp.headers['Memento-Datetime'] != ''
 
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
@@ -229,6 +254,11 @@ foo=bar&test=abc"""
 
         assert resp.headers['WARC-Coll'] == 'post'
         assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/post'
+        assert resp.headers['WARC-Date'] != ''
+
+        assert resp.headers['Link'] == MementoUtils.make_link('http://httpbin.org/post', 'original')
+        assert resp.headers['Memento-Datetime'] != ''
+
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
         assert b'"test": "abc"' in resp.body
@@ -243,6 +273,8 @@ foo=bar&test=abc"""
 
         assert resp.headers['WARC-Coll'] == 'post'
         assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/post'
+        assert resp.headers['Link'] == MementoUtils.make_link('http://httpbin.org/post', 'original')
+
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
         assert b'"test": "abc"' in resp.body
@@ -255,6 +287,8 @@ foo=bar&test=abc"""
 
         assert resp.headers['WARC-Coll'] == 'live'
         assert resp.headers['WARC-Target-URI'] == 'http://www.iana.org/'
+        assert resp.headers['Link'] == MementoUtils.make_link('http://www.iana.org/', 'original')
+
         assert b'HTTP/1.1 200 OK' in resp.body
 
         assert 'ResErrors' not in resp.headers
@@ -265,6 +299,10 @@ foo=bar&test=abc"""
         assert resp.headers['WARC-Coll'] == 'example'
         assert resp.headers['WARC-Date'] == '2016-02-25T04:23:29Z'
         assert resp.headers['WARC-Target-URI'] == 'http://example.com/'
+
+        assert resp.headers['Link'] == MementoUtils.make_link('http://example.com/', 'original')
+        assert resp.headers['Memento-Datetime'] == 'Thu, 25 Feb 2016 04:23:29 GMT'
+
         assert b'HTTP/1.1 200 OK' in resp.body
 
         assert 'ResErrors' not in resp.headers
@@ -285,6 +323,10 @@ foo=bar&test=abc"""
         assert resp.headers['WARC-Date'] == '2014-01-27T17:12:51Z'
         assert resp.headers['WARC-Refers-To-Target-URI'] == 'http://example.com'
         assert resp.headers['WARC-Refers-To-Date'] == '2014-01-27T17:12:00Z'
+
+        assert resp.headers['Link'] == MementoUtils.make_link('http://example.com', 'original')
+        assert resp.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
+
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'<!doctype html>' in resp.body
 
