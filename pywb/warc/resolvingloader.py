@@ -117,7 +117,7 @@ class ResolvingLoader(object):
             if not possible_paths:
                 continue
 
-            if isinstance(possible_paths, str):
+            if isinstance(possible_paths, six.string_types):
                 possible_paths = [possible_paths]
 
             for path in possible_paths:
