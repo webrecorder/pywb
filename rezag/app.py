@@ -2,25 +2,49 @@ from rezag.inputrequest import DirectWSGIInputRequest, POSTInputRequest
 from bottle import route, request, response, default_app, abort
 import bottle
 
-from pywb.utils.wbexception import WbException
-
 import traceback
 import json
 
+JSON_CT = 'application/json; charset=utf-8'
+
 def err_handler(exc):
     response.status = exc.status_code
-    response.content_type = 'application/json'
-    return json.dumps({'message': exc.body})
+    response.content_type = JSON_CT
+    err_msg = json.dumps({'message': exc.body})
+    response.headers['ResErrors'] = err_msg
+    return err_msg
 
 
 def wrap_error(func):
     def wrap_func(*args, **kwargs):
         try:
-            return func(*args, **kwargs)
-        except WbException as exc:
-            if bottle.debug:
-                traceback.print_exc()
-            abort(exc.status(), exc.msg)
+            res, errs = func(*args, **kwargs)
+
+            if res:
+                if errs:
+                    response.headers['ResErrors'] = json.dumps(errs)
+                return res
+
+            last_exc = errs.pop('last_exc', None)
+            if last_exc:
+                if bottle.debug:
+                    traceback.print_exc()
+
+                response.status = last_exc.status()
+                message = last_exc.msg
+            else:
+                response.status = 404
+                message = 'No Resource Found'
+
+            response.content_type = JSON_CT
+            res = {'message': message}
+            if errs:
+                res['errors'] = errs
+
+            err_msg = json.dumps(res)
+            response.headers['ResErrors'] = err_msg
+            return err_msg
+
         except Exception as e:
             if bottle.debug:
                 traceback.print_exc()
@@ -32,33 +56,31 @@ def wrap_error(func):
 route_dict = {}
 
 def add_route(path, handler):
-    @route(path, 'ANY')
+    @route([path, path + '/<mode:path>'], 'ANY')
     @wrap_error
-    def direct_input_request():
+    def direct_input_request(mode=''):
         params = dict(request.query)
+        params['mode'] = mode
         params['_input_req'] = DirectWSGIInputRequest(request.environ)
         return handler(params)
 
-    @route(path + '/postreq', 'POST')
+    @route([path + '/postreq', path + '/<mode:path>/postreq'], 'POST')
     @wrap_error
-    def post_fullrequest():
+    def post_fullrequest(mode=''):
         params = dict(request.query)
+        params['mode'] = mode
         params['_input_req'] = POSTInputRequest(request.environ)
         return handler(params)
 
     global route_dict
-    handler_dict = {'handler': handler.get_supported_modes()}
+    handler_dict = handler.get_supported_modes()
     route_dict[path] = handler_dict
     route_dict[path + '/postreq'] = handler_dict
+
 
 @route('/')
 def list_routes():
     return route_dict
-
-
-
-
-
 
 
 application = default_app()

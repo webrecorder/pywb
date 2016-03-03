@@ -13,9 +13,10 @@ from pywb.cdx.query import CDXQuery
 
 from heapq import merge
 from collections import deque
+from itertools import chain
 
 from rezag.indexsource import FileIndexSource
-from pywb.utils.wbexception import NotFoundException
+from pywb.utils.wbexception import NotFoundException, WbException
 import six
 import glob
 
@@ -29,13 +30,10 @@ class BaseAggregator(object):
         query = CDXQuery(params)
         self._set_src_params(params)
 
-        try:
-            cdx_iter = self.load_index(query.params)
-        except NotFoundException as nf:
-            cdx_iter = iter([])
+        cdx_iter, errs = self.load_index(query.params)
 
         cdx_iter = process_cdx(cdx_iter, query)
-        return cdx_iter
+        return cdx_iter, dict(errs)
 
     def _set_src_params(self, params):
         src_params = {}
@@ -60,16 +58,23 @@ class BaseAggregator(object):
         params['_all_src_params'] = src_params
 
     def load_child_source_list(self, name, source, params):
-        return list(self.load_child_source(name, source, params))
+        res = self.load_child_source(name, source, params)
+        return list(res[0]), res[1]
 
     def load_child_source(self, name, source, params):
         try:
             _src_params = params['_all_src_params'].get(name)
             params['_src_params'] = _src_params
-            cdx_iter = source.load_index(params)
-        except NotFoundException as nf:
-            print('Not found in ' + name)
+            res = source.load_index(params)
+            if isinstance(res, tuple):
+                cdx_iter, err_list = res
+            else:
+                cdx_iter = res
+                err_list = []
+        except WbException as wbe:
+            #print('Not found in ' + name)
             cdx_iter = iter([])
+            err_list = [(name, repr(wbe))]
 
         def add_name(cdx):
             if cdx.get('source'):
@@ -78,10 +83,13 @@ class BaseAggregator(object):
                 cdx['source'] = name
             return cdx
 
-        return (add_name(cdx) for cdx in cdx_iter)
+        return (add_name(cdx) for cdx in cdx_iter), err_list
 
     def load_index(self, params):
-        iter_list = self._load_all(params)
+        res_list = self._load_all(params)
+
+        iter_list = [res[0] for res in res_list]
+        err_list = chain(*[res[1] for res in res_list])
 
         #optimization: if only a single entry (or empty) just load directly
         if len(iter_list) <= 1:
@@ -89,7 +97,7 @@ class BaseAggregator(object):
         else:
             cdx_iter = merge(*(iter_list))
 
-        return cdx_iter
+        return cdx_iter, err_list
 
     def _on_source_error(self, name):  #pragma: no cover
         pass
@@ -207,6 +215,7 @@ class GeventMixin(object):
             if job.value is not None:
                 results.append(job.value)
             else:
+                results.append((iter([]), [(name, 'timeout')]))
                 self._on_source_error(name)
 
         return results
@@ -247,7 +256,9 @@ class ConcurrentMixin(object):
                 results.append(job.result())
 
             for job in res_not_done:
-                self._on_source_error(jobs[job])
+                name = jobs[job]
+                results.append((iter([]), [(name, 'timeout')]))
+                self._on_source_error(name)
 
         return results
 

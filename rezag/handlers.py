@@ -39,12 +39,13 @@ class IndexHandler(object):
         self.opts = opts or {}
 
     def get_supported_modes(self):
-        return dict(modes=['list_modes', 'list_sources', 'index'])
+        return dict(modes=['list_sources', 'index'])
 
     def _load_index_source(self, params):
         url = params.get('url')
         if not url:
-            raise BadRequestException('The "url" param is required')
+            errs = dict(last_exc=BadRequestException('The "url" param is required'))
+            return None, errs
 
         input_req = params.get('_input_req')
         if input_req:
@@ -55,21 +56,25 @@ class IndexHandler(object):
     def __call__(self, params):
         mode = params.get('mode', 'index')
         if mode == 'list_sources':
-            return self.index_source.get_source_list(params)
+            return self.index_source.get_source_list(params), {}
 
-        if mode == 'list_modes' or mode != 'index':
-            return self.get_supported_modes()
+        if mode != 'index':
+            return self.get_supported_modes(), {}
 
         output = params.get('output', self.DEF_OUTPUT)
         fields = params.get('fields')
 
         handler = self.OUTPUTS.get(output)
         if not handler:
-            raise BadRequestException('output={0} not supported'.format(output))
+            errs = dict(last_exc=BadRequestException('output={0} not supported'.format(output)))
+            return None, errs
 
-        cdx_iter = self._load_index_source(params)
+        cdx_iter, errs = self._load_index_source(params)
+        if not cdx_iter:
+            return None, errs
+
         res = handler(cdx_iter, fields)
-        return res
+        return res, errs
 
 
 #=============================================================================
@@ -87,7 +92,10 @@ class ResourceHandler(IndexHandler):
         if params.get('mode', 'resource') != 'resource':
             return super(ResourceHandler, self).__call__(params)
 
-        cdx_iter = self._load_index_source(params)
+        cdx_iter, errs = self._load_index_source(params)
+        if not cdx_iter:
+            return None, errs
+
         last_exc = None
 
         for cdx in cdx_iter:
@@ -95,15 +103,15 @@ class ResourceHandler(IndexHandler):
                 try:
                     resp = loader(cdx, params)
                     if resp is not None:
-                        return resp
+                        return resp, errs
                 except WbException as e:
                     last_exc = e
+                    errs[str(loader)] = repr(e)
 
         if last_exc:
-            raise last_exc
-            #raise ArchiveLoadFailed('Resource Found, could not be Loaded')
-        else:
-            raise NotFoundException('No Resource Found')
+            errs['last_exc'] = last_exc
+
+        return None, errs
 
 
 #=============================================================================
@@ -121,20 +129,19 @@ class HandlerSeq(object):
         self.handlers = handlers
 
     def get_supported_modes(self):
-        return []
-    #    return zip([self.handlers.get_supported_modes()]
+        if self.handlers:
+            return self.handlers[0].get_supported_modes()
+        else:
+            return {}
 
     def __call__(self, params):
-        last_exc = None
+        all_errs = {}
         for handler in self.handlers:
-            try:
-                res = handler(params)
-                if res is not None:
-                    return res
-            except WbException as e:
-                last_exc = e
+            res, errs = handler(params)
+            all_errs.update(errs)
+            if res is not None:
+                return res, all_errs
 
-        if last_exc:
-            raise last_exc
-        else:
-            raise NotFoundException('No Resource Found')
+        return None, all_errs
+
+

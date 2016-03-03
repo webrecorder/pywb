@@ -2,12 +2,17 @@ import re
 import six
 
 from pywb.utils.timeutils import timestamp_to_http_date
-
+from pywb.utils.wbexception import BadRequestException
 
 LINK_SPLIT = re.compile(',\s*(?=[<])')
 LINK_SEG_SPLIT = re.compile(';\s*')
 LINK_URL = re.compile('<(.*)>')
 LINK_PROP = re.compile('([\w]+)="([^"]+)')
+
+
+#=================================================================
+class MementoException(BadRequestException):
+    pass
 
 
 #=================================================================
@@ -22,7 +27,7 @@ class MementoUtils(object):
             props = LINK_SEG_SPLIT.split(link)
             m = LINK_URL.match(props[0])
             if not m:
-                raise Exception('Invalid Link Url: ' + props[0])
+                raise MementoException('Invalid Link Url: ' + props[0])
 
             result = dict(url=m.group(1))
             key = ''
@@ -31,7 +36,7 @@ class MementoUtils(object):
             for prop in props[1:]:
                 m = LINK_PROP.match(prop)
                 if not m:
-                    raise Exception('Invalid prop ' + prop)
+                    raise MementoException('Invalid prop ' + prop)
 
                 name = m.group(1)
                 value = m.group(2)
