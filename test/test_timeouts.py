@@ -1,9 +1,9 @@
 from gevent import monkey; monkey.patch_all(thread=False)
 import time
-from rezag.indexsource import FileIndexSource
+from webagg.indexsource import FileIndexSource
 
-from rezag.aggindexsource import SimpleAggregator, TimeoutMixin
-from rezag.aggindexsource import GeventTimeoutAggregator, GeventTimeoutAggregator
+from webagg.aggregator import SimpleAggregator, TimeoutMixin
+from webagg.aggregator import GeventTimeoutAggregator, GeventTimeoutAggregator
 
 from .testutils import json_list
 

@@ -15,7 +15,7 @@ from heapq import merge
 from collections import deque
 from itertools import chain
 
-from rezag.indexsource import FileIndexSource
+from webagg.indexsource import FileIndexSource
 from pywb.utils.wbexception import NotFoundException, WbException
 import six
 import glob

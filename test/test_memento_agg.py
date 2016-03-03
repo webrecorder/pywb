@@ -1,16 +1,16 @@
 from gevent import monkey; monkey.patch_all(thread=False)
 
-from rezag.aggindexsource import SimpleAggregator, GeventTimeoutAggregator
-from rezag.aggindexsource import ThreadedTimeoutAggregator, BaseAggregator
+from webagg.aggregator import SimpleAggregator, GeventTimeoutAggregator
+from webagg.aggregator import ThreadedTimeoutAggregator, BaseAggregator
 
-from rezag.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource
+from webagg.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource
 from .testutils import json_list, to_path
 
 import json
 import pytest
 import time
 
-from rezag.handlers import IndexHandler
+from webagg.handlers import IndexHandler
 
 
 sources = {

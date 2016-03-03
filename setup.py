@@ -14,22 +14,22 @@ class PyTest(TestCommand):
         import pytest
         import sys
         import os
-        cmdline = ' --cov rezag -v test/'
+        cmdline = ' --cov webagg -v test/'
         errcode = pytest.main(cmdline)
         sys.exit(errcode)
 
 setup(
-    name='rezag',
+    name='webagg',
     version='1.0',
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
-    license='MIT',
+    license='Apache 2.0',
     packages=find_packages(),
-    url='https://github.com/webrecorder/rezag',
+    url='https://github.com/webrecorder/webagg',
     description='Resource Aggregator',
     long_description=open('README.rst').read(),
     provides=[
-        'rezag',
+        'webagg',
         ],
     install_requires=[
         'pywb==1.0b',

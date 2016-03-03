@@ -1,7 +1,7 @@
-from rezag.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource, RedisIndexSource
-from rezag.indexsource import LiveIndexSource
+from webagg.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource, RedisIndexSource
+from webagg.indexsource import LiveIndexSource
 
-from rezag.aggindexsource import SimpleAggregator
+from webagg.aggregator import SimpleAggregator
 
 from pywb.utils.timeutils import timestamp_now
 
