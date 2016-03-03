@@ -244,8 +244,9 @@ class RewriteContent:
         if m:
             charset = m.group(1)
             charset = to_native_str(charset)
-            content_type = 'text/html; charset=' + charset
-            status_headers.replace_header('content-type', content_type)
+        #    content_type = 'text/html; charset=' + charset
+        #    status_headers.replace_header('content-type', content_type)
+
         return charset
 
     @staticmethod

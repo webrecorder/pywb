@@ -63,8 +63,12 @@ this.create_banner_element = function() {
 
 this.ts_to_date = function(ts, is_gmt)
 {
+    if (!ts) {
+        return "";
+    }
+
     if (ts.length < 14) {
-        return ts;
+        ts += "00000000000000".substr(ts.length);
     }
 
     var datestr = (ts.substring(0, 4) + "-" +

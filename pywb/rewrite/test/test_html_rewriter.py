@@ -94,6 +94,12 @@ r"""
 >>> parse('<META http-equiv="refresh" content>')
 <meta http-equiv="refresh" content="">
 
+>>> parse('<meta property="og:image" content="http://example.com/example.jpg">')
+<meta property="og:image" content="/web/20131226101010/http://example.com/example.jpg">
+
+>>> parse('<meta property="og:image" content="example.jpg">')
+<meta property="og:image" content="example.jpg">
+
 # Custom -data attribs
 >>> parse('<div data-url="http://example.com/a/b/c.html" data-some-other-value="http://example.com/img.gif">')
 <div data-url="/web/20131226101010oe_/http://example.com/a/b/c.html" data-some-other-value="/web/20131226101010oe_/http://example.com/img.gif">
