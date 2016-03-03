@@ -5,8 +5,8 @@ import json
 
 from .testutils import to_path
 
-from rezag.aggindexsource import DirectoryIndexSource, SimpleAggregator
-from rezag.indexsource import MementoIndexSource
+from webagg.aggregator import DirectoryIndexSource, SimpleAggregator
+from webagg.indexsource import MementoIndexSource
 
 
 #=============================================================================

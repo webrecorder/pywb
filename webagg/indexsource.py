@@ -9,9 +9,9 @@ from pywb.utils.wbexception import NotFoundException
 from pywb.cdx.cdxobject import CDXObject
 from pywb.cdx.query import CDXQuery
 
-from rezag.liverec import patched_requests as requests
+from webagg.liverec import patched_requests as requests
 
-from rezag.utils import MementoUtils
+from webagg.utils import MementoUtils
 
 
 WAYBACK_ORIG_SUFFIX = '{timestamp}id_/{url}'

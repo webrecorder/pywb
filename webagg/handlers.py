@@ -1,5 +1,5 @@
-from rezag.responseloader import  WARCPathLoader, LiveWebLoader
-from rezag.utils import MementoUtils
+from webagg.responseloader import  WARCPathLoader, LiveWebLoader
+from webagg.utils import MementoUtils
 from pywb.utils.wbexception import BadRequestException, WbException
 from pywb.utils.wbexception import NotFoundException
 from bottle import response

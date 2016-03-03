@@ -1,7 +1,7 @@
-from rezag.liverec import BaseRecorder
-from rezag.liverec import request as remote_request
+from webagg.liverec import BaseRecorder
+from webagg.liverec import request as remote_request
 
-from rezag.utils import MementoUtils
+from webagg.utils import MementoUtils
 
 from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_http_date
 from pywb.utils.timeutils import iso_date_to_datetime

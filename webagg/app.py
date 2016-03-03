@@ -1,4 +1,4 @@
-from rezag.inputrequest import DirectWSGIInputRequest, POSTInputRequest
+from webagg.inputrequest import DirectWSGIInputRequest, POSTInputRequest
 from bottle import route, request, response, default_app, abort
 import bottle
 

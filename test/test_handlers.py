@@ -2,14 +2,14 @@ from gevent import monkey; monkey.patch_all(thread=False)
 
 from collections import OrderedDict
 
-from rezag.handlers import DefaultResourceHandler, HandlerSeq
+from webagg.handlers import DefaultResourceHandler, HandlerSeq
 
-from rezag.indexsource import MementoIndexSource, FileIndexSource, LiveIndexSource
-from rezag.aggindexsource import GeventTimeoutAggregator, SimpleAggregator
-from rezag.aggindexsource import DirectoryIndexSource
+from webagg.indexsource import MementoIndexSource, FileIndexSource, LiveIndexSource
+from webagg.aggregator import GeventTimeoutAggregator, SimpleAggregator
+from webagg.aggregator import DirectoryIndexSource
 
-from rezag.app import add_route, application
-from rezag.utils import MementoUtils
+from webagg.app import add_route, application
+from webagg.utils import MementoUtils
 
 import webtest
 import bottle
