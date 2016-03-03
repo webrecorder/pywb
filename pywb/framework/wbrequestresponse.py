@@ -1,7 +1,7 @@
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.loaders import extract_post_query, append_post_query
 
-from six import StringIO
+from io import BytesIO
 import pprint
 import re
 
@@ -187,7 +187,7 @@ class WbRequest(object):
         length = self.env.get('CONTENT_LENGTH')
         stream = self.env['wsgi.input']
 
-        buffered_stream = StringIO()
+        buffered_stream = BytesIO()
 
         post_query = extract_post_query('POST', mime, length, stream,
                                         buffered_stream=buffered_stream)

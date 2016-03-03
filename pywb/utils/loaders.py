@@ -8,8 +8,8 @@ import hmac
 import requests
 
 import six
-import six.moves.urllib.request as urllib_req
-import six.moves.urllib.parse as urlparse
+from six.moves.urllib.request import pathname2url, url2pathname
+from six.moves.urllib.parse import urljoin, unquote_plus, urlsplit
 
 import time
 import pkg_resources
@@ -33,7 +33,7 @@ def to_file_url(filename):
     """ Convert a filename to a file:// url
     """
     url = os.path.abspath(filename)
-    url = urlparse.urljoin('file:', urllib_req.pathname2url(url))
+    url = urljoin('file:', pathname2url(url))
     return url
 
 
@@ -78,8 +78,7 @@ def extract_post_query(method, mime, length, stream, buffered_stream=None):
     if length <= 0:
         return None
 
-    #todo: encoding issues?
-    post_query = ''
+    post_query = b''
 
     while length > 0:
         buff = stream.read(length)
@@ -88,13 +87,14 @@ def extract_post_query(method, mime, length, stream, buffered_stream=None):
         if not buff:
             break
 
-        post_query += to_native_str(buff)
+        post_query += buff
 
     if buffered_stream:
         buffered_stream.write(post_query)
         buffered_stream.seek(0)
 
-    post_query = urlparse.unquote_plus(post_query)
+    post_query = to_native_str(post_query)
+    post_query = unquote_plus(post_query)
     return post_query
 
 
@@ -224,7 +224,7 @@ class LocalFileLoader(object):
         # convert to filename
         if url.startswith('file://'):
             file_only = True
-            url = urllib_req.url2pathname(url[len('file://'):])
+            url = url2pathname(url[len('file://'):])
 
         try:
             # first, try as file
@@ -295,7 +295,7 @@ class S3Loader(object):
             except Exception:  #pragma: no cover
                 self.s3conn = connect_s3(anon=True)
 
-        parts = urlparse.urlsplit(url)
+        parts = urlsplit(url)
 
         bucket = self.s3conn.get_bucket(parts.netloc)
 

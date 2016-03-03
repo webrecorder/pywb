@@ -7,16 +7,10 @@ from pywb.rewrite.wburl import WbUrl
 from pywb.webapp.handlers import StaticHandler, SearchPageWbUrlHandler
 from pywb.webapp.views import HeadInsertView
 
-from pywb.utils.wbexception import WbException
+from pywb.utils.wbexception import LiveResourceException
 
 import json
 import hashlib
-
-
-#=================================================================
-class LiveResourceException(WbException):
-    def status(self):
-        return '400 Bad Live Resource'
 
 
 #=================================================================

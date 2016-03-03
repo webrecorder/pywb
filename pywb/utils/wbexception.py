@@ -4,6 +4,7 @@
 class WbException(Exception):
     def __init__(self, msg=None, url=None):
         Exception.__init__(self, msg)
+        self.msg = msg
         self.url = url
 
 # Default Error Code
@@ -27,3 +28,11 @@ class BadRequestException(WbException):
 class NotFoundException(WbException):
     def status(self):
         return '404 Not Found'
+
+
+#=================================================================
+class LiveResourceException(WbException):
+    def status(self):
+        return '400 Bad Live Resource'
+
+

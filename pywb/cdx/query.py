@@ -8,17 +8,18 @@ class CDXQuery(object):
     def __init__(self, params):
         self.params = params
         url = self.url
+        url = self.params.get('alt_url', url)
         if not self.params.get('matchType'):
             if url.startswith('*.'):
-                self.params['url'] = url[2:]
+                url = self.params['url'] = url[2:]
                 self.params['matchType'] = 'domain'
             elif url.endswith('*'):
-                self.params['url'] = url[:-1]
+                url = self.params['url'] = url[:-1]
                 self.params['matchType'] = 'prefix'
             else:
                 self.params['matchType'] = 'exact'
 
-        start, end = calc_search_range(url=self.url,
+        start, end = calc_search_range(url=url,
                                        match_type=self.params['matchType'],
                                        url_canon=self.params.get('_url_canon'))
 
