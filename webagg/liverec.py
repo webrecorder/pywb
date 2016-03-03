@@ -42,7 +42,7 @@ class RecordingStream(object):
         self.recorder.write_response_buff(buff)
         return res
 
-    def readline(self, maxlen=None):
+    def readline(self, maxlen=-1):
         line = self.fp.readline(maxlen)
         self.recorder.write_response_header_line(line)
         return line

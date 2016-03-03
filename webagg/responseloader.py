@@ -12,10 +12,11 @@ from io import BytesIO
 from bottle import response
 
 import uuid
+import six
 
 
 #=============================================================================
-class StreamIter(object):
+class StreamIter(six.Iterator):
     def __init__(self, stream, header=None, size=8192):
         self.stream = stream
         self.header = header
