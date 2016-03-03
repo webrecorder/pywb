@@ -35,7 +35,7 @@ def setup_module():
 def test_timeout_long_all_pass():
     agg = TimeoutAggregator(sources, timeout=1.0)
 
-    res = agg(dict(url='http://example.com/'))
+    res, errs = agg(dict(url='http://example.com/'))
 
     exp = [{'source': 'slower', 'timestamp': '20140127171200'},
            {'source': 'slower', 'timestamp': '20140127171251'},
@@ -43,27 +43,31 @@ def test_timeout_long_all_pass():
 
     assert(json_list(res, fields=['source', 'timestamp']) == exp)
 
+    assert(errs == {})
+
 
 def test_timeout_slower_skipped_1():
     agg = GeventTimeoutAggregator(sources, timeout=0.49)
 
-    res = agg(dict(url='http://example.com/'))
+    res, errs = agg(dict(url='http://example.com/'))
 
     exp = [{'source': 'slow', 'timestamp': '20160225042329'}]
 
     assert(json_list(res, fields=['source', 'timestamp']) == exp)
 
+    assert(errs == {'slower': 'timeout'})
 
 
 def test_timeout_slower_skipped_2():
     agg = GeventTimeoutAggregator(sources, timeout=0.19)
 
-    res = agg(dict(url='http://example.com/'))
+    res, errs = agg(dict(url='http://example.com/'))
 
     exp = []
 
     assert(json_list(res, fields=['source', 'timestamp']) == exp)
 
+    assert(errs == {'slower': 'timeout', 'slow': 'timeout'})
 
 
 def test_timeout_skipping():
@@ -75,31 +79,40 @@ def test_timeout_skipping():
 
     exp = [{'source': 'slow', 'timestamp': '20160225042329'}]
 
-    res = agg(dict(url='http://example.com/'))
+    res, errs = agg(dict(url='http://example.com/'))
     assert(json_list(res, fields=['source', 'timestamp']) == exp)
     assert(sources['slow'].calls == 4)
     assert(sources['slower'].calls == 4)
 
-    res = agg(dict(url='http://example.com/'))
+    assert(errs == {'slower': 'timeout'})
+
+    res, errs = agg(dict(url='http://example.com/'))
     assert(json_list(res, fields=['source', 'timestamp']) == exp)
     assert(sources['slow'].calls == 5)
     assert(sources['slower'].calls == 5)
 
-    res = agg(dict(url='http://example.com/'))
+    assert(errs == {'slower': 'timeout'})
+
+    res, errs = agg(dict(url='http://example.com/'))
     assert(json_list(res, fields=['source', 'timestamp']) == exp)
     assert(sources['slow'].calls == 6)
     assert(sources['slower'].calls == 5)
 
-    res = agg(dict(url='http://example.com/'))
+    assert(errs == {})
+
+    res, errs = agg(dict(url='http://example.com/'))
     assert(json_list(res, fields=['source', 'timestamp']) == exp)
     assert(sources['slow'].calls == 7)
     assert(sources['slower'].calls == 5)
 
+    assert(errs == {})
+
     time.sleep(2.01)
 
-    res = agg(dict(url='http://example.com/'))
+    res, errs = agg(dict(url='http://example.com/'))
     assert(json_list(res, fields=['source', 'timestamp']) == exp)
     assert(sources['slow'].calls == 8)
     assert(sources['slower'].calls == 6)
 
+    assert(errs == {'slower': 'timeout'})
 

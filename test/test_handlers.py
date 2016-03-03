@@ -50,7 +50,7 @@ def setup_module(self):
                                   handler2]))
 
     add_route('/empty', HandlerSeq([]))
-    add_route('/invalid', HandlerSeq(['foo']))
+    add_route('/invalid', DefaultResourceHandler([SimpleAggregator({'invalid': 'should not be a callable'})]))
 
     application.debug = True
     global testapp
@@ -65,23 +65,49 @@ class TestResAgg(object):
     def setup(self):
         self.testapp = testapp
 
+    def test_list_routes(self):
+        resp = self.testapp.get('/')
+        res = resp.json
+        assert set(res.keys()) == set(['/empty', '/empty/postreq',
+                                       '/fallback', '/fallback/postreq',
+                                       '/live', '/live/postreq',
+                                       '/many', '/many/postreq',
+                                       '/posttest', '/posttest/postreq',
+                                       '/seq', '/seq/postreq',
+                                       '/invalid', '/invalid/postreq'])
+
+        assert res['/fallback'] == {'modes': ['list_sources', 'index', 'resource']}
+
     def test_list_handlers(self):
-        resp = self.testapp.get('/many?mode=list_modes')
-        assert resp.json == {'modes': ['list_modes', 'list_sources', 'index', 'resource']}
+        resp = self.testapp.get('/many')
+        assert resp.json == {'modes': ['list_sources', 'index', 'resource']}
+        assert 'ResErrors' not in resp.headers
 
-        resp = self.testapp.get('/many?mode=other')
-        assert resp.json == {'modes': ['list_modes', 'list_sources', 'index', 'resource']}
+        resp = self.testapp.get('/many/other')
+        assert resp.json == {'modes': ['list_sources', 'index', 'resource']}
+        assert 'ResErrors' not in resp.headers
 
-        # defaults to resource, must specify url
-        resp = self.testapp.get('/many', status=400)
+    def test_list_errors(self):
+        # must specify url for index or resource
+        resp = self.testapp.get('/many/index', status=400)
         assert resp.json == {'message': 'The "url" param is required'}
+        assert resp.text == resp.headers['ResErrors']
+
+        resp = self.testapp.get('/many/index', status=400)
+        assert resp.json == {'message': 'The "url" param is required'}
+        assert resp.text == resp.headers['ResErrors']
+
+        resp = self.testapp.get('/many/resource', status=400)
+        assert resp.json == {'message': 'The "url" param is required'}
+        assert resp.text == resp.headers['ResErrors']
 
     def test_list_sources(self):
-        resp = self.testapp.get('/many?mode=list_sources')
+        resp = self.testapp.get('/many/list_sources')
         assert resp.json == {'sources': {'local': 'file_dir', 'ia': 'memento', 'rhiz': 'memento', 'live': 'live'}}
+        assert 'ResErrors' not in resp.headers
 
     def test_live_index(self):
-        resp = self.testapp.get('/live?mode=index&url=http://httpbin.org/get&output=json')
+        resp = self.testapp.get('/live/index?url=http://httpbin.org/get&output=json')
         resp.charset = 'utf-8'
 
         res = to_json_list(resp.text)
@@ -91,7 +117,7 @@ class TestResAgg(object):
 
     def test_live_resource(self):
         headers = {'foo': 'bar'}
-        resp = self.testapp.get('/live?url=http://httpbin.org/get?foo=bar', headers=headers)
+        resp = self.testapp.get('/live/resource?url=http://httpbin.org/get?foo=bar', headers=headers)
 
         assert resp.headers['WARC-Coll'] == 'live'
         assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/get?foo=bar'
@@ -100,9 +126,10 @@ class TestResAgg(object):
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
 
+        assert 'ResErrors' not in resp.headers
 
     def test_live_post_resource(self):
-        resp = self.testapp.post('/live?url=http://httpbin.org/post',
+        resp = self.testapp.post('/live/resource?url=http://httpbin.org/post',
                                  OrderedDict([('foo', 'bar')]))
 
         assert resp.headers['WARC-Coll'] == 'live'
@@ -112,38 +139,45 @@ class TestResAgg(object):
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
 
+        assert 'ResErrors' not in resp.headers
+
     def test_agg_select_mem_1(self):
-        resp = self.testapp.get('/many?url=http://vvork.com/&closest=20141001')
+        resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20141001')
 
         assert resp.headers['WARC-Coll'] == 'rhiz'
         assert resp.headers['WARC-Target-URI'] == 'http://www.vvork.com/'
         assert resp.headers['WARC-Date'] == '2014-10-06T18:43:57Z'
         assert b'HTTP/1.1 200 OK' in resp.body
 
+        assert 'ResErrors' not in resp.headers
 
     def test_agg_select_mem_2(self):
-        resp = self.testapp.get('/many?url=http://vvork.com/&closest=20151231')
+        resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20151231')
 
         assert resp.headers['WARC-Coll'] == 'ia'
         assert resp.headers['WARC-Target-URI'] == 'http://vvork.com/'
         assert resp.headers['WARC-Date'] == '2016-01-10T13:48:55Z'
         assert b'HTTP/1.1 200 OK' in resp.body
 
+        assert 'ResErrors' not in resp.headers
 
     def test_agg_select_live(self):
-        resp = self.testapp.get('/many?url=http://vvork.com/&closest=2016')
+        resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=2016')
 
         assert resp.headers['WARC-Coll'] == 'live'
         assert resp.headers['WARC-Target-URI'] == 'http://vvork.com/'
         assert resp.headers['WARC-Date'] != ''
 
+        assert 'ResErrors' not in resp.headers
+
     def test_agg_select_local(self):
-        resp = self.testapp.get('/many?url=http://iana.org/&closest=20140126200624')
+        resp = self.testapp.get('/many/resource?url=http://iana.org/&closest=20140126200624')
 
         assert resp.headers['WARC-Coll'] == 'local'
         assert resp.headers['WARC-Target-URI'] == 'http://www.iana.org/'
         assert resp.headers['WARC-Date'] == '2014-01-26T20:06:24Z'
 
+        assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('http://webenact.rhizome.org/vvork/http://iana.org/',)"}
 
     def test_agg_select_local_postreq(self):
         req_data = """\
@@ -153,12 +187,13 @@ User-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (
 Host: iana.org
 """
 
-        resp = self.testapp.post('/many/postreq?url=http://iana.org/&closest=20140126200624', req_data)
+        resp = self.testapp.post('/many/resource/postreq?url=http://iana.org/&closest=20140126200624', req_data)
 
         assert resp.headers['WARC-Coll'] == 'local'
         assert resp.headers['WARC-Target-URI'] == 'http://www.iana.org/'
         assert resp.headers['WARC-Date'] == '2014-01-26T20:06:24Z'
 
+        assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('http://webenact.rhizome.org/vvork/http://iana.org/',)"}
 
     def test_agg_live_postreq(self):
         req_data = """\
@@ -168,7 +203,7 @@ User-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (
 Host: httpbin.org
 """
 
-        resp = self.testapp.post('/many/postreq?url=http://httpbin.org/get?foo=bar&closest=now', req_data)
+        resp = self.testapp.post('/many/resource/postreq?url=http://httpbin.org/get?foo=bar&closest=now', req_data)
 
         assert resp.headers['WARC-Coll'] == 'live'
         assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/get?foo=bar'
@@ -176,6 +211,8 @@ Host: httpbin.org
 
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
+
+        assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('http://webenact.rhizome.org/vvork/http://httpbin.org/get?foo=bar',)"}
 
     def test_agg_post_resolve_postreq(self):
         req_data = """\
@@ -188,7 +225,7 @@ content-type: application/x-www-form-urlencoded
 
 foo=bar&test=abc"""
 
-        resp = self.testapp.post('/posttest/postreq?url=http://httpbin.org/post', req_data)
+        resp = self.testapp.post('/posttest/resource/postreq?url=http://httpbin.org/post', req_data)
 
         assert resp.headers['WARC-Coll'] == 'post'
         assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/post'
@@ -196,11 +233,13 @@ foo=bar&test=abc"""
         assert b'"foo": "bar"' in resp.body
         assert b'"test": "abc"' in resp.body
         assert b'"url": "http://httpbin.org/post"' in resp.body
+
+        assert 'ResErrors' not in resp.headers
 
     def test_agg_post_resolve_fallback(self):
         req_data = OrderedDict([('foo', 'bar'), ('test', 'abc')])
 
-        resp = self.testapp.post('/fallback?url=http://httpbin.org/post', req_data)
+        resp = self.testapp.post('/fallback/resource?url=http://httpbin.org/post', req_data)
 
         assert resp.headers['WARC-Coll'] == 'post'
         assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/post'
@@ -209,28 +248,37 @@ foo=bar&test=abc"""
         assert b'"test": "abc"' in resp.body
         assert b'"url": "http://httpbin.org/post"' in resp.body
 
+        assert 'ResErrors' not in resp.headers
+
     def test_agg_seq_fallback_1(self):
-        resp = self.testapp.get('/fallback?url=http://www.iana.org/')
+        resp = self.testapp.get('/fallback/resource?url=http://www.iana.org/')
 
         assert resp.headers['WARC-Coll'] == 'live'
         assert resp.headers['WARC-Target-URI'] == 'http://www.iana.org/'
         assert b'HTTP/1.1 200 OK' in resp.body
 
+        assert 'ResErrors' not in resp.headers
+
     def test_agg_seq_fallback_2(self):
-        resp = self.testapp.get('/fallback?url=http://www.example.com/')
+        resp = self.testapp.get('/fallback/resource?url=http://www.example.com/')
 
         assert resp.headers['WARC-Coll'] == 'example'
         assert resp.headers['WARC-Date'] == '2016-02-25T04:23:29Z'
         assert resp.headers['WARC-Target-URI'] == 'http://example.com/'
         assert b'HTTP/1.1 200 OK' in resp.body
 
-    def test_error_fallback_live_not_found(self):
-        resp = self.testapp.get('/fallback?url=http://invalid.url-not-found', status=400)
+        assert 'ResErrors' not in resp.headers
 
-        assert resp.json == {'message': 'http://invalid.url-not-found'}
+    def test_error_fallback_live_not_found(self):
+        resp = self.testapp.get('/fallback/resource?url=http://invalid.url-not-found', status=400)
+
+        assert resp.json == {'message': 'http://invalid.url-not-found',
+                             'errors': {'LiveWebLoader': "LiveResourceException('http://invalid.url-not-found',)"}}
+
+        assert resp.text == resp.headers['ResErrors']
 
     def test_agg_local_revisit(self):
-        resp = self.testapp.get('/many?url=http://www.example.com/&closest=20140127171251&sources=local')
+        resp = self.testapp.get('/many/resource?url=http://www.example.com/&closest=20140127171251&sources=local')
 
         assert resp.headers['WARC-Coll'] == 'local'
         assert resp.headers['WARC-Target-URI'] == 'http://example.com'
@@ -240,23 +288,30 @@ foo=bar&test=abc"""
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'<!doctype html>' in resp.body
 
+        assert 'ResErrors' not in resp.headers
+
     def test_error_invalid_index_output(self):
-        resp = self.testapp.get('/live?mode=index&url=http://httpbin.org/get&output=foobar', status=400)
+        resp = self.testapp.get('/live/index?url=http://httpbin.org/get&output=foobar', status=400)
 
         assert resp.json == {'message': 'output=foobar not supported'}
+        assert resp.text == resp.headers['ResErrors']
 
     def test_error_local_not_found(self):
-        resp = self.testapp.get('/many?url=http://not-found.error/&sources=local', status=404)
+        resp = self.testapp.get('/many/resource?url=http://not-found.error/&sources=local', status=404)
 
         assert resp.json == {'message': 'No Resource Found'}
+        assert resp.text == resp.headers['ResErrors']
 
     def test_error_empty(self):
-        resp = self.testapp.get('/empty?url=http://example.com/', status=404)
+        resp = self.testapp.get('/empty/resource?url=http://example.com/', status=404)
 
         assert resp.json == {'message': 'No Resource Found'}
+        assert resp.text == resp.headers['ResErrors']
 
     def test_error_invalid(self):
-        resp = self.testapp.get('/invalid?url=http://example.com/', status=500)
+        resp = self.testapp.get('/invalid/resource?url=http://example.com/', status=500)
 
-        assert resp.json['message'].startswith('Internal Error')
+        assert resp.json == {'message': "Internal Error: 'list' object is not callable"}
+        assert resp.text == resp.headers['ResErrors']
+
 

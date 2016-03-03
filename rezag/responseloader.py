@@ -58,6 +58,10 @@ class WARCPathLoader(object):
                                               no_record_parse=True)
         self.cdx_source = cdx_source
 
+    def cdx_index_source(self, *args, **kwargs):
+        cdx_iter, errs = self.cdx_source(*args, **kwargs)
+        return cdx_iter
+
     def warc_paths(self):
         for path in self.paths:
             def check(filename, cdx):
@@ -83,7 +87,7 @@ class WARCPathLoader(object):
         headers, payload = (self.resolve_loader.
                              load_headers_and_payload(cdx,
                                                       failed_files,
-                                                      self.cdx_source))
+                                                      self.cdx_index_source))
 
         record = payload
 
@@ -101,6 +105,9 @@ class WARCPathLoader(object):
 
         res = StreamIter(record.stream)
         return res
+
+    def __str__(self):
+        return  'WARCPathLoader'
 
 
 #=============================================================================
@@ -200,3 +207,7 @@ class LiveWebLoader(object):
         if not id_:
             id_ = uuid.uuid1()
         return '<urn:uuid:{0}>'.format(id_)
+
+    def __str__(self):
+        return  'LiveWebLoader'
+
