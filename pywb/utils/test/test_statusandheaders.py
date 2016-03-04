@@ -30,7 +30,7 @@ StatusAndHeadersParserException: Expected Status Line starting with ['HTTP/1.0']
 
 # allow unexpected/invalid protocol line
 >>> StatusAndHeadersParser(['HTTP/1.0'], verify=False).parse(StringIO(unknown_protocol_headers))
-StatusAndHeaders(protocol = 'OtherBlah', statusline = 'OtherBlah', headers = [('Foo', 'Bar')])
+StatusAndHeaders(protocol = 'OtherBlah', statusline = '', headers = [('Foo', 'Bar')])
 
 
 
@@ -71,8 +71,8 @@ StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '204 empty', headers = [('C
 
 
 from pywb.utils.statusandheaders import StatusAndHeadersParser, StatusAndHeaders
-#from io import StringIO
 from six import StringIO
+import pytest
 
 
 status_headers_1 = "\
@@ -112,7 +112,57 @@ Foo: Bar\r\n\
 \r\n"
 
 
+req_headers = "\
+GET / HTTP/1.0\r\n\
+Foo: Bar\r\n\
+Content-Length: 0\r\n"
+
 
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
+
+
+def test_to_str_1():
+    res = str(StatusAndHeadersParser(['HTTP/1.0']).parse(StringIO(status_headers_1)))
+
+    exp = "\
+HTTP/1.0 200 OK\r\n\
+Content-Type: ABC\r\n\
+Some: Value\r\n\
+Multi-Line: Value1    Also This\r\n\
+"
+    assert(res == exp)
+
+
+def test_to_str_2():
+    res = str(StatusAndHeadersParser(['GET']).parse(StringIO(req_headers)))
+
+    assert(res == req_headers)
+
+    res = str(StatusAndHeadersParser(['GET']).parse(StringIO(req_headers + '\r\n')))
+
+    assert(res == req_headers)
+
+
+def test_to_str_with_remove():
+    res = StatusAndHeadersParser(['GET']).parse(StringIO(req_headers))
+    res.remove_header('Foo')
+
+    exp = "\
+GET / HTTP/1.0\r\n\
+Content-Length: 0\r\n"
+
+    assert(str(res) == exp)
+
+def test_status_empty():
+    with pytest.raises(EOFError):
+        StatusAndHeadersParser([], verify=False).parse(StringIO(''))
+
+
+def test_status_one_word():
+    res = StatusAndHeadersParser(['GET'], verify=False).parse(StringIO('A'))
+    assert(str(res) == 'A\r\n')
+
+

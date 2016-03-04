@@ -125,6 +125,23 @@ headers = {2})".format(self.protocol, self.statusline, headers_str)
                 self.headers == other.headers and
                 self.protocol == other.protocol)
 
+    def __str__(self):
+        string = self.protocol
+
+        if string and self.statusline:
+            string += ' '
+
+        if self.statusline:
+            string += self.statusline
+
+        if string:
+            string += '\r\n'
+
+        for h in self.headers:
+            string += ': '.join(h) + '\r\n'
+
+        return string
+
 
 #=================================================================
 def _strip_count(string, total_read):
@@ -209,7 +226,12 @@ class StatusAndHeadersParser(object):
 
             line = next_line
 
-        return StatusAndHeaders(statusline=protocol_status[-1].strip(),
+        if len(protocol_status) > 1:
+            statusline = protocol_status[1].strip()
+        else:
+            statusline = ''
+
+        return StatusAndHeaders(statusline=statusline,
                                 headers=headers,
                                 protocol=protocol_status[0],
                                 total_len=total_read)

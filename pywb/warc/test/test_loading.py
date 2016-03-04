@@ -356,7 +356,7 @@ def load_from_cdx_test(cdx, revisit_func=load_orig_cdx, reraise=False,
 
     try:
         (headers, stream) = resolve_loader(cdx, failed_files, revisit_func)
-        print(headers)
+        print(repr(headers))
         sys.stdout.write(stream.readline().decode('utf-8'))
         sys.stdout.write(stream.readline().decode('utf-8'))
     except ArchiveLoadFailed as e:
