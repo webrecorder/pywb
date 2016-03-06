@@ -1,5 +1,6 @@
 from webagg.liverec import BaseRecorder
 from webagg.liverec import request as remote_request
+from requests import request
 
 from webagg.utils import MementoUtils
 
@@ -157,6 +158,40 @@ class HeaderRecorder(BaseRecorder):
         ip = socket.getpeername()
         if ip:
             self.target_ip = ip[0]
+
+
+#=============================================================================
+class UpstreamProxyLoader(BaseLoader):
+    def _load_resource(self, cdx, params):
+        load_url = cdx.get('upstream_url')
+        if not load_url:
+            return None, None
+
+        input_req = params['_input_req']
+
+        method = input_req.get_req_method()
+        data = input_req.get_req_body()
+        req_headers = input_req.get_req_headers()
+
+        try:
+            upstream_res = request(url=load_url,
+                                   method=method,
+                                   stream=True,
+                                   allow_redirects=False,
+                                   headers=req_headers,
+                                   data=data,
+                                   timeout=params.get('_timeout'))
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            raise LiveResourceException(load_url)
+
+        out_headers = upstream_res.headers
+
+        return out_headers, StreamIter(upstream_res.raw)
+
+    def __str__(self):
+        return 'UpstreamProxyLoader'
 
 
 #=============================================================================
