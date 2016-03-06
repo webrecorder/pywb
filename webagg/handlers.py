@@ -2,25 +2,24 @@ from webagg.responseloader import  WARCPathLoader, LiveWebLoader
 from webagg.utils import MementoUtils
 from pywb.utils.wbexception import BadRequestException, WbException
 from pywb.utils.wbexception import NotFoundException
-from bottle import response
 
 
 #=============================================================================
 def to_cdxj(cdx_iter, fields):
-    response.headers['Content-Type'] = 'text/x-cdxj'
-    return [cdx.to_cdxj(fields) for cdx in cdx_iter]
+    content_type = 'text/x-cdxj'
+    return content_type, (cdx.to_cdxj(fields) for cdx in cdx_iter)
 
 def to_json(cdx_iter, fields):
-    response.headers['Content-Type'] = 'application/x-ndjson'
-    return [cdx.to_json(fields) for cdx in cdx_iter]
+    content_type = 'application/x-ndjson'
+    return content_type, (cdx.to_json(fields) for cdx in cdx_iter)
 
 def to_text(cdx_iter, fields):
-    response.headers['Content-Type'] = 'text/plain'
-    return [cdx.to_text(fields) for cdx in cdx_iter]
+    content_type = 'text/plain'
+    return content_type, (cdx.to_text(fields) for cdx in cdx_iter)
 
 def to_link(cdx_iter, fields):
-    response.headers['Content-Type'] = 'application/link'
-    return MementoUtils.make_timemap(cdx_iter)
+    content_type = 'application/link'
+    return content_type, MementoUtils.make_timemap(cdx_iter)
 
 
 #=============================================================================
@@ -56,10 +55,10 @@ class IndexHandler(object):
     def __call__(self, params):
         mode = params.get('mode', 'index')
         if mode == 'list_sources':
-            return self.index_source.get_source_list(params), {}
+            return {}, self.index_source.get_source_list(params), {}
 
         if mode != 'index':
-            return self.get_supported_modes(), {}
+            return {}, self.get_supported_modes(), {}
 
         output = params.get('output', self.DEF_OUTPUT)
         fields = params.get('fields')
@@ -67,14 +66,15 @@ class IndexHandler(object):
         handler = self.OUTPUTS.get(output)
         if not handler:
             errs = dict(last_exc=BadRequestException('output={0} not supported'.format(output)))
-            return None, errs
+            return None, None, errs
 
         cdx_iter, errs = self._load_index_source(params)
         if not cdx_iter:
-            return None, errs
+            return None, None, errs
 
-        res = handler(cdx_iter, fields)
-        return res, errs
+        content_type, res = handler(cdx_iter, fields)
+        out_headers = {'Content-Type': content_type}
+        return out_headers, res, errs
 
 
 #=============================================================================
@@ -94,16 +94,16 @@ class ResourceHandler(IndexHandler):
 
         cdx_iter, errs = self._load_index_source(params)
         if not cdx_iter:
-            return None, errs
+            return None, None, errs
 
         last_exc = None
 
         for cdx in cdx_iter:
             for loader in self.resource_loaders:
                 try:
-                    resp = loader(cdx, params)
+                    out_headers, resp = loader(cdx, params)
                     if resp is not None:
-                        return resp, errs
+                        return out_headers, resp, errs
                 except WbException as e:
                     last_exc = e
                     errs[str(loader)] = repr(e)
@@ -111,7 +111,7 @@ class ResourceHandler(IndexHandler):
         if last_exc:
             errs['last_exc'] = last_exc
 
-        return None, errs
+        return None, None, errs
 
 
 #=============================================================================
@@ -137,11 +137,11 @@ class HandlerSeq(object):
     def __call__(self, params):
         all_errs = {}
         for handler in self.handlers:
-            res, errs = handler(params)
+            out_headers, res, errs = handler(params)
             all_errs.update(errs)
             if res is not None:
-                return res, all_errs
+                return out_headers, res, all_errs
 
-        return None, all_errs
+        return None, None, all_errs
 
 
