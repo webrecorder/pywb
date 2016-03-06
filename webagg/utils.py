@@ -1,5 +1,6 @@
 import re
 import six
+import string
 
 from pywb.utils.timeutils import timestamp_to_http_date
 from pywb.utils.wbexception import BadRequestException
@@ -10,12 +11,12 @@ LINK_URL = re.compile('<(.*)>')
 LINK_PROP = re.compile('([\w]+)="([^"]+)')
 
 
-#=================================================================
+#=============================================================================
 class MementoException(BadRequestException):
     pass
 
 
-#=================================================================
+#=============================================================================
 class MementoUtils(object):
     @staticmethod
     def parse_links(link_header, def_name='timemap'):
@@ -102,3 +103,42 @@ class MementoUtils(object):
     @staticmethod
     def make_link(url, type):
         return '<{0}>; rel="{1}"'.format(url, type)
+
+
+#=============================================================================
+class ParamFormatter(string.Formatter):
+    def __init__(self, params, name='', prefix='param.'):
+        self.params = params
+        self.prefix = prefix
+        self.name = name
+
+    def get_value(self, key, args, kwargs):
+        # First, try the named param 'param.{name}.{key}'
+        if self.name:
+            named_key = self.prefix + self.name + '.' + key
+            value = self.params.get(named_key)
+            if value is not None:
+                return value
+
+        # Then, try 'param.{key}'
+        named_key = self.prefix + key
+        value = self.params.get(named_key)
+        if value is not None:
+            return value
+
+        # default to just '{key}'
+        value = kwargs.get(key, '')
+        return value
+
+
+#=============================================================================
+def res_template(template, params):
+    formatter = params.get('_formatter')
+    if not formatter:
+        formatter = ParamFormatter(params)
+
+    res = formatter.format(template, url=params['url'])
+
+    return res
+
+

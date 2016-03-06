@@ -11,6 +11,7 @@ from pywb.cdx.query import CDXQuery
 
 from webagg.liverec import patched_requests as requests
 
+from webagg.utils import ParamFormatter, res_template
 from webagg.utils import MementoUtils
 
 
@@ -22,15 +23,6 @@ class BaseIndexSource(object):
     def load_index(self, params):  #pragma: no cover
         raise NotImplemented()
 
-    @staticmethod
-    def res_template(template, params):
-        src_params = params.get('_src_params')
-        if not src_params:
-            res = template.format(url=params['url'])
-        else:
-            res = template.format(url=params['url'], **src_params)
-        return res
-
 
 #=============================================================================
 class FileIndexSource(BaseIndexSource):
@@ -38,7 +30,7 @@ class FileIndexSource(BaseIndexSource):
         self.filename_template = filename
 
     def load_index(self, params):
-        filename = self.res_template(self.filename_template, params)
+        filename = res_template(self.filename_template, params)
 
         try:
             fh = open(filename, 'rb')
@@ -64,7 +56,7 @@ class RemoteIndexSource(BaseIndexSource):
         self.replay_url = replay_url
 
     def load_index(self, params):
-        api_url = self.res_template(self.api_url_template, params)
+        api_url = res_template(self.api_url_template, params)
         r = requests.get(api_url, timeout=params.get('_timeout'))
         if r.status_code >= 400:
             raise NotFoundException(api_url)
@@ -73,7 +65,9 @@ class RemoteIndexSource(BaseIndexSource):
         def do_load(lines):
             for line in lines:
                 cdx = CDXObject(line)
-                cdx['load_url'] = self.replay_url.format(timestamp=cdx['timestamp'], url=cdx['url'])
+                cdx['load_url'] = self.replay_url.format(
+                                    timestamp=cdx['timestamp'],
+                                    url=cdx['url'])
                 yield cdx
 
         return do_load(lines)
@@ -114,7 +108,7 @@ class RedisIndexSource(BaseIndexSource):
         self.redis = redis.StrictRedis.from_url(redis_url)
 
     def load_index(self, params):
-        z_key = self.res_template(self.redis_key_template, params)
+        z_key = res_template(self.redis_key_template, params)
         index_list = self.redis.zrangebylex(z_key,
                                             b'[' + params['key'],
                                             b'(' + params['end_key'])
@@ -173,7 +167,7 @@ class MementoIndexSource(BaseIndexSource):
             yield cdx
 
     def get_timegate_links(self, params, closest):
-        url = self.res_template(self.timegate_url, params)
+        url = res_template(self.timegate_url, params)
         accept_dt = timestamp_to_http_date(closest)
         res = requests.head(url, headers={'Accept-Datetime': accept_dt})
         if res.status_code >= 400:
@@ -182,7 +176,7 @@ class MementoIndexSource(BaseIndexSource):
         return res.headers.get('Link')
 
     def get_timemap_links(self, params):
-        url = self.res_template(self.timemap_url, params)
+        url = res_template(self.timemap_url, params)
         res = requests.get(url, timeout=params.get('_timeout'))
         if res.status_code >= 400:
             raise NotFoundException(url)

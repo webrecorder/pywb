@@ -1,3 +1,5 @@
+from webagg.liverec import request as remote_request
+
 from webagg.inputrequest import DirectWSGIInputRequest, POSTInputRequest
 from bottle import route, request, response, default_app, abort
 import bottle
@@ -7,6 +9,42 @@ import json
 
 JSON_CT = 'application/json; charset=utf-8'
 
+
+#=============================================================================
+route_dict = {}
+
+
+#=============================================================================
+def add_route(path, handler):
+    @route([path, path + '/<mode:path>'], 'ANY')
+    @wrap_error
+    def direct_input_request(mode=''):
+        params = dict(request.query)
+        params['mode'] = mode
+        params['_input_req'] = DirectWSGIInputRequest(request.environ)
+        return handler(params)
+
+    @route([path + '/postreq', path + '/<mode:path>/postreq'], 'POST')
+    @wrap_error
+    def post_fullrequest(mode=''):
+        params = dict(request.query)
+        params['mode'] = mode
+        params['_input_req'] = POSTInputRequest(request.environ)
+        return handler(params)
+
+    global route_dict
+    handler_dict = handler.get_supported_modes()
+    route_dict[path] = handler_dict
+    route_dict[path + '/postreq'] = handler_dict
+
+
+#=============================================================================
+@route('/')
+def list_routes():
+    return route_dict
+
+
+#=============================================================================
 def err_handler(exc):
     response.status = exc.status_code
     response.content_type = JSON_CT
@@ -15,10 +53,15 @@ def err_handler(exc):
     return err_msg
 
 
+#=============================================================================
 def wrap_error(func):
     def wrap_func(*args, **kwargs):
         try:
-            res, errs = func(*args, **kwargs)
+            out_headers, res, errs = func(*args, **kwargs)
+
+            if out_headers:
+                for n, v in out_headers.items():
+                    response.headers[n] = v
 
             if res:
                 if errs:
@@ -53,36 +96,7 @@ def wrap_error(func):
     return wrap_func
 
 
-route_dict = {}
-
-def add_route(path, handler):
-    @route([path, path + '/<mode:path>'], 'ANY')
-    @wrap_error
-    def direct_input_request(mode=''):
-        params = dict(request.query)
-        params['mode'] = mode
-        params['_input_req'] = DirectWSGIInputRequest(request.environ)
-        return handler(params)
-
-    @route([path + '/postreq', path + '/<mode:path>/postreq'], 'POST')
-    @wrap_error
-    def post_fullrequest(mode=''):
-        params = dict(request.query)
-        params['mode'] = mode
-        params['_input_req'] = POSTInputRequest(request.environ)
-        return handler(params)
-
-    global route_dict
-    handler_dict = handler.get_supported_modes()
-    route_dict[path] = handler_dict
-    route_dict[path + '/postreq'] = handler_dict
-
-
-@route('/')
-def list_routes():
-    return route_dict
-
-
+#=============================================================================
 application = default_app()
 application.default_error_handler = err_handler
 

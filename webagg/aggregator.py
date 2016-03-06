@@ -17,6 +17,9 @@ from itertools import chain
 
 from webagg.indexsource import FileIndexSource
 from pywb.utils.wbexception import NotFoundException, WbException
+
+from webagg.utils import ParamFormatter, res_template
+
 import six
 import glob
 
@@ -28,34 +31,11 @@ class BaseAggregator(object):
             params['closest'] = timestamp_now()
 
         query = CDXQuery(params)
-        self._set_src_params(params)
 
         cdx_iter, errs = self.load_index(query.params)
 
         cdx_iter = process_cdx(cdx_iter, query)
         return cdx_iter, dict(errs)
-
-    def _set_src_params(self, params):
-        src_params = {}
-        for param, value in six.iteritems(params):
-            if not param.startswith('param.'):
-                continue
-
-            parts = param.split('.', 3)[1:]
-
-            if len(parts) == 2:
-                src = parts[0]
-                name = parts[1]
-            else:
-                src = ''
-                name = parts[0]
-
-            if not src in src_params:
-                src_params[src] = {}
-
-            src_params[src][name] = value
-
-        params['_all_src_params'] = src_params
 
     def load_child_source_list(self, name, source, params):
         res = self.load_child_source(name, source, params)
@@ -63,8 +43,7 @@ class BaseAggregator(object):
 
     def load_child_source(self, name, source, params):
         try:
-            _src_params = params['_all_src_params'].get(name)
-            params['_src_params'] = _src_params
+            params['_formatter'] = ParamFormatter(params, name)
             res = source.load_index(params)
             if isinstance(res, tuple):
                 cdx_iter, err_list = res
@@ -277,18 +256,7 @@ class BaseDirectoryIndexSource(BaseAggregator):
         self.base_dir = base_dir
 
     def _iter_sources(self, params):
-        self._set_src_params(params)
-        # see if specific params (when part of another agg)
-        src_params = params.get('_src_params')
-        if not src_params:
-            # try default param. settings
-            src_params = params.get('_all_src_params', {}).get('')
-
-        if src_params:
-            the_dir = self.base_dir.format(**src_params)
-        else:
-            the_dir = self.base_dir
-
+        the_dir = res_template(self.base_dir, params)
         the_dir = os.path.join(self.base_prefix, the_dir)
         try:
             sources = list(self._load_files(the_dir))

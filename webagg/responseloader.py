@@ -9,7 +9,6 @@ from pywb.utils.wbexception import LiveResourceException
 from pywb.warc.resolvingloader import ResolvingLoader
 
 from io import BytesIO
-from bottle import response
 
 import uuid
 import six
@@ -52,19 +51,19 @@ class StreamIter(six.Iterator):
 #=============================================================================
 class BaseLoader(object):
     def __call__(self, cdx, params):
-        res = self._load_resource(cdx, params)
+        out_headers, res = self._load_resource(cdx, params)
         if not res:
-            return res
+            return None, None
 
-        response.headers['WARC-Coll'] = cdx.get('source', '')
+        out_headers['WARC-Coll'] = cdx.get('source', '')
 
-        response.headers['Link'] = MementoUtils.make_link(
-                                     response.headers['WARC-Target-URI'],
+        out_headers['Link'] = MementoUtils.make_link(
+                                     out_headers['WARC-Target-URI'],
                                      'original')
 
-        memento_dt = iso_date_to_datetime(response.headers['WARC-Date'])
-        response.headers['Memento-Datetime'] = datetime_to_http_date(memento_dt)
-        return res
+        memento_dt = iso_date_to_datetime(out_headers['WARC-Date'])
+        out_headers['Memento-Datetime'] = datetime_to_http_date(memento_dt)
+        return out_headers, res
 
     def _load_resource(self, cdx, params):  #pragma: no cover
         raise NotImplemented()
@@ -91,8 +90,8 @@ class WARCPathLoader(BaseLoader):
         for path in self.paths:
             def check(filename, cdx):
                 try:
-                    if hasattr(cdx, '_src_params') and cdx._src_params:
-                        full_path = path.format(**cdx._src_params)
+                    if hasattr(cdx, '_formatter') and cdx._formatter:
+                        full_path = cdx._formatter.format(path)
                     else:
                         full_path = path
                     full_path += filename
@@ -104,9 +103,9 @@ class WARCPathLoader(BaseLoader):
 
     def _load_resource(self, cdx, params):
         if not cdx.get('filename') or cdx.get('offset') is None:
-            return None
+            return None, None
 
-        cdx._src_params = params.get('_src_params')
+        cdx._formatter = params.get('_formatter')
         failed_files = []
         headers, payload = (self.resolve_loader.
                              load_headers_and_payload(cdx,
@@ -114,18 +113,19 @@ class WARCPathLoader(BaseLoader):
                                                       self.cdx_index_source))
 
         record = payload
+        out_headers = {}
 
         for n, v in record.rec_headers.headers:
-            response.headers[n] = v
+            out_headers[n] = v
 
         if headers != payload:
-            response.headers['WARC-Target-URI'] = headers.rec_headers.get_header('WARC-Target-URI')
-            response.headers['WARC-Date'] = headers.rec_headers.get_header('WARC-Date')
-            response.headers['WARC-Refers-To-Target-URI'] = payload.rec_headers.get_header('WARC-Target-URI')
-            response.headers['WARC-Refers-To-Date'] = payload.rec_headers.get_header('WARC-Date')
+            out_headers['WARC-Target-URI'] = headers.rec_headers.get_header('WARC-Target-URI')
+            out_headers['WARC-Date'] = headers.rec_headers.get_header('WARC-Date')
+            out_headers['WARC-Refers-To-Target-URI'] = payload.rec_headers.get_header('WARC-Target-URI')
+            out_headers['WARC-Refers-To-Date'] = payload.rec_headers.get_header('WARC-Date')
             headers.stream.close()
 
-        return StreamIter(record.stream)
+        return out_headers, StreamIter(record.stream)
 
     def __str__(self):
         return  'WARCPathLoader'
@@ -137,6 +137,7 @@ class HeaderRecorder(BaseRecorder):
         self.buff = BytesIO()
         self.skip_list = skip_list
         self.skipped = []
+        self.target_ip = None
 
     def write_response_header_line(self, line):
         if self.accept_header(line):
@@ -152,6 +153,11 @@ class HeaderRecorder(BaseRecorder):
 
         return True
 
+    def finish_request(self, socket):
+        ip = socket.getpeername()
+        if ip:
+            self.target_ip = ip[0]
+
 
 #=============================================================================
 class LiveWebLoader(BaseLoader):
@@ -163,7 +169,7 @@ class LiveWebLoader(BaseLoader):
     def _load_resource(self, cdx, params):
         load_url = cdx.get('load_url')
         if not load_url:
-            return None
+            return None, None
 
         recorder = HeaderRecorder(self.SKIP_HEADERS)
 
@@ -200,30 +206,33 @@ class LiveWebLoader(BaseLoader):
 
         resp_headers = recorder.get_header()
 
-        response.headers['Content-Type'] = 'application/http; msgtype=response'
+        out_headers = {}
+        out_headers['Content-Type'] = 'application/http; msgtype=response'
 
-        #response.headers['WARC-Type'] = 'response'
-        #response.headers['WARC-Record-ID'] = self._make_warc_id()
-        response.headers['WARC-Target-URI'] = cdx['url']
-        response.headers['WARC-Date'] = self._make_date(dt)
+        out_headers['WARC-Type'] = 'response'
+        out_headers['WARC-Record-ID'] = self._make_warc_id()
+        out_headers['WARC-Target-URI'] = cdx['url']
+        out_headers['WARC-Date'] = self._make_date(dt)
+        if recorder.target_ip:
+            out_headers['WARC-IP-Address'] = recorder.target_ip
 
         # Try to set content-length, if it is available and valid
         try:
             content_len = int(upstream_res.headers.get('content-length', 0))
             if content_len > 0:
                 content_len += len(resp_headers)
-                response.headers['Content-Length'] = content_len
+                out_headers['Content-Length'] = content_len
         except (KeyError, TypeError):
             pass
 
-        return StreamIter(upstream_res.raw, header=resp_headers)
+        return out_headers, StreamIter(upstream_res.raw, header=resp_headers)
 
     @staticmethod
     def _make_date(dt):
         return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     @staticmethod
-    def _make_warc_id(id_=None):  #pragma: no cover
+    def _make_warc_id(id_=None):
         if not id_:
             id_ = uuid.uuid1()
         return '<urn:uuid:{0}>'.format(id_)
