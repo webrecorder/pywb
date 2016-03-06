@@ -113,7 +113,7 @@ class TestResAgg(object):
 
         res = to_json_list(resp.text)
         res[0]['timestamp'] = '2016'
-        assert(res == [{'url': 'http://httpbin.org/get', 'urlkey': 'org,httpbin)/get', 'is_live': True,
+        assert(res == [{'url': 'http://httpbin.org/get', 'urlkey': 'org,httpbin)/get', 'is_live': 'true',
                         'load_url': 'http://httpbin.org/get', 'source': 'live', 'timestamp': '2016'}])
 
     def test_live_resource(self):

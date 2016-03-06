@@ -51,9 +51,10 @@ class FileIndexSource(BaseIndexSource):
 
 #=============================================================================
 class RemoteIndexSource(BaseIndexSource):
-    def __init__(self, api_url, replay_url):
+    def __init__(self, api_url, replay_url, url_field='load_url'):
         self.api_url_template = api_url
         self.replay_url = replay_url
+        self.url_field = url_field
 
     def load_index(self, params):
         api_url = res_template(self.api_url_template, params)
@@ -65,12 +66,18 @@ class RemoteIndexSource(BaseIndexSource):
         def do_load(lines):
             for line in lines:
                 cdx = CDXObject(line)
-                cdx['load_url'] = self.replay_url.format(
-                                    timestamp=cdx['timestamp'],
-                                    url=cdx['url'])
+                cdx[self.url_field] = self.replay_url.format(
+                                        timestamp=cdx['timestamp'],
+                                        url=cdx['url'])
                 yield cdx
 
         return do_load(lines)
+
+    @staticmethod
+    def upstream_webagg(base_url):
+        api_url = base_url + '/index?url={url}'
+        proxy_url = base_url + '/resource?url={url}&closest={timestamp}'
+        return RemoteIndexSource(api_url, proxy_url, 'upstream_url')
 
     def __str__(self):
         return 'remote'
@@ -84,7 +91,7 @@ class LiveIndexSource(BaseIndexSource):
         cdx['timestamp'] = timestamp_now()
         cdx['url'] = params['url']
         cdx['load_url'] = params['url']
-        cdx['is_live'] = True
+        cdx['is_live'] = 'true'
         def live():
             yield cdx
 

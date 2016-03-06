@@ -46,6 +46,9 @@ def list_routes():
 
 #=============================================================================
 def err_handler(exc):
+    if bottle.debug:
+        print(exc)
+        traceback.print_exc()
     response.status = exc.status_code
     response.content_type = JSON_CT
     err_msg = json.dumps({'message': exc.body})
