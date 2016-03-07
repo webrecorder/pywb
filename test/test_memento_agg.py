@@ -9,6 +9,7 @@ from .testutils import json_list, to_path
 import json
 import pytest
 import time
+import six
 
 from webagg.handlers import IndexHandler
 
@@ -39,8 +40,13 @@ agg_nf = {'simple': SimpleAggregator(nf),
           'processes': ThreadedTimeoutAggregator(nf, timeout=5.0, use_processes=True),
          }
 
-#def pytest_generate_tests(metafunc):
-#    metafunc.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
+if six.PY2:
+    del aggs['threaded']
+    del aggs['processes']
+    del agg_tm['threaded']
+    del agg_tm['processes']
+    del agg_nf['threaded']
+    del agg_nf['processes']
 
 
 @pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
