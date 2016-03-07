@@ -66,21 +66,31 @@ class RemoteIndexSource(BaseIndexSource):
         def do_load(lines):
             for line in lines:
                 cdx = CDXObject(line)
-                cdx[self.url_field] = self.replay_url.format(
-                                        timestamp=cdx['timestamp'],
-                                        url=cdx['url'])
+                self._set_load_url(cdx)
                 yield cdx
 
         return do_load(lines)
 
-    @staticmethod
-    def upstream_webagg(base_url):
-        api_url = base_url + '/index?url={url}'
-        proxy_url = base_url + '/resource?url={url}&closest={timestamp}'
-        return RemoteIndexSource(api_url, proxy_url, 'upstream_url')
+    def _set_load_url(self, cdx):
+        cdx[self.url_field] = self.replay_url.format(
+                                 timestamp=cdx['timestamp'],
+                                 url=cdx['url'])
 
     def __str__(self):
         return 'remote'
+
+
+#=============================================================================
+class UpstreamAggIndexSource(RemoteIndexSource):
+    def __init__(self, base_url):
+        api_url = base_url + '/index?url={url}'
+        proxy_url = base_url + '/resource?url={url}&closest={timestamp}'
+        super(UpstreamAggIndexSource, self).__init__(api_url, proxy_url, 'filename')
+
+    def _set_load_url(self, cdx):
+        super(UpstreamAggIndexSource, self)._set_load_url(cdx)
+        cdx['offset'] = '0'
+        cdx.pop('load_url', '')
 
 
 #=============================================================================

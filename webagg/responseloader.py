@@ -1,34 +1,44 @@
 from webagg.liverec import BaseRecorder
 from webagg.liverec import request as remote_request
-from requests import request
 
 from webagg.utils import MementoUtils
+
+from requests import session
 
 from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_http_date
 from pywb.utils.timeutils import iso_date_to_datetime
 from pywb.utils.wbexception import LiveResourceException
+from pywb.utils.statusandheaders import StatusAndHeaders
+
 from pywb.warc.resolvingloader import ResolvingLoader
+
 
 from io import BytesIO
 
 import uuid
 import six
+import itertools
 
 
 #=============================================================================
 class StreamIter(six.Iterator):
-    def __init__(self, stream, header=None, size=8192):
+    def __init__(self, stream, header1=None, header2=None, size=8192):
         self.stream = stream
-        self.header = header
+        self.header1 = header1
+        self.header2 = header2
         self.size = size
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if self.header:
-            header = self.header
-            self.header = None
+        if self.header1:
+            header = self.header1
+            self.header1 = None
+            return header
+        elif self.header2:
+            header = self.header2
+            self.header2 = None
             return header
 
         data = self.stream.read(self.size)
@@ -52,22 +62,44 @@ class StreamIter(six.Iterator):
 #=============================================================================
 class BaseLoader(object):
     def __call__(self, cdx, params):
-        out_headers, res = self._load_resource(cdx, params)
-        if not res:
+        entry = self._load_resource(cdx, params)
+        if not entry:
             return None, None
 
-        out_headers['WARC-Coll'] = cdx.get('source', '')
+        warc_headers, other_headers_buff, stream = entry
+
+        out_headers = {}
+        out_headers['Source-Coll'] = cdx.get('source', '')
 
         out_headers['Link'] = MementoUtils.make_link(
-                                     out_headers['WARC-Target-URI'],
-                                     'original')
+                                warc_headers.get_header('WARC-Target-URI'),
+                                'original')
 
-        memento_dt = iso_date_to_datetime(out_headers['WARC-Date'])
+        out_headers['Content-Type'] = 'application/warc-record'
+
+        memento_dt = iso_date_to_datetime(warc_headers.get_header('WARC-Date'))
         out_headers['Memento-Datetime'] = datetime_to_http_date(memento_dt)
-        return out_headers, res
 
-    def _load_resource(self, cdx, params):  #pragma: no cover
-        raise NotImplemented()
+        warc_headers_buff = warc_headers.to_bytes()
+
+        self._set_content_len(warc_headers.get_header('Content-Length'),
+                              out_headers,
+                              len(warc_headers_buff))
+
+        return out_headers, StreamIter(stream,
+                                       header1=warc_headers_buff,
+                                       header2=other_headers_buff)
+
+    def _set_content_len(self, content_len_str, headers, existing_len):
+        # Try to set content-length, if it is available and valid
+        try:
+            content_len = int(content_len_str)
+        except (KeyError, TypeError):
+            content_len = -1
+
+        if content_len >= 0:
+            content_len += existing_len
+            headers['Content-Length'] = str(content_len)
 
 
 #=============================================================================
@@ -104,7 +136,7 @@ class WARCPathLoader(BaseLoader):
 
     def _load_resource(self, cdx, params):
         if not cdx.get('filename') or cdx.get('offset') is None:
-            return None, None
+            return None
 
         cdx._formatter = params.get('_formatter')
         failed_files = []
@@ -112,86 +144,27 @@ class WARCPathLoader(BaseLoader):
                              load_headers_and_payload(cdx,
                                                       failed_files,
                                                       self.cdx_index_source))
-
-        record = payload
-        out_headers = {}
-
-        for n, v in record.rec_headers.headers:
-            out_headers[n] = v
+        warc_headers = payload.rec_headers
 
         if headers != payload:
-            out_headers['WARC-Target-URI'] = headers.rec_headers.get_header('WARC-Target-URI')
-            out_headers['WARC-Date'] = headers.rec_headers.get_header('WARC-Date')
-            out_headers['WARC-Refers-To-Target-URI'] = payload.rec_headers.get_header('WARC-Target-URI')
-            out_headers['WARC-Refers-To-Date'] = payload.rec_headers.get_header('WARC-Date')
+            warc_headers.replace_header('WARC-Refers-To-Target-URI',
+                     payload.rec_headers.get_header('WARC-Target-URI'))
+
+            warc_headers.replace_header('WARC-Refers-To-Date',
+                     payload.rec_headers.get_header('WARC-Date'))
+
+            warc_headers.replace_header('WARC-Target-URI',
+                     headers.rec_headers.get_header('WARC-Target-URI'))
+
+            warc_headers.replace_header('WARC-Date',
+                     headers.rec_headers.get_header('WARC-Date'))
+
             headers.stream.close()
 
-        return out_headers, StreamIter(record.stream)
+        return (warc_headers, None, payload.stream)
 
     def __str__(self):
         return  'WARCPathLoader'
-
-
-#=============================================================================
-class HeaderRecorder(BaseRecorder):
-    def __init__(self, skip_list=None):
-        self.buff = BytesIO()
-        self.skip_list = skip_list
-        self.skipped = []
-        self.target_ip = None
-
-    def write_response_header_line(self, line):
-        if self.accept_header(line):
-            self.buff.write(line)
-
-    def get_header(self):
-        return self.buff.getvalue()
-
-    def accept_header(self, line):
-        if self.skip_list and line.lower().startswith(self.skip_list):
-            self.skipped.append(line)
-            return False
-
-        return True
-
-    def finish_request(self, socket):
-        ip = socket.getpeername()
-        if ip:
-            self.target_ip = ip[0]
-
-
-#=============================================================================
-class UpstreamProxyLoader(BaseLoader):
-    def _load_resource(self, cdx, params):
-        load_url = cdx.get('upstream_url')
-        if not load_url:
-            return None, None
-
-        input_req = params['_input_req']
-
-        method = input_req.get_req_method()
-        data = input_req.get_req_body()
-        req_headers = input_req.get_req_headers()
-
-        try:
-            upstream_res = request(url=load_url,
-                                   method=method,
-                                   stream=True,
-                                   allow_redirects=False,
-                                   headers=req_headers,
-                                   data=data,
-                                   timeout=params.get('_timeout'))
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            raise LiveResourceException(load_url)
-
-        out_headers = upstream_res.headers
-
-        return out_headers, StreamIter(upstream_res.raw)
-
-    def __str__(self):
-        return 'UpstreamProxyLoader'
 
 
 #=============================================================================
@@ -204,7 +177,7 @@ class LiveWebLoader(BaseLoader):
     def _load_resource(self, cdx, params):
         load_url = cdx.get('load_url')
         if not load_url:
-            return None, None
+            return None
 
         recorder = HeaderRecorder(self.SKIP_HEADERS)
 
@@ -236,31 +209,28 @@ class LiveWebLoader(BaseLoader):
                                           headers=req_headers,
                                           data=data,
                                           timeout=params.get('_timeout'))
-        except Exception:
+        except Exception as e:
             raise LiveResourceException(load_url)
 
-        resp_headers = recorder.get_header()
+        http_headers_buff = recorder.get_headers_buff()
 
-        out_headers = {}
-        out_headers['Content-Type'] = 'application/http; msgtype=response'
+        warc_headers = {}
 
-        out_headers['WARC-Type'] = 'response'
-        out_headers['WARC-Record-ID'] = self._make_warc_id()
-        out_headers['WARC-Target-URI'] = cdx['url']
-        out_headers['WARC-Date'] = self._make_date(dt)
+        warc_headers['WARC-Type'] = 'response'
+        warc_headers['WARC-Record-ID'] = self._make_warc_id()
+        warc_headers['WARC-Target-URI'] = cdx['url']
+        warc_headers['WARC-Date'] = self._make_date(dt)
         if recorder.target_ip:
-            out_headers['WARC-IP-Address'] = recorder.target_ip
+            warc_headers['WARC-IP-Address'] = recorder.target_ip
 
-        # Try to set content-length, if it is available and valid
-        try:
-            content_len = int(upstream_res.headers.get('content-length', 0))
-            if content_len > 0:
-                content_len += len(resp_headers)
-                out_headers['Content-Length'] = content_len
-        except (KeyError, TypeError):
-            pass
+        warc_headers['Content-Type'] = 'application/http; msgtype=response'
 
-        return out_headers, StreamIter(upstream_res.raw, header=resp_headers)
+        self._set_content_len(upstream_res.headers.get('Content-Length', -1),
+                              warc_headers,
+                              len(http_headers_buff))
+
+        warc_headers = StatusAndHeaders('WARC/1.0', warc_headers.items())
+        return (warc_headers, http_headers_buff, upstream_res.raw)
 
     @staticmethod
     def _make_date(dt):
@@ -274,4 +244,33 @@ class LiveWebLoader(BaseLoader):
 
     def __str__(self):
         return  'LiveWebLoader'
+
+
+#=============================================================================
+class HeaderRecorder(BaseRecorder):
+    def __init__(self, skip_list=None):
+        self.buff = BytesIO()
+        self.skip_list = skip_list
+        self.skipped = []
+        self.target_ip = None
+
+    def write_response_header_line(self, line):
+        if self.accept_header(line):
+            self.buff.write(line)
+
+    def get_headers_buff(self):
+        return self.buff.getvalue()
+
+    def accept_header(self, line):
+        if self.skip_list and line.lower().startswith(self.skip_list):
+            self.skipped.append(line)
+            return False
+
+        return True
+
+    def finish_request(self, socket):
+        ip = socket.getpeername()
+        if ip:
+            self.target_ip = ip[0]
+
 

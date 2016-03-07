@@ -1,7 +1,7 @@
 from webagg.liverec import request as remote_request
 
 from webagg.inputrequest import DirectWSGIInputRequest, POSTInputRequest
-from bottle import route, request, response, default_app, abort
+from bottle import route, request, response, abort, Bottle
 import bottle
 
 import traceback
@@ -11,49 +11,46 @@ JSON_CT = 'application/json; charset=utf-8'
 
 
 #=============================================================================
-route_dict = {}
+class ResAggApp(object):
+    def __init__(self, *args, **kwargs):
+        self.application = Bottle()
+        self.application.default_error_handler = self.err_handler
+        self.route_dict = {}
 
+        @self.application.route('/')
+        def list_routes():
+            return self.route_dict
 
-#=============================================================================
-def add_route(path, handler):
-    @route([path, path + '/<mode:path>'], 'ANY')
-    @wrap_error
-    def direct_input_request(mode=''):
-        params = dict(request.query)
-        params['mode'] = mode
-        params['_input_req'] = DirectWSGIInputRequest(request.environ)
-        return handler(params)
+    def add_route(self, path, handler):
+        @self.application.route([path, path + '/<mode:path>'], 'ANY')
+        @wrap_error
+        def direct_input_request(mode=''):
+            params = dict(request.query)
+            params['mode'] = mode
+            params['_input_req'] = DirectWSGIInputRequest(request.environ)
+            return handler(params)
 
-    @route([path + '/postreq', path + '/<mode:path>/postreq'], 'POST')
-    @wrap_error
-    def post_fullrequest(mode=''):
-        params = dict(request.query)
-        params['mode'] = mode
-        params['_input_req'] = POSTInputRequest(request.environ)
-        return handler(params)
+        @self.application.route([path + '/postreq', path + '/<mode:path>/postreq'], 'POST')
+        @wrap_error
+        def post_fullrequest(mode=''):
+            params = dict(request.query)
+            params['mode'] = mode
+            params['_input_req'] = POSTInputRequest(request.environ)
+            return handler(params)
 
-    global route_dict
-    handler_dict = handler.get_supported_modes()
-    route_dict[path] = handler_dict
-    route_dict[path + '/postreq'] = handler_dict
+        handler_dict = handler.get_supported_modes()
+        self.route_dict[path] = handler_dict
+        self.route_dict[path + '/postreq'] = handler_dict
 
-
-#=============================================================================
-@route('/')
-def list_routes():
-    return route_dict
-
-
-#=============================================================================
-def err_handler(exc):
-    if bottle.debug:
-        print(exc)
-        traceback.print_exc()
-    response.status = exc.status_code
-    response.content_type = JSON_CT
-    err_msg = json.dumps({'message': exc.body})
-    response.headers['ResErrors'] = err_msg
-    return err_msg
+    def err_handler(self, exc):
+        if bottle.debug:
+            print(exc)
+            traceback.print_exc()
+        response.status = exc.status_code
+        response.content_type = JSON_CT
+        err_msg = json.dumps({'message': exc.body})
+        response.headers['ResErrors'] = err_msg
+        return err_msg
 
 
 #=============================================================================
@@ -97,10 +94,5 @@ def wrap_error(func):
             abort(500, 'Internal Error: ' + str(e))
 
     return wrap_func
-
-
-#=============================================================================
-application = default_app()
-application.default_error_handler = err_handler
 
 

@@ -8,8 +8,11 @@ from webagg.indexsource import MementoIndexSource, FileIndexSource, LiveIndexSou
 from webagg.aggregator import GeventTimeoutAggregator, SimpleAggregator
 from webagg.aggregator import DirectoryIndexSource
 
-from webagg.app import add_route, application
+from webagg.app import ResAggApp
 from webagg.utils import MementoUtils
+
+from pywb.utils.statusandheaders import StatusAndHeadersParser
+from io import BytesIO
 
 import webtest
 import bottle
@@ -30,32 +33,32 @@ testapp = None
 def setup_module(self):
     live_source = SimpleAggregator({'live': LiveIndexSource()})
     live_handler = DefaultResourceHandler(live_source)
-    add_route('/live', live_handler)
+    app = ResAggApp()
+    app.add_route('/live', live_handler)
 
     source1 = GeventTimeoutAggregator(sources)
     handler1 = DefaultResourceHandler(source1, to_path('testdata/'))
-    add_route('/many', handler1)
+    app.add_route('/many', handler1)
 
     source2 = SimpleAggregator({'post': FileIndexSource(to_path('testdata/post-test.cdxj'))})
     handler2 = DefaultResourceHandler(source2, to_path('testdata/'))
-    add_route('/posttest', handler2)
+    app.add_route('/posttest', handler2)
 
     source3 = SimpleAggregator({'example': FileIndexSource(to_path('testdata/example.cdxj'))})
     handler3 = DefaultResourceHandler(source3, to_path('testdata/'))
 
-    add_route('/fallback', HandlerSeq([handler3,
+    app.add_route('/fallback', HandlerSeq([handler3,
                                        handler2,
                                        live_handler]))
 
-    add_route('/seq', HandlerSeq([handler3,
+    app.add_route('/seq', HandlerSeq([handler3,
                                   handler2]))
 
-    add_route('/empty', HandlerSeq([]))
-    add_route('/invalid', DefaultResourceHandler([SimpleAggregator({'invalid': 'should not be a callable'})]))
+    app.add_route('/empty', HandlerSeq([]))
+    app.add_route('/invalid', DefaultResourceHandler([SimpleAggregator({'invalid': 'should not be a callable'})]))
 
-    application.debug = True
     global testapp
-    testapp = webtest.TestApp(application)
+    testapp = webtest.TestApp(app.application)
 
 
 def to_json_list(text):
@@ -65,6 +68,15 @@ def to_json_list(text):
 class TestResAgg(object):
     def setup(self):
         self.testapp = testapp
+
+    def _check_uri_date(self, resp, uri, dt):
+        buff = BytesIO(resp.body)
+        status_headers = StatusAndHeadersParser(['WARC/1.0']).parse(buff)
+        assert status_headers.get_header('WARC-Target-URI') == uri
+        if dt == True:
+            assert status_headers.get_header('WARC-Date') != ''
+        else:
+            assert status_headers.get_header('WARC-Date') == dt
 
     def test_list_routes(self):
         resp = self.testapp.get('/')
@@ -120,9 +132,9 @@ class TestResAgg(object):
         headers = {'foo': 'bar'}
         resp = self.testapp.get('/live/resource?url=http://httpbin.org/get?foo=bar', headers=headers)
 
-        assert resp.headers['WARC-Coll'] == 'live'
-        assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/get?foo=bar'
-        assert resp.headers['WARC-Date'] != ''
+        assert resp.headers['Source-Coll'] == 'live'
+
+        self._check_uri_date(resp, 'http://httpbin.org/get?foo=bar', True)
 
         assert resp.headers['Link'] == MementoUtils.make_link('http://httpbin.org/get?foo=bar', 'original')
         assert resp.headers['Memento-Datetime'] != ''
@@ -136,9 +148,9 @@ class TestResAgg(object):
         resp = self.testapp.post('/live/resource?url=http://httpbin.org/post',
                                  OrderedDict([('foo', 'bar')]))
 
-        assert resp.headers['WARC-Coll'] == 'live'
-        assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/post'
-        assert resp.headers['WARC-Date'] != ''
+        assert resp.headers['Source-Coll'] == 'live'
+
+        self._check_uri_date(resp, 'http://httpbin.org/post', True)
 
         assert resp.headers['Link'] == MementoUtils.make_link('http://httpbin.org/post', 'original')
         assert resp.headers['Memento-Datetime'] != ''
@@ -151,9 +163,10 @@ class TestResAgg(object):
     def test_agg_select_mem_1(self):
         resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20141001')
 
-        assert resp.headers['WARC-Coll'] == 'rhiz'
-        assert resp.headers['WARC-Target-URI'] == 'http://www.vvork.com/'
-        assert resp.headers['WARC-Date'] == '2014-10-06T18:43:57Z'
+        assert resp.headers['Source-Coll'] == 'rhiz'
+
+        self._check_uri_date(resp, 'http://www.vvork.com/', '2014-10-06T18:43:57Z')
+
         assert b'HTTP/1.1 200 OK' in resp.body
 
         assert resp.headers['Link'] == MementoUtils.make_link('http://www.vvork.com/', 'original')
@@ -164,9 +177,10 @@ class TestResAgg(object):
     def test_agg_select_mem_2(self):
         resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20151231')
 
-        assert resp.headers['WARC-Coll'] == 'ia'
-        assert resp.headers['WARC-Target-URI'] == 'http://vvork.com/'
-        assert resp.headers['WARC-Date'] == '2016-01-10T13:48:55Z'
+        assert resp.headers['Source-Coll'] == 'ia'
+
+        self._check_uri_date(resp, 'http://vvork.com/', '2016-01-10T13:48:55Z')
+
         assert b'HTTP/1.1 200 OK' in resp.body
 
         assert resp.headers['Link'] == MementoUtils.make_link('http://vvork.com/', 'original')
@@ -177,9 +191,9 @@ class TestResAgg(object):
     def test_agg_select_live(self):
         resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=2016')
 
-        assert resp.headers['WARC-Coll'] == 'live'
-        assert resp.headers['WARC-Target-URI'] == 'http://vvork.com/'
-        assert resp.headers['WARC-Date'] != ''
+        assert resp.headers['Source-Coll'] == 'live'
+
+        self._check_uri_date(resp, 'http://vvork.com/', True)
 
         assert resp.headers['Link'] == MementoUtils.make_link('http://vvork.com/', 'original')
         assert resp.headers['Memento-Datetime'] != ''
@@ -189,9 +203,9 @@ class TestResAgg(object):
     def test_agg_select_local(self):
         resp = self.testapp.get('/many/resource?url=http://iana.org/&closest=20140126200624')
 
-        assert resp.headers['WARC-Coll'] == 'local'
-        assert resp.headers['WARC-Target-URI'] == 'http://www.iana.org/'
-        assert resp.headers['WARC-Date'] == '2014-01-26T20:06:24Z'
+        assert resp.headers['Source-Coll'] == 'local'
+
+        self._check_uri_date(resp, 'http://www.iana.org/', '2014-01-26T20:06:24Z')
 
         assert resp.headers['Link'] == MementoUtils.make_link('http://www.iana.org/', 'original')
         assert resp.headers['Memento-Datetime'] == 'Sun, 26 Jan 2014 20:06:24 GMT'
@@ -208,9 +222,9 @@ Host: iana.org
 
         resp = self.testapp.post('/many/resource/postreq?url=http://iana.org/&closest=20140126200624', req_data)
 
-        assert resp.headers['WARC-Coll'] == 'local'
-        assert resp.headers['WARC-Target-URI'] == 'http://www.iana.org/'
-        assert resp.headers['WARC-Date'] == '2014-01-26T20:06:24Z'
+        assert resp.headers['Source-Coll'] == 'local'
+
+        self._check_uri_date(resp, 'http://www.iana.org/', '2014-01-26T20:06:24Z')
 
         assert resp.headers['Link'] == MementoUtils.make_link('http://www.iana.org/', 'original')
         assert resp.headers['Memento-Datetime'] == 'Sun, 26 Jan 2014 20:06:24 GMT'
@@ -227,9 +241,9 @@ Host: httpbin.org
 
         resp = self.testapp.post('/many/resource/postreq?url=http://httpbin.org/get?foo=bar&closest=now', req_data)
 
-        assert resp.headers['WARC-Coll'] == 'live'
-        assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/get?foo=bar'
-        assert resp.headers['WARC-Date'] != ''
+        assert resp.headers['Source-Coll'] == 'live'
+
+        self._check_uri_date(resp, 'http://httpbin.org/get?foo=bar', True)
 
         assert resp.headers['Link'] == MementoUtils.make_link('http://httpbin.org/get?foo=bar', 'original')
         assert resp.headers['Memento-Datetime'] != ''
@@ -252,9 +266,9 @@ foo=bar&test=abc"""
 
         resp = self.testapp.post('/posttest/resource/postreq?url=http://httpbin.org/post', req_data)
 
-        assert resp.headers['WARC-Coll'] == 'post'
-        assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/post'
-        assert resp.headers['WARC-Date'] != ''
+        assert resp.headers['Source-Coll'] == 'post'
+
+        self._check_uri_date(resp, 'http://httpbin.org/post', True)
 
         assert resp.headers['Link'] == MementoUtils.make_link('http://httpbin.org/post', 'original')
         assert resp.headers['Memento-Datetime'] != ''
@@ -271,8 +285,10 @@ foo=bar&test=abc"""
 
         resp = self.testapp.post('/fallback/resource?url=http://httpbin.org/post', req_data)
 
-        assert resp.headers['WARC-Coll'] == 'post'
-        assert resp.headers['WARC-Target-URI'] == 'http://httpbin.org/post'
+        assert resp.headers['Source-Coll'] == 'post'
+
+        self._check_uri_date(resp, 'http://httpbin.org/post', True)
+
         assert resp.headers['Link'] == MementoUtils.make_link('http://httpbin.org/post', 'original')
 
         assert b'HTTP/1.1 200 OK' in resp.body
@@ -285,8 +301,10 @@ foo=bar&test=abc"""
     def test_agg_seq_fallback_1(self):
         resp = self.testapp.get('/fallback/resource?url=http://www.iana.org/')
 
-        assert resp.headers['WARC-Coll'] == 'live'
-        assert resp.headers['WARC-Target-URI'] == 'http://www.iana.org/'
+        assert resp.headers['Source-Coll'] == 'live'
+
+        self._check_uri_date(resp, 'http://www.iana.org/', True)
+
         assert resp.headers['Link'] == MementoUtils.make_link('http://www.iana.org/', 'original')
 
         assert b'HTTP/1.1 200 OK' in resp.body
@@ -296,9 +314,9 @@ foo=bar&test=abc"""
     def test_agg_seq_fallback_2(self):
         resp = self.testapp.get('/fallback/resource?url=http://www.example.com/')
 
-        assert resp.headers['WARC-Coll'] == 'example'
-        assert resp.headers['WARC-Date'] == '2016-02-25T04:23:29Z'
-        assert resp.headers['WARC-Target-URI'] == 'http://example.com/'
+        assert resp.headers['Source-Coll'] == 'example'
+
+        self._check_uri_date(resp, 'http://example.com/', '2016-02-25T04:23:29Z')
 
         assert resp.headers['Link'] == MementoUtils.make_link('http://example.com/', 'original')
         assert resp.headers['Memento-Datetime'] == 'Thu, 25 Feb 2016 04:23:29 GMT'
@@ -318,11 +336,14 @@ foo=bar&test=abc"""
     def test_agg_local_revisit(self):
         resp = self.testapp.get('/many/resource?url=http://www.example.com/&closest=20140127171251&sources=local')
 
-        assert resp.headers['WARC-Coll'] == 'local'
-        assert resp.headers['WARC-Target-URI'] == 'http://example.com'
-        assert resp.headers['WARC-Date'] == '2014-01-27T17:12:51Z'
-        assert resp.headers['WARC-Refers-To-Target-URI'] == 'http://example.com'
-        assert resp.headers['WARC-Refers-To-Date'] == '2014-01-27T17:12:00Z'
+        assert resp.headers['Source-Coll'] == 'local'
+
+        buff = BytesIO(resp.body)
+        status_headers = StatusAndHeadersParser(['WARC/1.0']).parse(buff)
+        assert status_headers.get_header('WARC-Target-URI') == 'http://example.com'
+        assert status_headers.get_header('WARC-Date') == '2014-01-27T17:12:51Z'
+        assert status_headers.get_header('WARC-Refers-To-Target-URI') == 'http://example.com'
+        assert status_headers.get_header('WARC-Refers-To-Date') == '2014-01-27T17:12:00Z'
 
         assert resp.headers['Link'] == MementoUtils.make_link('http://example.com', 'original')
         assert resp.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
