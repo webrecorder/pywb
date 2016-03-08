@@ -83,7 +83,7 @@ class TestUpstream(object):
 
     def test_live_1(self):
         resp = requests.get(self.base_url + '/live/resource?url=http://httpbin.org/get', stream=True)
-        assert resp.headers['Source-Coll'] == 'live'
+        assert resp.headers['WebAgg-Source-Coll'] == 'live'
 
         record = ArcWarcRecordLoader().parse_record_stream(resp.raw, no_record_parse=False)
         assert record.rec_headers.get_header('WARC-Target-URI') == 'http://httpbin.org/get'
@@ -91,7 +91,7 @@ class TestUpstream(object):
 
     def test_upstream_1(self):
         resp = self.testapp.get('/upstream/resource?url=http://httpbin.org/get')
-        assert resp.headers['Source-Coll'] == 'upstream:live'
+        assert resp.headers['WebAgg-Source-Coll'] == 'upstream:live'
 
         raw = BytesIO(resp.body)
 
@@ -101,7 +101,7 @@ class TestUpstream(object):
 
     def test_upstream_2(self):
         resp = self.testapp.get('/upstream_opt/resource?url=http://httpbin.org/get')
-        assert resp.headers['Source-Coll'] == 'upstream_opt:live', resp.headers
+        assert resp.headers['WebAgg-Source-Coll'] == 'upstream_opt:live', resp.headers
 
         raw = BytesIO(resp.body)
 

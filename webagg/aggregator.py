@@ -37,10 +37,6 @@ class BaseAggregator(object):
         cdx_iter = process_cdx(cdx_iter, query)
         return cdx_iter, dict(errs)
 
-    def load_child_source_list(self, name, source, params):
-        res = self.load_child_source(name, source, params)
-        return list(res[0]), res[1]
-
     def load_child_source(self, name, source, params):
         try:
             params['_formatter'] = ParamFormatter(params, name)
@@ -202,48 +198,6 @@ class GeventMixin(object):
 
 #=============================================================================
 class GeventTimeoutAggregator(TimeoutMixin, GeventMixin, BaseSourceListAggregator):
-    pass
-
-
-#=============================================================================
-class ConcurrentMixin(object):
-    def __init__(self, *args, **kwargs):
-        super(ConcurrentMixin, self).__init__(*args, **kwargs)
-        if kwargs.get('use_processes'):
-            self.pool_class = futures.ThreadPoolExecutor
-        else:
-            self.pool_class = futures.ProcessPoolExecutor
-        self.timeout = kwargs.get('timeout', 5.0)
-        self.size = kwargs.get('size')
-
-    def _load_all(self, params):
-        params['_timeout'] = self.timeout
-
-        sources = list(self._iter_sources(params))
-
-        with self.pool_class(max_workers=self.size) as executor:
-            def do_spawn(name, source):
-                return executor.submit(self.load_child_source_list,
-                                       name, source, params), name
-
-            jobs = dict([do_spawn(name, source) for name, source in sources])
-
-            res_done, res_not_done = futures.wait(jobs.keys(), timeout=self.timeout)
-
-            results = []
-            for job in res_done:
-                results.append(job.result())
-
-            for job in res_not_done:
-                name = jobs[job]
-                results.append((iter([]), [(name, 'timeout')]))
-                self._on_source_error(name)
-
-        return results
-
-
-#=============================================================================
-class ThreadedTimeoutAggregator(TimeoutMixin, ConcurrentMixin, BaseSourceListAggregator):
     pass
 
 

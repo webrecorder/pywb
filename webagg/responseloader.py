@@ -70,7 +70,7 @@ class BaseLoader(object):
 
         out_headers = {}
         out_headers['WebAgg-Type'] = 'warc'
-        out_headers['Source-Coll'] = cdx.get('source', '')
+        out_headers['WebAgg-Source-Coll'] = cdx.get('source', '')
         out_headers['Content-Type'] = 'application/warc-record'
 
         if not warc_headers:
@@ -237,7 +237,7 @@ class LiveWebLoader(BaseLoader):
 
         agg_type = upstream_res.headers.get('WebAgg-Type')
         if agg_type == 'warc':
-            cdx['source'] = upstream_res.headers.get('Source-Coll')
+            cdx['source'] = upstream_res.headers.get('WebAgg-Source-Coll')
             return None, upstream_res.headers, upstream_res.raw
 
         http_headers_buff = recorder.get_headers_buff()
