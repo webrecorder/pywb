@@ -200,7 +200,7 @@ class CDXObject(OrderedDict):
         :param fields: list of field names to output
         """
         if fields is None:
-            return json_encode(obj) + '\n'
+            return json_encode(OrderedDict(((x, obj[x]) for x in obj if not x.startswith('_')))) + '\n'
 
         result = json_encode(OrderedDict([(x, obj[x]) for x in fields if x in obj])) + '\n'
 
