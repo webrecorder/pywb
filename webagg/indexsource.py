@@ -2,12 +2,11 @@ import redis
 
 from pywb.utils.binsearch import iter_range
 from pywb.utils.timeutils import timestamp_to_http_date, http_date_to_timestamp
-from pywb.utils.timeutils import timestamp_to_sec, timestamp_now
-from pywb.utils.canonicalize import canonicalize, calc_search_range
+from pywb.utils.timeutils import timestamp_now
+from pywb.utils.canonicalize import canonicalize
 from pywb.utils.wbexception import NotFoundException
 
 from pywb.cdx.cdxobject import CDXObject
-from pywb.cdx.query import CDXQuery
 
 from webagg.liverec import patched_requests as requests
 
@@ -81,26 +80,16 @@ class RemoteIndexSource(BaseIndexSource):
 
 
 #=============================================================================
-class UpstreamAggIndexSource(RemoteIndexSource):
-    def __init__(self, base_url):
-        api_url = base_url + '/index?url={url}'
-        proxy_url = base_url + '/resource?url={url}&closest={timestamp}'
-        super(UpstreamAggIndexSource, self).__init__(api_url, proxy_url, 'filename')
-
-    def _set_load_url(self, cdx):
-        super(UpstreamAggIndexSource, self)._set_load_url(cdx)
-        cdx['offset'] = '0'
-        cdx.pop('load_url', '')
-
-
-#=============================================================================
 class LiveIndexSource(BaseIndexSource):
+    def __init__(self, proxy_url='{url}'):
+        self.proxy_url = proxy_url
+
     def load_index(self, params):
         cdx = CDXObject()
         cdx['urlkey'] = params.get('key').decode('utf-8')
         cdx['timestamp'] = timestamp_now()
         cdx['url'] = params['url']
-        cdx['load_url'] = params['url']
+        cdx['load_url'] = res_template(self.proxy_url, params)
         cdx['is_live'] = 'true'
         def live():
             yield cdx

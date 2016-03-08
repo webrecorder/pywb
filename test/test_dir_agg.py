@@ -5,6 +5,8 @@ import json
 
 from .testutils import to_path
 
+from mock import patch
+
 from webagg.aggregator import DirectoryIndexSource, SimpleAggregator
 from webagg.indexsource import MementoIndexSource
 
@@ -13,6 +15,10 @@ from webagg.indexsource import MementoIndexSource
 root_dir = None
 orig_cwd = None
 dir_loader = None
+
+linkheader = """\
+<http://example.com/>; rel="original", <http://web.archive.org/web/timemap/link/http://example.com/>; rel="timemap"; type="application/link-format", <http://web.archive.org/web/20020120142510/http://example.com/>; rel="first memento"; datetime="Sun, 20 Jan 2002 14:25:10 GMT", <http://web.archive.org/web/20100501123414/http://example.com/>; rel="prev memento"; datetime="Sat, 01 May 2010 12:34:14 GMT", <http://web.archive.org/web/20100514231857/http://example.com/>; rel="memento"; datetime="Fri, 14 May 2010 23:18:57 GMT", <http://web.archive.org/web/20100519202418/http://example.com/>; rel="next memento"; datetime="Wed, 19 May 2010 20:24:18 GMT", <http://web.archive.org/web/20160307200619/http://example.com/>; rel="last memento"; datetime="Mon, 07 Mar 2016 20:06:19 GMT"\
+"""
 
 def setup_module():
     global root_dir
@@ -124,7 +130,10 @@ def test_agg_all_found_2():
     assert(errs == {})
 
 
+def mock_link_header(*args, **kwargs):
+    return linkheader
 
+@patch('webagg.indexsource.MementoIndexSource.get_timegate_links', mock_link_header)
 def test_agg_dir_and_memento():
     sources = {'ia': MementoIndexSource.from_timegate_url('http://web.archive.org/web/'),
                'local': dir_loader}
@@ -133,9 +142,9 @@ def test_agg_dir_and_memento():
     res, errs = agg_source({'url': 'example.com/', 'param.local.coll': '*', 'closest': '20100512', 'limit': 6})
 
     exp = [
-        {'source': 'ia', 'timestamp': '20100513052358', 'load_url': 'http://web.archive.org/web/20100513052358id_/http://example.com/'},
         {'source': 'ia', 'timestamp': '20100514231857', 'load_url': 'http://web.archive.org/web/20100514231857id_/http://example.com/'},
-        {'source': 'ia', 'timestamp': '20100506013442', 'load_url': 'http://web.archive.org/web/20100506013442id_/http://example.com/'},
+        {'source': 'ia', 'timestamp': '20100519202418', 'load_url': 'http://web.archive.org/web/20100519202418id_/http://example.com/'},
+        {'source': 'ia', 'timestamp': '20100501123414', 'load_url': 'http://web.archive.org/web/20100501123414id_/http://example.com/'},
         {'source': 'local:colls/C/indexes', 'timestamp': '20140127171200', 'filename': 'dupes.warc.gz'},
         {'source': 'local:colls/C/indexes', 'timestamp': '20140127171251', 'filename': 'dupes.warc.gz'},
         {'source': 'local:colls/A/indexes', 'timestamp': '20160225042329', 'filename': 'example.warc.gz'}

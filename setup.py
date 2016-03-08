@@ -14,7 +14,7 @@ class PyTest(TestCommand):
         import pytest
         import sys
         import os
-        cmdline = ' --cov webagg -v test/'
+        cmdline = ' --cov webagg -vv test/'
         errcode = pytest.main(cmdline)
         sys.exit(errcode)
 
