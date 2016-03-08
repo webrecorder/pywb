@@ -3,10 +3,10 @@ from webagg.liverec import request as remote_request
 
 from webagg.utils import MementoUtils
 
-from requests import session
+from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_timestamp
+from pywb.utils.timeutils import iso_date_to_datetime, datetime_to_iso_date
+from pywb.utils.timeutils import http_date_to_datetime, datetime_to_http_date
 
-from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_http_date
-from pywb.utils.timeutils import iso_date_to_datetime
 from pywb.utils.wbexception import LiveResourceException
 from pywb.utils.statusandheaders import StatusAndHeaders
 
@@ -62,20 +62,31 @@ class StreamIter(six.Iterator):
 #=============================================================================
 class BaseLoader(object):
     def __call__(self, cdx, params):
-        entry = self._load_resource(cdx, params)
+        entry = self.load_resource(cdx, params)
         if not entry:
             return None, None
 
-        warc_headers, other_headers_buff, stream = entry
+        warc_headers, other_headers, stream = entry
 
         out_headers = {}
+        out_headers['WebAgg-Type'] = 'warc'
         out_headers['Source-Coll'] = cdx.get('source', '')
+        out_headers['Content-Type'] = 'application/warc-record'
+
+        if not warc_headers:
+            if other_headers:
+                out_headers['Link'] = other_headers.get('Link')
+                out_headers['Memento-Datetime'] = other_headers.get('Memento-Datetime')
+                out_headers['Content-Length'] = other_headers.get('Content-Length')
+
+                #for n, v in other_headers.items():
+                #    out_headers[n] = v
+
+            return out_headers, StreamIter(stream)
 
         out_headers['Link'] = MementoUtils.make_link(
                                 warc_headers.get_header('WARC-Target-URI'),
                                 'original')
-
-        out_headers['Content-Type'] = 'application/warc-record'
 
         memento_dt = iso_date_to_datetime(warc_headers.get_header('WARC-Date'))
         out_headers['Memento-Datetime'] = datetime_to_http_date(memento_dt)
@@ -88,7 +99,7 @@ class BaseLoader(object):
 
         return out_headers, StreamIter(stream,
                                        header1=warc_headers_buff,
-                                       header2=other_headers_buff)
+                                       header2=other_headers)
 
     def _set_content_len(self, content_len_str, headers, existing_len):
         # Try to set content-length, if it is available and valid
@@ -134,7 +145,10 @@ class WARCPathLoader(BaseLoader):
 
             yield check
 
-    def _load_resource(self, cdx, params):
+    def load_resource(self, cdx, params):
+        if cdx.get('_cached_result'):
+            return cdx.get('_cached_result')
+
         if not cdx.get('filename') or cdx.get('offset') is None:
             return None
 
@@ -174,7 +188,7 @@ class LiveWebLoader(BaseLoader):
                     b'content-location',
                     b'x-archive')
 
-    def _load_resource(self, cdx, params):
+    def load_resource(self, cdx, params):
         load_url = cdx.get('load_url')
         if not load_url:
             return None
@@ -187,7 +201,7 @@ class LiveWebLoader(BaseLoader):
 
         dt = timestamp_to_datetime(cdx['timestamp'])
 
-        if not cdx.get('is_live'):
+        if cdx.get('memento_url'):
             req_headers['Accept-Datetime'] = datetime_to_http_date(dt)
 
         # if different url, ensure origin is not set
@@ -212,6 +226,20 @@ class LiveWebLoader(BaseLoader):
         except Exception as e:
             raise LiveResourceException(load_url)
 
+        memento_dt = upstream_res.headers.get('Memento-Datetime')
+        if memento_dt:
+            dt = http_date_to_datetime(memento_dt)
+            cdx['timestamp'] = datetime_to_timestamp(dt)
+        elif cdx.get('memento_url'):
+        # if 'memento_url' set and no Memento-Datetime header present
+        # then its an error
+            return None
+
+        agg_type = upstream_res.headers.get('WebAgg-Type')
+        if agg_type == 'warc':
+            cdx['source'] = upstream_res.headers.get('Source-Coll')
+            return None, upstream_res.headers, upstream_res.raw
+
         http_headers_buff = recorder.get_headers_buff()
 
         warc_headers = {}
@@ -219,7 +247,7 @@ class LiveWebLoader(BaseLoader):
         warc_headers['WARC-Type'] = 'response'
         warc_headers['WARC-Record-ID'] = self._make_warc_id()
         warc_headers['WARC-Target-URI'] = cdx['url']
-        warc_headers['WARC-Date'] = self._make_date(dt)
+        warc_headers['WARC-Date'] = datetime_to_iso_date(dt)
         if recorder.target_ip:
             warc_headers['WARC-IP-Address'] = recorder.target_ip
 
@@ -231,10 +259,6 @@ class LiveWebLoader(BaseLoader):
 
         warc_headers = StatusAndHeaders('WARC/1.0', warc_headers.items())
         return (warc_headers, http_headers_buff, upstream_res.raw)
-
-    @staticmethod
-    def _make_date(dt):
-        return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     @staticmethod
     def _make_warc_id(id_=None):

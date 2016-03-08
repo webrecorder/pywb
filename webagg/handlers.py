@@ -118,7 +118,6 @@ class ResourceHandler(IndexHandler):
 class DefaultResourceHandler(ResourceHandler):
     def __init__(self, index_source, warc_paths=''):
         loaders = [WARCPathLoader(warc_paths, index_source),
-               #    UpstreamProxyLoader(),
                    LiveWebLoader(),
                   ]
         super(DefaultResourceHandler, self).__init__(index_source, loaders)
