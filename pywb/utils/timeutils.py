@@ -17,6 +17,7 @@ from email.utils import parsedate, formatdate
 DATE_TIMESPLIT = re.compile(r'[^\d]')
 
 TIMESTAMP_14 = '%Y%m%d%H%M%S'
+ISO_DT = '%Y-%m-%dT%H:%M:%SZ'
 
 PAD_14_DOWN = '10000101000000'
 PAD_14_UP =   '29991231235959'
@@ -62,6 +63,18 @@ def datetime_to_http_date(the_datetime):
     return formatdate(timeval=timeval,
                       localtime=False,
                       usegmt=True)
+
+
+def datetime_to_iso_date(the_datetime):
+    """
+    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12))
+    '2013-12-26T10:11:12Z'
+
+    >>> datetime_to_iso_date( datetime.datetime(2013, 12, 26, 10, 11, 12))
+    '2013-12-26T10:11:12Z'
+    """
+
+    return the_datetime.strftime(ISO_DT)
 
 
 def datetime_to_timestamp(the_datetime):
