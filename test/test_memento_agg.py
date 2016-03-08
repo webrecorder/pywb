@@ -1,7 +1,7 @@
 from gevent import monkey; monkey.patch_all(thread=False)
 
 from webagg.aggregator import SimpleAggregator, GeventTimeoutAggregator
-from webagg.aggregator import ThreadedTimeoutAggregator, BaseAggregator
+from webagg.aggregator import BaseAggregator
 
 from webagg.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource
 from .testutils import json_list, to_path
@@ -25,28 +25,14 @@ sources = {
 
 aggs = {'simple': SimpleAggregator(sources),
         'gevent': GeventTimeoutAggregator(sources, timeout=5.0),
-        'threaded': ThreadedTimeoutAggregator(sources, timeout=5.0),
-        'processes': ThreadedTimeoutAggregator(sources, timeout=5.0, use_processes=True),
        }
 
-agg_tm = {'gevent': GeventTimeoutAggregator(sources, timeout=0.0),
-          'threaded': ThreadedTimeoutAggregator(sources, timeout=0.0),
-          'processes': ThreadedTimeoutAggregator(sources, timeout=0.0, use_processes=True)}
+agg_tm = {'gevent': GeventTimeoutAggregator(sources, timeout=0.0)}
 
 nf = {'notfound': FileIndexSource(to_path('testdata/not-found-x'))}
 agg_nf = {'simple': SimpleAggregator(nf),
           'gevent': GeventTimeoutAggregator(nf, timeout=5.0),
-          'threaded': ThreadedTimeoutAggregator(nf, timeout=5.0),
-          'processes': ThreadedTimeoutAggregator(nf, timeout=5.0, use_processes=True),
          }
-
-if six.PY2:
-    del aggs['threaded']
-    del aggs['processes']
-    del agg_tm['threaded']
-    del agg_tm['processes']
-    del agg_nf['threaded']
-    del agg_nf['processes']
 
 
 @pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))

@@ -132,7 +132,7 @@ class TestResAgg(object):
         headers = {'foo': 'bar'}
         resp = self.testapp.get('/live/resource?url=http://httpbin.org/get?foo=bar', headers=headers)
 
-        assert resp.headers['Source-Coll'] == 'live'
+        assert resp.headers['WebAgg-Source-Coll'] == 'live'
 
         self._check_uri_date(resp, 'http://httpbin.org/get?foo=bar', True)
 
@@ -148,7 +148,7 @@ class TestResAgg(object):
         resp = self.testapp.post('/live/resource?url=http://httpbin.org/post',
                                  OrderedDict([('foo', 'bar')]))
 
-        assert resp.headers['Source-Coll'] == 'live'
+        assert resp.headers['WebAgg-Source-Coll'] == 'live'
 
         self._check_uri_date(resp, 'http://httpbin.org/post', True)
 
@@ -163,7 +163,7 @@ class TestResAgg(object):
     def test_agg_select_mem_1(self):
         resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20141001')
 
-        assert resp.headers['Source-Coll'] == 'rhiz'
+        assert resp.headers['WebAgg-Source-Coll'] == 'rhiz'
 
         self._check_uri_date(resp, 'http://www.vvork.com/', '2014-10-06T18:43:57Z')
 
@@ -177,7 +177,7 @@ class TestResAgg(object):
     def test_agg_select_mem_2(self):
         resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20151231')
 
-        assert resp.headers['Source-Coll'] == 'ia'
+        assert resp.headers['WebAgg-Source-Coll'] == 'ia'
 
         self._check_uri_date(resp, 'http://vvork.com/', '2016-01-10T13:48:55Z')
 
@@ -191,7 +191,7 @@ class TestResAgg(object):
     def test_agg_select_live(self):
         resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=2016')
 
-        assert resp.headers['Source-Coll'] == 'live'
+        assert resp.headers['WebAgg-Source-Coll'] == 'live'
 
         self._check_uri_date(resp, 'http://vvork.com/', True)
 
@@ -203,7 +203,7 @@ class TestResAgg(object):
     def test_agg_select_local(self):
         resp = self.testapp.get('/many/resource?url=http://iana.org/&closest=20140126200624')
 
-        assert resp.headers['Source-Coll'] == 'local'
+        assert resp.headers['WebAgg-Source-Coll'] == 'local'
 
         self._check_uri_date(resp, 'http://www.iana.org/', '2014-01-26T20:06:24Z')
 
@@ -222,7 +222,7 @@ Host: iana.org
 
         resp = self.testapp.post('/many/resource/postreq?url=http://iana.org/&closest=20140126200624', req_data)
 
-        assert resp.headers['Source-Coll'] == 'local'
+        assert resp.headers['WebAgg-Source-Coll'] == 'local'
 
         self._check_uri_date(resp, 'http://www.iana.org/', '2014-01-26T20:06:24Z')
 
@@ -241,7 +241,7 @@ Host: httpbin.org
 
         resp = self.testapp.post('/many/resource/postreq?url=http://httpbin.org/get?foo=bar&closest=now', req_data)
 
-        assert resp.headers['Source-Coll'] == 'live'
+        assert resp.headers['WebAgg-Source-Coll'] == 'live'
 
         self._check_uri_date(resp, 'http://httpbin.org/get?foo=bar', True)
 
@@ -266,7 +266,7 @@ foo=bar&test=abc"""
 
         resp = self.testapp.post('/posttest/resource/postreq?url=http://httpbin.org/post', req_data)
 
-        assert resp.headers['Source-Coll'] == 'post'
+        assert resp.headers['WebAgg-Source-Coll'] == 'post'
 
         self._check_uri_date(resp, 'http://httpbin.org/post', True)
 
@@ -285,7 +285,7 @@ foo=bar&test=abc"""
 
         resp = self.testapp.post('/fallback/resource?url=http://httpbin.org/post', req_data)
 
-        assert resp.headers['Source-Coll'] == 'post'
+        assert resp.headers['WebAgg-Source-Coll'] == 'post'
 
         self._check_uri_date(resp, 'http://httpbin.org/post', True)
 
@@ -301,7 +301,7 @@ foo=bar&test=abc"""
     def test_agg_seq_fallback_1(self):
         resp = self.testapp.get('/fallback/resource?url=http://www.iana.org/')
 
-        assert resp.headers['Source-Coll'] == 'live'
+        assert resp.headers['WebAgg-Source-Coll'] == 'live'
 
         self._check_uri_date(resp, 'http://www.iana.org/', True)
 
@@ -314,7 +314,7 @@ foo=bar&test=abc"""
     def test_agg_seq_fallback_2(self):
         resp = self.testapp.get('/fallback/resource?url=http://www.example.com/')
 
-        assert resp.headers['Source-Coll'] == 'example'
+        assert resp.headers['WebAgg-Source-Coll'] == 'example'
 
         self._check_uri_date(resp, 'http://example.com/', '2016-02-25T04:23:29Z')
 
@@ -336,7 +336,7 @@ foo=bar&test=abc"""
     def test_agg_local_revisit(self):
         resp = self.testapp.get('/many/resource?url=http://www.example.com/&closest=20140127171251&sources=local')
 
-        assert resp.headers['Source-Coll'] == 'local'
+        assert resp.headers['WebAgg-Source-Coll'] == 'local'
 
         buff = BytesIO(resp.body)
         status_headers = StatusAndHeadersParser(['WARC/1.0']).parse(buff)
