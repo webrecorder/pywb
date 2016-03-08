@@ -142,6 +142,9 @@ headers = {2})".format(self.protocol, self.statusline, headers_str)
 
         return string
 
+    def to_bytes(self):
+        return str(self).encode('iso-8859-1') + b'\r\n'
+
 
 #=================================================================
 def _strip_count(string, total_read):
