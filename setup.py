@@ -14,7 +14,7 @@ class PyTest(TestCommand):
         import pytest
         import sys
         import os
-        cmdline = ' --cov webagg -vv test/'
+        cmdline = ' --cov-config .coveragerc --cov webagg/ -vv webagg/test/'
         errcode = pytest.main(cmdline)
         sys.exit(errcode)
 
@@ -30,6 +30,7 @@ setup(
     long_description=open('README.rst').read(),
     provides=[
         'webagg',
+        'recorder',
         ],
     install_requires=[
         'pywb==1.0b',
