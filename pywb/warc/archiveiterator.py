@@ -83,6 +83,7 @@ class ArchiveIterator(object):
 
         raise_invalid_gzip = False
         empty_record = False
+        record = None
 
         while True:
             try:
@@ -96,7 +97,8 @@ class ArchiveIterator(object):
             except EOFError:
                 empty_record = True
 
-            self.read_to_end(record)
+            if record:
+                self.read_to_end(record)
 
             if self.reader.decompressor:
                 # if another gzip member, continue

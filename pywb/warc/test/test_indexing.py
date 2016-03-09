@@ -329,6 +329,17 @@ com,example)/ 20140216050221 {"url": "http://example.com/", "digest": "PEWDX5GTH
 """)
 
 
+def test_cdxj_empty():
+    options = dict(cdxj=True)
+
+    buff = BytesIO()
+
+    empty = BytesIO()
+
+    write_cdx_index(buff, empty,  'empty.warc.gz', **options)
+
+    assert buff.getvalue() == b''
+
 
 
 if __name__ == "__main__":
