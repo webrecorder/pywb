@@ -1,4 +1,4 @@
-PyWb 0.11.2
+PyWb 0.30.0
 ===========
 
 .. image:: https://travis-ci.org/ikreymer/pywb.svg?branch=master
@@ -6,7 +6,7 @@ PyWb 0.11.2
 .. image:: https://coveralls.io/repos/ikreymer/pywb/badge.svg?branch=master
       :target: https://coveralls.io/r/ikreymer/pywb?branch=master
 
-**pywb** is a python implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
+**pywb** is a Python (2 and ) implementation of web archival replay tools, sometimes also known as 'Wayback Machine'.
 
 **pywb** allows high-quality replay (browsing) of archived web data stored in standardized `ARC <http://en.wikipedia.org/wiki/ARC_(file_format)>`_ and `WARC <http://en.wikipedia.org/wiki/Web_ARChive>`_,
 and it can also serve as a customizable rewriting proxy to live web content.
@@ -19,6 +19,8 @@ Additionally, **pywb** includes an extensive `index query api <https://github.co
 The software can run as a traditional web application or an HTTP or HTTPS proxy server, and has been tested on Linux, OS X and Windows platforms.
 
 **pywb** is fully compliant with the `Memento <http://mementoweb.org/>`_ protocol (`RFC-7089 <http://tools.ietf.org/html/rfc7089>`_).
+
+**pywb** supports Python 2.6+ and Python 3.3+
 
 
 Getting Started -- Run your own Web Archive
