@@ -3,9 +3,11 @@ pywb 0.11.2 changelist
 
 Rewriting: if no charset specified in original page, don't add charset to allow browser to detect.
 
-Rewriting: rewrite <meta content=""> attribute if it is a url.
+Rewriting: rewrite ``<meta content="">`` attribute if it is a url.
 
 wb.js: pad shorter timestamp to 14 digits.
+
+Indexing: fixed exceptino when indexing empty files.
 
 
 pywb 0.11.1 changelist
