@@ -45,16 +45,16 @@ def setup_module():
     global dir_loader
     dir_loader = DirectoryIndexSource(dir_prefix, dir_path)
 
-    global orig_cwd
-    orig_cwd = os.getcwd()
-    os.chdir(root_dir)
+    #global orig_cwd
+    #orig_cwd = os.getcwd()
+    #os.chdir(root_dir)
 
     # use actually set dir
-    root_dir = os.getcwd()
+    #root_dir = os.getcwd()
 
 def teardown_module():
-    global orig_cwd
-    os.chdir(orig_cwd)
+    #global orig_cwd
+    #os.chdir(orig_cwd)
 
     global root_dir
     shutil.rmtree(root_dir)
@@ -72,7 +72,7 @@ def test_agg_no_coll_set():
 def test_agg_collA_found():
     res, errs = dir_loader({'url': 'example.com/', 'param.coll': 'A'})
 
-    exp = [{'source': 'colls/A/indexes', 'timestamp': '20160225042329', 'filename': 'example.warc.gz'}]
+    exp = [{'source': 'colls/A/indexes/example.cdxj', 'timestamp': '20160225042329', 'filename': 'example.warc.gz'}]
 
     assert(to_json_list(res) == exp)
     assert(errs == {})
@@ -88,7 +88,7 @@ def test_agg_collB():
 def test_agg_collB_found():
     res, errs = dir_loader({'url': 'iana.org/', 'param.coll': 'B'})
 
-    exp = [{'source': 'colls/B/indexes', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'}]
+    exp = [{'source': 'colls/B/indexes/iana.cdxj', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'}]
 
     assert(to_json_list(res) == exp)
     assert(errs == {})
@@ -98,7 +98,7 @@ def test_extra_agg_collB():
     agg_source = SimpleAggregator({'dir': dir_loader})
     res, errs = agg_source({'url': 'iana.org/', 'param.coll': 'B'})
 
-    exp = [{'source': 'dir:colls/B/indexes', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'}]
+    exp = [{'source': 'dir:colls/B/indexes/iana.cdxj', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'}]
 
     assert(to_json_list(res) == exp)
     assert(errs == {})
@@ -108,9 +108,9 @@ def test_agg_all_found_1():
     res, errs = dir_loader({'url': 'iana.org/', 'param.coll': '*'})
 
     exp = [
-        {'source': 'colls/B/indexes', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'},
-        {'source': 'colls/C/indexes', 'timestamp': '20140127171238', 'filename': 'dupes.warc.gz'},
-        {'source': 'colls/C/indexes', 'timestamp': '20140127171238', 'filename': 'dupes.warc.gz'},
+        {'source': 'colls/B/indexes/iana.cdxj', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'},
+        {'source': 'colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171238', 'filename': 'dupes.warc.gz'},
+        {'source': 'colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171238', 'filename': 'dupes.warc.gz'},
     ]
 
     assert(to_json_list(res) == exp)
@@ -121,9 +121,9 @@ def test_agg_all_found_2():
     res, errs = dir_loader({'url': 'example.com/', 'param.coll': '*'})
 
     exp = [
-        {'source': 'colls/C/indexes', 'timestamp': '20140127171200', 'filename': 'dupes.warc.gz'},
-        {'source': 'colls/C/indexes', 'timestamp': '20140127171251', 'filename': 'dupes.warc.gz'},
-        {'source': 'colls/A/indexes', 'timestamp': '20160225042329', 'filename': 'example.warc.gz'}
+        {'source': 'colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171200', 'filename': 'dupes.warc.gz'},
+        {'source': 'colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171251', 'filename': 'dupes.warc.gz'},
+        {'source': 'colls/A/indexes/example.cdxj', 'timestamp': '20160225042329', 'filename': 'example.warc.gz'}
     ]
 
     assert(to_json_list(res) == exp)
@@ -145,9 +145,9 @@ def test_agg_dir_and_memento():
         {'source': 'ia', 'timestamp': '20100514231857', 'load_url': 'http://web.archive.org/web/20100514231857id_/http://example.com/'},
         {'source': 'ia', 'timestamp': '20100519202418', 'load_url': 'http://web.archive.org/web/20100519202418id_/http://example.com/'},
         {'source': 'ia', 'timestamp': '20100501123414', 'load_url': 'http://web.archive.org/web/20100501123414id_/http://example.com/'},
-        {'source': 'local:colls/C/indexes', 'timestamp': '20140127171200', 'filename': 'dupes.warc.gz'},
-        {'source': 'local:colls/C/indexes', 'timestamp': '20140127171251', 'filename': 'dupes.warc.gz'},
-        {'source': 'local:colls/A/indexes', 'timestamp': '20160225042329', 'filename': 'example.warc.gz'}
+        {'source': 'local:colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171200', 'filename': 'dupes.warc.gz'},
+        {'source': 'local:colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171251', 'filename': 'dupes.warc.gz'},
+        {'source': 'local:colls/A/indexes/example.cdxj', 'timestamp': '20160225042329', 'filename': 'example.warc.gz'}
     ]
 
     assert(to_json_list(res) == exp)
@@ -175,9 +175,9 @@ def test_agg_no_dir_2():
 
 def test_agg_dir_sources_1():
     res = dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '*'})
-    exp = {'sources': {'colls/A/indexes': 'file',
-                       'colls/B/indexes': 'file',
-                       'colls/C/indexes': 'file'}
+    exp = {'sources': {'colls/A/indexes/example.cdxj': 'file',
+                       'colls/B/indexes/iana.cdxj': 'file',
+                       'colls/C/indexes/dupes.cdxj': 'file'}
           }
 
     assert(res == exp)
@@ -185,19 +185,29 @@ def test_agg_dir_sources_1():
 
 def test_agg_dir_sources_2():
     res = dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '[A,C]'})
-    exp = {'sources': {'colls/A/indexes': 'file',
-                       'colls/C/indexes': 'file'}
+    exp = {'sources': {'colls/A/indexes/example.cdxj': 'file',
+                       'colls/C/indexes/dupes.cdxj': 'file'}
           }
 
     assert(res == exp)
 
 
 def test_agg_dir_sources_single_dir():
-    loader = DirectoryIndexSource('testdata/', '')
+    loader = DirectoryIndexSource(os.path.join(root_dir, 'colls', 'A', 'indexes'), '')
+    res = loader.get_source_list({'url': 'example.com/'})
+
+    exp = {'sources': {'example.cdxj': 'file'}}
+
+    assert(res == exp)
+
+
+def test_agg_dir_sources_not_found_dir():
+    loader = DirectoryIndexSource(os.path.join(root_dir, 'colls', 'Z', 'indexes'), '')
     res = loader.get_source_list({'url': 'example.com/'})
 
     exp = {'sources': {}}
 
     assert(res == exp)
+
 
 
