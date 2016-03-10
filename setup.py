@@ -90,6 +90,9 @@ setup(
         'fakeredis',
         'mock',
        ],
+    dependency_links=[
+        'git+https://github.com/ikreymer/fakeredis.git@zset-lex-ops#egg=fakeredis-0.6.2-zset-lex-ops',
+       ],
     cmdclass={'test': PyTest},
     test_suite='',
     entry_points="""

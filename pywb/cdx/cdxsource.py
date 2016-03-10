@@ -131,8 +131,8 @@ class RedisCDXSource(CDXSource):
 
     def load_sorted_range(self, query, cdx_key):
         cdx_list = self.redis.zrangebylex(cdx_key,
-                                          '[' + query.key,
-                                          '(' + query.end_key)
+                                          b'[' + query.key,
+                                          b'(' + query.end_key)
 
         return iter(cdx_list)
 
@@ -143,7 +143,7 @@ class RedisCDXSource(CDXSource):
 
         # key is not part of list, so prepend to each line
         key += b' '
-        cdx_list = map(lambda x: key + x, cdx_list)
+        cdx_list = list(map(lambda x: key + x, cdx_list))
         return cdx_list
 
     def __str__(self):

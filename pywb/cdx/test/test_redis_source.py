@@ -4,8 +4,10 @@ com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYA
 com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz
 com,example)/ 20140127171251 http://example.com warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 11875 dupes.warc.gz
 
-# TODO: enable when FakeRedis supports zrangebylex!
-#>>> redis_cdx(redis_cdx_server_key, 'http://example.com')
+>>> redis_cdx(redis_cdx_server_key, 'http://example.com')
+com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
+com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz
+com,example)/ 20140127171251 http://example.com warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 553 11875 dupes.warc.gz
 
 """
 
@@ -21,8 +23,7 @@ from pywb import get_test_dir
 import sys
 import os
 
-test_cdx_dir = get_test_dir() + 'cdx/'
-
+test_cdx_dir = os.path.join(get_test_dir(), 'cdx/')
 
 def load_cdx_into_redis(source, filename, key=None):
     # load a cdx into mock redis
