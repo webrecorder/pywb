@@ -506,11 +506,11 @@ class TestManagedColls(object):
         index_file = os.path.join(auto_dir, INDEX_DIR, AUTOINDEX_FILE)
         assert os.path.isfile(index_file)
 
-        with open(index_file, 'rb') as fh:
+        with open(index_file, 'r') as fh:
             index = fh.read()
 
-        assert b'"example.warc.gz' in index
-        assert b'"sub/example-extra.warc' in index, index
+        assert '"example.warc.gz' in index, index
+        assert '"sub/example-extra.warc' in index, index
 
         mtime = os.path.getmtime(index_file)
 
