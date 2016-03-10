@@ -227,7 +227,18 @@ class CDXObject(OrderedDict):
         if not other._cached_json:
             other._cached_json = other.to_json()
 
-        return self._cached_json < other._cached_json
+        res = self._cached_json < other._cached_json
+        return res
+
+    def __le__(self, other):
+        if not self._cached_json:
+            self._cached_json = self.to_json()
+
+        if not other._cached_json:
+            other._cached_json = other.to_json()
+
+        res = (self._cached_json <= other._cached_json)
+        return res
 
 
 #=================================================================

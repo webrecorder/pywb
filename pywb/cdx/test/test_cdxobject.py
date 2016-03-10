@@ -41,3 +41,15 @@ def test_invalid_idx_format():
         x = IDXObject(b'a b c')
 
 
+def test_lt_le():
+    A = CDXObject(b'ca,example)/ 2016 {"url": "http://example.com/"}')
+    B = CDXObject(b'com,example)/ 2015 {"url": "http://example.com/"}')
+    C = CDXObject(b'com,example)/ 2016 {"url": "http://example.com/"}')
+
+    assert A < B
+    assert B < C
+    assert B >= A
+    assert C >= A
+    assert A < C
+
+
