@@ -33,7 +33,7 @@ A new utility, ``wb-manager`` performs the most common collection management tas
 1. Archive a Web Page
 """""""""""""""""""""
 
-If you do not have any web archive files (WARCS), you can create easiely create one from any page by using the free
+If you do not have any web archive files (WARCS), you can create easily create one from any page by using the free
 https://webrecorder.io/ service
 
 For example, you may visit https://webrecorder.io/record/http://example.com, then (after a few seconds),
