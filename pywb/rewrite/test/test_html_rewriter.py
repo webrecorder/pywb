@@ -160,6 +160,14 @@ r"""
 >>> parse('<!DOCTYPE html>Some Text without any tags <!-- comments -->', head_insert = '<script>load_stuff();</script>')
 <!DOCTYPE html>Some Text without any tags <!-- comments --><script>load_stuff();</script>
 
+# no parse comments
+>>> parse('<html><!-- <a href="/foo.html"> --></html>')
+<html><!-- <a href="/foo.html"> --></html>
+
+# with parse comments
+>>> parse('<html><!-- <a href="/foo.html"> --></html>', parse_comments=True)
+<html><!-- <a href="/web/20131226101010/http://example.com/foo.html"> --></html>
+
 # rel=canonical: rewrite (default)
 >>> parse('<link rel=canonical href="http://example.com/">')
 <link rel="canonical" href="/web/20131226101010oe_/http://example.com/">
@@ -237,8 +245,10 @@ urlrewriter_pencode = new_rewriter(rewrite_opts=dict(punycode_links=True))
 no_base_canon_rewriter = new_rewriter(rewrite_opts=dict(rewrite_rel_canon=False,
                                                         rewrite_base=False))
 
-def parse(data, head_insert=None, urlrewriter=urlrewriter):
-    parser = HTMLRewriter(urlrewriter, head_insert = head_insert, url = ORIGINAL_URL)
+def parse(data, head_insert=None, urlrewriter=urlrewriter, parse_comments=False):
+    parser = HTMLRewriter(urlrewriter, head_insert=head_insert,
+                          url=ORIGINAL_URL,
+                          parse_comments=parse_comments)
 
     if six.PY2 and isinstance(data, six.text_type):
         data = data.encode('utf-8')
