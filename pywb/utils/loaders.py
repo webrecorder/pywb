@@ -375,7 +375,7 @@ class LimitReader(object):
     def wrap_stream(stream, content_length):
         """
         If given content_length is an int > 0, wrap the stream
-        in a LimitReader. Ottherwise, return the stream unaltered
+        in a LimitReader. Otherwise, return the stream unaltered
         """
         try:
             content_length = int(content_length)
