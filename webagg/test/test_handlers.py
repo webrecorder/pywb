@@ -203,7 +203,7 @@ class TestResAgg(object):
     def test_agg_select_local(self):
         resp = self.testapp.get('/many/resource?url=http://iana.org/&closest=20140126200624')
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'local'
+        assert resp.headers['WebAgg-Source-Coll'] == 'local:iana.cdxj'
 
         self._check_uri_date(resp, 'http://www.iana.org/', '2014-01-26T20:06:24Z')
 
@@ -222,7 +222,7 @@ Host: iana.org
 
         resp = self.testapp.post('/many/resource/postreq?url=http://iana.org/&closest=20140126200624', req_data)
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'local'
+        assert resp.headers['WebAgg-Source-Coll'] == 'local:iana.cdxj'
 
         self._check_uri_date(resp, 'http://www.iana.org/', '2014-01-26T20:06:24Z')
 
@@ -336,7 +336,7 @@ foo=bar&test=abc"""
     def test_agg_local_revisit(self):
         resp = self.testapp.get('/many/resource?url=http://www.example.com/&closest=20140127171251&sources=local')
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'local'
+        assert resp.headers['WebAgg-Source-Coll'] == 'local:dupes.cdxj'
 
         buff = BytesIO(resp.body)
         status_headers = StatusAndHeadersParser(['WARC/1.0']).parse(buff)

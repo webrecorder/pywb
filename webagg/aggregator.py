@@ -228,8 +228,11 @@ class BaseDirectoryIndexSource(BaseAggregator):
                     print('Adding ' + filename)
                     rel_path = os.path.relpath(the_dir, self.base_prefix)
                     if rel_path == '.':
-                        rel_path = ''
-                    yield rel_path, FileIndexSource(filename)
+                        full_name = name
+                    else:
+                        full_name = rel_path + '/' + name
+
+                    yield full_name, FileIndexSource(filename)
 
     def __str__(self):
         return 'file_dir'
