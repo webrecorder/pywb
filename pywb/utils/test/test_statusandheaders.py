@@ -136,6 +136,20 @@ Multi-Line: Value1    Also This\r\n\
     assert(res == exp)
 
 
+def test_to_str_exclude():
+    sah = StatusAndHeadersParser(['HTTP/1.0']).parse(StringIO(status_headers_1))
+    res = sah.to_str(['multi-line'])
+
+    exp = "\
+HTTP/1.0 200 OK\r\n\
+Content-Type: ABC\r\n\
+Some: Value\r\n\
+"
+    assert(res == exp)
+
+    assert(sah.to_bytes(['multi-line']) == (exp.encode('latin-1') + b'\r\n'))
+
+
 def test_to_str_2():
     res = str(StatusAndHeadersParser(['GET']).parse(StringIO(req_headers)))
 

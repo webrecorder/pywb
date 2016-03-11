@@ -2,10 +2,10 @@
 Representation and parsing of HTTP-style status + headers
 """
 
-import pprint
+from pprint import pformat
 from copy import copy
 from six.moves import range
-import six
+from six import iteritems
 from pywb.utils.loaders import to_native_str
 
 
@@ -64,7 +64,7 @@ class StatusAndHeaders(object):
                 self.headers[index] = (curr_name, header_dict[name_lower])
                 del header_dict[name_lower]
 
-        for name, value in six.iteritems(header_dict):
+        for name, value in iteritems(header_dict):
             self.headers.append((name, value))
 
     def remove_header(self, name):
@@ -116,7 +116,7 @@ class StatusAndHeaders(object):
         return self
 
     def __repr__(self):
-        headers_str = pprint.pformat(self.headers, indent=2, width=WRAP_WIDTH)
+        headers_str = pformat(self.headers, indent=2, width=WRAP_WIDTH)
         return "StatusAndHeaders(protocol = '{0}', statusline = '{1}', \
 headers = {2})".format(self.protocol, self.statusline, headers_str)
 
@@ -125,7 +125,10 @@ headers = {2})".format(self.protocol, self.statusline, headers_str)
                 self.headers == other.headers and
                 self.protocol == other.protocol)
 
-    def __str__(self):
+    def __str__(self, exclude_list=None):
+        return self.to_str(exclude_list)
+
+    def to_str(self, exclude_list):
         string = self.protocol
 
         if string and self.statusline:
@@ -138,12 +141,15 @@ headers = {2})".format(self.protocol, self.statusline, headers_str)
             string += '\r\n'
 
         for h in self.headers:
+            if exclude_list and h[0].lower() in exclude_list:
+                continue
+
             string += ': '.join(h) + '\r\n'
 
         return string
 
-    def to_bytes(self):
-        return str(self).encode('iso-8859-1') + b'\r\n'
+    def to_bytes(self, exclude_list=None):
+        return self.to_str(exclude_list).encode('iso-8859-1') + b'\r\n'
 
 
 #=================================================================
