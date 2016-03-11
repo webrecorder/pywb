@@ -3,7 +3,7 @@ import os
 import shutil
 import json
 
-from .testutils import to_path, to_json_list, TempDirTests
+from .testutils import to_path, to_json_list, TempDirTests, BaseTestClass
 
 from mock import patch
 
@@ -21,7 +21,7 @@ def mock_link_header(*args, **kwargs):
     return linkheader
 
 
-class TestDirAgg(TempDirTests):
+class TestDirAgg(TempDirTests, BaseTestClass):
     @classmethod
     def setup_class(cls):
         super(TestDirAgg, cls).setup_class()
@@ -40,7 +40,7 @@ class TestDirAgg(TempDirTests):
         shutil.copy(to_path('testdata/iana.cdxj'), coll_B)
         shutil.copy(to_path('testdata/dupes.cdxj'), coll_C)
 
-        with open(to_path(cls.root_dir) + 'somefile', 'w') as fh:
+        with open(to_path(cls.root_dir) + '/somefile', 'w') as fh:
             fh.write('foo')
 
         cls.dir_loader = DirectoryIndexSource(dir_prefix, dir_path)
