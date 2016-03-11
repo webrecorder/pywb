@@ -5,7 +5,6 @@ omit =
     *.html
     *.js
     *.css
-    pywb/__init__.py
 
 [report]
 exclude_lines =
