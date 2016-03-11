@@ -29,9 +29,14 @@ class BaseWARCRecorder(object):
 
     REVISIT_PROFILE = 'http://netpreserve.org/warc/1.0/revisit/uri-agnostic-identical-payload-digest'
 
-    def __init__(self, gzip=True, dedup_index=None):
+    def __init__(self, gzip=True, dedup_index=None, name='recorder',
+                 exclude_headers=None):
         self.gzip = gzip
         self.dedup_index = dedup_index
+        self.rec_source_name = name
+        self.exclude_headers = exclude_headers
+        if self.exclude_headers:
+            self.exclude_headers = [x.lower() for x in self.exclude_headers]
 
     def ensure_digest(self, record):
         block_digest = record.rec_headers.get('WARC-Block-Digest')
@@ -62,7 +67,8 @@ class BaseWARCRecorder(object):
         return Digester('sha1')
 
     def _set_header_buff(self, record):
-        record.status_headers.headers_buff = str(record.status_headers).encode('latin-1') + b'\r\n'
+        buff = record.status_headers.to_bytes(self.exclude_headers)
+        record.status_headers.headers_buff = buff
 
     def write_req_resp(self, req, resp, params):
         url = resp.rec_headers.get('WARC-Target-Uri')
@@ -79,8 +85,6 @@ class BaseWARCRecorder(object):
         resp_id = resp.rec_headers.get('WARC-Record-ID')
         if resp_id:
             req.rec_headers['WARC-Concurrent-To'] = resp_id
-
-        #resp.status_headers.remove_header('Etag')
 
         self._set_header_buff(req)
         self._set_header_buff(resp)
@@ -208,12 +212,6 @@ class Digester(object):
     def update(self, buff):
         self.digester.update(buff)
 
-    def __eq__(self, string):
-        digest = str(base64.b32encode(self.digester.digest()))
-        if ':' in string:
-            digest = self._type_ + ':' + digest
-        return string == digest
-
     def __str__(self):
         return self.type_ + ':' + to_native_str(base64.b32encode(self.digester.digest()))
 
@@ -259,7 +257,9 @@ class PerRecordWARCRecorder(BaseWARCRecorder):
         resp_uuid = resp.rec_headers['WARC-Record-ID'].split(':')[-1].strip('<> ')
         req_uuid = req.rec_headers['WARC-Record-ID'].split(':')[-1].strip('<> ')
 
-        formatter = ParamFormatter(params)
+        formatter = ParamFormatter(params, name=self.rec_source_name)
+        print(params)
+        print(formatter.name)
         full_dir = formatter.format(self.warcdir)
 
         try:

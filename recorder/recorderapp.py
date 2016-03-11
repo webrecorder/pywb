@@ -1,3 +1,4 @@
+#from gevent import monkey; monkey.patch_all()
 from requests import request as remote_request
 from requests.structures import CaseInsensitiveDict
 
@@ -12,10 +13,11 @@ from pywb.warc.recordloader import ArcWarcRecordLoader
 from recorder.warcrecorder import SingleFileWARCRecorder, PerRecordWARCRecorder
 from recorder.redisindexer import WritableRedisIndexer
 
-from six.moves.urllib.parse import parse_qsl
+from six.moves.urllib.parse import parse_qsl, quote
 
 import json
 import tempfile
+import re
 
 import traceback
 
@@ -24,50 +26,55 @@ import gevent
 
 
 #==============================================================================
-write_queue = gevent.queue.Queue()
-
-
-#==============================================================================
 class RecorderApp(object):
-    def __init__(self, upstream_host, writer):
+    def __init__(self, upstream_host, writer, accept_colls='.*'):
         self.upstream_host = upstream_host
 
         self.writer = writer
         self.parser = StatusAndHeadersParser([], verify=False)
 
-        gevent.spawn(self._do_write)
+        self.write_queue = gevent.queue.Queue()
+        gevent.spawn(self._write_loop)
 
-    def _do_write(self):
+        self.rx_accept_colls = re.compile(accept_colls)
+
+    def _write_loop(self):
         while True:
+            self._write_one()
+
+    def _write_one(self):
+        try:
+            result = self.write_queue.get()
+
+            req = None
+            resp = None
+            req_head, req_pay, resp_head, resp_pay, params = result
+
+            if not self.rx_accept_colls.match(resp_head.get('WebAgg-Source-Coll', '')):
+                print('COLL', resp_head)
+                return
+
+            req = self._create_req_record(req_head, req_pay, 'request')
+            resp = self._create_resp_record(resp_head, resp_pay, 'response')
+
+            self.writer.write_req_resp(req, resp, params)
+        except:
+            traceback.print_exc()
+
+        finally:
             try:
-                result = write_queue.get()
-                req = None
-                resp = None
-                req_head, req_pay, resp_head, resp_pay, params = result
+                if req:
+                    req.stream.close()
 
-                req = self._create_req_record(req_head, req_pay, 'request')
-                resp = self._create_resp_record(resp_head, resp_pay, 'response')
-
-                self.writer.write_req_resp(req, resp, params)
-
-            except:
+                if resp:
+                    resp.stream.close()
+            except Exception as e:
                 traceback.print_exc()
-
-            finally:
-                try:
-                    if req:
-                        req.stream.close()
-
-                    if resp:
-                        resp.stream.close()
-                except Exception as e:
-                    traceback.print_exc()
 
     def _create_req_record(self, req_headers, payload, type_, ct=''):
         len_ = payload.tell()
         payload.seek(0)
 
-        #warc_headers = StatusAndHeaders('WARC/1.0', req_headers.items())
         warc_headers = req_headers
 
         status_headers = self.parser.parse(payload)
@@ -76,7 +83,7 @@ class RecorderApp(object):
                                 status_headers, ct, len_)
         return record
 
-    def _create_resp_record(self, req_headers, payload, type_, ct=''):
+    def _create_resp_record(self, resp_headers, payload, type_, ct=''):
         len_ = payload.tell()
         payload.seek(0)
 
@@ -95,18 +102,32 @@ class RecorderApp(object):
                    ('Content-Length', str(len(message)))]
 
         start_response('400 Bad Request', headers)
-        return message
+        return [message.encode('utf-8')]
+
+    def _get_request_uri(self, env):
+        req_uri = env.get('REQUEST_URI')
+        if req_uri:
+            return req_uri
+
+        req_uri = quote(env.get('PATH_INFO', ''), safe='/~!$&\'()*+,;=:@')
+        query = env.get('QUERY_STRING')
+        if query:
+            req_uri += '?' + query
+
+        return req_uri
 
     def __call__(self, environ, start_response):
-        request_uri = environ.get('REQUEST_URI')
+        request_uri = self._get_request_uri(environ)
 
         input_req = DirectWSGIInputRequest(environ)
         headers = input_req.get_req_headers()
         method = input_req.get_req_method()
 
+        input_buff = input_req.get_req_body()
+
         params = dict(parse_qsl(environ.get('QUERY_STRING')))
 
-        req_stream = Wrapper(input_req.get_req_body(), headers, None)
+        req_stream = ReqWrapper(input_buff, headers)
 
         try:
             res = remote_request(url=self.upstream_host + request_uri,
@@ -121,24 +142,16 @@ class RecorderApp(object):
 
         start_response('200 OK', list(res.headers.items()))
 
-        resp_stream = Wrapper(res.raw, res.headers, req_stream, params)
+        resp_stream = RespWrapper(res.raw, res.headers, req_stream, params, self.write_queue)
 
         return StreamIter(ReadFullyStream(resp_stream))
 
 
 #==============================================================================
 class Wrapper(object):
-    def __init__(self, stream, rec_headers, req_obj=None,
-                 params=None):
+    def __init__(self, stream):
         self.stream = stream
         self.out = self._create_buffer()
-        self.headers = CaseInsensitiveDict(rec_headers)
-        for n in rec_headers.keys():
-            if not n.upper().startswith('WARC-'):
-                del self.headers[n]
-
-        self.req_obj = req_obj
-        self.params = params
 
     def _create_buffer(self):
         return tempfile.SpooledTemporaryFile(max_size=512*1024)
@@ -153,21 +166,42 @@ class Wrapper(object):
             self.stream.close()
         except:
             traceback.print_exc()
+        finally:
+            self._after_close()
 
-        if not self.req_obj:
+    def _after_close(self):
+        pass
+
+
+#==============================================================================
+class RespWrapper(Wrapper):
+    def __init__(self, stream, headers, req,
+                 params, queue):
+
+        super(RespWrapper, self).__init__(stream)
+        self.headers = headers
+        self.req = req
+        self.params = params
+        self.queue = queue
+
+    def _after_close(self):
+        if not self.req:
             return
 
         try:
-            entry = (self.req_obj.headers, self.req_obj.out,
+            entry = (self.req.headers, self.req.out,
                      self.headers, self.out, self.params)
-            write_queue.put(entry)
-            self.req_obj = None
+            self.queue.put(entry)
+            self.req = None
         except:
             traceback.print_exc()
 
 
 #==============================================================================
-application = RecorderApp('http://localhost:8080',
-                PerRecordWARCRecorder('./warcs/{user}/{coll}/',
-                  dedup_index=WritableRedisIndexer('redis://localhost/2/{user}:{coll}:cdxj', 'recorder')))
-
+class ReqWrapper(Wrapper):
+    def __init__(self, stream, req_headers):
+        super(ReqWrapper, self).__init__(stream)
+        self.headers = CaseInsensitiveDict(req_headers)
+        for n in req_headers.keys():
+            if not n.upper().startswith('WARC-'):
+                del self.headers[n]

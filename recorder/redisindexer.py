@@ -5,6 +5,7 @@ from pywb.utils.timeutils import timestamp_to_datetime
 from pywb.utils.timeutils import datetime_to_iso_date, iso_date_to_timestamp
 
 from io import BytesIO
+import os
 
 from webagg.indexsource import RedisIndexSource
 from webagg.aggregator import SimpleAggregator
@@ -13,17 +14,21 @@ from webagg.utils import res_template
 
 #==============================================================================
 class WritableRedisIndexer(RedisIndexSource):
-    def __init__(self, redis_url, name):
+    def __init__(self, redis_url, rel_path_template='', name='recorder'):
         super(WritableRedisIndexer, self).__init__(redis_url)
         self.cdx_lookup = SimpleAggregator({name: self})
+        self.rel_path_template = rel_path_template
 
     def add_record(self, stream, params, filename=None):
         if not filename and hasattr(stream, 'name'):
             filename = stream.name
 
+        rel_path = res_template(self.rel_path_template, params)
+        filename = os.path.relpath(filename, rel_path)
+
         cdxout = BytesIO()
         write_cdx_index(cdxout, stream, filename,
-                        cdxj=True, append_post=True)
+                        cdxj=True, append_post=True, rel_root=rel_path)
 
         z_key = res_template(self.redis_key_template, params)
 
