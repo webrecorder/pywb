@@ -4,7 +4,7 @@ from webagg.aggregator import SimpleAggregator, GeventTimeoutAggregator
 from webagg.aggregator import BaseAggregator
 
 from webagg.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource
-from .testutils import json_list, to_path
+from .testutils import to_json_list, to_path
 
 import json
 import pytest
@@ -48,7 +48,7 @@ def test_mem_agg_index_1(agg):
            {"timestamp": "20140107040552", "load_url": "http://wayback.archive-it.org/all/20140107040552id_/http://iana.org/", "source": "ait"}
           ]
 
-    assert(json_list(res) == exp)
+    assert(to_json_list(res) == exp)
     assert(errs == {'bl': "NotFoundException('http://www.webarchive.org.uk/wayback/archive/http://iana.org/',)",
                     'rhiz': "NotFoundException('http://webenact.rhizome.org/vvork/http://iana.org/',)"})
 
@@ -65,7 +65,7 @@ def test_mem_agg_index_2(agg):
             {"timestamp": "20100514231857", "load_url": "http://wayback.archive-it.org/all/20100514231857id_/http://example.com/", "source": "ait"},
             {"timestamp": "20100519202418", "load_url": "http://web.archive.org/web/20100519202418id_/http://example.com/", "source": "ia"}]
 
-    assert(json_list(res) == exp)
+    assert(to_json_list(res) == exp)
     assert(errs == {'rhiz': "NotFoundException('http://webenact.rhizome.org/vvork/http://example.com/',)"})
 
 
@@ -80,7 +80,7 @@ def test_mem_agg_index_3(agg):
            {"timestamp": "20140806161228", "load_url": "http://web.archive.org/web/20140806161228id_/http://vvork.com/", "source": "ia"},
            {"timestamp": "20131004231540", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"}]
 
-    assert(json_list(res) == exp)
+    assert(to_json_list(res) == exp)
     assert(errs == {})
 
 
@@ -92,7 +92,7 @@ def test_mem_agg_index_4(agg):
     exp = [{"timestamp": "20141006184357", "load_url": "http://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"},
            {"timestamp": "20131004231540", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"}]
 
-    assert(json_list(res) == exp)
+    assert(to_json_list(res) == exp)
     assert(errs == {})
 
 
@@ -101,7 +101,7 @@ def test_mem_agg_not_found(agg):
     url = 'http://vvork.com/'
     res, errs = agg(dict(url=url, closest='20141001', limit=2))
 
-    assert(json_list(res) == [])
+    assert(to_json_list(res) == [])
     assert(errs == {'notfound': "NotFoundException('testdata/not-found-x',)"})
 
 
@@ -118,7 +118,7 @@ def test_mem_agg_timeout(agg):
     res, errs = agg(dict(url=url, closest='20141001', limit=2))
     BaseAggregator.load_child_source = orig_source
 
-    assert(json_list(res) == [])
+    assert(to_json_list(res) == [])
     assert(errs == {'local': 'timeout',
                     'ait': 'timeout', 'bl': 'timeout', 'ia': 'timeout', 'rhiz': 'timeout'})
 
