@@ -1,62 +1,23 @@
-from webagg.app import ResAggApp
-
 import webtest
-import threading
 
 from io import BytesIO
+from webagg.app import ResAggApp
 import requests
 
 from webagg.handlers import DefaultResourceHandler
-from webagg.indexsource import LiveIndexSource
-from webagg.proxyindexsource import ProxyMementoIndexSource, UpstreamAggIndexSource
 from webagg.aggregator import SimpleAggregator
-
-from wsgiref.simple_server import make_server
+from webagg.proxyindexsource import ProxyMementoIndexSource, UpstreamAggIndexSource
 
 from pywb.warc.recordloader import ArcWarcRecordLoader
 
-
-class ServerThreadRunner(object):
-    def __init__(self, app):
-        self.httpd = make_server('', 0, app)
-        self.port = self.httpd.socket.getsockname()[1]
-
-        def run():
-            self.httpd.serve_forever()
-
-        self.thread = threading.Thread(target=run)
-        self.thread.daemon = True
-        self.thread.start()
-
-    def stop_thread(self):
-        self.httpd.shutdown()
+from .testutils import LiveServerTests, BaseTestClass
 
 
-server = None
-
-
-def setup_module():
-    app = ResAggApp()
-    app.add_route('/live',
-        DefaultResourceHandler(SimpleAggregator(
-                               {'live': LiveIndexSource()})
-        )
-    )
-
-    global server
-    server = ServerThreadRunner(app.application)
-
-def teardown_module():
-    global server
-    server.stop_thread()
-
-
-
-class TestUpstream(object):
+class TestUpstream(LiveServerTests, BaseTestClass):
     def setup(self):
         app = ResAggApp()
 
-        base_url = 'http://localhost:{0}'.format(server.port)
+        base_url = 'http://localhost:{0}'.format(self.server.port)
         app.add_route('/upstream',
             DefaultResourceHandler(SimpleAggregator(
                            {'upstream': UpstreamAggIndexSource(base_url + '/live')})
