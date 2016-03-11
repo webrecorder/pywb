@@ -14,7 +14,7 @@ class PyTest(TestCommand):
         import pytest
         import sys
         import os
-        cmdline = ' --cov-config .coveragerc --cov webagg/ -vv webagg/test/'
+        cmdline = ' --cov-config .coveragerc --cov ./ -vv webagg/test/ recorder/test/'
         errcode = pytest.main(cmdline)
         sys.exit(errcode)
 
@@ -33,10 +33,10 @@ setup(
         'recorder',
         ],
     install_requires=[
-        'pywb==1.0b',
+        'pywb==0.30.0',
         ],
     dependency_links=[
-        'git+https://github.com/ikreymer/pywb.git@py3#egg=pywb-1.0b-py3',
+        'git+https://github.com/ikreymer/pywb.git@py3#egg=pywb-0.30.0-py3',
     ],
     zip_safe=True,
     entry_points="""
