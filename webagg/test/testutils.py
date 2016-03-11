@@ -1,7 +1,9 @@
 import json
 import os
+import tempfile
+import shutil
 
-def json_list(cdxlist, fields=['timestamp', 'load_url', 'filename', 'source']):
+def to_json_list(cdxlist, fields=['timestamp', 'load_url', 'filename', 'source']):
     return list([json.loads(cdx.to_json(fields)) for cdx in cdxlist])
 
 def key_ts_res(cdxlist, extra='filename'):
@@ -13,4 +15,13 @@ def to_path(path):
 
     return path
 
+
+class TempDirTests(object):
+    @classmethod
+    def setup_class(cls):
+        cls.root_dir = tempfile.mkdtemp()
+
+    @classmethod
+    def teardown_class(cls):
+        shutil.rmtree(cls.root_dir)
 
