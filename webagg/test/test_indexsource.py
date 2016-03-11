@@ -10,19 +10,22 @@ from .testutils import key_ts_res
 
 import pytest
 
-import redis
-import fakeredis
+from fakeredis import FakeStrictRedis
+from mock import patch
 
-redis.StrictRedis = fakeredis.FakeStrictRedis
-redis.Redis = fakeredis.FakeRedis
+redismock = patch('redis.StrictRedis', FakeStrictRedis)
+redismock.start()
 
 def setup_module():
-    global r
-    r = fakeredis.FakeStrictRedis(db=2)
+    r = FakeStrictRedis.from_url('redis://localhost:6379/2')
     r.delete('test:rediscdx')
     with open('testdata/iana.cdxj', 'rb') as fh:
         for line in fh:
             r.zadd('test:rediscdx', 0, line.rstrip())
+
+
+def teardown_module():
+    redismock.stop()
 
 
 local_sources = [
