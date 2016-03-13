@@ -8,7 +8,8 @@ from pywb.utils.wbexception import NotFoundException
 
 from pywb.cdx.cdxobject import CDXObject
 
-from webagg.liverec import patched_requests as requests
+#from webagg.liverec import patched_requests as requests
+import requests
 
 from webagg.utils import ParamFormatter, res_template
 from webagg.utils import MementoUtils

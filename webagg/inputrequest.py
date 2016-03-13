@@ -2,8 +2,8 @@ from pywb.utils.loaders import extract_post_query, append_post_query
 from pywb.utils.loaders import LimitReader
 from pywb.utils.statusandheaders import StatusAndHeadersParser
 
-from six.moves.urllib.parse import urlsplit
-from six import StringIO, iteritems
+from six.moves.urllib.parse import urlsplit, quote
+from six import iteritems
 from io import BytesIO
 
 
@@ -79,6 +79,18 @@ class DirectWSGIInputRequest(object):
             url = append_post_query(url, post_query)
 
         return url
+
+    def get_full_request_uri(self):
+        req_uri = self.env.get('REQUEST_URI')
+        if req_uri:
+            return req_uri
+
+        req_uri = quote(self.env.get('PATH_INFO', ''), safe='/~!$&\'()*+,;=:@')
+        query = self.env.get('QUERY_STRING')
+        if query:
+            req_uri += '?' + query
+
+        return req_uri
 
 
 #=============================================================================

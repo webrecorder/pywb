@@ -1,4 +1,4 @@
-from gevent import monkey; monkey.patch_all(thread=False)
+#from gevent import monkey; monkey.patch_all(thread=False)
 
 from collections import OrderedDict
 
@@ -12,6 +12,7 @@ from webagg.app import ResAggApp
 from webagg.utils import MementoUtils
 
 from pywb.utils.statusandheaders import StatusAndHeadersParser
+from pywb.utils.bufferedreaders import ChunkedDataReader
 from io import BytesIO
 
 import webtest
@@ -71,6 +72,7 @@ class TestResAgg(object):
 
     def _check_uri_date(self, resp, uri, dt):
         buff = BytesIO(resp.body)
+        buff = ChunkedDataReader(buff)
         status_headers = StatusAndHeadersParser(['WARC/1.0']).parse(buff)
         assert status_headers.get_header('WARC-Target-URI') == uri
         if dt == True:
