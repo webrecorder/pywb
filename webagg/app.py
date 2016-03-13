@@ -1,9 +1,8 @@
-from webagg.liverec import request as remote_request
-
 from webagg.inputrequest import DirectWSGIInputRequest, POSTInputRequest
 from bottle import route, request, response, abort, Bottle
 import bottle
 
+import requests
 import traceback
 import json
 

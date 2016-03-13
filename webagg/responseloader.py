@@ -1,6 +1,3 @@
-from webagg.liverec import BaseRecorder
-from webagg.liverec import request as remote_request
-
 from webagg.utils import MementoUtils
 
 from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_timestamp
@@ -12,12 +9,12 @@ from pywb.utils.statusandheaders import StatusAndHeaders
 
 from pywb.warc.resolvingloader import ResolvingLoader
 
-
 from io import BytesIO
 
 import uuid
 import six
 import itertools
+import requests
 
 
 #=============================================================================
@@ -79,9 +76,6 @@ class BaseLoader(object):
                 out_headers['Memento-Datetime'] = other_headers.get('Memento-Datetime')
                 out_headers['Content-Length'] = other_headers.get('Content-Length')
 
-                #for n, v in other_headers.items():
-                #    out_headers[n] = v
-
             return out_headers, StreamIter(stream)
 
         out_headers['Link'] = MementoUtils.make_link(
@@ -93,13 +87,19 @@ class BaseLoader(object):
 
         warc_headers_buff = warc_headers.to_bytes()
 
-        self._set_content_len(warc_headers.get_header('Content-Length'),
-                              out_headers,
-                              len(warc_headers_buff))
+        lenset = self._set_content_len(warc_headers.get_header('Content-Length'),
+                                     out_headers,
+                                     len(warc_headers_buff))
 
-        return out_headers, StreamIter(stream,
-                                       header1=warc_headers_buff,
-                                       header2=other_headers)
+        streamiter = StreamIter(stream,
+                                header1=warc_headers_buff,
+                                header2=other_headers)
+
+        if not lenset:
+            out_headers['Transfer-Encoding'] = 'chunked'
+            streamiter = self._chunk_encode(streamiter)
+
+        return out_headers, streamiter
 
     def _set_content_len(self, content_len_str, headers, existing_len):
         # Try to set content-length, if it is available and valid
@@ -111,6 +111,21 @@ class BaseLoader(object):
         if content_len >= 0:
             content_len += existing_len
             headers['Content-Length'] = str(content_len)
+            return True
+
+        return False
+
+    @staticmethod
+    def _chunk_encode(orig_iter):
+        for chunk in orig_iter:
+            if not len(chunk):
+                continue
+            chunk_len = b'%X\r\n' % len(chunk)
+            yield chunk_len
+            yield chunk
+            yield b'\r\n'
+
+        yield b'0\r\n\r\n'
 
 
 #=============================================================================
@@ -183,17 +198,20 @@ class WARCPathLoader(BaseLoader):
 
 #=============================================================================
 class LiveWebLoader(BaseLoader):
-    SKIP_HEADERS = (b'link',
-                    b'memento-datetime',
-                    b'content-location',
-                    b'x-archive')
+    SKIP_HEADERS = ('link',
+                    'memento-datetime',
+                    'content-location',
+                    'x-archive')
+
+    def __init__(self):
+        self.sesh = requests.session()
 
     def load_resource(self, cdx, params):
         load_url = cdx.get('load_url')
         if not load_url:
             return None
 
-        recorder = HeaderRecorder(self.SKIP_HEADERS)
+        #recorder = HeaderRecorder(self.SKIP_HEADERS)
 
         input_req = params['_input_req']
 
@@ -215,14 +233,13 @@ class LiveWebLoader(BaseLoader):
         data = input_req.get_req_body()
 
         try:
-            upstream_res = remote_request(url=load_url,
-                                          method=method,
-                                          recorder=recorder,
-                                          stream=True,
-                                          allow_redirects=False,
-                                          headers=req_headers,
-                                          data=data,
-                                          timeout=params.get('_timeout'))
+            upstream_res = self.sesh.request(url=load_url,
+                                             method=method,
+                                             stream=True,
+                                             allow_redirects=False,
+                                             headers=req_headers,
+                                             data=data,
+                                             timeout=params.get('_timeout'))
         except Exception as e:
             raise LiveResourceException(load_url)
 
@@ -240,7 +257,47 @@ class LiveWebLoader(BaseLoader):
             cdx['source'] = upstream_res.headers.get('WebAgg-Source-Coll')
             return None, upstream_res.headers, upstream_res.raw
 
-        http_headers_buff = recorder.get_headers_buff()
+        if upstream_res.raw.version == 11:
+            version = '1.1'
+        else:
+            version = '1.0'
+
+        status = 'HTTP/{version} {status} {reason}\r\n'
+        status = status.format(version=version,
+                               status=upstream_res.status_code,
+                               reason=upstream_res.reason)
+
+        http_headers_buff = status
+
+        orig_resp = upstream_res.raw._original_response
+
+        try:  #pragma: no cover
+        #PY 3
+            resp_headers = orig_resp.headers._headers
+            for n, v in resp_headers:
+                if n.lower() in self.SKIP_HEADERS:
+                    continue
+
+                http_headers_buff += n + ': ' + v + '\r\n'
+        except:  #pragma: no cover
+        #PY 2
+            resp_headers = orig_resp.msg.headers
+            for n, v in zip(orig_resp.getheaders(), resp_headers):
+                if n in self.SKIP_HEADERS:
+                    continue
+
+                http_headers_buff += v
+
+        http_headers_buff += '\r\n'
+        http_headers_buff = http_headers_buff.encode('latin-1')
+
+        try:
+            fp = upstream_res.raw._fp.fp
+            if hasattr(fp, 'raw'):
+                fp = fp.raw
+            remote_ip = fp._sock.getpeername()[0]
+        except:  #pragma: no cover
+            remote_ip = None
 
         warc_headers = {}
 
@@ -248,8 +305,8 @@ class LiveWebLoader(BaseLoader):
         warc_headers['WARC-Record-ID'] = self._make_warc_id()
         warc_headers['WARC-Target-URI'] = cdx['url']
         warc_headers['WARC-Date'] = datetime_to_iso_date(dt)
-        if recorder.target_ip:
-            warc_headers['WARC-IP-Address'] = recorder.target_ip
+        if remote_ip:
+            warc_headers['WARC-IP-Address'] = remote_ip
 
         warc_headers['Content-Type'] = 'application/http; msgtype=response'
 
@@ -268,33 +325,4 @@ class LiveWebLoader(BaseLoader):
 
     def __str__(self):
         return  'LiveWebLoader'
-
-
-#=============================================================================
-class HeaderRecorder(BaseRecorder):
-    def __init__(self, skip_list=None):
-        self.buff = BytesIO()
-        self.skip_list = skip_list
-        self.skipped = []
-        self.target_ip = None
-
-    def write_response_header_line(self, line):
-        if self.accept_header(line):
-            self.buff.write(line)
-
-    def get_headers_buff(self):
-        return self.buff.getvalue()
-
-    def accept_header(self, line):
-        if self.skip_list and line.lower().startswith(self.skip_list):
-            self.skipped.append(line)
-            return False
-
-        return True
-
-    def finish_request(self, socket):
-        ip = socket.getpeername()
-        if ip:
-            self.target_ip = ip[0]
-
 

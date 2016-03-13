@@ -71,7 +71,7 @@ class LiveServerTests(object):
     @classmethod
     def teardown_class(cls):
         super(LiveServerTests, cls).teardown_class()
-        cls.server.stop_thread()
+        cls.server.stop()
 
 
 # ============================================================================
@@ -87,8 +87,7 @@ class ServerThreadRunner(object):
         #self.proc.daemon = True
         self.proc.start()
 
-    def stop_thread(self):
-        #self.httpd.shutdown()
+    def stop(self):
         self.proc.terminate()
 
 

@@ -1,6 +1,7 @@
 import re
 import six
 import string
+import time
 
 from pywb.utils.timeutils import timestamp_to_http_date
 from pywb.utils.wbexception import BadRequestException
@@ -9,6 +10,8 @@ LINK_SPLIT = re.compile(',\s*(?=[<])')
 LINK_SEG_SPLIT = re.compile(';\s*')
 LINK_URL = re.compile('<(.*)>')
 LINK_PROP = re.compile('([\w]+)="([^"]+)')
+
+BUFF_SIZE = 8192
 
 
 #=============================================================================
@@ -140,5 +143,46 @@ def res_template(template, params):
     res = formatter.format(template, url=params['url'])
 
     return res
+
+
+#=================================================================
+class ReadFullyStream(object):
+    def __init__(self, stream):
+        self.stream = stream
+
+    def read(self, *args, **kwargs):
+        try:
+            return self.stream.read(*args, **kwargs)
+        except:
+            self.mark_incomplete()
+            raise
+
+    def readline(self, *args, **kwargs):
+        try:
+            return self.stream.readline(*args, **kwargs)
+        except:
+            self.mark_incomplete()
+            raise
+
+    def mark_incomplete(self):
+        if (hasattr(self.stream, '_fp') and
+            hasattr(self.stream._fp, 'mark_incomplete')):
+            self.stream._fp.mark_incomplete()
+
+    def close(self):
+        try:
+            while True:
+                buff = self.stream.read(BUFF_SIZE)
+                time.sleep(0)
+                if not buff:
+                    break
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.mark_incomplete()
+        finally:
+            self.stream.close()
+
 
 
