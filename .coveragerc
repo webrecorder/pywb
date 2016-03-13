@@ -5,6 +5,7 @@ omit =
     *.html
     *.js
     *.css
+    setup.py
 
 [report]
 exclude_lines =
