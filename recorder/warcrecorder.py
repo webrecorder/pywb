@@ -258,8 +258,6 @@ class PerRecordWARCRecorder(BaseWARCRecorder):
         req_uuid = req.rec_headers['WARC-Record-ID'].split(':')[-1].strip('<> ')
 
         formatter = ParamFormatter(params, name=self.rec_source_name)
-        print(params)
-        print(formatter.name)
         full_dir = formatter.format(self.warcdir)
 
         try:

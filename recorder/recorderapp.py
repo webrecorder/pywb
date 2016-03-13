@@ -1,8 +1,8 @@
 #from gevent import monkey; monkey.patch_all()
-from requests import request as remote_request
 from requests.structures import CaseInsensitiveDict
+import requests
 
-from webagg.liverec import ReadFullyStream
+from webagg.utils import ReadFullyStream
 from webagg.responseloader import StreamIter
 from webagg.inputrequest import DirectWSGIInputRequest
 
@@ -13,7 +13,7 @@ from pywb.warc.recordloader import ArcWarcRecordLoader
 from recorder.warcrecorder import SingleFileWARCRecorder, PerRecordWARCRecorder
 from recorder.redisindexer import WritableRedisIndexer
 
-from six.moves.urllib.parse import parse_qsl, quote
+from six.moves.urllib.parse import parse_qsl
 
 import json
 import tempfile
@@ -51,7 +51,6 @@ class RecorderApp(object):
             req_head, req_pay, resp_head, resp_pay, params = result
 
             if not self.rx_accept_colls.match(resp_head.get('WebAgg-Source-Coll', '')):
-                print('COLL', resp_head)
                 return
 
             req = self._create_req_record(req_head, req_pay, 'request')
@@ -104,24 +103,11 @@ class RecorderApp(object):
         start_response('400 Bad Request', headers)
         return [message.encode('utf-8')]
 
-    def _get_request_uri(self, env):
-        req_uri = env.get('REQUEST_URI')
-        if req_uri:
-            return req_uri
-
-        req_uri = quote(env.get('PATH_INFO', ''), safe='/~!$&\'()*+,;=:@')
-        query = env.get('QUERY_STRING')
-        if query:
-            req_uri += '?' + query
-
-        return req_uri
-
     def __call__(self, environ, start_response):
-        request_uri = self._get_request_uri(environ)
-
         input_req = DirectWSGIInputRequest(environ)
         headers = input_req.get_req_headers()
         method = input_req.get_req_method()
+        request_uri = input_req.get_full_request_uri()
 
         input_buff = input_req.get_req_body()
 
@@ -130,7 +116,7 @@ class RecorderApp(object):
         req_stream = ReqWrapper(input_buff, headers)
 
         try:
-            res = remote_request(url=self.upstream_host + request_uri,
+            res = requests.request(url=self.upstream_host + request_uri,
                                  method=method,
                                  data=req_stream,
                                  headers=headers,
@@ -205,3 +191,5 @@ class ReqWrapper(Wrapper):
         for n in req_headers.keys():
             if not n.upper().startswith('WARC-'):
                 del self.headers[n]
+
+
