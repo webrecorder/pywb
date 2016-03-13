@@ -1,9 +1,5 @@
 #from gevent import monkey; monkey.patch_all()
-from requests.structures import CaseInsensitiveDict
-import requests
-
-from webagg.utils import ReadFullyStream
-from webagg.responseloader import StreamIter
+from webagg.utils import ReadFullyStream, StreamIter
 from webagg.inputrequest import DirectWSGIInputRequest
 
 from pywb.utils.statusandheaders import StatusAndHeadersParser
@@ -18,6 +14,9 @@ from six.moves.urllib.parse import parse_qsl
 import json
 import tempfile
 import re
+
+from requests.structures import CaseInsensitiveDict
+import requests
 
 import traceback
 

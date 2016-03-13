@@ -1,4 +1,4 @@
-from webagg.utils import MementoUtils
+from webagg.utils import MementoUtils, StreamIter
 
 from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_timestamp
 from pywb.utils.timeutils import iso_date_to_datetime, datetime_to_iso_date
@@ -15,45 +15,6 @@ import uuid
 import six
 import itertools
 import requests
-
-
-#=============================================================================
-class StreamIter(six.Iterator):
-    def __init__(self, stream, header1=None, header2=None, size=8192):
-        self.stream = stream
-        self.header1 = header1
-        self.header2 = header2
-        self.size = size
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.header1:
-            header = self.header1
-            self.header1 = None
-            return header
-        elif self.header2:
-            header = self.header2
-            self.header2 = None
-            return header
-
-        data = self.stream.read(self.size)
-        if data:
-            return data
-
-        self.close()
-        raise StopIteration
-
-    def close(self):
-        if not self.stream:
-            return
-
-        try:
-            self.stream.close()
-            self.stream = None
-        except Exception:
-            pass
 
 
 #=============================================================================
