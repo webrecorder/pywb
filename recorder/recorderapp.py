@@ -42,11 +42,11 @@ class RecorderApp(object):
             self._write_one()
 
     def _write_one(self):
+        req = None
+        resp = None
         try:
             result = self.write_queue.get()
 
-            req = None
-            resp = None
             req_head, req_pay, resp_head, resp_pay, params = result
 
             if not self.rx_accept_colls.match(resp_head.get('WebAgg-Source-Coll', '')):
@@ -74,7 +74,6 @@ class RecorderApp(object):
         payload.seek(0)
 
         warc_headers = req_headers
-
         status_headers = self.parser.parse(payload)
 
         record = ArcWarcRecord('warc', type_, warc_headers, payload,
@@ -113,11 +112,14 @@ class RecorderApp(object):
         params = dict(parse_qsl(environ.get('QUERY_STRING')))
 
         req_stream = ReqWrapper(input_buff, headers)
+        data = None
+        if input_buff:
+            data = req_stream
 
         try:
             res = requests.request(url=self.upstream_host + request_uri,
                                  method=method,
-                                 data=req_stream,
+                                 data=data,
                                  headers=headers,
                                  allow_redirects=False,
                                  stream=True)
