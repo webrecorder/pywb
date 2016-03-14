@@ -121,17 +121,21 @@ class ArcWarcRecordLoader(object):
         is_err = False
 
         try:
-            length = int(length) - sub_len
-            if length < 0:
-                is_err = True
+            if length is not None:
+                length = int(length) - sub_len
+                if length < 0:
+                    is_err = True
+
         except (ValueError, TypeError):
             is_err = True
 
         # err condition
         if is_err:
             length = 0
+
         # limit stream to the length for all valid records
-        stream = LimitReader.wrap_stream(stream, length)
+        if length is not None and length >= 0:
+            stream = LimitReader.wrap_stream(stream, length)
 
         # don't parse the http record at all
         if no_record_parse:
@@ -158,8 +162,10 @@ class ArcWarcRecordLoader(object):
 
         # everything else: create a no-status entry, set content-type
         else:
-            content_type_header = [('Content-Type', content_type),
-                                   ('Content-Length', str(length))]
+            content_type_header = [('Content-Type', content_type)]
+
+            if length is not None and length >= 0:
+                content_type_header.append(('Content-Length', str(length)))
 
             status_headers = StatusAndHeaders('200 OK', content_type_header)
 
