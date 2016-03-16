@@ -165,7 +165,21 @@ class LiveRewriter(object):
         statusline = str(response.status_code) + ' ' + response.reason
 
         headers = response.headers.items()
+
         stream = response.raw
+
+        try:  #pragma: no cover
+        #PY 3
+            headers = stream._original_response.headers._headers
+        except:  #pragma: no cover
+        #PY 2
+            headers = []
+            resp_headers = stream._original_response.msg.headers
+            for h in resp_headers:
+                n, v = h.split(':', 1)
+                n = n.strip()
+                v = v.strip()
+                headers.append((n, v))
 
         status_headers = StatusAndHeaders(statusline, headers)
 

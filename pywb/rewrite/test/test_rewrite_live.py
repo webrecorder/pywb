@@ -255,6 +255,16 @@ def test_post():
     status_headers, resp_buff = get_rewritten('http://httpbin.org/post', urlrewriter, env=env)
     assert status_headers.get_statuscode() == '200', status_headers
 
+def test_multiple_set_cookies():
+    status_headers, buff = get_rewritten('http://httpbin.org/cookies/set?A=B&C=D', urlrewriter)
+
+    assert status_headers.get_statuscode() == '302'
+
+    print(status_headers.headers)
+
+    assert ('Set-Cookie', 'A=B; Path=/pywb/20131226101010/http://example.com/') in status_headers.headers
+    assert ('Set-Cookie', 'C=D; Path=/pywb/20131226101010/http://example.com/') in status_headers.headers
+
 
 def get_rewritten(*args, **kwargs):
     status_headers, buff = LiveRewriter().get_rewritten(remote_only=False, *args, **kwargs)

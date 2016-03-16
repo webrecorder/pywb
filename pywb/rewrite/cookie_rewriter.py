@@ -11,10 +11,11 @@ class WbUrlBaseCookieRewriter(object):
 
     def rewrite(self, cookie_str, header='Set-Cookie'):
         results = []
-        cookie = SimpleCookie()
         try:
-            cookie.load(cookie_str)
+            cookie = SimpleCookie(cookie_str)
         except CookieError:
+            import traceback
+            traceback.print_exc()
             return results
 
         for name, morsel in six.iteritems(cookie):
