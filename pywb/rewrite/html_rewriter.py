@@ -298,6 +298,7 @@ class HTMLRewriterMixin(object):
                 if self.has_attr(tag_attrs, ('http-equiv', 'refresh')):
                     attr_value = self._rewrite_meta_refresh(attr_value)
                 elif attr_value.startswith(self.DATA_RW_PROTOCOLS):
+                    rw_mod = handler.get(attr_name)
                     attr_value = self._rewrite_url(attr_value, rw_mod)
 
             # special case: param value, conditional rewrite
