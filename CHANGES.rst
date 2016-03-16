@@ -1,3 +1,9 @@
+pywb 0.11.3 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+rewrite: fix typo in ``<meta content="">`` rewrite (modifier was not being set)
+
+
 pywb 0.11.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
