@@ -39,7 +39,10 @@ class RecorderApp(object):
 
     def _write_loop(self):
         while True:
-            self._write_one()
+            try:
+                self._write_one()
+            except:
+                traceback.print_exc()
 
     def _write_one(self):
         req = None
@@ -56,8 +59,6 @@ class RecorderApp(object):
             resp = self._create_resp_record(resp_head, resp_pay, 'response')
 
             self.writer.write_req_resp(req, resp, params)
-        except:
-            traceback.print_exc()
 
         finally:
             try:

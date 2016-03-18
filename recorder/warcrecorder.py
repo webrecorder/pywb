@@ -8,12 +8,18 @@ import sys
 import os
 import six
 
+
 import traceback
 
 from collections import OrderedDict
 
+from socket import gethostname
+
+import fcntl
+
 from pywb.utils.loaders import LimitReader, to_native_str
 from pywb.utils.bufferedreaders import BufferedReader
+from pywb.utils.timeutils import timestamp20_now
 
 from webagg.utils import ParamFormatter
 
@@ -99,14 +105,15 @@ class BaseWARCRecorder(object):
             print('Skipping due to dedup')
             return
 
-        self._do_write_req_resp(req, resp, params)
+        formatter = ParamFormatter(params, name=self.rec_source_name)
+        self._do_write_req_resp(req, resp, params, formatter)
 
     def _check_revisit(self, record, params):
         if not self.dedup_index:
             return record
 
         try:
-            url = record.rec_headers.get('WARC-Target-URI')
+            url = record.rec_headers.get('WARC-Target-Uri')
             digest = record.rec_headers.get('WARC-Payload-Digest')
             iso_dt = record.rec_headers.get('WARC-Date')
             result = self.dedup_index.lookup_revisit(params, digest, url, iso_dt)
@@ -221,33 +228,47 @@ class Digester(object):
 
 # ============================================================================
 class SingleFileWARCRecorder(BaseWARCRecorder):
-    def __init__(self, warcfilename, *args, **kwargs):
+    def __init__(self, filename, *args, **kwargs):
         super(SingleFileWARCRecorder, self).__init__(*args, **kwargs)
-        self.warcfilename = warcfilename
+        self.filename = filename.format(timestamp=timestamp20_now(),
+                                                host=gethostname())
 
-    def _do_write_req_resp(self, req, resp, params):
-        print('Writing {0} to {1} '.format(url, self.warcfilename))
-        with open(self.warcfilename, 'a+b') as out:
-            start = out.tell()
+        try:
+            os.makedirs(os.path.dirname(self.filename))
+        except:
+            pass
 
-            self._write_warc_record(out, resp)
-            self._write_warc_record(out, req)
+        self._fh = open(self.filename, 'a+b')
 
-            out.flush()
-            out.seek(start)
+        fcntl.flock(self._fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
-            if self.dedup_index:
-                self.dedup_index.add_record(out, params, filename=self.warcfilename)
+    def _do_write_req_resp(self, req, resp, params, formatter):
+        url = resp.rec_headers.get('WARC-Target-Uri')
+        print('Writing {0} to {1} '.format(url, self.filename))
 
-    def add_user_record(self, url, content_type, data):
-        with open(self.warcfilename, 'a+b') as out:
-            start = out.tell()
-            self._write_warc_metadata(out, url, content_type, data)
-            out.flush()
+        out = self._fh
+        if not out:
+            raise IOError('Already closed')
 
-            #out.seek(start)
-            #if self.indexer:
-            #    self.indexer.add_record(out, self.warcfilename)
+        start = out.tell()
+
+        self._write_warc_record(out, resp)
+        self._write_warc_record(out, req)
+
+        out.flush()
+        out.seek(start)
+
+        if self.dedup_index:
+            self.dedup_index.index_records(out, params, filename=self.filename)
+
+    def close(self):
+        if not self._fh:
+            return None
+
+        fcntl.flock(self._fh, fcntl.LOCK_UN)
+
+        self._fh.close()
+        self._fh = None
 
 
 # ============================================================================
@@ -256,11 +277,10 @@ class PerRecordWARCRecorder(BaseWARCRecorder):
         super(PerRecordWARCRecorder, self).__init__(*args, **kwargs)
         self.warcdir = warcdir
 
-    def _do_write_req_resp(self, req, resp, params):
+    def _do_write_req_resp(self, req, resp, params, formatter):
         resp_uuid = resp.rec_headers['WARC-Record-ID'].split(':')[-1].strip('<> ')
         req_uuid = req.rec_headers['WARC-Record-ID'].split(':')[-1].strip('<> ')
 
-        formatter = ParamFormatter(params, name=self.rec_source_name)
         full_dir = formatter.format(self.warcdir)
 
         try:
@@ -271,14 +291,18 @@ class PerRecordWARCRecorder(BaseWARCRecorder):
         resp_filename = os.path.join(full_dir, resp_uuid + '.warc.gz')
         req_filename = os.path.join(full_dir, req_uuid + '.warc.gz')
 
-        self._write_record(resp_filename, resp, params, True)
-        self._write_record(req_filename, req, params, False)
+        url = resp.rec_headers.get('WARC-Target-Uri')
+        print('Writing request for {0} to {1}'.format(url, req_filename))
+        print('Writing response for {0} to {1}'.format(url, resp_filename))
 
-    def _write_record(self, filename, rec, params, index=False):
+        self._write_and_index(resp_filename, resp, params, True)
+        self._write_and_index(req_filename, req, params, False)
+
+    def _write_and_index(self, filename, rec, params, index=False):
         with open(filename, 'w+b') as out:
             self._write_warc_record(out, rec)
             if index and self.dedup_index:
                 out.seek(0)
-                self.dedup_index.add_record(out, params, filename=filename)
+                self.dedup_index.index_records(out, params, filename=filename)
 
 

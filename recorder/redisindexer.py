@@ -1,8 +1,7 @@
 from pywb.utils.canonicalize import calc_search_range
 from pywb.cdx.cdxobject import CDXObject
 from pywb.warc.cdxindexer import write_cdx_index
-from pywb.utils.timeutils import timestamp_to_datetime
-from pywb.utils.timeutils import datetime_to_iso_date, iso_date_to_timestamp
+from pywb.utils.timeutils import iso_date_to_timestamp
 
 from io import BytesIO
 import os
@@ -11,24 +10,25 @@ from webagg.indexsource import RedisIndexSource
 from webagg.aggregator import SimpleAggregator
 from webagg.utils import res_template
 
+from recorder.filters import WriteRevisitDupePolicy
+
 
 #==============================================================================
 class WritableRedisIndexer(RedisIndexSource):
-    def __init__(self, redis_url, rel_path_template='', name='recorder'):
+    def __init__(self, redis_url, rel_path_template='', name='recorder',
+                 dupe_policy=WriteRevisitDupePolicy()):
         super(WritableRedisIndexer, self).__init__(redis_url)
         self.cdx_lookup = SimpleAggregator({name: self})
         self.rel_path_template = rel_path_template
+        self.dupe_policy = dupe_policy
 
-    def add_record(self, stream, params, filename=None):
-        if not filename and hasattr(stream, 'name'):
-            filename = stream.name
-
+    def index_records(self, stream, params, filename=None):
         rel_path = res_template(self.rel_path_template, params)
         filename = os.path.relpath(filename, rel_path)
 
         cdxout = BytesIO()
         write_cdx_index(cdxout, stream, filename,
-                        cdxj=True, append_post=True, rel_root=rel_path)
+                        cdxj=True, append_post=True)
 
         z_key = res_template(self.redis_key_template, params)
 
@@ -55,8 +55,8 @@ class WritableRedisIndexer(RedisIndexSource):
         cdx_iter, errs = self.cdx_lookup(params)
 
         for cdx in cdx_iter:
-            dt = timestamp_to_datetime(cdx['timestamp'])
-            return ('revisit', cdx['url'],
-                    datetime_to_iso_date(dt))
+            res = self.dupe_policy(cdx)
+            if res:
+                return res
 
         return None
