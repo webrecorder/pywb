@@ -8,11 +8,12 @@ import webtest
 
 from fakeredis import FakeStrictRedis
 from mock import patch
+from pytest import raises
 
 from recorder.recorderapp import RecorderApp
 from recorder.redisindexer import WritableRedisIndexer
-from recorder.warcrecorder import PerRecordWARCRecorder
-from recorder.filters import ExcludeSpecificHeaders
+from recorder.warcrecorder import PerRecordWARCRecorder, SingleFileWARCRecorder
+from recorder.filters import ExcludeSpecificHeaders, SkipDupePolicy, WriteDupePolicy
 
 from webagg.utils import MementoUtils
 
@@ -20,9 +21,11 @@ from pywb.cdx.cdxobject import CDXObject
 from pywb.utils.statusandheaders import StatusAndHeadersParser
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 from pywb.warc.recordloader import ArcWarcRecordLoader
+from pywb.warc.cdxindexer import write_cdx_index
 
 from six.moves.urllib.parse import quote, unquote
 from io import BytesIO
+import time
 
 general_req_data = "\
 GET {path} HTTP/1.1\r\n\
@@ -45,7 +48,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         cls.upstream_url = 'http://localhost:{0}'.format(cls.server.port)
 
 
-    def _test_per_warc(self, recorder_app, host, path, other_params=''):
+    def _test_warc_write(self, recorder_app, host, path, other_params=''):
         url = 'http://' + host + path
         req_url = '/live/resource/postreq?url=' + url + other_params
         testapp = webtest.TestApp(recorder_app)
@@ -72,7 +75,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         recorder_app = RecorderApp(self.upstream_url,
                         PerRecordWARCRecorder(to_path(self.root_dir + '/warcs/')))
 
-        resp = self._test_per_warc(recorder_app, 'httpbin.org', '/get?foo=bar')
+        resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
 
@@ -82,7 +85,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         recorder_app = RecorderApp(self.upstream_url,
                         PerRecordWARCRecorder(to_path(self.root_dir + '/warcs/')), accept_colls='live')
 
-        resp = self._test_per_warc(recorder_app, 'httpbin.org', '/get?foo=bar')
+        resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
 
@@ -105,7 +108,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         recorder_app = RecorderApp(self.upstream_url,
                         PerRecordWARCRecorder(base_path), accept_colls='live')
 
-        resp = self._test_per_warc(recorder_app, 'httpbin.org', '/cookies/set%3Fname%3Dvalue%26foo%3Dbar')
+        resp = self._test_warc_write(recorder_app, 'httpbin.org', '/cookies/set%3Fname%3Dvalue%26foo%3Dbar')
         assert b'HTTP/1.1 302' in resp.body
 
         buff = BytesIO(resp.body)
@@ -134,7 +137,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
                          PerRecordWARCRecorder(base_path, header_filter=header_filter),
                             accept_colls='live')
 
-        resp = self._test_per_warc(recorder_app, 'httpbin.org', '/cookies/set%3Fname%3Dvalue%26foo%3Dbar')
+        resp = self._test_warc_write(recorder_app, 'httpbin.org', '/cookies/set%3Fname%3Dvalue%26foo%3Dbar')
         assert b'HTTP/1.1 302' in resp.body
 
         buff = BytesIO(resp.body)
@@ -161,7 +164,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         recorder_app = RecorderApp(self.upstream_url,
                         writer=PerRecordWARCRecorder(to_path(self.root_dir + '/warcs/')), accept_colls='not-live')
 
-        resp = self._test_per_warc(recorder_app, 'httpbin.org', '/get?foo=bar')
+        resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
 
@@ -181,7 +184,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         self._test_all_warcs('/warcs/', 4)
 
-        resp = self._test_per_warc(recorder_app, 'httpbin.org',
+        resp = self._test_warc_write(recorder_app, 'httpbin.org',
                             '/get?foo=bar', '&param.recorder.user=USER&param.recorder.coll=COLL')
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
@@ -190,7 +193,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         r = FakeStrictRedis.from_url('redis://localhost/2')
 
-        res = r.zrange('USER:COLL:cdxj', 0, -1)
+        res = r.zrangebylex('USER:COLL:cdxj', '[org,httpbin)/', '(org,httpbin,')
         assert len(res) == 1
 
         cdx = CDXObject(res[0])
@@ -214,7 +217,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         self._test_all_warcs('/warcs/', 4)
 
-        resp = self._test_per_warc(recorder_app, 'httpbin.org',
+        resp = self._test_warc_write(recorder_app, 'httpbin.org',
                             '/get?foo=bar', '&param.recorder.user=USER&param.recorder.coll=COLL')
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
@@ -224,7 +227,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         # Test Redis CDX
         r = FakeStrictRedis.from_url('redis://localhost/2')
 
-        res = r.zrange('USER:COLL:cdxj', 0, -1)
+        res = r.zrangebylex('USER:COLL:cdxj', '[org,httpbin)/', '(org,httpbin,')
         assert len(res) == 2
 
         cdx = CDXObject(res[1])
@@ -246,5 +249,129 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
             assert status_headers.get_header('WARC-Refers-To-Target-URI') == 'http://httpbin.org/get?foo=bar'
             assert status_headers.get_header('WARC-Refers-To-Date') != ''
 
+    @patch('redis.StrictRedis', FakeStrictRedis)
+    def test_record_param_user_coll_skip(self):
+        warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
+
+
+        dedup_index = WritableRedisIndexer('redis://localhost/2/{user}:{coll}:cdxj',
+                        rel_path_template=self.root_dir + '/warcs/',
+                        dupe_policy=SkipDupePolicy())
+
+        recorder_app = RecorderApp(self.upstream_url,
+                        PerRecordWARCRecorder(warc_path, dedup_index=dedup_index))
+
+        # No new entries written
+        self._test_all_warcs('/warcs/', 4)
+
+        resp = self._test_warc_write(recorder_app, 'httpbin.org',
+                            '/get?foo=bar', '&param.recorder.user=USER&param.recorder.coll=COLL')
+        assert b'HTTP/1.1 200 OK' in resp.body
+        assert b'"foo": "bar"' in resp.body
+
+        self._test_all_warcs('/warcs/USER/COLL/', 4)
+
+        # Test Redis CDX
+        r = FakeStrictRedis.from_url('redis://localhost/2')
+
+        res = r.zrangebylex('USER:COLL:cdxj', '[org,httpbin)/', '(org,httpbin,')
+        assert len(res) == 2
+
+    @patch('redis.StrictRedis', FakeStrictRedis)
+    def test_record_param_user_coll_write_dupe_no_revisit(self):
+
+        warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
+
+
+        dedup_index = WritableRedisIndexer('redis://localhost/2/{user}:{coll}:cdxj',
+                        rel_path_template=self.root_dir + '/warcs/',
+                        dupe_policy=WriteDupePolicy())
+
+        recorder_app = RecorderApp(self.upstream_url,
+                        PerRecordWARCRecorder(warc_path, dedup_index=dedup_index))
+
+        resp = self._test_warc_write(recorder_app, 'httpbin.org',
+                            '/get?foo=bar', '&param.recorder.user=USER&param.recorder.coll=COLL')
+        assert b'HTTP/1.1 200 OK' in resp.body
+        assert b'"foo": "bar"' in resp.body
+
+        self._test_all_warcs('/warcs/USER/COLL/', 6)
+
+        r = FakeStrictRedis.from_url('redis://localhost/2')
+
+        res = r.zrangebylex('USER:COLL:cdxj', '[org,httpbin)/', '(org,httpbin,')
+        assert len(res) == 3
+
+        mimes = [CDXObject(x)['mime'] for x in res]
+
+        assert sorted(mimes) == ['application/json', 'application/json', 'warc/revisit']
+
+    # Single File
+    def test_record_single_file_warc_1(self):
+        path = to_path(self.root_dir + '/warcs/A.warc.gz')
+        recorder_app = RecorderApp(self.upstream_url,
+                        SingleFileWARCRecorder(path))
+
+        resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
+        assert b'HTTP/1.1 200 OK' in resp.body
+        assert b'"foo": "bar"' in resp.body
+
+        assert os.path.isfile(path)
+
+
+    @patch('redis.StrictRedis', FakeStrictRedis)
+    def test_record_single_file_multiple_writes(self):
+        warc_path = to_path(self.root_dir + '/warcs/FOO/rec-test.warc.gz')
+
+        rel_path = self.root_dir + '/warcs/'
+
+        dedup_index = WritableRedisIndexer('redis://localhost/2/{coll}:cdxj',
+                        rel_path_template=rel_path)
+
+        writer = SingleFileWARCRecorder(warc_path, dedup_index=dedup_index)
+        recorder_app = RecorderApp(self.upstream_url, writer)
+
+        # First Record
+        resp = self._test_warc_write(recorder_app, 'httpbin.org',
+                            '/get?foo=bar', '&param.recorder.coll=FOO')
+
+        assert b'HTTP/1.1 200 OK' in resp.body
+        assert b'"foo": "bar"' in resp.body
+
+
+        # Second Record
+        resp = self._test_warc_write(recorder_app, 'httpbin.org',
+                            '/get?boo=far', '&param.recorder.coll=FOO')
+
+        assert b'HTTP/1.1 200 OK' in resp.body
+        assert b'"boo": "far"' in resp.body
+
+        self._test_all_warcs('/warcs/FOO/', 1)
+
+        r = FakeStrictRedis.from_url('redis://localhost/2')
+        res = r.zrangebylex('FOO:cdxj', '[org,httpbin)/', '(org,httpbin,')
+        assert len(res) == 2
+
+        assert os.path.isfile(warc_path)
+
+        cdxout = BytesIO()
+        with open(warc_path, 'rb') as fh:
+            filename = os.path.relpath(warc_path, rel_path)
+            write_cdx_index(cdxout, fh, filename,
+                            cdxj=True, append_post=True, sort=True)
+
+        res = [CDXObject(x) for x in res]
+
+        cdxres = cdxout.getvalue().strip()
+        cdxres = cdxres.split(b'\n')
+        cdxres = [CDXObject(x) for x in cdxres]
+
+        assert cdxres == res
+
+        writer.close()
+
+        with raises(OSError):
+            resp = self._test_warc_write(recorder_app, 'httpbin.org',
+                                '/get?boo=far', '&param.recorder.coll=FOO')
 
 
