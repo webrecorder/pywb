@@ -17,6 +17,8 @@ from pywb.utils.bufferedreaders import BufferedReader
 
 from webagg.utils import ParamFormatter
 
+from recorder.filters import ExcludeNone
+
 
 # ============================================================================
 class BaseWARCRecorder(object):
@@ -29,14 +31,14 @@ class BaseWARCRecorder(object):
 
     REVISIT_PROFILE = 'http://netpreserve.org/warc/1.0/revisit/uri-agnostic-identical-payload-digest'
 
+    BUFF_SIZE = 8192
+
     def __init__(self, gzip=True, dedup_index=None, name='recorder',
-                 exclude_headers=None):
+                 header_filter=ExcludeNone()):
         self.gzip = gzip
         self.dedup_index = dedup_index
         self.rec_source_name = name
-        self.exclude_headers = exclude_headers
-        if self.exclude_headers:
-            self.exclude_headers = [x.lower() for x in self.exclude_headers]
+        self.header_filter = header_filter
 
     def ensure_digest(self, record):
         block_digest = record.rec_headers.get('WARC-Block-Digest')
@@ -52,7 +54,7 @@ class BaseWARCRecorder(object):
         block_digester.update(record.status_headers.headers_buff)
 
         while True:
-            buf = record.stream.read(8192)
+            buf = record.stream.read(self.BUFF_SIZE)
             if not buf:
                 break
 
@@ -67,7 +69,8 @@ class BaseWARCRecorder(object):
         return Digester('sha1')
 
     def _set_header_buff(self, record):
-        buff = record.status_headers.to_bytes(self.exclude_headers)
+        exclude_list = self.header_filter(record)
+        buff = record.status_headers.to_bytes(exclude_list)
         record.status_headers.headers_buff = buff
 
     def write_req_resp(self, req, resp, params):

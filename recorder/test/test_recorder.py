@@ -12,6 +12,7 @@ from mock import patch
 from recorder.recorderapp import RecorderApp
 from recorder.redisindexer import WritableRedisIndexer
 from recorder.warcrecorder import PerRecordWARCRecorder
+from recorder.filters import ExcludeSpecificHeaders
 
 from webagg.utils import MementoUtils
 
@@ -128,8 +129,9 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
     def test_record_cookies_skip_header(self):
         base_path = to_path(self.root_dir + '/warcs/cookieskip/')
+        header_filter = ExcludeSpecificHeaders(['Set-Cookie', 'Cookie'])
         recorder_app = RecorderApp(self.upstream_url,
-                         PerRecordWARCRecorder(base_path, exclude_headers=['Set-Cookie', 'Cookie']),
+                         PerRecordWARCRecorder(base_path, header_filter=header_filter),
                             accept_colls='live')
 
         resp = self._test_per_warc(recorder_app, 'httpbin.org', '/cookies/set%3Fname%3Dvalue%26foo%3Dbar')
