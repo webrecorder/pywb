@@ -13,7 +13,8 @@ from pytest import raises
 from recorder.recorderapp import RecorderApp
 from recorder.redisindexer import WritableRedisIndexer
 from recorder.warcwriter import PerRecordWARCWriter, MultiFileWARCWriter
-from recorder.filters import ExcludeSpecificHeaders, SkipDupePolicy, WriteDupePolicy
+from recorder.filters import ExcludeSpecificHeaders
+from recorder.filters import SkipDupePolicy, WriteDupePolicy, WriteRevisitDupePolicy
 
 from webagg.utils import MementoUtils
 
@@ -47,6 +48,13 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         cls.upstream_url = 'http://localhost:{0}'.format(cls.server.port)
 
+    def _get_dedup_index(self, dupe_policy=WriteRevisitDupePolicy()):
+        dedup_index = WritableRedisIndexer('redis://localhost/2/{user}:{coll}:cdxj',
+                        file_key_template='{user}:{coll}:warc',
+                        rel_path_template=self.root_dir + '/warcs/',
+                        dupe_policy=dupe_policy)
+
+        return dedup_index
 
     def _test_warc_write(self, recorder_app, host, path, other_params=''):
         url = 'http://' + host + path
@@ -176,9 +184,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
 
-
-        dedup_index = WritableRedisIndexer('redis://localhost/2/{user}:{coll}:cdxj',
-                        rel_path_template=self.root_dir + '/warcs/')
+        dedup_index = self._get_dedup_index()
 
         recorder_app = RecorderApp(self.upstream_url,
                         PerRecordWARCWriter(warc_path, dedup_index=dedup_index))
@@ -204,14 +210,16 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         assert cdx['filename'].startswith('USER/COLL/')
         assert cdx['filename'].endswith('.warc.gz')
 
+        warcs = r.hgetall('USER:COLL:warc')
+        full_path = self.root_dir + '/warcs/' + cdx['filename']
+        assert warcs == {cdx['filename'].encode('utf-8'): full_path.encode('utf-8')}
+
 
     @patch('redis.StrictRedis', FakeStrictRedis)
     def test_record_param_user_coll_revisit(self):
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
 
-
-        dedup_index = WritableRedisIndexer('redis://localhost/2/{user}:{coll}:cdxj',
-                        rel_path_template=self.root_dir + '/warcs/')
+        dedup_index = self._get_dedup_index()
 
         recorder_app = RecorderApp(self.upstream_url,
                         PerRecordWARCWriter(warc_path, dedup_index=dedup_index))
@@ -240,6 +248,10 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         fullwarc = os.path.join(self.root_dir, 'warcs', cdx['filename'])
 
+        warcs = r.hgetall('USER:COLL:warc')
+        assert len(warcs) == 2
+        assert warcs[cdx['filename'].encode('utf-8')] == fullwarc.encode('utf-8')
+
         with open(fullwarc, 'rb') as fh:
             decomp = DecompressingBufferedReader(fh)
             # Test refers-to headers
@@ -254,10 +266,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
     def test_record_param_user_coll_skip(self):
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
 
-
-        dedup_index = WritableRedisIndexer('redis://localhost/2/{user}:{coll}:cdxj',
-                        rel_path_template=self.root_dir + '/warcs/',
-                        dupe_policy=SkipDupePolicy())
+        dedup_index = self._get_dedup_index(dupe_policy=SkipDupePolicy())
 
         recorder_app = RecorderApp(self.upstream_url,
                         PerRecordWARCWriter(warc_path, dedup_index=dedup_index))
@@ -283,10 +292,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
 
-
-        dedup_index = WritableRedisIndexer('redis://localhost/2/{user}:{coll}:cdxj',
-                        rel_path_template=self.root_dir + '/warcs/',
-                        dupe_policy=WriteDupePolicy())
+        dedup_index = self._get_dedup_index(dupe_policy=WriteDupePolicy())
 
         writer = PerRecordWARCWriter(warc_path, dedup_index=dedup_index)
         recorder_app = RecorderApp(self.upstream_url, writer)
@@ -329,7 +335,9 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         rel_path = self.root_dir + '/warcs/'
 
         dedup_index = WritableRedisIndexer('redis://localhost/2/{coll}:cdxj',
+                        file_key_template='{coll}:warc',
                         rel_path_template=rel_path)
+
 
         writer = MultiFileWARCWriter(warc_path, dedup_index=dedup_index)
         recorder_app = RecorderApp(self.upstream_url, writer)
@@ -382,3 +390,8 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org',
                                 '/get?boo=far', '&param.recorder.coll=FOO')
+
+        self._test_all_warcs('/warcs/FOO/', 2)
+
+        warcs = r.hgetall('FOO:warc')
+        assert len(warcs) == 2
