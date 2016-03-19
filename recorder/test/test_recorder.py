@@ -12,7 +12,7 @@ from pytest import raises
 
 from recorder.recorderapp import RecorderApp
 from recorder.redisindexer import WritableRedisIndexer
-from recorder.warcwriter import PerRecordWARCWriter, SingleFileWARCWriter
+from recorder.warcwriter import PerRecordWARCWriter, MultiFileWARCWriter
 from recorder.filters import ExcludeSpecificHeaders, SkipDupePolicy, WriteDupePolicy
 
 from webagg.utils import MementoUtils
@@ -288,8 +288,8 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
                         rel_path_template=self.root_dir + '/warcs/',
                         dupe_policy=WriteDupePolicy())
 
-        recorder_app = RecorderApp(self.upstream_url,
-                        PerRecordWARCWriter(warc_path, dedup_index=dedup_index))
+        writer = PerRecordWARCWriter(warc_path, dedup_index=dedup_index)
+        recorder_app = RecorderApp(self.upstream_url, writer)
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org',
                             '/get?foo=bar', '&param.recorder.user=USER&param.recorder.coll=COLL')
@@ -307,29 +307,31 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         assert sorted(mimes) == ['application/json', 'application/json', 'warc/revisit']
 
-    # Single File
-    def test_record_single_file_warc_1(self):
+        assert len(writer.fh_cache) == 0
+
+    # Keep Open
+    def test_record_file_warc_keep_open(self):
         path = to_path(self.root_dir + '/warcs/A.warc.gz')
-        recorder_app = RecorderApp(self.upstream_url,
-                        SingleFileWARCWriter(path))
+        writer = MultiFileWARCWriter(path)
+        recorder_app = RecorderApp(self.upstream_url, writer)
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
 
         assert os.path.isfile(path)
-
+        assert len(writer.fh_cache) == 1
 
     @patch('redis.StrictRedis', FakeStrictRedis)
-    def test_record_single_file_multiple_writes(self):
-        warc_path = to_path(self.root_dir + '/warcs/FOO/rec-{hostname}-{timestamp}.warc.gz')
+    def test_record_multiple_writes_keep_open(self):
+        warc_path = to_path(self.root_dir + '/warcs/FOO/ABC-{hostname}-{timestamp}.warc.gz')
 
         rel_path = self.root_dir + '/warcs/'
 
         dedup_index = WritableRedisIndexer('redis://localhost/2/{coll}:cdxj',
                         rel_path_template=rel_path)
 
-        writer = SingleFileWARCWriter(warc_path, dedup_index=dedup_index)
+        writer = MultiFileWARCWriter(warc_path, dedup_index=dedup_index)
         recorder_app = RecorderApp(self.upstream_url, writer)
 
         # First Record
@@ -370,10 +372,13 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         assert cdxres == res
 
-        # close this file
+        assert len(writer.fh_cache) == 1
+
+        writer.remove_file(self.root_dir + '/warcs/FOO/')
+
+        assert len(writer.fh_cache) == 0
+
         writer.close()
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org',
                                 '/get?boo=far', '&param.recorder.coll=FOO')
-
-        self._test_all_warcs('/warcs/FOO/', 2)
