@@ -20,7 +20,7 @@ from pywb.utils.loaders import LimitReader, to_native_str
 from pywb.utils.bufferedreaders import BufferedReader
 from pywb.utils.timeutils import timestamp20_now
 
-from webagg.utils import ParamFormatter
+from webagg.utils import ParamFormatter, res_template
 
 from recorder.filters import ExcludeNone
 
@@ -107,8 +107,8 @@ class BaseWARCWriter(object):
             print('Skipping due to dedup')
             return
 
-        formatter = ParamFormatter(params, name=self.rec_source_name)
-        self._do_write_req_resp(req, resp, params, formatter)
+        params['_formatter'] = ParamFormatter(params, name=self.rec_source_name)
+        self._do_write_req_resp(req, resp, params)
 
     def _check_revisit(self, record, params):
         if not self.dedup_index:
@@ -248,18 +248,24 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
         self.fh_cache = {}
 
-    def _open_file(self, dir_):
+    def _open_file(self, dir_, params):
         timestamp = timestamp20_now()
 
         filename = dir_ + self.filename_template.format(hostname=self.hostname,
                                                         timestamp=timestamp)
 
+        path, name = os.path.split(filename)
+
         try:
-            os.makedirs(os.path.dirname(filename))
+            os.makedirs(path)
         except:
             pass
 
         fh = open(filename, 'a+b')
+
+        if self.dedup_index:
+            self.dedup_index.add_warc_file(filename, params)
+
         return fh, filename
 
     def _close_file(self, fh):
@@ -272,8 +278,8 @@ class MultiFileWARCWriter(BaseWARCWriter):
             out, filename = result
             self._close_file(out)
 
-    def _do_write_req_resp(self, req, resp, params, formatter):
-        full_dir = formatter.format(self.dir_template)
+    def _do_write_req_resp(self, req, resp, params):
+        full_dir = res_template(self.dir_template, params)
 
         result = self.fh_cache.get(full_dir)
 
@@ -283,7 +289,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
             out, filename = result
             is_new = False
         else:
-            out, filename = self._open_file(full_dir)
+            out, filename = self._open_file(full_dir, params)
             is_new = True
 
         try:

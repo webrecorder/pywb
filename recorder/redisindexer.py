@@ -15,12 +15,22 @@ from recorder.filters import WriteRevisitDupePolicy
 
 #==============================================================================
 class WritableRedisIndexer(RedisIndexSource):
-    def __init__(self, redis_url, rel_path_template='', name='recorder',
+    def __init__(self, redis_url, rel_path_template='',
+                 file_key_template='', name='recorder',
                  dupe_policy=WriteRevisitDupePolicy()):
         super(WritableRedisIndexer, self).__init__(redis_url)
         self.cdx_lookup = SimpleAggregator({name: self})
         self.rel_path_template = rel_path_template
+        self.file_key_template = file_key_template
         self.dupe_policy = dupe_policy
+
+    def add_warc_file(self, full_filename, params):
+        rel_path = res_template(self.rel_path_template, params)
+        filename = os.path.relpath(full_filename, rel_path)
+
+        file_key = res_template(self.file_key_template, params)
+
+        self.redis.hset(file_key, filename, full_filename)
 
     def index_records(self, stream, params, filename=None):
         rel_path = res_template(self.rel_path_template, params)
