@@ -12,7 +12,7 @@ from pytest import raises
 
 from recorder.recorderapp import RecorderApp
 from recorder.redisindexer import WritableRedisIndexer
-from recorder.warcrecorder import PerRecordWARCRecorder, SingleFileWARCRecorder
+from recorder.warcwriter import PerRecordWARCWriter, SingleFileWARCWriter
 from recorder.filters import ExcludeSpecificHeaders, SkipDupePolicy, WriteDupePolicy
 
 from webagg.utils import MementoUtils
@@ -70,10 +70,21 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         files = [x for x in os.listdir(coll_dir) if os.path.isfile(os.path.join(coll_dir, x))]
         assert len(files) == num
         assert all(x.endswith('.warc.gz') for x in files)
+        return files, coll_dir
 
     def test_record_warc_1(self):
         recorder_app = RecorderApp(self.upstream_url,
-                        PerRecordWARCRecorder(to_path(self.root_dir + '/warcs/')))
+                        PerRecordWARCWriter(to_path(self.root_dir + '/warcs/')))
+
+        resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
+        assert b'HTTP/1.1 200 OK' in resp.body
+        assert b'"foo": "bar"' in resp.body
+
+        self._test_all_warcs('/warcs/', 1)
+
+    def test_record_warc_2(self):
+        recorder_app = RecorderApp(self.upstream_url,
+                        PerRecordWARCWriter(to_path(self.root_dir + '/warcs/')), accept_colls='live')
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
         assert b'HTTP/1.1 200 OK' in resp.body
@@ -81,19 +92,9 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         self._test_all_warcs('/warcs/', 2)
 
-    def test_record_warc_2(self):
-        recorder_app = RecorderApp(self.upstream_url,
-                        PerRecordWARCRecorder(to_path(self.root_dir + '/warcs/')), accept_colls='live')
-
-        resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
-        assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
-
-        self._test_all_warcs('/warcs/', 4)
-
     def test_error_url(self):
         recorder_app = RecorderApp(self.upstream_url + '01',
-                        PerRecordWARCRecorder(to_path(self.root_dir + '/warcs/')), accept_colls='live')
+                        PerRecordWARCWriter(to_path(self.root_dir + '/warcs/')), accept_colls='live')
 
 
         testapp = webtest.TestApp(recorder_app)
@@ -101,12 +102,12 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         assert resp.json['error'] != ''
 
-        self._test_all_warcs('/warcs/', 4)
+        self._test_all_warcs('/warcs/', 2)
 
     def test_record_cookies_header(self):
         base_path = to_path(self.root_dir + '/warcs/cookiecheck/')
         recorder_app = RecorderApp(self.upstream_url,
-                        PerRecordWARCRecorder(base_path), accept_colls='live')
+                        PerRecordWARCWriter(base_path), accept_colls='live')
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/cookies/set%3Fname%3Dvalue%26foo%3Dbar')
         assert b'HTTP/1.1 302' in resp.body
@@ -134,7 +135,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         base_path = to_path(self.root_dir + '/warcs/cookieskip/')
         header_filter = ExcludeSpecificHeaders(['Set-Cookie', 'Cookie'])
         recorder_app = RecorderApp(self.upstream_url,
-                         PerRecordWARCRecorder(base_path, header_filter=header_filter),
+                         PerRecordWARCWriter(base_path, header_filter=header_filter),
                             accept_colls='live')
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/cookies/set%3Fname%3Dvalue%26foo%3Dbar')
@@ -162,13 +163,13 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
     def test_record_skip_wrong_coll(self):
         recorder_app = RecorderApp(self.upstream_url,
-                        writer=PerRecordWARCRecorder(to_path(self.root_dir + '/warcs/')), accept_colls='not-live')
+                        writer=PerRecordWARCWriter(to_path(self.root_dir + '/warcs/')), accept_colls='not-live')
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
 
-        self._test_all_warcs('/warcs/', 4)
+        self._test_all_warcs('/warcs/', 2)
 
     @patch('redis.StrictRedis', FakeStrictRedis)
     def test_record_param_user_coll(self):
@@ -180,16 +181,16 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
                         rel_path_template=self.root_dir + '/warcs/')
 
         recorder_app = RecorderApp(self.upstream_url,
-                        PerRecordWARCRecorder(warc_path, dedup_index=dedup_index))
+                        PerRecordWARCWriter(warc_path, dedup_index=dedup_index))
 
-        self._test_all_warcs('/warcs/', 4)
+        self._test_all_warcs('/warcs/', 2)
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org',
                             '/get?foo=bar', '&param.recorder.user=USER&param.recorder.coll=COLL')
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
 
-        self._test_all_warcs('/warcs/USER/COLL/', 2)
+        self._test_all_warcs('/warcs/USER/COLL/', 1)
 
         r = FakeStrictRedis.from_url('redis://localhost/2')
 
@@ -213,16 +214,16 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
                         rel_path_template=self.root_dir + '/warcs/')
 
         recorder_app = RecorderApp(self.upstream_url,
-                        PerRecordWARCRecorder(warc_path, dedup_index=dedup_index))
+                        PerRecordWARCWriter(warc_path, dedup_index=dedup_index))
 
-        self._test_all_warcs('/warcs/', 4)
+        self._test_all_warcs('/warcs/', 2)
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org',
                             '/get?foo=bar', '&param.recorder.user=USER&param.recorder.coll=COLL')
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
 
-        self._test_all_warcs('/warcs/USER/COLL/', 4)
+        self._test_all_warcs('/warcs/USER/COLL/', 2)
 
         # Test Redis CDX
         r = FakeStrictRedis.from_url('redis://localhost/2')
@@ -259,17 +260,17 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
                         dupe_policy=SkipDupePolicy())
 
         recorder_app = RecorderApp(self.upstream_url,
-                        PerRecordWARCRecorder(warc_path, dedup_index=dedup_index))
+                        PerRecordWARCWriter(warc_path, dedup_index=dedup_index))
 
         # No new entries written
-        self._test_all_warcs('/warcs/', 4)
+        self._test_all_warcs('/warcs/', 2)
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org',
                             '/get?foo=bar', '&param.recorder.user=USER&param.recorder.coll=COLL')
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
 
-        self._test_all_warcs('/warcs/USER/COLL/', 4)
+        self._test_all_warcs('/warcs/USER/COLL/', 2)
 
         # Test Redis CDX
         r = FakeStrictRedis.from_url('redis://localhost/2')
@@ -288,14 +289,14 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
                         dupe_policy=WriteDupePolicy())
 
         recorder_app = RecorderApp(self.upstream_url,
-                        PerRecordWARCRecorder(warc_path, dedup_index=dedup_index))
+                        PerRecordWARCWriter(warc_path, dedup_index=dedup_index))
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org',
                             '/get?foo=bar', '&param.recorder.user=USER&param.recorder.coll=COLL')
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
 
-        self._test_all_warcs('/warcs/USER/COLL/', 6)
+        self._test_all_warcs('/warcs/USER/COLL/', 3)
 
         r = FakeStrictRedis.from_url('redis://localhost/2')
 
@@ -310,7 +311,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
     def test_record_single_file_warc_1(self):
         path = to_path(self.root_dir + '/warcs/A.warc.gz')
         recorder_app = RecorderApp(self.upstream_url,
-                        SingleFileWARCRecorder(path))
+                        SingleFileWARCWriter(path))
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
         assert b'HTTP/1.1 200 OK' in resp.body
@@ -321,14 +322,14 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
     @patch('redis.StrictRedis', FakeStrictRedis)
     def test_record_single_file_multiple_writes(self):
-        warc_path = to_path(self.root_dir + '/warcs/FOO/rec-test.warc.gz')
+        warc_path = to_path(self.root_dir + '/warcs/FOO/rec-{hostname}-{timestamp}.warc.gz')
 
         rel_path = self.root_dir + '/warcs/'
 
         dedup_index = WritableRedisIndexer('redis://localhost/2/{coll}:cdxj',
                         rel_path_template=rel_path)
 
-        writer = SingleFileWARCRecorder(warc_path, dedup_index=dedup_index)
+        writer = SingleFileWARCWriter(warc_path, dedup_index=dedup_index)
         recorder_app = RecorderApp(self.upstream_url, writer)
 
         # First Record
@@ -352,11 +353,12 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         res = r.zrangebylex('FOO:cdxj', '[org,httpbin)/', '(org,httpbin,')
         assert len(res) == 2
 
-        assert os.path.isfile(warc_path)
+        files, coll_dir = self._test_all_warcs('/warcs/FOO/', 1)
+        fullname = coll_dir + files[0]
 
         cdxout = BytesIO()
-        with open(warc_path, 'rb') as fh:
-            filename = os.path.relpath(warc_path, rel_path)
+        with open(fullname, 'rb') as fh:
+            filename = os.path.relpath(fullname, rel_path)
             write_cdx_index(cdxout, fh, filename,
                             cdxj=True, append_post=True, sort=True)
 
@@ -368,10 +370,10 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         assert cdxres == res
 
+        # close this file
         writer.close()
 
-        with raises(OSError):
-            resp = self._test_warc_write(recorder_app, 'httpbin.org',
+        resp = self._test_warc_write(recorder_app, 'httpbin.org',
                                 '/get?boo=far', '&param.recorder.coll=FOO')
 
-
+        self._test_all_warcs('/warcs/FOO/', 2)

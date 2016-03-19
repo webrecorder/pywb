@@ -6,9 +6,6 @@ from pywb.utils.statusandheaders import StatusAndHeadersParser
 from pywb.warc.recordloader import ArcWarcRecord
 from pywb.warc.recordloader import ArcWarcRecordLoader
 
-from recorder.warcrecorder import SingleFileWARCRecorder, PerRecordWARCRecorder
-from recorder.redisindexer import WritableRedisIndexer
-
 from six.moves.urllib.parse import parse_qsl
 
 import json
