@@ -36,7 +36,7 @@ class TestUpstream(LiveServerTests, BaseTestClass):
 
     def test_live_paths(self):
         res = requests.get(self.base_url + '/')
-        assert set(res.json().keys()) == {'/live/postreq', '/live'}
+        assert set(res.json().keys()) == {'/live/postreq', '/live', '/replay/postreq', '/replay'}
 
     def test_upstream_paths(self):
         res = self.testapp.get('/')

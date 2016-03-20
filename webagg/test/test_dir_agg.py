@@ -7,7 +7,10 @@ from .testutils import to_path, to_json_list, TempDirTests, BaseTestClass
 
 from mock import patch
 
-from webagg.aggregator import DirectoryIndexSource, SimpleAggregator
+import time
+
+from webagg.aggregator import DirectoryIndexSource, CacheDirectoryIndexSource
+from webagg.aggregator import SimpleAggregator
 from webagg.indexsource import MementoIndexSource
 
 
@@ -44,6 +47,7 @@ class TestDirAgg(TempDirTests, BaseTestClass):
             fh.write('foo')
 
         cls.dir_loader = DirectoryIndexSource(dir_prefix, dir_path)
+        cls.cache_dir_loader = CacheDirectoryIndexSource(dir_prefix, dir_path)
 
     def test_agg_no_coll_set(self):
         res, errs = self.dir_loader(dict(url='example.com/'))
@@ -188,3 +192,25 @@ class TestDirAgg(TempDirTests, BaseTestClass):
 
 
 
+    def test_cache_dir_sources_1(self):
+        exp = {'sources': {'colls/A/indexes/example.cdxj': 'file',
+                           'colls/B/indexes/iana.cdxj': 'file',
+                           'colls/C/indexes/dupes.cdxj': 'file'}
+              }
+
+        res = self.cache_dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '*'})
+        assert(res == exp)
+
+        res = self.cache_dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '*'})
+        assert(res == exp)
+
+        new_file = os.path.join(self.root_dir, 'colls/C/indexes/empty.cdxj')
+
+        with open(new_file, 'a') as fh:
+            os.utime(new_file)
+
+        res = self.cache_dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '*'})
+
+        # New File Included
+        exp['sources']['colls/C/indexes/empty.cdxj'] = 'file'
+        assert(res == exp)
