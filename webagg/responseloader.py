@@ -254,7 +254,7 @@ class LiveWebLoader(BaseLoader):
 
         try:
             fp = upstream_res.raw._fp.fp
-            if hasattr(fp, 'raw'):
+            if hasattr(fp, 'raw'):  #pragma: no cover
                 fp = fp.raw
             remote_ip = fp._sock.getpeername()[0]
         except:  #pragma: no cover

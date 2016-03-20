@@ -221,24 +221,53 @@ class BaseDirectoryIndexSource(BaseAggregator):
 
     def _load_files(self, glob_dir):
         for the_dir in glob.iglob(glob_dir):
-            for name in os.listdir(the_dir):
-                filename = os.path.join(the_dir, name)
+            for result in self._load_files_single_dir(the_dir):
+                yield result
 
-                if filename.endswith(self.CDX_EXT):
-                    print('Adding ' + filename)
-                    rel_path = os.path.relpath(the_dir, self.base_prefix)
-                    if rel_path == '.':
-                        full_name = name
-                    else:
-                        full_name = rel_path + '/' + name
+    def _load_files_single_dir(self, the_dir):
+        for name in os.listdir(the_dir):
+            filename = os.path.join(the_dir, name)
 
-                    yield full_name, FileIndexSource(filename)
+            if filename.endswith(self.CDX_EXT):
+                print('Adding ' + filename)
+                rel_path = os.path.relpath(the_dir, self.base_prefix)
+                if rel_path == '.':
+                    full_name = name
+                else:
+                    full_name = rel_path + '/' + name
+
+                yield full_name, FileIndexSource(filename)
 
     def __str__(self):
         return 'file_dir'
 
 
+#=============================================================================
 class DirectoryIndexSource(SeqAggMixin, BaseDirectoryIndexSource):
     pass
 
 
+#=============================================================================
+class CacheDirectoryIndexSource(DirectoryIndexSource):
+    def __init__(self, *args, **kwargs):
+        super(CacheDirectoryIndexSource, self).__init__(*args, **kwargs)
+        self.cached_file_list = {}
+
+    def _load_files_single_dir(self, the_dir):
+        try:
+            stat = os.stat(the_dir)
+        except Exception as e:
+            stat = 0
+
+        result = self.cached_file_list.get(the_dir)
+
+        if result:
+            last_stat, files = result
+            if stat and last_stat == stat:
+                print('Dir {0} unchanged'.format(the_dir))
+                return files
+
+        files = super(CacheDirectoryIndexSource, self)._load_files_single_dir(the_dir)
+        files = list(files)
+        self.cached_file_list[the_dir] = (stat, files)
+        return files
