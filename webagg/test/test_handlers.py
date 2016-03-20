@@ -16,7 +16,6 @@ from pywb.utils.bufferedreaders import ChunkedDataReader
 from io import BytesIO
 
 import webtest
-import bottle
 
 from .testutils import to_path
 
