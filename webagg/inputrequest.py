@@ -4,7 +4,7 @@ from pywb.utils.statusandheaders import StatusAndHeadersParser
 
 from six.moves.urllib.parse import urlsplit, quote
 from six import iteritems
-from io import BytesIO
+from io import BytesIO, StringIO
 
 
 #=============================================================================
@@ -14,6 +14,9 @@ class DirectWSGIInputRequest(object):
 
     def get_req_method(self):
         return self.env['REQUEST_METHOD'].upper()
+
+    def get_req_protocol(self):
+        return self.env['SERVER_PROTOCOL']
 
     def get_req_headers(self):
         headers = {}
@@ -92,6 +95,38 @@ class DirectWSGIInputRequest(object):
 
         return req_uri
 
+    def reconstruct_request(self, url=None):
+        buff = StringIO()
+        buff.write(self.get_req_method())
+        buff.write(' ')
+        buff.write(self.get_full_request_uri())
+        buff.write(' ')
+        buff.write(self.get_req_protocol())
+        buff.write('\r\n')
+
+        headers = self.get_req_headers()
+
+        if url:
+            parts = urlsplit(url)
+            buff.write('Host: ')
+            buff.write(parts.netloc)
+            buff.write('\r\n')
+
+        for name, value in iteritems(headers):
+            buff.write(name)
+            buff.write(': ')
+            buff.write(value)
+            buff.write('\r\n')
+
+        buff.write('\r\n')
+        buff = buff.getvalue().encode('latin-1')
+
+        body = self.get_req_body()
+        if body:
+            buff += body.read()
+
+        return buff
+
 
 #=============================================================================
 class POSTInputRequest(DirectWSGIInputRequest):
@@ -111,6 +146,12 @@ class POSTInputRequest(DirectWSGIInputRequest):
             headers[n] = v
 
         return headers
+
+    def get_full_request_uri(self):
+        return self.status_headers.statusline.split(' ', 1)[0]
+
+    def get_req_protocol(self):
+        return self.status_headers.statusline.split(' ', 1)[-1]
 
     def _get_content_type(self):
         return self.status_headers.get_header('Content-Type')
