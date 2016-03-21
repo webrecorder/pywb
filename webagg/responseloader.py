@@ -1,4 +1,5 @@
-from webagg.utils import MementoUtils, StreamIter
+from webagg.utils import MementoUtils, StreamIter, chunk_encode_iter
+from webagg.indexsource import RedisIndexSource
 
 from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_timestamp
 from pywb.utils.timeutils import iso_date_to_datetime, datetime_to_iso_date
@@ -58,7 +59,7 @@ class BaseLoader(object):
 
         if not lenset:
             out_headers['Transfer-Encoding'] = 'chunked'
-            streamiter = self._chunk_encode(streamiter)
+            streamiter = chunk_encode_iter(streamiter)
 
         return out_headers, streamiter
 
@@ -76,17 +77,32 @@ class BaseLoader(object):
 
         return False
 
-    @staticmethod
-    def _chunk_encode(orig_iter):
-        for chunk in orig_iter:
-            if not len(chunk):
-                continue
-            chunk_len = b'%X\r\n' % len(chunk)
-            yield chunk_len
-            yield chunk
-            yield b'\r\n'
 
-        yield b'0\r\n\r\n'
+#=============================================================================
+class PrefixResolver(object):
+    def __init__(self, template):
+        self.template = template
+
+    def __call__(self, filename, cdx):
+        full_path = self.template
+        if hasattr(cdx, '_formatter') and cdx._formatter:
+            full_path = cdx._formatter.format(full_path)
+
+        return full_path + filename
+
+
+#=============================================================================
+class RedisResolver(RedisIndexSource):
+    def __call__(self, filename, cdx):
+        redis_key = self.redis_key_template
+        if hasattr(cdx, '_formatter') and cdx._formatter:
+            redis_key = cdx._formatter.format(redis_key)
+
+        res = self.redis.hget(redis_key, filename)
+        if res:
+            res = res.decode('utf-8')
+
+        return res
 
 
 #=============================================================================
@@ -96,9 +112,9 @@ class WARCPathLoader(BaseLoader):
         if isinstance(paths, str):
             self.paths = [paths]
 
-        self.path_checks = list(self.warc_paths())
+        self.resolvers = [self._make_resolver(path) for path in self.paths]
 
-        self.resolve_loader = ResolvingLoader(self.path_checks,
+        self.resolve_loader = ResolvingLoader(self.resolvers,
                                               no_record_parse=True)
         self.cdx_source = cdx_source
 
@@ -106,20 +122,15 @@ class WARCPathLoader(BaseLoader):
         cdx_iter, errs = self.cdx_source(*args, **kwargs)
         return cdx_iter
 
-    def warc_paths(self):
-        for path in self.paths:
-            def check(filename, cdx):
-                try:
-                    if hasattr(cdx, '_formatter') and cdx._formatter:
-                        full_path = cdx._formatter.format(path)
-                    else:
-                        full_path = path
-                    full_path += filename
-                    return full_path
-                except KeyError:
-                    return None
+    def _make_resolver(self, path):
+        if hasattr(path, '__call__'):
+            return path
 
-            yield check
+        if path.startswith('redis://'):
+            return RedisResolver(path)
+
+        else:
+            return PrefixResolver(path)
 
     def load_resource(self, cdx, params):
         if cdx.get('_cached_result'):
