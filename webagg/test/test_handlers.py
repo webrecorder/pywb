@@ -17,6 +17,9 @@ from io import BytesIO
 
 import webtest
 
+from fakeredis import FakeStrictRedis
+from mock import patch
+
 from .testutils import to_path
 
 import json
@@ -29,6 +32,9 @@ sources = {
 }
 
 testapp = None
+
+redismock = patch('redis.StrictRedis', FakeStrictRedis)
+redismock.start()
 
 def setup_module(self):
     live_source = SimpleAggregator({'live': LiveIndexSource()})
@@ -54,11 +60,17 @@ def setup_module(self):
     app.add_route('/seq', HandlerSeq([handler3,
                                   handler2]))
 
+    app.add_route('/allredis', DefaultResourceHandler(source3, 'redis://localhost/2/test:warc'))
+
     app.add_route('/empty', HandlerSeq([]))
     app.add_route('/invalid', DefaultResourceHandler([SimpleAggregator({'invalid': 'should not be a callable'})]))
 
     global testapp
     testapp = webtest.TestApp(app.application)
+
+
+def teardown_module(self):
+    redismock.stop()
 
 
 def to_json_list(text):
@@ -88,6 +100,7 @@ class TestResAgg(object):
                                        '/many', '/many/postreq',
                                        '/posttest', '/posttest/postreq',
                                        '/seq', '/seq/postreq',
+                                       '/allredis', '/allredis/postreq',
                                        '/invalid', '/invalid/postreq'])
 
         assert res['/fallback'] == {'modes': ['list_sources', 'index', 'resource']}
@@ -325,6 +338,34 @@ foo=bar&test=abc"""
         assert b'HTTP/1.1 200 OK' in resp.body
 
         assert 'ResErrors' not in resp.headers
+
+    def test_redis_warc_1(self):
+        f = FakeStrictRedis.from_url('redis://localhost/2')
+        f.hset('test:warc', 'example.warc.gz', './testdata/example.warc.gz')
+
+        resp = self.testapp.get('/allredis/resource?url=http://www.example.com/')
+
+        assert resp.headers['WebAgg-Source-Coll'] == 'example'
+
+    def test_error_redis_file_not_found(self):
+        f = FakeStrictRedis.from_url('redis://localhost/2')
+        f.hset('test:warc', 'example.warc.gz', './testdata/example2.warc.gz')
+
+        resp = self.testapp.get('/allredis/resource?url=http://www.example.com/', status=503)
+        assert resp.json['message'] == "example.warc.gz:[Errno 2] No such file or directory: './testdata/example2.warc.gz'"
+
+        f.hdel('test:warc', 'example.warc.gz')
+        resp = self.testapp.get('/allredis/resource?url=http://www.example.com/', status=503)
+
+        assert resp.json == {'message': 'example.warc.gz:Archive File Not Found',
+                             'errors': {'WARCPathLoader': "ArchiveLoadFailed('example.warc.gz:Archive File Not Found',)"}}
+
+        f.delete('test:warc')
+        resp = self.testapp.get('/allredis/resource?url=http://www.example.com/', status=503)
+
+        assert resp.json == {'message': 'example.warc.gz:Archive File Not Found',
+                             'errors': {'WARCPathLoader': "ArchiveLoadFailed('example.warc.gz:Archive File Not Found',)"}}
+
 
     def test_error_fallback_live_not_found(self):
         resp = self.testapp.get('/fallback/resource?url=http://invalid.url-not-found', status=400)

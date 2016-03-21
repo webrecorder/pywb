@@ -99,6 +99,7 @@ class RedisResolver(RedisIndexSource):
             redis_key = cdx._formatter.format(redis_key)
 
         res = self.redis.hget(redis_key, filename)
+        print('REDIS_KEY', redis_key, filename, res)
         if res:
             res = res.decode('utf-8')
 
