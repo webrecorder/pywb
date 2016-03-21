@@ -678,6 +678,20 @@ var wombat_internal = function($wbwindow) {
         Math.random = seeded_random;
     }
 
+    function init_crypto_random() {
+        var orig_getrandom = $wbwindow.Crypto.prototype.getRandomValues;
+
+        var new_getrandom = function(array) {
+            for (i = 0; i < array.length; i++) {
+                array[i] = parseInt(Math.random() * 65535);
+            }
+            return array;
+        }
+
+        $wbwindow.Crypto.prototype.getRandomValues = new_getrandom;
+        $wbwindow.crypto.getRandomValues = new_getrandom;
+    } 
+
     //============================================
     function override_history_func(func_name) {
         if (!$wbwindow.history) {
@@ -2176,6 +2190,9 @@ var wombat_internal = function($wbwindow) {
 
         // Random
         init_seeded_random(wbinfo.wombat_sec);
+
+        // Crypto Random
+        init_crypto_random();
 
         // Date
         init_date_override(wbinfo.wombat_sec);
