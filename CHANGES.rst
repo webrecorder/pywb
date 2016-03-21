@@ -1,11 +1,12 @@
 pywb 0.11.4 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
-* wombat: overrides ``window.crypto.getRandomValues()`` to use predictable random for improved
+* wombat: overrides ``window.crypto.getRandomValues()`` to use predictable 'random' values for improved
   replayability in many JS applications.
 
-* fix gevent/uwsgi: add ``gevent.monkey.patch_all()`` to ``pywb.apps.wayback`` used by ``uwsgi.ini``.
-  (Was relying on ``gevent-early-monkey-patch`` which is not yet available until uwsgi 2.1).
+* fix gevent/uwsgi: run ``gevent.monkey.patch_all()`` explicitly when loading ``pywb.apps.wayback`` if ``GEVENT_MONKEY_PATCH=1`` env var is set
+
+  Enabled by default in ``uwsgi.ini``. (Was previously relying on ``gevent-early-monkey-patch`` which is not yet available until uwsgi 2.1 is released).
 
 
 pywb 0.11.3 changelist
