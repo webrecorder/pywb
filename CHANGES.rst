@@ -22,7 +22,7 @@ pywb 0.11.2 changelist
 
 * wb.js: pad shorter timestamp to 14 digits.
 
-* Indexing: fixed exceptino when indexing empty files.
+* Indexing: fixed exception when indexing empty files.
 
 
 pywb 0.11.1 changelist
