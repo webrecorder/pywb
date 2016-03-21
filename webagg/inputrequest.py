@@ -113,6 +113,9 @@ class DirectWSGIInputRequest(object):
             buff.write('\r\n')
 
         for name, value in iteritems(headers):
+            if name.lower() == 'host':
+                continue
+
             buff.write(name)
             buff.write(': ')
             buff.write(value)

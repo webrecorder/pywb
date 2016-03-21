@@ -7,7 +7,7 @@ from multiprocessing import Process
 
 from wsgiref.simple_server import make_server
 
-from webagg.aggregator import SimpleAggregator, CacheDirectoryIndexSource
+from webagg.aggregator import SimpleAggregator
 from webagg.app import ResAggApp
 from webagg.handlers import DefaultResourceHandler
 from webagg.indexsource import LiveIndexSource
@@ -64,12 +64,6 @@ class LiveServerTests(object):
         app.add_route('/live',
             DefaultResourceHandler(SimpleAggregator(
                                    {'live': LiveIndexSource()})
-            )
-        )
-        app.add_route('/replay',
-            DefaultResourceHandler(SimpleAggregator(
-                                   {'replay': CacheDirectoryIndexSource('./testdata/')}),
-                                   './testdata/'
             )
         )
         return app.application

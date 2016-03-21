@@ -1,7 +1,8 @@
 import re
 import six
 import string
-import time
+
+from contextlib import closing
 
 from pywb.utils.timeutils import timestamp_to_http_date
 from pywb.utils.wbexception import BadRequestException
@@ -11,7 +12,7 @@ LINK_SEG_SPLIT = re.compile(';\s*')
 LINK_URL = re.compile('<(.*)>')
 LINK_PROP = re.compile('([\w]+)="([^"]+)')
 
-BUFF_SIZE = 8192
+BUFF_SIZE = 16384
 
 
 #=============================================================================
@@ -146,81 +147,31 @@ def res_template(template, params):
 
 
 #=============================================================================
-class ReadFullyStream(object):
-    def __init__(self, stream):
-        self.stream = stream
+def StreamIter(stream, header1=None, header2=None, size=BUFF_SIZE):
+    with closing(stream):
+        if header1:
+            yield header1
 
-    def read(self, *args, **kwargs):
-        try:
-            return self.stream.read(*args, **kwargs)
-        except:
-            self.mark_incomplete()
-            raise
+        if header2:
+            yield header2
 
-    def readline(self, *args, **kwargs):
-        try:
-            return self.stream.readline(*args, **kwargs)
-        except:
-            self.mark_incomplete()
-            raise
-
-    def mark_incomplete(self):
-        if (hasattr(self.stream, '_fp') and
-            hasattr(self.stream._fp, 'mark_incomplete')):
-            self.stream._fp.mark_incomplete()
-
-    def close(self):
-        try:
-            while True:
-                buff = self.stream.read(BUFF_SIZE)
-                time.sleep(0)
-                if not buff:
-                    break
-
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            self.mark_incomplete()
-        finally:
-            self.stream.close()
+        while True:
+            buff = stream.read(size)
+            if not buff:
+                break
+            yield buff
 
 
 #=============================================================================
-class StreamIter(six.Iterator):
-    def __init__(self, stream, header1=None, header2=None, size=8192):
-        self.stream = stream
-        self.header1 = header1
-        self.header2 = header2
-        self.size = size
+def chunk_encode_iter(orig_iter):
+    for chunk in orig_iter:
+        if not len(chunk):
+            continue
+        chunk_len = b'%X\r\n' % len(chunk)
+        yield chunk_len
+        yield chunk
+        yield b'\r\n'
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.header1:
-            header = self.header1
-            self.header1 = None
-            return header
-        elif self.header2:
-            header = self.header2
-            self.header2 = None
-            return header
-
-        data = self.stream.read(self.size)
-        if data:
-            return data
-
-        self.close()
-        raise StopIteration
-
-    def close(self):
-        if not self.stream:
-            return
-
-        try:
-            self.stream.close()
-            self.stream = None
-        except Exception:
-            pass
+    yield b'0\r\n\r\n'
 
 
