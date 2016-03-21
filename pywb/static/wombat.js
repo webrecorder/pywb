@@ -679,7 +679,7 @@ var wombat_internal = function($wbwindow) {
     }
 
     function init_crypto_random() {
-        if (!$wbwindow.crypto || $wbwindow.Crypto) {
+        if (!$wbwindow.crypto || !$wbwindow.Crypto) {
             return;
         }
 
