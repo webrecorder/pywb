@@ -91,7 +91,7 @@ class BaseWARCWriter(object):
         req.rec_headers['WARC-Target-Uri'] = url
         req.rec_headers['WARC-Date'] = dt
         req.rec_headers['WARC-Type'] = 'request'
-        req.rec_headers['Content-Type'] = req.content_type
+        #req.rec_headers['Content-Type'] = req.content_type
 
         resp_id = resp.rec_headers.get('WARC-Record-ID')
         if resp_id:
@@ -142,6 +142,9 @@ class BaseWARCWriter(object):
         self._line(out, b'WARC/1.0')
 
         for n, v in six.iteritems(record.rec_headers):
+            if n.lower() in ('content-length', 'content-type'):
+                continue
+
             self._header(out, n, v)
 
         content_type = record.content_type

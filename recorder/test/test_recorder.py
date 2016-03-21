@@ -61,8 +61,9 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         req_url = '/live/resource/postreq?url=' + url + other_params
         testapp = webtest.TestApp(recorder_app)
         resp = testapp.post(req_url, general_req_data.format(host=host, path=path).encode('utf-8'))
-        #gevent.sleep(0.1)
-        recorder_app._write_one()
+
+        if not recorder_app.write_queue.empty():
+            recorder_app._write_one()
 
         assert resp.headers['WebAgg-Source-Coll'] == 'live'
 
