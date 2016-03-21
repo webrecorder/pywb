@@ -1,19 +1,29 @@
+pywb 0.11.4 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* wombat: overrides ``window.crypto.getRandomValues()`` to use predictable random for improved
+  replayability in many JS applications.
+
+* fix gevent/uwsgi: add ``gevent.monkey.patch_all()`` to ``pywb.apps.wayback`` used by ``uwsgi.ini``.
+  (Was relying on ``gevent-early-monkey-patch`` which is not yet available until uwsgi 2.1).
+
+
 pywb 0.11.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
-rewrite: fix typo in ``<meta content="">`` rewrite (modifier was not being set)
+* rewrite: fix typo in ``<meta content="">`` rewrite (modifier was not being set)
 
 
 pywb 0.11.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Rewriting: if no charset specified in original page, don't add charset to allow browser to detect.
+* Rewriting: if no charset specified in original page, don't add charset to allow browser to detect.
 
-Rewriting: rewrite ``<meta content="">`` attribute if it is a url.
+* Rewriting: rewrite ``<meta content="">`` attribute if it is a url.
 
-wb.js: pad shorter timestamp to 14 digits.
+* wb.js: pad shorter timestamp to 14 digits.
 
-Indexing: fixed exceptino when indexing empty files.
+* Indexing: fixed exceptino when indexing empty files.
 
 
 pywb 0.11.1 changelist

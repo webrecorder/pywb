@@ -679,11 +679,15 @@ var wombat_internal = function($wbwindow) {
     }
 
     function init_crypto_random() {
+        if (!$wbwindow.crypto || $wbwindow.Crypto) {
+            return;
+        }
+
         var orig_getrandom = $wbwindow.Crypto.prototype.getRandomValues;
 
         var new_getrandom = function(array) {
             for (i = 0; i < array.length; i++) {
-                array[i] = parseInt(Math.random() * 65535);
+                array[i] = parseInt(Math.random() * 4294967296);
             }
             return array;
         }
