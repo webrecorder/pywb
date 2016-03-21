@@ -1,9 +1,10 @@
-import sys
+import os
 
-if not hasattr(sys, '_called_from_test'):  #pragma: no cover
+if os.environ.get('GEVENT_MONKEY_PATCH') == '1':  #pragma: no cover
     # Use gevent if available
     try:
         from gevent.monkey import patch_all; patch_all()
+        print('gevent patched!')
     except Exception as e:
         pass
 
