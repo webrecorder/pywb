@@ -136,12 +136,12 @@ class ParamFormatter(string.Formatter):
 
 
 #=============================================================================
-def res_template(template, params):
+def res_template(template, params, **extra_params):
     formatter = params.get('_formatter')
     if not formatter:
         formatter = ParamFormatter(params)
 
-    res = formatter.format(template, url=params['url'])
+    res = formatter.format(template, url=params['url'], **extra_params)
 
     return res
 
