@@ -85,7 +85,7 @@ class DirectWSGIInputRequest(object):
 
     def get_full_request_uri(self):
         req_uri = self.env.get('REQUEST_URI')
-        if req_uri:
+        if req_uri and not self.env.get('SCRIPT_NAME'):
             return req_uri
 
         req_uri = quote(self.env.get('PATH_INFO', ''), safe='/~!$&\'()*+,;=:@')
