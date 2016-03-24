@@ -275,12 +275,9 @@ class CacheDirectoryIndexSource(DirectoryIndexSource):
 
 #=============================================================================
 class RedisMultiKeyIndexSource(SeqAggMixin, BaseAggregator, RedisIndexSource):
-    def _iter_sources2(self, params):
+    def _iter_sources(self, params):
         redis_key_pattern = res_template(self.redis_key_template, params)
 
         for key in self.redis.scan_iter(match=redis_key_pattern):
             key = key.decode('utf-8')
-            yield '', RedisIndexSource(None, self.redis, key)
-
-    def _iter_sources(self, params):
-        return list(self._iter_sources2(params))
+            yield key, RedisIndexSource(None, self.redis, key)
