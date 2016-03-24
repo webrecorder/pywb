@@ -31,12 +31,14 @@ setup(
     provides=[
         'webagg',
         'recorder',
+        'urlrewrite',
+        'proxy',
         ],
     install_requires=[
         'pywb==0.30.0',
         ],
     dependency_links=[
-        'git+https://github.com/ikreymer/pywb.git@py3#egg=pywb-0.30.0-py3',
+        'git+https://github.com/ikreymer/pywb.git@develop#egg=pywb-0.30.0-develop',
     ],
     zip_safe=True,
     entry_points="""
