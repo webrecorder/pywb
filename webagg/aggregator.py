@@ -15,7 +15,7 @@ from heapq import merge
 from collections import deque
 from itertools import chain
 
-from webagg.indexsource import FileIndexSource
+from webagg.indexsource import FileIndexSource, RedisIndexSource
 from pywb.utils.wbexception import NotFoundException, WbException
 
 from webagg.utils import ParamFormatter, res_template
@@ -51,14 +51,14 @@ class BaseAggregator(object):
             cdx_iter = iter([])
             err_list = [(name, repr(wbe))]
 
-        def add_name(cdx):
+        def add_name(cdx, name):
             if cdx.get('source'):
                 cdx['source'] = name + ':' + cdx['source']
             else:
                 cdx['source'] = name
             return cdx
 
-        return (add_name(cdx) for cdx in cdx_iter), err_list
+        return (add_name(cdx, name) for cdx in cdx_iter), err_list
 
     def load_index(self, params):
         res_list = self._load_all(params)
@@ -271,3 +271,16 @@ class CacheDirectoryIndexSource(DirectoryIndexSource):
         files = list(files)
         self.cached_file_list[the_dir] = (stat, files)
         return files
+
+
+#=============================================================================
+class RedisMultiKeyIndexSource(SeqAggMixin, BaseAggregator, RedisIndexSource):
+    def _iter_sources2(self, params):
+        redis_key_pattern = res_template(self.redis_key_template, params)
+
+        for key in self.redis.scan_iter(match=redis_key_pattern):
+            key = key.decode('utf-8')
+            yield '', RedisIndexSource(None, self.redis, key)
+
+    def _iter_sources(self, params):
+        return list(self._iter_sources2(params))

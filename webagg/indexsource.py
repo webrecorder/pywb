@@ -103,19 +103,30 @@ class LiveIndexSource(BaseIndexSource):
 
 #=============================================================================
 class RedisIndexSource(BaseIndexSource):
-    def __init__(self, redis_url):
+    def __init__(self, redis_url, redis=None, key_prefix=None):
+        if redis_url and not redis:
+            redis, key_prefix = self.parse_redis_url(redis_url)
+
+        self.redis = redis
+        self.redis_key_template = key_prefix
+
+    @staticmethod
+    def parse_redis_url(redis_url):
         parts = redis_url.split('/')
         key_prefix = ''
         if len(parts) > 4:
             key_prefix = parts[4]
             redis_url = 'redis://' + parts[2] + '/' + parts[3]
 
-        self.redis_url = redis_url
-        self.redis_key_template = key_prefix
-        self.redis = redis.StrictRedis.from_url(redis_url)
+        redis_key_template = key_prefix
+        red = redis.StrictRedis.from_url(redis_url)
+        return red, key_prefix
 
     def load_index(self, params):
-        z_key = res_template(self.redis_key_template, params)
+        return self.load_key_index(self.redis_key_template, params)
+
+    def load_key_index(self, key_template, params):
+        z_key = res_template(key_template, params)
         index_list = self.redis.zrangebylex(z_key,
                                             b'[' + params['key'],
                                             b'(' + params['end_key'])
