@@ -5,6 +5,9 @@ import shutil
 
 from multiprocessing import Process
 
+from fakeredis import FakeStrictRedis
+from mock import patch
+
 from wsgiref.simple_server import make_server
 
 from webagg.aggregator import SimpleAggregator
@@ -36,6 +39,27 @@ class BaseTestClass(object):
     @classmethod
     def teardown_class(cls):
         pass
+
+
+# ============================================================================
+class FakeRedisTests(object):
+    @classmethod
+    def setup_class(cls):
+        super(FakeRedisTests, cls).setup_class()
+        cls.redismock = patch('redis.StrictRedis', FakeStrictRedis)
+        cls.redismock.start()
+
+    @staticmethod
+    def add_cdx_to_redis(filename, key, redis_url='redis://localhost:6379/2'):
+        r = FakeStrictRedis.from_url(redis_url)
+        with open(filename, 'rb') as fh:
+            for line in fh:
+                r.zadd(key, 0, line.rstrip())
+
+    @classmethod
+    def teardown_class(cls):
+        super(FakeRedisTests, cls).teardown_class()
+        cls.redismock.stop()
 
 
 # ============================================================================

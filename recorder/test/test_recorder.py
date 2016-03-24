@@ -2,13 +2,13 @@
 import gevent
 
 from webagg.test.testutils import TempDirTests, LiveServerTests, BaseTestClass, to_path
+from webagg.test.testutils import FakeRedisTests
 
 import os
 import webtest
 
-from fakeredis import FakeStrictRedis
-from mock import patch
 from pytest import raises
+from fakeredis import FakeStrictRedis
 
 from recorder.recorderapp import RecorderApp
 from recorder.redisindexer import WritableRedisIndexer
@@ -37,7 +37,7 @@ Host: {host}\r\n\
 
 
 
-class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
+class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass):
     @classmethod
     def setup_class(cls):
         super(TestRecorder, cls).setup_class()
@@ -180,7 +180,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
 
         self._test_all_warcs('/warcs/', 2)
 
-    @patch('redis.StrictRedis', FakeStrictRedis)
+    #@patch('redis.StrictRedis', FakeStrictRedis)
     def test_record_param_user_coll(self):
 
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
@@ -216,7 +216,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         assert warcs == {cdx['filename'].encode('utf-8'): full_path.encode('utf-8')}
 
 
-    @patch('redis.StrictRedis', FakeStrictRedis)
+    #@patch('redis.StrictRedis', FakeStrictRedis)
     def test_record_param_user_coll_revisit(self):
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
 
@@ -263,7 +263,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
             assert status_headers.get_header('WARC-Refers-To-Target-URI') == 'http://httpbin.org/get?foo=bar'
             assert status_headers.get_header('WARC-Refers-To-Date') != ''
 
-    @patch('redis.StrictRedis', FakeStrictRedis)
+    #@patch('redis.StrictRedis', FakeStrictRedis)
     def test_record_param_user_coll_skip(self):
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
 
@@ -288,7 +288,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         res = r.zrangebylex('USER:COLL:cdxj', '[org,httpbin)/', '(org,httpbin,')
         assert len(res) == 2
 
-    @patch('redis.StrictRedis', FakeStrictRedis)
+    #@patch('redis.StrictRedis', FakeStrictRedis)
     def test_record_param_user_coll_write_dupe_no_revisit(self):
 
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
@@ -329,7 +329,7 @@ class TestRecorder(LiveServerTests, TempDirTests, BaseTestClass):
         assert os.path.isfile(path)
         assert len(writer.fh_cache) == 1
 
-    @patch('redis.StrictRedis', FakeStrictRedis)
+    #@patch('redis.StrictRedis', FakeStrictRedis)
     def test_record_multiple_writes_keep_open(self):
         warc_path = to_path(self.root_dir + '/warcs/FOO/ABC-{hostname}-{timestamp}.warc.gz')
 

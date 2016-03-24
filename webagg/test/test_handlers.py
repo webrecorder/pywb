@@ -16,11 +16,9 @@ from pywb.utils.bufferedreaders import ChunkedDataReader
 from io import BytesIO
 
 import webtest
-
 from fakeredis import FakeStrictRedis
-from mock import patch
 
-from .testutils import to_path
+from .testutils import to_path, FakeRedisTests, BaseTestClass
 
 import json
 
@@ -32,9 +30,6 @@ sources = {
 }
 
 testapp = None
-
-redismock = patch('redis.StrictRedis', FakeStrictRedis)
-redismock.start()
 
 def setup_module(self):
     live_source = SimpleAggregator({'live': LiveIndexSource()})
@@ -69,15 +64,11 @@ def setup_module(self):
     testapp = webtest.TestApp(app.application)
 
 
-def teardown_module(self):
-    redismock.stop()
-
-
 def to_json_list(text):
     return list([json.loads(cdx) for cdx in text.rstrip().split('\n')])
 
 
-class TestResAgg(object):
+class TestResAgg(FakeRedisTests, BaseTestClass):
     def setup(self):
         self.testapp = testapp
 
