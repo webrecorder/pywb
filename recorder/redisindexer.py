@@ -32,7 +32,7 @@ class WritableRedisIndexer(RedisIndexSource):
 
         self.redis.hset(file_key, filename, full_filename)
 
-    def index_records(self, stream, params, filename=None):
+    def add_urls_to_index(self, stream, params, filename=None):
         rel_path = res_template(self.rel_path_template, params)
         filename = os.path.relpath(filename, rel_path)
 

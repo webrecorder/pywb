@@ -233,7 +233,6 @@ class Digester(object):
 
 # ============================================================================
 class MultiFileWARCWriter(BaseWARCWriter):
-
     def __init__(self, dir_template, filename_template=None, max_size=0,
                  *args, **kwargs):
         super(MultiFileWARCWriter, self).__init__(*args, **kwargs)
@@ -254,8 +253,9 @@ class MultiFileWARCWriter(BaseWARCWriter):
     def _open_file(self, dir_, params):
         timestamp = timestamp20_now()
 
-        filename = dir_ + self.filename_template.format(hostname=self.hostname,
-                                                        timestamp=timestamp)
+        filename = dir_ + res_template(self.filename_template, params,
+                                       hostname=self.hostname,
+                                       timestamp=timestamp)
 
         path, name = os.path.split(filename)
 
@@ -311,7 +311,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
             out.seek(start)
 
             if self.dedup_index:
-                self.dedup_index.index_records(out, params, filename=filename)
+                self.dedup_index.add_urls_to_index(out, params, filename=filename)
 
         except Exception as e:
             traceback.print_exc()
