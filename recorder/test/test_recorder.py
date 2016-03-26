@@ -383,7 +383,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         assert len(writer.fh_cache) == 1
 
-        writer.remove_file(self.root_dir + '/warcs/FOO/')
+        writer.close_file({'param.recorder.coll': 'FOO'})
 
         assert len(writer.fh_cache) == 0
 

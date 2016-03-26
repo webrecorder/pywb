@@ -182,12 +182,6 @@ class Wrapper(object):
         self.out.write(buff)
         return buff
 
-    def close(self):
-        try:
-            self.stream.close()
-        except:
-            traceback.print_exc()
-
 
 #==============================================================================
 class RespWrapper(Wrapper):
@@ -247,5 +241,9 @@ class ReqWrapper(Wrapper):
         for n in req_headers.keys():
             if not n.upper().startswith('WARC-'):
                 del self.headers[n]
+
+    def close(self):
+        # no need to close wsgi.input
+        pass
 
 
