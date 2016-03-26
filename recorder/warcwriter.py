@@ -275,11 +275,15 @@ class MultiFileWARCWriter(BaseWARCWriter):
         fcntl.flock(fh, fcntl.LOCK_UN)
         fh.close()
 
-    def remove_file(self, full_dir):
+    def close_file(self, params):
+        full_dir = res_template(self.dir_template, params)
         result = self.fh_cache.pop(full_dir, None)
-        if result:
-            out, filename = result
-            self._close_file(out)
+        if not result:
+            return
+
+        out, filename = result
+        self._close_file(out)
+        return filename
 
     def _do_write_req_resp(self, req, resp, params):
         full_dir = res_template(self.dir_template, params)
@@ -323,10 +327,9 @@ class MultiFileWARCWriter(BaseWARCWriter):
                 close_file = True
 
             if close_file:
-                if is_new:
-                    self._close_file(out)
-                else:
-                    self.remove_file(full_dir)
+                self._close_file(out)
+                if not is_new:
+                    self.fh_cache.pop(full_dir, None)
 
             elif is_new:
                 fcntl.flock(out, fcntl.LOCK_EX | fcntl.LOCK_NB)
