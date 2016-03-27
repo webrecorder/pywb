@@ -1,6 +1,5 @@
 from webagg.inputrequest import DirectWSGIInputRequest, POSTInputRequest
-from bottle import route, request, response, abort, Bottle
-import bottle
+from bottle import route, request, response, abort, Bottle, debug as bottle_debug
 
 import requests
 import traceback
@@ -15,6 +14,10 @@ class ResAggApp(object):
         self.application = Bottle()
         self.application.default_error_handler = self.err_handler
         self.route_dict = {}
+        self.debug = kwargs.get('debug', False)
+
+        if self.debug:
+            bottle_debug(True)
 
         @self.application.route('/')
         def list_routes():
@@ -22,7 +25,7 @@ class ResAggApp(object):
 
     def add_route(self, path, handler):
         @self.application.route([path, path + '/<mode:path>'], 'ANY')
-        @wrap_error
+        @self.wrap_error
         def direct_input_request(mode=''):
             params = dict(request.query)
             params['mode'] = mode
@@ -30,7 +33,7 @@ class ResAggApp(object):
             return handler(params)
 
         @self.application.route([path + '/postreq', path + '/<mode:path>/postreq'], 'POST')
-        @wrap_error
+        @self.wrap_error
         def post_fullrequest(mode=''):
             params = dict(request.query)
             params['mode'] = mode
@@ -42,7 +45,7 @@ class ResAggApp(object):
         self.route_dict[path + '/postreq'] = handler_dict
 
     def err_handler(self, exc):
-        if bottle.debug:
+        if self.debug:
             print(exc)
             traceback.print_exc()
         response.status = exc.status_code
@@ -51,47 +54,45 @@ class ResAggApp(object):
         response.headers['ResErrors'] = err_msg
         return err_msg
 
+    def wrap_error(self, func):
+        def wrap_func(*args, **kwargs):
+            try:
+                out_headers, res, errs = func(*args, **kwargs)
 
-#=============================================================================
-def wrap_error(func):
-    def wrap_func(*args, **kwargs):
-        try:
-            out_headers, res, errs = func(*args, **kwargs)
+                if out_headers:
+                    for n, v in out_headers.items():
+                        response.headers[n] = v
 
-            if out_headers:
-                for n, v in out_headers.items():
-                    response.headers[n] = v
+                if res:
+                    if errs:
+                        response.headers['ResErrors'] = json.dumps(errs)
+                    return res
 
-            if res:
+                last_exc = errs.pop('last_exc', None)
+                if last_exc:
+                    if self.debug:
+                        traceback.print_exc()
+
+                    response.status = last_exc.status()
+                    message = last_exc.msg
+                else:
+                    response.status = 404
+                    message = 'No Resource Found'
+
+                response.content_type = JSON_CT
+                res = {'message': message}
                 if errs:
-                    response.headers['ResErrors'] = json.dumps(errs)
-                return res
+                    res['errors'] = errs
 
-            last_exc = errs.pop('last_exc', None)
-            if last_exc:
-                if bottle.debug:
+                err_msg = json.dumps(res)
+                response.headers['ResErrors'] = err_msg
+                return err_msg
+
+            except Exception as e:
+                if self.debug:
                     traceback.print_exc()
+                abort(500, 'Internal Error: ' + str(e))
 
-                response.status = last_exc.status()
-                message = last_exc.msg
-            else:
-                response.status = 404
-                message = 'No Resource Found'
-
-            response.content_type = JSON_CT
-            res = {'message': message}
-            if errs:
-                res['errors'] = errs
-
-            err_msg = json.dumps(res)
-            response.headers['ResErrors'] = err_msg
-            return err_msg
-
-        except Exception as e:
-            if bottle.debug:
-                traceback.print_exc()
-            abort(500, 'Internal Error: ' + str(e))
-
-    return wrap_func
+        return wrap_func
 
 
