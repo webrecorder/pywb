@@ -125,7 +125,7 @@ class RedisResolver(RedisIndexSource):
             redis_key = cdx._formatter.format(redis_key)
 
         res = self.redis.hget(redis_key, filename)
-        if res:
+        if res and six.PY3:
             res = res.decode('utf-8')
 
         return res
@@ -135,7 +135,7 @@ class RedisResolver(RedisIndexSource):
 class WARCPathLoader(BaseLoader):
     def __init__(self, paths, cdx_source):
         self.paths = paths
-        if isinstance(paths, str):
+        if isinstance(paths, six.string_types):
             self.paths = [paths]
 
         self.resolvers = [self._make_resolver(path) for path in self.paths]

@@ -29,48 +29,40 @@ sources = {
     'live': LiveIndexSource(),
 }
 
-testapp = None
-
-def setup_module(self):
-    live_source = SimpleAggregator({'live': LiveIndexSource()})
-    live_handler = DefaultResourceHandler(live_source)
-    app = ResAggApp()
-    app.add_route('/live', live_handler)
-
-    source1 = GeventTimeoutAggregator(sources)
-    handler1 = DefaultResourceHandler(source1, to_path('testdata/'))
-    app.add_route('/many', handler1)
-
-    source2 = SimpleAggregator({'post': FileIndexSource(to_path('testdata/post-test.cdxj'))})
-    handler2 = DefaultResourceHandler(source2, to_path('testdata/'))
-    app.add_route('/posttest', handler2)
-
-    source3 = SimpleAggregator({'example': FileIndexSource(to_path('testdata/example.cdxj'))})
-    handler3 = DefaultResourceHandler(source3, to_path('testdata/'))
-
-    app.add_route('/fallback', HandlerSeq([handler3,
-                                       handler2,
-                                       live_handler]))
-
-    app.add_route('/seq', HandlerSeq([handler3,
-                                  handler2]))
-
-    app.add_route('/allredis', DefaultResourceHandler(source3, 'redis://localhost/2/test:warc'))
-
-    app.add_route('/empty', HandlerSeq([]))
-    app.add_route('/invalid', DefaultResourceHandler([SimpleAggregator({'invalid': 'should not be a callable'})]))
-
-    global testapp
-    testapp = webtest.TestApp(app.application)
-
-
-def to_json_list(text):
-    return list([json.loads(cdx) for cdx in text.rstrip().split('\n')])
-
 
 class TestResAgg(FakeRedisTests, BaseTestClass):
-    def setup(self):
-        self.testapp = testapp
+    def setup_class(cls):
+        super(TestResAgg, cls).setup_class()
+
+        live_source = SimpleAggregator({'live': LiveIndexSource()})
+        live_handler = DefaultResourceHandler(live_source)
+        app = ResAggApp()
+        app.add_route('/live', live_handler)
+
+        source1 = GeventTimeoutAggregator(sources)
+        handler1 = DefaultResourceHandler(source1, to_path('testdata/'))
+        app.add_route('/many', handler1)
+
+        source2 = SimpleAggregator({'post': FileIndexSource(to_path('testdata/post-test.cdxj'))})
+        handler2 = DefaultResourceHandler(source2, to_path('testdata/'))
+        app.add_route('/posttest', handler2)
+
+        source3 = SimpleAggregator({'example': FileIndexSource(to_path('testdata/example.cdxj'))})
+        handler3 = DefaultResourceHandler(source3, to_path('testdata/'))
+
+        app.add_route('/fallback', HandlerSeq([handler3,
+                                           handler2,
+                                           live_handler]))
+
+        app.add_route('/seq', HandlerSeq([handler3,
+                                      handler2]))
+
+        app.add_route('/allredis', DefaultResourceHandler(source3, 'redis://localhost/2/test:warc'))
+
+        app.add_route('/empty', HandlerSeq([]))
+        app.add_route('/invalid', DefaultResourceHandler([SimpleAggregator({'invalid': 'should not be a callable'})]))
+
+        cls.testapp = webtest.TestApp(app.application)
 
     def _check_uri_date(self, resp, uri, dt):
         buff = BytesIO(resp.body)
@@ -128,10 +120,10 @@ class TestResAgg(FakeRedisTests, BaseTestClass):
         resp = self.testapp.get('/live/index?url=http://httpbin.org/get&output=json')
         resp.charset = 'utf-8'
 
-        res = to_json_list(resp.text)
-        res[0]['timestamp'] = '2016'
-        assert(res == [{'url': 'http://httpbin.org/get', 'urlkey': 'org,httpbin)/get', 'is_live': 'true',
-                        'load_url': 'http://httpbin.org/get', 'source': 'live', 'timestamp': '2016'}])
+        cdxlist = list([json.loads(cdx) for cdx in resp.text.rstrip().split('\n')])
+        cdxlist[0]['timestamp'] = '2016'
+        assert(cdxlist == [{'url': 'http://httpbin.org/get', 'urlkey': 'org,httpbin)/get', 'is_live': 'true',
+                            'load_url': 'http://httpbin.org/get', 'source': 'live', 'timestamp': '2016'}])
 
     def test_live_resource(self):
         headers = {'foo': 'bar'}
@@ -343,26 +335,26 @@ foo=bar&test=abc"""
         f.hset('test:warc', 'example.warc.gz', './testdata/example2.warc.gz')
 
         resp = self.testapp.get('/allredis/resource?url=http://www.example.com/', status=503)
-        assert resp.json['message'] == "example.warc.gz:[Errno 2] No such file or directory: './testdata/example2.warc.gz'"
+        assert resp.json['message'] == "example.warc.gz: [Errno 2] No such file or directory: './testdata/example2.warc.gz'"
 
         f.hdel('test:warc', 'example.warc.gz')
         resp = self.testapp.get('/allredis/resource?url=http://www.example.com/', status=503)
 
-        assert resp.json == {'message': 'example.warc.gz:Archive File Not Found',
-                             'errors': {'WARCPathLoader': "ArchiveLoadFailed('example.warc.gz:Archive File Not Found',)"}}
+        assert resp.json == {'message': 'example.warc.gz: Archive File Not Found',
+                             'errors': {'WARCPathLoader': 'example.warc.gz: Archive File Not Found'}}
 
         f.delete('test:warc')
         resp = self.testapp.get('/allredis/resource?url=http://www.example.com/', status=503)
 
-        assert resp.json == {'message': 'example.warc.gz:Archive File Not Found',
-                             'errors': {'WARCPathLoader': "ArchiveLoadFailed('example.warc.gz:Archive File Not Found',)"}}
+        assert resp.json == {'message': 'example.warc.gz: Archive File Not Found',
+                             'errors': {'WARCPathLoader': 'example.warc.gz: Archive File Not Found'}}
 
 
     def test_error_fallback_live_not_found(self):
         resp = self.testapp.get('/fallback/resource?url=http://invalid.url-not-found', status=400)
 
         assert resp.json == {'message': 'http://invalid.url-not-found',
-                             'errors': {'LiveWebLoader': "LiveResourceException('http://invalid.url-not-found',)"}}
+                             'errors': {'LiveWebLoader': 'http://invalid.url-not-found'}}
 
         assert resp.text == resp.headers['ResErrors']
 

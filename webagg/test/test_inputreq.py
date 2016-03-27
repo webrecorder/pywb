@@ -1,5 +1,5 @@
 from webagg.inputrequest import DirectWSGIInputRequest, POSTInputRequest
-from bottle import Bottle, request, response
+from bottle import Bottle, request, response, debug
 import webtest
 import traceback
 
@@ -8,7 +8,7 @@ import traceback
 class InputReqApp(object):
     def __init__(self):
         self.application = Bottle()
-        self.application.default_error_handler = self.err_handler
+        debug(True)
 
         @self.application.route('/test/<url:re:.*>', 'ANY')
         def direct_input_request(url=''):
@@ -22,10 +22,6 @@ class InputReqApp(object):
             inputreq = POSTInputRequest(request.environ)
             response['Content-Type'] = 'text/plain; charset=utf-8'
             return inputreq.reconstruct_request(params.get('url'))
-
-    def err_handler(self, out):
-        print(out)
-        traceback.print_exc()
 
 
 #=============================================================================

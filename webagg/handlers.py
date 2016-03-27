@@ -106,7 +106,7 @@ class ResourceHandler(IndexHandler):
                         return out_headers, resp, errs
                 except WbException as e:
                     last_exc = e
-                    errs[str(loader)] = repr(e)
+                    errs[str(loader)] = str(e)
 
         if last_exc:
             errs['last_exc'] = last_exc
