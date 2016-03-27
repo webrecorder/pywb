@@ -207,7 +207,7 @@ class TestDirAgg(TempDirTests, BaseTestClass):
         new_file = os.path.join(self.root_dir, 'colls/C/indexes/empty.cdxj')
 
         with open(new_file, 'a') as fh:
-            os.utime(new_file)
+            os.utime(new_file, None)
 
         res = self.cache_dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '*'})
 
