@@ -25,7 +25,7 @@ ArcWarcRecord = collections.namedtuple('ArcWarcRecord',
 class ArchiveLoadFailed(WbException):
     def __init__(self, reason, filename=''):
         if filename:
-            msg = filename + ':' + str(reason)
+            msg = filename + ': ' + str(reason)
         else:
             msg = str(reason)
 
