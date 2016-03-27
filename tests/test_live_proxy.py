@@ -145,7 +145,7 @@ class TestProxyLiveRewriter:
 
     def test_echo_proxy_bounded_noproxy_range(self):
         headers = [('Range', 'bytes=10-1000')]
-        resp = self.testapp.get('/rewrite/http://example.com/foobar', headers=headers)
+        resp = self.testapp.get('/rewrite/http://httpbin.org/range/1024', headers=headers)
 
         # actual response is with range
         assert resp.status_int == 206
@@ -159,22 +159,22 @@ class TestProxyLiveRewriter:
         assert len(self.requestlog) == 1
 
         # proxy receives different request than our response
-        assert self.requestlog[0] != resp.text
+        assert self.requestlog[0] != resp.body
 
-        assert self.requestlog[0].startswith('GET http://example.com/foobar HTTP/1.1')
+        assert self.requestlog[0].startswith('GET http://httpbin.org/range/1024 HTTP/1.1')
 
         # no range request
         assert 'range: ' not in self.requestlog[0]
 
         # r: key cached
         assert len(self.cache) == 1
-        assert RewriteHandler.create_cache_key('r:', 'http://example.com/foobar') in self.cache
+        assert RewriteHandler.create_cache_key('r:', 'http://httpbin.org/range/1024') in self.cache
 
         # Second Request
         # clear log
         self.requestlog.pop()
         headers = [('Range', 'bytes=101-150')]
-        resp = self.testapp.get('/rewrite/http://example.com/foobar', headers=headers)
+        resp = self.testapp.get('/rewrite/http://httpbin.org/range/1024', headers=headers)
 
         # actual response is with range
         assert resp.status_int == 206
