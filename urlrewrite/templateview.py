@@ -1,4 +1,4 @@
-from pywb.utils.timeutils import timestamp_to_datetime, timestamp_to_sec,
+from pywb.utils.timeutils import timestamp_to_datetime, timestamp_to_sec
 from pywb.utils.timeutils import timestamp_now
 from six.moves.urllib.parse import urlsplit
 

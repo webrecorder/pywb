@@ -13,8 +13,8 @@ from pywb.utils.loaders import extract_client_cookie
 from pywb.cdx.cdxobject import CDXObject
 from pywb.warc.recordloader import ArcWarcRecordLoader
 
-from rewriteinputreq import RewriteInputRequest
-from templateview import JinjaEnv, HeadInsertView, TopFrameView
+from urlrewrite.rewriteinputreq import RewriteInputRequest
+from urlrewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView
 
 from io import BytesIO
 
