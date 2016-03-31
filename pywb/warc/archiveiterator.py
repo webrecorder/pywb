@@ -309,7 +309,10 @@ class DefaultRecordIter(object):
             else:
                 entry = ArchiveIndexEntry()
 
-            self.entry_cache[rec_type] = entry
+            # don't reuse when using append post
+            # entry may be cached
+            if not self.options.get('append_post'):
+                self.entry_cache[rec_type] = entry
 
         return entry
 
