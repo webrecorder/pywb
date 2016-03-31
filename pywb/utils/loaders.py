@@ -37,8 +37,15 @@ def to_file_url(filename):
 #=================================================================
 def load_yaml_config(config_file):
     import yaml
-    configdata = BlockLoader().load(config_file)
-    config = yaml.load(configdata)
+    config = None
+    configdata = None
+    try:
+        configdata = BlockLoader().load(config_file)
+        config = yaml.load(configdata)
+    finally:
+        if configdata:
+            configdata.close()
+
     return config
 
 
