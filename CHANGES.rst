@@ -1,3 +1,11 @@
+pywb 0.11.5 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* cdx index bug fix: fix bug with cdx indexing with post-append when WARC request and response records do not alternate in the WARC.
+
+* load yaml config: ensure file stream gets closed.
+
+
 pywb 0.11.4 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
