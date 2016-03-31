@@ -5,6 +5,8 @@ pywb 0.11.5 changelist
 
 * load yaml config: ensure file stream gets closed.
 
+* zipnum: resolve paths specified in zipnum .loc file relative to the .loc file, not to application root.
+
 
 pywb 0.11.4 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
