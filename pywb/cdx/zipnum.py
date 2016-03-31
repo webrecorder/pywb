@@ -51,11 +51,20 @@ class LocMapResolver(object):
         # update loc file mtime
         self.loc_mtime = new_mtime
 
+        local_dir = os.path.dirname(self.loc_filename)
+
+        def res_path(pathname):
+            if '://' not in pathname:
+                pathname = os.path.join(local_dir, pathname)
+            return pathname
+
         logging.debug('Loading loc from: ' + self.loc_filename)
         with open(self.loc_filename, 'rb') as fh:
             for line in fh:
                 parts = line.rstrip().split('\t')
-                self.loc_map[parts[0]] = parts[1:]
+
+                paths = [res_path(pathname) for pathname in parts[1:]]
+                self.loc_map[parts[0]] = paths
 
     def __call__(self, part, query):
         return self.loc_map[part]

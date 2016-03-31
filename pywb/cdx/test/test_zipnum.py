@@ -149,7 +149,7 @@ Traceback (most recent call last):
 Exception: No Locations Found for: foo
 
 
->>> zip_test_err(url='http://iana.org/x', matchType='exact')
+>>> zip_test_err(url='http://iana.org/x', matchType='exact')   # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
 IOError: [Errno 2] No such file or directory: './sample_archive/invalid'
 
