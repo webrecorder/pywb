@@ -41,11 +41,14 @@ def to_file_url(filename):
 def load_yaml_config(config_file):
     import yaml
     config = None
+    configdata = None
     try:
         configdata = BlockLoader().load(config_file)
         config = yaml.load(configdata)
     finally:
         configdata.close()
+        if configdata:
+            configdata.close()
 
     return config
 

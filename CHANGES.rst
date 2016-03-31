@@ -1,3 +1,13 @@
+pywb 0.11.5 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* cdx index bug fix: fix bug with cdx indexing with post-append when WARC request and response records do not alternate in the WARC.
+
+* load yaml config: ensure file stream gets closed.
+
+* zipnum: resolve paths specified in zipnum .loc file relative to the .loc file, not to application root.
+
+
 pywb 0.11.4 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -22,7 +32,7 @@ pywb 0.11.2 changelist
 
 * wb.js: pad shorter timestamp to 14 digits.
 
-* Indexing: fixed exceptino when indexing empty files.
+* Indexing: fixed exception when indexing empty files.
 
 
 pywb 0.11.1 changelist

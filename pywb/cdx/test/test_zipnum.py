@@ -122,7 +122,6 @@ Traceback (most recent call last):
 Exception: No Locations Found for: foo
 
 
-
 >>> zip_test_err(url='http://example.zz/x', matchType='exact')  # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
 Exception: No Locations Found for: foo2
