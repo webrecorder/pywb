@@ -12,7 +12,7 @@ from fakeredis import FakeStrictRedis
 
 from recorder.recorderapp import RecorderApp
 from recorder.redisindexer import WritableRedisIndexer
-from recorder.warcwriter import PerRecordWARCWriter, MultiFileWARCWriter
+from recorder.warcwriter import PerRecordWARCWriter, MultiFileWARCWriter, SimpleTempWARCWriter
 from recorder.filters import ExcludeSpecificHeaders
 from recorder.filters import SkipDupePolicy, WriteDupePolicy, WriteRevisitDupePolicy
 
@@ -27,6 +27,7 @@ from pywb.warc.cdxindexer import write_cdx_index
 from six.moves.urllib.parse import quote, unquote
 from io import BytesIO
 import time
+import json
 
 general_req_data = "\
 GET {path} HTTP/1.1\r\n\
@@ -180,7 +181,6 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         self._test_all_warcs('/warcs/', 2)
 
-    #@patch('redis.StrictRedis', FakeStrictRedis)
     def test_record_param_user_coll(self):
 
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
@@ -216,7 +216,6 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert warcs == {cdx['filename'].encode('utf-8'): full_path.encode('utf-8')}
 
 
-    #@patch('redis.StrictRedis', FakeStrictRedis)
     def test_record_param_user_coll_revisit(self):
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
 
@@ -263,7 +262,6 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
             assert status_headers.get_header('WARC-Refers-To-Target-URI') == 'http://httpbin.org/get?foo=bar'
             assert status_headers.get_header('WARC-Refers-To-Date') != ''
 
-    #@patch('redis.StrictRedis', FakeStrictRedis)
     def test_record_param_user_coll_skip(self):
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
 
@@ -288,7 +286,6 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         res = r.zrangebylex('USER:COLL:cdxj', '[org,httpbin)/', '(org,httpbin,')
         assert len(res) == 2
 
-    #@patch('redis.StrictRedis', FakeStrictRedis)
     def test_record_param_user_coll_write_dupe_no_revisit(self):
 
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
@@ -329,7 +326,6 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert os.path.isfile(path)
         assert len(writer.fh_cache) == 1
 
-    #@patch('redis.StrictRedis', FakeStrictRedis)
     def test_record_multiple_writes_keep_open(self):
         warc_path = to_path(self.root_dir + '/warcs/FOO/ABC-{hostname}-{timestamp}.warc.gz')
 
@@ -397,3 +393,31 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         warcs = r.hgetall('FOO:warc')
         assert len(warcs) == 2
+
+    def test_warcinfo_record(self):
+        simplewriter = SimpleTempWARCWriter(gzip=False)
+        params = {'software': 'recorder test',
+                  'format': 'WARC File Format 1.0',
+                  'json-metadata': json.dumps({'foo': 'bar'})}
+
+        record = simplewriter.create_warcinfo_record('testfile.warc.gz', **params)
+        simplewriter.write_record(record)
+        buff = simplewriter.get_buffer()
+        assert isinstance(buff, bytes)
+
+        buff = BytesIO(buff)
+        parsed_record = ArcWarcRecordLoader().parse_record_stream(buff)
+
+        assert parsed_record.rec_headers.get_header('WARC-Type') == 'warcinfo'
+        assert parsed_record.rec_headers.get_header('WARC-Filename') == 'testfile.warc.gz'
+
+        buff = parsed_record.stream.read().decode('utf-8')
+
+        length = parsed_record.rec_headers.get_header('Content-Length')
+
+        assert len(buff) == int(length)
+
+        assert 'json-metadata: {"foo": "bar"}\r\n' in buff
+        assert 'format: WARC File Format 1.0\r\n' in buff
+        assert 'json-metadata: {"foo": "bar"}\r\n' in buff
+
