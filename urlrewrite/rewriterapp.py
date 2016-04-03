@@ -21,7 +21,7 @@ from io import BytesIO
 
 # ============================================================================
 class RewriterApp(object):
-    def __init__(self, framed_replay=False):
+    def __init__(self, framed_replay=False, jinja_env=None):
         self.loader = ArcWarcRecordLoader()
 
         self.framed_replay = framed_replay
@@ -32,9 +32,12 @@ class RewriterApp(object):
 
         self.content_rewriter = RewriteContent(is_framed_replay=frame_type)
 
-        self.jenv = JinjaEnv(globals={'static_path': 'static/__pywb'})
-        self.head_insert_view = HeadInsertView(self.jenv, 'head_insert.html', 'banner.html')
-        self.frame_insert_view = TopFrameView(self.jenv, 'frame_insert.html', 'banner.html')
+        if not jinja_env:
+            jinja_env = JinjaEnv(globals={'static_path': 'static/__pywb'})
+
+        self.jinja_env = jinja_env
+        self.head_insert_view = HeadInsertView(self.jinja_env, 'head_insert.html', 'banner.html')
+        self.frame_insert_view = TopFrameView(self.jinja_env, 'frame_insert.html', 'banner.html')
 
     def render_content(self, wb_url, **kwargs):
         wb_url = WbUrl(wb_url)
