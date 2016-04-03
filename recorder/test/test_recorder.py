@@ -42,14 +42,14 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
     def setup_class(cls):
         super(TestRecorder, cls).setup_class()
 
-        warcs = to_path(cls.root_dir + '/warcs')
+        cls.warcs_dir = to_path(cls.root_dir + '/warcs')
 
-        os.makedirs(warcs)
+        os.makedirs(cls.warcs_dir)
 
         cls.upstream_url = 'http://localhost:{0}'.format(cls.server.port)
 
     def _get_dedup_index(self, dupe_policy=WriteRevisitDupePolicy()):
-        dedup_index = WritableRedisIndexer('redis://localhost/2/{user}:{coll}:cdxj',
+        dedup_index = WritableRedisIndexer(redis_url='redis://localhost/2/{user}:{coll}:cdxj',
                         file_key_template='{user}:{coll}:warc',
                         rel_path_template=self.root_dir + '/warcs/',
                         dupe_policy=dupe_policy)
@@ -335,7 +335,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         rel_path = self.root_dir + '/warcs/'
 
-        dedup_index = WritableRedisIndexer('redis://localhost/2/{coll}:cdxj',
+        dedup_index = WritableRedisIndexer(redis_url='redis://localhost/2/{coll}:cdxj',
                         file_key_template='{coll}:warc',
                         rel_path_template=rel_path)
 
@@ -383,7 +383,8 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         assert len(writer.fh_cache) == 1
 
-        writer.close_file({'param.recorder.coll': 'FOO'})
+        writer.close_file(self.root_dir + '/warcs/FOO/')
+        #writer.close_file({'param.recorder.coll': 'FOO'})
 
         assert len(writer.fh_cache) == 0
 
