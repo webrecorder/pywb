@@ -13,12 +13,15 @@ import traceback
 from collections import OrderedDict
 
 from socket import gethostname
+from io import BytesIO
 
 import fcntl
 
 from pywb.utils.loaders import LimitReader, to_native_str
 from pywb.utils.bufferedreaders import BufferedReader
-from pywb.utils.timeutils import timestamp20_now
+from pywb.utils.timeutils import timestamp20_now, datetime_to_iso_date
+
+from pywb.warc.recordloader import ArcWarcRecord
 
 from webagg.utils import ParamFormatter, res_template
 
@@ -110,6 +113,25 @@ class BaseWARCWriter(object):
         params['_formatter'] = ParamFormatter(params, name=self.rec_source_name)
         self._do_write_req_resp(req, resp, params)
 
+    def create_warcinfo_record(self, filename, **kwargs):
+        headers = {}
+        headers['WARC-Record_ID'] = self._make_warc_id()
+        headers['WARC-Type'] = 'warcinfo'
+        if filename:
+            headers['WARC-Filename'] = filename
+        headers['WARC-Date'] = datetime_to_iso_date(datetime.datetime.utcnow())
+
+        warcinfo = BytesIO()
+        for n, v in six.iteritems(kwargs):
+            self._header(warcinfo, n, v)
+
+        warcinfo.seek(0)
+
+        record = ArcWarcRecord('warc', 'warcinfo', headers, warcinfo,
+                               None, '', len(warcinfo.getbuffer()))
+
+        return record
+
     def _check_revisit(self, record, params):
         if not self.dedup_index:
             return record
@@ -159,7 +181,9 @@ class BaseWARCWriter(object):
             http_headers_only = False
 
         if record.length:
-            actual_len = len(record.status_headers.headers_buff)
+            actual_len = 0
+            if record.status_headers:
+                actual_len = len(record.status_headers.headers_buff)
 
             if not http_headers_only:
                 diff = record.stream.tell() - actual_len
@@ -170,8 +194,9 @@ class BaseWARCWriter(object):
             # add empty line
             self._line(out, b'')
 
-            # write headers and buffer
-            out.write(record.status_headers.headers_buff)
+            # write headers buffer, if any
+            if record.status_headers:
+                out.write(record.status_headers.headers_buff)
 
             if not http_headers_only:
                 out.write(record.stream.read())
@@ -351,3 +376,26 @@ class PerRecordWARCWriter(MultiFileWARCWriter):
         kwargs['max_size'] = 1
         super(PerRecordWARCWriter, self).__init__(*args, **kwargs)
 
+
+# ============================================================================
+class SimpleTempWARCWriter(BaseWARCWriter):
+    def __init__(self, *args, **kwargs):
+        super(SimpleTempWARCWriter, self).__init__(*args, **kwargs)
+        self.out = self._create_buffer()
+
+    def _create_buffer(self):
+        return tempfile.SpooledTemporaryFile(max_size=512*1024)
+
+    def _do_write_req_resp(self, req, resp, params):
+        self._write_warc_record(self.out, resp)
+        self._write_warc_record(self.out, req)
+
+    def write_record(self, record):
+        self._write_warc_record(self.out, record)
+
+    def get_buffer(self):
+        pos = self.out.tell()
+        self.out.seek(0)
+        buff = self.out.read()
+        self.out.seek(pos)
+        return buff
