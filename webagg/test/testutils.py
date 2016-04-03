@@ -42,11 +42,20 @@ class BaseTestClass(object):
 
 
 # ============================================================================
+PUBSUBS = []
+
+class FakeStrictRedisSharedPubSub(FakeStrictRedis):
+    def __init__(self, *args, **kwargs):
+        super(FakeStrictRedisSharedPubSub, self).__init__(*args, **kwargs)
+        self._pubsubs = PUBSUBS
+
+
+# ============================================================================
 class FakeRedisTests(object):
     @classmethod
     def setup_class(cls):
         super(FakeRedisTests, cls).setup_class()
-        cls.redismock = patch('redis.StrictRedis', FakeStrictRedis)
+        cls.redismock = patch('redis.StrictRedis', FakeStrictRedisSharedPubSub)
         cls.redismock.start()
 
     @staticmethod
