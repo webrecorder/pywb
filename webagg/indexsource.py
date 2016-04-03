@@ -103,12 +103,12 @@ class LiveIndexSource(BaseIndexSource):
 
 #=============================================================================
 class RedisIndexSource(BaseIndexSource):
-    def __init__(self, redis_url, redis=None, key_prefix=None):
+    def __init__(self, redis_url, redis=None, key_template=None):
         if redis_url and not redis:
-            redis, key_prefix = self.parse_redis_url(redis_url)
+            redis, key_template = self.parse_redis_url(redis_url)
 
         self.redis = redis
-        self.redis_key_template = key_prefix
+        self.redis_key_template = key_template
 
     @staticmethod
     def parse_redis_url(redis_url):
