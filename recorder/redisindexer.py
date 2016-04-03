@@ -15,14 +15,21 @@ from recorder.filters import WriteRevisitDupePolicy
 
 #==============================================================================
 class WritableRedisIndexer(RedisIndexSource):
-    def __init__(self, redis_url, rel_path_template='',
-                 file_key_template='', name='recorder',
-                 dupe_policy=WriteRevisitDupePolicy()):
-        super(WritableRedisIndexer, self).__init__(redis_url)
+    def __init__(self, *args, **kwargs):
+        redis_url = kwargs.get('redis_url')
+        redis = kwargs.get('redis')
+        cdx_key_template = kwargs.get('cdx_key_template')
+
+        super(WritableRedisIndexer, self).__init__(redis_url,
+                                                   redis,
+                                                   cdx_key_template)
+
+        name = kwargs.get('name', 'recorder')
         self.cdx_lookup = SimpleAggregator({name: self})
-        self.rel_path_template = rel_path_template
-        self.file_key_template = file_key_template
-        self.dupe_policy = dupe_policy
+
+        self.rel_path_template = kwargs.get('rel_path_template', '')
+        self.file_key_template = kwargs.get('file_key_template', '')
+        self.dupe_policy = kwargs.get('dupe_policy', WriteRevisitDupePolicy())
 
     def add_warc_file(self, full_filename, params):
         rel_path = res_template(self.rel_path_template, params)
@@ -32,7 +39,7 @@ class WritableRedisIndexer(RedisIndexSource):
 
         self.redis.hset(file_key, filename, full_filename)
 
-    def add_urls_to_index(self, stream, params, filename=None):
+    def add_urls_to_index(self, stream, params, filename, length):
         rel_path = res_template(self.rel_path_template, params)
         filename = os.path.relpath(filename, rel_path)
 
@@ -42,12 +49,13 @@ class WritableRedisIndexer(RedisIndexSource):
 
         z_key = res_template(self.redis_key_template, params)
 
-        cdxes = cdxout.getvalue()
-        for cdx in cdxes.split(b'\n'):
+        cdx_list = cdxout.getvalue().rstrip().split(b'\n')
+
+        for cdx in cdx_list:
             if cdx:
                 self.redis.zadd(z_key, 0, cdx)
 
-        return cdx
+        return cdx_list
 
     def lookup_revisit(self, params, digest, url, iso_dt):
         params['url'] = url

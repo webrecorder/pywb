@@ -275,8 +275,8 @@ class MultiFileWARCWriter(BaseWARCWriter):
         fcntl.flock(fh, fcntl.LOCK_UN)
         fh.close()
 
-    def close_file(self, params):
-        full_dir = res_template(self.dir_template, params)
+    def close_file(self, full_dir):
+        #full_dir = res_template(self.dir_template, params)
         result = self.fh_cache.pop(full_dir, None)
         if not result:
             return
@@ -315,7 +315,9 @@ class MultiFileWARCWriter(BaseWARCWriter):
             out.seek(start)
 
             if self.dedup_index:
-                self.dedup_index.add_urls_to_index(out, params, filename=filename)
+                self.dedup_index.add_urls_to_index(out, params,
+                                                   filename,
+                                                   new_size - start)
 
         except Exception as e:
             traceback.print_exc()
