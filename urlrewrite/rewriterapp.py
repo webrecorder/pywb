@@ -49,11 +49,15 @@ class RewriterApp(object):
         full_prefix = host_prefix + rel_prefix
 
         if self.framed_replay and wb_url.mod == self.frame_mod:
+            extra_params = self.get_top_frame_params(wb_url, kwargs)
             return self.frame_insert_view.get_top_frame(wb_url,
                                                         full_prefix,
                                                         host_prefix,
+                                                        request.environ,
                                                         self.frame_mod,
-                                                        self.replay_mod)
+                                                        self.replay_mod,
+                                                        coll='',
+                                                        extra_params=extra_params)
 
         urlrewriter = UrlRewriter(wb_url,
                                   prefix=full_prefix,
@@ -78,7 +82,7 @@ class RewriterApp(object):
         else:
             closest = wb_url.timestamp
 
-        upstream_url = self.get_upstream_url(url, closest, kwargs)
+        upstream_url = self.get_upstream_url(url, wb_url, closest, kwargs)
 
         r = requests.post(upstream_url,
                           data=BytesIO(req_data),
@@ -159,8 +163,12 @@ class RewriterApp(object):
 
         return False
 
-    def get_upstream_url(self, url, closest, kwargs):
+    def get_upstream_url(self, url, wb_url, closest, kwargs):
         raise NotImplemented()
 
     def _add_custom_params(self, cdx, kwargs):
         pass
+
+    def get_top_frame_params(self, wb_url, kwargs):
+        return None
+

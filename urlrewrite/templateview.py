@@ -92,8 +92,12 @@ class BaseInsertView(object):
         self.insert_file = insert_file
         self.banner_file = banner_file
 
-    def render_to_string(self, **kwargs):
+    def render_to_string(self, env, **kwargs):
         template = self.jenv.jinja_env.get_template(self.insert_file)
+        params = env.get('webrec.template_params')
+        if params:
+            kwargs.update(params)
+
         return template.render(**kwargs)
 
 
@@ -124,7 +128,7 @@ class HeadInsertView(BaseInsertView):
                     }
 
         def make_head_insert(rule, cdx):
-            return (self.render_to_string(wbrequest=wbrequest,
+            return (self.render_to_string(env, wbrequest=wbrequest,
                                           cdx=cdx,
                                           top_url=top_url,
                                           include_ts=include_ts,
@@ -139,9 +143,11 @@ class TopFrameView(BaseInsertView):
     def get_top_frame(self, wb_url,
                       wb_prefix,
                       host_prefix,
+                      env,
                       frame_mod,
                       replay_mod,
-                      coll=''):
+                      coll='',
+                      extra_params=None):
 
         embed_url = wb_url.to_str(mod=replay_mod)
 
@@ -165,6 +171,9 @@ class TopFrameView(BaseInsertView):
                       url=wb_url.get_url(),
                       banner_html=self.banner_file)
 
-        return self.render_to_string(**params)
+        if extra_params:
+            params.update(extra_params)
+
+        return self.render_to_string(env, **params)
 
 
