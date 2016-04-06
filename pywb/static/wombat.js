@@ -756,7 +756,7 @@ var wombat_internal = function($wbwindow) {
             }
 
             result = orig.call(this, method, url, async, user, password);
-            //this.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            this.setRequestHeader('X-Pywb-Requested-With', 'XMLHttpRequest');
         }
 
         $wbwindow.XMLHttpRequest.prototype.open = open_rewritten;

@@ -79,6 +79,9 @@ class LiveRewriter(object):
             elif name == 'HTTP_REFERER':
                 continue
 
+            elif name == 'HTTP_X_PYWB_REQUESTED_WITH':
+                continue
+
             elif name == 'HTTP_X_FORWARDED_PROTO':
                 name = 'X-Forwarded-Proto'
                 value = splits.scheme

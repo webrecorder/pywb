@@ -112,6 +112,7 @@ class WbRequest(object):
 
     def _is_ajax(self):
         value = self.env.get('HTTP_X_REQUESTED_WITH')
+        value = value or self.env.get('HTTP_X_PYWB_REQUESTED_WITH')
         if value and value.lower() == 'xmlhttprequest':
             return True
 
