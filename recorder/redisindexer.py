@@ -73,7 +73,7 @@ class WritableRedisIndexer(RedisIndexSource):
         cdx_iter, errs = self.cdx_lookup(params)
 
         for cdx in cdx_iter:
-            res = self.dupe_policy(cdx)
+            res = self.dupe_policy(cdx, params)
             if res:
                 return res
 
