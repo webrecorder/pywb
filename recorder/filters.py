@@ -23,20 +23,23 @@ class ExcludeSpecificHeaders(object):
 # Revisit Policy
 # ============================================================================
 class WriteRevisitDupePolicy(object):
-    def __call__(self, cdx):
+    def __call__(self, cdx, params):
         dt = timestamp_to_datetime(cdx['timestamp'])
         return ('revisit', cdx['url'], datetime_to_iso_date(dt))
 
 
 # ============================================================================
 class SkipDupePolicy(object):
-    def __call__(self, cdx):
-        return 'skip'
+    def __call__(self, cdx, params):
+        if cdx['url'] == params['url']:
+            return 'skip'
+        else:
+            return 'write'
 
 
 # ============================================================================
 class WriteDupePolicy(object):
-    def __call__(self, cdx):
+    def __call__(self, cdx, params):
         return 'write'
 
 
