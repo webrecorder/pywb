@@ -48,16 +48,9 @@ class RewriterApp(object):
         rel_prefix = self.get_rel_prefix()
         full_prefix = host_prefix + rel_prefix
 
-        if self.framed_replay and wb_url.mod == self.frame_mod:
-            extra_params = self.get_top_frame_params(wb_url, kwargs)
-            return self.frame_insert_view.get_top_frame(wb_url,
-                                                        full_prefix,
-                                                        host_prefix,
-                                                        request.environ,
-                                                        self.frame_mod,
-                                                        self.replay_mod,
-                                                        coll='',
-                                                        extra_params=extra_params)
+        resp = self.handle_custom_response(wb_url, full_prefix, host_prefix, kwargs)
+        if resp is not None:
+            return resp
 
         urlrewriter = UrlRewriter(wb_url,
                                   prefix=full_prefix,
@@ -90,12 +83,19 @@ class RewriterApp(object):
                           stream=True)
 
         if r.status_code >= 400:
+            error = None
             try:
+                error = r.raw.read()
                 r.raw.close()
             except:
                 pass
 
-            data = dict(url=url, args=kwargs)
+            if error:
+                error = error.decode('utf-8')
+            else:
+                error = ''
+
+            data = dict(url=url, args=kwargs, error=error)
             raise HTTPError(r.status_code, exception=data)
 
         record = self.loader.parse_record_stream(r.raw)
@@ -105,7 +105,7 @@ class RewriterApp(object):
         cdx['timestamp'] = http_date_to_timestamp(r.headers.get('Memento-Datetime'))
         cdx['url'] = url
 
-        self._add_custom_params(cdx, kwargs)
+        self._add_custom_params(cdx, r.headers, kwargs)
 
         if self.is_ajax():
             head_insert_func = None
@@ -129,7 +129,7 @@ class RewriterApp(object):
         response.status = int(status_headers.get_statuscode())
 
         for n, v in status_headers.headers:
-            response.headers[n] = v
+            response.add_header(n, v)
 
         return gen
 
@@ -158,6 +158,7 @@ class RewriterApp(object):
 
     def is_ajax(self):
         value = request.environ.get('HTTP_X_REQUESTED_WITH')
+        value = value or request.environ.get('HTTP_X_PYWB_REQUESTED_WITH')
         if value and value.lower() == 'xmlhttprequest':
             return True
 
@@ -166,9 +167,22 @@ class RewriterApp(object):
     def get_upstream_url(self, url, wb_url, closest, kwargs):
         raise NotImplemented()
 
-    def _add_custom_params(self, cdx, kwargs):
+    def _add_custom_params(self, cdx, headers, kwargs):
         pass
 
     def get_top_frame_params(self, wb_url, kwargs):
         return None
 
+    def handle_custom_response(self, wb_url, full_prefix, host_prefix, kwargs):
+        if self.framed_replay and wb_url.mod == self.frame_mod:
+            extra_params = self.get_top_frame_params(wb_url, kwargs)
+            return self.frame_insert_view.get_top_frame(wb_url,
+                                                        full_prefix,
+                                                        host_prefix,
+                                                        request.environ,
+                                                        self.frame_mod,
+                                                        self.replay_mod,
+                                                        coll='',
+                                                        extra_params=extra_params)
+
+        return None

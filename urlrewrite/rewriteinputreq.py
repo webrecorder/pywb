@@ -42,6 +42,9 @@ class RewriteInputRequest(DirectWSGIInputRequest):
                 if cookie_val:
                     value = cookie_val
 
+            elif name == 'HTTP_X_PYWB_REQUESTED_WITH':
+                continue
+
             elif name == 'HTTP_X_FORWARDED_PROTO':
                 name = 'X-Forwarded-Proto'
                 value = self.splits.scheme
