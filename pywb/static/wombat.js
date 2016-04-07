@@ -1820,6 +1820,7 @@ var wombat_internal = function($wbwindow) {
         }
 
         function rewrite_cookie(cookie) {
+            var IP_RX = /^(\d)+\.(\d)+\.(\d)+\.(\d)+$/;
 
             cookie = cookie.replace(wb_abs_prefix, '');
             cookie = cookie.replace(wb_rel_prefix, '');
@@ -1838,7 +1839,7 @@ var wombat_internal = function($wbwindow) {
             // rewrite domain
             cookie = cookie.replace(cookie_domain_regex, function(m, m1) {
                 // if no subdomain, eg. "localhost", just remove domain altogether
-                if ($wbwindow.location.hostname.indexOf(".") >= 0) {
+                if ($wbwindow.location.hostname.indexOf(".") >= 0 && !IP_RX.test($wbwindow.location.hostname)) {
                     return "Domain=." + $wbwindow.location.hostname;
                 } else {
                     return "";
