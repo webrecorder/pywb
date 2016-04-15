@@ -210,8 +210,12 @@ class RewriterApp(object):
 
         return r
 
-
-
+    def do_query(self, wb_url, kwargs):
+        upstream_url = self.get_upstream_url(wb_url.url, wb_url, 'now', kwargs)
+        upstream_url = upstream_url.replace('/resource/postreq', '/index')
+        r = requests.get(upstream_url + '&output=json')
+        print(r.text)
+        return r.text
 
     def get_host_prefix(self):
         return request.urlparts.scheme + '://' + request.urlparts.netloc
@@ -255,6 +259,9 @@ class RewriterApp(object):
         return None
 
     def handle_custom_response(self, wb_url, full_prefix, host_prefix, kwargs):
+        if wb_url.is_query():
+            return self.do_query(wb_url, kwargs)
+
         if self.framed_replay and wb_url.mod == self.frame_mod:
             extra_params = self.get_top_frame_params(wb_url, kwargs)
             return self.frame_insert_view.get_top_frame(wb_url,
