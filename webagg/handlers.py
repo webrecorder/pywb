@@ -3,6 +3,9 @@ from webagg.utils import MementoUtils
 from pywb.utils.wbexception import BadRequestException, WbException
 from pywb.utils.wbexception import NotFoundException
 
+from pywb.cdx.query import CDXQuery
+from pywb.cdx.cdxdomainspecific import load_domain_specific_cdx_rules
+
 
 #=============================================================================
 def to_cdxj(cdx_iter, fields):
@@ -22,6 +25,39 @@ def to_link(cdx_iter, fields):
     return content_type, MementoUtils.make_timemap(cdx_iter)
 
 
+
+#=============================================================================
+class FuzzyMatcher(object):
+    def __init__(self):
+        res = load_domain_specific_cdx_rules('pywb/rules.yaml', True)
+        self.url_canon, self.fuzzy_query = res
+
+    def __call__(self, index_source, params):
+        cdx_iter, errs = index_source(params)
+        return self.do_fuzzy(cdx_iter, index_source, params), errs
+
+    def do_fuzzy(self, cdx_iter, index_source, params):
+        found = False
+        for cdx in cdx_iter:
+            found = True
+            yield cdx
+
+        fuzzy_query_params = None
+        if not found:
+            query = CDXQuery(params)
+            fuzzy_query_params = self.fuzzy_query(query)
+
+        if not fuzzy_query_params:
+            return
+
+        fuzzy_query_params.pop('alt_url', '')
+
+        new_iter, errs = index_source(fuzzy_query_params)
+
+        for cdx in new_iter:
+            yield cdx
+
+
 #=============================================================================
 class IndexHandler(object):
     OUTPUTS = {
@@ -33,9 +69,10 @@ class IndexHandler(object):
 
     DEF_OUTPUT = 'cdxj'
 
-    def __init__(self, index_source, opts=None):
+    def __init__(self, index_source, opts=None, *args, **kwargs):
         self.index_source = index_source
         self.opts = opts or {}
+        self.fuzzy = FuzzyMatcher()
 
     def get_supported_modes(self):
         return dict(modes=['list_sources', 'index'])
@@ -50,7 +87,7 @@ class IndexHandler(object):
         if input_req:
             params['alt_url'] = input_req.include_post_query(url)
 
-        return self.index_source(params)
+        return self.fuzzy(self.index_source, params)
 
     def __call__(self, params):
         mode = params.get('mode', 'index')
