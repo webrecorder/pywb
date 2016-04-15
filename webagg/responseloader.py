@@ -216,7 +216,8 @@ class LiveWebLoader(BaseLoader):
                     'x-archive')
 
     def __init__(self):
-        self.sesh = requests.session()
+        #self.sesh = requests.session()
+        self.sesh = requests
 
     def load_resource(self, cdx, params):
         load_url = cdx.get('load_url')
