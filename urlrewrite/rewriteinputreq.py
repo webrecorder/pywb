@@ -3,10 +3,15 @@ from pywb.utils.loaders import extract_client_cookie
 
 from six import iteritems
 from six.moves.urllib.parse import urlsplit
+import re
 
 
 #=============================================================================
 class RewriteInputRequest(DirectWSGIInputRequest):
+    RANGE_ARG_RX = re.compile('.*.googlevideo.com/videoplayback.*([&?]range=(\d+)-(\d+))')
+
+    RANGE_HEADER = re.compile('bytes=(\d+)-(\d+)?')
+
     def __init__(self, env, urlkey, url, rewriter):
         super(RewriteInputRequest, self).__init__(env)
         self.urlkey = urlkey
@@ -38,7 +43,7 @@ class RewriteInputRequest(DirectWSGIInputRequest):
 
             elif name == 'HTTP_X_CSRFTOKEN':
                 name = 'X-CSRFToken'
-                cookie_val = extract_client_cookie(env, 'csrftoken')
+                cookie_val = extract_client_cookie(self.env, 'csrftoken')
                 if cookie_val:
                     value = cookie_val
 
@@ -85,4 +90,40 @@ class RewriteInputRequest(DirectWSGIInputRequest):
                 pass
 
         return value
+
+    def extract_range(self):
+        use_206 = False
+        start = None
+        end = None
+        url = self.url
+
+        range_h = self.env.get('HTTP_RANGE')
+
+        if range_h:
+            m = self.RANGE_HEADER.match(range_h)
+            if m:
+                start = m.group(1)
+                end = m.group(2)
+                use_206 = True
+
+        else:
+            m = self.RANGE_ARG_RX.match(url)
+            if m:
+                start = m.group(2)
+                end = m.group(3)
+                url = url[:m.start(1)] + url[m.end(1):]
+                use_206 = False
+
+        if not start:
+            return None
+
+        start = int(start)
+
+        if end:
+            end = int(end)
+        else:
+            end = ''
+
+        result = (url, start, end, use_206)
+        return result
 
