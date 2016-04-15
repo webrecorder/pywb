@@ -44,7 +44,7 @@ class BaseWARCWriter(object):
     FILE_TEMPLATE = 'rec-{timestamp}-{hostname}.warc.gz'
 
     def __init__(self, gzip=True, dedup_index=None, name='recorder',
-                 header_filter=ExcludeNone()):
+                 header_filter=ExcludeNone(), *args, **kwargs):
         self.gzip = gzip
         self.dedup_index = dedup_index
         self.rec_source_name = name
@@ -85,13 +85,13 @@ class BaseWARCWriter(object):
         record.status_headers.headers_buff = buff
 
     def write_req_resp(self, req, resp, params):
-        url = resp.rec_headers.get('WARC-Target-Uri')
+        url = resp.rec_headers.get('WARC-Target-URI')
         dt = resp.rec_headers.get('WARC-Date')
 
         if not req.rec_headers.get('WARC-Record-ID'):
             req.rec_headers['WARC-Record-ID'] = self._make_warc_id()
 
-        req.rec_headers['WARC-Target-Uri'] = url
+        req.rec_headers['WARC-Target-URI'] = url
         req.rec_headers['WARC-Date'] = dt
         req.rec_headers['WARC-Type'] = 'request'
         #req.rec_headers['Content-Type'] = req.content_type
@@ -137,7 +137,7 @@ class BaseWARCWriter(object):
             return record
 
         try:
-            url = record.rec_headers.get('WARC-Target-Uri')
+            url = record.rec_headers.get('WARC-Target-URI')
             digest = record.rec_headers.get('WARC-Payload-Digest')
             iso_dt = record.rec_headers.get('WARC-Date')
             result = self.dedup_index.lookup_revisit(params, digest, url, iso_dt)
@@ -310,6 +310,12 @@ class MultiFileWARCWriter(BaseWARCWriter):
         self._close_file(out)
         return filename
 
+    def _is_write_resp(self, resp, params):
+        return True
+
+    def _is_write_req(self, req, params):
+        return True
+
     def _do_write_req_resp(self, req, resp, params):
         full_dir = res_template(self.dir_template, params)
 
@@ -325,13 +331,16 @@ class MultiFileWARCWriter(BaseWARCWriter):
             is_new = True
 
         try:
-            url = resp.rec_headers.get('WARC-Target-Uri')
+            url = resp.rec_headers.get('WARC-Target-URI')
             print('Writing req/resp {0} to {1} '.format(url, filename))
 
             start = out.tell()
 
-            self._write_warc_record(out, resp)
-            self._write_warc_record(out, req)
+            if self._is_write_resp(resp, params):
+                self._write_warc_record(out, resp)
+
+            if self._is_write_req(req, params):
+                self._write_warc_record(out, req)
 
             out.flush()
 

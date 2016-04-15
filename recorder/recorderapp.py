@@ -37,7 +37,8 @@ class RecorderApp(object):
 
         self.skip_filters = skip_filters
 
-    def create_default_filters(self, kwargs):
+    @staticmethod
+    def create_default_filters(kwargs):
         skip_filters = [SkipRangeRequestFilter()]
 
         accept_colls = kwargs.get('accept_colls')
