@@ -87,7 +87,7 @@ class JinjaEnv(object):
 
 # ============================================================================
 class BaseInsertView(object):
-    def __init__(self, jenv, insert_file, banner_file):
+    def __init__(self, jenv, insert_file, banner_file=''):
         self.jenv = jenv
         self.insert_file = insert_file
         self.banner_file = banner_file
@@ -106,15 +106,13 @@ class HeadInsertView(BaseInsertView):
     def create_insert_func(self, wb_url,
                            wb_prefix,
                            host_prefix,
+                           top_url,
                            env,
                            is_framed,
                            coll='',
                            include_ts=True):
 
         url = wb_url.get_url()
-
-        top_url = wb_prefix
-        top_url += wb_url.to_str(mod='')
 
         include_wombat = not wb_url.is_banner_only
 
