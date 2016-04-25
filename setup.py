@@ -14,7 +14,7 @@ class PyTest(TestCommand):
         import pytest
         import sys
         import os
-        cmdline = ' --cov-config .coveragerc --cov ./ -vv webagg/test/ recorder/test/'
+        cmdline = ' --cov-config .coveragerc --cov ./ -vv webagg/test/ recorder/test/ urlrewrite/test/'
         errcode = pytest.main(cmdline)
         sys.exit(errcode)
 

@@ -13,7 +13,6 @@ from pywb.cdx.cdxobject import CDXObject
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.framework.wbrequestresponse import WbResponse
 
-
 from urlrewrite.rewriteinputreq import RewriteInputRequest
 from urlrewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView, BaseInsertView
 
