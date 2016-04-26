@@ -116,7 +116,7 @@ class TestProxyLiveRewriter:
 
         # equal to returned response (echo)
         assert self.requestlog[0] == resp.text
-        assert resp.headers['x-proxy'] == 'test'
+        assert resp.headers['x-archive-orig-x-proxy'] == 'test'
 
         assert resp.text.startswith('GET http://example.com/ HTTP/1.1')
         assert 'referer: http://other.example.com' in resp.text.lower()
@@ -136,7 +136,7 @@ class TestProxyLiveRewriter:
 
         # proxied, but without range
         assert self.requestlog[0] == resp.text
-        assert resp.headers['x-proxy'] == 'test'
+        assert resp.headers['x-archive-orig-x-proxy'] == 'test'
 
         assert self.requestlog[0].startswith('GET http://example.com/ HTTP/1.1')
         assert 'range: ' not in self.requestlog[0]
@@ -182,7 +182,7 @@ class TestProxyLiveRewriter:
         assert resp.headers['Accept-Ranges'] == 'bytes'
 
         # not from proxy
-        assert 'x-proxy' not in resp.headers
+        assert 'x-archive-orig-x-proxy' not in resp.headers
 
         # already pinged proxy, no additional requests set to proxy
         assert len(self.requestlog) == 0

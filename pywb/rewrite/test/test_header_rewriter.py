@@ -39,7 +39,7 @@ HTTP Headers Rewriting
   ('Set-Cookie', 'foo=bar; Path=/web/20131010/http://example.com/'),
   ('Content-Encoding', 'gzip'),
   ('X-Archive-Orig-Transfer-Encoding', 'chunked'),
-  ('X-Proxy', 'test')]),
+  ('X-Archive-Orig-X-Proxy', 'test')]),
  'text_type': None}
 
 """
