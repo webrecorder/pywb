@@ -20,7 +20,7 @@ class UrlRewriter(object):
     REL_SCHEME = ('//', r'\/\/', r'\\/\\/')
 
     def __init__(self, wburl, prefix='', full_prefix=None, rel_prefix=None,
-                 root_path=None, cookie_scope=None, rewrite_opts={}):
+                 root_path=None, cookie_scope=None, rewrite_opts=None):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
         self.prefix = prefix
         self.full_prefix = full_prefix or prefix
@@ -32,9 +32,9 @@ class UrlRewriter(object):
             self.prefix_scheme = None
         self.prefix_abs = self.prefix and self.prefix.startswith(self.PROTOCOLS)
         self.cookie_scope = cookie_scope
-        self.rewrite_opts = rewrite_opts
+        self.rewrite_opts = rewrite_opts or {}
 
-        if rewrite_opts.get('punycode_links'):
+        if self.rewrite_opts.get('punycode_links'):
             self.wburl._do_percent_encode = False
 
     def rewrite(self, url, mod=None):

@@ -166,6 +166,9 @@ class HeaderRewriter(object):
                 else:
                     add_prefixed_header(name, value)
 
+            elif lowername.startswith('x-'):
+                add_header(name, value)
+
             elif urlrewriter:
                 add_prefixed_header(name, value)
             else:

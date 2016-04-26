@@ -24,6 +24,26 @@ True
 >>> rewrite_cookie('abc=def; Path=file.html; Expires=Wed, 13 Jan 2021 22:23:01 GMT', urlrewriter, 'coll')
 [('Set-Cookie', 'abc=def; Path=/pywb/20131226101010/http://example.com/some/path/file.html')]
 
+# keep expires
+>>> rewrite_cookie('abc=def; Path=file.html; Expires=Wed, 13 Jan 2021 22:23:01 GMT', urlrewriter2, 'coll')
+[('Set-Cookie', 'abc=def; expires=Wed, 13 Jan 2021 22:23:01 GMT; Path=/preview/em_/http://example.com/file.html')]
+
+# keep expires, UTC->GMT
+>>> rewrite_cookie('abc=def; Path=file.html; Expires=Wed, 13 Jan 2021 22:23:01 UTC', urlrewriter2, 'coll')
+[('Set-Cookie', 'abc=def; expires=Wed, 13 Jan 2021 22:23:01 GMT; Path=/preview/em_/http://example.com/file.html')]
+
+# keep Max-Age
+>>> rewrite_cookie('abc=def; Path=file.html; Max-Age=1500', urlrewriter2, 'coll')
+[('Set-Cookie', 'abc=def; Max-Age=1500; Path=/preview/em_/http://example.com/file.html')]
+
+# Secure Remove
+>>> rewrite_cookie('abc=def; Path=file.html; HttpOnly; Secure', urlrewriter2, 'coll')
+[('Set-Cookie', 'abc=def; HttpOnly; Path=/preview/em_/http://example.com/file.html')]
+
+# Secure Keep
+>>> rewrite_cookie('abc=def; Path=file.html; HttpOnly; Secure', urlrewriter3, 'coll')
+[('Set-Cookie', 'abc=def; HttpOnly; Path=/preview/em_/http://example.com/file.html; Secure')]
+
 # Cookie with invalid chars, not parsed
 >>> rewrite_cookie('abc@def=123', urlrewriter, 'coll')
 []
@@ -67,15 +87,22 @@ True
 """
 
 
-from pywb.rewrite.cookie_rewriter import MinimalScopeCookieRewriter, get_cookie_rewriter
+from pywb.rewrite.cookie_rewriter import MinimalScopeCookieRewriter
+from pywb.rewrite.cookie_rewriter import get_cookie_rewriter
 from pywb.rewrite.url_rewriter import UrlRewriter
 
-urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html', 'http://localhost:8080/pywb/', rel_prefix='/pywb/')
+urlrewriter = UrlRewriter('20131226101010/http://example.com/some/path/index.html',
+                          'http://localhost:8080/pywb/',
+                          rel_prefix='/pywb/')
 
 urlrewriter2 = UrlRewriter('em_/http://example.com/', '/preview/')
+urlrewriter2.rewrite_opts['is_live'] = True
+
+urlrewriter3 = UrlRewriter('em_/http://example.com/', 'https://localhost:8080/preview/')
 
 
 def rewrite_cookie(cookie_str, rewriter=urlrewriter, scope='default'):
     cookie_rewriter = get_cookie_rewriter(scope)
     return cookie_rewriter(rewriter).rewrite(cookie_str)
+
 

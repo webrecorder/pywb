@@ -31,14 +31,15 @@ HTTP Headers Rewriting
  'text_type': 'js'}
 
 # Binary -- transfer-encoding rewritten
->>> _test_headers([('Content-Length', '200000'), ('Content-Type', 'image/png'), ('Set-Cookie', 'foo=bar; Path=/;'), ('Content-Encoding', 'gzip'), ('Transfer-Encoding', 'chunked')])
+>>> _test_headers([('Content-Length', '200000'), ('Content-Type', 'image/png'), ('Set-Cookie', 'foo=bar; Path=/;'), ('Content-Encoding', 'gzip'), ('Transfer-Encoding', 'chunked'), ('X-Proxy', 'test')])
 {'charset': None,
  'removed_header_dict': {'transfer-encoding': 'chunked'},
  'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('Content-Length', '200000'),
   ('Content-Type', 'image/png'),
   ('Set-Cookie', 'foo=bar; Path=/web/20131010/http://example.com/'),
   ('Content-Encoding', 'gzip'),
-  ('X-Archive-Orig-Transfer-Encoding', 'chunked')]),
+  ('X-Archive-Orig-Transfer-Encoding', 'chunked'),
+  ('X-Proxy', 'test')]),
  'text_type': None}
 
 """

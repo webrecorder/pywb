@@ -106,8 +106,8 @@ class RewriteContent:
                                                            stream)
             return (status_headers, self.stream_to_gen(stream), False)
 
-        if wb_url.is_banner_only:
-            urlrewriter = None
+        if urlrewriter and cdx and cdx.get('is_live'):
+            urlrewriter.rewrite_opts['is_live'] = True
 
         rule = self.ruleset.get_first_match(urlkey)
 

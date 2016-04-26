@@ -1,16 +1,20 @@
 from six.moves.http_cookies import SimpleCookie, CookieError
 import six
+import re
 
 
-#=================================================================
+#================================================================
 class WbUrlBaseCookieRewriter(object):
     """ Base Cookie rewriter for wburl-based requests.
     """
+    UTC_RX = re.compile('((?:.*)Expires=(?:.*))UTC', re.I)
+
     def __init__(self, url_rewriter):
         self.url_rewriter = url_rewriter
 
     def rewrite(self, cookie_str, header='Set-Cookie'):
         results = []
+        cookie_str = self.UTC_RX.sub('\\1GMT', cookie_str)
         try:
             cookie = SimpleCookie(cookie_str)
         except CookieError:
@@ -21,16 +25,26 @@ class WbUrlBaseCookieRewriter(object):
         for name, morsel in six.iteritems(cookie):
             morsel = self.rewrite_cookie(name, morsel)
 
-            if morsel:
-                path = morsel.get('path')
-                if path:
-                    inx = path.find(self.url_rewriter.rel_prefix)
-                    if inx > 0:
-                        morsel['path'] = path[inx:]
-
-                results.append((header, morsel.OutputString()))
+            self._filter_morsel(morsel)
+            results.append((header, morsel.OutputString()))
 
         return results
+
+    def _filter_morsel(self, morsel):
+        path = morsel.get('path')
+        if path:
+            inx = path.find(self.url_rewriter.rel_prefix)
+            if inx > 0:
+                morsel['path'] = path[inx:]
+
+        if not self.url_rewriter.full_prefix.startswith('https://'):
+            # also remove secure to avoid issues when
+            # proxying over plain http
+            if morsel.get('secure'):
+                del morsel['secure']
+
+        if not self.url_rewriter.rewrite_opts.get('is_live'):
+            self._remove_age_opts(morsel)
 
     def _remove_age_opts(self, morsel):
         # remove expires as it refers to archived time
@@ -40,11 +54,6 @@ class WbUrlBaseCookieRewriter(object):
         # don't use max-age, just expire at end of session
         if morsel.get('max-age'):
             del morsel['max-age']
-
-        # for now, also remove secure to avoid issues when
-        # proxying over plain http (TODO: detect https?)
-        if morsel.get('secure'):
-            del morsel['secure']
 
 
 #=================================================================
@@ -71,7 +80,6 @@ class MinimalScopeCookieRewriter(WbUrlBaseCookieRewriter):
         elif morsel.get('path'):
             morsel['path'] = self.url_rewriter.rewrite(morsel['path'])
 
-        self._remove_age_opts(morsel)
         return morsel
 
 
@@ -96,7 +104,6 @@ class HostScopeCookieRewriter(WbUrlBaseCookieRewriter):
         elif morsel.get('path'):
             morsel['path'] = self.url_rewriter.rewrite(morsel['path'])
 
-        self._remove_age_opts(morsel)
         return morsel
 
 
@@ -116,7 +123,6 @@ class ExactPathCookieRewriter(WbUrlBaseCookieRewriter):
         if morsel.get('path'):
             del morsel['path']
 
-        self._remove_age_opts(morsel)
         return morsel
 
 
@@ -136,7 +142,6 @@ class RootScopeCookieRewriter(WbUrlBaseCookieRewriter):
         if morsel.get('domain'):
             del morsel['domain']
 
-        self._remove_age_opts(morsel)
         return morsel
 
 
@@ -154,3 +159,4 @@ def get_cookie_rewriter(cookie_scope):
         return MinimalScopeCookieRewriter
     else:
         return HostScopeCookieRewriter
+
