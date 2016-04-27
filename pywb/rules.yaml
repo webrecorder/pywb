@@ -7,6 +7,12 @@ rules:
 
       fuzzy_lookup: '/profiles/show/.*with_replies\?.*(max_id=[^&]+)'
 
+    - url_prefix: 'com,twitter)/i/timeline'
+
+      fuzzy_lookup:
+          - max_position
+          - include_entities
+
 
     # facebook rules
     #=================================================================
