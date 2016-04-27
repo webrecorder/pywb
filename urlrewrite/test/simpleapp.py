@@ -12,17 +12,17 @@ from urlrewrite.rewriterapp import RewriterApp
 
 # ============================================================================
 class RWApp(RewriterApp):
-    def __init__(self, upstream_url):
-        self.upstream_url = upstream_url
+    def __init__(self, upstream_urls):
+        self.upstream_urls = upstream_urls
         self.app = Bottle()
         self.block_loader = LocalFileLoader()
         self.init_routes()
         super(RWApp, self).__init__(True)
 
     def get_upstream_url(self, url, wb_url, closest, kwargs):
-        return self.upstream_url.format(url=quote(url),
-                                        closest=closest,
-                                        type=kwargs.get('type'))
+        type = kwargs.get('type')
+        return self.upstream_urls[type].format(url=quote(url),
+                                               closest=closest)
 
     def init_routes(self):
         @self.app.get('/static/__pywb/<filepath:path>')
@@ -35,12 +35,23 @@ class RWApp(RewriterApp):
             return data
 
         self.app.mount('/live/', self.call_with_params(type='live'))
-        self.app.mount('/replay/', self.call_with_params(type='replay-testdata'))
+        self.app.mount('/record/', self.call_with_params(type='record'))
+        self.app.mount('/replay/', self.call_with_params(type='replay'))
+
+    @staticmethod
+    def create_app(replay_port=8080, record_port=8010):
+        upstream_urls = {'live': 'http://localhost:%s/live/resource/postreq?url={url}&closest={closest}' % replay_port,
+                         'record': 'http://localhost:%s/live/resource/postreq?url={url}&closest={closest}' % record_port,
+                         'replay': 'http://localhost:%s/replay/resource/postreq?url={url}&closest={closest}' % replay_port,
+                        }
+
+        rwapp = RWApp(upstream_urls)
+        return rwapp
 
 
 # ============================================================================
 if __name__ == "__main__":
-    rwapp = RWApp('http://localhost:8080/{type}/resource/postreq?url={url}&closest={closest}')
-    rwapp.app.run(port=8090)
+    application = RWApp.create_app()
+    application.app.run(port=8090, server='gevent')
 
 

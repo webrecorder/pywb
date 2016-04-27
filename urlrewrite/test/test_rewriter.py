@@ -11,10 +11,11 @@ class TestRewriter(LiveServerTests, BaseTestClass):
     @classmethod
     def setup_class(cls):
         super(TestRewriter, cls).setup_class()
-        cls.upstream_url = 'http://localhost:{0}'.format(cls.server.port)
-        cls.upstream_url += '/{type}/resource/postreq?url={url}&closest={closest}'
+        #cls.upstream_url = 'http://localhost:{0}'.format(cls.server.port)
+        #cls.upstream_url += '/{type}/resource/postreq?url={url}&closest={closest}'
+        #cls.app = RWApp(cls.upstream_url)
 
-        cls.app = RWApp(cls.upstream_url)
+        cls.app = RWApp.create_app(replay_port=cls.server.port)
         cls.testapp = webtest.TestApp(cls.app.app)
 
     def test_replay(self):
