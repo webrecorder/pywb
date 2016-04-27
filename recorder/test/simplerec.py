@@ -10,7 +10,8 @@ upstream_url = 'http://localhost:8080'
 
 target = './_recordings/'
 
-dedup_index = WritableRedisIndexer('redis://localhost/2/rec:cdxj',
+dedup_index = WritableRedisIndexer(
+                redis_url='redis://localhost/2/rec:cdxj',
                 file_key_template='rec:warc',
                 rel_path_template=target,
                 dupe_policy=SkipDupePolicy())
