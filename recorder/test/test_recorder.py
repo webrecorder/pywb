@@ -23,6 +23,7 @@ from pywb.utils.statusandheaders import StatusAndHeadersParser
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.cdxindexer import write_cdx_index
+from pywb.warc.archiveiterator import ArchiveIterator
 
 from six.moves.urllib.parse import quote, unquote
 from io import BytesIO
@@ -33,7 +34,9 @@ general_req_data = "\
 GET {path} HTTP/1.1\r\n\
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n\
 User-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36\r\n\
+X-Other: foo\r\n\
 Host: {host}\r\n\
+Cookie: boo=far\r\n\
 \r\n"
 
 
@@ -82,6 +85,25 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert all(x.endswith('.warc.gz') for x in files)
         return files, coll_dir
 
+    def _load_resp_req(self, base_path):
+        warcs = os.listdir(base_path)
+        assert len(warcs) == 1
+        warc = warcs[0]
+
+        stored_resp = None
+        stored_req = None
+
+        with open(os.path.join(base_path, warc), 'rb') as fh:
+            for rec in ArchiveIterator(fh)():
+                if rec.rec_type == 'response':
+                    stored_resp = rec
+                elif rec.rec_type == 'request':
+                    stored_req = rec
+
+        assert stored_resp is not None
+        assert stored_req is not None
+        return stored_req, stored_resp
+
     def test_record_warc_1(self):
         recorder_app = RecorderApp(self.upstream_url,
                         PerRecordWARCWriter(to_path(self.root_dir + '/warcs/')))
@@ -127,19 +149,13 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert ('Set-Cookie', 'name=value; Path=/') in record.status_headers.headers
         assert ('Set-Cookie', 'foo=bar; Path=/') in record.status_headers.headers
 
-        warcs = os.listdir(base_path)
+        stored_req, stored_resp = self._load_resp_req(base_path)
 
-        stored_rec = None
-        for warc in warcs:
-            with open(os.path.join(base_path, warc), 'rb') as fh:
-                decomp = DecompressingBufferedReader(fh)
-                stored_rec = ArcWarcRecordLoader().parse_record_stream(decomp)
-                if stored_rec.rec_type == 'response':
-                    break
+        assert ('Set-Cookie', 'name=value; Path=/') in stored_resp.status_headers.headers
+        assert ('Set-Cookie', 'foo=bar; Path=/') in stored_resp.status_headers.headers
 
-        assert stored_rec is not None
-        assert ('Set-Cookie', 'name=value; Path=/') in stored_rec.status_headers.headers
-        assert ('Set-Cookie', 'foo=bar; Path=/') in stored_rec.status_headers.headers
+        assert ('X-Other', 'foo') in stored_req.status_headers.headers
+        assert ('Cookie', 'boo=far') in stored_req.status_headers.headers
 
     def test_record_cookies_skip_header(self):
         base_path = to_path(self.root_dir + '/warcs/cookieskip/')
@@ -156,20 +172,13 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert ('Set-Cookie', 'name=value; Path=/') in record.status_headers.headers
         assert ('Set-Cookie', 'foo=bar; Path=/') in record.status_headers.headers
 
-        warcs = os.listdir(base_path)
+        stored_req, stored_resp = self._load_resp_req(base_path)
 
-        stored_rec = None
-        for warc in warcs:
-            with open(os.path.join(base_path, warc), 'rb') as fh:
-                decomp = DecompressingBufferedReader(fh)
-                stored_rec = ArcWarcRecordLoader().parse_record_stream(decomp)
-                if stored_rec.rec_type == 'response':
-                    break
+        assert ('Set-Cookie', 'name=value; Path=/') not in stored_resp.status_headers.headers
+        assert ('Set-Cookie', 'foo=bar; Path=/') not in stored_resp.status_headers.headers
 
-        assert stored_rec is not None
-        assert ('Set-Cookie', 'name=value; Path=/') not in stored_rec.status_headers.headers
-        assert ('Set-Cookie', 'foo=bar; Path=/') not in stored_rec.status_headers.headers
-
+        assert ('X-Other', 'foo') in stored_req.status_headers.headers
+        assert ('Cookie', 'boo=far') not in stored_req.status_headers.headers
 
     def test_record_skip_wrong_coll(self):
         recorder_app = RecorderApp(self.upstream_url,
