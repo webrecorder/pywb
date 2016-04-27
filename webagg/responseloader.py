@@ -13,12 +13,13 @@ from pywb.warc.resolvingloader import ResolvingLoader
 
 from six.moves.urllib.parse import urlsplit
 
-from io import BytesIO
+#from io import BytesIO
 
 import uuid
 import six
 import itertools
-import requests
+#import requests
+import urllib3
 
 
 #=============================================================================
@@ -216,8 +217,12 @@ class LiveWebLoader(BaseLoader):
                     'x-archive')
 
     def __init__(self):
-        #self.sesh = requests.session()
-        self.sesh = requests
+        self.num_retries = 3
+        self.num_pools = 10
+        self.num_conn_per_pool = 10
+
+        self.pool = urllib3.PoolManager(num_pools=self.num_pools,
+                                        maxsize=self.num_conn_per_pool)
 
     def load_resource(self, cdx, params):
         load_url = cdx.get('load_url')
@@ -237,13 +242,17 @@ class LiveWebLoader(BaseLoader):
         data = input_req.get_req_body()
 
         try:
-            upstream_res = self.sesh.request(url=load_url,
-                                             method=method,
-                                             stream=True,
-                                             allow_redirects=False,
+            upstream_res = self.pool.urlopen(method=method,
+                                             url=load_url,
+                                             body=data,
                                              headers=req_headers,
-                                             data=data,
+                                             redirect=False,
+                                             assert_same_host=False,
+                                             preload_content=False,
+                                             decode_content=False,
+                                             retries=self.num_retries,
                                              timeout=params.get('_timeout'))
+
         except Exception as e:
             raise LiveResourceException(load_url)
 
@@ -259,26 +268,26 @@ class LiveWebLoader(BaseLoader):
         agg_type = upstream_res.headers.get('WebAgg-Type')
         if agg_type == 'warc':
             cdx['source'] = upstream_res.headers.get('WebAgg-Source-Coll')
-            return None, upstream_res.headers, upstream_res.raw
+            return None, upstream_res.headers, upstream_res
 
         self.raise_on_self_redirect(params, cdx,
-                                    str(upstream_res.status_code),
+                                    str(upstream_res.status),
                                     upstream_res.headers.get('Location'))
 
 
-        if upstream_res.raw.version == 11:
+        if upstream_res.version == 11:
             version = '1.1'
         else:
             version = '1.0'
 
         status = 'HTTP/{version} {status} {reason}\r\n'
         status = status.format(version=version,
-                               status=upstream_res.status_code,
+                               status=upstream_res.status,
                                reason=upstream_res.reason)
 
         http_headers_buff = status
 
-        orig_resp = upstream_res.raw._original_response
+        orig_resp = upstream_res._original_response
 
         try:  #pragma: no cover
         #PY 3
@@ -301,7 +310,7 @@ class LiveWebLoader(BaseLoader):
         http_headers_buff = http_headers_buff.encode('latin-1')
 
         try:
-            fp = upstream_res.raw._fp.fp
+            fp = upstream_res._fp.fp
             if hasattr(fp, 'raw'):  #pragma: no cover
                 fp = fp.raw
             remote_ip = fp._sock.getpeername()[0]
@@ -324,7 +333,7 @@ class LiveWebLoader(BaseLoader):
                               len(http_headers_buff))
 
         warc_headers = StatusAndHeaders('WARC/1.0', warc_headers.items())
-        return (warc_headers, http_headers_buff, upstream_res.raw)
+        return (warc_headers, http_headers_buff, upstream_res)
 
     @staticmethod
     def _make_warc_id(id_=None):
