@@ -120,6 +120,7 @@ class BaseWARCWriter(object):
         if filename:
             headers['WARC-Filename'] = filename
         headers['WARC-Date'] = datetime_to_iso_date(datetime.datetime.utcnow())
+        headers['Content-Type'] = 'application/warc-fields'
 
         warcinfo = BytesIO()
         for n, v in six.iteritems(kwargs):
