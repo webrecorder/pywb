@@ -418,6 +418,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         parsed_record = ArcWarcRecordLoader().parse_record_stream(buff)
 
         assert parsed_record.rec_headers.get_header('WARC-Type') == 'warcinfo'
+        assert parsed_record.rec_headers.get_header('Content-Type') == 'application/warc-fields'
         assert parsed_record.rec_headers.get_header('WARC-Filename') == 'testfile.warc.gz'
 
         buff = parsed_record.stream.read().decode('utf-8')
