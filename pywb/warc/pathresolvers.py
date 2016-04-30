@@ -51,7 +51,7 @@ class RedisResolver(object):
 
     def __call__(self, filename, cdx=None):
         redis_val = self.redis.hget(self.key_prefix + filename, 'path')
-        return [to_native_str(redis_val)] if redis_val else []
+        return [to_native_str(redis_val, 'utf-8')] if redis_val else []
 
     def __repr__(self):
         return "RedisResolver('{0}')".format(self.redis_url)
@@ -69,7 +69,7 @@ class PathIndexResolver(object):
             for pathline in result:
                 paths = pathline.split(b'\t')[1:]
                 for path in paths:
-                    yield to_native_str(path)
+                    yield to_native_str(path, 'utf-8')
 
     def __repr__(self):  # pragma: no cover
         return "PathIndexResolver('{0}')".format(self.pathindex_file)

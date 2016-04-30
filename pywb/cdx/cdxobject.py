@@ -123,11 +123,11 @@ class CDXObject(OrderedDict):
             for n, v in six.iteritems(json_fields):
                 n = self.CDX_ALT_FIELDS.get(n, n)
 
-                try:
-                    v.encode('ascii')
-                except UnicodeEncodeError:
-                    parts = v.encode('utf-8').split(b'//', 1)
-                    v = parts[0].decode('utf-8') + '//' + quote(parts[1])
+                if n == 'url':
+                    try:
+                        v.encode('ascii')
+                    except UnicodeEncodeError:
+                        v = quote(v, safe=':/')
 
                 self[n] = v
 
