@@ -66,9 +66,6 @@ class ArchiveIterator(object):
         self.member_info = None
         self.no_record_parse = no_record_parse
 
-    def __iter__(self):
-        return self
-
     def __call__(self, block_size=16384):
         """ iterate over each record
         """
