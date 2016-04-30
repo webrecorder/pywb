@@ -136,6 +136,7 @@ class JSLocationRewriterMixin(object):
 
           (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(window).'), 0),
 
+          (r'(?<=\.)frameElement\b', RegexRewriter.add_prefix(prefix), 0),
           #  (r'(?<=document\.)domain', RegexRewriter.add_prefix(prefix), 0),
           #  (r'(?<=document\.)referrer', RegexRewriter.add_prefix(prefix), 0),
           #  (r'(?<=document\.)cookie', RegexRewriter.add_prefix(prefix), 0),

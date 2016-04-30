@@ -62,6 +62,9 @@ r"""
 #>>> _test_js('document_domain = "anotherdomain.com"; window.document.domain = "example.com"')
 #'document_domain = "anotherdomain.com"; window.document.WB_wombat_domain = "example.com"'
 
+>>> _test_js('win.frameElement != undefined')
+'win.WB_wombat_frameElement != undefined'
+
 # top test
 >>> _test_js('window.top != window')
 'window.WB_wombat_top != window'
