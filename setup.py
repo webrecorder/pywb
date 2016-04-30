@@ -47,7 +47,7 @@ setup(
     long_description=long_description,
     license='GPL',
     packages=find_packages(),
-    zip_safe=False,
+    zip_safe=True,
     provides=[
         'pywb',
         'pywb.utils',

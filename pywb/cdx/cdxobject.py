@@ -127,7 +127,7 @@ class CDXObject(OrderedDict):
                     try:
                         v.encode('ascii')
                     except UnicodeEncodeError:
-                        v = quote(v, safe=':/')
+                        v = quote(v.encode('utf-8'), safe=':/')
 
                 self[n] = v
 
