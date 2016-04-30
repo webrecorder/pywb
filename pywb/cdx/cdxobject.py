@@ -10,6 +10,7 @@ from six.moves.urllib.parse import urlencode, quote
 from six.moves.urllib.parse import parse_qs
 
 from pywb.utils.wbexception import WbException
+from pywb.utils.loaders import to_native_str
 
 from json import loads as json_decode
 from json import dumps as json_encode
@@ -117,10 +118,11 @@ class CDXObject(OrderedDict):
         fields = cdxline.split(b' ' , 2)
         # Check for CDX JSON
         if fields[-1].startswith(b'{'):
-            self[URLKEY] = fields[0].decode('utf-8')
-            self[TIMESTAMP] = fields[1].decode('utf-8')
-            json_fields = json_decode(fields[-1].decode('utf-8'))
+            self[URLKEY] = to_native_str(fields[0], 'utf-8')
+            self[TIMESTAMP] = to_native_str(fields[1], 'utf-8')
+            json_fields = json_decode(to_native_str(fields[-1], 'utf-8'))
             for n, v in six.iteritems(json_fields):
+                n = to_native_str(n, 'utf-8')
                 n = self.CDX_ALT_FIELDS.get(n, n)
 
                 if n == 'url':
@@ -128,6 +130,9 @@ class CDXObject(OrderedDict):
                         v.encode('ascii')
                     except UnicodeEncodeError:
                         v = quote(v.encode('utf-8'), safe=':/')
+
+                if n != 'filename':
+                    v = to_native_str(v, 'utf-8')
 
                 self[n] = v
 
