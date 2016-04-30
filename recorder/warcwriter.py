@@ -120,7 +120,6 @@ class BaseWARCWriter(object):
         if filename:
             headers['WARC-Filename'] = filename
         headers['WARC-Date'] = datetime_to_iso_date(datetime.datetime.utcnow())
-        headers['Content-Type'] = 'application/warc-fields'
 
         warcinfo = BytesIO()
         for n, v in six.iteritems(kwargs):
@@ -174,7 +173,7 @@ class BaseWARCWriter(object):
         if not content_type:
             content_type = self.WARC_RECORDS[record.rec_headers['WARC-Type']]
 
-        self._header(out, 'Content-Type', record.content_type)
+        self._header(out, 'Content-Type', content_type)
 
         if record.rec_headers['WARC-Type'] == 'revisit':
             http_headers_only = True
