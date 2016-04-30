@@ -48,13 +48,11 @@ class RewriteContent:
         return (status_headers, stream)
 
     def _rewrite_headers(self, urlrewriter, rule, status_headers, stream,
-                         urlkey=''):
+                         urlkey='', cookie_rewriter=None):
 
         header_rewriter_class = rule.rewriters['header']
 
-        cookie_rewriter = None
-
-        if urlrewriter:
+        if urlrewriter and not cookie_rewriter:
             cookie_rewriter = urlrewriter.get_cookie_rewriter(rule)
 
         rewritten_headers = (header_rewriter_class().
@@ -96,7 +94,7 @@ class RewriteContent:
 
     def rewrite_content(self, urlrewriter, status_headers, stream,
                         head_insert_func=None, urlkey='',
-                        cdx=None):
+                        cdx=None, cookie_rewriter=None):
 
         wb_url = urlrewriter.wburl
 
@@ -114,7 +112,9 @@ class RewriteContent:
         (rewritten_headers, stream) = self._rewrite_headers(urlrewriter,
                                                             rule,
                                                             status_headers,
-                                                            stream)
+                                                            stream,
+                                                            urlkey,
+                                                            cookie_rewriter)
 
         status_headers = rewritten_headers.status_headers
 
