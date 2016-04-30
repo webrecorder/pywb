@@ -148,6 +148,9 @@ r"""
 >>> parse('<html><head><script src="other.js"></script></head><body>Test</body></html>', head_insert = '<script src="cool.js"></script>')
 <html><head><script src="cool.js"></script><script src="/web/20131226101010js_/http://example.com/some/path/other.js"></script></head><body>Test</body></html>
 
+>>> parse('<html><script src="other.js"></script></html>', head_insert = '<script src="cool.js"></script>')
+<html><script src="cool.js"></script><script src="/web/20131226101010js_/http://example.com/some/path/other.js"></script></html>
+
 >>> parse('<html><head/><body>Test</body></html>', head_insert = '<script src="cool.js"></script>')
 <html><head><script src="cool.js"></script></head><body>Test</body></html>
 

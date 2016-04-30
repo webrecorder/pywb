@@ -233,16 +233,16 @@ class HTMLRewriterMixin(object):
         return False
 
     def _rewrite_tag_attrs(self, tag, tag_attrs):
-        # special case: script or style parse context
-        if ((tag in self.STATE_TAGS) and not self._wb_parse_context):
-            self._wb_parse_context = tag
-
         # special case: head insertion, before-head tags
-        elif (self.head_insert and
+        if (self.head_insert and
               not self._wb_parse_context
               and (tag not in self.BEFORE_HEAD_TAGS)):
             self.out.write(self.head_insert)
             self.head_insert = None
+
+        # special case: script or style parse context
+        if ((tag in self.STATE_TAGS) and not self._wb_parse_context):
+            self._wb_parse_context = tag
 
         # attr rewriting
         handler = self.rewrite_tags.get(tag)
