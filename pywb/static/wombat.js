@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.11
+// Wombat JS-Rewriting Library v2.12
 //============================================
 
 
@@ -2307,7 +2307,7 @@ var wombat_internal = function($wbwindow) {
             var res = this.frameElement;
 
             if (this.__WB_replay_top == this) {
-                return undefined;
+                return null;
             }
 
             return res;

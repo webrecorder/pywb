@@ -29,7 +29,7 @@ pywb 0.30.0 changelist
    - support custom cookie rewriter
    
 * wombat/client side improvements:
-   - rewrite ``frameElement`` -> ``WB_wombat_frameElement``, set to undefined for top replay frame
+   - rewrite ``frameElement`` -> ``WB_wombat_frameElement``, set to null for top replay frame
    - Allow changing of ``document.domain``
    - Rewrite ``<form action>`` and <input @value>`` in ``rewrite_elem``
  
