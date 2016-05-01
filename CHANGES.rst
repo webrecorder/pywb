@@ -1,3 +1,44 @@
+pywb 0.30.0 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* Support for Python 3.3+ in addition to Python 2.6+
+
+* statusheaders: ``to_str()`` and ``to_bytes()`` to reconstruct status line and headers, with option to exclude certain headers
+
+* cdxobject improvements:
+   - ``conv_to_json()`` for serializing to json, with optional list of fields
+   - ``to_json()`` and ``to_cdxj()``
+   - Default JSON serialization includes all fields, except starting with ``_``
+   - Default CDXJ serialization includes all fields, except urlkey and timestamp
+   - Comparison operators for cdxobject
+   - Reading cdxline as byte buffer, individual fields as strings (python 3)
+  
+* redis: full testing of ``zlexbyrange`` with new fakeredis
+
+* timeutils: add ``datetime_to_iso_date``
+  
+* cdx indexing: support for custom iterators which can override ``create_payload_buffer()`` to optionally store payload for further processing in a single indexing pass
+
+* warcrecord loader fully read streams with no content-length, don't force 204
+
+* cookie improvements:
+   - use httplib cookie pairs directly to avoid concatenated headers (eg. for ``Set-Cookie``)
+   - don't remove ``max-age`` and ``expires`` when in live rewriting mode
+   - convert `` UTC`` -> `` GMT`` in expires to avoid Python parsing issues
+   - remove ``secure`` only if not serving from https
+   - support custom cookie rewriter
+   
+* wombat/client side improvements:
+   - rewrite ``frameElement`` -> ``WB_wombat_frameElement``, set to undefined for top replay frame
+   - Allow changing of ``document.domain``
+   - Rewrite ``<form action>`` and <input @value>`` in ``rewrite_elem``
+ 
+* Tests: improved tests, replaced doctests of dict output to regular tests for improved compatibility with different python implementations
+  
+  
+
+
+
 pywb 0.11.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
