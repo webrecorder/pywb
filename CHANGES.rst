@@ -17,7 +17,7 @@ pywb 0.30.0 changelist
 
 * timeutils: add ``datetime_to_iso_date``
   
-* cdx indexing: support for custom iterators which can override ``create_payload_buffer()`` to optionally store payload for further processing in a single indexing pass
+* cdx indexing refactor: rename ``DefaultRecordIter`` -> ``DefaultRecordParser``, a callable which creates an iterator
 
 * warcrecord loader fully read streams with no content-length, don't force 204
 
