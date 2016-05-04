@@ -13,6 +13,10 @@ rules:
           - max_position
           - include_entities
 
+    - url_prefix: 'com,twitter)/i/videos/tweet'
+
+      fuzzy_lookup: '()'
+     
 
     # facebook rules
     #=================================================================
