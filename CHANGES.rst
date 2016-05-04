@@ -1,3 +1,11 @@
+pywb 0.30.1 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* Rules: match rule for Twitter video.
+
+* Record Loader: Only parse ``http:`` and ``https:`` urls as HTTP in ``response``, ``request`` and ``revisit`` records.
+
+
 pywb 0.30.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
