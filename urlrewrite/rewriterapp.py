@@ -17,6 +17,7 @@ from urlrewrite.rewriteinputreq import RewriteInputRequest
 from urlrewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView, BaseInsertView
 
 from io import BytesIO
+
 import gevent
 import json
 
@@ -52,6 +53,8 @@ class RewriterApp(object):
         self.frame_insert_view = TopFrameView(self.jinja_env, 'frame_insert.html', 'banner.html')
         self.error_view = BaseInsertView(self.jinja_env, 'error.html')
         self.query_view = BaseInsertView(self.jinja_env, config.get('query_html', 'query.html'))
+
+        self.cookie_tracker = None
 
     def call_with_params(self, **kwargs):
         def run_app(environ, start_response):
@@ -123,8 +126,15 @@ class RewriterApp(object):
                 else:
                     async_record_url = mod_url
 
-        r = self._do_req(inputreq, url, wb_url, kwargs,
-                         async_record_url is not None)
+        skip = async_record_url is not None
+
+        setcookie_headers = None
+        if self.cookie_tracker:
+            cookie_key = self.get_cookie_key(kwargs)
+            res = self.cookie_tracker.get_cookie_headers(url, cookie_key)
+            inputreq.extra_cookie, setcookie_headers = res
+
+        r = self._do_req(inputreq, url, wb_url, kwargs, skip)
 
         if r.status_code >= 400:
             error = None
@@ -143,7 +153,6 @@ class RewriterApp(object):
             raise UpstreamException(r.status_code, url=url, details=details)
 
         if async_record_url:
-            #print('ASYNC REC', async_record_url)
             environ.pop('HTTP_RANGE', '')
             gevent.spawn(self._do_async_req,
                          inputreq,
@@ -183,14 +192,24 @@ class RewriterApp(object):
                                                        environ,
                                                        self.framed_replay))
 
+        cookie_rewriter = None
+        if self.cookie_tracker:
+            cookie_rewriter = self.cookie_tracker.get_rewriter(urlrewriter,
+                                                               cookie_key)
+
         result = self.content_rewriter.rewrite_content(urlrewriter,
                                                record.status_headers,
                                                record.stream,
                                                head_insert_func,
                                                urlkey,
-                                               cdx)
+                                               cdx,
+                                               cookie_rewriter)
 
         status_headers, gen, is_rw = result
+
+        if setcookie_headers:
+            status_headers.headers.extend(setcookie_headers)
+
         return WbResponse(status_headers, gen)
 
     def get_top_url(self, full_prefix, wb_url, cdx, kwargs):
@@ -341,6 +360,9 @@ class RewriterApp(object):
         return False
 
     def get_upstream_url(self, url, wb_url, closest, kwargs):
+        raise NotImplemented()
+
+    def get_cookie_key(self, kwargs):
         raise NotImplemented()
 
     def _add_custom_params(self, cdx, headers, kwargs):

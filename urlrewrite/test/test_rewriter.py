@@ -1,13 +1,14 @@
 
 from webagg.test.testutils import LiveServerTests, BaseTestClass
+from webagg.test.testutils import FakeRedisTests
 
-from .simpleapp import RWApp
+from .simpleapp import RWApp, debug
 
 import os
 import webtest
 
 
-class TestRewriter(LiveServerTests, BaseTestClass):
+class TestRewriter(LiveServerTests, FakeRedisTests, BaseTestClass):
     @classmethod
     def setup_class(cls):
         super(TestRewriter, cls).setup_class()
@@ -17,6 +18,7 @@ class TestRewriter(LiveServerTests, BaseTestClass):
 
         cls.app = RWApp.create_app(replay_port=cls.server.port)
         cls.testapp = webtest.TestApp(cls.app.app)
+        debug(True)
 
     def test_replay(self):
         resp = self.testapp.get('/live/mp_/http://example.com/')
@@ -34,7 +36,8 @@ class TestRewriter(LiveServerTests, BaseTestClass):
 
         assert 'wbinfo.capture_url = "http://example.com/"' in resp.text
 
+    def test_cookie_track_1(self):
+        resp = self.testapp.get('/live/mp_/https://twitter.com/')
 
-
-
+        assert resp.headers['set-cookie'] != None
 

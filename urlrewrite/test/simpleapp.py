@@ -1,28 +1,38 @@
 from gevent.monkey import patch_all; patch_all()
 
-from bottle import run, Bottle, request, response
+from bottle import run, Bottle, request, response, debug
 
 from six.moves.urllib.parse import quote
 
 from pywb.utils.loaders import LocalFileLoader
+
 import mimetypes
+import redis
 
 from urlrewrite.rewriterapp import RewriterApp
+from urlrewrite.cookies import CookieTracker
 
 
 # ============================================================================
 class RWApp(RewriterApp):
-    def __init__(self, upstream_urls):
+    def __init__(self, upstream_urls, cookie_key_templ, redis):
         self.upstream_urls = upstream_urls
+        self.cookie_key_templ = cookie_key_templ
         self.app = Bottle()
         self.block_loader = LocalFileLoader()
         self.init_routes()
+
         super(RWApp, self).__init__(True)
+
+        self.cookie_tracker = CookieTracker(redis)
 
     def get_upstream_url(self, url, wb_url, closest, kwargs):
         type = kwargs.get('type')
         return self.upstream_urls[type].format(url=quote(url),
                                                closest=closest)
+
+    def get_cookie_key(self, kwargs):
+        return self.cookie_key_templ.format(**kwargs)
 
     def init_routes(self):
         @self.app.get('/static/__pywb/<filepath:path>')
@@ -45,7 +55,8 @@ class RWApp(RewriterApp):
                          'replay': 'http://localhost:%s/replay/resource/postreq?url={url}&closest={closest}' % replay_port,
                         }
 
-        rwapp = RWApp(upstream_urls)
+        r = redis.StrictRedis.from_url('redis://localhost/2')
+        rwapp = RWApp(upstream_urls, 'cookies:', r)
         return rwapp
 
 
