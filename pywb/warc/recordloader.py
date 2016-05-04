@@ -51,6 +51,9 @@ class ArcWarcRecordLoader(object):
 
     NON_HTTP_RECORDS = ('warcinfo', 'arc_header', 'metadata', 'resource')
 
+    NON_HTTP_SCHEMES = ('dns:', 'whois:', 'ntp:')
+    HTTP_SCHEMES = ('http:', 'https:')
+
     def __init__(self, loader=None, cookie_maker=None, block_size=8192,
                  verify_http=True):
         if not loader:
@@ -151,13 +154,13 @@ class ArcWarcRecordLoader(object):
             status_headers = StatusAndHeaders(msg, [])
 
         # response record or non-empty revisit: parse HTTP status and headers!
-        elif (rec_type in ('response', 'revisit') and
-              not uri.startswith(('dns:', 'whois:'))):
+        elif (rec_type in ('response', 'revisit')
+              and uri.startswith(self.HTTP_SCHEMES)):
             status_headers = self.http_parser.parse(stream)
 
         # request record: parse request
-        elif ((rec_type == 'request') and
-              not uri.startswith(('dns:', 'whois:'))):
+        elif ((rec_type == 'request')
+              and uri.startswith(self.HTTP_SCHEMES)):
             status_headers = self.http_req_parser.parse(stream)
 
         # everything else: create a no-status entry, set content-type
