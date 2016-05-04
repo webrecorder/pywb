@@ -17,6 +17,7 @@ class RewriteInputRequest(DirectWSGIInputRequest):
         self.urlkey = urlkey
         self.url = url
         self.rewriter = rewriter
+        self.extra_cookie = None
 
         self.splits = urlsplit(self.url)
 
@@ -75,6 +76,10 @@ class RewriteInputRequest(DirectWSGIInputRequest):
             value = self._req_cookie_rewrite('')
             if value:
                 headers['Cookie'] = value
+
+        if self.extra_cookie:
+            headers['Cookie'] = self.extra_cookie + ';' + headers.get('Cookie', '')
+            print('Cookie', headers['Cookie'])
 
         return headers
 
