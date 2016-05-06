@@ -7,7 +7,7 @@ from webagg.indexsource import LiveIndexSource, RedisIndexSource
 from webagg.aggregator import SimpleAggregator, CacheDirectoryIndexSource
 
 def simpleapp():
-    app = ResAggApp()
+    app = ResAggApp(debug=True)
     app.add_route('/live',
         DefaultResourceHandler(SimpleAggregator(
                                {'live': LiveIndexSource()})

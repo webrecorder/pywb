@@ -26,6 +26,14 @@ class RWApp(RewriterApp):
 
         self.cookie_tracker = CookieTracker(redis)
 
+        self.orig_error_handler = self.app.default_error_handler
+        self.app.default_error_handler = self.err_handler
+
+    def err_handler(self, exc):
+        print(exc)
+        traceback.print_exc()
+        return self.orig_error_handler(exc)
+
     def get_upstream_url(self, url, wb_url, closest, kwargs):
         type = kwargs.get('type')
         return self.upstream_urls[type].format(url=quote(url),
