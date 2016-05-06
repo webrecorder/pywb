@@ -35,7 +35,7 @@ setup(
         'proxy',
         ],
     install_requires=[
-        'pywb==0.30.0',
+        'pywb>=0.30.0',
         ],
     dependency_links=[
         'git+https://github.com/ikreymer/pywb.git@develop#egg=pywb-0.30.0-develop',
