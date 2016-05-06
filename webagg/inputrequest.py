@@ -68,14 +68,15 @@ class DirectWSGIInputRequest(object):
             return url
 
         mime = self._get_content_type()
-        mime = mime.split(';')[0] if mime else ''
+        #mime = mime.split(';')[0] if mime else ''
         length = self._get_content_length()
         stream = self.env['wsgi.input']
 
         buffered_stream = BytesIO()
 
         post_query = extract_post_query('POST', mime, length, stream,
-                                        buffered_stream=buffered_stream)
+                                        buffered_stream=buffered_stream,
+                                        environ=self.env)
 
         if post_query:
             self.env['wsgi.input'] = buffered_stream

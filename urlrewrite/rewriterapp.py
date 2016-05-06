@@ -1,6 +1,6 @@
 import requests
 
-from pywb.rewrite.rewrite_content import RewriteContent
+from pywb.rewrite.rewrite_content import RewriteContentAMF
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter
 
@@ -42,7 +42,7 @@ class RewriterApp(object):
 
         frame_type = 'inverse' if framed_replay else False
 
-        self.content_rewriter = RewriteContent(is_framed_replay=frame_type)
+        self.content_rewriter = RewriteContentAMF(is_framed_replay=frame_type)
 
         if not jinja_env:
             jinja_env = JinjaEnv(globals={'static_path': 'static/__pywb'})
@@ -100,6 +100,8 @@ class RewriterApp(object):
 
         inputreq = RewriteInputRequest(environ, urlkey, url,
                                        self.content_rewriter)
+
+        inputreq.include_post_query(url)
 
         mod_url = None
         use_206 = False
@@ -203,7 +205,8 @@ class RewriterApp(object):
                                                head_insert_func,
                                                urlkey,
                                                cdx,
-                                               cookie_rewriter)
+                                               cookie_rewriter,
+                                               environ)
 
         status_headers, gen, is_rw = result
 
