@@ -253,6 +253,7 @@ class ArchiveIndexEntryMixin(object):
         self['mime'] = def_mime
         if mime:
             self['mime'] = self.MIME_RE.split(mime, 1)[0]
+            self['_content_type'] = mime
 
     def extract_status(self, status_headers):
         """ Extract status code only from status line
@@ -390,7 +391,7 @@ class DefaultRecordParser(object):
                 len_ = record.status_headers.get_header('Content-Length')
 
                 post_query = extract_post_query(method,
-                                                entry.get('mime'),
+                                                entry.get('_content_type'),
                                                 len_,
                                                 record.stream)
 

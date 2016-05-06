@@ -13,7 +13,7 @@ from pywb.utils.timeutils import timestamp_now
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import MementoResponse
 
-from pywb.rewrite.rewrite_content import RewriteContent
+from pywb.rewrite.rewrite_content import RewriteContentAMF
 from pywb.warc.recordloader import ArchiveLoadFailed
 
 from pywb.webapp.views import HeadInsertView
@@ -40,7 +40,7 @@ class ReplayView(object):
         self.content_loader = content_loader
 
         framed = config.get('framed_replay')
-        self.content_rewriter = RewriteContent(is_framed_replay=framed)
+        self.content_rewriter = RewriteContentAMF(is_framed_replay=framed)
 
         self.head_insert_view = HeadInsertView.init_from_config(config)
 
@@ -174,7 +174,8 @@ class ReplayView(object):
                                   stream=stream,
                                   head_insert_func=head_insert_func,
                                   urlkey=cdx['urlkey'],
-                                  cdx=cdx))
+                                  cdx=cdx,
+                                  env=wbrequest.env))
 
         (status_headers, response_iter, is_rewritten) = result
 

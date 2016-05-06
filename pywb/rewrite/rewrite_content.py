@@ -5,7 +5,8 @@ import yaml
 import re
 
 from chardet.universaldetector import UniversalDetector
-from io import BytesIO
+from io import BytesIO, BufferedReader
+from six.moves import zip
 
 from pywb.rewrite.header_rewriter import RewrittenStatusAndHeaders
 
@@ -21,7 +22,7 @@ from pywb.rewrite.regex_rewriters import JSNoneRewriter, JSLinkOnlyRewriter
 
 
 #=================================================================
-class RewriteContent:
+class RewriteContent(object):
     HEAD_REGEX = re.compile(b'<\s*head\\b[^>]*[>]+', re.I)
 
     TAG_REGEX = re.compile(b'^\s*\<')
@@ -94,7 +95,7 @@ class RewriteContent:
 
     def rewrite_content(self, urlrewriter, status_headers, stream,
                         head_insert_func=None, urlkey='',
-                        cdx=None, cookie_rewriter=None):
+                        cdx=None, cookie_rewriter=None, env=None):
 
         wb_url = urlrewriter.wburl
 
@@ -118,9 +119,12 @@ class RewriteContent:
 
         status_headers = rewritten_headers.status_headers
 
-        # use rewritten headers, but no further rewriting needed
-        if rewritten_headers.text_type is None:
-            return (status_headers, self.stream_to_gen(stream), False)
+        res = self.handle_custom_rewrite(rewritten_headers.text_type,
+                                         status_headers,
+                                         stream,
+                                         env)
+        if res:
+            return res
 
         # Handle text content rewriting
         # ====================================================================
@@ -236,6 +240,11 @@ class RewriteContent:
                                               align_to_line=align)
 
         return (status_headers, gen, True)
+
+    def handle_custom_rewrite(self, text_type, status_headers, stream, env):
+        # use rewritten headers, but no further rewriting needed
+        if text_type is None:
+            return (status_headers, self.stream_to_gen(stream), False)
 
     @staticmethod
     def _extract_html_charset(buff, status_headers):
@@ -360,3 +369,57 @@ class RewriteContent:
 
         finally:
             stream.close()
+
+
+# =================================================================
+class RewriteContentAMF(RewriteContent):
+    def handle_custom_rewrite(self, text_type, status_headers, stream, env):
+
+        if status_headers.get_header('Content-Type') == 'application/x-amf':
+            stream = self.rewrite_amf(stream, env)
+
+        return (super(RewriteContentAMF, self).
+                handle_custom_rewrite(text_type, status_headers, stream, env))
+
+    def rewrite_amf(self, stream, env):
+        try:
+            from pyamf import remoting
+
+            iobuff = BytesIO()
+            while True:
+                buff = stream.read()
+                if not buff:
+                    break
+                iobuff.write(buff)
+
+            iobuff.seek(0)
+            res = remoting.decode(iobuff)
+
+            print('rewrite amf')
+
+            print(env.get('pywb.inputdata'))
+
+            if env and env.get('pywb.inputdata'):
+                inputdata = env.get('pywb.inputdata')
+
+                new_list = []
+
+                for src, target in zip(inputdata.bodies, res.bodies):
+                    print(target[0] + ' = ' + src[0])
+
+                    print('messageId => corrId ' + target[1].body.correlationId + ' => ' + src[1].body[0].messageId)
+                    target[1].body.correlationId = src[1].body[0].messageId
+
+                    new_list.append((src[0], target[1]))
+
+                res.bodies = new_list
+
+            return BytesIO(remoting.encode(res).getvalue())
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            print(e)
+            return stream
+
+

@@ -9,10 +9,12 @@ import requests
 
 import six
 from six.moves.urllib.request import pathname2url, url2pathname
-from six.moves.urllib.parse import urljoin, unquote_plus, urlsplit
+from six.moves.urllib.parse import urljoin, unquote_plus, urlsplit, urlencode
 
 import time
 import pkg_resources
+import base64
+import cgi
 
 from io import open, BytesIO
 
@@ -65,17 +67,16 @@ def to_native_str(value, encoding='iso-8859-1', func=lambda x: x):
 
 
 #=================================================================
-def extract_post_query(method, mime, length, stream, buffered_stream=None):
+def extract_post_query(method, mime, length, stream,
+                       buffered_stream=None,
+                       environ=None):
     """
     Extract a url-encoded form POST from stream
-    If not a application/x-www-form-urlencoded, or no missing
     content length, return None
+    Attempt to decode application/x-www-form-urlencoded or multipart/*,
+    otherwise read whole block and b64encode
     """
     if method.upper() != 'POST':
-        return None
-
-    if ((not mime or
-         not mime.lower().startswith('application/x-www-form-urlencoded'))):
         return None
 
     try:
@@ -101,9 +102,77 @@ def extract_post_query(method, mime, length, stream, buffered_stream=None):
         buffered_stream.write(post_query)
         buffered_stream.seek(0)
 
-    post_query = to_native_str(post_query)
-    post_query = unquote_plus(post_query)
+    if not mime:
+        mime = ''
+
+    if mime.startswith('application/x-www-form-urlencoded'):
+        post_query = to_native_str(post_query)
+        post_query = unquote_plus(post_query)
+
+    elif mime.startswith('multipart/'):
+        env = {'REQUEST_METHOD': 'POST',
+               'CONTENT_TYPE': mime,
+               'CONTENT_LENGTH': len(post_query)}
+
+        args = dict(fp=BytesIO(post_query),
+                    environ=env,
+                    keep_blank_values=True)
+
+        if six.PY3:
+            args['encoding'] = 'utf-8'
+
+        data = cgi.FieldStorage(**args)
+
+        values = []
+        for item in data.list:
+            values.append((item.name, item.value))
+
+        post_query = urlencode(values, True)
+
+    elif mime.startswith('application/x-amf'):
+        post_query = amf_parse(post_query, environ)
+
+    else:
+        post_query = base64.b64encode(post_query)
+        post_query = to_native_str(post_query)
+        post_query = '&__wb_post_data=' + post_query
+
     return post_query
+
+
+#=================================================================
+def amf_parse(string, environ):
+    try:
+        from pyamf import remoting
+
+        res = remoting.decode(BytesIO(string))
+
+        #print(res)
+        body = res.bodies[0][1].body[0]
+
+        values = {}
+
+        if hasattr(body, 'body'):
+            values['body'] = body.body
+
+        if hasattr(body, 'source'):
+            values['source'] = body.source
+
+        if hasattr(body, 'operation'):
+            values['op'] = body.operation
+
+        if environ is not None:
+            environ['pywb.inputdata'] = res
+
+        query = urlencode(values)
+        #print(query)
+        return query
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(e)
+        return None
 
 
 #=================================================================

@@ -82,6 +82,7 @@ setup(
         'pyyaml',
         'watchdog',
         'webencodings',
+        'pyamf',
        ],
     tests_require=[
         'pytest',
@@ -91,7 +92,7 @@ setup(
         'mock',
        ],
     dependency_links=[
-        'git+https://github.com/ikreymer/fakeredis.git@zset-lex-ops#egg=fakeredis-0.6.2-zset-lex-ops',
+        'git+https://github.com/t0m/pyamf.git@python3'
        ],
     cmdclass={'test': PyTest},
     test_suite='',

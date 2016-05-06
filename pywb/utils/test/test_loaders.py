@@ -90,8 +90,9 @@ IOError: [Errno 2] No such file or directory: '_x_no_such_file_'
 # unsupported method
 >>> extract_post_query('PUT', 'application/x-www-form-urlencoded', len(post_data), BytesIO(post_data))
 
-# unsupported type
+# base64 encode
 >>> extract_post_query('POST', 'text/plain', len(post_data), BytesIO(post_data))
+'&__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6'
 
 # invalid length
 >>> extract_post_query('POST', 'application/x-www-form-urlencoded', 'abc', BytesIO(post_data))
