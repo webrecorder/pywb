@@ -667,15 +667,15 @@ var wombat_internal = function($wbwindow) {
         // Adapted from:
         // http://indiegamr.com/generate-repeatable-random-numbers-in-js/
 
-        Math.seed = parseInt(seed);
+        $wbwindow.Math.seed = parseInt(seed);
         function seeded_random() {
-            Math.seed = (Math.seed * 9301 + 49297) % 233280;
-            var rnd = Math.seed / 233280;
+            $wbwindow.Math.seed = ($wbwindow.Math.seed * 9301 + 49297) % 233280;
+            var rnd = $wbwindow.Math.seed / 233280;
 
             return rnd;
         }
 
-        Math.random = seeded_random;
+        $wbwindow.Math.random = seeded_random;
     }
 
     function init_crypto_random() {
@@ -687,7 +687,7 @@ var wombat_internal = function($wbwindow) {
 
         var new_getrandom = function(array) {
             for (i = 0; i < array.length; i++) {
-                array[i] = parseInt(Math.random() * 4294967296);
+                array[i] = parseInt($wbwindow.Math.random() * 4294967296);
             }
             return array;
         }
@@ -931,7 +931,8 @@ var wombat_internal = function($wbwindow) {
         //var timezone = new Date().getTimezoneOffset() * 60 * 1000;
         // Already UTC!
         var timezone = 0;
-        var timediff = $wbwindow.Date.now() - (timestamp - timezone);
+        var start_now = $wbwindow.Date.now()
+        var timediff = start_now - (timestamp - timezone);
 
         if ($wbwindow.__wb_Date_now) {
             return;
@@ -1656,13 +1657,14 @@ var wombat_internal = function($wbwindow) {
 
                 var from = source.WB_wombat_location.origin;
 
-                if (!source.__WB_id) {
-                    source.__WB_id = Math.round(Math.random() * 1000) + source.WB_wombat_location.href;
-                }
                 if (!this.__WB_win_id) {
                     this.__WB_win_id = {};
+                    this.__WB_counter = 0;
                 }
 
+                if (!source.__WB_id) {
+                    source.__WB_id = (this.__WB_counter++) + source.WB_wombat_location.href;
+                }
                 this.__WB_win_id[source.__WB_id] = source;
 
                 src_id = source.__WB_id;
