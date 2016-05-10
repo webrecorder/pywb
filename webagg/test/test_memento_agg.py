@@ -129,13 +129,13 @@ def test_handler_output_cdxj():
     url = 'http://vvork.com/'
     headers, res, errs = handler(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait'))
 
-    exp = """\
+    exp = b"""\
 com,vvork)/ 20141006184357 {"url": "http://www.vvork.com/", "mem_rel": "memento", "memento_url": "http://webenact.rhizome.org/vvork/20141006184357/http://www.vvork.com/", "load_url": "http://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"}
 com,vvork)/ 20131004231540 {"url": "http://vvork.com/", "mem_rel": "last memento", "memento_url": "http://wayback.archive-it.org/all/20131004231540/http://vvork.com/", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"}
 """
 
     assert(headers['Content-Type'] == 'text/x-cdxj')
-    assert(''.join(res) == exp)
+    assert(b''.join(res) == exp)
     assert(errs == {})
 
 
@@ -145,13 +145,13 @@ def test_handler_output_json():
     url = 'http://vvork.com/'
     headers, res, errs = handler(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait', output='json'))
 
-    exp = """\
+    exp = b"""\
 {"urlkey": "com,vvork)/", "timestamp": "20141006184357", "url": "http://www.vvork.com/", "mem_rel": "memento", "memento_url": "http://webenact.rhizome.org/vvork/20141006184357/http://www.vvork.com/", "load_url": "http://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"}
 {"urlkey": "com,vvork)/", "timestamp": "20131004231540", "url": "http://vvork.com/", "mem_rel": "last memento", "memento_url": "http://wayback.archive-it.org/all/20131004231540/http://vvork.com/", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"}
 """
 
     assert(headers['Content-Type'] == 'application/x-ndjson')
-    assert(''.join(res) == exp)
+    assert(b''.join(res) == exp)
     assert(errs == {})
 
 def test_handler_output_link():
@@ -160,12 +160,12 @@ def test_handler_output_link():
     url = 'http://vvork.com/'
     headers, res, errs = handler(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait', output='link'))
 
-    exp = """\
+    exp = b"""\
 <http://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/>; rel="memento"; datetime="Mon, 06 Oct 2014 18:43:57 GMT"; src="rhiz",
 <http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/>; rel="memento"; datetime="Fri, 04 Oct 2013 23:15:40 GMT"; src="ait"
 """
     assert(headers['Content-Type'] == 'application/link')
-    assert(''.join(res) == exp)
+    assert(b''.join(res) == exp)
     assert(errs == {})
 
 
@@ -175,7 +175,7 @@ def test_handler_output_link_2():
     url = 'http://iana.org/'
     headers, res, errs = handler(dict(url=url, closest='20140126000000', limit=5, output='link'))
 
-    exp = """\
+    exp = b"""\
 <http://web.archive.org/web/20140126093743id_/http://iana.org/>; rel="memento"; datetime="Sun, 26 Jan 2014 09:37:43 GMT"; src="ia",
 <file://iana.warc.gz:334:2258>; rel="memento"; datetime="Sun, 26 Jan 2014 20:06:24 GMT"; src="local",
 <http://web.archive.org/web/20140123034755id_/http://iana.org/>; rel="memento"; datetime="Thu, 23 Jan 2014 03:47:55 GMT"; src="ia",
@@ -183,7 +183,7 @@ def test_handler_output_link_2():
 <http://wayback.archive-it.org/all/20140107040552id_/http://iana.org/>; rel="memento"; datetime="Tue, 07 Jan 2014 04:05:52 GMT"; src="ait"
 """
     assert(headers['Content-Type'] == 'application/link')
-    assert(''.join(res) == exp)
+    assert(b''.join(res) == exp)
 
     exp_errs = {'bl': "NotFoundException('http://www.webarchive.org.uk/wayback/archive/http://iana.org/',)",
                 'rhiz': "NotFoundException('http://webenact.rhizome.org/vvork/http://iana.org/',)"}
@@ -198,10 +198,10 @@ def test_handler_output_link_3():
     url = 'http://foo.bar.non-existent'
     headers, res, errs = handler(dict(url=url, closest='20140126000000', limit=5, output='link'))
 
-    exp = ''
+    exp = b''
 
     assert(headers['Content-Type'] == 'application/link')
-    assert(''.join(res) == exp)
+    assert(b''.join(res) == exp)
 
     exp_errs = {'ait': "NotFoundException('http://wayback.archive-it.org/all/http://foo.bar.non-existent',)",
                 'bl': "NotFoundException('http://www.webarchive.org.uk/wayback/archive/http://foo.bar.non-existent',)",
@@ -216,12 +216,12 @@ def test_handler_output_text():
     url = 'http://vvork.com/'
     headers, res, errs = handler(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait', output='text'))
 
-    exp = """\
+    exp = b"""\
 com,vvork)/ 20141006184357 http://www.vvork.com/ memento http://webenact.rhizome.org/vvork/20141006184357/http://www.vvork.com/ http://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/ rhiz
 com,vvork)/ 20131004231540 http://vvork.com/ last memento http://wayback.archive-it.org/all/20131004231540/http://vvork.com/ http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/ ait
 """
     assert(headers['Content-Type'] == 'text/plain')
-    assert(''.join(res) == exp)
+    assert(b''.join(res) == exp)
     assert(errs == {})
 
 

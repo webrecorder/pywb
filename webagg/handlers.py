@@ -111,7 +111,14 @@ class IndexHandler(object):
 
         content_type, res = handler(cdx_iter, fields)
         out_headers = {'Content-Type': content_type}
-        return out_headers, res, errs
+
+        def check_str(res):
+            for x in res:
+                if isinstance(x, str):
+                    x = x.encode('utf-8')
+                yield x
+
+        return out_headers, check_str(res), errs
 
 
 #=============================================================================

@@ -1,9 +1,11 @@
 from webagg.inputrequest import DirectWSGIInputRequest, POSTInputRequest
-from bottle import route, request, response, abort, Bottle, debug as bottle_debug
+from werkzeug.routing import Map, Rule
 
 import requests
 import traceback
 import json
+
+from six.moves.urllib.parse import parse_qsl
 
 JSON_CT = 'application/json; charset=utf-8'
 
@@ -11,88 +13,103 @@ JSON_CT = 'application/json; charset=utf-8'
 #=============================================================================
 class ResAggApp(object):
     def __init__(self, *args, **kwargs):
-        self.application = Bottle()
-        self.application.default_error_handler = self.err_handler
         self.route_dict = {}
         self.debug = kwargs.get('debug', False)
 
-        if self.debug:
-            bottle_debug(True)
+        self.url_map = Map()
 
-        @self.application.route('/')
-        def list_routes():
-            return self.route_dict
+        def list_routes(environ):
+            return {}, self.route_dict, {}
+
+        self.url_map.add(Rule('/', endpoint=list_routes))
 
     def add_route(self, path, handler):
-        @self.application.route([path, path + '/<mode:path>'], 'ANY')
-        @self.wrap_error
-        def direct_input_request(mode=''):
-            params = dict(request.query)
+        def direct_input_request(environ, mode=''):
+            params = self.get_query_dict(environ)
             params['mode'] = mode
-            params['_input_req'] = DirectWSGIInputRequest(request.environ)
+            params['_input_req'] = DirectWSGIInputRequest(environ)
             return handler(params)
 
-        @self.application.route([path + '/postreq', path + '/<mode:path>/postreq'], 'POST')
-        @self.wrap_error
-        def post_fullrequest(mode=''):
-            params = dict(request.query)
+        def post_fullrequest(environ, mode=''):
+            params = self.get_query_dict(environ)
             params['mode'] = mode
-            params['_input_req'] = POSTInputRequest(request.environ)
+            params['_input_req'] = POSTInputRequest(environ)
             return handler(params)
+
+        self.url_map.add(Rule(path, endpoint=direct_input_request))
+        self.url_map.add(Rule(path + '/<path:mode>', endpoint=direct_input_request))
+
+        self.url_map.add(Rule(path + '/postreq', endpoint=post_fullrequest))
+        self.url_map.add(Rule(path + '/<path:mode>/postreq', endpoint=post_fullrequest))
 
         handler_dict = handler.get_supported_modes()
+
         self.route_dict[path] = handler_dict
         self.route_dict[path + '/postreq'] = handler_dict
 
-    def err_handler(self, exc):
-        if self.debug:
-            print(exc)
-            traceback.print_exc()
-        response.status = exc.status_code
-        response.content_type = JSON_CT
-        err_msg = json.dumps({'message': exc.body})
-        response.headers['ResErrors'] = err_msg
-        return err_msg
+    def get_query_dict(self, environ):
+        query_str = environ.get('QUERY_STRING')
+        if query_str:
+            return dict(parse_qsl(query_str))
+        else:
+            return {}
 
-    def wrap_error(self, func):
-        def wrap_func(*args, **kwargs):
-            try:
-                out_headers, res, errs = func(*args, **kwargs)
+    def __call__(self, environ, start_response):
+        urls = self.url_map.bind_to_environ(environ)
+        try:
+            endpoint, args = urls.match()
+        except HTTPException as e:
+            return e(environ, start_response)
 
-                if out_headers:
-                    for n, v in out_headers.items():
-                        response.headers[n] = v
+        try:
+            result = endpoint(environ, **args)
 
-                if res:
-                    if errs:
-                        response.headers['ResErrors'] = json.dumps(errs)
-                    return res
+            out_headers, res, errs = result
 
-                last_exc = errs.pop('last_exc', None)
-                if last_exc:
-                    if self.debug:
-                        traceback.print_exc()
+            if res:
+                if isinstance(res, dict):
+                    res = json.dumps(res).encode('utf-8')
+                    out_headers['Content-Type'] = JSON_CT
+                    out_headers['Content-Length'] = str(len(res))
+                    res = [res]
 
-                    response.status = last_exc.status()
-                    message = last_exc.msg
-                else:
-                    response.status = 404
-                    message = 'No Resource Found'
-
-                response.content_type = JSON_CT
-                res = {'message': message}
                 if errs:
-                    res['errors'] = errs
+                    out_headers['ResErrors'] = json.dumps(errs)
 
-                err_msg = json.dumps(res)
-                response.headers['ResErrors'] = err_msg
-                return err_msg
+                start_response('200 OK', list(out_headers.items()))
+                return res
 
-            except Exception as e:
-                if self.debug:
-                    traceback.print_exc()
-                abort(500, 'Internal Error: ' + str(e))
+            else:
+                return self.send_error(out_headers, errs, start_response)
 
-        return wrap_func
+        except Exception as e:
+            message = 'Internal Error: ' + str(e)
+            status = 500
+            return self.send_error({}, {}, start_response,
+                                   message=message,
+                                   status=status)
 
 
+    def send_error(self, out_headers, errs, start_response,
+                   message='No Resource Found', status=404):
+        last_exc = errs.pop('last_exc', None)
+        if last_exc:
+            if self.debug:
+                traceback.print_exc()
+
+            status = last_exc.status()
+            message = last_exc.msg
+
+        res = {'message': message}
+        if errs:
+            res['errors'] = errs
+
+        err_msg = json.dumps(res)
+
+        headers = [('Content-Type', JSON_CT),
+                   ('Content-Length', str(len(err_msg))),
+                   ('ResErrors', err_msg)
+                  ]
+
+        start_response(str(status) + ' ' + message, headers)
+        return [err_msg.encode('utf-8')]
