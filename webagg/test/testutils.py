@@ -99,7 +99,7 @@ class LiveServerTests(object):
                                    {'live': LiveIndexSource()})
             )
         )
-        return app.application
+        return app
 
     @classmethod
     def teardown_class(cls):

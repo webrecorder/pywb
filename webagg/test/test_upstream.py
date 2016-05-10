@@ -31,7 +31,7 @@ class TestUpstream(LiveServerTests, BaseTestClass):
         )
 
         self.base_url = base_url
-        self.testapp = webtest.TestApp(app.application)
+        self.testapp = webtest.TestApp(app)
 
 
     def test_live_paths(self):

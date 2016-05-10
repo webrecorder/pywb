@@ -62,7 +62,7 @@ class TestResAgg(FakeRedisTests, BaseTestClass):
         app.add_route('/empty', HandlerSeq([]))
         app.add_route('/invalid', DefaultResourceHandler([SimpleAggregator({'invalid': 'should not be a callable'})]))
 
-        cls.testapp = webtest.TestApp(app.application)
+        cls.testapp = webtest.TestApp(app)
 
     def _check_uri_date(self, resp, uri, dt):
         buff = BytesIO(resp.body)
