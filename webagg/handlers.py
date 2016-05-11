@@ -6,6 +6,8 @@ from pywb.utils.wbexception import NotFoundException
 from pywb.cdx.query import CDXQuery
 from pywb.cdx.cdxdomainspecific import load_domain_specific_cdx_rules
 
+import six
+
 
 #=============================================================================
 def to_cdxj(cdx_iter, fields):
@@ -112,11 +114,11 @@ class IndexHandler(object):
         content_type, res = handler(cdx_iter, fields)
         out_headers = {'Content-Type': content_type}
 
-        def check_str(res):
-            for x in res:
-                if isinstance(x, str):
-                    x = x.encode('utf-8')
-                yield x
+        def check_str(lines):
+            for line in lines:
+                if isinstance(line, six.text_type):
+                    line = line.encode('utf-8')
+                yield line
 
         return out_headers, check_str(res), errs
 
