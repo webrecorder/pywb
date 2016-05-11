@@ -128,7 +128,7 @@ class BaseWARCWriter(object):
         warcinfo.seek(0)
 
         record = ArcWarcRecord('warc', 'warcinfo', headers, warcinfo,
-                               None, '', len(warcinfo.getbuffer()))
+                               None, '', len(warcinfo.getvalue()))
 
         return record
 

@@ -6,6 +6,7 @@ import traceback
 import json
 
 from six.moves.urllib.parse import parse_qsl
+import six
 
 JSON_CT = 'application/json; charset=utf-8'
 
@@ -66,31 +67,32 @@ class ResAggApp(object):
 
             out_headers, res, errs = result
 
-            if res:
-                if isinstance(res, dict):
-                    res = json.dumps(res).encode('utf-8')
-                    out_headers['Content-Type'] = JSON_CT
-                    out_headers['Content-Length'] = str(len(res))
-                    res = [res]
+            if not res:
+                return self.send_error(errs, start_response)
 
-                if errs:
-                    out_headers['ResErrors'] = json.dumps(errs)
+            if isinstance(res, dict):
+                res = self.json_encode(res, out_headers)
 
-                start_response('200 OK', list(out_headers.items()))
-                return res
+            if errs:
+                out_headers['ResErrors'] = json.dumps(errs)
 
-            else:
-                return self.send_error(out_headers, errs, start_response)
+            start_response('200 OK', list(out_headers.items()))
+            return res
 
         except Exception as e:
             message = 'Internal Error: ' + str(e)
             status = 500
-            return self.send_error({}, {}, start_response,
+            return self.send_error({}, start_response,
                                    message=message,
                                    status=status)
 
+    def json_encode(self, res, out_headers):
+        res = json.dumps(res).encode('utf-8')
+        out_headers['Content-Type'] = JSON_CT
+        out_headers['Content-Length'] = str(len(res))
+        return [res]
 
-    def send_error(self, out_headers, errs, start_response,
+    def send_error(self, errs, start_response,
                    message='No Resource Found', status=404):
         last_exc = errs.pop('last_exc', None)
         if last_exc:
@@ -104,12 +106,15 @@ class ResAggApp(object):
         if errs:
             res['errors'] = errs
 
-        err_msg = json.dumps(res)
+        out_headers = {}
+        res = self.json_encode(res, out_headers)
 
-        headers = [('Content-Type', JSON_CT),
-                   ('Content-Length', str(len(err_msg))),
-                   ('ResErrors', err_msg)
-                  ]
+        if six.PY3:
+            out_headers['ResErrors'] = res[0].decode('utf-8')
+        else:
+            out_headers['ResErrors'] = res[0]
+            message = message.encode('utf-8')
 
-        start_response(str(status) + ' ' + message, headers)
-        return [err_msg.encode('utf-8')]
+        message = str(status) + ' ' + message
+        start_response(message, list(out_headers.items()))
+        return res
