@@ -29,15 +29,18 @@ class WritableRedisIndexer(RedisIndexSource):
 
         self.rel_path_template = kwargs.get('rel_path_template', '')
         self.file_key_template = kwargs.get('file_key_template', '')
+        self.full_warc_prefix = kwargs.get('full_warc_prefix', '')
         self.dupe_policy = kwargs.get('dupe_policy', WriteRevisitDupePolicy())
 
     def add_warc_file(self, full_filename, params):
         rel_path = res_template(self.rel_path_template, params)
-        filename = os.path.relpath(full_filename, rel_path)
+        rel_filename = os.path.relpath(full_filename, rel_path)
 
         file_key = res_template(self.file_key_template, params)
 
-        self.redis.hset(file_key, filename, full_filename)
+        full_load_path = self.full_warc_prefix + full_filename
+
+        self.redis.hset(file_key, rel_filename, full_load_path)
 
     def add_urls_to_index(self, stream, params, filename, length):
         rel_path = res_template(self.rel_path_template, params)
