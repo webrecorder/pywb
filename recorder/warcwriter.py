@@ -259,7 +259,7 @@ class Digester(object):
 # ============================================================================
 class MultiFileWARCWriter(BaseWARCWriter):
     def __init__(self, dir_template, filename_template=None, max_size=0,
-                 *args, **kwargs):
+                 max_idle_secs=1800, *args, **kwargs):
         super(MultiFileWARCWriter, self).__init__(*args, **kwargs)
 
         if not filename_template:
@@ -272,6 +272,10 @@ class MultiFileWARCWriter(BaseWARCWriter):
         self.dir_template = dir_template
         self.filename_template = filename_template
         self.max_size = max_size
+        if max_idle_secs > 0:
+            self.max_idle_time = datetime.timedelta(seconds=max_idle_secs)
+        else:
+            self.max_idle_time = None
 
         self.fh_cache = {}
 
@@ -300,7 +304,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
         fcntl.flock(fh, fcntl.LOCK_UN)
         fh.close()
 
-    def close_file(self, full_dir):
+    def close_dir(self, full_dir):
         #full_dir = res_template(self.dir_template, params)
         result = self.fh_cache.pop(full_dir, None)
         if not result:
@@ -371,12 +375,29 @@ class MultiFileWARCWriter(BaseWARCWriter):
                 fcntl.flock(out, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 self.fh_cache[full_dir] = (out, filename)
 
-    def close(self):
-        for n, v in self.fh_cache.items():
+    def iter_open_files(self):
+        for n, v in list(self.fh_cache.items()):
             out, filename = v
+            yield n, out, filename
+
+    def close(self):
+        for dirname, out, filename in self.iter_open_files():
             self._close_file(out)
 
         self.fh_cache = {}
+
+    def close_idle_files(self):
+        if not self.max_idle_time:
+            return
+
+        now = datetime.datetime.now()
+
+        for dirname, out, filename in self.iter_open_files():
+            mtime = os.path.getmtime(filename)
+            mtime = datetime.datetime.fromtimestamp(mtime)
+            if (now - mtime) > self.max_idle_time:
+                print('Closing idle ' + filename)
+                self.close_dir(dirname)
 
 
 # ============================================================================

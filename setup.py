@@ -36,6 +36,7 @@ setup(
         ],
     install_requires=[
         'pywb>=0.30.0',
+        'werkzeug',
         ],
     dependency_links=[
         #'git+https://github.com/ikreymer/pywb.git@develop#egg=pywb-0.30.0-develop',

@@ -365,6 +365,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         self._test_all_warcs('/warcs/FOO/', 1)
 
+        # Check two records in WARC
         r = FakeStrictRedis.from_url('redis://localhost/2')
         res = r.zrangebylex('FOO:cdxj', '[org,httpbin)/', '(org,httpbin,')
         assert len(res) == 2
@@ -388,7 +389,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         assert len(writer.fh_cache) == 1
 
-        writer.close_file(self.root_dir + '/warcs/FOO/')
+        writer.close_dir(self.root_dir + '/warcs/FOO/')
         #writer.close_file({'param.recorder.coll': 'FOO'})
 
         assert len(writer.fh_cache) == 0
@@ -402,6 +403,46 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         warcs = r.hgetall('FOO:warc')
         assert len(warcs) == 2
+
+    def test_record_multiple_writes_rollover_idle(self):
+        warc_path = to_path(self.root_dir + '/warcs/GOO/ABC-{hostname}-{timestamp}.warc.gz')
+
+        rel_path = self.root_dir + '/warcs/'
+
+        dedup_index = WritableRedisIndexer(redis_url='redis://localhost/2/{coll}:cdxj',
+                        file_key_template='{coll}:warc',
+                        rel_path_template=rel_path)
+
+        writer = MultiFileWARCWriter(warc_path, dedup_index=dedup_index, max_idle_secs=0.9)
+        recorder_app = RecorderApp(self.upstream_url, writer)
+
+        # First Record
+        resp = self._test_warc_write(recorder_app, 'httpbin.org',
+                            '/get?foo=bar', '&param.recorder.coll=GOO')
+
+        assert b'HTTP/1.1 200 OK' in resp.body
+        assert b'"foo": "bar"' in resp.body
+
+        # Second Record
+        resp = self._test_warc_write(recorder_app, 'httpbin.org',
+                            '/get?boo=far', '&param.recorder.coll=GOO')
+
+        assert b'HTTP/1.1 200 OK' in resp.body
+        assert b'"boo": "far"' in resp.body
+
+        self._test_all_warcs('/warcs/GOO/', 1)
+
+        time.sleep(1.0)
+        writer.close_idle_files()
+
+        # Third Record
+        resp = self._test_warc_write(recorder_app, 'httpbin.org',
+                            '/get?goo=bar', '&param.recorder.coll=GOO')
+
+        assert b'HTTP/1.1 200 OK' in resp.body
+        assert b'"goo": "bar"' in resp.body
+
+        self._test_all_warcs('/warcs/GOO/', 2)
 
     def test_warcinfo_record(self):
         simplewriter = SimpleTempWARCWriter(gzip=False)
