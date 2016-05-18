@@ -372,8 +372,8 @@ class S3Loader(object):
         parts = urlsplit(url)
 
         if parts.username and parts.password:
-            aws_access_key_id = parts.username
-            aws_secret_access_key = parts.password
+            aws_access_key_id = unquote_plus(parts.username)
+            aws_secret_access_key = unquote_plus(parts.password)
             bucket_name = parts.netloc.split('@', 1)[-1]
         else:
             bucket_name = parts.netloc
