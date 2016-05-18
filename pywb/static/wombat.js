@@ -292,6 +292,7 @@ var wombat_internal = function($wbwindow) {
         var parser = make_parser(extract_orig($wbwindow.document.baseURI));
         var href = parser.href;
         var hash = href.lastIndexOf("#");
+
         if (hash >= 0) {
             href = href.substring(0, hash);
         }
@@ -300,8 +301,6 @@ var wombat_internal = function($wbwindow) {
 
         if (lastslash >= 0 && lastslash != (href.length - 1)) {
             href = href.substring(0, lastslash + 1);
-        } else {
-            href += "/";
         }
 
         parser.href = href + url;
