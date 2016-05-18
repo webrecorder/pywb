@@ -37,11 +37,11 @@ Traceback (most recent call last):
 IOError: [Errno 2] No such file or directory: '_x_no_such_file_'
 
 # HMAC Cookie Maker
->>> print_str(BlockLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read())
+>>> print_str(BlockLoader(cookie_maker=HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read())
 'Example Domain'
 
 # fixed cookie, range request
->>> print_str(BlockLoader('some=value').load('http://example.com', 41, 14).read())
+>>> print_str(BlockLoader(cookie='some=value').load('http://example.com', 41, 14).read())
 'Example Domain'
 
 # range request

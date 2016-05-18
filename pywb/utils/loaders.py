@@ -236,23 +236,34 @@ def read_last_line(fh, offset=256):
 
 
 #=================================================================
-class BlockLoader(object):
+class BaseLoader(object):
+    def __init__(self, **kwargs):
+        pass
+
+    def load(self, url, offset=0, length=-1):
+        raise NotImplemented()
+
+
+#=================================================================
+class BlockLoader(BaseLoader):
     """
     a loader which can stream blocks of content
     given a uri, offset and optional length.
     Currently supports: http/https and file/local file system
     """
 
-    def __init__(self, *args, **kwargs):
+    loaders = {}
+    profile_loader = None
+
+    def __init__(self, **kwargs):
         self.cached = {}
-        self.args = args
         self.kwargs = kwargs
 
     def load(self, url, offset=0, length=-1):
-        loader = self._get_loader_for(url)
+        loader = self._get_loader_for_url(url)
         return loader.load(url, offset, length)
 
-    def _get_loader_for(self, url):
+    def _get_loader_for_url(self, url):
         """
         Determine loading method based on uri
         """
@@ -266,14 +277,41 @@ class BlockLoader(object):
         if loader:
             return loader
 
-        loader_cls = LOADERS.get(type_)
-        if not loader_cls:
-            raise IOError('No Loader for type: ' + type_)
+        if '+' in type_:
+            profile_name, scheme = type_.split('+', 1)
+        else:
+            profile_name = ''
+            scheme = type_
 
-        loader = loader_cls(*self.args, **self.kwargs)
+        loader_cls = self._get_loader_class_for_type(scheme)
+
+        if not loader_cls:
+            raise IOError('No Loader for type: ' + scheme)
+
+        profile = self.kwargs
+
+        if self.profile_loader:
+            profile = self.profile_loader(profile_name, scheme)
+
+        loader = loader_cls(**profile)
+
         self.cached[type_] = loader
         return loader
 
+    def _get_loader_class_for_type(self, type_):
+        loader_cls = self.loaders.get(type_)
+        return loader_cls
+
+    @staticmethod
+    def init_default_loaders():
+        BlockLoader.loaders['http'] = HttpLoader
+        BlockLoader.loaders['https'] = HttpLoader
+        BlockLoader.loaders['s3'] = S3Loader
+        BlockLoader.loaders['file'] = LocalFileLoader
+
+    @staticmethod
+    def set_profile_loader(src):
+        BlockLoader.profile_loader = src
 
     @staticmethod
     def _make_range_header(offset, length):
@@ -286,10 +324,7 @@ class BlockLoader(object):
 
 
 #=================================================================
-class LocalFileLoader(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
+class LocalFileLoader(BaseLoader):
     def load(self, url, offset=0, length=-1):
         """
         Load a file-like reader from the local file system
@@ -329,9 +364,11 @@ class LocalFileLoader(object):
 
 
 #=================================================================
-class HttpLoader(object):
-    def __init__(self, cookie_maker=None, *args, **kwargs):
-        self.cookie_maker = cookie_maker
+class HttpLoader(BaseLoader):
+    def __init__(self, **kwargs):
+        self.cookie_maker = kwargs.get('cookie_maker')
+        if not self.cookie_maker:
+            self.cookie_maker = kwargs.get('cookie')
         self.session = None
 
     def load(self, url, offset, length):
@@ -357,17 +394,19 @@ class HttpLoader(object):
 
 
 #=================================================================
-class S3Loader(object):
-    def __init__(self, *args, **kwargs):
+class S3Loader(BaseLoader):
+    def __init__(self, **kwargs):
         self.s3conn = None
+        self.aws_access_key_id = kwargs.get('aws_access_key_id')
+        self.aws_secret_access_key = kwargs.get('aws_secret_access_key')
 
     def load(self, url, offset, length):
         if not s3_avail:  #pragma: no cover
            raise IOError('To load from s3 paths, ' +
                           'you must install boto: pip install boto')
 
-        aws_access_key_id = None
-        aws_secret_access_key = None
+        aws_access_key_id = self.aws_access_key_id
+        aws_secret_access_key = self.aws_secret_access_key
 
         parts = urlsplit(url)
 
@@ -495,12 +534,6 @@ class LimitReader(object):
 
         return stream
 
-
-#=================================================================
-LOADERS = {'http': HttpLoader,
-           'https': HttpLoader,
-           's3': S3Loader,
-           'file': LocalFileLoader
-          }
-
+# ============================================================================
+BlockLoader.init_default_loaders()
 
