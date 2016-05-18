@@ -366,24 +366,36 @@ class S3Loader(object):
            raise IOError('To load from s3 paths, ' +
                           'you must install boto: pip install boto')
 
-        if not self.s3conn:
-            try:
-                self.s3conn = connect_s3()
-            except Exception:  #pragma: no cover
-                self.s3conn = connect_s3(anon=True)
+        aws_access_key_id = None
+        aws_secret_access_key = None
 
         parts = urlsplit(url)
 
-        bucket = self.s3conn.get_bucket(parts.netloc)
+        if parts.username and parts.password:
+            aws_access_key_id = parts.username
+            aws_secret_access_key = parts.password
+            bucket_name = parts.netloc.split('@', 1)[-1]
+        else:
+            bucket_name = parts.netloc
 
-        headers = {'Range': BlockLoader._make_range_header(offset, length)}
+        if not self.s3conn:
+            try:
+                self.s3conn = connect_s3(aws_access_key_id, aws_secret_access_key)
+            except Exception:  #pragma: no cover
+                self.s3conn = connect_s3(anon=True)
+
+        bucket = self.s3conn.get_bucket(bucket_name)
 
         key = bucket.get_key(parts.path)
 
-        result = key.get_contents_as_string(headers=headers)
-        key.close()
+        if offset == 0 and length == -1:
+            headers = {}
+        else:
+            headers = {'Range': BlockLoader._make_range_header(offset, length)}
 
-        return BytesIO(result)
+        # Read range
+        key.open_read(headers=headers)
+        return key
 
 
 #=================================================================
