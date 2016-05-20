@@ -68,6 +68,7 @@ class FakeRedisTests(object):
     @classmethod
     def teardown_class(cls):
         super(FakeRedisTests, cls).teardown_class()
+        FakeStrictRedis().flushall()
         cls.redismock.stop()
 
 
