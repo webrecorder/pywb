@@ -1,6 +1,8 @@
 import re
 import six
 import string
+import yaml
+import os
 
 from contextlib import closing
 
@@ -173,4 +175,26 @@ def chunk_encode_iter(orig_iter):
 
     yield b'0\r\n\r\n'
 
+
+#=============================================================================
+def load_config(main_env_var, main_default_file='',
+                overlay_env_var='', overlay_file=''):
+
+    configfile = os.environ.get(main_env_var, main_default_file)
+
+    if configfile:
+        # Load config
+        with open(configfile, 'rb') as fh:
+            config = yaml.load(fh)
+
+    else:
+        config = {}
+
+    overlay_configfile = os.environ.get(overlay_env_var, overlay_file)
+
+    if overlay_configfile:
+        with open(overlay_configfile, 'rb') as fh:
+            config.update(yaml.load(fh))
+
+    return config
 
