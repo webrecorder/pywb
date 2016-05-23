@@ -38,27 +38,21 @@ function make_url(url, ts, mod)
     }
 }
 
-function push_state(url, timestamp, request_ts, capture_str, is_live) {
+function push_state(state) {
     var frame = document.getElementById(IFRAME_ID).contentWindow;
     if (frame.WB_wombat_location) {
         var curr_href = frame.WB_wombat_location.href;
 
         // If not current url, don't update
-        if (url != curr_href) {
+        if (state.url != curr_href) {
             return;
         }
     }
 
-    var state = {}
-    state.timestamp = timestamp;
-    state.request_ts = request_ts;
-    state.outer_url = make_url(url, state.request_ts, wbinfo.frame_mod);
-    state.inner_url = make_url(url, state.request_ts, wbinfo.replay_mod);
-    state.url = url;
-    state.capture_str = capture_str;
-    state.is_live = is_live;
+    state.outer_url = make_url(state.url, state.request_ts, wbinfo.frame_mod);
+    state.inner_url = make_url(state.url, state.request_ts, wbinfo.replay_mod);
 
-    var canon_url = make_url(url, state.request_ts, "");
+    var canon_url = make_url(state.url, state.request_ts, "");
     if (window.location.href != canon_url) {
         window.history.replaceState(state, "", canon_url);
     }
@@ -157,7 +151,13 @@ function iframe_loaded(event) {
         request_ts = ts;
     }
 
-    update_wb_url(url, ts, request_ts, is_live);
+    var state = {}
+    state["url"] = url;
+    state["ts"] = ts;
+    state["request_ts"] = request_ts;
+    state["is_live"] = is_live
+
+    update_wb_url(state);
 }
 
 
@@ -165,12 +165,18 @@ function init_pm() {
     var frame = document.getElementById(IFRAME_ID).contentWindow;
 
     window.addEventListener("message", function(event) {
-        // Pass to replay frame
         if (event.source == window.parent) {
+            // Pass to replay frame
             frame.postMessage(event.data, "*");
         } else if (event.source == frame) {
-        // Pass to parent
-            window.parent.postMessage(event.data, "*");
+
+            // Check if iframe url change message
+            if (typeof(event.data) == "object" && event.data["wb_type"]) {
+                update_wb_url(event.data);
+            } else {
+                // Pass to parent
+                window.parent.postMessage(event.data, "*");
+            }
         }
     });
 
@@ -181,14 +187,14 @@ function init_pm() {
 }
 
 
-function update_wb_url(url, ts, request_ts, is_live) {
-    if (curr_state.url == url && curr_state.timestamp == ts) {
+function update_wb_url(state) {
+    if (curr_state.url == state.url && curr_state.ts == state.ts) {
         return;
     }
 
-    capture_str = _wb_js.ts_to_date(ts, true);
+    state['capture_str'] = _wb_js.ts_to_date(state.ts, true);
 
-    push_state(url, ts, request_ts, capture_str, is_live);
+    push_state(state);
 }
 
 // Load Banner
@@ -237,3 +243,4 @@ function init_hash_connect() {
 }
 
 document.addEventListener("DOMContentLoaded", init_hash_connect);
+

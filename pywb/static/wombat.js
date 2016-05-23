@@ -718,11 +718,23 @@ var wombat_internal = function($wbwindow) {
 
             orig_func.call(this, state_obj, title, url);
 
-            if ($wbwindow.__WB_top_frame && $wbwindow != $wbwindow.__WB_top_frame && $wbwindow.__WB_top_frame.update_wb_url) {
-                $wbwindow.__WB_top_frame.update_wb_url($wbwindow.WB_wombat_location.href,
-                                                   wb_info.timestamp,
-                                                   wb_info.request_ts,
-                                                   wb_info.is_live);
+            //if ($wbwindow.__WB_top_frame && $wbwindow != $wbwindow.__WB_top_frame && $wbwindow.__WB_top_frame.update_wb_url) {
+            //    $wbwindow.__WB_top_frame.update_wb_url($wbwindow.WB_wombat_location.href,
+            //                                       wb_info.timestamp,
+            //                                       wb_info.request_ts,
+            //                                       wb_info.is_live);
+            //}
+            if ($wbwindow.__WB_top_frame && $wbwindow != $wbwindow.__WB_top_frame) {
+                var message = {
+                           "url": url,
+                           "ts": wb_info.timestamp,
+                           "request_ts": wb_info.request_ts,
+                           "is_live": wb_info.is_live,
+                           "title": title,
+                           "wb_type": func_name,
+                          }
+
+                $wbwindow.__WB_top_frame.postMessage(message, "*");
             }
         }
 
