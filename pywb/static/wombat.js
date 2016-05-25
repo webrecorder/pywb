@@ -1796,19 +1796,22 @@ var wombat_internal = function($wbwindow) {
     //============================================
     function init_open_override()
     {
-        if (!$wbwindow.Window.prototype.open) {
-            return;
+        var orig = $wbwindow.open;
+
+        if ($wbwindow.Window.prototype.open) {
+            orig = $wbwindow.Window.prototype.open;
         }
 
-        var orig = $wbwindow.Window.prototype.open;
-
         var open_rewritten = function(strUrl, strWindowName, strWindowFeatures) {
-            strUrl = rewrite_url(strUrl);
+            strUrl = rewrite_url(strUrl, false, "");
             return orig.call(this, strUrl, strWindowName, strWindowFeatures);
         }
 
         $wbwindow.open = open_rewritten;
-        $wbwindow.Window.prototype.open = open_rewritten;
+
+        if ($wbwindow.Window.prototype.open) {
+            $wbwindow.Window.prototype.open = open_rewritten;
+        }
 
         for (var i = 0; i < $wbwindow.frames.length; i++) {
             try {
@@ -2099,7 +2102,7 @@ var wombat_internal = function($wbwindow) {
 
     //============================================
     function get_final_url(prefix, mod, url) {
-        if (!mod) {
+        if (mod == undefined) {
             mod = wb_info.mod;
         }
 
