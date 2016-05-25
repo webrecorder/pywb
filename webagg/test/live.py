@@ -27,7 +27,7 @@ def simpleapp():
                                 './testdata/'
         )
     )
-    return app.application
+    return app
 
 
 

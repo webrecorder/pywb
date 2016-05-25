@@ -18,7 +18,8 @@ from six.moves.urllib.parse import urlsplit
 import uuid
 import six
 import itertools
-#import requests
+
+from requests.models import PreparedRequest
 import urllib3
 
 
@@ -240,6 +241,10 @@ class LiveWebLoader(BaseLoader):
 
         method = input_req.get_req_method()
         data = input_req.get_req_body()
+
+        p = PreparedRequest()
+        p.prepare_url(load_url, None)
+        load_url = p.url
 
         try:
             upstream_res = self.pool.urlopen(method=method,
