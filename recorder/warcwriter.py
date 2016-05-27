@@ -21,8 +21,11 @@ from pywb.utils.loaders import LimitReader, to_native_str
 from pywb.utils.bufferedreaders import BufferedReader
 from pywb.utils.timeutils import timestamp20_now, datetime_to_iso_date
 
+from pywb.utils.statusandheaders import StatusAndHeadersParser
 from pywb.warc.recordloader import ArcWarcRecord
+from pywb.warc.recordloader import ArcWarcRecordLoader
 
+from requests.structures import CaseInsensitiveDict
 from webagg.utils import ParamFormatter, res_template
 
 from recorder.filters import ExcludeNone
@@ -51,6 +54,8 @@ class BaseWARCWriter(object):
         self.header_filter = header_filter
         self.hostname = gethostname()
 
+        self.parser = StatusAndHeadersParser([], verify=False)
+
     def ensure_digest(self, record):
         block_digest = record.rec_headers.get('WARC-Block-Digest')
         payload_digest = record.rec_headers.get('WARC-Payload-Digest')
@@ -62,7 +67,8 @@ class BaseWARCWriter(object):
 
         pos = record.stream.tell()
 
-        block_digester.update(record.status_headers.headers_buff)
+        if record.status_headers and hasattr(record.status_headers, 'headers_buff'):
+            block_digester.update(record.status_headers.headers_buff)
 
         while True:
             buf = record.stream.read(self.BUFF_SIZE)
@@ -100,11 +106,6 @@ class BaseWARCWriter(object):
         if resp_id:
             req.rec_headers['WARC-Concurrent-To'] = resp_id
 
-        self._set_header_buff(req)
-        self._set_header_buff(resp)
-
-        self.ensure_digest(resp)
-
         resp = self._check_revisit(resp, params)
         if not resp:
             print('Skipping due to dedup')
@@ -113,13 +114,45 @@ class BaseWARCWriter(object):
         params['_formatter'] = ParamFormatter(params, name=self.rec_source_name)
         self._do_write_req_resp(req, resp, params)
 
+    def create_req_record(self, req_headers, payload, type_, content_type=''):
+        len_ = payload.tell()
+        payload.seek(0)
+
+        warc_headers = req_headers
+        status_headers = self.parser.parse(payload)
+
+        record = ArcWarcRecord('warc', type_, warc_headers, payload,
+                                status_headers, content_type, len_)
+
+        self._set_header_buff(record)
+
+        return record
+
+    def create_resp_record(self, resp_headers, payload, type_, content_type=''):
+        len_ = payload.tell()
+        payload.seek(0)
+
+        warc_headers = self.parser.parse(payload)
+        warc_headers = CaseInsensitiveDict(warc_headers.headers)
+
+        status_headers = self.parser.parse(payload)
+
+        record = ArcWarcRecord('warc', type_, warc_headers, payload,
+                              status_headers, content_type, len_)
+
+        self._set_header_buff(record)
+
+        self.ensure_digest(record)
+
+        return record
+
     def create_warcinfo_record(self, filename, **kwargs):
-        headers = {}
-        headers['WARC-Record_ID'] = self._make_warc_id()
-        headers['WARC-Type'] = 'warcinfo'
+        warc_headers = {}
+        warc_headers['WARC-Record-ID'] = self._make_warc_id()
+        warc_headers['WARC-Type'] = 'warcinfo'
         if filename:
-            headers['WARC-Filename'] = filename
-        headers['WARC-Date'] = datetime_to_iso_date(datetime.datetime.utcnow())
+            warc_headers['WARC-Filename'] = filename
+        warc_headers['WARC-Date'] = datetime_to_iso_date(datetime.datetime.utcnow())
 
         warcinfo = BytesIO()
         for n, v in six.iteritems(kwargs):
@@ -127,8 +160,26 @@ class BaseWARCWriter(object):
 
         warcinfo.seek(0)
 
-        record = ArcWarcRecord('warc', 'warcinfo', headers, warcinfo,
+        record = ArcWarcRecord('warc', 'warcinfo', warc_headers, warcinfo,
                                None, '', len(warcinfo.getvalue()))
+
+        return record
+
+    def create_custom_record(self, uri, payload, record_type, content_type,
+                             warc_headers=None):
+        len_ = payload.tell()
+        payload.seek(0)
+
+        warc_headers = warc_headers or {}
+        warc_headers['WARC-Record-ID'] = self._make_warc_id()
+        warc_headers['WARC-Type'] = record_type
+        warc_headers['WARC-Target-URI'] = uri
+        warc_headers['WARC-Date'] = datetime_to_iso_date(datetime.datetime.utcnow())
+
+        record = ArcWarcRecord('warc', record_type, warc_headers, payload,
+                               None, content_type, len_)
+
+        self.ensure_digest(record)
 
         return record
 
@@ -171,9 +222,10 @@ class BaseWARCWriter(object):
 
         content_type = record.content_type
         if not content_type:
-            content_type = self.WARC_RECORDS[record.rec_headers['WARC-Type']]
+            content_type = self.WARC_RECORDS.get(record.rec_headers['WARC-Type'])
 
-        self._header(out, 'Content-Type', content_type)
+        if content_type:
+            self._header(out, 'Content-Type', content_type)
 
         if record.rec_headers['WARC-Type'] == 'revisit':
             http_headers_only = True
@@ -320,6 +372,11 @@ class MultiFileWARCWriter(BaseWARCWriter):
     def _is_write_req(self, req, params):
         return True
 
+    def write_record(self, record, params=None):
+        params = params or {}
+        params['_formatter'] = ParamFormatter(params, name=self.rec_source_name)
+        self._do_write_req_resp(None, record, params)
+
     def _do_write_req_resp(self, req, resp, params):
         full_dir = res_template(self.dir_template, params)
 
@@ -340,10 +397,10 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
             start = out.tell()
 
-            if self._is_write_resp(resp, params):
+            if resp and self._is_write_resp(resp, params):
                 self._write_warc_record(out, resp)
 
-            if self._is_write_req(req, params):
+            if req and self._is_write_req(req, params):
                 self._write_warc_record(out, req)
 
             out.flush()
@@ -420,7 +477,7 @@ class SimpleTempWARCWriter(BaseWARCWriter):
         self._write_warc_record(self.out, resp)
         self._write_warc_record(self.out, req)
 
-    def write_record(self, record):
+    def write_record(self, record, params=None):
         self._write_warc_record(self.out, record)
 
     def get_buffer(self):

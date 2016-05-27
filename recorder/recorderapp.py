@@ -1,10 +1,6 @@
 from webagg.utils import StreamIter, chunk_encode_iter, BUFF_SIZE
 from webagg.inputrequest import DirectWSGIInputRequest
 
-from pywb.utils.statusandheaders import StatusAndHeadersParser
-from pywb.warc.recordloader import ArcWarcRecord
-from pywb.warc.recordloader import ArcWarcRecordLoader
-
 from recorder.filters import SkipRangeRequestFilter, CollectionFilter
 
 from six.moves.urllib.parse import parse_qsl
@@ -27,7 +23,6 @@ class RecorderApp(object):
         self.upstream_host = upstream_host
 
         self.writer = writer
-        self.parser = StatusAndHeadersParser([], verify=False)
 
         self.write_queue = gevent.queue.Queue()
         gevent.spawn(self._write_loop)
@@ -62,8 +57,8 @@ class RecorderApp(object):
 
             req_head, req_pay, resp_head, resp_pay, params = result
 
-            req = self._create_req_record(req_head, req_pay, 'request')
-            resp = self._create_resp_record(resp_head, resp_pay, 'response')
+            req = self.writer.create_req_record(req_head, req_pay, 'request')
+            resp = self.writer.create_resp_record(resp_head, resp_pay, 'response')
 
             self.writer.write_req_resp(req, resp, params)
 
@@ -77,47 +72,66 @@ class RecorderApp(object):
             except Exception as e:
                 traceback.print_exc()
 
-    def _create_req_record(self, req_headers, payload, type_, ct=''):
-        len_ = payload.tell()
-        payload.seek(0)
-
-        warc_headers = req_headers
-        status_headers = self.parser.parse(payload)
-
-        record = ArcWarcRecord('warc', type_, warc_headers, payload,
-                                status_headers, ct, len_)
-        return record
-
-    def _create_resp_record(self, resp_headers, payload, type_, ct=''):
-        len_ = payload.tell()
-        payload.seek(0)
-
-        warc_headers = self.parser.parse(payload)
-        warc_headers = CaseInsensitiveDict(warc_headers.headers)
-
-        status_headers = self.parser.parse(payload)
-
-        record = ArcWarcRecord('warc', type_, warc_headers, payload,
-                              status_headers, ct, len_)
-        return record
-
     def send_error(self, exc, start_response):
-        message = json.dumps({'error': repr(exc)})
+        return self.send_message({'error': repr(exc)},
+                                 '400 Bad Request',
+                                 start_response)
+
+    def send_message(self, msg, status, start_response):
+        message = json.dumps(msg)
         headers = [('Content-Type', 'application/json; charset=utf-8'),
                    ('Content-Length', str(len(message)))]
 
-        start_response('400 Bad Request', headers)
+        start_response(status, headers)
         return [message.encode('utf-8')]
+
+    def _put_record(self, request_uri, input_buff, record_type,
+                    headers, params, start_response):
+
+        req_stream = ReqWrapper(input_buff, headers)
+
+        while True:
+            buff = req_stream.read()
+            if not buff:
+                break
+
+        content_type = headers.get('Content-Type')
+
+        record = self.writer.create_custom_record(params['url'],
+                                                  req_stream.out,
+                                                  record_type,
+                                                  content_type,
+                                                  req_stream.headers)
+
+        self.writer.write_record(record, params)
+
+        return self.send_message({'success': 'true'},
+                                 '200 OK',
+                                 start_response)
+
 
     def __call__(self, environ, start_response):
         input_req = DirectWSGIInputRequest(environ)
-        headers = input_req.get_req_headers()
-        method = input_req.get_req_method()
+
+        params = dict(parse_qsl(environ.get('QUERY_STRING')))
+
         request_uri = input_req.get_full_request_uri()
 
         input_buff = input_req.get_req_body()
 
-        params = dict(parse_qsl(environ.get('QUERY_STRING')))
+        headers = input_req.get_req_headers()
+
+        method = input_req.get_req_method()
+
+        # write request body as metadata/resource
+        put_record = params.get('put_record')
+        if put_record and method in ('PUT', 'POST'):
+            return self._put_record(request_uri,
+                                    input_buff,
+                                    put_record,
+                                    headers,
+                                    params,
+                                    start_response)
 
         skipping = any(x.skip_request(headers) for x in self.skip_filters)
 
