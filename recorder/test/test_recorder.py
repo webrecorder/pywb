@@ -52,9 +52,16 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         cls.upstream_url = 'http://localhost:{0}'.format(cls.server.port)
 
-    def _get_dedup_index(self, dupe_policy=WriteRevisitDupePolicy()):
-        dedup_index = WritableRedisIndexer(redis_url='redis://localhost/2/{user}:{coll}:cdxj',
-                        file_key_template='{user}:{coll}:warc',
+    def _get_dedup_index(self, dupe_policy=WriteRevisitDupePolicy(), user=True):
+        if user:
+            file_key_template = '{user}:{coll}:warc'
+            redis_url = 'redis://localhost/2/{user}:{coll}:cdxj'
+        else:
+            file_key_template = '{coll}:warc'
+            redis_url = 'redis://localhost/2/{coll}:cdxj'
+
+        dedup_index = WritableRedisIndexer(redis_url=redis_url,
+                        file_key_template=file_key_template,
                         rel_path_template=self.root_dir + '/warcs/',
                         dupe_policy=dupe_policy)
 
@@ -340,10 +347,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         rel_path = self.root_dir + '/warcs/'
 
-        dedup_index = WritableRedisIndexer(redis_url='redis://localhost/2/{coll}:cdxj',
-                        file_key_template='{coll}:warc',
-                        rel_path_template=rel_path)
-
+        dedup_index = self._get_dedup_index(user=False)
 
         writer = MultiFileWARCWriter(warc_path, dedup_index=dedup_index)
         recorder_app = RecorderApp(self.upstream_url, writer)
@@ -409,9 +413,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         rel_path = self.root_dir + '/warcs/'
 
-        dedup_index = WritableRedisIndexer(redis_url='redis://localhost/2/{coll}:cdxj',
-                        file_key_template='{coll}:warc',
-                        rel_path_template=rel_path)
+        dedup_index = self._get_dedup_index(user=False)
 
         writer = MultiFileWARCWriter(warc_path, dedup_index=dedup_index, max_idle_secs=0.9)
         recorder_app = RecorderApp(self.upstream_url, writer)
@@ -471,4 +473,55 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert 'json-metadata: {"foo": "bar"}\r\n' in buff
         assert 'format: WARC File Format 1.0\r\n' in buff
         assert 'json-metadata: {"foo": "bar"}\r\n' in buff
+
+    def test_record_custom_record(self):
+        dedup_index = self._get_dedup_index(user=False)
+
+        warc_path = to_path(self.root_dir + '/warcs/meta/meta.warc.gz')
+
+        recorder_app = RecorderApp(self.upstream_url,
+                        MultiFileWARCWriter(warc_path, dedup_index=dedup_index))
+
+        req_url = '/live/resource/postreq?url=custom://httpbin.org&param.recorder.coll=META&put_record=resource'
+
+        buff = b'Some Data'
+
+        testapp = webtest.TestApp(recorder_app)
+        headers = {'content-type': 'text/plain',
+                   'WARC-Custom': 'foo'
+                  }
+
+        resp = testapp.put(req_url, headers=headers, params=buff)
+
+        self._test_all_warcs('/warcs/meta', 1)
+
+        r = FakeStrictRedis.from_url('redis://localhost/2')
+
+        warcs = r.hgetall('META:warc')
+        assert len(warcs) == 1
+
+        with open(warcs[b'meta/meta.warc.gz'], 'rb') as fh:
+            decomp = DecompressingBufferedReader(fh)
+            record = ArcWarcRecordLoader().parse_record_stream(decomp)
+
+        status_headers = record.rec_headers
+        assert len(record.rec_headers.headers) == 9
+        assert status_headers.get_header('WARC-Type') == 'resource'
+        assert status_headers.get_header('WARC-Target-URI') == 'custom://httpbin.org'
+        assert status_headers.get_header('WARC-Record-ID') != ''
+        assert status_headers.get_header('WARC-Date') != ''
+        assert status_headers.get_header('WARC-Block-Digest') != ''
+        assert status_headers.get_header('WARC-Block-Digest') == status_headers.get_header('WARC-Payload-Digest')
+        assert status_headers.get_header('Content-Type') == 'text/plain'
+        assert status_headers.get_header('Content-Length') == str(len(buff))
+        assert status_headers.get_header('WARC-Custom') == 'foo'
+
+        assert record.stream.read() == buff
+
+        status_headers = record.status_headers
+        assert len(record.status_headers.headers) == 2
+
+        assert status_headers.get_header('Content-Type') == 'text/plain'
+        assert status_headers.get_header('Content-Length') == str(len(buff))
+
 

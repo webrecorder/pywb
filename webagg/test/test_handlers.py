@@ -353,8 +353,8 @@ foo=bar&test=abc"""
     def test_error_fallback_live_not_found(self):
         resp = self.testapp.get('/fallback/resource?url=http://invalid.url-not-found', status=400)
 
-        assert resp.json == {'message': 'http://invalid.url-not-found',
-                             'errors': {'LiveWebLoader': 'http://invalid.url-not-found'}}
+        assert resp.json == {'message': 'http://invalid.url-not-found/',
+                             'errors': {'LiveWebLoader': 'http://invalid.url-not-found/'}}
 
         assert resp.text == resp.headers['ResErrors']
 
