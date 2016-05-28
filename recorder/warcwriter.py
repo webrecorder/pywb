@@ -94,13 +94,9 @@ class BaseWARCWriter(object):
         url = resp.rec_headers.get('WARC-Target-URI')
         dt = resp.rec_headers.get('WARC-Date')
 
-        if not req.rec_headers.get('WARC-Record-ID'):
-            req.rec_headers['WARC-Record-ID'] = self._make_warc_id()
-
+        #req.rec_headers['Content-Type'] = req.content_type
         req.rec_headers['WARC-Target-URI'] = url
         req.rec_headers['WARC-Date'] = dt
-        req.rec_headers['WARC-Type'] = 'request'
-        #req.rec_headers['Content-Type'] = req.content_type
 
         resp_id = resp.rec_headers.get('WARC-Record-ID')
         if resp_id:
@@ -114,37 +110,47 @@ class BaseWARCWriter(object):
         params['_formatter'] = ParamFormatter(params, name=self.rec_source_name)
         self._do_write_req_resp(req, resp, params)
 
-    def create_req_record(self, req_headers, payload, type_, content_type=''):
+    def create_req_record(self, req_headers, payload):
         len_ = payload.tell()
         payload.seek(0)
 
         warc_headers = req_headers
+        warc_headers['WARC-Type'] = 'request'
+        if not warc_headers.get('WARC-Record-ID'):
+            warc_headers['WARC-Record-ID'] = self._make_warc_id()
+
         status_headers = self.parser.parse(payload)
 
-        record = ArcWarcRecord('warc', type_, warc_headers, payload,
-                                status_headers, content_type, len_)
+        record = ArcWarcRecord('warc', 'request', warc_headers, payload,
+                                status_headers, '', len_)
 
         self._set_header_buff(record)
 
         return record
 
-    def create_resp_record(self, resp_headers, payload, type_, content_type=''):
+    def read_resp_record(self, resp_headers, payload):
         len_ = payload.tell()
         payload.seek(0)
 
         warc_headers = self.parser.parse(payload)
         warc_headers = CaseInsensitiveDict(warc_headers.headers)
 
-        status_headers = self.parser.parse(payload)
+        record_type = warc_headers.get('WARC-Type', 'response')
 
-        record = ArcWarcRecord('warc', type_, warc_headers, payload,
-                              status_headers, content_type, len_)
+        if record_type == 'response':
+            status_headers = self.parser.parse(payload)
+        else:
+            status_headers = None
 
-        self._set_header_buff(record)
+        record = ArcWarcRecord('warc', record_type, warc_headers, payload,
+                              status_headers, '', len_)
+
+        if record_type == 'response':
+            self._set_header_buff(record)
 
         self.ensure_digest(record)
 
-        return record
+        return record_type, record
 
     def create_warcinfo_record(self, filename, **kwargs):
         warc_headers = {}
@@ -220,7 +226,11 @@ class BaseWARCWriter(object):
 
             self._header(out, n, v)
 
-        content_type = record.content_type
+        content_type = record.rec_headers.get('Content-Type')
+
+        if not content_type:
+            content_type = record.content_type
+
         if not content_type:
             content_type = self.WARC_RECORDS.get(record.rec_headers['WARC-Type'])
 

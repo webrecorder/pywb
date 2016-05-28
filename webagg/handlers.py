@@ -1,4 +1,4 @@
-from webagg.responseloader import  WARCPathLoader, LiveWebLoader
+from webagg.responseloader import  WARCPathLoader, LiveWebLoader, VideoLoader
 from webagg.utils import MementoUtils
 from pywb.utils.wbexception import BadRequestException, WbException
 from pywb.utils.wbexception import NotFoundException
@@ -165,6 +165,7 @@ class DefaultResourceHandler(ResourceHandler):
     def __init__(self, index_source, warc_paths=''):
         loaders = [WARCPathLoader(warc_paths, index_source),
                    LiveWebLoader(),
+                   VideoLoader()
                   ]
         super(DefaultResourceHandler, self).__init__(index_source, loaders)
 

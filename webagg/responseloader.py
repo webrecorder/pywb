@@ -13,11 +13,12 @@ from pywb.warc.resolvingloader import ResolvingLoader
 
 from six.moves.urllib.parse import urlsplit
 
-#from io import BytesIO
+from io import BytesIO
 
 import uuid
 import six
 import itertools
+import json
 
 from requests.models import PreparedRequest
 import urllib3
@@ -104,6 +105,12 @@ class BaseLoader(object):
             msg = msg.format(request_url, location_url)
             #print(msg)
             raise WbException(msg)
+
+    @staticmethod
+    def _make_warc_id(id_=None):
+        if not id_:
+            id_ = uuid.uuid1()
+        return '<urn:uuid:{0}>'.format(id_)
 
 
 #=============================================================================
@@ -230,6 +237,9 @@ class LiveWebLoader(BaseLoader):
         if not load_url:
             return None
 
+        if params.get('content_type') == VideoLoader.CONTENT_TYPE:
+            return None
+
         input_req = params['_input_req']
 
         req_headers = input_req.get_req_headers()
@@ -340,12 +350,56 @@ class LiveWebLoader(BaseLoader):
         warc_headers = StatusAndHeaders('WARC/1.0', warc_headers.items())
         return (warc_headers, http_headers_buff, upstream_res)
 
-    @staticmethod
-    def _make_warc_id(id_=None):
-        if not id_:
-            id_ = uuid.uuid1()
-        return '<urn:uuid:{0}>'.format(id_)
-
     def __str__(self):
         return  'LiveWebLoader'
+
+
+#=============================================================================
+class VideoLoader(BaseLoader):
+    CONTENT_TYPE = 'application/vnd.youtube-dl_formats+json'
+
+    def __init__(self):
+        try:
+            from youtube_dl import YoutubeDL as YoutubeDL
+        except ImportError:
+            self.ydl = None
+            return
+
+        self.ydl = YoutubeDL(dict(simulate=True,
+                                  youtube_include_dash_manifest=False))
+
+        self.ydl.add_default_info_extractors()
+
+    def load_resource(self, cdx, params):
+        load_url = cdx.get('load_url')
+        if not load_url:
+            return None
+
+        if params.get('content_type') != self.CONTENT_TYPE:
+            return None
+
+        if not self.ydl:
+            return None
+
+        info = self.ydl.extract_info(load_url)
+        info_buff = json.dumps(info)
+        info_buff = info_buff.encode('utf-8')
+
+        warc_headers = {}
+
+        schema, rest = load_url.split('://', 1)
+        target_url = 'metadata://' + rest
+
+        dt = timestamp_to_datetime(cdx['timestamp'])
+
+        warc_headers['WARC-Type'] = 'metadata'
+        warc_headers['WARC-Record-ID'] = self._make_warc_id()
+        warc_headers['WARC-Target-URI'] = target_url
+        warc_headers['WARC-Date'] = datetime_to_iso_date(dt)
+        warc_headers['Content-Type'] = self.CONTENT_TYPE
+        warc_headers['Content-Length'] = str(len(info_buff))
+
+        warc_headers = StatusAndHeaders('WARC/1.0', warc_headers.items())
+
+        return warc_headers, None, BytesIO(info_buff)
 

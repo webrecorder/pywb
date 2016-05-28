@@ -92,6 +92,7 @@ class LiveIndexSource(BaseIndexSource):
         cdx['url'] = params['url']
         cdx['load_url'] = res_template(self.proxy_url, params)
         cdx['is_live'] = 'true'
+        cdx['mime'] = params.get('content_type', '')
         def live():
             yield cdx
 

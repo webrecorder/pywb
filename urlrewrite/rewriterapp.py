@@ -13,6 +13,8 @@ from pywb.cdx.cdxobject import CDXObject
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.framework.wbrequestresponse import WbResponse
 
+from six.moves.urllib.parse import urlencode
+
 from urlrewrite.rewriteinputreq import RewriteInputRequest
 from urlrewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView, BaseInsertView
 
@@ -31,10 +33,13 @@ class UpstreamException(WbException):
 
 # ============================================================================
 class RewriterApp(object):
+    VIDEO_INFO_CONTENT_TYPE = 'application/vnd.youtube-dl_formats+json'
+
     def __init__(self, framed_replay=False, jinja_env=None, config=None):
         self.loader = ArcWarcRecordLoader()
 
         config = config or {}
+        self.paths = config['url_templates']
 
         self.framed_replay = framed_replay
         self.frame_mod = ''
@@ -76,8 +81,6 @@ class RewriterApp(object):
 
     def render_content(self, wb_url, kwargs, environ):
         wb_url = WbUrl(wb_url)
-        #if wb_url.mod == 'vi_':
-        #    return self._get_video_info(wbrequest)
 
         host_prefix = self.get_host_prefix(environ)
         rel_prefix = self.get_rel_prefix(environ)
@@ -95,13 +98,12 @@ class RewriterApp(object):
 
         self.unrewrite_referrer(environ)
 
-        url = wb_url.url
-        urlkey = canonicalize(url)
+        urlkey = canonicalize(wb_url.url)
 
-        inputreq = RewriteInputRequest(environ, urlkey, url,
+        inputreq = RewriteInputRequest(environ, urlkey, wb_url.url,
                                        self.content_rewriter)
 
-        inputreq.include_post_query(url)
+        inputreq.include_post_query(wb_url.url)
 
         mod_url = None
         use_206 = False
@@ -119,7 +121,6 @@ class RewriterApp(object):
                 # if bytes=0- Range request,
                 # simply remove the range and still proxy
                 if start == 0 and not end and use_206:
-                    url = mod_url
                     wb_url.url = mod_url
                     inputreq.url = mod_url
 
@@ -133,10 +134,10 @@ class RewriterApp(object):
         setcookie_headers = None
         if self.cookie_tracker:
             cookie_key = self.get_cookie_key(kwargs)
-            res = self.cookie_tracker.get_cookie_headers(url, cookie_key)
+            res = self.cookie_tracker.get_cookie_headers(wb_url.url, cookie_key)
             inputreq.extra_cookie, setcookie_headers = res
 
-        r = self._do_req(inputreq, url, wb_url, kwargs, skip)
+        r = self._do_req(inputreq, wb_url, kwargs, skip)
 
         if r.status_code >= 400:
             error = None
@@ -152,7 +153,7 @@ class RewriterApp(object):
                 error = ''
 
             details = dict(args=kwargs, error=error)
-            raise UpstreamException(r.status_code, url=url, details=details)
+            raise UpstreamException(r.status_code, url=wb_url.url, details=details)
 
         if async_record_url:
             environ.pop('HTTP_RANGE', '')
@@ -168,7 +169,7 @@ class RewriterApp(object):
         cdx = CDXObject()
         cdx['urlkey'] = urlkey
         cdx['timestamp'] = http_date_to_timestamp(r.headers.get('Memento-Datetime'))
-        cdx['url'] = url
+        cdx['url'] = wb_url.url
 
         self._add_custom_params(cdx, r.headers, kwargs)
 
@@ -246,8 +247,8 @@ class RewriterApp(object):
 
         return WbResponse.text_response(error_html, content_type='text/html')
 
-    def _do_req(self, inputreq, url, wb_url, kwargs, skip):
-        req_data = inputreq.reconstruct_request(url)
+    def _do_req(self, inputreq, wb_url, kwargs, skip):
+        req_data = inputreq.reconstruct_request(wb_url.url)
 
         headers = {'Content-Length': len(req_data),
                    'Content-Type': 'application/request'}
@@ -260,7 +261,15 @@ class RewriterApp(object):
         else:
             closest = wb_url.timestamp
 
-        upstream_url = self.get_upstream_url(url, wb_url, closest, kwargs)
+        params = {}
+        params['url'] = wb_url.url
+        params['closest'] = closest
+
+        if wb_url.mod == 'vi_':
+            params['content_type'] = self.VIDEO_INFO_CONTENT_TYPE
+
+        upstream_url = self.get_upstream_url(wb_url, kwargs, params)
+
         r = requests.post(upstream_url,
                           data=BytesIO(req_data),
                           headers=headers,
@@ -269,11 +278,14 @@ class RewriterApp(object):
         return r
 
     def do_query(self, wb_url, kwargs):
-        upstream_url = self.get_upstream_url(wb_url.url, wb_url, 'now', kwargs)
-        upstream_url = upstream_url.replace('/resource/postreq', '/index')
+        params = {}
+        params['url'] = wb_url.url
+        params['output'] = 'json'
+        params['from'] = wb_url.timestamp
+        params['to'] = wb_url.end_timestamp
 
-        upstream_url += '&output=json'
-        upstream_url += '&from=' + wb_url.timestamp + '&to=' + wb_url.end_timestamp
+        upstream_url = self.get_upstream_url(wb_url, kwargs, params)
+        upstream_url = upstream_url.replace('/resource/postreq', '/index')
 
         r = requests.get(upstream_url)
 
@@ -362,8 +374,15 @@ class RewriterApp(object):
 
         return False
 
-    def get_upstream_url(self, url, wb_url, closest, kwargs):
-        raise NotImplemented()
+    def get_base_url(self, wb_url, kwargs):
+        type = kwargs.get('type')
+        return self.paths[type]
+
+    def get_upstream_url(self, wb_url, kwargs, params):
+        base_url = self.get_base_url(wb_url, kwargs)
+        #params['filter'] = tuple(params['filter'])
+        base_url += '&' + urlencode(params, True)
+        return base_url
 
     def get_cookie_key(self, kwargs):
         raise NotImplemented()
@@ -378,7 +397,6 @@ class RewriterApp(object):
     def handle_custom_response(self, environ, wb_url, full_prefix, host_prefix, kwargs):
         if wb_url.is_query():
             return self.handle_query(environ, wb_url, kwargs)
-            #return self.do_query(wb_url, kwargs)
 
         if self.framed_replay and wb_url.mod == self.frame_mod:
             extra_params = self.get_top_frame_params(wb_url, kwargs)
