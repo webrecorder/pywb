@@ -14,6 +14,7 @@ from webagg.utils import MementoUtils
 from pywb.utils.statusandheaders import StatusAndHeadersParser
 from pywb.utils.bufferedreaders import ChunkedDataReader
 from io import BytesIO
+from six.moves.urllib.parse import urlencode
 
 import webtest
 from fakeredis import FakeStrictRedis
@@ -329,6 +330,47 @@ foo=bar&test=abc"""
         resp = self.testapp.get('/allredis/resource?url=http://www.example.com/')
 
         assert resp.headers['WebAgg-Source-Coll'] == 'example'
+
+    def test_live_video_loader(self):
+        params = {'url': 'http://www.youtube.com/v/BfBgWtAIbRc',
+                  'content_type': 'application/vnd.youtube-dl_formats+json'
+                 }
+
+        resp = self.testapp.get('/live/resource', params=params)
+
+        assert resp.headers['WebAgg-Source-Coll'] == 'live'
+
+        self._check_uri_date(resp, 'metadata://www.youtube.com/v/BfBgWtAIbRc', True)
+
+        assert resp.headers['Link'] == MementoUtils.make_link('metadata://www.youtube.com/v/BfBgWtAIbRc', 'original')
+        assert resp.headers['Memento-Datetime'] != ''
+
+        assert b'WARC-Type: metadata' in resp.body
+        assert b'Content-Type: application/vnd.youtube-dl_formats+json' in resp.body
+
+    def test_live_video_loader_post(self):
+        req_data = """\
+GET /v/BfBgWtAIbRc HTTP/1.1
+accept-encoding: gzip, deflate
+accept: */*
+host: www.youtube.com\
+"""
+
+        params = {'url': 'http://www.youtube.com/v/BfBgWtAIbRc',
+                  'content_type': 'application/vnd.youtube-dl_formats+json'
+                 }
+
+        resp = self.testapp.post('/live/resource/postreq?&' + urlencode(params), req_data)
+
+        assert resp.headers['WebAgg-Source-Coll'] == 'live'
+
+        self._check_uri_date(resp, 'metadata://www.youtube.com/v/BfBgWtAIbRc', True)
+
+        assert resp.headers['Link'] == MementoUtils.make_link('metadata://www.youtube.com/v/BfBgWtAIbRc', 'original')
+        assert resp.headers['Memento-Datetime'] != ''
+
+        assert b'WARC-Type: metadata' in resp.body
+        assert b'Content-Type: application/vnd.youtube-dl_formats+json' in resp.body
 
     def test_error_redis_file_not_found(self):
         f = FakeStrictRedis.from_url('redis://localhost/2')

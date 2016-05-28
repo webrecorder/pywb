@@ -16,13 +16,15 @@ from urlrewrite.cookies import CookieTracker
 # ============================================================================
 class RWApp(RewriterApp):
     def __init__(self, upstream_urls, cookie_key_templ, redis):
-        self.upstream_urls = upstream_urls
+        config = {}
+        config['url_templates'] = upstream_urls
+
         self.cookie_key_templ = cookie_key_templ
         self.app = Bottle()
         self.block_loader = LocalFileLoader()
         self.init_routes()
 
-        super(RWApp, self).__init__(True)
+        super(RWApp, self).__init__(True, config=config)
 
         self.cookie_tracker = CookieTracker(redis)
 
@@ -33,11 +35,6 @@ class RWApp(RewriterApp):
         print(exc)
         traceback.print_exc()
         return self.orig_error_handler(exc)
-
-    def get_upstream_url(self, url, wb_url, closest, kwargs):
-        type = kwargs.get('type')
-        return self.upstream_urls[type].format(url=quote(url),
-                                               closest=closest)
 
     def get_cookie_key(self, kwargs):
         return self.cookie_key_templ.format(**kwargs)
@@ -58,9 +55,9 @@ class RWApp(RewriterApp):
 
     @staticmethod
     def create_app(replay_port=8080, record_port=8010):
-        upstream_urls = {'live': 'http://localhost:%s/live/resource/postreq?url={url}&closest={closest}' % replay_port,
-                         'record': 'http://localhost:%s/live/resource/postreq?url={url}&closest={closest}' % record_port,
-                         'replay': 'http://localhost:%s/replay/resource/postreq?url={url}&closest={closest}' % replay_port,
+        upstream_urls = {'live': 'http://localhost:%s/live/resource/postreq?' % replay_port,
+                         'record': 'http://localhost:%s/live/resource/postreq?' % record_port,
+                         'replay': 'http://localhost:%s/replay/resource/postreq?' % replay_port,
                         }
 
         r = redis.StrictRedis.from_url('redis://localhost/2')

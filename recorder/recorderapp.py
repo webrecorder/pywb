@@ -57,10 +57,16 @@ class RecorderApp(object):
 
             req_head, req_pay, resp_head, resp_pay, params = result
 
-            req = self.writer.create_req_record(req_head, req_pay, 'request')
-            resp = self.writer.create_resp_record(resp_head, resp_pay, 'response')
+            resp_type, resp = self.writer.read_resp_record(resp_head, resp_pay)
 
-            self.writer.write_req_resp(req, resp, params)
+            if resp_type == 'response':
+                req = self.writer.create_req_record(req_head, req_pay)
+
+                self.writer.write_req_resp(req, resp, params)
+
+            else:
+                self.writer.write_record(resp, params)
+
 
         finally:
             try:

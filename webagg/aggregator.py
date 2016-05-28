@@ -30,6 +30,10 @@ class BaseAggregator(object):
         if params.get('closest') == 'now':
             params['closest'] = timestamp_now()
 
+        content_type = params.get('content_type')
+        if content_type:
+            params['filter'] = '=mime:' + content_type
+
         query = CDXQuery(params)
 
         cdx_iter, errs = self.load_index(query.params)

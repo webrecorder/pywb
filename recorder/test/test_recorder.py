@@ -25,7 +25,7 @@ from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.cdxindexer import write_cdx_index
 from pywb.warc.archiveiterator import ArchiveIterator
 
-from six.moves.urllib.parse import quote, unquote
+from six.moves.urllib.parse import quote, unquote, urlencode
 from io import BytesIO
 import time
 import json
@@ -67,7 +67,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         return dedup_index
 
-    def _test_warc_write(self, recorder_app, host, path, other_params=''):
+    def _test_warc_write(self, recorder_app, host, path, other_params='', link_url=''):
         url = 'http://' + host + path
         req_url = '/live/resource/postreq?url=' + url + other_params
         testapp = webtest.TestApp(recorder_app)
@@ -78,7 +78,10 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         assert resp.headers['WebAgg-Source-Coll'] == 'live'
 
-        assert resp.headers['Link'] == MementoUtils.make_link(unquote(url), 'original')
+        if not link_url:
+            link_url = unquote(url)
+
+        assert resp.headers['Link'] == MementoUtils.make_link(link_url, 'original')
         assert resp.headers['Memento-Datetime'] != ''
 
         return resp
@@ -303,7 +306,6 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert len(res) == 2
 
     def test_record_param_user_coll_write_dupe_no_revisit(self):
-
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
 
         dedup_index = self._get_dedup_index(dupe_policy=WriteDupePolicy())
@@ -524,4 +526,37 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert status_headers.get_header('Content-Type') == 'text/plain'
         assert status_headers.get_header('Content-Length') == str(len(buff))
 
+    def test_record_video_metadata(self):
+        warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
+
+        dedup_index = self._get_dedup_index()
+
+        writer = PerRecordWARCWriter(warc_path, dedup_index=dedup_index)
+        recorder_app = RecorderApp(self.upstream_url, writer)
+
+        params = {'param.recorder.user': 'USER',
+                  'param.recorder.coll': 'VIDEO',
+                  'content_type': 'application/vnd.youtube-dl_formats+json'
+                 }
+
+        resp = self._test_warc_write(recorder_app,
+            'www.youtube.com', '/v/BfBgWtAIbRc', '&' + urlencode(params),
+            link_url='metadata://www.youtube.com/v/BfBgWtAIbRc')
+
+        r = FakeStrictRedis.from_url('redis://localhost/2')
+
+        warcs = r.hgetall('USER:VIDEO:warc')
+        assert len(warcs) == 1
+
+        filename = list(warcs.values())[0]
+
+        with open(filename, 'rb') as fh:
+            decomp = DecompressingBufferedReader(fh)
+            record = ArcWarcRecordLoader().parse_record_stream(decomp)
+
+        status_headers = record.rec_headers
+        assert status_headers.get_header('WARC-Type') == 'metadata'
+        assert status_headers.get_header('Content-Type') == 'application/vnd.youtube-dl_formats+json'
+        assert status_headers.get_header('WARC-Block-Digest') != ''
+        assert status_headers.get_header('WARC-Block-Digest') == status_headers.get_header('WARC-Payload-Digest')
 
