@@ -48,6 +48,10 @@ IOError: [Errno 2] No such file or directory: '_x_no_such_file_'
 >>> print_str(BlockLoader().load('http://example.com', 1262).read())
 '</html>\n'
 
+# custom profile
+>>> print_str(BlockLoader().load('local+http://example.com', 1262).read())
+'</html>\n'
+
 # unknown loader error
 #>>> BlockLoader().load('foo://example.com', 10).read()  # doctest: +IGNORE_EXCEPTION_DETAIL
 #Traceback (most recent call last):

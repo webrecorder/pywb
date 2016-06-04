@@ -260,7 +260,7 @@ class BlockLoader(BaseLoader):
         self.kwargs = kwargs
 
     def load(self, url, offset=0, length=-1):
-        loader = self._get_loader_for_url(url)
+        loader, url = self._get_loader_for_url(url)
         return loader.load(url, offset, length)
 
     def _get_loader_for_url(self, url):
@@ -273,15 +273,17 @@ class BlockLoader(BaseLoader):
         else:
             type_ = parts[0]
 
-        loader = self.cached.get(type_)
-        if loader:
-            return loader
-
         if '+' in type_:
             profile_name, scheme = type_.split('+', 1)
+            if len(parts) == 2:
+                url = scheme + '://' + parts[1]
         else:
             profile_name = ''
             scheme = type_
+
+        loader = self.cached.get(type_)
+        if loader:
+            return loader, url
 
         loader_cls = self._get_loader_class_for_type(scheme)
 
@@ -296,7 +298,7 @@ class BlockLoader(BaseLoader):
         loader = loader_cls(**profile)
 
         self.cached[type_] = loader
-        return loader
+        return loader, url
 
     def _get_loader_class_for_type(self, type_):
         loader_cls = self.loaders.get(type_)
