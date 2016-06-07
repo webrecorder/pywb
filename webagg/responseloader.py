@@ -133,7 +133,17 @@ class RedisResolver(RedisIndexSource):
         if hasattr(cdx, '_formatter') and cdx._formatter:
             redis_key = cdx._formatter.format(redis_key)
 
-        res = self.redis.hget(redis_key, filename)
+        res = None
+
+        if '*' in redis_key:
+            for key in self.redis.scan_iter(redis_key):
+                #key = key.decode('utf-8')
+                res = self.redis.hget(key, filename)
+                if res:
+                    break
+        else:
+            res = self.redis.hget(redis_key, filename)
+
         if res and six.PY3:
             res = res.decode('utf-8')
 
