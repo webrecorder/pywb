@@ -168,10 +168,10 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert ('Cookie', 'boo=far') in stored_req.status_headers.headers
 
     def test_record_cookies_skip_header(self):
-        base_path = to_path(self.root_dir + '/warcs/cookieskip/')
+        warc_path = to_path(self.root_dir + '/warcs/cookieskip/')
         header_filter = ExcludeSpecificHeaders(['Set-Cookie', 'Cookie'])
         recorder_app = RecorderApp(self.upstream_url,
-                         PerRecordWARCWriter(base_path, header_filter=header_filter),
+                         PerRecordWARCWriter(warc_path, header_filter=header_filter),
                             accept_colls='live')
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/cookies/set%3Fname%3Dvalue%26foo%3Dbar')
@@ -182,7 +182,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert ('Set-Cookie', 'name=value; Path=/') in record.status_headers.headers
         assert ('Set-Cookie', 'foo=bar; Path=/') in record.status_headers.headers
 
-        stored_req, stored_resp = self._load_resp_req(base_path)
+        stored_req, stored_resp = self._load_resp_req(warc_path)
 
         assert ('Set-Cookie', 'name=value; Path=/') not in stored_resp.status_headers.headers
         assert ('Set-Cookie', 'foo=bar; Path=/') not in stored_resp.status_headers.headers
@@ -201,7 +201,6 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         self._test_all_warcs('/warcs/', 2)
 
     def test_record_param_user_coll(self):
-
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
 
         dedup_index = self._get_dedup_index()
@@ -234,6 +233,25 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         full_path = self.root_dir + '/warcs/' + cdx['filename']
         assert warcs == {cdx['filename'].encode('utf-8'): full_path.encode('utf-8')}
 
+    def test_record_param_user_coll_same_dir(self):
+        warc_path = to_path(self.root_dir + '/warcs2/')
+
+        dedup_index = self._get_dedup_index()
+
+        recorder_app = RecorderApp(self.upstream_url,
+                        PerRecordWARCWriter(warc_path, dedup_index=dedup_index, key_template='{user}:{coll}'))
+
+        resp = self._test_warc_write(recorder_app, 'httpbin.org',
+                            '/get?foo=bar', '&param.recorder.user=USER2&param.recorder.coll=COLL2')
+        assert b'HTTP/1.1 200 OK' in resp.body
+        assert b'"foo": "bar"' in resp.body
+
+        resp = self._test_warc_write(recorder_app, 'httpbin.org',
+                            '/get?foo=bar', '&param.recorder.user=USER2&param.recorder.coll=COLL3')
+        assert b'HTTP/1.1 200 OK' in resp.body
+        assert b'"foo": "bar"' in resp.body
+
+        self._test_all_warcs('/warcs2', 2)
 
     def test_record_param_user_coll_revisit(self):
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
@@ -395,8 +413,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         assert len(writer.fh_cache) == 1
 
-        writer.close_dir(self.root_dir + '/warcs/FOO/')
-        #writer.close_file({'param.recorder.coll': 'FOO'})
+        writer.close_key(self.root_dir + '/warcs/FOO/')
 
         assert len(writer.fh_cache) == 0
 
