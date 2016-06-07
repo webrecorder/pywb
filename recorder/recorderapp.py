@@ -115,11 +115,14 @@ class RecorderApp(object):
                                  '200 OK',
                                  start_response)
 
+    def _get_params(self, environ):
+        params = dict(parse_qsl(environ.get('QUERY_STRING')))
+        return params
 
     def __call__(self, environ, start_response):
         input_req = DirectWSGIInputRequest(environ)
 
-        params = dict(parse_qsl(environ.get('QUERY_STRING')))
+        params = self._get_params(environ)
 
         request_uri = input_req.get_full_request_uri()
 

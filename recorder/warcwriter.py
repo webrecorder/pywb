@@ -332,6 +332,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
             filename_template = self.FILE_TEMPLATE
 
         self.dir_template = dir_template
+        self.key_template = kwargs.get('key_template', self.dir_template)
         self.filename_template = filename_template
         self.max_size = max_size
         if max_idle_secs > 0:
@@ -344,9 +345,12 @@ class MultiFileWARCWriter(BaseWARCWriter):
     def _open_file(self, dir_, params):
         timestamp = timestamp20_now()
 
+        randstr = base64.b32encode(os.urandom(5)).decode('utf-8')
+
         filename = dir_ + res_template(self.filename_template, params,
                                        hostname=self.hostname,
-                                       timestamp=timestamp)
+                                       timestamp=timestamp,
+                                       random=randstr)
 
         path, name = os.path.split(filename)
 
@@ -366,15 +370,25 @@ class MultiFileWARCWriter(BaseWARCWriter):
         fcntl.flock(fh, fcntl.LOCK_UN)
         fh.close()
 
-    def close_dir(self, full_dir):
-        #full_dir = res_template(self.dir_template, params)
-        result = self.fh_cache.pop(full_dir, None)
+    def get_dir_key(self, params):
+        return res_template(self.key_template, params)
+
+    def close_key(self, dir_key):
+        if isinstance(dir_key, dict):
+            dir_key = self.get_dir_key(dir_key)
+
+        result = self.fh_cache.pop(dir_key, None)
         if not result:
             return
 
         out, filename = result
         self._close_file(out)
         return filename
+
+    def close_file(self, match_filename):
+        for dir_key, out, filename in self.iter_open_files():
+            if filename == match_filename:
+                return self.close_key(dir_key)
 
     def _is_write_resp(self, resp, params):
         return True
@@ -389,8 +403,9 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
     def _do_write_req_resp(self, req, resp, params):
         full_dir = res_template(self.dir_template, params)
+        dir_key = self.get_dir_key(params)
 
-        result = self.fh_cache.get(full_dir)
+        result = self.fh_cache.get(dir_key)
 
         close_file = False
 
@@ -436,11 +451,11 @@ class MultiFileWARCWriter(BaseWARCWriter):
             if close_file:
                 self._close_file(out)
                 if not is_new:
-                    self.fh_cache.pop(full_dir, None)
+                    self.fh_cache.pop(dir_key, None)
 
             elif is_new:
                 fcntl.flock(out, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                self.fh_cache[full_dir] = (out, filename)
+                self.fh_cache[dir_key] = (out, filename)
 
     def iter_open_files(self):
         for n, v in list(self.fh_cache.items()):
@@ -448,7 +463,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
             yield n, out, filename
 
     def close(self):
-        for dirname, out, filename in self.iter_open_files():
+        for dir_key, out, filename in self.iter_open_files():
             self._close_file(out)
 
         self.fh_cache = {}
@@ -459,12 +474,12 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
         now = datetime.datetime.now()
 
-        for dirname, out, filename in self.iter_open_files():
+        for dir_key, out, filename in self.iter_open_files():
             mtime = os.path.getmtime(filename)
             mtime = datetime.datetime.fromtimestamp(mtime)
             if (now - mtime) > self.max_idle_time:
                 print('Closing idle ' + filename)
-                self.close_dir(dirname)
+                self.close_key(dir_key)
 
 
 # ============================================================================
