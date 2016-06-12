@@ -140,9 +140,11 @@ def test_err_compress_mix():
     # error: compressed member, followed by not compressed -- considered invalid
     x = DecompressingBufferedReader(BytesIO(compress('ABC') + b'123'), decomp_type = 'gzip')
     b = x.read()
-    b = x.read_next_member()
-    with pytest.raises(zlib.error):
-        x.read()
+    assert b == b'ABC'
+    x.read_next_member()
+    assert x.read() == b''
+    #with pytest.raises(zlib.error):
+    #    x.read()
     #error: Error -3 while decompressing: incorrect header check
 
 def test_err_chunk_cut_off():

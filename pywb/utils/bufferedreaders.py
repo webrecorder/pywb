@@ -98,7 +98,7 @@ class BufferedReader(object):
         if self.decompressor and data:
             try:
                 data = self.decompressor.decompress(data)
-            except Exception:
+            except Exception as e:
                 # if first read attempt, assume non-gzipped stream
                 if self.num_read == 0:
                     if self.decomp_type == 'deflate':
@@ -108,7 +108,8 @@ class BufferedReader(object):
                         self.decompressor = None
                 # otherwise (partly decompressed), something is wrong
                 else:
-                    raise
+                    print(str(e))
+                    return b''
         return data
 
     def read(self, length=None):
