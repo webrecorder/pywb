@@ -49,6 +49,12 @@ r"""
 >>> parse('<base href="static/"/><img src="image.gif"/>', urlrewriter=no_base_canon_rewriter)
 <base href="static/"/><img src="/web/20131226101010im_/http://example.com/some/path/static/image.gif"/>
 
+# Empty url
+>>> parse('<base href="">')
+<base href="">
+
+>>> parse('<base href>')
+<base href>
 
 
 # HTML Entities

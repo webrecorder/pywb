@@ -216,8 +216,7 @@ class HTMLRewriterMixin(object):
             return ''
 
         values = value.split(',')
-        values = map(lambda x: self._rewrite_url(x.strip()), values)
-        values = [v for v in values if v is not None]
+        values = [self._rewrite_url(v.strip()) for v in values]
         return ', '.join(values)
 
     def _rewrite_css(self, css_content):
