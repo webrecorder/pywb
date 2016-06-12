@@ -78,11 +78,10 @@ setup(
         'requests',
         'redis',
         'jinja2',
-        'surt==0.3b4',
+        'surt>=0.3.0',
         'pyyaml',
         'watchdog',
         'webencodings',
-        'pyamf',
        ],
     tests_require=[
         'pytest',
@@ -90,9 +89,6 @@ setup(
         'pytest-cov',
         'fakeredis',
         'mock',
-       ],
-    dependency_links=[
-        'git+https://github.com/t0m/pyamf.git@python3'
        ],
     cmdclass={'test': PyTest},
     test_suite='',
