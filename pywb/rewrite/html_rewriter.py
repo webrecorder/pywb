@@ -120,7 +120,7 @@ class HTMLRewriterMixin(object):
 
     def _rewrite_meta_refresh(self, meta_refresh):
         if not meta_refresh:
-            return None
+            return ''
 
         m = self.META_REFRESH_REGEX.match(meta_refresh)
         if not m:
@@ -133,6 +133,9 @@ class HTMLRewriterMixin(object):
         return meta_refresh
 
     def _rewrite_base(self, url, mod=''):
+        if not url:
+            return ''
+
         url = self._ensure_url_has_path(url)
 
         base_url = self._rewrite_url(url, mod)
@@ -183,11 +186,11 @@ class HTMLRewriterMixin(object):
 
     def _rewrite_url(self, value, mod=None):
         if not value:
-            return None
+            return ''
 
         value = value.strip()
         if not value:
-            return None
+            return ''
 
         value = self.try_unescape(value)
         return self.url_rewriter.rewrite(value, mod)
@@ -209,6 +212,9 @@ class HTMLRewriterMixin(object):
         return new_value
 
     def _rewrite_srcset(self, value, mod=''):
+        if not value:
+            return ''
+
         values = value.split(',')
         values = map(lambda x: self._rewrite_url(x.strip()), values)
         return ', '.join(values)
@@ -217,13 +223,13 @@ class HTMLRewriterMixin(object):
         if css_content:
             return self.css_rewriter.rewrite(css_content)
         else:
-            return None
+            return ''
 
     def _rewrite_script(self, script_content):
         if script_content:
             return self.js_rewriter.rewrite(script_content)
         else:
-            return None
+            return ''
 
     def has_attr(self, tag_attrs, attr):
         name, value = attr
