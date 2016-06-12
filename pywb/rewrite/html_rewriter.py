@@ -252,6 +252,11 @@ class HTMLRewriterMixin(object):
         self.out.write('<' + tag)
 
         for attr_name, attr_value in tag_attrs:
+            empty_attr = False
+            if attr_value is None:
+                attr_value = ''
+                empty_attr = True
+
             # special case: inline JS/event handler
             if ((attr_value and attr_value.startswith('javascript:'))
                  or attr_name.startswith('on')):
@@ -324,7 +329,7 @@ class HTMLRewriterMixin(object):
                     attr_value = self._rewrite_url(attr_value, rw_mod)
 
             # write the attr!
-            self._write_attr(attr_name, attr_value)
+            self._write_attr(attr_name, attr_value, empty_attr)
 
         return True
 
@@ -347,11 +352,17 @@ class HTMLRewriterMixin(object):
 
         return True
 
-    def _write_attr(self, name, value):
-        # parser doesn't differentiate between 'attr=""' and just 'attr'
-        # 'attr=""' is more common, so use that form
-        if value:
+    def _write_attr(self, name, value, empty_attr):
+        # if empty_attr is set, just write 'attr'!
+        if empty_attr:
+            self.out.write(' ' + name)
+
+        # write with value, if set
+        elif value:
+
             self.out.write(' ' + name + '="' + value.replace('"', '&quot;') + '"')
+
+        # otherwise, 'attr=""' is more common, so use that form
         else:
             self.out.write(' ' + name + '=""')
 
@@ -421,8 +432,9 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
     def feed(self, string):
         try:
             HTMLParser.feed(self, string)
-        except Exception:  # pragma: no cover
-            # only raised in 2.6
+        except Exception as e:  # pragma: no cover
+            import traceback
+            traceback.print_exc()
             self.out.write(string)
 
     def _internal_close(self):
