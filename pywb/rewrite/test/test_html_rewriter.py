@@ -119,6 +119,10 @@ r"""
 >>> parse('<img srcset="//example.com/1x 1x, //example.com/foo 2x, https://example.com/bar 4x">')
 <img srcset="/web/20131226101010///example.com/1x 1x, /web/20131226101010///example.com/foo 2x, /web/20131226101010/https://example.com/bar 4x">
 
+# empty srcset attrib
+>>> parse('<img srcset="">')
+<img srcset="">
+
 # Script tag
 >>> parse('<script>window.location = "http://example.com/a/b/c.html"</script>')
 <script>window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html"</script>
