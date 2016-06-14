@@ -187,7 +187,8 @@ class WARCPathLoader(BaseLoader):
         if not cdx.get('filename') or cdx.get('offset') is None:
             return None
 
-        cdx._formatter = ParamFormatter(params, cdx.get('source'))
+        orig_source = cdx.get('source', '').split(':')[0]
+        cdx._formatter = ParamFormatter(params, orig_source)
 
         failed_files = []
         headers, payload = (self.resolve_loader.

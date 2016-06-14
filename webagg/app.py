@@ -74,6 +74,8 @@ class ResAggApp(object):
                 res = self.json_encode(res, out_headers)
 
             if errs:
+                if 'last_exc' in errs:
+                    errs['last_exc'] = str(errs['last_exc'])
                 out_headers['ResErrors'] = json.dumps(errs)
 
             start_response('200 OK', list(out_headers.items()))
