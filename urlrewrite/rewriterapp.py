@@ -1,6 +1,6 @@
 import requests
 
-from pywb.rewrite.rewrite_content import RewriteContentAMF
+from pywb.rewrite.rewrite_amf import RewriteContentAMF
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter
 
