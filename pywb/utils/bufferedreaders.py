@@ -1,5 +1,6 @@
 from io import BytesIO
 import zlib
+import brotli
 
 
 #=================================================================
@@ -16,6 +17,11 @@ def deflate_decompressor():
 
 def deflate_decompressor_alt():
     return zlib.decompressobj(-zlib.MAX_WBITS)
+
+def brotli_decompressor():
+    decomp = brotli.Decompressor()
+    decomp.unused_data = None
+    return decomp
 
 
 #=================================================================
@@ -40,7 +46,9 @@ class BufferedReader(object):
 
     DECOMPRESSORS = {'gzip': gzip_decompressor,
                      'deflate': deflate_decompressor,
-                     'deflate_alt': deflate_decompressor_alt}
+                     'deflate_alt': deflate_decompressor_alt,
+                     'br': brotli_decompressor
+                    }
 
     def __init__(self, stream, block_size=1024,
                  decomp_type=None,
@@ -180,6 +188,10 @@ class BufferedReader(object):
         if self.stream:
             self.stream.close()
             self.stream = None
+
+    @classmethod
+    def get_supported_decompressors(cls):
+        return cls.DECOMPRESSORS.keys()
 
 
 #=================================================================

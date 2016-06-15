@@ -77,6 +77,7 @@ class RewriteContent(object):
 
 
     def _check_encoding(self, rewritten_headers, stream, enc):
+        matched = False
         if (rewritten_headers.
              contains_removed_header('content-encoding', enc)):
 
@@ -87,8 +88,9 @@ class RewriteContent(object):
                 stream = DecompressingBufferedReader(stream, decomp_type=enc)
 
             rewritten_headers.status_headers.remove_header('content-length')
+            matched = True
 
-        return stream
+        return matched, stream
 
 
 
@@ -139,8 +141,12 @@ class RewriteContent(object):
         encoding = None
         first_buff = b''
 
-        stream = self._check_encoding(rewritten_headers, stream, 'gzip')
-        stream = self._check_encoding(rewritten_headers, stream, 'deflate')
+        for decomp_type in BufferedReader.get_supported_decompressors():
+            matched, stream = self._check_encoding(rewritten_headers,
+                                                   stream,
+                                                   decomp_type)
+            if matched:
+                break
 
         if mod == 'js_':
             text_type, stream = self._resolve_text_type('js',

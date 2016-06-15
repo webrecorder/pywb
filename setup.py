@@ -79,6 +79,7 @@ setup(
         'redis',
         'jinja2',
         'surt>=0.3.0',
+        'brotlipy',
         'pyyaml',
         'watchdog',
         'webencodings',
