@@ -1,3 +1,35 @@
+pywb 0.31.0 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* HTML rewriting:
+   - preserve empty attrs while parsing, eg. ``<tag attr>`` instead of ``<tag attr="">``
+   - empty ``srcset`` attribute does not cause errors
+   - better error checking of empty attributes for all custom parsers
+
+* wombat/client side improvements:
+   - use ``postMessage()`` for inner replay frame -> outer frame updates
+   - Fix ``window.open()`` rewriting even if prototype is missing
+   - Fix double-slash in relative url rewriting
+   - ``Math.random()`` overrides uses correct window
+  
+* BufferedReader improvements:
+   - More lenient of partially decompressed data, return what was decompressed instead of raising exception.
+   - Support Brotli decompression, properly rewrite ``Content-Encoding: br``
+
+* Python 2/3 Compatibility:
+   - Decode all cdx fields to native string in py2
+  
+* BlockLoader improvements:
+   - support custom profile urls, eg. ``profile+http://`` which allow a custom profile to be selected if a profile loader is registered via ``BlockLoader.set_profile_loader()``
+  
+   - s3 loader: support profiles and AWS creds directly set in username/password of url
+
+* POST replay improvements:
+   - support ``multipart/form-data`` encoding same as ``x-www-form-urlencoded``
+   - support ``application/x-amf`` with experimental AMF rewriter (RewriteContentAMF rewriter)
+   - support generic post-data matching exact base64 encoded value.
+
+
 pywb 0.30.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -21,7 +53,7 @@ pywb 0.30.0 changelist
    - Comparison operators for cdxobject
    - Reading cdxline as byte buffer, individual fields as strings (python 3)
   
-* redis: full testing of ``zlexbyrange`` with new fakeredis
+* redis: full testing of ``zrangebylex`` with new fakeredis
 
 * timeutils: add ``datetime_to_iso_date``
   
