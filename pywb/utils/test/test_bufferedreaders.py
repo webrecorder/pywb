@@ -133,6 +133,14 @@ def compress_alt(buff):
 
     return compressed
 
+# Brotli
+
+def test_brotli():
+    with open(get_test_dir() + 'text_content/quickfox_repeated.compressed', 'rb') as fh:
+        x = DecompressingBufferedReader(fh, decomp_type='br')
+        x.read() == b'The quick brown fox jumps over the lazy dog' * 4096
+
+
 
 # Errors
 
