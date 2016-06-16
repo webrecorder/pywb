@@ -49,6 +49,12 @@ r"""
 >>> parse('<base href="static/"/><img src="image.gif"/>', urlrewriter=no_base_canon_rewriter)
 <base href="static/"/><img src="/web/20131226101010im_/http://example.com/some/path/static/image.gif"/>
 
+# Empty url
+>>> parse('<base href="">')
+<base href="">
+
+>>> parse('<base href>')
+<base href>
 
 
 # HTML Entities
@@ -65,6 +71,10 @@ r"""
 # Ensure attr values are not unescaped
 >>> parse('<input value="&amp;X&amp;&quot;">X</input>')
 <input value="&amp;X&amp;&quot;">X</input>
+
+# Empty values should be ignored
+>>> parse('<input name="foo" value>')
+<input name="foo" value>
 
 # SKIPPED
 # Unicode -- default with %-encoding
@@ -92,7 +102,7 @@ r"""
 <meta http-equiv="refresh" content="text/html; charset=utf-8"/>
 
 >>> parse('<META http-equiv="refresh" content>')
-<meta http-equiv="refresh" content="">
+<meta http-equiv="refresh" content>
 
 >>> parse('<meta property="og:image" content="http://example.com/example.jpg">')
 <meta property="og:image" content="/web/20131226101010/http://example.com/example.jpg">
@@ -115,6 +125,10 @@ r"""
 >>> parse('<img srcset="//example.com/1x 1x, //example.com/foo 2x, https://example.com/bar 4x">')
 <img srcset="/web/20131226101010///example.com/1x 1x, /web/20131226101010///example.com/foo 2x, /web/20131226101010/https://example.com/bar 4x">
 
+# empty srcset attrib
+>>> parse('<img srcset="">')
+<img srcset="">
+
 # Script tag
 >>> parse('<script>window.location = "http://example.com/a/b/c.html"</script>')
 <script>window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html"</script>
@@ -131,7 +145,7 @@ r"""
 <script>/*<![CDATA[*/window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html;/*]]>*/"</script>
 
 >>> parse('<div style="background: url(\'abc.html\')" onblah onclick="location = \'redirect.html\'"></div>')
-<div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onblah="" onclick="WB_wombat_location = 'redirect.html'"></div>
+<div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onblah onclick="WB_wombat_location = 'redirect.html'"></div>
 
 >>> parse('<i style="background-image: url(http://foo-.bar_.example.com/)"></i>')
 <i style="background-image: url(/web/20131226101010/http://foo-.bar_.example.com/)"></i>

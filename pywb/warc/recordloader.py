@@ -57,7 +57,7 @@ class ArcWarcRecordLoader(object):
     def __init__(self, loader=None, cookie_maker=None, block_size=8192,
                  verify_http=True):
         if not loader:
-            loader = BlockLoader(cookie_maker)
+            loader = BlockLoader(cookie_maker=cookie_maker)
 
         self.loader = loader
         self.block_size = block_size

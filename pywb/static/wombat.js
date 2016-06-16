@@ -292,6 +292,7 @@ var wombat_internal = function($wbwindow) {
         var parser = make_parser(extract_orig($wbwindow.document.baseURI));
         var href = parser.href;
         var hash = href.lastIndexOf("#");
+
         if (hash >= 0) {
             href = href.substring(0, hash);
         }
@@ -300,8 +301,6 @@ var wombat_internal = function($wbwindow) {
 
         if (lastslash >= 0 && lastslash != (href.length - 1)) {
             href = href.substring(0, lastslash + 1);
-        } else {
-            href += "/";
         }
 
         parser.href = href + url;
@@ -667,15 +666,15 @@ var wombat_internal = function($wbwindow) {
         // Adapted from:
         // http://indiegamr.com/generate-repeatable-random-numbers-in-js/
 
-        Math.seed = parseInt(seed);
+        $wbwindow.Math.seed = parseInt(seed);
         function seeded_random() {
-            Math.seed = (Math.seed * 9301 + 49297) % 233280;
-            var rnd = Math.seed / 233280;
+            $wbwindow.Math.seed = ($wbwindow.Math.seed * 9301 + 49297) % 233280;
+            var rnd = $wbwindow.Math.seed / 233280;
 
             return rnd;
         }
 
-        Math.random = seeded_random;
+        $wbwindow.Math.random = seeded_random;
     }
 
     function init_crypto_random() {
@@ -687,7 +686,7 @@ var wombat_internal = function($wbwindow) {
 
         var new_getrandom = function(array) {
             for (i = 0; i < array.length; i++) {
-                array[i] = parseInt(Math.random() * 4294967296);
+                array[i] = parseInt($wbwindow.Math.random() * 4294967296);
             }
             return array;
         }
@@ -719,11 +718,23 @@ var wombat_internal = function($wbwindow) {
 
             orig_func.call(this, state_obj, title, url);
 
-            if ($wbwindow.__WB_top_frame && $wbwindow != $wbwindow.__WB_top_frame && $wbwindow.__WB_top_frame.update_wb_url) {
-                $wbwindow.__WB_top_frame.update_wb_url($wbwindow.WB_wombat_location.href,
-                                                   wb_info.timestamp,
-                                                   wb_info.request_ts,
-                                                   wb_info.is_live);
+            //if ($wbwindow.__WB_top_frame && $wbwindow != $wbwindow.__WB_top_frame && $wbwindow.__WB_top_frame.update_wb_url) {
+            //    $wbwindow.__WB_top_frame.update_wb_url($wbwindow.WB_wombat_location.href,
+            //                                       wb_info.timestamp,
+            //                                       wb_info.request_ts,
+            //                                       wb_info.is_live);
+            //}
+            if ($wbwindow.__WB_top_frame && $wbwindow != $wbwindow.__WB_top_frame) {
+                var message = {
+                           "url": url,
+                           "ts": wb_info.timestamp,
+                           "request_ts": wb_info.request_ts,
+                           "is_live": wb_info.is_live,
+                           "title": title,
+                           "wb_type": func_name,
+                          }
+
+                $wbwindow.__WB_top_frame.postMessage(message, "*");
             }
         }
 
@@ -931,7 +942,8 @@ var wombat_internal = function($wbwindow) {
         //var timezone = new Date().getTimezoneOffset() * 60 * 1000;
         // Already UTC!
         var timezone = 0;
-        var timediff = $wbwindow.Date.now() - (timestamp - timezone);
+        var start_now = $wbwindow.Date.now()
+        var timediff = start_now - (timestamp - timezone);
 
         if ($wbwindow.__wb_Date_now) {
             return;
@@ -1656,13 +1668,14 @@ var wombat_internal = function($wbwindow) {
 
                 var from = source.WB_wombat_location.origin;
 
-                if (!source.__WB_id) {
-                    source.__WB_id = Math.round(Math.random() * 1000) + source.WB_wombat_location.href;
-                }
                 if (!this.__WB_win_id) {
                     this.__WB_win_id = {};
+                    this.__WB_counter = 0;
                 }
 
+                if (!source.__WB_id) {
+                    source.__WB_id = (this.__WB_counter++) + source.WB_wombat_location.href;
+                }
                 this.__WB_win_id[source.__WB_id] = source;
 
                 src_id = source.__WB_id;
@@ -1783,19 +1796,22 @@ var wombat_internal = function($wbwindow) {
     //============================================
     function init_open_override()
     {
-        if (!$wbwindow.Window.prototype.open) {
-            return;
+        var orig = $wbwindow.open;
+
+        if ($wbwindow.Window.prototype.open) {
+            orig = $wbwindow.Window.prototype.open;
         }
 
-        var orig = $wbwindow.Window.prototype.open;
-
         var open_rewritten = function(strUrl, strWindowName, strWindowFeatures) {
-            strUrl = rewrite_url(strUrl);
+            strUrl = rewrite_url(strUrl, false, "");
             return orig.call(this, strUrl, strWindowName, strWindowFeatures);
         }
 
         $wbwindow.open = open_rewritten;
-        $wbwindow.Window.prototype.open = open_rewritten;
+
+        if ($wbwindow.Window.prototype.open) {
+            $wbwindow.Window.prototype.open = open_rewritten;
+        }
 
         for (var i = 0; i < $wbwindow.frames.length; i++) {
             try {
@@ -2086,7 +2102,7 @@ var wombat_internal = function($wbwindow) {
 
     //============================================
     function get_final_url(prefix, mod, url) {
-        if (!mod) {
+        if (mod == undefined) {
             mod = wb_info.mod;
         }
 

@@ -174,7 +174,8 @@ class ReplayView(object):
                                   stream=stream,
                                   head_insert_func=head_insert_func,
                                   urlkey=cdx['urlkey'],
-                                  cdx=cdx))
+                                  cdx=cdx,
+                                  env=wbrequest.env))
 
         (status_headers, response_iter, is_rewritten) = result
 

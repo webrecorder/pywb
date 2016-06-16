@@ -37,15 +37,19 @@ Traceback (most recent call last):
 IOError: [Errno 2] No such file or directory: '_x_no_such_file_'
 
 # HMAC Cookie Maker
->>> print_str(BlockLoader(HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read())
+>>> print_str(BlockLoader(cookie_maker=HMACCookieMaker('test', 'test', 5)).load('http://example.com', 41, 14).read())
 'Example Domain'
 
 # fixed cookie, range request
->>> print_str(BlockLoader('some=value').load('http://example.com', 41, 14).read())
+>>> print_str(BlockLoader(cookie='some=value').load('http://example.com', 41, 14).read())
 'Example Domain'
 
 # range request
 >>> print_str(BlockLoader().load('http://example.com', 1262).read())
+'</html>\n'
+
+# custom profile
+>>> print_str(BlockLoader().load('local+http://example.com', 1262).read())
 '</html>\n'
 
 # unknown loader error
@@ -90,8 +94,9 @@ IOError: [Errno 2] No such file or directory: '_x_no_such_file_'
 # unsupported method
 >>> extract_post_query('PUT', 'application/x-www-form-urlencoded', len(post_data), BytesIO(post_data))
 
-# unsupported type
+# base64 encode
 >>> extract_post_query('POST', 'text/plain', len(post_data), BytesIO(post_data))
+'&__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6'
 
 # invalid length
 >>> extract_post_query('POST', 'application/x-www-form-urlencoded', 'abc', BytesIO(post_data))

@@ -184,14 +184,15 @@ class WbRequest(object):
         if not self.wb_url:
             return
 
-        mime = self.env.get('CONTENT_TYPE', '').split(';')[0]
+        mime = self.env.get('CONTENT_TYPE', '')
         length = self.env.get('CONTENT_LENGTH')
         stream = self.env['wsgi.input']
 
         buffered_stream = BytesIO()
 
         post_query = extract_post_query('POST', mime, length, stream,
-                                        buffered_stream=buffered_stream)
+                                        buffered_stream=buffered_stream,
+                                        environ=self.env)
 
         if post_query:
             self.env['wsgi.input'] = buffered_stream

@@ -153,7 +153,7 @@ class CDXObject(OrderedDict):
             raise CDXException(msg)
 
         for header, field in zip(cdxformat, fields):
-            self[header] = field.decode('utf-8')
+            self[header] = to_native_str(field, 'utf-8')
 
         self.cdxline = cdxline
 
@@ -213,7 +213,7 @@ class CDXObject(OrderedDict):
 
     def __str__(self):
         if self.cdxline:
-            return self.cdxline.decode('utf-8')
+            return to_native_str(self.cdxline, 'utf-8')
 
         if not self._from_json:
             return ' '.join(str(val) for val in six.itervalues(self))
@@ -263,7 +263,7 @@ class IDXObject(OrderedDict):
             raise CDXException(msg.format(len(fields), self.NUM_REQ_FIELDS))
 
         for header, field in zip(self.FORMAT, fields):
-            self[header] = field.decode('utf-8')
+            self[header] = to_native_str(field, 'utf-8')
 
         self['offset'] = int(self['offset'])
         self['length'] = int(self['length'])
@@ -285,4 +285,4 @@ class IDXObject(OrderedDict):
         return json_encode(self) + '\n'
 
     def __str__(self):
-        return self.idxline.decode('utf-8')
+        return to_native_str(self.idxline, 'utf-8')

@@ -133,6 +133,14 @@ def compress_alt(buff):
 
     return compressed
 
+# Brotli
+
+def test_brotli():
+    with open(get_test_dir() + 'text_content/quickfox_repeated.compressed', 'rb') as fh:
+        x = DecompressingBufferedReader(fh, decomp_type='br')
+        x.read() == b'The quick brown fox jumps over the lazy dog' * 4096
+
+
 
 # Errors
 
@@ -140,9 +148,11 @@ def test_err_compress_mix():
     # error: compressed member, followed by not compressed -- considered invalid
     x = DecompressingBufferedReader(BytesIO(compress('ABC') + b'123'), decomp_type = 'gzip')
     b = x.read()
-    b = x.read_next_member()
-    with pytest.raises(zlib.error):
-        x.read()
+    assert b == b'ABC'
+    x.read_next_member()
+    assert x.read() == b''
+    #with pytest.raises(zlib.error):
+    #    x.read()
     #error: Error -3 while decompressing: incorrect header check
 
 def test_err_chunk_cut_off():

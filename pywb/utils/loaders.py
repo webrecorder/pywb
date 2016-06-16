@@ -9,10 +9,12 @@ import requests
 
 import six
 from six.moves.urllib.request import pathname2url, url2pathname
-from six.moves.urllib.parse import urljoin, unquote_plus, urlsplit
+from six.moves.urllib.parse import urljoin, unquote_plus, urlsplit, urlencode
 
 import time
 import pkg_resources
+import base64
+import cgi
 
 from io import open, BytesIO
 
@@ -65,17 +67,16 @@ def to_native_str(value, encoding='iso-8859-1', func=lambda x: x):
 
 
 #=================================================================
-def extract_post_query(method, mime, length, stream, buffered_stream=None):
+def extract_post_query(method, mime, length, stream,
+                       buffered_stream=None,
+                       environ=None):
     """
     Extract a url-encoded form POST from stream
-    If not a application/x-www-form-urlencoded, or no missing
     content length, return None
+    Attempt to decode application/x-www-form-urlencoded or multipart/*,
+    otherwise read whole block and b64encode
     """
     if method.upper() != 'POST':
-        return None
-
-    if ((not mime or
-         not mime.lower().startswith('application/x-www-form-urlencoded'))):
         return None
 
     try:
@@ -101,9 +102,77 @@ def extract_post_query(method, mime, length, stream, buffered_stream=None):
         buffered_stream.write(post_query)
         buffered_stream.seek(0)
 
-    post_query = to_native_str(post_query)
-    post_query = unquote_plus(post_query)
+    if not mime:
+        mime = ''
+
+    if mime.startswith('application/x-www-form-urlencoded'):
+        post_query = to_native_str(post_query)
+        post_query = unquote_plus(post_query)
+
+    elif mime.startswith('multipart/'):
+        env = {'REQUEST_METHOD': 'POST',
+               'CONTENT_TYPE': mime,
+               'CONTENT_LENGTH': len(post_query)}
+
+        args = dict(fp=BytesIO(post_query),
+                    environ=env,
+                    keep_blank_values=True)
+
+        if six.PY3:
+            args['encoding'] = 'utf-8'
+
+        data = cgi.FieldStorage(**args)
+
+        values = []
+        for item in data.list:
+            values.append((item.name, item.value))
+
+        post_query = urlencode(values, True)
+
+    elif mime.startswith('application/x-amf'):
+        post_query = amf_parse(post_query, environ)
+
+    else:
+        post_query = base64.b64encode(post_query)
+        post_query = to_native_str(post_query)
+        post_query = '&__wb_post_data=' + post_query
+
     return post_query
+
+
+#=================================================================
+def amf_parse(string, environ):
+    try:
+        from pyamf import remoting
+
+        res = remoting.decode(BytesIO(string))
+
+        #print(res)
+        body = res.bodies[0][1].body[0]
+
+        values = {}
+
+        if hasattr(body, 'body'):
+            values['body'] = body.body
+
+        if hasattr(body, 'source'):
+            values['source'] = body.source
+
+        if hasattr(body, 'operation'):
+            values['op'] = body.operation
+
+        if environ is not None:
+            environ['pywb.inputdata'] = res
+
+        query = urlencode(values)
+        #print(query)
+        return query
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(e)
+        return None
 
 
 #=================================================================
@@ -167,23 +236,34 @@ def read_last_line(fh, offset=256):
 
 
 #=================================================================
-class BlockLoader(object):
+class BaseLoader(object):
+    def __init__(self, **kwargs):
+        pass
+
+    def load(self, url, offset=0, length=-1):
+        raise NotImplemented()
+
+
+#=================================================================
+class BlockLoader(BaseLoader):
     """
     a loader which can stream blocks of content
     given a uri, offset and optional length.
     Currently supports: http/https and file/local file system
     """
 
-    def __init__(self, *args, **kwargs):
+    loaders = {}
+    profile_loader = None
+
+    def __init__(self, **kwargs):
         self.cached = {}
-        self.args = args
         self.kwargs = kwargs
 
     def load(self, url, offset=0, length=-1):
-        loader = self._get_loader_for(url)
+        loader, url = self._get_loader_for_url(url)
         return loader.load(url, offset, length)
 
-    def _get_loader_for(self, url):
+    def _get_loader_for_url(self, url):
         """
         Determine loading method based on uri
         """
@@ -193,18 +273,47 @@ class BlockLoader(object):
         else:
             type_ = parts[0]
 
+        if '+' in type_:
+            profile_name, scheme = type_.split('+', 1)
+            if len(parts) == 2:
+                url = scheme + '://' + parts[1]
+        else:
+            profile_name = ''
+            scheme = type_
+
         loader = self.cached.get(type_)
         if loader:
-            return loader
+            return loader, url
 
-        loader_cls = LOADERS.get(type_)
+        loader_cls = self._get_loader_class_for_type(scheme)
+
         if not loader_cls:
-            raise IOError('No Loader for type: ' + type_)
+            raise IOError('No Loader for type: ' + scheme)
 
-        loader = loader_cls(*self.args, **self.kwargs)
+        profile = self.kwargs
+
+        if self.profile_loader:
+            profile = self.profile_loader(profile_name, scheme)
+
+        loader = loader_cls(**profile)
+
         self.cached[type_] = loader
-        return loader
+        return loader, url
 
+    def _get_loader_class_for_type(self, type_):
+        loader_cls = self.loaders.get(type_)
+        return loader_cls
+
+    @staticmethod
+    def init_default_loaders():
+        BlockLoader.loaders['http'] = HttpLoader
+        BlockLoader.loaders['https'] = HttpLoader
+        BlockLoader.loaders['s3'] = S3Loader
+        BlockLoader.loaders['file'] = LocalFileLoader
+
+    @staticmethod
+    def set_profile_loader(src):
+        BlockLoader.profile_loader = src
 
     @staticmethod
     def _make_range_header(offset, length):
@@ -217,10 +326,7 @@ class BlockLoader(object):
 
 
 #=================================================================
-class LocalFileLoader(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
+class LocalFileLoader(BaseLoader):
     def load(self, url, offset=0, length=-1):
         """
         Load a file-like reader from the local file system
@@ -260,9 +366,11 @@ class LocalFileLoader(object):
 
 
 #=================================================================
-class HttpLoader(object):
-    def __init__(self, cookie_maker=None, *args, **kwargs):
-        self.cookie_maker = cookie_maker
+class HttpLoader(BaseLoader):
+    def __init__(self, **kwargs):
+        self.cookie_maker = kwargs.get('cookie_maker')
+        if not self.cookie_maker:
+            self.cookie_maker = kwargs.get('cookie')
         self.session = None
 
     def load(self, url, offset, length):
@@ -288,33 +396,47 @@ class HttpLoader(object):
 
 
 #=================================================================
-class S3Loader(object):
-    def __init__(self, *args, **kwargs):
+class S3Loader(BaseLoader):
+    def __init__(self, **kwargs):
         self.s3conn = None
+        self.aws_access_key_id = kwargs.get('aws_access_key_id')
+        self.aws_secret_access_key = kwargs.get('aws_secret_access_key')
 
     def load(self, url, offset, length):
         if not s3_avail:  #pragma: no cover
            raise IOError('To load from s3 paths, ' +
                           'you must install boto: pip install boto')
 
-        if not self.s3conn:
-            try:
-                self.s3conn = connect_s3()
-            except Exception:  #pragma: no cover
-                self.s3conn = connect_s3(anon=True)
+        aws_access_key_id = self.aws_access_key_id
+        aws_secret_access_key = self.aws_secret_access_key
 
         parts = urlsplit(url)
 
-        bucket = self.s3conn.get_bucket(parts.netloc)
+        if parts.username and parts.password:
+            aws_access_key_id = unquote_plus(parts.username)
+            aws_secret_access_key = unquote_plus(parts.password)
+            bucket_name = parts.netloc.split('@', 1)[-1]
+        else:
+            bucket_name = parts.netloc
 
-        headers = {'Range': BlockLoader._make_range_header(offset, length)}
+        if not self.s3conn:
+            try:
+                self.s3conn = connect_s3(aws_access_key_id, aws_secret_access_key)
+            except Exception:  #pragma: no cover
+                self.s3conn = connect_s3(anon=True)
+
+        bucket = self.s3conn.get_bucket(bucket_name)
 
         key = bucket.get_key(parts.path)
 
-        result = key.get_contents_as_string(headers=headers)
-        key.close()
+        if offset == 0 and length == -1:
+            headers = {}
+        else:
+            headers = {'Range': BlockLoader._make_range_header(offset, length)}
 
-        return BytesIO(result)
+        # Read range
+        key.open_read(headers=headers)
+        return key
 
 
 #=================================================================
@@ -414,12 +536,6 @@ class LimitReader(object):
 
         return stream
 
-
-#=================================================================
-LOADERS = {'http': HttpLoader,
-           'https': HttpLoader,
-           's3': S3Loader,
-           'file': LocalFileLoader
-          }
-
+# ============================================================================
+BlockLoader.init_default_loaders()
 
