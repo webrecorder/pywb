@@ -1,6 +1,7 @@
 from pywb.rewrite.cookie_rewriter import WbUrlBaseCookieRewriter
 from pywb.utils.timeutils import datetime_to_http_date
 from six.moves.http_cookiejar import CookieJar, DefaultCookiePolicy
+from six.moves import zip
 
 import redis
 
@@ -12,41 +13,53 @@ import six
 
 # =============================================================================
 class CookieTracker(object):
-    def __init__(self, redis):
+    def __init__(self, redis, expire_time=120):
         self.redis = redis
+        self.expire_time = expire_time
 
     def get_rewriter(self, url_rewriter, cookie_key):
-        return DomainCacheCookieRewriter(url_rewriter,
-                                         self.redis,
-                                         cookie_key)
+        return DomainCacheCookieRewriter(url_rewriter, self, cookie_key)
 
     def get_cookie_headers(self, url, cookie_key):
         subds = self.get_subdomains(url)
+
         if not subds:
             return None, None
 
         with redis.utils.pipeline(self.redis) as pi:
-            for x in subds:
-                pi.hgetall(cookie_key + '.' + x)
+            for domain in subds:
+                pi.hgetall(cookie_key + '.' + domain)
 
             all_res = pi.execute()
 
         cookies = []
         set_cookies = []
 
-        for res in all_res:
-            if not res:
-                continue
+        with redis.utils.pipeline(self.redis) as pi:
+            for res, domain in zip(all_res, subds):
+                if not res:
+                    continue
 
-            for n, v in six.iteritems(res):
-                n = n.decode('utf-8')
-                v = v.decode('utf-8')
-                full = n + '=' + v
-                cookies.append(full.split(';')[0])
-                set_cookies.append(('Set-Cookie', full + '; Max-Age=120'))
+                for n, v in six.iteritems(res):
+                    n = n.decode('utf-8')
+                    v = v.decode('utf-8')
+                    full = n + '=' + v
+                    cookies.append(full.split(';')[0])
+                    set_cookies.append(('Set-Cookie', full + '; Max-Age=' + str(self.expire_time)))
+
+                pi.expire(cookie_key + '.' + domain, self.expire_time)
+
 
         cookies = ';'.join(cookies)
         return cookies, set_cookies
+
+    def add_cookie(self, cookie_key, domain, name, value):
+        if domain[0] != '.':
+            domain = '.' + domain
+
+        with redis.utils.pipeline(self.redis) as pi:
+            pi.hset(cookie_key + domain, name, value)
+            pi.expire(cookie_key + domain, self.expire_time)
 
     @staticmethod
     def get_subdomains(url):
@@ -72,9 +85,9 @@ class CookieTracker(object):
 
 # =============================================================================
 class DomainCacheCookieRewriter(WbUrlBaseCookieRewriter):
-    def __init__(self, url_rewriter, redis, cookie_key):
+    def __init__(self, url_rewriter, cookie_tracker, cookie_key):
         super(DomainCacheCookieRewriter, self).__init__(url_rewriter)
-        self.redis = redis
+        self.cookie_tracker = cookie_tracker
         self.cookie_key = cookie_key
 
     def rewrite_cookie(self, name, morsel):
@@ -98,9 +111,10 @@ class DomainCacheCookieRewriter(WbUrlBaseCookieRewriter):
             if morsel.get('secure'):
                 string += '; Secure'
 
-            with redis.utils.pipeline(self.redis) as pi:
-                pi.hset(self.cookie_key + domain, morsel.key, string)
-                pi.expire(self.cookie_key + domain, 120)
+            self.cookie_tracker.add_cookie(self.cookie_key,
+                                           domain,
+                                           morsel.key,
+                                           string)
 
         # else set cookie to rewritten path
         if morsel.get('path'):
