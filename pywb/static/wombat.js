@@ -47,8 +47,6 @@ var wombat_internal = function($wbwindow) {
 
     var wb_wombat_updating = false;
 
-    var cookie_domain_callback = undefined;
-
     // custom options
     var wb_opts;
 
@@ -1847,6 +1845,24 @@ var wombat_internal = function($wbwindow) {
             cookie = cookie.replace(wb_abs_prefix, '');
             cookie = cookie.replace(wb_rel_prefix, '');
 
+            // rewrite domain
+            cookie = cookie.replace(cookie_domain_regex, function(m, m1) {
+                var message = {"domain": m1,
+                               "cookie": cookie,
+                               "wb_type": "cookie",
+                              }
+
+                // norify of cookie setting to allow server-side tracking
+                $wbwindow.__WB_top_frame.postMessage(message, "*");
+
+                // if no subdomain, eg. "localhost", just remove domain altogether
+                if ($wbwindow.location.hostname.indexOf(".") >= 0 && !IP_RX.test($wbwindow.location.hostname)) {
+                    return "Domain=." + $wbwindow.location.hostname;
+                } else {
+                    return "";
+                }
+            });
+
             // rewrite path
             cookie = cookie.replace(cookie_path_regex, function(m, m1) {
                 var rewritten = rewrite_url(m1);
@@ -1856,21 +1872,6 @@ var wombat_internal = function($wbwindow) {
                 }
 
                 return "Path=" + rewritten;
-            });
-
-            // rewrite domain
-            cookie = cookie.replace(cookie_domain_regex, function(m, m1) {
-
-                if (cookie_domain_callback) {
-                    cookie_domain_callback(m1, cookie.split(";", 1)[0]);
-                }
-
-                // if no subdomain, eg. "localhost", just remove domain altogether
-                if ($wbwindow.location.hostname.indexOf(".") >= 0 && !IP_RX.test($wbwindow.location.hostname)) {
-                    return "Domain=." + $wbwindow.location.hostname;
-                } else {
-                    return "";
-                }
             });
 
             // rewrite secure, if needed
@@ -2257,10 +2258,6 @@ var wombat_internal = function($wbwindow) {
         this.extract_orig = extract_orig;
         this.rewrite_url = rewrite_url;
         this.watch_elem = watch_elem;
-
-        this.cookie_callback = function(callback) {
-            cookie_domain_callback = callback;
-        }
     }
 
     function init_top_frame($wbwindow) {
