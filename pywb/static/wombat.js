@@ -710,11 +710,13 @@ var wombat_internal = function($wbwindow) {
         $wbwindow.history['_orig_' + func_name] = orig_func;
 
         function rewritten_func(state_obj, title, url) {
-            if (!starts_with(url, $wbwindow.WB_wombat_location.origin + "/")) {
-                throw new DOMException("Invalid history change: " + url);
-            }
-
             url = rewrite_url(url);
+
+            var abs_url = extract_orig(url);
+
+            if (!starts_with(abs_url, $wbwindow.WB_wombat_location.origin + "/")) {
+                throw new DOMException("Invalid history change: " + abs_url);
+            }
 
             if (url == $wbwindow.location.href) {
                 return;
@@ -724,7 +726,7 @@ var wombat_internal = function($wbwindow) {
 
             if ($wbwindow.__WB_top_frame && $wbwindow != $wbwindow.__WB_top_frame) {
                 var message = {
-                           "url": extract_orig(url),
+                           "url": abs_url,
                            "ts": wb_info.timestamp,
                            "request_ts": wb_info.request_ts,
                            "is_live": wb_info.is_live,
