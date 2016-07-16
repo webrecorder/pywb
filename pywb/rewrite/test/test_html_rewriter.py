@@ -56,6 +56,9 @@ r"""
 >>> parse('<base href>')
 <base href>
 
+# href on other tags
+>>> parse('<HTML><div Href="page.html">Text</div></hTmL>')
+<html><div href="/web/20131226101010/http://example.com/some/path/page.html">Text</div></html>
 
 # HTML Entities
 >>> parse('<a href="">&rsaquo; &nbsp; &#62; &#63</div>')

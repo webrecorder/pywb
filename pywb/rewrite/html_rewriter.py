@@ -328,6 +328,11 @@ class HTMLRewriterMixin(object):
             elif (tag == 'base') and (attr_name == 'href') and attr_value:
                 rw_mod = handler.get(attr_name)
                 attr_value = self._rewrite_base(attr_value, rw_mod)
+
+            elif attr_name == 'href':
+                rw_mod = self.defmod
+                attr_value = self._rewrite_url(attr_value, rw_mod)
+
             else:
                 # rewrite url using tag handler
                 rw_mod = handler.get(attr_name)
