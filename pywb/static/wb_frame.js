@@ -54,7 +54,11 @@ function push_state(state) {
 
     var canon_url = make_url(state.url, state.request_ts, "");
     if (window.location.href != canon_url) {
-        window.history.replaceState(state, "", canon_url);
+        if (state.wb_type != "pushState") {
+            window.history.replaceState(state, "", canon_url);
+        } else {
+            window.history.pushState(state, "", canon_url);
+        }
     }
 
     set_state(state);
@@ -172,7 +176,8 @@ function init_pm() {
 
             // Check if iframe url change message
             if (typeof(event.data) == "object" && event.data["wb_type"]) {
-                update_wb_url(event.data);
+                handle_message(event.data);
+
             } else {
                 // Pass to parent
                 window.parent.postMessage(event.data, "*");
@@ -183,6 +188,21 @@ function init_pm() {
     window.__WB_pmw = function(win) {
         this.pm_source = win;
         return this;
+    }
+}
+
+
+function handle_message(state) {
+    var type = state.wb_type;
+
+    if (type == "load" || type == "pushState" || type == "replaceState") {
+        update_wb_url(state);
+    } else if (type == "go") {
+        window.history.go(state.param);
+    } else if (type == "back") {
+        window.history.back();
+    } else if (type == "forward") {
+        window.history.forward();
     }
 }
 
