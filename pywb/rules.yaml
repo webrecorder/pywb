@@ -187,6 +187,7 @@ rules:
       fuzzy_lookup:
           - video_id
           - html5
+          - cpn
 
     - url_prefix: 'com,youtube,s)/api/stats/qoe'
 
