@@ -11,7 +11,7 @@ from pywb.utils.statusandheaders import StatusAndHeaders, StatusAndHeadersParser
 
 from pywb.warc.resolvingloader import ResolvingLoader
 
-from six.moves.urllib.parse import urlsplit
+from six.moves.urllib.parse import urlsplit, quote, unquote
 
 from io import BytesIO
 
@@ -35,7 +35,7 @@ class BaseLoader(object):
 
         out_headers = {}
         out_headers['WebAgg-Type'] = 'warc'
-        out_headers['WebAgg-Source-Coll'] = cdx.get('source', '')
+        out_headers['WebAgg-Source-Coll'] = quote(cdx.get('source', ''), safe=':/')
         out_headers['Content-Type'] = 'application/warc-record'
 
         if not warc_headers:
@@ -293,7 +293,7 @@ class LiveWebLoader(BaseLoader):
 
         agg_type = upstream_res.headers.get('WebAgg-Type')
         if agg_type == 'warc':
-            cdx['source'] = upstream_res.headers.get('WebAgg-Source-Coll')
+            cdx['source'] = unquote(upstream_res.headers.get('WebAgg-Source-Coll'))
             return None, upstream_res.headers, upstream_res
 
         self.raise_on_self_redirect(params, cdx,
