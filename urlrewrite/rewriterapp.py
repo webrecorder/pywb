@@ -79,6 +79,11 @@ class RewriterApp(object):
 
         return response(environ, start_response)
 
+    def is_framed_replay(self, wb_url):
+        return (self.framed_replay and
+                wb_url.mod == self.frame_mod and
+                wb_url.is_replay())
+
     def render_content(self, wb_url, kwargs, environ):
         wb_url = WbUrl(wb_url)
 
@@ -89,7 +94,13 @@ class RewriterApp(object):
         resp = self.handle_custom_response(environ, wb_url,
                                            full_prefix, host_prefix, kwargs)
         if resp is not None:
-            return WbResponse.text_response(resp, content_type='text/html')
+            content_type = 'text/html'
+
+            # if not replay outer frame, specify utf-8 charset
+            if not self.is_framed_replay(wb_url):
+                content_type += '; charset=utf-8'
+
+            return WbResponse.text_response(resp, content_type=content_type)
 
         urlrewriter = UrlRewriter(wb_url,
                                   prefix=full_prefix,
@@ -398,7 +409,7 @@ class RewriterApp(object):
         if wb_url.is_query():
             return self.handle_query(environ, wb_url, kwargs)
 
-        if self.framed_replay and wb_url.mod == self.frame_mod:
+        if self.is_framed_replay(wb_url):
             extra_params = self.get_top_frame_params(wb_url, kwargs)
             return self.frame_insert_view.get_top_frame(wb_url,
                                                         full_prefix,
