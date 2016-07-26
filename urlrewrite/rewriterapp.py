@@ -123,7 +123,7 @@ class RewriterApp(object):
         readd_range = False
         async_record_url = None
 
-        if kwargs.get('type') == 'record':
+        if kwargs.get('type') in ('record', 'patch'):
             rangeres = inputreq.extract_range()
 
             if rangeres:
