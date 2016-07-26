@@ -153,6 +153,18 @@ r"""
 >>> parse('<i style="background-image: url(http://foo-.bar_.example.com/)"></i>')
 <i style="background-image: url(/web/20131226101010/http://foo-.bar_.example.com/)"></i>
 
+>>> parse('<i style=\'background-image: url("http://foo.example.com/")\'></i>')
+<i style="background-image: url(&quot;/web/20131226101010/http://foo.example.com/&quot;)"></i>
+
+>>> parse('<i style=\'background-image: url(&quot;http://foo.example.com/&quot;)\'></i>')
+<i style="background-image: url(&quot;/web/20131226101010/http://foo.example.com/&quot;)"></i>
+
+>>> parse("<i style='background-image: url(&apos;http://foo.example.com/&apos;)'></i>")
+<i style="background-image: url(&apos;/web/20131226101010/http://foo.example.com/&apos;)"></i>
+
+#>>> parse('<i style=\'background-image: url(&quot;http://исп/&quot;)\'></i>')
+<i style="background-image: url(&quot;/web/20131226101010/http://%D0%B8%D1%81%D0%BF/&quot;)"></i>
+
 # Style
 >>> parse('<style>@import "styles.css" .a { font-face: url(\'myfont.ttf\') }</style>')
 <style>@import "/web/20131226101010/http://example.com/some/path/styles.css" .a { font-face: url('/web/20131226101010/http://example.com/some/path/myfont.ttf') }</style>
