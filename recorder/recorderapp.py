@@ -111,7 +111,10 @@ class RecorderApp(object):
 
         self.writer.write_record(record, params)
 
-        return self.send_message({'success': 'true'},
+        msg = {'success': 'true',
+               'WARC-Date': record.rec_headers.get('WARC-Date')}
+
+        return self.send_message(msg,
                                  '200 OK',
                                  start_response)
 
@@ -262,6 +265,7 @@ class ReqWrapper(Wrapper):
     def __init__(self, stream, req_headers):
         super(ReqWrapper, self).__init__(stream)
         self.headers = CaseInsensitiveDict(req_headers)
+
         for n in req_headers.keys():
             if not n.upper().startswith('WARC-'):
                 del self.headers[n]

@@ -180,7 +180,9 @@ class BaseWARCWriter(object):
         warc_headers['WARC-Record-ID'] = self._make_warc_id()
         warc_headers['WARC-Type'] = record_type
         warc_headers['WARC-Target-URI'] = uri
-        warc_headers['WARC-Date'] = datetime_to_iso_date(datetime.datetime.utcnow())
+
+        if 'WARC-Date' not in warc_headers:
+            warc_headers['WARC-Date'] = datetime_to_iso_date(datetime.datetime.utcnow())
 
         record = ArcWarcRecord('warc', record_type, warc_headers, payload,
                                None, content_type, len_)
