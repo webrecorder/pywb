@@ -512,6 +512,9 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         resp = testapp.put(req_url, headers=headers, params=buff)
 
+        assert resp.json['success'] == 'true'
+        assert resp.json['WARC-Date'] != ''
+
         self._test_all_warcs('/warcs/meta', 1)
 
         r = FakeStrictRedis.from_url('redis://localhost/2')
