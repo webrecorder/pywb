@@ -4,7 +4,7 @@
   wbinfo.url = "{{ cdx.url }}";
   wbinfo.timestamp = "{{ cdx.timestamp }}";
   wbinfo.request_ts = "{{ wbrequest.wb_url.timestamp }}";
-  wbinfo.prefix = "{{ wbrequest.wb_prefix }}";
+  wbinfo.prefix = decodeURI("{{ wbrequest.wb_prefix }}");
   wbinfo.mod = "{{ wbrequest.wb_url.mod }}";
   wbinfo.top_url = "{{ top_url }}";
   wbinfo.is_framed = {{ "true" if wbrequest.options.is_framed else "false" }};
