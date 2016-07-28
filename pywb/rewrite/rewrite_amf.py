@@ -6,13 +6,12 @@ from pywb.rewrite.rewrite_content import RewriteContent
 # ============================================================================
 # Expiermental: not fully tested
 class RewriteContentAMF(RewriteContent):  #pragma: no cover
-    def handle_custom_rewrite(self, text_type, status_headers, stream, env):
-
-        if status_headers.get_header('Content-Type') == 'application/x-amf':
+    def handle_custom_rewrite(self, rewritten_headers, stream, mod, env):
+        if rewritten_headers.status_headers.get_header('Content-Type') == 'application/x-amf':
             stream = self.rewrite_amf(stream, env)
 
         return (super(RewriteContentAMF, self).
-                handle_custom_rewrite(text_type, status_headers, stream, env))
+                handle_custom_rewrite(rewritten_headers, stream, mod, env))
 
     def rewrite_amf(self, stream, env):
         try:

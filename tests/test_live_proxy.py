@@ -125,7 +125,7 @@ class TestProxyLiveRewriter:
 
     def test_echo_proxy_start_unbounded_remove_range(self):
         headers = [('Range', 'bytes=0-')]
-        resp = self.testapp.get('/rewrite/http://example.com/', headers=headers)
+        resp = self.testapp.get('/rewrite/http://httpbin.org/range/100', headers=headers)
 
         # actual response is with range
         assert resp.status_int == 206
@@ -138,7 +138,7 @@ class TestProxyLiveRewriter:
         assert self.requestlog[0] == resp.text
         assert resp.headers['x-archive-orig-x-proxy'] == 'test'
 
-        assert self.requestlog[0].startswith('GET http://example.com/ HTTP/1.1')
+        assert self.requestlog[0].startswith('GET http://httpbin.org/range/100 HTTP/1.1')
         assert 'range: ' not in self.requestlog[0]
 
         assert len(self.cache) == 0

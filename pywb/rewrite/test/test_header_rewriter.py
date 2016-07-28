@@ -6,7 +6,7 @@ HTTP Headers Rewriting
 # Text with charset
 >>> _test_headers([('Date', 'Fri, 03 Jan 2014 03:03:21 GMT'), ('Content-Length', '5'), ('Content-Type', 'text/html;charset=UTF-8')])
 {'charset': 'utf-8',
- 'removed_header_dict': {},
+ 'removed_header_dict': {'content-length': '5'},
  'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('X-Archive-Orig-Date', 'Fri, 03 Jan 2014 03:03:21 GMT'),
   ('X-Archive-Orig-Content-Length', '5'),
   ('Content-Type', 'text/html;charset=UTF-8')]),
@@ -24,9 +24,11 @@ HTTP Headers Rewriting
 >>> _test_headers([('Content-Length', '199999'), ('Content-Type', 'text/javascript'), ('Content-Encoding', 'gzip'), ('Transfer-Encoding', 'chunked')])
 {'charset': None,
  'removed_header_dict': {'content-encoding': 'gzip',
+                         'content-length': '199999',
                          'transfer-encoding': 'chunked'},
  'status_headers': StatusAndHeaders(protocol = '', statusline = '200 OK', headers = [ ('X-Archive-Orig-Content-Length', '199999'),
   ('Content-Type', 'text/javascript'),
+  ('X-Archive-Orig-Content-Encoding', 'gzip'),
   ('X-Archive-Orig-Transfer-Encoding', 'chunked')]),
  'text_type': 'js'}
 

@@ -17,6 +17,12 @@ class RewrittenStatusAndHeaders(object):
     def contains_removed_header(self, name, value):
         return self.removed_header_dict.get(name) == value
 
+    def readd_rewrite_removed(self):
+        for name in HeaderRewriter.PROXY_NO_REWRITE_HEADERS:
+            value = self.removed_header_dict.get(name)
+            if value is not None:
+                self.status_headers.headers.append((name, value))
+
 
 #=================================================================
 class HeaderRewriter(object):
@@ -34,6 +40,8 @@ class HeaderRewriter(object):
         'json': ['application/json'],
 
         'xml':  ['/xml', '+xml', '.xml', '.rss'],
+
+        'plain': ['text/plain'],
     }
 
     PROXY_HEADERS = ['content-type', 'content-disposition', 'content-range',
@@ -41,12 +49,12 @@ class HeaderRewriter(object):
 
     URL_REWRITE_HEADERS = ['location', 'content-location', 'content-base']
 
-    ENCODING_HEADERS = ['content-encoding']
+    #ENCODING_HEADERS = ['content-encoding']
 
     REMOVE_HEADERS = ['transfer-encoding', 'content-security-policy',
                       'strict-transport-security']
 
-    PROXY_NO_REWRITE_HEADERS = ['content-length']
+    PROXY_NO_REWRITE_HEADERS = ['content-length', 'content-encoding']
 
     COOKIE_HEADERS = ['set-cookie', 'cookie']
 
@@ -141,19 +149,16 @@ class HeaderRewriter(object):
             elif urlrewriter and lowername in self.URL_REWRITE_HEADERS:
                 new_headers.append((name, urlrewriter.rewrite(value)))
 
-            elif lowername in self.ENCODING_HEADERS:
+            elif lowername in self.PROXY_NO_REWRITE_HEADERS:
                 if content_rewritten:
                     removed_header_dict[lowername] = value
+                    add_prefixed_header(name, value)
                 else:
                     add_header(name, value)
 
             elif lowername in self.REMOVE_HEADERS:
                 removed_header_dict[lowername] = value
                 add_prefixed_header(name, value)
-
-            elif (lowername in self.PROXY_NO_REWRITE_HEADERS and
-                  not content_rewritten):
-                add_header(name, value)
 
             elif (lowername in self.COOKIE_HEADERS and
                   cookie_rewriter):
