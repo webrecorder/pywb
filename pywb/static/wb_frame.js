@@ -19,7 +19,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
 
 var LIVE_COOKIE_REGEX = /pywb.timestamp=([\d]{1,14})/;
 
-var TS_REGEX = /\/([\d]{1,14})\//;
+var TS_REGEX = /\/([\d]{1,14})(?:\w+_)?\/(?:\w+[:])?\/\//;
 
 var curr_state = {};
 
