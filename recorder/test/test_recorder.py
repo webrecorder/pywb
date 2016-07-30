@@ -471,7 +471,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
                   'format': 'WARC File Format 1.0',
                   'json-metadata': json.dumps({'foo': 'bar'})}
 
-        record = simplewriter.create_warcinfo_record('testfile.warc.gz', **params)
+        record = simplewriter.create_warcinfo_record('testfile.warc.gz', params)
         simplewriter.write_record(record)
         buff = simplewriter.get_buffer()
         assert isinstance(buff, bytes)

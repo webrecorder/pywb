@@ -152,7 +152,7 @@ class BaseWARCWriter(object):
 
         return record_type, record
 
-    def create_warcinfo_record(self, filename, **kwargs):
+    def create_warcinfo_record(self, filename, info):
         warc_headers = {}
         warc_headers['WARC-Record-ID'] = self._make_warc_id()
         warc_headers['WARC-Type'] = 'warcinfo'
@@ -161,7 +161,7 @@ class BaseWARCWriter(object):
         warc_headers['WARC-Date'] = datetime_to_iso_date(datetime.datetime.utcnow())
 
         warcinfo = BytesIO()
-        for n, v in six.iteritems(kwargs):
+        for n, v in six.iteritems(info):
             self._header(warcinfo, n, v)
 
         warcinfo.seek(0)
@@ -344,7 +344,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
         self.fh_cache = {}
 
-    def _open_file(self, dir_, params):
+    def get_new_filename(self, dir_, params):
         timestamp = timestamp20_now()
 
         randstr = base64.b32encode(os.urandom(5)).decode('utf-8')
@@ -354,6 +354,12 @@ class MultiFileWARCWriter(BaseWARCWriter):
                                        timestamp=timestamp,
                                        random=randstr)
 
+        return filename
+
+    def allow_new_file(self, filename, params):
+        return True
+
+    def _open_file(self, filename, params):
         path, name = os.path.split(filename)
 
         try:
@@ -366,7 +372,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
         if self.dedup_index:
             self.dedup_index.add_warc_file(filename, params)
 
-        return fh, filename
+        return fh
 
     def _close_file(self, fh):
         fcntl.flock(fh, fcntl.LOCK_UN)
@@ -415,7 +421,13 @@ class MultiFileWARCWriter(BaseWARCWriter):
             out, filename = result
             is_new = False
         else:
-            out, filename = self._open_file(full_dir, params)
+            filename = self.get_new_filename(full_dir, params)
+
+            if not self.allow_new_file(filename, params):
+                return
+
+            out = self._open_file(filename, params)
+
             is_new = True
 
         try:
