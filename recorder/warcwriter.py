@@ -7,6 +7,7 @@ import zlib
 import sys
 import os
 import six
+import shutil
 
 import traceback
 
@@ -410,6 +411,26 @@ class MultiFileWARCWriter(BaseWARCWriter):
         self._do_write_req_resp(None, record, params)
 
     def _do_write_req_resp(self, req, resp, params):
+        def write_callback(out, filename):
+            url = resp.rec_headers.get('WARC-Target-URI')
+            print('Writing req/resp {0} to {1} '.format(url, filename))
+
+            if resp and self._is_write_resp(resp, params):
+                self._write_warc_record(out, resp)
+
+            if req and self._is_write_req(req, params):
+                self._write_warc_record(out, req)
+
+        return self._write_to_file(params, write_callback)
+
+    def write_stream_to_file(self, params, stream):
+        def write_callback(out, filename):
+            print('Writing stream to {0}'.format(filename))
+            shutil.copyfileobj(stream, out)
+
+        return self._write_to_file(params, write_callback)
+
+    def _write_to_file(self, params, write_callback):
         full_dir = res_template(self.dir_template, params)
         dir_key = self.get_dir_key(params)
 
@@ -424,23 +445,16 @@ class MultiFileWARCWriter(BaseWARCWriter):
             filename = self.get_new_filename(full_dir, params)
 
             if not self.allow_new_file(filename, params):
-                return
+                return False
 
             out = self._open_file(filename, params)
 
             is_new = True
 
         try:
-            url = resp.rec_headers.get('WARC-Target-URI')
-            print('Writing req/resp {0} to {1} '.format(url, filename))
-
             start = out.tell()
 
-            if resp and self._is_write_resp(resp, params):
-                self._write_warc_record(out, resp)
-
-            if req and self._is_write_req(req, params):
-                self._write_warc_record(out, req)
+            write_callback(out, filename)
 
             out.flush()
 
@@ -453,9 +467,12 @@ class MultiFileWARCWriter(BaseWARCWriter):
                                                    filename,
                                                    new_size - start)
 
+            return True
+
         except Exception as e:
             traceback.print_exc()
             close_file = True
+            return False
 
         finally:
             # check for rollover
