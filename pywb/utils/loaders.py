@@ -392,6 +392,7 @@ class HttpLoader(BaseLoader):
             self.session = requests.Session()
 
         r = self.session.get(url, headers=headers, stream=True)
+        r.raise_for_status()
         return r.raw
 
 
