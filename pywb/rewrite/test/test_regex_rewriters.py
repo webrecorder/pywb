@@ -144,6 +144,12 @@ r"""
 >>> _test_css("background: url(\"http://domain.com/path.html\")")
 'background: url("/web/20131010/http://domain.com/path.html")'
 
+>>> _test_css('background: url("   http://domain.com/path.html   ")')
+'background: url("   /web/20131010/http://domain.com/path.html   ")'
+
+>>> _test_css('background: url(" http://domain.com/path.html x ")')
+'background: url(" /web/20131010/http://domain.com/path.html x ")'
+
 >>> _test_css("background: url(file.jpeg)")
 'background: url(/web/20131010/http://example.com/file.jpeg)'
 
