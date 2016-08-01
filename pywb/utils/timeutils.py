@@ -121,6 +121,18 @@ def iso_date_to_timestamp(string):
 
     return datetime_to_timestamp(iso_date_to_datetime(string))
 
+def timestamp_to_iso_date(string):
+    """
+    >>> timestamp_to_iso_date('20131226101112')
+    '2013-12-26T10:11:12Z'
+
+    >>> timestamp_to_iso_date('20131226101112')
+    '2013-12-26T10:11:12Z'
+    """
+
+
+    return datetime_to_iso_date(timestamp_to_datetime(string))
+
 
 def http_date_to_timestamp(string):
     """
