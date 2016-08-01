@@ -82,6 +82,8 @@ class ResAggApp(object):
             return res
 
         except Exception as e:
+            if self.debug:
+                traceback.print_exc()
             message = 'Internal Error: ' + str(e)
             status = 500
             return self.send_error({}, start_response,
