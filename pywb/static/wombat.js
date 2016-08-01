@@ -714,7 +714,7 @@ var wombat_internal = function($wbwindow) {
 
             var abs_url = extract_orig(url);
 
-            if (!starts_with(abs_url, $wbwindow.WB_wombat_location.origin + "/")) {
+            if (abs_url && !starts_with(abs_url, $wbwindow.WB_wombat_location.origin + "/")) {
                 throw new DOMException("Invalid history change: " + abs_url);
             }
 
