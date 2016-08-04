@@ -166,10 +166,6 @@ class WARCPathLoader(BaseLoader):
 
         self.cdx_source = cdx_source
 
-    def cdx_index_source(self, *args, **kwargs):
-        cdx_iter, errs = self.cdx_source(*args, **kwargs)
-        return cdx_iter
-
     def _make_resolver(self, path):
         if hasattr(path, '__call__'):
             return path
@@ -188,13 +184,26 @@ class WARCPathLoader(BaseLoader):
             return None
 
         orig_source = cdx.get('source', '').split(':')[0]
-        cdx._formatter = ParamFormatter(params, orig_source)
+        formatter = ParamFormatter(params, orig_source)
+        cdx._formatter = formatter
+
+        def local_index_query(local_params):
+            for n, v in six.iteritems(params):
+                if n.startswith('param.'):
+                    local_params[n] = v
+
+            cdx_iter, errs = self.cdx_source(local_params)
+            for cdx in cdx_iter:
+                cdx._formatter = formatter
+                yield cdx
+
+            return cdx_iter
 
         failed_files = []
         headers, payload = (self.resolve_loader.
                              load_headers_and_payload(cdx,
                                                       failed_files,
-                                                      self.cdx_index_source))
+                                                      local_index_query))
 
         if cdx.get('status', '').startswith('3'):
             status_headers = self.headers_parser.parse(payload.stream)
