@@ -63,6 +63,9 @@ class TestResAgg(FakeRedisTests, BaseTestClass):
         app.add_route('/empty', HandlerSeq([]))
         app.add_route('/invalid', DefaultResourceHandler([SimpleAggregator({'invalid': 'should not be a callable'})]))
 
+        url_agnost = SimpleAggregator({'url-agnost': FileIndexSource(to_path('testdata/url-agnost-example.cdxj'))})
+        app.add_route('/urlagnost', DefaultResourceHandler(url_agnost, 'redis://localhost/2/test:{arg}:warc'))
+
         cls.testapp = webtest.TestApp(app)
 
     def _check_uri_date(self, resp, uri, dt):
@@ -85,6 +88,7 @@ class TestResAgg(FakeRedisTests, BaseTestClass):
                                        '/posttest', '/posttest/postreq',
                                        '/seq', '/seq/postreq',
                                        '/allredis', '/allredis/postreq',
+                                       '/urlagnost', '/urlagnost/postreq',
                                        '/invalid', '/invalid/postreq'])
 
         assert res['/fallback'] == {'modes': ['list_sources', 'index', 'resource']}
@@ -330,6 +334,18 @@ foo=bar&test=abc"""
         resp = self.testapp.get('/allredis/resource?url=http://www.example.com/')
 
         assert resp.headers['WebAgg-Source-Coll'] == 'example'
+
+    def test_url_agnost(self):
+        f = FakeStrictRedis.from_url('redis://localhost/2')
+        f.hset('test:foo:warc', 'example-url-agnostic-revisit.warc.gz', './testdata/example-url-agnostic-revisit.warc.gz')
+        f.hset('test:foo:warc', 'example-url-agnostic-orig.warc.gz', './testdata/example-url-agnostic-orig.warc.gz')
+
+        resp = self.testapp.get('/urlagnost/resource?url=http://example.com/&param.arg=foo')
+
+        assert resp.status_int == 200
+        assert resp.headers['Link'] == MementoUtils.make_link('http://test@example.com/', 'original')
+        assert resp.headers['WebAgg-Source-Coll'] == 'url-agnost'
+        assert resp.headers['Memento-Datetime'] == 'Mon, 29 Jul 2013 19:51:51 GMT'
 
     def test_live_video_loader(self):
         params = {'url': 'http://www.youtube.com/v/BfBgWtAIbRc',
