@@ -261,7 +261,7 @@ class RewriterApp(object):
     def _do_req(self, inputreq, wb_url, kwargs, skip):
         req_data = inputreq.reconstruct_request(wb_url.url)
 
-        headers = {'Content-Length': len(req_data),
+        headers = {'Content-Length': str(len(req_data)),
                    'Content-Type': 'application/request'}
 
         if skip:

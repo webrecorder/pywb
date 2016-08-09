@@ -33,6 +33,7 @@ class RWApp(RewriterApp):
 
     def err_handler(self, exc):
         print(exc)
+        import traceback
         traceback.print_exc()
         return self.orig_error_handler(exc)
 

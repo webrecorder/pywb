@@ -28,16 +28,23 @@ class JinjaEnv(object):
     def __init__(self, paths=['templates', '.', '/'],
                        packages=['pywb'],
                        globals=None,
-                       overlay=None):
+                       overlay=None,
+                       extensions=None):
 
         self._init_filters()
 
         loader = ChoiceLoader(self._make_loaders(paths, packages))
 
+        extensions = extensions or {}
+
         if overlay:
-            jinja_env = overlay.jinja_env.overlay(loader=loader, trim_blocks=True)
+            jinja_env = overlay.jinja_env.overlay(loader=loader,
+                                                  trim_blocks=True,
+                                                  extensions=extensions)
         else:
-            jinja_env = RelEnvironment(loader=loader, trim_blocks=True)
+            jinja_env = RelEnvironment(loader=loader,
+                                       trim_blocks=True,
+                                       extensions=extensions)
 
         jinja_env.filters.update(self.filters)
         if globals:
