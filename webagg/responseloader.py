@@ -88,6 +88,9 @@ class BaseLoader(object):
         Check if response is a 3xx redirect to the same url
         If so, reject this capture to avoid causing redirect loop
         """
+        if cdx.get('is_live'):
+            return
+
         if not status_code.startswith('3') or status_code == '304':
             return
 
@@ -104,7 +107,7 @@ class BaseLoader(object):
             msg = 'Self Redirect {0} -> {1}'
             msg = msg.format(request_url, location_url)
             #print(msg)
-            raise WbException(msg)
+            raise LiveResourceException(msg)
 
     @staticmethod
     def _make_warc_id(id_=None):
