@@ -45,7 +45,7 @@ class HeaderRewriter(object):
     }
 
     PROXY_HEADERS = ['content-type', 'content-disposition', 'content-range',
-                     'accept-ranges']
+                     'accept-ranges', 'www-authenticate', 'proxy-authenticate']
 
     URL_REWRITE_HEADERS = ['location', 'content-location', 'content-base']
 
