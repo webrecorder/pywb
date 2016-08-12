@@ -376,8 +376,11 @@ class MultiFileWARCWriter(BaseWARCWriter):
         return fh
 
     def _close_file(self, fh):
-        fcntl.flock(fh, fcntl.LOCK_UN)
-        fh.close()
+        try:
+            fcntl.flock(fh, fcntl.LOCK_UN)
+            fh.close()
+        except Exception as e:
+            print(e)
 
     def get_dir_key(self, params):
         return res_template(self.key_template, params)
@@ -506,8 +509,14 @@ class MultiFileWARCWriter(BaseWARCWriter):
         now = datetime.datetime.now()
 
         for dir_key, out, filename in self.iter_open_files():
-            mtime = os.path.getmtime(filename)
+            try:
+                mtime = os.path.getmtime(filename)
+            except:
+                self.close_key(dir_key)
+                return
+
             mtime = datetime.datetime.fromtimestamp(mtime)
+
             if (now - mtime) > self.max_idle_time:
                 print('Closing idle ' + filename)
                 self.close_key(dir_key)
