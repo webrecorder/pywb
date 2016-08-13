@@ -277,6 +277,13 @@ class LiveWebLoader(BaseLoader):
 
         p = PreparedRequest()
         p.prepare_url(load_url, None)
+        p.prepare_headers(None)
+        p.prepare_auth(None, load_url)
+
+        auth = p.headers.get('Authorization')
+        if auth:
+            req_headers['Authorization'] = auth
+
         load_url = p.url
 
         try:
