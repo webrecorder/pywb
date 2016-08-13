@@ -94,6 +94,15 @@ class RecorderApp(object):
     def _put_record(self, request_uri, input_buff, record_type,
                     headers, params, start_response):
 
+        if record_type == 'stream':
+            if self.writer.write_stream_to_file(params, input_buff):
+                msg = {'success': 'true'}
+            else:
+                msg = {'error_message': 'upload_error'}
+
+            return self.send_message(msg, '200 OK',
+                                     start_response)
+
         req_stream = ReqWrapper(input_buff, headers)
 
         while True:
@@ -123,6 +132,13 @@ class RecorderApp(object):
         return params
 
     def __call__(self, environ, start_response):
+        try:
+            return self.handle_call(environ, start_response)
+        except:
+            import traceback
+            traceback.print_exc()
+
+    def handle_call(self, environ, start_response):
         input_req = DirectWSGIInputRequest(environ)
 
         params = self._get_params(environ)
