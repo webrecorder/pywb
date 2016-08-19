@@ -724,7 +724,7 @@ var wombat_internal = function($wbwindow) {
 
             orig_func.call(this, state_obj, title, url);
 
-            if ($wbwindow.__WB_top_frame && $wbwindow != $wbwindow.__WB_top_frame) {
+            if ($wbwindow.__WB_top_frame) {
                 var message = {
                            "url": abs_url,
                            "ts": wb_info.timestamp,
@@ -753,7 +753,7 @@ var wombat_internal = function($wbwindow) {
         }
 
         // Only useful for framed replay
-        if (!$wbwindow.__WB_top_frame || $wbwindow == $wbwindow.__WB_top_frame) {
+        if (!$wbwindow.__WB_top_frame) {
             return;
         }
 
@@ -2341,11 +2341,14 @@ var wombat_internal = function($wbwindow) {
         var real_parent = replay_top.__WB_orig_parent || replay_top.parent;
 
         // Check to ensure top frame is different window and directly accessible (later refactor to support postMessage)
-        try {
-            if ((real_parent == $wbwindow) || !real_parent.wbinfo || !real_parent.wbinfo.is_frame) {
-                real_parent = undefined;
-            }
-        } catch (e) {
+        //try {
+        //    if ((real_parent == $wbwindow) || !real_parent.wbinfo || !real_parent.wbinfo.is_frame) {
+        //        real_parent = undefined;
+        //    }
+        //} catch (e) {
+        //    real_parent = undefined;
+        //}
+        if (real_parent == $wbwindow || !wb_info.is_framed) {
             real_parent = undefined;
         }
 

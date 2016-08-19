@@ -171,7 +171,7 @@ this.load = function() {
         add_event("readystatechange", init_banner, document);
 
     // Framed Replay
-    } else if (window.__WB_top_frame && window != window.__WB_top_frame && window.__WB_top_frame.update_wb_url) {
+    } else if (window.__WB_top_frame) {
         add_event("readystatechange", notify_top, document);
     }
 }
