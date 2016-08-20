@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.12
+// Wombat JS-Rewriting Library v2.14
 //============================================
 
 
@@ -734,7 +734,7 @@ var wombat_internal = function($wbwindow) {
                            "wb_type": func_name,
                           }
 
-                $wbwindow.__WB_top_frame.postMessage(message, "*");
+                $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
             }
         }
 
@@ -774,7 +774,7 @@ var wombat_internal = function($wbwindow) {
                 message["param"] = arguments[0];
             }
 
-            $wbwindow.__WB_top_frame.postMessage(message, "*");
+            $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
         }
 
         $wbwindow.history[func_name] = rewritten_func;
@@ -1688,6 +1688,47 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
+    function init_hash_change()
+    {
+        if (!$wbwindow.__WB_top_frame) {
+            return;
+        }
+
+        function receive_hash_change(event)
+        {
+            if (!event.data || event.source != $wbwindow.__WB_top_frame) {
+                return;
+            }
+
+            var message = event.data;
+
+            if (!message.wb_type) {
+                return;
+            }
+
+            if (message.wb_type == "outer_hashchange") {
+                if ($wbwindow.location.hash != message.hash) {
+                    $wbwindow.location.hash = message.hash;
+                }
+            }
+        }
+
+        function send_hash_change() {
+            var message = {"wb_type": "hashchange",
+                           "hash": $wbwindow.location.hash
+                          }
+
+            if ($wbwindow.__WB_top_frame) {
+                $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
+            }
+        }
+
+        $wbwindow.addEventListener("message", receive_hash_change);
+
+        $wbwindow.addEventListener("hashchange", send_hash_change);
+    }
+
+    //============================================
     function init_postmessage_override($wbwindow)
     {
         if (!$wbwindow.postMessage || $wbwindow.__orig_postMessage) {
@@ -1698,7 +1739,7 @@ var wombat_internal = function($wbwindow) {
         
         $wbwindow.__orig_postMessage = orig;
 
-        var postmessage_rewritten = function(message, targetOrigin, transfer) {
+        var postmessage_rewritten = function(message, targetOrigin, transfer, from_top) {
             var from = undefined;
             var src_id = undefined;
 
@@ -1738,7 +1779,9 @@ var wombat_internal = function($wbwindow) {
             var new_message = {"from": from,
                                "to_host": to,
                                "src_id":  src_id,
-                               "message": message};
+                               "message": message,
+                               "from_top": from_top,
+                              }
 
             if (targetOrigin != "*") {
                 targetOrigin = this.location.origin;
@@ -1776,7 +1819,9 @@ var wombat_internal = function($wbwindow) {
 
                 var source = event.source;
 
-                if (event.data.src_id && win.__WB_win_id && win.__WB_win_id[event.data.src_id]) {
+                if (event.data.from_top) {
+                    source = win.__WB_top_frame;
+                } else if (event.data.src_id && win.__WB_win_id && win.__WB_win_id[event.data.src_id]) {
                     source = win.__WB_win_id[event.data.src_id];
                 }
 
@@ -1892,7 +1937,7 @@ var wombat_internal = function($wbwindow) {
                               }
 
                 // norify of cookie setting to allow server-side tracking
-                $wbwindow.__WB_top_frame.postMessage(message, "*");
+                $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
 
                 // if no subdomain, eg. "localhost", just remove domain altogether
                 if ($wbwindow.location.hostname.indexOf(".") >= 0 && !IP_RX.test($wbwindow.location.hostname)) {
@@ -2173,6 +2218,8 @@ var wombat_internal = function($wbwindow) {
         wb_opts = wbinfo.wombat_opts;
         wb_replay_prefix = wbinfo.prefix;
 
+        wb_info.top_host = wb_info.top_host || "*";
+
         init_top_frame($wbwindow);
         init_wombat_top($wbwindow);
 
@@ -2234,6 +2281,8 @@ var wombat_internal = function($wbwindow) {
             init_postmessage_override($wbwindow);
         }
 
+        init_hash_change();
+
         // write
         init_write_override();
 
@@ -2292,7 +2341,6 @@ var wombat_internal = function($wbwindow) {
 
         // Date
         init_date_override(wbinfo.wombat_sec);
-
 
         // registerProtocolHandler override
         init_registerPH_override();

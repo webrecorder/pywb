@@ -21,9 +21,11 @@ var LIVE_COOKIE_REGEX = /pywb.timestamp=([\d]{1,14})/;
 
 var TS_REGEX = /\/([\d]{1,14})(?:\w+_)?\/(?:\w+[:])?\/\//;
 
-var curr_state = {};
+//var curr_state = {};
 
 var IFRAME_ID = "replay_iframe";
+
+var last_inner_hash = undefined;
 
 function make_url(url, ts, mod)
 {
@@ -39,6 +41,7 @@ function make_url(url, ts, mod)
 }
 
 function push_state(state) {
+    /*
     var frame = document.getElementById(IFRAME_ID).contentWindow;
     if (frame.WB_wombat_location) {
         var curr_href = frame.WB_wombat_location.href;
@@ -48,6 +51,7 @@ function push_state(state) {
             return;
         }
     }
+    */
 
     state.outer_url = make_url(state.url, state.request_ts, wbinfo.frame_mod);
     state.inner_url = make_url(state.url, state.request_ts, wbinfo.replay_mod);
@@ -67,8 +71,8 @@ function push_state(state) {
 function pop_state(state) {
     set_state(state);
 
-    var frame = document.getElementById(IFRAME_ID).contentWindow;
-    frame.src = state.inner_url;
+    //var frame = document.getElementById(IFRAME_ID);
+    //frame.src = state.inner_url;
 }
 
 function extract_ts(url)
@@ -107,7 +111,7 @@ function set_state(state) {
         }
     }
 
-    curr_state = state;
+    //curr_state = state;
 }
 
 window.onpopstate = function(event) {
@@ -125,43 +129,6 @@ function extract_ts_cookie(value) {
     } else {
         return "";
     }
-}
-
-function iframe_loaded(event) {
-    var url;
-    var ts;
-    var request_ts;
-    var capture_str;
-    var is_live = false;
-    var iframe = document.getElementById(IFRAME_ID).contentWindow;
-
-    if (iframe.WB_wombat_location) {
-        url = iframe.WB_wombat_location.href;
-    } else {
-        url = extract_replay_url(iframe.location.href);
-    }
-
-    if (iframe.wbinfo) {
-        ts = iframe.wbinfo.timestamp;
-        request_ts = iframe.wbinfo.request_ts;
-        is_live = iframe.wbinfo.is_live;
-    } else {
-        ts = extract_ts_cookie(iframe.document.cookie);
-        if (ts) {
-            is_live = true;
-        } else {
-            ts = extract_ts(iframe.location.href);
-        }
-        request_ts = ts;
-    }
-
-    var state = {}
-    state["url"] = url;
-    state["ts"] = ts;
-    state["request_ts"] = request_ts;
-    state["is_live"] = is_live
-
-    update_wb_url(state);
 }
 
 
@@ -203,59 +170,56 @@ function handle_message(state) {
         window.history.back();
     } else if (type == "forward") {
         window.history.forward();
+    } else if (type == "hashchange") {
+        inner_hash_changed(state);
     }
 }
 
 
 function update_wb_url(state) {
-    if (curr_state.url == state.url && curr_state.ts == state.ts) {
-        return;
-    }
+    //if (curr_state && curr_state.url == state.url && curr_state.ts == state.ts) {
+    //    return;
+    //}
 
     state['capture_str'] = _wb_js.ts_to_date(state.ts, true);
 
     push_state(state);
 }
 
-// Load Banner
-if (_wb_js) {
-    _wb_js.load();
+function inner_hash_changed(state) {
+    if (window.location.hash != state.hash) {
+        window.location.hash = state.hash;
+    }
+    last_inner_hash = state.hash;
+}
+
+function outer_hash_changed(event) {
+    if (window.location.hash == last_inner_hash) {
+        return;
+    }
+
+    var frame = document.getElementById(IFRAME_ID).contentWindow;
+
+    var message = {"wb_type": "outer_hashchange", "hash": window.location.hash}
+
+    frame.postMessage(message, "*", undefined, true);
 }
 
 function init_hash_connect() {
-    var frame = document.getElementById(IFRAME_ID).contentWindow;
+    var frame = document.getElementById(IFRAME_ID);
     
     if (window.location.hash) {
         var curr_url = wbinfo.capture_url + window.location.hash;
-        
-        frame.location.href = make_url(curr_url, wbinfo.request_ts, wbinfo.replay_mod);
+
+        frame.src = make_url(curr_url, wbinfo.request_ts, wbinfo.replay_mod);
+
+        last_inner_hash = window.location.hash;
+        //frame.location.href = make_url(curr_url, wbinfo.request_ts, wbinfo.replay_mod);
         //frame.location.hash = window.location.hash;
-    }
-    
-    function outer_hash_changed() {             
-        var the_frame = document.getElementById(IFRAME_ID).contentWindow;
-
-        if (window.location.hash == the_frame.location.hash) {
-            return;
-        }
-              
-        the_frame.location.hash = window.location.hash;
-        //the_frame.location.href = make_url(curr_url, curr_state.request_ts, wbinfo.replay_mod);
-    }
-    
-    function inner_hash_changed() {
-        var the_frame = document.getElementById(IFRAME_ID).contentWindow;
-
-        if (window.location.hash == the_frame.location.hash) {
-            return;
-        }
- 
-        window.location.hash = the_frame.location.hash;
     }
 
     if ("onhashchange" in window) {
         window.addEventListener("hashchange", outer_hash_changed, false);
-        frame.addEventListener("hashchange", inner_hash_changed, false);
     }
 
     // Init Post Message connect
@@ -263,4 +227,11 @@ function init_hash_connect() {
 }
 
 document.addEventListener("DOMContentLoaded", init_hash_connect);
+
+// Load Banner
+if (_wb_js) {
+    _wb_js.load();
+}
+
+
 
