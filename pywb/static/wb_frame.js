@@ -27,16 +27,18 @@ var IFRAME_ID = "replay_iframe";
 
 var last_inner_hash = undefined;
 
-function make_url(url, ts, mod)
+function make_url(url, ts, mod, prefix)
 {
     if (ts || mod) {
         mod += "/";
     }
 
+    prefix = prefix || wbinfo.prefix;
+
     if (ts) {
-        return wbinfo.prefix + ts + mod + url;
+        return prefix + ts + mod + url;
     } else {
-        return wbinfo.prefix + mod + url;
+        return prefix + mod + url;
     }
 }
 
@@ -53,10 +55,11 @@ function push_state(state) {
     }
     */
 
-    state.outer_url = make_url(state.url, state.request_ts, wbinfo.frame_mod);
+    state.outer_url = make_url(state.url, state.request_ts, wbinfo.frame_mod, wbinfo.outer_prefix);
     state.inner_url = make_url(state.url, state.request_ts, wbinfo.replay_mod);
 
-    var canon_url = make_url(state.url, state.request_ts, "");
+    var canon_url = make_url(state.url, state.request_ts, "", wbinfo.outer_prefix);
+
     if (window.location.href != canon_url) {
         if (state.wb_type != "pushState") {
             window.history.replaceState(state, "", canon_url);
