@@ -402,7 +402,17 @@ var wombat_internal = function($wbwindow) {
     function make_parser(href) {
         href = extract_orig(href);
 
-        var p = $wbwindow.document.createElement("a", true);
+        var baseWin;
+
+        // special case: for newly opened blank windows, use the opener
+        // to create parser to have the proper baseURI
+        if ($wbwindow.location.href == "about:blank" && $wbwindow.opener) {
+            baseWin = $wbwindow.opener;
+        } else {
+            baseWin = $wbwindow;
+        }
+
+        var p = baseWin.document.createElement("a", true);
         p.href = href;
         return p;
     }
@@ -1888,7 +1898,9 @@ var wombat_internal = function($wbwindow) {
 
         var open_rewritten = function(strUrl, strWindowName, strWindowFeatures) {
             strUrl = rewrite_url(strUrl, false, "");
-            return orig.call(this, strUrl, strWindowName, strWindowFeatures);
+            var res = orig.call(this, strUrl, strWindowName, strWindowFeatures);
+            init_new_window_wombat(res, strUrl);
+            return res;
         }
 
         $wbwindow.open = open_rewritten;
@@ -2080,7 +2092,11 @@ var wombat_internal = function($wbwindow) {
 
         //var src = iframe.src;
         var src = wb_getAttribute.call(iframe, "src");
-        
+
+        init_new_window_wombat(win, src);
+    }
+
+    function init_new_window_wombat(win, src) {
         if (!src || src == "" || src == "about:blank" || src.indexOf("javascript:") >= 0) {
             win._WBWombat = wombat_internal(win);
             win._wb_wombat = new win._WBWombat(wb_info);
