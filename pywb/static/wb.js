@@ -134,7 +134,7 @@ function notify_top(event) {
 
     window.__WB_top_frame.postMessage(message, "*");
 
-    remove_event("readystatechange", notify_top, document);
+    //remove_event("readystatechange", notify_top, document);
 }
 
 this.load = function() {
