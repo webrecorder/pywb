@@ -1,4 +1,4 @@
-PyWb 0.31.5
+PyWb 0.32.0
 ===========
 
 .. image:: https://travis-ci.org/ikreymer/pywb.svg?branch=master
