@@ -40,6 +40,7 @@ class HTMLRewriterMixin(object):
             'embed':   {'src': 'oe_'},
             'head':    {'': defmod},  # for head rewriting
             'iframe':  {'src': 'if_'},
+            'image':   {'src': 'im_', 'xlink:href': 'im_'},
             'img':     {'src': 'im_',
                         'srcset': 'im_'},
             'ins':     {'cite': defmod},

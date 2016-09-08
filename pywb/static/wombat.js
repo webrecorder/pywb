@@ -1218,6 +1218,7 @@ var wombat_internal = function($wbwindow) {
         if (elem.tagName == "STYLE") {
             var new_content = rewrite_style(elem.textContent);
             if (elem.textContent != new_content) {
+                elem.textContent = new_content;
                 changed = true;
             }
         } else if (elem.tagName == "OBJECT") {
