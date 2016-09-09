@@ -148,7 +148,10 @@ r"""
 <script>/*<![CDATA[*/window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html;/*]]>*/"</script>
 
 >>> parse('<div style="background: url(\'abc.html\')" onblah onclick="location = \'redirect.html\'"></div>')
-<div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onblah onclick="WB_wombat_location = 'redirect.html'"></div>
+<div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onblah onclick="window.WB_wombat_location = 'redirect.html'"></div>
+
+>>> parse('<div style="background: url(\'abc.html\')" onblah onclick="window.location = \'redirect.html\'"></div>')
+<div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onblah onclick="window.WB_wombat_location = 'redirect.html'"></div>
 
 >>> parse('<i style="background-image: url(http://foo-.bar_.example.com/)"></i>')
 <i style="background-image: url(/web/20131226101010/http://foo-.bar_.example.com/)"></i>
