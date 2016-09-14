@@ -29,7 +29,7 @@ def wayback(args=None):
 #=============================================================================
 class BaseCli(object):
     def __init__(self, args=None, default_port=8080, desc=''):
-        parser = ArgumentParser(desc)
+        parser = ArgumentParser(description=desc)
         parser.add_argument('-p', '--port', type=int, default=default_port)
         parser.add_argument('-t', '--threads', type=int, default=4)
         parser.add_argument('-s', '--server')
