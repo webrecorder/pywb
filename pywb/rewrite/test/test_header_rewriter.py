@@ -78,7 +78,7 @@ def _test_head_data(headers, status='200 OK', rewriter=urlrewriter):
 def test_cookie_headers():
     # cookie, host/origin rewriting
     res = _test_head_data([('Connection', 'close'),
-                           ('Set-Cookie', 'foo=bar; Path=/; abc=def; Path=somefile.html'),
+                           ('Set-Cookie', 'foo=bar; Path=/; abc=def; Path=/somefile.html'),
                            ('Host', 'example.com'),
                            ('Origin', 'https://example.com')])
 

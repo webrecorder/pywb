@@ -8,7 +8,7 @@ r"""
 #=================================================================
 
 >>> parse('<HTML><A Href="page.html">Text</a></hTmL>')
-<html><a href="/web/20131226101010/http://example.com/some/path/page.html">Text</a></html>
+<html><a href="page.html">Text</a></html>
 
 >>> parse('<body x="y"><img src="../img.gif"/><br/></body>')
 <body x="y"><img src="/web/20131226101010im_/http://example.com/some/img.gif"/><br/></body>
@@ -35,8 +35,8 @@ r"""
 >>> parse('<html><head><base href="/other/file.html"/>', urlrewriter=full_path_urlrewriter)
 <html><head><base href="/web/20131226101010/http://example.com/other/file.html"/>
 
->>> parse('<base href="static/"/><img src="image.gif"/>')
-<base href="/web/20131226101010/http://example.com/some/path/static/"/><img src="/web/20131226101010im_/http://example.com/some/path/static/image.gif"/>
+>>> parse('<base href="./static/"/><img src="image.gif"/>')
+<base href="./static/"/><img src="image.gif"/>
 
 # ensure trailing slash added
 >>> parse('<base href="http://example.com"/>')
@@ -47,7 +47,7 @@ r"""
 <html><head><base href="http://example.com/diff/path/file.html"/>
 
 >>> parse('<base href="static/"/><img src="image.gif"/>', urlrewriter=no_base_canon_rewriter)
-<base href="static/"/><img src="/web/20131226101010im_/http://example.com/some/path/static/image.gif"/>
+<base href="static/"/><img src="image.gif"/>
 
 # Empty url
 >>> parse('<base href="">')
@@ -58,7 +58,7 @@ r"""
 
 # href on other tags
 >>> parse('<HTML><div Href="page.html">Text</div></hTmL>')
-<html><div href="/web/20131226101010/http://example.com/some/path/page.html">Text</div></html>
+<html><div href="page.html">Text</div></html>
 
 # HTML Entities
 >>> parse('<a href="">&rsaquo; &nbsp; &#62; &#63</div>')
@@ -148,10 +148,10 @@ r"""
 <script>/*<![CDATA[*/window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html;/*]]>*/"</script>
 
 >>> parse('<div style="background: url(\'abc.html\')" onblah onclick="location = \'redirect.html\'"></div>')
-<div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onblah onclick="window.WB_wombat_location = 'redirect.html'"></div>
+<div style="background: url('abc.html')" onblah onclick="window.WB_wombat_location = 'redirect.html'"></div>
 
->>> parse('<div style="background: url(\'abc.html\')" onblah onclick="window.location = \'redirect.html\'"></div>')
-<div style="background: url('/web/20131226101010/http://example.com/some/path/abc.html')" onblah onclick="window.WB_wombat_location = 'redirect.html'"></div>
+>>> parse('<div style="background: url(\'/other_path/abc.html\')" onblah onclick="window.location = \'redirect.html\'"></div>')
+<div style="background: url('/web/20131226101010/http://example.com/other_path/abc.html')" onblah onclick="window.WB_wombat_location = 'redirect.html'"></div>
 
 >>> parse('<i style="background-image: url(http://foo-.bar_.example.com/)"></i>')
 <i style="background-image: url(/web/20131226101010/http://foo-.bar_.example.com/)"></i>
@@ -169,19 +169,19 @@ r"""
 <i style="background-image: url(&quot;/web/20131226101010/http://%D0%B8%D1%81%D0%BF/&quot;)"></i>
 
 # Style
->>> parse('<style>@import "styles.css" .a { font-face: url(\'myfont.ttf\') }</style>')
-<style>@import "/web/20131226101010/http://example.com/some/path/styles.css" .a { font-face: url('/web/20131226101010/http://example.com/some/path/myfont.ttf') }</style>
+>>> parse('<style>@import "/styles.css" .a { font-face: url(\'../myfont.ttf\') }</style>')
+<style>@import "/web/20131226101010/http://example.com/styles.css" .a { font-face: url('/web/20131226101010/http://example.com/some/myfont.ttf') }</style>
 
 # Unterminated style tag, handle and auto-terminate
 >>> parse('<style>@import url(styles.css)')
-<style>@import url(/web/20131226101010/http://example.com/some/path/styles.css)</style>
+<style>@import url(styles.css)</style>
 
 # Head Insertion
->>> parse('<html><head><script src="other.js"></script></head><body>Test</body></html>', head_insert = '<script src="cool.js"></script>')
-<html><head><script src="cool.js"></script><script src="/web/20131226101010js_/http://example.com/some/path/other.js"></script></head><body>Test</body></html>
+>>> parse('<html><head><script src="/other.js"></script></head><body>Test</body></html>', head_insert = '<script src="cool.js"></script>')
+<html><head><script src="cool.js"></script><script src="/web/20131226101010js_/http://example.com/other.js"></script></head><body>Test</body></html>
 
 >>> parse('<html><script src="other.js"></script></html>', head_insert = '<script src="cool.js"></script>')
-<html><script src="cool.js"></script><script src="/web/20131226101010js_/http://example.com/some/path/other.js"></script></html>
+<html><script src="cool.js"></script><script src="other.js"></script></html>
 
 >>> parse('<html><head/><body>Test</body></html>', head_insert = '<script src="cool.js"></script>')
 <html><head><script src="cool.js"></script></head><body>Test</body></html>
@@ -189,7 +189,7 @@ r"""
 >>> parse('<body><div style="">SomeTest</div>', head_insert = '/* Insert */')
 /* Insert */<body><div style="">SomeTest</div>
 
->>> parse('<link href="abc.txt"><div>SomeTest</div>', head_insert = '<script>load_stuff();</script>')
+>>> parse('<link href="/some/path/abc.txt"><div>SomeTest</div>', head_insert = '<script>load_stuff();</script>')
 <script>load_stuff();</script><link href="/web/20131226101010oe_/http://example.com/some/path/abc.txt"><div>SomeTest</div>
 
 >>> parse('<!DOCTYPE html>Some Text without any tags <!-- comments -->', head_insert = '<script>load_stuff();</script>')
@@ -236,7 +236,7 @@ r"""
 
 # remove extra spaces
 >>> parse('<HTML><A Href="  page.html  ">Text</a></hTmL>')
-<html><a href="/web/20131226101010/http://example.com/some/path/page.html">Text</a></html>
+<html><a href="page.html">Text</a></html>
 
 >>> parse('<HTML><A Href="  ">Text</a></hTmL>')
 <html><a href="">Text</a></html>

@@ -151,7 +151,7 @@ r"""
 'background: url(" /web/20131010/http://domain.com/path.html x ")'
 
 >>> _test_css("background: url(file.jpeg)")
-'background: url(/web/20131010/http://example.com/file.jpeg)'
+'background: url(file.jpeg)'
 
 >>> _test_css("background:#abc url('/static/styles/../images/layout/logo.png')")
 "background:#abc url('/web/20131010/http://example.com/static/images/layout/logo.png')"
@@ -163,18 +163,18 @@ r"""
 "background: url('')"
 
 >>> _test_css("background: url (\"weirdpath\')")
-'background: url ("/web/20131010/http://example.com/weirdpath\')'
+'background: url ("weirdpath\')'
 
->>> _test_css("@import   url ('path.css')")
+>>> _test_css("@import   url ('/path.css')")
 "@import   url ('/web/20131010/http://example.com/path.css')"
 
 >>> _test_css("@import url('path.css')")
-"@import url('/web/20131010/http://example.com/path.css')"
+"@import url('path.css')"
 
 >>> _test_css("@import ( 'path.css')")
-"@import ( '/web/20131010/http://example.com/path.css')"
+"@import ( 'path.css')"
 
->>> _test_css("@import  \"path.css\"")
+>>> _test_css("@import  \"/path.css\"")
 '@import  "/web/20131010/http://example.com/path.css"'
 
 >>> _test_css("@import ('../path.css\"")
@@ -184,7 +184,7 @@ r"""
 '@import (\'/web/20131010/http://example.com/url.css"'
 
 >>> _test_css("@import (\"url.css\")")
-'@import ("/web/20131010/http://example.com/url.css")'
+'@import ("url.css")'
 
 >>> _test_css("@import url(/url.css)\n@import  url(/anotherurl.css)\n @import  url(/and_a_third.css)")
 '@import url(/web/20131010/http://example.com/url.css)\n@import  url(/web/20131010/http://example.com/anotherurl.css)\n @import  url(/web/20131010/http://example.com/and_a_third.css)'

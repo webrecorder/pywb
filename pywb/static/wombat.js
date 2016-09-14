@@ -109,7 +109,7 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
-    var rewrite_url = rewrite_url_;
+    var rewrite_url = rewrite_url_debug;
 
     function rewrite_url_debug(url, use_rel, mod) {
         var rewritten = rewrite_url_(url, use_rel, mod);

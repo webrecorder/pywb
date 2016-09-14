@@ -19,6 +19,9 @@ class UrlRewriter(object):
 
     REL_SCHEME = ('//', r'\/\/', r'\\/\\/')
 
+    PARENT_PATH = '../'
+    REL_PATH = '/'
+
     def __init__(self, wburl, prefix='', full_prefix=None, rel_prefix=None,
                  root_path=None, cookie_scope=None, rewrite_opts=None):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
@@ -60,6 +63,11 @@ class UrlRewriter(object):
         if url.startswith(self.REL_SCHEME):
             is_abs = True
             scheme_rel = True
+        elif (not is_abs and
+              not url.startswith(self.REL_PATH) and
+              self.PARENT_PATH not in url):
+            return url
+
             # if prefix starts with a scheme
             #if self.prefix_scheme:
             #    url = self.prefix_scheme + ':' + url

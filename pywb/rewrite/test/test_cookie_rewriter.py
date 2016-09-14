@@ -22,10 +22,10 @@ True
 [('Set-Cookie', 'some=value; Path=/pywb/')]
 
 >>> rewrite_cookie('abc=def; Path=file.html; Expires=Wed, 13 Jan 2021 22:23:01 GMT', urlrewriter, 'coll')
-[('Set-Cookie', 'abc=def; Path=/pywb/20131226101010/http://example.com/some/path/file.html')]
+[('Set-Cookie', 'abc=def; Path=file.html')]
 
 # keep Max-Age
->>> rewrite_cookie('abc=def; Path=file.html; Max-Age=1500', urlrewriter2, 'coll')
+>>> rewrite_cookie('abc=def; Path=/file.html; Max-Age=1500', urlrewriter2, 'coll')
 [('Set-Cookie', 'abc=def; Max-Age=1500; Path=/preview/em_/http://example.com/file.html')]
 
 # Cookie with invalid chars, not parsed
@@ -92,14 +92,14 @@ def rewrite_cookie(cookie_str, rewriter=urlrewriter, scope='default'):
 @pytest.mark.skipif(sys.version_info < (2,7), reason='Unsupported')
 def test_with_expires():
     # keep expires
-    res = rewrite_cookie('abc=def; Path=file.html; Expires=Wed, 13 Jan 2021 22:23:01 GMT', urlrewriter2, 'coll')
+    res = rewrite_cookie('abc=def; Path=/file.html; Expires=Wed, 13 Jan 2021 22:23:01 GMT', urlrewriter2, 'coll')
     assert len(res) == 1
     assert res[0][1].lower() == 'abc=def; expires=wed, 13 jan 2021 22:23:01 gmt; path=/preview/em_/http://example.com/file.html'
 
 @pytest.mark.skipif(sys.version_info < (2,7), reason='Unsupported')
 def test_with_expires_utc_replace():
     # keep expires, UTC->GMT
-    res = rewrite_cookie('abc=def; Path=file.html; Expires=Wed, 13 Jan 2021 22:23:01 UTC', urlrewriter2, 'coll')
+    res = rewrite_cookie('abc=def; Path=/file.html; Expires=Wed, 13 Jan 2021 22:23:01 UTC', urlrewriter2, 'coll')
     assert len(res) == 1
     assert res[0][1].lower() == 'abc=def; expires=wed, 13 jan 2021 22:23:01 gmt; path=/preview/em_/http://example.com/file.html'
 
@@ -113,14 +113,14 @@ def test_http_secure_flag():
 @pytest.mark.skipif(sys.version_info < (2,7), reason='Unsupported')
 def test_secure_flag_remove():
     # Secure Remove
-    res = rewrite_cookie('abc=def; Path=file.html; HttpOnly; Secure', urlrewriter2, 'coll')
+    res = rewrite_cookie('abc=def; Path=/file.html; HttpOnly; Secure', urlrewriter2, 'coll')
     assert len(res) == 1
     assert res[0][1].lower() == 'abc=def; httponly; path=/preview/em_/http://example.com/file.html'
 
 @pytest.mark.skipif(sys.version_info < (2,7), reason='Unsupported')
 def test_secure_flag_keep():
     # Secure Keep
-    res = rewrite_cookie('abc=def; Path=file.html; HttpOnly; Secure', urlrewriter3, 'coll')
+    res = rewrite_cookie('abc=def; Path=/file.html; HttpOnly; Secure', urlrewriter3, 'coll')
     assert res[0][1].lower() == 'abc=def; httponly; path=/preview/em_/http://example.com/file.html; secure'
 
 
