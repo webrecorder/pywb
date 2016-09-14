@@ -1209,6 +1209,35 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
+    function rewrite_frame_src(elem, name)
+    {
+        var value = wb_getAttribute.call(elem, name);
+        var new_value = undefined;
+
+        // special case for rewriting javascript: urls that contain WB_wombat_
+        // must insert wombat init first!
+        if (starts_with(value, "javascript:")) {
+            if (value.indexOf("WB_wombat_") >= 0) {
+                var JS = "javascript:";
+                new_value = JS;
+                new_value += "window.parent._wb_wombat.init_new_window_wombat(window);"
+                new_value += value.substr(JS.length);
+            }
+        }
+
+        if (!new_value) {
+            new_value = rewrite_url(value, false);
+        }
+
+        if (new_value != value) {
+            wb_setAttribute.call(elem, name, new_value);
+            return true;
+        }
+
+        return false;
+    }
+
+    //============================================
     function rewrite_elem(elem)
     {
         if (!elem) {
@@ -1229,6 +1258,8 @@ var wombat_internal = function($wbwindow) {
             changed = rewrite_attr(elem, "action", true);
         } else if (elem.tagName == "INPUT") {
             changed = rewrite_attr(elem, "value", true);
+        } else if (elem.tagName == "IFRAME" || elem.tagName == "FRAME") {
+            changed = rewrite_frame_src(elem, "src");
         } else {
             changed = rewrite_attr(elem, "src");
             changed = rewrite_attr(elem, "href") || changed;
@@ -2386,6 +2417,7 @@ var wombat_internal = function($wbwindow) {
         this.extract_orig = extract_orig;
         this.rewrite_url = rewrite_url;
         this.watch_elem = watch_elem;
+        this.init_new_window_wombat = init_new_window_wombat;
     }
 
     function init_top_frame($wbwindow) {
