@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.15
+// Wombat JS-Rewriting Library v2.16
 //============================================
 
 
@@ -314,6 +314,8 @@ var wombat_internal = function($wbwindow) {
             return "";
         }
 
+        var orig_href = href;
+
         // proxy mode: no extraction needed
         if (!wb_replay_prefix) {
             return href;
@@ -348,7 +350,7 @@ var wombat_internal = function($wbwindow) {
                 href = href.substr(4);
             }
 
-            if (!starts_with(href, VALID_PREFIXES)) {
+            if (href != orig_href && !starts_with(href, VALID_PREFIXES)) {
                 href = HTTP_PREFIX + href;
             }
         }
@@ -1231,6 +1233,7 @@ var wombat_internal = function($wbwindow) {
             changed = rewrite_attr(elem, "src");
             changed = rewrite_attr(elem, "href") || changed;
             changed = rewrite_attr(elem, "style") || changed;
+            changed = rewrite_attr(elem, "poster") || changed;
         }
 
         if (elem.getAttribute) {
@@ -2210,6 +2213,20 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
+    function init_beacon_override()
+    {
+        if (!$wbwindow.navigator.sendBeacon) {
+            return;
+        }
+
+        var orig_sendBeacon = $wbwindow.navigator.sendBeacon;
+
+        $wbwindow.navigator.sendBeacon = function(url, data) {
+            return orig_sendBeacon.call(this, rewrite_url(url), data);
+        }
+    }
+
+    //============================================
     function get_final_url(prefix, mod, url) {
         if (mod == undefined) {
             mod = wb_info.mod;
@@ -2361,6 +2378,9 @@ var wombat_internal = function($wbwindow) {
 
         // registerProtocolHandler override
         init_registerPH_override();
+
+        //sendBeacon override
+        init_beacon_override();
 
         // expose functions
         this.extract_orig = extract_orig;
