@@ -1,3 +1,35 @@
+pywb 0.32.0 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* Cross-Domain Framed Replay
+   - pywb banner (outer) and content (inner) frames can be served from different domains
+   - All cross-frame interaction done via ``postMessage``, including url, hash, cookie change notifications
+  
+* Server-Side Rewriting:
+   - Don't rewrite relative urls (unless contain ``../`` or start with ``/``)
+   - Rewrite svg ``<image>`` tag
+   - Don't rewrite ``Proxy-Authenticate`` or ``WWW-Authenticate`` headers
+   - Rewrite ``href`` on any element
+   - Preserve HTML entities and spaces when rewriting CSS urls
+   - Content detect: handle ``text/plain`` text as JS or CSS if ``js_`` or ``cs_`` modifiers used
+   - Improved rewriting of ``on*`` attributes, ensure ``window.`` is added when accessing rewritten objects.
+  
+* Client-Side Rewriting:
+   - Add cookie notification message for cookies with ``Domain=`` to allow server-side handling
+   - Improved handling of Unicode prefixes, use ``decodeURI``
+   - History API: properly override go, forward, back and preserve pushState/replaceState
+   - Ensure client-rewriting for windows created by ``window.open``
+   - Override ``navigator.sendBeacon``
+   - Rewrite ``poster`` attr in dynamic elems
+   - Rewrite ``src`` attr in video ``source`` elems
+   
+ * Record Loader: Option to convert  ARC->WARC records implicitly, return WARC responses (enabled by default)
+ 
+ * Block Loader: Raise exceptions for 4xx or 5xx responses
+ 
+ * CDX API: return not found CDX error as JSON or plain text if using ``output=json`` or ``output=text``
+ 
+ 
 pywb 0.31.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
