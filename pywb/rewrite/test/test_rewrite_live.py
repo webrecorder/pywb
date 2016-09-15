@@ -123,7 +123,7 @@ def test_local_no_head_banner_only():
     assert 'window.location = "/other.html"' in buff
 
     # link NOT rewritten
-    assert '"another.html"' in buff
+    assert '"/some/path/another.html"' in buff
 
 def test_local_banner_only_no_rewrite():
     status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html',
@@ -138,7 +138,7 @@ def test_local_banner_only_no_rewrite():
     assert 'window.location = "http:\/\/example.com/dynamic_page.html"' in buff, buff
 
     # link NOT rewritten
-    assert '"another.html"' in buff
+    assert '"/some/path/another.html"' in buff
 
 def test_local_2_link_only_rewrite():
     status_headers, buff = get_rewritten(get_test_dir() + 'text_content/sample.html',

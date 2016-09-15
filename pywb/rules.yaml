@@ -135,6 +135,15 @@ rules:
 
       fuzzy_lookup: 'com,google,plus\)/_/.*?.*(f.sid=[^&]+)'
 
+    # periscope
+    #=================================================================
+
+    - url_prefix: 'tv,periscope,assets)/js/'
+
+      rewrite:
+        js_regexs:
+            - match: '"location"'
+              replace: '"WB_wombat_location"'
 
     # vimeo rules
     #=================================================================

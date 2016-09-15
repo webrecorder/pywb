@@ -118,11 +118,9 @@ class RewriteContent(object):
                                                             urlkey,
                                                             cookie_rewriter)
 
-        status_headers = rewritten_headers.status_headers
-
-        res = self.handle_custom_rewrite(rewritten_headers.text_type,
-                                         status_headers,
+        res = self.handle_custom_rewrite(rewritten_headers,
                                          stream,
+                                         wb_url.mod,
                                          env)
         if res:
             return res
@@ -131,6 +129,7 @@ class RewriteContent(object):
         # ====================================================================
         # special case -- need to ungzip the body
 
+        status_headers = rewritten_headers.status_headers
         text_type = rewritten_headers.text_type
 
         # see known js/css modifier specified, the context should run
@@ -246,9 +245,16 @@ class RewriteContent(object):
 
         return (status_headers, gen, True)
 
-    def handle_custom_rewrite(self, text_type, status_headers, stream, env):
+    def handle_custom_rewrite(self, rewritten_headers, stream, mod, env):
+        text_type = rewritten_headers.text_type
+        status_headers = rewritten_headers.status_headers
+
         # use rewritten headers, but no further rewriting needed
         if text_type is None:
+            return (status_headers, self.stream_to_gen(stream), False)
+
+        if text_type == 'plain' and not mod in ('js_', 'cs_'):
+            rewritten_headers.readd_rewrite_removed()
             return (status_headers, self.stream_to_gen(stream), False)
 
     @staticmethod

@@ -165,7 +165,7 @@ __wbvidrw = (function() {
                 var name = child.getAttribute("name");
                 name = name.toLowerCase();
 
-                if (name == "movie") {
+                if (name == "movie" || name == "src") {
                     var value = child.getAttribute("value");
                     obj_url = value;
                 }

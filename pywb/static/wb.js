@@ -110,7 +110,7 @@ function remove_event(name, func, object) {
     }
 }
 
-function notify_top() {
+function notify_top(event) {
     if (!window.__WB_top_frame) {
         return;
     }
@@ -123,25 +123,18 @@ function notify_top() {
         return;
     }
 
-    //if (window.__WB_top_frame.update_wb_url) {
-    //    window.__WB_top_frame.update_wb_url(window.WB_wombat_location.href,
-    //                                        wbinfo.timestamp,
-    //                                        wbinfo.request_ts,
-    //                                        wbinfo.is_live);
-    //}
-
     var message = {
                "url": window.WB_wombat_location.href,
                "ts": wbinfo.timestamp,
                "request_ts": wbinfo.request_ts,
                "is_live": wbinfo.is_live,
-               "title": "",
+               "title": document ? document.title : "",
                "wb_type": "load",
               }
 
     window.__WB_top_frame.postMessage(message, "*");
 
-    remove_event("readystatechange", notify_top, document);
+    //remove_event("readystatechange", notify_top, document);
 }
 
 this.load = function() {
@@ -152,7 +145,7 @@ this.load = function() {
     window._wb_js_inited = true;
 
     // Non-Framed Replay OR top frame for framed replay!
-    if (window.wbinfo && (!window.__WB_top_frame || window.__WB_top_frame == window)) {
+    if (window.wbinfo && !window.__WB_top_frame) {
         if (wbinfo.is_framed && wbinfo.mod != "bn_") {
             var hash = window.location.hash;
 
@@ -171,7 +164,7 @@ this.load = function() {
         add_event("readystatechange", init_banner, document);
 
     // Framed Replay
-    } else if (window.__WB_top_frame && window != window.__WB_top_frame && window.__WB_top_frame.update_wb_url) {
+    } else if (window.__WB_top_frame) {
         add_event("readystatechange", notify_top, document);
     }
 }

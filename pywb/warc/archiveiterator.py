@@ -54,14 +54,17 @@ class ArchiveIterator(object):
 
 
     def __init__(self, fileobj, no_record_parse=False,
-                 verify_http=False):
+                 verify_http=False, arc2warc=False):
         self.fh = fileobj
 
-        self.loader = ArcWarcRecordLoader(verify_http=verify_http)
+        self.loader = ArcWarcRecordLoader(verify_http=verify_http,
+                                          arc2warc=arc2warc)
         self.reader = None
 
         self.offset = 0
         self.known_format = None
+
+        self.mixed_arc_warc = arc2warc
 
         self.member_info = None
         self.no_record_parse = no_record_parse
@@ -226,7 +229,8 @@ class ArchiveIterator(object):
         self.member_info = None
 
         # Track known format for faster parsing of other records
-        self.known_format = record.format
+        if not self.mixed_arc_warc:
+            self.known_format = record.format
 
         return record
 
@@ -357,6 +361,9 @@ class DefaultRecordParser(object):
             entry = None
 
             if not include_all and not minimal and (record.status_headers.get_statuscode() == '-'):
+                continue
+
+            if record.rec_type == 'arc_header':
                 continue
 
             if record.format == 'warc':
@@ -495,9 +502,6 @@ class DefaultRecordParser(object):
     def parse_arc_record(self, record):
         """ Parse arc record
         """
-        if record.rec_type == 'arc_header':
-            return None
-
         url = record.rec_headers.get_header('uri')
         url = url.replace('\r', '%0D')
         url = url.replace('\n', '%0A')
@@ -528,7 +532,8 @@ class DefaultRecordParser(object):
 
     def __call__(self, fh):
         aiter = ArchiveIterator(fh, self.options.get('minimal', False),
-                                    self.options.get('verify_http', False))
+                                    self.options.get('verify_http', False),
+                                    self.options.get('arc2warc', False))
 
         entry_iter = self.create_record_iter(aiter)
 

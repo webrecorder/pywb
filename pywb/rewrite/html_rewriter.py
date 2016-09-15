@@ -40,6 +40,7 @@ class HTMLRewriterMixin(object):
             'embed':   {'src': 'oe_'},
             'head':    {'': defmod},  # for head rewriting
             'iframe':  {'src': 'if_'},
+            'image':   {'src': 'im_', 'xlink:href': 'im_'},
             'img':     {'src': 'im_',
                         'srcset': 'im_'},
             'ins':     {'cite': defmod},
@@ -117,6 +118,8 @@ class HTMLRewriterMixin(object):
     # ===========================
     META_REFRESH_REGEX = re.compile('^[\\d.]+\\s*;\\s*url\\s*=\\s*(.+?)\\s*$',
                                     re.IGNORECASE | re.MULTILINE)
+
+    ADD_WINDOW = re.compile('(?<![.])(WB_wombat_)')
 
     def _rewrite_meta_refresh(self, meta_refresh):
         if not meta_refresh:
@@ -225,11 +228,15 @@ class HTMLRewriterMixin(object):
         else:
             return ''
 
-    def _rewrite_script(self, script_content):
-        if script_content:
-            return self.js_rewriter.rewrite(script_content)
-        else:
+    def _rewrite_script(self, script_content, ensure_window=False):
+        if not script_content:
             return ''
+
+        content = self.js_rewriter.rewrite(script_content)
+        if ensure_window:
+            content = self.ADD_WINDOW.sub('window.\\1', content)
+
+        return content
 
     def has_attr(self, tag_attrs, attr):
         name, value = attr
@@ -266,7 +273,7 @@ class HTMLRewriterMixin(object):
             # special case: inline JS/event handler
             if ((attr_value and attr_value.startswith('javascript:'))
                  or attr_name.startswith('on')):
-                attr_value = self._rewrite_script(attr_value)
+                attr_value = self._rewrite_script(attr_value, True)
 
             # special case: inline CSS/style attribute
             elif attr_name == 'style':
@@ -328,6 +335,11 @@ class HTMLRewriterMixin(object):
             elif (tag == 'base') and (attr_name == 'href') and attr_value:
                 rw_mod = handler.get(attr_name)
                 attr_value = self._rewrite_base(attr_value, rw_mod)
+
+            elif attr_name == 'href':
+                rw_mod = self.defmod
+                attr_value = self._rewrite_url(attr_value, rw_mod)
+
             else:
                 # rewrite url using tag handler
                 rw_mod = handler.get(attr_name)

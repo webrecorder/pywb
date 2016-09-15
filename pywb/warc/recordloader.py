@@ -9,6 +9,7 @@ from pywb.utils.loaders import to_native_str
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 
 from pywb.utils.wbexception import WbException
+from pywb.utils.timeutils import timestamp_to_iso_date
 
 from six.moves import zip
 import six
@@ -37,11 +38,6 @@ class ArchiveLoadFailed(WbException):
 
 #=================================================================
 class ArcWarcRecordLoader(object):
-    # Standard ARC v1.0 headers
-    # TODO: support ARC v2.0 also?
-    ARC_HEADERS = ["uri", "ip-address", "archive-date",
-                   "content-type", "length"]
-
     WARC_TYPES = ['WARC/1.0', 'WARC/0.17', 'WARC/0.18']
 
     HTTP_TYPES = ['HTTP/1.0', 'HTTP/1.1']
@@ -55,14 +51,17 @@ class ArcWarcRecordLoader(object):
     HTTP_SCHEMES = ('http:', 'https:')
 
     def __init__(self, loader=None, cookie_maker=None, block_size=8192,
-                 verify_http=True):
+                 verify_http=True, arc2warc=True):
         if not loader:
             loader = BlockLoader(cookie_maker=cookie_maker)
 
         self.loader = loader
         self.block_size = block_size
 
-        self.arc_parser = ARCHeadersParser(self.ARC_HEADERS)
+        if arc2warc:
+            self.arc_parser = ARC2WARCHeadersParser()
+        else:
+            self.arc_parser = ARCHeadersParser()
 
         self.warc_parser = StatusAndHeadersParser(self.WARC_TYPES)
         self.http_parser = StatusAndHeadersParser(self.HTTP_TYPES, verify_http)
@@ -114,12 +113,16 @@ class ArcWarcRecordLoader(object):
             else:
                 rec_type = 'response'
 
-        elif the_format == 'warc':
+        elif the_format in ('warc', 'arc2warc'):
             rec_type = rec_headers.get_header('WARC-Type')
             uri = rec_headers.get_header('WARC-Target-URI')
             length = rec_headers.get_header('Content-Length')
             content_type = rec_headers.get_header('Content-Type')
-            sub_len = 0
+            if the_format == 'warc':
+                sub_len = 0
+            else:
+                sub_len = rec_headers.total_len
+                the_format = 'warc'
 
         is_err = False
 
@@ -201,7 +204,7 @@ class ArcWarcRecordLoader(object):
         # now try as arc
         try:
             rec_headers = self.arc_parser.parse(stream, statusline)
-            return 'arc', rec_headers
+            return self.arc_parser.get_rec_type(), rec_headers
         except StatusAndHeadersParserException as se:
             if known_format == 'arc':
                 msg = 'Invalid ARC record, first line: '
@@ -212,8 +215,15 @@ class ArcWarcRecordLoader(object):
 
 #=================================================================
 class ARCHeadersParser(object):
-    def __init__(self, headernames):
-        self.headernames = headernames
+    # ARC 1.0 headers
+    ARC_HEADERS = ["uri", "ip-address", "archive-date",
+                       "content-type", "length"]
+
+    def __init__(self):
+        self.headernames = self.get_header_names()
+
+    def get_rec_type(self):
+        return 'arc'
 
     def parse(self, stream, headerline=None):
         total_read = 0
@@ -250,12 +260,60 @@ class ARCHeadersParser(object):
             msg = msg.format(headernames, parts)
             raise StatusAndHeadersParserException(msg, parts)
 
-        headers = []
 
-        for name, value in zip(headernames, parts):
-            headers.append((name, value))
+        protocol, headers = self._get_protocol_and_headers(headerline, parts)
 
         return StatusAndHeaders(statusline='',
                                 headers=headers,
-                                protocol='ARC/1.0',
+                                protocol='WARC/1.0',
                                 total_len=total_read)
+
+    @classmethod
+    def get_header_names(cls):
+        return cls.ARC_HEADERS
+
+    def _get_protocol_and_headers(self, headerline, parts):
+        headers = []
+
+        for name, value in zip(self.headernames, parts):
+            headers.append((name, value))
+
+        return ('ARC/1.0', headers)
+
+
+#=================================================================
+class ARC2WARCHeadersParser(ARCHeadersParser):
+    # Headers for converting ARC -> WARC Header
+    ARC_TO_WARC_HEADERS = ["WARC-Target-URI",
+                           "WARC-IP-Address",
+                           "WARC-Date",
+                           "Content-Type",
+                           "Content-Length"]
+
+    def get_rec_type(self):
+        return 'arc2warc'
+
+    @classmethod
+    def get_header_names(cls):
+        return cls.ARC_TO_WARC_HEADERS
+
+    def _get_protocol_and_headers(self, headerline, parts):
+        headers = []
+
+        for name, value in zip(self.headernames, parts):
+            if name == 'WARC-Date':
+                value = timestamp_to_iso_date(value)
+
+            headers.append((name, value))
+
+        if headerline.startswith('filedesc://'):
+            rec_type = 'arc_header'
+        else:
+            rec_type = 'response'
+
+        headers.append(('WARC-Type', rec_type))
+        headers.append(('WARC-Record-ID', StatusAndHeadersParser.make_warc_id()))
+
+        return ('WARC/1.0', headers)
+
+

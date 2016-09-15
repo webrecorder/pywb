@@ -7,6 +7,7 @@ from copy import copy
 from six.moves import range
 from six import iteritems
 from pywb.utils.loaders import to_native_str
+import uuid
 
 
 WRAP_WIDTH = 80
@@ -256,6 +257,12 @@ class StatusAndHeadersParser(object):
             if key_upper.startswith(prefix):
                 plen = len(prefix)
                 return (key_upper[:plen], key[plen:])
+
+    @staticmethod
+    def make_warc_id(id_=None):
+        if not id_:
+            id_ = uuid.uuid1()
+        return '<urn:uuid:{0}>'.format(id_)
 
 
 #=================================================================

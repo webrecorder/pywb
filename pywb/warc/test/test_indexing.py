@@ -44,6 +44,19 @@ com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ
  CDX N b a m s k r M S V g
 com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1656 151 example.arc
 
+# arc.gz
+>>> print_cdx_index('example.arc.gz', arc2warc=True)
+ CDX N b a m s k r M S V g
+com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 856 171 example.arc.gz
+
+# arc
+>>> print_cdx_index('example.arc', arc2warc=True)
+ CDX N b a m s k r M S V g
+com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1656 151 example.arc
+
+
+
+
 # wget warc, includes metadata by default
 >>> print_cdx_index('example-wget-1-14.warc.gz')
  CDX N b a m s k r M S V g
@@ -327,6 +340,22 @@ def test_cdxj_arc_minimal():
     assert parse_cdxj(res) == parse_cdxj(b"""
 com,example)/ 20140216050221 {"url": "http://example.com/", "digest": "PEWDX5GTH66WU74WBPGFECIYBMPMP3FP", "length": "856", "offset": "171", "filename": "example.arc.gz"}
 """)
+
+def test_cdxj_arc_conv():
+    # arc.gz -- json
+    res = cdx_index('example.arc.gz', cdxj=True, arc2warc=True)
+    assert parse_cdxj(res) == parse_cdxj(b"""
+com,example)/ 20140216050221 {"url": "http://example.com/", "mime": "text/html", "status": "200", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "856", "offset": "171", "filename": "example.arc.gz"}
+""")
+
+def test_cdxj_arc_minimal_conv():
+    # arc.gz -- minimal + json
+    res = cdx_index('example.arc.gz', cdxj=True, minimal=True, arc2warc=True)
+    assert parse_cdxj(res) == parse_cdxj(b"""
+com,example)/ 20140216050221 {"url": "http://example.com/", "digest": "PEWDX5GTH66WU74WBPGFECIYBMPMP3FP", "length": "856", "offset": "171", "filename": "example.arc.gz"}
+""")
+
+
 
 
 def test_cdxj_empty():

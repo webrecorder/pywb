@@ -138,6 +138,7 @@ import pytest
 import six
 from six import StringIO
 from io import BytesIO
+import requests
 
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
 from pywb.utils.loaders import LimitReader, extract_client_cookie, extract_post_query
@@ -176,6 +177,14 @@ def test_s3_read_1():
     assert reader.readline() == b'WARC/1.0\r\n'
     assert reader.readline() == b'WARC-Type: response\r\n'
 
+def test_limit_post():
+    reader = LimitReader(BytesIO(b'abcdefg'), 3)
+    r = requests.request(method='POST',
+                         url='http://httpbin.org/post',
+                         data=reader,
+                         headers={'Content-Length': '3'})
+
+    assert '"abc"' in r.text
 
 # Error
 def test_err_no_such_file():

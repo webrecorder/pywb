@@ -4,7 +4,6 @@ from pywb.framework.wsgi_wrappers import init_app
 import webtest
 import pywb.rewrite.rewrite_live
 
-
 #=================================================================
 class MockYTDWrapper(object):
     def extract_info(self, url):
@@ -47,6 +46,7 @@ class TestLiveRewriter:
     def test_live_live_frame(self):
         resp = self.testapp.get('/live/http://example.com/')
         assert resp.status_int == 200
+        resp.charset = 'utf-8'
         assert '<iframe ' in resp.text
         assert 'src="http://localhost:80/live/mp_/http://example.com/"' in resp.text, resp.text
 
