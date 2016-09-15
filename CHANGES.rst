@@ -23,11 +23,11 @@ pywb 0.32.0 changelist
    - Rewrite ``poster`` attr in dynamic elems
    - Rewrite ``src`` attr in video ``source`` elems
    
- * Record Loader: Option to convert  ARC->WARC records implicitly, return WARC responses (enabled by default)
+* Record Loader: Option to convert  ARC->WARC records implicitly, return WARC responses (enabled by default)
  
- * Block Loader: Raise exceptions for 4xx or 5xx responses
+* Block Loader: Raise exceptions for 4xx or 5xx responses
  
- * CDX API: return not found CDX error as JSON or plain text if using ``output=json`` or ``output=text``
+* CDX API: return not found CDX error as JSON or plain text if using ``output=json`` or ``output=text``
  
  
 pywb 0.31.0 changelist
