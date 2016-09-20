@@ -1,3 +1,11 @@
+pywb 0.32.1 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* Template Responses: Calculate ``Content-Length`` correctly from encoded utf-8 text length
+
+* WbUrl: Improved detection of url scheme, don't treat ``a.co/?http://foo`` as having a valid scheme
+
+
 pywb 0.32.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
