@@ -98,6 +98,8 @@ class WbUrl(BaseWbUrl):
 
     FIRST_PATH = re.compile('(?<![:/])[/?](?![/])')
 
+    SCHEME_RX = re.compile('[a-zA-Z0-9+-.]+(:/)')
+
 
     @staticmethod
     def percent_encode_host(url):
@@ -200,7 +202,12 @@ class WbUrl(BaseWbUrl):
 
         # protocol agnostic url -> http://
         # no protocol -> http://
-        inx = self.url.find(':/')
+        #inx = self.url.find('://')
+        inx = -1
+        m = self.SCHEME_RX.match(self.url)
+        if m:
+            inx = m.span(1)[0]
+
         #if inx < 0:
             # check for other partially encoded variants
         #    m = self.PARTIAL_ENC_RX.match(self.url)
