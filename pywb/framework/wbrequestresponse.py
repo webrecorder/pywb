@@ -239,11 +239,12 @@ class WbResponse(object):
 
     @staticmethod
     def text_response(text, status='200 OK', content_type='text/plain; charset=utf-8'):
+        encoded_text = text.encode('utf-8')
         status_headers = StatusAndHeaders(status,
                                           [('Content-Type', content_type),
-                                           ('Content-Length', str(len(text)))])
+                                           ('Content-Length', str(len(encoded_text)))])
 
-        return WbResponse(status_headers, value=[text.encode('utf-8')])
+        return WbResponse(status_headers, value=[encoded_text])
 
     @staticmethod
     def redir_response(location, status='302 Redirect', headers=None):
