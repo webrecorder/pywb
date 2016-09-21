@@ -192,10 +192,9 @@ __wbvidrw = (function() {
                         });
                     }
 
-
-                    if (wbinfo.url.indexOf("livestream") >= 0) {
-                        obj_url = wbinfo.url;
-                    }
+                    //if (wbinfo.url.indexOf("livestream") >= 0) {
+                    obj_url = wbinfo.url;
+                    //}
                 }
             }
         }
@@ -364,7 +363,7 @@ __wbvidrw = (function() {
                     return;
                 }
 
-                if (videoinfo._type == "playlist" && videoinfo.extractor == "livestream") {
+                if (videoinfo._type == "playlist") {
                     if (videoinfo.entries && videoinfo.entries.length > 0) {
                         do_replace_video(elem, videoinfo.entries[0]);
                         return;
