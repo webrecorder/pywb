@@ -207,9 +207,15 @@ class StaticHandler(BaseHandler):
             data.seek(0)
             headers = [('Content-Length', str(size))]
 
+            reader = None
+
             if 'wsgi.file_wrapper' in wbrequest.env:
-                reader = wbrequest.env['wsgi.file_wrapper'](data)
-            else:
+                try:
+                    reader = wbrequest.env['wsgi.file_wrapper'](data)
+                except:
+                    pass
+
+            if not reader:
                 reader = iter(lambda: data.read(), b'')
 
             content_type = 'application/octet-stream'
