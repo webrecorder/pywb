@@ -58,7 +58,7 @@ class MementoRespMixin(object):
                        not is_top_frame)
 
         if is_timegate:
-            self.status_headers.headers.append(('Vary', 'accept-datetime'))
+            self.status_headers.replace_header('Vary', 'accept-datetime')
 
         # Determine if memento:
         is_memento = False
@@ -100,8 +100,8 @@ class MementoRespMixin(object):
                 http_date = timestamp_to_http_date(ts)
 
                 if is_memento:
-                    self.status_headers.headers.append(('Memento-Datetime',
-                                                       http_date))
+                    self.status_headers.replace_header('Memento-Datetime',
+                                                       http_date)
 
                 canon_link = wbrequest.urlrewriter.get_new_url(mod=mod,
                                                                timestamp=ts,
@@ -133,7 +133,7 @@ class MementoRespMixin(object):
 
         link = ', '.join(link)
 
-        self.status_headers.headers.append(('Link', link))
+        self.status_headers.replace_header('Link', link)
 
     def make_link(self, url, type):
         return '<{0}>; rel="{1}"'.format(url, type)
