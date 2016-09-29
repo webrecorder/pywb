@@ -34,7 +34,7 @@ class CaptureException(WbException):
 
 #=================================================================
 class ReplayView(object):
-    STRIP_SCHEME_WWW = re.compile('^([\w]+:[/]*(?:www[\d]*\.)?)?(.*?)$')
+    STRIP_SCHEME_WWW = re.compile('^([\w]+:[/]*(?:www[\d]*\.)?)?(.*?)$', re.MULTILINE)
 
     def __init__(self, content_loader, config):
         self.content_loader = content_loader
