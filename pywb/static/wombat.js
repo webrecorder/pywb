@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.16
+// Wombat JS-Rewriting Library v2.17
 //============================================
 
 
@@ -49,6 +49,8 @@ var wombat_internal = function($wbwindow) {
 
     // custom options
     var wb_opts;
+
+    var wb_is_proxy = false;
 
     //============================================
     function is_host_url(str) {
@@ -160,10 +162,12 @@ var wombat_internal = function($wbwindow) {
             return url;
         }
 
-        // proxy mode: If no wb_replay_prefix, only rewrite https:// -> http://
-        if (!wb_replay_prefix) {
-            if (starts_with(url, HTTPS_PREFIX)) {
+        // proxy mode: If no wb_replay_prefix, only rewrite scheme
+        if (wb_is_proxy) {
+            if (wb_orig_scheme == HTTP_PREFIX && starts_with(url, HTTPS_PREFIX)) {
                 return HTTP_PREFIX + url.substr(HTTPS_PREFIX.length);
+            } else if (wb_orig_scheme == HTTPS_PREFIX && starts_with(url, HTTP_PREFIX)) {
+                return HTTPS_PREFIX + url.substr(HTTP_PREFIX.length);
             } else {
                 return url;
             }
@@ -317,7 +321,7 @@ var wombat_internal = function($wbwindow) {
         var orig_href = href;
 
         // proxy mode: no extraction needed
-        if (!wb_replay_prefix) {
+        if (wb_is_proxy) {
             return href;
         }
 
@@ -2282,24 +2286,31 @@ var wombat_internal = function($wbwindow) {
         wb_info = wbinfo;
         wb_opts = wbinfo.wombat_opts;
         wb_replay_prefix = wbinfo.prefix;
+        wb_is_proxy = (!wb_replay_prefix);
 
         wb_info.top_host = wb_info.top_host || "*";
 
         init_top_frame($wbwindow);
-        init_wombat_top($wbwindow);
 
-        if (wb_replay_prefix && wb_replay_prefix.indexOf($wbwindow.__WB_replay_top.location.origin) == 0) {
-            wb_rel_prefix = wb_replay_prefix.substring($wbwindow.__WB_replay_top.location.origin.length + 1);
-        } else {
-            wb_rel_prefix = wb_replay_prefix;
-        }
-        wb_rel_prefix_check = wb_rel_prefix;
+        init_wombat_loc($wbwindow);
 
         wbinfo.wombat_opts = wbinfo.wombat_opts || {};
 
-        wb_curr_host = $wbwindow.location.protocol + "//" + $wbwindow.location.host;
+        wb_orig_scheme = wbinfo.wombat_scheme + '://';
 
-        if (wb_replay_prefix) {
+        // archival mode: init url-rewriting intercepts
+        if (!wb_is_proxy) {
+            init_wombat_top($wbwindow);
+
+            wb_curr_host = $wbwindow.location.protocol + "//" + $wbwindow.location.host;
+
+            if (wb_replay_prefix && wb_replay_prefix.indexOf($wbwindow.__WB_replay_top.location.origin) == 0) {
+                wb_rel_prefix = wb_replay_prefix.substring($wbwindow.__WB_replay_top.location.origin.length + 1);
+            } else {
+                wb_rel_prefix = wb_replay_prefix;
+            }
+            wb_rel_prefix_check = wb_rel_prefix;
+
             wb_abs_prefix = wb_replay_prefix;
             //wb_replay_date_prefix = wb_replay_prefix + ts_mod;
             //wb_coll_prefix += ts_mod;
@@ -2310,93 +2321,95 @@ var wombat_internal = function($wbwindow) {
                 wb_capture_date_part = "";
             }
 
-            wb_orig_scheme = wbinfo.wombat_scheme + '://';
-
             wb_orig_origin = wb_orig_scheme + wbinfo.wombat_host;
 
             init_bad_prefixes(wb_replay_prefix);
+
+            //if ($wbwindow.opener) {
+            //    $wbwindow.opener.WB_wombat_location = copy_location_obj($wbwindow.opener.location);
+            //}
+
+            // Domain
+            //$wbwindow.document.WB_wombat_domain = wbinfo.wombat_host;
+            //$wbwindow.document.WB_wombat_referrer = extract_orig($wbwindow.document.referrer);
+
+            init_doc_overrides($wbwindow, wb_opts);
+
+            // History
+            override_history_func("pushState");
+            override_history_func("replaceState");
+
+            override_history_nav("go");
+            override_history_nav("back");
+            override_history_nav("forward");
+
+            // postMessage
+            // OPT skip
+            if (!wb_opts.skip_postmessage) {
+                init_postmessage_override($wbwindow);
+            }
+
+            init_hash_change();
+
+            // write
+            init_write_override();
+
+            // Ajax
+            init_ajax_rewrite();
+
+            if (!wb_opts.skip_disable_worker) {
+                //init_worker_override();
+            }
+
+            // innerHTML can be overriden on prototype!
+            override_html_assign($wbwindow.HTMLElement, "innerHTML");
+            override_html_assign($wbwindow.HTMLIFrameElement, "srcdoc");
+            override_html_assign($wbwindow.HTMLStyleElement, "textContent");
+
+
+            // init insertAdjacentHTML() override
+            init_insertAdjacentHTML_override();
+
+            // iframe.contentWindow and iframe.contentDocument overrides to 
+            // ensure wombat is inited on the iframe $wbwindow!
+            override_iframe_content_access("contentWindow");
+            override_iframe_content_access("contentDocument");
+
+            // base override
+            init_base_override();
+
+            // setAttribute
+            if (!wb_opts.skip_setAttribute) {
+                init_setAttribute_override();
+                init_getAttribute_override();
+            }
+
+            // createElement attr override
+            if (!wb_opts.skip_createElement) {
+                init_createElement_override();
+            }
+
+            // ensure namespace urls are NOT rewritten
+            init_createElementNS_fix();
+
+            // Image
+            //init_image_override();
+
+            // DOM
+            // OPT skip
+            if (!wb_opts.skip_dom) {
+                init_dom_override();
+            }
+
+            // registerProtocolHandler override
+            init_registerPH_override();
+
+            //sendBeacon override
+            init_beacon_override();
         }
 
-        init_wombat_loc($wbwindow);
-
-        //if ($wbwindow.opener) {
-        //    $wbwindow.opener.WB_wombat_location = copy_location_obj($wbwindow.opener.location);
-        //}
-
-        // Domain
-        //$wbwindow.document.WB_wombat_domain = wbinfo.wombat_host;
-        //$wbwindow.document.WB_wombat_referrer = extract_orig($wbwindow.document.referrer);
-
-        init_doc_overrides($wbwindow, wb_opts);
-
-        // History
-        override_history_func("pushState");
-        override_history_func("replaceState");
-
-        override_history_nav("go");
-        override_history_nav("back");
-        override_history_nav("forward");
-
-        // open
-        init_open_override();
-
-        // postMessage
-        // OPT skip
-        if (!wb_opts.skip_postmessage) {
-            init_postmessage_override($wbwindow);
-        }
-
-        init_hash_change();
-
-        // write
-        init_write_override();
-
-        // Ajax
-        init_ajax_rewrite();
-
-        if (!wb_opts.skip_disable_worker) {
-            //init_worker_override();
-        }
-
-        // innerHTML can be overriden on prototype!
-        override_html_assign($wbwindow.HTMLElement, "innerHTML");
-        override_html_assign($wbwindow.HTMLIFrameElement, "srcdoc");
-        override_html_assign($wbwindow.HTMLStyleElement, "textContent");
-
-
-        // init insertAdjacentHTML() override
-        init_insertAdjacentHTML_override();
-
-        // iframe.contentWindow and iframe.contentDocument overrides to 
-        // ensure wombat is inited on the iframe $wbwindow!
-        override_iframe_content_access("contentWindow");
-        override_iframe_content_access("contentDocument");
-
-        // base override
-        init_base_override();
-
-        // setAttribute
-        if (!wb_opts.skip_setAttribute) {
-            init_setAttribute_override();
-            init_getAttribute_override();
-        }
-
-        // createElement attr override
-        if (!wb_opts.skip_createElement) {
-            init_createElement_override();
-        }
-
-        // ensure namespace urls are NOT rewritten
-        init_createElementNS_fix();
-
-        // Image
-        //init_image_override();
-
-        // DOM
-        // OPT skip
-        if (!wb_opts.skip_dom) {
-            init_dom_override();
-        }
+        // other overrides
+        // proxy mode: only using these overrides
 
         // Random
         init_seeded_random(wbinfo.wombat_sec);
@@ -2407,11 +2420,8 @@ var wombat_internal = function($wbwindow) {
         // Date
         init_date_override(wbinfo.wombat_sec);
 
-        // registerProtocolHandler override
-        init_registerPH_override();
-
-        //sendBeacon override
-        init_beacon_override();
+        // open
+        init_open_override();
 
         // expose functions
         this.extract_orig = extract_orig;
@@ -2422,7 +2432,7 @@ var wombat_internal = function($wbwindow) {
 
     function init_top_frame($wbwindow) {
         // proxy mode
-        if (!wb_replay_prefix) {
+        if (wb_is_proxy) {
             $wbwindow.__WB_replay_top = $wbwindow.top;
             $wbwindow.__WB_top_frame = undefined;
             return;
