@@ -156,7 +156,12 @@ class RewriteContent(object):
                                                         text_type,
                                                         stream)
 
-        rewriter_class = rule.rewriters[text_type]
+        # for proxy mode: use special js_proxy rewriter
+        # which may be none rewriter + custom rules (if any)
+        if text_type == 'js' and not urlrewriter.prefix:
+            rewriter_class = rule.rewriters['js_proxy']
+        else:
+            rewriter_class = rule.rewriters[text_type]
 
         # for html, need to perform header insert, supply js, css, xml
         # rewriters

@@ -45,8 +45,11 @@ class RewriteRules(BaseRule):
         # set js class, using either default or override from config
         self.rewriters['js'] = config.get('js_class', js_default_class)
 
+        self.rewriters['js_proxy'] = JSNoneRewriter
+
         # add any regexs for js rewriter
-        self._add_custom_regexs('js', config)
+        self._add_custom_regexs('js', 'js_regexs', config)
+        self._add_custom_regexs('js_proxy', 'js_regexs', config)
 
         # cookie rewrite scope
         self.cookie_scope = config.get('cookie_scope', 'default')
@@ -57,12 +60,12 @@ class RewriteRules(BaseRule):
 
         self.req_cookie_rewrite = req_cookie_rewrite
 
-    def _add_custom_regexs(self, field, config):
-        regexs = config.get(field + '_regexs')
+    def _add_custom_regexs(self, rw_id, field, config):
+        regexs = config.get(field)
         if not regexs:
             return
 
-        rewriter_cls = self.rewriters[field]
+        rewriter_cls = self.rewriters[rw_id]
 
         #rule_def_tuples = RegexRewriter.parse_rules_from_config(regexs)
         parse_rules_func = RegexRewriter.parse_rules_from_config(regexs)
@@ -71,4 +74,4 @@ class RewriteRules(BaseRule):
             rule_def_tuples = parse_rules_func(urlrewriter)
             return rewriter_cls(urlrewriter, rule_def_tuples)
 
-        self.rewriters[field] = extend_rewriter_with_regex
+        self.rewriters[rw_id] = extend_rewriter_with_regex
