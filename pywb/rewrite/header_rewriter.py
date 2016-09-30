@@ -18,7 +18,7 @@ class RewrittenStatusAndHeaders(object):
         return self.removed_header_dict.get(name) == value
 
     def readd_rewrite_removed(self):
-        for name in HeaderRewriter.PROXY_NO_REWRITE_HEADERS:
+        for name in HeaderRewriter.KEEP_NO_REWRITE_HEADERS:
             value = self.removed_header_dict.get(name)
             if value is not None:
                 self.status_headers.headers.append((name, value))
@@ -49,12 +49,11 @@ class HeaderRewriter(object):
 
     URL_REWRITE_HEADERS = ['location', 'content-location', 'content-base']
 
-    #ENCODING_HEADERS = ['content-encoding']
+    REMOVE_ALWAYS_HEADERS = ['transfer-encoding']
 
-    REMOVE_HEADERS = ['transfer-encoding', 'content-security-policy',
-                      'strict-transport-security']
+    KEEP_PROXY_HEADERS = ['content-security-policy', 'strict-transport-security']
 
-    PROXY_NO_REWRITE_HEADERS = ['content-length', 'content-encoding']
+    KEEP_NO_REWRITE_HEADERS = ['content-length', 'content-encoding']
 
     COOKIE_HEADERS = ['set-cookie', 'cookie']
 
@@ -68,7 +67,7 @@ class HeaderRewriter(object):
         content_type = status_headers.get_header('Content-Type')
         text_type = None
         charset = None
-        strip_encoding = False
+        content_modified = False
         http_cache = None
         if urlrewriter:
             http_cache = urlrewriter.rewrite_opts.get('http_cache')
@@ -77,12 +76,12 @@ class HeaderRewriter(object):
             text_type = self._extract_text_type(content_type)
             if text_type:
                 charset = self._extract_char_set(content_type)
-                strip_encoding = True
+                content_modified = True
 
         result = self._rewrite_headers(status_headers.headers,
                                        urlrewriter,
                                        cookie_rewriter,
-                                       strip_encoding,
+                                       content_modified,
                                        http_cache)
 
         new_headers = result[0]
@@ -128,7 +127,7 @@ class HeaderRewriter(object):
 
     def _rewrite_headers(self, headers, urlrewriter,
                          cookie_rewriter,
-                         content_rewritten,
+                         content_modified,
                          http_cache):
 
         new_headers = []
@@ -146,17 +145,24 @@ class HeaderRewriter(object):
             if lowername in self.PROXY_HEADERS:
                 add_header(name, value)
 
-            elif urlrewriter and lowername in self.URL_REWRITE_HEADERS:
+            elif urlrewriter and urlrewriter.prefix and lowername in self.URL_REWRITE_HEADERS:
                 new_headers.append((name, urlrewriter.rewrite(value)))
 
-            elif lowername in self.PROXY_NO_REWRITE_HEADERS:
-                if content_rewritten:
+            elif lowername in self.KEEP_NO_REWRITE_HEADERS:
+                if content_modified:
                     removed_header_dict[lowername] = value
                     add_prefixed_header(name, value)
                 else:
                     add_header(name, value)
 
-            elif lowername in self.REMOVE_HEADERS:
+            elif lowername in self.KEEP_PROXY_HEADERS:
+                if urlrewriter.prefix:
+                    removed_header_dict[lowername] = value
+                    add_prefixed_header(name, value)
+                else:
+                    add_header(name, value)
+
+            elif lowername in self.REMOVE_ALWAYS_HEADERS:
                 removed_header_dict[lowername] = value
                 add_prefixed_header(name, value)
 
@@ -171,7 +177,7 @@ class HeaderRewriter(object):
                 else:
                     add_prefixed_header(name, value)
 
-            elif urlrewriter:
+            elif urlrewriter and urlrewriter.prefix:
                 add_prefixed_header(name, value)
             else:
                 add_header(name, value)
