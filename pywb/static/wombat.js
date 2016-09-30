@@ -790,7 +790,9 @@ var wombat_internal = function($wbwindow) {
                 message["param"] = arguments[0];
             }
 
-            $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
+            if ($wbwindow.__WB_top_frame) {
+                $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
+            }
         }
 
         $wbwindow.history[func_name] = rewritten_func;
@@ -1988,7 +1990,9 @@ var wombat_internal = function($wbwindow) {
                               }
 
                 // norify of cookie setting to allow server-side tracking
-                $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
+                if ($wbwindow.__WB_top_frame) {
+                    $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
+                }
 
                 // if no subdomain, eg. "localhost", just remove domain altogether
                 if ($wbwindow.location.hostname.indexOf(".") >= 0 && !IP_RX.test($wbwindow.location.hostname)) {
