@@ -359,10 +359,9 @@ var wombat_internal = function($wbwindow) {
             }
         }
 
-        // remove trailing slash
-        //if (ends_with(href, "/")) {
-        //    href = href.substring(0, href.length - 1);
-        //}
+        if (orig_href.charAt(0) == "/" && orig_href.charAt(1) != "/" && starts_with(href, wb_orig_origin)) {
+            href = href.substr(wb_orig_origin.length);
+        }
 
         return href;
     }
