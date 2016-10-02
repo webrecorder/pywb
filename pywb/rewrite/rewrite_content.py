@@ -211,7 +211,12 @@ class RewriteContent(object):
 
                 return (status_headers, gen, False)
 
-            js_rewriter_class = rule.rewriters['js']
+            # if proxy, use js_proxy rewriter
+            if not urlrewriter.prefix:
+                js_rewriter_class = rule.rewriters['js_proxy']
+            else:
+                js_rewriter_class = rule.rewriters['js']
+
             css_rewriter_class = rule.rewriters['css']
 
             if wb_url.is_url_rewrite_only:
