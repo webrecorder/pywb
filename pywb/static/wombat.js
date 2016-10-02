@@ -2265,6 +2265,30 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
+    function init_disable_notifications() {
+        if (window.Notification) {
+            window.Notification.requestPermission = function(callback) {
+                if (callback) {
+                    callback("denied");
+                }
+
+                return Promise.resolve("denied");
+            }
+        }
+
+        if (window.geolocation) {
+            var disabled = function(success, error, options) {
+                if (error) {
+                    error({"code": 2, "message": "not available"});
+                }
+            }
+
+            window.geolocation.getCurrentPosition = disabled;
+            window.geolocation.watchPosition = disabled;
+        }
+    }
+
+    //============================================
     function get_final_url(prefix, mod, url) {
         if (mod == undefined) {
             mod = wb_info.mod;
@@ -2425,6 +2449,9 @@ var wombat_internal = function($wbwindow) {
 
         // open
         init_open_override();
+
+        // disable notifications
+        init_disable_notifications();
 
         // expose functions
         this.extract_orig = extract_orig;
