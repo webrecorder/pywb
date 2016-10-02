@@ -391,8 +391,9 @@ class RewriterApp(object):
 
     def get_upstream_url(self, wb_url, kwargs, params):
         base_url = self.get_base_url(wb_url, kwargs)
-        #params['filter'] = tuple(params['filter'])
-        base_url += '&' + urlencode(params, True)
+        param_str = urlencode(params, True)
+        if param_str:
+            base_url += '&' + param_str
         return base_url
 
     def get_cookie_key(self, kwargs):
