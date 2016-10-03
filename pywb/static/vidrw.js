@@ -343,7 +343,7 @@ __wbvidrw = (function() {
         // if in proxy mode, access video info via special proxy magic path
         // eg: http://pywb.proxy/<coll>/vi_/<url>
         if (wbinfo.proxy_magic) {
-            info_url = "http://" + wbinfo.proxy_magic + "/" + wbinfo.coll + "/";
+            info_url = window.location.protocol + "//" + wbinfo.proxy_magic + "/" + wbinfo.coll + "/";
         } else {
             info_url = wbinfo.prefix;
         }
