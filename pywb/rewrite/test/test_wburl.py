@@ -13,6 +13,9 @@ u"""
 >>> repr(WbUrl('20130102im_/https:/example.com'))
 "('replay', '20130102', 'im_', 'https://example.com', '20130102im_/https://example.com')"
 
+>>> repr(WbUrl('20130102$cbr:test-foo.123/https:/example.com'))
+"('replay', '20130102', '$cbr:test-foo.123', 'https://example.com', '20130102$cbr:test-foo.123/https://example.com')"
+
 # Protocol agnostic convert to http
 >>> repr(WbUrl('20130102im_///example.com'))
 "('replay', '20130102', 'im_', 'http://example.com', '20130102im_/http://example.com')"
