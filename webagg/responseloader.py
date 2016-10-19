@@ -208,7 +208,8 @@ class WARCPathLoader(BaseLoader):
                                                       failed_files,
                                                       local_index_query))
 
-        if cdx.get('status', '').startswith('3'):
+        status = cdx.get('status')
+        if not status or status.startswith('3'):
             status_headers = self.headers_parser.parse(payload.stream)
             self.raise_on_self_redirect(params, cdx,
                                         status_headers.get_statuscode(),
