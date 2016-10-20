@@ -29,6 +29,9 @@ u"""
 >>> repr(WbUrl('im_/20130102.org'))
 "('latest_replay', '', 'im_', 'http://20130102.org', 'im_/http://20130102.org')"
 
+>>> repr(WbUrl('$cbr:test-foo.123/https:/example.com'))
+"('latest_replay', '', '$cbr:test-foo.123', 'https://example.com', '$cbr:test-foo.123/https://example.com')"
+
 >>> repr(WbUrl('20130102.example.com'))
 "('latest_replay', '', '', 'http://20130102.example.com', 'http://20130102.example.com')"
 
