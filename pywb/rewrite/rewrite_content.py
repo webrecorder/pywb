@@ -266,7 +266,7 @@ class RewriteContent(object):
         if text_type is None:
             return (status_headers, self.stream_to_gen(stream), False)
 
-        if ((text_type == 'html' and urlrewriter.rewrite_opts.get('ajax')) or
+        if ((text_type == 'html' and urlrewriter.rewrite_opts.get('is_ajax')) or
             (text_type == 'plain' and not mod in ('js_', 'cs_'))):
             rewritten_headers.readd_rewrite_removed()
             return (status_headers, self.stream_to_gen(stream), False)
