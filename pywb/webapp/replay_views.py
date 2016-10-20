@@ -163,6 +163,9 @@ class ReplayView(object):
         if wbrequest and wbrequest.wb_url:
             wbrequest.wb_url.url = cdx['url']
 
+        if wbrequest.options['is_ajax']:
+            wbrequest.urlrewriter.rewrite_opts['is_ajax'] = True
+
         head_insert_func = None
         if self.head_insert_view:
             head_insert_func = (self.head_insert_view.

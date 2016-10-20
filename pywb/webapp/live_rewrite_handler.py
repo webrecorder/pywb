@@ -48,6 +48,9 @@ class RewriteHandler(SearchPageWbUrlHandler):
             url = wbrequest.urlrewriter.get_new_url(type=type_, timestamp='')
             return WbResponse.redir_response(url)
 
+        if wbrequest.options['is_ajax']:
+            wbrequest.urlrewriter.rewrite_opts['is_ajax'] = True
+
         try:
             return self.render_content(wbrequest)
 

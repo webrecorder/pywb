@@ -120,6 +120,7 @@ class RewriteContent(object):
 
         res = self.handle_custom_rewrite(rewritten_headers,
                                          stream,
+                                         urlrewriter,
                                          wb_url.mod,
                                          env)
         if res:
@@ -255,7 +256,9 @@ class RewriteContent(object):
 
         return (status_headers, gen, True)
 
-    def handle_custom_rewrite(self, rewritten_headers, stream, mod, env):
+    def handle_custom_rewrite(self, rewritten_headers, stream,
+                              urlrewriter, mod, env):
+
         text_type = rewritten_headers.text_type
         status_headers = rewritten_headers.status_headers
 
@@ -263,7 +266,8 @@ class RewriteContent(object):
         if text_type is None:
             return (status_headers, self.stream_to_gen(stream), False)
 
-        if text_type == 'plain' and not mod in ('js_', 'cs_'):
+        if ((text_type == 'html' and urlrewriter.rewrite_opts.get('ajax')) or
+            (text_type == 'plain' and not mod in ('js_', 'cs_'))):
             rewritten_headers.readd_rewrite_removed()
             return (status_headers, self.stream_to_gen(stream), False)
 

@@ -134,6 +134,8 @@ class JSLocationRewriterMixin(object):
           #  (r'(?<![/$])\blocation\b(?!\":)', RegexRewriter.add_prefix(prefix), 0),
           (r'(?<![/$\'"-])\b(?:location|top)\b(?!(?:\":|:|=\d|-))', RegexRewriter.add_prefix(prefix), 0),
 
+          (r'(?<=[?])location[:]', RegexRewriter.add_prefix(prefix), 0),
+
           (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(window).'), 0),
 
           (r'(?<=\.)frameElement\b', RegexRewriter.add_prefix(prefix), 0),
