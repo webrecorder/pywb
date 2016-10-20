@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.17
+// Wombat JS-Rewriting Library v2.18
 //============================================
 
 
@@ -729,7 +729,9 @@ var wombat_internal = function($wbwindow) {
 
             var abs_url = extract_orig(url);
 
-            if (abs_url && !starts_with(abs_url, $wbwindow.WB_wombat_location.origin + "/")) {
+            if (abs_url &&
+                (abs_url != $wbwindow.WB_wombat_location.origin) &&
+                !starts_with(abs_url, $wbwindow.WB_wombat_location.origin + "/")) {
                 throw new DOMException("Invalid history change: " + abs_url);
             }
 
@@ -823,10 +825,32 @@ var wombat_internal = function($wbwindow) {
             }
 
             result = orig.call(this, method, url, async, user, password);
-            this.setRequestHeader('X-Pywb-Requested-With', 'XMLHttpRequest');
+            if (!starts_with(url, "data:")) {
+                this.setRequestHeader('X-Pywb-Requested-With', 'XMLHttpRequest');
+            }
         }
 
         $wbwindow.XMLHttpRequest.prototype.open = open_rewritten;
+    }
+
+    //============================================
+    function init_fetch_rewrite()
+    {
+        if (!$wbwindow.fetch) {
+            return;
+        }
+
+        var orig_fetch = $wbwindow.fetch;
+
+        $wbwindow.fetch = function(input, init) {
+            if (typeof(input) === "string") {
+                input = rewrite_url(input);
+            } else if (typeof(input) === "object" && input.url) {
+                input.url = rewrite_url(input.url);
+            }
+
+            return orig_fetch.call(this, input, init);
+        }
     }
 
     //============================================
@@ -1267,6 +1291,7 @@ var wombat_internal = function($wbwindow) {
             changed = rewrite_frame_src(elem, "src");
         } else {
             changed = rewrite_attr(elem, "src");
+            changed = rewrite_attr(elem, "srcset") || changed;
             changed = rewrite_attr(elem, "href") || changed;
             changed = rewrite_attr(elem, "style") || changed;
             changed = rewrite_attr(elem, "poster") || changed;
@@ -1466,6 +1491,7 @@ var wombat_internal = function($wbwindow) {
         override_attr($wbwindow.HTMLAudioElement.prototype, "src", "oe_");
         override_attr($wbwindow.HTMLAudioElement.prototype, "poster", "im_");
         override_attr($wbwindow.HTMLSourceElement.prototype, "src", "oe_");
+        override_attr($wbwindow.HTMLSourceElement.prototype, "srcset", "oe_");
         override_attr($wbwindow.HTMLInputElement.prototype, "src", "oe_");
         override_attr($wbwindow.HTMLEmbedElement.prototype, "src", "oe_");
         override_attr($wbwindow.HTMLObjectElement.prototype, "data", "oe_");
@@ -2383,6 +2409,9 @@ var wombat_internal = function($wbwindow) {
 
             // Ajax
             init_ajax_rewrite();
+
+            // Fetch
+            init_fetch_rewrite();
 
             if (!wb_opts.skip_disable_worker) {
                 //init_worker_override();
