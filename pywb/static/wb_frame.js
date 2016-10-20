@@ -106,7 +106,7 @@ function set_state(state) {
     }
 
     var label = document.getElementById("_wb_label");
-    if (label) {
+    if (label && window._wb_js) {
         if (state.is_live) {
             label.innerHTML = _wb_js.banner_labels.LIVE_MSG;
         } else {
@@ -135,14 +135,18 @@ function extract_ts_cookie(value) {
 }
 
 
-function init_pm() {
-    var frame = document.getElementById(IFRAME_ID).contentWindow;
+function init_pm(frame) {
+    if (!frame) {
+        return;
+    }
+
+    var frame_win = frame.contentWindow;
 
     window.addEventListener("message", function(event) {
         if (event.source == window.parent) {
             // Pass to replay frame
-            frame.postMessage(event.data, "*");
-        } else if (event.source == frame) {
+            frame_win.postMessage(event.data, "*");
+        } else if (event.source == frame_win) {
 
             // Check if iframe url change message
             if (typeof(event.data) == "object" && event.data["wb_type"]) {
@@ -180,11 +184,9 @@ function handle_message(state) {
 
 
 function update_wb_url(state) {
-    //if (curr_state && curr_state.url == state.url && curr_state.ts == state.ts) {
-    //    return;
-    //}
-
-    state['capture_str'] = _wb_js.ts_to_date(state.ts, true);
+    if (window._wb_js) {
+        state['capture_str'] = _wb_js.ts_to_date(state.ts, true);
+    }
 
     push_state(state);
 }
@@ -201,15 +203,21 @@ function outer_hash_changed(event) {
         return;
     }
 
-    var frame = document.getElementById(IFRAME_ID).contentWindow;
+    var frame = document.getElementById(IFRAME_ID);
 
-    var message = {"wb_type": "outer_hashchange", "hash": window.location.hash}
+    if (frame) {
+        var message = {"wb_type": "outer_hashchange", "hash": window.location.hash}
 
-    frame.postMessage(message, "*", undefined, true);
+        frame.contentWindow.postMessage(message, "*", undefined, true);
+    }
 }
 
 function init_hash_connect() {
     var frame = document.getElementById(IFRAME_ID);
+
+    if (!frame) {
+        return;
+    }
     
     if (window.location.hash) {
         var curr_url = wbinfo.capture_url + window.location.hash;
@@ -226,13 +234,13 @@ function init_hash_connect() {
     }
 
     // Init Post Message connect
-    init_pm();
+    init_pm(frame);
 }
 
 document.addEventListener("DOMContentLoaded", init_hash_connect);
 
 // Load Banner
-if (_wb_js) {
+if (window._wb_js) {
     _wb_js.load();
 }
 
