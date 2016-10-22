@@ -9,7 +9,7 @@ RUN pip install git+https://github.com/ikreymer/pywb.git@develop#egg=pywb-0.32.2
 
 RUN pip install git+https://github.com/t0m/pyamf.git@python3
 
-RUN pip install boto
+RUN pip install boto webassets
 
 ADD . /webrecore/
 WORKDIR /webrecore/

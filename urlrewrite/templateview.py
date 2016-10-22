@@ -5,6 +5,12 @@ from six.moves.urllib.parse import urlsplit
 from jinja2 import Environment
 from jinja2 import FileSystemLoader, PackageLoader, ChoiceLoader
 
+from webassets.ext.jinja2 import AssetsExtension
+from webassets.loaders import YAMLLoader
+from webassets.env import Resolver
+
+from pkg_resources import resource_filename
+
 import json
 import os
 
@@ -27,6 +33,7 @@ class RelEnvironment(Environment):
 class JinjaEnv(object):
     def __init__(self, paths=['templates', '.', '/'],
                        packages=['pywb'],
+                       assets_path=None,
                        globals=None,
                        overlay=None,
                        extensions=None):
@@ -35,7 +42,10 @@ class JinjaEnv(object):
 
         loader = ChoiceLoader(self._make_loaders(paths, packages))
 
-        extensions = extensions or {}
+        extensions = extensions or []
+
+        if assets_path:
+            extensions.append(AssetsExtension)
 
         if overlay:
             jinja_env = overlay.jinja_env.overlay(loader=loader,
@@ -47,9 +57,18 @@ class JinjaEnv(object):
                                        extensions=extensions)
 
         jinja_env.filters.update(self.filters)
+
         if globals:
             jinja_env.globals.update(globals)
+
         self.jinja_env = jinja_env
+
+        # init assets
+        if assets_path:
+            assets_loader = YAMLLoader(assets_path)
+            assets_env = assets_loader.load_environment()
+            assets_env.resolver = PkgResResolver()
+            jinja_env.assets_environment = assets_env
 
     def _make_loaders(self, paths, packages):
         loaders = []
@@ -180,5 +199,27 @@ class TopFrameView(BaseInsertView):
             params.update(extra_params)
 
         return self.render_to_string(env, **params)
+
+
+# ============================================================================
+class PkgResResolver(Resolver):
+    def get_pkg_path(self, item):
+        if not isinstance(item, str):
+            return None
+
+        parts = urlsplit(item)
+        if parts.scheme == 'pkg' and parts.netloc:
+            return (parts.netloc, parts.path)
+
+        return None
+
+    def resolve_source(self, ctx, item):
+        pkg = self.get_pkg_path(item)
+        if pkg:
+            filename = resource_filename(pkg[0], pkg[1])
+            if filename:
+                return filename
+
+        return super(PkgResResolver, self).resolve_source(ctx, item)
 
 
