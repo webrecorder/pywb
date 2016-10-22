@@ -196,6 +196,7 @@ class RewriterApp(object):
 
         if self.is_ajax(environ):
             head_insert_func = None
+            urlrewriter.rewrite_opts['is_ajax'] = True
         else:
             top_url = self.get_top_url(full_prefix, wb_url, cdx, kwargs)
             head_insert_func = (self.head_insert_view.
