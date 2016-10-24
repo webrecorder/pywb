@@ -1,3 +1,29 @@
+pywb 0.33.0 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* Client-Side Rewrite:
+   - Video: More aggressive ``youtube-dl`` rewriting, try video query for any ``<object>`` with flashvars
+   - proxy: disable most client side rewriting when in proxy mode, keep non-rewriting overrides (random, Date)
+   - host relative extract: ``extract_orig()`` returns host-relative if url starts with ``/``
+   - add geolocation and notifications overrides to (auto-disable)
+   - proxy: use current protocl for video info query.
+   - fix history check bug: support changing history to exact current origin.
+   - add ``window.fetch()`` override
+   - add ``srcset`` attribute rewriting
+   - adon't add ``X-Pywb-Requested-With`` to ``data:`` urls
+   - general JS fixes, add undefined checks before acccessing ``_wb_js``, top frame, and content frame.
+  
+* Server-Side Rewrite:
+   - www canonicalization: improve regex to include urls containing ``\r``
+   - memento: fix potential duplicate memento headers
+   - proxy: when in proxy mode, only rewrite headers related to encoding or cache
+   - proxy: add special 'proxy_js' rewriter which defaults to no rewriting for proxy mode but allows custom JS rules to still be applied. Used for JS and embedded JS in html.
+   - WbUrl: add new modifier form starting with ``$`` in addition to ending with ``_``, eg. ``/$mod:foo/http://example.com/``
+   - ajax: don't rewrite ``text/html`` responses to ajax requests.
+   
+* Static Handler: if ``wsgi.file_wrapper`` fails, fallback to direct streaming of static ocntent.
+
+
 pywb 0.32.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
