@@ -10,11 +10,12 @@ from mock import patch
 
 from wsgiref.simple_server import make_server
 
-from webagg.aggregator import SimpleAggregator
-from webagg.app import ResAggApp
-from webagg.handlers import DefaultResourceHandler
-from webagg.indexsource import LiveIndexSource
+from pywb.webagg.aggregator import SimpleAggregator
+from pywb.webagg.app import ResAggApp
+from pywb.webagg.handlers import DefaultResourceHandler
+from pywb.webagg.indexsource import LiveIndexSource
 
+from pywb import get_test_dir
 
 # ============================================================================
 def to_json_list(cdxlist, fields=['timestamp', 'load_url', 'filename', 'source']):
@@ -28,6 +29,11 @@ def to_path(path):
         path = path.replace('/', os.path.sep)
 
     return path
+
+
+# ============================================================================
+TEST_CDX_PATH = to_path(get_test_dir() + '/cdxj/')
+TEST_WARC_PATH = to_path(get_test_dir() + '/warcs/')
 
 
 # ============================================================================

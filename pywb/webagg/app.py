@@ -1,4 +1,4 @@
-from webagg.inputrequest import DirectWSGIInputRequest, POSTInputRequest
+from pywb.webagg.inputrequest import DirectWSGIInputRequest, POSTInputRequest
 from werkzeug.routing import Map, Rule
 
 import requests

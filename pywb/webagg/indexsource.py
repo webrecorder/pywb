@@ -8,11 +8,10 @@ from pywb.utils.wbexception import NotFoundException
 
 from pywb.cdx.cdxobject import CDXObject
 
-#from webagg.liverec import patched_requests as requests
 import requests
 
-from webagg.utils import ParamFormatter, res_template
-from webagg.utils import MementoUtils
+from pywb.webagg.utils import ParamFormatter, res_template
+from pywb.webagg.utils import MementoUtils
 
 
 WAYBACK_ORIG_SUFFIX = '{timestamp}id_/{url}'

@@ -2,14 +2,14 @@
 
 from collections import OrderedDict
 
-from webagg.handlers import DefaultResourceHandler, HandlerSeq
+from pywb.webagg.handlers import DefaultResourceHandler, HandlerSeq
 
-from webagg.indexsource import MementoIndexSource, FileIndexSource, LiveIndexSource
-from webagg.aggregator import GeventTimeoutAggregator, SimpleAggregator
-from webagg.aggregator import DirectoryIndexSource
+from pywb.webagg.indexsource import MementoIndexSource, FileIndexSource, LiveIndexSource
+from pywb.webagg.aggregator import GeventTimeoutAggregator, SimpleAggregator
+from pywb.webagg.aggregator import DirectoryIndexSource
 
-from webagg.app import ResAggApp
-from webagg.utils import MementoUtils
+from pywb.webagg.app import ResAggApp
+from pywb.webagg.utils import MementoUtils
 
 from pywb.utils.statusandheaders import StatusAndHeadersParser
 from pywb.utils.bufferedreaders import ChunkedDataReader
@@ -19,12 +19,12 @@ from six.moves.urllib.parse import urlencode
 import webtest
 from fakeredis import FakeStrictRedis
 
-from .testutils import to_path, FakeRedisTests, BaseTestClass
+from .testutils import to_path, FakeRedisTests, BaseTestClass, TEST_CDX_PATH, TEST_WARC_PATH
 
 import json
 
 sources = {
-    'local': DirectoryIndexSource(to_path('testdata/'), ''),
+    'local': DirectoryIndexSource(TEST_CDX_PATH),
     'ia': MementoIndexSource.from_timegate_url('http://web.archive.org/web/'),
     'rhiz': MementoIndexSource.from_timegate_url('http://webenact.rhizome.org/vvork/', path='*'),
     'live': LiveIndexSource(),
@@ -41,15 +41,15 @@ class TestResAgg(FakeRedisTests, BaseTestClass):
         app.add_route('/live', live_handler)
 
         source1 = GeventTimeoutAggregator(sources)
-        handler1 = DefaultResourceHandler(source1, to_path('testdata/'))
+        handler1 = DefaultResourceHandler(source1, TEST_WARC_PATH)
         app.add_route('/many', handler1)
 
-        source2 = SimpleAggregator({'post': FileIndexSource(to_path('testdata/post-test.cdxj'))})
-        handler2 = DefaultResourceHandler(source2, to_path('testdata/'))
+        source2 = SimpleAggregator({'post': FileIndexSource(TEST_CDX_PATH + 'post-test.cdxj')})
+        handler2 = DefaultResourceHandler(source2, TEST_WARC_PATH)
         app.add_route('/posttest', handler2)
 
-        source3 = SimpleAggregator({'example': FileIndexSource(to_path('testdata/example.cdxj'))})
-        handler3 = DefaultResourceHandler(source3, to_path('testdata/'))
+        source3 = SimpleAggregator({'example': FileIndexSource(TEST_CDX_PATH + 'example2.cdxj')})
+        handler3 = DefaultResourceHandler(source3, TEST_WARC_PATH)
 
         app.add_route('/fallback', HandlerSeq([handler3,
                                            handler2,
@@ -63,7 +63,7 @@ class TestResAgg(FakeRedisTests, BaseTestClass):
         app.add_route('/empty', HandlerSeq([]))
         app.add_route('/invalid', DefaultResourceHandler([SimpleAggregator({'invalid': 'should not be a callable'})]))
 
-        url_agnost = SimpleAggregator({'url-agnost': FileIndexSource(to_path('testdata/url-agnost-example.cdxj'))})
+        url_agnost = SimpleAggregator({'url-agnost': FileIndexSource(TEST_CDX_PATH + 'url-agnost-example.cdxj')})
         app.add_route('/urlagnost', DefaultResourceHandler(url_agnost, 'redis://localhost/2/test:{arg}:warc'))
 
         cls.testapp = webtest.TestApp(app)
@@ -329,7 +329,7 @@ foo=bar&test=abc"""
 
     def test_redis_warc_1(self):
         f = FakeStrictRedis.from_url('redis://localhost/2')
-        f.hset('test:warc', 'example.warc.gz', './testdata/example.warc.gz')
+        f.hset('test:warc', 'example2.warc.gz', TEST_WARC_PATH + 'example2.warc.gz')
 
         resp = self.testapp.get('/allredis/resource?url=http://www.example.com/')
 
@@ -337,8 +337,8 @@ foo=bar&test=abc"""
 
     def test_url_agnost(self):
         f = FakeStrictRedis.from_url('redis://localhost/2')
-        f.hset('test:foo:warc', 'example-url-agnostic-revisit.warc.gz', './testdata/example-url-agnostic-revisit.warc.gz')
-        f.hset('test:foo:warc', 'example-url-agnostic-orig.warc.gz', './testdata/example-url-agnostic-orig.warc.gz')
+        f.hset('test:foo:warc', 'example-url-agnostic-revisit.warc.gz', TEST_WARC_PATH + 'example-url-agnostic-revisit.warc.gz')
+        f.hset('test:foo:warc', 'example-url-agnostic-orig.warc.gz', TEST_WARC_PATH + 'example-url-agnostic-orig.warc.gz')
 
         resp = self.testapp.get('/urlagnost/resource?url=http://example.com/&param.arg=foo')
 
@@ -390,22 +390,22 @@ host: www.youtube.com\
 
     def test_error_redis_file_not_found(self):
         f = FakeStrictRedis.from_url('redis://localhost/2')
-        f.hset('test:warc', 'example.warc.gz', './testdata/example2.warc.gz')
+        f.hset('test:warc', 'example2.warc.gz', './x-no-such-dir/example2.warc.gz')
 
         resp = self.testapp.get('/allredis/resource?url=http://www.example.com/', status=503)
-        assert resp.json['message'] == "example.warc.gz: [Errno 2] No such file or directory: './testdata/example2.warc.gz'"
+        assert resp.json['message'] == "example2.warc.gz: [Errno 2] No such file or directory: './x-no-such-dir/example2.warc.gz'"
 
-        f.hdel('test:warc', 'example.warc.gz')
+        f.hdel('test:warc', 'example2.warc.gz')
         resp = self.testapp.get('/allredis/resource?url=http://www.example.com/', status=503)
 
-        assert resp.json == {'message': 'example.warc.gz: Archive File Not Found',
-                             'errors': {'WARCPathLoader': 'example.warc.gz: Archive File Not Found'}}
+        assert resp.json == {'message': 'example2.warc.gz: Archive File Not Found',
+                             'errors': {'WARCPathLoader': 'example2.warc.gz: Archive File Not Found'}}
 
         f.delete('test:warc')
         resp = self.testapp.get('/allredis/resource?url=http://www.example.com/', status=503)
 
-        assert resp.json == {'message': 'example.warc.gz: Archive File Not Found',
-                             'errors': {'WARCPathLoader': 'example.warc.gz: Archive File Not Found'}}
+        assert resp.json == {'message': 'example2.warc.gz: Archive File Not Found',
+                             'errors': {'WARCPathLoader': 'example2.warc.gz: Archive File Not Found'}}
 
 
     def test_error_fallback_live_not_found(self):

@@ -1,5 +1,5 @@
-from webagg.responseloader import  WARCPathLoader, LiveWebLoader, VideoLoader
-from webagg.utils import MementoUtils
+from pywb.webagg.responseloader import  WARCPathLoader, LiveWebLoader, VideoLoader
+from pywb.webagg.utils import MementoUtils
 from pywb.utils.wbexception import BadRequestException, WbException
 from pywb.utils.wbexception import NotFoundException
 

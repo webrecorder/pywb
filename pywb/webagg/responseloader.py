@@ -1,6 +1,6 @@
-from webagg.utils import MementoUtils, StreamIter, chunk_encode_iter
-from webagg.utils import ParamFormatter
-from webagg.indexsource import RedisIndexSource
+from pywb.webagg.utils import MementoUtils, StreamIter, chunk_encode_iter
+from pywb.webagg.utils import ParamFormatter
+from pywb.webagg.indexsource import RedisIndexSource
 
 from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_timestamp
 from pywb.utils.timeutils import iso_date_to_datetime, datetime_to_iso_date

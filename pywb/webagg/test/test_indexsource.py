@@ -1,14 +1,14 @@
-from webagg.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource, RedisIndexSource
-from webagg.indexsource import LiveIndexSource
+from pywb.webagg.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource, RedisIndexSource
+from pywb.webagg.indexsource import LiveIndexSource
 
-from webagg.aggregator import SimpleAggregator
+from pywb.webagg.aggregator import SimpleAggregator
 
 from pywb.utils.timeutils import timestamp_now
 
-from .testutils import key_ts_res
-
+from .testutils import key_ts_res, TEST_CDX_PATH
 
 import pytest
+import os
 
 from fakeredis import FakeStrictRedis
 from mock import patch
@@ -19,7 +19,7 @@ redismock.start()
 def setup_module():
     r = FakeStrictRedis.from_url('redis://localhost:6379/2')
     r.delete('test:rediscdx')
-    with open('testdata/iana.cdxj', 'rb') as fh:
+    with open(TEST_CDX_PATH + 'iana.cdxj', 'rb') as fh:
         for line in fh:
             r.zadd('test:rediscdx', 0, line.rstrip())
 
@@ -29,7 +29,7 @@ def teardown_module():
 
 
 local_sources = [
-    FileIndexSource('testdata/iana.cdxj'),
+    FileIndexSource(TEST_CDX_PATH + 'iana.cdxj'),
     RedisIndexSource('redis://localhost:6379/2/test:rediscdx')
 ]
 

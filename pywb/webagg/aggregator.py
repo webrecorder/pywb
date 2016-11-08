@@ -15,10 +15,10 @@ from heapq import merge
 from collections import deque
 from itertools import chain
 
-from webagg.indexsource import FileIndexSource, RedisIndexSource
+from pywb.webagg.indexsource import FileIndexSource, RedisIndexSource
 from pywb.utils.wbexception import NotFoundException, WbException
 
-from webagg.utils import ParamFormatter, res_template
+from pywb.webagg.utils import ParamFormatter, res_template
 
 import six
 import glob

@@ -1,4 +1,4 @@
-from webagg.inputrequest import DirectWSGIInputRequest, POSTInputRequest
+from pywb.webagg.inputrequest import DirectWSGIInputRequest, POSTInputRequest
 from bottle import Bottle, request, response, debug
 import webtest
 import traceback

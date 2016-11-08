@@ -1,27 +1,33 @@
 from gevent import monkey; monkey.patch_all(thread=False)
 
-from webagg.aggregator import SimpleAggregator, GeventTimeoutAggregator
-from webagg.aggregator import BaseAggregator
+from pywb.webagg.aggregator import SimpleAggregator, GeventTimeoutAggregator
+from pywb.webagg.aggregator import BaseAggregator
 
-from webagg.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource
-from .testutils import to_json_list, to_path
+from pywb.webagg.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource
+from .testutils import to_json_list, to_path, TEST_CDX_PATH
 
 import json
 import pytest
 import time
 import six
+import yaml
 
-from webagg.handlers import IndexHandler
+from mock import patch
+
+from pywb.webagg.handlers import IndexHandler
+
+from pywb import get_test_dir
+from pywb.utils.wbexception import NotFoundException
 
 
+# Aggregator Mappings
 sources = {
-    'local': FileIndexSource(to_path('testdata/iana.cdxj')),
+    'local': FileIndexSource(TEST_CDX_PATH + 'iana.cdxj'),
     'ia': MementoIndexSource.from_timegate_url('http://web.archive.org/web/'),
     'ait': MementoIndexSource.from_timegate_url('http://wayback.archive-it.org/all/'),
     'bl': MementoIndexSource.from_timegate_url('http://www.webarchive.org.uk/wayback/archive/'),
     'rhiz': MementoIndexSource.from_timegate_url('http://webenact.rhizome.org/vvork/', path='*')
 }
-
 
 aggs = {'simple': SimpleAggregator(sources),
         'gevent': GeventTimeoutAggregator(sources, timeout=5.0),
@@ -34,12 +40,40 @@ agg_nf = {'simple': SimpleAggregator(nf),
           'gevent': GeventTimeoutAggregator(nf, timeout=5.0),
          }
 
+# Load expected link headers
+link_header_data = None
+def setup_module():
+    global link_header_data
+    with open(to_path(get_test_dir() + '/text_content/link_headers.yaml')) as fh:
+        link_header_data = yaml.load(fh)
+
+
+orig_get_timegate_links = MementoIndexSource.get_timegate_links
+
+def mock_link_header(test_name, load=False):
+    def mock_func(self, params, closest):
+        if load:
+            res = orig_get_timegate_links(self, params, closest)
+            print("'{0}': '{1}'".format(self.timegate_url, res))
+            return res
+
+        try:
+            res = link_header_data[test_name][self.timegate_url]
+            time.sleep(0.2)
+        except:
+            msg = self.timegate_url.format(url=params['url'])
+            raise NotFoundException(msg)
+
+        return res
+
+    return mock_func
+
 
 @pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
+@patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', mock_link_header('agg_test_1'))
 def test_mem_agg_index_1(agg):
     url = 'http://iana.org/'
     res, errs = agg(dict(url=url, closest='20140126000000', limit=5))
-
 
     exp = [{"timestamp": "20140126093743", "load_url": "http://web.archive.org/web/20140126093743id_/http://iana.org/", "source": "ia"},
            {"timestamp": "20140126200624", "filename": "iana.warc.gz", "source": "local"},
@@ -53,23 +87,25 @@ def test_mem_agg_index_1(agg):
                     'rhiz': "NotFoundException('http://webenact.rhizome.org/vvork/http://iana.org/',)"})
 
 @pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
+@patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', mock_link_header('agg_test_2'))
 def test_mem_agg_index_2(agg):
     url = 'http://example.com/'
     res, errs = agg(dict(url=url, closest='20100512', limit=6))
 
     exp = [{"timestamp": "20100513010014", "load_url": "http://www.webarchive.org.uk/wayback/archive/20100513010014id_/http://example.com/", "source": "bl"},
             {"timestamp": "20100512204410", "load_url": "http://www.webarchive.org.uk/wayback/archive/20100512204410id_/http://example.com/", "source": "bl"},
-            #{"timestamp": "20100513052358", "load_url": "http://web.archive.org/web/20100513052358id_/http://example.com/", "source": "ia"},
-            {"timestamp": "20100511201151", "load_url": "http://wayback.archive-it.org/all/20100511201151id_/http://example.com/", "source": "ait"},
-            {"timestamp": "20100514231857", "load_url": "http://web.archive.org/web/20100514231857id_/http://example.com/", "source": "ia"},
+            {"timestamp": "20100513224108", "load_url": "http://web.archive.org/web/20100513224108id_/http://example.com/", "source": "ia"},
+            {"timestamp": "20100511201151", 'load_url': "http://wayback.archive-it.org/all/20100511201151id_/http://example.com/", "source": "ait"},
             {"timestamp": "20100514231857", "load_url": "http://wayback.archive-it.org/all/20100514231857id_/http://example.com/", "source": "ait"},
-            {"timestamp": "20100510233601", "load_url": "http://web.archive.org/web/20100510233601id_/http://example.com/", "source": "ia"}]
+            {"timestamp": "20100514231857", "load_url": "http://web.archive.org/web/20100514231857id_/http://example.com/", "source": "ia"},
+          ]
 
     assert(to_json_list(res) == exp)
     assert(errs == {'rhiz': "NotFoundException('http://webenact.rhizome.org/vvork/http://example.com/',)"})
 
 
 @pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
+@patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', mock_link_header('agg_test_3'))
 def test_mem_agg_index_3(agg):
     url = 'http://vvork.com/'
     res, errs = agg(dict(url=url, closest='20141001', limit=5))
@@ -85,6 +121,7 @@ def test_mem_agg_index_3(agg):
 
 
 @pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
+@patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', mock_link_header('agg_test_4'))
 def test_mem_agg_index_4(agg):
     url = 'http://vvork.com/'
     res, errs = agg(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait'))
