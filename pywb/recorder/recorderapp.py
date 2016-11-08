@@ -1,7 +1,7 @@
-from webagg.utils import StreamIter, chunk_encode_iter, BUFF_SIZE
-from webagg.inputrequest import DirectWSGIInputRequest
+from pywb.webagg.utils import StreamIter, chunk_encode_iter, BUFF_SIZE
+from pywb.webagg.inputrequest import DirectWSGIInputRequest
 
-from recorder.filters import SkipRangeRequestFilter, CollectionFilter
+from pywb.recorder.filters import SkipRangeRequestFilter, CollectionFilter
 
 from six.moves.urllib.parse import parse_qsl
 

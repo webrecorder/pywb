@@ -14,7 +14,7 @@ from pywb.cdx.cdxobject import CDXObject
 
 from io import BytesIO
 
-from rewriteinputreq import RewriteInputRequest
+from pywb.urlrewrite.rewriteinputreq import RewriteInputRequest
 
 from six.moves.urllib.parse import quote
 
