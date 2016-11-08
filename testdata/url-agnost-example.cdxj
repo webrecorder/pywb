@@ -1,0 +1,2 @@
+com,example)/ 20130729195151 {"url": "http://test@example.com/", "mime": "warc/revisit", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "591", "offset": "355", "filename": "example-url-agnostic-revisit.warc.gz"}
+org,iana,example)/ 20130702195402 {"url": "http://example.iana.org/", "mime": "text/html", "status": "200", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "length": "1001", "offset": "353", "filename": "example-url-agnostic-orig.warc.gz"}
