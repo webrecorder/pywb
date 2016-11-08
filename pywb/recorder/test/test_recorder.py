@@ -1,8 +1,9 @@
 #from gevent import monkey; monkey.patch_all()
 import gevent
 
-from webagg.test.testutils import TempDirTests, LiveServerTests, BaseTestClass, to_path
-from webagg.test.testutils import FakeRedisTests
+import pywb.webagg
+from pywb.webagg.test.testutils import TempDirTests, LiveServerTests, BaseTestClass, to_path
+from pywb.webagg.test.testutils import FakeRedisTests
 
 import os
 import webtest
@@ -10,13 +11,13 @@ import webtest
 from pytest import raises
 from fakeredis import FakeStrictRedis
 
-from recorder.recorderapp import RecorderApp
-from recorder.redisindexer import WritableRedisIndexer
-from recorder.warcwriter import PerRecordWARCWriter, MultiFileWARCWriter, SimpleTempWARCWriter
-from recorder.filters import ExcludeSpecificHeaders
-from recorder.filters import SkipDupePolicy, WriteDupePolicy, WriteRevisitDupePolicy
+from pywb.recorder.recorderapp import RecorderApp
+from pywb.recorder.redisindexer import WritableRedisIndexer
+from pywb.recorder.warcwriter import PerRecordWARCWriter, MultiFileWARCWriter, SimpleTempWARCWriter
+from pywb.recorder.filters import ExcludeSpecificHeaders
+from pywb.recorder.filters import SkipDupePolicy, WriteDupePolicy, WriteRevisitDupePolicy
 
-from webagg.utils import MementoUtils
+from pywb.webagg.utils import MementoUtils
 
 from pywb.cdx.cdxobject import CDXObject
 from pywb.utils.statusandheaders import StatusAndHeadersParser

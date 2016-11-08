@@ -9,8 +9,8 @@ from pywb.utils.loaders import LocalFileLoader
 import mimetypes
 import redis
 
-from urlrewrite.rewriterapp import RewriterApp
-from urlrewrite.cookies import CookieTracker
+from pywb.urlrewrite.rewriterapp import RewriterApp
+from pywb.urlrewrite.cookies import CookieTracker
 
 
 # ============================================================================

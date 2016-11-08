@@ -15,8 +15,8 @@ from pywb.framework.wbrequestresponse import WbResponse
 
 from six.moves.urllib.parse import urlencode
 
-from urlrewrite.rewriteinputreq import RewriteInputRequest
-from urlrewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView, BaseInsertView
+from pywb.urlrewrite.rewriteinputreq import RewriteInputRequest
+from pywb.urlrewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView, BaseInsertView
 
 from io import BytesIO
 

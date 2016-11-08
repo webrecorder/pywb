@@ -27,9 +27,9 @@ from pywb.warc.recordloader import ArcWarcRecord
 from pywb.warc.recordloader import ArcWarcRecordLoader
 
 from requests.structures import CaseInsensitiveDict
-from webagg.utils import ParamFormatter, res_template
+from pywb.webagg.utils import ParamFormatter, res_template
 
-from recorder.filters import ExcludeNone
+from pywb.recorder.filters import ExcludeNone
 
 
 # ============================================================================

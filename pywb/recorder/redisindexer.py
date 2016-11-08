@@ -6,11 +6,11 @@ from pywb.utils.timeutils import iso_date_to_timestamp
 from io import BytesIO
 import os
 
-from webagg.indexsource import RedisIndexSource
-from webagg.aggregator import SimpleAggregator
-from webagg.utils import res_template
+from pywb.webagg.indexsource import RedisIndexSource
+from pywb.webagg.aggregator import SimpleAggregator
+from pywb.webagg.utils import res_template
 
-from recorder.filters import WriteRevisitDupePolicy
+from pywb.recorder.filters import WriteRevisitDupePolicy
 
 
 #==============================================================================

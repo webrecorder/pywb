@@ -1,6 +1,6 @@
 
-from webagg.test.testutils import LiveServerTests, BaseTestClass
-from webagg.test.testutils import FakeRedisTests
+from pywb.webagg.test.testutils import LiveServerTests, BaseTestClass
+from pywb.webagg.test.testutils import FakeRedisTests
 
 from .simpleapp import RWApp, debug
 

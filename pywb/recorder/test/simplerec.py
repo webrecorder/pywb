@@ -1,10 +1,10 @@
 from gevent import monkey; monkey.patch_all()
 
-from recorder.recorderapp import RecorderApp
-from recorder.redisindexer import WritableRedisIndexer
+from pywb.recorder.recorderapp import RecorderApp
+from pywb.recorder.redisindexer import WritableRedisIndexer
 
-from recorder.warcwriter import MultiFileWARCWriter
-from recorder.filters import SkipDupePolicy
+from pywb.recorder.warcwriter import MultiFileWARCWriter
+from pywb.recorder.filters import SkipDupePolicy
 
 import atexit
 import tempfile
