@@ -3,15 +3,15 @@ import os
 import shutil
 import json
 
-from .testutils import to_path, to_json_list, TempDirTests, BaseTestClass
+from .testutils import to_path, to_json_list, TempDirTests, BaseTestClass, TEST_CDX_PATH
 
 from mock import patch
 
 import time
 
-from webagg.aggregator import DirectoryIndexSource, CacheDirectoryIndexSource
-from webagg.aggregator import SimpleAggregator
-from webagg.indexsource import MementoIndexSource
+from pywb.webagg.aggregator import DirectoryIndexSource, CacheDirectoryIndexSource
+from pywb.webagg.aggregator import SimpleAggregator
+from pywb.webagg.indexsource import MementoIndexSource
 
 
 #=============================================================================
@@ -39,9 +39,9 @@ class TestDirAgg(TempDirTests, BaseTestClass):
         dir_prefix = to_path(cls.root_dir)
         dir_path ='colls/{coll}/indexes'
 
-        shutil.copy(to_path('testdata/example.cdxj'), coll_A)
-        shutil.copy(to_path('testdata/iana.cdxj'), coll_B)
-        shutil.copy(to_path('testdata/dupes.cdxj'), coll_C)
+        shutil.copy(to_path(TEST_CDX_PATH + 'example2.cdxj'), coll_A)
+        shutil.copy(to_path(TEST_CDX_PATH + 'iana.cdxj'), coll_B)
+        shutil.copy(to_path(TEST_CDX_PATH + 'dupes.cdxj'), coll_C)
 
         with open(to_path(cls.root_dir) + '/somefile', 'w') as fh:
             fh.write('foo')
@@ -57,7 +57,7 @@ class TestDirAgg(TempDirTests, BaseTestClass):
     def test_agg_collA_found(self):
         res, errs = self.dir_loader({'url': 'example.com/', 'param.coll': 'A'})
 
-        exp = [{'source': 'colls/A/indexes/example.cdxj', 'timestamp': '20160225042329', 'filename': 'example.warc.gz'}]
+        exp = [{'source': 'colls/A/indexes/example2.cdxj', 'timestamp': '20160225042329', 'filename': 'example2.warc.gz'}]
 
         assert(to_json_list(res) == exp)
         assert(errs == {})
@@ -108,13 +108,13 @@ class TestDirAgg(TempDirTests, BaseTestClass):
         exp = [
             {'source': 'colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171200', 'filename': 'dupes.warc.gz'},
             {'source': 'colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171251', 'filename': 'dupes.warc.gz'},
-            {'source': 'colls/A/indexes/example.cdxj', 'timestamp': '20160225042329', 'filename': 'example.warc.gz'}
+            {'source': 'colls/A/indexes/example2.cdxj', 'timestamp': '20160225042329', 'filename': 'example2.warc.gz'}
         ]
 
         assert(to_json_list(res) == exp)
         assert(errs == {})
 
-    @patch('webagg.indexsource.MementoIndexSource.get_timegate_links', mock_link_header)
+    @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', mock_link_header)
     def test_agg_dir_and_memento(self):
         sources = {'ia': MementoIndexSource.from_timegate_url('http://web.archive.org/web/'),
                    'local': self.dir_loader}
@@ -128,7 +128,7 @@ class TestDirAgg(TempDirTests, BaseTestClass):
             {'source': 'ia', 'timestamp': '20100501123414', 'load_url': 'http://web.archive.org/web/20100501123414id_/http://example.com/'},
             {'source': 'local:colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171200', 'filename': 'dupes.warc.gz'},
             {'source': 'local:colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171251', 'filename': 'dupes.warc.gz'},
-            {'source': 'local:colls/A/indexes/example.cdxj', 'timestamp': '20160225042329', 'filename': 'example.warc.gz'}
+            {'source': 'local:colls/A/indexes/example2.cdxj', 'timestamp': '20160225042329', 'filename': 'example2.warc.gz'}
         ]
 
         assert(to_json_list(res) == exp)
@@ -156,7 +156,7 @@ class TestDirAgg(TempDirTests, BaseTestClass):
 
     def test_agg_dir_sources_1(self):
         res = self.dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '*'})
-        exp = {'sources': {'colls/A/indexes/example.cdxj': 'file',
+        exp = {'sources': {'colls/A/indexes/example2.cdxj': 'file',
                            'colls/B/indexes/iana.cdxj': 'file',
                            'colls/C/indexes/dupes.cdxj': 'file'}
               }
@@ -166,7 +166,7 @@ class TestDirAgg(TempDirTests, BaseTestClass):
 
     def test_agg_dir_sources_2(self):
         res = self.dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '[A,C]'})
-        exp = {'sources': {'colls/A/indexes/example.cdxj': 'file',
+        exp = {'sources': {'colls/A/indexes/example2.cdxj': 'file',
                            'colls/C/indexes/dupes.cdxj': 'file'}
               }
 
@@ -177,7 +177,7 @@ class TestDirAgg(TempDirTests, BaseTestClass):
         loader = DirectoryIndexSource(os.path.join(self.root_dir, 'colls', 'A', 'indexes'), '')
         res = loader.get_source_list({'url': 'example.com/'})
 
-        exp = {'sources': {'example.cdxj': 'file'}}
+        exp = {'sources': {'example2.cdxj': 'file'}}
 
         assert(res == exp)
 
@@ -193,7 +193,7 @@ class TestDirAgg(TempDirTests, BaseTestClass):
 
 
     def test_cache_dir_sources_1(self):
-        exp = {'sources': {'colls/A/indexes/example.cdxj': 'file',
+        exp = {'sources': {'colls/A/indexes/example2.cdxj': 'file',
                            'colls/B/indexes/iana.cdxj': 'file',
                            'colls/C/indexes/dupes.cdxj': 'file'}
               }

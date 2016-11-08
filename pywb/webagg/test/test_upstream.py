@@ -1,12 +1,12 @@
 import webtest
 
 from io import BytesIO
-from webagg.app import ResAggApp
+from pywb.webagg.app import ResAggApp
 import requests
 
-from webagg.handlers import DefaultResourceHandler
-from webagg.aggregator import SimpleAggregator
-from webagg.proxyindexsource import ProxyMementoIndexSource, UpstreamAggIndexSource
+from pywb.webagg.handlers import DefaultResourceHandler
+from pywb.webagg.aggregator import SimpleAggregator
+from pywb.webagg.proxyindexsource import ProxyMementoIndexSource, UpstreamAggIndexSource
 
 from pywb.warc.recordloader import ArcWarcRecordLoader
 

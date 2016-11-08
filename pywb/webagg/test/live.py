@@ -1,10 +1,10 @@
 from gevent.monkey import patch_all; patch_all()
 
-from webagg.test.testutils import LiveServerTests
-from webagg.handlers import DefaultResourceHandler
-from webagg.app import ResAggApp
-from webagg.indexsource import LiveIndexSource, RedisIndexSource
-from webagg.aggregator import SimpleAggregator, CacheDirectoryIndexSource
+from pywb.webagg.test.testutils import LiveServerTests
+from pywb.webagg.handlers import DefaultResourceHandler
+from pywb.webagg.app import ResAggApp
+from pywb.webagg.indexsource import LiveIndexSource, RedisIndexSource
+from pywb.webagg.aggregator import SimpleAggregator, CacheDirectoryIndexSource
 
 def simpleapp():
     app = ResAggApp(debug=True)

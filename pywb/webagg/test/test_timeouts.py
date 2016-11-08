@@ -1,11 +1,11 @@
 from gevent import monkey; monkey.patch_all(thread=False)
 import time
-from webagg.indexsource import FileIndexSource
+from pywb.webagg.indexsource import FileIndexSource
 
-from webagg.aggregator import SimpleAggregator, TimeoutMixin
-from webagg.aggregator import GeventTimeoutAggregator, GeventTimeoutAggregator
+from pywb.webagg.aggregator import SimpleAggregator, TimeoutMixin
+from pywb.webagg.aggregator import GeventTimeoutAggregator, GeventTimeoutAggregator
 
-from .testutils import to_json_list
+from .testutils import to_json_list, TEST_CDX_PATH
 
 
 class TimeoutFileSource(FileIndexSource):
@@ -26,8 +26,8 @@ TimeoutAggregator = GeventTimeoutAggregator
 
 def setup_module():
     global sources
-    sources = {'slow': TimeoutFileSource('testdata/example.cdxj', 0.2),
-               'slower': TimeoutFileSource('testdata/dupes.cdxj', 0.5)
+    sources = {'slow': TimeoutFileSource(TEST_CDX_PATH + 'example2.cdxj', 0.2),
+               'slower': TimeoutFileSource(TEST_CDX_PATH + 'dupes.cdxj', 0.5)
               }
 
 

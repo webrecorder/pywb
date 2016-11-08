@@ -58,7 +58,10 @@ setup(
         'pywb.manager',
         'pywb.perms',
         'pywb.webapp',
-        'pywb.apps'
+        'pywb.apps',
+        'pywb.webagg',
+        'pywb.recorder',
+        'pywb.urlrewrite'
         ],
     package_data={
         'pywb': ['static/flowplayer/*', 'static/*.*', 'templates/*', '*.yaml'],
