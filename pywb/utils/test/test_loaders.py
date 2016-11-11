@@ -166,7 +166,7 @@ def seek_read_full(seekable_reader, offset):
 def test_s3_read_1():
     pytest.importorskip('boto')
 
-    res = BlockLoader().load('s3://aws-publicdatasets/common-crawl/crawl-data/CC-MAIN-2015-11/segments/1424936462700.28/warc/CC-MAIN-20150226074102-00159-ip-10-28-5-156.ec2.internal.warc.gz',
+    res = BlockLoader().load('s3://commoncrawl/crawl-data/CC-MAIN-2015-11/segments/1424936462700.28/warc/CC-MAIN-20150226074102-00159-ip-10-28-5-156.ec2.internal.warc.gz',
                              offset=53235662,
                              length=2526)
 

@@ -84,8 +84,9 @@ setup(
         'surt>=0.3.0',
         'brotlipy',
         'pyyaml',
-        'watchdog',
         'webencodings',
+        'gevent>=1.1.1',
+        'webassets',
        ],
     tests_require=[
         'pytest',
