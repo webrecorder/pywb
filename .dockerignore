@@ -1,0 +1,11 @@
+build/
+dist/
+.cache/
+.eggs/
+.git/
+**/*.egg
+**/*.egg-info
+**/__pycache__
+**/*.pyc
+
+

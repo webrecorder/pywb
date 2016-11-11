@@ -10,9 +10,7 @@ RUN pip install git+https://github.com/t0m/pyamf.git@python3
 RUN pip install webassets pyyaml brotlipy
 
 RUN mkdir /pywb
-ADD setup.py /pywb
-ADD README.rst /pywb
-ADD ./pywb /pywb/pywb
+ADD . /pywb
 RUN cd pywb; python setup.py install
 
 RUN mkdir /webarchive
