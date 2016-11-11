@@ -1,8 +1,6 @@
 from gevent.pool import Pool
 import gevent
 
-from concurrent import futures
-
 import json
 import time
 import os
