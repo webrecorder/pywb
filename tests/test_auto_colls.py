@@ -1,3 +1,5 @@
+from gevent.monkey import patch_all; patch_all()
+
 import os
 import tempfile
 import shutil
@@ -6,7 +8,8 @@ import sys
 import webtest
 
 import time
-import threading
+#import threading
+import gevent
 
 from six import StringIO
 
@@ -488,20 +491,22 @@ class TestManagedColls(object):
 
         def do_copy():
             try:
-                time.sleep(1)
+                time.sleep(1.0)
                 shutil.copy(self._get_sample_warc('example.warc.gz'), archive_dir)
                 shutil.copy(self._get_sample_warc('example-extra.warc'), archive_sub_dir)
-                time.sleep(1)
+                time.sleep(1.0)
             finally:
                 pywb.manager.autoindex.keep_running = False
 
-        thread = threading.Thread(target=do_copy)
-        thread.daemon = True
-        thread.start()
+        #thread = threading.Thread(target=do_copy)
+        #thread.daemon = True
+        #thread.start()
+        ge = gevent.spawn(do_copy)
 
-        main(['autoindex'])
+        main(['autoindex', 'auto', '--interval', '0.25'])
 
-        thread.join()
+        #thread.join()
+        ge.join()
 
         index_file = os.path.join(auto_dir, INDEX_DIR, AUTOINDEX_FILE)
         assert os.path.isfile(index_file)
@@ -519,13 +524,15 @@ class TestManagedColls(object):
 
         os.remove(index_file)
 
-        thread = threading.Thread(target=do_copy)
-        thread.daemon = True
-        thread.start()
+        #thread = threading.Thread(target=do_copy)
+        #thread.daemon = True
+        #thread.start()
+        ge = gevent.spawn(do_copy)
 
-        main(['autoindex', 'auto'])
+        main(['autoindex', 'auto', '--interval', '0.25'])
 
-        thread.join()
+        #thread.join()
+        ge.join()
 
 	# assert file was update
         assert os.path.getmtime(index_file) > mtime
