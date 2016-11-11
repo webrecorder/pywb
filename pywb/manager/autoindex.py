@@ -1,45 +1,60 @@
-import sys
+import gevent
 import time
-from watchdog.observers import Observer
-from watchdog.events import RegexMatchingEventHandler
+import re
+import os
 
 
 #=============================================================================
-EXT_REGEX = '.*\.w?arc(\.gz)?$'
+EXT_RX = re.compile('.*\.w?arc(\.gz)?$')
 
 keep_running = True
 
+
 #=============================================================================
-class CDXAutoIndexer(RegexMatchingEventHandler):
+class CDXAutoIndexer(object):
     def __init__(self, updater, path):
-        super(CDXAutoIndexer, self).__init__(regexes=[EXT_REGEX],
-                                             ignore_directories=True)
         self.updater = updater
-        self.cdx_path = path
+        self.root_path = path
 
-    def on_created(self, event):
-        self.updater(event.src_path)
+        self.mtimes = {}
 
-    def on_modified(self, event):
-        self.updater(event.src_path)
+    def has_changed(self, *paths):
+        full_path = os.path.join(*paths)
+        try:
+            mtime = os.path.getmtime(full_path)
+        except:
+            return False
 
-    def start_watch(self):
-        self.observer = Observer()
-        self.observer.schedule(self, self.cdx_path, recursive=True)
-        self.observer.start()
+        if mtime == self.mtimes.get(full_path):
+            return False
 
-    def do_loop(self, sleep_time=1):
+        self.mtimes[full_path] = mtime
+        return full_path
+
+    def check_path(self):
+        for dirName, subdirList, fileList in os.walk(self.root_path):
+            if not subdirList and not self.has_changed(dirName):
+                return False
+
+            for filename in fileList:
+                if not EXT_RX.match(filename):
+                    continue
+
+                path = self.has_changed(self.root_path, dirName, filename)
+                if not path:
+                    continue
+
+                self.updater(os.path.join(dirName, filename))
+
+    def do_loop(self, interval):
         try:
             while keep_running:
-                time.sleep(sleep_time)
+                self.check_path()
+                time.sleep(interval)
         except KeyboardInterrupt:  # pragma: no cover
-            self.observer.stop()
-            self.observer.join()
+            return
+
+    def start(self, interval):
+        self.ge = gevent.spawn(self.do_loop, interval)
 
 
-#=============================================================================
-if __name__ == "__main__":
-    w = Watcher(sys.argv[1] if len(sys.argv) > 1 else '.')
-    def p(x):
-        print(x)
-    w.run(p)
