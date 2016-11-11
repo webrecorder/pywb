@@ -200,8 +200,6 @@ class WARCPathLoader(BaseLoader):
                 cdx._formatter = formatter
                 yield cdx
 
-            return cdx_iter
-
         failed_files = []
         headers, payload = (self.resolve_loader.
                              load_headers_and_payload(cdx,
