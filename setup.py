@@ -85,7 +85,7 @@ setup(
         'brotlipy',
         'pyyaml',
         'webencodings',
-        'gevent>=1.1.1',
+        'gevent==1.1.2',
         'webassets',
        ],
     tests_require=[
@@ -94,6 +94,9 @@ setup(
         'pytest-cov',
         'fakeredis',
         'mock',
+        'urllib3',
+        'bottle',
+        'werkzeug',
        ],
     cmdclass={'test': PyTest},
     test_suite='',
