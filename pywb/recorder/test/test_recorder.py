@@ -277,7 +277,11 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         res = r.zrangebylex('USER:COLL:cdxj', '[org,httpbin)/', '(org,httpbin,')
         assert len(res) == 2
 
-        cdx = CDXObject(res[1])
+        if b'warc/revisit' in res[0]:
+            cdx = CDXObject(res[0])
+        else:
+            cdx = CDXObject(res[1])
+
         assert cdx['urlkey'] == 'org,httpbin)/get?foo=bar'
         assert cdx['mime'] == 'warc/revisit'
         assert cdx['offset'] == '0'
