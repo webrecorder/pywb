@@ -301,13 +301,13 @@ foo=bar&test=abc"""
         assert 'ResErrors' not in resp.headers
 
     def test_agg_seq_fallback_1(self):
-        resp = self.testapp.get('/fallback/resource?url=http://www.iana.org/')
+        resp = self.testapp.get('/fallback/resource?url=http://httpbin.org/')
 
         assert resp.headers['WebAgg-Source-Coll'] == 'live'
 
-        self._check_uri_date(resp, 'http://www.iana.org/', True)
+        self._check_uri_date(resp, 'http://httpbin.org/', True)
 
-        assert resp.headers['Link'] == MementoUtils.make_link('http://www.iana.org/', 'original')
+        assert resp.headers['Link'] == MementoUtils.make_link('http://httpbin.org/', 'original')
 
         assert b'HTTP/1.1 200 OK' in resp.body
 
