@@ -84,8 +84,7 @@ rules:
 
     - url_prefix: 'com,instagram)/'
 
-      fuzzy_lookup:
-          - taken-by
+      fuzzy_lookup: '()'
 
 
     # blogspot rules
