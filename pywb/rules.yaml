@@ -82,9 +82,10 @@ rules:
                 rewrite: true
                 group: 1
 
-    - url_prefix: 'com,instagram)/p/'
+    - url_prefix: 'com,instagram)/'
 
-      fuzzy_lookup: '()'
+      fuzzy_lookup:
+          - taken-by
 
 
     # blogspot rules
@@ -144,6 +145,18 @@ rules:
         js_regexs:
             - match: '"location"'
               replace: '"WB_wombat_location"'
+
+
+    # medium
+    #=================================================================
+
+    - url_prefix: 'com,medium'
+
+      rewrite:
+        js_regexs:
+            - match: '"noitacol"'
+              replace: '"noitacol_tabmow_BW"'
+
 
     # vimeo rules
     #=================================================================
