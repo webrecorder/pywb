@@ -2,6 +2,8 @@ import json
 import os
 import tempfile
 import shutil
+import yaml
+import time
 
 from multiprocessing import Process
 
@@ -13,9 +15,11 @@ from wsgiref.simple_server import make_server
 from pywb.webagg.aggregator import SimpleAggregator
 from pywb.webagg.app import ResAggApp
 from pywb.webagg.handlers import DefaultResourceHandler
-from pywb.webagg.indexsource import LiveIndexSource
+from pywb.webagg.indexsource import LiveIndexSource, MementoIndexSource
 
 from pywb import get_test_dir
+from pywb.utils.wbexception import NotFoundException
+
 
 # ============================================================================
 def to_json_list(cdxlist, fields=['timestamp', 'load_url', 'filename', 'source']):
@@ -89,6 +93,44 @@ class TempDirTests(object):
     def teardown_class(cls):
         super(TempDirTests, cls).teardown_class()
         shutil.rmtree(cls.root_dir)
+
+
+# ============================================================================
+class MementoOverrideTests(object):
+    link_header_data = None
+    orig_get_timegate_links = None
+
+    @classmethod
+    def setup_class(cls):
+        super(MementoOverrideTests, cls).setup_class()
+
+        # Load expected link headers
+        MementoOverrideTests.link_header_data = None
+        with open(to_path(get_test_dir() + '/text_content/link_headers.yaml')) as fh:
+            MementoOverrideTests.link_header_data = yaml.load(fh)
+
+        MementoOverrideTests.orig_get_timegate_links = MementoIndexSource.get_timegate_links
+
+    @classmethod
+    def mock_link_header(cls, test_name, load=False):
+        def mock_func(self, params, closest):
+            if load:
+                res = cls.orig_get_timegate_links(self, params, closest)
+                print(test_name + ': ')
+                print("    '{0}': '{1}'".format(self.timegate_url, res))
+                return res
+
+            try:
+                res = cls.link_header_data[test_name][self.timegate_url]
+                time.sleep(0.2)
+            except Exception as e:
+                print(e)
+                msg = self.timegate_url.format(url=params['url'])
+                raise NotFoundException(msg)
+
+            return res
+
+        return mock_func
 
 
 # ============================================================================

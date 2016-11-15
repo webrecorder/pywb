@@ -18,8 +18,9 @@ from six.moves.urllib.parse import urlencode
 
 import webtest
 from fakeredis import FakeStrictRedis
+from mock import patch
 
-from .testutils import to_path, FakeRedisTests, BaseTestClass, TEST_CDX_PATH, TEST_WARC_PATH
+from .testutils import to_path, MementoOverrideTests, FakeRedisTests, BaseTestClass, TEST_CDX_PATH, TEST_WARC_PATH
 
 import json
 
@@ -31,7 +32,7 @@ sources = {
 }
 
 
-class TestResAgg(FakeRedisTests, BaseTestClass):
+class TestResAgg(MementoOverrideTests, FakeRedisTests, BaseTestClass):
     def setup_class(cls):
         super(TestResAgg, cls).setup_class()
 
@@ -162,6 +163,7 @@ class TestResAgg(FakeRedisTests, BaseTestClass):
 
         assert 'ResErrors' not in resp.headers
 
+    @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_mem_1'))
     def test_agg_select_mem_1(self):
         resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20141001')
 
@@ -176,6 +178,7 @@ class TestResAgg(FakeRedisTests, BaseTestClass):
 
         assert 'ResErrors' not in resp.headers
 
+    @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_mem_2'))
     def test_agg_select_mem_2(self):
         resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20151231')
 
@@ -190,6 +193,7 @@ class TestResAgg(FakeRedisTests, BaseTestClass):
 
         assert 'ResErrors' not in resp.headers
 
+    @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_live'))
     def test_agg_select_live(self):
         resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=2016')
 
@@ -202,6 +206,7 @@ class TestResAgg(FakeRedisTests, BaseTestClass):
 
         assert 'ResErrors' not in resp.headers
 
+    @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_local'))
     def test_agg_select_local(self):
         resp = self.testapp.get('/many/resource?url=http://iana.org/&closest=20140126200624')
 
@@ -214,6 +219,7 @@ class TestResAgg(FakeRedisTests, BaseTestClass):
 
         assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('http://webenact.rhizome.org/vvork/http://iana.org/',)"}
 
+    @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_local_postreq'))
     def test_agg_select_local_postreq(self):
         req_data = """\
 GET / HTTP/1.1
@@ -233,6 +239,7 @@ Host: iana.org
 
         assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('http://webenact.rhizome.org/vvork/http://iana.org/',)"}
 
+    @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_live_postreq'))
     def test_agg_live_postreq(self):
         req_data = """\
 GET /get?foo=bar HTTP/1.1
@@ -416,6 +423,7 @@ host: www.youtube.com\
 
         assert resp.text == resp.headers['ResErrors']
 
+    @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_local_revisit'))
     def test_agg_local_revisit(self):
         resp = self.testapp.get('/many/resource?url=http://www.example.com/&closest=20140127171251&sources=local')
 
@@ -442,6 +450,7 @@ host: www.youtube.com\
         assert resp.json == {'message': 'output=foobar not supported'}
         assert resp.text == resp.headers['ResErrors']
 
+    @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_not_found'))
     def test_error_local_not_found(self):
         resp = self.testapp.get('/many/resource?url=http://not-found.error/&sources=local', status=404)
 
