@@ -1,5 +1,6 @@
 from pywb.webagg.inputrequest import DirectWSGIInputRequest, POSTInputRequest
 from werkzeug.routing import Map, Rule
+from werkzeug.exceptions import HTTPException
 
 import requests
 import traceback
@@ -47,6 +48,9 @@ class ResAggApp(object):
 
         self.route_dict[path] = handler_dict
         self.route_dict[path + '/postreq'] = handler_dict
+
+    def _add_simple_route(self, path, func):
+        self.url_map.add(Rule(path, endpoint=func))
 
     def get_query_dict(self, environ):
         query_str = environ.get('QUERY_STRING')
