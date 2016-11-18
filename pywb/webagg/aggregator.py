@@ -240,8 +240,30 @@ class BaseDirectoryIndexSource(BaseAggregator):
 
                 yield full_name, FileIndexSource(filename)
 
+    def __repr__(self):
+        return 'DirectoryIndexSource(file://{0})'.format(os.path.join(self.base_prefix, self.base_dir))
+
     def __str__(self):
         return 'file_dir'
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return (self.base_prefix == other.base_prefix and
+                self.base_dir == other.base_dir)
+
+    @classmethod
+    def init_from_string(cls, value):
+        if '://' not in value and os.path.isdir(value):
+            return cls(value)
+
+    @classmethod
+    def init_from_config(cls, config):
+        if config['type'] != 'file':
+            return
+
+        return cls.init_from_string(config['path'])
 
 
 #=============================================================================

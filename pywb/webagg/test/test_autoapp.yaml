@@ -1,0 +1,64 @@
+collections:
+
+    # Live Index
+    live: $live
+
+    # rhizome (memento)
+    rhiz: memento+http://webenact.rhizome.org/all/
+
+    # rhizome (cdx)
+    rhiz_cdx: cdx+http://webenact.rhizome.org/all-cdx
+
+    # ia cdx
+    ia: cdx+http://web.archive.org/cdx /web
+
+    # ait cdxX
+    ait: cdx+http://wayback.archive-it.org/cdx /all
+
+
+    ait_long:
+        index:
+            type: cdx
+            api_url: http://wayback.archive-it.org/cdx?url={url}
+            replay_url: http://wayback.archive-it.org/all/{timestamp}id_/{url}
+
+    rhiz_long:
+        index:
+            type: memento
+            timegate_url: http://webenact.rhizome.org/all/{url}
+            timemap_url: http://webenact.rhizome.org/all/timemap/link/{url}
+            replay_url: http://webenact.rhizome.org/all/{timestamp}id_/{url}
+
+    # many archives
+    many:
+        index_group:
+            rhiz: memento+http://webenact.rhizome.org/all/
+            ia:   cdx+http://web.archive.org/cdx;/web
+            apt:  memento+http://arquivo.pt/wayback/
+            liveweb: live
+
+    # Local Dir CDX
+    local:
+        index: ./local/indexes
+        resource: ./local/data
+
+    local_file:
+        index: ./local/indexes/file.cdxj
+        resource: ./local/data
+
+    # Sequence
+    many_seq:
+        sequence:
+            - 
+              index: ./local/indexes
+              resource: ./local/data
+              name: local
+
+            - 
+              index_group:
+                rhiz: cdx+http://webenact.rhizome.org/all-cdx
+                apt:  memento+http://arquivo.pt/wayback/
+
+            - 
+              index: $live
+              name: live
