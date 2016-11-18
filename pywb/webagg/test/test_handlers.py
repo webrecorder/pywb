@@ -33,6 +33,7 @@ sources = {
 
 
 class TestResAgg(MementoOverrideTests, FakeRedisTests, BaseTestClass):
+    @classmethod
     def setup_class(cls):
         super(TestResAgg, cls).setup_class()
 
