@@ -3,6 +3,7 @@ import six
 import string
 import yaml
 import os
+import zlib
 
 from contextlib import closing
 
@@ -174,6 +175,19 @@ def chunk_encode_iter(orig_iter):
         yield b'\r\n'
 
     yield b'0\r\n\r\n'
+
+
+#=============================================================================
+def compress_gzip_iter(orig_iter):
+    compressobj = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS + 16)
+    for chunk in orig_iter:
+        buff = compressobj.compress(chunk)
+        if len(buff) == 0:
+            continue
+
+        yield buff
+
+    yield compressobj.flush()
 
 
 #=============================================================================
