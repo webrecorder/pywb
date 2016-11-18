@@ -1,5 +1,3 @@
-import redis
-
 from pywb.utils.binsearch import iter_range
 from pywb.utils.timeutils import timestamp_to_http_date, http_date_to_timestamp
 from pywb.utils.timeutils import timestamp_now
@@ -8,10 +6,12 @@ from pywb.utils.wbexception import NotFoundException
 
 from pywb.cdx.cdxobject import CDXObject
 
-import requests
-
 from pywb.webagg.utils import ParamFormatter, res_template
 from pywb.webagg.utils import MementoUtils
+
+import redis
+import requests
+import re
 
 
 WAYBACK_ORIG_SUFFIX = '{timestamp}id_/{url}'
@@ -44,19 +44,45 @@ class FileIndexSource(BaseIndexSource):
 
         return do_load(fh)
 
+    def __repr__(self):
+        return 'FileIndexSource(file://{0})'.format(self.filename_template)
+
     def __str__(self):
         return 'file'
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.filename_template == other.filename_template
+
+    @classmethod
+    def init_from_string(cls, value):
+        if value.startswith('file://'):
+            return cls(value[7:])
+
+        if value.startswith('/') or '://' not in value:
+            return FileIndexSource(value)
+
+    @classmethod
+    def init_from_config(cls, config):
+        if config['type'] != 'file':
+            return
+
+        return cls.init_from_string(config['path'])
 
 
 #=============================================================================
 class RemoteIndexSource(BaseIndexSource):
+    CDX_MATCH_RX = re.compile('^cdxj?\+(?P<url>https?\:.*)')
+
     def __init__(self, api_url, replay_url, url_field='load_url'):
-        self.api_url_template = api_url
+        self.api_url = api_url
         self.replay_url = replay_url
         self.url_field = url_field
 
     def load_index(self, params):
-        api_url = res_template(self.api_url_template, params)
+        api_url = res_template(self.api_url, params)
         r = requests.get(api_url, timeout=params.get('_timeout'))
         if r.status_code >= 400:
             raise NotFoundException(api_url)
@@ -75,8 +101,50 @@ class RemoteIndexSource(BaseIndexSource):
                                  timestamp=cdx['timestamp'],
                                  url=cdx['url'])
 
+    def __repr__(self):
+        return 'RemoteIndexSource({0}, {1})'.format(self.api_url, self.replay_url)
+
     def __str__(self):
-        return 'remote'
+        return 'cdx'
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return (self.api_url == other.api_url and
+                self.replay_url == other.replay_url)
+
+    @classmethod
+    def init_from_string(cls, value):
+        m = cls.CDX_MATCH_RX.match(value)
+        if not m:
+            return
+
+        url = m.group('url')
+        coll = ''
+
+        parts = url.split(' ', 1)
+        if len(parts) == 2:
+            url = parts[0]
+            coll = parts[1]
+
+        # pywb style cdx, just remove -cdx to get coll path
+        if not coll and url.endswith('-cdx'):
+            replay = url[:-4] + '/' + WAYBACK_ORIG_SUFFIX
+        else:
+        # add specified coll, if any
+            replay = url.rsplit('/', 1)[0] + coll + '/' + WAYBACK_ORIG_SUFFIX
+
+        url += '?url={url}'
+
+        return cls(url, replay)
+
+    @classmethod
+    def init_from_config(cls, config):
+        if config['type'] != 'cdx':
+            return
+
+        return cls(config['api_url'], config['replay_url'])
 
 
 #=============================================================================
@@ -97,8 +165,32 @@ class LiveIndexSource(BaseIndexSource):
 
         return live()
 
+    def __repr__(self):
+        return 'LiveIndexSource()'
+
     def __str__(self):
         return 'live'
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return True
+
+    @classmethod
+    def init_from_string(cls, value):
+        if value in ('$live', 'live'):
+            return cls()
+
+        if value.startswith('live+'):
+            return cls(value[5:])
+
+    @classmethod
+    def init_from_config(cls, config):
+        if config['type'] != 'live':
+            return
+
+        return cls()
 
 
 #=============================================================================
@@ -107,6 +199,7 @@ class RedisIndexSource(BaseIndexSource):
         if redis_url and not redis:
             redis, key_template = self.parse_redis_url(redis_url)
 
+        self.redis_url = redis_url
         self.redis = redis
         self.redis_key_template = key_template
 
@@ -137,8 +230,32 @@ class RedisIndexSource(BaseIndexSource):
 
         return do_load(index_list)
 
+    def __repr__(self):
+        return 'RedisIndexSource({0})'.format(self.redis_url,
+                                              self.redis,
+                                              self.redis_key_template)
+
     def __str__(self):
         return 'redis'
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return (self.redis_key_template == other.redis_key_template and
+                self.redis == other.redis)
+
+    @classmethod
+    def init_from_string(cls, value):
+        if value.startswith('redis://'):
+            return cls(value)
+
+    @classmethod
+    def init_from_config(cls, config):
+        if config['type'] != 'redis':
+            return
+
+        return cls.init_from_string(config['redis_url'])
 
 
 #=============================================================================
@@ -150,18 +267,6 @@ class MementoIndexSource(BaseIndexSource):
 
     def links_to_cdxobject(self, link_header, def_name):
         results = MementoUtils.parse_links(link_header, def_name)
-
-        #meta = MementoUtils.meta_field('timegate', results)
-        #if meta:
-        #    yield meta
-
-        #meta = MementoUtils.meta_field('timemap', results)
-        #if meta:
-        #    yield meta
-
-        #meta = MementoUtils.meta_field('original', results)
-        #if meta:
-        #    yield meta
 
         original = results['original']['url']
         key = canonicalize(original)
@@ -219,7 +324,38 @@ class MementoIndexSource(BaseIndexSource):
                                   timegate_url + 'timemap/' + path + '/{url}',
                                   timegate_url + WAYBACK_ORIG_SUFFIX)
 
+    def __repr__(self):
+        return 'MementoIndexSource({0}, {1}, {2})'.format(self.timegate_url,
+                                                          self.timemap_url,
+                                                          self.replay_url)
+
     def __str__(self):
         return 'memento'
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return (self.timegate_url == other.timegate_url and
+                self.timemap_url == other.timemap_url and
+                self.replay_url == other.replay_url)
+
+    @classmethod
+    def init_from_string(cls, value):
+        if value.startswith('memento+'):
+            return cls.from_timegate_url(value[8:])
+
+        # default to memento for any http url
+        if value.startswith(('http://', 'https://')):
+            return cls.from_timegate_url(value)
+
+
+    @classmethod
+    def init_from_config(cls, config):
+        if config['type'] != 'memento':
+            return
+
+        return cls(config['timegate_url'],
+                   config['timemap_url'],
+                   config['replay_url'])
 
