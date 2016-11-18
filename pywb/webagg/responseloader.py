@@ -1,4 +1,4 @@
-from pywb.webagg.utils import MementoUtils, StreamIter, chunk_encode_iter
+from pywb.webagg.utils import MementoUtils, StreamIter, chunk_encode_iter, compress_gzip_iter
 from pywb.webagg.utils import ParamFormatter
 from pywb.webagg.indexsource import RedisIndexSource
 
@@ -19,6 +19,7 @@ import uuid
 import six
 import itertools
 import json
+import glob
 
 from requests.models import PreparedRequest
 import urllib3
@@ -31,6 +32,8 @@ class BaseLoader(object):
         if not entry:
             return None, None
 
+        compress = params.get('compress') == 'gzip'
+
         warc_headers, other_headers, stream = entry
 
         out_headers = {}
@@ -42,7 +45,8 @@ class BaseLoader(object):
             if other_headers:
                 out_headers['Link'] = other_headers.get('Link')
                 out_headers['Memento-Datetime'] = other_headers.get('Memento-Datetime')
-                out_headers['Content-Length'] = other_headers.get('Content-Length')
+                if not compress:
+                    out_headers['Content-Length'] = other_headers.get('Content-Length')
 
             return out_headers, StreamIter(stream)
 
@@ -55,13 +59,20 @@ class BaseLoader(object):
 
         warc_headers_buff = warc_headers.to_bytes()
 
-        lenset = self._set_content_len(warc_headers.get_header('Content-Length'),
-                                     out_headers,
-                                     len(warc_headers_buff))
+        if not compress:
+            lenset = self._set_content_len(warc_headers.get_header('Content-Length'),
+                                         out_headers,
+                                         len(warc_headers_buff))
+        else:
+            lenset = False
 
         streamiter = StreamIter(stream,
                                 header1=warc_headers_buff,
                                 header2=other_headers)
+
+        if compress:
+            streamiter = compress_gzip_iter(streamiter)
+            out_headers['Content-Encoding'] = 'gzip'
 
         if not lenset:
             out_headers['Transfer-Encoding'] = 'chunked'
@@ -126,7 +137,20 @@ class PrefixResolver(object):
         if hasattr(cdx, '_formatter') and cdx._formatter:
             full_path = cdx._formatter.format(full_path)
 
-        return full_path + filename
+        path = full_path + filename
+        if '*' not in path:
+            return path
+
+        if path.startswith('file://'):
+            path = path[7:]
+        elif '://' in path:
+            return path
+
+        paths = glob.glob(path)
+        if paths:
+            return paths
+        else:
+            return path
 
 
 #=============================================================================
@@ -159,6 +183,8 @@ class WARCPathLoader(BaseLoader):
         self.paths = paths
         if isinstance(paths, six.string_types):
             self.paths = [paths]
+        elif self.paths is None:
+            self.paths = []
 
         self.resolvers = [self._make_resolver(path) for path in self.paths]
 
