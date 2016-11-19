@@ -15,6 +15,9 @@ collections:
     # ait cdxX
     ait: cdx+http://wayback.archive-it.org/cdx /all
 
+    # zipnum index
+    zip_cluster: zipnum+./local/indexes/file.idx
+
 
     ait_long:
         index:

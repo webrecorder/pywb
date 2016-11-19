@@ -25,6 +25,8 @@ class BaseIndexSource(object):
 
 #=============================================================================
 class FileIndexSource(BaseIndexSource):
+    CDX_EXT = ('.cdx', '.cdxj')
+
     def __init__(self, filename):
         self.filename_template = filename
 
@@ -60,6 +62,9 @@ class FileIndexSource(BaseIndexSource):
     def init_from_string(cls, value):
         if value.startswith('file://'):
             return cls(value[7:])
+
+        if not value.endswith(cls.CDX_EXT):
+            return None
 
         if value.startswith('/') or '://' not in value:
             return FileIndexSource(value)
