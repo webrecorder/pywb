@@ -60,7 +60,10 @@ class BaseAggregator(object):
                 cdx['source'] = name
             return cdx
 
-        return (add_name(cdx, name) for cdx in cdx_iter), err_list
+        if params.get('nosource') != 'true':
+            cdx_iter = (add_name(cdx, name) for cdx in cdx_iter)
+
+        return cdx_iter, err_list
 
     def load_index(self, params):
         res_list = self._load_all(params)
@@ -205,8 +208,6 @@ class GeventTimeoutAggregator(TimeoutMixin, GeventMixin, BaseSourceListAggregato
 
 #=============================================================================
 class BaseDirectoryIndexSource(BaseAggregator):
-    CDX_EXT = ('.cdx', '.cdxj')
-
     def __init__(self, base_prefix, base_dir=''):
         self.base_prefix = base_prefix
         self.base_dir = base_dir
@@ -230,8 +231,8 @@ class BaseDirectoryIndexSource(BaseAggregator):
         for name in os.listdir(the_dir):
             filename = os.path.join(the_dir, name)
 
-            if filename.endswith(self.CDX_EXT):
-                print('Adding ' + filename)
+            if filename.endswith(FileIndexSource.CDX_EXT):
+                #print('Adding ' + filename)
                 rel_path = os.path.relpath(the_dir, self.base_prefix)
                 if rel_path == '.':
                     full_name = name
@@ -302,6 +303,19 @@ class RedisMultiKeyIndexSource(SeqAggMixin, BaseAggregator, RedisIndexSource):
     def _iter_sources(self, params):
         redis_key_pattern = res_template(self.redis_key_template, params)
 
+        if '*' not in redis_key_pattern:
+            yield redis_key_pattern, RedisIndexSource(None, self.redis, redis_key_pattern)
+            return
+
         for key in self.redis.scan_iter(match=redis_key_pattern):
             key = key.decode('utf-8')
             yield key, RedisIndexSource(None, self.redis, key)
+
+    def __repr__(self):
+        return 'RedisMultiKeyIndexSource({0})'.format(self.redis_url,
+                                                      self.redis,
+                                                      self.redis_key_template)
+
+    def __str__(self):
+        return 'redis'
+

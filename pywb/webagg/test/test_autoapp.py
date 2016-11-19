@@ -20,6 +20,12 @@ class TestAutoConfigApp(TempDirTests, BaseTestClass):
         with open(os.path.join('local', 'indexes', 'file.cdxj'), 'a') as fh:
             fh.write('foo')
 
+        with open(os.path.join('local', 'indexes', 'file.idx'), 'a') as fh:
+            fh.write('foo')
+
+        with open(os.path.join('local', 'indexes', 'file.loc'), 'a') as fh:
+            fh.write('foo')
+
         cls.loader = AutoConfigApp(os.path.join(cls.get_curr_dir(), 'test_autoapp.yaml'))
 
         cls.colls = cls.loader.load_colls()

@@ -2,10 +2,15 @@ from pywb.webagg.app import ResAggApp
 from pywb.webagg.utils import load_config
 from pywb.utils.loaders import load_yaml_config
 
-from pywb.webagg.aggregator import CacheDirectoryIndexSource, GeventTimeoutAggregator, SimpleAggregator
+from pywb.webagg.aggregator import CacheDirectoryIndexSource, RedisMultiKeyIndexSource
+from pywb.webagg.aggregator import GeventTimeoutAggregator, SimpleAggregator
+
 from pywb.webagg.handlers import DefaultResourceHandler, HandlerSeq
-from pywb.webagg.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource, RedisIndexSource
+
+from pywb.webagg.indexsource import FileIndexSource, RemoteIndexSource
+from pywb.webagg.indexsource import MementoIndexSource, RedisIndexSource
 from pywb.webagg.indexsource import LiveIndexSource
+from pywb.webagg.zipnum import ZipNumIndexSource
 
 from pywb import DEFAULT_CONFIG
 
@@ -15,16 +20,21 @@ import os
 
 
 SOURCE_LIST = [LiveIndexSource,
-               RedisIndexSource,
+               RedisMultiKeyIndexSource,
                MementoIndexSource,
                CacheDirectoryIndexSource,
                FileIndexSource,
-               RemoteIndexSource
+               RemoteIndexSource,
+               ZipNumIndexSource,
               ]
 
 
 # ============================================================================
 class AutoConfigApp(ResAggApp):
+    @staticmethod
+    def register_source(source_cls):
+        SOURCE_LIST.append(source_cls)
+
     def __init__(self, config_file='./config.yaml'):
         config = load_yaml_config(DEFAULT_CONFIG)
 
@@ -114,10 +124,8 @@ class AutoConfigApp(ResAggApp):
         else:
             raise Exception('collection config must be string or dict')
 
-        sources = {}
         if index:
-            sources[name] = self.load_single_source(index)
-            agg = SimpleAggregator(sources)
+            agg = init_index_agg({name: index})
 
         else:
             if not isinstance(coll_config, dict):
@@ -127,15 +135,13 @@ class AutoConfigApp(ResAggApp):
             if sequence:
                 return self.init_sequence(name, sequence)
 
-            index = coll_config.get('index_group')
-            if not index:
+            index_group = coll_config.get('index_group')
+            if not index_group:
                 raise Exception('no index, index_group or sequence found')
 
-            for name, value in iteritems(index):
-                sources[name] = self.load_single_source(value)
 
             timeout = int(coll_config.get('timeout', 0))
-            agg = GeventTimeoutAggregator(sources, timeout=timeout)
+            agg = init_index_agg(index_group, True, timeout)
 
         return DefaultResourceHandler(agg, resource)
 
@@ -155,21 +161,35 @@ class AutoConfigApp(ResAggApp):
 
         return HandlerSeq(handlers)
 
-    def load_single_source(self, value):
-        if isinstance(value, str):
-            for source_cls in SOURCE_LIST:
-                source = source_cls.init_from_string(value)
-                if source:
-                    return source
+# ============================================================================
+def init_index_source(value):
+    if isinstance(value, str):
+        for source_cls in SOURCE_LIST:
+            source = source_cls.init_from_string(value)
+            if source:
+                return source
 
-        elif isinstance(value, dict):
-            for source_cls in SOURCE_LIST:
-                source = source_cls.init_from_config(value)
-                if source:
-                    return source
+    elif isinstance(value, dict):
+        for source_cls in SOURCE_LIST:
+            source = source_cls.init_from_config(value)
+            if source:
+                return source
 
-        else:
-            raise Exception('Source config must be string or dict')
+    else:
+        raise Exception('Source config must be string or dict')
 
-        raise Exception('No Index Source Found for: ' + str(value))
+    raise Exception('No Index Source Found for: ' + str(value))
+
+
+# ============================================================================
+def init_index_agg(source_configs, use_gevent=False, timeout=0):
+    sources = {}
+    for n, v in iteritems(source_configs):
+        sources[n] = init_index_source(v)
+
+    if use_gevent:
+        return GeventTimeoutAggregator(sources, timeout=timeout)
+    else:
+        return SimpleAggregator(sources)
+
 
