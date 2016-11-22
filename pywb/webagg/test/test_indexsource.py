@@ -170,7 +170,7 @@ def test_all_not_found(source):
     expected = ''
     assert(key_ts_res(res) == expected)
     if source == remote_sources[0]:
-        assert('http://x-not-found-x.notfound/' in errs['source'])
+        assert('http%3A//x-not-found-x.notfound/' in errs['source'])
     else:
         assert(errs == {})
 

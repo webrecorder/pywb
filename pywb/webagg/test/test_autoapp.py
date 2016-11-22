@@ -49,7 +49,7 @@ class TestAutoConfigApp(TempDirTests, BaseTestClass):
     def test_remote_cdx(self):
         sources = self._get_sources('ait')
         assert isinstance(sources['ait'], RemoteIndexSource)
-        assert sources['ait'].api_url == 'http://wayback.archive-it.org/cdx?url={url}'
+        assert sources['ait'].api_url == 'http://wayback.archive-it.org/cdx?url={url}&closest={timestamp}&sort=closest'
         assert sources['ait'].replay_url == 'http://wayback.archive-it.org/all/{timestamp}id_/{url}'
 
         long_form_sources = self._get_sources('ait_long')
@@ -68,7 +68,7 @@ class TestAutoConfigApp(TempDirTests, BaseTestClass):
     def test_remote_cdx_2(self):
         sources = self._get_sources('rhiz_cdx')
         assert isinstance(sources['rhiz_cdx'], RemoteIndexSource)
-        assert sources['rhiz_cdx'].api_url == 'http://webenact.rhizome.org/all-cdx?url={url}'
+        assert sources['rhiz_cdx'].api_url == 'http://webenact.rhizome.org/all-cdx?url={url}&closest={timestamp}&sort=closest'
         assert sources['rhiz_cdx'].replay_url == 'http://webenact.rhizome.org/all/{timestamp}id_/{url}'
 
     def test_live(self):

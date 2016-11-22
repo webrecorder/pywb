@@ -31,10 +31,6 @@ SOURCE_LIST = [LiveIndexSource,
 
 # ============================================================================
 class AutoConfigApp(ResAggApp):
-    @staticmethod
-    def register_source(source_cls):
-        SOURCE_LIST.append(source_cls)
-
     def __init__(self, config_file='./config.yaml'):
         config = load_yaml_config(DEFAULT_CONFIG)
 
@@ -162,15 +158,16 @@ class AutoConfigApp(ResAggApp):
         return HandlerSeq(handlers)
 
 # ============================================================================
-def init_index_source(value):
+def init_index_source(value, source_list=None):
+    source_list = source_list or SOURCE_LIST
     if isinstance(value, str):
-        for source_cls in SOURCE_LIST:
+        for source_cls in source_list:
             source = source_cls.init_from_string(value)
             if source:
                 return source
 
     elif isinstance(value, dict):
-        for source_cls in SOURCE_LIST:
+        for source_cls in source_list:
             source = source_cls.init_from_config(value)
             if source:
                 return source
@@ -182,10 +179,15 @@ def init_index_source(value):
 
 
 # ============================================================================
-def init_index_agg(source_configs, use_gevent=False, timeout=0):
+def register_source(source_cls):
+    SOURCE_LIST.append(source_cls)
+
+
+# ============================================================================
+def init_index_agg(source_configs, use_gevent=False, timeout=0, source_list=None):
     sources = {}
     for n, v in iteritems(source_configs):
-        sources[n] = init_index_source(v)
+        sources[n] = init_index_source(v, source_list=source_list)
 
     if use_gevent:
         return GeventTimeoutAggregator(sources, timeout=timeout)

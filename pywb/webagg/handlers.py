@@ -26,11 +26,6 @@ def to_link(cdx_iter, fields):
     content_type = 'application/link'
     return content_type, MementoUtils.make_timemap(cdx_iter)
 
-def to_raw(cdx_iter, fields):
-    content_type = 'cdx'
-    return content_type, cdx_iter
-
-
 #=============================================================================
 class FuzzyMatcher(object):
     def __init__(self):

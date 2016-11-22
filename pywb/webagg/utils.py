@@ -10,6 +10,9 @@ from contextlib import closing
 from pywb.utils.timeutils import timestamp_to_http_date
 from pywb.utils.wbexception import BadRequestException
 
+from six.moves.urllib.parse import quote
+
+
 LINK_SPLIT = re.compile(',\s*(?=[<])')
 LINK_SEG_SPLIT = re.compile(';\s*')
 LINK_URL = re.compile('<(.*)>')
@@ -143,7 +146,13 @@ def res_template(template, params, **extra_params):
     formatter = params.get('_formatter')
     if not formatter:
         formatter = ParamFormatter(params)
-    res = formatter.format(template, url=params.get('url', ''), **extra_params)
+
+    url = params.get('url', '')
+    qi = template.find('?')
+    if qi >= 0 and template.find('{url}') > qi:
+        url = quote(url)
+
+    res = formatter.format(template, url=url, **extra_params)
 
     return res
 

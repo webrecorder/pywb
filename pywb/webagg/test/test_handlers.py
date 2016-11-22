@@ -5,11 +5,15 @@ from collections import OrderedDict
 from pywb.webagg.handlers import DefaultResourceHandler, HandlerSeq
 
 from pywb.webagg.indexsource import MementoIndexSource, FileIndexSource, LiveIndexSource
+from pywb.webagg.indexsource import RemoteIndexSource
+
 from pywb.webagg.aggregator import GeventTimeoutAggregator, SimpleAggregator
 from pywb.webagg.aggregator import DirectoryIndexSource
 
 from pywb.webagg.app import ResAggApp
 from pywb.webagg.utils import MementoUtils
+
+from pywb.warc.recordloader import ArcWarcRecordLoader
 
 from pywb.utils.statusandheaders import StatusAndHeadersParser
 from pywb.utils.bufferedreaders import ChunkedDataReader
@@ -31,6 +35,13 @@ sources = {
     'live': LiveIndexSource(),
 }
 
+ia_cdx = {
+    'ia-cdx': RemoteIndexSource('http://web.archive.org/cdx?url={url}&closest={timestamp}&sort=closest',
+                                'http://web.archive.org/web/{timestamp}id_/{url}')
+}
+
+
+
 
 class TestResAgg(MementoOverrideTests, FakeRedisTests, BaseTestClass):
     @classmethod
@@ -45,6 +56,8 @@ class TestResAgg(MementoOverrideTests, FakeRedisTests, BaseTestClass):
         source1 = GeventTimeoutAggregator(sources)
         handler1 = DefaultResourceHandler(source1, TEST_WARC_PATH)
         app.add_route('/many', handler1)
+
+        app.add_route('/cdx_api', DefaultResourceHandler(SimpleAggregator(ia_cdx), TEST_WARC_PATH))
 
         source2 = SimpleAggregator({'post': FileIndexSource(TEST_CDX_PATH + 'post-test.cdxj')})
         handler2 = DefaultResourceHandler(source2, TEST_WARC_PATH)
@@ -87,6 +100,7 @@ class TestResAgg(MementoOverrideTests, FakeRedisTests, BaseTestClass):
                                        '/fallback', '/fallback/postreq',
                                        '/live', '/live/postreq',
                                        '/many', '/many/postreq',
+                                       '/cdx_api', '/cdx_api/postreq',
                                        '/posttest', '/posttest/postreq',
                                        '/seq', '/seq/postreq',
                                        '/allredis', '/allredis/postreq',
@@ -193,6 +207,17 @@ class TestResAgg(MementoOverrideTests, FakeRedisTests, BaseTestClass):
         assert resp.headers['Memento-Datetime'] == 'Sun, 10 Jan 2016 13:48:55 GMT'
 
         assert 'ResErrors' not in resp.headers
+
+    def test_agg_select_mem_unrewrite_headers(self):
+        resp = self.testapp.get('/cdx_api/resource?closest=20161103124134&url=http://iana.org/')
+
+        assert resp.headers['WebAgg-Source-Coll'] == 'ia-cdx'
+
+        buff = BytesIO(resp.body)
+        record = ArcWarcRecordLoader().parse_record_stream(buff, no_record_parse=False)
+        print(record.status_headers)
+        assert record.status_headers.get_statuscode() == '302'
+        assert record.status_headers.get_header('Location') == 'https://www.iana.org/'
 
     @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_live'))
     def test_agg_select_live(self):

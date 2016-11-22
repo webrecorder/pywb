@@ -95,6 +95,9 @@ class RemoteIndexSource(BaseIndexSource):
         lines = r.content.strip().split(b'\n')
         def do_load(lines):
             for line in lines:
+                if not line:
+                    continue
+
                 cdx = CDXObject(line)
                 self._set_load_url(cdx)
                 yield cdx
@@ -140,7 +143,7 @@ class RemoteIndexSource(BaseIndexSource):
         # add specified coll, if any
             replay = url.rsplit('/', 1)[0] + coll + '/' + WAYBACK_ORIG_SUFFIX
 
-        url += '?url={url}'
+        url += '?url={url}&closest={timestamp}&sort=closest'
 
         return cls(url, replay)
 
@@ -201,15 +204,15 @@ class LiveIndexSource(BaseIndexSource):
 #=============================================================================
 class RedisIndexSource(BaseIndexSource):
     def __init__(self, redis_url, redis=None, key_template=None):
-        if redis_url and not redis:
-            redis, key_template = self.parse_redis_url(redis_url)
+        if redis_url:
+            redis, key_template = self.parse_redis_url(redis_url, redis)
 
         self.redis_url = redis_url
         self.redis = redis
         self.redis_key_template = key_template
 
     @staticmethod
-    def parse_redis_url(redis_url):
+    def parse_redis_url(redis_url, redis_=None):
         parts = redis_url.split('/')
         key_prefix = ''
         if len(parts) > 4:
@@ -217,8 +220,9 @@ class RedisIndexSource(BaseIndexSource):
             redis_url = 'redis://' + parts[2] + '/' + parts[3]
 
         redis_key_template = key_prefix
-        red = redis.StrictRedis.from_url(redis_url)
-        return red, key_prefix
+        if not redis_:
+            redis_ = redis.StrictRedis.from_url(redis_url)
+        return redis_, key_prefix
 
     def load_index(self, params):
         return self.load_key_index(self.redis_key_template, params)
