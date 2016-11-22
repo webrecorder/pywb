@@ -81,13 +81,21 @@ class FileIndexSource(BaseIndexSource):
 class RemoteIndexSource(BaseIndexSource):
     CDX_MATCH_RX = re.compile('^cdxj?\+(?P<url>https?\:.*)')
 
-    def __init__(self, api_url, replay_url, url_field='load_url'):
+    def __init__(self, api_url, replay_url, url_field='load_url', closest_limit=10):
         self.api_url = api_url
         self.replay_url = replay_url
         self.url_field = url_field
+        self.closest_limit = closest_limit
+
+    def _get_api_url(self, params):
+        api_url = res_template(self.api_url, params)
+        if 'timestamp' in params and self.closest_limit:
+            api_url += '&limit=' + str(self.closest_limit)
+
+        return api_url
 
     def load_index(self, params):
-        api_url = res_template(self.api_url, params)
+        api_url = self._get_api_url(params)
         r = requests.get(api_url, timeout=params.get('_timeout'))
         if r.status_code >= 400:
             raise NotFoundException(api_url)
