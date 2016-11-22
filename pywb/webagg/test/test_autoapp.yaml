@@ -22,7 +22,7 @@ collections:
     ait_long:
         index:
             type: cdx
-            api_url: http://wayback.archive-it.org/cdx?url={url}
+            api_url: 'http://wayback.archive-it.org/cdx?url={url}&closest={timestamp}&sort=closest'
             replay_url: http://wayback.archive-it.org/all/{timestamp}id_/{url}
 
     rhiz_long:

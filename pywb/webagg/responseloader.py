@@ -272,6 +272,8 @@ class LiveWebLoader(BaseLoader):
                     'content-location',
                     'x-archive')
 
+    UNREWRITE_HEADERS = ('location', 'content-location')
+
     def __init__(self):
         self.num_retries = 3
         self.num_pools = 10
@@ -342,7 +344,7 @@ class LiveWebLoader(BaseLoader):
 
         self.raise_on_self_redirect(params, cdx,
                                     str(upstream_res.status),
-                                    upstream_res.headers.get('Location'))
+                                    self.unrewrite_header(cdx, upstream_res.headers.get('Location')))
 
 
         if upstream_res.version == 11:
@@ -363,18 +365,30 @@ class LiveWebLoader(BaseLoader):
         #PY 3
             resp_headers = orig_resp.headers._headers
             for n, v in resp_headers:
-                if n.lower() in self.SKIP_HEADERS:
+                nl = n.lower()
+                if nl in self.SKIP_HEADERS:
                     continue
+
+                if nl in self.UNREWRITE_HEADERS:
+                    v = self.unrewrite_header(cdx, v)
 
                 http_headers_buff += n + ': ' + v + '\r\n'
         except:  #pragma: no cover
         #PY 2
             resp_headers = orig_resp.msg.headers
-            for n, v in zip(orig_resp.getheaders(), resp_headers):
+            for (n, v), line in zip(orig_resp.getheaders(), resp_headers):
                 if n in self.SKIP_HEADERS:
                     continue
 
-                http_headers_buff += v
+                new_v = v
+                if n in self.UNREWRITE_HEADERS:
+                    new_v = self.unrewrite_header(cdx, v)
+
+                if new_v != v:
+                    http_headers_buff += n + ': ' + new_v + '\r\n'
+                else:
+                    http_headers_buff += line
+
 
         http_headers_buff += '\r\n'
         http_headers_buff = http_headers_buff.encode('latin-1')
@@ -404,6 +418,19 @@ class LiveWebLoader(BaseLoader):
 
         warc_headers = StatusAndHeaders('WARC/1.0', warc_headers.items())
         return (warc_headers, http_headers_buff, upstream_res)
+
+    def unrewrite_header(self, cdx, value):
+        if not value:
+            return value
+
+        if cdx.get('is_live'):
+            return value
+
+        inx = value.find('/http', 1)
+        if inx < 1:
+            return value
+
+        return value[inx + 1:]
 
     def __str__(self):
         return  'LiveWebLoader'
