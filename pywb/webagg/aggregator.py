@@ -242,7 +242,8 @@ class BaseDirectoryIndexSource(BaseAggregator):
                 yield full_name, FileIndexSource(filename)
 
     def __repr__(self):
-        return 'DirectoryIndexSource(file://{0})'.format(os.path.join(self.base_prefix, self.base_dir))
+        return '{0}(file://{1})'.format(self.__class__.__name__,
+                                        os.path.join(self.base_prefix, self.base_dir))
 
     def __str__(self):
         return 'file_dir'
@@ -299,23 +300,26 @@ class CacheDirectoryIndexSource(DirectoryIndexSource):
 
 
 #=============================================================================
-class RedisMultiKeyIndexSource(SeqAggMixin, BaseAggregator, RedisIndexSource):
+class BaseRedisMultiKeyIndexSource(BaseAggregator, RedisIndexSource):
     def _iter_sources(self, params):
         redis_key_pattern = res_template(self.redis_key_template, params)
 
         if '*' not in redis_key_pattern:
-            yield redis_key_pattern, RedisIndexSource(None, self.redis, redis_key_pattern)
+            yield self._get_source_for_key(redis_key_pattern)
             return
 
         for key in self.redis.scan_iter(match=redis_key_pattern):
             key = key.decode('utf-8')
-            yield key, RedisIndexSource(None, self.redis, key)
+            yield self._get_source_for_key(key)
 
-    def __repr__(self):
-        return 'RedisMultiKeyIndexSource({0})'.format(self.redis_url,
-                                                      self.redis,
-                                                      self.redis_key_template)
+    def _get_source_for_key(self, key):
+        return key, RedisIndexSource(None, self.redis, key)
 
     def __str__(self):
         return 'redis'
+
+
+#=============================================================================
+class RedisMultiKeyIndexSource(SeqAggMixin, BaseRedisMultiKeyIndexSource):
+    pass
 
