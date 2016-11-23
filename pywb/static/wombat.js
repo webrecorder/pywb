@@ -846,7 +846,10 @@ var wombat_internal = function($wbwindow) {
             if (typeof(input) === "string") {
                 input = rewrite_url(input);
             } else if (typeof(input) === "object" && input.url) {
-                input.url = rewrite_url(input.url);
+                var new_url = rewrite_url(input.url);
+                if (new_url != input.url) {
+                    input = new Request(new_url, input);
+                }
             }
 
             return orig_fetch.call(this, input, init);
