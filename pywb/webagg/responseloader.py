@@ -316,6 +316,12 @@ class LiveWebLoader(BaseLoader):
 
         load_url = p.url
 
+        # host is set to the actual host for live loading
+        # ensure it is set to the load_url host
+        if not cdx.get('is_live'):
+            #req_headers.pop('Host', '')
+            req_headers['Host'] = urlsplit(p.url).netloc
+
         try:
             upstream_res = self.pool.urlopen(method=method,
                                              url=load_url,
