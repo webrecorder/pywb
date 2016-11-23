@@ -47,7 +47,8 @@ class FileIndexSource(BaseIndexSource):
         return do_load(fh)
 
     def __repr__(self):
-        return 'FileIndexSource(file://{0})'.format(self.filename_template)
+        return '{0}(file://{1})'.format(self.__class__.__name__,
+                                        self.filename_template)
 
     def __str__(self):
         return 'file'
@@ -118,7 +119,9 @@ class RemoteIndexSource(BaseIndexSource):
                                  url=cdx['url'])
 
     def __repr__(self):
-        return 'RemoteIndexSource({0}, {1})'.format(self.api_url, self.replay_url)
+        return '{0}({1}, {2})'.format(self.__class__.name__,
+                                      self.api_url,
+                                      self.replay_url)
 
     def __str__(self):
         return 'cdx'
@@ -182,7 +185,7 @@ class LiveIndexSource(BaseIndexSource):
         return live()
 
     def __repr__(self):
-        return 'LiveIndexSource()'
+        return '{0}()'.format(self.__class__.__name__)
 
     def __str__(self):
         return 'live'
@@ -211,7 +214,7 @@ class LiveIndexSource(BaseIndexSource):
 
 #=============================================================================
 class RedisIndexSource(BaseIndexSource):
-    def __init__(self, redis_url, redis=None, key_template=None):
+    def __init__(self, redis_url=None, redis=None, key_template=None, **kwargs):
         if redis_url:
             redis, key_template = self.parse_redis_url(redis_url, redis)
 
@@ -248,9 +251,10 @@ class RedisIndexSource(BaseIndexSource):
         return do_load(index_list)
 
     def __repr__(self):
-        return 'RedisIndexSource({0})'.format(self.redis_url,
-                                              self.redis,
-                                              self.redis_key_template)
+        return '{0}({1}, {2}, {3})'.format(self.__class__.__name__,
+                                           self.redis_url,
+                                           self.redis,
+                                           self.redis_key_template)
 
     def __str__(self):
         return 'redis'
@@ -342,9 +346,10 @@ class MementoIndexSource(BaseIndexSource):
                                   timegate_url + WAYBACK_ORIG_SUFFIX)
 
     def __repr__(self):
-        return 'MementoIndexSource({0}, {1}, {2})'.format(self.timegate_url,
-                                                          self.timemap_url,
-                                                          self.replay_url)
+        return '{0}({1}, {2}, {3})'.format(self.__class__.__name__,
+                                           self.timegate_url,
+                                           self.timemap_url,
+                                           self.replay_url)
 
     def __str__(self):
         return 'memento'
