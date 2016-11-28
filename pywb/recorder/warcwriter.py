@@ -27,7 +27,7 @@ from pywb.warc.recordloader import ArcWarcRecord
 from pywb.warc.recordloader import ArcWarcRecordLoader
 
 from requests.structures import CaseInsensitiveDict
-from pywb.webagg.utils import ParamFormatter, res_template
+from pywb.webagg.utils import res_template, BUFF_SIZE
 
 from pywb.recorder.filters import ExcludeNone
 
@@ -43,19 +43,25 @@ class BaseWARCWriter(object):
 
     REVISIT_PROFILE = 'http://netpreserve.org/warc/1.0/revisit/uri-agnostic-identical-payload-digest'
 
-    BUFF_SIZE = 8192
-
     FILE_TEMPLATE = 'rec-{timestamp}-{hostname}.warc.gz'
 
-    def __init__(self, gzip=True, dedup_index=None, name='recorder',
+    def __init__(self, gzip=True, dedup_index=None,
                  header_filter=ExcludeNone(), *args, **kwargs):
         self.gzip = gzip
         self.dedup_index = dedup_index
-        self.rec_source_name = name
         self.header_filter = header_filter
         self.hostname = gethostname()
 
         self.parser = StatusAndHeadersParser([], verify=False)
+
+    @staticmethod
+    def _iter_stream(stream):
+        while True:
+            buf = stream.read(BUFF_SIZE)
+            if not buf:
+                return
+
+            yield buf
 
     def ensure_digest(self, record):
         block_digest = record.rec_headers.get('WARC-Block-Digest')
@@ -71,11 +77,7 @@ class BaseWARCWriter(object):
         if record.status_headers and hasattr(record.status_headers, 'headers_buff'):
             block_digester.update(record.status_headers.headers_buff)
 
-        while True:
-            buf = record.stream.read(self.BUFF_SIZE)
-            if not buf:
-                break
-
+        for buf in self._iter_stream(record.stream):
             block_digester.update(buf)
             payload_digester.update(buf)
 
@@ -108,7 +110,6 @@ class BaseWARCWriter(object):
             print('Skipping due to dedup')
             return
 
-        params['_formatter'] = ParamFormatter(params, name=self.rec_source_name)
         self._do_write_req_resp(req, resp, params)
 
     def create_req_record(self, req_headers, payload):
@@ -264,7 +265,9 @@ class BaseWARCWriter(object):
                 out.write(record.status_headers.headers_buff)
 
             if not http_headers_only:
-                out.write(record.stream.read())
+                for buf in self._iter_stream(record.stream):
+                    out.write(buf)
+                #out.write(record.stream.read())
 
             # add two lines
             self._line(out, b'\r\n')
@@ -410,7 +413,6 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
     def write_record(self, record, params=None):
         params = params or {}
-        params['_formatter'] = ParamFormatter(params, name=self.rec_source_name)
         self._do_write_req_resp(None, record, params)
 
     def _do_write_req_resp(self, req, resp, params):

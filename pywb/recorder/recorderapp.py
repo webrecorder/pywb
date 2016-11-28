@@ -1,4 +1,5 @@
 from pywb.webagg.utils import StreamIter, chunk_encode_iter, BUFF_SIZE
+from pywb.webagg.utils import ParamFormatter, res_template
 from pywb.webagg.inputrequest import DirectWSGIInputRequest
 
 from pywb.recorder.filters import SkipRangeRequestFilter, CollectionFilter
@@ -24,6 +25,11 @@ class RecorderApp(object):
 
         self.writer = writer
 
+        self.rec_source_name = kwargs.get('name', 'recorder')
+
+        self.create_buff_func = kwargs.get('create_buff_func',
+                                           self.default_create_buffer)
+
         self.write_queue = gevent.queue.Queue()
         gevent.spawn(self._write_loop)
 
@@ -42,6 +48,10 @@ class RecorderApp(object):
 
         return skip_filters
 
+    @staticmethod
+    def default_create_buffer(params, name):
+        return tempfile.SpooledTemporaryFile(max_size=512*1024)
+
     def _write_loop(self):
         while True:
             try:
@@ -50,8 +60,8 @@ class RecorderApp(object):
                 traceback.print_exc()
 
     def _write_one(self):
-        req = None
-        resp = None
+        req_pay = None
+        resp_pay = None
         try:
             result = self.write_queue.get()
 
@@ -70,11 +80,11 @@ class RecorderApp(object):
 
         finally:
             try:
-                if req:
-                    req.stream.close()
+                if req_pay:
+                    req_pay.close()
 
-                if resp:
-                    resp.stream.close()
+                if resp_pay:
+                    resp_pay.close()
             except Exception as e:
                 traceback.print_exc()
 
@@ -103,25 +113,34 @@ class RecorderApp(object):
             return self.send_message(msg, '200 OK',
                                      start_response)
 
-        req_stream = ReqWrapper(input_buff, headers)
+        req_stream = None
+        try:
+            req_stream = ReqWrapper(input_buff,
+                                    headers,
+                                    params,
+                                    self.create_buff_func)
 
-        while True:
-            buff = req_stream.read()
-            if not buff:
-                break
+            while True:
+                buff = req_stream.read()
+                if not buff:
+                    break
 
-        content_type = headers.get('Content-Type')
+            content_type = headers.get('Content-Type')
 
-        record = self.writer.create_custom_record(params['url'],
-                                                  req_stream.out,
-                                                  record_type,
-                                                  content_type,
-                                                  req_stream.headers)
+            record = self.writer.create_custom_record(params['url'],
+                                                      req_stream.out,
+                                                      record_type,
+                                                      content_type,
+                                                      req_stream.headers)
 
-        self.writer.write_record(record, params)
+            self.writer.write_record(record, params)
 
-        msg = {'success': 'true',
-               'WARC-Date': record.rec_headers.get('WARC-Date')}
+            msg = {'success': 'true',
+                   'WARC-Date': record.rec_headers.get('WARC-Date')}
+
+        finally:
+            if req_stream:
+                req_stream.out.close()
 
         return self.send_message(msg,
                                  '200 OK',
@@ -129,6 +148,7 @@ class RecorderApp(object):
 
     def _get_params(self, environ):
         params = dict(parse_qsl(environ.get('QUERY_STRING')))
+        params['_formatter'] = ParamFormatter(params, name=self.rec_source_name)
         return params
 
     def __call__(self, environ, start_response):
@@ -164,7 +184,10 @@ class RecorderApp(object):
         skipping = any(x.skip_request(headers) for x in self.skip_filters)
 
         if not skipping:
-            req_stream = ReqWrapper(input_buff, headers)
+            req_stream = ReqWrapper(input_buff,
+                                    headers,
+                                    params,
+                                    self.create_buff_func)
         else:
             req_stream = input_buff
 
@@ -181,7 +204,8 @@ class RecorderApp(object):
                                  stream=True)
             res.raise_for_status()
         except Exception as e:
-            #traceback.print_exc()
+            if not skipping:
+                req_stream.out.close()
             return self.send_error(e, start_response)
 
         start_response('200 OK', list(res.headers.items()))
@@ -192,7 +216,8 @@ class RecorderApp(object):
                                       req_stream,
                                       params,
                                       self.write_queue,
-                                      self.skip_filters)
+                                      self.skip_filters,
+                                      self.create_buff_func)
         else:
             resp_stream = res.raw
 
@@ -206,13 +231,11 @@ class RecorderApp(object):
 
 #==============================================================================
 class Wrapper(object):
-    def __init__(self, stream):
+    def __init__(self, stream, params, create_func):
         self.stream = stream
-        self.out = self._create_buffer()
+        self.params = params
+        self.out = create_func(params, self.__class__.__name__)
         self.interrupted = False
-
-    def _create_buffer(self):
-        return tempfile.SpooledTemporaryFile(max_size=512*1024)
 
     def read(self, *args, **kwargs):
         try:
@@ -229,12 +252,11 @@ class Wrapper(object):
 #==============================================================================
 class RespWrapper(Wrapper):
     def __init__(self, stream, headers, req,
-                 params, queue, skip_filters):
+                 params, queue, skip_filters, create_func):
 
-        super(RespWrapper, self).__init__(stream)
+        super(RespWrapper, self).__init__(stream, params, create_func)
         self.headers = headers
         self.req = req
-        self.params = params
         self.queue = queue
         self.skip_filters = skip_filters
 
@@ -257,29 +279,38 @@ class RespWrapper(Wrapper):
             self._write_to_file()
 
     def _write_to_file(self):
-        skipping = any(x.skip_response(self.req.headers, self.headers)
-                        for x in self.skip_filters)
-
-        if self.interrupted or skipping:
-            self.out.close()
-            self.req.out.close()
-            self.req.close()
-            return
-
+        skipping = False
         try:
-            entry = (self.req.headers, self.req.out,
-                     self.headers, self.out, self.params)
-            self.queue.put(entry)
-            self.req.close()
-            self.req = None
+            if self.interrupted:
+                skipping = True
+            else:
+                skipping = any(x.skip_response(self.req.headers, self.headers)
+                                for x in self.skip_filters)
+
+            if not skipping:
+                entry = (self.req.headers, self.req.out,
+                         self.headers, self.out, self.params)
+                self.queue.put(entry)
         except:
             traceback.print_exc()
+            skipping = True
+
+        finally:
+            try:
+                if skipping:
+                    self.out.close()
+                    self.req.out.close()
+            except:
+                traceback.print_exc()
+
+            self.req.close()
+            self.req = None
 
 
 #==============================================================================
 class ReqWrapper(Wrapper):
-    def __init__(self, stream, req_headers):
-        super(ReqWrapper, self).__init__(stream)
+    def __init__(self, stream, req_headers, params, create_func):
+        super(ReqWrapper, self).__init__(stream, params, create_func)
         self.headers = CaseInsensitiveDict(req_headers)
 
         for n in req_headers.keys():
