@@ -119,7 +119,7 @@ class RemoteIndexSource(BaseIndexSource):
                                  url=cdx['url'])
 
     def __repr__(self):
-        return '{0}({1}, {2})'.format(self.__class__.name__,
+        return '{0}({1}, {2})'.format(self.__class__.__name__,
                                       self.api_url,
                                       self.replay_url)
 
