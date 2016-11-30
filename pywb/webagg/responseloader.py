@@ -280,10 +280,11 @@ class LiveWebLoader(BaseLoader):
 
     UNREWRITE_HEADERS = ('location', 'content-location')
 
-    def __init__(self):
+    def __init__(self, forward_proxy_prefix=None):
         self.num_retries = 3
         self.num_pools = 10
         self.num_conn_per_pool = 10
+        self.forward_proxy_prefix = forward_proxy_prefix
 
         self.pool = urllib3.PoolManager(num_pools=self.num_pools,
                                         maxsize=self.num_conn_per_pool)
@@ -295,6 +296,9 @@ class LiveWebLoader(BaseLoader):
 
         if params.get('content_type') == VideoLoader.CONTENT_TYPE:
             return None
+
+        if self.forward_proxy_prefix and not cdx.get('is_live'):
+            load_url = self.forward_proxy_prefix + load_url
 
         input_req = params['_input_req']
 
@@ -400,7 +404,6 @@ class LiveWebLoader(BaseLoader):
                     http_headers_buff += n + ': ' + new_v + '\r\n'
                 else:
                     http_headers_buff += line
-
 
         http_headers_buff += '\r\n'
         http_headers_buff = http_headers_buff.encode('latin-1')
