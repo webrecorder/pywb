@@ -729,6 +729,10 @@ var wombat_internal = function($wbwindow) {
 
             var abs_url = extract_orig(url);
 
+            if (!abs_url) {
+                abs_url = $wbwindow.WB_wombat_location.href;
+            }
+
             if (abs_url &&
                 (abs_url != $wbwindow.WB_wombat_location.origin) &&
                 !starts_with(abs_url, $wbwindow.WB_wombat_location.origin + "/")) {
@@ -2144,6 +2148,18 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
+    function init_eval_override() {
+        var orig_eval = $wbwindow.eval;
+
+        $wbwindow.eval = function(string) {
+            if (string) {
+                string = string.replace(/\blocation\b/g, "WB_wombat_$&");
+            }
+            orig_eval.call(this, string);
+        }
+    }
+
+    //============================================
     function init_iframe_wombat(iframe) {
         var win;
 
@@ -2409,6 +2425,9 @@ var wombat_internal = function($wbwindow) {
 
             // write
             init_write_override();
+
+            // eval
+            init_eval_override();
 
             // Ajax
             init_ajax_rewrite();
