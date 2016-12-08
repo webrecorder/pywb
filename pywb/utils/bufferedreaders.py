@@ -67,6 +67,7 @@ class BufferedReader(object):
         self._init_decomp(decomp_type)
 
     def _init_decomp(self, decomp_type):
+        self.num_block_read = 0
         if decomp_type:
             try:
                 self.decomp_type = decomp_type
@@ -100,6 +101,7 @@ class BufferedReader(object):
         data = self._decompress(data)
         self.buff_size = len(data)
         self.num_read += self.buff_size
+        self.num_block_read += self.buff_size
         self.buff = BytesIO(data)
 
     def _decompress(self, data):
@@ -108,7 +110,7 @@ class BufferedReader(object):
                 data = self.decompressor.decompress(data)
             except Exception as e:
                 # if first read attempt, assume non-gzipped stream
-                if self.num_read == 0:
+                if self.num_block_read == 0:
                     if self.decomp_type == 'deflate':
                         self._init_decomp('deflate_alt')
                         data = self._decompress(data)
