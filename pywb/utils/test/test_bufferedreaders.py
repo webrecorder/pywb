@@ -141,19 +141,19 @@ def test_brotli():
         x.read() == b'The quick brown fox jumps over the lazy dog' * 4096
 
 
-
-# Errors
-
-def test_err_compress_mix():
-    # error: compressed member, followed by not compressed -- considered invalid
+# Compression
+def test_compress_mix():
+    # error: compressed member, followed by not compressed -- now allowed!
     x = DecompressingBufferedReader(BytesIO(compress('ABC') + b'123'), decomp_type = 'gzip')
     b = x.read()
     assert b == b'ABC'
     x.read_next_member()
-    assert x.read() == b''
+    assert x.read() == b'123'
     #with pytest.raises(zlib.error):
     #    x.read()
     #error: Error -3 while decompressing: incorrect header check
+
+# Errors
 
 def test_err_chunk_cut_off():
     # Chunked data cut off with exceptions
