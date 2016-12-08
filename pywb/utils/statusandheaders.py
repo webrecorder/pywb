@@ -129,6 +129,11 @@ headers = {2})".format(self.protocol, self.statusline, headers_str)
     def __str__(self, exclude_list=None):
         return self.to_str(exclude_list)
 
+    def __bool__(self):
+        return bool(self.statusline or self.headers)
+
+    __nonzero__ = __bool__
+
     def to_str(self, exclude_list):
         string = self.protocol
 
