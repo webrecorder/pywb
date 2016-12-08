@@ -19,6 +19,7 @@ from pywb.urlrewrite.rewriteinputreq import RewriteInputRequest
 from pywb.urlrewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView, BaseInsertView
 
 from io import BytesIO
+from copy import copy
 
 import gevent
 import json
@@ -168,10 +169,12 @@ class RewriterApp(object):
 
         if async_record_url:
             environ.pop('HTTP_RANGE', '')
+            new_wb_url = copy(wb_url)
+            new_wb_url.url = async_record_url
+
             gevent.spawn(self._do_async_req,
                          inputreq,
-                         async_record_url,
-                         wb_url,
+                         new_wb_url,
                          kwargs,
                          False)
 
