@@ -126,16 +126,24 @@ class BufferedReader(object):
         """
         Fill bytes and read some number of bytes
         (up to length if specified)
-        < length bytes may be read if reached the end of input
-        or at a buffer boundary. If at a boundary, the subsequent
-        call will fill buffer anew.
+        <= length bytes may be read if reached the end of input
+        if at buffer boundary, will attempt to read again until
+        specified length is read
         """
-        if length == 0:
-            return b''
+        all_buffs = []
+        while length is None or length > 0:
+            self._fillbuff()
+            buff = self.buff.read(length)
+            if not buff:
+                break
 
-        self._fillbuff()
-        buff = self.buff.read(length)
-        return buff
+            all_buffs.append(buff)
+            if length:
+                length -= len(buff)
+
+        return b''.join(all_buffs)
+
+
 
     def readline(self, length=None):
         """
