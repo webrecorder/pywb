@@ -218,7 +218,7 @@ class BaseWARCWriter(object):
 
         return record
 
-    def _write_warc_record(self, out, record):
+    def _write_warc_record(self, out, record, adjust_cl=True):
         if self.gzip:
             out = GzippingWrapper(out)
 
@@ -252,7 +252,11 @@ class BaseWARCWriter(object):
                 actual_len = len(record.status_headers.headers_buff)
 
             if not http_headers_only:
-                diff = record.stream.tell() - actual_len
+                if adjust_cl:
+                    diff = record.stream.tell() - actual_len
+                else:
+                    diff = 0
+
                 actual_len = record.length - diff
 
             self._header(out, 'Content-Length', str(actual_len))
