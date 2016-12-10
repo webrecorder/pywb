@@ -16,10 +16,16 @@ import six
 
 
 #=================================================================
-ArcWarcRecord = collections.namedtuple('ArcWarcRecord',
-                                       'format, rec_type, rec_headers, ' +
-                                       'stream, status_headers, ' +
-                                       'content_type, length')
+#ArcWarcRecord = collections.namedtuple('ArcWarcRecord',
+#                                       'format, rec_type, rec_headers, ' +
+#                                       'stream, status_headers, ' +
+#                                       'content_type, length')
+
+#=================================================================
+class ArcWarcRecord(object):
+    def __init__(self, *args):
+        (self.format, self.rec_type, self.rec_headers, self.stream,
+         self.status_headers, self.content_type, self.length) = args
 
 
 #=================================================================
