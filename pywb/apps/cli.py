@@ -1,9 +1,4 @@
-import os
-import logging
 from argparse import ArgumentParser
-from pywb.framework.wsgi_wrappers import init_app
-from pywb.webapp.pywb_init import create_cdx_server_app, create_wb_router
-
 
 #=================================================================
 def cdx_server(args=None):  #pragma: no cover
@@ -27,18 +22,34 @@ def wayback(args=None):
 
 
 #=============================================================================
+def webagg():
+    WebaggCli().run()
+
+
+#=============================================================================
 class BaseCli(object):
     def __init__(self, args=None, default_port=8080, desc=''):
         parser = ArgumentParser(description=desc)
         parser.add_argument('-p', '--port', type=int, default=default_port)
         parser.add_argument('-t', '--threads', type=int, default=4)
-        parser.add_argument('-s', '--server')
+        parser.add_argument('-s', '--server', default='gevent')
 
         self.desc = desc
 
         self._extend_parser(parser)
 
         self.r = parser.parse_args(args)
+
+        if self.r.server == 'gevent':
+            try:
+                from gevent.monkey import patch_all; patch_all()
+                print('Using Gevent')
+            except:
+                print('No Gevent')
+                self.r.server = 'wsgiref'
+
+        from pywb.framework.wsgi_wrappers import init_app
+        self.init_app = init_app
 
         self.application = self.load()
 
@@ -49,7 +60,9 @@ class BaseCli(object):
         pass
 
     def run(self):
-        if self.r.server == 'waitress':  #pragma: no cover
+        if self.r.server == 'gevent':  #pragma: no cover
+            self.run_gevent()
+        elif self.r.server == 'waitress':  #pragma: no cover
             self.run_waitress()
         else:
             self.run_wsgiref()
@@ -62,6 +75,11 @@ class BaseCli(object):
     def run_wsgiref(self):  #pragma: no cover
         from pywb.framework.wsgi_wrappers import start_wsgi_ref_server
         start_wsgi_ref_server(self.application, self.desc, port=self.r.port)
+
+    def run_gevent(self):
+        from gevent.pywsgi import WSGIServer
+        print('Starting Gevent Server on ' + str(self.r.port))
+        WSGIServer(('', self.r.port), self.application).serve_forever()
 
 
 #=============================================================================
@@ -79,7 +97,8 @@ class LiveCli(BaseCli):
                       enable_auto_colls=False,
                       collections={'live': '$liveweb'})
 
-        return init_app(create_wb_router, load_yaml=False, config=config)
+        from pywb.webapp.pywb_init import create_wb_router
+        return self.init_app(create_wb_router, load_yaml=False, config=config)
 
 
 #=============================================================================
@@ -98,6 +117,9 @@ class ReplayCli(BaseCli):
     def run(self):
         if self.r.autoindex:
             from pywb.manager.manager import CollectionsManager
+            import os
+            import logging
+
             m = CollectionsManager('', must_exist=False)
             if not os.path.isdir(m.colls_dir):
                 msg = 'No managed directory "{0}" for auto-indexing'
@@ -114,17 +136,29 @@ class ReplayCli(BaseCli):
 #=============================================================================
 class CdxCli(ReplayCli):  #pragma: no cover
     def load(self):
+        from pywb.webapp.pywb_init import create_cdx_server_app
         super(CdxCli, self).load()
-        return init_app(create_cdx_server_app,
-                        load_yaml=True)
+        return self.init_app(create_cdx_server_app,
+                             load_yaml=True)
 
 
 #=============================================================================
 class WaybackCli(ReplayCli):
     def load(self):
+        from pywb.webapp.pywb_init import create_wb_router
         super(WaybackCli, self).load()
-        return init_app(create_wb_router,
-                        load_yaml=True)
+        return self.init_app(create_wb_router,
+                             load_yaml=True)
+
+
+#=============================================================================
+class WebaggCli(BaseCli):
+    def load(self):
+        from pywb.apps.webagg import application
+        return application
+
+    def run(self):
+        self.run_gevent()
 
 
 #=============================================================================
