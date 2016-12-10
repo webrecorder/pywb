@@ -80,25 +80,24 @@ class TestManagedColls(object):
     def teardown(self):
         J2TemplateView.shared_jinja_env = None
 
-    #@patch('waitress.serve', lambda *args, **kwargs: None)
-    @patch('six.moves.BaseHTTPServer.HTTPServer.serve_forever', lambda *args, **kwargs: None)
+    @patch('pywb.apps.cli.BaseCli.run_gevent', lambda *args, **kwargs: None)
     def test_run_cli(self):
         """ test new wayback cli interface
         test autoindex error before collections inited
         """
         from pywb.apps.cli import wayback
 
-        wayback(['-p', '0'])
+        wayback(['-p', '0', '-s', 'gevent'])
 
         # Nothing to auto-index.. yet
         with raises(SystemExit):
-            wayback(['-a', '-p', '0'])
+            wayback(['-a', '-p', '0', '-s', 'gevent'])
 
         colls = os.path.join(self.root_dir, 'collections')
         os.mkdir(colls)
 
         pywb.manager.autoindex.keep_running = False
-        wayback(['-a', '-p', '0'])
+        wayback(['-a', '-p', '0', '-s', 'gevent'])
 
     def test_create_first_coll(self):
         """ Test first collection creation, with all required dirs

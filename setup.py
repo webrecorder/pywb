@@ -107,6 +107,7 @@ setup(
         live-rewrite-server = pywb.apps.cli:live_rewrite_server
         cdx-indexer = pywb.warc.cdxindexer:main
         wb-manager = pywb.manager.manager:main_wrap_exc
+        webagg-server = pywb.apps.cli:webagg
         """,
     classifiers=[
         'Development Status :: 4 - Beta',
