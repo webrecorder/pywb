@@ -146,7 +146,7 @@ class RewriterApp(object):
         setcookie_headers = None
         if self.cookie_tracker:
             cookie_key = self.get_cookie_key(kwargs)
-            res = self.cookie_tracker.get_cookie_headers(wb_url.url, cookie_key)
+            res = self.cookie_tracker.get_cookie_headers(wb_url.url, urlrewriter, cookie_key)
             inputreq.extra_cookie, setcookie_headers = res
 
         r = self._do_req(inputreq, wb_url, kwargs, skip)
