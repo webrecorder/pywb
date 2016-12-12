@@ -1,6 +1,5 @@
-from pywb.rewrite.cookie_rewriter import WbUrlBaseCookieRewriter
+from pywb.rewrite.cookie_rewriter import WbUrlBaseCookieRewriter, HostScopeCookieRewriter
 from pywb.utils.timeutils import datetime_to_http_date
-from six.moves.http_cookiejar import CookieJar, DefaultCookiePolicy
 from six.moves import zip
 
 import redis
@@ -20,8 +19,9 @@ class CookieTracker(object):
     def get_rewriter(self, url_rewriter, cookie_key):
         return DomainCacheCookieRewriter(url_rewriter, self, cookie_key)
 
-    def get_cookie_headers(self, url, cookie_key):
+    def get_cookie_headers(self, url, url_rewriter, cookie_key):
         subds = self.get_subdomains(url)
+        host_cookie_rewriter = HostScopeNoFilterCookieRewriter(url_rewriter)
 
         if not subds:
             return None, None
@@ -35,20 +35,26 @@ class CookieTracker(object):
         cookies = []
         set_cookies = []
 
+        expire_set = []
+
+        for res, domain in zip(all_res, subds):
+            if not res:
+                continue
+
+            for n, v in six.iteritems(res):
+                n = n.decode('utf-8')
+                v = v.decode('utf-8')
+                full = n + '=' + v
+                cookies.append(full.split(';')[0])
+
+                full += '; Max-Age=' + str(self.expire_time)
+                set_cookies.extend(host_cookie_rewriter.rewrite(full))
+
+            expire_set.append(cookie_key + '.' + domain)
+
         with redis.utils.pipeline(self.redis) as pi:
-            for res, domain in zip(all_res, subds):
-                if not res:
-                    continue
-
-                for n, v in six.iteritems(res):
-                    n = n.decode('utf-8')
-                    v = v.decode('utf-8')
-                    full = n + '=' + v
-                    cookies.append(full.split(';')[0])
-                    set_cookies.append(('Set-Cookie', full + '; Max-Age=' + str(self.expire_time)))
-
-                pi.expire(cookie_key + '.' + domain, self.expire_time)
-
+            for key in expire_set:
+                pi.expire(key, self.expire_time)
 
         cookies = ';'.join(cookies)
         return cookies, set_cookies
@@ -81,6 +87,12 @@ class CookieTracker(object):
 
         all_subs = get_all_subdomains(main, full)
         return all_subs
+
+
+# =============================================================================
+class HostScopeNoFilterCookieRewriter(HostScopeCookieRewriter):
+    def _filter_morsel(self, morsel):
+        pass
 
 
 # =============================================================================
