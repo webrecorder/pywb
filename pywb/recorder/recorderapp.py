@@ -1,4 +1,4 @@
-from pywb.webagg.utils import StreamIter, chunk_encode_iter, BUFF_SIZE
+from pywb.webagg.utils import StreamIter, BUFF_SIZE
 from pywb.webagg.utils import ParamFormatter, res_template
 from pywb.webagg.inputrequest import DirectWSGIInputRequest
 
@@ -223,8 +223,8 @@ class RecorderApp(object):
 
         resp_iter = StreamIter(resp_stream)
 
-        if res.headers.get('Transfer-Encoding') == 'chunked':
-            resp_iter = chunk_encode_iter(resp_iter)
+        #if res.headers.get('Transfer-Encoding') == 'chunked':
+        #    resp_iter = chunk_encode_iter(resp_iter)
 
         return resp_iter
 

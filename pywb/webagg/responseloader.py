@@ -1,4 +1,4 @@
-from pywb.webagg.utils import MementoUtils, StreamIter, chunk_encode_iter, compress_gzip_iter
+from pywb.webagg.utils import MementoUtils, StreamIter, compress_gzip_iter
 from pywb.webagg.utils import ParamFormatter
 from pywb.webagg.indexsource import RedisIndexSource
 
@@ -77,9 +77,9 @@ class BaseLoader(object):
             streamiter = compress_gzip_iter(streamiter)
             out_headers['Content-Encoding'] = 'gzip'
 
-        if not lenset:
-            out_headers['Transfer-Encoding'] = 'chunked'
-            streamiter = chunk_encode_iter(streamiter)
+        #if not lenset:
+        #    out_headers['Transfer-Encoding'] = 'chunked'
+        #    streamiter = chunk_encode_iter(streamiter)
 
         return out_headers, streamiter
 
