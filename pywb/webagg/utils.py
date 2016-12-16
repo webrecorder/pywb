@@ -223,9 +223,9 @@ def load_config(main_env_var, main_default_file='',
                 overlay_env_var='', overlay_file=''):
 
     configfile = os.environ.get(main_env_var, main_default_file)
-    configfile = os.path.expandvars(configfile)
 
     if configfile:
+        configfile = os.path.expandvars(configfile)
         # Load config
         with open(configfile, 'rb') as fh:
             config = yaml.load(fh)
@@ -234,9 +234,9 @@ def load_config(main_env_var, main_default_file='',
         config = {}
 
     overlay_configfile = os.environ.get(overlay_env_var, overlay_file)
-    overlay_configfile = os.path.expandvars(overlay_configfile)
 
     if overlay_configfile:
+        overlay_configfile = os.path.expandvars(overlay_configfile)
         with open(overlay_configfile, 'rb') as fh:
             config.update(yaml.load(fh))
 
