@@ -11,6 +11,7 @@ from pywb.utils.timeutils import timestamp_to_http_date
 from pywb.utils.wbexception import BadRequestException
 
 from six.moves.urllib.parse import quote
+from tempfile import SpooledTemporaryFile
 
 
 LINK_SPLIT = re.compile(',\s*(?=[<])')
@@ -187,6 +188,24 @@ def chunk_encode_iter(orig_iter):
 
 
 #=============================================================================
+def buffer_iter(status_headers, iterator, buff_size=BUFF_SIZE * 4):
+    out = SpooledTemporaryFile(buff_size)
+    size = 0
+
+    for buff in iterator:
+        size += len(buff)
+        out.write(buff)
+
+    content_length_str = str(size)
+    # remove existing content length
+    status_headers.replace_header('Content-Length',
+                                  content_length_str)
+
+    out.seek(0)
+    return StreamIter(out)
+
+
+#=============================================================================
 def compress_gzip_iter(orig_iter):
     compressobj = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS + 16)
     for chunk in orig_iter:
@@ -204,6 +223,7 @@ def load_config(main_env_var, main_default_file='',
                 overlay_env_var='', overlay_file=''):
 
     configfile = os.environ.get(main_env_var, main_default_file)
+    configfile = os.path.expandvars(configfile)
 
     if configfile:
         # Load config
@@ -214,6 +234,7 @@ def load_config(main_env_var, main_default_file='',
         config = {}
 
     overlay_configfile = os.environ.get(overlay_env_var, overlay_file)
+    overlay_configfile = os.path.expandvars(overlay_configfile)
 
     if overlay_configfile:
         with open(overlay_configfile, 'rb') as fh:
