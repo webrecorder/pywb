@@ -79,7 +79,6 @@ class RewriteInputRequest(DirectWSGIInputRequest):
 
         if self.extra_cookie:
             headers['Cookie'] = self.extra_cookie + ';' + headers.get('Cookie', '')
-            print('Cookie', headers['Cookie'])
 
         return headers
 

@@ -422,7 +422,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
     def _do_write_req_resp(self, req, resp, params):
         def write_callback(out, filename):
             url = resp.rec_headers.get('WARC-Target-URI')
-            print('Writing req/resp {0} to {1} '.format(url, filename))
+            #print('Writing req/resp {0} to {1} '.format(url, filename))
 
             if resp and self._is_write_resp(resp, params):
                 self._write_warc_record(out, resp)
@@ -434,7 +434,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
     def write_stream_to_file(self, params, stream):
         def write_callback(out, filename):
-            print('Writing stream to {0}'.format(filename))
+            #print('Writing stream to {0}'.format(filename))
             shutil.copyfileobj(stream, out)
 
         return self._write_to_file(params, write_callback)
