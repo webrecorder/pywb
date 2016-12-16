@@ -17,7 +17,6 @@ from six.moves.urllib.parse import urlencode
 
 from pywb.urlrewrite.rewriteinputreq import RewriteInputRequest
 from pywb.urlrewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView, BaseInsertView
-from pywb.webagg.utils import chunk_encode_iter, buffer_iter
 
 
 from io import BytesIO
@@ -233,22 +232,6 @@ class RewriterApp(object):
 
         if ' ' not in status_headers.statusline:
             status_headers.statusline += ' None'
-
-        # check for content-length
-        res = status_headers.get_header('content-length')
-        try:
-            if int(res) > 0:
-                return response
-        except:
-            pass
-
-        # need to either chunk or buffer to get content-length
-        if environ.get('SERVER_PROTOCOL') == 'HTTP/1.1':
-            status_headers.remove_header('content-length')
-            status_headers.headers.append(('Transfer-Encoding', 'chunked'))
-            gen = chunk_encode_iter(gen)
-        else:
-            gen = buffer_iter(status_headers, gen)
 
         return WbResponse(status_headers, gen)
 
