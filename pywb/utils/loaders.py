@@ -12,7 +12,7 @@ from six.moves.urllib.request import pathname2url, url2pathname
 from six.moves.urllib.parse import urljoin, unquote_plus, urlsplit, urlencode
 
 import time
-import pkg_resources
+import pkgutil
 import base64
 import cgi
 
@@ -40,15 +40,19 @@ def to_file_url(filename):
 
 
 #=================================================================
+def load(filename):
+    return BlockLoader().load(filename)
+
+
+#=================================================================
 def load_yaml_config(config_file):
     import yaml
     config = None
     configdata = None
     try:
-        configdata = BlockLoader().load(config_file)
+        configdata = load(config_file)
         config = yaml.load(configdata)
     finally:
-        configdata.close()
         if configdata:
             configdata.close()
 
@@ -310,6 +314,7 @@ class BlockLoader(BaseLoader):
         BlockLoader.loaders['https'] = HttpLoader
         BlockLoader.loaders['s3'] = S3Loader
         BlockLoader.loaders['file'] = LocalFileLoader
+        BlockLoader.loaders['pkg'] = PackageLoader
 
     @staticmethod
     def set_profile_loader(src):
@@ -326,7 +331,33 @@ class BlockLoader(BaseLoader):
 
 
 #=================================================================
-class LocalFileLoader(BaseLoader):
+class PackageLoader(BaseLoader):
+    def load(self, url, offset=0, length=-1):
+        if url.startswith('pkg://'):
+            url = url[len('pkg://'):]
+
+        # then, try as package.path/file
+        pkg_split = url.split('/', 1)
+        if len(pkg_split) == 1:
+            raise
+
+        data = pkgutil.get_data(pkg_split[0], pkg_split[1])
+        if offset > 0:
+            data = data[offset:]
+
+        if length > -1:
+            data = data[:length]
+
+        buff = BytesIO(data)
+        buff.name = url
+        return buff
+
+        #afile = pkg_resources.resource_stream(pkg_split[0],
+        #                                      pkg_split[1])
+
+
+#=================================================================
+class LocalFileLoader(PackageLoader):
     def load(self, url, offset=0, length=-1):
         """
         Load a file-like reader from the local file system
@@ -348,13 +379,7 @@ class LocalFileLoader(BaseLoader):
             if file_only:
                 raise
 
-            # then, try as package.path/file
-            pkg_split = url.split('/', 1)
-            if len(pkg_split) == 1:
-                raise
-
-            afile = pkg_resources.resource_stream(pkg_split[0],
-                                                  pkg_split[1])
+            return super(LocalFileLoader, self).load(url, offset, length)
 
         if offset > 0:
             afile.seek(offset)

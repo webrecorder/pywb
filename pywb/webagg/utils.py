@@ -9,6 +9,7 @@ from contextlib import closing
 
 from pywb.utils.timeutils import timestamp_to_http_date
 from pywb.utils.wbexception import BadRequestException
+from pywb.utils.loaders import load_yaml_config
 
 from six.moves.urllib.parse import quote
 from tempfile import SpooledTemporaryFile
@@ -223,22 +224,20 @@ def load_config(main_env_var, main_default_file='',
                 overlay_env_var='', overlay_file=''):
 
     configfile = os.environ.get(main_env_var, main_default_file)
+    config = None
 
     if configfile:
         configfile = os.path.expandvars(configfile)
-        # Load config
-        with open(configfile, 'rb') as fh:
-            config = yaml.load(fh)
 
-    else:
-        config = {}
+        config = load_yaml_config(configfile)
+
+    config = config or {}
 
     overlay_configfile = os.environ.get(overlay_env_var, overlay_file)
 
     if overlay_configfile:
         overlay_configfile = os.path.expandvars(overlay_configfile)
-        with open(overlay_configfile, 'rb') as fh:
-            config.update(yaml.load(fh))
+        config.update(load_yaml_config(overlay_configfile))
 
     return config
 

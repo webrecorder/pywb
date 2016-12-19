@@ -1,5 +1,7 @@
 from pywb.utils.timeutils import timestamp_to_datetime, timestamp_to_sec
 from pywb.utils.timeutils import timestamp_now
+from pywb.utils.loaders import load
+
 from six.moves.urllib.parse import urlsplit
 
 from jinja2 import Environment
@@ -13,13 +15,6 @@ from pkg_resources import resource_filename
 
 import json
 import os
-
-
-# ============================================================================
-class FileOnlyPackageLoader(PackageLoader):
-    def get_source(self, env, template):
-        dir_, file_ = os.path.split(template)
-        return super(FileOnlyPackageLoader, self).get_source(env, file_)
 
 
 # ============================================================================
@@ -65,7 +60,7 @@ class JinjaEnv(object):
 
         # init assets
         if assets_path:
-            assets_loader = YAMLLoader(assets_path)
+            assets_loader = YAMLLoader(load(assets_path))
             assets_env = assets_loader.load_environment()
             assets_env.resolver = PkgResResolver()
             jinja_env.assets_environment = assets_env
@@ -78,7 +73,7 @@ class JinjaEnv(object):
 
         # add loaders for all specified packages
         for package in packages:
-            loaders.append(FileOnlyPackageLoader(package))
+            loaders.append(PackageLoader(package))
 
         return loaders
 
