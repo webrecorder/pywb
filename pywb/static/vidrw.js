@@ -278,8 +278,11 @@ __wbvidrw = (function() {
 
                     if (player) {
                         _pywb_yt_err = function() {
-                            do_yt_video_replace(player_div);
+                            console.log("yt onError");
+                            console.log(arguments);
+                            //do_yt_video_replace(player_div);
                         }
+                        player.addEventListener("onStateChange", function() { console.log("yt stateChange"); });
 
                         player.addEventListener("onError", "_pywb_yt_err");
                     }
