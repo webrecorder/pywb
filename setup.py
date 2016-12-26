@@ -87,6 +87,7 @@ setup(
         'webencodings',
         'gevent==1.1.2',
         'webassets==0.12.0',
+        'portalocker'
         #'pyamf'
     ],
     dependency_links=[

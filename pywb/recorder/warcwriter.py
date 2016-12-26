@@ -16,7 +16,7 @@ from collections import OrderedDict
 from socket import gethostname
 from io import BytesIO
 
-import fcntl
+import portalocker
 
 from pywb.utils.loaders import LimitReader, to_native_str
 from pywb.utils.bufferedreaders import BufferedReader
@@ -384,7 +384,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
     def _close_file(self, fh):
         try:
-            fcntl.flock(fh, fcntl.LOCK_UN)
+            portalocker.lock(fh, portalocker.LOCK_UN)
             fh.close()
         except Exception as e:
             print(e)
@@ -494,7 +494,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
                     self.fh_cache.pop(dir_key, None)
 
             elif is_new:
-                fcntl.flock(out, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                portalocker.lock(out, portalocker.LOCK_EX | portalocker.LOCK_NB)
                 self.fh_cache[dir_key] = (out, filename)
 
     def iter_open_files(self):
