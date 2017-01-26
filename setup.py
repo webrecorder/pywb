@@ -8,14 +8,6 @@ import glob
 from pywb import __version__
 
 
-# Fix for TypeError: 'NoneType' object is not callable" error
-# when running 'python setup.py test'
-try:
-    import multiprocessing
-except ImportError:
-    pass
-
-
 long_description = open('README.rst').read()
 
 
@@ -26,6 +18,8 @@ class PyTest(TestCommand):
         self.test_suite = ' '
 
     def run_tests(self):
+        from gevent.monkey import patch_all; patch_all()
+
         import pytest
         import sys
         import os
