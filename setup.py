@@ -80,12 +80,11 @@ setup(
         'pyyaml',
         'webencodings',
         'gevent==1.1.2',
-        'webassets==0.12.0',
+        'webassets==0.12.1',
         'portalocker'
         #'pyamf'
     ],
     dependency_links=[
-        'git+https://github.com/ikreymer/webassets.git@pyinstaller#egg=webassets-0.12.0',
         #'git+https://github.com/t0m/pyamf.git@python3#egg=pyamf-0.8.0'
     ],
     tests_require=[
