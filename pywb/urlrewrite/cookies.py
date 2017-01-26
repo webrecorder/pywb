@@ -42,8 +42,10 @@ class CookieTracker(object):
                 continue
 
             for n, v in six.iteritems(res):
-                n = n.decode('utf-8')
-                v = v.decode('utf-8')
+                if six.PY3 and type(n) == six.binary_type:
+                    n = n.decode('utf-8')
+                    v = v.decode('utf-8')
+
                 full = n + '=' + v
                 cookies.append(full.split(';')[0])
 
