@@ -74,7 +74,7 @@ setup(
         'chardet',
         'requests',
         'redis',
-        'jinja2',
+        'jinja2<2.9',
         'surt>=0.3.0',
         'brotlipy',
         'pyyaml',
