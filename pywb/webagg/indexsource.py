@@ -317,12 +317,17 @@ class MementoIndexSource(BaseIndexSource):
         if res.status_code >= 400:
             raise NotFoundException(url)
 
-        return res.headers.get('Link')
+        links = res.headers.get('Link')
+
+        if not links:
+            raise NotFoundException(url)
+
+        return links
 
     def get_timemap_links(self, params):
         url = res_template(self.timemap_url, params)
         res = requests.get(url, timeout=params.get('_timeout'))
-        if res.status_code >= 400:
+        if res.status_code >= 400 or not res.text:
             raise NotFoundException(url)
 
         return res.text
