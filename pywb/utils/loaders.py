@@ -511,6 +511,13 @@ class LimitReader(object):
     def __init__(self, stream, limit):
         self.stream = stream
         self.limit = limit
+        self.length = 0
+
+    def _update(self, buff):
+        length = len(buff)
+        self.limit -= length
+        self.length += length
+        return buff
 
     def read(self, length=None):
         if length is not None:
@@ -522,8 +529,7 @@ class LimitReader(object):
             return b''
 
         buff = self.stream.read(length)
-        self.limit -= len(buff)
-        return buff
+        return self._update(buff)
 
     def readline(self, length=None):
         if length is not None:
@@ -535,11 +541,13 @@ class LimitReader(object):
             return b''
 
         buff = self.stream.readline(length)
-        self.limit -= len(buff)
-        return buff
+        return self._update(buff)
 
     def close(self):
         self.stream.close()
+
+    def tell(self):
+        return self.length
 
     @staticmethod
     def wrap_stream(stream, content_length):
