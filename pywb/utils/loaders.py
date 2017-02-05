@@ -511,12 +511,13 @@ class LimitReader(object):
     def __init__(self, stream, limit):
         self.stream = stream
         self.limit = limit
-        self.length = 0
+
+        if hasattr(stream, 'tell'):
+            self.tell = self._tell
 
     def _update(self, buff):
         length = len(buff)
         self.limit -= length
-        self.length += length
         return buff
 
     def read(self, length=None):
@@ -546,8 +547,8 @@ class LimitReader(object):
     def close(self):
         self.stream.close()
 
-    def tell(self):
-        return self.length
+    def _tell(self):
+        return self.stream.tell()
 
     @staticmethod
     def wrap_stream(stream, content_length):
@@ -569,6 +570,7 @@ class LimitReader(object):
             pass
 
         return stream
+
 
 # ============================================================================
 BlockLoader.init_default_loaders()
