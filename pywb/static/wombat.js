@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.18
+// Wombat JS-Rewriting Library v2.20
 //============================================
 
 
@@ -835,6 +835,18 @@ var wombat_internal = function($wbwindow) {
         }
 
         $wbwindow.XMLHttpRequest.prototype.open = open_rewritten;
+
+
+        // responseURL override
+        var orig_getter = get_orig_getter($wbwindow.XMLHttpRequest.prototype, "responseURL");
+        if (orig_getter) {
+            var get_responseURL = function() {
+                var res = orig_getter.call(this);
+                return extract_orig(res);
+            }
+
+            def_prop($wbwindow.XMLHttpRequest.prototype, "responseURL", undefined, get_responseURL);
+        }
     }
 
     //============================================
@@ -1089,7 +1101,33 @@ var wombat_internal = function($wbwindow) {
 
         // for now, disabling workers until override of worker content can be supported
         // hopefully, pages depending on workers will have a fallback
-        $wbwindow.Worker = undefined;
+        //$wbwindow.Worker = undefined;
+
+        // Worker unrewrite postMessage
+        var orig_worker = $wbwindow.Worker;
+
+        function rewrite_blob(url) {
+            // use sync ajax request to get the contents, remove postMessage() rewriting
+            var x = new XMLHttpRequest();
+            x.open("GET", url, false);
+            x.send();
+
+            var resp = x.responseText.replace(/__WB_pmw\(window\)\./g, "");
+            var blob = new Blob([resp], {"type": "text/javascript"});
+            return URL.createObjectURL(blob);
+        }
+
+        $wbwindow.Worker = (function (Worker) {
+            return function (url) {
+                if (starts_with(url, "blob:")) {
+                    url = rewrite_blob(url);
+                }
+                return new Worker(url);
+            }
+
+        })($wbwindow.Worker);
+
+        $wbwindow.Worker.prototype = orig_worker.prototype;
     }
 
 
@@ -2153,7 +2191,7 @@ var wombat_internal = function($wbwindow) {
 
         $wbwindow.eval = function(string) {
             if (string) {
-                string = string.replace(/\blocation\b/g, "WB_wombat_$&");
+                string = string.toString().replace(/\blocation\b/g, "WB_wombat_$&");
             }
             orig_eval.call(this, string);
         }
@@ -2435,9 +2473,8 @@ var wombat_internal = function($wbwindow) {
             // Fetch
             init_fetch_rewrite();
 
-            if (!wb_opts.skip_disable_worker) {
-                //init_worker_override();
-            }
+            // Worker override (experimental)
+            init_worker_override();
 
             // innerHTML can be overriden on prototype!
             override_html_assign($wbwindow.HTMLElement, "innerHTML");
