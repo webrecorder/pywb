@@ -68,7 +68,7 @@ class FileIndexSource(BaseIndexSource):
             return None
 
         if value.startswith('/') or '://' not in value:
-            return FileIndexSource(value)
+            return cls(value)
 
     @classmethod
     def init_from_config(cls, config):
@@ -344,11 +344,11 @@ class MementoIndexSource(BaseIndexSource):
 
         return self.links_to_cdxobject(links, def_name)
 
-    @staticmethod
-    def from_timegate_url(timegate_url, path='link'):
-        return MementoIndexSource(timegate_url + '{url}',
-                                  timegate_url + 'timemap/' + path + '/{url}',
-                                  timegate_url + WAYBACK_ORIG_SUFFIX)
+    @classmethod
+    def from_timegate_url(cls, timegate_url, path='link'):
+        return cls(timegate_url + '{url}',
+                   timegate_url + 'timemap/' + path + '/{url}',
+                   timegate_url + WAYBACK_ORIG_SUFFIX)
 
     def __repr__(self):
         return '{0}({1}, {2}, {3})'.format(self.__class__.__name__,
@@ -370,11 +370,11 @@ class MementoIndexSource(BaseIndexSource):
     @classmethod
     def init_from_string(cls, value):
         if value.startswith('memento+'):
-            return cls.from_timegate_url(value[8:])
+            return cls.from_timegate_url(value[8:], '*')
 
         # default to memento for any http url
         if value.startswith(('http://', 'https://')):
-            return cls.from_timegate_url(value)
+            return cls.from_timegate_url(value, '*')
 
 
     @classmethod
