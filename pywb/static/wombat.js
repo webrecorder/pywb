@@ -2427,7 +2427,7 @@ var wombat_internal = function($wbwindow) {
             init_write_override();
 
             // eval
-            init_eval_override();
+            //init_eval_override();
 
             // Ajax
             init_ajax_rewrite();
