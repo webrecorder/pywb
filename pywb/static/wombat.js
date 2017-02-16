@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.20
+// Wombat JS-Rewriting Library v2.21
 //============================================
 
 
@@ -838,15 +838,7 @@ var wombat_internal = function($wbwindow) {
 
 
         // responseURL override
-        var orig_getter = get_orig_getter($wbwindow.XMLHttpRequest.prototype, "responseURL");
-        if (orig_getter) {
-            var get_responseURL = function() {
-                var res = orig_getter.call(this);
-                return extract_orig(res);
-            }
-
-            def_prop($wbwindow.XMLHttpRequest.prototype, "responseURL", undefined, get_responseURL);
-        }
+        override_prop_extract($wbwindow.XMLHttpRequest.prototype, "responseURL");
     }
 
     //============================================
@@ -898,14 +890,19 @@ var wombat_internal = function($wbwindow) {
         def_prop($wbwindow.HTMLBaseElement.prototype, "href", undefined, base_href_get);
 
         // Shared baseURI
-        var orig_getter = get_orig_getter($wbwindow.Node.prototype, "baseURI");
+        override_prop_extract($wbwindow.Node.prototype, "baseURI");
+    }
+
+    //============================================
+    function override_prop_extract(proto, prop) {
+        var orig_getter = get_orig_getter(proto, prop);
         if (orig_getter) {
-            var get_baseURI = function() {
+            var new_getter = function() {
                 var res = orig_getter.call(this);
-                return extract_orig(res);
+                return extract_orig(res, true);
             }
 
-            def_prop($wbwindow.Node.prototype, "baseURI", undefined, get_baseURI);
+            def_prop(proto, prop, undefined, new_getter);
         }
     }
 
@@ -1765,7 +1762,6 @@ var wombat_internal = function($wbwindow) {
                 var child = arguments[0];
 
                 if (child) {
-
                     if (child instanceof $wbwindow.Element) {
                         rewrite_elem(child);
                     } else if (child instanceof $wbwindow.Text) {
@@ -1797,6 +1793,10 @@ var wombat_internal = function($wbwindow) {
 
 
     function init_proto_pm_origin(win) {
+        if (win.Object.prototype.__WB_pmw) {
+            return;
+        }
+
         function pm_origin(origin_window) {
             this.__WB_source = origin_window;
             return this;
@@ -1805,6 +1805,7 @@ var wombat_internal = function($wbwindow) {
         try {
             win.Object.defineProperty(win.Object.prototype, "__WB_pmw", {value: pm_origin, configurable: false, enumerable: false});
         } catch(e) {
+
         }
     }
 
@@ -1867,7 +1868,7 @@ var wombat_internal = function($wbwindow) {
             if (window.__WB_source && window.__WB_source.WB_wombat_location) {
                 var source = window.__WB_source;
 
-                var from = source.WB_wombat_location.origin;
+                from = source.WB_wombat_location.origin;
 
                 if (!this.__WB_win_id) {
                     this.__WB_win_id = {};
@@ -1955,6 +1956,11 @@ var wombat_internal = function($wbwindow) {
                                        "source": source,
                                        "ports": event.ports});
 
+                ne._target = event.target;
+                ne._srcElement = event.srcElement;
+                ne._currentTarget = event.currentTarget;
+                ne._eventPhase = event.eventPhase;
+                ne._path = event.path;
             }
 
             return orig_listener(ne);
@@ -1964,11 +1970,20 @@ var wombat_internal = function($wbwindow) {
 
         // ADD
         var _orig_addEventListener = $wbwindow.addEventListener;
-        
+
+        var _orig_removeEventListener = $wbwindow.removeEventListener;
+
+
         var addEventListener_rewritten = function(type, listener, useCapture) {
             if (type == "message") {
                 var win = this;
                 var wrapped_listener = function(event) { return WrappedListener(event, listener, win); }
+
+                if (listen_map[listener]) {
+                    //console.log("Listener Already Added");
+                    //_orig_removeEventListener.call(this, type, listen_map[listener], useCapture);
+                    return;
+                }
 
                 listen_map[listener] = wrapped_listener;
 
@@ -1981,7 +1996,6 @@ var wombat_internal = function($wbwindow) {
         $wbwindow.addEventListener = addEventListener_rewritten;
 
         // REMOVE
-        var _orig_removeEventListener = $wbwindow.removeEventListener;
         
         var removeEventListener_rewritten = function(type, listener, useCapture) {
             if (type == "message") {
@@ -1996,6 +2010,39 @@ var wombat_internal = function($wbwindow) {
         }
 
         $wbwindow.removeEventListener = removeEventListener_rewritten;
+    }
+
+    //============================================
+    function init_messageevent_override($wbwindow) {
+        if (!$wbwindow.MessageEvent || $wbwindow.MessageEvent.prototype.__extended) {
+            return;
+        }
+
+        function addMEOverride(attr)
+        {
+            var orig_getter = get_orig_getter($wbwindow.MessageEvent.prototype, attr);
+
+            if (!orig_getter) {
+                return;
+            }
+
+            function getter() {
+                if (this["_" + attr] != undefined) {
+                    return this["_" + attr];
+                }
+                return orig_getter.call(this);
+            }
+
+            def_prop($wbwindow.MessageEvent.prototype, attr, undefined, getter);
+        }
+
+        addMEOverride("target");
+        addMEOverride("srcElement");
+        addMEOverride("currentTarget");
+        addMEOverride("eventPhase");
+        addMEOverride("path");
+
+        $wbwindow.MessageEvent.prototype.__extended = true;
     }
 
     //============================================
@@ -2457,6 +2504,7 @@ var wombat_internal = function($wbwindow) {
             // OPT skip
             if (!wb_opts.skip_postmessage) {
                 init_postmessage_override($wbwindow);
+                init_messageevent_override($wbwindow);
             }
 
             init_hash_change();
@@ -2465,7 +2513,7 @@ var wombat_internal = function($wbwindow) {
             init_write_override();
 
             // eval
-            init_eval_override();
+            //init_eval_override();
 
             // Ajax
             init_ajax_rewrite();
@@ -2481,6 +2529,8 @@ var wombat_internal = function($wbwindow) {
             override_html_assign($wbwindow.HTMLIFrameElement, "srcdoc");
             override_html_assign($wbwindow.HTMLStyleElement, "textContent");
 
+            // Document.URL override
+            override_prop_extract($wbwindow.Document.prototype, "URL");
 
             // init insertAdjacentHTML() override
             init_insertAdjacentHTML_override();
