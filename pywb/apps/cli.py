@@ -1,4 +1,6 @@
 from argparse import ArgumentParser
+import logging
+
 
 #=================================================================
 def cdx_server(args=None):  #pragma: no cover
@@ -27,12 +29,18 @@ def webagg():
 
 
 #=============================================================================
+def new_wayback():
+    NewWaybackCli().run()
+
+
+#=============================================================================
 class BaseCli(object):
     def __init__(self, args=None, default_port=8080, desc=''):
         parser = ArgumentParser(description=desc)
         parser.add_argument('-p', '--port', type=int, default=default_port)
         parser.add_argument('-t', '--threads', type=int, default=4)
         parser.add_argument('-s', '--server', default='gevent')
+        parser.add_argument('--debug', action='store_true')
 
         self.desc = desc
 
@@ -40,12 +48,15 @@ class BaseCli(object):
 
         self.r = parser.parse_args(args)
 
+        logging.basicConfig(format='%(asctime)s: [%(levelname)s]: %(message)s',
+                            level=logging.DEBUG if self.r.debug else logging.INFO)
+
         if self.r.server == 'gevent':
             try:
                 from gevent.monkey import patch_all; patch_all()
-                print('Using Gevent')
+                logging.debug('Using Gevent')
             except:
-                print('No Gevent')
+                logging.debug('No Gevent')
                 self.r.server = 'wsgiref'
 
         from pywb.framework.wsgi_wrappers import init_app
@@ -69,7 +80,7 @@ class BaseCli(object):
 
     def run_waitress(self):  #pragma: no cover
         from waitress import serve
-        print(self.desc)
+        logging.debug(str(self.desc))
         serve(self.application, port=self.r.port, threads=self.r.threads)
 
     def run_wsgiref(self):  #pragma: no cover
@@ -78,7 +89,7 @@ class BaseCli(object):
 
     def run_gevent(self):
         from gevent.pywsgi import WSGIServer
-        print('Starting Gevent Server on ' + str(self.r.port))
+        logging.info('Starting Gevent Server on ' + str(self.r.port))
         WSGIServer(('', self.r.port), self.application).serve_forever()
 
 
@@ -105,6 +116,7 @@ class LiveCli(BaseCli):
 class ReplayCli(BaseCli):
     def _extend_parser(self, parser):
         parser.add_argument('-a', '--autoindex', action='store_true')
+        parser.add_argument('--auto-interval', type=int, default=30)
 
         help_dir='Specify root archive dir (default is current working directory)'
         parser.add_argument('-d', '--directory', help=help_dir)
@@ -118,7 +130,6 @@ class ReplayCli(BaseCli):
         if self.r.autoindex:
             from pywb.manager.manager import CollectionsManager
             import os
-            import logging
 
             m = CollectionsManager('', must_exist=False)
             if not os.path.isdir(m.colls_dir):
@@ -127,11 +138,12 @@ class ReplayCli(BaseCli):
                 import sys
                 sys.exit(2)
             else:
-                msg = 'Auto-Indexing Enabled on "{0}"'
-                logging.info(msg.format(m.colls_dir))
-                m.autoindex(do_loop=False)
+                msg = 'Auto-Indexing Enabled on "{0}", checking every {1} secs'
+                logging.info(msg.format(m.colls_dir, self.r.auto_interval))
+                m.autoindex(interval=self.r.auto_interval, do_loop=False)
 
         super(ReplayCli, self).run()
+
 
 #=============================================================================
 class CdxCli(ReplayCli):  #pragma: no cover
@@ -159,6 +171,18 @@ class WebaggCli(BaseCli):
 
     def run(self):
         self.run_gevent()
+
+
+#=============================================================================
+class NewWaybackCli(ReplayCli):
+    def load(self):
+        from pywb.apps.newwayback import application
+        return application
+
+    def run(self):
+        self.r.server = 'gevent'
+        super(NewWaybackCli, self).run()
+        #self.run_gevent()
 
 
 #=============================================================================

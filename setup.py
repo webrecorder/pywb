@@ -107,6 +107,7 @@ setup(
         cdx-indexer = pywb.warc.cdxindexer:main
         wb-manager = pywb.manager.manager:main_wrap_exc
         webagg-server = pywb.apps.cli:webagg
+        new-wayback = pywb.apps.cli:new_wayback
         """,
     classifiers=[
         'Development Status :: 5 - Production/Stable',

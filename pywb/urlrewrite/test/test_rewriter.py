@@ -1,24 +1,26 @@
+from gevent import monkey; monkey.patch_all(thread=False)
 
 from pywb.webagg.test.testutils import LiveServerTests, BaseTestClass
 from pywb.webagg.test.testutils import FakeRedisTests
 
-from .simpleapp import RWApp, debug
+from pywb.urlrewrite.frontendapp import FrontEndApp
 
 import os
 import webtest
 
 
-class TestRewriter(LiveServerTests, FakeRedisTests, BaseTestClass):
+LIVE_CONFIG = {'collections': {'live': '$live'}}
+
+
+class TestRewriter(FakeRedisTests, BaseTestClass):
     @classmethod
     def setup_class(cls):
         super(TestRewriter, cls).setup_class()
-        #cls.upstream_url = 'http://localhost:{0}'.format(cls.server.port)
-        #cls.upstream_url += '/{type}/resource/postreq?url={url}&closest={closest}'
-        #cls.app = RWApp(cls.upstream_url)
 
-        cls.app = RWApp.create_app(replay_port=cls.server.port)
-        cls.testapp = webtest.TestApp(cls.app.app)
-        debug(True)
+        #cls.app = RWApp.create_app(replay_port=cls.server.port)
+        #cls.testapp = webtest.TestApp(cls.app.app)
+        cls.testapp = webtest.TestApp(FrontEndApp(custom_config=LIVE_CONFIG,
+                                                  config_file=None))
 
     def test_replay(self):
         resp = self.testapp.get('/live/mp_/http://example.com/')
@@ -36,8 +38,8 @@ class TestRewriter(LiveServerTests, FakeRedisTests, BaseTestClass):
 
         assert 'wbinfo.capture_url = "http://example.com/"' in resp.text
 
-    def test_cookie_track_1(self):
-        resp = self.testapp.get('/live/mp_/https://twitter.com/')
+    #def test_cookie_track_1(self):
+    #    resp = self.testapp.get('/live/mp_/https://twitter.com/')
 
-        assert resp.headers['set-cookie'] != None
+    #    assert resp.headers['set-cookie'] != None
 

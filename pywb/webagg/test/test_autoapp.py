@@ -17,6 +17,10 @@ class TestAutoConfigApp(TempDirTests, BaseTestClass):
         os.mkdir('./local')
         os.mkdir('./local/indexes')
 
+        os.mkdir('collections')
+        os.mkdir('collections/auto1')
+        os.mkdir('collections/auto2')
+
         with open(os.path.join('local', 'indexes', 'file.cdxj'), 'a') as fh:
             fh.write('foo')
 
@@ -27,8 +31,6 @@ class TestAutoConfigApp(TempDirTests, BaseTestClass):
             fh.write('foo')
 
         cls.loader = AutoConfigApp(os.path.join(cls.get_curr_dir(), 'test_autoapp.yaml'))
-
-        cls.colls = cls.loader.load_colls()
 
     @classmethod
     def teardown_class(cls):
@@ -41,10 +43,16 @@ class TestAutoConfigApp(TempDirTests, BaseTestClass):
 
     def _get_sources(self, coll_name='', handler=None):
         if not handler:
-            handler = self.colls.get(coll_name)
+            handler = self.loader.fixed_routes.get(coll_name)
         assert isinstance(handler, ResourceHandler)
         assert isinstance(handler.index_source, BaseSourceListAggregator)
         return handler.index_source.sources
+
+    def test_list_static(self):
+        assert len(self.loader.list_fixed_routes()) == 12
+
+    def test_list_dynamic(self):
+        assert self.loader.list_dynamic_routes() == ['auto1', 'auto2']
 
     def test_remote_cdx(self):
         sources = self._get_sources('ait')
@@ -90,7 +98,7 @@ class TestAutoConfigApp(TempDirTests, BaseTestClass):
         assert isinstance(sources['local_file'], FileIndexSource)
 
     def test_sequence(self):
-        seq = self.colls.get('many_seq')
+        seq = self.loader.fixed_routes.get('many_seq')
         assert isinstance(seq, HandlerSeq)
 
         assert len(seq.handlers) == 3

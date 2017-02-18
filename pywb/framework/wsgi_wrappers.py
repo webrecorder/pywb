@@ -145,10 +145,6 @@ DEFAULT_CONFIG_FILE = 'config.yaml'
 
 #=================================================================
 def init_app(init_func, load_yaml=True, config_file=None, config=None):
-    logging.basicConfig(format='%(asctime)s: [%(levelname)s]: %(message)s',
-                        level=logging.DEBUG)
-    logging.debug('')
-
     try:
         config = config or {}
         if load_yaml:

@@ -41,7 +41,7 @@ class RewriterApp(object):
         self.loader = ArcWarcRecordLoader()
 
         config = config or {}
-        self.paths = config['url_templates']
+        self.paths = {}
 
         self.framed_replay = framed_replay
         self.frame_mod = ''
@@ -395,13 +395,14 @@ class RewriterApp(object):
 
     def get_base_url(self, wb_url, kwargs):
         type = kwargs.get('type')
-        return self.paths[type]
+        return self.paths[type].format(**kwargs)
 
     def get_upstream_url(self, wb_url, kwargs, params):
         base_url = self.get_base_url(wb_url, kwargs)
         param_str = urlencode(params, True)
         if param_str:
-            base_url += '&' + param_str
+            q_char = '&' if '?' in base_url else '?'
+            base_url += q_char + param_str
         return base_url
 
     def get_cookie_key(self, kwargs):
