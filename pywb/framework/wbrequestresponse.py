@@ -4,6 +4,7 @@ from pywb.utils.loaders import extract_post_query, append_post_query
 from io import BytesIO
 import pprint
 import re
+import json
 
 
 #=================================================================
@@ -245,6 +246,10 @@ class WbResponse(object):
                                            ('Content-Length', str(len(encoded_text)))])
 
         return WbResponse(status_headers, value=[encoded_text])
+
+    @staticmethod
+    def json_response(obj, status='200 OK', content_type='application/json; charset=utf-8'):
+        return WbResponse.text_response(json.dumps(obj), status, content_type)
 
     @staticmethod
     def redir_response(location, status='302 Redirect', headers=None):

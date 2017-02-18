@@ -31,33 +31,36 @@ SOURCE_LIST = [LiveIndexSource,
 
 # ============================================================================
 class AutoConfigApp(ResAggApp):
-    def __init__(self, config_file='./config.yaml'):
+    AUTO_DIR_INDEX_PATH = '{coll}/indexes/'
+    AUTO_DIR_ARCHIVE_PATH = '{coll}/archive/'
+
+    def __init__(self, config_file='./config.yaml', custom_config=None):
         config = load_yaml_config(DEFAULT_CONFIG)
 
-        try:
-            new_config = load_config('PYWB_CONFIG_FILE', config_file)
-        except Exception as e:
-            new_config = {}
-            print(e)
+        if config_file:
+            try:
+                custom_config = load_config('PYWB_CONFIG_FILE', config_file)
+            except Exception as e:
+                if not custom_config:
+                    custom_config = {'debug': True}
+                print(e)
 
-        if new_config:
-            config.update(new_config)
+        if custom_config:
+            config.update(custom_config)
 
         super(AutoConfigApp, self).__init__(debug=config.get('debug', False))
         self.config = config
 
-    def init(self):
         if self.config.get('enable_auto_colls', True):
             auto_handler = self.load_auto_colls()
             self.add_route('/_', auto_handler)
 
-        routes = self.load_colls()
-        for name, route in iteritems(routes):
+        self.fixed_routes = self.load_colls()
+
+        for name, route in iteritems(self.fixed_routes):
             self.add_route('/' + name, route)
 
         self._add_simple_route('/<coll>-cdx', self.cdx_compat)
-
-        return self
 
     def _lookup(self, environ, path):
         urls = self.url_map.bind(environ['HTTP_HOST'], path_info=path)
@@ -82,20 +85,36 @@ class AutoConfigApp(ResAggApp):
         return result
 
     def load_auto_colls(self):
-        root_dir = self.config.get('collections_root', '')
-        if not root_dir:
+        self.root_dir = self.config.get('collections_root', '')
+        if not self.root_dir:
             print('No Root Dir, Skip Auto Colls!')
             return
 
-        indexes_templ = os.path.join('{coll}', 'indexes') + os.path.sep
-        dir_source = CacheDirectoryIndexSource(root_dir, indexes_templ)
+        #indexes_templ = os.path.join('{coll}', 'indexes') + os.path.sep
+        indexes_templ = self.AUTO_DIR_INDEX_PATH.replace('/', os.path.sep)
+        dir_source = CacheDirectoryIndexSource(self.root_dir, indexes_templ)
 
         archive_templ = self.config.get('archive_paths')
         if not archive_templ:
-            archive_templ = os.path.join('.', root_dir, '{coll}', 'archive') + os.path.sep
+            archive_templ = self.AUTO_DIR_ARCHIVE_PATH.replace('/', os.path.sep)
+            archive_templ = os.path.join(self.root_dir, archive_templ)
+            #archive_templ = os.path.join('.', root_dir, '{coll}', 'archive') + os.path.sep
+
         handler = DefaultResourceHandler(dir_source, archive_templ)
 
         return handler
+
+    def list_fixed_routes(self):
+        return list(self.fixed_routes.keys())
+
+    def list_dynamic_routes(self):
+        if not self.root_dir:
+            return []
+
+        try:
+            return os.listdir(self.root_dir)
+        except IOError:
+            return []
 
     def load_colls(self):
         routes = {}
