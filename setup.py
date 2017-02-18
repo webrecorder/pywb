@@ -89,7 +89,7 @@ setup(
     ],
     tests_require=[
         'pytest',
-        'WebTest',
+        'WebTest<=2.0.23',
         'pytest-cov',
         'fakeredis',
         'mock',
@@ -110,12 +110,17 @@ setup(
         new-wayback = pywb.apps.cli:new_wayback
         """,
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
         'License :: OSI Approved :: GNU General Public License (GPL)',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Topic :: Internet :: Proxy Servers',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Internet :: WWW/HTTP :: WSGI',

@@ -1,3 +1,14 @@
+pywb 0.33.1 changelist
+~~~~~~~~~~~~~~~~~~~~~~
+
+* Client Rewriting Improvements:
+   - Better rules for Instagram, Medium
+   - Fix window.fetch() override
+   - Work on eval() override (disabled for more testing)
+
+* Add Python 3 classifiers to setup.py
+
+
 pywb 0.33.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
