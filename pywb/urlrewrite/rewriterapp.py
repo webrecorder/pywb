@@ -8,6 +8,9 @@ from pywb.utils.wbexception import WbException
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.timeutils import http_date_to_timestamp
 from pywb.utils.loaders import extract_client_cookie
+from pywb.utils.bufferedreaders import BufferedReader
+
+from pywb.webagg.utils import BUFF_SIZE
 
 from pywb.cdx.cdxobject import CDXObject
 from pywb.warc.recordloader import ArcWarcRecordLoader
@@ -179,7 +182,8 @@ class RewriterApp(object):
                          kwargs,
                          False)
 
-        record = self.loader.parse_record_stream(r.raw)
+        stream = BufferedReader(r.raw, block_size=BUFF_SIZE)
+        record = self.loader.parse_record_stream(stream)
 
         cdx = CDXObject()
         cdx['urlkey'] = urlkey
