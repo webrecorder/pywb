@@ -221,6 +221,7 @@ class RedisIndexSource(BaseIndexSource):
         self.redis_url = redis_url
         self.redis = redis
         self.redis_key_template = key_template
+        self.member_key_template = kwargs.get('member_key_templ')
 
     @staticmethod
     def parse_redis_url(redis_url, redis_=None):
@@ -234,6 +235,21 @@ class RedisIndexSource(BaseIndexSource):
         if not redis_:
             redis_ = redis.StrictRedis.from_url(redis_url)
         return redis_, key_prefix
+
+    def scan_keys(self, match_templ, params, member_key=None):
+        if not member_key:
+            member_key = self.member_key_template
+
+        if not member_key:
+            return self.redis.scan_iter(match=match_templ)
+
+        key = res_template(member_key, params)
+
+        keys = self.redis.smembers(key)
+
+        match_templ = match_templ.encode('utf-8')
+
+        return [match_templ.replace(b'*', key) for key in keys]
 
     def load_index(self, params):
         return self.load_key_index(self.redis_key_template, params)

@@ -305,15 +305,18 @@ class BaseRedisMultiKeyIndexSource(BaseAggregator, RedisIndexSource):
         redis_key_pattern = res_template(self.redis_key_template, params)
 
         if '*' not in redis_key_pattern:
-            yield self._get_source_for_key(redis_key_pattern)
-            return
+            keys = [redis_key_pattern.encode('utf-8')]
+        else:
+            keys = self.scan_keys(redis_key_pattern, params)
 
-        for key in self.redis.scan_iter(match=redis_key_pattern):
+        for key in keys:
             key = key.decode('utf-8')
-            yield self._get_source_for_key(key)
+            res = self._get_source_for_key(key)
+            if res:
+                yield key, res
 
     def _get_source_for_key(self, key):
-        return key, RedisIndexSource(None, self.redis, key)
+        return RedisIndexSource(None, self.redis, key)
 
     def __str__(self):
         return 'redis'
