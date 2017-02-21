@@ -163,13 +163,15 @@ class PrefixResolver(object):
 class RedisResolver(RedisIndexSource):
     def __call__(self, filename, cdx):
         redis_key = self.redis_key_template
+        params = {}
         if hasattr(cdx, '_formatter') and cdx._formatter:
             redis_key = cdx._formatter.format(redis_key)
+            params = cdx._formatter.params
 
         res = None
 
         if '*' in redis_key:
-            for key in self.redis.scan_iter(redis_key):
+            for key in self.scan_keys(redis_key, params):
                 #key = key.decode('utf-8')
                 res = self.redis.hget(key, filename)
                 if res:
