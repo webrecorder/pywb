@@ -23,6 +23,9 @@ class RewriteInputRequest(DirectWSGIInputRequest):
 
     def get_full_request_uri(self):
         uri = self.splits.path
+        if not uri:
+            uri = '/'
+
         if self.splits.query:
             uri += '?' + self.splits.query
 
