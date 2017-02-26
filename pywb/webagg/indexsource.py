@@ -386,11 +386,11 @@ class MementoIndexSource(BaseIndexSource):
     @classmethod
     def init_from_string(cls, value):
         if value.startswith('memento+'):
-            return cls.from_timegate_url(value[8:], '*')
+            return cls.from_timegate_url(value[8:], 'link')
 
         # default to memento for any http url
         if value.startswith(('http://', 'https://')):
-            return cls.from_timegate_url(value, '*')
+            return cls.from_timegate_url(value, 'link')
 
 
     @classmethod

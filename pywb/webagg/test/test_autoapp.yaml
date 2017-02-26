@@ -29,7 +29,7 @@ collections:
         index:
             type: memento
             timegate_url: http://webenact.rhizome.org/all/{url}
-            timemap_url: http://webenact.rhizome.org/all/timemap/*/{url}
+            timemap_url: http://webenact.rhizome.org/all/timemap/link/{url}
             replay_url: http://webenact.rhizome.org/all/{timestamp}id_/{url}
 
     # many archives
