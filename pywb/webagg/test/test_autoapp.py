@@ -67,7 +67,7 @@ class TestAutoConfigApp(TempDirTests, BaseTestClass):
         sources = self._get_sources('rhiz')
         assert isinstance(sources['rhiz'], MementoIndexSource)
         assert sources['rhiz'].timegate_url == 'http://webenact.rhizome.org/all/{url}'
-        assert sources['rhiz'].timemap_url == 'http://webenact.rhizome.org/all/timemap/*/{url}'
+        assert sources['rhiz'].timemap_url == 'http://webenact.rhizome.org/all/timemap/link/{url}'
         assert sources['rhiz'].replay_url == 'http://webenact.rhizome.org/all/{timestamp}id_/{url}'
 
         long_form_sources = self._get_sources('rhiz_long')
