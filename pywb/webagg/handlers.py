@@ -100,7 +100,10 @@ class IndexHandler(object):
         output = params.get('output', self.DEF_OUTPUT)
         fields = params.get('fields')
 
-        handler = self.OUTPUTS.get(output)
+        if fields and isinstance(fields, str):
+            fields = fields.split(',')
+
+        handler = self.OUTPUTS.get(output, fields)
         if not handler:
             errs = dict(last_exc=BadRequestException('output={0} not supported'.format(output)))
             return None, None, errs

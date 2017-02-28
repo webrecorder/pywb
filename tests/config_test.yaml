@@ -1,0 +1,33 @@
+# pywb config file
+
+debug: true
+
+collections:
+    pywb: ./sample_archive/cdx/
+
+    # live collection
+    live: $live
+
+    # coll with fallback
+    pywb-fallback:
+        sequence:
+            - 
+                index: ./sample_archive/cdx/
+                name: local
+
+            -
+                index: $live
+
+    #pywb-norange:
+    #    index_paths: ./sample_archive/cdx/
+    #    enable_ranges: false
+
+    pywb-cdxj:
+        index_paths: ./sample_archive/cdxj/
+
+
+archive_paths:
+    - ./invalid/path/to/ignore/
+    - ./sample_archive/warcs/
+
+

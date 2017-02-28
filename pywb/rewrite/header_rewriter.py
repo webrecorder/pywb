@@ -149,7 +149,7 @@ class HeaderRewriter(object):
                 new_headers.append((name, urlrewriter.rewrite(value)))
 
             elif lowername in self.KEEP_NO_REWRITE_HEADERS:
-                if content_modified:
+                if content_modified and value != '0':
                     removed_header_dict[lowername] = value
                     add_prefixed_header(name, value)
                 else:

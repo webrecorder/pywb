@@ -1,0 +1,14 @@
+collections:
+    # <name>: <cdx_path>
+    # collection will be accessed via /<name>
+    # <cdx_path> is a string or list of:
+    #  - string or list of one or more local .cdx file
+    #  - string or list of one or more local dirs with .cdx files
+    #  - a string value indicating remote http cdx server
+    pywb: ./sample_archive/cdx/
+
+archive_paths: ./sample_archive/warcs/
+
+enable_memento: true
+
+framed_replay: inverse

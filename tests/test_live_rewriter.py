@@ -1,30 +1,11 @@
-from pywb.webapp.live_rewrite_handler import RewriteHandler
-from pywb.apps.cli import LiveCli
-from pywb.framework.wsgi_wrappers import init_app
-import webtest
-import pywb.rewrite.rewrite_live
-
-#=================================================================
-class MockYTDWrapper(object):
-    def extract_info(self, url):
-        return {'mock': 'youtube_dl_data'}
+from .base_config_test import BaseConfigTest
 
 
-pywb.rewrite.rewrite_live.youtubedl = MockYTDWrapper()
-
-
-def setup_module():
-    global app
-    global testapp
-    app = LiveCli(['-f']).application
-    testapp = webtest.TestApp(app)
-
-
-#=================================================================
-class TestLiveRewriter:
-    def setup(self):
-        self.app = app
-        self.testapp = testapp
+# ============================================================================
+class TestLiveRewriter(BaseConfigTest):
+    @classmethod
+    def setup_class(cls):
+        super(TestLiveRewriter, cls).setup_class('config_test.yaml')
 
     def test_live_live_1(self):
         headers = [('User-Agent', 'python'), ('Referer', 'http://localhost:80/live/other.example.com')]
@@ -61,7 +42,7 @@ class TestLiveRewriter:
     def test_live_video_info(self):
         resp = self.testapp.get('/live/vi_/https://www.youtube.com/watch?v=DjFZyFWSt1M')
         assert resp.status_int == 200
-        assert resp.content_type == RewriteHandler.YT_DL_TYPE, resp.content_type
+        assert resp.content_type == 'application/vnd.youtube-dl_formats+json', resp.content_type
 
     def test_deflate(self):
         resp = self.testapp.get('/live/mp_/http://httpbin.org/deflate')

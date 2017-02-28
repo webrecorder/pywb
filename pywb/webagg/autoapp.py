@@ -94,11 +94,8 @@ class AutoConfigApp(ResAggApp):
         indexes_templ = self.AUTO_DIR_INDEX_PATH.replace('/', os.path.sep)
         dir_source = CacheDirectoryIndexSource(self.root_dir, indexes_templ)
 
-        archive_templ = self.config.get('archive_paths')
-        if not archive_templ:
-            archive_templ = self.AUTO_DIR_ARCHIVE_PATH.replace('/', os.path.sep)
-            archive_templ = os.path.join(self.root_dir, archive_templ)
-            #archive_templ = os.path.join('.', root_dir, '{coll}', 'archive') + os.path.sep
+        archive_templ = self.AUTO_DIR_ARCHIVE_PATH.replace('/', os.path.sep)
+        archive_templ = os.path.join(self.root_dir, archive_templ)
 
         handler = DefaultResourceHandler(dir_source, archive_templ)
 
@@ -123,8 +120,15 @@ class AutoConfigApp(ResAggApp):
         if not colls:
             return routes
 
+        self.default_archive_paths = self.config.get('archive_paths')
+
         for name, coll_config in iteritems(colls):
-            handler = self.load_coll(name, coll_config)
+            try:
+                handler = self.load_coll(name, coll_config)
+            except:
+                print('Invalid Collection: ' + name)
+                continue
+
             routes[name] = handler
 
         return routes
@@ -132,10 +136,15 @@ class AutoConfigApp(ResAggApp):
     def load_coll(self, name, coll_config):
         if isinstance(coll_config, str):
             index = coll_config
-            resource =  None
+            resource = None
         elif isinstance(coll_config, dict):
             index = coll_config.get('index')
+            if not index:
+                index = coll_config.get('index_paths')
             resource = coll_config.get('resource')
+            if not resource:
+                resource = coll_config.get('archive_paths')
+
         else:
             raise Exception('collection config must be string or dict')
 
@@ -154,9 +163,11 @@ class AutoConfigApp(ResAggApp):
             if not index_group:
                 raise Exception('no index, index_group or sequence found')
 
-
             timeout = int(coll_config.get('timeout', 0))
             agg = init_index_agg(index_group, True, timeout)
+
+        if not resource:
+            resource = self.default_archive_paths
 
         return DefaultResourceHandler(agg, resource)
 
@@ -170,7 +181,7 @@ class AutoConfigApp(ResAggApp):
             if not isinstance(entry, dict):
                 raise Exception('"sequence" entry must be a dict')
 
-            name = entry.get('name')
+            name = entry.get('name', '')
             handler = self.load_coll(name, entry)
             handlers.append(handler)
 

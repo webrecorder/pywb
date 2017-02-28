@@ -53,9 +53,10 @@ class BaseLoader(object):
 
             return out_headers, StreamIter(stream)
 
-        out_headers['Link'] = MementoUtils.make_link(
-                                warc_headers.get_header('WARC-Target-URI'),
-                                'original')
+        target_uri = warc_headers.get_header('WARC-Target-URI')
+
+        out_headers['WARC-Target-URI'] = target_uri
+        out_headers['Link'] = MementoUtils.make_link(target_uri, 'original')
 
         memento_dt = iso_date_to_datetime(warc_headers.get_header('WARC-Date'))
         out_headers['Memento-Datetime'] = datetime_to_http_date(memento_dt)
@@ -315,7 +316,10 @@ class LiveWebLoader(BaseLoader):
         data = input_req.get_req_body()
 
         p = PreparedRequest()
-        p.prepare_url(load_url, None)
+        try:
+            p.prepare_url(load_url, None)
+        except:
+            raise LiveResourceException(load_url)
         p.prepare_headers(None)
         p.prepare_auth(None, load_url)
 

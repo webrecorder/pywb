@@ -1,16 +1,14 @@
-import webtest
-from pywb.webapp.pywb_init import create_wb_router
-from pywb.framework.wsgi_wrappers import init_app
+from .base_config_test import BaseConfigTest
 
 from .memento_fixture import *
 
-from .server_mock import make_setup_module, BaseIntegration
+# ============================================================================
+class TestMementoFrame(MementoMixin, BaseConfigTest):
+    @classmethod
+    def setup_class(cls):
+        super(TestMementoFrame, cls).setup_class('config_test_frames.yaml')
 
-setup_module = make_setup_module('tests/test_config_frames.yaml')
-
-
-class TestMementoFrameInverse(MementoMixin, BaseIntegration):
-    def test_top_frame_replay(self):
+    def _test_top_frame_replay(self):
         resp = self.testapp.get('/pywb/20140127171238/http://www.iana.org/')
 
         # Memento Headers

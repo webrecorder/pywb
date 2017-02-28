@@ -205,7 +205,7 @@ class RewriteContent(object):
                 except Exception:
                     content_len = None
 
-                if content_len and content_len >= 0:
+                if content_len is not None and content_len >= 0:
                     content_len = str(content_len + len(head_insert_str))
                     status_headers.replace_header('Content-Length',
                                                   content_len)

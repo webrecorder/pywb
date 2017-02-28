@@ -16,6 +16,9 @@ from pywb.cdx.cdxobject import CDXObject
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.framework.wbrequestresponse import WbResponse
 
+from pywb.webagg.utils import MementoUtils, buffer_iter
+
+from werkzeug.http import HTTP_STATUS_CODES
 from six.moves.urllib.parse import urlencode
 
 from pywb.urlrewrite.rewriteinputreq import RewriteInputRequest
@@ -62,6 +65,7 @@ class RewriterApp(object):
         self.head_insert_view = HeadInsertView(self.jinja_env, 'head_insert.html', 'banner.html')
         self.frame_insert_view = TopFrameView(self.jinja_env, 'frame_insert.html', 'banner.html')
         self.error_view = BaseInsertView(self.jinja_env, 'error.html')
+        self.not_found_view = BaseInsertView(self.jinja_env, 'not_found.html')
         self.query_view = BaseInsertView(self.jinja_env, config.get('query_html', 'query.html'))
 
         self.cookie_tracker = None
@@ -185,10 +189,13 @@ class RewriterApp(object):
         stream = BufferedReader(r.raw, block_size=BUFF_SIZE)
         record = self.loader.parse_record_stream(stream)
 
+        memento_dt = r.headers.get('Memento-Datetime')
+        target_uri = r.headers.get('WARC-Target-URI')
+
         cdx = CDXObject()
         cdx['urlkey'] = urlkey
-        cdx['timestamp'] = http_date_to_timestamp(r.headers.get('Memento-Datetime'))
-        cdx['url'] = wb_url.url
+        cdx['timestamp'] = http_date_to_timestamp(memento_dt)
+        cdx['url'] = target_uri
 
         self._add_custom_params(cdx, r.headers, kwargs)
 
@@ -237,7 +244,29 @@ class RewriterApp(object):
         if ' ' not in status_headers.statusline:
             status_headers.statusline += ' None'
 
+        self._add_memento_links(urlrewriter, full_prefix, memento_dt, status_headers)
+
+        #if cdx['timestamp'] != wb_url.timestamp:
+        status_headers.headers.append(('Content-Location', urlrewriter.get_new_url(timestamp=cdx['timestamp'],
+                                                                                   url=cdx['url'])))
+
+        #gen = buffer_iter(status_headers, gen)
+
         return WbResponse(status_headers, gen)
+
+    def _add_memento_links(self, urlrewriter, full_prefix, memento_dt, status_headers):
+        wb_url = urlrewriter.wburl
+        status_headers.headers.append(('Memento-Datetime', memento_dt))
+
+        memento_url = full_prefix + wb_url._original_url
+        timegate_url = urlrewriter.get_new_url(timestamp='')
+
+        link = []
+        link.append(MementoUtils.make_link(timegate_url, 'timegate'))
+        link.append(MementoUtils.make_memento_link(memento_url, 'memento', memento_dt))
+        link_str = ', '.join(link)
+
+        status_headers.headers.append(('Link', link_str))
 
     def get_top_url(self, full_prefix, wb_url, cdx, kwargs):
         top_url = full_prefix
@@ -264,11 +293,26 @@ class RewriterApp(object):
                 pass
 
     def handle_error(self, environ, ue):
-        error_html = self.error_view.render_to_string(environ,
-                                                      err_msg=ue.url,
-                                                      err_details=ue.msg)
+        if ue.status_code == 404:
+            return self._not_found_response(environ, ue.url)
 
-        return WbResponse.text_response(error_html, content_type='text/html')
+        else:
+            status = str(ue.status_code) + ' ' + HTTP_STATUS_CODES.get(ue.status_code, 'Unknown Error')
+            return self._error_response(environ, ue.url, ue.msg,
+                                        status=status)
+
+    def _not_found_response(self, environ, url):
+        resp = self.not_found_view.render_to_string(environ, url=url)
+
+        return WbResponse.text_response(resp, status='404 Not Found', content_type='text/html')
+
+    def _error_response(self, environ, msg='', details='', status='404 Not Found'):
+        resp = self.error_view.render_to_string(environ,
+                                                err_msg=msg,
+                                                err_details=details)
+
+        return WbResponse.text_response(resp, status=status, content_type='text/html')
+
 
     def _do_req(self, inputreq, wb_url, kwargs, skip):
         req_data = inputreq.reconstruct_request(wb_url.url)

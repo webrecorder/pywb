@@ -41,6 +41,7 @@ class BaseCli(object):
         parser.add_argument('-t', '--threads', type=int, default=4)
         parser.add_argument('-s', '--server', default='gevent')
         parser.add_argument('--debug', action='store_true')
+        parser.add_argument('--profile', action='store_true')
 
         self.desc = desc
 
@@ -59,10 +60,11 @@ class BaseCli(object):
                 logging.debug('No Gevent')
                 self.r.server = 'wsgiref'
 
-        from pywb.framework.wsgi_wrappers import init_app
-        self.init_app = init_app
-
         self.application = self.load()
+
+        if self.r.profile:
+            from werkzeug.contrib.profiler import ProfilerMiddleware
+            self.application = ProfilerMiddleware(self.application)
 
     def _extend_parser(self, parser):  #pragma: no cover
         pass
@@ -109,7 +111,9 @@ class LiveCli(BaseCli):
                       collections={'live': '$liveweb'})
 
         from pywb.webapp.pywb_init import create_wb_router
-        return self.init_app(create_wb_router, load_yaml=False, config=config)
+        from pywb.framework.wsgi_wrappers import init_app
+
+        return init_app(create_wb_router, load_yaml=False, config=config)
 
 
 #=============================================================================
@@ -149,18 +153,20 @@ class ReplayCli(BaseCli):
 class CdxCli(ReplayCli):  #pragma: no cover
     def load(self):
         from pywb.webapp.pywb_init import create_cdx_server_app
+        from pywb.framework.wsgi_wrappers import init_app
         super(CdxCli, self).load()
-        return self.init_app(create_cdx_server_app,
-                             load_yaml=True)
+        return init_app(create_cdx_server_app,
+                        load_yaml=True)
 
 
 #=============================================================================
 class WaybackCli(ReplayCli):
     def load(self):
         from pywb.webapp.pywb_init import create_wb_router
+        from pywb.framework.wsgi_wrappers import init_app
         super(WaybackCli, self).load()
-        return self.init_app(create_wb_router,
-                             load_yaml=True)
+        return init_app(create_wb_router,
+                        load_yaml=True)
 
 
 #=============================================================================
