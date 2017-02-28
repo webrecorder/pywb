@@ -110,7 +110,7 @@ class AutoConfigApp(ResAggApp):
 
         try:
             return os.listdir(self.root_dir)
-        except IOError:
+        except (IOError, OSError):
             return []
 
     def load_colls(self):
