@@ -86,7 +86,6 @@ class MementoUtils(object):
 
         return memento.format(url, rel, datetime, cdx.get('source', ''))
 
-
     @staticmethod
     def make_timemap(cdx_iter):
         # get first memento as it'll be used for 'from' field
@@ -115,6 +114,10 @@ class MementoUtils(object):
     @staticmethod
     def make_link(url, type):
         return '<{0}>; rel="{1}"'.format(url, type)
+
+    @staticmethod
+    def make_memento_link(url, type, dt):
+        return '<{0}>; rel="{1}"; datetime="{2}"'.format(url, type, dt)
 
 
 #=============================================================================
