@@ -4,31 +4,24 @@ import base64
 import hashlib
 import datetime
 import zlib
-import sys
-import os
 import six
-import shutil
-
-import traceback
 
 from socket import gethostname
 from io import BytesIO
 
-import portalocker
-
-from pywb.utils.loaders import LimitReader, to_native_str
-from pywb.utils.bufferedreaders import BufferedReader
-from pywb.utils.timeutils import timestamp20_now, datetime_to_iso_date
+from pywb.utils.loaders import to_native_str
+from pywb.utils.timeutils import datetime_to_iso_date
 
 from pywb.utils.statusandheaders import StatusAndHeadersParser, StatusAndHeaders
+
 from pywb.warc.recordloader import ArcWarcRecord
 from pywb.warc.recordloader import ArcWarcRecordLoader
-
-from pywb.webagg.utils import res_template, BUFF_SIZE
 
 
 # ============================================================================
 class BaseWARCWriter(object):
+    BUFF_SIZE = 16384
+
     WARC_RECORDS = {'warcinfo': 'application/warc-fields',
          'response': 'application/http; msgtype=response',
          'revisit': 'application/http; msgtype=response',
@@ -38,25 +31,20 @@ class BaseWARCWriter(object):
 
     REVISIT_PROFILE = 'http://netpreserve.org/warc/1.0/revisit/uri-agnostic-identical-payload-digest'
 
-    FILE_TEMPLATE = 'rec-{timestamp}-{hostname}.warc.gz'
-
     WARC_VERSION = 'WARC/1.0'
 
-    def __init__(self, gzip=True, dedup_index=None,
-                 header_filter=None, *args, **kwargs):
-
+    def __init__(self, gzip=True, header_filter=None, *args, **kwargs):
         self.gzip = gzip
-        self.dedup_index = dedup_index
         self.header_filter = header_filter
         self.hostname = gethostname()
 
         self.parser = StatusAndHeadersParser([], verify=False)
         self.warc_version = kwargs.get('warc_version', self.WARC_VERSION)
 
-    @staticmethod
-    def _iter_stream(stream):
+    @classmethod
+    def _iter_stream(cls, stream):
         while True:
-            buf = stream.read(BUFF_SIZE)
+            buf = stream.read(cls.BUFF_SIZE)
             if not buf:
                 return
 
@@ -93,25 +81,6 @@ class BaseWARCWriter(object):
             exclude_list = self.header_filter(record)
         buff = record.status_headers.to_bytes(exclude_list)
         record.status_headers.headers_buff = buff
-
-    def write_req_resp(self, req, resp, params):
-        url = resp.rec_headers.get_header('WARC-Target-URI')
-        dt = resp.rec_headers.get_header('WARC-Date')
-
-        #req.rec_headers['Content-Type'] = req.content_type
-        req.rec_headers.replace_header('WARC-Target-URI', url)
-        req.rec_headers.replace_header('WARC-Date', dt)
-
-        resp_id = resp.rec_headers.get_header('WARC-Record-ID')
-        if resp_id:
-            req.rec_headers.add_header('WARC-Concurrent-To', resp_id)
-
-        resp = self._check_revisit(resp, params)
-        if not resp:
-            print('Skipping due to dedup')
-            return
-
-        self._do_write_req_resp(req, resp, params)
 
     def create_warcinfo_record(self, filename, info):
         warc_headers = StatusAndHeaders(self.warc_version, [])
@@ -179,31 +148,6 @@ class BaseWARCWriter(object):
 
         if has_http_headers:
             self._set_header_buff(record)
-
-        return record
-
-    def _check_revisit(self, record, params):
-        if not self.dedup_index:
-            return record
-
-        try:
-            url = record.rec_headers.get_header('WARC-Target-URI')
-            digest = record.rec_headers.get_header('WARC-Payload-Digest')
-            iso_dt = record.rec_headers.get_header('WARC-Date')
-            result = self.dedup_index.lookup_revisit(params, digest, url, iso_dt)
-        except Exception as e:
-            traceback.print_exc()
-            result = None
-
-        if result == 'skip':
-            return None
-
-        if isinstance(result, tuple) and result[0] == 'revisit':
-            record.rec_headers.replace_header('WARC-Type', 'revisit')
-            record.rec_headers.add_header('WARC-Profile', self.REVISIT_PROFILE)
-
-            record.rec_headers.add_header('WARC-Refers-To-Target-URI', result[1])
-            record.rec_headers.add_header('WARC-Refers-To-Date', result[2])
 
         return record
 
@@ -321,231 +265,40 @@ class Digester(object):
 
 
 # ============================================================================
-class MultiFileWARCWriter(BaseWARCWriter):
-    def __init__(self, dir_template, filename_template=None, max_size=0,
-                 max_idle_secs=1800, *args, **kwargs):
-        super(MultiFileWARCWriter, self).__init__(*args, **kwargs)
-
-        if not filename_template:
-            dir_template, filename_template = os.path.split(dir_template)
-            dir_template += os.path.sep
-
-        if not filename_template:
-            filename_template = self.FILE_TEMPLATE
-
-        self.dir_template = dir_template
-        self.key_template = kwargs.get('key_template', self.dir_template)
-        self.filename_template = filename_template
-        self.max_size = max_size
-        if max_idle_secs > 0:
-            self.max_idle_time = datetime.timedelta(seconds=max_idle_secs)
-        else:
-            self.max_idle_time = None
-
-        self.fh_cache = {}
-
-    def get_new_filename(self, dir_, params):
-        timestamp = timestamp20_now()
-
-        randstr = base64.b32encode(os.urandom(5)).decode('utf-8')
-
-        filename = dir_ + res_template(self.filename_template, params,
-                                       hostname=self.hostname,
-                                       timestamp=timestamp,
-                                       random=randstr)
-
-        return filename
-
-    def allow_new_file(self, filename, params):
-        return True
-
-    def _open_file(self, filename, params):
-        path, name = os.path.split(filename)
-
-        try:
-            os.makedirs(path)
-        except:
-            pass
-
-        fh = open(filename, 'a+b')
-
-        if self.dedup_index:
-            self.dedup_index.add_warc_file(filename, params)
-
-        return fh
-
-    def _close_file(self, fh):
-        try:
-            portalocker.lock(fh, portalocker.LOCK_UN)
-            fh.close()
-        except Exception as e:
-            print(e)
-
-    def get_dir_key(self, params):
-        return res_template(self.key_template, params)
-
-    def close_key(self, dir_key):
-        if isinstance(dir_key, dict):
-            dir_key = self.get_dir_key(dir_key)
-
-        result = self.fh_cache.pop(dir_key, None)
-        if not result:
-            return
-
-        out, filename = result
-        self._close_file(out)
-        return filename
-
-    def close_file(self, match_filename):
-        for dir_key, out, filename in self.iter_open_files():
-            if filename == match_filename:
-                return self.close_key(dir_key)
-
-    def _is_write_resp(self, resp, params):
-        return True
-
-    def _is_write_req(self, req, params):
-        return True
-
-    def write_record(self, record, params=None):
-        params = params or {}
-        self._do_write_req_resp(None, record, params)
-
-    def _do_write_req_resp(self, req, resp, params):
-        def write_callback(out, filename):
-            #url = resp.rec_headers.get_header('WARC-Target-URI')
-            #print('Writing req/resp {0} to {1} '.format(url, filename))
-
-            if resp and self._is_write_resp(resp, params):
-                self._write_warc_record(out, resp)
-
-            if req and self._is_write_req(req, params):
-                self._write_warc_record(out, req)
-
-        return self._write_to_file(params, write_callback)
-
-    def write_stream_to_file(self, params, stream):
-        def write_callback(out, filename):
-            #print('Writing stream to {0}'.format(filename))
-            shutil.copyfileobj(stream, out)
-
-        return self._write_to_file(params, write_callback)
-
-    def _write_to_file(self, params, write_callback):
-        full_dir = res_template(self.dir_template, params)
-        dir_key = self.get_dir_key(params)
-
-        result = self.fh_cache.get(dir_key)
-
-        close_file = False
-
-        if result:
-            out, filename = result
-            is_new = False
-        else:
-            filename = self.get_new_filename(full_dir, params)
-
-            if not self.allow_new_file(filename, params):
-                return False
-
-            out = self._open_file(filename, params)
-
-            is_new = True
-
-        try:
-            start = out.tell()
-
-            write_callback(out, filename)
-
-            out.flush()
-
-            new_size = out.tell()
-
-            out.seek(start)
-
-            if self.dedup_index:
-                self.dedup_index.add_urls_to_index(out, params,
-                                                   filename,
-                                                   new_size - start)
-
-            return True
-
-        except Exception as e:
-            traceback.print_exc()
-            close_file = True
-            return False
-
-        finally:
-            # check for rollover
-            if self.max_size and new_size > self.max_size:
-                close_file = True
-
-            if close_file:
-                self._close_file(out)
-                if not is_new:
-                    self.fh_cache.pop(dir_key, None)
-
-            elif is_new:
-                portalocker.lock(out, portalocker.LOCK_EX | portalocker.LOCK_NB)
-                self.fh_cache[dir_key] = (out, filename)
-
-    def iter_open_files(self):
-        for n, v in list(self.fh_cache.items()):
-            out, filename = v
-            yield n, out, filename
-
-    def close(self):
-        for dir_key, out, filename in self.iter_open_files():
-            self._close_file(out)
-
-        self.fh_cache = {}
-
-    def close_idle_files(self):
-        if not self.max_idle_time:
-            return
-
-        now = datetime.datetime.now()
-
-        for dir_key, out, filename in self.iter_open_files():
-            try:
-                mtime = os.path.getmtime(filename)
-            except:
-                self.close_key(dir_key)
-                return
-
-            mtime = datetime.datetime.fromtimestamp(mtime)
-
-            if (now - mtime) > self.max_idle_time:
-                print('Closing idle ' + filename)
-                self.close_key(dir_key)
-
-
-# ============================================================================
-class PerRecordWARCWriter(MultiFileWARCWriter):
+class BufferWARCWriter(BaseWARCWriter):
     def __init__(self, *args, **kwargs):
-        kwargs['max_size'] = 1
-        super(PerRecordWARCWriter, self).__init__(*args, **kwargs)
-
-
-# ============================================================================
-class SimpleTempWARCWriter(BaseWARCWriter):
-    def __init__(self, *args, **kwargs):
-        super(SimpleTempWARCWriter, self).__init__(*args, **kwargs)
+        super(BufferWARCWriter, self).__init__(*args, **kwargs)
         self.out = self._create_buffer()
 
     def _create_buffer(self):
         return tempfile.SpooledTemporaryFile(max_size=512*1024)
 
-    def _do_write_req_resp(self, req, resp, params):
-        self._write_warc_record(self.out, resp)
-        self._write_warc_record(self.out, req)
-
-    def write_record(self, record, params=None):
+    def write_record(self, record):
         self._write_warc_record(self.out, record)
 
-    def get_buffer(self):
+    def get_contents(self):
         pos = self.out.tell()
         self.out.seek(0)
         buff = self.out.read()
         self.out.seek(pos)
         return buff
+
+
+# ============================================================================
+class FileWARCWriter(BufferWARCWriter):
+    def __init__(self, *args, **kwargs):
+        file_or_buff = None
+        if len(args) > 0:
+            file_or_buff = args[0]
+        else:
+            file_or_buff = kwargs.get('file')
+
+        if isinstance(file_or_buff, str):
+            self.out = open(file_or_buff, 'rb')
+        elif hasattr(file_or_buff, 'read'):
+            self.out = file_or_buff
+        else:
+            raise Exception('file must be a readable or valid filename')
+
+
+

@@ -13,7 +13,7 @@ from fakeredis import FakeStrictRedis
 
 from pywb.recorder.recorderapp import RecorderApp
 from pywb.recorder.redisindexer import WritableRedisIndexer
-from pywb.recorder.warcwriter import PerRecordWARCWriter, MultiFileWARCWriter, SimpleTempWARCWriter
+from pywb.recorder.multifilewarcwriter import PerRecordWARCWriter, MultiFileWARCWriter
 from pywb.recorder.filters import ExcludeSpecificHeaders
 from pywb.recorder.filters import SkipDupePolicy, WriteDupePolicy, WriteRevisitDupePolicy
 

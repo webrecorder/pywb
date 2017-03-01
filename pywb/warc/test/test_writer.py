@@ -1,5 +1,5 @@
 from pywb.utils.statusandheaders import StatusAndHeaders
-from pywb.recorder.warcwriter import SimpleTempWARCWriter
+from pywb.warc.warcwriter import BufferWARCWriter
 from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.warc.archiveiterator import ArchiveIterator
 
@@ -9,7 +9,7 @@ import json
 
 
 # ============================================================================
-class FixedTestWARCWriter(SimpleTempWARCWriter):
+class FixedTestWARCWriter(BufferWARCWriter):
     @classmethod
     def _make_warc_id(cls, id_=None):
         return '<urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>'
@@ -36,7 +36,7 @@ class TestWarcWriter(object):
 
         record = simplewriter.create_warcinfo_record('testfile.warc.gz', params)
         simplewriter.write_record(record)
-        buff = simplewriter.get_buffer()
+        buff = simplewriter.get_contents()
         assert isinstance(buff, bytes)
 
         buff = BytesIO(buff)
@@ -71,7 +71,7 @@ json-metadata: {"foo": "bar"}\r\n\
 \r\n\
 '
 
-        assert simplewriter.get_buffer().decode('utf-8') == warcinfo_record
+        assert simplewriter.get_contents().decode('utf-8') == warcinfo_record
 
     def test_generate_response(self):
         headers_list = [('Content-Type', 'text/plain; charset="UTF-8"'),
@@ -93,7 +93,7 @@ json-metadata: {"foo": "bar"}\r\n\
 
         writer.write_record(record)
 
-        buff = writer.get_buffer()
+        buff = writer.get_contents()
 
         self._validate_record_content_len(BytesIO(buff))
 

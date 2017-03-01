@@ -7,7 +7,7 @@ import re
 import time
 import datetime
 import calendar
-from six.moves import map
+
 from email.utils import parsedate, formatdate
 
 #=================================================================
@@ -37,7 +37,7 @@ def iso_date_to_datetime(string):
     if nums[-1] == '':
         nums = nums[:-1]
 
-    the_datetime = datetime.datetime(*map(int, nums))
+    the_datetime = datetime.datetime(*(int(num) for num in nums))
     return the_datetime
 
 
