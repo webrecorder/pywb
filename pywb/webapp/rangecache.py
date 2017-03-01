@@ -1,5 +1,5 @@
 from pywb.utils.statusandheaders import StatusAndHeaders
-from pywb.utils.loaders import LimitReader
+from pywb.utils.limitreader import LimitReader
 from pywb.framework.cache import create_cache
 
 from tempfile import NamedTemporaryFile, mkdtemp

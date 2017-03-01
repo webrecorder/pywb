@@ -7,7 +7,7 @@ from itertools import chain
 
 from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.wbexception import WbException, NotFoundException
-from pywb.utils.loaders import LimitReader
+from pywb.utils.limitreader import LimitReader
 from pywb.utils.timeutils import timestamp_now
 
 from pywb.framework.wbrequestresponse import WbResponse
