@@ -11,8 +11,6 @@ import shutil
 
 import traceback
 
-from collections import OrderedDict
-
 from socket import gethostname
 from io import BytesIO
 
@@ -22,14 +20,11 @@ from pywb.utils.loaders import LimitReader, to_native_str
 from pywb.utils.bufferedreaders import BufferedReader
 from pywb.utils.timeutils import timestamp20_now, datetime_to_iso_date
 
-from pywb.utils.statusandheaders import StatusAndHeadersParser
+from pywb.utils.statusandheaders import StatusAndHeadersParser, StatusAndHeaders
 from pywb.warc.recordloader import ArcWarcRecord
 from pywb.warc.recordloader import ArcWarcRecordLoader
 
-from requests.structures import CaseInsensitiveDict
 from pywb.webagg.utils import res_template, BUFF_SIZE
-
-from pywb.recorder.filters import ExcludeNone
 
 
 # ============================================================================
@@ -45,14 +40,18 @@ class BaseWARCWriter(object):
 
     FILE_TEMPLATE = 'rec-{timestamp}-{hostname}.warc.gz'
 
+    WARC_VERSION = 'WARC/1.0'
+
     def __init__(self, gzip=True, dedup_index=None,
-                 header_filter=ExcludeNone(), *args, **kwargs):
+                 header_filter=None, *args, **kwargs):
+
         self.gzip = gzip
         self.dedup_index = dedup_index
         self.header_filter = header_filter
         self.hostname = gethostname()
 
         self.parser = StatusAndHeadersParser([], verify=False)
+        self.warc_version = kwargs.get('warc_version', self.WARC_VERSION)
 
     @staticmethod
     def _iter_stream(stream):
@@ -64,8 +63,8 @@ class BaseWARCWriter(object):
             yield buf
 
     def ensure_digest(self, record):
-        block_digest = record.rec_headers.get('WARC-Block-Digest')
-        payload_digest = record.rec_headers.get('WARC-Payload-Digest')
+        block_digest = record.rec_headers.get_header('WARC-Block-Digest')
+        payload_digest = record.rec_headers.get_header('WARC-Payload-Digest')
         if block_digest and payload_digest:
             return
 
@@ -82,28 +81,30 @@ class BaseWARCWriter(object):
             payload_digester.update(buf)
 
         record.stream.seek(pos)
-        record.rec_headers['WARC-Block-Digest'] = str(block_digester)
-        record.rec_headers['WARC-Payload-Digest'] = str(payload_digester)
+        record.rec_headers.add_header('WARC-Block-Digest', str(block_digester))
+        record.rec_headers.add_header('WARC-Payload-Digest', str(payload_digester))
 
     def _create_digester(self):
         return Digester('sha1')
 
     def _set_header_buff(self, record):
-        exclude_list = self.header_filter(record)
+        exclude_list = None
+        if self.header_filter:
+            exclude_list = self.header_filter(record)
         buff = record.status_headers.to_bytes(exclude_list)
         record.status_headers.headers_buff = buff
 
     def write_req_resp(self, req, resp, params):
-        url = resp.rec_headers.get('WARC-Target-URI')
-        dt = resp.rec_headers.get('WARC-Date')
+        url = resp.rec_headers.get_header('WARC-Target-URI')
+        dt = resp.rec_headers.get_header('WARC-Date')
 
         #req.rec_headers['Content-Type'] = req.content_type
-        req.rec_headers['WARC-Target-URI'] = url
-        req.rec_headers['WARC-Date'] = dt
+        req.rec_headers.replace_header('WARC-Target-URI', url)
+        req.rec_headers.replace_header('WARC-Date', dt)
 
-        resp_id = resp.rec_headers.get('WARC-Record-ID')
+        resp_id = resp.rec_headers.get_header('WARC-Record-ID')
         if resp_id:
-            req.rec_headers['WARC-Concurrent-To'] = resp_id
+            req.rec_headers.add_header('WARC-Concurrent-To', resp_id)
 
         resp = self._check_revisit(resp, params)
         if not resp:
@@ -112,55 +113,13 @@ class BaseWARCWriter(object):
 
         self._do_write_req_resp(req, resp, params)
 
-    def create_req_record(self, req_headers, payload):
-        len_ = payload.tell()
-        payload.seek(0)
-
-        warc_headers = req_headers
-        warc_headers['WARC-Type'] = 'request'
-        if not warc_headers.get('WARC-Record-ID'):
-            warc_headers['WARC-Record-ID'] = self._make_warc_id()
-
-        status_headers = self.parser.parse(payload)
-
-        record = ArcWarcRecord('warc', 'request', warc_headers, payload,
-                                status_headers, '', len_)
-
-        self._set_header_buff(record)
-
-        return record
-
-    def read_resp_record(self, resp_headers, payload):
-        len_ = payload.tell()
-        payload.seek(0)
-
-        warc_headers = self.parser.parse(payload)
-        warc_headers = CaseInsensitiveDict(warc_headers.headers)
-
-        record_type = warc_headers.get('WARC-Type', 'response')
-
-        if record_type == 'response':
-            status_headers = self.parser.parse(payload)
-        else:
-            status_headers = None
-
-        record = ArcWarcRecord('warc', record_type, warc_headers, payload,
-                              status_headers, '', len_)
-
-        if record_type == 'response':
-            self._set_header_buff(record)
-
-        self.ensure_digest(record)
-
-        return record_type, record
-
     def create_warcinfo_record(self, filename, info):
-        warc_headers = {}
-        warc_headers['WARC-Record-ID'] = self._make_warc_id()
-        warc_headers['WARC-Type'] = 'warcinfo'
+        warc_headers = StatusAndHeaders(self.warc_version, [])
+        warc_headers.add_header('WARC-Type', 'warcinfo')
+        warc_headers.add_header('WARC-Record-ID', self._make_warc_id())
         if filename:
-            warc_headers['WARC-Filename'] = filename
-        warc_headers['WARC-Date'] = datetime_to_iso_date(datetime.datetime.utcnow())
+            warc_headers.add_header('WARC-Filename', filename)
+        warc_headers.add_header('WARC-Date', self._make_warc_date())
 
         warcinfo = BytesIO()
         for n, v in six.iteritems(info):
@@ -173,23 +132,53 @@ class BaseWARCWriter(object):
 
         return record
 
-    def create_custom_record(self, uri, payload, record_type, content_type,
-                             warc_headers=None):
+    def copy_warc_record(self, payload):
         len_ = payload.tell()
         payload.seek(0)
 
-        warc_headers = warc_headers or {}
-        warc_headers['WARC-Record-ID'] = self._make_warc_id()
-        warc_headers['WARC-Type'] = record_type
-        warc_headers['WARC-Target-URI'] = uri
+        warc_headers = self.parser.parse(payload)
 
-        if 'WARC-Date' not in warc_headers:
-            warc_headers['WARC-Date'] = datetime_to_iso_date(datetime.datetime.utcnow())
+        record_type = warc_headers.get_header('WARC-Type', 'response')
+
+        return self._fill_record(record_type, warc_headers, None, payload, '', len_)
+
+    def create_warc_record(self, uri, record_type, payload,
+                           length=None,
+                           warc_content_type='',
+                           warc_headers_dict={},
+                           status_headers=None):
+
+        if length is None:
+            length = payload.tell()
+            payload.seek(0)
+
+        warc_headers = StatusAndHeaders(self.warc_version, list(warc_headers_dict.items()))
+        warc_headers.replace_header('WARC-Type', record_type)
+        if not warc_headers.get_header('WARC-Record-ID'):
+            warc_headers.add_header('WARC-Record-ID', self._make_warc_id())
+
+        if uri:
+            warc_headers.replace_header('WARC-Target-URI', uri)
+
+        if not warc_headers.get_header('WARC-Date'):
+            warc_headers.add_header('WARC-Date', self._make_warc_date())
+
+        return self._fill_record(record_type, warc_headers, status_headers,
+                                 payload, warc_content_type, length)
+
+    def _fill_record(self, record_type, warc_headers, status_headers, payload, warc_content_type, len_):
+        has_http_headers = (record_type in ('request', 'response', 'revisit'))
+
+        if not status_headers and has_http_headers:
+            status_headers = self.parser.parse(payload)
 
         record = ArcWarcRecord('warc', record_type, warc_headers, payload,
-                               None, content_type, len_)
+                               status_headers, warc_content_type, len_)
 
         self.ensure_digest(record)
+
+        if has_http_headers:
+            self._set_header_buff(record)
 
         return record
 
@@ -198,9 +187,9 @@ class BaseWARCWriter(object):
             return record
 
         try:
-            url = record.rec_headers.get('WARC-Target-URI')
-            digest = record.rec_headers.get('WARC-Payload-Digest')
-            iso_dt = record.rec_headers.get('WARC-Date')
+            url = record.rec_headers.get_header('WARC-Target-URI')
+            digest = record.rec_headers.get_header('WARC-Payload-Digest')
+            iso_dt = record.rec_headers.get_header('WARC-Date')
             result = self.dedup_index.lookup_revisit(params, digest, url, iso_dt)
         except Exception as e:
             traceback.print_exc()
@@ -210,11 +199,11 @@ class BaseWARCWriter(object):
             return None
 
         if isinstance(result, tuple) and result[0] == 'revisit':
-            record.rec_headers['WARC-Type'] = 'revisit'
-            record.rec_headers['WARC-Profile'] = self.REVISIT_PROFILE
+            record.rec_headers.replace_header('WARC-Type', 'revisit')
+            record.rec_headers.add_header('WARC-Profile', self.REVISIT_PROFILE)
 
-            record.rec_headers['WARC-Refers-To-Target-URI'] = result[1]
-            record.rec_headers['WARC-Refers-To-Date'] = result[2]
+            record.rec_headers.add_header('WARC-Refers-To-Target-URI', result[1])
+            record.rec_headers.add_header('WARC-Refers-To-Date', result[2])
 
         return record
 
@@ -222,31 +211,26 @@ class BaseWARCWriter(object):
         if self.gzip:
             out = GzippingWrapper(out)
 
-        self._line(out, b'WARC/1.0')
-
-        for n, v in six.iteritems(record.rec_headers):
-            if n.lower() in ('content-length', 'content-type'):
-                continue
-
-            self._header(out, n, v)
-
-        content_type = record.rec_headers.get('Content-Type')
+        # compute Content-Type
+        content_type = record.rec_headers.get_header('Content-Type')
 
         if not content_type:
             content_type = record.content_type
 
-        if not content_type:
-            content_type = self.WARC_RECORDS.get(record.rec_headers['WARC-Type'])
+            if not content_type:
+                content_type = self.WARC_RECORDS.get(record.rec_headers.get_header('WARC-Type'))
 
-        if content_type:
-            self._header(out, 'Content-Type', content_type)
+            if content_type:
+                record.rec_headers.replace_header('Content-Type', content_type)
+                #self._header(out, 'Content-Type', content_type)
 
-        if record.rec_headers['WARC-Type'] == 'revisit':
+        if record.rec_headers.get_header('WARC-Type') == 'revisit':
             http_headers_only = True
         else:
             http_headers_only = False
 
-        if record.length:
+        # compute Content-Length
+        if record.length or record.status_headers:
             actual_len = 0
             if record.status_headers:
                 actual_len = len(record.status_headers.headers_buff)
@@ -259,10 +243,14 @@ class BaseWARCWriter(object):
 
                 actual_len = record.length - diff
 
-            self._header(out, 'Content-Length', str(actual_len))
+            record.rec_headers.replace_header('Content-Length', str(actual_len))
+            #self._header(out, 'Content-Length', str(actual_len))
 
             # add empty line
-            self._line(out, b'')
+            #self._line(out, b'')
+
+            # write record headers
+            out.write(record.rec_headers.to_bytes())
 
             # write headers buffer, if any
             if record.status_headers:
@@ -290,11 +278,15 @@ class BaseWARCWriter(object):
     def _line(self, out, line):
         out.write(line + b'\r\n')
 
-    @staticmethod
-    def _make_warc_id(id_=None):
+    @classmethod
+    def _make_warc_id(cls, id_=None):
         if not id_:
             id_ = uuid.uuid1()
         return '<urn:uuid:{0}>'.format(id_)
+
+    @classmethod
+    def _make_warc_date(cls):
+        return datetime_to_iso_date(datetime.datetime.utcnow())
 
 
 # ============================================================================
@@ -421,7 +413,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
     def _do_write_req_resp(self, req, resp, params):
         def write_callback(out, filename):
-            url = resp.rec_headers.get('WARC-Target-URI')
+            #url = resp.rec_headers.get_header('WARC-Target-URI')
             #print('Writing req/resp {0} to {1} '.format(url, filename))
 
             if resp and self._is_write_resp(resp, params):

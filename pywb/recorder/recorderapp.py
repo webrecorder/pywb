@@ -5,11 +5,12 @@ from pywb.webagg.inputrequest import DirectWSGIInputRequest
 from pywb.recorder.filters import SkipRangeRequestFilter, CollectionFilter
 
 from six.moves.urllib.parse import parse_qsl
+import six
 
 import json
 import tempfile
 
-from requests.structures import CaseInsensitiveDict
+#from requests.structures import CaseInsensitiveDict
 import requests
 
 import traceback
@@ -67,10 +68,15 @@ class RecorderApp(object):
 
             req_head, req_pay, resp_head, resp_pay, params = result
 
-            resp_type, resp = self.writer.read_resp_record(resp_head, resp_pay)
+            #resp_type, resp = self.writer.read_resp_record(resp_head, resp_pay)
+            resp = self.writer.copy_warc_record(resp_pay)
 
-            if resp_type == 'response':
-                req = self.writer.create_req_record(req_head, req_pay)
+            if resp.rec_type == 'response':
+                uri = resp.rec_headers.get_header('WARC-Target-Uri')
+                req = self.writer.create_warc_record(uri=uri,
+                                                     record_type='request',
+                                                     payload=req_pay,
+                                                     warc_headers_dict=req_head)
 
                 self.writer.write_req_resp(req, resp, params)
 
@@ -127,16 +133,16 @@ class RecorderApp(object):
 
             content_type = headers.get('Content-Type')
 
-            record = self.writer.create_custom_record(params['url'],
-                                                      req_stream.out,
-                                                      record_type,
-                                                      content_type,
-                                                      req_stream.headers)
+            record = self.writer.create_warc_record(uri=params['url'],
+                                                    record_type=record_type,
+                                                    payload=req_stream.out,
+                                                    warc_content_type=content_type,
+                                                    warc_headers_dict=req_stream.headers)
 
             self.writer.write_record(record, params)
 
             msg = {'success': 'true',
-                   'WARC-Date': record.rec_headers.get('WARC-Date')}
+                   'WARC-Date': record.rec_headers.get_header('WARC-Date')}
 
         finally:
             if req_stream:
@@ -311,11 +317,11 @@ class RespWrapper(Wrapper):
 class ReqWrapper(Wrapper):
     def __init__(self, stream, req_headers, params, create_func):
         super(ReqWrapper, self).__init__(stream, params, create_func)
-        self.headers = CaseInsensitiveDict(req_headers)
+        self.headers = {}
 
-        for n in req_headers.keys():
-            if not n.upper().startswith('WARC-'):
-                del self.headers[n]
+        for n in six.iterkeys(req_headers):
+            if n.upper().startswith('WARC-'):
+                self.headers[n] = req_headers[n]
 
     def close(self):
         # no need to close wsgi.input

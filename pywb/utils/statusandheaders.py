@@ -26,7 +26,7 @@ class StatusAndHeaders(object):
         self.protocol = protocol
         self.total_len = total_len
 
-    def get_header(self, name):
+    def get_header(self, name, default_value=None):
         """
         return header (name, value)
         if found
@@ -35,6 +35,11 @@ class StatusAndHeaders(object):
         for value in self.headers:
             if value[0].lower() == name_lower:
                 return value[1]
+
+        return default_value
+
+    def add_header(self, name, value):
+        self.headers.append((name, value))
 
     def replace_header(self, name, value):
         """
