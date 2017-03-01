@@ -4,15 +4,13 @@ from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.statusandheaders import StatusAndHeadersParser
 from pywb.utils.statusandheaders import StatusAndHeadersParserException
 
-from pywb.utils.loaders import BlockLoader, LimitReader
+from pywb.utils.loaders import LimitReader
 from pywb.utils.loaders import to_native_str
-from pywb.utils.bufferedreaders import DecompressingBufferedReader
 
 from pywb.utils.wbexception import WbException
 from pywb.utils.timeutils import timestamp_to_iso_date
 
 from six.moves import zip
-import six
 
 
 #=================================================================
@@ -56,14 +54,7 @@ class ArcWarcRecordLoader(object):
     NON_HTTP_SCHEMES = ('dns:', 'whois:', 'ntp:')
     HTTP_SCHEMES = ('http:', 'https:')
 
-    def __init__(self, loader=None, cookie_maker=None, block_size=8192,
-                 verify_http=True, arc2warc=True):
-        if not loader:
-            loader = BlockLoader(cookie_maker=cookie_maker)
-
-        self.loader = loader
-        self.block_size = block_size
-
+    def __init__(self, verify_http=True, arc2warc=True):
         if arc2warc:
             self.arc_parser = ARC2WARCHeadersParser()
         else:
@@ -73,25 +64,6 @@ class ArcWarcRecordLoader(object):
         self.http_parser = StatusAndHeadersParser(self.HTTP_TYPES, verify_http)
 
         self.http_req_parser = StatusAndHeadersParser(self.HTTP_VERBS, verify_http)
-
-    def load(self, url, offset, length, no_record_parse=False):
-        """ Load a single record from given url at offset with length
-        and parse as either warc or arc record
-        """
-        try:
-            length = int(length)
-        except:
-            length = -1
-
-        stream = self.loader.load(url, int(offset), length)
-        decomp_type = 'gzip'
-
-        # Create decompressing stream
-        stream = DecompressingBufferedReader(stream=stream,
-                                             decomp_type=decomp_type,
-                                             block_size=self.block_size)
-
-        return self.parse_record_stream(stream, no_record_parse=no_record_parse)
 
     def parse_record_stream(self, stream,
                             statusline=None,

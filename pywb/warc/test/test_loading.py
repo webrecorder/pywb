@@ -293,6 +293,7 @@ import pprint
 import six
 
 from pywb.warc.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
+from pywb.warc.blockrecordloader import BlockArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
 from pywb.warc.pathresolvers import PathResolverMapper
 from pywb.cdx.cdxobject import CDXObject
@@ -326,7 +327,7 @@ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - \
 def load_test_archive(test_file, offset, length):
     path = test_warc_dir + test_file
 
-    testloader = ArcWarcRecordLoader()
+    testloader = BlockArcWarcRecordLoader()
 
     archive = testloader.load(path, offset, length)
 

@@ -1,5 +1,6 @@
 from pywb.utils.timeutils import iso_date_to_timestamp
-from pywb.warc.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
+from pywb.warc.blockrecordloader import BlockArcWarcRecordLoader
+from pywb.warc.recordloader import ArchiveLoadFailed
 from pywb.utils.wbexception import NotFoundException
 
 import six
@@ -9,7 +10,7 @@ import six
 class ResolvingLoader(object):
     MISSING_REVISIT_MSG = 'Original for revisit record could not be loaded'
 
-    def __init__(self, path_resolvers, record_loader=ArcWarcRecordLoader(), no_record_parse=False):
+    def __init__(self, path_resolvers, record_loader=BlockArcWarcRecordLoader(), no_record_parse=False):
         self.path_resolvers = path_resolvers
         self.record_loader = record_loader
         self.no_record_parse = no_record_parse

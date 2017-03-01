@@ -12,7 +12,7 @@ from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
 
-from pywb.warc.recordloader import ArcWarcRecordLoader
+from pywb.warc.blockrecordloader import BlockArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
 from pywb.warc.pathresolvers import PathResolverMapper
 
@@ -134,7 +134,7 @@ class WBHandler(SearchPageWbUrlHandler):
 
     def _init_replay_view(self, config):
         cookie_maker = config.get('cookie_maker')
-        record_loader = ArcWarcRecordLoader(cookie_maker=cookie_maker)
+        record_loader = BlockArcWarcRecordLoader(cookie_maker=cookie_maker)
 
         paths = config.get('archive_paths')
 
