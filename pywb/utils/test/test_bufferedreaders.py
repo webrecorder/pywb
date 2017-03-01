@@ -101,7 +101,7 @@ Zero-Length chunk:
 from io import BytesIO
 from pywb.utils.bufferedreaders import ChunkedDataReader, ChunkedDataException
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
-from pywb.utils.loaders import LimitReader
+from pywb.utils.limitreader import LimitReader
 
 from pywb import get_test_dir
 

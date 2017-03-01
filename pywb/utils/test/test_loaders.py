@@ -141,8 +141,9 @@ from io import BytesIO
 import requests
 
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
-from pywb.utils.loaders import LimitReader, extract_client_cookie, extract_post_query
+from pywb.utils.loaders import extract_client_cookie, extract_post_query
 from pywb.utils.loaders import append_post_query, read_last_line
+from pywb.utils.limitreader import LimitReader
 
 from pywb.utils.bufferedreaders import DecompressingBufferedReader
 

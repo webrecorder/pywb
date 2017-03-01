@@ -4,7 +4,7 @@ from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.utils.statusandheaders import StatusAndHeadersParser
 from pywb.utils.statusandheaders import StatusAndHeadersParserException
 
-from pywb.utils.loaders import LimitReader
+from pywb.utils.limitreader import LimitReader
 from pywb.utils.loaders import to_native_str
 
 from pywb.utils.wbexception import WbException
