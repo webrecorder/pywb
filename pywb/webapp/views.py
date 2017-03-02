@@ -1,4 +1,4 @@
-from pywb.utils.timeutils import timestamp_to_datetime, timestamp_to_sec
+from warcio.timeutils import timestamp_to_datetime, timestamp_to_sec
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import make_timemap, LINK_FORMAT
 

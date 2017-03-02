@@ -5,16 +5,17 @@ from io import BytesIO
 from six.moves.urllib.parse import urlsplit
 from itertools import chain
 
-from pywb.utils.statusandheaders import StatusAndHeaders
+from warcio.statusandheaders import StatusAndHeaders
+from warcio.limitreader import LimitReader
+from warcio.timeutils import timestamp_now
+from warcio.recordloader import ArchiveLoadFailed
+
 from pywb.utils.wbexception import WbException, NotFoundException
-from pywb.utils.limitreader import LimitReader
-from pywb.utils.timeutils import timestamp_now
 
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.framework.memento import MementoResponse
 
 from pywb.rewrite.rewrite_content import RewriteContent
-from pywb.warc.recordloader import ArchiveLoadFailed
 
 from pywb.webapp.views import HeadInsertView
 

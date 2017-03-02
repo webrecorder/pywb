@@ -5,7 +5,8 @@ import json
 import time
 import os
 
-from pywb.utils.timeutils import timestamp_now
+from warcio.timeutils import timestamp_now
+
 from pywb.cdx.cdxops import process_cdx
 from pywb.cdx.query import CDXQuery
 

@@ -3,7 +3,7 @@ from pywb.utils.wbexception import NotFoundException
 from pywb.webagg.indexsource import BaseIndexSource, RemoteIndexSource
 from pywb.webagg.responseloader import LiveWebLoader
 from pywb.webagg.utils import ParamFormatter, res_template
-from pywb.utils.timeutils import timestamp_now
+from warcio.timeutils import timestamp_now
 
 
 #=============================================================================

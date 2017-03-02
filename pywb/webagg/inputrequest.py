@@ -1,6 +1,7 @@
+from warcio.limitreader import LimitReader
+from warcio.statusandheaders import StatusAndHeadersParser
+
 from pywb.utils.loaders import extract_post_query, append_post_query
-from pywb.utils.limitreader import LimitReader
-from pywb.utils.statusandheaders import StatusAndHeadersParser
 
 from six.moves.urllib.parse import urlsplit, quote
 from six import iteritems, StringIO

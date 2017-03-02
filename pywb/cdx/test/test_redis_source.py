@@ -14,7 +14,7 @@ com,example)/ 20140127171251 http://example.com warc/revisit - B2LTWWPUOYAH7UIPQ
 from fakeredis import FakeStrictRedis
 from mock import patch
 
-from pywb.utils.timeutils import timestamp_to_sec
+from warcio.timeutils import timestamp_to_sec
 from pywb.cdx.cdxsource import RedisCDXSource
 from pywb.cdx.cdxserver import CDXServer
 

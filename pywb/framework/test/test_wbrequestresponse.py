@@ -61,7 +61,7 @@
 
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter
-from pywb.utils.statusandheaders import StatusAndHeaders
+from warcio.statusandheaders import StatusAndHeaders
 
 from pywb.framework.wbrequestresponse import WbRequest, WbResponse
 

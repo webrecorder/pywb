@@ -15,7 +15,7 @@ from pywb.cdx.cdxobject import IDXObject, CDXException, CDXObject
 from pywb.cdx.query import CDXQuery
 
 from pywb.utils.loaders import BlockLoader, read_last_line
-from pywb.utils.bufferedreaders import gzip_decompressor
+from warcio.bufferedreaders import gzip_decompressor
 from pywb.utils.binsearch import iter_range, linearsearch, search
 
 

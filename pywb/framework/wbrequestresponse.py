@@ -1,4 +1,4 @@
-from pywb.utils.statusandheaders import StatusAndHeaders
+from warcio.statusandheaders import StatusAndHeaders
 from pywb.utils.loaders import extract_post_query, append_post_query
 
 from io import BytesIO

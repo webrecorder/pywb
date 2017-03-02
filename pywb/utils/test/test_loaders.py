@@ -1,27 +1,5 @@
-#=================================================================
 r"""
-# LimitReader Tests
->>> LimitReader(StringIO('abcdefghjiklmnopqrstuvwxyz'), 10).read(26)
-'abcdefghji'
-
->>> LimitReader(StringIO('abcdefghjiklmnopqrstuvwxyz'), 8).readline(26)
-'abcdefgh'
-
->>> LimitReader.wrap_stream(LimitReader(StringIO('abcdefghjiklmnopqrstuvwxyz'), 8), 4).readline(26)
-'abcd'
-
->>> read_multiple(LimitReader(StringIO('abcdefghjiklmnopqrstuvwxyz'), 10), [2, 2, 20])
-'efghji'
-
-# zero-length read
->>> print_str(LimitReader(StringIO('a'), 0).readline(0))
-''
-
-# don't wrap if invalid length
->>> b = StringIO('b')
->>> LimitReader.wrap_stream(b, 'abc') == b
-True
-
+#=================================================================
 # BlockLoader Tests (includes LimitReader)
 # Ensure attempt to read more than 100 bytes, reads exactly 100 bytes
 >>> len(BlockLoader().load(test_cdx_dir + 'iana.cdx', 0, 100).read(400))
@@ -143,26 +121,13 @@ import requests
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
 from pywb.utils.loaders import extract_client_cookie, extract_post_query
 from pywb.utils.loaders import append_post_query, read_last_line
-from pywb.utils.limitreader import LimitReader
 
-from pywb.utils.bufferedreaders import DecompressingBufferedReader
+from warcio.bufferedreaders import DecompressingBufferedReader
 
 from pywb import get_test_dir
 
 test_cdx_dir = get_test_dir() + 'cdx/'
 
-
-def read_multiple(reader, inc_reads):
-    result = None
-    for x in inc_reads:
-        result = reader.read(x)
-    return result
-
-
-def seek_read_full(seekable_reader, offset):
-    seekable_reader.seek(offset)
-    seekable_reader.readline() #skip
-    return seekable_reader.readline()
 
 def test_s3_read_1():
     pytest.importorskip('boto')
@@ -177,15 +142,6 @@ def test_s3_read_1():
     reader = DecompressingBufferedReader(BytesIO(buff))
     assert reader.readline() == b'WARC/1.0\r\n'
     assert reader.readline() == b'WARC-Type: response\r\n'
-
-def test_limit_post():
-    reader = LimitReader(BytesIO(b'abcdefg'), 3)
-    r = requests.request(method='POST',
-                         url='http://httpbin.org/post',
-                         data=reader,
-                         headers={'Content-Length': '3'})
-
-    assert '"abc"' in r.text
 
 # Error
 def test_err_no_such_file():

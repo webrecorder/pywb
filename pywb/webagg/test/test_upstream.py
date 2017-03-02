@@ -8,7 +8,7 @@ from pywb.webagg.handlers import DefaultResourceHandler
 from pywb.webagg.aggregator import SimpleAggregator
 from pywb.webagg.proxyindexsource import ProxyMementoIndexSource, UpstreamAggIndexSource
 
-from pywb.warc.recordloader import ArcWarcRecordLoader
+from warcio.recordloader import ArcWarcRecordLoader
 
 from .testutils import LiveServerTests, BaseTestClass
 
@@ -48,7 +48,7 @@ class TestUpstream(LiveServerTests, BaseTestClass):
 
         record = ArcWarcRecordLoader().parse_record_stream(resp.raw, no_record_parse=False)
         assert record.rec_headers.get_header('WARC-Target-URI') == 'http://httpbin.org/get'
-        assert record.status_headers.get_header('Date') != ''
+        assert record.http_headers.get_header('Date') != ''
 
     def test_upstream_1(self):
         resp = self.testapp.get('/upstream/resource?url=http://httpbin.org/get')
@@ -58,7 +58,7 @@ class TestUpstream(LiveServerTests, BaseTestClass):
 
         record = ArcWarcRecordLoader().parse_record_stream(raw, no_record_parse=False)
         assert record.rec_headers.get_header('WARC-Target-URI') == 'http://httpbin.org/get'
-        assert record.status_headers.get_header('Date') != ''
+        assert record.http_headers.get_header('Date') != ''
 
     def test_upstream_2(self):
         resp = self.testapp.get('/upstream_opt/resource?url=http://httpbin.org/get')
@@ -68,7 +68,7 @@ class TestUpstream(LiveServerTests, BaseTestClass):
 
         record = ArcWarcRecordLoader().parse_record_stream(raw, no_record_parse=False)
         assert record.rec_headers.get_header('WARC-Target-URI') == 'http://httpbin.org/get'
-        assert record.status_headers.get_header('Date') != ''
+        assert record.http_headers.get_header('Date') != ''
 
 
 

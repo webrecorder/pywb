@@ -1,6 +1,6 @@
 from pywb.utils.wbexception import BadRequestException
-from pywb.utils.timeutils import http_date_to_timestamp
-from pywb.utils.timeutils import timestamp_to_http_date
+from warcio.timeutils import http_date_to_timestamp
+from warcio.timeutils import timestamp_to_http_date
 
 from pywb.framework.wbrequestresponse import WbRequest, WbResponse
 from pywb.rewrite.wburl import WbUrl

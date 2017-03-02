@@ -3,7 +3,7 @@ from pywb.webagg.indexsource import LiveIndexSource
 
 from pywb.webagg.aggregator import SimpleAggregator
 
-from pywb.utils.timeutils import timestamp_now
+from warcio.timeutils import timestamp_now
 
 from .testutils import key_ts_res, TEST_CDX_PATH
 

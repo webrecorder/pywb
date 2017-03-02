@@ -1,5 +1,5 @@
 from pywb.rewrite.cookie_rewriter import WbUrlBaseCookieRewriter, HostScopeCookieRewriter
-from pywb.utils.timeutils import datetime_to_http_date
+from warcio.timeutils import datetime_to_http_date
 from six.moves import zip
 
 import redis

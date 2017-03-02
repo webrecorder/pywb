@@ -12,10 +12,11 @@ from pywb.rewrite.header_rewriter import RewrittenStatusAndHeaders
 from pywb.rewrite.rewriterules import RewriteRules
 
 from pywb.utils.dsrules import RuleSet
-from pywb.utils.statusandheaders import StatusAndHeaders
-from pywb.utils.bufferedreaders import DecompressingBufferedReader
-from pywb.utils.bufferedreaders import ChunkedDataReader, BufferedReader
-from pywb.utils.loaders import to_native_str
+
+from warcio.statusandheaders import StatusAndHeaders
+from warcio.bufferedreaders import DecompressingBufferedReader
+from warcio.bufferedreaders import ChunkedDataReader, BufferedReader
+from warcio.utils import to_native_str
 
 from pywb.rewrite.regex_rewriters import JSNoneRewriter, JSLinkOnlyRewriter
 

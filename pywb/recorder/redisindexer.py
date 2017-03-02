@@ -1,7 +1,8 @@
 from pywb.utils.canonicalize import calc_search_range
 from pywb.cdx.cdxobject import CDXObject
 from pywb.warc.cdxindexer import write_cdx_index
-from pywb.utils.timeutils import iso_date_to_timestamp
+
+from warcio.timeutils import iso_date_to_timestamp
 
 from io import BytesIO
 import os

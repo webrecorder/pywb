@@ -1,5 +1,5 @@
-from pywb.utils.statusandheaders import StatusAndHeaders
-from pywb.utils.timeutils import datetime_to_http_date
+from warcio.statusandheaders import StatusAndHeaders
+from warcio.timeutils import datetime_to_http_date
 from datetime import datetime, timedelta
 import six
 

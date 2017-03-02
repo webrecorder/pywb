@@ -20,11 +20,13 @@ from pywb.recorder.filters import SkipDupePolicy, WriteDupePolicy, WriteRevisitD
 from pywb.webagg.utils import MementoUtils
 
 from pywb.cdx.cdxobject import CDXObject
-from pywb.utils.statusandheaders import StatusAndHeadersParser
-from pywb.utils.bufferedreaders import DecompressingBufferedReader
-from pywb.warc.recordloader import ArcWarcRecordLoader
+
+from warcio.statusandheaders import StatusAndHeadersParser
+from warcio.bufferedreaders import DecompressingBufferedReader
+from warcio.recordloader import ArcWarcRecordLoader
+from warcio.archiveiterator import ArchiveIterator
+
 from pywb.warc.cdxindexer import write_cdx_index
-from pywb.warc.archiveiterator import ArchiveIterator
 
 from six.moves.urllib.parse import quote, unquote, urlencode
 from io import BytesIO
@@ -122,9 +124,9 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
             filename = os.path.join(base_dir, filename)
             with open(filename, 'rb') as fh:
                 for record in ArchiveIterator(fh, no_record_parse=True):
-                    assert record.status_headers == None
+                    assert record.http_headers == None
                     assert int(record.rec_headers.get_header('Content-Length')) == record.length
-                    assert record.length == len(record.stream.read())
+                    assert record.length == len(record.raw_stream.read())
 
     def test_record_warc_1(self):
         recorder_app = RecorderApp(self.upstream_url,
@@ -168,16 +170,16 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         buff = BytesIO(resp.body)
         record = ArcWarcRecordLoader().parse_record_stream(buff)
-        assert ('Set-Cookie', 'name=value; Path=/') in record.status_headers.headers
-        assert ('Set-Cookie', 'foo=bar; Path=/') in record.status_headers.headers
+        assert ('Set-Cookie', 'name=value; Path=/') in record.http_headers.headers
+        assert ('Set-Cookie', 'foo=bar; Path=/') in record.http_headers.headers
 
         stored_req, stored_resp = self._load_resp_req(base_path)
 
-        assert ('Set-Cookie', 'name=value; Path=/') in stored_resp.status_headers.headers
-        assert ('Set-Cookie', 'foo=bar; Path=/') in stored_resp.status_headers.headers
+        assert ('Set-Cookie', 'name=value; Path=/') in stored_resp.http_headers.headers
+        assert ('Set-Cookie', 'foo=bar; Path=/') in stored_resp.http_headers.headers
 
-        assert ('X-Other', 'foo') in stored_req.status_headers.headers
-        assert ('Cookie', 'boo=far') in stored_req.status_headers.headers
+        assert ('X-Other', 'foo') in stored_req.http_headers.headers
+        assert ('Cookie', 'boo=far') in stored_req.http_headers.headers
 
         self._test_all_warcs('/warcs/cookiecheck/', 1)
 
@@ -193,16 +195,16 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         buff = BytesIO(resp.body)
         record = ArcWarcRecordLoader().parse_record_stream(buff)
-        assert ('Set-Cookie', 'name=value; Path=/') in record.status_headers.headers
-        assert ('Set-Cookie', 'foo=bar; Path=/') in record.status_headers.headers
+        assert ('Set-Cookie', 'name=value; Path=/') in record.http_headers.headers
+        assert ('Set-Cookie', 'foo=bar; Path=/') in record.http_headers.headers
 
         stored_req, stored_resp = self._load_resp_req(warc_path)
 
-        assert ('Set-Cookie', 'name=value; Path=/') not in stored_resp.status_headers.headers
-        assert ('Set-Cookie', 'foo=bar; Path=/') not in stored_resp.status_headers.headers
+        assert ('Set-Cookie', 'name=value; Path=/') not in stored_resp.http_headers.headers
+        assert ('Set-Cookie', 'foo=bar; Path=/') not in stored_resp.http_headers.headers
 
-        assert ('X-Other', 'foo') in stored_req.status_headers.headers
-        assert ('Cookie', 'boo=far') not in stored_req.status_headers.headers
+        assert ('X-Other', 'foo') in stored_req.http_headers.headers
+        assert ('Cookie', 'boo=far') not in stored_req.http_headers.headers
 
         self._test_all_warcs('/warcs/cookieskip/', 1)
 
@@ -530,10 +532,10 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert status_headers.get_header('Content-Length') == str(len(buff))
         assert status_headers.get_header('WARC-Custom') == 'foo'
 
-        assert record.stream.read() == buff
+        assert record.raw_stream.read() == buff
 
-        status_headers = record.status_headers
-        assert len(record.status_headers.headers) == 2
+        status_headers = record.http_headers
+        assert len(record.http_headers.headers) == 2
 
         assert status_headers.get_header('Content-Type') == 'text/plain'
         assert status_headers.get_header('Content-Length') == str(len(buff))

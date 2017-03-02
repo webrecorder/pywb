@@ -5,9 +5,11 @@ import logging
 
 from datetime import datetime
 
+from warcio.statusandheaders import StatusAndHeaders
+from warcio.timeutils import datetime_to_timestamp
+
 from pywb.utils.wbexception import NotFoundException
 from pywb.utils.loaders import LocalFileLoader
-from pywb.utils.statusandheaders import StatusAndHeaders
 
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
@@ -19,7 +21,6 @@ from pywb.warc.pathresolvers import PathResolverMapper
 from pywb.webapp.views import J2TemplateView, init_view
 from pywb.webapp.replay_views import ReplayView
 from pywb.framework.memento import MementoResponse
-from pywb.utils.timeutils import datetime_to_timestamp
 
 
 #=================================================================

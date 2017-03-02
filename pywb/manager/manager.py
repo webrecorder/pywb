@@ -13,7 +13,7 @@ from pkg_resources import resource_string
 from argparse import ArgumentParser, RawTextHelpFormatter
 
 from pywb.utils.loaders import load_yaml_config
-from pywb.utils.timeutils import timestamp20_now
+from warcio.timeutils import timestamp20_now
 
 from pywb import DEFAULT_CONFIG
 
