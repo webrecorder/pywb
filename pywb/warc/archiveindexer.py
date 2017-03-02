@@ -1,8 +1,8 @@
-from pywb.utils.timeutils import iso_date_to_timestamp
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.loaders import extract_post_query, append_post_query
 
-from pywb.warc.archiveiterator import ArchiveIterator
+from warcio.timeutils import iso_date_to_timestamp
+from warcio.archiveiterator import ArchiveIterator
 
 import hashlib
 import base64
@@ -71,7 +71,7 @@ class ArchiveIndexEntryMixin(object):
             self['urlkey'] = canonicalize(url, surt_ordered)
             other['urlkey'] = self['urlkey']
 
-        referer = other.record.status_headers.get_header('referer')
+        referer = other.record.http_headers.get_header('referer')
         if referer:
             self['_referer'] = referer
 
@@ -141,7 +141,7 @@ class DefaultRecordParser(object):
         for record in raw_iter:
             entry = None
 
-            if not include_all and not minimal and (record.status_headers.get_statuscode() == '-'):
+            if not include_all and not minimal and (record.http_headers.get_statuscode() == '-'):
                 continue
 
             if record.rec_type == 'arc_header':
@@ -175,13 +175,13 @@ class DefaultRecordParser(object):
                 compute_digest = True
 
             elif not minimal and record.rec_type == 'request' and append_post:
-                method = record.status_headers.protocol
-                len_ = record.status_headers.get_header('Content-Length')
+                method = record.http_headers.protocol
+                len_ = record.http_headers.get_header('Content-Length')
 
                 post_query = extract_post_query(method,
                                                 entry.get('_content_type'),
                                                 len_,
-                                                record.stream)
+                                                record.raw_stream)
 
                 entry['_post_query'] = post_query
 
@@ -236,7 +236,7 @@ class DefaultRecordParser(object):
         if record.rec_type == 'warcinfo':
             entry['url'] = record.rec_headers.get_header('WARC-Filename')
             entry['urlkey'] = entry['url']
-            entry['_warcinfo'] = record.stream.read(record.length)
+            entry['_warcinfo'] = record.raw_stream.read(record.length)
             return entry
 
         entry['url'] = record.rec_headers.get_header('WARC-Target-Uri')
@@ -252,13 +252,13 @@ class DefaultRecordParser(object):
             entry['mime'] = '-'
         else:
             def_mime = '-' if record.rec_type == 'request' else 'unk'
-            entry.extract_mime(record.status_headers.
+            entry.extract_mime(record.http_headers.
                                get_header('Content-Type'),
                                def_mime)
 
         # status -- only for response records (by convention):
         if record.rec_type == 'response' and not self.options.get('minimal'):
-            entry.extract_status(record.status_headers)
+            entry.extract_status(record.http_headers)
         else:
             entry['status'] = '-'
 
@@ -304,7 +304,7 @@ class DefaultRecordParser(object):
             entry.extract_mime(record.rec_headers.get_header('content-type'))
 
             # status
-            entry.extract_status(record.status_headers)
+            entry.extract_status(record.http_headers)
 
         # digest
         entry['digest'] = '-'

@@ -17,7 +17,7 @@ import base64
 import cgi
 
 from io import open, BytesIO
-from pywb.utils.limitreader import LimitReader
+from warcio.limitreader import LimitReader
 
 try:
     from boto import connect_s3

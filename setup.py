@@ -71,6 +71,7 @@ setup(
         ],
     install_requires=[
         'six',
+        'warcio',
         'chardet',
         'requests',
         'redis',

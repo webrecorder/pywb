@@ -2,7 +2,7 @@ from pywb.webagg.responseloader import  WARCPathLoader, LiveWebLoader, VideoLoad
 from pywb.webagg.utils import MementoUtils
 from pywb.utils.wbexception import BadRequestException, WbException
 from pywb.utils.wbexception import NotFoundException
-from pywb.warc.recordloader import ArchiveLoadFailed
+from warcio.recordloader import ArchiveLoadFailed
 
 from pywb.cdx.query import CDXQuery
 from pywb.cdx.cdxdomainspecific import load_domain_specific_cdx_rules

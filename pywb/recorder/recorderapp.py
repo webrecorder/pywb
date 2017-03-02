@@ -69,16 +69,21 @@ class RecorderApp(object):
             req_head, req_pay, resp_head, resp_pay, params = result
 
             #resp_type, resp = self.writer.read_resp_record(resp_head, resp_pay)
-            resp = self.writer.copy_warc_record(resp_pay)
+            resp_length = resp_pay.tell()
+            resp_pay.seek(0)
+            resp = self.writer.create_record_from_stream(resp_pay, resp_length)
 
             if resp.rec_type == 'response':
                 uri = resp.rec_headers.get_header('WARC-Target-Uri')
+                req_length = req_pay.tell()
+                req_pay.seek(0)
                 req = self.writer.create_warc_record(uri=uri,
                                                      record_type='request',
                                                      payload=req_pay,
+                                                     length=req_length,
                                                      warc_headers_dict=req_head)
 
-                self.writer.write_req_resp(req, resp, params)
+                self.writer.write_request_response_pair(req, resp, params)
 
             else:
                 self.writer.write_record(resp, params)
@@ -133,9 +138,13 @@ class RecorderApp(object):
 
             content_type = headers.get('Content-Type')
 
+            payload_length = req_stream.out.tell()
+            req_stream.out.seek(0)
+
             record = self.writer.create_warc_record(uri=params['url'],
                                                     record_type=record_type,
                                                     payload=req_stream.out,
+                                                    length=payload_length,
                                                     warc_content_type=content_type,
                                                     warc_headers_dict=req_stream.headers)
 

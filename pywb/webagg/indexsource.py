@@ -1,6 +1,6 @@
 from pywb.utils.binsearch import iter_range
-from pywb.utils.timeutils import timestamp_to_http_date, http_date_to_timestamp
-from pywb.utils.timeutils import timestamp_now
+from warcio.timeutils import timestamp_to_http_date, http_date_to_timestamp
+from warcio.timeutils import timestamp_now
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.wbexception import NotFoundException
 
