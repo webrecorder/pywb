@@ -2,6 +2,7 @@ from pywb.webagg.responseloader import  WARCPathLoader, LiveWebLoader, VideoLoad
 from pywb.webagg.utils import MementoUtils
 from pywb.utils.wbexception import BadRequestException, WbException
 from pywb.utils.wbexception import NotFoundException
+from pywb.warc.recordloader import ArchiveLoadFailed
 
 from pywb.cdx.query import CDXQuery
 from pywb.cdx.cdxdomainspecific import load_domain_specific_cdx_rules
@@ -151,7 +152,7 @@ class ResourceHandler(IndexHandler):
                     out_headers, resp = loader(cdx, params)
                     if resp is not None:
                         return out_headers, resp, errs
-                except WbException as e:
+                except (WbException, ArchiveLoadFailed) as e:
                     last_exc = e
                     errs[str(loader)] = str(e)
 

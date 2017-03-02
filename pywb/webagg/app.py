@@ -107,7 +107,11 @@ class ResAggApp(object):
             if self.debug:
                 traceback.print_exc()
 
-            status = last_exc.status()
+            if not hasattr(last_exc, 'status'):
+                status = '503 Archive Not Available'
+            else:
+                status = last_exc.status()
+
             message = last_exc.msg
 
         res = {'message': message}

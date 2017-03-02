@@ -7,7 +7,7 @@ from pywb.utils.statusandheaders import StatusAndHeadersParserException
 from pywb.utils.limitreader import LimitReader
 from pywb.utils.loaders import to_native_str
 
-from pywb.utils.wbexception import WbException
+#from pywb.utils.wbexception import WbException
 from pywb.utils.timeutils import timestamp_to_iso_date
 
 from six.moves import zip
@@ -27,7 +27,7 @@ class ArcWarcRecord(object):
 
 
 #=================================================================
-class ArchiveLoadFailed(WbException):
+class ArchiveLoadFailed(Exception):
     def __init__(self, reason, filename=''):
         if filename:
             msg = filename + ': ' + str(reason)
@@ -35,9 +35,7 @@ class ArchiveLoadFailed(WbException):
             msg = str(reason)
 
         super(ArchiveLoadFailed, self).__init__(msg)
-
-    def status(self):
-        return '503 Service Unavailable'
+        self.msg = msg
 
 
 #=================================================================
