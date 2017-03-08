@@ -210,7 +210,8 @@ class RewriterApp(object):
             except (ValueError, TypeError):
                 pass
 
-        if self.is_ajax(environ):
+        is_ajax = self.is_ajax(environ)
+        if is_ajax:
             head_insert_func = None
             urlrewriter.rewrite_opts['is_ajax'] = True
         else:
@@ -245,11 +246,11 @@ class RewriterApp(object):
         if ' ' not in status_headers.statusline:
             status_headers.statusline += ' None'
 
-        self._add_memento_links(urlrewriter, full_prefix, memento_dt, status_headers)
+        if not is_ajax:
+            self._add_memento_links(urlrewriter, full_prefix, memento_dt, status_headers)
 
-        #if cdx['timestamp'] != wb_url.timestamp:
-        status_headers.headers.append(('Content-Location', urlrewriter.get_new_url(timestamp=cdx['timestamp'],
-                                                                                   url=cdx['url'])))
+            status_headers.headers.append(('Content-Location', urlrewriter.get_new_url(timestamp=cdx['timestamp'],
+                                                                                       url=cdx['url'])))
 
         #gen = buffer_iter(status_headers, gen)
 
