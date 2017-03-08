@@ -221,7 +221,7 @@ class TestResAgg(MementoOverrideTests, FakeRedisTests, BaseTestClass):
 
     @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_live'))
     def test_agg_select_live(self):
-        resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=2016')
+        resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=now')
 
         assert resp.headers['WebAgg-Source-Coll'] == 'live'
 
