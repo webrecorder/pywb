@@ -8,6 +8,6 @@ surt>=0.3.0
 brotlipy
 pyyaml
 webencodings
-gevent==1.1.2
+gevent==1.2.1
 webassets==0.12.1
 portalocker
