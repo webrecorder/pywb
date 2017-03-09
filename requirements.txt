@@ -1,0 +1,13 @@
+six
+warcio
+chardet
+requests
+redis
+jinja2<2.9
+surt>=0.3.0
+brotlipy
+pyyaml
+webencodings
+gevent==1.1.2
+webassets==0.12.1
+portalocker
