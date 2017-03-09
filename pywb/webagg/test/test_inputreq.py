@@ -1,34 +1,45 @@
 from pywb.webagg.inputrequest import DirectWSGIInputRequest, POSTInputRequest
-from bottle import Bottle, request, response, debug
+from werkzeug.routing import Map, Rule
+
 import webtest
 import traceback
+from six.moves.urllib.parse import parse_qsl
 
 
 #=============================================================================
 class InputReqApp(object):
     def __init__(self):
-        self.application = Bottle()
-        debug(True)
+        self.url_map = Map()
+        self.url_map.add(Rule('/test/<path:url>', endpoint=self.direct_input_request))
+        self.url_map.add(Rule('/test-postreq', endpoint=self.post_fullrequest))
 
-        @self.application.route('/test/<url:re:.*>', 'ANY')
-        def direct_input_request(url=''):
-            inputreq = DirectWSGIInputRequest(request.environ)
-            response['Content-Type'] = 'text/plain; charset=utf-8'
-            return inputreq.reconstruct_request(url)
+    def direct_input_request(self, environ, url=''):
+        inputreq = DirectWSGIInputRequest(environ)
+        return inputreq.reconstruct_request(url)
 
-        @self.application.route('/test-postreq', 'POST')
-        def post_fullrequest():
-            params = dict(request.query)
-            inputreq = POSTInputRequest(request.environ)
-            response['Content-Type'] = 'text/plain; charset=utf-8'
-            return inputreq.reconstruct_request(params.get('url'))
+    def post_fullrequest(self, environ):
+        params = dict(parse_qsl(environ.get('QUERY_STRING', '')))
+        inputreq = POSTInputRequest(environ)
+        return inputreq.reconstruct_request(params['url'])
+
+    def __call__(self, environ, start_response):
+        urls = self.url_map.bind_to_environ(environ)
+        try:
+            endpoint, args = urls.match()
+        except HTTPException as e:
+            return e(environ, start_response)
+
+        result = endpoint(environ, **args)
+        start_response('200 OK', [('Content-Type', 'text/plain; charset=utf-8')])
+        return [result]
+
 
 
 #=============================================================================
 class TestInputReq(object):
     def setup(self):
         self.app = InputReqApp()
-        self.testapp = webtest.TestApp(self.app.application)
+        self.testapp = webtest.TestApp(self.app)
 
     def test_get_direct(self):
         res = self.testapp.get('/test/http://example.com/', headers={'Foo': 'Bar'})

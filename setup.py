@@ -86,7 +86,6 @@ setup(
         'fakeredis',
         'mock',
         'urllib3',
-        'bottle',
         'werkzeug',
        ],
     cmdclass={'test': PyTest},
