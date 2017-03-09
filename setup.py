@@ -31,6 +31,12 @@ class PyTest(TestCommand):
 
         sys.exit(errcode)
 
+
+def load_requirements(filename):
+    with open(filename, 'rt') as fh:
+        return fh.read().rstrip().split('\n')
+
+
 setup(
     name='pywb',
     version=__version__,
@@ -69,22 +75,7 @@ setup(
         ('sample_archive/text_content',
             glob.glob('sample_archive/text_content/*')),
         ],
-    install_requires=[
-        'six',
-        'warcio',
-        'chardet',
-        'requests',
-        'redis',
-        'jinja2<2.9',
-        'surt>=0.3.0',
-        'brotlipy',
-        'pyyaml',
-        'webencodings',
-        'gevent==1.1.2',
-        'webassets==0.12.1',
-        'portalocker'
-        #'pyamf'
-    ],
+    install_requires=load_requirements('requirements.txt'),
     dependency_links=[
         #'git+https://github.com/t0m/pyamf.git@python3#egg=pyamf-0.8.0'
     ],

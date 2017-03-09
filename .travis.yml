@@ -18,10 +18,10 @@ cache:
 sudo: false
 
 install:
-  - "pip install 'argparse>=1.2.1' --allow-all-external"
-  - pip install boto certauth youtube-dl
-  - pip install git+https://github.com/esnme/ultrajson.git
+  #- pip install boto certauth youtube-dl
+  #- pip install git+https://github.com/esnme/ultrajson.git
   - python setup.py -q install
+  - pip install -r extra_requirements.txt
   - pip install coverage pytest-cov coveralls
   - npm install
 
