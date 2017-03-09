@@ -6,10 +6,10 @@ from pywb.framework.archivalrouter import Route
 
 from pywb.rewrite.rewrite_content import RewriteContent
 from pywb.rewrite.wburl import WbUrl
-from pywb.warc.recordloader import ArcWarcRecordLoader
+from warcio.recordloader import ArcWarcRecordLoader
 from pywb.webapp.live_rewrite_handler import RewriteHandler
 from pywb.utils.canonicalize import canonicalize
-from pywb.utils.timeutils import http_date_to_timestamp
+from warcio.timeutils import http_date_to_timestamp
 from pywb.cdx.cdxobject import CDXObject
 
 from io import BytesIO
@@ -81,7 +81,7 @@ class PlatformHandler(RewriteHandler):
 
         head_insert_func = self.head_insert_view.create_insert_func(wbrequest)
         result = self.content_rewriter.rewrite_content(wbrequest.urlrewriter,
-                                               record.status_headers,
+                                               record.http_headers,
                                                record.stream,
                                                head_insert_func,
                                                urlkey,

@@ -1,7 +1,6 @@
 from pywb.framework.wbrequestresponse import WbResponse
 from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.wbexception import WbException
-from pywb.utils.statusandheaders import StatusAndHeaders
 from pywb.rewrite.wburl import WbUrl
 
 from pywb.framework.cache import create_cache
@@ -10,7 +9,8 @@ from pywb.framework.basehandlers import WbUrlHandler
 from six.moves.urllib.parse import parse_qs, urlsplit
 import six
 
-from pywb.utils.loaders import to_native_str
+from warcio.statusandheaders import StatusAndHeaders
+from warcio.utils import to_native_str
 
 import base64
 import os

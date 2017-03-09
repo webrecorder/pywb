@@ -31,7 +31,7 @@ from bisect import insort
 
 from six import StringIO
 
-from pywb.warc.archiveiterator import DefaultRecordParser
+from pywb.warc.archiveindexer import DefaultRecordParser
 import codecs
 import six
 

@@ -50,9 +50,9 @@ HTTP Headers Rewriting
 
 from pywb.rewrite.header_rewriter import HeaderRewriter
 from pywb.rewrite.url_rewriter import UrlRewriter
-from pywb.utils.statusandheaders import StatusAndHeaders
+from warcio.statusandheaders import StatusAndHeaders
 
-from pywb.utils.timeutils import datetime_to_http_date
+from warcio.timeutils import datetime_to_http_date
 from datetime import datetime
 
 import pprint

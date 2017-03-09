@@ -2,12 +2,13 @@ from pywb.webagg.utils import MementoUtils, StreamIter, compress_gzip_iter
 from pywb.webagg.utils import ParamFormatter
 from pywb.webagg.indexsource import RedisIndexSource
 
-from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_timestamp
-from pywb.utils.timeutils import iso_date_to_datetime, datetime_to_iso_date
-from pywb.utils.timeutils import http_date_to_datetime, datetime_to_http_date
+from warcio.timeutils import timestamp_to_datetime, datetime_to_timestamp
+from warcio.timeutils import iso_date_to_datetime, datetime_to_iso_date
+from warcio.timeutils import http_date_to_datetime, datetime_to_http_date
+
+from warcio.statusandheaders import StatusAndHeaders, StatusAndHeadersParser
 
 from pywb.utils.wbexception import LiveResourceException, WbException
-from pywb.utils.statusandheaders import StatusAndHeaders, StatusAndHeadersParser
 
 from pywb.warc.resolvingloader import ResolvingLoader
 
@@ -243,11 +244,11 @@ class WARCPathLoader(BaseLoader):
 
         status = cdx.get('status')
         if not status or status.startswith('3'):
-            status_headers = self.headers_parser.parse(payload.stream)
+            http_headers = self.headers_parser.parse(payload.raw_stream)
             self.raise_on_self_redirect(params, cdx,
-                                        status_headers.get_statuscode(),
-                                        status_headers.get_header('Location'))
-            http_headers_buff = status_headers.to_bytes()
+                                        http_headers.get_statuscode(),
+                                        http_headers.get_header('Location'))
+            http_headers_buff = http_headers.to_bytes()
         else:
             http_headers_buff = None
 
@@ -266,9 +267,9 @@ class WARCPathLoader(BaseLoader):
             warc_headers.replace_header('WARC-Date',
                      headers.rec_headers.get_header('WARC-Date'))
 
-            headers.stream.close()
+            headers.raw_stream.close()
 
-        return (warc_headers, http_headers_buff, payload.stream)
+        return (warc_headers, http_headers_buff, payload.raw_stream)
 
     def __str__(self):
         return  'WARCPathLoader'

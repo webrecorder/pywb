@@ -370,6 +370,30 @@ def test_cdxj_empty():
     assert buff.getvalue() == b''
 
 
+def test_cdxj_middle_empty_records():
+    empty_gzip_record = b'\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\x03\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
+    new_warc = BytesIO()
+
+    with open(TEST_WARC_DIR + 'example2.warc.gz', 'rb') as fh:
+        new_warc.write(empty_gzip_record)
+        new_warc.write(fh.read())
+        new_warc.write(empty_gzip_record)
+        new_warc.write(empty_gzip_record)
+        fh.seek(0)
+        new_warc.write(fh.read())
+
+    options = dict(cdxj=True)
+
+    buff = BytesIO()
+    new_warc.seek(0)
+
+    write_cdx_index(buff, new_warc, 'empty.warc.gz', **options)
+
+    lines = buff.getvalue().rstrip().split(b'\n')
+
+    assert len(lines) == 2, lines
+
 
 if __name__ == "__main__":
     import doctest

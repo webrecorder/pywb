@@ -292,12 +292,13 @@ import sys
 import pprint
 import six
 
-from pywb.warc.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
+from warcio.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
+from pywb.warc.blockrecordloader import BlockArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
 from pywb.warc.pathresolvers import PathResolverMapper
 from pywb.cdx.cdxobject import CDXObject
 
-import pywb.utils.statusandheaders
+import warcio.statusandheaders
 
 from pywb import get_test_dir
 
@@ -326,14 +327,16 @@ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - \
 def load_test_archive(test_file, offset, length):
     path = test_warc_dir + test_file
 
-    testloader = ArcWarcRecordLoader()
+    testloader = BlockArcWarcRecordLoader()
 
     archive = testloader.load(path, offset, length)
 
-    pywb.utils.statusandheaders.WRAP_WIDTH = 160
+    warcio.statusandheaders.WRAP_WIDTH = 160
 
     pprint.pprint(((archive.format, archive.rec_type),
-                   archive.rec_headers, archive.status_headers), indent=1, width=160)
+                   archive.rec_headers, archive.http_headers), indent=1, width=160)
+
+    warcio.statusandheaders.WRAP_WIDTH = 80
 
 
 #==============================================================================

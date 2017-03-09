@@ -7,7 +7,9 @@ import zlib
 
 from contextlib import closing
 
-from pywb.utils.timeutils import timestamp_to_http_date
+from warcio.timeutils import timestamp_to_http_date
+from warcio.utils import BUFF_SIZE
+
 from pywb.utils.wbexception import BadRequestException
 from pywb.utils.loaders import load_yaml_config
 
@@ -19,9 +21,6 @@ LINK_SPLIT = re.compile(',\s*(?=[<])')
 LINK_SEG_SPLIT = re.compile(';\s*')
 LINK_URL = re.compile('<(.*)>')
 LINK_PROP = re.compile('([\w]+)="([^"]+)')
-
-BUFF_SIZE = 16384
-
 
 #=============================================================================
 class MementoException(BadRequestException):

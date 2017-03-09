@@ -6,14 +6,15 @@ from pywb.rewrite.url_rewriter import UrlRewriter
 
 from pywb.utils.wbexception import WbException
 from pywb.utils.canonicalize import canonicalize
-from pywb.utils.timeutils import http_date_to_timestamp
 from pywb.utils.loaders import extract_client_cookie
-from pywb.utils.bufferedreaders import BufferedReader
+
+from warcio.timeutils import http_date_to_timestamp
+from warcio.bufferedreaders import BufferedReader
+from warcio.recordloader import ArcWarcRecordLoader
 
 from pywb.webagg.utils import BUFF_SIZE
 
 from pywb.cdx.cdxobject import CDXObject
-from pywb.warc.recordloader import ArcWarcRecordLoader
 from pywb.framework.wbrequestresponse import WbResponse
 
 from pywb.webagg.utils import MementoUtils, buffer_iter
@@ -200,11 +201,11 @@ class RewriterApp(object):
         self._add_custom_params(cdx, r.headers, kwargs)
 
         if readd_range:
-            content_length = (record.status_headers.
+            content_length = (record.http_headers.
                               get_header('Content-Length'))
             try:
                 content_length = int(content_length)
-                record.status_headers.add_range(0, content_length,
+                record.http_headers.add_range(0, content_length,
                                                    content_length)
             except (ValueError, TypeError):
                 pass
@@ -229,8 +230,8 @@ class RewriterApp(object):
                                                                cookie_key)
 
         result = self.content_rewriter.rewrite_content(urlrewriter,
-                                               record.status_headers,
-                                               record.stream,
+                                               record.http_headers,
+                                               record.raw_stream,
                                                head_insert_func,
                                                urlkey,
                                                cdx,

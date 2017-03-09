@@ -13,18 +13,20 @@ from fakeredis import FakeStrictRedis
 
 from pywb.recorder.recorderapp import RecorderApp
 from pywb.recorder.redisindexer import WritableRedisIndexer
-from pywb.recorder.warcwriter import PerRecordWARCWriter, MultiFileWARCWriter, SimpleTempWARCWriter
+from pywb.recorder.multifilewarcwriter import PerRecordWARCWriter, MultiFileWARCWriter
 from pywb.recorder.filters import ExcludeSpecificHeaders
 from pywb.recorder.filters import SkipDupePolicy, WriteDupePolicy, WriteRevisitDupePolicy
 
 from pywb.webagg.utils import MementoUtils
 
 from pywb.cdx.cdxobject import CDXObject
-from pywb.utils.statusandheaders import StatusAndHeadersParser
-from pywb.utils.bufferedreaders import DecompressingBufferedReader
-from pywb.warc.recordloader import ArcWarcRecordLoader
+
+from warcio.statusandheaders import StatusAndHeadersParser
+from warcio.bufferedreaders import DecompressingBufferedReader
+from warcio.recordloader import ArcWarcRecordLoader
+from warcio.archiveiterator import ArchiveIterator
+
 from pywb.warc.cdxindexer import write_cdx_index
-from pywb.warc.archiveiterator import ArchiveIterator
 
 from six.moves.urllib.parse import quote, unquote, urlencode
 from io import BytesIO
@@ -94,6 +96,8 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         files = [x for x in os.listdir(coll_dir) if os.path.isfile(os.path.join(coll_dir, x))]
         assert len(files) == num
         assert all(x.endswith('.warc.gz') for x in files)
+
+        self._verify_content_len(coll_dir, files)
         return files, coll_dir
 
     def _load_resp_req(self, base_path):
@@ -105,7 +109,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         stored_req = None
 
         with open(os.path.join(base_path, warc), 'rb') as fh:
-            for rec in ArchiveIterator(fh)():
+            for rec in ArchiveIterator(fh):
                 if rec.rec_type == 'response':
                     stored_resp = rec
                 elif rec.rec_type == 'request':
@@ -114,6 +118,15 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert stored_resp is not None
         assert stored_req is not None
         return stored_req, stored_resp
+
+    def _verify_content_len(self, base_dir, files):
+        for filename in files:
+            filename = os.path.join(base_dir, filename)
+            with open(filename, 'rb') as fh:
+                for record in ArchiveIterator(fh, no_record_parse=True):
+                    assert record.http_headers == None
+                    assert int(record.rec_headers.get_header('Content-Length')) == record.length
+                    assert record.length == len(record.raw_stream.read())
 
     def test_record_warc_1(self):
         recorder_app = RecorderApp(self.upstream_url,
@@ -157,16 +170,18 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         buff = BytesIO(resp.body)
         record = ArcWarcRecordLoader().parse_record_stream(buff)
-        assert ('Set-Cookie', 'name=value; Path=/') in record.status_headers.headers
-        assert ('Set-Cookie', 'foo=bar; Path=/') in record.status_headers.headers
+        assert ('Set-Cookie', 'name=value; Path=/') in record.http_headers.headers
+        assert ('Set-Cookie', 'foo=bar; Path=/') in record.http_headers.headers
 
         stored_req, stored_resp = self._load_resp_req(base_path)
 
-        assert ('Set-Cookie', 'name=value; Path=/') in stored_resp.status_headers.headers
-        assert ('Set-Cookie', 'foo=bar; Path=/') in stored_resp.status_headers.headers
+        assert ('Set-Cookie', 'name=value; Path=/') in stored_resp.http_headers.headers
+        assert ('Set-Cookie', 'foo=bar; Path=/') in stored_resp.http_headers.headers
 
-        assert ('X-Other', 'foo') in stored_req.status_headers.headers
-        assert ('Cookie', 'boo=far') in stored_req.status_headers.headers
+        assert ('X-Other', 'foo') in stored_req.http_headers.headers
+        assert ('Cookie', 'boo=far') in stored_req.http_headers.headers
+
+        self._test_all_warcs('/warcs/cookiecheck/', 1)
 
     def test_record_cookies_skip_header(self):
         warc_path = to_path(self.root_dir + '/warcs/cookieskip/')
@@ -180,16 +195,18 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         buff = BytesIO(resp.body)
         record = ArcWarcRecordLoader().parse_record_stream(buff)
-        assert ('Set-Cookie', 'name=value; Path=/') in record.status_headers.headers
-        assert ('Set-Cookie', 'foo=bar; Path=/') in record.status_headers.headers
+        assert ('Set-Cookie', 'name=value; Path=/') in record.http_headers.headers
+        assert ('Set-Cookie', 'foo=bar; Path=/') in record.http_headers.headers
 
         stored_req, stored_resp = self._load_resp_req(warc_path)
 
-        assert ('Set-Cookie', 'name=value; Path=/') not in stored_resp.status_headers.headers
-        assert ('Set-Cookie', 'foo=bar; Path=/') not in stored_resp.status_headers.headers
+        assert ('Set-Cookie', 'name=value; Path=/') not in stored_resp.http_headers.headers
+        assert ('Set-Cookie', 'foo=bar; Path=/') not in stored_resp.http_headers.headers
 
-        assert ('X-Other', 'foo') in stored_req.status_headers.headers
-        assert ('Cookie', 'boo=far') not in stored_req.status_headers.headers
+        assert ('X-Other', 'foo') in stored_req.http_headers.headers
+        assert ('Cookie', 'boo=far') not in stored_req.http_headers.headers
+
+        self._test_all_warcs('/warcs/cookieskip/', 1)
 
     def test_record_skip_wrong_coll(self):
         recorder_app = RecorderApp(self.upstream_url,
@@ -470,34 +487,6 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         self._test_all_warcs('/warcs/GOO/', 2)
 
-    def test_warcinfo_record(self):
-        simplewriter = SimpleTempWARCWriter(gzip=False)
-        params = {'software': 'recorder test',
-                  'format': 'WARC File Format 1.0',
-                  'json-metadata': json.dumps({'foo': 'bar'})}
-
-        record = simplewriter.create_warcinfo_record('testfile.warc.gz', params)
-        simplewriter.write_record(record)
-        buff = simplewriter.get_buffer()
-        assert isinstance(buff, bytes)
-
-        buff = BytesIO(buff)
-        parsed_record = ArcWarcRecordLoader().parse_record_stream(buff)
-
-        assert parsed_record.rec_headers.get_header('WARC-Type') == 'warcinfo'
-        assert parsed_record.rec_headers.get_header('Content-Type') == 'application/warc-fields'
-        assert parsed_record.rec_headers.get_header('WARC-Filename') == 'testfile.warc.gz'
-
-        buff = parsed_record.stream.read().decode('utf-8')
-
-        length = parsed_record.rec_headers.get_header('Content-Length')
-
-        assert len(buff) == int(length)
-
-        assert 'json-metadata: {"foo": "bar"}\r\n' in buff
-        assert 'format: WARC File Format 1.0\r\n' in buff
-        assert 'json-metadata: {"foo": "bar"}\r\n' in buff
-
     def test_record_custom_record(self):
         dedup_index = self._get_dedup_index(user=False)
 
@@ -543,10 +532,10 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert status_headers.get_header('Content-Length') == str(len(buff))
         assert status_headers.get_header('WARC-Custom') == 'foo'
 
-        assert record.stream.read() == buff
+        assert record.raw_stream.read() == buff
 
-        status_headers = record.status_headers
-        assert len(record.status_headers.headers) == 2
+        status_headers = record.http_headers
+        assert len(record.http_headers.headers) == 2
 
         assert status_headers.get_header('Content-Type') == 'text/plain'
         assert status_headers.get_header('Content-Length') == str(len(buff))
@@ -584,4 +573,3 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert status_headers.get_header('Content-Type') == 'application/vnd.youtube-dl_formats+json'
         assert status_headers.get_header('WARC-Block-Digest') != ''
         assert status_headers.get_header('WARC-Block-Digest') == status_headers.get_header('WARC-Payload-Digest')
-

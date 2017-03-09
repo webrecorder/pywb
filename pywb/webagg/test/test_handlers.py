@@ -13,10 +13,10 @@ from pywb.webagg.aggregator import DirectoryIndexSource
 from pywb.webagg.app import ResAggApp
 from pywb.webagg.utils import MementoUtils
 
-from pywb.warc.recordloader import ArcWarcRecordLoader
+from warcio.recordloader import ArcWarcRecordLoader
+from warcio.statusandheaders import StatusAndHeadersParser
+from warcio.bufferedreaders import ChunkedDataReader
 
-from pywb.utils.statusandheaders import StatusAndHeadersParser
-from pywb.utils.bufferedreaders import ChunkedDataReader
 from io import BytesIO
 from six.moves.urllib.parse import urlencode
 
@@ -215,9 +215,9 @@ class TestResAgg(MementoOverrideTests, FakeRedisTests, BaseTestClass):
 
         buff = BytesIO(resp.body)
         record = ArcWarcRecordLoader().parse_record_stream(buff, no_record_parse=False)
-        print(record.status_headers)
-        assert record.status_headers.get_statuscode() == '302'
-        assert record.status_headers.get_header('Location') == 'https://www.iana.org/'
+        print(record.http_headers)
+        assert record.http_headers.get_statuscode() == '302'
+        assert record.http_headers.get_header('Location') == 'https://www.iana.org/'
 
     @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_live'))
     def test_agg_select_live(self):

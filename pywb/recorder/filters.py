@@ -1,4 +1,4 @@
-from pywb.utils.timeutils import timestamp_to_datetime, datetime_to_iso_date
+from warcio.timeutils import timestamp_to_datetime, datetime_to_iso_date
 import re
 
 

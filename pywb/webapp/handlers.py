@@ -5,21 +5,22 @@ import logging
 
 from datetime import datetime
 
+from warcio.statusandheaders import StatusAndHeaders
+from warcio.timeutils import datetime_to_timestamp
+
 from pywb.utils.wbexception import NotFoundException
 from pywb.utils.loaders import LocalFileLoader
-from pywb.utils.statusandheaders import StatusAndHeaders
 
 from pywb.framework.basehandlers import BaseHandler, WbUrlHandler
 from pywb.framework.wbrequestresponse import WbResponse
 
-from pywb.warc.recordloader import ArcWarcRecordLoader
+from pywb.warc.blockrecordloader import BlockArcWarcRecordLoader
 from pywb.warc.resolvingloader import ResolvingLoader
 from pywb.warc.pathresolvers import PathResolverMapper
 
 from pywb.webapp.views import J2TemplateView, init_view
 from pywb.webapp.replay_views import ReplayView
 from pywb.framework.memento import MementoResponse
-from pywb.utils.timeutils import datetime_to_timestamp
 
 
 #=================================================================
@@ -134,7 +135,7 @@ class WBHandler(SearchPageWbUrlHandler):
 
     def _init_replay_view(self, config):
         cookie_maker = config.get('cookie_maker')
-        record_loader = ArcWarcRecordLoader(cookie_maker=cookie_maker)
+        record_loader = BlockArcWarcRecordLoader(cookie_maker=cookie_maker)
 
         paths = config.get('archive_paths')
 
