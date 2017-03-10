@@ -5,17 +5,15 @@ import shutil
 import yaml
 import time
 
-from multiprocessing import Process
-
 from fakeredis import FakeStrictRedis
 from mock import patch
-
-from wsgiref.simple_server import make_server
 
 from pywb.webagg.aggregator import SimpleAggregator
 from pywb.webagg.app import ResAggApp
 from pywb.webagg.handlers import DefaultResourceHandler
 from pywb.webagg.indexsource import LiveIndexSource, MementoIndexSource
+
+from pywb.urlrewrite.geventserver import GeventServer
 
 from pywb import get_test_dir
 from pywb.utils.wbexception import NotFoundException
@@ -138,7 +136,8 @@ class LiveServerTests(object):
     @classmethod
     def setup_class(cls):
         super(LiveServerTests, cls).setup_class()
-        cls.server = ServerThreadRunner(cls.make_live_app())
+        #cls.server = ServerThreadRunner(cls.make_live_app())
+        cls.server = GeventServer(cls.make_live_app())
 
     @staticmethod
     def make_live_app():
@@ -154,22 +153,3 @@ class LiveServerTests(object):
     def teardown_class(cls):
         super(LiveServerTests, cls).teardown_class()
         cls.server.stop()
-
-
-# ============================================================================
-class ServerThreadRunner(object):
-    def __init__(self, app):
-        self.httpd = make_server('', 0, app)
-        self.port = self.httpd.socket.getsockname()[1]
-
-        def run():
-            self.httpd.serve_forever()
-
-        self.proc = Process(target=run)
-        #self.proc.daemon = True
-        self.proc.start()
-
-    def stop(self):
-        self.proc.terminate()
-
-

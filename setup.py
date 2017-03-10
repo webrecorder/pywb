@@ -81,7 +81,7 @@ setup(
     ],
     tests_require=[
         'pytest',
-        'WebTest<=2.0.23',
+        'WebTest',
         'pytest-cov',
         'fakeredis',
         'mock',
