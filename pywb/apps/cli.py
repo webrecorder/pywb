@@ -11,7 +11,7 @@ def cdx_server(args=None):  #pragma: no cover
 
 #=================================================================
 def live_rewrite_server(args=None):  #pragma: no cover
-    LiveCli(args=args,
+    NewLiveCli(args=args,
             default_port=8090,
             desc='pywb Live Rewrite Proxy Server').run()
 
@@ -189,6 +189,19 @@ class NewWaybackCli(ReplayCli):
         self.r.server = 'gevent'
         super(NewWaybackCli, self).run()
         #self.run_gevent()
+
+#=============================================================================
+class NewLiveCli(BaseCli):
+    def load(self):
+        from pywb.apps.live import application
+        return application
+
+    def run(self):
+        self.r.server = 'gevent'
+        super(NewLiveCli, self).run()
+        #self.run_gevent()
+
+
 
 
 #=============================================================================
