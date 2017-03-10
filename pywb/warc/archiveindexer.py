@@ -1,6 +1,8 @@
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.loaders import extract_post_query, append_post_query
 
+from pywb.webagg.utils import BUFF_SIZE
+
 from warcio.timeutils import iso_date_to_timestamp
 from warcio.archiveiterator import ArchiveIterator
 
@@ -188,7 +190,14 @@ class DefaultRecordParser(object):
             entry.record = record
 
             self.begin_payload(compute_digest, entry)
-            raw_iter.read_to_end(record, self.handle_payload)
+
+            while True:
+                buff = record.raw_stream.read(BUFF_SIZE)
+                if not buff:
+                    break
+                self.handle_payload(buff)
+
+            raw_iter.read_to_end(record)
 
             entry.set_rec_info(*raw_iter.member_info)
             self.end_payload(entry)
