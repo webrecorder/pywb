@@ -14,7 +14,7 @@ from fakeredis import FakeStrictRedis
 from pywb.recorder.recorderapp import RecorderApp
 from pywb.recorder.redisindexer import WritableRedisIndexer
 from pywb.recorder.multifilewarcwriter import PerRecordWARCWriter, MultiFileWARCWriter
-from pywb.recorder.filters import ExcludeSpecificHeaders
+from pywb.recorder.filters import ExcludeSpecificHeaders, ExcludeHttpOnlyCookieHeaders
 from pywb.recorder.filters import SkipDupePolicy, WriteDupePolicy, WriteRevisitDupePolicy
 
 from pywb.webagg.utils import MementoUtils
@@ -119,6 +119,19 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert stored_req is not None
         return stored_req, stored_resp
 
+    def _get_http_only_cookies(self, record):
+        non_http_only = None
+        http_only = None
+        for header in record.http_headers.headers:
+            name = header[0].lower()
+            if name == 'set-cookie':
+                if ExcludeHttpOnlyCookieHeaders.HTTPONLY_RX.search(header[1].lower()):
+                    http_only = header
+                else:
+                    non_http_only = header
+
+        return non_http_only, http_only
+
     def _verify_content_len(self, base_dir, files):
         for filename in files:
             filename = os.path.join(base_dir, filename)
@@ -183,7 +196,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         self._test_all_warcs('/warcs/cookiecheck/', 1)
 
-    def test_record_cookies_skip_header(self):
+    def test_record_skip_all_cookies_header(self):
         warc_path = to_path(self.root_dir + '/warcs/cookieskip/')
         header_filter = ExcludeSpecificHeaders(['Set-Cookie', 'Cookie'])
         recorder_app = RecorderApp(self.upstream_url,
@@ -207,6 +220,37 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert ('Cookie', 'boo=far') not in stored_req.http_headers.headers
 
         self._test_all_warcs('/warcs/cookieskip/', 1)
+
+    def test_record_skip_http_only_cookies_header(self):
+        warc_path = to_path(self.root_dir + '/warcs/cookieskip_httponly/')
+        header_filter = ExcludeHttpOnlyCookieHeaders()
+        recorder_app = RecorderApp(self.upstream_url,
+                         PerRecordWARCWriter(warc_path, header_filter=header_filter),
+                            accept_colls='live')
+
+        resp = self._test_warc_write(recorder_app, 'www.google.com', '/')
+        assert b'HTTP/1.1 302' in resp.body
+
+        buff = BytesIO(resp.body)
+        record = ArcWarcRecordLoader().parse_record_stream(buff)
+
+        non_http_only, http_only = self._get_http_only_cookies(record)
+        # both httponly and other cookies
+        assert http_only != None
+        assert non_http_only != None
+
+        stored_req, stored_resp = self._load_resp_req(warc_path)
+
+        non_http_only, http_only = self._get_http_only_cookies(stored_resp)
+        # no httponly cookies
+        assert http_only == None
+        assert non_http_only != None
+
+
+        assert ('X-Other', 'foo') in stored_req.http_headers.headers
+        assert ('Cookie', 'boo=far') not in stored_req.http_headers.headers
+
+        self._test_all_warcs('/warcs/cookieskip_httponly/', 1)
 
     def test_record_skip_wrong_coll(self):
         recorder_app = RecorderApp(self.upstream_url,

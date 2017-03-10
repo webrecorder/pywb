@@ -21,8 +21,6 @@ class MultiFileWARCWriter(BaseWARCWriter):
                  max_idle_secs=1800, *args, **kwargs):
         super(MultiFileWARCWriter, self).__init__(*args, **kwargs)
 
-        self.header_filter = kwargs.get('header_filter')
-
         if not filename_template:
             dir_template, filename_template = os.path.split(dir_template)
             dir_template += os.path.sep
@@ -63,13 +61,6 @@ class MultiFileWARCWriter(BaseWARCWriter):
                                                 http_headers=record.http_headers)
 
         return record
-
-    def _set_header_buff(self, record):
-        exclude_list = None
-        if self.header_filter:
-            exclude_list = self.header_filter(record)
-        buff = record.http_headers.to_bytes(exclude_list)
-        record.http_headers.headers_buff = buff
 
     def get_new_filename(self, dir_, params):
         timestamp = timestamp20_now()
