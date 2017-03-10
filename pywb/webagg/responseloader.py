@@ -399,7 +399,12 @@ class LiveWebLoader(BaseLoader):
         except:  #pragma: no cover
         #PY 2
             resp_headers = orig_resp.msg.headers
-            for (n, v), line in zip(orig_resp.getheaders(), resp_headers):
+
+            for line in resp_headers:
+                n, v = line.split(':', 1)
+                n = n.lower()
+                v = v.strip()
+
                 if n in self.SKIP_HEADERS:
                     continue
 
