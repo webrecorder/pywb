@@ -10,7 +10,6 @@ import six
 import json
 import tempfile
 
-#from requests.structures import CaseInsensitiveDict
 import requests
 
 import traceback
@@ -68,7 +67,6 @@ class RecorderApp(object):
 
             req_head, req_pay, resp_head, resp_pay, params = result
 
-            #resp_type, resp = self.writer.read_resp_record(resp_head, resp_pay)
             resp_length = resp_pay.tell()
             resp_pay.seek(0)
             resp = self.writer.create_record_from_stream(resp_pay, resp_length)
@@ -237,9 +235,6 @@ class RecorderApp(object):
             resp_stream = res.raw
 
         resp_iter = StreamIter(resp_stream)
-
-        #if res.headers.get('Transfer-Encoding') == 'chunked':
-        #    resp_iter = chunk_encode_iter(resp_iter)
 
         return resp_iter
 

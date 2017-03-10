@@ -5,18 +5,31 @@ import re
 # ============================================================================
 # Header Exclusions
 # ============================================================================
-class ExcludeNone(object):
-    def __call__(self, record):
-        return None
+class ExcludeSpecificHeaders(object):
+    def __init__(self, exclude_headers=None):
+        self.exclude_headers = [x.lower() for x in exclude_headers]
+
+    def __call__(self, header):
+        if header[0].lower() in self.exclude_headers:
+            return None
+
+        return header
 
 
 # ============================================================================
-class ExcludeSpecificHeaders(object):
-    def __init__(self, exclude_headers=[]):
-        self.exclude_headers = [x.lower() for x in exclude_headers]
+class ExcludeHttpOnlyCookieHeaders(object):
+    HTTPONLY_RX = re.compile(';\\s*HttpOnly\\s*(;|$)', re.I)
 
-    def __call__(self, record):
-        return self.exclude_headers
+    def __call__(self, header):
+        name = header[0].lower()
+        if name == 'cookie':
+            return None
+
+        if (name == 'set-cookie' and
+            self.HTTPONLY_RX.search(header[1])):
+            return None
+
+        return header
 
 
 # ============================================================================
