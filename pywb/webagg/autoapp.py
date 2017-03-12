@@ -39,13 +39,16 @@ class AutoConfigApp(ResAggApp):
 
         if config_file:
             try:
-                custom_config = load_config('PYWB_CONFIG_FILE', config_file)
+                file_config = load_config('PYWB_CONFIG_FILE', config_file)
+                config.update(file_config)
             except Exception as e:
                 if not custom_config:
                     custom_config = {'debug': True}
                 print(e)
 
         if custom_config:
+            if 'collections' in custom_config and 'collections' in config:
+                custom_config['collections'].update(config['collections'])
             config.update(custom_config)
 
         super(AutoConfigApp, self).__init__(debug=config.get('debug', False))
