@@ -1659,6 +1659,24 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
+    function override_frames_access($wbwindow)
+    {
+        $wbwindow.__wb_frames = $wbwindow.frames;
+
+        var getter = function() {
+            for (var i = 0; i < this.__wb_frames.length; i++) {
+                if (!this.__wb_frames[i]._wb_wombat) {
+                    init_new_window_wombat(this.__wb_frames[i]);
+                }
+            }
+            return this.__wb_frames;
+        };
+
+        def_prop($wbwindow, "frames", undefined, getter);
+        def_prop($wbwindow.Window.prototype, "frames", undefined, getter);
+    }
+
+    //============================================
     function init_insertAdjacentHTML_override()
     {
         if (!$wbwindow.Element ||
@@ -2539,6 +2557,8 @@ var wombat_internal = function($wbwindow) {
             // ensure wombat is inited on the iframe $wbwindow!
             override_iframe_content_access("contentWindow");
             override_iframe_content_access("contentDocument");
+
+            override_frames_access($wbwindow);
 
             // base override
             init_base_override();
