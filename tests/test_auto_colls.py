@@ -87,17 +87,17 @@ class TestManagedColls(object):
         """
         from pywb.apps.cli import wayback
 
-        wayback(['-p', '0', '-s', 'gevent'])
+        wayback(['-p', '0'])
 
         # Nothing to auto-index.. yet
         with raises(SystemExit):
-            wayback(['-a', '-p', '0', '-s', 'gevent'])
+            wayback(['-a', '-p', '0'])
 
         colls = os.path.join(self.root_dir, 'collections')
         os.mkdir(colls)
 
         pywb.manager.autoindex.keep_running = False
-        wayback(['-a', '-p', '0', '-s', 'gevent'])
+        wayback(['-a', '-p', '0'])
 
     def test_create_first_coll(self):
         """ Test first collection creation, with all required dirs
