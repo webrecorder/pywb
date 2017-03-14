@@ -396,10 +396,13 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.status_int == 200
         assert '"data": "^"' in resp.text
 
-    def test_post_invalid(self):
-        # not json
-        resp = self.testapp.post_json('/pywb/20140610001255mp_/http://httpbin.org/post?foo=bar', {'data': '^'}, status=404)
-        assert resp.status_int == 404
+    def test_post_fuzzy_match(self):
+        resp = self.testapp.post('/pywb/20140610001255mp_/http://httpbin.org/post?foo=bar', {'data': 'x'})
+        assert resp.status_int == 200
+        assert '"A": "1"' in resp.text
+        assert '"B": "[]"' in resp.text
+        assert '"C": "3"' in resp.text
+
 
     def test_post_referer_redirect(self):
         # allowing 307 redirects
