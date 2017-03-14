@@ -4,8 +4,7 @@ from pywb.utils.wbexception import BadRequestException, WbException
 from pywb.utils.wbexception import NotFoundException
 from warcio.recordloader import ArchiveLoadFailed
 
-from pywb.cdx.query import CDXQuery
-from pywb.cdx.cdxdomainspecific import load_domain_specific_cdx_rules
+from pywb.webagg.fuzzymatcher import FuzzyMatcher
 
 import six
 
@@ -27,37 +26,6 @@ def to_link(cdx_iter, fields):
     content_type = 'application/link'
     return content_type, MementoUtils.make_timemap(cdx_iter)
 
-#=============================================================================
-class FuzzyMatcher(object):
-    def __init__(self):
-        res = load_domain_specific_cdx_rules('pywb/rules.yaml', True)
-        self.url_canon, self.fuzzy_query = res
-
-    def __call__(self, index_source, params):
-        cdx_iter, errs = index_source(params)
-        return self.do_fuzzy(cdx_iter, index_source, params), errs
-
-    def do_fuzzy(self, cdx_iter, index_source, params):
-        found = False
-        for cdx in cdx_iter:
-            found = True
-            yield cdx
-
-        fuzzy_query_params = None
-        if not found:
-            query = CDXQuery(params)
-            fuzzy_query_params = self.fuzzy_query(query)
-
-        if not fuzzy_query_params:
-            return
-
-        fuzzy_query_params.pop('alt_url', '')
-
-        new_iter, errs = index_source(fuzzy_query_params)
-
-        for cdx in new_iter:
-            yield cdx
-
 
 #=============================================================================
 class IndexHandler(object):
@@ -73,7 +41,7 @@ class IndexHandler(object):
     def __init__(self, index_source, opts=None, *args, **kwargs):
         self.index_source = index_source
         self.opts = opts or {}
-        self.fuzzy = FuzzyMatcher()
+        self.fuzzy = FuzzyMatcher('pkg://pywb/rules.yaml')
 
     def get_supported_modes(self):
         return dict(modes=['list_sources', 'index'])

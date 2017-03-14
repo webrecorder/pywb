@@ -334,13 +334,13 @@ foo=bar&test=abc"""
         assert 'ResErrors' not in resp.headers
 
     def test_agg_seq_fallback_1(self):
-        resp = self.testapp.get('/fallback/resource?url=http://httpbin.org/')
+        resp = self.testapp.get('/fallback/resource?url=http://httpbin.org/status/200')
 
         assert resp.headers['WebAgg-Source-Coll'] == 'live'
 
-        self._check_uri_date(resp, 'http://httpbin.org/', True)
+        self._check_uri_date(resp, 'http://httpbin.org/status/200', True)
 
-        assert resp.headers['Link'] == MementoUtils.make_link('http://httpbin.org/', 'original')
+        assert resp.headers['Link'] == MementoUtils.make_link('http://httpbin.org/status/200', 'original')
 
         assert b'HTTP/1.1 200 OK' in resp.body
 
