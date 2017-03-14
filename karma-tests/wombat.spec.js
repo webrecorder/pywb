@@ -83,6 +83,7 @@ function runWombatTest(testCase, done) {
                 new window._WBWombat(window, wbinfo);
             });
         } catch (e) {
+            console.error(e.stack);
             throw new Error('Initializing WombatJS failed: ' + e.toString());
         }
 
