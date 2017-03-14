@@ -80,7 +80,7 @@ function runWombatTest(testCase, done) {
         try {
             testFrame.contentWindow.eval(testCase.wombatScript);
             runFunctionInIFrame(function () {
-                new window._WBWombat(wbinfo);
+                new window._WBWombat(window, wbinfo);
             });
         } catch (e) {
             throw new Error('Initializing WombatJS failed: ' + e.toString());
