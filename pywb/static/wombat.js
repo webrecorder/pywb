@@ -22,11 +22,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
 //============================================
 
 
-
-_WBWombat = (function() {
-
-
-var wombat_internal = function($wbwindow) {
+var _WBWombat = function($wbwindow, wbinfo) {
 
     // Globals
     var wb_replay_prefix;
@@ -417,7 +413,8 @@ var wombat_internal = function($wbwindow) {
             baseWin = $wbwindow;
         }
 
-        var p = baseWin.document.createElement("a", true);
+        var p = baseWin.document.createElement("a");
+        p._no_rewrite = true;
         p.href = href;
         return p;
     }
@@ -1665,9 +1662,7 @@ var wombat_internal = function($wbwindow) {
 
         var getter = function() {
             for (var i = 0; i < this.__wb_frames.length; i++) {
-                if (!this.__wb_frames[i]._wb_wombat) {
-                    init_new_window_wombat(this.__wb_frames[i]);
-                }
+                init_new_window_wombat(this.__wb_frames[i]);
             }
             return this.__wb_frames;
         };
@@ -2198,13 +2193,6 @@ var wombat_internal = function($wbwindow) {
             return;
         }
 
-        var check_wombat = function(win) {
-            if (win && !win._wb_wombat) {
-                win._WBWombat = wombat_internal(win);
-                win._wb_wombat = new win._WBWombat(wb_info);
-            }
-        }
-
         // Write
         var orig_doc_write = $wbwindow.document.write;
 
@@ -2214,7 +2202,7 @@ var wombat_internal = function($wbwindow) {
                 return;
             }
             var res = orig_doc_write.call(this, new_buff);
-            check_wombat(this.defaultView);
+            init_new_window_wombat(this.defaultView);
             return res;
         }
 
@@ -2230,7 +2218,7 @@ var wombat_internal = function($wbwindow) {
                 return;
             }
             var res = orig_doc_writeln.call(this, new_buff);
-            check_wombat(this.defaultView);
+            init_new_window_wombat(this.defaultView);
             return res;
         }
 
@@ -2242,7 +2230,7 @@ var wombat_internal = function($wbwindow) {
 
         var new_open = function() {
             var res = orig_doc_open.call(this);
-            check_wombat(this.defaultView);
+            init_new_window_wombat(this.defaultView);
             return res;
         }
 
@@ -2287,9 +2275,15 @@ var wombat_internal = function($wbwindow) {
     }
 
     function init_new_window_wombat(win, src) {
+        if (!win || win._wb_wombat) {
+            return;
+        }
+
         if (!src || src == "" || src == "about:blank" || src.indexOf("javascript:") >= 0) {
-            win._WBWombat = wombat_internal(win);
-            win._wb_wombat = new win._WBWombat(wb_info);
+            //win._WBWombat = wombat_internal(win);
+            //win._wb_wombat = new win._WBWombat(wb_info);
+            win._wb_wombat = new _WBWombat(win, wb_info);
+
         } else {
             // These should get overriden when content is loaded, but just in case...
             //win._WB_wombat_location = win.location;
@@ -2457,7 +2451,7 @@ var wombat_internal = function($wbwindow) {
     }
 
     //============================================
-    function wombat_init(wbinfo) {
+    function init_paths(wbinfo) {
         wb_info = wbinfo;
         wb_opts = wbinfo.wombat_opts;
         wb_replay_prefix = wbinfo.prefix;
@@ -2465,19 +2459,34 @@ var wombat_internal = function($wbwindow) {
 
         wb_info.top_host = wb_info.top_host || "*";
 
-        init_top_frame($wbwindow);
-
-        init_wombat_loc($wbwindow);
+        wb_curr_host = $wbwindow.location.protocol + "//" + $wbwindow.location.host;
 
         wbinfo.wombat_opts = wbinfo.wombat_opts || {};
 
         wb_orig_scheme = wbinfo.wombat_scheme + '://';
+        wb_orig_origin = wb_orig_scheme + wbinfo.wombat_host;
+
+        wb_abs_prefix = wb_replay_prefix;
+
+        if (!wbinfo.is_live && wbinfo.wombat_ts.length > 0) {
+            wb_capture_date_part = "/" + wbinfo.wombat_ts + "/";
+        } else {
+            wb_capture_date_part = "";
+        }
+
+        init_bad_prefixes(wb_replay_prefix);
+    }
+
+    function wombat_init(wbinfo) {
+        init_paths(wbinfo);
+
+        init_top_frame($wbwindow);
+
+        init_wombat_loc($wbwindow);
 
         // archival mode: init url-rewriting intercepts
         if (!wb_is_proxy) {
             init_wombat_top($wbwindow);
-
-            wb_curr_host = $wbwindow.location.protocol + "//" + $wbwindow.location.host;
 
             if (wb_replay_prefix && wb_replay_prefix.indexOf($wbwindow.__WB_replay_top.location.origin) == 0) {
                 wb_rel_prefix = wb_replay_prefix.substring($wbwindow.__WB_replay_top.location.origin.length + 1);
@@ -2485,20 +2494,6 @@ var wombat_internal = function($wbwindow) {
                 wb_rel_prefix = wb_replay_prefix;
             }
             wb_rel_prefix_check = wb_rel_prefix;
-
-            wb_abs_prefix = wb_replay_prefix;
-            //wb_replay_date_prefix = wb_replay_prefix + ts_mod;
-            //wb_coll_prefix += ts_mod;
-
-            if (!wbinfo.is_live && wbinfo.wombat_ts.length > 0) {
-                wb_capture_date_part = "/" + wbinfo.wombat_ts + "/";
-            } else {
-                wb_capture_date_part = "";
-            }
-
-            wb_orig_origin = wb_orig_scheme + wbinfo.wombat_host;
-
-            init_bad_prefixes(wb_replay_prefix);
 
             //if ($wbwindow.opener) {
             //    $wbwindow.opener.WB_wombat_location = copy_location_obj($wbwindow.opener.location);
@@ -2612,10 +2607,13 @@ var wombat_internal = function($wbwindow) {
         init_disable_notifications();
 
         // expose functions
-        this.extract_orig = extract_orig;
-        this.rewrite_url = rewrite_url;
-        this.watch_elem = watch_elem;
-        this.init_new_window_wombat = init_new_window_wombat;
+        var obj = {}
+        obj.extract_orig = extract_orig;
+        obj.rewrite_url = rewrite_url;
+        obj.watch_elem = watch_elem;
+        obj.init_new_window_wombat = init_new_window_wombat;
+        obj.init_paths = init_paths;
+        return obj;
     }
 
     function init_top_frame($wbwindow) {
@@ -2766,10 +2764,7 @@ var wombat_internal = function($wbwindow) {
         });
     };
 
-    return wombat_init;
+    return wombat_init(wbinfo);
 };
-
-return wombat_internal(window);
-})();
 
 window._WBWombat = _WBWombat;
