@@ -132,9 +132,7 @@ class JSLocationRewriterMixin(object):
     def __init__(self, rewriter, rules=[], prefix='WB_wombat_'):
         rules = rules + [
           #  (r'(?<![/$])\blocation\b(?!\":)', RegexRewriter.add_prefix(prefix), 0),
-          (r'(?<![/$\'"-])\b(?:location|top)\b(?!(?:\":|:|=\d|-))', RegexRewriter.add_prefix(prefix), 0),
-
-          (r'(?<=[?])location[:]', RegexRewriter.add_prefix(prefix), 0),
+          (r'(?<![$\'"])\b(?:location|top)\b(?![$\'"])', RegexRewriter.add_prefix(prefix), 0),
 
           (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(window).'), 0),
 
