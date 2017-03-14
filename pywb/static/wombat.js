@@ -2468,7 +2468,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         wb_abs_prefix = wb_replay_prefix;
 
-        if (!wbinfo.is_live && wbinfo.wombat_ts.length > 0) {
+        if (!wbinfo.is_live && wbinfo.wombat_ts) {
             wb_capture_date_part = "/" + wbinfo.wombat_ts + "/";
         } else {
             wb_capture_date_part = "";

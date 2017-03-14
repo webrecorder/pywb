@@ -126,6 +126,7 @@ describe('WombatJS', function () {
             initScript: function () {
                 wbinfo = {
                     wombat_opts: {},
+                    wombat_ts: '',
                 };
             },
             wombatScript: wombatScript,
