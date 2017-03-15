@@ -731,7 +731,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
 
             if (abs_url &&
-                (abs_url != $wbwindow.WB_wombat_location.origin) &&
+                (abs_url != $wbwindow.WB_wombat_location.origin && $wbwindow.WB_wombat_location.href != "about:blank") &&
                 !starts_with(abs_url, $wbwindow.WB_wombat_location.origin + "/")) {
                 throw new DOMException("Invalid history change: " + abs_url);
             }
@@ -1088,7 +1088,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_worker_override() {
+    function init_web_worker_override() {
         if (!$wbwindow.Worker) {
             return;
         }
@@ -1122,6 +1122,25 @@ var _WBWombat = function($wbwindow, wbinfo) {
         })($wbwindow.Worker);
 
         $wbwindow.Worker.prototype = orig_worker.prototype;
+    }
+
+
+    //============================================
+    function init_service_worker_override() {
+        if (!$wbwindow.ServiceWorkerContainer ||
+            !$wbwindow.ServiceWorkerContainer.prototype ||
+            !$wbwindow.ServiceWorkerContainer.prototype.register) {
+            return;
+        }
+        var orig_register = $wbwindow.ServiceWorkerContainer.prototype.register;
+
+        $wbwindow.ServiceWorkerContainer.prototype.register = function(scriptURL, options) {
+            scriptURL = rewrite_url(scriptURL, false, "id_");
+            if (options && options.scope) {
+                options.scope = rewrite_url(options.scope, false, "id_");
+            }
+            return orig_register.call(this, scriptURL, options);
+        }
     }
 
 
@@ -1697,8 +1716,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         $wbwindow.Element.prototype.insertAdjacentHTML = insertAdjacent_override;
     }
-
-
 
     //============================================
     function init_wombat_loc(win) {
@@ -2535,7 +2552,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             init_fetch_rewrite();
 
             // Worker override (experimental)
-            init_worker_override();
+            init_web_worker_override();
+            init_service_worker_override();
 
             // innerHTML can be overriden on prototype!
             override_html_assign($wbwindow.HTMLElement, "innerHTML");
@@ -2544,6 +2562,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             // Document.URL override
             override_prop_extract($wbwindow.Document.prototype, "URL");
+            override_prop_extract($wbwindow.Document.prototype, "documentURI");
 
             // init insertAdjacentHTML() override
             init_insertAdjacentHTML_override();
