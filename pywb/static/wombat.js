@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.21
+// Wombat JS-Rewriting Library v2.25
 //============================================
 
 
@@ -357,6 +357,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         if (orig_href.charAt(0) == "/" && orig_href.charAt(1) != "/" && starts_with(href, wb_orig_origin)) {
             href = href.substr(wb_orig_origin.length);
+        }
+
+        if (starts_with(href, REL_PREFIX)) {
+            href = wb_info.wombat_scheme + href;
         }
 
         return href;
@@ -896,7 +900,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         if (orig_getter) {
             var new_getter = function() {
                 var res = orig_getter.call(this);
-                return extract_orig(res, true);
+                return extract_orig(res);
             }
 
             def_prop(proto, prop, undefined, new_getter);
@@ -1949,51 +1953,46 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         $wbwindow.Window.prototype.postMessage = postmessage_rewritten;
 
-/*
-        for (var i = 0; i < $wbwindow.frames.length; i++) {
-            try {
-                //init_postmessage_override($wbwindow.frames[i]);
-                $wbwindow.frames[i].postMessage = postmessage_rewritten;
-            } catch (e) {
-                console.log(e);
-            }
-        }
-*/
-        function WrappedListener(event, orig_listener, win) {
-            var ne = event;
+        function WrappedListener(orig_listener, win) {
 
-            if (event.data.from && event.data.message) {
+            function listen(event) {
+                var ne = event;
 
-                if (event.data.to_host != "*" && win.WB_wombat_location && event.data.to_host != win.WB_wombat_location.host) {
-                    console.log("Skipping " + win.WB_wombat_location.host + " not " + event.data.to_host);
-                    return;
+                if (event.data.from && event.data.message) {
+
+                    if (event.data.to_host != "*" && win.WB_wombat_location && event.data.to_host != win.WB_wombat_location.host) {
+                        console.log("Skipping " + win.WB_wombat_location.host + " not " + event.data.to_host);
+                        return;
+                    }
+
+                    var source = event.source;
+
+                    if (event.data.from_top) {
+                        source = win.__WB_top_frame;
+                    } else if (event.data.src_id && win.__WB_win_id && win.__WB_win_id[event.data.src_id]) {
+                        source = win.__WB_win_id[event.data.src_id];
+                    }
+
+                    ne = new MessageEvent("message",
+                                          {"bubbles": event.bubbles,
+                                           "cancelable": event.cancelable,
+                                           "data": event.data.message,
+                                           "origin": event.data.from,
+                                           "lastEventId": event.lastEventId,
+                                           "source": source,
+                                           "ports": event.ports});
+
+                    ne._target = event.target;
+                    ne._srcElement = event.srcElement;
+                    ne._currentTarget = event.currentTarget;
+                    ne._eventPhase = event.eventPhase;
+                    ne._path = event.path;
                 }
 
-                var source = event.source;
-
-                if (event.data.from_top) {
-                    source = win.__WB_top_frame;
-                } else if (event.data.src_id && win.__WB_win_id && win.__WB_win_id[event.data.src_id]) {
-                    source = win.__WB_win_id[event.data.src_id];
-                }
-
-                ne = new MessageEvent("message",
-                                      {"bubbles": event.bubbles,
-                                       "cancelable": event.cancelable,
-                                       "data": event.data.message,
-                                       "origin": event.data.from,
-                                       "lastEventId": event.lastEventId,
-                                       "source": source,
-                                       "ports": event.ports});
-
-                ne._target = event.target;
-                ne._srcElement = event.srcElement;
-                ne._currentTarget = event.currentTarget;
-                ne._eventPhase = event.eventPhase;
-                ne._path = event.path;
+                return orig_listener(ne);
             }
 
-            return orig_listener(ne);
+            return {"listen": listen};
         }
 
         var listen_map = {};
@@ -2006,18 +2005,17 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         var addEventListener_rewritten = function(type, listener, useCapture) {
             if (type == "message") {
-                var win = this;
-                var wrapped_listener = function(event) { return WrappedListener(event, listener, win); }
+                var wrapped_listener = new WrappedListener(listener, this);
 
-                if (listen_map[listener]) {
+                //if (listen_map[listener]) {
                     //console.log("Listener Already Added");
                     //_orig_removeEventListener.call(this, type, listen_map[listener], useCapture);
-                    return;
-                }
+                    //return;
+                //}
 
                 listen_map[listener] = wrapped_listener;
 
-                return _orig_addEventListener.call(this, type, wrapped_listener, useCapture);
+                return _orig_addEventListener.call(this, type, wrapped_listener.listen, useCapture);
             } else {
                 return _orig_addEventListener.call(this, type, listener, useCapture);
             }
@@ -2029,10 +2027,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
         
         var removeEventListener_rewritten = function(type, listener, useCapture) {
             if (type == "message") {
-                var mapped = listen_map[listener];
-                if (mapped) {
+                var wrapped_listener = listen_map[listener];
+                if (wrapped_listener) {
                     delete listen_map[listener];
-                    return _orig_removeEventListener.call(this, type, mapped, useCapture);
+                    return _orig_removeEventListener.call(this, type, wrapped_listener.listen, useCapture);
                 }
             } else {
                 return _orig_removeEventListener.call(this, type, listener, useCapture);
