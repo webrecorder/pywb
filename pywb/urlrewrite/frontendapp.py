@@ -143,7 +143,6 @@ class FrontEndApp(RewriterApp):
             endpoint, args = urls.match()
 
             response = endpoint(environ, **args)
-
             return response(environ, start_response)
 
         except HTTPException as e:
@@ -157,7 +156,8 @@ class FrontEndApp(RewriterApp):
             if self.debug:
                 traceback.print_exc()
 
-            return self._error_response(environ, 'Internal Error: ' + str(e), '500 Server Error')
+            response = self._error_response(environ, 'Internal Error: ' + str(e), '500 Server Error')
+            return response(environ, start_response)
 
     @classmethod
     def create_app(cls, port):
