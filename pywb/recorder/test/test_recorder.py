@@ -1,4 +1,4 @@
-#from gevent import monkey; monkey.patch_all()
+from gevent import monkey; monkey.patch_all()
 import gevent
 
 import pywb.webagg
@@ -33,14 +33,16 @@ from io import BytesIO
 import time
 import json
 
+UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36'
+
 general_req_data = "\
 GET {path} HTTP/1.1\r\n\
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n\
-User-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36\r\n\
+User-agent: %s\r\n\
 X-Other: foo\r\n\
 Host: {host}\r\n\
 Cookie: boo=far\r\n\
-\r\n"
+\r\n" % UA
 
 
 
@@ -91,7 +93,9 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
     def _test_all_warcs(self, dirname, num):
         coll_dir = to_path(self.root_dir + dirname)
-        assert os.path.isdir(coll_dir)
+        assert os.path.isdir(coll_dir) == (num != None)
+        if num is None:
+            return
 
         files = [x for x in os.listdir(coll_dir) if os.path.isfile(os.path.join(coll_dir, x))]
         assert len(files) == num
@@ -270,12 +274,14 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         recorder_app = RecorderApp(self.upstream_url,
                         PerRecordWARCWriter(warc_path, dedup_index=dedup_index))
 
-        self._test_all_warcs('/warcs/', 2)
+        self._test_all_warcs('/warcs/USER/COLL/', None)
 
-        resp = self._test_warc_write(recorder_app, 'httpbin.org',
-                            '/get?foo=bar', '&param.recorder.user=USER&param.recorder.coll=COLL')
-        assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        resp = self._test_warc_write(recorder_app, 'httpbin.org', '/user-agent',
+                            '&param.recorder.user=USER&param.recorder.coll=COLL')
+
+        assert '"user-agent": "{0}"'.format(UA) in resp.text
+        #assert b'HTTP/1.1 200 OK' in resp.body
+        #assert b'"foo": "bar"' in resp.body
 
         self._test_all_warcs('/warcs/USER/COLL/', 1)
 
@@ -285,7 +291,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert len(res) == 1
 
         cdx = CDXObject(res[0])
-        assert cdx['urlkey'] == 'org,httpbin)/get?foo=bar'
+        assert cdx['urlkey'] == 'org,httpbin)/user-agent'
         assert cdx['mime'] == 'application/json'
         assert cdx['offset'] == '0'
         assert cdx['filename'].startswith('USER/COLL/')
@@ -323,12 +329,14 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         recorder_app = RecorderApp(self.upstream_url,
                         PerRecordWARCWriter(warc_path, dedup_index=dedup_index))
 
-        self._test_all_warcs('/warcs/', 2)
+        self._test_all_warcs('/warcs/USER/COLL/', 1)
 
-        resp = self._test_warc_write(recorder_app, 'httpbin.org',
-                            '/get?foo=bar', '&param.recorder.user=USER&param.recorder.coll=COLL')
-        assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        resp = self._test_warc_write(recorder_app, 'httpbin.org', '/user-agent',
+                                    '&param.recorder.user=USER&param.recorder.coll=COLL')
+
+        assert '"user-agent": "{0}"'.format(UA) in resp.text
+        #assert b'HTTP/1.1 200 OK' in resp.body
+        #assert b'"foo": "bar"' in resp.body
 
         self._test_all_warcs('/warcs/USER/COLL/', 2)
 
@@ -343,7 +351,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         else:
             cdx = CDXObject(res[1])
 
-        assert cdx['urlkey'] == 'org,httpbin)/get?foo=bar'
+        assert cdx['urlkey'] == 'org,httpbin)/user-agent'
         assert cdx['mime'] == 'warc/revisit'
         assert cdx['offset'] == '0'
         assert cdx['filename'].startswith('USER/COLL/')
@@ -360,9 +368,9 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
             # Test refers-to headers
             status_headers = StatusAndHeadersParser(['WARC/1.0']).parse(decomp)
             assert status_headers.get_header('WARC-Type') == 'revisit'
-            assert status_headers.get_header('WARC-Target-URI') == 'http://httpbin.org/get?foo=bar'
+            assert status_headers.get_header('WARC-Target-URI') == 'http://httpbin.org/user-agent'
             assert status_headers.get_header('WARC-Date') != ''
-            assert status_headers.get_header('WARC-Refers-To-Target-URI') == 'http://httpbin.org/get?foo=bar'
+            assert status_headers.get_header('WARC-Refers-To-Target-URI') == 'http://httpbin.org/user-agent'
             assert status_headers.get_header('WARC-Refers-To-Date') != ''
 
     def test_record_param_user_coll_skip(self):
@@ -374,13 +382,14 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
                         PerRecordWARCWriter(warc_path, dedup_index=dedup_index))
 
         # No new entries written
-        self._test_all_warcs('/warcs/', 2)
+        self._test_all_warcs('/warcs/USER/COLL/', 2)
 
-        resp = self._test_warc_write(recorder_app, 'httpbin.org',
-                            '/get?foo=bar', '&param.recorder.user=USER&param.recorder.coll=COLL')
-        assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        resp = self._test_warc_write(recorder_app, 'httpbin.org', '/user-agent',
+                            '&param.recorder.user=USER&param.recorder.coll=COLL')
 
+        assert '"user-agent": "{0}"'.format(UA) in resp.text
+        #assert b'HTTP/1.1 200 OK' in resp.body
+        #assert b'"foo": "bar"' in resp.body
         self._test_all_warcs('/warcs/USER/COLL/', 2)
 
         # Test Redis CDX
