@@ -1,6 +1,9 @@
 import requests
 
-from pywb.rewrite.rewrite_amf import RewriteContentAMF
+from pywb.rewrite.rewrite_amf import RewriteAMFMixin
+from pywb.rewrite.rewrite_dash import RewriteDASHMixin
+from pywb.rewrite.rewrite_content import RewriteContent
+
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter
 
@@ -41,6 +44,11 @@ class UpstreamException(WbException):
 
 
 # ============================================================================
+class Rewriter(RewriteDASHMixin, RewriteAMFMixin, RewriteContent):
+    pass
+
+
+# ============================================================================
 class RewriterApp(object):
     VIDEO_INFO_CONTENT_TYPE = 'application/vnd.youtube-dl_formats+json'
 
@@ -56,7 +64,7 @@ class RewriterApp(object):
 
         frame_type = 'inverse' if framed_replay else False
 
-        self.content_rewriter = RewriteContentAMF(is_framed_replay=frame_type)
+        self.content_rewriter = Rewriter(is_framed_replay=frame_type)
 
         if not jinja_env:
             jinja_env = JinjaEnv(globals={'static_path': 'static/__pywb'})
@@ -197,6 +205,9 @@ class RewriterApp(object):
         cdx['urlkey'] = urlkey
         cdx['timestamp'] = http_date_to_timestamp(memento_dt)
         cdx['url'] = target_uri
+
+        if target_uri != wb_url.url and r.headers.get('WebAgg-Fuzzy-Match') == '1':
+            return WbResponse.redir_response(urlrewriter.rewrite(target_uri))
 
         self._add_custom_params(cdx, r.headers, kwargs)
 

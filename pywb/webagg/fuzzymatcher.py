@@ -10,7 +10,7 @@ from collections import namedtuple
 # ============================================================================
 FuzzyRule = namedtuple('FuzzyRule',
                        'url_prefix, regex, replace_after, filter_str, ' +
-                       'match_type')
+                       'match_type, match_filters')
 
 
 # ============================================================================
@@ -45,14 +45,28 @@ class FuzzyMatcher(object):
             replace_after = self.DEFAULT_REPLACE_AFTER
             filter_str = self.DEFAULT_FILTER
             match_type = self.DEFAULT_MATCH_TYPE
+            match_filters = None
 
         else:
             regex = self.make_regex(config.get('match'))
             replace_after = config.get('replace', self.DEFAULT_REPLACE_AFTER)
             filter_str = config.get('filter', self.DEFAULT_FILTER)
             match_type = config.get('type', self.DEFAULT_MATCH_TYPE)
+            match_filters = self._init_match_filters(config.get('match_filters'))
 
-        return FuzzyRule(url_prefix, regex, replace_after, filter_str, match_type)
+        return FuzzyRule(url_prefix, regex, replace_after, filter_str,
+                         match_type, match_filters)
+
+    def _init_match_filters(self, filter_config):
+        if not filter_config:
+            return
+
+        filters = []
+        for filter_ in filter_config:
+            filter_['match'] = re.compile(filter_['match'])
+            filters.append(filter_)
+
+        return filters
 
     def get_fuzzy_match(self, params):
         urlkey = to_native_str(params['key'], 'utf-8')
@@ -70,9 +84,8 @@ class FuzzyMatcher(object):
 
             matched_rule = rule
             groups = m.groups()
-            for g in groups:
-                for f in matched_rule.filter_str:
-                    filters.append(f.format(g))
+            for f in matched_rule.filter_str:
+                filters.append(f.format(*groups))
 
             break
 
@@ -132,6 +145,8 @@ class FuzzyMatcher(object):
         if found:
             return
 
+        url = params['url']
+
         rule = self.get_fuzzy_match(params)
         if not rule:
             return
@@ -139,10 +154,18 @@ class FuzzyMatcher(object):
         new_iter, errs = index_source(params)
 
         for cdx in new_iter:
-            if self.allow_fuzzy_result(rule, cdx):
+            if self.allow_fuzzy_result(rule, url, cdx):
+                cdx['is_fuzzy'] = True
                 yield cdx
 
-    def allow_fuzzy_result(self, rule, cdx):
-        return True
+    def allow_fuzzy_result(self, rule, url, cdx):
+        if not rule.match_filters:
+            return True
+
+        for match_filter in rule.match_filters:
+            if match_filter['mime'] in (cdx['mime'], '*'):
+                return match_filter['match'].search(url)
+
+        return False
 
 

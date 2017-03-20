@@ -360,7 +360,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         if (starts_with(href, REL_PREFIX)) {
-            href = wb_info.wombat_scheme + href;
+            href = "http:" + href;
         }
 
         return href;

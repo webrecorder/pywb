@@ -1,16 +1,15 @@
 from io import BytesIO
 from six.moves import zip
-from pywb.rewrite.rewrite_content import RewriteContent
 
 
 # ============================================================================
 # Expiermental: not fully tested
-class RewriteContentAMF(RewriteContent):  #pragma: no cover
+class RewriteAMFMixin(object):  #pragma: no cover
     def handle_custom_rewrite(self, rewritten_headers, stream, urlrewriter, mod, env):
         if rewritten_headers.status_headers.get_header('Content-Type') == 'application/x-amf':
             stream = self.rewrite_amf(stream, env)
 
-        return (super(RewriteContentAMF, self).
+        return (super(RewriteAMFMixin, self).
                 handle_custom_rewrite(rewritten_headers, stream, urlrewriter, mod, env))
 
     def rewrite_amf(self, stream, env):

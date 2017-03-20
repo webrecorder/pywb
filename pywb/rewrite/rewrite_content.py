@@ -76,6 +76,15 @@ class RewriteContent(object):
 
         return (rewritten_headers, stream)
 
+    def _decoding_stream(self, rewritten_headers, stream):
+        for decomp_type in BufferedReader.get_supported_decompressors():
+            matched, stream = self._check_encoding(rewritten_headers,
+                                                   stream,
+                                                   decomp_type)
+            if matched:
+                break
+
+        return stream
 
     def _check_encoding(self, rewritten_headers, stream, enc):
         matched = False
@@ -142,12 +151,7 @@ class RewriteContent(object):
         encoding = None
         first_buff = b''
 
-        for decomp_type in BufferedReader.get_supported_decompressors():
-            matched, stream = self._check_encoding(rewritten_headers,
-                                                   stream,
-                                                   decomp_type)
-            if matched:
-                break
+        stream = self._decoding_stream(rewritten_headers, stream)
 
         if mod == 'js_':
             text_type, stream = self._resolve_text_type('js',
