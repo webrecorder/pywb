@@ -39,6 +39,8 @@ class HeaderRewriter(object):
 
         'json': ['application/json'],
 
+        'hls': ['application/x-mpegURL'],
+
         'xml':  ['/xml', '+xml', '.xml', '.rss'],
 
         'plain': ['text/plain'],

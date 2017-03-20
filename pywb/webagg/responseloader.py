@@ -44,6 +44,8 @@ class BaseLoader(object):
         out_headers['WebAgg-Type'] = 'warc'
         out_headers['WebAgg-Source-Coll'] = quote(cdx.get('source', ''), safe=':/')
         out_headers['Content-Type'] = 'application/warc-record'
+        if cdx.get('is_fuzzy'):
+            out_headers['WebAgg-Fuzzy-Match'] = '1'
 
         if not warc_headers:
             if other_headers:

@@ -337,13 +337,17 @@ rules:
             - match: ''
               invalid_: ''
 
-      # all domain rules -- fallback to this dataset
+
+    # all domain rules -- fallback to this dataset
     #=================================================================
     # Applies to all urls -- should be last
     - url_prefix: ''
-      fuzzy_lookup: '()'
+      fuzzy_lookup:
+        match: '()'
+        match_filters:
+            - mime: 'application/dash+xml'
+              match: '()'
 
-      #fuzzy_lookup:
-      #  match: '(.*)[&?](?:_|uncache)=[\d]+[&]?'
-      #  filter: ['=urlkey:{0}']
-      #  replace: '?'
+            - mime: '*'
+              match: '(.*)[&?](?:_|uncache)=[\d]+[&]?'
+
