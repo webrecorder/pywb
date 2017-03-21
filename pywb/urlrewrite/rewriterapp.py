@@ -211,7 +211,7 @@ class RewriterApp(object):
 
         self._add_custom_params(cdx, r.headers, kwargs)
 
-        if readd_range:
+        if readd_range and record.http_headers.get_statuscode() == '200':
             content_length = (record.http_headers.
                               get_header('Content-Length'))
             try:
