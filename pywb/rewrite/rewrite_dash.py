@@ -105,3 +105,23 @@ class RewriteDASHMixin(object):
         buff_io.seek(0)
         return buff_io
 
+
+def rewrite_fb_dash(string):
+    DASH_SPLIT = r'\n",dash_prefetched_representation_ids:'
+    inx = string.find(DASH_SPLIT)
+    if inx < 0:
+        return string
+
+    string = string[:inx]
+
+    buff = string.encode('utf-8').decode('unicode-escape')
+    buff = buff.encode('utf-8')
+    io = BytesIO(buff)
+    io, best_ids = RewriteDASHMixin.rewrite_dash(io)
+    string = json.dumps(io.read().decode('utf-8'))
+    string = string[1:-1].replace('<', r'\x3C')
+
+    string += DASH_SPLIT
+    string += json.dumps(best_ids)
+    return string
+
