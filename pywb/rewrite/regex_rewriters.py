@@ -142,26 +142,13 @@ class JSLocationRewriterMixin(object):
 
     def __init__(self, rewriter, rules=[], prefix='WB_wombat_'):
         rules = rules + [
-          #  (r'(?<![/$])\blocation\b(?!\":)', RegexRewriter.add_prefix(prefix), 0),
           (r'(?<![$\'"])\b(?:location|top)\b(?![$\'":])', RegexRewriter.add_prefix(prefix), 0),
 
-          (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(window).'), 0),
+          (r'(?<=[?])\s*(?:\w+[.])?(location)\s*(?=[:])', RegexRewriter.add_prefix(prefix), 1),
+
+          (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(self.window).'), 0),
 
           (r'(?<=\.)frameElement\b', RegexRewriter.add_prefix(prefix), 0),
-          #  (r'(?<=document\.)domain', RegexRewriter.add_prefix(prefix), 0),
-          #  (r'(?<=document\.)referrer', RegexRewriter.add_prefix(prefix), 0),
-          #  (r'(?<=document\.)cookie', RegexRewriter.add_prefix(prefix), 0),
-
-            #todo: move to mixin?
-          #(r'(?<=[\s=(){])(top)\s*(?:[!}?)]|==|$)',
-          # (r'(?<=[\s=(){.])(top)\s*(?:[,!}?)]|==|$)',
-          #  RegexRewriter.add_prefix(prefix), 1),
-
-          # (r'^(top)\s*(?:[!})]|==|$)',
-          #  RegexRewriter.add_prefix(prefix), 1),
-
-          # (r'(?<=window\.)(top)',
-          #  RegexRewriter.add_prefix(prefix), 1),
         ]
         super(JSLocationRewriterMixin, self).__init__(rewriter, rules)
 

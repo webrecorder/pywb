@@ -58,6 +58,14 @@ r"""
 >>> _test_js('$location = cond ? a.location: location; location$')
 '$location = cond ? a.WB_wombat_location: WB_wombat_location; location$'
 
+>>> _test_js('location$ = cond?a.location:location;')
+'location$ = cond?a.WB_wombat_location:WB_wombat_location;'
+
+>>> _test_js('location$ = {location: "location", top: " location "}')
+'location$ = {location: "location", top: " WB_wombat_location "}'
+
+
+
 # not rewriting WB_wombat_domain
 #>>> _test_js('window.location = "http://example.com/abc.html" document.domain = "anotherdomain.com"')
 #'window.WB_wombat_location = "/web/20131010/http://example.com/abc.html" document.WB_wombat_domain = "anotherdomain.com"'
