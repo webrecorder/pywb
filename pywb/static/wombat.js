@@ -1293,7 +1293,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         if (typeof(value) === "string") {
             value = value.replace(STYLE_REGEX, style_replacer);
-            value = value.replace('WB_wombat_', '');
+            value = value.replace(/WB_wombat_/g, '');
         }
 
         return value;
@@ -1486,7 +1486,21 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var orig_setter = get_orig_setter(obj, attr);
 
         var setter = function(orig) {
-            var val = rewrite_url(orig, false, mod);
+            var val;
+
+            if (mod == "cs_" && orig.indexOf("data:text/css") == 0) {
+                var decoded = decodeURIComponent(orig);
+                if (decoded != orig) {
+                    val = rewrite_style(decoded);
+                    var parts = val.split(",", 2);
+                    val = parts[0] + "," + encodeURIComponent(parts[1]);
+                } else {
+                    val = rewrite_style(orig);
+                }
+            } else {
+                val = rewrite_url(orig, false, mod);
+            }
+
             if (orig_setter) {
                 return orig_setter.call(this, val);
             } else if (default_to_setget) {
