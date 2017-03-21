@@ -4,6 +4,15 @@ from pywb.rewrite.url_rewriter import UrlRewriter
 
 
 #=================================================================
+def load_function(string):
+    import importlib
+
+    string = string.split(':', 1)
+    mod = importlib.import_module(string[0])
+    return getattr(mod, string[1])
+
+
+#=================================================================
 class RegexRewriter(object):
     #@staticmethod
     #def comment_out(string):
@@ -93,6 +102,8 @@ class RegexRewriter(object):
                 match = obj.get('match')
                 if 'rewrite' in obj:
                     replace = RegexRewriter.archival_rewrite(rewriter)
+                elif 'function' in obj:
+                    replace = load_function(obj['function'])
                 else:
                     replace = RegexRewriter.format(obj.get('replace', '{0}'))
                 group = obj.get('group', 0)
@@ -132,7 +143,7 @@ class JSLocationRewriterMixin(object):
     def __init__(self, rewriter, rules=[], prefix='WB_wombat_'):
         rules = rules + [
           #  (r'(?<![/$])\blocation\b(?!\":)', RegexRewriter.add_prefix(prefix), 0),
-          (r'(?<![$\'"])\b(?:location|top)\b(?![$\'"])', RegexRewriter.add_prefix(prefix), 0),
+          (r'(?<![$\'"])\b(?:location|top)\b(?![$\'":])', RegexRewriter.add_prefix(prefix), 0),
 
           (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(window).'), 0),
 
