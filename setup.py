@@ -4,6 +4,8 @@
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import glob
+import os
+import sys
 
 from pywb import __version__
 
@@ -21,7 +23,6 @@ class PyTest(TestCommand):
         from gevent.monkey import patch_all; patch_all()
 
         import pytest
-        import sys
         import os
         os.environ.pop('PYWB_CONFIG_FILE', None)
         cmdline = ' --cov-config .coveragerc --cov pywb'
@@ -32,9 +33,34 @@ class PyTest(TestCommand):
         sys.exit(errcode)
 
 
+
+def get_git_short_hash():
+    import subprocess
+    try:
+        hash_id = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).rstrip()
+        if sys.version_info >= (3, 0):
+            hash_id = hash_id.decode('utf-8')
+
+        return hash_id
+    except:
+        return ''
+
+def generate_git_hash_py(pkg, filename='git_hash.py'):
+    try:
+        git_hash = get_git_short_hash()
+        with open(os.path.join(pkg, filename), 'wt') as fh:
+            fh.write('git_hash = "{0}"\n'.format(git_hash))
+    except:
+        pass
+
+
+
 def load_requirements(filename):
     with open(filename, 'rt') as fh:
         return fh.read().rstrip().split('\n')
+
+
+generate_git_hash_py('pywb')
 
 
 setup(
