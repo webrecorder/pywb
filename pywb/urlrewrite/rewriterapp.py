@@ -125,6 +125,10 @@ class RewriterApp(object):
                                   full_prefix=full_prefix,
                                   rel_prefix=rel_prefix)
 
+        scheme_inx = wb_url.url.find('//')
+        if wb_url.url.find('/', scheme_inx + 2) < 0:
+            return WbResponse.redir_response(urlrewriter.rewrite(wb_url.url + '/'))
+
         self.unrewrite_referrer(environ)
 
         urlkey = canonicalize(wb_url.url)
