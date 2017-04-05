@@ -106,7 +106,7 @@ class TestWbIntegration(BaseConfigTest):
 
     def test_replay_fuzzy_1(self):
         resp = self.testapp.get('/pywb/20140127171238mp_/http://www.iana.org/?_=123')
-        assert resp.status_int == 302
+        assert resp.status_int == 307
         assert resp.headers['Location'].endswith('/pywb/20140127171238mp_/http://www.iana.org/')
 
     def test_replay_no_fuzzy_match(self):
@@ -121,8 +121,18 @@ class TestWbIntegration(BaseConfigTest):
     #    assert 'wb.js' in resp.text
     #    assert '/pywb-nosurt/20140103030321/http://www.iana.org/domains/example' in resp.text
 
+    def test_no_slash_redir_1(self):
+        resp = self.testapp.get('/pywb/20140103030321mp_/http://example.com')
+        assert resp.status_int == 307
+        assert resp.headers['Location'].endswith('/pywb/20140103030321mp_/http://example.com/')
+
+    def test_no_slash_redir_2(self):
+        resp = self.testapp.get('/pywb/20140103030321mp_/http://example.com?example=1')
+        assert resp.status_int == 307
+        assert resp.headers['Location'].endswith('/pywb/20140103030321mp_/http://example.com/?example=1')
+
     def test_replay_cdxj(self):
-        resp = self.testapp.get('/pywb-cdxj/20140103030321mp_/http://example.com?example=1')
+        resp = self.testapp.get('/pywb-cdxj/20140103030321mp_/http://example.com/?example=1')
         self._assert_basic_html(resp)
 
         assert '"20140103030321"' in resp.text
@@ -130,7 +140,7 @@ class TestWbIntegration(BaseConfigTest):
         assert '/pywb-cdxj/20140103030321mp_/http://www.iana.org/domains/example' in resp.text
 
     def test_replay_cdxj_revisit(self):
-        resp = self.testapp.get('/pywb-cdxj/20140103030341mp_/http://example.com?example=1')
+        resp = self.testapp.get('/pywb-cdxj/20140103030341mp_/http://example.com/?example=1')
         self._assert_basic_html(resp)
 
         assert '"20140103030341"' in resp.text
@@ -138,7 +148,7 @@ class TestWbIntegration(BaseConfigTest):
         assert '/pywb-cdxj/20140103030341mp_/http://www.iana.org/domains/example' in resp.text
 
     def test_zero_len_revisit(self):
-        resp = self.testapp.get('/pywb/20140603030341mp_/http://example.com?example=2')
+        resp = self.testapp.get('/pywb/20140603030341mp_/http://example.com/?example=2')
         self._assert_basic_html(resp)
 
         assert '"20140603030341"' in resp.text
@@ -181,7 +191,7 @@ class TestWbIntegration(BaseConfigTest):
         assert '"/_css/2013.1/screen.css"' in resp.text
 
     def test_replay_identity_1(self):
-        resp = self.testapp.get('/pywb/20140127171251id_/http://example.com')
+        resp = self.testapp.get('/pywb/20140127171251id_/http://example.com/')
 
         # no wb header insertion
         assert 'wb.js' not in resp.text
@@ -235,7 +245,7 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.content_length == 0
 
     def test_replay_identity_2_arcgz(self):
-        resp = self.testapp.get('/pywb/20140216050221id_/http://arc.gz.test.example.com')
+        resp = self.testapp.get('/pywb/20140216050221id_/http://arc.gz.test.example.com/')
 
         # no wb header insertion
         assert 'wb.js' not in resp.text
@@ -244,7 +254,7 @@ class TestWbIntegration(BaseConfigTest):
         assert '"http://www.iana.org/domains/example"' in resp.text
 
     def test_replay_identity_2_arc(self):
-        resp = self.testapp.get('/pywb/20140216050221id_/http://arc.test.example.com')
+        resp = self.testapp.get('/pywb/20140216050221id_/http://arc.test.example.com/')
 
         # no wb header insertion
         assert 'wb.js' not in resp.text
@@ -350,21 +360,21 @@ class TestWbIntegration(BaseConfigTest):
     #    assert resp.status_int == 302
 
     def test_not_existant_warc_other_capture(self):
-        resp = self.testapp.get('/pywb/20140703030321mp_/http://example.com?example=2')
+        resp = self.testapp.get('/pywb/20140703030321mp_/http://example.com/?example=2')
         assert resp.status_int == 200
         assert resp.headers['Content-Location'].endswith('/pywb/20140603030341mp_/http://example.com?example=2')
 
     def test_missing_revisit_other_capture(self):
-        resp = self.testapp.get('/pywb/20140603030351mp_/http://example.com?example=2')
+        resp = self.testapp.get('/pywb/20140603030351mp_/http://example.com/?example=2')
         assert resp.status_int == 200
         assert resp.headers['Content-Location'].endswith('/pywb/20140603030341mp_/http://example.com?example=2')
 
     def test_not_existant_warc_no_other(self):
-        resp = self.testapp.get('/pywb/20140703030321mp_/http://example.com?example=3', status=503)
+        resp = self.testapp.get('/pywb/20140703030321mp_/http://example.com/?example=3', status=503)
         assert resp.status_int == 503
 
     def test_missing_revisit_no_other(self):
-        resp = self.testapp.get('/pywb/20140603030351mp_/http://example.com?example=3', status=503)
+        resp = self.testapp.get('/pywb/20140603030351mp_/http://example.com/?example=3', status=503)
         assert resp.status_int == 503
 
     def test_live_frame(self):
@@ -429,7 +439,7 @@ class TestWbIntegration(BaseConfigTest):
         assert 'Excluded' in resp.text
 
     def test_replay_not_found(self):
-        resp = self.testapp.head('/pywb/mp_/http://not-exist.example.com', status=404)
+        resp = self.testapp.head('/pywb/mp_/http://not-exist.example.com/', status=404)
         assert resp.content_type == 'text/html'
         assert resp.status_int == 404
 

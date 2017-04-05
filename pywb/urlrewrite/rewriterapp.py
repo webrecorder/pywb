@@ -23,7 +23,7 @@ from pywb.framework.wbrequestresponse import WbResponse
 from pywb.webagg.utils import MementoUtils, buffer_iter
 
 from werkzeug.http import HTTP_STATUS_CODES
-from six.moves.urllib.parse import urlencode
+from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
 
 from pywb.urlrewrite.rewriteinputreq import RewriteInputRequest
 from pywb.urlrewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView, BaseInsertView
@@ -125,9 +125,13 @@ class RewriterApp(object):
                                   full_prefix=full_prefix,
                                   rel_prefix=rel_prefix)
 
-        scheme_inx = wb_url.url.find('//')
-        if wb_url.url.find('/', scheme_inx + 2) < 0:
-            return WbResponse.redir_response(urlrewriter.rewrite(wb_url.url + '/'))
+        url_parts = urlsplit(wb_url.url)
+        if not url_parts.path:
+            scheme, netloc, path, query, frag = url_parts
+            path = '/'
+            url = urlunsplit((scheme, netloc, path, query, frag))
+            return WbResponse.redir_response(urlrewriter.rewrite(url),
+                                             '307 Temporary Redirect')
 
         self.unrewrite_referrer(environ)
 
@@ -211,7 +215,8 @@ class RewriterApp(object):
         cdx['url'] = target_uri
 
         if target_uri != wb_url.url and r.headers.get('WebAgg-Fuzzy-Match') == '1':
-            return WbResponse.redir_response(urlrewriter.rewrite(target_uri))
+            return WbResponse.redir_response(urlrewriter.rewrite(target_uri),
+                                             '307 Temporary Redirect')
 
         self._add_custom_params(cdx, r.headers, kwargs)
 
