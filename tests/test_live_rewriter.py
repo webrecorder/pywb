@@ -32,11 +32,13 @@ class TestLiveRewriter(BaseConfigTest):
         assert 'src="http://localhost:80/live/mp_/http://example.com/"' in resp.text, resp.text
 
     def test_live_invalid(self):
-        resp = self.testapp.get('/live/mp_/http://abcdef', status=400)
+        resp = self.testapp.get('/live/mp_/http://abcdef', status=307)
+        resp = resp.follow(status=400)
         assert resp.status_int == 400
 
     def test_live_invalid_2(self):
-        resp = self.testapp.get('/live/mp_/@#$@#$', status=400)
+        resp = self.testapp.get('/live/mp_/@#$@#$', status=307)
+        resp = resp.follow(status=400)
         assert resp.status_int == 400
 
     def test_live_video_info(self):
