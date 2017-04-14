@@ -1089,6 +1089,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
         $wbwindow.Date.parse = orig_parse;
 
         $wbwindow.Date.__WB_timediff = timediff;
+
+        Object.defineProperty($wbwindow.Date.prototype, "constructor", {value: $wbwindow.Date});
     }
 
     //============================================
