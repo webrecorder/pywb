@@ -29,11 +29,11 @@ class NewWbRequest(object):
 # ============================================================================
 class FrontEndApp(RewriterApp):
     def __init__(self, config_file='./config.yaml', custom_config=None):
-        super(FrontEndApp, self).__init__(True)
-
         self.debug = True
         self.webagg = AutoConfigApp(config_file=config_file,
                                     custom_config=custom_config)
+
+        super(FrontEndApp, self).__init__(True, config=self.webagg.config)
 
         self.webagg_server = GeventServer(self.webagg, port=0)
 

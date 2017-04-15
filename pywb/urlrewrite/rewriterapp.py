@@ -79,6 +79,8 @@ class RewriterApp(object):
 
         self.cookie_tracker = None
 
+        self.enable_memento = config.get('enable_memento')
+
     def call_with_params(self, **kwargs):
         def run_app(environ, start_response):
             environ['pywb.kwargs'] = kwargs
@@ -266,12 +268,11 @@ class RewriterApp(object):
         if ' ' not in status_headers.statusline:
             status_headers.statusline += ' None'
 
-        if not is_ajax:
+        if not is_ajax and self.enable_memento:
             self._add_memento_links(urlrewriter, full_prefix, memento_dt, status_headers)
 
             status_headers.headers.append(('Content-Location', urlrewriter.get_new_url(timestamp=cdx['timestamp'],
                                                                                        url=cdx['url'])))
-
         #gen = buffer_iter(status_headers, gen)
 
         return WbResponse(status_headers, gen)
@@ -280,7 +281,7 @@ class RewriterApp(object):
         wb_url = urlrewriter.wburl
         status_headers.headers.append(('Memento-Datetime', memento_dt))
 
-        memento_url = full_prefix + wb_url._original_url
+        memento_url = full_prefix + str(wb_url)
         timegate_url = urlrewriter.get_new_url(timestamp='')
 
         link = []
