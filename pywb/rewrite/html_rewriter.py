@@ -143,8 +143,8 @@ class HTMLRewriterMixin(object):
 
         base_url = self._rewrite_url(url, mod)
 
-        self.url_rewriter = (self.url_rewriter.
-                             rebase_rewriter(base_url))
+        self.url_rewriter = self.url_rewriter.rebase_rewriter(url)
+
         self.has_base = True
 
         if self.opts.get('rewrite_base', True):
