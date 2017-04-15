@@ -99,13 +99,13 @@ class UrlRewriter(object):
     def get_new_url(self, **kwargs):
         return self.prefix + self.wburl.to_str(**kwargs)
 
-    def rebase_rewriter(self, new_url):
-        if new_url.startswith(self.prefix):
-            new_url = new_url[len(self.prefix):]
-        elif new_url.startswith(self.rel_prefix):
-            new_url = new_url[len(self.rel_prefix):]
+    def rebase_rewriter(self, base_url):
+        if not base_url.startswith(self.PROTOCOLS):
+            base_url = self.urljoin(self.wburl.url, base_url)
 
-        new_wburl = WbUrl(new_url)
+        new_wburl_str = self.wburl.to_str(url=base_url)
+        new_wburl = WbUrl(new_wburl_str)
+
         return self._create_rebased_rewriter(new_wburl, self.prefix)
 
     def _create_rebased_rewriter(self, new_wburl, prefix):

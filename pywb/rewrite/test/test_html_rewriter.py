@@ -31,12 +31,25 @@ r"""
 >>> parse('<html><head><base href="http://example.com/diff/path/file.html"/>', urlrewriter=full_path_urlrewriter)
 <html><head><base href="http://localhost:80/web/20131226101010/http://example.com/diff/path/file.html"/>
 
+# Full Path Scheme Rel Base
+>>> parse('<base href="//example.com"/><img src="/foo.gif"/>', urlrewriter=full_path_urlrewriter)
+<base href="//localhost:80/web/20131226101010///example.com/"/><img src="/web/20131226101010im_/http://example.com/foo.gif"/>
+
 # Rel Base
 >>> parse('<html><head><base href="/other/file.html"/>', urlrewriter=full_path_urlrewriter)
 <html><head><base href="/web/20131226101010/http://example.com/other/file.html"/>
 
->>> parse('<base href="./static/"/><img src="image.gif"/>')
+# Rel Base + example
+>>> parse('<html><head><base href="/other/file.html"/><a href="/path.html">', urlrewriter=full_path_urlrewriter)
+<html><head><base href="/web/20131226101010/http://example.com/other/file.html"/><a href="/web/20131226101010/http://example.com/path.html">
+
+# Rel Base
+>>> parse('<base href="./static/"/><img src="image.gif"/>', urlrewriter=full_path_urlrewriter)
 <base href="./static/"/><img src="image.gif"/>
+
+# Rel Base
+>>> parse('<base href="./static/"/><a href="/static/"/>', urlrewriter=full_path_urlrewriter)
+<base href="./static/"/><a href="/web/20131226101010/http://example.com/static/"/>
 
 # ensure trailing slash added
 >>> parse('<base href="http://example.com"/>')
