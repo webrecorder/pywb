@@ -1112,9 +1112,14 @@ var _WBWombat = function($wbwindow, wbinfo) {
             x.open("GET", url, false);
             x.send();
 
-            var resp = x.responseText.replace(/__WB_pmw\(window\)\./g, "");
-            var blob = new Blob([resp], {"type": "text/javascript"});
-            return URL.createObjectURL(blob);
+            var resp = x.responseText.replace(/__WB_pmw\(.*?\)\.(?=postMessage\()/g, "");
+
+            if (resp != x.responseText) {
+                var blob = new Blob([resp], {"type": "text/javascript"});
+                return URL.createObjectURL(blob);
+            } else {
+                return url;
+            }
         }
 
         $wbwindow.Worker = (function (Worker) {
@@ -1491,7 +1496,14 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var val;
 
             if (mod == "cs_" && orig.indexOf("data:text/css") == 0) {
-                var decoded = decodeURIComponent(orig);
+                var decoded;
+
+                try {
+                    decoded = decodeURIComponent(orig);
+                } catch (e) {
+                    decoded = orig;
+                }
+
                 if (decoded != orig) {
                     val = rewrite_style(decoded);
                     var parts = val.split(",", 2);
