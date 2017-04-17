@@ -2334,7 +2334,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             //win._WB_wombat_top = $wbwindow.WB_wombat_top;
 
             init_proto_pm_origin(win);
-            //init_postmessage_override(win);
+            init_postmessage_override(win);
+            init_messageevent_override(win);
         }
     }
 
