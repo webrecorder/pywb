@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.25
+// Wombat JS-Rewriting Library v2.26
 //============================================
 
 
@@ -895,16 +895,33 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function override_prop_extract(proto, prop) {
+    function override_prop_extract(proto, prop, cond) {
         var orig_getter = get_orig_getter(proto, prop);
         if (orig_getter) {
             var new_getter = function() {
                 var res = orig_getter.call(this);
-                return extract_orig(res);
+                if (!cond || cond(this)) {
+                    res = extract_orig(res);
+                }
+                return res;
             }
 
             def_prop(proto, prop, undefined, new_getter);
         }
+    }
+
+
+    //============================================
+    function override_attr_props() {
+        function is_rw_attr(attr) {
+            if (attr && equals_any(attr.nodeName, REWRITE_ATTRS)) {
+                return true;
+            }
+            return false;
+        }
+
+        override_prop_extract($wbwindow.Attr.prototype, "nodeValue", is_rw_attr);
+        override_prop_extract($wbwindow.Attr.prototype, "value", is_rw_attr);
     }
 
     //============================================
@@ -2590,6 +2607,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
             // Document.URL override
             override_prop_extract($wbwindow.Document.prototype, "URL");
             override_prop_extract($wbwindow.Document.prototype, "documentURI");
+
+            // Attr nodeValue and value
+            override_attr_props();
 
             // init insertAdjacentHTML() override
             init_insertAdjacentHTML_override();
