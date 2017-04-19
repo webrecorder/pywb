@@ -7,6 +7,8 @@ from pywb.rewrite.regex_rewriters import JSLocationOnlyRewriter, JSNoneRewriter
 from pywb.rewrite.header_rewriter import HeaderRewriter
 from pywb.rewrite.html_rewriter import HTMLRewriter
 
+from pywb.rewrite.jsonp_rewriter import JSONPRewriter
+
 import re
 
 
@@ -23,7 +25,7 @@ class RewriteRules(BaseRule):
         self.rewriters['css'] = config.get('css_class', CSSRewriter)
         self.rewriters['xml'] = config.get('xml_class', XMLRewriter)
         self.rewriters['html'] = config.get('html_class', HTMLRewriter)
-        self.rewriters['json'] = config.get('json_class', JSLinkOnlyRewriter)
+        self.rewriters['json'] = config.get('json_class', JSONPRewriter)
 
         self.parse_comments = config.get('parse_comments', False)
 
@@ -35,10 +37,10 @@ class RewriteRules(BaseRule):
             js_default_class = JSLinkAndLocationRewriter
         elif self.js_rewrite_location == 'location':
             js_default_class = JSLocationOnlyRewriter
-            self.rewriters['json'] = JSNoneRewriter
+#            self.rewriters['json'] = JSNoneRewriter
         elif self.js_rewrite_location == 'none':
             js_default_class = JSNoneRewriter
-            self.rewriters['json'] = JSNoneRewriter
+#            self.rewriters['json'] = JSNoneRewriter
         else:
             js_default_class = JSLinkOnlyRewriter
 
@@ -75,3 +77,4 @@ class RewriteRules(BaseRule):
             return rewriter_cls(urlrewriter, rule_def_tuples)
 
         self.rewriters[rw_id] = extend_rewriter_with_regex
+

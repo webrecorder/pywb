@@ -216,9 +216,10 @@ class RewriterApp(object):
         cdx['timestamp'] = http_date_to_timestamp(memento_dt)
         cdx['url'] = target_uri
 
-        if target_uri != wb_url.url and r.headers.get('WebAgg-Fuzzy-Match') == '1':
-            return WbResponse.redir_response(urlrewriter.rewrite(target_uri),
-                                             '307 Temporary Redirect')
+        # Disable Fuzzy Match Redir
+        #if target_uri != wb_url.url and r.headers.get('WebAgg-Fuzzy-Match') == '1':
+        #    return WbResponse.redir_response(urlrewriter.rewrite(target_uri),
+        #                                     '307 Temporary Redirect')
 
         self._add_custom_params(cdx, r.headers, kwargs)
 
