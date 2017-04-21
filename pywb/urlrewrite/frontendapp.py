@@ -27,13 +27,13 @@ class NewWbRequest(object):
 
 
 # ============================================================================
-class FrontEndApp(RewriterApp):
+class FrontEndApp(object):
     def __init__(self, config_file='./config.yaml', custom_config=None):
         self.debug = True
         self.webagg = AutoConfigApp(config_file=config_file,
                                     custom_config=custom_config)
 
-        super(FrontEndApp, self).__init__(True, config=self.webagg.config)
+        self.rewriterapp = RewriterApp(True, config=self.webagg.config)
 
         self.webagg_server = GeventServer(self.webagg, port=0)
 
@@ -46,7 +46,7 @@ class FrontEndApp(RewriterApp):
         self.url_map.add(Rule('/collinfo.json', endpoint=self.serve_listing))
         self.url_map.add(Rule('/', endpoint=self.serve_home))
 
-        self.paths = self.get_upstream_paths(self.webagg_server.port)
+        self.rewriterapp.paths = self.get_upstream_paths(self.webagg_server.port)
 
     def get_upstream_paths(self, port):
         return {'replay-dyn': 'http://localhost:%s/_/resource/postreq?param.coll={coll}' % port,
@@ -54,7 +54,7 @@ class FrontEndApp(RewriterApp):
                }
 
     def serve_home(self, environ):
-        home_view = BaseInsertView(self.jinja_env, 'new_index.html')
+        home_view = BaseInsertView(self.rewriterapp.jinja_env, 'new_index.html')
         routes = self.webagg.list_fixed_routes() + self.webagg.list_dynamic_routes()
 
         content = home_view.render_to_string(environ, routes=routes)
@@ -64,14 +64,14 @@ class FrontEndApp(RewriterApp):
         try:
             return self.static_handler(NewWbRequest(environ, filepath, ''))
         except:
-            raise NotFound(response=self._error_response(environ, 'Static File Not Found: {0}'.format(filepath)))
+            self.raise_not_found(environ, 'Static File Not Found: {0}'.format(filepath))
 
     def serve_coll_page(self, environ, coll):
         if not self.is_valid_coll(coll):
-            raise NotFound(response=self._error_response(environ, 'No handler for "/{0}"'.format(coll)))
+            self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
 
         wbrequest = NewWbRequest(environ, '', '/')
-        view = BaseInsertView(self.jinja_env, 'search.html')
+        view = BaseInsertView(self.rewriterapp.jinja_env, 'search.html')
         content = view.render_to_string(environ, wbrequest=wbrequest)
 
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
@@ -87,12 +87,15 @@ class FrontEndApp(RewriterApp):
         return (coll in self.webagg.list_fixed_routes() or
                 coll in self.webagg.list_dynamic_routes())
 
+    def raise_not_found(self, environ, msg):
+        raise NotFound(response=self.rewriterapp._error_response(environ, msg))
+
     def serve_content(self, environ, coll='', url=''):
         if not self.is_valid_coll(coll):
-            raise NotFound(response=self._error_response(environ, 'No handler for "/{0}"'.format(coll)))
+            self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
 
         pop_path_info(environ)
-        wb_url = self.get_wburl(environ)
+        wb_url = self.rewriterapp.get_wburl(environ)
 
         kwargs = {'coll': coll}
 
@@ -102,9 +105,9 @@ class FrontEndApp(RewriterApp):
             kwargs['type'] = 'replay-dyn'
 
         try:
-            response = self.render_content(wb_url, kwargs, environ)
+            response = self.rewriterapp.render_content(wb_url, kwargs, environ)
         except UpstreamException as ue:
-            response = self.handle_error(environ, ue)
+            response = self.rewriterapp.handle_error(environ, ue)
             raise HTTPException(response=response)
 
         return response
@@ -156,7 +159,7 @@ class FrontEndApp(RewriterApp):
             if self.debug:
                 traceback.print_exc()
 
-            response = self._error_response(environ, 'Internal Error: ' + str(e), '500 Server Error')
+            response = self.rewriterapp._error_response(environ, 'Internal Error: ' + str(e), '500 Server Error')
             return response(environ, start_response)
 
     @classmethod

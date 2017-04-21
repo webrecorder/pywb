@@ -106,8 +106,9 @@ class TestWbIntegration(BaseConfigTest):
 
     def test_replay_fuzzy_1(self):
         resp = self.testapp.get('/pywb/20140127171238mp_/http://www.iana.org/?_=123')
-        assert resp.status_int == 307
-        assert resp.headers['Location'].endswith('/pywb/20140127171238mp_/http://www.iana.org/')
+        assert resp.status_int == 200
+        assert resp.headers['Content-Location'].endswith('/pywb/20140126200624mp_/http://www.iana.org/')
+        #assert resp.headers['Location'].endswith('/pywb/20140127171238mp_/http://www.iana.org/')
 
     def test_replay_no_fuzzy_match(self):
         resp = self.testapp.get('/pywb/20140127171238mp_/http://www.iana.org/?foo=bar', status=404)

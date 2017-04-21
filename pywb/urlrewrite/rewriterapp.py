@@ -216,8 +216,12 @@ class RewriterApp(object):
         cdx['timestamp'] = http_date_to_timestamp(memento_dt)
         cdx['url'] = target_uri
 
-        # Disable Fuzzy Match Redir
-        #if target_uri != wb_url.url and r.headers.get('WebAgg-Fuzzy-Match') == '1':
+        set_content_loc = False
+
+        # Check if Fuzzy Match
+        if target_uri != wb_url.url and r.headers.get('WebAgg-Fuzzy-Match') == '1':
+            set_content_loc = True
+
         #    return WbResponse.redir_response(urlrewriter.rewrite(target_uri),
         #                                     '307 Temporary Redirect')
 
@@ -272,6 +276,9 @@ class RewriterApp(object):
         if not is_ajax and self.enable_memento:
             self._add_memento_links(urlrewriter, full_prefix, memento_dt, status_headers)
 
+            set_content_loc = True
+
+        if set_content_loc:
             status_headers.headers.append(('Content-Location', urlrewriter.get_new_url(timestamp=cdx['timestamp'],
                                                                                        url=cdx['url'])))
         #gen = buffer_iter(status_headers, gen)
