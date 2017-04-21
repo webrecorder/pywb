@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.26
+// Wombat JS-Rewriting Library v2.27
 //============================================
 
 
@@ -953,6 +953,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
                     }
                 } else if (lowername == "style" && typeof(value) == "string") {
                     value = rewrite_style(value);
+                } else if (lowername == "srcset") {
+                    value = rewrite_srcset(value);
                 }
             }
             orig_setAttribute.call(this, name, value);
@@ -1286,6 +1288,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         if (name == "style") {
             new_value = rewrite_style(value);
+        } else if (name == "srcset") {
+            new_value = rewrite_srcset(value);
         } else {
             // Only rewrite if absolute url
             if (abs_url_only && !starts_with(value, VALID_PREFIXES)) {
@@ -1321,6 +1325,22 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         return value;
+    }
+
+    //============================================
+    function rewrite_srcset(value)
+    {
+        if (!value) {
+            return "";
+        }
+
+        values = value.split(',');
+
+        for (var i = 0; i < values.length; i++) {
+            values[i] = rewrite_url(values[i].trim());
+        }
+
+        return values.join(",");
     }
 
     //============================================
