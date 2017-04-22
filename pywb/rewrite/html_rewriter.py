@@ -15,6 +15,9 @@ import six.moves.html_parser
 six.moves.html_parser.unescape = lambda x: x
 from six import text_type
 
+script_wrapper = '{\nlet window = _WB_wombat_window_proxy;\n' \
+                 'let location = WB_wombat_location;\nlet top = WB_wombat_top;\n%s\n}'
+
 
 #=================================================================
 class HTMLRewriterMixin(object):
@@ -236,7 +239,7 @@ class HTMLRewriterMixin(object):
         if ensure_window:
             content = self.ADD_WINDOW.sub('window.\\1', content)
 
-        return content
+        return script_wrapper % content
 
     def has_attr(self, tag_attrs, attr):
         name, value = attr
