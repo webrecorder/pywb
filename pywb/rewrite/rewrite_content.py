@@ -21,6 +21,15 @@ from warcio.utils import to_native_str
 from pywb.rewrite.regex_rewriters import JSNoneRewriter, JSLinkOnlyRewriter
 
 
+firstbuf_proxy = b'{\nlet window = _WB_wombat_window_proxy;\n' \
+                 b'let location = WB_wombat_location;\nlet top = WB_wombat_top;\n'
+
+
+def final_read_proxy():
+    return ' ' \
+            '\n}'
+
+
 #=================================================================
 class RewriteContent(object):
     HEAD_REGEX = re.compile(b'<\s*head\\b[^>]*[>]+', re.I)
@@ -253,11 +262,18 @@ class RewriteContent(object):
         align = (text_type != 'html')
 
         # Create rewriting generator
-        gen = self.rewrite_text_stream_to_gen(stream,
-                                              rewrite_func=rewriter.rewrite,
-                                              final_read_func=rewriter.close,
-                                              first_buff=first_buff,
-                                              align_to_line=align)
+        if text_type == 'js':
+            gen = self.rewrite_text_stream_to_gen(stream,
+                                                  rewrite_func=rewriter.rewrite,
+                                                  final_read_func=final_read_proxy,
+                                                  first_buff=firstbuf_proxy,
+                                                  align_to_line=align)
+        else:
+            gen = self.rewrite_text_stream_to_gen(stream,
+                                                  rewrite_func=rewriter.rewrite,
+                                                  final_read_func=rewriter.close,
+                                                  first_buff=first_buff,
+                                                  align_to_line=align)
 
         return (status_headers, gen, True)
 
@@ -360,6 +376,42 @@ class RewriteContent(object):
                 yield buff
                 if not buff:
                     break
+
+        finally:
+            stream.close()
+
+    @staticmethod
+    def rewrite_js_stream_to_gen(stream, rewrite_func,
+                                   final_read_func, first_buff,
+                                   align_to_line):
+        """
+               Convert stream to generator using applying rewriting func
+               to each portion of the stream.
+               Align to line boundaries if needed.
+               """
+        try:
+            has_closed = hasattr(stream, 'closed')
+            buff = first_buff
+
+            while True:
+                if buff:
+                    buff = rewrite_func(buff.decode('iso-8859-1'))
+                    yield buff.encode('iso-8859-1')
+
+                buff = stream.read(RewriteContent.BUFF_SIZE)
+                # on 2.6, readline() (but not read()) throws an exception
+                # if stream already closed, so check stream.closed if present
+                if (buff and align_to_line and
+                        (not has_closed or not stream.closed)):
+                    buff += stream.readline()
+
+                if not buff:
+                    break
+
+            # For adding a tail/handling final buffer
+            buff = final_read_func()
+            if buff:
+                yield buff.encode('iso-8859-1')
 
         finally:
             stream.close()
