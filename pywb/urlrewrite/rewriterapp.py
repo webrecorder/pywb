@@ -5,7 +5,7 @@ from pywb.rewrite.rewrite_dash import RewriteDASHMixin
 from pywb.rewrite.rewrite_content import RewriteContent
 
 from pywb.rewrite.wburl import WbUrl
-from pywb.rewrite.url_rewriter import UrlRewriter
+from pywb.rewrite.url_rewriter import UrlRewriter, SchemeOnlyUrlRewriter
 
 from pywb.utils.wbexception import WbException
 from pywb.utils.canonicalize import canonicalize
@@ -20,7 +20,7 @@ from pywb.webagg.utils import BUFF_SIZE
 from pywb.cdx.cdxobject import CDXObject
 from pywb.framework.wbrequestresponse import WbResponse
 
-from pywb.webagg.utils import MementoUtils, buffer_iter
+from pywb.webagg.utils import MementoUtils, buffer_iter, chunk_encode_iter
 
 from werkzeug.http import HTTP_STATUS_CODES
 from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
@@ -122,10 +122,20 @@ class RewriterApp(object):
 
             return WbResponse.text_response(resp, content_type=content_type)
 
-        urlrewriter = UrlRewriter(wb_url,
-                                  prefix=full_prefix,
-                                  full_prefix=full_prefix,
-                                  rel_prefix=rel_prefix)
+        is_proxy = ('wsgiprox.fixed_host' in environ)
+
+        if is_proxy:
+            environ['pywb_proxy_magic'] = environ['wsgiprox.fixed_host']
+            urlrewriter = SchemeOnlyUrlRewriter(wb_url, '')
+            framed_replay = False
+
+        else:
+            urlrewriter = UrlRewriter(wb_url,
+                                      prefix=full_prefix,
+                                      full_prefix=full_prefix,
+                                      rel_prefix=rel_prefix)
+
+            framed_replay = self.framed_replay
 
         url_parts = urlsplit(wb_url.url)
         if not url_parts.path:
@@ -135,7 +145,7 @@ class RewriterApp(object):
             return WbResponse.redir_response(urlrewriter.rewrite(url),
                                              '307 Temporary Redirect')
 
-        self.unrewrite_referrer(environ)
+        self.unrewrite_referrer(environ, full_prefix)
 
         urlkey = canonicalize(wb_url.url)
 
@@ -249,7 +259,7 @@ class RewriterApp(object):
                                                        host_prefix,
                                                        top_url,
                                                        environ,
-                                                       self.framed_replay))
+                                                       framed_replay))
 
         cookie_rewriter = None
         if self.cookie_tracker:
@@ -282,8 +292,31 @@ class RewriterApp(object):
             status_headers.headers.append(('Content-Location', urlrewriter.get_new_url(timestamp=cdx['timestamp'],
                                                                                        url=cdx['url'])))
         #gen = buffer_iter(status_headers, gen)
+        response = WbResponse(status_headers, gen)
 
-        return WbResponse(status_headers, gen)
+        if is_proxy:
+            self.prepare_proxy_response(response, environ)
+
+        return response
+
+    def prepare_proxy_response(self, response, environ):
+        response.status_headers.remove_header('Content-Security-Policy')
+
+        res = response.status_headers.get_header('content-length')
+        try:
+            if int(res) > 0:
+                return
+        except:
+            pass
+
+        # need to either chunk or buffer to get content-length
+        if environ.get('SERVER_PROTOCOL') == 'HTTP/1.1':
+            response.status_headers.remove_header('content-length')
+            response.status_headers.headers.append(('Transfer-Encoding', 'chunked'))
+            response.body = chunk_encode_iter(response.body)
+        else:
+            response.body = buffer_iter(response.status_headers,
+                                        response.body)
 
     def _add_memento_links(self, urlrewriter, full_prefix, memento_dt, status_headers):
         wb_url = urlrewriter.wburl
@@ -421,20 +454,28 @@ class RewriterApp(object):
         return None
 
     def get_host_prefix(self, environ):
-        #return request.urlparts.scheme + '://' + request.urlparts.netloc
-        url = environ['wsgi.url_scheme'] + '://'
-        if environ.get('HTTP_HOST'):
-            url += environ['HTTP_HOST']
-        else:
-            url += environ['SERVER_NAME']
-            if environ['wsgi.url_scheme'] == 'https':
-                if environ['SERVER_PORT'] != '443':
-                   url += ':' + environ['SERVER_PORT']
-            else:
-                if environ['SERVER_PORT'] != '80':
-                   url += ':' + environ['SERVER_PORT']
+        scheme = environ['wsgi.url_scheme'] + '://'
 
-        return url
+        # proxy
+        host = environ.get('wsgiprox.fixed_host')
+        if host:
+            return scheme + host
+
+        # default
+        host = environ.get('HTTP_HOST')
+        if host:
+            return scheme + host
+
+        # if no host
+        host = environ['SERVER_NAME']
+        if environ['wsgi.url_scheme'] == 'https':
+            if environ['SERVER_PORT'] != '443':
+                host += ':' + environ['SERVER_PORT']
+        else:
+            if environ['SERVER_PORT'] != '80':
+                host += ':' + environ['SERVER_PORT']
+
+        return scheme + host
 
     def get_rel_prefix(self, environ):
         #return request.script_name
@@ -450,12 +491,10 @@ class RewriterApp(object):
 
         return wb_url
 
-    def unrewrite_referrer(self, environ):
+    def unrewrite_referrer(self, environ, full_prefix):
         referrer = environ.get('HTTP_REFERER')
         if not referrer:
             return False
-
-        full_prefix = self.get_full_prefix(environ)
 
         if referrer.startswith(full_prefix):
             referrer = referrer[len(full_prefix):]

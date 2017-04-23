@@ -2536,7 +2536,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         wb_info = wbinfo;
         wb_opts = wbinfo.wombat_opts;
         wb_replay_prefix = wbinfo.prefix;
-        wb_is_proxy = (!wb_replay_prefix);
+        wb_is_proxy = (wbinfo.proxy_magic || !wb_replay_prefix);
 
         wb_info.top_host = wb_info.top_host || "*";
 
