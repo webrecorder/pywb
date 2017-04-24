@@ -23,7 +23,7 @@ import json
 import glob
 
 from requests.models import PreparedRequest
-import urllib3
+from requests.packages import urllib3
 
 import six.moves.http_client
 six.moves.http_client._MAXHEADERS = 10000
