@@ -176,6 +176,13 @@ class TopFrameView(BaseInsertView):
         else:
             timestamp = timestamp_now()
 
+        if 'wsgiprox.proxy_host' in env:
+            if not wb_url.url.startswith(env['wsgi.url_scheme'] + ':'):
+                wb_url.url = env['wsgi.url_scheme'] + ':' + wb_url.url.split(':', 1)[-1]
+            iframe_url = wb_url.url
+        else:
+            iframe_url = wb_prefix + embed_url
+
         wbrequest = {'host_prefix': host_prefix,
                      'wb_prefix': wb_prefix,
                      'wb_url': wb_url,
@@ -186,6 +193,7 @@ class TopFrameView(BaseInsertView):
                     }
 
         params = dict(embed_url=embed_url,
+                      iframe_url=iframe_url,
                       wbrequest=wbrequest,
                       timestamp=timestamp,
                       url=wb_url.get_url(),

@@ -20,7 +20,7 @@ from pywb.webagg.utils import BUFF_SIZE
 from pywb.cdx.cdxobject import CDXObject
 from pywb.framework.wbrequestresponse import WbResponse
 
-from pywb.webagg.utils import MementoUtils, buffer_iter, chunk_encode_iter
+from pywb.webagg.utils import MementoUtils
 
 from werkzeug.http import HTTP_STATUS_CODES
 from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
@@ -122,10 +122,10 @@ class RewriterApp(object):
 
             return WbResponse.text_response(resp, content_type=content_type)
 
-        is_proxy = ('wsgiprox.fixed_host' in environ)
+        is_proxy = ('wsgiprox.proxy_host' in environ)
 
         if is_proxy:
-            environ['pywb_proxy_magic'] = environ['wsgiprox.fixed_host']
+            environ['pywb_proxy_magic'] = environ['wsgiprox.proxy_host']
             urlrewriter = SchemeOnlyUrlRewriter(wb_url, '')
             framed_replay = False
 
@@ -295,28 +295,10 @@ class RewriterApp(object):
         response = WbResponse(status_headers, gen)
 
         if is_proxy:
-            self.prepare_proxy_response(response, environ)
+            response.status_headers.remove_header('Content-Security-Policy')
+            response.status_headers.remove_header('X-Frame-Options')
 
         return response
-
-    def prepare_proxy_response(self, response, environ):
-        response.status_headers.remove_header('Content-Security-Policy')
-
-        res = response.status_headers.get_header('content-length')
-        try:
-            if int(res) > 0:
-                return
-        except:
-            pass
-
-        # need to either chunk or buffer to get content-length
-        if environ.get('SERVER_PROTOCOL') == 'HTTP/1.1':
-            response.status_headers.remove_header('content-length')
-            response.status_headers.headers.append(('Transfer-Encoding', 'chunked'))
-            response.body = chunk_encode_iter(response.body)
-        else:
-            response.body = buffer_iter(response.status_headers,
-                                        response.body)
 
     def _add_memento_links(self, urlrewriter, full_prefix, memento_dt, status_headers):
         wb_url = urlrewriter.wburl
@@ -457,7 +439,7 @@ class RewriterApp(object):
         scheme = environ['wsgi.url_scheme'] + '://'
 
         # proxy
-        host = environ.get('wsgiprox.fixed_host')
+        host = environ.get('wsgiprox.proxy_host')
         if host:
             return scheme + host
 
