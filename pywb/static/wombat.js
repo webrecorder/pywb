@@ -21,6 +21,139 @@ This file is part of pywb, https://github.com/ikreymer/pywb
 // Wombat JS-Rewriting Library v2.27
 //============================================
 
+// https://github.com/tvcutsem/harmony-reflect/blob/master/reflect.js
+function sameValue(x, y) {
+  if (x === y) {
+    // 0 === -0, but they are not identical
+    return x !== 0 || 1 / x === 1 / y;
+  }
+  // NaN !== NaN, but they are identical.
+  // NaNs are the only non-reflexive value, i.e., if x !== x,
+  // then x is a NaN.
+  // isNaN is broken: it converts its argument to number, so
+  // isNaN("foo") => true
+  return x !== x && y !== y;
+}
+
+function isEmptyDescriptor(desc) {
+  return !('get' in desc) &&
+    !('set' in desc) &&
+    !('value' in desc) &&
+    !('writable' in desc) &&
+    !('enumerable' in desc) &&
+    !('configurable' in desc);
+}
+
+
+function isEquivalentDescriptor(desc1, desc2) {
+  return sameValue(desc1.get, desc2.get) &&
+    sameValue(desc1.set, desc2.set) &&
+    sameValue(desc1.value, desc2.value) &&
+    sameValue(desc1.writable, desc2.writable) &&
+    sameValue(desc1.enumerable, desc2.enumerable) &&
+    sameValue(desc1.configurable, desc2.configurable);
+}
+
+function isAccessorDescriptor(desc) {
+  if (desc === undefined) return false;
+  return ('get' in desc || 'set' in desc);
+}
+function isDataDescriptor(desc) {
+  if (desc === undefined) return false;
+  return ('value' in desc || 'writable' in desc);
+}
+function isGenericDescriptor(desc) {
+  if (desc === undefined) return false;
+  return !isAccessorDescriptor(desc) && !isDataDescriptor(desc);
+}
+
+function genericReflectDefineProp (target, name, desc) {
+  var current = Object.getOwnPropertyDescriptor(target, name);
+  var extensible = Object.isExtensible(target);
+  if (current === undefined && extensible === false) {
+    return false;
+  }
+  if (current === undefined && extensible === true) {
+    Object.defineProperty(target, name, desc); // should never fail
+    return true;
+  }
+  if (isEmptyDescriptor(desc)) {
+    Object.defineProperty(target, name, desc);
+    return true;
+  }
+  if (isEquivalentDescriptor(current, desc)) {
+    return true;
+  }
+  if (current.configurable === false) {
+    if (desc.configurable === true) {
+      return false;
+    }
+    if ('enumerable' in desc && desc.enumerable !== current.enumerable) {
+      return false;
+    }
+  }
+  if (isGenericDescriptor(desc)) {
+    // no further validation necessary
+  } else if (isDataDescriptor(current) !== isDataDescriptor(desc)) {
+    if (current.configurable === false) {
+      return false;
+    }
+  } else if (isDataDescriptor(current) && isDataDescriptor(desc)) {
+    if (current.configurable === false) {
+      if (current.writable === false && desc.writable === true) {
+        return false;
+      }
+      if (current.writable === false) {
+        if ('value' in desc && !sameValue(desc.value, current.value)) {
+          return false;
+        }
+      }
+    }
+  } else if (isAccessorDescriptor(current) && isAccessorDescriptor(desc)) {
+    if (current.configurable === false) {
+      if ('set' in desc && !sameValue(desc.set, current.set)) {
+        return false;
+      }
+      if ('get' in desc && !sameValue(desc.get, current.get)) {
+        return false;
+      }
+    }
+  }
+  Object.defineProperty(target, name, desc); // should never fail
+  return true;
+}
+
+function genericReflectSet (target, name, value) {
+  // first, check whether target has a non-writable property
+  // shadowing name on receiver
+  var ownDesc = Object.getOwnPropertyDescriptor(target, name);
+  if (ownDesc === undefined) {
+    if (!Object.isExtensible(target)) return false;
+    Object.defineProperty(target, name, { value: value, writable: true, enumerable: true, configurable: true });
+    return true;
+  }
+
+  // we now know that ownDesc !== undefined
+  if (isAccessorDescriptor(ownDesc)) {
+    var setter = ownDesc.set;
+    if (setter === undefined) return false;
+    setter.call(target, value); // assumes Function.prototype.call
+    return true;
+  }
+  // otherwise, isDataDescriptor(ownDesc) must be true
+  if (ownDesc.writable === false) return false;
+  // we found an existing writable data property on the prototype chain.
+  // Now update or add the data property on the receiver, depending on
+  // whether the receiver already defines the property or not.
+  if (!Object.isExtensible(target)) return false;
+  var updateDesc =
+    { value: value,
+      writable:     ownDesc.writable,
+      enumerable:   ownDesc.enumerable,
+      configurable: ownDesc.configurable };
+  Object.defineProperty(target, name, updateDesc);
+  return true;
+}
 
 var _WBWombat = function($wbwindow, wbinfo) {
 console.log('wombat');
@@ -1314,7 +1447,7 @@ console.log('wombat');
     //============================================
     function rewrite_style(value)
     {
-        STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
+        let STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
 
         function style_replacer(match, n1, n2, n3, offset, string) {
             return n1 + rewrite_url(n2) + n3;
@@ -1335,7 +1468,7 @@ console.log('wombat');
             return "";
         }
 
-        values = value.split(',');
+        let values = value.split(',');
 
         for (var i = 0; i < values.length; i++) {
             values[i] = rewrite_url(values[i].trim());
@@ -2080,14 +2213,13 @@ console.log('wombat');
                 //}
 
                 listen_map[listener] = wrapped_listener;
-
                 return _orig_addEventListener.call(this, type, wrapped_listener.listen, useCapture);
             } else {
                 return _orig_addEventListener.call(this, type, listener, useCapture);
             }
         }
 
-        $wbwindow.addEventListener = addEventListener_rewritten;
+        $wbwindow.addEventListener = addEventListener_rewritten.bind($wbwindow);
 
         // REMOVE
 
@@ -2103,7 +2235,7 @@ console.log('wombat');
             }
         }
 
-        $wbwindow.removeEventListener = removeEventListener_rewritten;
+        $wbwindow.removeEventListener = removeEventListener_rewritten.bind($wbwindow);
     }
 
     //============================================
@@ -2294,7 +2426,7 @@ console.log('wombat');
         var orig_doc_writeln = $wbwindow.document.writeln;
 
         var new_writeln = function(string) {
-            new_buff = rewrite_html(string, true);
+            let new_buff = rewrite_html(string, true);
             if (!new_buff) {
                 return;
             }
@@ -2559,53 +2691,199 @@ console.log('wombat');
         init_bad_prefixes(wb_replay_prefix);
     }
 
-    function init_proxy($wbwindow) {
-        var $wbwindow_noModify = {'console': true};
-        var $wbwindow_ownFunctions = {};
-        Object.getOwnPropertyNames($wbwindow).forEach(function (it) {
-            if (typeof $wbwindow[it] === 'function') {
-              if (/[A-Z]/.test(it[0])) {
-                $wbwindow_noModify[it] = true
+    function createWombatWindowProxy ($wbwindow) {
+      let $wbwindow_noModify = {
+          "console":true,"NFC":true,"Object":true,"BluetoothUUID":true,"BluetoothRemoteGATTService":true,"Function":true,"BluetoothRemoteGATTServer":true,"BluetoothRemoteGATTDescriptor":true,"Array":true,"BluetoothRemoteGATTCharacteristic":true,"BluetoothDevice":true,"BluetoothCharacteristicProperties":true,"Number":true,"Bluetooth":true,"WebAuthentication":true,"ScopedCredentialInfo":true,"ScopedCredential":true,"AuthenticationAssertion":true,"Boolean":true,"WebGLRenderingContext":true,"WebGL2RenderingContext":true,"Path2D":true,"String":true,"CanvasPattern":true,"Symbol":true,"CanvasGradient":true,"TextDetector":true,"FaceDetector":true,"Date":true,"DetectedText":true,"DetectedFace":true,"Promise":true,"DetectedBarcode":true,"RegExp":true,"BarcodeDetector":true,"SensorErrorEvent":true,"Error":true,"Sensor":true,"Magnetometer":true,"Gyroscope":true,"EvalError":true,"AmbientLightSensor":true,"Accelerometer":true,"RangeError":true,"ReferenceError":true,"SyntaxError":true,"TypeError":true,"SpeechSynthesisUtterance":true,"SpeechSynthesisEvent":true,"URIError":true,"RemotePlayback":true,"PushSubscriptionOptions":true,"PushSubscription":true,"JSON":true,"PushManager":true,"PresentationReceiver":true,"Math":true,"PresentationConnectionList":true,"PresentationRequest":true,"Intl":true,"PresentationConnectionCloseEvent":true,"ArrayBuffer":true,"PresentationConnectionAvailableEvent":true,"PresentationConnection":true,"PresentationAvailability":true,"Uint8Array":true,"Presentation":true,"PermissionStatus":true,"Int8Array":true,"Permissions":true,"PaymentResponse":true,"Uint16Array":true,"PaymentRequestUpdateEvent":true,"Int16Array":true,"PaymentRequest":true,"PaymentAddress":true,"PaymentAppManager":true,"Uint32Array":true,"Notification":true,"Int32Array":true,"NetworkInformation":true,"VideoPlaybackQuality":true,"TrackDefaultList":true,"Float32Array":true,"TrackDefault":true,"Float64Array":true,"CanvasCaptureMediaStreamTrack":true,"IDBObserverChanges":true,"Uint8ClampedArray":true,"IDBObserver":true,"IDBObservation":true,"DataView":true,"OffscreenCanvasRenderingContext2D":true,"StorageManager":true,"DeviceLightEvent":true,"Map":true,"SiteBoundCredential":true,"Set":true,"PasswordCredential":true,"FederatedCredential":true,"CredentialsContainer":true,"WeakMap":true,"Credential":true,"WeakSet":true,"CompositorWorker":true,"BudgetState":true,"Proxy":true,"BudgetService":true,"BroadcastChannel":true,"Reflect":true,"SyncManager":true,"Infinity":true,"WebSocket":true,"WebGLVertexArrayObject":true,"NaN":true,"WebGLUniformLocation":true,"WebGLTransformFeedback":true,"WebGLTexture":true,"WebGLSync":true,"WebGLShaderPrecisionFormat":true,"WebGLShader":true,"WebGLSampler":true,"WebGLRenderbuffer":true,"WebGLQuery":true,"WebGLProgram":true,"WebGLFramebuffer":true,"WebGLContextEvent":true,"WebGLBuffer":true,"WebGLActiveInfo":true,"WaveShaperNode":true,"TextEncoder":true,"TextDecoder":true,"SubtleCrypto":true,"StorageEvent":true,"Storage":true,"StereoPannerNode":true,"SourceBufferList":true,"ByteLengthQueuingStrategy":true,"SourceBuffer":true,"ServiceWorkerRegistration":true,"CountQueuingStrategy":true,"ServiceWorkerContainer":true,"ServiceWorker":true,"ReadableStream":true,"ScriptProcessorNode":true,"ScreenOrientation":true,"Response":true,"Request":true,"RTCStatsReport":true,"RTCSessionDescription":true,"RTCPeerConnectionIceEvent":true,"RTCPeerConnection":true,"RTCIceCandidate":true,"RTCDataChannelEvent":true,"RTCDataChannel":true,"RTCCertificate":true,"Plugin":true,"PluginArray":true,"PeriodicWave":true,"PannerNode":true,"OscillatorNode":true,"OfflineAudioContext":true,"OfflineAudioCompletionEvent":true,"MimeType":true,"MimeTypeArray":true,"MediaStreamTrackEvent":true,"MediaStreamTrack":true,"MediaStreamEvent":true,"MediaStream":true,"MediaStreamAudioSourceNode":true,"MediaStreamAudioDestinationNode":true,"MediaSource":true,"MediaRecorder":true,"MediaKeys":true,"MediaKeySystemAccess":true,"MediaKeyStatusMap":true,"MediaKeySession":true,"MediaKeyMessageEvent":true,"MediaEncryptedEvent":true,"MediaElementAudioSourceNode":true,"MediaDevices":true,"MediaDeviceInfo":true,"MIDIPort":true,"MIDIOutputMap":true,"MIDIOutput":true,"MIDIMessageEvent":true,"MIDIInputMap":true,"MIDIInput":true,"MIDIConnectionEvent":true,"MIDIAccess":true,"ImageBitmapRenderingContext":true,"IIRFilterNode":true,"IDBVersionChangeEvent":true,"IDBTransaction":true,"IDBRequest":true,"IDBOpenDBRequest":true,"IDBObjectStore":true,"IDBKeyRange":true,"IDBIndex":true,"IDBFactory":true,"IDBDatabase":true,"IDBCursorWithValue":true,"IDBCursor":true,"Headers":true,"GamepadEvent":true,"Gamepad":true,"GamepadButton":true,"GainNode":true,"EventSource":true,"DynamicsCompressorNode":true,"DeviceOrientationEvent":true,"DeviceMotionEvent":true,"DelayNode":true,"DOMError":true,"CryptoKey":true,"Crypto":true,"ConvolverNode":true,"ConstantSourceNode":true,"CloseEvent":true,"ChannelSplitterNode":true,"ChannelMergerNode":true,"WritableStream":true,"CanvasRenderingContext2D":true,"CacheStorage":true,"Cache":true,"BlobEvent":true,"BiquadFilterNode":true,"BeforeInstallPromptEvent":true,"BatteryManager":true,"BaseAudioContext":true,"AudioScheduledSourceNode":true,"AudioProcessingEvent":true,"AudioParam":true,"AudioNode":true,"AudioListener":true,"AudioDestinationNode":true,"AudioContext":true,"AudioBufferSourceNode":true,"AudioBuffer":true,"AppBannerPromptResult":true,"AnalyserNode":true,"WebAssembly":true,"SVGMPathElement":true,"SVGDiscardElement":true,"SVGAnimationElement":true,"XSLTProcessor":true,"Worklet":true,"ImageCapture":true,"VTTRegion":true,"KeyframeEffectReadOnly":true,"KeyframeEffect":true,"MediaSettingsRange":true,"DocumentTimeline":true,"PhotoCapabilities":true,"AnimationTimeline":true,"AnimationPlaybackEvent":true,"USB":true,"AnimationEffectTimingReadOnly":true,"AnimationEffectTiming":true,"AnimationEffectReadOnly":true,"USBAlternateInterface":true,"VisualViewport":true,"USBConfiguration":true,"SharedWorker":true,"ResizeObserverEntry":true,"USBConnectionEvent":true,"ResizeObserver":true,"PointerEvent":true,"PerformanceObserverEntryList":true,"USBDevice":true,"PerformanceObserver":true,"USBEndpoint":true,"PerformanceNavigationTiming":true,"IntersectionObserverEntry":true,"IntersectionObserver":true,"USBInterface":true,"StaticRange":true,"USBInTransferResult":true,"InputEvent":true,"DOMRectReadOnly":true,"USBIsochronousInTransferPacket":true,"DOMRect":true,"DOMQuad":true,"DOMPointReadOnly":true,"USBIsochronousInTransferResult":true,"DOMPoint":true,"USBIsochronousOutTransferPacket":true,"DOMMatrixReadOnly":true,"DOMMatrix":true,"OffscreenCanvas":true,"USBIsochronousOutTransferResult":true,"Float32ImageData":true,"USBOutTransferResult":true,"CustomElementRegistry":true,"CompositorProxy":true,"__REACT_DEVTOOLS_GLOBAL_HOOK__":true,"StylePropertyMap":true,"CSSVariableReferenceValue":true,"CSSURLImageValue":true,"CSSUnparsedValue":true,"CSSTranslation":true,"CSSTransformValue":true,"CSSTransformComponent":true,"CSSStyleValue":true,"CSSSkew":true,"CSSSimpleLength":true,"CSSScale":true,"CSSRotation":true,"CSSResourceValue":true,"CSSPositionValue":true,"CSSPerspective":true,"CSSNumberValue":true,"CSSMatrixComponent":true,"CSSLengthValue":true,"CSSKeywordValue":true,"CSSImageValue":true,"CSSCalcLength":true,"CSSAngleValue":true,"VideoTrackList":true,"VideoTrack":true,"AudioTrackList":true,"AudioTrack":true,"XPathResult":true,"XPathExpression":true,"XPathEvaluator":true,"XMLSerializer":true,"XMLHttpRequestUpload":true,"XMLHttpRequestEventTarget":true,"XMLHttpRequest":true,"XMLDocument":true,"Worker":true,"Window":true,"WheelEvent":true,"WebKitCSSMatrix":true,"ValidityState":true,"VTTCue":true,"URLSearchParams":true,"URL":true,"UIEvent":true,"TreeWalker":true,"TransitionEvent":true,"TrackEvent":true,"TouchList":true,"TouchEvent":true,"Touch":true,"TimeRanges":true,"TextTrackList":true,"TextTrackCueList":true,"TextTrackCue":true,"TextTrack":true,"TextMetrics":true,"TextEvent":true,"Text":true,"TaskAttributionTiming":true,"StyleSheetList":true,"StyleSheet":true,"ShadowRoot":true,"Selection":true,"SecurityPolicyViolationEvent":true,"Screen":true,"SVGViewElement":true,"SVGUseElement":true,"SVGUnitTypes":true,"SVGTransformList":true,"SVGTransform":true,"SVGTitleElement":true,"SVGTextPositioningElement":true,"SVGTextPathElement":true,"SVGTextElement":true,"SVGTextContentElement":true,"SVGTSpanElement":true,"SVGSymbolElement":true,"SVGSwitchElement":true,"SVGStyleElement":true,"SVGStringList":true,"SVGStopElement":true,"SVGSetElement":true,"SVGScriptElement":true,"SVGSVGElement":true,"SVGRectElement":true,"SVGRect":true,"SVGRadialGradientElement":true,"SVGPreserveAspectRatio":true,"SVGPolylineElement":true,"SVGPolygonElement":true,"SVGPointList":true,"SVGPoint":true,"SVGPatternElement":true,"SVGPathElement":true,"SVGNumberList":true,"SVGNumber":true,"SVGMetadataElement":true,"SVGMatrix":true,"SVGMaskElement":true,"SVGMarkerElement":true,"SVGLinearGradientElement":true,"SVGLineElement":true,"SVGLengthList":true,"SVGLength":true,"SVGImageElement":true,"SVGGraphicsElement":true,"SVGGradientElement":true,"SVGGeometryElement":true,"SVGGElement":true,"SVGForeignObjectElement":true,"SVGFilterElement":true,"SVGFETurbulenceElement":true,"SVGFETileElement":true,"SVGFESpotLightElement":true,"SVGFESpecularLightingElement":true,"SVGFEPointLightElement":true,"SVGFEOffsetElement":true,"SVGFEMorphologyElement":true,"SVGFEMergeNodeElement":true,"SVGFEMergeElement":true,"SVGFEImageElement":true,"SVGFEGaussianBlurElement":true,"SVGFEFuncRElement":true,"SVGFEFuncGElement":true,"SVGFEFuncBElement":true,"SVGFEFuncAElement":true,"SVGFEFloodElement":true,"SVGFEDropShadowElement":true,"SVGFEDistantLightElement":true,"SVGFEDisplacementMapElement":true,"SVGFEDiffuseLightingElement":true,"SVGFEConvolveMatrixElement":true,"SVGFECompositeElement":true,"SVGFEComponentTransferElement":true,"SVGFEColorMatrixElement":true,"SVGFEBlendElement":true,"SVGEllipseElement":true,"SVGElement":true,"SVGDescElement":true,"SVGDefsElement":true,"SVGComponentTransferFunctionElement":true,"SVGClipPathElement":true,"SVGCircleElement":true,"SVGAnimatedTransformList":true,"SVGAnimatedString":true,"SVGAnimatedRect":true,"SVGAnimatedPreserveAspectRatio":true,"SVGAnimatedNumberList":true,"SVGAnimatedNumber":true,"SVGAnimatedLengthList":true,"SVGAnimatedLength":true,"SVGAnimatedInteger":true,"SVGAnimatedEnumeration":true,"SVGAnimatedBoolean":true,"SVGAnimatedAngle":true,"SVGAnimateTransformElement":true,"SVGAnimateMotionElement":true,"SVGAnimateElement":true,"SVGAngle":true,"SVGAElement":true,"Range":true,"RadioNodeList":true,"PromiseRejectionEvent":true,"ProgressEvent":true,"ProcessingInstruction":true,"PopStateEvent":true,"PerformanceTiming":true,"PerformanceResourceTiming":true,"PerformanceNavigation":true,"PerformanceMeasure":true,"PerformanceMark":true,"PerformanceLongTaskTiming":true,"PerformanceEntry":true,"Performance":true,"PageTransitionEvent":true,"NodeList":true,"NodeIterator":true,"NodeFilter":true,"Node":true,"Navigator":true,"NamedNodeMap":true,"MutationRecord":true,"MutationObserver":true,"MutationEvent":true,"MouseEvent":true,"MessagePort":true,"MessageEvent":true,"MessageChannel":true,"MediaQueryListEvent":true,"MediaQueryList":true,"MediaList":true,"MediaError":true,"Location":true,"KeyboardEvent":true,"InputDeviceCapabilities":true,"ImageData":true,"ImageBitmap":true,"IdleDeadline":true,"History":true,"HashChangeEvent":true,"HTMLVideoElement":true,"HTMLUnknownElement":true,"HTMLUListElement":true,"HTMLTrackElement":true,"HTMLTitleElement":true,"HTMLTextAreaElement":true,"HTMLTemplateElement":true,"HTMLTableSectionElement":true,"HTMLTableRowElement":true,"HTMLTableElement":true,"HTMLTableColElement":true,"HTMLTableCellElement":true,"HTMLTableCaptionElement":true,"HTMLStyleElement":true,"HTMLSpanElement":true,"HTMLSourceElement":true,"HTMLSlotElement":true,"HTMLShadowElement":true,"HTMLSelectElement":true,"HTMLScriptElement":true,"HTMLQuoteElement":true,"HTMLProgressElement":true,"HTMLPreElement":true,"HTMLPictureElement":true,"HTMLParamElement":true,"HTMLParagraphElement":true,"HTMLOutputElement":true,"HTMLOptionsCollection":true,"Option":true,"HTMLOptionElement":true,"HTMLOptGroupElement":true,"HTMLObjectElement":true,"HTMLOListElement":true,"HTMLModElement":true,"HTMLMeterElement":true,"HTMLMetaElement":true,"HTMLMenuElement":true,"HTMLMediaElement":true,"HTMLMarqueeElement":true,"HTMLMapElement":true,"HTMLLinkElement":true,"HTMLLegendElement":true,"HTMLLabelElement":true,"HTMLLIElement":true,"HTMLInputElement":true,"Image":true,"HTMLImageElement":true,"HTMLIFrameElement":true,"HTMLHtmlElement":true,"HTMLHeadingElement":true,"HTMLHeadElement":true,"HTMLHRElement":true,"HTMLFrameSetElement":true,"HTMLFrameElement":true,"HTMLFormElement":true,"HTMLFormControlsCollection":true,"HTMLFontElement":true,"HTMLFieldSetElement":true,"HTMLEmbedElement":true,"HTMLElement":true,"HTMLDocument":true,"HTMLDivElement":true,"HTMLDirectoryElement":true,"HTMLDialogElement":true,"HTMLDetailsElement":true,"HTMLDataListElement":true,"HTMLDListElement":true,"HTMLContentElement":true,"HTMLCollection":true,"HTMLCanvasElement":true,"HTMLButtonElement":true,"HTMLBodyElement":true,"HTMLBaseElement":true,"HTMLBRElement":true,"Audio":true,"HTMLAudioElement":true,"HTMLAreaElement":true,"HTMLAnchorElement":true,"HTMLAllCollection":true,"FormData":true,"FontFaceSetLoadEvent":true,"FontFace":true,"FocusEvent":true,"FileReader":true,"FileList":true,"File":true,"EventTarget":true,"Event":true,"ErrorEvent":true,"Element":true,"DragEvent":true,"DocumentType":true,"DocumentFragment":true,"Document":true,"DataTransferItemList":true,"DataTransferItem":true,"DataTransfer":true,"DOMTokenList":true,"DOMStringMap":true,"DOMStringList":true,"DOMParser":true,"DOMImplementation":true,"DOMException":true,"CustomEvent":true,"CompositionEvent":true,"Comment":true,"ClipboardEvent":true,"ClientRectList":true,"ClientRect":true,"CharacterData":true,"CSSViewportRule":true,"CSSSupportsRule":true,"CSSStyleSheet":true,"CSSStyleRule":true,"CSSStyleDeclaration":true,"CSSRuleList":true,"CSSRule":true,"CSSPageRule":true,"CSSNamespaceRule":true,"CSSMediaRule":true,"CSSKeyframesRule":true,"CSSKeyframeRule":true,"CSSImportRule":true,"CSSGroupingRule":true,"CSSFontFaceRule":true,"CSS":true,"CSSConditionRule":true,"CDATASection":true,"Blob":true,"BeforeUnloadEvent":true,"BarProp":true,"Attr":true,"ApplicationCacheErrorEvent":true,"ApplicationCache":true,"AnimationEvent":true,"WebKitMutationObserver":true,"WebKitAnimationEvent":true,"WebKitTransitionEvent":true};
+      let $wbwindow_ownFunctions ={
+          "addEventListener":true,"removeEventListener":true,"onabort":true,"onanimationcancel":true,"onanimationend":true,"onanimationiteration":true,"onauxclick":true,"onblur":true,"onchange":true,"onclick":true,"onclose":true,"oncontextmenu":true,"ondblclick":true,"onerror":true,"onfocus":true,"ongotpointercapture":true,"oninput":true,"onkeydown":true,"onkeypress":true,"onkeyup":true,"onload":true,"onloadend":true,"onloadstart":true,"onlostpointercapture":true,"onmousedown":true,"onmousemove":true,"onmouseout":true,"onmouseover":true,"onmouseup":true,"onpointercancel":true,"onpointerdown":true,"onpointerenter":true,"onpointerleave":true,"onpointermove":true,"onpointerout":true,"onpointerover":true,"onpointerup":true,"onreset":true,"onresize":true,"onscroll":true,"onselect":true,"onselectionchange":true,"onselectstart":true,"onsubmit":true,"ontouchcancel":true,"ontouchmove":true,"ontouchstart":true,"ontransitioncancel":true,"ontransitionend":true,"parseFloat":true,"parseInt":true,"webkitSpeechRecognitionEvent":true,"webkitSpeechRecognitionError":true,"webkitSpeechRecognition":true,"webkitSpeechGrammarList":true,"webkitSpeechGrammar":true,"webkitRTCPeerConnection":true,"webkitMediaStream":true,"decodeURI":true,"decodeURIComponent":true,"encodeURI":true,"encodeURIComponent":true,"escape":true,"unescape":true,"eval":true,"isFinite":true,"isNaN":true,"stop":true,"open":true,"alert":true,"confirm":true,"prompt":true,"print":true,"requestAnimationFrame":true,"cancelAnimationFrame":true,"requestIdleCallback":true,"cancelIdleCallback":true,"captureEvents":true,"releaseEvents":true,"getComputedStyle":true,"matchMedia":true,"moveTo":true,"moveBy":true,"resizeTo":true,"resizeBy":true,"getSelection":true,"find":true,"getMatchedCSSRules":true,"webkitRequestAnimationFrame":true,"webkitCancelAnimationFrame":true,"btoa":true,"atob":true,"setTimeout":true,"clearTimeout":true,"setInterval":true,"clearInterval":true,"createImageBitmap":true,"scroll":true,"scrollTo":true,"scrollBy":true,"getComputedStyleMap":true,"fetch":true,"webkitRequestFileSystem":true,"webkitResolveLocalFileSystemURL":true,"openDatabase":true,"postMessage":true,"blur":true,"focus":true,"close":true,"createWombatWindowProxy":true,"webkitURL":true};
+      return new Proxy($wbwindow, {
+        get(target, what) {
+          console.log('wombat window proxy get',what);
+          if (what === 'postMessage') {
+            return target.__WB_pmw(target).postMessage.bind(target.__WB_pmw(target));
+          } else if (what === 'location') {
+            return target.WB_wombat_location;
+          } else if (what === 'document') {
+             if (target._WB_wombat_document_proxy) {
+               return target._WB_wombat_document_proxy;
+             } else {
+               return target[what];
+             }
+          } else if ($wbwindow_noModify[what]) {
+            return target[what];
+          } else {
+            let retVal = target[what];
+            if (typeof retVal === 'function' && $wbwindow_ownFunctions[what]) {
+              return retVal.bind(target);
+            }
+            return retVal;
+          }
+      },
+      set(target, prop, value) {
+        console.log('wombat window proxy set',prop,value);
+        if (prop === 'location') {
+          target.WB_wombat_location = value;
+          return true;
+        } else if (prop === 'top') {
+          target.WB_wombat_top = value;
+          return true;
+        } else if (prop === 'postMessage') {
+          return true;
+        } else {
+          target[prop] = value;
+          return true;
+        }
+      },
+      has(target,prop) {
+        console.log('wombat window proxy has',prop);
+        return prop in target;
+      }
+    })
+  }
+    function createWombatWindowProxy2 ($wbwindow) {
+      let $wbwindow_noModify = {
+          "console":true,"NFC":true,"Object":true,"BluetoothUUID":true,"BluetoothRemoteGATTService":true,"Function":true,"BluetoothRemoteGATTServer":true,"BluetoothRemoteGATTDescriptor":true,"Array":true,"BluetoothRemoteGATTCharacteristic":true,"BluetoothDevice":true,"BluetoothCharacteristicProperties":true,"Number":true,"Bluetooth":true,"WebAuthentication":true,"ScopedCredentialInfo":true,"ScopedCredential":true,"AuthenticationAssertion":true,"Boolean":true,"WebGLRenderingContext":true,"WebGL2RenderingContext":true,"Path2D":true,"String":true,"CanvasPattern":true,"Symbol":true,"CanvasGradient":true,"TextDetector":true,"FaceDetector":true,"Date":true,"DetectedText":true,"DetectedFace":true,"Promise":true,"DetectedBarcode":true,"RegExp":true,"BarcodeDetector":true,"SensorErrorEvent":true,"Error":true,"Sensor":true,"Magnetometer":true,"Gyroscope":true,"EvalError":true,"AmbientLightSensor":true,"Accelerometer":true,"RangeError":true,"ReferenceError":true,"SyntaxError":true,"TypeError":true,"SpeechSynthesisUtterance":true,"SpeechSynthesisEvent":true,"URIError":true,"RemotePlayback":true,"PushSubscriptionOptions":true,"PushSubscription":true,"JSON":true,"PushManager":true,"PresentationReceiver":true,"Math":true,"PresentationConnectionList":true,"PresentationRequest":true,"Intl":true,"PresentationConnectionCloseEvent":true,"ArrayBuffer":true,"PresentationConnectionAvailableEvent":true,"PresentationConnection":true,"PresentationAvailability":true,"Uint8Array":true,"Presentation":true,"PermissionStatus":true,"Int8Array":true,"Permissions":true,"PaymentResponse":true,"Uint16Array":true,"PaymentRequestUpdateEvent":true,"Int16Array":true,"PaymentRequest":true,"PaymentAddress":true,"PaymentAppManager":true,"Uint32Array":true,"Notification":true,"Int32Array":true,"NetworkInformation":true,"VideoPlaybackQuality":true,"TrackDefaultList":true,"Float32Array":true,"TrackDefault":true,"Float64Array":true,"CanvasCaptureMediaStreamTrack":true,"IDBObserverChanges":true,"Uint8ClampedArray":true,"IDBObserver":true,"IDBObservation":true,"DataView":true,"OffscreenCanvasRenderingContext2D":true,"StorageManager":true,"DeviceLightEvent":true,"Map":true,"SiteBoundCredential":true,"Set":true,"PasswordCredential":true,"FederatedCredential":true,"CredentialsContainer":true,"WeakMap":true,"Credential":true,"WeakSet":true,"CompositorWorker":true,"BudgetState":true,"Proxy":true,"BudgetService":true,"BroadcastChannel":true,"Reflect":true,"SyncManager":true,"Infinity":true,"WebSocket":true,"WebGLVertexArrayObject":true,"NaN":true,"WebGLUniformLocation":true,"WebGLTransformFeedback":true,"WebGLTexture":true,"WebGLSync":true,"WebGLShaderPrecisionFormat":true,"WebGLShader":true,"WebGLSampler":true,"WebGLRenderbuffer":true,"WebGLQuery":true,"WebGLProgram":true,"WebGLFramebuffer":true,"WebGLContextEvent":true,"WebGLBuffer":true,"WebGLActiveInfo":true,"WaveShaperNode":true,"TextEncoder":true,"TextDecoder":true,"SubtleCrypto":true,"StorageEvent":true,"Storage":true,"StereoPannerNode":true,"SourceBufferList":true,"ByteLengthQueuingStrategy":true,"SourceBuffer":true,"ServiceWorkerRegistration":true,"CountQueuingStrategy":true,"ServiceWorkerContainer":true,"ServiceWorker":true,"ReadableStream":true,"ScriptProcessorNode":true,"ScreenOrientation":true,"Response":true,"Request":true,"RTCStatsReport":true,"RTCSessionDescription":true,"RTCPeerConnectionIceEvent":true,"RTCPeerConnection":true,"RTCIceCandidate":true,"RTCDataChannelEvent":true,"RTCDataChannel":true,"RTCCertificate":true,"Plugin":true,"PluginArray":true,"PeriodicWave":true,"PannerNode":true,"OscillatorNode":true,"OfflineAudioContext":true,"OfflineAudioCompletionEvent":true,"MimeType":true,"MimeTypeArray":true,"MediaStreamTrackEvent":true,"MediaStreamTrack":true,"MediaStreamEvent":true,"MediaStream":true,"MediaStreamAudioSourceNode":true,"MediaStreamAudioDestinationNode":true,"MediaSource":true,"MediaRecorder":true,"MediaKeys":true,"MediaKeySystemAccess":true,"MediaKeyStatusMap":true,"MediaKeySession":true,"MediaKeyMessageEvent":true,"MediaEncryptedEvent":true,"MediaElementAudioSourceNode":true,"MediaDevices":true,"MediaDeviceInfo":true,"MIDIPort":true,"MIDIOutputMap":true,"MIDIOutput":true,"MIDIMessageEvent":true,"MIDIInputMap":true,"MIDIInput":true,"MIDIConnectionEvent":true,"MIDIAccess":true,"ImageBitmapRenderingContext":true,"IIRFilterNode":true,"IDBVersionChangeEvent":true,"IDBTransaction":true,"IDBRequest":true,"IDBOpenDBRequest":true,"IDBObjectStore":true,"IDBKeyRange":true,"IDBIndex":true,"IDBFactory":true,"IDBDatabase":true,"IDBCursorWithValue":true,"IDBCursor":true,"Headers":true,"GamepadEvent":true,"Gamepad":true,"GamepadButton":true,"GainNode":true,"EventSource":true,"DynamicsCompressorNode":true,"DeviceOrientationEvent":true,"DeviceMotionEvent":true,"DelayNode":true,"DOMError":true,"CryptoKey":true,"Crypto":true,"ConvolverNode":true,"ConstantSourceNode":true,"CloseEvent":true,"ChannelSplitterNode":true,"ChannelMergerNode":true,"WritableStream":true,"CanvasRenderingContext2D":true,"CacheStorage":true,"Cache":true,"BlobEvent":true,"BiquadFilterNode":true,"BeforeInstallPromptEvent":true,"BatteryManager":true,"BaseAudioContext":true,"AudioScheduledSourceNode":true,"AudioProcessingEvent":true,"AudioParam":true,"AudioNode":true,"AudioListener":true,"AudioDestinationNode":true,"AudioContext":true,"AudioBufferSourceNode":true,"AudioBuffer":true,"AppBannerPromptResult":true,"AnalyserNode":true,"WebAssembly":true,"SVGMPathElement":true,"SVGDiscardElement":true,"SVGAnimationElement":true,"XSLTProcessor":true,"Worklet":true,"ImageCapture":true,"VTTRegion":true,"KeyframeEffectReadOnly":true,"KeyframeEffect":true,"MediaSettingsRange":true,"DocumentTimeline":true,"PhotoCapabilities":true,"AnimationTimeline":true,"AnimationPlaybackEvent":true,"USB":true,"AnimationEffectTimingReadOnly":true,"AnimationEffectTiming":true,"AnimationEffectReadOnly":true,"USBAlternateInterface":true,"VisualViewport":true,"USBConfiguration":true,"SharedWorker":true,"ResizeObserverEntry":true,"USBConnectionEvent":true,"ResizeObserver":true,"PointerEvent":true,"PerformanceObserverEntryList":true,"USBDevice":true,"PerformanceObserver":true,"USBEndpoint":true,"PerformanceNavigationTiming":true,"IntersectionObserverEntry":true,"IntersectionObserver":true,"USBInterface":true,"StaticRange":true,"USBInTransferResult":true,"InputEvent":true,"DOMRectReadOnly":true,"USBIsochronousInTransferPacket":true,"DOMRect":true,"DOMQuad":true,"DOMPointReadOnly":true,"USBIsochronousInTransferResult":true,"DOMPoint":true,"USBIsochronousOutTransferPacket":true,"DOMMatrixReadOnly":true,"DOMMatrix":true,"OffscreenCanvas":true,"USBIsochronousOutTransferResult":true,"Float32ImageData":true,"USBOutTransferResult":true,"CustomElementRegistry":true,"CompositorProxy":true,"__REACT_DEVTOOLS_GLOBAL_HOOK__":true,"StylePropertyMap":true,"CSSVariableReferenceValue":true,"CSSURLImageValue":true,"CSSUnparsedValue":true,"CSSTranslation":true,"CSSTransformValue":true,"CSSTransformComponent":true,"CSSStyleValue":true,"CSSSkew":true,"CSSSimpleLength":true,"CSSScale":true,"CSSRotation":true,"CSSResourceValue":true,"CSSPositionValue":true,"CSSPerspective":true,"CSSNumberValue":true,"CSSMatrixComponent":true,"CSSLengthValue":true,"CSSKeywordValue":true,"CSSImageValue":true,"CSSCalcLength":true,"CSSAngleValue":true,"VideoTrackList":true,"VideoTrack":true,"AudioTrackList":true,"AudioTrack":true,"XPathResult":true,"XPathExpression":true,"XPathEvaluator":true,"XMLSerializer":true,"XMLHttpRequestUpload":true,"XMLHttpRequestEventTarget":true,"XMLHttpRequest":true,"XMLDocument":true,"Worker":true,"Window":true,"WheelEvent":true,"WebKitCSSMatrix":true,"ValidityState":true,"VTTCue":true,"URLSearchParams":true,"URL":true,"UIEvent":true,"TreeWalker":true,"TransitionEvent":true,"TrackEvent":true,"TouchList":true,"TouchEvent":true,"Touch":true,"TimeRanges":true,"TextTrackList":true,"TextTrackCueList":true,"TextTrackCue":true,"TextTrack":true,"TextMetrics":true,"TextEvent":true,"Text":true,"TaskAttributionTiming":true,"StyleSheetList":true,"StyleSheet":true,"ShadowRoot":true,"Selection":true,"SecurityPolicyViolationEvent":true,"Screen":true,"SVGViewElement":true,"SVGUseElement":true,"SVGUnitTypes":true,"SVGTransformList":true,"SVGTransform":true,"SVGTitleElement":true,"SVGTextPositioningElement":true,"SVGTextPathElement":true,"SVGTextElement":true,"SVGTextContentElement":true,"SVGTSpanElement":true,"SVGSymbolElement":true,"SVGSwitchElement":true,"SVGStyleElement":true,"SVGStringList":true,"SVGStopElement":true,"SVGSetElement":true,"SVGScriptElement":true,"SVGSVGElement":true,"SVGRectElement":true,"SVGRect":true,"SVGRadialGradientElement":true,"SVGPreserveAspectRatio":true,"SVGPolylineElement":true,"SVGPolygonElement":true,"SVGPointList":true,"SVGPoint":true,"SVGPatternElement":true,"SVGPathElement":true,"SVGNumberList":true,"SVGNumber":true,"SVGMetadataElement":true,"SVGMatrix":true,"SVGMaskElement":true,"SVGMarkerElement":true,"SVGLinearGradientElement":true,"SVGLineElement":true,"SVGLengthList":true,"SVGLength":true,"SVGImageElement":true,"SVGGraphicsElement":true,"SVGGradientElement":true,"SVGGeometryElement":true,"SVGGElement":true,"SVGForeignObjectElement":true,"SVGFilterElement":true,"SVGFETurbulenceElement":true,"SVGFETileElement":true,"SVGFESpotLightElement":true,"SVGFESpecularLightingElement":true,"SVGFEPointLightElement":true,"SVGFEOffsetElement":true,"SVGFEMorphologyElement":true,"SVGFEMergeNodeElement":true,"SVGFEMergeElement":true,"SVGFEImageElement":true,"SVGFEGaussianBlurElement":true,"SVGFEFuncRElement":true,"SVGFEFuncGElement":true,"SVGFEFuncBElement":true,"SVGFEFuncAElement":true,"SVGFEFloodElement":true,"SVGFEDropShadowElement":true,"SVGFEDistantLightElement":true,"SVGFEDisplacementMapElement":true,"SVGFEDiffuseLightingElement":true,"SVGFEConvolveMatrixElement":true,"SVGFECompositeElement":true,"SVGFEComponentTransferElement":true,"SVGFEColorMatrixElement":true,"SVGFEBlendElement":true,"SVGEllipseElement":true,"SVGElement":true,"SVGDescElement":true,"SVGDefsElement":true,"SVGComponentTransferFunctionElement":true,"SVGClipPathElement":true,"SVGCircleElement":true,"SVGAnimatedTransformList":true,"SVGAnimatedString":true,"SVGAnimatedRect":true,"SVGAnimatedPreserveAspectRatio":true,"SVGAnimatedNumberList":true,"SVGAnimatedNumber":true,"SVGAnimatedLengthList":true,"SVGAnimatedLength":true,"SVGAnimatedInteger":true,"SVGAnimatedEnumeration":true,"SVGAnimatedBoolean":true,"SVGAnimatedAngle":true,"SVGAnimateTransformElement":true,"SVGAnimateMotionElement":true,"SVGAnimateElement":true,"SVGAngle":true,"SVGAElement":true,"Range":true,"RadioNodeList":true,"PromiseRejectionEvent":true,"ProgressEvent":true,"ProcessingInstruction":true,"PopStateEvent":true,"PerformanceTiming":true,"PerformanceResourceTiming":true,"PerformanceNavigation":true,"PerformanceMeasure":true,"PerformanceMark":true,"PerformanceLongTaskTiming":true,"PerformanceEntry":true,"Performance":true,"PageTransitionEvent":true,"NodeList":true,"NodeIterator":true,"NodeFilter":true,"Node":true,"Navigator":true,"NamedNodeMap":true,"MutationRecord":true,"MutationObserver":true,"MutationEvent":true,"MouseEvent":true,"MessagePort":true,"MessageEvent":true,"MessageChannel":true,"MediaQueryListEvent":true,"MediaQueryList":true,"MediaList":true,"MediaError":true,"Location":true,"KeyboardEvent":true,"InputDeviceCapabilities":true,"ImageData":true,"ImageBitmap":true,"IdleDeadline":true,"History":true,"HashChangeEvent":true,"HTMLVideoElement":true,"HTMLUnknownElement":true,"HTMLUListElement":true,"HTMLTrackElement":true,"HTMLTitleElement":true,"HTMLTextAreaElement":true,"HTMLTemplateElement":true,"HTMLTableSectionElement":true,"HTMLTableRowElement":true,"HTMLTableElement":true,"HTMLTableColElement":true,"HTMLTableCellElement":true,"HTMLTableCaptionElement":true,"HTMLStyleElement":true,"HTMLSpanElement":true,"HTMLSourceElement":true,"HTMLSlotElement":true,"HTMLShadowElement":true,"HTMLSelectElement":true,"HTMLScriptElement":true,"HTMLQuoteElement":true,"HTMLProgressElement":true,"HTMLPreElement":true,"HTMLPictureElement":true,"HTMLParamElement":true,"HTMLParagraphElement":true,"HTMLOutputElement":true,"HTMLOptionsCollection":true,"Option":true,"HTMLOptionElement":true,"HTMLOptGroupElement":true,"HTMLObjectElement":true,"HTMLOListElement":true,"HTMLModElement":true,"HTMLMeterElement":true,"HTMLMetaElement":true,"HTMLMenuElement":true,"HTMLMediaElement":true,"HTMLMarqueeElement":true,"HTMLMapElement":true,"HTMLLinkElement":true,"HTMLLegendElement":true,"HTMLLabelElement":true,"HTMLLIElement":true,"HTMLInputElement":true,"Image":true,"HTMLImageElement":true,"HTMLIFrameElement":true,"HTMLHtmlElement":true,"HTMLHeadingElement":true,"HTMLHeadElement":true,"HTMLHRElement":true,"HTMLFrameSetElement":true,"HTMLFrameElement":true,"HTMLFormElement":true,"HTMLFormControlsCollection":true,"HTMLFontElement":true,"HTMLFieldSetElement":true,"HTMLEmbedElement":true,"HTMLElement":true,"HTMLDocument":true,"HTMLDivElement":true,"HTMLDirectoryElement":true,"HTMLDialogElement":true,"HTMLDetailsElement":true,"HTMLDataListElement":true,"HTMLDListElement":true,"HTMLContentElement":true,"HTMLCollection":true,"HTMLCanvasElement":true,"HTMLButtonElement":true,"HTMLBodyElement":true,"HTMLBaseElement":true,"HTMLBRElement":true,"Audio":true,"HTMLAudioElement":true,"HTMLAreaElement":true,"HTMLAnchorElement":true,"HTMLAllCollection":true,"FormData":true,"FontFaceSetLoadEvent":true,"FontFace":true,"FocusEvent":true,"FileReader":true,"FileList":true,"File":true,"EventTarget":true,"Event":true,"ErrorEvent":true,"Element":true,"DragEvent":true,"DocumentType":true,"DocumentFragment":true,"Document":true,"DataTransferItemList":true,"DataTransferItem":true,"DataTransfer":true,"DOMTokenList":true,"DOMStringMap":true,"DOMStringList":true,"DOMParser":true,"DOMImplementation":true,"DOMException":true,"CustomEvent":true,"CompositionEvent":true,"Comment":true,"ClipboardEvent":true,"ClientRectList":true,"ClientRect":true,"CharacterData":true,"CSSViewportRule":true,"CSSSupportsRule":true,"CSSStyleSheet":true,"CSSStyleRule":true,"CSSStyleDeclaration":true,"CSSRuleList":true,"CSSRule":true,"CSSPageRule":true,"CSSNamespaceRule":true,"CSSMediaRule":true,"CSSKeyframesRule":true,"CSSKeyframeRule":true,"CSSImportRule":true,"CSSGroupingRule":true,"CSSFontFaceRule":true,"CSS":true,"CSSConditionRule":true,"CDATASection":true,"Blob":true,"BeforeUnloadEvent":true,"BarProp":true,"Attr":true,"ApplicationCacheErrorEvent":true,"ApplicationCache":true,"AnimationEvent":true,"WebKitMutationObserver":true,"WebKitAnimationEvent":true,"WebKitTransitionEvent":true};
+      let $wbwindow_ownFunctions ={
+          "addEventListener":true,"removeEventListener":true,"onabort":true,"onanimationcancel":true,"onanimationend":true,"onanimationiteration":true,"onauxclick":true,"onblur":true,"onchange":true,"onclick":true,"onclose":true,"oncontextmenu":true,"ondblclick":true,"onerror":true,"onfocus":true,"ongotpointercapture":true,"oninput":true,"onkeydown":true,"onkeypress":true,"onkeyup":true,"onload":true,"onloadend":true,"onloadstart":true,"onlostpointercapture":true,"onmousedown":true,"onmousemove":true,"onmouseout":true,"onmouseover":true,"onmouseup":true,"onpointercancel":true,"onpointerdown":true,"onpointerenter":true,"onpointerleave":true,"onpointermove":true,"onpointerout":true,"onpointerover":true,"onpointerup":true,"onreset":true,"onresize":true,"onscroll":true,"onselect":true,"onselectionchange":true,"onselectstart":true,"onsubmit":true,"ontouchcancel":true,"ontouchmove":true,"ontouchstart":true,"ontransitioncancel":true,"ontransitionend":true,"parseFloat":true,"parseInt":true,"webkitSpeechRecognitionEvent":true,"webkitSpeechRecognitionError":true,"webkitSpeechRecognition":true,"webkitSpeechGrammarList":true,"webkitSpeechGrammar":true,"webkitRTCPeerConnection":true,"webkitMediaStream":true,"decodeURI":true,"decodeURIComponent":true,"encodeURI":true,"encodeURIComponent":true,"escape":true,"unescape":true,"eval":true,"isFinite":true,"isNaN":true,"stop":true,"open":true,"alert":true,"confirm":true,"prompt":true,"print":true,"requestAnimationFrame":true,"cancelAnimationFrame":true,"requestIdleCallback":true,"cancelIdleCallback":true,"captureEvents":true,"releaseEvents":true,"getComputedStyle":true,"matchMedia":true,"moveTo":true,"moveBy":true,"resizeTo":true,"resizeBy":true,"getSelection":true,"find":true,"getMatchedCSSRules":true,"webkitRequestAnimationFrame":true,"webkitCancelAnimationFrame":true,"btoa":true,"atob":true,"setTimeout":true,"clearTimeout":true,"setInterval":true,"clearInterval":true,"createImageBitmap":true,"scroll":true,"scrollTo":true,"scrollBy":true,"getComputedStyleMap":true,"fetch":true,"webkitRequestFileSystem":true,"webkitResolveLocalFileSystemURL":true,"openDatabase":true,"postMessage":true,"blur":true,"focus":true,"close":true,"createWombatWindowProxy":true,"webkitURL":true};
+      let self;
+      self = new Proxy({__proto__: $wbwindow.__proto__}, {
+         get(target, what) {
+          console.log('wombat window proxy get', what);
+          switch (what) {
+            case 'self':
+            case 'window':
+              return self;
+            case 'postMessage':
+              return $wbwindow.__WB_pmw($wbwindow).postMessage.bind($wbwindow.__WB_pmw($wbwindow));
+            case 'location':
+              return $wbwindow.WB_wombat_location;
+            case 'document':
+              if ($wbwindow._WB_wombat_document_proxy) {
+                return $wbwindow._WB_wombat_document_proxy;
               } else {
-                  $wbwindow_ownFunctions[it] = true
+                return $wbwindow[what];
               }
-            }
-        });
-        $wbwindow._WB_wombat_window_proxy = new Proxy($wbwindow,{
-            get (target,what) {
-                console.log('wombat window proxy get',what);
-                if (what === 'postMessage') {
-                    return  target.__WB_pmw(target).postMessage.bind(target.__WB_pmw(target));
-                } else {
-                    let retVal = target[what];
-                    if ($wbwindow_noModify[what]) {
-                        return retVal
-                    }
-                    if (typeof retVal === 'function' && $wbwindow_ownFunctions[what]) {
-                        return retVal.bind(target);
-                    }
-                    return retVal
+            default:
+              if ($wbwindow_noModify[what]) {
+                return $wbwindow[what];
+              } else {
+                let retVal = $wbwindow[what];
+                if (typeof retVal === 'function' && $wbwindow_ownFunctions[what]) {
+                  return retVal.bind($wbwindow);
                 }
-            },
-            set (target,prop,value) {
-                console.log('wombat window proxy set',prop,value);
-                if (prop === 'location') {
-                    target.WB_wombat_location = value;
-                    return true;
-                } else if (prop === 'top') {
-                    target.WB_wombat_top = value;
-                    return true;
-                } else if (prop === 'postMessage') {
-                    return true;
-                } else {
-                    target[prop] = value;
-                    return true;
-                }
-            },
-            has (target, key) {
-              return key in target;
-            }
-        });
+                return retVal;
+              }
+          }
+        },
+        set(target, prop, value) {
+          console.log('wombat window proxy set', prop, value);
+          if (prop === 'location') {
+              if (value === '/sign-in/?routeTo=https%3A%2F%2Fwww.mendeley.com%2Fprofiles%2Fhelen-palmer%2F') {
+                  if(!$wbwindow.__redirect_save_once) {
+                      let wbdiv = $wbwindow.top.document.getElementById('_wb_frame_top_banner');
+                        $wbwindow.__redirect_save_once = true;
+                        $wbwindow.__redirect_save_count = 1;
+                        if ($wbwindow.top.document.getElementById('_wb_label_counter2') === null) {
+                                                    wbdiv.innerHTML = `${wbdiv.innerHTML} <span id='_wb_label_counter'>Page redirection count: <span id='_wb_label_counter2'>${$wbwindow.__redirect_save_count}</span></span>`;
+                        } else {
+                            let __ = $wbwindow.top.document.getElementById('_wb_label_counter2');
+                             $wbwindow.__redirect_save_count = parseInt(__.innerHTML);
+                             $wbwindow.__redirect_save_count++;
+                         __.innerHTML = `${$wbwindow.__redirect_save_count}`;
+                        }
+
+
+                    } else {
+                       let wbdiv = $wbwindow.top.document.getElementById('_wb_label_counter2');
+                       $wbwindow.__redirect_save_count++;
+                         wbdiv.innerHTML = `${$wbwindow.__redirect_save_count}`;
+                    }
+              } else {
+                   $wbwindow.WB_wombat_location = value;
+              }
+            return true;
+          } else if (prop === 'postMessage' || prop === 'document') {
+            return true;
+          } else {
+            return genericReflectSet($wbwindow,prop,value);
+          }
+        },
+        has(target,prop) {
+          console.log('wombat window proxy has',prop);
+          return prop in $wbwindow;
+        },
+        ownKeys (target) {
+          return Object.getOwnPropertyNames($wbwindow).concat(Object.getOwnPropertySymbols($wbwindow));
+        },
+        getOwnPropertyDescriptor (target,key) {
+          return Object.getOwnPropertyDescriptor($wbwindow,key);
+        },
+        getPrototypeOf (target) {
+          return Object.getPrototypeOf($wbwindow);
+        },
+        setPrototypeOf (target, newProto) {
+          return false;
+        },
+        isExtensible (target) {
+          return Object.isExtensible($wbwindow);
+        },
+        preventExtensions (target) {
+          Object.preventExtensions($wbwindow);
+          return true;
+        },
+        deleteProperty (target, prop) {
+          let propDescriptor = Object.getOwnPropertyDescriptor($wbwindow,prop);
+          if (propDescriptor === undefined) {
+            return true;
+          }
+          if (propDescriptor.configurable === false) {
+            return false;
+          }
+          delete $wbwindow[prop];
+          return true;
+        },
+        defineProperty (target, prop, desc) {
+          return genericReflectDefineProp($wbwindow, prop, desc);
+        }
+      });
+      return self;
+  }
+
+  function createDocumentProxy ($wbwindow) {
+
+    return new Proxy($wbwindow.document, {
+      get (target, what) {
+        console.log('wombat document proxy get', what);
+        if (what === 'location') {
+            return $wbwindow.WB_wombat_location;
+        }
+        let retVal = target[what];
+        if (typeof retVal === 'function') {
+          return retVal.bind(target);
+        }
+        return target[what];
+      },
+      set (target, what, prop) {
+        console.log('wombat document proxy set', what, prop);
+        if (what === 'domain') {
+          return true;
+        } else if (what === 'location') {
+          $wbwindow.WB_wombat_location = prop;
+          return true;
+        } else {
+          target[what] = prop;
+          return true;
+        }
+      },
+      getPrototypeOf(target) {
+       return Object.getPrototypeOf(target);
+      }
+    })
+  }
+
+    function init_proxy($wbwindow) {
+        $wbwindow._WB_wombat_window_proxy = createWombatWindowProxy2($wbwindow);
+        $wbwindow._WB_wombat_document_proxy = createDocumentProxy($wbwindow);
     }
 
     function wombat_init(wbinfo) {

@@ -21,8 +21,11 @@ from warcio.utils import to_native_str
 from pywb.rewrite.regex_rewriters import JSNoneRewriter, JSLinkOnlyRewriter
 
 
-firstbuf_proxy = b'{\nlet window = _WB_wombat_window_proxy;\n' \
-                 b'let location = WB_wombat_location;\nlet top = WB_wombat_top;\n'
+firstbuf_proxy = b'\n{\nlet window = _WB_wombat_window_proxy;\n' \
+                 b'let self = _WB_wombat_window_proxy;\n' \
+                 b'let document = _WB_wombat_document_proxy;\n' \
+                 b'let location = WB_wombat_location;\n' \
+                 b'let top = _WB_wombat_window_proxy;\n\n'
 
 
 def final_read_proxy():
