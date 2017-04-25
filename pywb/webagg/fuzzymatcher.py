@@ -162,8 +162,12 @@ class FuzzyMatcher(object):
         if not rule.match_filters:
             return True
 
+        mime = cdx.get('mime')
+        if not mime:
+            return False
+
         for match_filter in rule.match_filters:
-            if match_filter['mime'] in (cdx.get('mime', ''), '*'):
+            if match_filter['mime'] in (mime, '*'):
                 return match_filter['match'].search(url)
 
         return False
