@@ -163,7 +163,7 @@ class FuzzyMatcher(object):
             return True
 
         for match_filter in rule.match_filters:
-            if match_filter['mime'] in (cdx['mime'], '*'):
+            if match_filter['mime'] in (cdx.get('mime', ''), '*'):
                 return match_filter['match'].search(url)
 
         return False
