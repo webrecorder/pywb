@@ -159,7 +159,7 @@ class JSProxyHelperRewriterMixin(object):
         rules = rules + [
             (r'\"use\sstrict\"\;', RegexRewriter.replacer('"";'), 0),
         ]
-        super(JSLocationRewriterMixin, self).__init__(rewriter, rules)
+        super(JSProxyHelperRewriterMixin, self).__init__(rewriter, rules)
 
 
 #=================================================================
@@ -176,7 +176,6 @@ class JSLinkOnlyRewriter(JSLinkRewriterMixin, RegexRewriter):
 #=================================================================
 class JSLinkAndLocationRewriter(JSLocationRewriterMixin,
                                 JSLinkRewriterMixin,
-                                JSProxyHelperRewriterMixin,
                                 RegexRewriter):
     pass
 
