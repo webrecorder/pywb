@@ -253,9 +253,9 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     function rewrite_url_debug(url, use_rel, mod) {
         var rewritten = rewrite_url_(url, use_rel, mod);
         if (url != rewritten) {
-            console.log('REWRITE: ' + url + ' -> ' + rewritten);
+            console.warn('REWRITE: ' + url + ' -> ' + rewritten);
         } else {
-            console.log('NOT REWRITTEN ' + url);
+            console.warn('NOT REWRITTEN ' + url);
         }
         return rewritten;
     }
@@ -970,7 +970,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 async = true;
             }
 
-            result = orig.call(this, method, url, async, user, password);
+            var result = orig.call(this, method, url, async, user, password);
             if (!starts_with(url, "data:")) {
                 this.setRequestHeader('X-Pywb-Requested-With', 'XMLHttpRequest');
             }
@@ -1298,10 +1298,12 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         var orig_register = $wbwindow.ServiceWorkerContainer.prototype.register;
 
         $wbwindow.ServiceWorkerContainer.prototype.register = function (scriptURL, options) {
+            console.warn('service worker url',scriptURL);
             scriptURL = rewrite_url(scriptURL, false, "id_");
             if (options && options.scope) {
                 options.scope = rewrite_url(options.scope, false, "id_");
             }
+            console.warn('service worker url',scriptURL);
             return orig_register.call(this, scriptURL, options);
         }
     }
@@ -2661,7 +2663,6 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         if (mod == undefined) {
             mod = wb_info.mod;
         }
-
         // if live, don't add the timestamp
         if (!wb_info.is_live) {
             prefix += wb_info.wombat_ts;
@@ -4248,9 +4249,9 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             "dispatchEvent": true
         };
         let self;
-        self = new Proxy({__proto__: $wbwindow.__proto__}, {
+        self = new Proxy({}, {
             get(target, what) {
-                console.log('wombat window proxy get', what);
+                // console.log('wombat window proxy get', what);
                 switch (what) {
                     case 'self':
                     case 'window':
@@ -4278,7 +4279,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 }
             },
             set(target, prop, value) {
-                console.log('wombat window proxy set', prop, value);
+                // console.log('wombat window proxy set', prop, value);
                 if (prop === 'location') {
                     if (value === '/sign-in/?routeTo=https%3A%2F%2Fwww.mendeley.com%2Fprofiles%2Fhelen-palmer%2F') {
                         if (!$wbwindow.__redirect_save_once) {
@@ -4311,7 +4312,6 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 }
             },
             has(target, prop) {
-                console.log('wombat window proxy has', prop);
                 return prop in $wbwindow;
             },
             ownKeys (target) {
@@ -4352,10 +4352,9 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     function createDocumentProxy($wbwindow) {
-        let self;
-        self = new Proxy($wbwindow.document, {
+        return new Proxy($wbwindow.document, {
             get (target, what) {
-                console.log('wombat document proxy get', what);
+                // console.log('wombat document proxy get', what);
                 if (what === '__isWBProxy__') {
                     return true;
                 }
@@ -4387,7 +4386,6 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 return Object.getPrototypeOf(target);
             }
         });
-        return self;
     }
 
     function init_proxy($wbwindow) {
