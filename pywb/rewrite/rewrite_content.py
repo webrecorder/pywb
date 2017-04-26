@@ -27,6 +27,15 @@ firstbuf_proxy = b'\n{\nlet window = _WB_wombat_window_proxy;\n' \
                  b'let location = WB_wombat_location;\n' \
                  b'let top = _WB_wombat_window_proxy;\n\n'
 
+firstbuf_proxy2 = b"""
+var _____WB$wombat$assign$function_____=function(b){let c;switch(b){case'window':case'top':try{c=_WB_wombat_window_proxy}catch(d){c={}}break;case'self':try{c=_WB_wombat_window_proxy}catch(d){c=self}break;case'location':try{c=WB_wombat_location}catch(d){c={}}break;case'document':{let d=!0;try{c=_WB_wombat_document_proxy}catch(e){d=!1}if(!d)try{c=document}catch(e){c={}}break}}return c};\n
+{\n
+let window = _____WB$wombat$assign$function_____('window');\n
+let self = _____WB$wombat$assign$function_____('self'); \n
+let document = _____WB$wombat$assign$function_____('document');\n
+let location = _____WB$wombat$assign$function_____('location'); \n
+let top = _____WB$wombat$assign$function_____('top');\n\n
+"""
 
 def final_read_proxy():
     return ' ' \
@@ -269,7 +278,7 @@ class RewriteContent(object):
             gen = self.rewrite_text_stream_to_gen(stream,
                                                   rewrite_func=rewriter.rewrite,
                                                   final_read_func=final_read_proxy,
-                                                  first_buff=firstbuf_proxy,
+                                                  first_buff=firstbuf_proxy2,
                                                   align_to_line=align)
         else:
             gen = self.rewrite_text_stream_to_gen(stream,
