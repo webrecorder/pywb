@@ -7,15 +7,14 @@ This archive contains the following collections:
 
 <ul>
 {% for route in routes %}
-  {% if route | is_wb_handler %}
     <li>
-    <a href="{{ '/' + route.path }}">{{ '/' + route.path }}</a>
-    {% if route.user_metadata.title is defined %}
-    ({{ route.user_metadata.title }})
+    <a href="{{ '/' + route }}">{{ '/' + route }}</a>
+    {% if all_metadata and all_metadata[route] %}
+      ({{ all_metadata[route].title }})
     {% endif %}
     </li>
-  {% endif %}
 {% endfor %}
+
 </ul>
 </body>
 </html>

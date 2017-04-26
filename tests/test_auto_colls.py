@@ -8,12 +8,17 @@ import sys
 import webtest
 
 import time
-#import threading
 import gevent
 
 from six import StringIO
 
-from pywb.webapp.pywb_init import create_wb_router
+from webtest import TestApp
+from pytest import raises
+from mock import patch
+
+from pywb import get_test_dir
+from pywb.webagg.test.testutils import TempDirTests, BaseTestClass
+
 from pywb.manager.manager import main
 
 import pywb.manager.autoindex
@@ -21,12 +26,7 @@ import pywb.manager.autoindex
 from pywb.warc.cdxindexer import main as cdxindexer_main
 from pywb.cdx.cdxobject import CDXObject
 
-from pywb import get_test_dir
-from pywb.framework.wsgi_wrappers import init_app
-from pywb.webapp.views import J2TemplateView
-
-from pytest import raises
-from mock import patch
+from pywb.urlrewrite.frontendapp import FrontEndApp
 
 
 #=============================================================================
@@ -38,37 +38,18 @@ AUTOINDEX_FILE = 'autoindex.cdxj'
 
 
 #=============================================================================
-root_dir = None
-orig_cwd = None
+class TestManagedColls(TempDirTests, BaseTestClass):
+    @classmethod
+    def setup_class(cls):
+        super(TestManagedColls, cls).setup_class()
+        cls.orig_cwd = os.getcwd()
+        cls.root_dir = os.path.realpath(cls.root_dir)
+        os.chdir(cls.root_dir)
 
-def setup_module():
-    global root_dir
-    root_dir = tempfile.mkdtemp()
-
-    global orig_cwd
-    orig_cwd = os.getcwd()
-    os.chdir(root_dir)
-
-    # use actually set dir
-    root_dir = os.getcwd()
-
-def teardown_module():
-    global orig_cwd
-    os.chdir(orig_cwd)
-
-    global root_dir
-    shutil.rmtree(root_dir)
-
-
-#=============================================================================
-class TestManagedColls(object):
-    def setup(self):
-        global root_dir
-        self.root_dir = root_dir
-
-    def _create_app(self):
-        self.app = init_app(create_wb_router)
-        self.testapp = webtest.TestApp(self.app)
+    @classmethod
+    def teardown_class(cls):
+        super(TestManagedColls, cls).teardown_class()
+        os.chdir(cls.orig_cwd)
 
     def _check_dirs(self, base, dirlist):
         for dir_ in dirlist:
@@ -77,8 +58,10 @@ class TestManagedColls(object):
     def _get_sample_warc(self, name):
         return os.path.join(get_test_dir(), 'warcs', name)
 
-    def teardown(self):
-        J2TemplateView.shared_jinja_env = None
+    def _create_app(self):
+        config_file = 'config_test.yaml'
+        config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
+        self.testapp = TestApp(FrontEndApp(config_file=config_file))
 
     @patch('pywb.apps.cli.BaseCli.run_gevent', lambda *args, **kwargs: None)
     def test_run_cli(self):
@@ -233,7 +216,7 @@ class TestManagedColls(object):
             fh.write(b'/* Some JS File */')
 
         self._create_app()
-        resp = self.testapp.get('/static/test/abc.js')
+        resp = self.testapp.get('/static/_/test/abc.js')
         assert resp.status_int == 200
         assert resp.content_type == 'application/javascript'
         resp.charset = 'utf-8'
@@ -248,7 +231,7 @@ class TestManagedColls(object):
             fh.write(b'/* Some CSS File */')
 
         self._create_app()
-        resp = self.testapp.get('/static/__shared/foo.css')
+        resp = self.testapp.get('/static/foo.css')
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
         resp.charset = 'utf-8'
@@ -266,6 +249,12 @@ class TestManagedColls(object):
         assert resp.content_type == 'text/html'
         resp.charset = 'utf-8'
         assert '(Collection Title)' in resp.text
+
+        # test cache
+        resp = self.testapp.get('/')
+        resp.charset = 'utf-8'
+        assert '(Collection Title)' in resp.text
+
 
     def test_other_metadata_search_page(self):
         main(['metadata', 'foo', '--set',
@@ -304,35 +293,28 @@ class TestManagedColls(object):
         assert resp.content_type == 'text/html'
         assert 'pywb custom search page' in resp.text
 
-    def test_custom_config(self):
-        """ Test custom created config.yaml which overrides auto settings
+    def test_more_custom_templates(self):
+        """
+        Test custom templates and metadata
         Template is relative to collection-specific dir
         Add custom metadata and test its presence in custom search page
         """
-        config_path = os.path.join(self.root_dir, 'collections', 'test', 'config.yaml')
-        with open(config_path, 'w+b') as fh:
-            fh.write(b'search_html: ./templates/custom_search.html\n')
-            fh.write(b'index_paths: ./cdx2/\n')
-
         custom_search = os.path.join(self.root_dir, 'collections', 'test',
-                                     'templates', 'custom_search.html')
+                                     'templates', 'search.html')
 
         # add metadata
         main(['metadata', 'test', '--set', 'some=value'])
 
         with open(custom_search, 'w+b') as fh:
-            fh.write(b'config.yaml overriden search page: ')
-            fh.write(b'{{ wbrequest.user_metadata | tojson }}\n')
-
-        os.rename(os.path.join(self.root_dir, 'collections', 'test', INDEX_DIR),
-                  os.path.join(self.root_dir, 'collections', 'test', 'cdx2'))
+            fh.write(b'overriden search page: ')
+            fh.write(b'{{ metadata | tojson }}\n')
 
         self._create_app()
         resp = self.testapp.get('/test/')
         resp.charset = 'utf-8'
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'
-        assert 'config.yaml overriden search page: {"some": "value"}' in resp.text
+        assert 'overriden search page: {"some": "value"}' in resp.text
 
         resp = self.testapp.get('/test/20140103030321/http://example.com?example=1')
         assert resp.status_int == 200
@@ -607,15 +589,15 @@ class TestManagedColls(object):
         cdx_path = os.path.join(colls, 'foo', INDEX_DIR)
         shutil.rmtree(cdx_path)
 
-        with raises(Exception):
-            self._create_app()
+        #with raises(Exception):
+        #    self._create_app()
 
         # CDX a file not a dir
         with open(cdx_path, 'w+b') as fh:
             fh.write(b'foo\n')
 
-        with raises(Exception):
-            self._create_app()
+        #with raises(Exception):
+        #    self._create_app()
 
         shutil.rmtree(colls)
 

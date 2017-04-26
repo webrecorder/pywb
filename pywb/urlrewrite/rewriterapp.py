@@ -67,7 +67,7 @@ class RewriterApp(object):
         self.content_rewriter = Rewriter(is_framed_replay=frame_type)
 
         if not jinja_env:
-            jinja_env = JinjaEnv(globals={'static_path': 'static/__pywb'})
+            jinja_env = JinjaEnv(globals={'static_path': 'static'})
 
         self.jinja_env = jinja_env
 
@@ -80,13 +80,6 @@ class RewriterApp(object):
         self.cookie_tracker = None
 
         self.enable_memento = config.get('enable_memento')
-
-    def call_with_params(self, **kwargs):
-        def run_app(environ, start_response):
-            environ['pywb.kwargs'] = kwargs
-            return self(environ, start_response)
-
-        return run_app
 
     def __call__(self, environ, start_response):
         wb_url = self.get_wburl(environ)

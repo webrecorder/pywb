@@ -1,4 +1,5 @@
 import mimetypes
+import os
 
 from pywb.utils.loaders import LocalFileLoader
 
@@ -15,9 +16,17 @@ class StaticHandler(object):
         self.static_path = static_path
         self.block_loader = LocalFileLoader()
 
-    def __call__(self, wbrequest):
-        url = wbrequest.wb_url_str.split('?')[0]
-        full_path = self.static_path + url
+    def __call__(self, environ, url_str):
+        url = url_str.split('?')[0]
+
+        full_path = environ.get('pywb.static_dir')
+        if full_path:
+            full_path = os.path.join(full_path, url)
+            if not os.path.isfile(full_path):
+                full_path = None
+
+        if not full_path:
+            full_path = os.path.join(self.static_path, url)
 
         try:
             data = self.block_loader.load(full_path)
@@ -29,9 +38,9 @@ class StaticHandler(object):
 
             reader = None
 
-            if 'wsgi.file_wrapper' in wbrequest.env:
+            if 'wsgi.file_wrapper' in environ:
                 try:
-                    reader = wbrequest.env['wsgi.file_wrapper'](data)
+                    reader = environ['wsgi.file_wrapper'](data)
                 except:
                     pass
 
@@ -50,6 +59,6 @@ class StaticHandler(object):
 
         except IOError:
             raise NotFoundException('Static File Not Found: ' +
-                                    wbrequest.wb_url_str)
+                                    url_str)
 
 

@@ -5,6 +5,9 @@ from werkzeug.routing import Map, Rule
 from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.wsgi import pop_path_info
 from six.moves.urllib.parse import urljoin
+from six import iteritems
+
+from pywb.utils.loaders import load_yaml_config
 
 from pywb.webagg.autoapp import AutoConfigApp
 from pywb.webapp.handlers import StaticHandler
@@ -15,15 +18,9 @@ from pywb.urlrewrite.geventserver import GeventServer
 from pywb.urlrewrite.templateview import BaseInsertView
 
 from pywb.urlrewrite.rewriterapp import RewriterApp, UpstreamException
+
+import os
 import traceback
-
-
-# ============================================================================
-class NewWbRequest(object):
-    def __init__(self, env, wb_url_str, full_prefix):
-        self.env = env
-        self.wb_url_str = wb_url_str
-        self.full_prefix = full_prefix
 
 
 # ============================================================================
@@ -40,7 +37,8 @@ class FrontEndApp(object):
         self.static_handler = StaticHandler('pywb/static/')
 
         self.url_map = Map()
-        self.url_map.add(Rule('/static/__pywb/<path:filepath>', endpoint=self.serve_static))
+        self.url_map.add(Rule('/static/_/<coll>/<path:filepath>', endpoint=self.serve_static))
+        self.url_map.add(Rule('/static/<path:filepath>', endpoint=self.serve_static))
         self.url_map.add(Rule('/<coll>/', endpoint=self.serve_coll_page))
         self.url_map.add(Rule('/<coll>/<path:url>', endpoint=self.serve_content))
         self.url_map.add(Rule('/collinfo.json', endpoint=self.serve_listing))
@@ -48,21 +46,42 @@ class FrontEndApp(object):
 
         self.rewriterapp.paths = self.get_upstream_paths(self.webagg_server.port)
 
+        self.templates_dir = self.webagg.config.get('templates_dir', 'templates')
+        self.static_dir = self.webagg.config.get('static_dir', 'static')
+
+        metadata_templ = os.path.join(self.webagg.root_dir, '{coll}', 'metadata.yaml')
+        self.metadata_cache = MetadataCache(metadata_templ)
+
     def get_upstream_paths(self, port):
         return {'replay-dyn': 'http://localhost:%s/_/resource/postreq?param.coll={coll}' % port,
                 'replay-fixed': 'http://localhost:%s/{coll}/resource/postreq' % port
                }
 
     def serve_home(self, environ):
-        home_view = BaseInsertView(self.rewriterapp.jinja_env, 'new_index.html')
-        routes = self.webagg.list_fixed_routes() + self.webagg.list_dynamic_routes()
+        home_view = BaseInsertView(self.rewriterapp.jinja_env, 'index.html')
+        fixed_routes = self.webagg.list_fixed_routes()
+        dynamic_routes = self.webagg.list_dynamic_routes()
 
-        content = home_view.render_to_string(environ, routes=routes)
+        routes = fixed_routes + dynamic_routes
+
+        all_metadata = self.metadata_cache.get_all(dynamic_routes)
+
+        content = home_view.render_to_string(environ,
+                                             routes=routes,
+                                             all_metadata=all_metadata)
+
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
 
-    def serve_static(self, environ, filepath=''):
+    def serve_static(self, environ, coll='', filepath=''):
+        if coll:
+            path = os.path.join(self.webagg.root_dir, coll, self.static_dir)
+        else:
+            path = self.static_dir
+
+        environ['pywb.static_dir'] = path
+
         try:
-            return self.static_handler(NewWbRequest(environ, filepath, ''))
+            return self.static_handler(environ, filepath)
         except:
             self.raise_not_found(environ, 'Static File Not Found: {0}'.format(filepath))
 
@@ -70,31 +89,24 @@ class FrontEndApp(object):
         if not self.is_valid_coll(coll):
             self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
 
-        wbrequest = NewWbRequest(environ, '', '/')
+        self.setup_paths(environ, coll)
+
+        metadata = self.metadata_cache.load(coll)
+
         view = BaseInsertView(self.rewriterapp.jinja_env, 'search.html')
-        content = view.render_to_string(environ, wbrequest=wbrequest)
+
+        content = view.render_to_string(environ,
+                                        wb_prefix=environ.get('SCRIPT_NAME') + '/',
+                                        metadata=metadata)
 
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
-
-    def serve_listing(self, environ):
-        result = {'fixed': self.webagg.list_fixed_routes(),
-                  'dynamic': self.webagg.list_dynamic_routes()
-                 }
-
-        return WbResponse.json_response(result)
-
-    def is_valid_coll(self, coll):
-        return (coll in self.webagg.list_fixed_routes() or
-                coll in self.webagg.list_dynamic_routes())
-
-    def raise_not_found(self, environ, msg):
-        raise NotFound(response=self.rewriterapp._error_response(environ, msg))
 
     def serve_content(self, environ, coll='', url=''):
         if not self.is_valid_coll(coll):
             self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
 
-        pop_path_info(environ)
+        self.setup_paths(environ, coll)
+
         wb_url = self.rewriterapp.get_wburl(environ)
 
         kwargs = {'coll': coll}
@@ -111,6 +123,29 @@ class FrontEndApp(object):
             raise HTTPException(response=response)
 
         return response
+
+    def setup_paths(self, environ, coll):
+        pop_path_info(environ)
+        if not coll or not self.webagg.root_dir:
+            return
+
+        environ['pywb.templates_dir'] = os.path.join(self.webagg.root_dir,
+                                                     coll,
+                                                     self.templates_dir)
+
+    def serve_listing(self, environ):
+        result = {'fixed': self.webagg.list_fixed_routes(),
+                  'dynamic': self.webagg.list_dynamic_routes()
+                 }
+
+        return WbResponse.json_response(result)
+
+    def is_valid_coll(self, coll):
+        return (coll in self.webagg.list_fixed_routes() or
+                coll in self.webagg.list_dynamic_routes())
+
+    def raise_not_found(self, environ, msg):
+        raise NotFound(response=self.rewriterapp._error_response(environ, msg))
 
     def _check_refer_redirect(self, environ):
         referer = environ.get('HTTP_REFERER')
@@ -167,6 +202,41 @@ class FrontEndApp(object):
         app = FrontEndApp()
         app_server = GeventServer(app, port=port, hostname='0.0.0.0')
         return app_server
+
+
+# ============================================================================
+class MetadataCache(object):
+    def __init__(self, template_str):
+        self.template_str = template_str
+        self.cache = {}
+
+    def load(self, coll):
+        path = self.template_str.format(coll=coll)
+        try:
+            mtime = os.path.getmtime(path)
+            obj = self.cache.get(path)
+        except:
+            return {}
+
+        if not obj:
+            return self.store_new(coll, path, mtime)
+
+        cached_mtime, data = obj
+        if mtime == cached_mtime == mtime:
+            return obj
+
+        return self.store_new(coll, path, mtime)
+
+    def store_new(self, coll, path, mtime):
+        obj = load_yaml_config(path)
+        self.cache[coll] = (mtime, obj)
+        return obj
+
+    def get_all(self, routes):
+        for route in routes:
+            self.load(route)
+
+        return {name: value[1] for name, value in iteritems(self.cache)}
 
 
 # ============================================================================

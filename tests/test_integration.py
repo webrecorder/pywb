@@ -445,20 +445,20 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.status_int == 404
 
     def test_static_content(self):
-        resp = self.testapp.get('/static/__pywb/wb.css')
+        resp = self.testapp.get('/static/wb.css')
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
         assert resp.content_length > 0
 
     def test_static_content_filewrapper(self):
         from wsgiref.util import FileWrapper
-        resp = self.testapp.get('/static/__pywb/wb.css', extra_environ = {'wsgi.file_wrapper': FileWrapper})
+        resp = self.testapp.get('/static/wb.css', extra_environ = {'wsgi.file_wrapper': FileWrapper})
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
         assert resp.content_length > 0
 
     def test_static_not_found(self):
-        resp = self.testapp.get('/static/__pywb/notfound.css', status = 404)
+        resp = self.testapp.get('/static/notfound.css', status = 404)
         assert resp.status_int == 404
 
     def _test_cdx_server_filters(self):

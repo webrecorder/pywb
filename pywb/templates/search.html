@@ -1,10 +1,10 @@
-{% if wbrequest.user_metadata %}
+{% if metadata %}
 
-<h2>{{ wbrequest.user_metadata.title if wbrequest.user_metadata.title else wbrequest.coll }} Search Page</h2>
+<h2>{{ metadata.title if metadata.title else coll }} Search Page</h2>
 
 <div>
 <table style="text-align: left">
-{% for key, val in wbrequest.user_metadata.items() %}
+{% for key, val in metadata.items() %}
 <tr><th>{{ key }}:</th><td>{{ val }}</td>
 {% endfor %}
 </table>
@@ -14,7 +14,7 @@
 
 <p>
 Search this collection by url:
-<form onsubmit="url = document.getElementById('search').value; if (url != '') { document.location.href = '{{ wbrequest.wb_prefix }}' + '*/' + url; } return false;">
+<form onsubmit="url = document.getElementById('search').value; if (url != '') { document.location.href = '{{ wb_prefix }}' + '*/' + url; } return false;">
 <input id="search" name="search" placeholder="Enter url to search"/>
 <button type="submit">Search</button>
 </form>
