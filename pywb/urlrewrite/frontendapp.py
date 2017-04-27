@@ -69,11 +69,9 @@ class FrontEndApp(RewriterApp):
     def serve_coll_page(self, environ, coll):
         if not self.is_valid_coll(coll):
             raise NotFound(response=self._error_response(environ, 'No handler for "/{0}"'.format(coll)))
-
         wbrequest = NewWbRequest(environ, '', '/')
         view = BaseInsertView(self.jinja_env, 'search.html')
-        content = view.render_to_string(environ, wbrequest=wbrequest)
-
+        content = view.render_to_string(environ, wbrequest=wbrequest,coll=coll)
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
 
     def serve_listing(self, environ):

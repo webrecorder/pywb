@@ -81,6 +81,7 @@ class ReplayCli(BaseCli):
     def load(self):
         super(ReplayCli, self).load()
         if self.r.directory:  #pragma: no cover
+            import os
             os.chdir(self.r.directory)
 
     def run(self):

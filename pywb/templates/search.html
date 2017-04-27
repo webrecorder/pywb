@@ -13,7 +13,7 @@
 {% endif %}
 
 <p>
-Search this collection by url:
+Search {{ coll }} by url:
 <form onsubmit="url = document.getElementById('search').value; if (url != '') { document.location.href = '{{ wbrequest.wb_prefix }}' + '*/' + url; } return false;">
 <input id="search" name="search" placeholder="Enter url to search"/>
 <button type="submit">Search</button>
