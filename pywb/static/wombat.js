@@ -1131,7 +1131,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             return;
         }
 
-        var orig_createElement = $wbwindow.document.createElement;
+        var orig_createElement = $wbwindow.document.createElement.bind($wbwindow.document);
 
         var createElement_override = function (tagName, skip) {
             var created = orig_createElement.call(this, tagName);
@@ -1323,6 +1323,20 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 return oObserve.call(this,target.__WBProxyGetO__,options);
             } else {
                 return oObserve.call(this,target,options);
+            }
+        }
+    }
+
+    function override_window_getcomputedstyle($wbwindow) {
+        if (!$wbwindow.getComputedStyle) {
+             return;
+        }
+        let oGetComputedStyle = $wbwindow.getComputedStyle;
+        $wbwindow.getComputedStyle = function (elem, options) {
+            if (elem.__isWBProxy__) {
+                return oGetComputedStyle.call(this,elem.__WBProxyGetO__,options);
+            } else {
+                return oGetComputedStyle.call(this,elem,options);
             }
         }
     }
@@ -4248,14 +4262,13 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             "webkitURL": true,
             "dispatchEvent": true
         };
-        let self;
-        self = new Proxy({}, {
+         return new Proxy({}, {
             get(target, what) {
                 // console.log('wombat window proxy get', what);
                 switch (what) {
                     case 'self':
                     case 'window':
-                        return self;
+                        return $wbwindow._WB_wombat_window_proxy;
                     case 'postMessage':
                         return $wbwindow.__WB_pmw($wbwindow).postMessage.bind($wbwindow.__WB_pmw($wbwindow));
                     case 'location':
@@ -4318,7 +4331,16 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 return Object.getOwnPropertyNames($wbwindow).concat(Object.getOwnPropertySymbols($wbwindow));
             },
             getOwnPropertyDescriptor (target, key) {
-                return Object.getOwnPropertyDescriptor($wbwindow, key);
+                // console.log(key);
+                // hack for some JS libraries that do a for in
+                // since we are proxying an empty object need to add configurable = true
+                // Proxies know we are an empty object and if window says not configurable
+                // throws an error
+                let descriptor =  Object.getOwnPropertyDescriptor($wbwindow, key);
+                if (descriptor && !descriptor.configurable) {
+                    descriptor.configurable = true;
+                }
+                return descriptor;
             },
             getPrototypeOf (target) {
                 return Object.getPrototypeOf($wbwindow);
@@ -4348,7 +4370,6 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 return genericReflectDefineProp($wbwindow, prop, desc);
             }
         });
-        return self;
     }
 
     function createDocumentProxy($wbwindow) {
@@ -4530,6 +4551,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         init_proxy($wbwindow);
 
         override_mutation_obs($wbwindow);
+        override_window_getcomputedstyle($wbwindow);
 
         var $wbwindow_noModify = {};
         // expose functions
