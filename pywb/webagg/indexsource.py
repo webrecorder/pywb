@@ -10,17 +10,26 @@ from pywb.webagg.utils import ParamFormatter, res_template
 from pywb.webagg.utils import MementoUtils
 
 import redis
+
 import requests
+
 import re
-
-
-WAYBACK_ORIG_SUFFIX = '{timestamp}id_/{url}'
 
 
 #=============================================================================
 class BaseIndexSource(object):
+    WAYBACK_ORIG_SUFFIX = '{timestamp}id_/{url}'
+
     def load_index(self, params):  #pragma: no cover
         raise NotImplemented()
+
+    def _get_referrer(self, params):
+        input_req = params.get('_input_req')
+        if input_req:
+            return input_req.get_referrer()
+        else:
+            return None
+
 
 
 #=============================================================================
@@ -90,7 +99,7 @@ class RemoteIndexSource(BaseIndexSource):
 
     def _get_api_url(self, params):
         api_url = res_template(self.api_url, params)
-        if 'timestamp' in params and self.closest_limit:
+        if 'closest' in params and self.closest_limit:
             api_url += '&limit=' + str(self.closest_limit)
 
         return api_url
@@ -149,12 +158,12 @@ class RemoteIndexSource(BaseIndexSource):
 
         # pywb style cdx, just remove -cdx to get coll path
         if not coll and url.endswith('-cdx'):
-            replay = url[:-4] + '/' + WAYBACK_ORIG_SUFFIX
+            replay = url[:-4] + '/' + cls.WAYBACK_ORIG_SUFFIX
         else:
         # add specified coll, if any
-            replay = url.rsplit('/', 1)[0] + coll + '/' + WAYBACK_ORIG_SUFFIX
+            replay = url.rsplit('/', 1)[0] + coll + '/' + cls.WAYBACK_ORIG_SUFFIX
 
-        url += '?url={url}&closest={timestamp}&sort=closest'
+        url += '?url={url}&closest={closest}&sort=closest'
 
         return cls(url, replay)
 
@@ -320,15 +329,21 @@ class MementoIndexSource(BaseIndexSource):
             cdx['mem_rel'] = val.get('rel', '')
             cdx['memento_url'] = val['url']
 
-            load_url = self.replay_url.format(timestamp=cdx['timestamp'],
-                                              url=original)
+            load_url = self._get_replay_url(cdx['timestamp'], original)
 
             cdx['load_url'] = load_url
             yield cdx
 
-    def get_timegate_links(self, params, closest):
+    def _get_replay_url(self, ts, url):
+        return self.replay_url.format(url=url, timestamp=ts)
+
+    def handle_timegate(self, params, timestamp):
+        links = self.get_timegate_links(params, timestamp)
+        return self.links_to_cdxobject(links, 'timegate')
+
+    def get_timegate_links(self, params, timestamp):
         url = res_template(self.timegate_url, params)
-        accept_dt = timestamp_to_http_date(closest)
+        accept_dt = timestamp_to_http_date(timestamp)
         res = requests.head(url, headers={'Accept-Datetime': accept_dt})
         if res.status_code >= 400:
             raise NotFoundException(url)
@@ -340,31 +355,35 @@ class MementoIndexSource(BaseIndexSource):
 
         return links
 
-    def get_timemap_links(self, params):
+    def _get_timemap_headers(self, params):
+        return {}
+
+    def handle_timemap(self, params):
         url = res_template(self.timemap_url, params)
-        res = requests.get(url, timeout=params.get('_timeout'))
+        headers = self._get_timemap_headers(params)
+        res = requests.get(url,
+                           headers=headers,
+                           timeout=params.get('_timeout'))
+
         if res.status_code >= 400 or not res.text:
             raise NotFoundException(url)
 
-        return res.text
+        links = res.text
+        return self.links_to_cdxobject(links, 'timemap')
 
     def load_index(self, params):
-        closest = params.get('closest')
+        timestamp = params.get('closest')
 
-        if not closest:
-            links = self.get_timemap_links(params)
-            def_name = 'timemap'
+        if not timestamp:
+            return self.handle_timemap(params)
         else:
-            links = self.get_timegate_links(params, closest)
-            def_name = 'timegate'
-
-        return self.links_to_cdxobject(links, def_name)
+            return self.handle_timegate(params, timestamp)
 
     @classmethod
     def from_timegate_url(cls, timegate_url, path='link'):
         return cls(timegate_url + '{url}',
                    timegate_url + 'timemap/' + path + '/{url}',
-                   timegate_url + WAYBACK_ORIG_SUFFIX)
+                   timegate_url + cls.WAYBACK_ORIG_SUFFIX)
 
     def __repr__(self):
         return '{0}({1}, {2}, {3})'.format(self.__class__.__name__,
@@ -372,8 +391,12 @@ class MementoIndexSource(BaseIndexSource):
                                            self.timemap_url,
                                            self.replay_url)
 
-    def __str__(self):
+    @classmethod
+    def _init_id(cls):
         return 'memento'
+
+    def __str__(self):
+        return self._init_id()
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -385,8 +408,9 @@ class MementoIndexSource(BaseIndexSource):
 
     @classmethod
     def init_from_string(cls, value):
-        if value.startswith('memento+'):
-            return cls.from_timegate_url(value[8:], 'link')
+        key = cls._init_id() + '+'
+        if value.startswith(key):
+            return cls.from_timegate_url(value[len(key):], 'link')
 
         # default to memento for any http url
         if value.startswith(('http://', 'https://')):
@@ -395,7 +419,7 @@ class MementoIndexSource(BaseIndexSource):
 
     @classmethod
     def init_from_config(cls, config):
-        if config['type'] != 'memento':
+        if config['type'] != cls._init_id():
             return
 
         return cls(config['timegate_url'],

@@ -130,6 +130,9 @@ class AutoConfigApp(ResAggApp):
                 handler = self.load_coll(name, coll_config)
             except:
                 print('Invalid Collection: ' + name)
+                if self.debug:
+                    import traceback
+                    traceback.print_exc()
                 continue
 
             routes[name] = handler

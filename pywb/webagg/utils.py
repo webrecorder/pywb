@@ -140,8 +140,13 @@ class ParamFormatter(string.Formatter):
         if value is not None:
             return value
 
-        # default to just '{key}'
-        value = kwargs.get(key, '')
+        # try in extra params as just {key}
+        value = kwargs.get(key)
+        if value is not None:
+            return value
+
+        # try in params as just '{key}'
+        value = self.params.get(key, '')
         return value
 
 
