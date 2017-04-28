@@ -5,6 +5,7 @@ from pywb.webagg.indexsource import RedisIndexSource
 from warcio.timeutils import timestamp_to_datetime, datetime_to_timestamp
 from warcio.timeutils import iso_date_to_datetime, datetime_to_iso_date
 from warcio.timeutils import http_date_to_datetime, datetime_to_http_date
+from warcio.utils import to_native_str
 
 from warcio.statusandheaders import StatusAndHeaders, StatusAndHeadersParser
 
@@ -45,7 +46,7 @@ class BaseLoader(object):
         out_headers['WebAgg-Source-Coll'] = quote(cdx.get('source', ''), safe=':/')
         out_headers['Content-Type'] = 'application/warc-record'
 
-        out_headers['WebAgg-Cdx'] = cdx.to_cdxj().rstrip()
+        out_headers['WebAgg-Cdx'] = to_native_str(cdx.to_cdxj().rstrip())
 
         if not warc_headers:
             if other_headers:

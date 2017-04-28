@@ -7,7 +7,7 @@ from werkzeug.wsgi import pop_path_info
 from six.moves.urllib.parse import urljoin
 from six import iteritems
 
-from pywb.utils.loaders import load_yaml_config
+from pywb.utils.loaders import load_yaml_config, to_native_str
 
 from pywb.webagg.autoapp import AutoConfigApp
 from pywb.webapp.handlers import StaticHandler
@@ -107,7 +107,8 @@ class FrontEndApp(object):
 
         self.setup_paths(environ, coll)
 
-        wb_url_str = url
+        wb_url_str = to_native_str(url)
+
         if environ.get('QUERY_STRING'):
             wb_url_str += '?' + environ.get('QUERY_STRING')
 
