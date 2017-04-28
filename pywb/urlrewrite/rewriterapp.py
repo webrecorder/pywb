@@ -81,17 +81,6 @@ class RewriterApp(object):
 
         self.enable_memento = config.get('enable_memento')
 
-    def __call__(self, environ, start_response):
-        wb_url = self.get_wburl(environ)
-        kwargs = environ.get('pywb.kwargs', {})
-
-        try:
-            response = self.render_content(wb_url, kwargs, environ)
-        except UpstreamException as ue:
-            response = self.handle_error(environ, ue)
-
-        return response(environ, start_response)
-
     def is_framed_replay(self, wb_url):
         return (self.framed_replay and
                 wb_url.mod == self.frame_mod and
@@ -214,15 +203,16 @@ class RewriterApp(object):
         memento_dt = r.headers.get('Memento-Datetime')
         target_uri = r.headers.get('WARC-Target-URI')
 
-        cdx = CDXObject()
-        cdx['urlkey'] = urlkey
-        cdx['timestamp'] = http_date_to_timestamp(memento_dt)
-        cdx['url'] = target_uri
+        cdx = CDXObject(r.headers.get('Webagg-Cdx').encode('utf-8'))
+
+        #cdx['urlkey'] = urlkey
+        #cdx['timestamp'] = http_date_to_timestamp(memento_dt)
+        #cdx['url'] = target_uri
 
         set_content_loc = False
 
         # Check if Fuzzy Match
-        if target_uri != wb_url.url and r.headers.get('WebAgg-Fuzzy-Match') == '1':
+        if target_uri != wb_url.url and cdx.get('is_fuzzy') == '1':
             set_content_loc = True
 
         #    return WbResponse.redir_response(urlrewriter.rewrite(target_uri),
@@ -459,13 +449,6 @@ class RewriterApp(object):
     def get_full_prefix(self, environ):
         return self.get_host_prefix(environ) + self.get_rel_prefix(environ)
 
-    def get_wburl(self, environ):
-        wb_url = environ.get('PATH_INFO', '/')[1:]
-        if environ.get('QUERY_STRING'):
-            wb_url += '?' + environ.get('QUERY_STRING')
-
-        return wb_url
-
     def unrewrite_referrer(self, environ, full_prefix):
         referrer = environ.get('HTTP_REFERER')
         if not referrer:
@@ -502,8 +485,9 @@ class RewriterApp(object):
         raise NotImplemented()
 
     def _add_custom_params(self, cdx, headers, kwargs):
-        cdx['is_live'] = 'true'
         pass
+        #if resp_headers.get('Webagg-Source-Live') == '1':
+        #    cdx['is_live'] = 'true'
 
     def get_top_frame_params(self, wb_url, kwargs):
         return None

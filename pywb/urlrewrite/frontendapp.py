@@ -107,7 +107,9 @@ class FrontEndApp(object):
 
         self.setup_paths(environ, coll)
 
-        wb_url = self.rewriterapp.get_wburl(environ)
+        wb_url_str = url
+        if environ.get('QUERY_STRING'):
+            wb_url_str += '?' + environ.get('QUERY_STRING')
 
         kwargs = {'coll': coll}
 
@@ -117,7 +119,7 @@ class FrontEndApp(object):
             kwargs['type'] = 'replay-dyn'
 
         try:
-            response = self.rewriterapp.render_content(wb_url, kwargs, environ)
+            response = self.rewriterapp.render_content(wb_url_str, kwargs, environ)
         except UpstreamException as ue:
             response = self.rewriterapp.handle_error(environ, ue)
             raise HTTPException(response=response)
