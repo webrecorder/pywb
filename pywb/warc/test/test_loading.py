@@ -298,9 +298,9 @@ from pywb.warc.resolvingloader import ResolvingLoader
 from pywb.warc.pathresolvers import PathResolverMapper
 from pywb.cdx.cdxobject import CDXObject
 
-import warcio.statusandheaders
-
 from pywb import get_test_dir
+from mock import patch
+
 
 #==============================================================================
 test_warc_dir = get_test_dir() + 'warcs/'
@@ -323,7 +323,18 @@ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - \
 1001 353 someunknown.warc.gz'
 
 
+WRAP_WIDTH = 160
+
+
 #==============================================================================
+def repr_format(sh):
+    headers_str = pprint.pformat(sh.headers, indent=2, width=WRAP_WIDTH)
+    return "StatusAndHeaders(protocol = '{0}', statusline = '{1}', \
+headers = {2})".format(sh.protocol, sh.statusline, headers_str)
+
+
+#==============================================================================
+@patch('warcio.statusandheaders.StatusAndHeaders.__repr__', repr_format)
 def load_test_archive(test_file, offset, length):
     path = test_warc_dir + test_file
 
@@ -331,12 +342,9 @@ def load_test_archive(test_file, offset, length):
 
     archive = testloader.load(path, offset, length)
 
-    warcio.statusandheaders.WRAP_WIDTH = 160
-
     pprint.pprint(((archive.format, archive.rec_type),
-                   archive.rec_headers, archive.http_headers), indent=1, width=160)
-
-    warcio.statusandheaders.WRAP_WIDTH = 80
+                   archive.rec_headers,
+                   archive.http_headers), indent=1, width=WRAP_WIDTH)
 
 
 #==============================================================================
@@ -359,7 +367,7 @@ def load_from_cdx_test(cdx, revisit_func=load_orig_cdx, reraise=False,
 
     try:
         (headers, stream) = resolve_loader(cdx, failed_files, revisit_func)
-        print(repr(headers))
+        print(repr_format(headers))
         sys.stdout.write(stream.readline().decode('utf-8'))
         sys.stdout.write(stream.readline().decode('utf-8'))
     except ArchiveLoadFailed as e:
