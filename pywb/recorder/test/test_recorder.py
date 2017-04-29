@@ -571,7 +571,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         with open(warcs[b'meta/meta.warc.gz'], 'rb') as fh:
             decomp = DecompressingBufferedReader(fh)
-            record = ArcWarcRecordLoader().parse_record_stream(decomp)
+            record = ArcWarcRecordLoader().parse_record_stream(decomp, ensure_http_headers=True)
 
         status_headers = record.rec_headers
         assert len(record.rec_headers.headers) == 9

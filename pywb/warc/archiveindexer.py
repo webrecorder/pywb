@@ -323,7 +323,8 @@ class DefaultRecordParser(object):
     def __call__(self, fh):
         aiter = ArchiveIterator(fh, self.options.get('minimal', False),
                                     self.options.get('verify_http', False),
-                                    self.options.get('arc2warc', False))
+                                    self.options.get('arc2warc', False),
+                                    ensure_http_headers=True)
 
         entry_iter = self.create_record_iter(aiter)
 

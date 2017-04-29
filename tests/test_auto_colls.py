@@ -12,7 +12,7 @@ import gevent
 
 from six import StringIO
 
-from webtest import TestApp
+import webtest
 from pytest import raises
 from mock import patch
 
@@ -61,7 +61,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
     def _create_app(self):
         config_file = 'config_test.yaml'
         config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
-        self.testapp = TestApp(FrontEndApp(config_file=config_file))
+        self.testapp = webtest.TestApp(FrontEndApp(config_file=config_file))
 
     @patch('pywb.apps.cli.BaseCli.run_gevent', lambda *args, **kwargs: None)
     def test_run_cli(self):

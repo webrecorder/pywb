@@ -198,7 +198,8 @@ class RewriterApp(object):
                          False)
 
         stream = BufferedReader(r.raw, block_size=BUFF_SIZE)
-        record = self.loader.parse_record_stream(stream)
+        record = self.loader.parse_record_stream(stream,
+                                                 ensure_http_headers=True)
 
         memento_dt = r.headers.get('Memento-Datetime')
         target_uri = r.headers.get('WARC-Target-URI')
