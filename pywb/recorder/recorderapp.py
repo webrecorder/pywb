@@ -2,6 +2,8 @@ from pywb.webagg.utils import StreamIter, BUFF_SIZE
 from pywb.webagg.utils import ParamFormatter, res_template
 from pywb.webagg.inputrequest import DirectWSGIInputRequest
 
+from warcio.recordloader import ArcWarcRecordLoader
+
 from pywb.recorder.filters import SkipRangeRequestFilter, CollectionFilter
 
 from six.moves.urllib.parse import parse_qsl
@@ -69,7 +71,7 @@ class RecorderApp(object):
 
             resp_length = resp_pay.tell()
             resp_pay.seek(0)
-            resp = self.writer.create_record_from_stream(resp_pay, resp_length)
+            resp = ArcWarcRecordLoader().parse_record_stream(resp_pay)
 
             if resp.rec_type == 'response':
                 uri = resp.rec_headers.get_header('WARC-Target-Uri')

@@ -44,6 +44,9 @@ class MultiFileWARCWriter(BaseWARCWriter):
         if not self.dedup_index or record.rec_type != 'response':
             return record
 
+        # ensure payload digest is computed at this point
+        self.ensure_digest(record, block=False, payload=True)
+
         try:
             url = record.rec_headers.get_header('WARC-Target-URI')
             digest = record.rec_headers.get_header('WARC-Payload-Digest')
