@@ -30,7 +30,9 @@ class FrontEndApp(object):
         self.webagg = AutoConfigApp(config_file=config_file,
                                     custom_config=custom_config)
 
-        self.rewriterapp = RewriterApp(True, config=self.webagg.config)
+        framed_replay = self.webagg.config.get('framed_replay', True)
+
+        self.rewriterapp = RewriterApp(framed_replay, config=self.webagg.config)
 
         self.webagg_server = GeventServer(self.webagg, port=0)
 

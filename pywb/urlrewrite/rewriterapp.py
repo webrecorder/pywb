@@ -55,12 +55,17 @@ class RewriterApp(object):
     def __init__(self, framed_replay=False, jinja_env=None, config=None):
         self.loader = ArcWarcRecordLoader()
 
-        config = config or {}
+        self.config = config or {}
         self.paths = {}
 
         self.framed_replay = framed_replay
-        self.frame_mod = ''
-        self.replay_mod = 'mp_'
+
+        if framed_replay:
+            self.frame_mod = ''
+            self.replay_mod = 'mp_'
+        else:
+            self.frame_mod = None
+            self.replay_mod = ''
 
         frame_type = 'inverse' if framed_replay else False
 
@@ -71,15 +76,27 @@ class RewriterApp(object):
 
         self.jinja_env = jinja_env
 
-        self.head_insert_view = HeadInsertView(self.jinja_env, 'head_insert.html', 'banner.html')
-        self.frame_insert_view = TopFrameView(self.jinja_env, 'frame_insert.html', 'banner.html')
-        self.error_view = BaseInsertView(self.jinja_env, 'error.html')
-        self.not_found_view = BaseInsertView(self.jinja_env, 'not_found.html')
-        self.query_view = BaseInsertView(self.jinja_env, config.get('query_html', 'query.html'))
+        self.head_insert_view = HeadInsertView(self.jinja_env,
+                                               self._html_templ('head_insert_html'),
+                                               self._html_templ('banner_html'))
+
+        self.frame_insert_view = TopFrameView(self.jinja_env,
+                                               self._html_templ('frame_insert_html'),
+                                               self._html_templ('banner_html'))
+
+        self.error_view = BaseInsertView(self.jinja_env, self._html_templ('error_html'))
+        self.not_found_view = BaseInsertView(self.jinja_env, self._html_templ('not_found_html'))
+        self.query_view = BaseInsertView(self.jinja_env, self._html_templ('query_html'))
 
         self.cookie_tracker = None
 
-        self.enable_memento = config.get('enable_memento')
+        self.enable_memento = self.config.get('enable_memento')
+
+    def _html_templ(self, name):
+        value = self.config.get(name)
+        if not value:
+            value = name.replace('_html', '.html')
+        return value
 
     def is_framed_replay(self, wb_url):
         return (self.framed_replay and
