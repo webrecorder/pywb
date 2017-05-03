@@ -1438,6 +1438,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         string = string.toString();
 
+        if (string.indexOf("<script") <= 0) {
+            //string = string.replace(/WB_wombat_/g, "");
+            string = string.replace(/((id|class)=".*)WB_wombat_([^"]+)/, '$1$3');
+        }
+
         var changed = false;
 
         for (var i = 0; i < inner_doc.all.length; i++) {
