@@ -1,4 +1,4 @@
-from .base_config_test import BaseConfigTest
+from .base_config_test import BaseConfigTest, fmod
 
 from pywb.cdx.cdxobject import CDXObject
 
@@ -8,16 +8,6 @@ class TestWbIntegration(BaseConfigTest):
     @classmethod
     def setup_class(cls):
         super(TestWbIntegration, cls).setup_class('config_test.yaml')
-
-    def _assert_basic_html(self, resp):
-        assert resp.status_int == 200
-        assert resp.content_type == 'text/html'
-        assert resp.content_length > 0
-
-    def _assert_basic_text(self, resp):
-        assert resp.status_int == 200
-        assert resp.content_type == 'text/plain'
-        assert resp.content_length > 0
 
     def test_home(self):
         resp = self.testapp.get('/')
@@ -87,82 +77,67 @@ class TestWbIntegration(BaseConfigTest):
         assert '<iframe ' in resp.text
         assert '/pywb/20140127171238mp_/http://www.iana.org/' in resp.text, resp.text
 
-    def test_replay_content(self):
-        resp = self.testapp.get('/pywb/20140127171238mp_/http://www.iana.org/')
+    def test_replay_content(self, fmod):
+        resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/', fmod)
         self._assert_basic_html(resp)
 
         assert '"20140127171238"' in resp.text, resp.text
         assert 'wb.js' in resp.text
         assert 'new _WBWombat' in resp.text, resp.text
-        assert '/pywb/20140127171238mp_/http://www.iana.org/time-zones"' in resp.text
+        assert '/pywb/20140127171238{0}/http://www.iana.org/time-zones"'.format(fmod) in resp.text
 
-    #def test_replay_non_frame_content(self):
-    #    resp = self.testapp.get('/pywb-nonframe/20140127171238/http://www.iana.org/')
-    #    self._assert_basic_html(resp)
+        assert ('wbinfo.is_framed = ' + ('true' if fmod else 'false')) in resp.text
 
-    #    assert '"20140127171238"' in resp.text
-    #    assert 'wb.js' in resp.text
-    #    assert '/pywb-nonframe/20140127171238/http://www.iana.org/time-zones"' in resp.text
-
-    def test_replay_fuzzy_1(self):
-        resp = self.testapp.get('/pywb/20140127171238mp_/http://www.iana.org/?_=123')
+    def test_replay_fuzzy_1(self, fmod):
+        resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/?_=123', fmod)
         assert resp.status_int == 200
-        assert resp.headers['Content-Location'].endswith('/pywb/20140126200624mp_/http://www.iana.org/')
-        #assert resp.headers['Location'].endswith('/pywb/20140127171238mp_/http://www.iana.org/')
+        assert resp.headers['Content-Location'].endswith('/pywb/20140126200624{0}/http://www.iana.org/'.format(fmod))
 
-    def test_replay_no_fuzzy_match(self):
-        resp = self.testapp.get('/pywb/20140127171238mp_/http://www.iana.org/?foo=bar', status=404)
+    def test_replay_no_fuzzy_match(self, fmod):
+        resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/?foo=bar', fmod, status=404)
         assert resp.status_int == 404
 
-    #def test_replay_non_surt(self):
-    #    resp = self.testapp.get('/pywb-nosurt/20140103030321/http://example.com?example=1')
-    #    self._assert_basic_html(resp)
-
-    #    assert '"20140103030321"' in resp.text
-    #    assert 'wb.js' in resp.text
-    #    assert '/pywb-nosurt/20140103030321/http://www.iana.org/domains/example' in resp.text
-
-    def test_no_slash_redir_1(self):
-        resp = self.testapp.get('/pywb/20140103030321mp_/http://example.com')
+    def test_no_slash_redir_1(self, fmod):
+        resp = self.get('/pywb/20140103030321{0}/http://example.com', fmod)
         assert resp.status_int == 307
-        assert resp.headers['Location'].endswith('/pywb/20140103030321mp_/http://example.com/')
+        assert resp.headers['Location'].endswith('/pywb/20140103030321{0}/http://example.com/'.format(fmod))
 
-    def test_no_slash_redir_2(self):
-        resp = self.testapp.get('/pywb/20140103030321mp_/http://example.com?example=1')
+    def test_no_slash_redir_2(self, fmod):
+        resp = self.get('/pywb/20140103030321{0}/http://example.com?example=1', fmod)
         assert resp.status_int == 307
-        assert resp.headers['Location'].endswith('/pywb/20140103030321mp_/http://example.com/?example=1')
+        assert resp.headers['Location'].endswith('/pywb/20140103030321{0}/http://example.com/?example=1'.format(fmod))
 
-    def test_replay_cdxj(self):
-        resp = self.testapp.get('/pywb-cdxj/20140103030321mp_/http://example.com/?example=1')
+    def test_replay_cdxj(self, fmod):
+        resp = self.get('/pywb-cdxj/20140103030321{0}/http://example.com/?example=1', fmod)
         self._assert_basic_html(resp)
 
         assert '"20140103030321"' in resp.text
         assert 'wb.js' in resp.text
-        assert '/pywb-cdxj/20140103030321mp_/http://www.iana.org/domains/example' in resp.text
+        assert '/pywb-cdxj/20140103030321{0}/http://www.iana.org/domains/example'.format(fmod) in resp.text
 
-    def test_replay_cdxj_revisit(self):
-        resp = self.testapp.get('/pywb-cdxj/20140103030341mp_/http://example.com/?example=1')
+    def test_replay_cdxj_revisit(self, fmod):
+        resp = self.get('/pywb-cdxj/20140103030341{0}/http://example.com/?example=1', fmod)
         self._assert_basic_html(resp)
 
         assert '"20140103030341"' in resp.text
         assert 'wb.js' in resp.text
-        assert '/pywb-cdxj/20140103030341mp_/http://www.iana.org/domains/example' in resp.text
+        assert '/pywb-cdxj/20140103030341{0}/http://www.iana.org/domains/example'.format(fmod) in resp.text
 
-    def test_zero_len_revisit(self):
-        resp = self.testapp.get('/pywb/20140603030341mp_/http://example.com/?example=2')
+    def test_zero_len_revisit(self, fmod):
+        resp = self.get('/pywb/20140603030341{0}/http://example.com/?example=2', fmod)
         self._assert_basic_html(resp)
 
         assert '"20140603030341"' in resp.text
         assert 'wb.js' in resp.text
-        assert '/pywb/20140603030341mp_/http://www.iana.org/domains/example' in resp.text
+        assert '/pywb/20140603030341{0}/http://www.iana.org/domains/example'.format(fmod) in resp.text
 
-    def test_replay_url_agnostic_revisit(self):
-        resp = self.testapp.get('/pywb/20130729195151mp_/http://www.example.com/')
+    def test_replay_url_agnostic_revisit(self, fmod):
+        resp = self.get('/pywb/20130729195151{0}/http://www.example.com/', fmod)
         self._assert_basic_html(resp)
 
         assert '"20130729195151"' in resp.text
         assert 'wb.js' in resp.text
-        assert '/pywb/20130729195151mp_/http://www.iana.org/domains/example"' in resp.text
+        assert '/pywb/20130729195151{0}/http://www.iana.org/domains/example"'.format(fmod) in resp.text
 
     def test_video_info_not_found(self):
         # not actually archived, but ensure video info path is tested
@@ -263,9 +238,9 @@ class TestWbIntegration(BaseConfigTest):
         # original unrewritten url present
         assert '"http://www.iana.org/domains/example"' in resp.text
 
-    def test_replay_content_length_1(self):
+    def test_replay_content_length_1(self, fmod):
         # test larger file, rewritten file (svg!)
-        resp = self.testapp.get('/pywb/20140126200654mp_/http://www.iana.org/_img/2013.1/rir-map.svg')
+        resp = self.get('/pywb/20140126200654{0}/http://www.iana.org/_img/2013.1/rir-map.svg', fmod)
         assert resp.headers['Content-Length'] == str(len(resp.text))
 
     def test_replay_css_mod(self):
@@ -286,96 +261,83 @@ class TestWbIntegration(BaseConfigTest):
 
     #    assert resp.headers['Location'].endswith('/pywb/20140127171238/http://iana.org')
 
-    def test_replay_non_exact(self):
+    def test_replay_non_exact(self, fmod):
         # non-exact mode, don't redirect to exact capture
-        resp = self.testapp.get('/pywb/20140127171237mp_/http://www.iana.org/')
+        resp = self.get('/pywb/20140127171237{0}/http://www.iana.org/', fmod)
         assert resp.status_int == 200
 
         self._assert_basic_html(resp)
         assert '"20140127171237"' in resp.text
         # actual timestamp set in JS
         assert 'timestamp = "20140127171238"' in resp.text
-        assert '/pywb/20140127171237mp_/http://www.iana.org/about/' in resp.text
+        assert '/pywb/20140127171237{0}/http://www.iana.org/about/'.format(fmod) in resp.text
 
-    def test_latest_replay(self):
-        resp = self.testapp.get('/pywb/mp_/http://example.com/')
+    def test_latest_replay(self, fmod):
+        fmod_slash = fmod + '/' if fmod else ''
+        resp = self.get('/pywb/{0}http://example.com/', fmod_slash)
         self._assert_basic_html(resp)
 
-        assert resp.headers['Content-Location'].endswith('/20140127171251mp_/http://example.com')
+        assert resp.headers['Content-Location'].endswith('/20140127171251{0}/http://example.com'.format(fmod))
 
         assert '"20140127171251"' in resp.text
-        assert '/pywb/mp_/http://www.iana.org/domains/example' in resp.text
+        assert '/pywb/{0}http://www.iana.org/domains/example'.format(fmod_slash) in resp.text, resp.text
 
-    def test_replay_non_latest_content_location_ts(self):
-        resp = self.testapp.get('/pywb/mp_/http://example.com/')
+    def test_replay_non_latest_content_location_ts(self, fmod):
+        fmod_slash = fmod + '/' if fmod else ''
+        resp = self.get('/pywb/{0}http://example.com/', fmod_slash)
         assert resp.status_int == 200
 
         assert resp.headers['Content-Location'].endswith('/http://example.com')
 
         # extract ts, which should be current time
         ts = resp.headers['Content-Location'].rsplit('/http://')[0].rsplit('/', 1)[-1]
-        assert ts == '20140127171251mp_'
+        assert ts == '20140127171251{0}'.format(fmod)
 
-        ts = ts[:-3]
-        #resp = resp.follow()
-
-        #self._assert_basic_html(resp)
+        if fmod:
+            ts = ts.replace(fmod, '')
 
         # ensure the current ts is present in the links
         assert '"{0}"'.format(ts) in resp.text
-        assert '/pywb/mp_/http://www.iana.org/domains/example' in resp.text
+        assert '/pywb/{0}http://www.iana.org/domains/example'.format(fmod_slash) in resp.text
 
         # ensure ts is current ts
         #assert timestamp_now() >= ts, ts
 
-    def test_refer_redirect(self):
+    def test_refer_redirect(self, fmod):
         # webtest uses Host: localhost:80 by default
-        target = 'http://localhost:80/pywb/2014mp_/http://iana.org/_css/2013.1/screen.css'
+        target = 'http://localhost:80/pywb/2014{0}/http://iana.org/_css/2013.1/screen.css'.format(fmod)
 
-        resp = self.testapp.get('/_css/2013.1/screen.css', headers = [('Referer', 'http://localhost:80/pywb/2014mp_/http://iana.org/')])
+        resp = self.get('/_css/2013.1/screen.css', fmod, headers=[('Referer', 'http://localhost:80/pywb/2014{0}/http://iana.org/'.format(fmod))])
         assert resp.status_int == 307
         assert resp.headers['Location'] == target, resp.headers['Location']
 
         resp = resp.follow()
         assert resp.status_int == 200
-        assert resp.headers['Content-Location'].endswith('/pywb/20140127171239mp_/http://www.iana.org/_css/2013.1/screen.css')
+        assert resp.headers['Content-Location'].endswith('/pywb/20140127171239{0}/http://www.iana.org/_css/2013.1/screen.css'.format(fmod))
         assert resp.content_type == 'text/css'
 
-    def test_non_exact_replay_skip_self_redir(self):
-        uri = '/pywb/20140126200927mp_/http://www.iana.org/domains/root/db'
-        resp = self.testapp.get(uri)
+    def test_non_exact_replay_skip_self_redir(self, fmod):
+        uri = '/pywb/20140126200927{0}/http://www.iana.org/domains/root/db'
+        resp = self.get(uri, fmod)
         assert resp.status_int == 200
-        assert resp.headers['Content-Location'].endswith('/pywb/20140126200928mp_/http://www.iana.org/domains/root/db')
+        assert resp.headers['Content-Location'].endswith('/pywb/20140126200928{0}/http://www.iana.org/domains/root/db'.format(fmod))
 
-    #def test_referrer_self_redirect(self):
-    #    uri = '/pywb/20140127171239/http://www.iana.org/_css/2013.1/screen.css'
-    #    host = 'somehost:8082'
-    #    referrer = 'http://' + host + uri
-
-        # capture is normally a 200
-    #    resp = self.testapp.get(uri)
-    #    assert resp.status_int == 200
-
-        # redirect causes skip of this capture, redirect to next
-    #    resp = self.testapp.get(uri, headers = [('Referer', referrer), ('Host', host)], status = 302)
-    #    assert resp.status_int == 302
-
-    def test_not_existant_warc_other_capture(self):
-        resp = self.testapp.get('/pywb/20140703030321mp_/http://example.com/?example=2')
+    def test_not_existant_warc_other_capture(self, fmod):
+        resp = self.get('/pywb/20140703030321{0}/http://example.com/?example=2', fmod)
         assert resp.status_int == 200
-        assert resp.headers['Content-Location'].endswith('/pywb/20140603030341mp_/http://example.com?example=2')
+        assert resp.headers['Content-Location'].endswith('/pywb/20140603030341{0}/http://example.com?example=2'.format(fmod))
 
-    def test_missing_revisit_other_capture(self):
-        resp = self.testapp.get('/pywb/20140603030351mp_/http://example.com/?example=2')
+    def test_missing_revisit_other_capture(self, fmod):
+        resp = self.get('/pywb/20140603030351{0}/http://example.com/?example=2', fmod)
         assert resp.status_int == 200
-        assert resp.headers['Content-Location'].endswith('/pywb/20140603030341mp_/http://example.com?example=2')
+        assert resp.headers['Content-Location'].endswith('/pywb/20140603030341{0}/http://example.com?example=2'.format(fmod))
 
-    def test_not_existant_warc_no_other(self):
-        resp = self.testapp.get('/pywb/20140703030321mp_/http://example.com/?example=3', status=503)
+    def test_not_existant_warc_no_other(self, fmod):
+        resp = self.get('/pywb/20140703030321{0}/http://example.com/?example=3', fmod, status=503)
         assert resp.status_int == 503
 
-    def test_missing_revisit_no_other(self):
-        resp = self.testapp.get('/pywb/20140603030351mp_/http://example.com/?example=3', status=503)
+    def test_missing_revisit_no_other(self, fmod):
+        resp = self.get('/pywb/20140603030351{0}/http://example.com/?example=3', fmod, status=503)
         assert resp.status_int == 503
 
     def test_live_frame(self):
@@ -392,55 +354,47 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.status_int == 302
         assert resp.headers['Location'].endswith('/live/http://example.com/?test=test')
 
-    def test_live_fallback(self):
-        resp = self.testapp.get('/pywb-fallback/mp_/http://example.com/?test=test')
+    def test_live_fallback(self, fmod):
+        fmod_slash = fmod + '/' if fmod else ''
+        resp = self.get('/pywb-fallback/{0}http://example.com/?test=test', fmod_slash)
         assert resp.status_int == 200
 
-    def test_post_1(self):
-        resp = self.testapp.post('/pywb/mp_/httpbin.org/post', {'foo': 'bar', 'test': 'abc'})
-
-        # no redirects for POST, as some browsers (FF) show modal confirmation dialog!
-        #assert resp.status_int == 307
-        #assert resp.headers['Location'].endswith('/pywb/20140610000859/http://httpbin.org/post')
-
-        # XX webtest doesn't support 307 redirect of post
-        #resp = resp.follow()
-        #resp = self.testapp.post(resp.headers['Location'], {'foo': 'bar', 'test': 'abc'})
+    def test_post_1(self, fmod):
+        fmod_slash = fmod + '/' if fmod else ''
+        resp = self.post('/pywb/{0}httpbin.org/post', fmod_slash, {'foo': 'bar', 'test': 'abc'})
 
         assert resp.status_int == 200
         assert '"foo": "bar"' in resp.text
         assert '"test": "abc"' in resp.text
 
-    def test_post_2(self):
-        resp = self.testapp.post('/pywb/20140610001255mp_/http://httpbin.org/post?foo=bar', {'data': '^'})
+    def test_post_2(self, fmod):
+        resp = self.post('/pywb/20140610001255{0}/http://httpbin.org/post?foo=bar', fmod, {'data': '^'})
         assert resp.status_int == 200
         assert '"data": "^"' in resp.text
 
-    def test_post_invalid(self):
+    def test_post_invalid(self, fmod):
         # not json
-        resp = self.testapp.post_json('/pywb/20140610001255mp_/http://httpbin.org/post?foo=bar', {'data': '^'}, status=404)
+        resp = self.post_json('/pywb/20140610001255{0}/http://httpbin.org/post?foo=bar', fmod, {'data': '^'}, status=404)
         assert resp.status_int == 404
-
-    #def test_post_fuzzy_match(self):
-    #    resp = self.testapp.post('/pywb/20140610001255mp_/http://httpbin.org/post?foo=bar', {'data': 'x'})
-    #    assert resp.status_int == 200
-    #    assert '"A": "1"' in resp.text
-    #    assert '"B": "[]"' in resp.text
-    #    assert '"C": "3"' in resp.text
 
     def test_post_referer_redirect(self):
         # allowing 307 redirects
-        resp = self.testapp.post('/post', {'foo': 'bar', 'test': 'abc'}, headers=[('Referer', 'http://localhost:80/pywb/2014mp_/http://httpbin.org/foo')])
+        resp = self.post('/post', fmod,
+                         {'foo': 'bar', 'test': 'abc'},
+                         headers=[('Referer', 'http://localhost:80/pywb/2014{0}/http://httpbin.org/foo'.format(fmod))])
+
         assert resp.status_int == 307
-        assert resp.headers['Location'].endswith('/pywb/2014mp_/http://httpbin.org/post')
+        assert resp.headers['Location'].endswith('/pywb/2014{0}/http://httpbin.org/post'.format(fmod))
 
     def _test_excluded_content(self):
-        resp = self.testapp.get('/pywb/mp_/http://www.iana.org/_img/bookmark_icon.ico', status=403)
+        fmod_slash = fmod + '/' if fmod else ''
+        resp = self.get('/pywb/{0}http://www.iana.org/_img/bookmark_icon.ico', fmod_slash, status=403)
         assert resp.status_int == 403
         assert 'Excluded' in resp.text
 
-    def test_replay_not_found(self):
-        resp = self.testapp.head('/pywb/mp_/http://not-exist.example.com/', status=404)
+    def test_replay_not_found(self, fmod):
+        fmod_slash = fmod + '/' if fmod else ''
+        resp = self.head('/pywb/{0}http://not-exist.example.com/', fmod_slash, status=404)
         assert resp.content_type == 'text/html'
         assert resp.status_int == 404
 

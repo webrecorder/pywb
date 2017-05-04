@@ -31,3 +31,5 @@ archive_paths:
     - ./sample_archive/warcs/
 
 
+enable_memento: true
+
