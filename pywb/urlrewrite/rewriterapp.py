@@ -1,8 +1,9 @@
 import requests
 
-from pywb.rewrite.rewrite_amf import RewriteAMFMixin
-from pywb.rewrite.rewrite_dash import RewriteDASHMixin
-from pywb.rewrite.rewrite_content import RewriteContent
+#from pywb.rewrite.rewrite_amf import RewriteAMFMixin
+#from pywb.rewrite.rewrite_dash import RewriteDASHMixin
+#from pywb.rewrite.rewrite_content import RewriteContent
+from pywb.urlrewrite.rewriter import Rewriter
 
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter, SchemeOnlyUrlRewriter
@@ -44,8 +45,8 @@ class UpstreamException(WbException):
 
 
 # ============================================================================
-class Rewriter(RewriteDASHMixin, RewriteAMFMixin, RewriteContent):
-    pass
+#class Rewriter(RewriteDASHMixin, RewriteAMFMixin, RewriteContent):
+#    pass
 
 
 # ============================================================================
@@ -67,9 +68,10 @@ class RewriterApp(object):
             self.frame_mod = None
             self.replay_mod = ''
 
-        frame_type = 'inverse' if framed_replay else False
+        #frame_type = 'inverse' if framed_replay else False
 
-        self.content_rewriter = Rewriter(is_framed_replay=frame_type)
+        #self.content_rewriter = Rewriter(is_framed_replay=frame_type)
+        self.content_rw = Rewriter('pkg://pywb/rules.yaml', self.replay_mod)
 
         if not jinja_env:
             jinja_env = JinjaEnv(globals={'static_path': 'static'})
@@ -149,7 +151,7 @@ class RewriterApp(object):
         urlkey = canonicalize(wb_url.url)
 
         inputreq = RewriteInputRequest(environ, urlkey, wb_url.url,
-                                       self.content_rewriter)
+                                       self.content_rw)
 
         inputreq.include_post_query(wb_url.url)
 
@@ -267,14 +269,15 @@ class RewriterApp(object):
             cookie_rewriter = self.cookie_tracker.get_rewriter(urlrewriter,
                                                                cookie_key)
 
-        result = self.content_rewriter.rewrite_content(urlrewriter,
-                                               record.http_headers,
-                                               record.raw_stream,
-                                               head_insert_func,
-                                               urlkey,
-                                               cdx,
-                                               cookie_rewriter,
-                                               environ)
+        #result = self.content_rewriter.rewrite_content(urlrewriter,
+        #                                       record.http_headers,
+        #                                       record.raw_stream,
+        #                                       head_insert_func,
+        #                                       urlkey,
+        #                                       cdx,
+        #                                       cookie_rewriter,
+        #                                       environ)
+        result = self.content_rw(record, urlrewriter, cookie_rewriter, head_insert_func, cdx)
 
         status_headers, gen, is_rw = result
 

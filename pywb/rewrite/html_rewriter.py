@@ -88,8 +88,10 @@ class HTMLRewriterMixin(object):
     # ===========================
     def __init__(self, url_rewriter,
                  head_insert=None,
-                 js_rewriter_class=JSRewriter,
-                 css_rewriter_class=CSSRewriter,
+                 js_rewriter_class=None,
+                 js_rewriter=None,
+                 css_rewriter=None,
+                 css_rewriter_class=None,
                  url = '',
                  defmod='',
                  parse_comments=False):
@@ -97,8 +99,19 @@ class HTMLRewriterMixin(object):
         self.url_rewriter = url_rewriter
         self._wb_parse_context = None
 
-        self.js_rewriter = js_rewriter_class(url_rewriter)
-        self.css_rewriter = css_rewriter_class(url_rewriter)
+        if js_rewriter:
+            self.js_rewriter = js_rewriter
+        elif js_rewriter_class:
+            self.js_rewriter = js_rewriter_class(url_rewriter)
+        else:
+            self.js_rewriter = JSRewriter(url_rewriter)
+
+        if css_rewriter:
+            self.css_rewriter = css_rewriter
+        elif css_rewriter_class:
+            self.css_rewriter = css_rewriter_class(url_rewriter)
+        else:
+            self.css_rewriter = CSSRewriter(url_rewriter)
 
         self.head_insert = head_insert
         self.parse_comments = parse_comments

@@ -1,4 +1,4 @@
-FROM python:3.5.2
+FROM python:3.5.3
 
 MAINTAINER Ilya Kreymer <ikreymer at gmail.com>
 

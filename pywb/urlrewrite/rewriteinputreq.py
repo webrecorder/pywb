@@ -89,6 +89,8 @@ class RewriteInputRequest(DirectWSGIInputRequest):
         return headers
 
     def _req_cookie_rewrite(self, value):
+        return value
+
         rule = self.rewriter.ruleset.get_first_match(self.urlkey)
         if not rule or not rule.req_cookie_rewrite:
             return value
