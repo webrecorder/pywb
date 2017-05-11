@@ -152,8 +152,7 @@ class TestWbIntegration(BaseConfigTest):
         assert len(lines) == 17
         assert lines[0].startswith('org,iana)/_css/2013.1/print.css 20140127171239')
 
-
-    def test_replay_banner_only(self):
+    def _test_replay_banner_only(self):
         resp = self.testapp.get('/pywb/20140126201054bn_/http://www.iana.org/domains/reserved')
 
         # wb.js header insertion

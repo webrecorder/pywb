@@ -3,16 +3,9 @@ from six.moves import zip
 
 
 # ============================================================================
-# Expiermental: not fully tested
-class RewriteAMFMixin(object):  #pragma: no cover
-    def handle_custom_rewrite(self, rewritten_headers, stream, urlrewriter, mod, env):
-        if rewritten_headers.status_headers.get_header('Content-Type') == 'application/x-amf':
-            stream = self.rewrite_amf(stream, env)
-
-        return (super(RewriteAMFMixin, self).
-                handle_custom_rewrite(rewritten_headers, stream, urlrewriter, mod, env))
-
-    def rewrite_amf(self, stream, env):
+# Experimental: not fully tested
+class RewriteAMF(object):  #pragma: no cover
+    def __call__(self, rwinfo):
         try:
             from pyamf import remoting
 
@@ -26,9 +19,10 @@ class RewriteAMFMixin(object):  #pragma: no cover
             iobuff.seek(0)
             res = remoting.decode(iobuff)
 
-            if env and env.get('pywb.inputdata'):
-                inputdata = env.get('pywb.inputdata')
+            # TODO: revisit this
+            inputdata = rwinfo.url_rewriter.rewrite_opts.get('pywb.inputdata')
 
+            if inputdata:
                 new_list = []
 
                 for src, target in zip(inputdata.bodies, res.bodies):

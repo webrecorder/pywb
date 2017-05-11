@@ -1,6 +1,7 @@
 import re
 
 from pywb.rewrite.url_rewriter import UrlRewriter
+from pywb.rewrite.content_rewriter import StreamingRewriter
 
 
 #=================================================================
@@ -13,7 +14,7 @@ def load_function(string):
 
 
 #=================================================================
-class RegexRewriter(object):
+class RegexRewriter(StreamingRewriter):
     #@staticmethod
     #def comment_out(string):
     #    return '/*' + string + '*/'
@@ -43,6 +44,7 @@ class RegexRewriter(object):
     #DEFAULT_OP = add_prefix
 
     def __init__(self, rewriter, rules):
+        super(RegexRewriter, self).__init__()
         #rules = self.create_rules(http_prefix)
 
         # Build regexstr, concatenating regex list

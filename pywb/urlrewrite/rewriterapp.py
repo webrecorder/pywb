@@ -3,7 +3,7 @@ import requests
 #from pywb.rewrite.rewrite_amf import RewriteAMFMixin
 #from pywb.rewrite.rewrite_dash import RewriteDASHMixin
 #from pywb.rewrite.rewrite_content import RewriteContent
-from pywb.urlrewrite.rewriter import Rewriter
+from pywb.urlrewrite.rewriter import DefaultRewriter
 
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter, SchemeOnlyUrlRewriter
@@ -71,7 +71,7 @@ class RewriterApp(object):
         #frame_type = 'inverse' if framed_replay else False
 
         #self.content_rewriter = Rewriter(is_framed_replay=frame_type)
-        self.content_rw = Rewriter('pkg://pywb/rules.yaml', self.replay_mod)
+        self.content_rw = DefaultRewriter('pkg://pywb/rules.yaml', self.replay_mod)
 
         if not jinja_env:
             jinja_env = JinjaEnv(globals={'static_path': 'static'})

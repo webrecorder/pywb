@@ -1,39 +1,17 @@
-import xml.etree.ElementTree as ET
 from contextlib import closing
 from io import BytesIO, StringIO
 import json
 
-from pywb.webagg.utils import StreamIter
-import re
+import xml.etree.ElementTree as ET
 
-EXT_INF = re.compile('#EXT-X-STREAM-INF:(?:.*[,])?BANDWIDTH=([\d]+)')
+from pywb.webagg.utils import StreamIter
 
 
 # ============================================================================
-class RewriteDASHMixin(object):
-    def handle_custom_rewrite(self, rewritten_headers, stream, urlrewriter, mod, env):
-        if rewritten_headers.status_headers.get_header('Content-Type') == 'application/dash+xml':
-            stream = self._decoding_stream(rewritten_headers, stream)
-            stream, _ = self.rewrite_dash(stream)
-            rewritten_headers.status_headers.remove_header('content-length')
-            return (rewritten_headers.status_headers, StreamIter(stream), True)
-
-        elif rewritten_headers.status_headers.get_header('Content-Type') == 'application/x-mpegURL':
-            stream = self._decoding_stream(rewritten_headers, stream)
-            stream = self.rewrite_m3u8(stream)
-            rewritten_headers.status_headers.remove_header('content-length')
-            return (rewritten_headers.status_headers, StreamIter(stream), True)
-
-        return (super(RewriteDASHMixin, self).
-                handle_custom_rewrite(rewritten_headers, stream, urlrewriter, mod, env))
-
-    @classmethod
-    def rewrite_dash(cls, stream):
-        ET.register_namespace('', 'urn:mpeg:dash:schema:mpd:2011')
-        namespaces = {'mpd': 'urn:mpeg:dash:schema:mpd:2011'}
-
+class RewriteDASH(object):
+    def __call__(self, rwinfo):
         buff_io = BytesIO()
-        with closing(stream) as fh:
+        with closing(rwinfo.content_stream) as fh:
             while True:
                 buff = fh.read()
                 if not buff:
@@ -42,8 +20,15 @@ class RewriteDASHMixin(object):
                 buff_io.write(buff)
 
         buff_io.seek(0)
+        res_buff, best_ids = self.rewrite_dash(buff_io)
+        return StreamIter(res_buff)
+
+    def rewrite_dash(self, stream):
+        ET.register_namespace('', 'urn:mpeg:dash:schema:mpd:2011')
+        namespaces = {'mpd': 'urn:mpeg:dash:schema:mpd:2011'}
+
         tree = ET.ElementTree()
-        tree.parse(buff_io)
+        tree.parse(stream)
 
         root = tree.getroot()
 
@@ -72,40 +57,8 @@ class RewriteDASHMixin(object):
         buff_io.seek(0)
         return buff_io, best_ids
 
-    @classmethod
-    def rewrite_m3u8(cls, stream):
-        buff = stream.read()
 
-        lines = buff.decode('utf-8').split('\n')
-        best = None
-        indexes = []
-        count = 0
-        best_index = None
-
-        for line in lines:
-            m = EXT_INF.match(line)
-            if m:
-                indexes.append(count)
-                bandwidth = int(m.group(1))
-                if not best or bandwidth > best:
-                    best = bandwidth
-                    best_index = count
-
-            count = count + 1
-
-        if indexes and best_index is not None:
-            indexes.remove(best_index)
-
-        for index in reversed(indexes):
-            del lines[index + 1]
-            del lines[index]
-
-        buff_io = BytesIO()
-        buff_io.write('\n'.join(lines).encode('utf-8'))
-        buff_io.seek(0)
-        return buff_io
-
-
+# ============================================================================
 def rewrite_fb_dash(string):
     DASH_SPLIT = r'\n",dash_prefetched_representation_ids:'
     inx = string.find(DASH_SPLIT)
@@ -117,7 +70,7 @@ def rewrite_fb_dash(string):
     buff = string.encode('utf-8').decode('unicode-escape')
     buff = buff.encode('utf-8')
     io = BytesIO(buff)
-    io, best_ids = RewriteDASHMixin.rewrite_dash(io)
+    io, best_ids = RewriteDASHMixin().rewrite_dash(io)
     string = json.dumps(io.read().decode('utf-8'))
     string = string[1:-1].replace('<', r'\x3C')
 

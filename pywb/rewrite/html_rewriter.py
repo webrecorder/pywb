@@ -11,6 +11,8 @@ from six.moves.urllib.parse import urljoin, urlsplit, urlunsplit
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.regex_rewriters import JSRewriter, CSSRewriter
 
+from pywb.rewrite.content_rewriter import StreamingRewriter
+
 import six.moves.html_parser
 six.moves.html_parser.unescape = lambda x: x
 from six import text_type
@@ -441,7 +443,7 @@ class HTMLRewriterMixin(object):
 
 
 #=================================================================
-class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
+class HTMLRewriter(HTMLRewriterMixin, StreamingRewriter, HTMLParser):
     PARSETAG = re.compile('[<]')
 
     def __init__(self, *args, **kwargs):
@@ -451,6 +453,8 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
             HTMLParser.__init__(self)
 
         super(HTMLRewriter, self).__init__(*args, **kwargs)
+        # for StreamingRewriter
+        self.align_to_line = False
 
     def reset(self):
         HTMLParser.reset(self)
