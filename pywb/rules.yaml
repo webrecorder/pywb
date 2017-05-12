@@ -352,6 +352,9 @@ rules:
             - mime: 'application/dash+xml'
               match: '()'
 
+            - mime: 'application/x-shockwave-flash'
+              match: '()'
+
             - mime: '*'
-              match: '(.*)[&?](?:_|uncache)=[\d]+[&]?'
+              match: '(.*)[&?](?:_|cb|uncache)=[\d]+[&]?'
 
