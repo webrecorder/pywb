@@ -349,6 +349,17 @@ rules:
       fuzzy_lookup:
         match: '()'
         match_filters:
+            - not_ext:
+                - asp
+                - aspx
+                - jsp
+                - php
+                - pl
+                - exe
+                - dll
+
+              match: '()'
+
             - mime: 'application/dash+xml'
               match: '()'
 
