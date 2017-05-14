@@ -17,6 +17,9 @@ class PrefixHeaderRewriter(object):
         'content-location': 'url-rewrite',
         'content-base': 'url-rewrite',
 
+        'transfer-encoding': 'prefix',
+        'connection': 'prefix',
+
         'content-encoding': 'keep-if-no-content-rewrite',
         'content-length': 'content-length',
 
@@ -24,12 +27,15 @@ class PrefixHeaderRewriter(object):
         'cookie': 'cookie',
     }
 
-    default_rule = 'prefix'
-
     def __init__(self, rwinfo, header_prefix='X-Archive-Orig-'):
         self.header_prefix = header_prefix
         self.rwinfo = rwinfo
         self.http_headers = rwinfo.record.http_headers
+
+        if rwinfo.is_url_rw():
+            self.default_rule = 'prefix'
+        else:
+            self.default_rule = 'keep'
 
     def __call__(self):
         new_headers_list = []
@@ -54,14 +60,14 @@ class PrefixHeaderRewriter(object):
             return (name, self.rwinfo.url_rewriter.rewrite(value))
 
         elif rule == 'keep-if-no-content-rewrite':
-            if not self.rwinfo.is_content_rw():
+            if not self.rwinfo.is_content_rw:
                 return (name, value)
 
         elif rule == 'content-length':
             if value == '0':
                 return (name, value)
 
-            if not self.rwinfo.is_content_rw():
+            if not self.rwinfo.is_content_rw:
                 try:
                     if int(value) >= 0:
                         return (name, value)
@@ -92,11 +98,3 @@ class PrefixHeaderRewriter(object):
             new_headers.append(('Expires', datetime_to_http_date(dt)))
 
 
-#=============================================================================
-class ProxyHeaderRewriter(PrefixHeaderRewriter):
-    header_rules = {
-        'transfer-encoding': 'prefix',
-        'connection': 'prefix',
-    }
-
-    default_rule = 'keep'

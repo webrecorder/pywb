@@ -1,16 +1,14 @@
 import re
 from io import BytesIO
-from pywb.webagg.utils import StreamIter
+
+from pywb.rewrite.content_rewriter import BufferedRewriter
 
 
 # ============================================================================
-class RewriteHLS(object):
+class RewriteHLS(BufferedRewriter):
     EXT_INF = re.compile('#EXT-X-STREAM-INF:(?:.*[,])?BANDWIDTH=([\d]+)')
 
-    def __call__(self, rwinfo):
-        return StreamIter(self.rewrite_m3u8(rwinfo.content_stream))
-
-    def rewrite_m3u8(self, stream):
+    def rewrite_stream(self, stream):
         buff = stream.read()
 
         lines = buff.decode('utf-8').split('\n')

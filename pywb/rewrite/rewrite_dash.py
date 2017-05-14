@@ -4,24 +4,14 @@ import json
 
 import xml.etree.ElementTree as ET
 
-from pywb.webagg.utils import StreamIter
+from pywb.rewrite.content_rewriter import BufferedRewriter
 
 
 # ============================================================================
-class RewriteDASH(object):
-    def __call__(self, rwinfo):
-        buff_io = BytesIO()
-        with closing(rwinfo.content_stream) as fh:
-            while True:
-                buff = fh.read()
-                if not buff:
-                    break
-
-                buff_io.write(buff)
-
-        buff_io.seek(0)
-        res_buff, best_ids = self.rewrite_dash(buff_io)
-        return StreamIter(res_buff)
+class RewriteDASH(BufferedRewriter):
+    def rewrite_stream(self, stream):
+        res_buff, best_ids = self.rewrite_dash(stream)
+        return res_buff
 
     def rewrite_dash(self, stream):
         ET.register_namespace('', 'urn:mpeg:dash:schema:mpd:2011')
@@ -70,7 +60,7 @@ def rewrite_fb_dash(string):
     buff = string.encode('utf-8').decode('unicode-escape')
     buff = buff.encode('utf-8')
     io = BytesIO(buff)
-    io, best_ids = RewriteDASHMixin().rewrite_dash(io)
+    io, best_ids = RewriteDASH().rewrite_dash(io)
     string = json.dumps(io.read().decode('utf-8'))
     string = string[1:-1].replace('<', r'\x3C')
 

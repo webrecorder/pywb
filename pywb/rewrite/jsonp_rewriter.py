@@ -7,10 +7,6 @@ class JSONPRewriter(StreamingRewriter):
     JSONP = re.compile(r'^(\w+)\(\{')
     CALLBACK = re.compile(r'[?].*callback=([^&]+)')
 
-    def __init__(self, urlrewriter):
-        super(JSONPRewriter, self).__init__()
-        self.urlrewriter = urlrewriter
-
     def rewrite(self, string):
         # see if json is jsonp, starts with callback func
         m_json = self.JSONP.search(string)

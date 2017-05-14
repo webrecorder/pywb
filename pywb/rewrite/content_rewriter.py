@@ -7,6 +7,7 @@ from warcio.utils import to_native_str
 
 import re
 import webencodings
+import tempfile
 
 from pywb.webagg.utils import StreamIter, BUFF_SIZE
 from pywb.rewrite.cookie_rewriter import ExactPathCookieRewriter
@@ -78,10 +79,15 @@ class BaseContentRewriter(object):
     def create_rewriter(self, text_type, rule, rwinfo, cdx, head_insert_func=None):
         rw_type, rw_class = self.get_rw_class(rule, text_type, rwinfo)
 
-        if rw_type in ('js', 'js_proxy'):
+        if rw_type in ('js', 'js-proxy'):
             extra_rules = []
             if 'js_regex_func' in rule:
                 extra_rules = rule['js_regex_func'](rwinfo.url_rewriter)
+
+            # if js-proxy and no rules, default to none
+            # js rewriting in proxy only if extra rules apply
+            if rw_type == 'js-proxy' and not extra_rules:
+                return None
 
             return rw_class(rwinfo.url_rewriter, extra_rules)
 
@@ -93,6 +99,10 @@ class BaseContentRewriter(object):
 
         js_rewriter = self.create_rewriter('js', rule, rwinfo, cdx)
         css_rewriter = self.create_rewriter('css', rule, rwinfo, cdx)
+
+        # if no js rewriter, then do banner insert only
+        if not js_rewriter:
+            rw_class = self.all_rewriters.get('html-banner-only')
 
         rw = rw_class(rwinfo.url_rewriter,
                       js_rewriter=js_rewriter,
@@ -140,33 +150,28 @@ class BaseContentRewriter(object):
         return charset
 
     def rewrite_headers(self, rwinfo):
-        if rwinfo.is_url_rw():
-            header_rw_name = 'header'
-        else:
-            header_rw_name = 'header-proxy'
-
-        header_rw_class = self.all_rewriters.get(header_rw_name)
-        rwinfo.rw_http_headers = header_rw_class(rwinfo)()
+        header_rw_class = self.all_rewriters.get('header')
+        return header_rw_class(rwinfo)()
 
     def __call__(self, record, url_rewriter, cookie_rewriter,
                  head_insert_func=None,
                  cdx=None):
 
         rwinfo = RewriteInfo(record, self.get_rewrite_types(), url_rewriter, cookie_rewriter)
-
-        self.rewrite_headers(rwinfo)
-
         content_rewriter = None
-        if rwinfo.is_content_rw():
+
+        if rwinfo.should_rw_content():
             rule = self.get_rule(cdx)
             content_rewriter = self.create_rewriter(rwinfo.text_type, rule, rwinfo, cdx, head_insert_func)
 
         if content_rewriter:
             gen = content_rewriter(rwinfo)
         else:
-            gen = StreamIter(rwinfo.content_stream)
+            gen = StreamIter(rwinfo.record.raw_stream)
 
-        return rwinfo.rw_http_headers, gen, (content_rewriter != None)
+        rw_http_headers = self.rewrite_headers(rwinfo)
+
+        return rw_http_headers, gen, (content_rewriter != None)
 
     def init_js_regexs(self, regexs):
         raise NotImplemented()
@@ -176,9 +181,33 @@ class BaseContentRewriter(object):
 
 
 # ============================================================================
+class BufferedRewriter(object):
+    def __init__(self, url_rewriter=None):
+        self.url_rewriter = url_rewriter
+
+    def __call__(self, rwinfo):
+        stream_buffer = tempfile.SpooledTemporaryFile(BUFF_SIZE * 4)
+
+        with closing(rwinfo.content_stream) as fh:
+            while True:
+                buff = fh.read()
+                if not buff:
+                    break
+
+                stream_buffer.write(buff)
+
+        stream_buffer.seek(0)
+        return StreamIter(self.rewrite_stream(stream_buffer))
+
+    def rewrite_stream(self, stream):
+        raise NotImplemented('implement in subclass')
+
+
+# ============================================================================
 class StreamingRewriter(object):
-    def __init__(self):
-        self.align_to_line = True
+    def __init__(self, url_rewriter, align_to_line=True):
+        self.url_rewriter = url_rewriter
+        self.align_to_line = align_to_line
 
     def __call__(self, rwinfo):
         gen = self.rewrite_text_stream_to_gen(rwinfo.content_stream,
@@ -233,8 +262,8 @@ class RewriteInfo(object):
     def __init__(self, record, rewrite_types, url_rewriter, cookie_rewriter):
         self.record = record
 
-        self.rw_http_headers = record.http_headers
-        self.content_stream = record.content_stream()
+        self._content_stream = None
+        self.is_content_rw = False
 
         self.rewrite_types = rewrite_types
 
@@ -287,15 +316,20 @@ class RewriteInfo(object):
         if self.TAG_REGEX.match(buff):
             self.text_type = 'html'
 
+    @property
+    def content_stream(self):
+        if not self._content_stream:
+            self._content_stream = self.record.content_stream()
+            self.is_content_rw = True
+
+        return self._content_stream
+
     def read_and_keep(self, size):
         buff = self.content_stream.read(size)
-        self.content_stream = BufferedReader(self.content_stream, starting_data=buff)
+        self._content_stream = BufferedReader(self._content_stream, starting_data=buff)
         return buff
 
-    def is_content_rw(self):
-        if not self.url_rewriter.prefix:
-            return False
-
+    def should_rw_content(self):
         if self.url_rewriter.wburl.mod == 'id_':
             return False
 
@@ -310,15 +344,15 @@ class RewriteInfo(object):
         elif not self.text_type:
             return False
 
+        elif self.text_type == 'css' or self.text_type == 'xml':
+            if self.url_rewriter.wburl.mod == 'bn_':
+                return False
+
         return True
 
     def is_url_rw(self):
-        if not self.url_rewriter:
-            return False
-
-        if self.url_rewriter.wburl.mod == 'id_':
+        if self.url_rewriter.wburl.mod in ('id_', 'bn_'):
             return False
 
         return True
-
 

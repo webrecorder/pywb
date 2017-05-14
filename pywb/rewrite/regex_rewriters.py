@@ -1,6 +1,5 @@
 import re
 
-from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.content_rewriter import StreamingRewriter
 
 
@@ -44,7 +43,7 @@ class RegexRewriter(StreamingRewriter):
     #DEFAULT_OP = add_prefix
 
     def __init__(self, rewriter, rules):
-        super(RegexRewriter, self).__init__()
+        super(RegexRewriter, self).__init__(rewriter)
         #rules = self.create_rules(http_prefix)
 
         # Build regexstr, concatenating regex list

@@ -1,11 +1,13 @@
 from io import BytesIO
 from six.moves import zip
 
+from pywb.rewrite.content_rewriter import BufferedRewriter
+
 
 # ============================================================================
 # Experimental: not fully tested
-class RewriteAMF(object):  #pragma: no cover
-    def __call__(self, rwinfo):
+class RewriteAMF(BufferedRewriter):  #pragma: no cover
+    def rewrite_stream(self, stream):
         try:
             from pyamf import remoting
 
@@ -20,7 +22,7 @@ class RewriteAMF(object):  #pragma: no cover
             res = remoting.decode(iobuff)
 
             # TODO: revisit this
-            inputdata = rwinfo.url_rewriter.rewrite_opts.get('pywb.inputdata')
+            inputdata = url_rewriter.rewrite_opts.get('pywb.inputdata')
 
             if inputdata:
                 new_list = []
@@ -42,3 +44,5 @@ class RewriteAMF(object):  #pragma: no cover
             traceback.print_exc()
             print(e)
             return stream
+
+

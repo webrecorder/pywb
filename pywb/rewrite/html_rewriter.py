@@ -19,7 +19,7 @@ from six import text_type
 
 
 #=================================================================
-class HTMLRewriterMixin(object):
+class HTMLRewriterMixin(StreamingRewriter):
     """
     HTML-Parsing Rewriter for custom rewriting, also delegates
     to rewriters for script and css
@@ -98,7 +98,7 @@ class HTMLRewriterMixin(object):
                  defmod='',
                  parse_comments=False):
 
-        self.url_rewriter = url_rewriter
+        super(HTMLRewriterMixin, self).__init__(url_rewriter, False)
         self._wb_parse_context = None
 
         if js_rewriter:
@@ -443,7 +443,7 @@ class HTMLRewriterMixin(object):
 
 
 #=================================================================
-class HTMLRewriter(HTMLRewriterMixin, StreamingRewriter, HTMLParser):
+class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
     PARSETAG = re.compile('[<]')
 
     def __init__(self, *args, **kwargs):
@@ -453,8 +453,6 @@ class HTMLRewriter(HTMLRewriterMixin, StreamingRewriter, HTMLParser):
             HTMLParser.__init__(self)
 
         super(HTMLRewriter, self).__init__(*args, **kwargs)
-        # for StreamingRewriter
-        self.align_to_line = False
 
     def reset(self):
         HTMLParser.reset(self)

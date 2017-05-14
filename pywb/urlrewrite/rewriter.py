@@ -1,12 +1,13 @@
 from pywb.rewrite.content_rewriter import BaseContentRewriter
 
 from pywb.rewrite.html_rewriter import HTMLRewriter
+from pywb.rewrite.html_insert_rewriter import HTMLInsertOnlyRewriter
 
 from pywb.rewrite.regex_rewriters import RegexRewriter, CSSRewriter, XMLRewriter
 from pywb.rewrite.regex_rewriters import JSLinkAndLocationRewriter, JSLinkOnlyRewriter
 from pywb.rewrite.regex_rewriters import JSLocationOnlyRewriter, JSNoneRewriter
 
-from pywb.urlrewrite.header_rewriter import PrefixHeaderRewriter, ProxyHeaderRewriter
+from pywb.urlrewrite.header_rewriter import PrefixHeaderRewriter
 
 from pywb.rewrite.jsonp_rewriter import JSONPRewriter
 
@@ -19,9 +20,9 @@ from pywb.rewrite.rewrite_amf import RewriteAMF
 class DefaultRewriter(BaseContentRewriter):
     all_rewriters = {
         'header': PrefixHeaderRewriter,
-        'header-proxy': ProxyHeaderRewriter,
 
         'html': HTMLRewriter,
+        'html-banner-only': HTMLInsertOnlyRewriter,
 
         'css': CSSRewriter,
 
