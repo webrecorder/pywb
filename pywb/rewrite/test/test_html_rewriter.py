@@ -149,6 +149,26 @@ r"""
 >>> parse('<script>window.location = "http://example.com/a/b/c.html"</script>')
 <script>window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html"</script>
 
+# Script tag with JS-type 1
+>>> parse('<script type="application/javascript">window.location = "http://example.com/a/b/c.html"</script>')
+<script type="application/javascript">window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html"</script>
+
+# Script tag with JS-type 2
+>>> parse('<script type="text/ecmascript">window.location = "http://example.com/a/b/c.html"</script>')
+<script type="text/ecmascript">window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html"</script>
+
+# Script tag with JS-type 3
+>>> parse('<script type="JavaScript">window.location = "http://example.com/a/b/c.html"</script>')
+<script type="JavaScript">window.WB_wombat_location = "/web/20131226101010/http://example.com/a/b/c.html"</script>
+
+# Script tag with JS-type 4
+>>> parse('<script type="text/javascript">{"embed top test": "http://example.com/a/b/c.html"}</script>')
+<script type="text/javascript">{"embed WB_wombat_top test": "/web/20131226101010/http://example.com/a/b/c.html"}</script>
+
+# Script tag with NON-JS type
+>>> parse('<script type="application/json">{"embed top test": "http://example.com/a/b/c.html"}</script>')
+<script type="application/json">{"embed top test": "http://example.com/a/b/c.html"}</script>
+
 # Script tag + crossorigin + integrity
 >>> parse('<script src="/js/scripts.js" crossorigin="anonymous" integrity="ABC"></script>')
 <script src="/web/20131226101010js_/http://example.com/js/scripts.js" _crossorigin="anonymous" _integrity="ABC"></script>

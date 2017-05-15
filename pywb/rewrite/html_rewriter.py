@@ -65,8 +65,6 @@ class HTMLRewriterMixin(StreamingRewriter):
 
         return rewrite_tags
 
-    STATE_TAGS = ['script', 'style']
-
     # tags allowed in the <head> of an html document
     HEAD_TAGS = ['html', 'head', 'base', 'link', 'meta',
                  'title', 'style', 'script', 'object', 'bgsound']
@@ -255,10 +253,18 @@ class HTMLRewriterMixin(StreamingRewriter):
 
     def has_attr(self, tag_attrs, attr):
         name, value = attr
+        attr_value = self.get_attr(tag_attrs, name)
+        if attr_value is None:
+            return False
+
+        return attr_value.lower() == value.lower()
+
+    def get_attr(self, tag_attrs, match_name):
         for attr_name, attr_value in tag_attrs:
-            if attr_name == name:
-                return value.lower() == attr_value.lower()
-        return False
+            if attr_name == match_name:
+                return attr_value
+
+        return None
 
     def _rewrite_tag_attrs(self, tag, tag_attrs):
         # special case: head insertion, before-head tags
@@ -268,9 +274,7 @@ class HTMLRewriterMixin(StreamingRewriter):
             self.out.write(self.head_insert)
             self.head_insert = None
 
-        # special case: script or style parse context
-        if ((tag in self.STATE_TAGS) and not self._wb_parse_context):
-            self._wb_parse_context = tag
+        self._set_parse_context(tag, tag_attrs)
 
         # attr rewriting
         handler = self.rewrite_tags.get(tag)
@@ -365,6 +369,32 @@ class HTMLRewriterMixin(StreamingRewriter):
             self._write_attr(attr_name, attr_value, empty_attr)
 
         return True
+
+    def _set_parse_context(self, tag, tag_attrs):
+        # special case: script or style parse context
+        if not self._wb_parse_context:
+            if tag == 'style':
+                self._wb_parse_context = 'style'
+
+            elif tag == 'script':
+                if self._allow_js_type(tag_attrs):
+                    self._wb_parse_context = 'script'
+
+    def _allow_js_type(self, tag_attrs):
+        type_value = self.get_attr(tag_attrs, 'type')
+
+        if not type_value:
+            return True
+
+        type_value = type_value.lower()
+
+        if 'javascript' in type_value:
+            return True
+
+        if 'ecmascript' in type_value:
+            return True
+
+        return False
 
     def _rewrite_head(self, start_end):
         # special case: head tag
