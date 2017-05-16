@@ -43,18 +43,6 @@ function make_url(url, ts, mod, prefix)
 }
 
 function push_state(state) {
-    /*
-    var frame = document.getElementById(IFRAME_ID).contentWindow;
-    if (frame.WB_wombat_location) {
-        var curr_href = frame.WB_wombat_location.href;
-
-        // If not current url, don't update
-        if (state.url != curr_href) {
-            return;
-        }
-    }
-    */
-
     state.outer_url = make_url(state.url, state.request_ts, wbinfo.frame_mod, wbinfo.outer_prefix);
     state.inner_url = make_url(state.url, state.request_ts, wbinfo.replay_mod);
 
@@ -186,6 +174,13 @@ function handle_message(state) {
 function update_wb_url(state) {
     if (window._wb_js) {
         state['capture_str'] = _wb_js.ts_to_date(state.ts, true);
+    }
+
+    // don't set the state again current state is already same url + ts
+    if (window.history.state &&
+        window.history.state.url == state.url &&
+        window.history.state.request_ts == state.request_ts) {
+        return;
     }
 
     push_state(state);

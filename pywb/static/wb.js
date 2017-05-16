@@ -129,6 +129,7 @@ function notify_top(event) {
                "request_ts": wbinfo.request_ts,
                "is_live": wbinfo.is_live,
                "title": document ? document.title : "",
+               "readyState": document.readyState,
                "wb_type": "load",
               }
 
