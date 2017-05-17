@@ -49,10 +49,27 @@ function push_state(state) {
     var canon_url = make_url(state.url, state.request_ts, "", wbinfo.outer_prefix);
 
     if (window.location.href != canon_url) {
-        if (state.wb_type != "pushState") {
-            window.history.replaceState(state, "", canon_url);
-        } else {
-            window.history.pushState(state, "", canon_url);
+        switch (state.wb_type) {
+            case "load":
+                // default is to replaceState as the history already contains iframe history
+                // due to "joint session history" requirement, so just replacing the latest state.
+                // see: https://html.spec.whatwg.org/multipage/browsers.html#joint-session-history
+                if (!window.pushStateOnLoad) {
+                    window.history.replaceState(state, "", canon_url);
+                } else {
+                // if the window.history is not working as expected (eg. embedded application)
+                // then need to pushState() explicitly to add to the top-level window history
+                    window.history.pushState(state, "", canon_url);
+                }
+                break;
+
+            case "replaceState":
+                window.history.replaceState(state, "", canon_url);
+                break;
+
+            case "pushState":
+                window.history.pushState(state, "", canon_url);
+                break;
         }
     }
 
