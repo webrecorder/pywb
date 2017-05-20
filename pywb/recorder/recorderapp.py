@@ -186,6 +186,8 @@ class RecorderApp(object):
 
         method = input_req.get_req_method()
 
+        path = environ['PATH_INFO']
+
         # write request body as metadata/resource
         put_record = params.get('put_record')
         if put_record and method in ('PUT', 'POST'):
@@ -196,7 +198,7 @@ class RecorderApp(object):
                                     params,
                                     start_response)
 
-        skipping = any(x.skip_request(headers) for x in self.skip_filters)
+        skipping = any(x.skip_request(path, headers) for x in self.skip_filters)
 
         if not skipping:
             req_stream = ReqWrapper(input_buff,
@@ -232,6 +234,7 @@ class RecorderApp(object):
                                       params,
                                       self.write_queue,
                                       self.skip_filters,
+                                      path,
                                       self.create_buff_func)
         else:
             resp_stream = res.raw
@@ -264,13 +267,14 @@ class Wrapper(object):
 #==============================================================================
 class RespWrapper(Wrapper):
     def __init__(self, stream, headers, req,
-                 params, queue, skip_filters, create_func):
+                 params, queue, skip_filters, path, create_func):
 
         super(RespWrapper, self).__init__(stream, params, create_func)
         self.headers = headers
         self.req = req
         self.queue = queue
         self.skip_filters = skip_filters
+        self.path = path
 
     def close(self):
         try:
@@ -296,7 +300,9 @@ class RespWrapper(Wrapper):
             if self.interrupted:
                 skipping = True
             else:
-                skipping = any(x.skip_response(self.req.headers, self.headers)
+                skipping = any(x.skip_response(self.path,
+                                               self.req.headers,
+                                               self.headers)
                                 for x in self.skip_filters)
 
             if not skipping:

@@ -42,6 +42,7 @@ class BaseAggregator(object):
 
     def load_child_source(self, name, source, params):
         try:
+            params['_name'] = name
             params['_formatter'] = ParamFormatter(params, name)
             res = source.load_index(params)
             if isinstance(res, tuple):
@@ -62,6 +63,10 @@ class BaseAggregator(object):
             return cdx
 
         if params.get('nosource') != 'true':
+            src_coll = params.get('param.' + name + '.src_coll')
+            if src_coll:
+                name += ':' + src_coll
+
             cdx_iter = (add_name(cdx, name) for cdx in cdx_iter)
 
         return cdx_iter, err_list
@@ -107,12 +112,23 @@ class BaseSourceListAggregator(BaseAggregator):
     def _iter_sources(self, params):
         sources = self.get_all_sources(params)
         srcs_list = params.get('sources')
-        if not srcs_list:
+        if not srcs_list or srcs_list == '*':
             return sources.items()
 
         sel_sources = tuple(srcs_list.split(','))
 
-        return [(name, sources[name]) for name in sources.keys() if name in sel_sources]
+        def yield_sources(sources, sel_sources, params):
+            for name in sel_sources:
+                if name in sources:
+                    yield (name, sources[name])
+
+                elif ':' in name:
+                    name, param = name.split(':', 1)
+                    if name in sources:
+                        params['param.' + name + '.src_coll'] = param
+                        yield (name, sources[name])
+
+        return yield_sources(sources, sel_sources, params)
 
 
 #=============================================================================
@@ -320,7 +336,7 @@ class BaseRedisMultiKeyIndexSource(BaseAggregator, RedisIndexSource):
         return RedisIndexSource(None, self.redis, key)
 
     def __str__(self):
-        return 'redis'
+        return 'redis-multikey'
 
 
 #=============================================================================

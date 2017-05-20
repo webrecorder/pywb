@@ -133,6 +133,10 @@ class MultiFileWARCWriter(BaseWARCWriter):
         self._do_write_req_resp(None, record, params)
 
     def _do_write_req_resp(self, req, resp, params):
+        prov = resp.rec_headers.get_header('WARC-Provenance')
+        if prov:
+            req.rec_headers.add_header(prov)
+
         resp = self._check_revisit(resp, params)
         if not resp:
             print('Skipping due to dedup')

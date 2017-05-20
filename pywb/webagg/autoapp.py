@@ -215,8 +215,11 @@ def init_index_source(value, source_list=None):
 
 
 # ============================================================================
-def register_source(source_cls):
-    SOURCE_LIST.append(source_cls)
+def register_source(source_cls, end=False):
+    if not end:
+        SOURCE_LIST.insert(0, source_cls)
+    else:
+        SOURCE_LIST.append(source_cls)
 
 
 # ============================================================================
