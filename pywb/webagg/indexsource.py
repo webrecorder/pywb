@@ -117,16 +117,20 @@ class RemoteIndexSource(BaseIndexSource):
                     continue
 
                 cdx = CDXObject(line)
-                self._set_load_url(cdx)
+                self._set_load_url(cdx, params)
                 yield cdx
 
         return do_load(lines)
 
-    def _set_load_url(self, cdx):
-        cdx[self.url_field] = self.replay_url.format(
-                                 timestamp=cdx['timestamp'],
-                                 url=cdx['url'])
+    def _set_load_url(self, cdx, params):
+        source_coll = ''
+        name = params.get('_name')
+        if name:
+            source_coll = params.get('param.' + name + '.src_coll', '')
 
+        cdx[self.url_field] = self.replay_url.format(url=cdx['url'],
+                                                     timestamp=cdx['timestamp'],
+                                                     src_coll=source_coll)
     def __repr__(self):
         return '{0}({1}, {2})'.format(self.__class__.__name__,
                                       self.api_url,

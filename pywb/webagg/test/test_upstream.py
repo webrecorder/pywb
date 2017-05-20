@@ -1,3 +1,5 @@
+from gevent import monkey; monkey.patch_all(thread=False)
+
 import webtest
 
 from io import BytesIO
@@ -6,7 +8,7 @@ import requests
 
 from pywb.webagg.handlers import DefaultResourceHandler
 from pywb.webagg.aggregator import SimpleAggregator
-from pywb.webagg.proxyindexsource import ProxyMementoIndexSource, UpstreamAggIndexSource
+from pywb.webagg.upstreamindexsource import UpstreamMementoIndexSource, UpstreamAggIndexSource
 
 from warcio.recordloader import ArcWarcRecordLoader
 
@@ -26,7 +28,7 @@ class TestUpstream(LiveServerTests, BaseTestClass):
 
         app.add_route('/upstream_opt',
             DefaultResourceHandler(SimpleAggregator(
-                           {'upstream_opt': ProxyMementoIndexSource.upstream_resource(base_url + '/live')})
+                           {'upstream_opt': UpstreamMementoIndexSource.upstream_resource(base_url + '/live')})
             )
         )
 

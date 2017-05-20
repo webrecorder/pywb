@@ -13,14 +13,14 @@ class UpstreamAggIndexSource(RemoteIndexSource):
         proxy_url = base_url + '/resource?url={url}&closest={timestamp}'
         super(UpstreamAggIndexSource, self).__init__(api_url, proxy_url, 'filename')
 
-    def _set_load_url(self, cdx):
-        super(UpstreamAggIndexSource, self)._set_load_url(cdx)
+    def _set_load_url(self, cdx, params):
+        super(UpstreamAggIndexSource, self)._set_load_url(cdx, params)
         cdx['offset'] = '0'
         cdx.pop('load_url', '')
 
 
 #=============================================================================
-class ProxyMementoIndexSource(BaseIndexSource):
+class UpstreamMementoIndexSource(BaseIndexSource):
     def __init__(self, proxy_url='{url}'):
         self.proxy_url = proxy_url
         self.loader = LiveWebLoader()
@@ -45,10 +45,10 @@ class ProxyMementoIndexSource(BaseIndexSource):
         yield cdx
 
     def __str__(self):
-        return 'proxy'
+        return 'upstream'
 
     @staticmethod
     def upstream_resource(base_url):
-        return ProxyMementoIndexSource(base_url + '/resource?url={url}&closest={closest}')
+        return UpstreamMementoIndexSource(base_url + '/resource?url={url}&closest={closest}')
 
 

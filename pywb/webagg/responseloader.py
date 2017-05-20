@@ -41,12 +41,14 @@ class BaseLoader(object):
 
         warc_headers, other_headers, stream = entry
 
+        source = self._get_provenance(cdx)
+
         out_headers = {}
         out_headers['WebAgg-Type'] = 'warc'
-        out_headers['WebAgg-Source-Coll'] = quote(cdx.get('source', ''), safe=':/')
         out_headers['Content-Type'] = 'application/warc-record'
 
         out_headers['WebAgg-Cdx'] = to_native_str(cdx.to_cdxj().rstrip())
+        out_headers['WebAgg-Source-Coll'] = source
 
         if not warc_headers:
             if other_headers:
@@ -60,6 +62,7 @@ class BaseLoader(object):
         target_uri = warc_headers.get_header('WARC-Target-URI')
 
         out_headers['WARC-Target-URI'] = target_uri
+
         out_headers['Link'] = MementoUtils.make_link(target_uri, 'original')
 
         memento_dt = iso_date_to_datetime(warc_headers.get_header('WARC-Date'))
@@ -87,6 +90,9 @@ class BaseLoader(object):
         #    streamiter = chunk_encode_iter(streamiter)
 
         return out_headers, streamiter
+
+    def _get_provenance(self, cdx):
+        return quote(cdx.get('source', ''), safe=':/')
 
     def _set_content_len(self, content_len_str, headers, existing_len):
         # Try to set content-length, if it is available and valid
@@ -424,6 +430,10 @@ class LiveWebLoader(BaseLoader):
         warc_headers['WARC-Record-ID'] = self._make_warc_id()
         warc_headers['WARC-Target-URI'] = cdx['url']
         warc_headers['WARC-Date'] = datetime_to_iso_date(dt)
+
+        if not cdx.get('is_live'):
+            warc_headers['WARC-Provenance'] = self._get_provenance(cdx)
+
         if remote_ip:
             warc_headers['WARC-IP-Address'] = remote_ip
 
