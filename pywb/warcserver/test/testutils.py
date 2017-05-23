@@ -14,7 +14,7 @@ from pywb.warcserver.handlers import DefaultResourceHandler
 from pywb.warcserver.index.aggregator import SimpleAggregator
 from pywb.warcserver.index.indexsource import LiveIndexSource, MementoIndexSource
 
-from pywb.urlrewrite.geventserver import GeventServer
+from pywb.utils.geventserver import GeventServer
 
 from pywb import get_test_dir
 from pywb.utils.wbexception import NotFoundException

@@ -10,7 +10,7 @@ import portalocker
 from warcio.timeutils import timestamp20_now
 from warcio.warcwriter import BaseWARCWriter
 
-from pywb.webagg.utils import res_template
+from pywb.warcserver.utils import res_template
 
 
 # ============================================================================

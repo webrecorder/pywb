@@ -1,9 +1,8 @@
 from gevent import monkey; monkey.patch_all()
 import gevent
 
-import pywb.webagg
-from pywb.webagg.test.testutils import TempDirTests, LiveServerTests, BaseTestClass, to_path
-from pywb.webagg.test.testutils import FakeRedisTests
+from pywb.warcserver.test.testutils import TempDirTests, LiveServerTests, BaseTestClass, to_path
+from pywb.warcserver.test.testutils import FakeRedisTests
 
 import os
 import webtest
@@ -17,16 +16,16 @@ from pywb.recorder.multifilewarcwriter import PerRecordWARCWriter, MultiFileWARC
 from pywb.recorder.filters import ExcludeSpecificHeaders, ExcludeHttpOnlyCookieHeaders
 from pywb.recorder.filters import SkipDupePolicy, WriteDupePolicy, WriteRevisitDupePolicy
 
-from pywb.webagg.utils import MementoUtils
+from pywb.warcserver.utils import MementoUtils
 
-from pywb.cdx.cdxobject import CDXObject
+from pywb.warcserver.index.cdxobject import CDXObject
 
 from warcio.statusandheaders import StatusAndHeadersParser
 from warcio.bufferedreaders import DecompressingBufferedReader
 from warcio.recordloader import ArcWarcRecordLoader
 from warcio.archiveiterator import ArchiveIterator
 
-from pywb.warc.cdxindexer import write_cdx_index
+from pywb.indexer.cdxindexer import write_cdx_index
 
 from six.moves.urllib.parse import quote, unquote, urlencode
 from io import BytesIO

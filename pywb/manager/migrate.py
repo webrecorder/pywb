@@ -1,6 +1,6 @@
 from pywb.utils.canonicalize import canonicalize
-from pywb.cdx.cdxobject import CDXObject, URLKEY, ORIGINAL
-from pywb.warc.cdxindexer import CDXJ
+from pywb.warcserver.index.cdxobject import CDXObject, URLKEY, ORIGINAL
+from pywb.indexer.cdxindexer import CDXJ
 
 import os
 import shutil

@@ -200,9 +200,9 @@ Total: 4
 
 from pywb import get_test_dir
 
-from pywb.warc.cdxindexer import write_cdx_index, main, cdx_filename
+from pywb.indexer.cdxindexer import write_cdx_index, main, cdx_filename
 
-from pywb.cdx.cdxobject import CDXObject
+from pywb.warcserver.index.cdxobject import CDXObject
 
 from io import BytesIO
 import sys

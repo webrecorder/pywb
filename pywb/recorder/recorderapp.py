@@ -1,6 +1,6 @@
-from pywb.webagg.utils import StreamIter, BUFF_SIZE
-from pywb.webagg.utils import ParamFormatter, res_template
-from pywb.webagg.inputrequest import DirectWSGIInputRequest
+from pywb.warcserver.utils import StreamIter, BUFF_SIZE
+from pywb.warcserver.utils import ParamFormatter, res_template
+from pywb.warcserver.inputrequest import DirectWSGIInputRequest
 
 from warcio.recordloader import ArcWarcRecordLoader
 

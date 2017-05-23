@@ -1,7 +1,7 @@
 from pywb.utils.canonicalize import canonicalize
-from pywb.utils.loaders import extract_post_query, append_post_query
 
-from pywb.webagg.utils import BUFF_SIZE
+from pywb.warcserver.inputrequest import PostQueryExtractor
+from pywb.warcserver.utils import BUFF_SIZE
 
 from warcio.timeutils import iso_date_to_timestamp
 from warcio.archiveiterator import ArchiveIterator
@@ -68,9 +68,10 @@ class ArchiveIndexEntryMixin(object):
 
         # merge POST/PUT body query
         post_query = other.get('_post_query')
-        if post_query:
-            url = append_post_query(self['url'], post_query)
-            self['urlkey'] = canonicalize(url, surt_ordered)
+        url = self['url']
+        new_url = post_query.append_post_query(url)
+        if post_query and new_url != url:
+            self['urlkey'] = canonicalize(new_url, surt_ordered)
             other['urlkey'] = self['urlkey']
 
         referer = other.record.http_headers.get_header('referer')
@@ -180,7 +181,7 @@ class DefaultRecordParser(object):
                 method = record.http_headers.protocol
                 len_ = record.http_headers.get_header('Content-Length')
 
-                post_query = extract_post_query(method,
+                post_query = PostQueryExtractor(method,
                                                 entry.get('_content_type'),
                                                 len_,
                                                 record.raw_stream)
