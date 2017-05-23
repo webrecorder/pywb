@@ -293,9 +293,11 @@ import pprint
 import six
 
 from warcio.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
-from pywb.warc.blockrecordloader import BlockArcWarcRecordLoader
-from pywb.warc.resolvingloader import ResolvingLoader
-from pywb.warc.pathresolvers import PathResolverMapper
+
+from pywb.webagg.resource.blockrecordloader import BlockArcWarcRecordLoader
+from pywb.webagg.resource.resolvingloader import ResolvingLoader
+from pywb.webagg.resource.pathresolvers import DefaultResolverMixin
+
 from pywb.cdx.cdxobject import CDXObject
 
 from pywb import get_test_dir
@@ -362,7 +364,7 @@ def load_orig_cdx(_):
 #==============================================================================
 def load_from_cdx_test(cdx, revisit_func=load_orig_cdx, reraise=False,
                        failed_files=None):
-    resolve_loader = ResolvingLoader(PathResolverMapper()(test_warc_dir))
+    resolve_loader = ResolvingLoader(DefaultResolverMixin.make_resolvers(test_warc_dir))
     cdx = CDXObject(cdx.encode('utf-8'))
 
     try:

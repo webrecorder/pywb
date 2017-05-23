@@ -1,7 +1,8 @@
 from warcio.recordloader import ArchiveLoadFailed
 from warcio.timeutils import iso_date_to_timestamp
 
-from pywb.warc.blockrecordloader import BlockArcWarcRecordLoader
+from pywb.webagg.resource.blockrecordloader import BlockArcWarcRecordLoader
+
 from pywb.utils.wbexception import NotFoundException
 
 import six

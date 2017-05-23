@@ -1,11 +1,13 @@
 from warcio.bufferedreaders import DecompressingBufferedReader
 from warcio.recordloader import ArcWarcRecordLoader
+
 from pywb.utils.loaders import BlockLoader
+from pywb.webagg.utils import BUFF_SIZE
 
 
 #=================================================================
 class BlockArcWarcRecordLoader(ArcWarcRecordLoader):
-    def __init__(self, loader=None, cookie_maker=None, block_size=8192, *args, **kwargs):
+    def __init__(self, loader=None, cookie_maker=None, block_size=BUFF_SIZE, *args, **kwargs):
         if not loader:
             loader = BlockLoader(cookie_maker=cookie_maker)
 

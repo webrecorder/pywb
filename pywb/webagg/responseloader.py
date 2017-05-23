@@ -1,6 +1,5 @@
 from pywb.webagg.utils import MementoUtils, StreamIter, compress_gzip_iter
 from pywb.webagg.utils import ParamFormatter
-from pywb.webagg.indexsource import RedisIndexSource
 
 from warcio.timeutils import timestamp_to_datetime, datetime_to_timestamp
 from warcio.timeutils import iso_date_to_datetime, datetime_to_iso_date
@@ -11,7 +10,8 @@ from warcio.statusandheaders import StatusAndHeaders, StatusAndHeadersParser
 
 from pywb.utils.wbexception import LiveResourceException, WbException
 
-from pywb.warc.resolvingloader import ResolvingLoader
+from pywb.webagg.resource.resolvingloader import ResolvingLoader
+from pywb.webagg.resource.pathresolvers import DefaultResolverMixin
 
 from six.moves.urllib.parse import urlsplit, quote, unquote
 
@@ -144,67 +144,11 @@ class BaseLoader(object):
 
 
 #=============================================================================
-class PrefixResolver(object):
-    def __init__(self, template):
-        self.template = template
-
-    def __call__(self, filename, cdx):
-        full_path = self.template
-        if hasattr(cdx, '_formatter') and cdx._formatter:
-            full_path = cdx._formatter.format(full_path)
-
-        path = full_path + filename
-        if '*' not in path:
-            return path
-
-        if path.startswith('file://'):
-            path = path[7:]
-        elif '://' in path:
-            return path
-
-        paths = glob.glob(path)
-        if paths:
-            return paths
-        else:
-            return path
-
-
-#=============================================================================
-class RedisResolver(RedisIndexSource):
-    def __call__(self, filename, cdx):
-        redis_key = self.redis_key_template
-        params = {}
-        if hasattr(cdx, '_formatter') and cdx._formatter:
-            redis_key = cdx._formatter.format(redis_key)
-            params = cdx._formatter.params
-
-        res = None
-
-        if '*' in redis_key:
-            for key in self.scan_keys(redis_key, params):
-                #key = key.decode('utf-8')
-                res = self.redis.hget(key, filename)
-                if res:
-                    break
-        else:
-            res = self.redis.hget(redis_key, filename)
-
-        if res and six.PY3:
-            res = res.decode('utf-8')
-
-        return res
-
-
-#=============================================================================
-class WARCPathLoader(BaseLoader):
+class WARCPathLoader(DefaultResolverMixin, BaseLoader):
     def __init__(self, paths, cdx_source):
         self.paths = paths
-        if isinstance(paths, six.string_types):
-            self.paths = [paths]
-        elif self.paths is None:
-            self.paths = []
 
-        self.resolvers = [self._make_resolver(path) for path in self.paths]
+        self.resolvers = self.make_resolvers(self.paths)
 
         self.resolve_loader = ResolvingLoader(self.resolvers,
                                               no_record_parse=True)
@@ -212,16 +156,6 @@ class WARCPathLoader(BaseLoader):
         self.headers_parser = StatusAndHeadersParser([], verify=False)
 
         self.cdx_source = cdx_source
-
-    def _make_resolver(self, path):
-        if hasattr(path, '__call__'):
-            return path
-
-        if path.startswith('redis://'):
-            return RedisResolver(path)
-
-        else:
-            return PrefixResolver(path)
 
     def load_resource(self, cdx, params):
         if cdx.get('_cached_result'):
