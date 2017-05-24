@@ -8,16 +8,15 @@ from six.moves.urllib.parse import urljoin
 from six import iteritems
 
 from pywb.utils.loaders import load_yaml_config, to_native_str
+from pywb.utils.geventserver import GeventServer
 
-from pywb.webagg.autoapp import AutoConfigApp
-from pywb.webapp.handlers import StaticHandler
+from pywb.warcserver.warcserver import WarcServer
 
-from pywb.framework.wbrequestresponse import WbResponse
+from pywb.rewrite.templateview import BaseInsertView
 
-from pywb.urlrewrite.geventserver import GeventServer
-from pywb.urlrewrite.templateview import BaseInsertView
-
-from pywb.urlrewrite.rewriterapp import RewriterApp, UpstreamException
+from pywb.apps.static_handler import StaticHandler
+from pywb.apps.rewriterapp import RewriterApp, UpstreamException
+from pywb.apps.wbrequestresponse import WbResponse
 
 import os
 import traceback
@@ -27,14 +26,14 @@ import traceback
 class FrontEndApp(object):
     def __init__(self, config_file='./config.yaml', custom_config=None):
         self.debug = True
-        self.webagg = AutoConfigApp(config_file=config_file,
-                                    custom_config=custom_config)
+        self.warcserver = WarcServer(config_file=config_file,
+                                     custom_config=custom_config)
 
-        framed_replay = self.webagg.config.get('framed_replay', True)
+        framed_replay = self.warcserver.config.get('framed_replay', True)
 
-        self.rewriterapp = RewriterApp(framed_replay, config=self.webagg.config)
+        self.rewriterapp = RewriterApp(framed_replay, config=self.warcserver.config)
 
-        self.webagg_server = GeventServer(self.webagg, port=0)
+        self.warcserver_server = GeventServer(self.warcserver, port=0)
 
         self.static_handler = StaticHandler('pywb/static/')
 
@@ -46,12 +45,12 @@ class FrontEndApp(object):
         self.url_map.add(Rule('/collinfo.json', endpoint=self.serve_listing))
         self.url_map.add(Rule('/', endpoint=self.serve_home))
 
-        self.rewriterapp.paths = self.get_upstream_paths(self.webagg_server.port)
+        self.rewriterapp.paths = self.get_upstream_paths(self.warcserver_server.port)
 
-        self.templates_dir = self.webagg.config.get('templates_dir', 'templates')
-        self.static_dir = self.webagg.config.get('static_dir', 'static')
+        self.templates_dir = self.warcserver.config.get('templates_dir', 'templates')
+        self.static_dir = self.warcserver.config.get('static_dir', 'static')
 
-        metadata_templ = os.path.join(self.webagg.root_dir, '{coll}', 'metadata.yaml')
+        metadata_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'metadata.yaml')
         self.metadata_cache = MetadataCache(metadata_templ)
 
     def get_upstream_paths(self, port):
@@ -61,8 +60,8 @@ class FrontEndApp(object):
 
     def serve_home(self, environ):
         home_view = BaseInsertView(self.rewriterapp.jinja_env, 'index.html')
-        fixed_routes = self.webagg.list_fixed_routes()
-        dynamic_routes = self.webagg.list_dynamic_routes()
+        fixed_routes = self.warcserver.list_fixed_routes()
+        dynamic_routes = self.warcserver.list_dynamic_routes()
 
         routes = fixed_routes + dynamic_routes
 
@@ -76,7 +75,7 @@ class FrontEndApp(object):
 
     def serve_static(self, environ, coll='', filepath=''):
         if coll:
-            path = os.path.join(self.webagg.root_dir, coll, self.static_dir)
+            path = os.path.join(self.warcserver.root_dir, coll, self.static_dir)
         else:
             path = self.static_dir
 
@@ -116,7 +115,7 @@ class FrontEndApp(object):
 
         kwargs = {'coll': coll}
 
-        if coll in self.webagg.list_fixed_routes():
+        if coll in self.warcserver.list_fixed_routes():
             kwargs['type'] = 'replay-fixed'
         else:
             kwargs['type'] = 'replay-dyn'
@@ -131,23 +130,23 @@ class FrontEndApp(object):
 
     def setup_paths(self, environ, coll):
         pop_path_info(environ)
-        if not coll or not self.webagg.root_dir:
+        if not coll or not self.warcserver.root_dir:
             return
 
-        environ['pywb.templates_dir'] = os.path.join(self.webagg.root_dir,
+        environ['pywb.templates_dir'] = os.path.join(self.warcserver.root_dir,
                                                      coll,
                                                      self.templates_dir)
 
     def serve_listing(self, environ):
-        result = {'fixed': self.webagg.list_fixed_routes(),
-                  'dynamic': self.webagg.list_dynamic_routes()
+        result = {'fixed': self.warcserver.list_fixed_routes(),
+                  'dynamic': self.warcserver.list_dynamic_routes()
                  }
 
         return WbResponse.json_response(result)
 
     def is_valid_coll(self, coll):
-        return (coll in self.webagg.list_fixed_routes() or
-                coll in self.webagg.list_dynamic_routes())
+        return (coll in self.warcserver.list_fixed_routes() or
+                coll in self.warcserver.list_dynamic_routes())
 
     def raise_not_found(self, environ, msg):
         raise NotFound(response=self.rewriterapp._error_response(environ, msg))

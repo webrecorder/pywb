@@ -7,7 +7,7 @@ from pywb.rewrite.regex_rewriters import RegexRewriter, CSSRewriter, XMLRewriter
 from pywb.rewrite.regex_rewriters import JSLinkAndLocationRewriter, JSLinkOnlyRewriter
 from pywb.rewrite.regex_rewriters import JSLocationOnlyRewriter, JSNoneRewriter
 
-from pywb.urlrewrite.header_rewriter import PrefixHeaderRewriter
+from pywb.rewrite.header_rewriter import PrefixHeaderRewriter
 
 from pywb.rewrite.jsonp_rewriter import JSONPRewriter
 
@@ -74,6 +74,10 @@ class DefaultRewriter(BaseContentRewriter):
         # PLAIN
         'text/plain': 'plain',
     }
+
+    def __init__(self, rules_file=None, replay_mod=''):
+        rules_file = rules_file or 'pkg://pywb/rules.yaml'
+        super(DefaultRewriter, self).__init__(rules_file, replay_mod)
 
     def init_js_regex(self, regexs):
         return RegexRewriter.parse_rules_from_config(regexs)

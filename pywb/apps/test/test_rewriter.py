@@ -1,9 +1,9 @@
 from gevent import monkey; monkey.patch_all(thread=False)
 
-from pywb.webagg.test.testutils import LiveServerTests, BaseTestClass
-from pywb.webagg.test.testutils import FakeRedisTests
+from pywb.warcserver.test.testutils import LiveServerTests, BaseTestClass
+from pywb.warcserver.test.testutils import FakeRedisTests
 
-from pywb.urlrewrite.frontendapp import FrontEndApp
+from pywb.apps.frontendapp import FrontEndApp
 
 import os
 import webtest
@@ -12,10 +12,10 @@ import webtest
 LIVE_CONFIG = {'collections': {'live': '$live'}}
 
 
-class TestRewriter(FakeRedisTests, BaseTestClass):
+class TestRewriterApp(FakeRedisTests, BaseTestClass):
     @classmethod
     def setup_class(cls):
-        super(TestRewriter, cls).setup_class()
+        super(TestRewriterApp, cls).setup_class()
 
         #cls.app = RWApp.create_app(replay_port=cls.server.port)
         #cls.testapp = webtest.TestApp(cls.app.app)

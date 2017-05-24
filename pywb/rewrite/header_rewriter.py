@@ -1,102 +1,87 @@
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.timeutils import datetime_to_http_date
 from datetime import datetime, timedelta
-import six
 
 
-#=================================================================
-class RewrittenStatusAndHeaders(object):
-    def __init__(self, statusline, headers,
-                 removed_header_dict, text_type, charset):
+#=============================================================================
+class PrefixHeaderRewriter(object):
+    header_rules = {
+        'content-type': 'keep',
+        'content-disposition': 'keep',
+        'content-range': 'keep',
+        'accept-rangees': 'keep',
+        'www-authenticate': 'keep',
+        'proxy-authenticate': 'keep',
 
-        self.status_headers = StatusAndHeaders(statusline, headers)
-        self.removed_header_dict = removed_header_dict
-        self.text_type = text_type
-        self.charset = charset
+        'location': 'url-rewrite',
+        'content-location': 'url-rewrite',
+        'content-base': 'url-rewrite',
 
-    def contains_removed_header(self, name, value):
-        return self.removed_header_dict.get(name) == value
+        'transfer-encoding': 'prefix',
+        'connection': 'prefix',
 
-    def readd_rewrite_removed(self):
-        for name in HeaderRewriter.KEEP_NO_REWRITE_HEADERS:
-            value = self.removed_header_dict.get(name)
-            if value is not None:
-                self.status_headers.headers.append((name, value))
+        'content-encoding': 'keep-if-no-content-rewrite',
+        'content-length': 'content-length',
 
-
-#=================================================================
-class HeaderRewriter(object):
-    REWRITE_TYPES = {
-        'html': ['text/html',
-                 'application/xhtml',
-                 'application/xhtml+xml'],
-
-        'css':  ['text/css'],
-
-        'js':   ['text/javascript',
-                 'application/javascript',
-                 'application/x-javascript'],
-
-        'json': ['application/json'],
-
-        'hls': ['application/x-mpegURL'],
-
-        'xml':  ['/xml', '+xml', '.xml', '.rss'],
-
-        'plain': ['text/plain'],
+        'set-cookie': 'cookie',
+        'cookie': 'cookie',
     }
 
-    PROXY_HEADERS = ['content-type', 'content-disposition', 'content-range',
-                     'accept-ranges', 'www-authenticate', 'proxy-authenticate']
-
-    URL_REWRITE_HEADERS = ['location', 'content-location', 'content-base']
-
-    REMOVE_ALWAYS_HEADERS = ['transfer-encoding']
-
-    KEEP_PROXY_HEADERS = ['content-security-policy', 'strict-transport-security']
-
-    KEEP_NO_REWRITE_HEADERS = ['content-length', 'content-encoding']
-
-    COOKIE_HEADERS = ['set-cookie', 'cookie']
-
-    CACHE_HEADERS = ['cache-control', 'expires', 'etag', 'last-modified']
-
-
-    def __init__(self, header_prefix='X-Archive-Orig-'):
+    def __init__(self, rwinfo, header_prefix='X-Archive-Orig-'):
         self.header_prefix = header_prefix
+        self.rwinfo = rwinfo
+        self.http_headers = rwinfo.record.http_headers
 
-    def rewrite(self, status_headers, urlrewriter, cookie_rewriter):
-        content_type = status_headers.get_header('Content-Type')
-        text_type = None
-        charset = None
-        content_modified = False
-        http_cache = None
-        if urlrewriter:
-            http_cache = urlrewriter.rewrite_opts.get('http_cache')
+        if rwinfo.is_url_rw():
+            self.default_rule = 'prefix'
+        else:
+            self.default_rule = 'keep'
 
-        if content_type:
-            text_type = self._extract_text_type(content_type)
-            if text_type:
-                charset = self._extract_char_set(content_type)
-                content_modified = True
+    def __call__(self):
+        new_headers_list = []
+        for name, value in self.http_headers.headers:
+            rule = self.header_rules.get(name.lower(), self.default_rule)
+            new_header = self.rewrite_header(name, value, rule)
+            if new_header:
+                if isinstance(new_header, list):
+                    new_headers_list.extend(new_header)
+                else:
+                    new_headers_list.append(new_header)
 
-        result = self._rewrite_headers(status_headers.headers,
-                                       urlrewriter,
-                                       cookie_rewriter,
-                                       content_modified,
-                                       http_cache)
+        return StatusAndHeaders(self.http_headers.statusline,
+                                headers=new_headers_list,
+                                protocol=self.http_headers.protocol)
 
-        new_headers = result[0]
-        removed_header_dict = result[1]
+    def rewrite_header(self, name, value, rule):
+        if rule == 'keep':
+            return (name, value)
 
-        if http_cache != None and http_cache != 'pass':
-            self._add_cache_headers(new_headers, http_cache)
+        elif rule == 'url-rewrite':
+            return (name, self.rwinfo.url_rewriter.rewrite(value))
 
-        return RewrittenStatusAndHeaders(status_headers.statusline,
-                                         new_headers,
-                                         removed_header_dict,
-                                         text_type,
-                                         charset)
+        elif rule == 'keep-if-no-content-rewrite':
+            if not self.rwinfo.is_content_rw:
+                return (name, value)
+
+        elif rule == 'content-length':
+            if value == '0':
+                return (name, value)
+
+            if not self.rwinfo.is_content_rw:
+                try:
+                    if int(value) >= 0:
+                        return (name, value)
+                except:
+                    pass
+
+        elif rule == 'cookie':
+            if self.rwinfo.cookie_rewriter:
+                return self.rwinfo.cookie_rewriter.rewrite(value)
+            else:
+                return (name, value)
+
+        # default 'prefix'
+        return (self.header_prefix + name, value)
 
     def _add_cache_headers(self, new_headers, http_cache):
         try:
@@ -112,76 +97,4 @@ class HeaderRewriter(object):
             new_headers.append(('Cache-Control', 'max-age=' + str(age)))
             new_headers.append(('Expires', datetime_to_http_date(dt)))
 
-    def _extract_text_type(self, content_type):
-        for ctype, mimelist in six.iteritems(self.REWRITE_TYPES):
-            if any((mime in content_type) for mime in mimelist):
-                return ctype
 
-        return None
-
-    def _extract_char_set(self, content_type):
-        CHARSET_TOKEN = 'charset='
-        idx = content_type.find(CHARSET_TOKEN)
-        if idx < 0:
-            return None
-
-        return content_type[idx + len(CHARSET_TOKEN):].lower()
-
-    def _rewrite_headers(self, headers, urlrewriter,
-                         cookie_rewriter,
-                         content_modified,
-                         http_cache):
-
-        new_headers = []
-        removed_header_dict = {}
-
-        def add_header(name, value):
-            new_headers.append((name, value))
-
-        def add_prefixed_header(name, value):
-            new_headers.append((self.header_prefix + name, value))
-
-        for (name, value) in headers:
-            lowername = name.lower()
-
-            if lowername in self.PROXY_HEADERS:
-                add_header(name, value)
-
-            elif urlrewriter and urlrewriter.prefix and lowername in self.URL_REWRITE_HEADERS:
-                new_headers.append((name, urlrewriter.rewrite(value)))
-
-            elif lowername in self.KEEP_NO_REWRITE_HEADERS:
-                if content_modified and value != '0':
-                    removed_header_dict[lowername] = value
-                    add_prefixed_header(name, value)
-                else:
-                    add_header(name, value)
-
-            elif lowername in self.KEEP_PROXY_HEADERS:
-                if urlrewriter.prefix:
-                    removed_header_dict[lowername] = value
-                    add_prefixed_header(name, value)
-                else:
-                    add_header(name, value)
-
-            elif lowername in self.REMOVE_ALWAYS_HEADERS:
-                removed_header_dict[lowername] = value
-                add_prefixed_header(name, value)
-
-            elif (lowername in self.COOKIE_HEADERS and
-                  cookie_rewriter):
-                cookie_list = cookie_rewriter.rewrite(value)
-                new_headers.extend(cookie_list)
-
-            elif (lowername in self.CACHE_HEADERS):
-                if http_cache == 'pass':
-                    add_header(name, value)
-                else:
-                    add_prefixed_header(name, value)
-
-            elif urlrewriter and urlrewriter.prefix:
-                add_prefixed_header(name, value)
-            else:
-                add_header(name, value)
-
-        return (new_headers, removed_header_dict)

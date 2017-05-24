@@ -52,43 +52,6 @@ IOError: [Errno 2] No such file or directory: '_x_no_such_file_'
 
 >>> extract_client_cookie({}, 'y')
 
-# append_post_query
->>> append_post_query('http://example.com/?abc=def', 'foo=bar')
-'http://example.com/?abc=def&foo=bar'
-
->>> append_post_query('http://example.com/', '')
-'http://example.com/'
-
->>> append_post_query('http://example.com/', 'foo=bar')
-'http://example.com/?foo=bar'
-
-# extract_post_query tests
-
-# correct POST data
->>> post_data = b'foo=bar&dir=%2Fbaz'
->>> extract_post_query('POST', 'application/x-www-form-urlencoded', len(post_data), BytesIO(post_data))
-'foo=bar&dir=/baz'
-
-# unsupported method
->>> extract_post_query('PUT', 'application/x-www-form-urlencoded', len(post_data), BytesIO(post_data))
-
-# base64 encode
->>> extract_post_query('POST', 'text/plain', len(post_data), BytesIO(post_data))
-'&__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6'
-
-# invalid length
->>> extract_post_query('POST', 'application/x-www-form-urlencoded', 'abc', BytesIO(post_data))
->>> extract_post_query('POST', 'application/x-www-form-urlencoded', 0, BytesIO(post_data))
-
-# length too short
->>> extract_post_query('POST', 'application/x-www-form-urlencoded', len(post_data) - 4, BytesIO(post_data))
-'foo=bar&dir=%2'
-
-# length too long
->>> extract_post_query('POST', 'application/x-www-form-urlencoded', len(post_data) + 4, BytesIO(post_data))
-'foo=bar&dir=/baz'
-
-
 # test read_last_line
 >>> print_str(read_last_line(BytesIO(b'A\nB\nC')))
 'C'
@@ -119,8 +82,8 @@ from io import BytesIO
 import requests
 
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
-from pywb.utils.loaders import extract_client_cookie, extract_post_query
-from pywb.utils.loaders import append_post_query, read_last_line
+from pywb.utils.loaders import extract_client_cookie
+from pywb.utils.loaders import read_last_line
 
 from warcio.bufferedreaders import DecompressingBufferedReader
 

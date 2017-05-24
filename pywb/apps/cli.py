@@ -6,7 +6,7 @@ import logging
 
 #=============================================================================
 def webagg(args=None):
-    WebaggCli(args=args,
+    WarcServerCli(args=args,
               default_port=8070,
               desc='pywb Web Aggregator Server').run()
 
@@ -103,18 +103,18 @@ class ReplayCli(BaseCli):
 
 
 #=============================================================================
-class WebaggCli(BaseCli):
+class WarcServerCli(BaseCli):
     def load(self):
-        from pywb.webagg.autoapp import AutoConfigApp
+        from pywb.warcserver.warcserver import WarcServer
 
-        super(WebaggCli, self).load()
-        return AutoConfigApp(custom_config=self.extra_config)
+        super(WarcServerCli, self).load()
+        return WarcServer(custom_config=self.extra_config)
 
 
 #=============================================================================
 class WaybackCli(ReplayCli):
     def load(self):
-        from pywb.urlrewrite.frontendapp import FrontEndApp
+        from pywb.apps.frontendapp import FrontEndApp
 
         super(WaybackCli, self).load()
         return FrontEndApp(custom_config=self.extra_config)
@@ -123,7 +123,7 @@ class WaybackCli(ReplayCli):
 #=============================================================================
 class LiveCli(BaseCli):
     def load(self):
-        from pywb.urlrewrite.frontendapp import FrontEndApp
+        from pywb.apps.frontendapp import FrontEndApp
 
         self.r.live = True
 

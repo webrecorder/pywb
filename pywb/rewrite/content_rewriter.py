@@ -9,7 +9,7 @@ import re
 import webencodings
 import tempfile
 
-from pywb.webagg.utils import StreamIter, BUFF_SIZE
+from pywb.warcserver.utils import StreamIter, BUFF_SIZE
 from pywb.rewrite.cookie_rewriter import ExactPathCookieRewriter
 
 from pywb.utils.loaders import load_yaml_config
@@ -277,8 +277,9 @@ class RewriteInfo(object):
 
         self.cookie_rewriter = cookie_rewriter
 
-        self._fill_text_type_and_charset()
-        self._resolve_text_type()
+        if self.record:
+            self._fill_text_type_and_charset()
+            self._resolve_text_type()
 
     def _fill_text_type_and_charset(self):
         content_type = self.record.http_headers.get_header('Content-Type')

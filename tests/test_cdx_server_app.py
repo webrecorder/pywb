@@ -8,10 +8,10 @@ import webtest
 
 from six.moves.urllib.parse import urlencode
 
-from pywb.cdx.cdxobject import CDXObject
+from pywb.warcserver.index.cdxobject import CDXObject
 
-from pywb.webagg.test.testutils import BaseTestClass
-from pywb.webagg.autoapp import AutoConfigApp
+from pywb.warcserver.test.testutils import BaseTestClass
+from pywb.warcserver.warcserver import WarcServer
 
 
 # ============================================================================
@@ -20,7 +20,7 @@ class TestCDXApp(BaseTestClass):
     def setup_class(cls):
         super(TestCDXApp, cls).setup_class()
         config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config_test.yaml')
-        cls.testapp = webtest.TestApp(AutoConfigApp(config_file=config_file))
+        cls.testapp = webtest.TestApp(WarcServer(config_file=config_file))
 
     def query(self, url, is_error=False, **params):
         params['url'] = url

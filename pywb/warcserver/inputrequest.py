@@ -86,10 +86,11 @@ class DirectWSGIInputRequest(object):
                                         buffered_stream=buffered_stream,
                                         environ=self.env)
 
-        if post_query.append_post_query(url) != url:
+        new_url = post_query.append_post_query(url)
+        if new_url != url:
             self.env['wsgi.input'] = buffered_stream
 
-        return url
+        return new_url
 
     def get_full_request_uri(self):
         req_uri = self.env.get('REQUEST_URI')
@@ -246,7 +247,7 @@ class PostQueryExtractor(object):
         else:
             post_query = base64.b64encode(post_query)
             post_query = to_native_str(post_query)
-            post_query = '&__wb_post_data=' + post_query
+            post_query = '__wb_post_data=' + post_query
 
         self.post_query = post_query
 

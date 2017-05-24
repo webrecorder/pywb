@@ -122,7 +122,7 @@ directory structure expected by pywb
         self._cdx_index(cdx_file, [self.archive_dir])
 
     def _cdx_index(self, out, input_, rel_root=None):
-        from pywb.warc.cdxindexer import write_multi_cdx_index
+        from pywb.indexer.cdxindexer import write_multi_cdx_index
 
         options = dict(append_post=True,
                        cdxj=True,

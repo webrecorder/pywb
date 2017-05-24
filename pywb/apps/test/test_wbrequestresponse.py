@@ -1,4 +1,4 @@
-from pywb.framework.wbrequestresponse import WbResponse
+from pywb.apps.wbrequestresponse import WbResponse
 from warcio.statusandheaders import StatusAndHeaders
 
 

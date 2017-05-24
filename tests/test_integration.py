@@ -1,6 +1,6 @@
 from .base_config_test import BaseConfigTest, fmod
 
-from pywb.cdx.cdxobject import CDXObject
+from pywb.warcserver.index.cdxobject import CDXObject
 
 
 # ============================================================================

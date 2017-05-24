@@ -3,7 +3,7 @@ import os
 
 from pywb.utils.loaders import LocalFileLoader
 
-from pywb.framework.wbrequestresponse import WbResponse
+from pywb.apps.wbrequestresponse import WbResponse
 
 
 #=================================================================

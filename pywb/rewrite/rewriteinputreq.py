@@ -1,4 +1,4 @@
-from pywb.webagg.inputrequest import DirectWSGIInputRequest
+from pywb.warcserver.inputrequest import DirectWSGIInputRequest
 from pywb.utils.loaders import extract_client_cookie
 
 from six import iteritems

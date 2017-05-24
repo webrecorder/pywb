@@ -3,9 +3,9 @@ from gevent import monkey; monkey.patch_all(thread=False)
 import pytest
 import webtest
 
-from pywb.webagg.test.testutils import BaseTestClass
+from pywb.warcserver.test.testutils import BaseTestClass
 
-from pywb.urlrewrite.frontendapp import FrontEndApp
+from pywb.apps.frontendapp import FrontEndApp
 import os
 
 

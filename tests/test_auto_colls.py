@@ -17,16 +17,16 @@ from pytest import raises
 from mock import patch
 
 from pywb import get_test_dir
-from pywb.webagg.test.testutils import TempDirTests, BaseTestClass
+from pywb.warcserver.test.testutils import TempDirTests, BaseTestClass
 
 from pywb.manager.manager import main
 
 import pywb.manager.autoindex
 
-from pywb.warc.cdxindexer import main as cdxindexer_main
-from pywb.cdx.cdxobject import CDXObject
+from pywb.indexer.cdxindexer import main as cdxindexer_main
+from pywb.warcserver.index.cdxobject import CDXObject
 
-from pywb.urlrewrite.frontendapp import FrontEndApp
+from pywb.apps.frontendapp import FrontEndApp
 
 
 #=============================================================================

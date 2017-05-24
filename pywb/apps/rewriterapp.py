@@ -1,9 +1,12 @@
 import requests
 
+from werkzeug.http import HTTP_STATUS_CODES
+from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
+
 #from pywb.rewrite.rewrite_amf import RewriteAMFMixin
 #from pywb.rewrite.rewrite_dash import RewriteDASHMixin
 #from pywb.rewrite.rewrite_content import RewriteContent
-from pywb.urlrewrite.rewriter import DefaultRewriter
+from pywb.rewrite.default_rewriter import DefaultRewriter
 
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter, SchemeOnlyUrlRewriter
@@ -16,18 +19,14 @@ from warcio.timeutils import http_date_to_timestamp
 from warcio.bufferedreaders import BufferedReader
 from warcio.recordloader import ArcWarcRecordLoader
 
-from pywb.webagg.utils import BUFF_SIZE
+from pywb.warcserver.index.cdxobject import CDXObject
+from pywb.apps.wbrequestresponse import WbResponse
 
-from pywb.cdx.cdxobject import CDXObject
-from pywb.framework.wbrequestresponse import WbResponse
+from pywb.warcserver.utils import BUFF_SIZE
+from pywb.warcserver.utils import MementoUtils
 
-from pywb.webagg.utils import MementoUtils
-
-from werkzeug.http import HTTP_STATUS_CODES
-from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
-
-from pywb.urlrewrite.rewriteinputreq import RewriteInputRequest
-from pywb.urlrewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView, BaseInsertView
+from pywb.rewrite.rewriteinputreq import RewriteInputRequest
+from pywb.rewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView, BaseInsertView
 
 
 from io import BytesIO
@@ -71,7 +70,7 @@ class RewriterApp(object):
         #frame_type = 'inverse' if framed_replay else False
 
         #self.content_rewriter = Rewriter(is_framed_replay=frame_type)
-        self.content_rw = DefaultRewriter('pkg://pywb/rules.yaml', self.replay_mod)
+        self.content_rw = DefaultRewriter(replay_mod=self.replay_mod)
 
         if not jinja_env:
             jinja_env = JinjaEnv(globals={'static_path': 'static'})
