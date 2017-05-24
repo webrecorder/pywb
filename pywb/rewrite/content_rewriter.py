@@ -10,7 +10,6 @@ import webencodings
 import tempfile
 
 from pywb.warcserver.utils import StreamIter, BUFF_SIZE
-from pywb.rewrite.cookie_rewriter import ExactPathCookieRewriter
 
 from pywb.utils.loaders import load_yaml_config
 
@@ -28,9 +27,6 @@ class BaseContentRewriter(object):
 
     def add_rewriter(self, rw):
         self.all_rewriters[rw.name] = rw
-
-    def get_rewriter(self, url, text_type):
-        return self.all_rewriters.get(text_type)
 
     def load_rules(self, filename):
         config = load_yaml_config(filename)
@@ -157,7 +153,7 @@ class BaseContentRewriter(object):
                  head_insert_func=None,
                  cdx=None):
 
-        rwinfo = RewriteInfo(record, self.get_rewrite_types(), url_rewriter, cookie_rewriter)
+        rwinfo = RewriteInfo(record, self, url_rewriter, cookie_rewriter)
         content_rewriter = None
 
         if rwinfo.should_rw_content():
@@ -259,13 +255,13 @@ class StreamingRewriter(object):
 class RewriteInfo(object):
     TAG_REGEX = re.compile(b'^\s*\<')
 
-    def __init__(self, record, rewrite_types, url_rewriter, cookie_rewriter):
+    def __init__(self, record, content_rewriter, url_rewriter, cookie_rewriter=None):
         self.record = record
 
         self._content_stream = None
         self.is_content_rw = False
 
-        self.rewrite_types = rewrite_types
+        self.rewrite_types = content_rewriter.get_rewrite_types()
 
         self.text_type = None
         self.charset = None
@@ -273,7 +269,9 @@ class RewriteInfo(object):
         self.url_rewriter = url_rewriter
 
         if not cookie_rewriter:
-            cookie_rewriter = ExactPathCookieRewriter(url_rewriter)
+            cookie_rw_class = content_rewriter.all_rewriters.get('cookie')
+            if cookie_rw_class:
+                cookie_rewriter = cookie_rw_class(url_rewriter)
 
         self.cookie_rewriter = cookie_rewriter
 

@@ -8,6 +8,7 @@ from pywb.rewrite.regex_rewriters import JSLinkAndLocationRewriter, JSLinkOnlyRe
 from pywb.rewrite.regex_rewriters import JSLocationOnlyRewriter, JSNoneRewriter
 
 from pywb.rewrite.header_rewriter import PrefixHeaderRewriter
+from pywb.rewrite.cookie_rewriter import HostScopeCookieRewriter
 
 from pywb.rewrite.jsonp_rewriter import JSONPRewriter
 
@@ -20,6 +21,7 @@ from pywb.rewrite.rewrite_amf import RewriteAMF
 class DefaultRewriter(BaseContentRewriter):
     all_rewriters = {
         'header': PrefixHeaderRewriter,
+        'cookie': HostScopeCookieRewriter,
 
         'html': HTMLRewriter,
         'html-banner-only': HTMLInsertOnlyRewriter,
