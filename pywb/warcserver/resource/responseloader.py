@@ -22,6 +22,7 @@ import six
 import itertools
 import json
 import glob
+import datetime
 
 from requests.models import PreparedRequest
 from requests.packages import urllib3
@@ -41,7 +42,7 @@ class BaseLoader(object):
 
         warc_headers, other_headers, stream = entry
 
-        source = self._get_provenance(cdx)
+        source = self._get_source_id(cdx)
 
         out_headers = {}
         out_headers['WebAgg-Type'] = 'warc'
@@ -49,6 +50,9 @@ class BaseLoader(object):
 
         out_headers['WebAgg-Cdx'] = to_native_str(cdx.to_cdxj().rstrip())
         out_headers['WebAgg-Source-Coll'] = source
+
+        if params.get('recorder_skip'):
+            out_headers['Recorder-Skip'] = '1'
 
         if not warc_headers:
             if other_headers:
@@ -91,7 +95,7 @@ class BaseLoader(object):
 
         return out_headers, streamiter
 
-    def _get_provenance(self, cdx):
+    def _get_source_id(self, cdx):
         return quote(cdx.get('source', ''), safe=':/')
 
     def _set_content_len(self, content_len_str, headers, existing_len):
@@ -366,7 +370,9 @@ class LiveWebLoader(BaseLoader):
         warc_headers['WARC-Date'] = datetime_to_iso_date(dt)
 
         if not cdx.get('is_live'):
-            warc_headers['WARC-Provenance'] = self._get_provenance(cdx)
+            now = datetime.datetime.utcnow()
+            warc_headers['WARC-Recorded-From-URI'] = cdx.get('load_url')
+            warc_headers['WARC-Recorded-On-Date'] = datatime_to_iso_date(now)
 
         if remote_ip:
             warc_headers['WARC-IP-Address'] = remote_ip

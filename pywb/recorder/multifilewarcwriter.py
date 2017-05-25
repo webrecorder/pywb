@@ -132,10 +132,14 @@ class MultiFileWARCWriter(BaseWARCWriter):
         params = params or {}
         self._do_write_req_resp(None, record, params)
 
+    def _copy_header(self, from_rec, to_rec, name):
+        header = from_rec.rec_headers.get_header(name)
+        if header:
+            to_rec.rec_headers.add_header(name, header)
+
     def _do_write_req_resp(self, req, resp, params):
-        prov = resp.rec_headers.get_header('WARC-Provenance')
-        if prov:
-            req.rec_headers.add_header(prov)
+        self._copy_header(resp, req, 'WARC-Recorded-From-URI')
+        self._copy_header(resp, req, 'WARC-Recorded-On-Date')
 
         resp = self._check_revisit(resp, params)
         if not resp:
