@@ -4,6 +4,7 @@ from pywb.utils.loaders import load_yaml_config
 import re
 import os
 
+from six import iterkeys
 from six.moves.urllib.parse import urlsplit
 from collections import namedtuple
 
@@ -20,7 +21,8 @@ class FuzzyMatcher(object):
     DEFAULT_MATCH_TYPE = 'prefix'
     DEFAULT_REPLACE_AFTER = '?'
 
-    REMOVE_PARAMS = ['alt_url', 'reverse', 'closest', 'end_key']
+    FUZZY_SKIP_PARAMS = ('alt_url', 'reverse', 'closest', 'end_key',
+                         'url', 'matchType', 'filter')
 
     def __init__(self, filename):
         config = load_yaml_config(filename)
@@ -103,14 +105,15 @@ class FuzzyMatcher(object):
             host = urlsplit(url).netloc
             url = host.split('.', 1)[1]
 
-        params.update({'url': url,
-                       'matchType': matched_rule.match_type,
-                       'filter': filters})
+        fuzzy_params = {'url': url,
+                        'matchType': matched_rule.match_type,
+                        'filter': filters}
 
-        for param in self.REMOVE_PARAMS:
-            params.pop(param, '')
+        for key in iterkeys(params):
+            if key not in self.FUZZY_SKIP_PARAMS:
+                fuzzy_params[key] = params[key]
 
-        return matched_rule
+        return matched_rule, fuzzy_params
 
     def make_regex(self, config):
         if isinstance(config, list):
@@ -148,11 +151,13 @@ class FuzzyMatcher(object):
 
         url = params['url']
 
-        rule = self.get_fuzzy_match(params)
-        if not rule:
+        res = self.get_fuzzy_match(params)
+        if not res:
             return
 
-        new_iter, errs = index_source(params)
+        rule, fuzzy_params = res
+
+        new_iter, errs = index_source(fuzzy_params)
 
         for cdx in new_iter:
             if self.allow_fuzzy_result(rule, url, cdx):
