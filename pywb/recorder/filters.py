@@ -86,6 +86,9 @@ class CollectionFilter(SkipNothingFilter):
         return False
 
     def skip_response(self, path, req_headers, resp_headers):
+        if resp_headers.get('Recorder-Skip') == '1':
+            return True
+
         path = path[1:].split('/', 1)[0]
 
         rx = self.rx_accept_map.get(path)
