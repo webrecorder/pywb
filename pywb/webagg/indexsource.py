@@ -259,6 +259,7 @@ class RedisIndexSource(BaseIndexSource):
         key = res_template(member_key, params)
 
         keys = self.redis.smembers(key)
+        params['scan:' + key] = keys
 
         match_templ = match_templ.encode('utf-8')
 

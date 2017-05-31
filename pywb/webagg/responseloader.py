@@ -48,11 +48,12 @@ class BaseLoader(object):
         out_headers['WebAgg-Type'] = 'warc'
         out_headers['Content-Type'] = 'application/warc-record'
 
-        out_headers['WebAgg-Cdx'] = to_native_str(cdx.to_cdxj().rstrip())
-        out_headers['WebAgg-Source-Coll'] = source
-
         if params.get('recorder_skip'):
             out_headers['Recorder-Skip'] = '1'
+            cdx['recorder_skip'] = '1'
+
+        out_headers['WebAgg-Cdx'] = to_native_str(cdx.to_cdxj().rstrip())
+        out_headers['WebAgg-Source-Coll'] = source
 
         if not warc_headers:
             if other_headers:
