@@ -438,8 +438,8 @@ class LiveWebLoader(BaseLoader):
 
         if not cdx.get('is_live'):
             now = datetime.datetime.utcnow()
-            warc_headers['WARC-Recorded-From-URI'] = cdx.get('load_url')
-            warc_headers['WARC-Recorded-On-Date'] = datetime_to_iso_date(now)
+            warc_headers['WARC-Source-URI'] = cdx.get('load_url')
+            warc_headers['WARC-Creation-Date'] = datetime_to_iso_date(now)
 
         if remote_ip:
             warc_headers['WARC-IP-Address'] = remote_ip

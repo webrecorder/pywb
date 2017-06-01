@@ -302,7 +302,8 @@ class RespWrapper(Wrapper):
             else:
                 skipping = any(x.skip_response(self.path,
                                                self.req.headers,
-                                               self.headers)
+                                               self.headers,
+                                               self.params)
                                 for x in self.skip_filters)
 
             if not skipping:

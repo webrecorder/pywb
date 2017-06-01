@@ -63,7 +63,7 @@ class SkipNothingFilter(object):
     def skip_request(self, path, req_headers):
         return False
 
-    def skip_response(self, path, req_headers, resp_headers):
+    def skip_response(self, path, req_headers, resp_headers, params):
         return False
 
 
@@ -85,7 +85,7 @@ class CollectionFilter(SkipNothingFilter):
 
         return False
 
-    def skip_response(self, path, req_headers, resp_headers):
+    def skip_response(self, path, req_headers, resp_headers, params):
         if resp_headers.get('Recorder-Skip') == '1':
             return True
 

@@ -95,8 +95,8 @@ class BaseAggregator(object):
         raise NotImplemented()
 
     def get_source_list(self, params):
-        srcs = self._iter_sources(params)
-        result = [(name, str(value)) for name, value in srcs]
+        sources = self._iter_sources(params)
+        result = [(name, str(value)) for name, value in sources]
         result = {'sources': dict(result)}
         return result
 
@@ -105,30 +105,51 @@ class BaseAggregator(object):
 class BaseSourceListAggregator(BaseAggregator):
     def __init__(self, sources, **kwargs):
         self.sources = sources
+        self.sources_key = kwargs.get('sources_key', 'sources')
+        self.invert_sources = kwargs.get('invert_sources', False)
 
     def get_all_sources(self, params):
         return self.sources
 
     def _iter_sources(self, params):
+        invert_sources = self.invert_sources
+        sel_sources = params.get(self.sources_key)
+        if sel_sources and sel_sources[0] == '!':
+            invert_sources = True
+            sel_sources = sel_sources[1:]
+
+        if not sel_sources or sel_sources == '*':
+            if not invert_sources:
+                return six.iteritems(self.get_all_sources(params))
+            else:
+                return iter([])
+
+        if not invert_sources:
+            return self.yield_sources(sel_sources, params)
+        else:
+            return self.yield_invert_sources(sel_sources, params)
+
+    def yield_sources(self, sel_sources, params):
         sources = self.get_all_sources(params)
-        srcs_list = params.get('sources')
-        if not srcs_list or srcs_list == '*':
-            return sources.items()
+        sel_sources = tuple(sel_sources.split(','))
+        for name in sel_sources:
+            if name in sources:
+                yield (name, sources[name])
 
-        sel_sources = tuple(srcs_list.split(','))
-
-        def yield_sources(sources, sel_sources, params):
-            for name in sel_sources:
+            elif ':' in name:
+                name, param = name.split(':', 1)
                 if name in sources:
+                    params['param.' + name + '.src_coll'] = param
                     yield (name, sources[name])
 
-                elif ':' in name:
-                    name, param = name.split(':', 1)
-                    if name in sources:
-                        params['param.' + name + '.src_coll'] = param
-                        yield (name, sources[name])
+    def yield_invert_sources(self, sel_sources, params):
+        sources = self.get_all_sources(params)
+        sel_sources = tuple([src.split(':', 1)[0]
+                             for src in sel_sources.split(',')])
 
-        return yield_sources(sources, sel_sources, params)
+        for name in six.iterkeys(sources):
+            if name not in sel_sources:
+                yield (name, sources[name])
 
 
 #=============================================================================
