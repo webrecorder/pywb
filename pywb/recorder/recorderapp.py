@@ -225,7 +225,13 @@ class RecorderApp(object):
                 req_stream.out.close()
             return self.send_error(e, start_response)
 
-        start_response('200 OK', list(res.headers.items()))
+        if not skipping:
+            skipping = any(x.skip_response(path,
+                                           req_stream.headers,
+                                           res.headers,
+                                           params)
+                            for x in self.skip_filters)
+
 
         if not skipping:
             resp_stream = RespWrapper(res.raw,
@@ -233,14 +239,15 @@ class RecorderApp(object):
                                       req_stream,
                                       params,
                                       self.write_queue,
-                                      self.skip_filters,
                                       path,
                                       self.create_buff_func)
+
         else:
             resp_stream = res.raw
 
         resp_iter = StreamIter(resp_stream)
 
+        start_response('200 OK', list(res.headers.items()))
         return resp_iter
 
 
@@ -267,13 +274,12 @@ class Wrapper(object):
 #==============================================================================
 class RespWrapper(Wrapper):
     def __init__(self, stream, headers, req,
-                 params, queue, skip_filters, path, create_func):
+                 params, queue, path, create_func):
 
         super(RespWrapper, self).__init__(stream, params, create_func)
         self.headers = headers
         self.req = req
         self.queue = queue
-        self.skip_filters = skip_filters
         self.path = path
 
     def close(self):
@@ -299,11 +305,6 @@ class RespWrapper(Wrapper):
         try:
             if self.interrupted:
                 skipping = True
-            else:
-                skipping = any(x.skip_response(self.path,
-                                               self.req.headers,
-                                               self.headers)
-                                for x in self.skip_filters)
 
             if not skipping:
                 entry = (self.req.headers, self.req.out,

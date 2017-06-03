@@ -30,6 +30,10 @@ aggs = {'simple': SimpleAggregator(sources),
         'gevent': GeventTimeoutAggregator(sources, timeout=5.0),
        }
 
+aggs_inv = {'simple': SimpleAggregator(sources, invert_sources=True),
+            'gevent': GeventTimeoutAggregator(sources, invert_sources=True, timeout=5.0),
+           }
+
 agg_tm = {'gevent': GeventTimeoutAggregator(sources, timeout=0.0)}
 
 nf = {'notfound': FileIndexSource(to_path('testdata/not-found-x'))}
@@ -104,6 +108,30 @@ class TestMemAgg(MementoOverrideTests, BaseTestClass):
         assert(to_json_list(res) == exp)
         assert(errs == {})
 
+
+    @pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
+    @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('agg_test_5'))
+    def test_mem_agg_index_5(self, agg):
+        url = 'http://vvork.com/'
+        res, errs = agg(dict(url=url, closest='20141001', limit=2, sources='!rhiz,ait'))
+
+
+        exp = [{'timestamp': '20141018133107', 'load_url': 'http://web.archive.org/web/20141018133107id_/http://vvork.com/', 'source': 'ia'}]
+
+        assert(to_json_list(res) == exp)
+        assert(errs == {'bl': "NotFoundException('http://www.webarchive.org.uk/wayback/archive/http://vvork.com/',)"})
+
+    @pytest.mark.parametrize("agg", list(aggs_inv.values()), ids=list(aggs_inv.keys()))
+    @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('agg_test_5'))
+    def test_mem_agg_index_5_inverse_preset(self, agg):
+        url = 'http://vvork.com/'
+        res, errs = agg(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait'))
+
+
+        exp = [{'timestamp': '20141018133107', 'load_url': 'http://web.archive.org/web/20141018133107id_/http://vvork.com/', 'source': 'ia'}]
+
+        assert(to_json_list(res) == exp)
+        assert(errs == {'bl': "NotFoundException('http://www.webarchive.org.uk/wayback/archive/http://vvork.com/',)"})
 
     @pytest.mark.parametrize("agg", list(agg_nf.values()), ids=list(agg_nf.keys()))
     def test_mem_agg_not_found(self, agg):

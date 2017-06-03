@@ -138,8 +138,8 @@ class MultiFileWARCWriter(BaseWARCWriter):
             to_rec.rec_headers.add_header(name, header)
 
     def _do_write_req_resp(self, req, resp, params):
-        self._copy_header(resp, req, 'WARC-Recorded-From-URI')
-        self._copy_header(resp, req, 'WARC-Recorded-On-Date')
+        self._copy_header(resp, req, 'WARC-Source-URI')
+        self._copy_header(resp, req, 'WARC-Creation-Date')
 
         resp = self._check_revisit(resp, params)
         if not resp:

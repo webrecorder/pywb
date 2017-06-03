@@ -5,6 +5,10 @@ import webtest
 from io import BytesIO
 import requests
 
+from pywb.webagg.handlers import DefaultResourceHandler
+from pywb.webagg.aggregator import SimpleAggregator
+from pywb.webagg.upstreamindexsource import UpstreamMementoIndexSource, UpstreamAggIndexSource
+
 from warcio.recordloader import ArcWarcRecordLoader
 
 from pywb.warcserver.handlers import DefaultResourceHandler

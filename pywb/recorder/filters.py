@@ -59,16 +59,22 @@ class WriteDupePolicy(object):
 # ============================================================================
 # Skip Record Filters
 # ============================================================================
-class SkipNothingFilter(object):
+class SkipDefaultFilter(object):
     def skip_request(self, path, req_headers):
+        if req_headers.get('Recorder-Skip') == '1':
+            return True
+
         return False
 
-    def skip_response(self, path, req_headers, resp_headers):
+    def skip_response(self, path, req_headers, resp_headers, params):
+        if resp_headers.get('Recorder-Skip') == '1':
+            return True
+
         return False
 
 
 # ============================================================================
-class CollectionFilter(SkipNothingFilter):
+class CollectionFilter(SkipDefaultFilter):
     def __init__(self, accept_colls):
         self.rx_accept_map = {}
 
@@ -79,14 +85,9 @@ class CollectionFilter(SkipNothingFilter):
             for name in accept_colls:
                 self.rx_accept_map[name] = re.compile(accept_colls[name])
 
-    def skip_request(self, path, req_headers):
-        if req_headers.get('Recorder-Skip') == '1':
-            return True
-
-        return False
-
-    def skip_response(self, path, req_headers, resp_headers):
-        if resp_headers.get('Recorder-Skip') == '1':
+    def skip_response(self, path, req_headers, resp_headers, params):
+        if super(CollectionFilter, self).skip_response(path, req_headers,
+                                                       resp_headers, params):
             return True
 
         path = path[1:].split('/', 1)[0]
@@ -102,8 +103,12 @@ class CollectionFilter(SkipNothingFilter):
 
 
 # ============================================================================
-class SkipRangeRequestFilter(SkipNothingFilter):
+class SkipRangeRequestFilter(SkipDefaultFilter):
     def skip_request(self, path, req_headers):
+        if super(SkipRangeRequestFilter, self).skip_request(path,
+                                                            req_headers):
+            return True
+
         range_ = req_headers.get('Range')
         if range_ and not range_.lower().startswith('bytes=0-'):
             return True
