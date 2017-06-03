@@ -110,7 +110,7 @@ class TestMemAgg(MementoOverrideTests, BaseTestClass):
 
 
     @pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
-    @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('agg_test_5'))
+    @patch('pywb.warcserver.index.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('agg_test_5'))
     def test_mem_agg_index_5(self, agg):
         url = 'http://vvork.com/'
         res, errs = agg(dict(url=url, closest='20141001', limit=2, sources='!rhiz,ait'))
@@ -122,7 +122,7 @@ class TestMemAgg(MementoOverrideTests, BaseTestClass):
         assert(errs == {'bl': "NotFoundException('http://www.webarchive.org.uk/wayback/archive/http://vvork.com/',)"})
 
     @pytest.mark.parametrize("agg", list(aggs_inv.values()), ids=list(aggs_inv.keys()))
-    @patch('pywb.webagg.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('agg_test_5'))
+    @patch('pywb.warcserver.index.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('agg_test_5'))
     def test_mem_agg_index_5_inverse_preset(self, agg):
         url = 'http://vvork.com/'
         res, errs = agg(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait'))
