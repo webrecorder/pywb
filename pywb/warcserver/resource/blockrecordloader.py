@@ -2,7 +2,7 @@ from warcio.bufferedreaders import DecompressingBufferedReader
 from warcio.recordloader import ArcWarcRecordLoader
 
 from pywb.utils.loaders import BlockLoader
-from pywb.warcserver.utils import BUFF_SIZE
+from pywb.utils.io import BUFF_SIZE
 
 
 #=================================================================

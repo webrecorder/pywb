@@ -16,7 +16,7 @@ from pywb.recorder.multifilewarcwriter import PerRecordWARCWriter, MultiFileWARC
 from pywb.recorder.filters import ExcludeSpecificHeaders, ExcludeHttpOnlyCookieHeaders
 from pywb.recorder.filters import SkipDupePolicy, WriteDupePolicy, WriteRevisitDupePolicy
 
-from pywb.warcserver.utils import MementoUtils
+from pywb.utils.memento import MementoUtils
 
 from pywb.warcserver.index.cdxobject import CDXObject
 

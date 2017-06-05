@@ -44,7 +44,7 @@ import six
 from six.moves.urllib.parse import urlsplit, urlunsplit
 from six.moves.urllib.parse import quote_plus, quote, unquote_plus
 
-from pywb.utils.loaders import to_native_str
+from warcio.utils import to_native_str
 
 
 #=================================================================

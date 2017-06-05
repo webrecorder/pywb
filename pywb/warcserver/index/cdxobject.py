@@ -10,7 +10,7 @@ from six.moves.urllib.parse import urlencode, quote
 from six.moves.urllib.parse import parse_qs
 
 from pywb.utils.wbexception import WbException
-from pywb.utils.loaders import to_native_str
+from warcio.utils import to_native_str
 
 from json import loads as json_decode
 from json import dumps as json_encode

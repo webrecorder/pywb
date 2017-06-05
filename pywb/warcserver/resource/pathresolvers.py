@@ -1,7 +1,7 @@
 import redis
 
+from warcio.utils import to_native_str
 from pywb.utils.binsearch import iter_exact
-from pywb.utils.loaders import to_native_str
 
 from pywb.warcserver.index.indexsource import RedisIndexSource
 

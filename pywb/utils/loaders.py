@@ -6,6 +6,7 @@ local and remote access
 import os
 import hmac
 import requests
+import yaml
 
 import six
 from six.moves.urllib.request import pathname2url, url2pathname
@@ -18,7 +19,6 @@ import cgi
 
 from io import open, BytesIO
 from warcio.limitreader import LimitReader
-from warcio.utils import to_native_str
 
 try:
     from boto import connect_s3
@@ -46,9 +46,8 @@ def load(filename):
     return BlockLoader().load(filename)
 
 
-#=================================================================
+# =============================================================================
 def load_yaml_config(config_file):
-    import yaml
     config = None
     configdata = None
     try:
@@ -57,6 +56,29 @@ def load_yaml_config(config_file):
     finally:
         if configdata:
             configdata.close()
+
+    return config
+
+
+# =============================================================================
+def load_overlay_config(main_env_var, main_default_file='',
+                        overlay_env_var='', overlay_file=''):
+
+    configfile = os.environ.get(main_env_var, main_default_file)
+    config = None
+
+    if configfile:
+        configfile = os.path.expandvars(configfile)
+
+        config = load_yaml_config(configfile)
+
+    config = config or {}
+
+    overlay_configfile = os.environ.get(overlay_env_var, overlay_file)
+
+    if overlay_configfile:
+        overlay_configfile = os.path.expandvars(overlay_configfile)
+        config.update(load_yaml_config(overlay_configfile))
 
     return config
 

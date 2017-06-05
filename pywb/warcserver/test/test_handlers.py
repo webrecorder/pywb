@@ -23,7 +23,7 @@ from pywb.warcserver.index.aggregator import GeventTimeoutAggregator, SimpleAggr
 from pywb.warcserver.index.aggregator import DirectoryIndexSource
 
 from pywb.warcserver.basewarcserver import BaseWarcServer
-from pywb.warcserver.utils import MementoUtils
+from pywb.utils.memento import MementoUtils
 
 
 sources = {

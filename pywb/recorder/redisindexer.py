@@ -4,12 +4,13 @@ from io import BytesIO
 import os
 
 from pywb.utils.canonicalize import calc_search_range
+from pywb.utils.format import res_template
+
 from pywb.indexer.cdxindexer import write_cdx_index
 
 from pywb.warcserver.index.cdxobject import CDXObject
 from pywb.warcserver.index.indexsource import RedisIndexSource
 from pywb.warcserver.index.aggregator import SimpleAggregator
-from pywb.warcserver.utils import res_template
 
 from pywb.recorder.filters import WriteRevisitDupePolicy
 

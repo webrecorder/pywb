@@ -12,7 +12,7 @@ from collections import deque
 from itertools import chain
 
 from pywb.utils.wbexception import NotFoundException, WbException
-from pywb.warcserver.utils import ParamFormatter, res_template
+from pywb.utils.format import ParamFormatter, res_template
 
 from pywb.warcserver.index.indexsource import FileIndexSource, RedisIndexSource
 from pywb.warcserver.index.cdxops import process_cdx

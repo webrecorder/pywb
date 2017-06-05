@@ -7,8 +7,8 @@ from warcio.timeutils import timestamp_now, pad_timestamp, PAD_14_DOWN
 
 from pywb.warcserver.index.cdxobject import CDXObject
 
-from pywb.warcserver.utils import ParamFormatter, res_template
-from pywb.warcserver.utils import MementoUtils
+from pywb.utils.format import ParamFormatter, res_template
+from pywb.utils.memento import MementoUtils
 
 import redis
 

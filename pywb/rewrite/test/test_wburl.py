@@ -245,7 +245,7 @@ Exception: ('Invalid WbUrl: ', '')
 from pywb.rewrite.wburl import WbUrl
 from six.moves.urllib.parse import quote_plus, unquote_plus
 
-from pywb.utils.loaders import to_native_str
+from warcio.utils import to_native_str
 
 from io import StringIO
 

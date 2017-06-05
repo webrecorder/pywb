@@ -5,7 +5,7 @@ from pywb.utils.wbexception import NotFoundException
 from pywb.warcserver.index.cdxobject import CDXObject
 from pywb.warcserver.index.indexsource import BaseIndexSource, RemoteIndexSource
 from pywb.warcserver.resource.responseloader import LiveWebLoader
-from pywb.warcserver.utils import ParamFormatter, res_template
+from pywb.utils.format import ParamFormatter, res_template
 
 
 #=============================================================================

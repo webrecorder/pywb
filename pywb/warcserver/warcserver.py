@@ -1,7 +1,6 @@
-from pywb.utils.loaders import load_yaml_config
+from pywb.utils.loaders import load_yaml_config, load_overlay_config
 
 from pywb.warcserver.basewarcserver import BaseWarcServer
-from pywb.warcserver.utils import load_config
 
 from pywb.warcserver.index.aggregator import CacheDirectoryIndexSource, RedisMultiKeyIndexSource
 from pywb.warcserver.index.aggregator import GeventTimeoutAggregator, SimpleAggregator
@@ -40,7 +39,7 @@ class WarcServer(BaseWarcServer):
 
         if config_file:
             try:
-                file_config = load_config('PYWB_CONFIG_FILE', config_file)
+                file_config = load_overlay_config('PYWB_CONFIG_FILE', config_file)
                 config.update(file_config)
             except Exception as e:
                 if not custom_config:

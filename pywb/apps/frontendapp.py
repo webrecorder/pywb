@@ -7,7 +7,9 @@ from werkzeug.wsgi import pop_path_info
 from six.moves.urllib.parse import urljoin
 from six import iteritems
 
-from pywb.utils.loaders import load_yaml_config, to_native_str
+from warcio.utils import to_native_str
+
+from pywb.utils.loaders import load_yaml_config
 from pywb.utils.geventserver import GeventServer
 
 from pywb.warcserver.warcserver import WarcServer

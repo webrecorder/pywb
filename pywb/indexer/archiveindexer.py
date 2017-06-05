@@ -1,7 +1,7 @@
 from pywb.utils.canonicalize import canonicalize
 
 from pywb.warcserver.inputrequest import PostQueryExtractor
-from pywb.warcserver.utils import BUFF_SIZE
+from pywb.utils.io import BUFF_SIZE
 
 from warcio.timeutils import iso_date_to_timestamp
 from warcio.archiveiterator import ArchiveIterator

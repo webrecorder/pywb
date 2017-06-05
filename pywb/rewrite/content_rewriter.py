@@ -9,7 +9,7 @@ import re
 import webencodings
 import tempfile
 
-from pywb.warcserver.utils import StreamIter, BUFF_SIZE
+from pywb.utils.io import StreamIter, BUFF_SIZE
 
 from pywb.utils.loaders import load_yaml_config
 

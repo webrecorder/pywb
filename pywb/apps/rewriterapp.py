@@ -14,6 +14,8 @@ from pywb.rewrite.url_rewriter import UrlRewriter, SchemeOnlyUrlRewriter
 from pywb.utils.wbexception import WbException
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.loaders import extract_client_cookie
+from pywb.utils.io import BUFF_SIZE
+from pywb.utils.memento import MementoUtils
 
 from warcio.timeutils import http_date_to_timestamp
 from warcio.bufferedreaders import BufferedReader
@@ -21,9 +23,6 @@ from warcio.recordloader import ArcWarcRecordLoader
 
 from pywb.warcserver.index.cdxobject import CDXObject
 from pywb.apps.wbrequestresponse import WbResponse
-
-from pywb.warcserver.utils import BUFF_SIZE
-from pywb.warcserver.utils import MementoUtils
 
 from pywb.rewrite.rewriteinputreq import RewriteInputRequest
 from pywb.rewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView, BaseInsertView

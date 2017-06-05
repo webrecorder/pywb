@@ -1,11 +1,11 @@
 from pywb.utils.wbexception import BadRequestException, WbException
 from pywb.utils.wbexception import NotFoundException
+from pywb.utils.memento import MementoUtils
 
 from warcio.recordloader import ArchiveLoadFailed
 
 from pywb.warcserver.index.fuzzymatcher import FuzzyMatcher
 from pywb.warcserver.resource.responseloader import  WARCPathLoader, LiveWebLoader, VideoLoader
-from pywb.warcserver.utils import MementoUtils
 
 import six
 
