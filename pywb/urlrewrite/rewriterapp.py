@@ -296,6 +296,7 @@ class RewriterApp(object):
         response = WbResponse(status_headers, gen)
 
         if is_proxy:
+            response.status_headers.remove_header('Content-Security-Policy-Report-Only')
             response.status_headers.remove_header('Content-Security-Policy')
             response.status_headers.remove_header('X-Frame-Options')
 

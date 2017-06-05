@@ -1,6 +1,6 @@
 from pywb.utils.binsearch import iter_range
 from warcio.timeutils import timestamp_to_http_date, http_date_to_timestamp
-from warcio.timeutils import timestamp_now
+from warcio.timeutils import timestamp_now, pad_timestamp, PAD_14_DOWN
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.wbexception import NotFoundException
 
@@ -379,6 +379,10 @@ class MementoIndexSource(BaseIndexSource):
     def load_index(self, params):
         timestamp = params.get('closest')
 
+        # can't do fuzzy matching via memento
+        if params.get('is_fuzzy'):
+            raise NotFoundException(params['url'] + '*')
+
         if not timestamp:
             return self.handle_timemap(params)
         else:
@@ -430,4 +434,83 @@ class MementoIndexSource(BaseIndexSource):
         return cls(config['timegate_url'],
                    config['timemap_url'],
                    config['replay_url'])
+
+
+#=============================================================================
+class WBMementoIndexSource(MementoIndexSource):
+    WBURL_MATCH = re.compile('([0-9]{0,14}(?:\w+_)?)?/{0,3}(.*)')
+    WAYBACK_ORIG_SUFFIX = '{timestamp}im_/{url}'
+
+    def __init__(self, replay_url):
+        super(WBMementoIndexSource, self).__init__('', '', replay_url)
+        self.prefix = replay_url.split('{', 1)[0]
+
+    def _get_referrer(self, params):
+        ref_url = super(WBMementoIndexSource, self)._get_referrer(params)
+        if ref_url:
+            timestamp = params.get('closest', '20')
+            timestamp = pad_timestamp(timestamp, PAD_14_DOWN)
+            ref_url = self._get_replay_url(timestamp, ref_url)
+            ref_url = ref_url.replace('im_/', '/')
+
+        return ref_url
+
+    def _get_timemap_headers(self, params):
+        ref_url = self._get_referrer(params)
+        if ref_url:
+            return {'Referer': ref_url}
+        else:
+            return {}
+
+    def _extract_location(self, location):
+        if not location or not location.startswith(self.prefix):
+            raise NotFoundException(url)
+
+        m = self.WBURL_MATCH.search(location[len(self.prefix):])
+        if not m:
+            raise NotFoundException(url)
+
+        url = m.group(2)
+        timestamp = m.group(1)
+        return url, timestamp, location
+
+    def handle_timegate(self, params, timestamp):
+        url = params['url']
+        load_url = self._get_replay_url(timestamp, url)
+        ref_url = self._get_referrer(params)
+
+        try:
+            headers = {}
+            if ref_url:
+                headers = {'Referer': ref_url}
+
+            res = requests.head(load_url, headers=headers)
+        except Exception as e:
+            raise NotFoundException(url)
+
+        if not res.headers.get('Memento-Datetime'):
+            if res.status_code >= 400:
+                raise NotFoundException(url)
+
+            if res.status_code == 302:
+                info = self._extract_location(res.headers.get('Location'))
+            else:
+                info = self._extract_location(res.headers.get('Content-Location'))
+
+            url, timestamp, load_url = info
+
+        cdx = CDXObject()
+        cdx['urlkey'] = canonicalize(url)
+        cdx['timestamp'] = timestamp
+        cdx['url'] = url
+        cdx['load_url'] = load_url
+
+        if ref_url:
+            cdx['set_referrer'] = ref_url
+
+        return iter([cdx])
+
+    @classmethod
+    def _init_id(cls):
+        return 'wb-memento'
 
