@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 """
 This module provides loaders for local file system and over http
 local and remote access
