@@ -66,7 +66,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         dedup_index = WritableRedisIndexer(redis_url=redis_url,
                         file_key_template=file_key_template,
-                        rel_path_template=self.root_dir + '/warcs/',
+                        rel_path_template=to_path(self.root_dir + '/warcs/'),
                         dupe_policy=dupe_policy)
 
         return dedup_index
@@ -293,11 +293,11 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert cdx['urlkey'] == 'org,httpbin)/user-agent'
         assert cdx['mime'] == 'application/json'
         assert cdx['offset'] == '0'
-        assert cdx['filename'].startswith('USER/COLL/')
+        assert cdx['filename'].startswith(to_path('USER/COLL/'))
         assert cdx['filename'].endswith('.warc.gz')
 
         warcs = r.hgetall('USER:COLL:warc')
-        full_path = self.root_dir + '/warcs/' + cdx['filename']
+        full_path = to_path(self.root_dir + '/warcs/' + cdx['filename'])
         assert warcs == {cdx['filename'].encode('utf-8'): full_path.encode('utf-8')}
 
     def test_record_param_user_coll_same_dir(self):
@@ -353,7 +353,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert cdx['urlkey'] == 'org,httpbin)/user-agent'
         assert cdx['mime'] == 'warc/revisit'
         assert cdx['offset'] == '0'
-        assert cdx['filename'].startswith('USER/COLL/')
+        assert cdx['filename'].startswith(to_path('USER/COLL/'))
         assert cdx['filename'].endswith('.warc.gz')
 
         fullwarc = os.path.join(self.root_dir, 'warcs', cdx['filename'])
@@ -439,7 +439,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
     def test_record_multiple_writes_keep_open(self):
         warc_path = to_path(self.root_dir + '/warcs/FOO/ABC-{hostname}-{timestamp}.warc.gz')
 
-        rel_path = self.root_dir + '/warcs/'
+        rel_path = to_path(self.root_dir + '/warcs/')
 
         dedup_index = self._get_dedup_index(user=False)
 
@@ -487,7 +487,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         assert len(writer.fh_cache) == 1
 
-        writer.close_key(self.root_dir + '/warcs/FOO/')
+        writer.close_key(to_path(self.root_dir + '/warcs/FOO/'))
 
         assert len(writer.fh_cache) == 0
 
@@ -504,7 +504,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
     def test_record_multiple_writes_rollover_idle(self):
         warc_path = to_path(self.root_dir + '/warcs/GOO/ABC-{hostname}-{timestamp}.warc.gz')
 
-        rel_path = self.root_dir + '/warcs/'
+        rel_path = to_path(self.root_dir + '/warcs/')
 
         dedup_index = self._get_dedup_index(user=False)
 
