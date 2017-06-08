@@ -50,7 +50,8 @@ class WritableRedisIndexer(RedisIndexSource):
 
         cdxout = BytesIO()
         write_cdx_index(cdxout, stream, filename,
-                        cdxj=True, append_post=True)
+                        cdxj=True, append_post=True,
+                        writer_cls=params.get('writer_cls'))
 
         z_key = res_template(self.redis_key_template, params)
 
