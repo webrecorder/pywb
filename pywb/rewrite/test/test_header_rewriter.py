@@ -113,19 +113,20 @@ X-Archive-Orig-Transfer-Encoding: chunked\r\n\
                    ('Transfer-Encoding', 'chunked'),
                    ('X-Custom', 'test')]
 
-        res = """\
-HTTP/1.0 200 OK\r\n\
-Content-Length: 200000\r\n\
-Content-Type: image/png\r\n\
-Set-Cookie: foo=bar; Path=/warc/20171226/http://example.com/\r\n\
-Set-Cookie: abc=123; Path=/warc/20171226/http://example.com/path.html\r\n\
-Content-Encoding: gzip\r\n\
-X-Archive-Orig-Transfer-Encoding: chunked\r\n\
-X-Archive-Orig-X-Custom: test\r\n\
-"""
         rwinfo = self.do_rewrite('200 OK', headers)
         http_headers = PrefixHeaderRewriter(rwinfo)()
-        assert str(http_headers) == res
+
+        assert(('Content-Length', '200000')) in http_headers.headers
+        assert(('Content-Type', 'image/png')) in http_headers.headers
+
+        assert(('Set-Cookie', 'foo=bar; Path=/warc/20171226/http://example.com/') in http_headers.headers)
+        assert(('Set-Cookie', 'abc=123; Path=/warc/20171226/http://example.com/path.html') in http_headers.headers)
+
+        assert(('Content-Encoding', 'gzip') in http_headers.headers)
+        assert(('X-Archive-Orig-Transfer-Encoding', 'chunked') in http_headers.headers)
+        assert(('X-Archive-Orig-X-Custom', 'test') in http_headers.headers)
+
+        assert(len(http_headers.headers) == 7)
 
         assert rwinfo.text_type == None
         assert rwinfo.charset == None
