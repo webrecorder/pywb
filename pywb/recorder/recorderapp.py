@@ -200,11 +200,14 @@ class RecorderApp(object):
 
         skipping = any(x.skip_request(path, headers) for x in self.skip_filters)
 
+        req_is_wrapped = False
+
         if not skipping:
             req_stream = ReqWrapper(input_buff,
                                     headers,
                                     params,
                                     self.create_buff_func)
+            req_is_wrapped = True
         else:
             req_stream = input_buff
 
@@ -221,7 +224,7 @@ class RecorderApp(object):
                                  stream=True)
             res.raise_for_status()
         except Exception as e:
-            if not skipping:
+            if req_is_wrapped:
                 req_stream.out.close()
             return self.send_error(e, start_response)
 
@@ -244,6 +247,8 @@ class RecorderApp(object):
 
         else:
             resp_stream = res.raw
+            if req_is_wrapped:
+                req_stream.out.close()
 
         resp_iter = StreamIter(resp_stream)
 
