@@ -86,9 +86,9 @@ class FuzzyMatcher(object):
                 continue
 
             matched_rule = rule
-            groups = m.groups()
-            for f in matched_rule.filter_str:
-                filters.append(f.format(*groups))
+            for g in m.groups():
+                for f in matched_rule.filter_str:
+                    filters.append(f.format(g))
 
             break
 
@@ -190,4 +190,4 @@ class FuzzyMatcher(object):
         # check last path segment
         # if contains '.', likely a file, so fuzzy match!
         last_path = url.split('?', 1)[0].rsplit('/', 1)[-1]
-        return os.path.splitext(last_path)[1]
+        return os.path.splitext(last_path)[1][1:]
