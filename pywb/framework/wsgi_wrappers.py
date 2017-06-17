@@ -86,7 +86,19 @@ class WSGIApp(object):
             error_view = self.wb_router.error_view
 
         if hasattr(exc, 'status'):
-            status = exc.status()
+            if callable(exc.status):
+                status = exc.status()
+            else:
+                status = exc.status
+            # wsgi requires status
+            #  - to have at least 4 characters and
+            #  - to start with a number / integer
+            if type(status) == int:
+                status = '{} Exception {}'.format(status, type(exc).__name__)
+            elif type(status) == str and status[0].isdigit():
+                pass
+            else:
+                status = '500 Internal Server Error'
         else:
             status = '500 Internal Server Error'
 
@@ -96,7 +108,7 @@ class WSGIApp(object):
             err_url = None
 
         if len(exc.args):
-            err_msg = exc.args[0]
+            err_msg = str(exc.args[0])
 
         if print_trace:
             import traceback
@@ -125,7 +137,7 @@ class WSGIApp(object):
 
             #msg = msg.encode('utf-8', 'ignore')
             return WbResponse.text_response(msg,
-                                           status=status)
+                                            status=status)
 
 #=================================================================
 DEFAULT_CONFIG_FILE = 'config.yaml'
