@@ -22,7 +22,7 @@ sudo: false
 
 install:
   - "pip install 'argparse>=1.2.1' --allow-all-external"
-  - pip install boto certauth
+  - pip install boto 'certauth<1.2'
   - pip install git+https://github.com/esnme/ultrajson.git
   - python setup.py -q install
   - pip install coverage pytest-cov coveralls
