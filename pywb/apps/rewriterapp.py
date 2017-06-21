@@ -380,6 +380,7 @@ class RewriterApp(object):
         params = {}
         params['url'] = wb_url.url
         params['closest'] = closest
+        params['matchType'] = 'exact'
 
         if wb_url.mod == 'vi_':
             params['content_type'] = self.VIDEO_INFO_CONTENT_TYPE
