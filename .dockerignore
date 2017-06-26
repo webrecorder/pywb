@@ -7,5 +7,9 @@ dist/
 **/*.egg-info
 **/__pycache__
 **/*.pyc
-
+realCols/
+proxyPywb/
+tests/
+tests_disabled/
+sample_archive/
 
