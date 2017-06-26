@@ -3076,12 +3076,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
         // disable notifications
         init_disable_notifications();
 
+        // add wombat proxy
         init_proxy($wbwindow);
 
-       // override_mutation_obs($wbwindow);
-        // override_window_getcomputedstyle($wbwindow);
-
-        var $wbwindow_noModify = {};
         // expose functions
         var obj = {}
         obj.extract_orig = extract_orig;

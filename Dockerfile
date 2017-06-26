@@ -1,6 +1,6 @@
 FROM python:3.5.2
 
-LABEL maintainer="John Berlin:jberlin@cs.odu.edu"
+MAINTAINER Ilya Kreymer <ikreymer at gmail.com>
 
 RUN mkdir /uwsgi
 COPY uwsgi.ini /uwsgi/
@@ -9,8 +9,6 @@ COPY uwsgi.ini /uwsgi/
 #RUN pip install git+https://github.com/t0m/pyamf.git@python3
 #RUN pip install webassets pyyaml brotlipy
 #RUN pip install six chardet 'requests<2.12' redis jinja2 'surt>=0.3.0' webencodings portalocker
-
-RUN apt-get update
 
 #RUN mkdir /pywb
 WORKDIR /pywb

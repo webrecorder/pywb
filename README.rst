@@ -237,13 +237,52 @@ The `pywb-proxy-demo <https://github.com/ikreymer/pywb-proxy-demo>`_ project als
 Running with any WSGI Container
 -------------------------------
 
-See `Platform spec <https://github.com/webrecorder/platform-spec/wiki>`_ for more details.
+The command-line ``wayback`` utility starts pywb using the standard Python library `WSGIRef <https://docs.python.org/2/library/wsgiref.html>`_ server. This should be sufficient for basic usage and testing, but is not recommended for production. In the future, a different default option will be provided.
 
-This repo contains an implementation for following components:
+Since pywb conforms to the Python `WSGI <http://wsgi.readthedocs.org/en/latest/>`_ specification, it can be run with any standard WSGI container/server
+and can be embedded in larger applications.
+
+When running with a different container, specify ``pywb.apps.wayback`` as the WSGI application module.
+
+For production deployments, `uWSGI <https://uwsgi-docs.readthedocs.org/en/latest/>`_ with gevent is the recommended container and the ``uwsgi.ini and ``run-uwsgi.sh``
+scripts in this repo provides examples of running pywb with uWSGI.
 
 
-* Resource/Memento Aggregator `webagg <webagg/>`_
+Wayback Machine Compatibility
+-----------------------------
 
-* Recorder `recorder <recorder/>`_
+**pywb** is compatible with the standard `Wayback Machine <http://en.wikipedia.org/wiki/Wayback_Machine>`_ url format, which was developed by the Internet Archive:
 
+Replay: ``http://<host>/<collection>/<timestamp>/<original url>``
+
+- ex: http://pywb.herokuapp.com/pywb/20140127171238/http://www.iana.org
+
+- ex: http://web.archive.org/web/20150316213720/http://www.example.com/
+
+Query Listing: ``http://<host>/<collection>/*/<original url>``
+
+- ex: http://pywb.herokuapp.com/pywb/\*/http://iana.org/
+
+- ex: http://web.archive.org/web/\*/http://www.example.com/
+
+
+Additional Reference
+--------------------
+
+-  The `wiki <https://github.com/ikreymer/pywb/wiki>`_ will have
+   additional technical documentation about various aspects of pywb
+
+-  The sample ``config.yaml`` file, although not required, provides a listing of various advanced configuration options:
+   `config.yaml <https://github.com/ikreymer/pywb/blob/master/config.yaml>`_
+
+
+Contributions & Bug Reports
+---------------------------
+
+Users are encouraged to fork and contribute to this project to improve any and all aspects of web archival
+replay and web proxy services.
+
+Please take a look at list of current
+`issues <https://github.com/ikreymer/pywb/issues?state=open>`_ and feel
+free to open new ones.
 

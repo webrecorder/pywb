@@ -1,13 +1,3 @@
-pywb 0.33.2 changelist
-~~~~~~~~~~~~~~~~~~~~~~
-
-* Minor fixes from pull requests:
-   - Better handling of exceptions from in wsgi_wrapper
-   - Fix CommonCrawl tests
-   - Fix broken links in README
-   - Fix travis build (requires certauth<1.2)
-
-
 pywb 0.33.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
