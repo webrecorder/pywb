@@ -56,12 +56,20 @@ from warcio.timeutils import datetime_to_http_date
 from datetime import datetime
 
 import pprint
+from mock import patch
 
 urlrewriter = UrlRewriter('20131010/http://example.com/', '/web/')
 
 
 headerrewriter = HeaderRewriter()
 
+def _repr_format(sh):
+    headers_str = pprint.pformat(sh.headers, indent=2, width=80)
+    return "StatusAndHeaders(protocol = '{0}', statusline = '{1}', \
+headers = {2})".format(sh.protocol, sh.statusline, headers_str)
+
+
+@patch('warcio.statusandheaders.StatusAndHeaders.__repr__', _repr_format)
 def _test_headers(headers, status='200 OK', rewriter=urlrewriter):
     rewritten = headerrewriter.rewrite(StatusAndHeaders(status, headers), rewriter, rewriter.get_cookie_rewriter())
     return pprint.pprint(vars(rewritten))

@@ -177,14 +177,14 @@ def test_all_not_found(source):
 
 # ============================================================================
 def test_another_remote_not_found():
-    source = MementoIndexSource.from_timegate_url('http://www.webarchive.org.uk/wayback/archive/')
+    source = MementoIndexSource.from_timegate_url('http://webenact.rhizome.org/all/')
     url = 'http://x-not-found-x.notfound/'
     res, errs = query_single_source(source, dict(url=url, limit=3))
 
 
     expected = ''
     assert(key_ts_res(res) == expected)
-    assert(errs['source'] == "NotFoundException('http://www.webarchive.org.uk/wayback/archive/timemap/link/http://x-not-found-x.notfound/',)")
+    assert(errs['source'] == "NotFoundException('http://webenact.rhizome.org/all/timemap/link/http://x-not-found-x.notfound/',)")
 
 # ============================================================================
 def test_file_not_found():

@@ -1,5 +1,5 @@
 six
-warcio==1.1
+warcio==1.3.3
 chardet
 requests
 redis
@@ -12,4 +12,3 @@ webencodings
 gevent==1.2.1
 webassets==0.12.1
 portalocker
-urllib3

@@ -34,13 +34,6 @@ class RegexRewriter(object):
     def archival_rewrite(rewriter):
         return lambda string: rewriter.rewrite(string)
 
-    @staticmethod
-    def replacer(other):
-        def it (string):
-            print(string)
-            return other
-        return it
-
     #@staticmethod
     #def replacer(other):
     #    return lambda m, string: other
@@ -139,6 +132,7 @@ class JSLinkRewriterMixin(object):
         ]
         super(JSLinkRewriterMixin, self).__init__(rewriter, rules)
 
+
 #=================================================================
 class JSLocationRewriterMixin(object):
     """
@@ -148,24 +142,20 @@ class JSLocationRewriterMixin(object):
 
     def __init__(self, rewriter, rules=[], prefix='WB_wombat_'):
         rules = rules + [
+          (r'(?<![$\'"])\b(?:location|top)\b(?![$\'":])', RegexRewriter.add_prefix(prefix), 0),
+
+          (r'(?<=[?])\s*(?:\w+[.])?(location)\s*(?=[:])', RegexRewriter.add_prefix(prefix), 1),
+
+          (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(self.window).'), 0),
+
           (r'(?<=\.)frameElement\b', RegexRewriter.add_prefix(prefix), 0),
         ]
         super(JSLocationRewriterMixin, self).__init__(rewriter, rules)
 
 
 #=================================================================
-class JSProxyHelperRewriterMixin(object):
-    def __init__(self, rewriter, rules=[], prefix='WB_wombat_'):
-        rules = rules + [
-            (r'\"use\sstrict\"\;', RegexRewriter.replacer('"";'), 0),
-        ]
-        super(JSProxyHelperRewriterMixin, self).__init__(rewriter, rules)
-
-
-#=================================================================
 class JSLocationOnlyRewriter(JSLocationRewriterMixin, RegexRewriter):
     pass
-
 
 
 #=================================================================
@@ -177,13 +167,6 @@ class JSLinkOnlyRewriter(JSLinkRewriterMixin, RegexRewriter):
 class JSLinkAndLocationRewriter(JSLocationRewriterMixin,
                                 JSLinkRewriterMixin,
                                 RegexRewriter):
-    pass
-
-
-#=================================================================
-class JSLinkAndProxyHelperRewriter(JSProxyHelperRewriterMixin,
-                                   JSLinkRewriterMixin,
-                                   RegexRewriter):
     pass
 
 

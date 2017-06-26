@@ -4,7 +4,7 @@ import re
 import json
 import os
 
-from webtest import TestApp
+import webtest
 
 from six.moves.urllib.parse import urlencode
 
@@ -20,7 +20,7 @@ class TestCDXApp(BaseTestClass):
     def setup_class(cls):
         super(TestCDXApp, cls).setup_class()
         config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config_test.yaml')
-        cls.testapp = TestApp(AutoConfigApp(config_file=config_file))
+        cls.testapp = webtest.TestApp(AutoConfigApp(config_file=config_file))
 
     def query(self, url, is_error=False, **params):
         params['url'] = url

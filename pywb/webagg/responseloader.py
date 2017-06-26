@@ -5,6 +5,7 @@ from pywb.webagg.indexsource import RedisIndexSource
 from warcio.timeutils import timestamp_to_datetime, datetime_to_timestamp
 from warcio.timeutils import iso_date_to_datetime, datetime_to_iso_date
 from warcio.timeutils import http_date_to_datetime, datetime_to_http_date
+from warcio.utils import to_native_str
 
 from warcio.statusandheaders import StatusAndHeaders, StatusAndHeadersParser
 
@@ -23,7 +24,7 @@ import json
 import glob
 
 from requests.models import PreparedRequest
-import urllib3
+from requests.packages import urllib3
 
 import six.moves.http_client
 six.moves.http_client._MAXHEADERS = 10000
@@ -44,8 +45,8 @@ class BaseLoader(object):
         out_headers['WebAgg-Type'] = 'warc'
         out_headers['WebAgg-Source-Coll'] = quote(cdx.get('source', ''), safe=':/')
         out_headers['Content-Type'] = 'application/warc-record'
-        if cdx.get('is_fuzzy'):
-            out_headers['WebAgg-Fuzzy-Match'] = '1'
+
+        out_headers['WebAgg-Cdx'] = to_native_str(cdx.to_cdxj().rstrip())
 
         if not warc_headers:
             if other_headers:
@@ -127,7 +128,6 @@ class BaseLoader(object):
         if request_url == location_url:
             msg = 'Self Redirect {0} -> {1}'
             msg = msg.format(request_url, location_url)
-            #print(msg)
             raise LiveResourceException(msg)
 
     @staticmethod
@@ -338,20 +338,13 @@ class LiveWebLoader(BaseLoader):
             #req_headers.pop('Host', '')
             req_headers['Host'] = urlsplit(p.url).netloc
 
-        try:
-            upstream_res = self.pool.urlopen(method=method,
-                                             url=load_url,
-                                             body=data,
-                                             headers=req_headers,
-                                             redirect=False,
-                                             assert_same_host=False,
-                                             preload_content=False,
-                                             decode_content=False,
-                                             retries=self.num_retries,
-                                             timeout=params.get('_timeout'))
+            referrer = cdx.get('set_referrer')
+            if referrer:
+                req_headers['Referer'] = referrer
 
-        except Exception as e:
-            raise LiveResourceException(load_url)
+        upstream_res = self._do_request_with_redir_check(method, load_url,
+                                                         data, req_headers,
+                                                         params, cdx)
 
         memento_dt = upstream_res.headers.get('Memento-Datetime')
         if memento_dt:
@@ -366,11 +359,6 @@ class LiveWebLoader(BaseLoader):
         if agg_type == 'warc':
             cdx['source'] = unquote(upstream_res.headers.get('WebAgg-Source-Coll'))
             return None, upstream_res.headers, upstream_res
-
-        self.raise_on_self_redirect(params, cdx,
-                                    str(upstream_res.status),
-                                    self.unrewrite_header(cdx, upstream_res.headers.get('Location')))
-
 
         if upstream_res.version == 11:
             version = '1.1'
@@ -460,6 +448,56 @@ class LiveWebLoader(BaseLoader):
             return value
 
         return value[inx + 1:]
+
+    def _do_request_with_redir_check(self, method, load_url,
+                                     data, req_headers, params, cdx):
+
+        upstream_res = self._do_request(method, load_url,
+                                        data, req_headers, params)
+
+        if cdx.get('is_live'):
+            return upstream_res
+
+        self_redir_count = 0
+
+        while True:
+            try:
+                location = upstream_res.headers.get('Location')
+                self.raise_on_self_redirect(params, cdx,
+                                            str(upstream_res.status),
+                                            self.unrewrite_header(cdx, location))
+
+                break
+
+            except LiveResourceException as e:
+                if load_url == location or self_redir_count >= 3:
+                    raise
+
+                load_url = location
+                upstream_res = self._do_request(method, load_url, data, req_headers, params)
+                self_redir_count += 1
+
+        return upstream_res
+
+    def _do_request(self, method, load_url, data, req_headers, params):
+        try:
+            upstream_res = self.pool.urlopen(method=method,
+                                             url=load_url,
+                                             body=data,
+                                             headers=req_headers,
+                                             redirect=False,
+                                             assert_same_host=False,
+                                             preload_content=False,
+                                             decode_content=False,
+                                             retries=self.num_retries,
+                                             timeout=params.get('_timeout'))
+
+            return upstream_res
+
+        except Exception as e:
+            print('FAILED: ' + method + ' ' + load_url, e)
+            print(req_headers)
+            raise LiveResourceException(load_url)
 
     def __str__(self):
         return  'LiveWebLoader'

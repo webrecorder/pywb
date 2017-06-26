@@ -36,7 +36,7 @@ sources = {
 }
 
 ia_cdx = {
-    'ia-cdx': RemoteIndexSource('http://web.archive.org/cdx?url={url}&closest={timestamp}&sort=closest',
+    'ia-cdx': RemoteIndexSource('http://web.archive.org/cdx?url={url}&closest={closest}&sort=closest',
                                 'http://web.archive.org/web/{timestamp}id_/{url}')
 }
 

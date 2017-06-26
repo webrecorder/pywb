@@ -2,6 +2,7 @@ from warcio.utils import to_native_str
 from pywb.utils.loaders import load_yaml_config
 
 import re
+import os
 
 from six.moves.urllib.parse import urlsplit
 from collections import namedtuple
@@ -162,10 +163,26 @@ class FuzzyMatcher(object):
         if not rule.match_filters:
             return True
 
+        mime = cdx.get('mime')
+        if not mime:
+            return False
+
         for match_filter in rule.match_filters:
-            if match_filter['mime'] in (cdx['mime'], '*'):
-                return match_filter['match'].search(url)
+            not_ext = match_filter.get('not_ext')
+            if not_ext:
+                ext = self.get_ext(url)
+                if not ext or ext in not_ext:
+                    continue
+
+            elif match_filter.get('mime', '--') not in (mime, '*'):
+                continue
+
+            return match_filter['match'].search(url)
 
         return False
 
-
+    def get_ext(self, url):
+        # check last path segment
+        # if contains '.', likely a file, so fuzzy match!
+        last_path = url.split('?', 1)[0].rsplit('/', 1)[-1]
+        return os.path.splitext(last_path)[1]

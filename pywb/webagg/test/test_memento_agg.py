@@ -131,7 +131,7 @@ class TestMemAgg(MementoOverrideTests, BaseTestClass):
                         'ait': 'timeout', 'bl': 'timeout', 'ia': 'timeout', 'rhiz': 'timeout'})
 
 
-    def test_handler_output_cdxj(self):
+    def _test_handler_output_cdxj(self):
         agg = GeventTimeoutAggregator(sources, timeout=5.0)
         handler = IndexHandler(agg)
         url = 'http://vvork.com/'
@@ -147,7 +147,7 @@ com,vvork)/ 20131004231540 {"url": "http://vvork.com/", "mem_rel": "last memento
         assert(errs == {})
 
 
-    def test_handler_output_json(self):
+    def _test_handler_output_json(self):
         agg = GeventTimeoutAggregator(sources, timeout=5.0)
         handler = IndexHandler(agg)
         url = 'http://vvork.com/'
@@ -162,7 +162,7 @@ com,vvork)/ 20131004231540 {"url": "http://vvork.com/", "mem_rel": "last memento
         assert(b''.join(res) == exp)
         assert(errs == {})
 
-    def test_handler_output_link(self):
+    def _test_handler_output_link(self):
         agg = GeventTimeoutAggregator(sources, timeout=5.0)
         handler = IndexHandler(agg)
         url = 'http://vvork.com/'
@@ -177,7 +177,7 @@ com,vvork)/ 20131004231540 {"url": "http://vvork.com/", "mem_rel": "last memento
         assert(errs == {})
 
 
-    def test_handler_output_link_2(self):
+    def _test_handler_output_link_2(self):
         agg = GeventTimeoutAggregator(sources, timeout=5.0)
         handler = IndexHandler(agg)
         url = 'http://iana.org/'
@@ -199,7 +199,7 @@ com,vvork)/ 20131004231540 {"url": "http://vvork.com/", "mem_rel": "last memento
         assert(errs == exp_errs)
 
 
-    def test_handler_output_link_3(self):
+    def _test_handler_output_link_3(self):
         agg = GeventTimeoutAggregator(sources, timeout=5.0)
         handler = IndexHandler(agg)
         url = 'http://foo.bar.non-existent'
@@ -217,7 +217,7 @@ com,vvork)/ 20131004231540 {"url": "http://vvork.com/", "mem_rel": "last memento
 
         assert(errs == exp_errs)
 
-    def test_handler_output_text(self):
+    def _test_handler_output_text(self):
         agg = GeventTimeoutAggregator(sources, timeout=5.0)
         handler = IndexHandler(agg)
         url = 'http://vvork.com/'

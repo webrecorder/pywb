@@ -84,9 +84,9 @@ urn:X-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX
 # bad arcs -- test error edge cases
 >>> print_cdx_index('bad.arc', include_all=True)
  CDX N b a m s k r M S V g
-com,example)/ 20140401000000 http://example.com/ text/html - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 67 134 bad.arc
-com,example)/ 20140102000000 http://example.com/ text/plain - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 59 202 bad.arc
-com,example)/ 20140401000000 http://example.com/ text/html - 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 68 262 bad.arc
+com,example)/ 20140401000000 http://example.com/ text/html 200 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 67 134 bad.arc
+com,example)/ 20140102000000 http://example.com/ text/plain 200 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 59 202 bad.arc
+com,example)/ 20140401000000 http://example.com/ text/html 200 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 68 262 bad.arc
 
 
 # POST request tests

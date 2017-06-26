@@ -5,7 +5,7 @@ from pywb.rewrite.rewrite_dash import RewriteDASHMixin
 from pywb.rewrite.rewrite_content import RewriteContent
 
 from pywb.rewrite.wburl import WbUrl
-from pywb.rewrite.url_rewriter import UrlRewriter
+from pywb.rewrite.url_rewriter import UrlRewriter, SchemeOnlyUrlRewriter
 
 from pywb.utils.wbexception import WbException
 from pywb.utils.canonicalize import canonicalize
@@ -20,7 +20,7 @@ from pywb.webagg.utils import BUFF_SIZE
 from pywb.cdx.cdxobject import CDXObject
 from pywb.framework.wbrequestresponse import WbResponse
 
-from pywb.webagg.utils import MementoUtils, buffer_iter
+from pywb.webagg.utils import MementoUtils
 
 from werkzeug.http import HTTP_STATUS_CODES
 from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
@@ -55,49 +55,48 @@ class RewriterApp(object):
     def __init__(self, framed_replay=False, jinja_env=None, config=None):
         self.loader = ArcWarcRecordLoader()
 
-        config = config or {}
+        self.config = config or {}
         self.paths = {}
 
         self.framed_replay = framed_replay
-        self.frame_mod = ''
-        self.replay_mod = 'mp_'
+
+        if framed_replay:
+            self.frame_mod = ''
+            self.replay_mod = 'mp_'
+        else:
+            self.frame_mod = None
+            self.replay_mod = ''
 
         frame_type = 'inverse' if framed_replay else False
 
         self.content_rewriter = Rewriter(is_framed_replay=frame_type)
 
         if not jinja_env:
-            jinja_env = JinjaEnv(globals={'static_path': 'static/__pywb'})
+            jinja_env = JinjaEnv(globals={'static_path': 'static'})
 
         self.jinja_env = jinja_env
 
-        self.head_insert_view = HeadInsertView(self.jinja_env, 'head_insert.html', 'banner.html')
-        self.frame_insert_view = TopFrameView(self.jinja_env, 'frame_insert.html', 'banner.html')
-        self.error_view = BaseInsertView(self.jinja_env, 'error.html')
-        self.not_found_view = BaseInsertView(self.jinja_env, 'not_found.html')
-        self.query_view = BaseInsertView(self.jinja_env, config.get('query_html', 'query.html'))
+        self.head_insert_view = HeadInsertView(self.jinja_env,
+                                               self._html_templ('head_insert_html'),
+                                               self._html_templ('banner_html'))
+
+        self.frame_insert_view = TopFrameView(self.jinja_env,
+                                               self._html_templ('frame_insert_html'),
+                                               self._html_templ('banner_html'))
+
+        self.error_view = BaseInsertView(self.jinja_env, self._html_templ('error_html'))
+        self.not_found_view = BaseInsertView(self.jinja_env, self._html_templ('not_found_html'))
+        self.query_view = BaseInsertView(self.jinja_env, self._html_templ('query_html'))
 
         self.cookie_tracker = None
 
-        self.enable_memento = config.get('enable_memento')
+        self.enable_memento = self.config.get('enable_memento')
 
-    def call_with_params(self, **kwargs):
-        def run_app(environ, start_response):
-            environ['pywb.kwargs'] = kwargs
-            return self(environ, start_response)
-
-        return run_app
-
-    def __call__(self, environ, start_response):
-        wb_url = self.get_wburl(environ)
-        kwargs = environ.get('pywb.kwargs', {})
-
-        try:
-            response = self.render_content(wb_url, kwargs, environ)
-        except UpstreamException as ue:
-            response = self.handle_error(environ, ue)
-
-        return response(environ, start_response)
+    def _html_templ(self, name):
+        value = self.config.get(name)
+        if not value:
+            value = name.replace('_html', '.html')
+        return value
 
     def is_framed_replay(self, wb_url):
         return (self.framed_replay and
@@ -122,10 +121,20 @@ class RewriterApp(object):
 
             return WbResponse.text_response(resp, content_type=content_type)
 
-        urlrewriter = UrlRewriter(wb_url,
-                                  prefix=full_prefix,
-                                  full_prefix=full_prefix,
-                                  rel_prefix=rel_prefix)
+        is_proxy = ('wsgiprox.proxy_host' in environ)
+
+        if is_proxy:
+            environ['pywb_proxy_magic'] = environ['wsgiprox.proxy_host']
+            urlrewriter = SchemeOnlyUrlRewriter(wb_url, '')
+            framed_replay = False
+
+        else:
+            urlrewriter = UrlRewriter(wb_url,
+                                      prefix=full_prefix,
+                                      full_prefix=full_prefix,
+                                      rel_prefix=rel_prefix)
+
+            framed_replay = self.framed_replay
 
         url_parts = urlsplit(wb_url.url)
         if not url_parts.path:
@@ -135,7 +144,7 @@ class RewriterApp(object):
             return WbResponse.redir_response(urlrewriter.rewrite(url),
                                              '307 Temporary Redirect')
 
-        self.unrewrite_referrer(environ)
+        self.unrewrite_referrer(environ, full_prefix)
 
         urlkey = canonicalize(wb_url.url)
 
@@ -206,18 +215,24 @@ class RewriterApp(object):
                          False)
 
         stream = BufferedReader(r.raw, block_size=BUFF_SIZE)
-        record = self.loader.parse_record_stream(stream)
+        record = self.loader.parse_record_stream(stream,
+                                                 ensure_http_headers=True)
 
         memento_dt = r.headers.get('Memento-Datetime')
         target_uri = r.headers.get('WARC-Target-URI')
 
-        cdx = CDXObject()
-        cdx['urlkey'] = urlkey
-        cdx['timestamp'] = http_date_to_timestamp(memento_dt)
-        cdx['url'] = target_uri
+        cdx = CDXObject(r.headers.get('Webagg-Cdx').encode('utf-8'))
 
-        # Disable Fuzzy Match Redir
-        #if target_uri != wb_url.url and r.headers.get('WebAgg-Fuzzy-Match') == '1':
+        #cdx['urlkey'] = urlkey
+        #cdx['timestamp'] = http_date_to_timestamp(memento_dt)
+        #cdx['url'] = target_uri
+
+        set_content_loc = False
+
+        # Check if Fuzzy Match
+        if target_uri != wb_url.url and cdx.get('is_fuzzy') == '1':
+            set_content_loc = True
+
         #    return WbResponse.redir_response(urlrewriter.rewrite(target_uri),
         #                                     '307 Temporary Redirect')
 
@@ -245,7 +260,7 @@ class RewriterApp(object):
                                                        host_prefix,
                                                        top_url,
                                                        environ,
-                                                       self.framed_replay))
+                                                       framed_replay))
 
         cookie_rewriter = None
         if self.cookie_tracker:
@@ -272,11 +287,19 @@ class RewriterApp(object):
         if not is_ajax and self.enable_memento:
             self._add_memento_links(urlrewriter, full_prefix, memento_dt, status_headers)
 
+            set_content_loc = True
+
+        if set_content_loc:
             status_headers.headers.append(('Content-Location', urlrewriter.get_new_url(timestamp=cdx['timestamp'],
                                                                                        url=cdx['url'])))
         #gen = buffer_iter(status_headers, gen)
+        response = WbResponse(status_headers, gen)
 
-        return WbResponse(status_headers, gen)
+        if is_proxy:
+            response.status_headers.remove_header('Content-Security-Policy')
+            response.status_headers.remove_header('X-Frame-Options')
+
+        return response
 
     def _add_memento_links(self, urlrewriter, full_prefix, memento_dt, status_headers):
         wb_url = urlrewriter.wburl
@@ -414,20 +437,28 @@ class RewriterApp(object):
         return None
 
     def get_host_prefix(self, environ):
-        #return request.urlparts.scheme + '://' + request.urlparts.netloc
-        url = environ['wsgi.url_scheme'] + '://'
-        if environ.get('HTTP_HOST'):
-            url += environ['HTTP_HOST']
-        else:
-            url += environ['SERVER_NAME']
-            if environ['wsgi.url_scheme'] == 'https':
-                if environ['SERVER_PORT'] != '443':
-                   url += ':' + environ['SERVER_PORT']
-            else:
-                if environ['SERVER_PORT'] != '80':
-                   url += ':' + environ['SERVER_PORT']
+        scheme = environ['wsgi.url_scheme'] + '://'
 
-        return url
+        # proxy
+        host = environ.get('wsgiprox.proxy_host')
+        if host:
+            return scheme + host
+
+        # default
+        host = environ.get('HTTP_HOST')
+        if host:
+            return scheme + host
+
+        # if no host
+        host = environ['SERVER_NAME']
+        if environ['wsgi.url_scheme'] == 'https':
+            if environ['SERVER_PORT'] != '443':
+                host += ':' + environ['SERVER_PORT']
+        else:
+            if environ['SERVER_PORT'] != '80':
+                host += ':' + environ['SERVER_PORT']
+
+        return scheme + host
 
     def get_rel_prefix(self, environ):
         #return request.script_name
@@ -436,19 +467,10 @@ class RewriterApp(object):
     def get_full_prefix(self, environ):
         return self.get_host_prefix(environ) + self.get_rel_prefix(environ)
 
-    def get_wburl(self, environ):
-        wb_url = environ.get('PATH_INFO', '/')[1:]
-        if environ.get('QUERY_STRING'):
-            wb_url += '?' + environ.get('QUERY_STRING')
-
-        return wb_url
-
-    def unrewrite_referrer(self, environ):
+    def unrewrite_referrer(self, environ, full_prefix):
         referrer = environ.get('HTTP_REFERER')
         if not referrer:
             return False
-
-        full_prefix = self.get_full_prefix(environ)
 
         if referrer.startswith(full_prefix):
             referrer = referrer[len(full_prefix):]
@@ -481,8 +503,9 @@ class RewriterApp(object):
         raise NotImplemented()
 
     def _add_custom_params(self, cdx, headers, kwargs):
-        cdx['is_live'] = 'true'
         pass
+        #if resp_headers.get('Webagg-Source-Live') == '1':
+        #    cdx['is_live'] = 'true'
 
     def get_top_frame_params(self, wb_url, kwargs):
         return None

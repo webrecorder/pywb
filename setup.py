@@ -25,10 +25,10 @@ class PyTest(TestCommand):
         import pytest
         import os
         os.environ.pop('PYWB_CONFIG_FILE', None)
-        cmdline = ' --cov-config .coveragerc --cov pywb'
+        cmdline = '--cov-config .coveragerc --cov pywb'
         cmdline += ' -v --doctest-module ./pywb/ tests/'
 
-        errcode = pytest.main(cmdline)
+        errcode = pytest.main(cmdline.split(' '))
 
         sys.exit(errcode)
 

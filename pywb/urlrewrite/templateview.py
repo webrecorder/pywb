@@ -5,7 +5,7 @@ from pywb.utils.loaders import load
 
 from six.moves.urllib.parse import urlsplit
 
-from jinja2 import Environment
+from jinja2 import Environment, TemplateNotFound
 from jinja2 import FileSystemLoader, PackageLoader, ChoiceLoader
 
 from webassets.ext.jinja2 import AssetsExtension
@@ -115,7 +115,19 @@ class BaseInsertView(object):
         self.banner_file = banner_file
 
     def render_to_string(self, env, **kwargs):
-        template = self.jenv.jinja_env.get_template(self.insert_file)
+        template = None
+        template_path = env.get('pywb.templates_dir')
+
+        if template_path:
+            template_path = os.path.join(template_path, self.insert_file)
+            try:
+                template = self.jenv.jinja_env.get_template(template_path)
+            except TemplateNotFound:
+                pass
+
+        if not template:
+            template = self.jenv.jinja_env.get_template(self.insert_file)
+
         params = env.get('webrec.template_params')
         if params:
             kwargs.update(params)
@@ -176,6 +188,13 @@ class TopFrameView(BaseInsertView):
         else:
             timestamp = timestamp_now()
 
+        if 'wsgiprox.proxy_host' in env:
+            if not wb_url.url.startswith(env['wsgi.url_scheme'] + ':'):
+                wb_url.url = env['wsgi.url_scheme'] + ':' + wb_url.url.split(':', 1)[-1]
+            iframe_url = wb_url.url
+        else:
+            iframe_url = wb_prefix + embed_url
+
         wbrequest = {'host_prefix': host_prefix,
                      'wb_prefix': wb_prefix,
                      'wb_url': wb_url,
@@ -186,6 +205,7 @@ class TopFrameView(BaseInsertView):
                     }
 
         params = dict(embed_url=embed_url,
+                      iframe_url=iframe_url,
                       wbrequest=wbrequest,
                       timestamp=timestamp,
                       url=wb_url.get_url(),

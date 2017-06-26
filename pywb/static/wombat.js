@@ -1,20 +1,20 @@
 /*
- Copyright(c) 2013-2015 Ilya Kreymer. Released under the GNU General Public License.
+Copyright(c) 2013-2015 Ilya Kreymer. Released under the GNU General Public License.
 
- This file is part of pywb, https://github.com/ikreymer/pywb
+This file is part of pywb, https://github.com/ikreymer/pywb
 
- pywb is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+    pywb is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
- pywb is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
+    pywb is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
- You should have received a copy of the GNU General Public License
- along with pywb.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with pywb.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //============================================
@@ -22,8 +22,7 @@
 //============================================
 
 
-var _WBWombat = function ($wbwindow, wbinfo) {
-    console.log('wombat');
+var _WBWombat = function($wbwindow, wbinfo) {
 
     // Globals
     var wb_replay_prefix;
@@ -211,9 +210,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
     //============================================
     function starts_with(string, arr_or_prefix) {
-        if (!string) {
-            return undefined;
-        }
+        if (!string) { return undefined; }
 
         if (arr_or_prefix instanceof Array) {
             for (var i = 0; i < arr_or_prefix.length; i++) {
@@ -253,9 +250,9 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     function rewrite_url_debug(url, use_rel, mod) {
         var rewritten = rewrite_url_(url, use_rel, mod);
         if (url != rewritten) {
-            console.warn('REWRITE: ' + url + ' -> ' + rewritten);
+            console.log('REWRITE: ' + url + ' -> ' + rewritten);
         } else {
-            console.warn('NOT REWRITTEN ' + url);
+            console.log('NOT REWRITTEN ' + url);
         }
         return rewritten;
     }
@@ -272,7 +269,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
     function init_bad_prefixes(prefix) {
         BAD_PREFIXES = ["http:" + prefix, "https:" + prefix,
-            "http:/" + prefix, "https:/" + prefix];
+                        "http:/" + prefix, "https:/" + prefix];
     }
 
     var SRC_TAGS = ["IFRAME", "IMG", "SCRIPT", "VIDEO", "AUDIO", "SOURCE", "EMBED", "INPUT"];
@@ -349,7 +346,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 return url;
             }
 
-            // relative collection
+            // relative collection 
             if ((url.indexOf(wb_rel_prefix) == 1) && (url.indexOf("http") > 1)) {
                 var scheme_sep = url.indexOf(":/");
                 if (scheme_sep > 0 && url[scheme_sep + 2] != '/') {
@@ -606,7 +603,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
 
     function init_loc_override(loc_obj, orig_setter, orig_getter) {
-        var make_get_loc_prop = function (prop) {
+        var make_get_loc_prop = function(prop) {
             function getter() {
                 if (this._no_rewrite) {
                     return orig_getter.call(this, prop);
@@ -630,7 +627,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             return getter;
         }
 
-        var make_set_loc_prop = function (prop) {
+        var make_set_loc_prop = function(prop) {
             function setter(value) {
                 if (this._no_rewrite) {
                     orig_setter.call(this, prop, value);
@@ -681,7 +678,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
         if (Object.defineProperty) {
             for (var i = 0; i < URL_PROPS.length; i++) {
-                add_loc_prop(loc_obj, URL_PROPS[i]);
+               add_loc_prop(loc_obj, URL_PROPS[i]);
             }
         }
     }
@@ -694,7 +691,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         this._orig_loc = orig_loc;
 
         // Rewrite replace and assign functions
-        this.replace = function (url) {
+        this.replace = function(url) {
             var new_url = rewrite_url(url);
             var orig = extract_orig(new_url);
             if (orig == this.href) {
@@ -703,7 +700,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             return this._orig_loc.replace(new_url);
         }
 
-        this.assign = function (url) {
+        this.assign = function(url) {
             var new_url = rewrite_url(url);
             var orig = extract_orig(new_url);
             if (orig == this.href) {
@@ -712,23 +709,23 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             return this._orig_loc.assign(new_url);
         }
 
-        this.reload = function () {
+        this.reload = function() {
             return this._orig_loc.reload();
         }
-
-        this.orig_getter = function (prop) {
+       
+        this.orig_getter = function(prop) {
             return this._orig_loc[prop];
         }
 
-        this.orig_setter = function (prop, value) {
+        this.orig_setter = function(prop, value) {
             this._orig_loc[prop] = value;
         }
 
         init_loc_override(this, this.orig_setter, this.orig_getter);
-
+        
         set_loc(this, orig_loc.href);
 
-        this.toString = function () {
+        this.toString = function() {
             return this.href;
         }
 
@@ -785,8 +782,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
         } else if (locType == "object") {
             update_location(wombat_loc.href,
-                wombat_loc._orig_href,
-                actual_location);
+                            wombat_loc._orig_href,
+                            actual_location);
         }
     }
 
@@ -841,7 +838,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
         var orig_getrandom = $wbwindow.Crypto.prototype.getRandomValues;
 
-        var new_getrandom = function (array) {
+        var new_getrandom = function(array) {
             for (i = 0; i < array.length; i++) {
                 array[i] = parseInt($wbwindow.Math.random() * 4294967296);
             }
@@ -850,7 +847,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
         $wbwindow.Crypto.prototype.getRandomValues = new_getrandom;
         $wbwindow.crypto.getRandomValues = new_getrandom;
-    }
+    } 
 
     //============================================
     function override_history_func(func_name) {
@@ -889,13 +886,13 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
             if ($wbwindow.__WB_top_frame) {
                 var message = {
-                    "url": abs_url,
-                    "ts": wb_info.timestamp,
-                    "request_ts": wb_info.request_ts,
-                    "is_live": wb_info.is_live,
-                    "title": title,
-                    "wb_type": func_name,
-                }
+                           "url": abs_url,
+                           "ts": wb_info.timestamp,
+                           "request_ts": wb_info.request_ts,
+                           "is_live": wb_info.is_live,
+                           "title": title,
+                           "wb_type": func_name,
+                          }
 
                 $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
             }
@@ -930,8 +927,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             orig_func.apply(this, arguments);
 
             var message = {
-                "wb_type": func_name,
-            }
+                       "wb_type": func_name,
+                      }
 
             if (func_name == "go") {
                 message["param"] = arguments[0];
@@ -970,7 +967,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 async = true;
             }
 
-            var result = orig.call(this, method, url, async, user, password);
+            result = orig.call(this, method, url, async, user, password);
             if (!starts_with(url, "data:")) {
                 this.setRequestHeader('X-Pywb-Requested-With', 'XMLHttpRequest');
             }
@@ -984,14 +981,15 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_fetch_rewrite() {
+    function init_fetch_rewrite()
+    {
         if (!$wbwindow.fetch) {
             return;
         }
 
         var orig_fetch = $wbwindow.fetch;
 
-        $wbwindow.fetch = function (input, init) {
+        $wbwindow.fetch = function(input, init) {
             if (typeof(input) === "string") {
                 input = rewrite_url(input);
             } else if (typeof(input) === "object" && input.url) {
@@ -1006,7 +1004,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_base_override() {
+    function init_base_override()
+    {
         if (!Object.defineProperty) {
             return;
         }
@@ -1014,7 +1013,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         // <base> element .getAttribute()
         orig_getAttribute = $wbwindow.HTMLBaseElement.prototype.getAttribute;
 
-        $wbwindow.HTMLBaseElement.prototype.getAttribute = function (name) {
+        $wbwindow.HTMLBaseElement.prototype.getAttribute = function(name) {
             var result = orig_getAttribute.call(this, name);
             if (name == "href") {
                 result = extract_orig(result);
@@ -1023,7 +1022,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         }
 
         // <base> element .href
-        var base_href_get = function () {
+        var base_href_get = function() {
             return this.getAttribute("href");
         };
 
@@ -1037,7 +1036,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     function override_prop_extract(proto, prop, cond) {
         var orig_getter = get_orig_getter(proto, prop);
         if (orig_getter) {
-            var new_getter = function () {
+            var new_getter = function() {
                 var res = orig_getter.call(this);
                 if (!cond || cond(this)) {
                     res = extract_orig(res);
@@ -1064,7 +1063,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_setAttribute_override() {
+    function init_setAttribute_override()
+    {
         if (!$wbwindow.Element ||
             !$wbwindow.Element.prototype ||
             !$wbwindow.Element.prototype.setAttribute) {
@@ -1076,7 +1076,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
         $wbwindow.Element.prototype._orig_setAttribute = orig_setAttribute;
 
-        $wbwindow.Element.prototype.setAttribute = function (name, value) {
+        $wbwindow.Element.prototype.setAttribute = function(name, value) {
             if (name) {
                 var lowername = name.toLowerCase();
                 if (equals_any(lowername, REWRITE_ATTRS) && typeof(value) == "string") {
@@ -1100,7 +1100,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_getAttribute_override() {
+    function init_getAttribute_override()
+    {
         if (!$wbwindow.Element ||
             !$wbwindow.Element.prototype ||
             !$wbwindow.Element.prototype.setAttribute) {
@@ -1110,7 +1111,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         var orig_getAttribute = $wbwindow.Element.prototype.getAttribute;
         wb_getAttribute = orig_getAttribute;
 
-        $wbwindow.Element.prototype.getAttribute = function (name) {
+        $wbwindow.Element.prototype.getAttribute = function(name) {
             var result = orig_getAttribute.call(this, name);
 
             if (equals_any(name.toLowerCase(), REWRITE_ATTRS)) {
@@ -1125,15 +1126,17 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_createElement_override() {
+    function init_createElement_override()
+    {
         if (!$wbwindow.document.createElement ||
             !$wbwindow.Document.prototype.createElement) {
             return;
         }
 
-        var orig_createElement = $wbwindow.document.createElement.bind($wbwindow.document);
+        var orig_createElement = $wbwindow.document.createElement;
 
-        var createElement_override = function (tagName, skip) {
+        var createElement_override = function(tagName, skip)
+        {
             var created = orig_createElement.call(this, tagName);
             if (!created) {
                 return created;
@@ -1156,7 +1159,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_createElementNS_fix() {
+    function init_createElementNS_fix()
+    {
         if (!$wbwindow.document.createElementNS ||
             !$wbwindow.Document.prototype.createElementNS) {
             return;
@@ -1164,7 +1168,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
         var orig_createElementNS = $wbwindow.document.createElementNS;
 
-        var createElementNS_fix = function (namespaceURI, qualifiedName) {
+        var createElementNS_fix = function(namespaceURI, qualifiedName)
+        {
             namespaceURI = extract_orig(namespaceURI);
             return orig_createElementNS.call(this, namespaceURI, qualifiedName);
         }
@@ -1233,7 +1238,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
         $wbwindow.Date.prototype = orig_date.prototype;
 
-        $wbwindow.Date.now = function () {
+        $wbwindow.Date.now = function() {
             return orig_now() - timediff;
         }
 
@@ -1297,140 +1302,105 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         }
         var orig_register = $wbwindow.ServiceWorkerContainer.prototype.register;
 
-        $wbwindow.ServiceWorkerContainer.prototype.register = function (scriptURL, options) {
-            console.warn('service worker url',scriptURL);
+        $wbwindow.ServiceWorkerContainer.prototype.register = function(scriptURL, options) {
             scriptURL = rewrite_url(scriptURL, false, "id_");
             if (options && options.scope) {
                 options.scope = rewrite_url(options.scope, false, "id_");
             }
-            console.warn('service worker url',scriptURL);
             return orig_register.call(this, scriptURL, options);
         }
     }
 
-    function override_mutation_obs($wbwindow) {
+
+    //============================================
+/*    function init_mutation_obs($wbwindow) {
         if (!$wbwindow.MutationObserver) {
-             return;
+            return;
         }
-        let oObserve = $wbwindow.MutationObserver.prototype.observe;
-        // for some reason MutationObserver can detect our proxy thus failing to work as expected
-        // so if the dom object being observed is _WB_wombat_document_proxy,
-        // check the target for the proxy sentinel property __isWBProxy___
-        // and retrieve original object being proxied via __WBProxyGetO__
-        // these properties only exist if proxied not added to original.prototype
-        $wbwindow.MutationObserver.prototype.observe = function (target, options) {
-            if (target.__isWBProxy__) {
-                return oObserve.call(this,target.__WBProxyGetO__,options);
-            } else {
-                return oObserve.call(this,target,options);
-            }
-        }
-    }
 
-    function override_window_getcomputedstyle($wbwindow) {
-        if (!$wbwindow.getComputedStyle) {
-             return;
-        }
-        let oGetComputedStyle = $wbwindow.getComputedStyle;
-        $wbwindow.getComputedStyle = function (elem, options) {
-            if (elem.__isWBProxy__) {
-                return oGetComputedStyle.call(this,elem.__WBProxyGetO__,options);
-            } else {
-                return oGetComputedStyle.call(this,elem,options);
+        var m = new MutationObserver(function(records, observer)
+                                     {
+            for (var i = 0; i < records.length; i++) {
+                var r = records[i];
+                if (r.type == "attributes" && r.attributeName == "style") {
+                    var style = r.target.style.cssText;
+                    if (style.indexOf("url(") > 0) {
+                        var new_style = rewrite_style(style);
+                        if (new_style != style) {
+                            r.target.style.cssText = new_style;
+                        }
+                    }
+                }
             }
+        });
+
+        m.observe($wbwindow.document.documentElement, {
+            childList: false,
+            attributes: true,
+            subtree: true,
+            //attributeOldValue: true,
+            attributeFilter: ["style"]});
+    }
+*/
+    //============================================
+/*    function init_href_src_obs($wbwindow)
+    {
+        if (!$wbwindow.MutationObserver) {
+            return;
         }
+
+        var m = new MutationObserver(function(records, observer)
+                                     {
+            for (var i = 0; i < records.length; i++) {
+                var r = records[i];
+                if (r.type == "attributes") {
+                    //var curr = wb_getAttribute(r.target, r.attributeName);
+                    var curr = r.target.getAttribute(r.attributeName);
+                    var new_url = rewrite_url(curr);
+                    if (curr != new_url) {
+                        wb_setAttribute.call(r.target, r.attributeName, new_url);
+                    }
+                }
+            }
+        });
+
+        m.observe($wbwindow.document.documentElement, {
+            childList: false,
+            attributes: true,
+            subtree: true,
+            //attributeOldValue: true,
+            attributeFilter: ["src", "href"]});
+
     }
 
 
     //============================================
-    /*    function init_mutation_obs($wbwindow) {
-     if (!$wbwindow.MutationObserver) {
-     return;
-     }
+    function init_iframe_insert_obs(root)
+    {
+        if (!$wbwindow.MutationObserver) {
+            return;
+        }
 
-     var m = new MutationObserver(function(records, observer)
-     {
-     for (var i = 0; i < records.length; i++) {
-     var r = records[i];
-     if (r.type == "attributes" && r.attributeName == "style") {
-     var style = r.target.style.cssText;
-     if (style.indexOf("url(") > 0) {
-     var new_style = rewrite_style(style);
-     if (new_style != style) {
-     r.target.style.cssText = new_style;
-     }
-     }
-     }
-     }
-     });
+        var m = new MutationObserver(function(records, observer)
+        {
+            for (var i = 0; i < records.length; i++) {
+                var r = records[i];
+                if (r.type == "childList") {
+                    for (var j = 0; j < r.addedNodes.length; j++) {
+                        if (r.addedNodes[j].tagName == "IFRAME") {
+                            init_iframe_wombat(r.addedNodes[j]);
+                        }
+                    }
+                }
+            }
+        });
 
-     m.observe($wbwindow.document.documentElement, {
-     childList: false,
-     attributes: true,
-     subtree: true,
-     //attributeOldValue: true,
-     attributeFilter: ["style"]});
-     }
-     */
-    //============================================
-    /*    function init_href_src_obs($wbwindow)
-     {
-     if (!$wbwindow.MutationObserver) {
-     return;
-     }
-
-     var m = new MutationObserver(function(records, observer)
-     {
-     for (var i = 0; i < records.length; i++) {
-     var r = records[i];
-     if (r.type == "attributes") {
-     //var curr = wb_getAttribute(r.target, r.attributeName);
-     var curr = r.target.getAttribute(r.attributeName);
-     var new_url = rewrite_url(curr);
-     if (curr != new_url) {
-     wb_setAttribute.call(r.target, r.attributeName, new_url);
-     }
-     }
-     }
-     });
-
-     m.observe($wbwindow.document.documentElement, {
-     childList: false,
-     attributes: true,
-     subtree: true,
-     //attributeOldValue: true,
-     attributeFilter: ["src", "href"]});
-
-     }
-
-
-     //============================================
-     function init_iframe_insert_obs(root)
-     {
-     if (!$wbwindow.MutationObserver) {
-     return;
-     }
-
-     var m = new MutationObserver(function(records, observer)
-     {
-     for (var i = 0; i < records.length; i++) {
-     var r = records[i];
-     if (r.type == "childList") {
-     for (var j = 0; j < r.addedNodes.length; j++) {
-     if (r.addedNodes[j].tagName == "IFRAME") {
-     init_iframe_wombat(r.addedNodes[j]);
-     }
-     }
-     }
-     }
-     });
-
-     m.observe(root, {
-     childList: true,
-     subtree: true,
-     });
-     }
-     */
+        m.observe(root, {
+            childList: true,
+            subtree: true,
+        });
+    }
+*/
     //============================================
     function rewrite_attr(elem, name, abs_url_only) {
         if (!elem || !elem.getAttribute) {
@@ -1479,8 +1449,9 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function rewrite_style(value) {
-        let STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
+    function rewrite_style(value)
+    {
+        STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
 
         function style_replacer(match, n1, n2, n3, offset, string) {
             return n1 + rewrite_url(n2) + n3;
@@ -1495,12 +1466,13 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function rewrite_srcset(value) {
+    function rewrite_srcset(value)
+    {
         if (!value) {
             return "";
         }
 
-        let values = value.split(',');
+        values = value.split(',');
 
         for (var i = 0; i < values.length; i++) {
             values[i] = rewrite_url(values[i].trim());
@@ -1510,7 +1482,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function rewrite_frame_src(elem, name) {
+    function rewrite_frame_src(elem, name)
+    {
         var value = wb_getAttribute.call(elem, name);
         var new_value = undefined;
 
@@ -1538,7 +1511,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function rewrite_elem(elem) {
+    function rewrite_elem(elem)
+    {
         if (!elem) {
             return;
         }
@@ -1594,13 +1568,18 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             string = write_buff + string;
             write_buff = "";
         }
-        var inner_doc = new DOMParser().parseFromString(string, "text/html");
+         var inner_doc = new DOMParser().parseFromString(string, "text/html");
 
         if (!inner_doc) {
             return string;
         }
 
         string = string.toString();
+
+        if (string.indexOf("<script") <= 0) {
+            //string = string.replace(/WB_wombat_/g, "");
+            string = string.replace(/((id|class)=".*)WB_wombat_([^"]+)/, '$1$3');
+        }
 
         var changed = false;
 
@@ -1618,7 +1597,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         if (string && string.indexOf("<html") >= 0) {
             new_html = inner_doc.documentElement.outerHTML;
         } else {
-            // otherwise, just add contents of head and body
+        // otherwise, just add contents of head and body
             new_html = inner_doc.head.innerHTML;
             new_html += inner_doc.body.innerHTML;
 
@@ -1639,19 +1618,19 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    /*    function add_attr_overrides(tagName, created)
-     {
-     if (!created || created._src != undefined || created._href != undefined) {
-     return;
-     }
+/*    function add_attr_overrides(tagName, created)
+    {
+        if (!created || created._src != undefined || created._href != undefined) {
+            return;
+        }
 
-     if (equals_any(tagName, SRC_TAGS)) {
-     override_attr(created, "src");
-     } else if (equals_any(tagName, HREF_TAGS)) {
-     override_attr(created, "href");
-     }
-     }
-     */
+        if (equals_any(tagName, SRC_TAGS)) {
+            override_attr(created, "src");
+        } else if (equals_any(tagName, HREF_TAGS)) {
+            override_attr(created, "href");
+        }
+    }
+*/
     //============================================
     function get_orig_getter(obj, prop) {
         var orig_getter;
@@ -1693,7 +1672,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         var orig_getter = get_orig_getter(obj, attr);
         var orig_setter = get_orig_setter(obj, attr);
 
-        var setter = function (orig) {
+        var setter = function(orig) {
             var val;
 
             if (mod == "cs_" && orig.indexOf("data:text/css") == 0) {
@@ -1723,7 +1702,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             }
         }
 
-        var getter = function () {
+        var getter = function() {
             var res = undefined;
 
             if (orig_getter) {
@@ -1745,7 +1724,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         var orig_getter = get_orig_getter(obj, attr);
         var orig_setter = get_orig_setter(obj, attr);
 
-        var setter = function (orig) {
+        var setter = function(orig) {
             var val = rewrite_style(orig);
             if (orig_setter) {
                 orig_setter.call(this, val);
@@ -1756,7 +1735,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             return val;
         }
 
-        var getter = function () {
+        var getter = function() {
             if (orig_getter) {
                 return orig_getter.call(this);
             } else {
@@ -1786,7 +1765,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         override_attr($wbwindow.HTMLInputElement.prototype, "src", "oe_");
         override_attr($wbwindow.HTMLEmbedElement.prototype, "src", "oe_");
         override_attr($wbwindow.HTMLObjectElement.prototype, "data", "oe_");
-
+     
         override_anchor_elem();
 
         var style_proto = $wbwindow.CSSStyleDeclaration.prototype;
@@ -1820,9 +1799,9 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
         for (var i = 0; i < URL_PROPS.length; i++) {
             save_prop(URL_PROPS[i]);
-        }
+        } 
 
-        var anchor_setter = function (prop, value) {
+        var anchor_setter = function(prop, value) {
             var func = anchor_orig["set_" + prop];
             if (func) {
                 return func.call(this, value);
@@ -1831,7 +1810,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             }
         }
 
-        var anchor_getter = function (prop) {
+        var anchor_getter = function(prop) {
             var func = anchor_orig["get_" + prop];
             if (func) {
                 return func.call(this);
@@ -1864,7 +1843,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             return;
         }
 
-        var setter = function (orig) {
+        var setter = function(orig) {
             var res = orig;
             if (!this._no_rewrite) {
                 //init_iframe_insert_obs(this);
@@ -1882,7 +1861,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
 
     //============================================
-    function override_iframe_content_access(prop) {
+    function override_iframe_content_access(prop)
+    {
         if (!$wbwindow.HTMLIFrameElement ||
             !$wbwindow.HTMLIFrameElement.prototype) {
             return;
@@ -1897,20 +1877,21 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             return;
         }
 
-        var getter = function () {
+        var getter = function() {
             init_iframe_wombat(this);
             return orig_getter.call(this);
         };
-
+        
         def_prop(obj, prop, orig_setter, getter);
         obj["_get_" + prop] = orig_getter;
     }
 
     //============================================
-    function override_frames_access($wbwindow) {
+    function override_frames_access($wbwindow)
+    {
         $wbwindow.__wb_frames = $wbwindow.frames;
 
-        var getter = function () {
+        var getter = function() {
             for (var i = 0; i < this.__wb_frames.length; i++) {
                 init_new_window_wombat(this.__wb_frames[i]);
             }
@@ -1922,7 +1903,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_insertAdjacentHTML_override() {
+    function init_insertAdjacentHTML_override()
+    {
         if (!$wbwindow.Element ||
             !$wbwindow.Element.prototype ||
             !$wbwindow.Element.prototype.insertAdjacentHTML) {
@@ -1931,7 +1913,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
         var orig_insertAdjacentHTML = $wbwindow.Element.prototype.insertAdjacentHTML;
 
-        var insertAdjacent_override = function (position, text) {
+        var insertAdjacent_override = function(position, text)
+        {
             if (!this._no_rewrite) {
                 // inserting adjacent, so must observe parent
                 //if (this.parentElement) {
@@ -1939,7 +1922,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 //}
                 text = rewrite_html(text);
             }
-
+ 
             return orig_insertAdjacentHTML.call(this, position, text);
         }
 
@@ -1958,7 +1941,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
         if (Object.defineProperty) {
 
-            var setter = function (value) {
+            var setter = function(value) {
                 if (this._WB_wombat_location) {
                     this._WB_wombat_location.href = value;
                 } else {
@@ -1966,7 +1949,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 }
             }
 
-            var getter = function () {
+            var getter = function() {
                 if (this._WB_wombat_location) {
                     return this._WB_wombat_location;
                 } else {
@@ -1993,20 +1976,20 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    /*    function rewrite_children(child) {
-     var desc;
+/*    function rewrite_children(child) {
+        var desc;
 
-     if (child.querySelectorAll) {
-     desc = child.querySelectorAll("[href], [src]");
-     }
+        if (child.querySelectorAll) {
+            desc = child.querySelectorAll("[href], [src]");
+        }
 
-     if (desc) {
-     for (var i = 0; i < desc.length; i++) {
-     rewrite_elem(desc[i]);
-     }
-     }
-     }
-     */
+        if (desc) {
+            for (var i = 0; i < desc.length; i++) {
+                rewrite_elem(desc[i]);
+            }
+        }
+    }
+*/
 
     //============================================
     function init_dom_override() {
@@ -2017,7 +2000,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         function replace_dom_func(funcname) {
             var orig = $wbwindow.Node.prototype[funcname];
 
-            $wbwindow.Node.prototype[funcname] = function () {
+            $wbwindow.Node.prototype[funcname] = function() {
                 var child = arguments[0];
 
                 if (child) {
@@ -2062,23 +2045,21 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         }
 
         try {
-            win.Object.defineProperty(win.Object.prototype, "__WB_pmw", {
-                value: pm_origin,
-                configurable: false,
-                enumerable: false
-            });
-        } catch (e) {
+            win.Object.defineProperty(win.Object.prototype, "__WB_pmw", {value: pm_origin, configurable: false, enumerable: false});
+        } catch(e) {
 
         }
     }
 
     //============================================
-    function init_hash_change() {
+    function init_hash_change()
+    {
         if (!$wbwindow.__WB_top_frame) {
             return;
         }
 
-        function receive_hash_change(event) {
+        function receive_hash_change(event)
+        {
             if (!event.data || event.source != $wbwindow.__WB_top_frame) {
                 return;
             }
@@ -2097,10 +2078,9 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         }
 
         function send_hash_change() {
-            var message = {
-                "wb_type": "hashchange",
-                "hash": $wbwindow.location.hash
-            }
+            var message = {"wb_type": "hashchange",
+                           "hash": $wbwindow.location.hash
+                          }
 
             if ($wbwindow.__WB_top_frame) {
                 $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
@@ -2113,16 +2093,17 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_postmessage_override($wbwindow) {
+    function init_postmessage_override($wbwindow)
+    {
         if (!$wbwindow.postMessage || $wbwindow.__orig_postMessage) {
             return;
         }
 
         var orig = $wbwindow.postMessage;
-
+        
         $wbwindow.__orig_postMessage = orig;
 
-        var postmessage_rewritten = function (message, targetOrigin, transfer, from_top) {
+        var postmessage_rewritten = function(message, targetOrigin, transfer, from_top) {
             var from = undefined;
             var src_id = undefined;
 
@@ -2142,14 +2123,14 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 this.__WB_win_id[source.__WB_id] = source;
 
                 src_id = source.__WB_id;
-
+                
                 window.__WB_source = undefined;
             } else {
                 from = window.WB_wombat_location.origin;
             }
 
             var to = targetOrigin;
-
+            
             if (to == this.location.origin) {
                 to = "*";
             } else {
@@ -2159,13 +2140,12 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 }
             }
 
-            var new_message = {
-                "from": from,
-                "to_host": to,
-                "src_id": src_id,
-                "message": message,
-                "from_top": from_top,
-            }
+            var new_message = {"from": from,
+                               "to_host": to,
+                               "src_id":  src_id,
+                               "message": message,
+                               "from_top": from_top,
+                              }
 
             if (targetOrigin != "*") {
                 targetOrigin = this.location.origin;
@@ -2173,7 +2153,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             }
 
             //console.log("Sending " + from + " -> " + to + " (" + targetOrigin + ") " + message);
-
+            
             return orig.call(this, new_message, targetOrigin, transfer);
         }
 
@@ -2202,15 +2182,13 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                     }
 
                     ne = new MessageEvent("message",
-                        {
-                            "bubbles": event.bubbles,
-                            "cancelable": event.cancelable,
-                            "data": event.data.message,
-                            "origin": event.data.from,
-                            "lastEventId": event.lastEventId,
-                            "source": source,
-                            "ports": event.ports
-                        });
+                                          {"bubbles": event.bubbles,
+                                           "cancelable": event.cancelable,
+                                           "data": event.data.message,
+                                           "origin": event.data.from,
+                                           "lastEventId": event.lastEventId,
+                                           "source": source,
+                                           "ports": event.ports});
 
                     ne._target = event.target;
                     ne._srcElement = event.srcElement;
@@ -2233,17 +2211,18 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         var _orig_removeEventListener = $wbwindow.removeEventListener;
 
 
-        var addEventListener_rewritten = function (type, listener, useCapture) {
+        var addEventListener_rewritten = function(type, listener, useCapture) {
             if (type == "message") {
                 var wrapped_listener = new WrappedListener(listener, this);
 
                 //if (listen_map[listener]) {
-                //console.log("Listener Already Added");
-                //_orig_removeEventListener.call(this, type, listen_map[listener], useCapture);
-                //return;
+                    //console.log("Listener Already Added");
+                    //_orig_removeEventListener.call(this, type, listen_map[listener], useCapture);
+                    //return;
                 //}
 
                 listen_map[listener] = wrapped_listener;
+
                 return _orig_addEventListener.call(this, type, wrapped_listener.listen, useCapture);
             } else {
                 return _orig_addEventListener.call(this, type, listener, useCapture);
@@ -2253,8 +2232,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         $wbwindow.addEventListener = addEventListener_rewritten.bind($wbwindow);
 
         // REMOVE
-
-        var removeEventListener_rewritten = function (type, listener, useCapture) {
+        
+        var removeEventListener_rewritten = function(type, listener, useCapture) {
             if (type == "message") {
                 var wrapped_listener = listen_map[listener];
                 if (wrapped_listener) {
@@ -2275,7 +2254,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             return;
         }
 
-        function addMEOverride(attr) {
+        function addMEOverride(attr)
+        {
             var orig_getter = get_orig_getter($wbwindow.MessageEvent.prototype, attr);
 
             if (!orig_getter) {
@@ -2302,14 +2282,15 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_open_override() {
+    function init_open_override()
+    {
         var orig = $wbwindow.open;
 
         if ($wbwindow.Window.prototype.open) {
             orig = $wbwindow.Window.prototype.open;
         }
 
-        var open_rewritten = function (strUrl, strWindowName, strWindowFeatures) {
+        var open_rewritten = function(strUrl, strWindowName, strWindowFeatures) {
             strUrl = rewrite_url(strUrl, false, "");
             var res = orig.call(this, strUrl, strWindowName, strWindowFeatures);
             init_new_window_wombat(res, strUrl);
@@ -2332,7 +2313,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_cookies_override($wbwindow) {
+    function init_cookies_override($wbwindow)
+    {
         var cookie_path_regex = /\bPath=\'?\"?([^;'"\s]+)/i;
         var cookie_domain_regex = /\bDomain=([^;'"\s]+)/i;
         var cookie_expires_regex = /\bExpires=([^;'"]+)/ig;
@@ -2354,12 +2336,11 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             cookie = cookie.replace(wb_rel_prefix, '');
 
             // rewrite domain
-            cookie = cookie.replace(cookie_domain_regex, function (m, m1) {
-                var message = {
-                    "domain": m1,
-                    "cookie": cookie,
-                    "wb_type": "cookie",
-                }
+            cookie = cookie.replace(cookie_domain_regex, function(m, m1) {
+                var message = {"domain": m1,
+                               "cookie": cookie,
+                               "wb_type": "cookie",
+                              }
 
                 // norify of cookie setting to allow server-side tracking
                 if ($wbwindow.__WB_top_frame) {
@@ -2375,7 +2356,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             });
 
             // rewrite path
-            cookie = cookie.replace(cookie_path_regex, function (m, m1) {
+            cookie = cookie.replace(cookie_path_regex, function(m, m1) {
                 var rewritten = rewrite_url(m1);
 
                 if (rewritten.indexOf(wb_curr_host) == 0) {
@@ -2396,14 +2377,14 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         }
 
 
-        var set_cookie = function (value) {
+        var set_cookie = function(value) {
             if (!value) {
                 return;
             }
 
             var orig_value = value;
 
-            value = value.replace(cookie_expires_regex, function (m, d1) {
+            value = value.replace(cookie_expires_regex, function(m, d1) {
                 var date = new Date(d1);
 
                 if (isNaN(date.getTime())) {
@@ -2429,7 +2410,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_write_override() {
+    function init_write_override()
+    {
         if (!$wbwindow.DOMParser) {
             return;
         }
@@ -2437,7 +2419,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         // Write
         var orig_doc_write = $wbwindow.document.write;
 
-        var new_write = function (string) {
+        var new_write = function(string) {
             new_buff = rewrite_html(string, true);
             if (!new_buff) {
                 return;
@@ -2453,8 +2435,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         // Writeln
         var orig_doc_writeln = $wbwindow.document.writeln;
 
-        var new_writeln = function (string) {
-            let new_buff = rewrite_html(string, true);
+        var new_writeln = function(string) {
+            new_buff = rewrite_html(string, true);
             if (!new_buff) {
                 return;
             }
@@ -2469,7 +2451,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         // Open
         var orig_doc_open = $wbwindow.document.open;
 
-        var new_open = function () {
+        var new_open = function() {
             var res = orig_doc_open.call(this);
             init_new_window_wombat(this.defaultView);
             return res;
@@ -2483,7 +2465,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     function init_eval_override() {
         var orig_eval = $wbwindow.eval;
 
-        $wbwindow.eval = function (string) {
+        $wbwindow.eval = function(string) {
             if (string) {
                 string = string.toString().replace(/\blocation\b/g, "WB_wombat_$&");
             }
@@ -2560,22 +2542,20 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
         domain_info.domain = domain_info.wombat_host;
 
-        var domain_setter = function (val) {
+        var domain_setter = function(val) {
             if (ends_with(domain_info.wombat_host, val)) {
                 domain_info.domain = val;
             }
         }
 
-        var domain_getter = function () {
+        var domain_getter = function() {
             return domain_info.domain;
         }
 
         // changing domain disallowed, but set as no-op to avoid errors
         def_prop($wbwindow.document, "domain", domain_setter, domain_getter);
 
-        def_prop($wbwindow.document, "referrer", undefined, function () {
-            return orig_referrer;
-        });
+        def_prop($wbwindow.document, "referrer", undefined, function() { return orig_referrer; });
 
 
         // Cookies
@@ -2593,7 +2573,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
         // Attr observers
         //if (!wb_opts.skip_attr_observers) {
-        // init_href_src_obs($wbwindow);
+           // init_href_src_obs($wbwindow);
         //}
 
         $wbwindow.document._wb_override = true;
@@ -2604,7 +2584,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     // Necessary since HTMLFormElement.prototype.action is not consistently
     // overridable
     function init_form_overrides($wbwindow) {
-        var do_init_forms = function () {
+        var do_init_forms = function() {
             for (var i = 0; i < $wbwindow.document.forms.length; i++) {
                 var new_action = rewrite_url($wbwindow.document.forms[i].action);
                 if (new_action != $wbwindow.document.forms[i].action) {
@@ -2623,27 +2603,29 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
 
     //============================================
-    function init_registerPH_override() {
+    function init_registerPH_override()
+    {
         if (!$wbwindow.navigator.registerProtocolHandler) {
             return;
         }
 
         var orig_registerPH = $wbwindow.navigator.registerProtocolHandler;
 
-        $wbwindow.navigator.registerProtocolHandler = function (protocol, uri, title) {
+        $wbwindow.navigator.registerProtocolHandler = function(protocol, uri, title) {
             return orig_registerPH.call(this, protocol, rewrite_url(uri), title);
         }
     }
 
     //============================================
-    function init_beacon_override() {
+    function init_beacon_override()
+    {
         if (!$wbwindow.navigator.sendBeacon) {
             return;
         }
 
         var orig_sendBeacon = $wbwindow.navigator.sendBeacon;
 
-        $wbwindow.navigator.sendBeacon = function (url, data) {
+        $wbwindow.navigator.sendBeacon = function(url, data) {
             return orig_sendBeacon.call(this, rewrite_url(url), data);
         }
     }
@@ -2651,7 +2633,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     //============================================
     function init_disable_notifications() {
         if (window.Notification) {
-            window.Notification.requestPermission = function (callback) {
+            window.Notification.requestPermission = function(callback) {
                 if (callback) {
                     callback("denied");
                 }
@@ -2661,7 +2643,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         }
 
         if (window.geolocation) {
-            var disabled = function (success, error, options) {
+            var disabled = function(success, error, options) {
                 if (error) {
                     error({"code": 2, "message": "not available"});
                 }
@@ -2677,6 +2659,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         if (mod == undefined) {
             mod = wb_info.mod;
         }
+
         // if live, don't add the timestamp
         if (!wb_info.is_live) {
             prefix += wb_info.wombat_ts;
@@ -2696,7 +2679,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         wb_info = wbinfo;
         wb_opts = wbinfo.wombat_opts;
         wb_replay_prefix = wbinfo.prefix;
-        wb_is_proxy = (!wb_replay_prefix);
+        wb_is_proxy = (wbinfo.proxy_magic || !wb_replay_prefix);
 
         wb_info.top_host = wb_info.top_host || "*";
 
@@ -2719,1435 +2702,6 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     function createWombatWindowProxy($wbwindow) {
-        let $wbwindow_noModify = {
-            "console": true,
-            "NFC": true,
-            "Object": true,
-            "BluetoothUUID": true,
-            "BluetoothRemoteGATTService": true,
-            "Function": true,
-            "BluetoothRemoteGATTServer": true,
-            "BluetoothRemoteGATTDescriptor": true,
-            "Array": true,
-            "BluetoothRemoteGATTCharacteristic": true,
-            "BluetoothDevice": true,
-            "BluetoothCharacteristicProperties": true,
-            "Number": true,
-            "Bluetooth": true,
-            "WebAuthentication": true,
-            "ScopedCredentialInfo": true,
-            "ScopedCredential": true,
-            "AuthenticationAssertion": true,
-            "Boolean": true,
-            "WebGLRenderingContext": true,
-            "WebGL2RenderingContext": true,
-            "Path2D": true,
-            "String": true,
-            "CanvasPattern": true,
-            "Symbol": true,
-            "CanvasGradient": true,
-            "TextDetector": true,
-            "FaceDetector": true,
-            "Date": true,
-            "DetectedText": true,
-            "DetectedFace": true,
-            "Promise": true,
-            "DetectedBarcode": true,
-            "RegExp": true,
-            "BarcodeDetector": true,
-            "SensorErrorEvent": true,
-            "Error": true,
-            "Sensor": true,
-            "Magnetometer": true,
-            "Gyroscope": true,
-            "EvalError": true,
-            "AmbientLightSensor": true,
-            "Accelerometer": true,
-            "RangeError": true,
-            "ReferenceError": true,
-            "SyntaxError": true,
-            "TypeError": true,
-            "SpeechSynthesisUtterance": true,
-            "SpeechSynthesisEvent": true,
-            "URIError": true,
-            "RemotePlayback": true,
-            "PushSubscriptionOptions": true,
-            "PushSubscription": true,
-            "JSON": true,
-            "PushManager": true,
-            "PresentationReceiver": true,
-            "Math": true,
-            "PresentationConnectionList": true,
-            "PresentationRequest": true,
-            "Intl": true,
-            "PresentationConnectionCloseEvent": true,
-            "ArrayBuffer": true,
-            "PresentationConnectionAvailableEvent": true,
-            "PresentationConnection": true,
-            "PresentationAvailability": true,
-            "Uint8Array": true,
-            "Presentation": true,
-            "PermissionStatus": true,
-            "Int8Array": true,
-            "Permissions": true,
-            "PaymentResponse": true,
-            "Uint16Array": true,
-            "PaymentRequestUpdateEvent": true,
-            "Int16Array": true,
-            "PaymentRequest": true,
-            "PaymentAddress": true,
-            "PaymentAppManager": true,
-            "Uint32Array": true,
-            "Notification": true,
-            "Int32Array": true,
-            "NetworkInformation": true,
-            "VideoPlaybackQuality": true,
-            "TrackDefaultList": true,
-            "Float32Array": true,
-            "TrackDefault": true,
-            "Float64Array": true,
-            "CanvasCaptureMediaStreamTrack": true,
-            "IDBObserverChanges": true,
-            "Uint8ClampedArray": true,
-            "IDBObserver": true,
-            "IDBObservation": true,
-            "DataView": true,
-            "OffscreenCanvasRenderingContext2D": true,
-            "StorageManager": true,
-            "DeviceLightEvent": true,
-            "Map": true,
-            "SiteBoundCredential": true,
-            "Set": true,
-            "PasswordCredential": true,
-            "FederatedCredential": true,
-            "CredentialsContainer": true,
-            "WeakMap": true,
-            "Credential": true,
-            "WeakSet": true,
-            "CompositorWorker": true,
-            "BudgetState": true,
-            "Proxy": true,
-            "BudgetService": true,
-            "BroadcastChannel": true,
-            "Reflect": true,
-            "SyncManager": true,
-            "Infinity": true,
-            "WebSocket": true,
-            "WebGLVertexArrayObject": true,
-            "NaN": true,
-            "WebGLUniformLocation": true,
-            "WebGLTransformFeedback": true,
-            "WebGLTexture": true,
-            "WebGLSync": true,
-            "WebGLShaderPrecisionFormat": true,
-            "WebGLShader": true,
-            "WebGLSampler": true,
-            "WebGLRenderbuffer": true,
-            "WebGLQuery": true,
-            "WebGLProgram": true,
-            "WebGLFramebuffer": true,
-            "WebGLContextEvent": true,
-            "WebGLBuffer": true,
-            "WebGLActiveInfo": true,
-            "WaveShaperNode": true,
-            "TextEncoder": true,
-            "TextDecoder": true,
-            "SubtleCrypto": true,
-            "StorageEvent": true,
-            "Storage": true,
-            "StereoPannerNode": true,
-            "SourceBufferList": true,
-            "ByteLengthQueuingStrategy": true,
-            "SourceBuffer": true,
-            "ServiceWorkerRegistration": true,
-            "CountQueuingStrategy": true,
-            "ServiceWorkerContainer": true,
-            "ServiceWorker": true,
-            "ReadableStream": true,
-            "ScriptProcessorNode": true,
-            "ScreenOrientation": true,
-            "Response": true,
-            "Request": true,
-            "RTCStatsReport": true,
-            "RTCSessionDescription": true,
-            "RTCPeerConnectionIceEvent": true,
-            "RTCPeerConnection": true,
-            "RTCIceCandidate": true,
-            "RTCDataChannelEvent": true,
-            "RTCDataChannel": true,
-            "RTCCertificate": true,
-            "Plugin": true,
-            "PluginArray": true,
-            "PeriodicWave": true,
-            "PannerNode": true,
-            "OscillatorNode": true,
-            "OfflineAudioContext": true,
-            "OfflineAudioCompletionEvent": true,
-            "MimeType": true,
-            "MimeTypeArray": true,
-            "MediaStreamTrackEvent": true,
-            "MediaStreamTrack": true,
-            "MediaStreamEvent": true,
-            "MediaStream": true,
-            "MediaStreamAudioSourceNode": true,
-            "MediaStreamAudioDestinationNode": true,
-            "MediaSource": true,
-            "MediaRecorder": true,
-            "MediaKeys": true,
-            "MediaKeySystemAccess": true,
-            "MediaKeyStatusMap": true,
-            "MediaKeySession": true,
-            "MediaKeyMessageEvent": true,
-            "MediaEncryptedEvent": true,
-            "MediaElementAudioSourceNode": true,
-            "MediaDevices": true,
-            "MediaDeviceInfo": true,
-            "MIDIPort": true,
-            "MIDIOutputMap": true,
-            "MIDIOutput": true,
-            "MIDIMessageEvent": true,
-            "MIDIInputMap": true,
-            "MIDIInput": true,
-            "MIDIConnectionEvent": true,
-            "MIDIAccess": true,
-            "ImageBitmapRenderingContext": true,
-            "IIRFilterNode": true,
-            "IDBVersionChangeEvent": true,
-            "IDBTransaction": true,
-            "IDBRequest": true,
-            "IDBOpenDBRequest": true,
-            "IDBObjectStore": true,
-            "IDBKeyRange": true,
-            "IDBIndex": true,
-            "IDBFactory": true,
-            "IDBDatabase": true,
-            "IDBCursorWithValue": true,
-            "IDBCursor": true,
-            "Headers": true,
-            "GamepadEvent": true,
-            "Gamepad": true,
-            "GamepadButton": true,
-            "GainNode": true,
-            "EventSource": true,
-            "DynamicsCompressorNode": true,
-            "DeviceOrientationEvent": true,
-            "DeviceMotionEvent": true,
-            "DelayNode": true,
-            "DOMError": true,
-            "CryptoKey": true,
-            "Crypto": true,
-            "ConvolverNode": true,
-            "ConstantSourceNode": true,
-            "CloseEvent": true,
-            "ChannelSplitterNode": true,
-            "ChannelMergerNode": true,
-            "WritableStream": true,
-            "CanvasRenderingContext2D": true,
-            "CacheStorage": true,
-            "Cache": true,
-            "BlobEvent": true,
-            "BiquadFilterNode": true,
-            "BeforeInstallPromptEvent": true,
-            "BatteryManager": true,
-            "BaseAudioContext": true,
-            "AudioScheduledSourceNode": true,
-            "AudioProcessingEvent": true,
-            "AudioParam": true,
-            "AudioNode": true,
-            "AudioListener": true,
-            "AudioDestinationNode": true,
-            "AudioContext": true,
-            "AudioBufferSourceNode": true,
-            "AudioBuffer": true,
-            "AppBannerPromptResult": true,
-            "AnalyserNode": true,
-            "WebAssembly": true,
-            "SVGMPathElement": true,
-            "SVGDiscardElement": true,
-            "SVGAnimationElement": true,
-            "XSLTProcessor": true,
-            "Worklet": true,
-            "ImageCapture": true,
-            "VTTRegion": true,
-            "KeyframeEffectReadOnly": true,
-            "KeyframeEffect": true,
-            "MediaSettingsRange": true,
-            "DocumentTimeline": true,
-            "PhotoCapabilities": true,
-            "AnimationTimeline": true,
-            "AnimationPlaybackEvent": true,
-            "USB": true,
-            "AnimationEffectTimingReadOnly": true,
-            "AnimationEffectTiming": true,
-            "AnimationEffectReadOnly": true,
-            "USBAlternateInterface": true,
-            "VisualViewport": true,
-            "USBConfiguration": true,
-            "SharedWorker": true,
-            "ResizeObserverEntry": true,
-            "USBConnectionEvent": true,
-            "ResizeObserver": true,
-            "PointerEvent": true,
-            "PerformanceObserverEntryList": true,
-            "USBDevice": true,
-            "PerformanceObserver": true,
-            "USBEndpoint": true,
-            "PerformanceNavigationTiming": true,
-            "IntersectionObserverEntry": true,
-            "IntersectionObserver": true,
-            "USBInterface": true,
-            "StaticRange": true,
-            "USBInTransferResult": true,
-            "InputEvent": true,
-            "DOMRectReadOnly": true,
-            "USBIsochronousInTransferPacket": true,
-            "DOMRect": true,
-            "DOMQuad": true,
-            "DOMPointReadOnly": true,
-            "USBIsochronousInTransferResult": true,
-            "DOMPoint": true,
-            "USBIsochronousOutTransferPacket": true,
-            "DOMMatrixReadOnly": true,
-            "DOMMatrix": true,
-            "OffscreenCanvas": true,
-            "USBIsochronousOutTransferResult": true,
-            "Float32ImageData": true,
-            "USBOutTransferResult": true,
-            "CustomElementRegistry": true,
-            "CompositorProxy": true,
-            "__REACT_DEVTOOLS_GLOBAL_HOOK__": true,
-            "StylePropertyMap": true,
-            "CSSVariableReferenceValue": true,
-            "CSSURLImageValue": true,
-            "CSSUnparsedValue": true,
-            "CSSTranslation": true,
-            "CSSTransformValue": true,
-            "CSSTransformComponent": true,
-            "CSSStyleValue": true,
-            "CSSSkew": true,
-            "CSSSimpleLength": true,
-            "CSSScale": true,
-            "CSSRotation": true,
-            "CSSResourceValue": true,
-            "CSSPositionValue": true,
-            "CSSPerspective": true,
-            "CSSNumberValue": true,
-            "CSSMatrixComponent": true,
-            "CSSLengthValue": true,
-            "CSSKeywordValue": true,
-            "CSSImageValue": true,
-            "CSSCalcLength": true,
-            "CSSAngleValue": true,
-            "VideoTrackList": true,
-            "VideoTrack": true,
-            "AudioTrackList": true,
-            "AudioTrack": true,
-            "XPathResult": true,
-            "XPathExpression": true,
-            "XPathEvaluator": true,
-            "XMLSerializer": true,
-            "XMLHttpRequestUpload": true,
-            "XMLHttpRequestEventTarget": true,
-            "XMLHttpRequest": true,
-            "XMLDocument": true,
-            "Worker": true,
-            "Window": true,
-            "WheelEvent": true,
-            "WebKitCSSMatrix": true,
-            "ValidityState": true,
-            "VTTCue": true,
-            "URLSearchParams": true,
-            "URL": true,
-            "UIEvent": true,
-            "TreeWalker": true,
-            "TransitionEvent": true,
-            "TrackEvent": true,
-            "TouchList": true,
-            "TouchEvent": true,
-            "Touch": true,
-            "TimeRanges": true,
-            "TextTrackList": true,
-            "TextTrackCueList": true,
-            "TextTrackCue": true,
-            "TextTrack": true,
-            "TextMetrics": true,
-            "TextEvent": true,
-            "Text": true,
-            "TaskAttributionTiming": true,
-            "StyleSheetList": true,
-            "StyleSheet": true,
-            "ShadowRoot": true,
-            "Selection": true,
-            "SecurityPolicyViolationEvent": true,
-            "Screen": true,
-            "SVGViewElement": true,
-            "SVGUseElement": true,
-            "SVGUnitTypes": true,
-            "SVGTransformList": true,
-            "SVGTransform": true,
-            "SVGTitleElement": true,
-            "SVGTextPositioningElement": true,
-            "SVGTextPathElement": true,
-            "SVGTextElement": true,
-            "SVGTextContentElement": true,
-            "SVGTSpanElement": true,
-            "SVGSymbolElement": true,
-            "SVGSwitchElement": true,
-            "SVGStyleElement": true,
-            "SVGStringList": true,
-            "SVGStopElement": true,
-            "SVGSetElement": true,
-            "SVGScriptElement": true,
-            "SVGSVGElement": true,
-            "SVGRectElement": true,
-            "SVGRect": true,
-            "SVGRadialGradientElement": true,
-            "SVGPreserveAspectRatio": true,
-            "SVGPolylineElement": true,
-            "SVGPolygonElement": true,
-            "SVGPointList": true,
-            "SVGPoint": true,
-            "SVGPatternElement": true,
-            "SVGPathElement": true,
-            "SVGNumberList": true,
-            "SVGNumber": true,
-            "SVGMetadataElement": true,
-            "SVGMatrix": true,
-            "SVGMaskElement": true,
-            "SVGMarkerElement": true,
-            "SVGLinearGradientElement": true,
-            "SVGLineElement": true,
-            "SVGLengthList": true,
-            "SVGLength": true,
-            "SVGImageElement": true,
-            "SVGGraphicsElement": true,
-            "SVGGradientElement": true,
-            "SVGGeometryElement": true,
-            "SVGGElement": true,
-            "SVGForeignObjectElement": true,
-            "SVGFilterElement": true,
-            "SVGFETurbulenceElement": true,
-            "SVGFETileElement": true,
-            "SVGFESpotLightElement": true,
-            "SVGFESpecularLightingElement": true,
-            "SVGFEPointLightElement": true,
-            "SVGFEOffsetElement": true,
-            "SVGFEMorphologyElement": true,
-            "SVGFEMergeNodeElement": true,
-            "SVGFEMergeElement": true,
-            "SVGFEImageElement": true,
-            "SVGFEGaussianBlurElement": true,
-            "SVGFEFuncRElement": true,
-            "SVGFEFuncGElement": true,
-            "SVGFEFuncBElement": true,
-            "SVGFEFuncAElement": true,
-            "SVGFEFloodElement": true,
-            "SVGFEDropShadowElement": true,
-            "SVGFEDistantLightElement": true,
-            "SVGFEDisplacementMapElement": true,
-            "SVGFEDiffuseLightingElement": true,
-            "SVGFEConvolveMatrixElement": true,
-            "SVGFECompositeElement": true,
-            "SVGFEComponentTransferElement": true,
-            "SVGFEColorMatrixElement": true,
-            "SVGFEBlendElement": true,
-            "SVGEllipseElement": true,
-            "SVGElement": true,
-            "SVGDescElement": true,
-            "SVGDefsElement": true,
-            "SVGComponentTransferFunctionElement": true,
-            "SVGClipPathElement": true,
-            "SVGCircleElement": true,
-            "SVGAnimatedTransformList": true,
-            "SVGAnimatedString": true,
-            "SVGAnimatedRect": true,
-            "SVGAnimatedPreserveAspectRatio": true,
-            "SVGAnimatedNumberList": true,
-            "SVGAnimatedNumber": true,
-            "SVGAnimatedLengthList": true,
-            "SVGAnimatedLength": true,
-            "SVGAnimatedInteger": true,
-            "SVGAnimatedEnumeration": true,
-            "SVGAnimatedBoolean": true,
-            "SVGAnimatedAngle": true,
-            "SVGAnimateTransformElement": true,
-            "SVGAnimateMotionElement": true,
-            "SVGAnimateElement": true,
-            "SVGAngle": true,
-            "SVGAElement": true,
-            "Range": true,
-            "RadioNodeList": true,
-            "PromiseRejectionEvent": true,
-            "ProgressEvent": true,
-            "ProcessingInstruction": true,
-            "PopStateEvent": true,
-            "PerformanceTiming": true,
-            "PerformanceResourceTiming": true,
-            "PerformanceNavigation": true,
-            "PerformanceMeasure": true,
-            "PerformanceMark": true,
-            "PerformanceLongTaskTiming": true,
-            "PerformanceEntry": true,
-            "Performance": true,
-            "PageTransitionEvent": true,
-            "NodeList": true,
-            "NodeIterator": true,
-            "NodeFilter": true,
-            "Node": true,
-            "Navigator": true,
-            "NamedNodeMap": true,
-            "MutationRecord": true,
-            "MutationObserver": true,
-            "MutationEvent": true,
-            "MouseEvent": true,
-            "MessagePort": true,
-            "MessageEvent": true,
-            "MessageChannel": true,
-            "MediaQueryListEvent": true,
-            "MediaQueryList": true,
-            "MediaList": true,
-            "MediaError": true,
-            "Location": true,
-            "KeyboardEvent": true,
-            "InputDeviceCapabilities": true,
-            "ImageData": true,
-            "ImageBitmap": true,
-            "IdleDeadline": true,
-            "History": true,
-            "HashChangeEvent": true,
-            "HTMLVideoElement": true,
-            "HTMLUnknownElement": true,
-            "HTMLUListElement": true,
-            "HTMLTrackElement": true,
-            "HTMLTitleElement": true,
-            "HTMLTextAreaElement": true,
-            "HTMLTemplateElement": true,
-            "HTMLTableSectionElement": true,
-            "HTMLTableRowElement": true,
-            "HTMLTableElement": true,
-            "HTMLTableColElement": true,
-            "HTMLTableCellElement": true,
-            "HTMLTableCaptionElement": true,
-            "HTMLStyleElement": true,
-            "HTMLSpanElement": true,
-            "HTMLSourceElement": true,
-            "HTMLSlotElement": true,
-            "HTMLShadowElement": true,
-            "HTMLSelectElement": true,
-            "HTMLScriptElement": true,
-            "HTMLQuoteElement": true,
-            "HTMLProgressElement": true,
-            "HTMLPreElement": true,
-            "HTMLPictureElement": true,
-            "HTMLParamElement": true,
-            "HTMLParagraphElement": true,
-            "HTMLOutputElement": true,
-            "HTMLOptionsCollection": true,
-            "Option": true,
-            "HTMLOptionElement": true,
-            "HTMLOptGroupElement": true,
-            "HTMLObjectElement": true,
-            "HTMLOListElement": true,
-            "HTMLModElement": true,
-            "HTMLMeterElement": true,
-            "HTMLMetaElement": true,
-            "HTMLMenuElement": true,
-            "HTMLMediaElement": true,
-            "HTMLMarqueeElement": true,
-            "HTMLMapElement": true,
-            "HTMLLinkElement": true,
-            "HTMLLegendElement": true,
-            "HTMLLabelElement": true,
-            "HTMLLIElement": true,
-            "HTMLInputElement": true,
-            "Image": true,
-            "HTMLImageElement": true,
-            "HTMLIFrameElement": true,
-            "HTMLHtmlElement": true,
-            "HTMLHeadingElement": true,
-            "HTMLHeadElement": true,
-            "HTMLHRElement": true,
-            "HTMLFrameSetElement": true,
-            "HTMLFrameElement": true,
-            "HTMLFormElement": true,
-            "HTMLFormControlsCollection": true,
-            "HTMLFontElement": true,
-            "HTMLFieldSetElement": true,
-            "HTMLEmbedElement": true,
-            "HTMLElement": true,
-            "HTMLDocument": true,
-            "HTMLDivElement": true,
-            "HTMLDirectoryElement": true,
-            "HTMLDialogElement": true,
-            "HTMLDetailsElement": true,
-            "HTMLDataListElement": true,
-            "HTMLDListElement": true,
-            "HTMLContentElement": true,
-            "HTMLCollection": true,
-            "HTMLCanvasElement": true,
-            "HTMLButtonElement": true,
-            "HTMLBodyElement": true,
-            "HTMLBaseElement": true,
-            "HTMLBRElement": true,
-            "Audio": true,
-            "HTMLAudioElement": true,
-            "HTMLAreaElement": true,
-            "HTMLAnchorElement": true,
-            "HTMLAllCollection": true,
-            "FormData": true,
-            "FontFaceSetLoadEvent": true,
-            "FontFace": true,
-            "FocusEvent": true,
-            "FileReader": true,
-            "FileList": true,
-            "File": true,
-            "EventTarget": true,
-            "Event": true,
-            "ErrorEvent": true,
-            "Element": true,
-            "DragEvent": true,
-            "DocumentType": true,
-            "DocumentFragment": true,
-            "Document": true,
-            "DataTransferItemList": true,
-            "DataTransferItem": true,
-            "DataTransfer": true,
-            "DOMTokenList": true,
-            "DOMStringMap": true,
-            "DOMStringList": true,
-            "DOMParser": true,
-            "DOMImplementation": true,
-            "DOMException": true,
-            "CustomEvent": true,
-            "CompositionEvent": true,
-            "Comment": true,
-            "ClipboardEvent": true,
-            "ClientRectList": true,
-            "ClientRect": true,
-            "CharacterData": true,
-            "CSSViewportRule": true,
-            "CSSSupportsRule": true,
-            "CSSStyleSheet": true,
-            "CSSStyleRule": true,
-            "CSSStyleDeclaration": true,
-            "CSSRuleList": true,
-            "CSSRule": true,
-            "CSSPageRule": true,
-            "CSSNamespaceRule": true,
-            "CSSMediaRule": true,
-            "CSSKeyframesRule": true,
-            "CSSKeyframeRule": true,
-            "CSSImportRule": true,
-            "CSSGroupingRule": true,
-            "CSSFontFaceRule": true,
-            "CSS": true,
-            "CSSConditionRule": true,
-            "CDATASection": true,
-            "Blob": true,
-            "BeforeUnloadEvent": true,
-            "BarProp": true,
-            "Attr": true,
-            "ApplicationCacheErrorEvent": true,
-            "ApplicationCache": true,
-            "AnimationEvent": true,
-            "WebKitMutationObserver": true,
-            "WebKitAnimationEvent": true,
-            "WebKitTransitionEvent": true
-        };
-        let $wbwindow_ownFunctions = {
-            "addEventListener": true,
-            "removeEventListener": true,
-            "onabort": true,
-            "onanimationcancel": true,
-            "onanimationend": true,
-            "onanimationiteration": true,
-            "onauxclick": true,
-            "onblur": true,
-            "onchange": true,
-            "onclick": true,
-            "onclose": true,
-            "oncontextmenu": true,
-            "ondblclick": true,
-            "onerror": true,
-            "onfocus": true,
-            "ongotpointercapture": true,
-            "oninput": true,
-            "onkeydown": true,
-            "onkeypress": true,
-            "onkeyup": true,
-            "onload": true,
-            "onloadend": true,
-            "onloadstart": true,
-            "onlostpointercapture": true,
-            "onmousedown": true,
-            "onmousemove": true,
-            "onmouseout": true,
-            "onmouseover": true,
-            "onmouseup": true,
-            "onpointercancel": true,
-            "onpointerdown": true,
-            "onpointerenter": true,
-            "onpointerleave": true,
-            "onpointermove": true,
-            "onpointerout": true,
-            "onpointerover": true,
-            "onpointerup": true,
-            "onreset": true,
-            "onresize": true,
-            "onscroll": true,
-            "onselect": true,
-            "onselectionchange": true,
-            "onselectstart": true,
-            "onsubmit": true,
-            "ontouchcancel": true,
-            "ontouchmove": true,
-            "ontouchstart": true,
-            "ontransitioncancel": true,
-            "ontransitionend": true,
-            "parseFloat": true,
-            "parseInt": true,
-            "webkitSpeechRecognitionEvent": true,
-            "webkitSpeechRecognitionError": true,
-            "webkitSpeechRecognition": true,
-            "webkitSpeechGrammarList": true,
-            "webkitSpeechGrammar": true,
-            "webkitRTCPeerConnection": true,
-            "webkitMediaStream": true,
-            "decodeURI": true,
-            "decodeURIComponent": true,
-            "encodeURI": true,
-            "encodeURIComponent": true,
-            "escape": true,
-            "unescape": true,
-            "eval": true,
-            "isFinite": true,
-            "isNaN": true,
-            "stop": true,
-            "open": true,
-            "alert": true,
-            "confirm": true,
-            "prompt": true,
-            "print": true,
-            "requestAnimationFrame": true,
-            "cancelAnimationFrame": true,
-            "requestIdleCallback": true,
-            "cancelIdleCallback": true,
-            "captureEvents": true,
-            "releaseEvents": true,
-            "getComputedStyle": true,
-            "matchMedia": true,
-            "moveTo": true,
-            "moveBy": true,
-            "resizeTo": true,
-            "resizeBy": true,
-            "getSelection": true,
-            "find": true,
-            "getMatchedCSSRules": true,
-            "webkitRequestAnimationFrame": true,
-            "webkitCancelAnimationFrame": true,
-            "btoa": true,
-            "atob": true,
-            "setTimeout": true,
-            "clearTimeout": true,
-            "setInterval": true,
-            "clearInterval": true,
-            "createImageBitmap": true,
-            "scroll": true,
-            "scrollTo": true,
-            "scrollBy": true,
-            "getComputedStyleMap": true,
-            "fetch": true,
-            "webkitRequestFileSystem": true,
-            "webkitResolveLocalFileSystemURL": true,
-            "openDatabase": true,
-            "postMessage": true,
-            "blur": true,
-            "focus": true,
-            "close": true,
-            "createWombatWindowProxy": true,
-            "webkitURL": true
-        };
-        return new Proxy($wbwindow, {
-            get(target, what) {
-                console.log('wombat window proxy get', what);
-                if (what === 'postMessage') {
-                    return target.__WB_pmw(target).postMessage.bind(target.__WB_pmw(target));
-                } else if (what === 'location') {
-                    return target.WB_wombat_location;
-                } else if (what === 'document') {
-                    if (target._WB_wombat_document_proxy) {
-                        return target._WB_wombat_document_proxy;
-                    } else {
-                        return target[what];
-                    }
-                } else if ($wbwindow_noModify[what]) {
-                    return target[what];
-                } else {
-                    let retVal = target[what];
-                    if (typeof retVal === 'function' && $wbwindow_ownFunctions[what]) {
-                        return retVal.bind(target);
-                    }
-                    return retVal;
-                }
-            },
-            set(target, prop, value) {
-                console.log('wombat window proxy set', prop, value);
-                if (prop === 'location') {
-                    target.WB_wombat_location = value;
-                    return true;
-                } else if (prop === 'top') {
-                    target.WB_wombat_top = value;
-                    return true;
-                } else if (prop === 'postMessage') {
-                    return true;
-                } else {
-                    target[prop] = value;
-                    return true;
-                }
-            },
-            has(target, prop) {
-                console.log('wombat window proxy has', prop);
-                return prop in target;
-            }
-        })
-    }
-
-    function createWombatWindowProxy2($wbwindow) {
-        let $wbwindow_noModify = {
-            "console": true,
-            "NFC": true,
-            "Object": true,
-            "BluetoothUUID": true,
-            "BluetoothRemoteGATTService": true,
-            "Function": true,
-            "BluetoothRemoteGATTServer": true,
-            "BluetoothRemoteGATTDescriptor": true,
-            "Array": true,
-            "BluetoothRemoteGATTCharacteristic": true,
-            "BluetoothDevice": true,
-            "BluetoothCharacteristicProperties": true,
-            "Number": true,
-            "Bluetooth": true,
-            "WebAuthentication": true,
-            "ScopedCredentialInfo": true,
-            "ScopedCredential": true,
-            "AuthenticationAssertion": true,
-            "Boolean": true,
-            "WebGLRenderingContext": true,
-            "WebGL2RenderingContext": true,
-            "Path2D": true,
-            "String": true,
-            "CanvasPattern": true,
-            "Symbol": true,
-            "CanvasGradient": true,
-            "TextDetector": true,
-            "FaceDetector": true,
-            "Date": true,
-            "DetectedText": true,
-            "DetectedFace": true,
-            "Promise": true,
-            "DetectedBarcode": true,
-            "RegExp": true,
-            "BarcodeDetector": true,
-            "SensorErrorEvent": true,
-            "Error": true,
-            "Sensor": true,
-            "Magnetometer": true,
-            "Gyroscope": true,
-            "EvalError": true,
-            "AmbientLightSensor": true,
-            "Accelerometer": true,
-            "RangeError": true,
-            "ReferenceError": true,
-            "SyntaxError": true,
-            "TypeError": true,
-            "SpeechSynthesisUtterance": true,
-            "SpeechSynthesisEvent": true,
-            "URIError": true,
-            "RemotePlayback": true,
-            "PushSubscriptionOptions": true,
-            "PushSubscription": true,
-            "JSON": true,
-            "PushManager": true,
-            "PresentationReceiver": true,
-            "Math": true,
-            "PresentationConnectionList": true,
-            "PresentationRequest": true,
-            "Intl": true,
-            "PresentationConnectionCloseEvent": true,
-            "ArrayBuffer": true,
-            "PresentationConnectionAvailableEvent": true,
-            "PresentationConnection": true,
-            "PresentationAvailability": true,
-            "Uint8Array": true,
-            "Presentation": true,
-            "PermissionStatus": true,
-            "Int8Array": true,
-            "Permissions": true,
-            "PaymentResponse": true,
-            "Uint16Array": true,
-            "PaymentRequestUpdateEvent": true,
-            "Int16Array": true,
-            "PaymentRequest": true,
-            "PaymentAddress": true,
-            "PaymentAppManager": true,
-            "Uint32Array": true,
-            "Notification": true,
-            "Int32Array": true,
-            "NetworkInformation": true,
-            "VideoPlaybackQuality": true,
-            "TrackDefaultList": true,
-            "Float32Array": true,
-            "TrackDefault": true,
-            "Float64Array": true,
-            "CanvasCaptureMediaStreamTrack": true,
-            "IDBObserverChanges": true,
-            "Uint8ClampedArray": true,
-            "IDBObserver": true,
-            "IDBObservation": true,
-            "DataView": true,
-            "OffscreenCanvasRenderingContext2D": true,
-            "StorageManager": true,
-            "DeviceLightEvent": true,
-            "Map": true,
-            "SiteBoundCredential": true,
-            "Set": true,
-            "PasswordCredential": true,
-            "FederatedCredential": true,
-            "CredentialsContainer": true,
-            "WeakMap": true,
-            "Credential": true,
-            "WeakSet": true,
-            "CompositorWorker": true,
-            "BudgetState": true,
-            "Proxy": true,
-            "BudgetService": true,
-            "BroadcastChannel": true,
-            "Reflect": true,
-            "SyncManager": true,
-            "Infinity": true,
-            "WebSocket": true,
-            "WebGLVertexArrayObject": true,
-            "NaN": true,
-            "WebGLUniformLocation": true,
-            "WebGLTransformFeedback": true,
-            "WebGLTexture": true,
-            "WebGLSync": true,
-            "WebGLShaderPrecisionFormat": true,
-            "WebGLShader": true,
-            "WebGLSampler": true,
-            "WebGLRenderbuffer": true,
-            "WebGLQuery": true,
-            "WebGLProgram": true,
-            "WebGLFramebuffer": true,
-            "WebGLContextEvent": true,
-            "WebGLBuffer": true,
-            "WebGLActiveInfo": true,
-            "WaveShaperNode": true,
-            "TextEncoder": true,
-            "TextDecoder": true,
-            "SubtleCrypto": true,
-            "StorageEvent": true,
-            "Storage": true,
-            "StereoPannerNode": true,
-            "SourceBufferList": true,
-            "ByteLengthQueuingStrategy": true,
-            "SourceBuffer": true,
-            "ServiceWorkerRegistration": true,
-            "CountQueuingStrategy": true,
-            "ServiceWorkerContainer": true,
-            "ServiceWorker": true,
-            "ReadableStream": true,
-            "ScriptProcessorNode": true,
-            "ScreenOrientation": true,
-            "Response": true,
-            "Request": true,
-            "RTCStatsReport": true,
-            "RTCSessionDescription": true,
-            "RTCPeerConnectionIceEvent": true,
-            "RTCPeerConnection": true,
-            "RTCIceCandidate": true,
-            "RTCDataChannelEvent": true,
-            "RTCDataChannel": true,
-            "RTCCertificate": true,
-            "Plugin": true,
-            "PluginArray": true,
-            "PeriodicWave": true,
-            "PannerNode": true,
-            "OscillatorNode": true,
-            "OfflineAudioContext": true,
-            "OfflineAudioCompletionEvent": true,
-            "MimeType": true,
-            "MimeTypeArray": true,
-            "MediaStreamTrackEvent": true,
-            "MediaStreamTrack": true,
-            "MediaStreamEvent": true,
-            "MediaStream": true,
-            "MediaStreamAudioSourceNode": true,
-            "MediaStreamAudioDestinationNode": true,
-            "MediaSource": true,
-            "MediaRecorder": true,
-            "MediaKeys": true,
-            "MediaKeySystemAccess": true,
-            "MediaKeyStatusMap": true,
-            "MediaKeySession": true,
-            "MediaKeyMessageEvent": true,
-            "MediaEncryptedEvent": true,
-            "MediaElementAudioSourceNode": true,
-            "MediaDevices": true,
-            "MediaDeviceInfo": true,
-            "MIDIPort": true,
-            "MIDIOutputMap": true,
-            "MIDIOutput": true,
-            "MIDIMessageEvent": true,
-            "MIDIInputMap": true,
-            "MIDIInput": true,
-            "MIDIConnectionEvent": true,
-            "MIDIAccess": true,
-            "ImageBitmapRenderingContext": true,
-            "IIRFilterNode": true,
-            "IDBVersionChangeEvent": true,
-            "IDBTransaction": true,
-            "IDBRequest": true,
-            "IDBOpenDBRequest": true,
-            "IDBObjectStore": true,
-            "IDBKeyRange": true,
-            "IDBIndex": true,
-            "IDBFactory": true,
-            "IDBDatabase": true,
-            "IDBCursorWithValue": true,
-            "IDBCursor": true,
-            "Headers": true,
-            "GamepadEvent": true,
-            "Gamepad": true,
-            "GamepadButton": true,
-            "GainNode": true,
-            "EventSource": true,
-            "DynamicsCompressorNode": true,
-            "DeviceOrientationEvent": true,
-            "DeviceMotionEvent": true,
-            "DelayNode": true,
-            "DOMError": true,
-            "CryptoKey": true,
-            "Crypto": true,
-            "ConvolverNode": true,
-            "ConstantSourceNode": true,
-            "CloseEvent": true,
-            "ChannelSplitterNode": true,
-            "ChannelMergerNode": true,
-            "WritableStream": true,
-            "CanvasRenderingContext2D": true,
-            "CacheStorage": true,
-            "Cache": true,
-            "BlobEvent": true,
-            "BiquadFilterNode": true,
-            "BeforeInstallPromptEvent": true,
-            "BatteryManager": true,
-            "BaseAudioContext": true,
-            "AudioScheduledSourceNode": true,
-            "AudioProcessingEvent": true,
-            "AudioParam": true,
-            "AudioNode": true,
-            "AudioListener": true,
-            "AudioDestinationNode": true,
-            "AudioContext": true,
-            "AudioBufferSourceNode": true,
-            "AudioBuffer": true,
-            "AppBannerPromptResult": true,
-            "AnalyserNode": true,
-            "WebAssembly": true,
-            "SVGMPathElement": true,
-            "SVGDiscardElement": true,
-            "SVGAnimationElement": true,
-            "XSLTProcessor": true,
-            "Worklet": true,
-            "ImageCapture": true,
-            "VTTRegion": true,
-            "KeyframeEffectReadOnly": true,
-            "KeyframeEffect": true,
-            "MediaSettingsRange": true,
-            "DocumentTimeline": true,
-            "PhotoCapabilities": true,
-            "AnimationTimeline": true,
-            "AnimationPlaybackEvent": true,
-            "USB": true,
-            "AnimationEffectTimingReadOnly": true,
-            "AnimationEffectTiming": true,
-            "AnimationEffectReadOnly": true,
-            "USBAlternateInterface": true,
-            "VisualViewport": true,
-            "USBConfiguration": true,
-            "SharedWorker": true,
-            "ResizeObserverEntry": true,
-            "USBConnectionEvent": true,
-            "ResizeObserver": true,
-            "PointerEvent": true,
-            "PerformanceObserverEntryList": true,
-            "USBDevice": true,
-            "PerformanceObserver": true,
-            "USBEndpoint": true,
-            "PerformanceNavigationTiming": true,
-            "IntersectionObserverEntry": true,
-            "IntersectionObserver": true,
-            "USBInterface": true,
-            "StaticRange": true,
-            "USBInTransferResult": true,
-            "InputEvent": true,
-            "DOMRectReadOnly": true,
-            "USBIsochronousInTransferPacket": true,
-            "DOMRect": true,
-            "DOMQuad": true,
-            "DOMPointReadOnly": true,
-            "USBIsochronousInTransferResult": true,
-            "DOMPoint": true,
-            "USBIsochronousOutTransferPacket": true,
-            "DOMMatrixReadOnly": true,
-            "DOMMatrix": true,
-            "OffscreenCanvas": true,
-            "USBIsochronousOutTransferResult": true,
-            "Float32ImageData": true,
-            "USBOutTransferResult": true,
-            "CustomElementRegistry": true,
-            "CompositorProxy": true,
-            "__REACT_DEVTOOLS_GLOBAL_HOOK__": true,
-            "StylePropertyMap": true,
-            "CSSVariableReferenceValue": true,
-            "CSSURLImageValue": true,
-            "CSSUnparsedValue": true,
-            "CSSTranslation": true,
-            "CSSTransformValue": true,
-            "CSSTransformComponent": true,
-            "CSSStyleValue": true,
-            "CSSSkew": true,
-            "CSSSimpleLength": true,
-            "CSSScale": true,
-            "CSSRotation": true,
-            "CSSResourceValue": true,
-            "CSSPositionValue": true,
-            "CSSPerspective": true,
-            "CSSNumberValue": true,
-            "CSSMatrixComponent": true,
-            "CSSLengthValue": true,
-            "CSSKeywordValue": true,
-            "CSSImageValue": true,
-            "CSSCalcLength": true,
-            "CSSAngleValue": true,
-            "VideoTrackList": true,
-            "VideoTrack": true,
-            "AudioTrackList": true,
-            "AudioTrack": true,
-            "XPathResult": true,
-            "XPathExpression": true,
-            "XPathEvaluator": true,
-            "XMLSerializer": true,
-            "XMLHttpRequestUpload": true,
-            "XMLHttpRequestEventTarget": true,
-            "XMLHttpRequest": true,
-            "XMLDocument": true,
-            "Worker": true,
-            "Window": true,
-            "WheelEvent": true,
-            "WebKitCSSMatrix": true,
-            "ValidityState": true,
-            "VTTCue": true,
-            "URLSearchParams": true,
-            "URL": true,
-            "UIEvent": true,
-            "TreeWalker": true,
-            "TransitionEvent": true,
-            "TrackEvent": true,
-            "TouchList": true,
-            "TouchEvent": true,
-            "Touch": true,
-            "TimeRanges": true,
-            "TextTrackList": true,
-            "TextTrackCueList": true,
-            "TextTrackCue": true,
-            "TextTrack": true,
-            "TextMetrics": true,
-            "TextEvent": true,
-            "Text": true,
-            "TaskAttributionTiming": true,
-            "StyleSheetList": true,
-            "StyleSheet": true,
-            "ShadowRoot": true,
-            "Selection": true,
-            "SecurityPolicyViolationEvent": true,
-            "Screen": true,
-            "SVGViewElement": true,
-            "SVGUseElement": true,
-            "SVGUnitTypes": true,
-            "SVGTransformList": true,
-            "SVGTransform": true,
-            "SVGTitleElement": true,
-            "SVGTextPositioningElement": true,
-            "SVGTextPathElement": true,
-            "SVGTextElement": true,
-            "SVGTextContentElement": true,
-            "SVGTSpanElement": true,
-            "SVGSymbolElement": true,
-            "SVGSwitchElement": true,
-            "SVGStyleElement": true,
-            "SVGStringList": true,
-            "SVGStopElement": true,
-            "SVGSetElement": true,
-            "SVGScriptElement": true,
-            "SVGSVGElement": true,
-            "SVGRectElement": true,
-            "SVGRect": true,
-            "SVGRadialGradientElement": true,
-            "SVGPreserveAspectRatio": true,
-            "SVGPolylineElement": true,
-            "SVGPolygonElement": true,
-            "SVGPointList": true,
-            "SVGPoint": true,
-            "SVGPatternElement": true,
-            "SVGPathElement": true,
-            "SVGNumberList": true,
-            "SVGNumber": true,
-            "SVGMetadataElement": true,
-            "SVGMatrix": true,
-            "SVGMaskElement": true,
-            "SVGMarkerElement": true,
-            "SVGLinearGradientElement": true,
-            "SVGLineElement": true,
-            "SVGLengthList": true,
-            "SVGLength": true,
-            "SVGImageElement": true,
-            "SVGGraphicsElement": true,
-            "SVGGradientElement": true,
-            "SVGGeometryElement": true,
-            "SVGGElement": true,
-            "SVGForeignObjectElement": true,
-            "SVGFilterElement": true,
-            "SVGFETurbulenceElement": true,
-            "SVGFETileElement": true,
-            "SVGFESpotLightElement": true,
-            "SVGFESpecularLightingElement": true,
-            "SVGFEPointLightElement": true,
-            "SVGFEOffsetElement": true,
-            "SVGFEMorphologyElement": true,
-            "SVGFEMergeNodeElement": true,
-            "SVGFEMergeElement": true,
-            "SVGFEImageElement": true,
-            "SVGFEGaussianBlurElement": true,
-            "SVGFEFuncRElement": true,
-            "SVGFEFuncGElement": true,
-            "SVGFEFuncBElement": true,
-            "SVGFEFuncAElement": true,
-            "SVGFEFloodElement": true,
-            "SVGFEDropShadowElement": true,
-            "SVGFEDistantLightElement": true,
-            "SVGFEDisplacementMapElement": true,
-            "SVGFEDiffuseLightingElement": true,
-            "SVGFEConvolveMatrixElement": true,
-            "SVGFECompositeElement": true,
-            "SVGFEComponentTransferElement": true,
-            "SVGFEColorMatrixElement": true,
-            "SVGFEBlendElement": true,
-            "SVGEllipseElement": true,
-            "SVGElement": true,
-            "SVGDescElement": true,
-            "SVGDefsElement": true,
-            "SVGComponentTransferFunctionElement": true,
-            "SVGClipPathElement": true,
-            "SVGCircleElement": true,
-            "SVGAnimatedTransformList": true,
-            "SVGAnimatedString": true,
-            "SVGAnimatedRect": true,
-            "SVGAnimatedPreserveAspectRatio": true,
-            "SVGAnimatedNumberList": true,
-            "SVGAnimatedNumber": true,
-            "SVGAnimatedLengthList": true,
-            "SVGAnimatedLength": true,
-            "SVGAnimatedInteger": true,
-            "SVGAnimatedEnumeration": true,
-            "SVGAnimatedBoolean": true,
-            "SVGAnimatedAngle": true,
-            "SVGAnimateTransformElement": true,
-            "SVGAnimateMotionElement": true,
-            "SVGAnimateElement": true,
-            "SVGAngle": true,
-            "SVGAElement": true,
-            "Range": true,
-            "RadioNodeList": true,
-            "PromiseRejectionEvent": true,
-            "ProgressEvent": true,
-            "ProcessingInstruction": true,
-            "PopStateEvent": true,
-            "PerformanceTiming": true,
-            "PerformanceResourceTiming": true,
-            "PerformanceNavigation": true,
-            "PerformanceMeasure": true,
-            "PerformanceMark": true,
-            "PerformanceLongTaskTiming": true,
-            "PerformanceEntry": true,
-            "Performance": true,
-            "PageTransitionEvent": true,
-            "NodeList": true,
-            "NodeIterator": true,
-            "NodeFilter": true,
-            "Node": true,
-            "Navigator": true,
-            "NamedNodeMap": true,
-            "MutationRecord": true,
-            "MutationObserver": true,
-            "MutationEvent": true,
-            "MouseEvent": true,
-            "MessagePort": true,
-            "MessageEvent": true,
-            "MessageChannel": true,
-            "MediaQueryListEvent": true,
-            "MediaQueryList": true,
-            "MediaList": true,
-            "MediaError": true,
-            "Location": true,
-            "KeyboardEvent": true,
-            "InputDeviceCapabilities": true,
-            "ImageData": true,
-            "ImageBitmap": true,
-            "IdleDeadline": true,
-            "History": true,
-            "HashChangeEvent": true,
-            "HTMLVideoElement": true,
-            "HTMLUnknownElement": true,
-            "HTMLUListElement": true,
-            "HTMLTrackElement": true,
-            "HTMLTitleElement": true,
-            "HTMLTextAreaElement": true,
-            "HTMLTemplateElement": true,
-            "HTMLTableSectionElement": true,
-            "HTMLTableRowElement": true,
-            "HTMLTableElement": true,
-            "HTMLTableColElement": true,
-            "HTMLTableCellElement": true,
-            "HTMLTableCaptionElement": true,
-            "HTMLStyleElement": true,
-            "HTMLSpanElement": true,
-            "HTMLSourceElement": true,
-            "HTMLSlotElement": true,
-            "HTMLShadowElement": true,
-            "HTMLSelectElement": true,
-            "HTMLScriptElement": true,
-            "HTMLQuoteElement": true,
-            "HTMLProgressElement": true,
-            "HTMLPreElement": true,
-            "HTMLPictureElement": true,
-            "HTMLParamElement": true,
-            "HTMLParagraphElement": true,
-            "HTMLOutputElement": true,
-            "HTMLOptionsCollection": true,
-            "Option": true,
-            "HTMLOptionElement": true,
-            "HTMLOptGroupElement": true,
-            "HTMLObjectElement": true,
-            "HTMLOListElement": true,
-            "HTMLModElement": true,
-            "HTMLMeterElement": true,
-            "HTMLMetaElement": true,
-            "HTMLMenuElement": true,
-            "HTMLMediaElement": true,
-            "HTMLMarqueeElement": true,
-            "HTMLMapElement": true,
-            "HTMLLinkElement": true,
-            "HTMLLegendElement": true,
-            "HTMLLabelElement": true,
-            "HTMLLIElement": true,
-            "HTMLInputElement": true,
-            "Image": true,
-            "HTMLImageElement": true,
-            "HTMLIFrameElement": true,
-            "HTMLHtmlElement": true,
-            "HTMLHeadingElement": true,
-            "HTMLHeadElement": true,
-            "HTMLHRElement": true,
-            "HTMLFrameSetElement": true,
-            "HTMLFrameElement": true,
-            "HTMLFormElement": true,
-            "HTMLFormControlsCollection": true,
-            "HTMLFontElement": true,
-            "HTMLFieldSetElement": true,
-            "HTMLEmbedElement": true,
-            "HTMLElement": true,
-            "HTMLDocument": true,
-            "HTMLDivElement": true,
-            "HTMLDirectoryElement": true,
-            "HTMLDialogElement": true,
-            "HTMLDetailsElement": true,
-            "HTMLDataListElement": true,
-            "HTMLDListElement": true,
-            "HTMLContentElement": true,
-            "HTMLCollection": true,
-            "HTMLCanvasElement": true,
-            "HTMLButtonElement": true,
-            "HTMLBodyElement": true,
-            "HTMLBaseElement": true,
-            "HTMLBRElement": true,
-            "Audio": true,
-            "HTMLAudioElement": true,
-            "HTMLAreaElement": true,
-            "HTMLAnchorElement": true,
-            "HTMLAllCollection": true,
-            "FormData": true,
-            "FontFaceSetLoadEvent": true,
-            "FontFace": true,
-            "FocusEvent": true,
-            "FileReader": true,
-            "FileList": true,
-            "File": true,
-            "EventTarget": true,
-            "Event": true,
-            "ErrorEvent": true,
-            "Element": true,
-            "DragEvent": true,
-            "DocumentType": true,
-            "DocumentFragment": true,
-            "Document": true,
-            "DataTransferItemList": true,
-            "DataTransferItem": true,
-            "DataTransfer": true,
-            "DOMTokenList": true,
-            "DOMStringMap": true,
-            "DOMStringList": true,
-            "DOMParser": true,
-            "DOMImplementation": true,
-            "DOMException": true,
-            "CustomEvent": true,
-            "CompositionEvent": true,
-            "Comment": true,
-            "ClipboardEvent": true,
-            "ClientRectList": true,
-            "ClientRect": true,
-            "CharacterData": true,
-            "CSSViewportRule": true,
-            "CSSSupportsRule": true,
-            "CSSStyleSheet": true,
-            "CSSStyleRule": true,
-            "CSSStyleDeclaration": true,
-            "CSSRuleList": true,
-            "CSSRule": true,
-            "CSSPageRule": true,
-            "CSSNamespaceRule": true,
-            "CSSMediaRule": true,
-            "CSSKeyframesRule": true,
-            "CSSKeyframeRule": true,
-            "CSSImportRule": true,
-            "CSSGroupingRule": true,
-            "CSSFontFaceRule": true,
-            "CSS": true,
-            "CSSConditionRule": true,
-            "CDATASection": true,
-            "Blob": true,
-            "BeforeUnloadEvent": true,
-            "BarProp": true,
-            "Attr": true,
-            "ApplicationCacheErrorEvent": true,
-            "ApplicationCache": true,
-            "AnimationEvent": true,
-            "WebKitMutationObserver": true,
-            "WebKitAnimationEvent": true,
-            "WebKitTransitionEvent": true
-        };
         let $wbwindow_ownFunctions = {
             "addEventListener": true,
             "removeEventListener": true,
@@ -4280,43 +2834,17 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                             return $wbwindow[what];
                         }
                     default:
-                        if ($wbwindow_noModify[what]) {
-                            return $wbwindow[what];
-                        } else {
-                            let retVal = $wbwindow[what];
-                            if (typeof retVal === 'function' && $wbwindow_ownFunctions[what]) {
-                                return retVal.bind($wbwindow);
-                            }
-                            return retVal;
-                        }
+                         let retVal = $wbwindow[what];
+                         if (typeof retVal === 'function' && $wbwindow_ownFunctions[what]) {
+                             return retVal.bind($wbwindow);
+                         }
+                         return retVal;
                 }
             },
             set(target, prop, value) {
                 // console.log('wombat window proxy set', prop, value);
                 if (prop === 'location') {
-                    if (value === '/sign-in/?routeTo=https%3A%2F%2Fwww.mendeley.com%2Fprofiles%2Fhelen-palmer%2F') {
-                        if (!$wbwindow.__redirect_save_once) {
-                            let wbdiv = $wbwindow.top.document.getElementById('_wb_frame_top_banner');
-                            $wbwindow.__redirect_save_once = true;
-                            $wbwindow.__redirect_save_count = 1;
-                            if ($wbwindow.top.document.getElementById('_wb_label_counter2') === null) {
-                                wbdiv.innerHTML = `${wbdiv.innerHTML} <span id='_wb_label_counter'>Page redirection count: <span id='_wb_label_counter2'>${$wbwindow.__redirect_save_count}</span></span>`;
-                            } else {
-                                let __ = $wbwindow.top.document.getElementById('_wb_label_counter2');
-                                $wbwindow.__redirect_save_count = parseInt(__.innerHTML);
-                                $wbwindow.__redirect_save_count++;
-                                __.innerHTML = `${$wbwindow.__redirect_save_count}`;
-                            }
-
-
-                        } else {
-                            let wbdiv = $wbwindow.top.document.getElementById('_wb_label_counter2');
-                            $wbwindow.__redirect_save_count++;
-                            wbdiv.innerHTML = `${$wbwindow.__redirect_save_count}`;
-                        }
-                    } else {
-                        $wbwindow.WB_wombat_location = value;
-                    }
+                   $wbwindow.WB_wombat_location = value;
                     return true;
                 } else if (prop === 'postMessage' || prop === 'document') {
                     return true;
@@ -4410,7 +2938,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
     function init_proxy($wbwindow) {
-        $wbwindow._WB_wombat_window_proxy = createWombatWindowProxy2($wbwindow);
+        $wbwindow._WB_wombat_window_proxy = createWombatWindowProxy($wbwindow);
         $wbwindow._WB_wombat_document_proxy = createDocumentProxy($wbwindow);
     }
 
@@ -4490,7 +3018,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             // init insertAdjacentHTML() override
             init_insertAdjacentHTML_override();
 
-            // iframe.contentWindow and iframe.contentDocument overrides to
+            // iframe.contentWindow and iframe.contentDocument overrides to 
             // ensure wombat is inited on the iframe $wbwindow!
             override_iframe_content_access("contentWindow");
             override_iframe_content_access("contentDocument");
@@ -4550,12 +3078,12 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
         init_proxy($wbwindow);
 
-        override_mutation_obs($wbwindow);
-        override_window_getcomputedstyle($wbwindow);
+       // override_mutation_obs($wbwindow);
+        // override_window_getcomputedstyle($wbwindow);
 
         var $wbwindow_noModify = {};
         // expose functions
-        var obj = {};
+        var obj = {}
         obj.extract_orig = extract_orig;
         obj.rewrite_url = rewrite_url;
         obj.watch_elem = watch_elem;
@@ -4582,7 +3110,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 if (!win.wbinfo) {
                     return (win._wb_wombat != undefined);
                 } else {
-                    // otherwise, ensure that it is not a top container frame
+                // otherwise, ensure that it is not a top container frame
                     return !win.wbinfo.is_frame;
                 }
 
@@ -4634,7 +3162,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             return;
         }
 
-        var getter = function () {
+        var getter = function() {
             var res = this.frameElement;
 
             if (this.__WB_replay_top == this) {
@@ -4650,8 +3178,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         if ($wbwindow.__WB_replay_top == $wbwindow) {
             try {
                 Object.defineProperty($wbwindow, "frameElement", {value: undefined, configurable: false});
-            } catch (e) {
-            }
+            } catch (e) {}
         }
     }
 
@@ -4669,7 +3196,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             }
         }
 
-        var getter = function () {
+        var getter = function() {
             if (this.__WB_replay_top) {
                 return this.__WB_replay_top;
             } else if (isWindow(this)) {
@@ -4679,7 +3206,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             }
         }
 
-        var setter = function (val) {
+        var setter = function(val) {
             this.top = val;
         }
 
@@ -4687,13 +3214,16 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     }
 
 
+
+
     // Utility functions used by rewriting rules
-    function watch_elem(elem, func) {
+    function watch_elem(elem, func)
+    {
         if (!$wbwindow.MutationObserver) {
             return false;
         }
 
-        var m = new MutationObserver(function (records, observer) {
+        var m = new MutationObserver(function(records, observer) {
             for (var i = 0; i < records.length; i++) {
                 var r = records[i];
                 if (r.type == "childList") {
