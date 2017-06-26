@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>pywb Wayback Machine (new)</h2>
+
+This archive contains the following collections:
+
+<ul>
+{% for route in routes %}
+    <li>
+    <a href="{{ '/' + route }}">{{ '/' + route }}</a>
+    </li>
+{% endfor %}
+</ul>
+</body>
+</html>

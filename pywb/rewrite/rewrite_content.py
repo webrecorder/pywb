@@ -21,6 +21,27 @@ from warcio.utils import to_native_str
 from pywb.rewrite.regex_rewriters import JSNoneRewriter, JSLinkOnlyRewriter
 
 
+firstbuf_proxy = b'\n{\nlet window = _WB_wombat_window_proxy;\n' \
+                 b'let self = _WB_wombat_window_proxy;\n' \
+                 b'let document = _WB_wombat_document_proxy;\n' \
+                 b'let location = WB_wombat_location;\n' \
+                 b'let top = _WB_wombat_window_proxy;\n\n'
+
+firstbuf_proxy2 = b"""
+var _____WB$wombat$assign$function_____=function(b){let c;switch(b){case'window':case'top':try{c=_WB_wombat_window_proxy}catch(d){c={}}break;case'self':try{c=_WB_wombat_window_proxy}catch(d){c=self}break;case'location':try{c=WB_wombat_location}catch(d){c={}}break;case'document':{let d=!0;try{c=_WB_wombat_document_proxy}catch(e){d=!1}if(!d)try{c=document}catch(e){c={}}break}}return c};\n
+{\n
+let window = _____WB$wombat$assign$function_____('window');\n
+let self = _____WB$wombat$assign$function_____('self');\n
+let document = _____WB$wombat$assign$function_____('document');\n
+let location = _____WB$wombat$assign$function_____('location');\n
+let top = _____WB$wombat$assign$function_____('top');\n\n
+"""
+
+def final_read_proxy():
+    return ' ' \
+            '\n}'
+
+
 #=================================================================
 class RewriteContent(object):
     HEAD_REGEX = re.compile(b'<\s*head\\b[^>]*[>]+', re.I)
@@ -253,11 +274,18 @@ class RewriteContent(object):
         align = (text_type != 'html')
 
         # Create rewriting generator
-        gen = self.rewrite_text_stream_to_gen(stream,
-                                              rewrite_func=rewriter.rewrite,
-                                              final_read_func=rewriter.close,
-                                              first_buff=first_buff,
-                                              align_to_line=align)
+        if text_type == 'js':
+            gen = self.rewrite_text_stream_to_gen(stream,
+                                                  rewrite_func=rewriter.rewrite,
+                                                  final_read_func=final_read_proxy,
+                                                  first_buff=firstbuf_proxy2,
+                                                  align_to_line=align)
+        else:
+            gen = self.rewrite_text_stream_to_gen(stream,
+                                                  rewrite_func=rewriter.rewrite,
+                                                  final_read_func=rewriter.close,
+                                                  first_buff=first_buff,
+                                                  align_to_line=align)
 
         return (status_headers, gen, True)
 
@@ -360,6 +388,42 @@ class RewriteContent(object):
                 yield buff
                 if not buff:
                     break
+
+        finally:
+            stream.close()
+
+    @staticmethod
+    def rewrite_js_stream_to_gen(stream, rewrite_func,
+                                   final_read_func, first_buff,
+                                   align_to_line):
+        """
+               Convert stream to generator using applying rewriting func
+               to each portion of the stream.
+               Align to line boundaries if needed.
+               """
+        try:
+            has_closed = hasattr(stream, 'closed')
+            buff = first_buff
+
+            while True:
+                if buff:
+                    buff = rewrite_func(buff.decode('iso-8859-1'))
+                    yield buff.encode('iso-8859-1')
+
+                buff = stream.read(RewriteContent.BUFF_SIZE)
+                # on 2.6, readline() (but not read()) throws an exception
+                # if stream already closed, so check stream.closed if present
+                if (buff and align_to_line and
+                        (not has_closed or not stream.closed)):
+                    buff += stream.readline()
+
+                if not buff:
+                    break
+
+            # For adding a tail/handling final buffer
+            buff = final_read_func()
+            if buff:
+                yield buff.encode('iso-8859-1')
 
         finally:
             stream.close()

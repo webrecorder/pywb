@@ -48,6 +48,144 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     var wb_is_proxy = false;
 
+    // https://github.com/tvcutsem/harmony-reflect/blob/master/reflect.js
+    function sameValue(x, y) {
+        if (x === y) {
+            // 0 === -0, but they are not identical
+            return x !== 0 || 1 / x === 1 / y;
+        }
+        // NaN !== NaN, but they are identical.
+        // NaNs are the only non-reflexive value, i.e., if x !== x,
+        // then x is a NaN.
+        // isNaN is broken: it converts its argument to number, so
+        // isNaN("foo") => true
+        return x !== x && y !== y;
+    }
+
+    function isEmptyDescriptor(desc) {
+        return !('get' in desc) &&
+            !('set' in desc) &&
+            !('value' in desc) &&
+            !('writable' in desc) &&
+            !('enumerable' in desc) &&
+            !('configurable' in desc);
+    }
+
+
+    function isEquivalentDescriptor(desc1, desc2) {
+        return sameValue(desc1.get, desc2.get) &&
+            sameValue(desc1.set, desc2.set) &&
+            sameValue(desc1.value, desc2.value) &&
+            sameValue(desc1.writable, desc2.writable) &&
+            sameValue(desc1.enumerable, desc2.enumerable) &&
+            sameValue(desc1.configurable, desc2.configurable);
+    }
+
+    function isAccessorDescriptor(desc) {
+        if (desc === undefined) return false;
+        return ('get' in desc || 'set' in desc);
+    }
+
+    function isDataDescriptor(desc) {
+        if (desc === undefined) return false;
+        return ('value' in desc || 'writable' in desc);
+    }
+
+    function isGenericDescriptor(desc) {
+        if (desc === undefined) return false;
+        return !isAccessorDescriptor(desc) && !isDataDescriptor(desc);
+    }
+
+    function genericReflectDefineProp(target, name, desc) {
+        var current = Object.getOwnPropertyDescriptor(target, name);
+        var extensible = Object.isExtensible(target);
+        if (current === undefined && extensible === false) {
+            return false;
+        }
+        if (current === undefined && extensible === true) {
+            Object.defineProperty(target, name, desc); // should never fail
+            return true;
+        }
+        if (isEmptyDescriptor(desc)) {
+            Object.defineProperty(target, name, desc);
+            return true;
+        }
+        if (isEquivalentDescriptor(current, desc)) {
+            return true;
+        }
+        if (current.configurable === false) {
+            if (desc.configurable === true) {
+                return false;
+            }
+            if ('enumerable' in desc && desc.enumerable !== current.enumerable) {
+                return false;
+            }
+        }
+        if (isGenericDescriptor(desc)) {
+            // no further validation necessary
+        } else if (isDataDescriptor(current) !== isDataDescriptor(desc)) {
+            if (current.configurable === false) {
+                return false;
+            }
+        } else if (isDataDescriptor(current) && isDataDescriptor(desc)) {
+            if (current.configurable === false) {
+                if (current.writable === false && desc.writable === true) {
+                    return false;
+                }
+                if (current.writable === false) {
+                    if ('value' in desc && !sameValue(desc.value, current.value)) {
+                        return false;
+                    }
+                }
+            }
+        } else if (isAccessorDescriptor(current) && isAccessorDescriptor(desc)) {
+            if (current.configurable === false) {
+                if ('set' in desc && !sameValue(desc.set, current.set)) {
+                    return false;
+                }
+                if ('get' in desc && !sameValue(desc.get, current.get)) {
+                    return false;
+                }
+            }
+        }
+        Object.defineProperty(target, name, desc); // should never fail
+        return true;
+    }
+
+    function genericReflectSet(target, name, value) {
+        // first, check whether target has a non-writable property
+        // shadowing name on receiver
+        var ownDesc = Object.getOwnPropertyDescriptor(target, name);
+        if (ownDesc === undefined) {
+            if (!Object.isExtensible(target)) return false;
+            Object.defineProperty(target, name, {value: value, writable: true, enumerable: true, configurable: true});
+            return true;
+        }
+
+        // we now know that ownDesc !== undefined
+        if (isAccessorDescriptor(ownDesc)) {
+            var setter = ownDesc.set;
+            if (setter === undefined) return false;
+            setter.call(target, value); // assumes Function.prototype.call
+            return true;
+        }
+        // otherwise, isDataDescriptor(ownDesc) must be true
+        if (ownDesc.writable === false) return false;
+        // we found an existing writable data property on the prototype chain.
+        // Now update or add the data property on the receiver, depending on
+        // whether the receiver already defines the property or not.
+        if (!Object.isExtensible(target)) return false;
+        var updateDesc =
+            {
+                value: value,
+                writable: ownDesc.writable,
+                enumerable: ownDesc.enumerable,
+                configurable: ownDesc.configurable
+            };
+        Object.defineProperty(target, name, updateDesc);
+        return true;
+    }
+
     //============================================
     function is_host_url(str) {
         // Good guess that's its a hostname
@@ -2090,8 +2228,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return _orig_addEventListener.call(this, type, listener, useCapture);
             }
         }
- 
-        $wbwindow.addEventListener = addEventListener_rewritten;
+
+        $wbwindow.addEventListener = addEventListener_rewritten.bind($wbwindow);
 
         // REMOVE
         
@@ -2107,7 +2245,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
         }
 
-        $wbwindow.removeEventListener = removeEventListener_rewritten;
+        $wbwindow.removeEventListener = removeEventListener_rewritten.bind($wbwindow);
     }
 
     //============================================
@@ -2563,6 +2701,247 @@ var _WBWombat = function($wbwindow, wbinfo) {
         init_bad_prefixes(wb_replay_prefix);
     }
 
+    function createWombatWindowProxy($wbwindow) {
+        let $wbwindow_ownFunctions = {
+            "addEventListener": true,
+            "removeEventListener": true,
+            "onabort": true,
+            "onanimationcancel": true,
+            "onanimationend": true,
+            "onanimationiteration": true,
+            "onauxclick": true,
+            "onblur": true,
+            "onchange": true,
+            "onclick": true,
+            "onclose": true,
+            "oncontextmenu": true,
+            "ondblclick": true,
+            "onerror": true,
+            "onfocus": true,
+            "ongotpointercapture": true,
+            "oninput": true,
+            "onkeydown": true,
+            "onkeypress": true,
+            "onkeyup": true,
+            "onload": true,
+            "onloadend": true,
+            "onloadstart": true,
+            "onlostpointercapture": true,
+            "onmousedown": true,
+            "onmousemove": true,
+            "onmouseout": true,
+            "onmouseover": true,
+            "onmouseup": true,
+            "onpointercancel": true,
+            "onpointerdown": true,
+            "onpointerenter": true,
+            "onpointerleave": true,
+            "onpointermove": true,
+            "onpointerout": true,
+            "onpointerover": true,
+            "onpointerup": true,
+            "onreset": true,
+            "onresize": true,
+            "onscroll": true,
+            "onselect": true,
+            "onselectionchange": true,
+            "onselectstart": true,
+            "onsubmit": true,
+            "ontouchcancel": true,
+            "ontouchmove": true,
+            "ontouchstart": true,
+            "ontransitioncancel": true,
+            "ontransitionend": true,
+            "parseFloat": true,
+            "parseInt": true,
+            "webkitSpeechRecognitionEvent": true,
+            "webkitSpeechRecognitionError": true,
+            "webkitSpeechRecognition": true,
+            "webkitSpeechGrammarList": true,
+            "webkitSpeechGrammar": true,
+            "webkitRTCPeerConnection": true,
+            "webkitMediaStream": true,
+            "decodeURI": true,
+            "decodeURIComponent": true,
+            "encodeURI": true,
+            "encodeURIComponent": true,
+            "escape": true,
+            "unescape": true,
+            "eval": true,
+            "isFinite": true,
+            "isNaN": true,
+            "stop": true,
+            "open": true,
+            "alert": true,
+            "confirm": true,
+            "prompt": true,
+            "print": true,
+            "requestAnimationFrame": true,
+            "cancelAnimationFrame": true,
+            "requestIdleCallback": true,
+            "cancelIdleCallback": true,
+            "captureEvents": true,
+            "releaseEvents": true,
+            "getComputedStyle": true,
+            "matchMedia": true,
+            "moveTo": true,
+            "moveBy": true,
+            "resizeTo": true,
+            "resizeBy": true,
+            "getSelection": true,
+            "find": true,
+            "getMatchedCSSRules": true,
+            "webkitRequestAnimationFrame": true,
+            "webkitCancelAnimationFrame": true,
+            "btoa": true,
+            "atob": true,
+            "setTimeout": true,
+            "clearTimeout": true,
+            "setInterval": true,
+            "clearInterval": true,
+            "createImageBitmap": true,
+            "scroll": true,
+            "scrollTo": true,
+            "scrollBy": true,
+            "getComputedStyleMap": true,
+            "fetch": true,
+            "webkitRequestFileSystem": true,
+            "webkitResolveLocalFileSystemURL": true,
+            "openDatabase": true,
+            "postMessage": true,
+            "blur": true,
+            "focus": true,
+            "close": true,
+            "createWombatWindowProxy": true,
+            "webkitURL": true,
+            "dispatchEvent": true
+        };
+         return new Proxy({}, {
+            get(target, what) {
+                // console.log('wombat window proxy get', what);
+                switch (what) {
+                    case 'self':
+                    case 'window':
+                        return $wbwindow._WB_wombat_window_proxy;
+                    case 'postMessage':
+                        return $wbwindow.__WB_pmw($wbwindow).postMessage.bind($wbwindow.__WB_pmw($wbwindow));
+                    case 'location':
+                        return $wbwindow.WB_wombat_location;
+                    case 'document':
+                        if ($wbwindow._WB_wombat_document_proxy) {
+                            return $wbwindow._WB_wombat_document_proxy;
+                        } else {
+                            return $wbwindow[what];
+                        }
+                    default:
+                         let retVal = $wbwindow[what];
+                         if (typeof retVal === 'function' && $wbwindow_ownFunctions[what]) {
+                             return retVal.bind($wbwindow);
+                         }
+                         return retVal;
+                }
+            },
+            set(target, prop, value) {
+                // console.log('wombat window proxy set', prop, value);
+                if (prop === 'location') {
+                   $wbwindow.WB_wombat_location = value;
+                    return true;
+                } else if (prop === 'postMessage' || prop === 'document') {
+                    return true;
+                } else {
+                    return genericReflectSet($wbwindow, prop, value);
+                }
+            },
+            has(target, prop) {
+                return prop in $wbwindow;
+            },
+            ownKeys (target) {
+                return Object.getOwnPropertyNames($wbwindow).concat(Object.getOwnPropertySymbols($wbwindow));
+            },
+            getOwnPropertyDescriptor (target, key) {
+                // console.log(key);
+                // hack for some JS libraries that do a for in
+                // since we are proxying an empty object need to add configurable = true
+                // Proxies know we are an empty object and if window says not configurable
+                // throws an error
+                let descriptor =  Object.getOwnPropertyDescriptor($wbwindow, key);
+                if (descriptor && !descriptor.configurable) {
+                    descriptor.configurable = true;
+                }
+                return descriptor;
+            },
+            getPrototypeOf (target) {
+                return Object.getPrototypeOf($wbwindow);
+            },
+            setPrototypeOf (target, newProto) {
+                return false;
+            },
+            isExtensible (target) {
+                return Object.isExtensible($wbwindow);
+            },
+            preventExtensions (target) {
+                Object.preventExtensions($wbwindow);
+                return true;
+            },
+            deleteProperty (target, prop) {
+                let propDescriptor = Object.getOwnPropertyDescriptor($wbwindow, prop);
+                if (propDescriptor === undefined) {
+                    return true;
+                }
+                if (propDescriptor.configurable === false) {
+                    return false;
+                }
+                delete $wbwindow[prop];
+                return true;
+            },
+            defineProperty (target, prop, desc) {
+                return genericReflectDefineProp($wbwindow, prop, desc);
+            }
+        });
+    }
+
+    function createDocumentProxy($wbwindow) {
+        return new Proxy($wbwindow.document, {
+            get (target, what) {
+                // console.log('wombat document proxy get', what);
+                if (what === '__isWBProxy__') {
+                    return true;
+                }
+                if (what === '__WBProxyGetO__') {
+                    return $wbwindow.document;
+                }
+                if (what === 'location') {
+                    return $wbwindow.WB_wombat_location;
+                }
+                let retVal = target[what];
+                if (typeof retVal === 'function') {
+                    return retVal.bind(target);
+                }
+                return target[what];
+            },
+            set (target, what, prop) {
+                // console.log('wombat document proxy set', what, prop);
+                if (what === 'domain') {
+                    return true;
+                } else if (what === 'location') {
+                    $wbwindow.WB_wombat_location = prop;
+                    return true;
+                } else {
+                    target[what] = prop;
+                    return true;
+                }
+            },
+            getPrototypeOf(target) {
+                return Object.getPrototypeOf(target);
+            }
+        });
+    }
+
+    function init_proxy($wbwindow) {
+        $wbwindow._WB_wombat_window_proxy = createWombatWindowProxy($wbwindow);
+        $wbwindow._WB_wombat_document_proxy = createDocumentProxy($wbwindow);
+    }
+
     function wombat_init(wbinfo) {
         init_paths(wbinfo);
 
@@ -2696,6 +3075,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         // disable notifications
         init_disable_notifications();
+
+        // add wombat proxy
+        init_proxy($wbwindow);
 
         // expose functions
         var obj = {}
