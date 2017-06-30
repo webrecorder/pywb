@@ -2,7 +2,8 @@ from .testutils import TempDirTests, BaseTestClass
 from pywb.warcserver.warcserver import WarcServer
 import os
 
-from pywb.warcserver.index.indexsource import RemoteIndexSource, LiveIndexSource, MementoIndexSource, FileIndexSource
+from pywb.warcserver.index.indexsource import RemoteIndexSource, LiveIndexSource, MementoIndexSource
+from pywb.warcserver.index.indexsource import WBMementoIndexSource, FileIndexSource
 from pywb.warcserver.index.aggregator import BaseSourceListAggregator, DirectoryIndexSource
 from pywb.warcserver.handlers import ResourceHandler, HandlerSeq
 
@@ -49,7 +50,7 @@ class TestWarcServer(TempDirTests, BaseTestClass):
         return handler.index_source.sources
 
     def test_list_static(self):
-        assert len(self.loader.list_fixed_routes()) == 12
+        assert len(self.loader.list_fixed_routes()) == 13
 
     def test_list_dynamic(self):
         assert self.loader.list_dynamic_routes() == ['auto1', 'auto2']
@@ -72,6 +73,14 @@ class TestWarcServer(TempDirTests, BaseTestClass):
 
         long_form_sources = self._get_sources('rhiz_long')
         assert sources['rhiz'] == long_form_sources['rhiz_long']
+
+    def test_wb_memento(self):
+        sources = self._get_sources('rhiz_wb')
+        assert isinstance(sources['rhiz_wb'], WBMementoIndexSource)
+        assert sources['rhiz_wb'].timegate_url == 'http://webenact.rhizome.org/all/{url}'
+        assert sources['rhiz_wb'].timemap_url == 'http://webenact.rhizome.org/all/timemap/link/{url}'
+        assert sources['rhiz_wb'].replay_url == 'http://webenact.rhizome.org/all/{timestamp}im_/{url}'
+        assert sources['rhiz_wb'].prefix == 'http://webenact.rhizome.org/all/'
 
     def test_remote_cdx_2(self):
         sources = self._get_sources('rhiz_cdx')

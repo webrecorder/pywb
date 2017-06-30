@@ -9,6 +9,9 @@ collections:
     # rhizome (cdx)
     rhiz_cdx: cdx+http://webenact.rhizome.org/all-cdx
 
+    # rhizome (native wb)
+    rhiz_wb: wb-memento+http://webenact.rhizome.org/all/
+
     # ia cdx
     ia: cdx+http://web.archive.org/cdx /web
 

@@ -14,7 +14,7 @@ class JSONPRewriter(StreamingRewriter):
             return string
 
         # see if there is a callback param in current url
-        m_callback = self.CALLBACK.search(self.urlrewriter.wburl.url)
+        m_callback = self.CALLBACK.search(self.url_rewriter.wburl.url)
         if not m_callback:
             return string
 

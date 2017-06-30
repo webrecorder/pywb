@@ -9,7 +9,7 @@ from pywb.warcserver.handlers import DefaultResourceHandler, HandlerSeq
 
 from pywb.warcserver.index.indexsource import FileIndexSource, RemoteIndexSource
 from pywb.warcserver.index.indexsource import MementoIndexSource, RedisIndexSource
-from pywb.warcserver.index.indexsource import LiveIndexSource
+from pywb.warcserver.index.indexsource import LiveIndexSource, WBMementoIndexSource
 from pywb.warcserver.index.zipnum import ZipNumIndexSource
 
 from pywb import DEFAULT_CONFIG
@@ -20,6 +20,7 @@ import os
 
 
 SOURCE_LIST = [LiveIndexSource,
+               WBMementoIndexSource,
                RedisMultiKeyIndexSource,
                MementoIndexSource,
                CacheDirectoryIndexSource,

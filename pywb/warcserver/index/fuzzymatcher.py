@@ -107,7 +107,8 @@ class FuzzyMatcher(object):
 
         fuzzy_params = {'url': url,
                         'matchType': matched_rule.match_type,
-                        'filter': filters}
+                        'filter': filters,
+                        'is_fuzzy': True}
 
         for key in iterkeys(params):
             if key not in self.FUZZY_SKIP_PARAMS:

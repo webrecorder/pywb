@@ -316,6 +316,13 @@ class MementoIndexSource(BaseIndexSource):
         self.timegate_url = timegate_url
         self.timemap_url = timemap_url
         self.replay_url = replay_url
+        self._init_sesh()
+
+    def _init_sesh(self):
+        self.sesh = requests.Session()
+        adapt = requests.adapters.HTTPAdapter(max_retries=3)
+        self.sesh.mount('http://', adapt)
+        self.sesh.mount('https://', adapt)
 
     def links_to_cdxobject(self, link_header, def_name):
         results = MementoUtils.parse_links(link_header, def_name)
@@ -350,8 +357,13 @@ class MementoIndexSource(BaseIndexSource):
     def get_timegate_links(self, params, timestamp):
         url = res_template(self.timegate_url, params)
         accept_dt = timestamp_to_http_date(timestamp)
-        res = requests.head(url, headers={'Accept-Datetime': accept_dt})
-        if res.status_code >= 400:
+        try:
+            headers = self._get_headers(params)
+            headers['Accept-Datetime'] = accept_dt
+            res = self.sesh.head(url, headers=headers, timeout=None)
+            if res.status_code >= 400:
+                raise NotFoundException(url)
+        except:
             raise NotFoundException(url)
 
         links = res.headers.get('Link')
@@ -361,15 +373,15 @@ class MementoIndexSource(BaseIndexSource):
 
         return links
 
-    def _get_timemap_headers(self, params):
+    def _get_headers(self, params):
         return {}
 
     def handle_timemap(self, params):
         url = res_template(self.timemap_url, params)
-        headers = self._get_timemap_headers(params)
-        res = requests.get(url,
-                           headers=headers,
-                           timeout=params.get('_timeout'))
+        headers = self._get_headers(params)
+        res = self.sesh.get(url,
+                            headers=headers,
+                            timeout=params.get('_timeout'))
 
         if res.status_code >= 400 or not res.text:
             raise NotFoundException(url)
@@ -439,11 +451,11 @@ class MementoIndexSource(BaseIndexSource):
 
 #=============================================================================
 class WBMementoIndexSource(MementoIndexSource):
-    WBURL_MATCH = re.compile('([0-9]{0,14}(?:\w+_)?)?/{0,3}(.*)')
+    WBURL_MATCH = re.compile('([0-9]{0,14})?(?:\w+_)?/{0,3}(.*)')
     WAYBACK_ORIG_SUFFIX = '{timestamp}im_/{url}'
 
-    def __init__(self, replay_url):
-        super(WBMementoIndexSource, self).__init__('', '', replay_url)
+    def __init__(self, timegate_url, timemap_url, replay_url):
+        super(WBMementoIndexSource, self).__init__(timegate_url, timemap_url, replay_url)
         self.prefix = replay_url.split('{', 1)[0]
 
     def _get_referrer(self, params):
@@ -456,14 +468,14 @@ class WBMementoIndexSource(MementoIndexSource):
 
         return ref_url
 
-    def _get_timemap_headers(self, params):
+    def _get_headers(self, params):
         ref_url = self._get_referrer(params)
         if ref_url:
             return {'Referer': ref_url}
         else:
             return {}
 
-    def _extract_location(self, location):
+    def _extract_location(self, url, location):
         if not location or not location.startswith(self.prefix):
             raise NotFoundException(url)
 
@@ -473,30 +485,27 @@ class WBMementoIndexSource(MementoIndexSource):
 
         url = m.group(2)
         timestamp = m.group(1)
+        location = self._get_replay_url(timestamp, url)
         return url, timestamp, location
 
     def handle_timegate(self, params, timestamp):
         url = params['url']
         load_url = self._get_replay_url(timestamp, url)
-        ref_url = self._get_referrer(params)
 
         try:
-            headers = {}
-            if ref_url:
-                headers = {'Referer': ref_url}
-
-            res = requests.head(load_url, headers=headers)
+            headers = self._get_headers(params)
+            res = self.sesh.head(load_url, headers=headers)
         except Exception as e:
             raise NotFoundException(url)
 
-        if not res.headers.get('Memento-Datetime'):
+        if res and res.headers.get('Memento-Datetime'):
             if res.status_code >= 400:
                 raise NotFoundException(url)
 
-            if res.status_code == 302:
-                info = self._extract_location(res.headers.get('Location'))
+            if res.status_code >= 300:
+                info = self._extract_location(url, res.headers.get('Location'))
             else:
-                info = self._extract_location(res.headers.get('Content-Location'))
+                info = self._extract_location(url, res.headers.get('Content-Location'))
 
             url, timestamp, load_url = info
 
@@ -506,12 +515,11 @@ class WBMementoIndexSource(MementoIndexSource):
         cdx['url'] = url
         cdx['load_url'] = load_url
 
-        if ref_url:
-            cdx['set_referrer'] = ref_url
+        if 'Referer' in headers:
+            cdx['set_referrer'] = headers['Referer']
 
         return iter([cdx])
 
     @classmethod
     def _init_id(cls):
         return 'wb-memento'
-
