@@ -27,7 +27,10 @@ def call_release_conn(stream):
     try:
         yield stream
     finally:
-        stream.release_conn()
+        if hasattr(stream, 'release_conn'):
+            stream.release_conn()
+        else:
+            stream.close()
 
 
 #=============================================================================

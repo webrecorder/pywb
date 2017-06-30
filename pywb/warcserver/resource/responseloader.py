@@ -14,6 +14,8 @@ from pywb.utils.format import ParamFormatter
 from pywb.warcserver.resource.resolvingloader import ResolvingLoader
 from pywb.warcserver.resource.pathresolvers import DefaultResolverMixin
 
+from pywb.warcserver.http import default_adapter
+
 from six.moves.urllib.parse import urlsplit, quote, unquote
 
 from io import BytesIO
@@ -26,7 +28,6 @@ import glob
 import datetime
 
 from requests.models import PreparedRequest
-from requests.packages import urllib3
 
 import six.moves.http_client
 six.moves.http_client._MAXHEADERS = 10000
@@ -233,14 +234,14 @@ class LiveWebLoader(BaseLoader):
 
     UNREWRITE_HEADERS = ('location', 'content-location')
 
-    def __init__(self, forward_proxy_prefix=None):
-        self.num_retries = 3
-        self.num_pools = 10
-        self.num_conn_per_pool = 10
+    def __init__(self, forward_proxy_prefix=None, adapter=None):
         self.forward_proxy_prefix = forward_proxy_prefix
 
-        self.pool = urllib3.PoolManager(num_pools=self.num_pools,
-                                        maxsize=self.num_conn_per_pool)
+        if not adapter:
+            adapter = default_adapter
+
+        self.pool = adapter.poolmanager
+        self.max_retries = adapter.max_retries
 
     def load_resource(self, cdx, params):
         load_url = cdx.get('load_url')
@@ -442,7 +443,7 @@ class LiveWebLoader(BaseLoader):
                                              assert_same_host=False,
                                              preload_content=False,
                                              decode_content=False,
-                                             retries=self.num_retries,
+                                             retries=self.max_retries,
                                              timeout=params.get('_timeout'))
 
             return upstream_res

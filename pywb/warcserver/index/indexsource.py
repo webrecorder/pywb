@@ -5,6 +5,7 @@ from pywb.utils.wbexception import NotFoundException
 from warcio.timeutils import timestamp_to_http_date, http_date_to_timestamp
 from warcio.timeutils import timestamp_now, pad_timestamp, PAD_14_DOWN
 
+from pywb.warcserver.http import default_adapter
 from pywb.warcserver.index.cdxobject import CDXObject
 
 from pywb.utils.format import ParamFormatter, res_template
@@ -30,6 +31,11 @@ class BaseIndexSource(object):
             return input_req.get_referrer()
         else:
             return None
+
+    def _init_sesh(self):
+        self.sesh = requests.Session()
+        self.sesh.mount('http://', default_adapter)
+        self.sesh.mount('https://', default_adapter)
 
 
 #=============================================================================
@@ -96,6 +102,7 @@ class RemoteIndexSource(BaseIndexSource):
         self.replay_url = replay_url
         self.url_field = url_field
         self.closest_limit = closest_limit
+        self._init_sesh()
 
     def _get_api_url(self, params):
         api_url = res_template(self.api_url, params)
@@ -106,8 +113,11 @@ class RemoteIndexSource(BaseIndexSource):
 
     def load_index(self, params):
         api_url = self._get_api_url(params)
-        r = requests.get(api_url, timeout=params.get('_timeout'))
-        if r.status_code >= 400:
+        try:
+            r = self.sesh.get(api_url, timeout=params.get('_timeout'))
+            r.raise_for_status()
+        except Exception as e:
+            print('FAILED: ' + str(e))
             raise NotFoundException(api_url)
 
         lines = r.content.strip().split(b'\n')
@@ -317,12 +327,6 @@ class MementoIndexSource(BaseIndexSource):
         self.replay_url = replay_url
         self._init_sesh()
 
-    def _init_sesh(self):
-        self.sesh = requests.Session()
-        adapt = requests.adapters.HTTPAdapter(max_retries=3)
-        self.sesh.mount('http://', adapt)
-        self.sesh.mount('https://', adapt)
-
     def links_to_cdxobject(self, link_header, def_name):
         results = MementoUtils.parse_links(link_header, def_name)
 
@@ -360,10 +364,9 @@ class MementoIndexSource(BaseIndexSource):
             headers = self._get_headers(params)
             headers['Accept-Datetime'] = accept_dt
             res = self.sesh.head(url, headers=headers)
-            if res.status_code >= 400:
-                raise NotFoundException(url)
+            res.raise_for_status()
         except Exception as e:
-            print('FAILED:', e)
+            print('FAILED: ' + str(e))
             raise NotFoundException(url)
 
         links = res.headers.get('Link')
