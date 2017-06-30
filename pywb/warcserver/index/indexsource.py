@@ -32,7 +32,6 @@ class BaseIndexSource(object):
             return None
 
 
-
 #=============================================================================
 class FileIndexSource(BaseIndexSource):
     CDX_EXT = ('.cdx', '.cdxj')
@@ -360,10 +359,11 @@ class MementoIndexSource(BaseIndexSource):
         try:
             headers = self._get_headers(params)
             headers['Accept-Datetime'] = accept_dt
-            res = self.sesh.head(url, headers=headers, timeout=None)
+            res = self.sesh.head(url, headers=headers)
             if res.status_code >= 400:
                 raise NotFoundException(url)
-        except:
+        except Exception as e:
+            print('FAILED:', e)
             raise NotFoundException(url)
 
         links = res.headers.get('Link')
@@ -374,7 +374,8 @@ class MementoIndexSource(BaseIndexSource):
         return links
 
     def _get_headers(self, params):
-        return {}
+        headers = {'Connection': 'close'}
+        return headers
 
     def handle_timemap(self, params):
         url = res_template(self.timemap_url, params)
@@ -469,11 +470,11 @@ class WBMementoIndexSource(MementoIndexSource):
         return ref_url
 
     def _get_headers(self, params):
+        headers = super(WBMementoIndexSource, self)._get_headers(params)
         ref_url = self._get_referrer(params)
         if ref_url:
-            return {'Referer': ref_url}
-        else:
-            return {}
+            headers['Referer'] = ref_url
+        return headers
 
     def _extract_location(self, url, location):
         if not location or not location.startswith(self.prefix):

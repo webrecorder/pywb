@@ -1,13 +1,13 @@
 import zlib
-from contextlib import closing
+from contextlib import closing, contextmanager
 
 from warcio.utils import BUFF_SIZE
 from tempfile import SpooledTemporaryFile
 
 
 #=============================================================================
-def StreamIter(stream, header1=None, header2=None, size=BUFF_SIZE):
-    with closing(stream):
+def StreamIter(stream, header1=None, header2=None, size=BUFF_SIZE, closer=closing):
+    with closer(stream):
         if header1:
             yield header1
 
@@ -19,6 +19,15 @@ def StreamIter(stream, header1=None, header2=None, size=BUFF_SIZE):
             if not buff:
                 break
             yield buff
+
+
+#=============================================================================
+@contextmanager
+def call_release_conn(stream):
+    try:
+        yield stream
+    finally:
+        stream.release_conn()
 
 
 #=============================================================================

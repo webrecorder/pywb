@@ -8,7 +8,7 @@ from warcio.statusandheaders import StatusAndHeaders, StatusAndHeadersParser
 from pywb.utils.wbexception import LiveResourceException, WbException
 
 from pywb.utils.memento import MementoUtils
-from pywb.utils.io import StreamIter, compress_gzip_iter
+from pywb.utils.io import StreamIter, compress_gzip_iter, call_release_conn
 from pywb.utils.format import ParamFormatter
 
 from pywb.warcserver.resource.resolvingloader import ResolvingLoader
@@ -63,7 +63,7 @@ class BaseLoader(object):
                 if not compress:
                     out_headers['Content-Length'] = other_headers.get('Content-Length')
 
-            return out_headers, StreamIter(stream)
+            return out_headers, StreamIter(stream, closer=call_release_conn)
 
         target_uri = warc_headers.get_header('WARC-Target-URI')
 
@@ -85,7 +85,8 @@ class BaseLoader(object):
 
         streamiter = StreamIter(stream,
                                 header1=warc_headers_buff,
-                                header2=other_headers)
+                                header2=other_headers,
+                                closer=call_release_conn)
 
         if compress:
             streamiter = compress_gzip_iter(streamiter)
