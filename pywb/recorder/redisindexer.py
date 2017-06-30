@@ -63,7 +63,12 @@ class WritableRedisIndexer(RedisIndexSource):
 
         return cdx_list
 
-    def lookup_revisit(self, params, digest, url, iso_dt):
+    def lookup_revisit(self, lookup_params, digest, url, iso_dt):
+        params = {}
+        for param in lookup_params:
+            if param.startswith('param.'):
+                params[param] = lookup_params[param]
+
         params['url'] = url
         params['closest'] = iso_date_to_timestamp(iso_dt)
 
