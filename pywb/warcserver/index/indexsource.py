@@ -193,19 +193,38 @@ class RemoteIndexSource(BaseIndexSource):
 class LiveIndexSource(BaseIndexSource):
     def __init__(self, proxy_url='{url}'):
         self.proxy_url = proxy_url
+        self._init_sesh()
 
     def load_index(self, params):
+        # no fuzzy match for live resources
+        if params.get('is_fuzzy'):
+            raise NotFoundException(params['url'] + '*')
+
         cdx = CDXObject()
         cdx['urlkey'] = params.get('key').decode('utf-8')
         cdx['timestamp'] = timestamp_now()
         cdx['url'] = params['url']
         cdx['load_url'] = res_template(self.proxy_url, params)
         cdx['is_live'] = 'true'
-        cdx['mime'] = params.get('content_type', '')
-        def live():
-            yield cdx
 
-        return live()
+        mime = params.get('content_type', '')
+
+        if params.get('filter') and not mime:
+            try:
+                res = self.sesh.head(cdx['url'])
+                if res.status_code != 405:
+                    cdx['status'] = str(res.status_code)
+
+                content_type = res.headers.get('Content-Type')
+                if content_type:
+                    mime = content_type.split(';')[0]
+
+            except Exception as e:
+                pass
+
+        cdx['mime'] = mime
+
+        return iter([cdx])
 
     def __repr__(self):
         return '{0}()'.format(self.__class__.__name__)
@@ -383,11 +402,16 @@ class MementoIndexSource(BaseIndexSource):
     def handle_timemap(self, params):
         url = res_template(self.timemap_url, params)
         headers = self._get_headers(params)
-        res = self.sesh.get(url,
-                            headers=headers,
-                            timeout=params.get('_timeout'))
+        try:
+            res = self.sesh.get(url,
+                                headers=headers,
+                                timeout=params.get('_timeout'))
 
-        if res.status_code >= 400 or not res.text:
+            res.raise_for_status()
+            assert(res.text)
+
+        except Exception as e:
+            print('FAILED: ' + str(e))
             raise NotFoundException(url)
 
         links = res.text

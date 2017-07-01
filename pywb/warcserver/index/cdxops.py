@@ -158,6 +158,63 @@ def cdx_reverse(cdx_iter, limit):
 
 
 #=================================================================
+class CDXFilter(object):
+    def __init__(self, string):
+        # invert filter
+        self.invert = string.startswith('!')
+        if self.invert:
+            string = string[1:]
+
+        # exact match
+        if string.startswith('='):
+            string = string[1:]
+            self.compare_func = self.exact
+        # contains match
+        elif string.startswith('~'):
+            string = string[1:]
+            self.compare_func = self.contains
+        else:
+            self.compare_func = self.rx_match
+
+        parts = string.split(':', 1)
+        # no field set, apply filter to entire cdx
+        if len(parts) == 1:
+            self.field = ''
+        # apply filter to cdx[field]
+        else:
+            self.field = parts[0]
+            self.field = CDXObject.CDX_ALT_FIELDS.get(self.field,
+                                                      self.field)
+            string = parts[1]
+
+        # make regex if regex mode
+        if self.compare_func == self.rx_match:
+            self.regex = re.compile(string)
+        else:
+            self.filter_str = string
+
+    def __call__(self, cdx):
+        if not self.field:
+            val = str(cdx)
+        else:
+            val = str(cdx.get(self.field, ''))
+
+        matched = self.compare_func(val)
+
+        return matched ^ self.invert
+
+    def exact(self, val):
+        return (self.filter_str == val)
+
+    def contains(self, val):
+        return (self.filter_str in val)
+
+    def rx_match(self, val):
+        res = self.regex.match(val)
+        return res is not None
+
+
+#=================================================================
 def cdx_filter(cdx_iter, filter_strings):
     """
     filter CDX by regex if each filter is :samp:`{field}:{regex}` form,
@@ -167,63 +224,7 @@ def cdx_filter(cdx_iter, filter_strings):
     if isinstance(filter_strings, str):
         filter_strings = [filter_strings]
 
-    filters = []
-
-    class Filter:
-        def __init__(self, string):
-            # invert filter
-            self.invert = string.startswith('!')
-            if self.invert:
-                string = string[1:]
-
-            # exact match
-            if string.startswith('='):
-                string = string[1:]
-                self.compare_func = self.exact
-            # contains match
-            elif string.startswith('~'):
-                string = string[1:]
-                self.compare_func = self.contains
-            else:
-                self.compare_func = self.regex
-
-            parts = string.split(':', 1)
-            # no field set, apply filter to entire cdx
-            if len(parts) == 1:
-                self.field = ''
-            # apply filter to cdx[field]
-            else:
-                self.field = parts[0]
-                self.field = CDXObject.CDX_ALT_FIELDS.get(self.field,
-                                                          self.field)
-                string = parts[1]
-
-            # make regex if regex mode
-            if self.compare_func == self.regex:
-                self.regex = re.compile(string)
-            else:
-                self.filter_str = string
-
-        def __call__(self, cdx):
-            if not self.field:
-                val = str(cdx)
-            else:
-                val = cdx.get(self.field, '')
-
-            matched = self.compare_func(val)
-
-            return matched ^ self.invert
-
-        def exact(self, val):
-            return (self.filter_str == val)
-
-        def contains(self, val):
-            return (self.filter_str in val)
-
-        def regex(self, val):
-            return self.regex.match(val) is not None
-
-    filters = list(map(Filter, filter_strings))
+    filters = [CDXFilter(filter_str) for filter_str in filter_strings]
 
     for cdx in cdx_iter:
         if all(x(cdx) for x in filters):
