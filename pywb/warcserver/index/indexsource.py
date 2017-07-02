@@ -16,11 +16,14 @@ import redis
 import requests
 
 import re
+import logging
 
 
 #=============================================================================
 class BaseIndexSource(object):
     WAYBACK_ORIG_SUFFIX = '{timestamp}id_/{url}'
+
+    logger = logging.getLogger(__name__)
 
     def load_index(self, params):  #pragma: no cover
         raise NotImplemented()
@@ -119,7 +122,7 @@ class RemoteIndexSource(BaseIndexSource):
             r = self.sesh.get(api_url, timeout=params.get('_timeout'))
             r.raise_for_status()
         except Exception as e:
-            print('FAILED: ' + str(e))
+            self.logger.debug('FAILED: ' + str(e))
             raise NotFoundException(api_url)
 
         lines = r.content.strip().split(b'\n')
@@ -387,7 +390,7 @@ class MementoIndexSource(BaseIndexSource):
             res = self.sesh.head(url, headers=headers)
             res.raise_for_status()
         except Exception as e:
-            print('FAILED: ' + str(e))
+            self.logger.debug('FAILED: ' + str(e))
             raise NotFoundException(url)
 
         links = res.headers.get('Link')
@@ -398,8 +401,7 @@ class MementoIndexSource(BaseIndexSource):
         return links
 
     def _get_headers(self, params):
-        headers = {'Connection': 'close'}
-        return headers
+        return {}
 
     def handle_timemap(self, params):
         url = res_template(self.timemap_url, params)
@@ -413,7 +415,7 @@ class MementoIndexSource(BaseIndexSource):
             assert(res.text)
 
         except Exception as e:
-            print('FAILED: ' + str(e))
+            self.logger.debug('FAILED: ' + str(e))
             raise NotFoundException(url)
 
         links = res.text
