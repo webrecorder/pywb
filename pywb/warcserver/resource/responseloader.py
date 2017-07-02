@@ -14,7 +14,7 @@ from pywb.utils.format import ParamFormatter
 from pywb.warcserver.resource.resolvingloader import ResolvingLoader
 from pywb.warcserver.resource.pathresolvers import DefaultResolverMixin
 
-from pywb.warcserver.http import default_adapter
+from pywb.warcserver.http import DefaultAdapters
 
 from six.moves.urllib.parse import urlsplit, quote, unquote
 
@@ -237,12 +237,6 @@ class LiveWebLoader(BaseLoader):
     def __init__(self, forward_proxy_prefix=None, adapter=None):
         self.forward_proxy_prefix = forward_proxy_prefix
 
-        if not adapter:
-            adapter = default_adapter
-
-        self.pool = adapter.poolmanager
-        self.max_retries = adapter.max_retries
-
     def load_resource(self, cdx, params):
         load_url = cdx.get('load_url')
         if not load_url:
@@ -407,7 +401,8 @@ class LiveWebLoader(BaseLoader):
                                      data, req_headers, params, cdx):
 
         upstream_res = self._do_request(method, load_url,
-                                        data, req_headers, params)
+                                        data, req_headers, params,
+                                        cdx.get('is_live'))
 
         if cdx.get('is_live'):
             return upstream_res
@@ -428,23 +423,28 @@ class LiveWebLoader(BaseLoader):
                     raise
 
                 load_url = location
-                upstream_res = self._do_request(method, load_url, data, req_headers, params)
+                upstream_res = self._do_request(method, load_url, data,
+                                                req_headers, params, cdx.get('is_live'))
                 self_redir_count += 1
 
         return upstream_res
 
-    def _do_request(self, method, load_url, data, req_headers, params):
+    def _do_request(self, method, load_url, data, req_headers, params, is_live):
+        adapter = DefaultAdapters.live_adapter if is_live else DefaultAdapters.remote_adapter
+        pool = adapter.poolmanager
+        max_retries = adapter.max_retries
+
         try:
-            upstream_res = self.pool.urlopen(method=method,
-                                             url=load_url,
-                                             body=data,
-                                             headers=req_headers,
-                                             redirect=False,
-                                             assert_same_host=False,
-                                             preload_content=False,
-                                             decode_content=False,
-                                             retries=self.max_retries,
-                                             timeout=params.get('_timeout'))
+            upstream_res = pool.urlopen(method=method,
+                                        url=load_url,
+                                        body=data,
+                                        headers=req_headers,
+                                        redirect=False,
+                                        assert_same_host=False,
+                                        preload_content=False,
+                                        decode_content=False,
+                                        retries=max_retries,
+                                        timeout=params.get('_timeout'))
 
             return upstream_res
 

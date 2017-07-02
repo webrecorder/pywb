@@ -53,7 +53,7 @@ class TestWarcServer(TempDirTests, BaseTestClass):
         assert len(self.loader.list_fixed_routes()) == 13
 
     def test_list_dynamic(self):
-        assert self.loader.list_dynamic_routes() == ['auto1', 'auto2']
+        assert set(self.loader.list_dynamic_routes()) == set(['auto1', 'auto2'])
 
     def test_remote_cdx(self):
         sources = self._get_sources('ait')

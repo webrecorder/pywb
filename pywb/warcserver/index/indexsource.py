@@ -5,7 +5,7 @@ from pywb.utils.wbexception import NotFoundException
 from warcio.timeutils import timestamp_to_http_date, http_date_to_timestamp
 from warcio.timeutils import timestamp_now, pad_timestamp, PAD_14_DOWN
 
-from pywb.warcserver.http import default_adapter
+from pywb.warcserver.http import DefaultAdapters
 from pywb.warcserver.index.cdxobject import CDXObject
 
 from pywb.utils.format import ParamFormatter, res_template
@@ -32,10 +32,12 @@ class BaseIndexSource(object):
         else:
             return None
 
-    def _init_sesh(self):
+    def _init_sesh(self, adapter=None):
+        if not adapter:
+            adapter = DefaultAdapters.remote_adapter
         self.sesh = requests.Session()
-        self.sesh.mount('http://', default_adapter)
-        self.sesh.mount('https://', default_adapter)
+        self.sesh.mount('http://', adapter)
+        self.sesh.mount('https://', adapter)
 
 
 #=============================================================================
@@ -193,7 +195,7 @@ class RemoteIndexSource(BaseIndexSource):
 class LiveIndexSource(BaseIndexSource):
     def __init__(self, proxy_url='{url}'):
         self.proxy_url = proxy_url
-        self._init_sesh()
+        self._init_sesh(DefaultAdapters.live_adapter)
 
     def load_index(self, params):
         # no fuzzy match for live resources
