@@ -1,5 +1,5 @@
 six
-warcio==1.3.3
+warcio>=1.3.4
 chardet
 requests
 redis
