@@ -26,11 +26,14 @@ import itertools
 import json
 import glob
 import datetime
+import logging
 
 from requests.models import PreparedRequest
 
 import six.moves.http_client
 six.moves.http_client._MAXHEADERS = 10000
+
+logger = logging.getLogger('warcserver')
 
 
 #=============================================================================
@@ -449,8 +452,7 @@ class LiveWebLoader(BaseLoader):
             return upstream_res
 
         except Exception as e:
-            print('FAILED: ' + method + ' ' + load_url, e)
-            print(req_headers)
+            logger.debug('FAILED: ' + method + ' ' + load_url + ': ' + str(e))
             raise LiveResourceException(load_url)
 
     def __str__(self):

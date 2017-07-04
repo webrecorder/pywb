@@ -23,7 +23,7 @@ import logging
 class BaseIndexSource(object):
     WAYBACK_ORIG_SUFFIX = '{timestamp}id_/{url}'
 
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger('warcserver')
 
     def load_index(self, params):  #pragma: no cover
         raise NotImplemented()
@@ -522,7 +522,7 @@ class WBMementoIndexSource(MementoIndexSource):
 
     def handle_timegate(self, params, timestamp):
         url = params['url']
-        load_url = self._get_replay_url(timestamp, url)
+        load_url = self.timegate_url.format(url=url, timestamp=ts)
 
         try:
             headers = self._get_headers(params)
