@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.27
+// Wombat JS-Rewriting Library v2.30
 //============================================
 
 
@@ -88,13 +88,20 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function equals_any(string, arr) {
-        for (var i = 0; i < arr.length; i++) {
-            if (string === arr[i]) {
-                return arr[i];
-            }
+    function should_rewrite_attr(tagName, attr) {
+        if (attr == "href" || attr == "src") {
+            return true;
         }
-        return undefined;
+
+        if (tagName == "VIDEO" && attr == "poster") {
+            return true;
+        }
+
+        if (tagName == "META" && attr == "content") {
+            return true;
+        }
+
+        return false;
     }
 
     //============================================
@@ -138,9 +145,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     var HREF_TAGS = ["LINK", "A"];
 
-    var REWRITE_ATTRS = ["src", "href", "poster"];
-
     var URL_PROPS = ["href", "hash", "pathname", "host", "hostname", "protocol", "origin", "search", "port"];
+
 
     //============================================
     function rewrite_url_(url, use_rel, mod) {
@@ -866,35 +872,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_base_override()
-    {
-        if (!Object.defineProperty) {
-            return;
-        }
-
-        // <base> element .getAttribute()
-        orig_getAttribute = $wbwindow.HTMLBaseElement.prototype.getAttribute;
-
-        $wbwindow.HTMLBaseElement.prototype.getAttribute = function(name) {
-            var result = orig_getAttribute.call(this, name);
-            if (name == "href") {
-                result = extract_orig(result);
-            }
-            return result;
-        }
-
-        // <base> element .href
-        var base_href_get = function() {
-            return this.getAttribute("href");
-        };
-
-        def_prop($wbwindow.HTMLBaseElement.prototype, "href", undefined, base_href_get);
-
-        // Shared baseURI
-        override_prop_extract($wbwindow.Node.prototype, "baseURI");
-    }
-
-    //============================================
     function override_prop_extract(proto, prop, cond) {
         var orig_getter = get_orig_getter(proto, prop);
         if (orig_getter) {
@@ -914,10 +891,13 @@ var _WBWombat = function($wbwindow, wbinfo) {
     //============================================
     function override_attr_props() {
         function is_rw_attr(attr) {
-            if (attr && equals_any(attr.nodeName, REWRITE_ATTRS)) {
-                return true;
+            if (!attr) {
+                return false;
             }
-            return false;
+
+            var tagName = attr.ownerElement && attr.ownerElement.tagName;
+
+            return should_rewrite_attr(tagName, attr.nodeName);
         }
 
         override_prop_extract($wbwindow.Attr.prototype, "nodeValue", is_rw_attr);
@@ -941,7 +921,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         $wbwindow.Element.prototype.setAttribute = function(name, value) {
             if (name) {
                 var lowername = name.toLowerCase();
-                if (equals_any(lowername, REWRITE_ATTRS) && typeof(value) == "string") {
+                if (typeof(value) == "string" && should_rewrite_attr(this.tagName, lowername)) {
                     if (!this._no_rewrite) {
                         var old_value = value;
 
@@ -976,7 +956,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         $wbwindow.Element.prototype.getAttribute = function(name) {
             var result = orig_getAttribute.call(this, name);
 
-            if (equals_any(name.toLowerCase(), REWRITE_ATTRS)) {
+            if (should_rewrite_attr(this.tagName, name)) {
                 result = extract_orig(result);
             } else if (starts_with(name, "data-") && starts_with(result, VALID_PREFIXES)) {
                 result = extract_orig(result);
@@ -1480,20 +1460,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-/*    function add_attr_overrides(tagName, created)
-    {
-        if (!created || created._src != undefined || created._href != undefined) {
-            return;
-        }
-
-        if (equals_any(tagName, SRC_TAGS)) {
-            override_attr(created, "src");
-        } else if (equals_any(tagName, HREF_TAGS)) {
-            override_attr(created, "href");
-        }
-    }
-*/
-    //============================================
     function get_orig_getter(obj, prop) {
         var orig_getter;
 
@@ -1627,6 +1593,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_attr($wbwindow.HTMLInputElement.prototype, "src", "oe_");
         override_attr($wbwindow.HTMLEmbedElement.prototype, "src", "oe_");
         override_attr($wbwindow.HTMLObjectElement.prototype, "data", "oe_");
+
+        override_attr($wbwindow.HTMLBaseElement.prototype, "href", "mp_");
+        override_attr($wbwindow.HTMLMetaElement.prototype, "content", "mp_");
      
         override_anchor_elem();
 
@@ -2633,6 +2602,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
             override_prop_extract($wbwindow.Document.prototype, "URL");
             override_prop_extract($wbwindow.Document.prototype, "documentURI");
 
+            // Node.baseURI override
+            override_prop_extract($wbwindow.Node.prototype, "baseURI");
+
             // Attr nodeValue and value
             override_attr_props();
 
@@ -2645,9 +2617,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
             override_iframe_content_access("contentDocument");
 
             override_frames_access($wbwindow);
-
-            // base override
-            init_base_override();
 
             // setAttribute
             if (!wb_opts.skip_setAttribute) {
