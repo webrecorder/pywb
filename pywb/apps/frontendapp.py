@@ -45,6 +45,7 @@ class FrontEndApp(object):
         self.url_map.add(Rule('/<coll>/', endpoint=self.serve_coll_page))
         self.url_map.add(Rule('/<coll>/<path:url>', endpoint=self.serve_content))
         self.url_map.add(Rule('/collinfo.json', endpoint=self.serve_listing))
+        self.url_map.add(Rule('/', endpoint=self.serve_options, methods=['OPTIONS']))
         self.url_map.add(Rule('/', endpoint=self.serve_home))
 
         self.rewriterapp.paths = self.get_upstream_paths(self.warcserver_server.port)
@@ -74,6 +75,9 @@ class FrontEndApp(object):
                                              all_metadata=all_metadata)
 
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
+
+    def serve_options(self, environ):
+        return WbResponse.options_response(environ)
 
     def serve_static(self, environ, coll='', filepath=''):
         if coll:

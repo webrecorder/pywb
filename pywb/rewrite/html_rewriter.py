@@ -9,7 +9,7 @@ from six.moves.urllib.parse import urljoin, urlsplit, urlunsplit
 
 
 from pywb.rewrite.url_rewriter import UrlRewriter
-from pywb.rewrite.regex_rewriters import JSRewriter, CSSRewriter
+from pywb.rewrite.regex_rewriters import JSRewriter, CSSRewriter, JSWombatProxyRewriter
 
 from pywb.rewrite.content_rewriter import StreamingRewriter
 
@@ -104,7 +104,7 @@ class HTMLRewriterMixin(StreamingRewriter):
         elif js_rewriter_class:
             self.js_rewriter = js_rewriter_class(url_rewriter)
         else:
-            self.js_rewriter = JSRewriter(url_rewriter)
+            self.js_rewriter = JSWombatProxyRewriter(url_rewriter)
 
         if css_rewriter:
             self.css_rewriter = css_rewriter

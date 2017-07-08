@@ -4,6 +4,7 @@ import os
 from pywb.utils.loaders import LocalFileLoader
 
 from pywb.apps.wbrequestresponse import WbResponse
+from pywb.utils.wbexception import NotFoundException
 
 
 #=================================================================
