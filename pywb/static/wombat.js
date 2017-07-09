@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.30
+// Wombat JS-Rewriting Library v2.31
 //============================================
 
 
@@ -1960,19 +1960,14 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 from = window.WB_wombat_location.origin;
             }
 
-            var to = targetOrigin;
+            var to_origin = targetOrigin;
             
-            if (to == this.location.origin) {
-                to = "*";
-            } else {
-                var to_host = to.split("//", 2);
-                if (to_host.length == 2) {
-                    to = to_host[1];
-                }
+            if (starts_with(to_origin, this.location.origin)) {
+                to_origin = "*";
             }
 
             var new_message = {"from": from,
-                               "to_host": to,
+                               "to_origin": to_origin,
                                "src_id":  src_id,
                                "message": message,
                                "from_top": from_top,
@@ -1980,7 +1975,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             if (targetOrigin != "*") {
                 targetOrigin = this.location.origin;
-                //targetOrigin = "*";
             }
 
             //console.log("Sending " + from + " -> " + to + " (" + targetOrigin + ") " + message);
@@ -1999,8 +1993,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
                 if (event.data.from && event.data.message) {
 
-                    if (event.data.to_host != "*" && win.WB_wombat_location && event.data.to_host != win.WB_wombat_location.host) {
-                        console.log("Skipping " + win.WB_wombat_location.host + " not " + event.data.to_host);
+                    if (event.data.to_origin != "*" && win.WB_wombat_location && !starts_with(event.data.to_origin, win.WB_wombat_location.origin)) {
+                        console.warn("Skipping message event to " + event.data.to_origin + " doesn't start with origin " + win.WB_wombat_location.origin);
                         return;
                     }
 
