@@ -1375,6 +1375,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             changed = rewrite_attr(elem, "value", true);
         } else if (elem.tagName == "IFRAME" || elem.tagName == "FRAME") {
             changed = rewrite_frame_src(elem, "src");
+        } else if (elem.tagName == "image") {
+            changed = rewrite_attr(elem, "xlink:href");
         } else {
             changed = rewrite_attr(elem, "src");
             changed = rewrite_attr(elem, "srcset") || changed;
