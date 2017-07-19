@@ -61,9 +61,6 @@ class RegexRewriter(StreamingRewriter):
     def rewrite(self, string):
         return self.regex.sub(lambda x: self.replace(x), string)
 
-    def close(self):
-        return ''
-
     def replace(self, m):
         i = 0
         for _, op, count in self.rules:

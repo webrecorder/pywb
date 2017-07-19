@@ -237,7 +237,7 @@ class HTMLRewriterMixin(StreamingRewriter):
 
     def _rewrite_css(self, css_content):
         if css_content:
-            return self.css_rewriter.rewrite(css_content)
+            return self.css_rewriter.rewrite_complete(css_content)
         else:
             return ''
 
@@ -245,7 +245,7 @@ class HTMLRewriterMixin(StreamingRewriter):
         if not script_content:
             return ''
 
-        content = self.js_rewriter.rewrite(script_content)
+        content = self.js_rewriter.rewrite_complete(script_content)
         if ensure_window:
             content = self.ADD_WINDOW.sub('window.\\1', content)
 
@@ -456,7 +456,7 @@ class HTMLRewriterMixin(StreamingRewriter):
 
         return result
 
-    def close(self):
+    def final_read(self):
         self.out = self.AccumBuff()
 
         self._internal_close()
@@ -467,6 +467,9 @@ class HTMLRewriterMixin(StreamingRewriter):
         self.out = None
 
         return result
+
+    def close(self):
+        return self.final_read()
 
     def _internal_close(self):  # pragma: no cover
         raise NotImplementedError('Base method')
@@ -562,8 +565,7 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
             comment_rewriter = HTMLRewriter(self.url_rewriter,
                                             defmod=self.defmod)
 
-            data = comment_rewriter.rewrite(data)
-            data += comment_rewriter.close()
+            data = comment_rewriter.rewrite_complete(data)
             self.out.write(data)
         else:
             self.parse_data(data)

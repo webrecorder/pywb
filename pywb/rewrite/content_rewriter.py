@@ -201,49 +201,48 @@ class BufferedRewriter(object):
 
 # ============================================================================
 class StreamingRewriter(object):
-    def __init__(self, url_rewriter, align_to_line=True):
+    def __init__(self, url_rewriter, align_to_line=True, first_buff=''):
         self.url_rewriter = url_rewriter
         self.align_to_line = align_to_line
+        self.first_buff = first_buff
 
     def __call__(self, rwinfo):
-        gen = self.rewrite_text_stream_to_gen(rwinfo.content_stream,
-                                              rewrite_func=self.rewrite,
-                                              final_read_func=self.close,
-                                              align_to_line=self.align_to_line)
-
-        return gen
+        return self.rewrite_text_stream_to_gen(rwinfo.content_stream)
 
     def rewrite(self, string):
         return string
 
-    def close(self):
+    def rewrite_complete(self, string):
+        return self.first_buff + self.rewrite(string) + self.final_read()
+
+    def final_read(self):
         return ''
 
-    def rewrite_text_stream_to_gen(cls, stream,
-                                   rewrite_func,
-                                   final_read_func,
-                                   align_to_line):
+    def rewrite_text_stream_to_gen(self, stream):
         """
         Convert stream to generator using applying rewriting func
         to each portion of the stream.
         Align to line boundaries if needed.
         """
         try:
-            buff = ''
+            buff = self.first_buff
+
+            if buff:
+                yield buff.encode('iso-8859-1')
 
             while True:
                 buff = stream.read(BUFF_SIZE)
                 if not buff:
                     break
 
-                if align_to_line:
+                if self.align_to_line:
                     buff += stream.readline()
 
-                buff = rewrite_func(buff.decode('iso-8859-1'))
+                buff = self.rewrite(buff.decode('iso-8859-1'))
                 yield buff.encode('iso-8859-1')
 
             # For adding a tail/handling final buffer
-            buff = final_read_func()
+            buff = self.final_read()
             if buff:
                 yield buff.encode('iso-8859-1')
 
