@@ -162,7 +162,7 @@ class JSWombatProxyRewriterMixin(object):
 
     def __init__(self, rewriter, rules=[]):
         super(JSWombatProxyRewriterMixin, self).__init__(rewriter, rules)
-        self.open_buffer = b"""
+        self.first_buff = """
         var _____WB$wombat$assign$function_____=function(b){let c;switch(b){case'window':case'top':try{
         c=_WB_wombat_window_proxy}catch(d){c={}}break;case'self':try{c=_WB_wombat_window_proxy}catch(d){
         c=self}break;case'location':try{c=WB_wombat_location}catch(d){c={}}break;case'document':{let d=!0;try{
@@ -174,16 +174,9 @@ class JSWombatProxyRewriterMixin(object):
             let location = _____WB$wombat$assign$function_____('location');\n
             let top = _____WB$wombat$assign$function_____('top');\n\n
         """
-        self.close_buffer = b"""\n\n}"""
         self.close_string = '\n\n}'
 
-    def yield_fist_buffer(self):
-        yield self.open_buffer
-
-    def close_wrapper_buffer(self):
-        return self.close_buffer
-
-    def final_read_func(self):
+    def final_read(self):
         return self.close_string
 
 
@@ -212,18 +205,7 @@ class JSNoneRewriter(RegexRewriter):
 
 # =================================================================
 class JSWombatProxyRewriter(JSWombatProxyRewriterMixin, RegexRewriter):
-    def __init__(self, rewriter, rules=[]):
-        super(JSWombatProxyRewriter, self).__init__(rewriter, rules)
-
-    def rewrite_text_stream_to_gen(self, stream,
-                                   rewrite_func,
-                                   final_read_func,
-                                   align_to_line):
-        return chain(self.yield_fist_buffer(),
-                     super(JSWombatProxyRewriter, self).rewrite_text_stream_to_gen(stream=stream,
-                                                                                   rewrite_func=rewrite_func,
-                                                                                   final_read_func=self.final_read_func,
-                                                                                   align_to_line=align_to_line))
+    pass
 
 
 # =================================================================
