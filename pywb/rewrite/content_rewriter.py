@@ -310,9 +310,9 @@ class RewriteInfo(object):
 
         buff = self.read_and_keep(128)
 
-        # check if starts with a tag, then likely html
-        if self.TAG_REGEX.match(buff):
-            self.text_type = 'html'
+        # check if doesn't start with a tag, then likely not html
+        if not self.TAG_REGEX.match(buff):
+            self.text_type = 'js' if mod == 'js_' else 'css'
 
     @property
     def content_stream(self):
