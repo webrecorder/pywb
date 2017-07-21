@@ -1415,7 +1415,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
             string = write_buff + string;
             write_buff = "";
         }
-         var inner_doc = new DOMParser().parseFromString(string, "text/html");
+
+        var orig_string = string;
+
+        string = string.replace(/<(\/?)(FRAME|TD|TR|TH)\b/ig, "<$1PYWB_$2");
+
+        var inner_doc = new DOMParser().parseFromString(string, "text/html");
 
         if (!inner_doc) {
             return string;
@@ -1434,34 +1439,42 @@ var _WBWombat = function($wbwindow, wbinfo) {
             changed = rewrite_elem(inner_doc.all[i]) || changed;
         }
 
-        if (!changed) {
-            return string;
-        }
+        function get_new_html() {
+            var new_html;
 
-        var new_html = "";
+            // if original had <html> tag, add full document HTML
+            if (string && string.indexOf("<html") >= 0) {
+                new_html = inner_doc.documentElement.outerHTML;
+            } else {
+            // otherwise, just add contents of head and body
+                new_html = inner_doc.head.innerHTML;
+                new_html += inner_doc.body.innerHTML;
 
-        // if original had <html> tag, add full document HTML
-        if (string && string.indexOf("<html") >= 0) {
-            new_html = inner_doc.documentElement.outerHTML;
-        } else {
-        // otherwise, just add contents of head and body
-            new_html = inner_doc.head.innerHTML;
-            new_html += inner_doc.body.innerHTML;
-
-            if (check_end_tag) {
-                if (inner_doc.all.length > 3) {
-                    var end_tag = "</" + inner_doc.all[3].tagName.toLowerCase() + ">";
-                    if (ends_with(new_html, end_tag) && !ends_with(string, end_tag)) {
-                        new_html = new_html.substring(0, new_html.length - end_tag.length);
+                if (check_end_tag) {
+                    if (inner_doc.all.length > 3) {
+                        var end_tag = "</" + inner_doc.all[3].tagName.toLowerCase() + ">";
+                        if (ends_with(new_html, end_tag) && !ends_with(string, end_tag)) {
+                            new_html = new_html.substring(0, new_html.length - end_tag.length);
+                        }
+                    } else if (string[0] != "<" || string[string.length - 1] != ">") {
+                        write_buff += string;
+                        return;
                     }
-                } else if (string[0] != "<" || string[string.length - 1] != ">") {
-                    write_buff += string;
-                    return;
                 }
             }
+
+            return new_html;
         }
 
-        return new_html;
+        if (changed) {
+            string = get_new_html();
+        }
+
+        if (string && string != orig_string) {
+            string = string.replace(/<(\/?)PYWB_(FRAME|TD|TR|TH)\b/ig, "<$1$2");
+        }
+
+        return string;
     }
 
     //============================================
