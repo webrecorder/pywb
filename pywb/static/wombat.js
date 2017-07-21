@@ -857,7 +857,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         var orig_fetch = $wbwindow.fetch;
 
-        $wbwindow.fetch = function(input, init) {
+        $wbwindow.fetch = function(input, init_opts) {
             if (typeof(input) === "string") {
                 input = rewrite_url(input);
             } else if (typeof(input) === "object" && input.url) {
@@ -867,7 +867,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 }
             }
 
-            return orig_fetch.call(this, input, init);
+            init_opts = init_opts || {};
+            init_opts["credentials"] = "include";
+
+            return orig_fetch.call(this, input, init_opts);
         }
     }
 
