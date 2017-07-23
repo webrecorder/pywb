@@ -1416,6 +1416,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
             write_buff = "";
         }
 
+        if (typeof string != "string" ) {
+            string = string.toString();
+        }
+
         var orig_string = string;
 
         string = string.replace(/<(\/?)(FRAME|TD|TR|TH)\b/ig, "<$1PYWB_$2");
@@ -1425,8 +1429,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
         if (!inner_doc) {
             return string;
         }
-
-        string = string.toString();
 
         if (string.indexOf("<script") <= 0) {
             //string = string.replace(/WB_wombat_/g, "");
