@@ -1411,18 +1411,18 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return string;
         }
 
+        if (typeof string != "string" ) {
+            string = string.toString();
+        }
+
         if (write_buff) {
             string = write_buff + string;
             write_buff = "";
         }
 
-        if (typeof string != "string" ) {
-            string = string.toString();
-        }
-
         var orig_string = string;
 
-        string = string.replace(/<(\/?)(FRAME|TD|TR|TH)\b/ig, "<$1PYWB_$2");
+        string = string.replace(/<(\/?)(FRAME)\b/ig, "<$1PYWB_$2");
 
         var inner_doc = new DOMParser().parseFromString(string, "text/html");
 
@@ -1473,7 +1473,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         if (string && string != orig_string) {
-            string = string.replace(/<(\/?)PYWB_(FRAME|TD|TR|TH)\b/ig, "<$1$2");
+            string = string.replace(/<(\/?)PYWB_(FRAME)\b/ig, "<$1$2");
         }
 
         return string;
