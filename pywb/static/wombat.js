@@ -2074,7 +2074,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
         }
 
-        $wbwindow.addEventListener = addEventListener_rewritten.bind($wbwindow);
+        $wbwindow.addEventListener = addEventListener_rewritten;//.bind($wbwindow);
 
         // REMOVE
         
@@ -2090,7 +2090,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
         }
 
-        $wbwindow.removeEventListener = removeEventListener_rewritten.bind($wbwindow);
+        $wbwindow.removeEventListener = removeEventListener_rewritten;//.bind($wbwindow);
     }
 
     //============================================
@@ -2546,59 +2546,68 @@ var _WBWombat = function($wbwindow, wbinfo) {
         init_bad_prefixes(wb_replay_prefix);
     }
 
+    function getAllOwnProps(obj) {
+        var ownProps = [];
+
+        var props = Object.getOwnPropertyNames(obj);
+
+        for (var i = 0; i < props.length; i++) {
+            var prop = props[i];
+            if (obj[prop] && !obj[prop].prototype) {
+                ownProps.push(prop);
+            }
+        }
+
+        obj = Object.getPrototypeOf(obj);
+
+        while (obj) {
+            props = Object.getOwnPropertyNames(obj);
+            for (var i = 0; i < props.length; i++) {
+                ownProps.push(props[i]);
+            }
+            obj = Object.getPrototypeOf(obj);
+        }
+
+        return ownProps;
+    }
+
     function createWombatWindowProxy($wbwindow) {
-        let $wbwindow_ownFunctions = {"addEventListener": true,"removeEventListener": true,
-            "onabort": true,"onanimationcancel": true,"onanimationend": true,"onanimationiteration": true,
-            "onauxclick": true,"onblur": true,"onchange": true,"onclick": true,"onclose": true,"oncontextmenu": true,
-            "ondblclick": true,"onerror": true,"onfocus": true,"ongotpointercapture": true, "oninput": true,"onkeydown": true,"onkeypress": true,"onkeyup": true,"onload": true,
-            "onloadend": true,"onloadstart": true,"onlostpointercapture": true,"onmousedown": true,"onmousemove": true,
-            "onmouseout": true,"onmouseover": true,"onmouseup": true,"onpointercancel": true,"onpointerdown": true,"onpointerenter": true,"onpointerleave": true,"onpointermove": true,
-            "onpointerout": true,"onpointerover": true,"onpointerup": true,"onreset": true,"onresize": true,
-            "onscroll": true,"onselect": true,"onselectionchange": true,"onselectstart": true,"onsubmit": true,"ontouchcancel": true,"ontouchmove": true,"ontouchstart": true,
-            "ontransitioncancel": true,"ontransitionend": true,"parseFloat": true,"parseInt": true,"webkitSpeechRecognitionEvent": true,"webkitSpeechRecognitionError": true,
-            "webkitSpeechRecognition": true,"webkitSpeechGrammarList": true,"webkitSpeechGrammar": true,"webkitRTCPeerConnection": true,"webkitMediaStream": true,"decodeURI": true,"decodeURIComponent": true,
-            "encodeURI": true,"encodeURIComponent": true,"escape": true,"unescape": true,"eval": true,"isFinite": true,
-            "isNaN": true,"stop": true,"open": true,"alert": true,"confirm": true,"prompt": true,"print": true,"requestAnimationFrame": true,
-            "cancelAnimationFrame": true,"requestIdleCallback": true,"cancelIdleCallback": true,"captureEvents": true,"releaseEvents": true,"getComputedStyle": true,
-            "matchMedia": true,"moveTo": true,"moveBy": true,"resizeTo": true,"resizeBy": true,"getSelection": true,"find": true,"getMatchedCSSRules": true,"webkitRequestAnimationFrame": true,"webkitCancelAnimationFrame": true,
-            "btoa": true,"atob": true,"setTimeout": true,"clearTimeout": true,"setInterval": true, "clearInterval": true,"createImageBitmap": true,"scroll": true,"scrollTo": true,"scrollBy": true,
-            "getComputedStyleMap": true,"fetch": true,"webkitRequestFileSystem": true, "webkitResolveLocalFileSystemURL": true,"openDatabase": true,"postMessage": true,"blur": true,"focus": true,"close": true,"createWombatWindowProxy": true,"webkitURL": true,"dispatchEvent": true
-        };
+        var ownProps = getAllOwnProps($wbwindow);
+
          return new Proxy({}, {
-            get(target, what) {
-                 if (what === '__isWBProxy__') {
-                    return true;
-                }
-                if (what === '__WBProxyGetO__') {
-                    return $wbwindow;
-                }
-                // console.log('wombat window proxy get', what);
-                switch (what) {
+            get(target, prop) {
+                // console.log('wombat window proxy get', prop);
+                switch (prop) {
                     case 'self':
                     case 'window':
                         return $wbwindow._WB_wombat_window_proxy;
+
                     case 'postMessage':
                         return $wbwindow.__WB_pmw($wbwindow).postMessage.bind($wbwindow.__WB_pmw($wbwindow));
+
                     case 'location':
                         return $wbwindow.WB_wombat_location;
+
                     case 'document':
                         if ($wbwindow._WB_wombat_document_proxy) {
                             return $wbwindow._WB_wombat_document_proxy;
                         } else {
-                            return $wbwindow[what];
+                            return $wbwindow[prop];
                         }
+
                     default:
-                         let retVal = $wbwindow[what];
-                         if (typeof retVal === 'function' && $wbwindow_ownFunctions[what]) {
-                             return retVal.bind($wbwindow);
-                         }
-                         return retVal;
+                        let retVal = $wbwindow[prop];
+
+                        if (typeof retVal === 'function' && ownProps.indexOf(prop) != -1) {
+                            return retVal.bind($wbwindow);
+                        }
+
+                        return retVal;
                 }
             },
             set(target, prop, value) {
-                // console.log('wombat window proxy set', prop, value);
                 if (prop === 'location') {
-                   $wbwindow.WB_wombat_location = value;
+                    $wbwindow.WB_wombat_location = value;
                     return true;
                 } else if (prop === 'postMessage' || prop === 'document') {
                     return true;
@@ -2649,90 +2658,48 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return true;
             },
             defineProperty (target, prop, desc) {
+                if (Object.getOwnPropertyDescriptor($wbwindow, prop)) {
+                    desc = desc || {};
+                    desc.configurable = true;
+                    Object.defineProperty(target, prop, desc);
+                    return true;
+                }
+
                 return Reflect.defineProperty($wbwindow, prop, desc);
             }
         });
     }
 
     function createDocumentProxy($wbwindow) {
-        let $documentOwnFuns = {"getElementsByTagNameNS": true, "getElementsByTagName": true, "exitFullscreen": true, "removeEventListener": true, "elementFromPoint": true, "createElementNS": true, "getRootNode": true, "prepend": true, "createEntityReference": true, "createComment": true, "close": true, "writeln": true, "isEqualNode": true, "createExpression": true, "addEventListener": true, "cloneNode": true, "createAttribute": true, "getSelection": true, "getBoxObjectFor": true, "attachEvent": true, "getElementsByClassName": true, "contains": true, "loadOverlay": true, "isDefaultNamespace": true, "createProcessingInstruction": true, "lookupPrefix": true, "isSameNode": true, "createTouch": true, "replaceChild": true, "getElementById": true, "createTreeWalker": true, "evaluate": true, "hasChildNodes": true, "createDocumentFragment": true, "insertBefore": true, "compareDocumentPosition": true, "normalize": true, "hasFocus": true, "dispatchEvent": true, "querySelectorAll": true, "queryCommandEnabled": true, "removeChild": true, "lookupNamespaceURI": true, "write": true, "caretPositionFromPoint": true, "clear": true, "createTextNode": true, "createNodeIterator": true, "enableStyleSheetsForSet": true, "isSupported": true, "mozSetImageElement": true, "releaseCapture": true, "exitPointerLock": true, "appendChild": true, "createEvent": true, "caretRangeFromPoint": true, "adoptNode": true, "fireEvent": true, "querySelector": true, "getElementsByName": true, "queryCommandSupported": true, "open": true, "getAnimations": true, "createRange": true, "createNSResolver": true, "detachEvent": true, "append": true, "setUserData": true, "importNode": true, "getUserData": true, "createCDATASection": true, "createTouchList": true, "registerElement": true, "execCommand": true, "createElement": true};
+        var ownProps = getAllOwnProps($wbwindow.document);
+
         return new Proxy($wbwindow.document, {
-            get (target, what) {
-                // console.log('wombat document proxy get', what);
-                if (what === '__isWBProxy__') {
-                    return true;
-                }
-                if (what === '__WBProxyGetO__') {
-                    return $wbwindow.document;
-                }
-                if (what === 'location') {
+            get (target, prop) {
+                if (prop === 'location') {
                     return $wbwindow.WB_wombat_location;
                 }
-                let retVal = target[what];
-                if (typeof retVal === 'function' && $documentOwnFuns[what]) {
+                let retVal = target[prop];
+                if (typeof retVal === 'function' && ownProps.indexOf(prop) != -1) {
                     return retVal.bind(target);
                 }
-                return target[what];
+                return target[prop];
             },
-            has(target, prop) {
-                return prop in $wbwindow.document;
-            },
-            set (target, what, prop) {
-                // console.log('wombat document proxy set', what, prop);
-                if (what === 'domain') {
+            set (target, prop, value) {
+                // console.log('wombat document proxy set', prop, prop);
+                if (prop === 'domain') {
                     return true;
-                } else if (what === 'location') {
-                    $wbwindow.WB_wombat_location = prop;
+                } else if (prop === 'location') {
+                    $wbwindow.WB_wombat_location = value;
                     return true;
                 } else {
-                    target[what] = prop;
+                    target[prop] = value;
                     return true;
                 }
             },
-            getPrototypeOf(target) {
-                return Object.getPrototypeOf(target);
-            }
         });
     }
 
-    function init_native_function_gotchas ($wbwindow) {
-        /*
-            THIS IS WHY WE HAVE the __isWBProxy__ and __WBProxyGetO__ ON WOMBAT PROXIES
-            if you need help debugging invalid invocation et al exceptions I use
-            https://github.com/teseve/teseve and https://github.com/james-proxy/james
-            :)
-        */
-        // begin known angular gotchas
-        var originalInsertBefore = $wbwindow.Node.prototype.insertBefore;
-        $wbwindow.Node.prototype.insertBefore = function (newNode, referenceNode) {
-            if (newNode && newNode.__isWBProxy__) {
-                newNode = newNode.__WBProxyGetO__
-            }
-            if (referenceNode && referenceNode.__isWBProxy__) {
-                referenceNode = referenceNode.__WBProxyGetO__
-            }
-            if (this.__isWBProxy__) {
-                return originalInsertBefore.call(this.__WBProxyGetO__, newNode, referenceNode);
-            } else {
-                return originalInsertBefore.call(this, newNode, referenceNode);
-            }
-        };
-        var originalNodeContains = $wbwindow.Node.prototype.contains;
-        $wbwindow.Node.prototype.contains = function (otherNode) {
-            if (otherNode && otherNode.__isWBProxy__) {
-                otherNode = otherNode.__WBProxyGetO__
-            }
-            if (this.__isWBProxy__) {
-                return originalNodeContains.call(this.__WBProxyGetO__, otherNode);
-            } else {
-                return originalNodeContains.call(this, otherNode);
-            }
-        };
-        // end known angular gotchas
-    }
-
     function init_proxy($wbwindow) {
-        init_native_function_gotchas($wbwindow);
         $wbwindow._WB_wombat_window_proxy = createWombatWindowProxy($wbwindow);
         $wbwindow._WB_wombat_document_proxy = createDocumentProxy($wbwindow);
     }

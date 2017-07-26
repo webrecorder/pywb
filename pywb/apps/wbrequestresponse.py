@@ -1,5 +1,4 @@
 from warcio.statusandheaders import StatusAndHeaders
-from werkzeug.wrappers import Request  # for options response see comments in options_response
 
 import json
 
@@ -51,46 +50,6 @@ class WbResponse(object):
                                            ('Content-Length', str(len(encoded_text)))])
 
         return WbResponse(status_headers, value=[encoded_text])
-
-    @staticmethod
-    def options_response(environ, status='200 OK', headers=None):
-        """
-        In order to maintain High Fidelity Replay the
-        replay system must respond to OPTIONS requests
-        either pre-flighted or explicit with a
-        at least allow all origins and state support for GET,POST,HEAD,OPTIONS,CONNECT methods.
-        Heavy JS pages will do all manner of fun things with OPTIONS
-        and redirection. Most that do use explicit JS made OPTIONS
-        request will not replay if the appropriate Access-Control-Allow-Origin
-        is not in the headers of the response. The most
-        common use case of this is cors preflighting, webrecorder
-        suffers the most from this :'(
-        https://fetch.spec.whatwg.org/#cors-protocol-and-credentials
-        https://www.w3.org/TR/cors/
-        https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS
-        https://www.html5rocks.com/en/tutorials/cors/#toc-adding-cors-support-to-the-server
-        """
-        # to conform to cors negotiation, the HTTP headers
-        # are only nicely accessible by wrapping environment in werkzeug.wrappers.Request
-        head = Request(environ).headers
-        allowed_meth = 'GET,HEAD,POST,OPTIONS,CONNECT'
-        if head.get('Method') not in allowed_meth:
-            allowed_meth += ',%s' % head.get('Method')
-        opts_headers = [
-            ('Access-Control-Allow-Origin', head.get('Origin', '*')),  # origin will always be set but....
-            ('Access-Control-Allow-Methods', allowed_meth)  # the bare essentials
-        ]
-        acrh = head.get('Access-Control-Request-Headers', None)
-        if acrh is not None:
-            opts_headers.append(('Access-Control-Allow-Headers', acrh))
-
-        if head.get('Cookie', None) is not None:
-            opts_headers.append(('Access-Control-Allow-Credentials', 'true'))
-
-        opts_headers.append(('Content-Length', '0'))
-        if headers:
-            opts_headers += headers
-        return WbResponse(StatusAndHeaders(status, opts_headers))
 
     @staticmethod
     def json_response(obj, status='200 OK', content_type='application/json; charset=utf-8'):

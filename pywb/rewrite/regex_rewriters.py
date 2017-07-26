@@ -1,5 +1,4 @@
 import re
-from itertools import chain
 from pywb.rewrite.content_rewriter import StreamingRewriter
 
 
@@ -210,7 +209,7 @@ class JSWombatProxyRewriter(JSWombatProxyRewriterMixin, RegexRewriter):
 
 # =================================================================
 # Set 'default' JSRewriter
-JSRewriter = JSWombatProxyRewriter
+JSRewriter = JSLocationOnlyRewriter
 
 
 # =================================================================

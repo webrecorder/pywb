@@ -4,7 +4,6 @@ from pywb.rewrite.html_rewriter import HTMLRewriter
 from pywb.rewrite.html_insert_rewriter import HTMLInsertOnlyRewriter
 
 from pywb.rewrite.regex_rewriters import RegexRewriter, CSSRewriter, XMLRewriter
-from pywb.rewrite.regex_rewriters import JSLinkAndLocationRewriter, JSLinkOnlyRewriter
 from pywb.rewrite.regex_rewriters import JSLocationOnlyRewriter, JSNoneRewriter, JSWombatProxyRewriter
 
 from pywb.rewrite.header_rewriter import PrefixHeaderRewriter
@@ -28,7 +27,7 @@ class DefaultRewriter(BaseContentRewriter):
 
         'css': CSSRewriter,
 
-        'js': JSWombatProxyRewriter,
+        'js': JSLocationOnlyRewriter,
         'js-proxy': JSNoneRewriter,
 
         'json': JSONPRewriter,
@@ -68,10 +67,10 @@ class DefaultRewriter(BaseContentRewriter):
         # AMF
         'application/x-amf': 'amf',
 
-        # XML
-        'text/xml': 'xml',
-        'application/xml': 'xml',
-        'application/rss+xml': 'xml',
+        # XML -- don't rewrite xml
+        #'text/xml': 'xml',
+        #'application/xml': 'xml',
+        #'application/rss+xml': 'xml',
 
         # PLAIN
         'text/plain': 'plain',
@@ -86,3 +85,11 @@ class DefaultRewriter(BaseContentRewriter):
 
     def get_rewrite_types(self):
         return self.rewrite_types
+
+
+# ============================================================================
+class DefaultRewriterWithJSProxy(DefaultRewriter):
+    def __init__(self, *args, **kwargs):
+        super(DefaultRewriterWithJSProxy, self).__init__(*args, **kwargs)
+        self.all_rewriters['js'] = JSWombatProxyRewriter
+

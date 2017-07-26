@@ -6,7 +6,7 @@ from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
 #from pywb.rewrite.rewrite_amf import RewriteAMFMixin
 #from pywb.rewrite.rewrite_dash import RewriteDASHMixin
 #from pywb.rewrite.rewrite_content import RewriteContent
-from pywb.rewrite.default_rewriter import DefaultRewriter
+from pywb.rewrite.default_rewriter import DefaultRewriter, DefaultRewriterWithJSProxy
 
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter, SchemeOnlyUrlRewriter
@@ -66,10 +66,10 @@ class RewriterApp(object):
             self.frame_mod = None
             self.replay_mod = ''
 
-        #frame_type = 'inverse' if framed_replay else False
-
-        #self.content_rewriter = Rewriter(is_framed_replay=frame_type)
-        self.content_rw = DefaultRewriter(replay_mod=self.replay_mod)
+        if self.config.get('js_local_scope_rewrite'):
+            self.content_rw = DefaultRewriterWithJSProxy(replay_mod=self.replay_mod)
+        else:
+            self.content_rw = DefaultRewriter(replay_mod=self.replay_mod)
 
         if not jinja_env:
             jinja_env = JinjaEnv(globals={'static_path': 'static'})
