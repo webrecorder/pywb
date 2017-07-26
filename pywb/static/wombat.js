@@ -2850,6 +2850,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
         obj.watch_elem = watch_elem;
         obj.init_new_window_wombat = init_new_window_wombat;
         obj.init_paths = init_paths;
+        obj.local_init = function(name) {
+            return $wbwindow._WB_wombat_window_proxy[name];
+        }
+
         return obj;
     }
 

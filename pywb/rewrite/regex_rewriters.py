@@ -166,16 +166,21 @@ class JSWombatProxyRewriterMixin(object):
 
         super(JSWombatProxyRewriterMixin, self).__init__(rewriter, rules)
         self.first_buff = """
-        var _____WB$wombat$assign$function_____=function(b){let c;switch(b){case'window':case'top':try{
-        c=_WB_wombat_window_proxy}catch(d){c={}}break;case'self':try{c=_WB_wombat_window_proxy}catch(d){
-        c=self}break;case'location':try{c=WB_wombat_location}catch(d){c={}}break;case'document':{let d=!0;try{
-        c=_WB_wombat_document_proxy}catch(e){d=!1}if(!d)try{c=document}catch(e){c={}}break}}return c};\n
-        {\n
-            let window = _____WB$wombat$assign$function_____('window');\n
-            let self = _____WB$wombat$assign$function_____('self');\n
-            let document = _____WB$wombat$assign$function_____('document');\n
-            let location = _____WB$wombat$assign$function_____('location');\n
-            let top = _____WB$wombat$assign$function_____('top');\n\n
+        var _____WB$wombat$assign$function_____ = function(name) {
+            if (self._wb_wombat && self._wb_wombat.local_init) {
+                return self._wb_wombat.local_init(name);
+            } else {
+                return self[name];
+            }
+        }
+
+        {
+            let window = _____WB$wombat$assign$function_____('window');
+            let self = _____WB$wombat$assign$function_____('self');
+            let document = _____WB$wombat$assign$function_____('document');
+            let location = _____WB$wombat$assign$function_____('location');
+            let top = _____WB$wombat$assign$function_____('top');
+
         """
         self.close_string = '\n\n}'
 
