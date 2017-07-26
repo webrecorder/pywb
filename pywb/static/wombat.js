@@ -2026,6 +2026,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
                         source = win.__WB_win_id[event.data.src_id];
                     }
 
+                    source = source.__WBProxyGetO__ || source;
+
                     ne = new MessageEvent("message",
                                           {"bubbles": event.bubbles,
                                            "cancelable": event.cancelable,
@@ -2074,7 +2076,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
         }
 
-        $wbwindow.addEventListener = addEventListener_rewritten;//.bind($wbwindow);
+        $wbwindow.addEventListener = addEventListener_rewritten;
 
         // REMOVE
         
@@ -2090,7 +2092,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
         }
 
-        $wbwindow.removeEventListener = removeEventListener_rewritten;//.bind($wbwindow);
+        $wbwindow.removeEventListener = removeEventListener_rewritten;
     }
 
     //============================================
@@ -2578,12 +2580,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
             get(target, prop) {
                 // console.log('wombat window proxy get', prop);
                 switch (prop) {
+                    case '__WBProxyGetO__':
+                        return $wbwindow;
+
                     case 'self':
                     case 'window':
                         return $wbwindow._WB_wombat_window_proxy;
-
-                    case 'postMessage':
-                        return $wbwindow.__WB_pmw($wbwindow).postMessage.bind($wbwindow.__WB_pmw($wbwindow));
 
                     case 'location':
                         return $wbwindow.WB_wombat_location;

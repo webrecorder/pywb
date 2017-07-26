@@ -160,6 +160,10 @@ class JSWombatProxyRewriterMixin(object):
     """
 
     def __init__(self, rewriter, rules=[]):
+        rules = rules + [
+           (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(self.window).'), 0),
+        ]
+
         super(JSWombatProxyRewriterMixin, self).__init__(rewriter, rules)
         self.first_buff = """
         var _____WB$wombat$assign$function_____=function(b){let c;switch(b){case'window':case'top':try{
