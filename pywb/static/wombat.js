@@ -1730,7 +1730,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         var getter = function() {
             init_iframe_wombat(this);
-            return orig_getter.call(this);
+            var res = orig_getter.call(this);
+            res = (res && res._WB_wombat_obj_proxy) || res;
+            return res;
         };
         
         def_prop(obj, prop, orig_setter, getter);
@@ -2124,6 +2126,17 @@ var _WBWombat = function($wbwindow, wbinfo) {
         addMEOverride("currentTarget");
         addMEOverride("eventPhase");
         addMEOverride("path");
+
+        var orig_source_getter = get_orig_getter($wbwindow.MessageEvent.prototype, "source");
+
+        // source override to return proxy obj
+        function source_getter() {
+            var res = orig_source_getter.call(this);
+            res = (res && res._WB_wombat_obj_proxy) || res;
+            return res;
+        }
+
+        def_prop($wbwindow.MessageEvent.prototype, "source", undefined, source_getter);
 
         $wbwindow.MessageEvent.prototype.__extended = true;
     }
@@ -2573,40 +2586,41 @@ var _WBWombat = function($wbwindow, wbinfo) {
         return ownProps;
     }
 
+    function default_proxy_get(obj, prop, ownProps) {
+        if (prop == '__WBProxyGetO__') {
+            return obj;
+        } else if (prop == 'location') {
+            return obj._WB_wombat_location;
+        }
+
+        let retVal = obj[prop];
+
+        var type = (typeof retVal);
+
+        if (type === "function" && ownProps.indexOf(prop) != -1) {
+            return retVal.bind(obj);
+        } else if (type === "object" && retVal && retVal._WB_wombat_obj_proxy) {
+            return retVal._WB_wombat_obj_proxy;
+        }
+
+        return retVal;
+    }
+
     function createWombatWindowProxy($wbwindow) {
         var ownProps = getAllOwnProps($wbwindow);
 
          return new Proxy({}, {
-            get(target, prop) {
-                // console.log('wombat window proxy get', prop);
-                switch (prop) {
-                    case '__WBProxyGetO__':
-                        return $wbwindow;
-
-                    case 'self':
-                    case 'window':
-                        return $wbwindow._WB_wombat_window_proxy;
-
-                    case 'location':
-                        return $wbwindow.WB_wombat_location;
-
-                    case 'document':
-                        if ($wbwindow._WB_wombat_document_proxy) {
-                            return $wbwindow._WB_wombat_document_proxy;
-                        } else {
-                            return $wbwindow[prop];
-                        }
-
-                    default:
-                        let retVal = $wbwindow[prop];
-
-                        if (typeof retVal === 'function' && ownProps.indexOf(prop) != -1) {
-                            return retVal.bind($wbwindow);
-                        }
-
-                        return retVal;
+           get(target, prop) {
+                if (prop == 'top') {
+                    return $wbwindow.WB_wombat_top._WB_wombat_obj_proxy;
                 }
+                // else if (prop == 'parent') {
+                //    return $wbwindow.parent._WB_wombat_obj_proxy;
+                //}
+
+                return default_proxy_get($wbwindow, prop, ownProps);
             },
+
             set(target, prop, value) {
                 if (prop === 'location') {
                     $wbwindow.WB_wombat_location = value;
@@ -2672,26 +2686,20 @@ var _WBWombat = function($wbwindow, wbinfo) {
         });
     }
 
-    function createDocumentProxy($wbwindow) {
-        var ownProps = getAllOwnProps($wbwindow.document);
+    function createDocumentProxy($document) {
+        var ownProps = getAllOwnProps($document);
 
-        return new Proxy($wbwindow.document, {
-            get (target, prop) {
-                if (prop === 'location') {
-                    return $wbwindow.WB_wombat_location;
-                }
-                let retVal = target[prop];
-                if (typeof retVal === 'function' && ownProps.indexOf(prop) != -1) {
-                    return retVal.bind(target);
-                }
-                return target[prop];
+        return new Proxy($document, {
+            get(target, prop) {
+                return default_proxy_get($document, prop, ownProps);
             },
+
             set (target, prop, value) {
                 // console.log('wombat document proxy set', prop, prop);
                 if (prop === 'domain') {
                     return true;
                 } else if (prop === 'location') {
-                    $wbwindow.WB_wombat_location = value;
+                    $document.WB_wombat_location = value;
                     return true;
                 } else {
                     target[prop] = value;
@@ -2702,8 +2710,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     function init_proxy($wbwindow) {
-        $wbwindow._WB_wombat_window_proxy = createWombatWindowProxy($wbwindow);
-        $wbwindow._WB_wombat_document_proxy = createDocumentProxy($wbwindow);
+        $wbwindow._WB_wombat_obj_proxy = createWombatWindowProxy($wbwindow);
+        $wbwindow.document._WB_wombat_obj_proxy = createDocumentProxy($wbwindow.document);
     }
 
     function wombat_init(wbinfo) {
@@ -2851,7 +2859,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         obj.init_new_window_wombat = init_new_window_wombat;
         obj.init_paths = init_paths;
         obj.local_init = function(name) {
-            return $wbwindow._WB_wombat_window_proxy[name];
+            return $wbwindow._WB_wombat_obj_proxy[name];
         }
 
         return obj;
