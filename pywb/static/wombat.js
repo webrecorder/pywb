@@ -892,6 +892,22 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
 
     //============================================
+    function override_prop_to_proxy(proto, prop) {
+        var orig_getter = get_orig_getter(proto, prop);
+
+        if (orig_getter) {
+            var new_getter = function() {
+                var res = orig_getter.call(this);
+                res = (res && res._WB_wombat_obj_proxy) || res;
+                return res;
+            }
+
+            def_prop(proto, prop, undefined, new_getter);
+        }
+    }
+
+
+    //============================================
     function override_attr_props() {
         function is_rw_attr(attr) {
             if (!attr) {
@@ -1884,6 +1900,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
         replace_dom_func("appendChild");
         replace_dom_func("insertBefore");
         replace_dom_func("replaceChild");
+
+        override_prop_to_proxy($wbwindow.Node.prototype, "ownerDocument");
+        override_prop_to_proxy($wbwindow.HTMLHtmlElement.prototype, "parentNode");
     }
 
 
@@ -1913,7 +1932,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         function receive_hash_change(event)
         {
-            if (!event.data || event.source != $wbwindow.__WB_top_frame) {
+            var source = event.source.__WBProxyGetO__ || event.source;
+
+            if (!event.data || source != $wbwindow.__WB_top_frame) {
                 return;
             }
 
@@ -2127,16 +2148,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         addMEOverride("eventPhase");
         addMEOverride("path");
 
-        var orig_source_getter = get_orig_getter($wbwindow.MessageEvent.prototype, "source");
-
-        // source override to return proxy obj
-        function source_getter() {
-            var res = orig_source_getter.call(this);
-            res = (res && res._WB_wombat_obj_proxy) || res;
-            return res;
-        }
-
-        def_prop($wbwindow.MessageEvent.prototype, "source", undefined, source_getter);
+        override_prop_to_proxy($wbwindow.MessageEvent.prototype, "source");
 
         $wbwindow.MessageEvent.prototype.__extended = true;
     }
@@ -2628,6 +2640,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 } else if (prop === 'postMessage' || prop === 'document') {
                     return true;
                 } else {
+                    var res = Reflect.set(target, prop, value);
+                    if (!res) {
+                        return false;
+                    }
+
                     return Reflect.set($wbwindow, prop, value);
                 }
             },
@@ -2674,12 +2691,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return true;
             },
             defineProperty (target, prop, desc) {
-                if (Object.getOwnPropertyDescriptor($wbwindow, prop)) {
-                    desc = desc || {};
-                    desc.configurable = true;
-                    Object.defineProperty(target, prop, desc);
-                    return true;
-                }
+                Reflect.defineProperty(target, prop, desc);
 
                 return Reflect.defineProperty($wbwindow, prop, desc);
             }

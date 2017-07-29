@@ -159,29 +159,34 @@ class JSWombatProxyRewriterMixin(object):
     Wombat js-proxy setup
     """
 
+    local_init_func = '\nvar {0} = function(name) {{\
+return (self._wb_wombat && self._wb_wombat.local_init &&\
+ self._wb_wombat.local_init(name)) || self[name]; }}\n{{\n'
+
+    local_init_func_name = '_____WB$wombat$assign$function_____'
+
+    local_var_line = 'let {0} = {1}("{0}");'
+
+    local_objs = ['window',
+                  'self',
+                  'document',
+                  'location',
+                  'top',
+                  'parent',
+                  'frames',
+                  'opener']
+
     def __init__(self, rewriter, rules=[]):
         rules = rules + [
            (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(self.window).'), 0),
         ]
 
         super(JSWombatProxyRewriterMixin, self).__init__(rewriter, rules)
-        self.first_buff = """
-        var _____WB$wombat$assign$function_____ = function(name) {
-            if (self._wb_wombat && self._wb_wombat.local_init) {
-                return self._wb_wombat.local_init(name);
-            } else {
-                return self[name];
-            }
-        }
 
-        {
-            let window = _____WB$wombat$assign$function_____('window');
-            let self = _____WB$wombat$assign$function_____('self');
-            let document = _____WB$wombat$assign$function_____('document');
-            let location = _____WB$wombat$assign$function_____('location');
-            let top = _____WB$wombat$assign$function_____('top');
+        local_declares = '\n'.join([self.local_var_line.format(obj, self.local_init_func_name) for obj in self.local_objs])
 
-        """
+        self.first_buff = self.local_init_func.format(self.local_init_func_name) + local_declares
+
         self.close_string = '\n\n}'
 
     def final_read(self):
