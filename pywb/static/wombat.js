@@ -2640,10 +2640,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 } else if (prop === 'postMessage' || prop === 'document') {
                     return true;
                 } else {
-                    var res = Reflect.set(target, prop, value);
-                    if (!res) {
-                        return false;
-                    }
+                    try {
+                        if (!Reflect.set(target, prop, value)) {
+                            return false;
+                        }
+                    } catch(e) {}
 
                     return Reflect.set($wbwindow, prop, value);
                 }
@@ -2691,9 +2692,14 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return true;
             },
             defineProperty (target, prop, desc) {
-                Reflect.defineProperty(target, prop, desc);
+                desc = desc || {};
+                if (!desc.value && !desc.get) {
+                    desc.value = $wbwindow[prop];
+                }
 
-                return Reflect.defineProperty($wbwindow, prop, desc);
+                var res = Reflect.defineProperty($wbwindow, prop, desc);
+
+                return Reflect.defineProperty(target, prop, desc);
             }
         });
     }
@@ -2703,6 +2709,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         return new Proxy($document, {
             get(target, prop) {
+                if (prop == "origin") {
+                    return $document._WB_wombat_location.origin;
+                }
+
                 return default_proxy_get($document, prop, ownProps);
             },
 

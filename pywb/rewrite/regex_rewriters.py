@@ -161,7 +161,9 @@ class JSWombatProxyRewriterMixin(object):
 
     local_init_func = '\nvar {0} = function(name) {{\
 return (self._wb_wombat && self._wb_wombat.local_init &&\
- self._wb_wombat.local_init(name)) || self[name]; }}\n{{\n'
+ self._wb_wombat.local_init(name)) || self[name]; }}\n\
+if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
+{{\n'
 
     local_init_func_name = '_____WB$wombat$assign$function_____'
 
@@ -178,7 +180,7 @@ return (self._wb_wombat && self._wb_wombat.local_init &&\
 
     def __init__(self, rewriter, rules=[]):
         rules = rules + [
-           (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(self.window).'), 0),
+           (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(self).'), 0),
         ]
 
         super(JSWombatProxyRewriterMixin, self).__init__(rewriter, rules)
