@@ -1647,6 +1647,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_style_attr(style_proto, "background", "background");
         override_style_attr(style_proto, "backgroundImage", "background-image");
 
+        override_style_attr(style_proto, "cursor", "cursor");
+
         override_style_attr(style_proto, "listStyle", "list-style");
         override_style_attr(style_proto, "listStyleImage", "list-style-image");
 
@@ -2580,9 +2582,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         for (var i = 0; i < props.length; i++) {
             var prop = props[i];
-            if (obj[prop] && !obj[prop].prototype) {
-                ownProps.push(prop);
-            }
+
+            try {
+                if (obj[prop] && !obj[prop].prototype) {
+                    ownProps.push(prop);
+                }
+            } catch (e) {}
         }
 
         obj = Object.getPrototypeOf(obj);
@@ -2603,6 +2608,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return obj;
         } else if (prop == 'location') {
             return obj._WB_wombat_location;
+        } else if (prop == "_WB_wombat_obj_proxy") {
+            return obj._WB_wombat_obj_proxy;
         }
 
         let retVal = obj[prop];
@@ -2626,9 +2633,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 if (prop == 'top') {
                     return $wbwindow.WB_wombat_top._WB_wombat_obj_proxy;
                 }
-                // else if (prop == 'parent') {
-                //    return $wbwindow.parent._WB_wombat_obj_proxy;
-                //}
 
                 return default_proxy_get($wbwindow, prop, ownProps);
             },
