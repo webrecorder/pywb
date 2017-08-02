@@ -938,9 +938,13 @@ var _WBWombat = function($wbwindow, wbinfo) {
         $wbwindow.Element.prototype._orig_setAttribute = orig_setAttribute;
 
         $wbwindow.Element.prototype.setAttribute = function(name, value) {
-            if (name) {
+            if (name && typeof(value) === "string") {
                 var lowername = name.toLowerCase();
-                if (typeof(value) == "string" && should_rewrite_attr(this.tagName, lowername)) {
+
+                if (this.tagName == "LINK" && lowername == "href" && value.indexOf("data:text/css") == 0) {
+                    value = rewrite_inline_style(value);
+
+                } else if (should_rewrite_attr(this.tagName, lowername)) {
                     if (!this._no_rewrite) {
                         var old_value = value;
 
@@ -950,7 +954,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                         }
                         value = rewrite_url(value, false, mod);
                     }
-                } else if (lowername == "style" && typeof(value) == "string") {
+                } else if (lowername == "style") {
                     value = rewrite_style(value);
                 } else if (lowername == "srcset") {
                     value = rewrite_srcset(value);
@@ -1532,6 +1536,27 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
+    function rewrite_inline_style(orig) {
+        var decoded;
+
+        try {
+            decoded = decodeURIComponent(orig);
+        } catch (e) {
+            decoded = orig;
+        }
+
+        if (decoded != orig) {
+            val = rewrite_style(decoded);
+            var parts = val.split(",", 2);
+            val = parts[0] + "," + encodeURIComponent(parts[1]);
+        } else {
+            val = rewrite_style(orig);
+        }
+
+        return val;
+    }
+
+    //============================================
     function override_attr(obj, attr, mod, default_to_setget) {
         var orig_getter = get_orig_getter(obj, attr);
         var orig_setter = get_orig_setter(obj, attr);
@@ -1540,21 +1565,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var val;
 
             if (mod == "cs_" && orig.indexOf("data:text/css") == 0) {
-                var decoded;
-
-                try {
-                    decoded = decodeURIComponent(orig);
-                } catch (e) {
-                    decoded = orig;
-                }
-
-                if (decoded != orig) {
-                    val = rewrite_style(decoded);
-                    var parts = val.split(",", 2);
-                    val = parts[0] + "," + encodeURIComponent(parts[1]);
-                } else {
-                    val = rewrite_style(orig);
-                }
+                val = rewrite_inline_style(orig);
             } else {
                 val = rewrite_url(orig, false, mod);
             }
