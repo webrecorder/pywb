@@ -328,19 +328,19 @@ class RewriteInfo(object):
         return buff
 
     def should_rw_content(self):
+        if not self.text_type:
+            return False
+
         if self.url_rewriter.wburl.mod == 'id_':
             return False
 
-        if self.text_type == 'html':
-            if self.url_rewriter.rewrite_opts.get('is_ajax'):
+        if self.url_rewriter.rewrite_opts.get('is_ajax'):
+            if self.text_type in ('html', 'js'):
                 return False
 
         elif self.text_type == 'plain':
             if self.url_rewriter.wburl.mod not in ('js_', 'cs_'):
                 return False
-
-        elif not self.text_type:
-            return False
 
         elif self.text_type == 'css' or self.text_type == 'xml':
             if self.url_rewriter.wburl.mod == 'bn_':
