@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.31
+// Wombat JS-Rewriting Library v2.32
 //============================================
 
 
@@ -1625,7 +1625,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
 
     //============================================
-    function init_attr_overrides($wbwindow) {
+    function init_attr_overrides() {
         override_attr($wbwindow.HTMLLinkElement.prototype, "href", "cs_");
         override_attr($wbwindow.CSSStyleSheet.prototype, "href", "cs_");
         override_attr($wbwindow.HTMLImageElement.prototype, "src", "im_");
@@ -2198,7 +2198,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_cookies_override($wbwindow)
+    function init_cookies_override()
     {
         var cookie_path_regex = /\bPath=\'?\"?([^;'"\s]+)/i;
         var cookie_domain_regex = /\bDomain=([^;'"\s]+)/i;
@@ -2406,76 +2406,46 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
 
     //============================================
-    function init_doc_overrides($wbwindow) {
+    function init_doc_overrides($document) {
         if (!Object.defineProperty) {
             return;
         }
 
-        if ($wbwindow.document._wb_override) {
-            return;
-        }
+        // referrer
+        override_prop_extract($document, "referrer");
 
-        var orig_referrer = extract_orig($wbwindow.document.referrer);
+        // origin
+        def_prop($document, "origin", undefined, function() { return this._WB_wombat_location.origin; });
 
-        var domain_info;
-
-        if ($wbwindow.wbinfo) {
-            domain_info = $wbwindow.wbinfo;
-        } else {
-            domain_info = wbinfo;
-        }
-
-        domain_info.domain = domain_info.wombat_host;
-
+        // domain
         var domain_setter = function(val) {
-            if (ends_with(domain_info.wombat_host, val)) {
-                domain_info.domain = val;
+            if (ends_with(this._WB_wombat_location.hostname, val)) {
+                this.__wb_domain = val;
             }
         }
 
         var domain_getter = function() {
-            return domain_info.domain;
+            return this.__wb_domain || this._WB_wombat_location.hostname;
         }
 
-        // changing domain disallowed, but set as no-op to avoid errors
-        def_prop($wbwindow.document, "domain", domain_setter, domain_getter);
+        def_prop($document, "domain", domain_setter, domain_getter);
 
-        def_prop($wbwindow.document, "referrer", undefined, function() { return orig_referrer; });
-
-
-        // Cookies
-        init_cookies_override($wbwindow);
-
-        // Init mutation observer (for style only)
-        //init_mutation_obs($wbwindow);
-
-        // override href and src attrs
-        init_attr_overrides($wbwindow);
-
-
-        init_form_overrides($wbwindow);
-
-
-        // Attr observers
-        //if (!wb_opts.skip_attr_observers) {
-           // init_href_src_obs($wbwindow);
-        //}
-
-        $wbwindow.document._wb_override = true;
+        // override form action
+        init_form_overrides($document);
     }
 
 
     //============================================
     // Necessary since HTMLFormElement.prototype.action is not consistently
     // overridable
-    function init_form_overrides($wbwindow) {
+    function init_form_overrides($document) {
         var do_init_forms = function() {
-            for (var i = 0; i < $wbwindow.document.forms.length; i++) {
-                var new_action = rewrite_url($wbwindow.document.forms[i].action);
-                if (new_action != $wbwindow.document.forms[i].action) {
-                    $wbwindow.document.forms[i].action = new_action;
+            for (var i = 0; i < $document.forms.length; i++) {
+                var new_action = rewrite_url($document.forms[i].action);
+                if (new_action != $document.forms[i].action) {
+                    $document.forms[i].action = new_action;
                 }
-                override_attr($wbwindow.document.forms[i], "action", "", true);
+                override_attr($document.forms[i], "action", "", true);
             }
         }
 
@@ -2720,22 +2690,17 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     function createDocumentProxy($document) {
+        init_doc_overrides($document);
+
         var ownProps = getAllOwnProps($document);
 
         return new Proxy($document, {
             get(target, prop) {
-                if (prop == "origin") {
-                    return $document._WB_wombat_location.origin;
-                }
-
                 return default_proxy_get($document, prop, ownProps);
             },
 
             set (target, prop, value) {
-                // console.log('wombat document proxy set', prop, prop);
-                if (prop === 'domain') {
-                    return true;
-                } else if (prop === 'location') {
+                if (prop === 'location') {
                     $document.WB_wombat_location = value;
                     return true;
                 } else {
@@ -2776,8 +2741,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
             // Domain
             //$wbwindow.document.WB_wombat_domain = wbinfo.wombat_host;
             //$wbwindow.document.WB_wombat_referrer = extract_orig($wbwindow.document.referrer);
-
-            init_doc_overrides($wbwindow, wb_opts);
 
             // History
             override_history_func("pushState");
@@ -2843,6 +2806,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 init_getAttribute_override();
             }
 
+            // override href and src attrs
+            init_attr_overrides();
+
+            // Cookies
+            init_cookies_override();
+
             // createElement attr override
             if (!wb_opts.skip_createElement) {
                 init_createElement_override();
@@ -2896,7 +2865,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
         obj.init_new_window_wombat = init_new_window_wombat;
         obj.init_paths = init_paths;
         obj.local_init = function(name) {
-            return $wbwindow._WB_wombat_obj_proxy[name];
+            var res = $wbwindow._WB_wombat_obj_proxy[name];
+            if (name === "document" && res && !res._WB_wombat_obj_proxy) {
+                res._WB_wombat_obj_proxy = createDocumentProxy(res);
+                return res._WB_wombat_obj_proxy;
+            }
+            return res;
         }
 
         return obj;

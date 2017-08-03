@@ -180,6 +180,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
 
     def __init__(self, rewriter, rules=[]):
         rules = rules + [
+           (r'Function\(["\']return this["\']\)', RegexRewriter.format('Function("return this._WB_wombat_obj_proxy || this")'), 0),
            (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(self).'), 0),
         ]
 
