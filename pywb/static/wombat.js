@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.32
+// Wombat JS-Rewriting Library v2.33
 //============================================
 
 
@@ -2593,7 +2593,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return obj._WB_wombat_obj_proxy;
         }
 
-        let retVal = obj[prop];
+        var retVal = obj[prop];
 
         var type = (typeof retVal);
 
@@ -2606,10 +2606,14 @@ var _WBWombat = function($wbwindow, wbinfo) {
         return retVal;
     }
 
-    function createWombatWindowProxy($wbwindow) {
+    function init_window_obj_proxy($wbwindow) {
+        if (!$wbwindow.Proxy) {
+            return undefined;
+        }
+
         var ownProps = getAllOwnProps($wbwindow);
 
-         return new Proxy({}, {
+        $wbwindow._WB_wombat_obj_proxy = new $wbwindow.Proxy({}, {
            get(target, prop) {
                 if (prop == 'top') {
                     return $wbwindow.WB_wombat_top._WB_wombat_obj_proxy;
@@ -2646,7 +2650,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 // since we are proxying an empty object need to add configurable = true
                 // Proxies know we are an empty object and if window says not configurable
                 // throws an error
-                let descriptor =  Object.getOwnPropertyDescriptor($wbwindow, key);
+                var descriptor =  Object.getOwnPropertyDescriptor($wbwindow, key);
                 if (descriptor && !descriptor.configurable) {
                     descriptor.configurable = true;
                 }
@@ -2666,7 +2670,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return true;
             },
             deleteProperty (target, prop) {
-                let propDescriptor = Object.getOwnPropertyDescriptor($wbwindow, prop);
+                var propDescriptor = Object.getOwnPropertyDescriptor($wbwindow, prop);
                 if (propDescriptor === undefined) {
                     return true;
                 }
@@ -2687,14 +2691,20 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return Reflect.defineProperty(target, prop, desc);
             }
         });
+
+        return $wbwindow._WB_wombat_obj_proxy;
     }
 
-    function createDocumentProxy($document) {
+    function init_document_obj_proxy($document) {
         init_doc_overrides($document);
+
+        if (!$wbwindow.Proxy) {
+            return undefined;
+        }
 
         var ownProps = getAllOwnProps($document);
 
-        return new Proxy($document, {
+        $document._WB_wombat_obj_proxy = new $wbwindow.Proxy($document, {
             get(target, prop) {
                 return default_proxy_get($document, prop, ownProps);
             },
@@ -2709,11 +2719,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 }
             },
         });
-    }
 
-    function init_proxy($wbwindow) {
-        $wbwindow._WB_wombat_obj_proxy = createWombatWindowProxy($wbwindow);
-        $wbwindow.document._WB_wombat_obj_proxy = createDocumentProxy($wbwindow.document);
+        return $document._WB_wombat_obj_proxy;
     }
 
     function wombat_init(wbinfo) {
@@ -2854,8 +2861,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
         // disable notifications
         init_disable_notifications();
 
-        // add wombat proxy
-        init_proxy($wbwindow);
+        // add window and document obj proxies, if available
+        init_window_obj_proxy($wbwindow);
+        init_document_obj_proxy($wbwindow.document);
 
         // expose functions
         var obj = {}
@@ -2867,8 +2875,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         obj.local_init = function(name) {
             var res = $wbwindow._WB_wombat_obj_proxy[name];
             if (name === "document" && res && !res._WB_wombat_obj_proxy) {
-                res._WB_wombat_obj_proxy = createDocumentProxy(res);
-                return res._WB_wombat_obj_proxy;
+                return init_document_obj_proxy(res) || res;
             }
             return res;
         }
@@ -3028,3 +3035,4 @@ var _WBWombat = function($wbwindow, wbinfo) {
 };
 
 window._WBWombat = _WBWombat;
+
