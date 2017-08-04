@@ -57,7 +57,9 @@ class BaseCli(object):
 
     def load(self):
         if self.r.live:
-            self.extra_config = {'collections': {'live': '$live'}}
+            self.extra_config = {'collections':
+                                    {'live': {'index': '$live',
+                                              'use_js_obj_proxy': True}}}
 
     def run(self):
         self.run_gevent()

@@ -15,10 +15,12 @@ from pywb.rewrite.rewrite_dash import RewriteDASH
 from pywb.rewrite.rewrite_hls import RewriteHLS
 from pywb.rewrite.rewrite_amf import RewriteAMF
 
+import copy
+
 
 # ============================================================================
 class DefaultRewriter(BaseContentRewriter):
-    all_rewriters = {
+    DEFAULT_REWRITERS = {
         'header': PrefixHeaderRewriter,
         'cookie': HostScopeCookieRewriter,
 
@@ -78,6 +80,7 @@ class DefaultRewriter(BaseContentRewriter):
 
     def __init__(self, rules_file=None, replay_mod=''):
         rules_file = rules_file or 'pkg://pywb/rules.yaml'
+        self.all_rewriters = copy.copy(self.DEFAULT_REWRITERS)
         super(DefaultRewriter, self).__init__(rules_file, replay_mod)
 
     def init_js_regex(self, regexs):

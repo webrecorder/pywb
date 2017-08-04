@@ -66,10 +66,8 @@ class RewriterApp(object):
             self.frame_mod = None
             self.replay_mod = ''
 
-        if self.config.get('js_local_scope_rewrite'):
-            self.content_rw = DefaultRewriterWithJSProxy(replay_mod=self.replay_mod)
-        else:
-            self.content_rw = DefaultRewriter(replay_mod=self.replay_mod)
+        self.default_rw = DefaultRewriter(replay_mod=self.replay_mod)
+        self.js_proxy_rw = DefaultRewriterWithJSProxy(replay_mod=self.replay_mod)
 
         if not jinja_env:
             jinja_env = JinjaEnv(globals={'static_path': 'static'})
@@ -148,8 +146,12 @@ class RewriterApp(object):
 
         urlkey = canonicalize(wb_url.url)
 
-        inputreq = RewriteInputRequest(environ, urlkey, wb_url.url,
-                                       self.content_rw)
+        if kwargs.get('use_js_obj_proxy'):
+            content_rw = self.js_proxy_rw
+        else:
+            content_rw = self.default_rw
+
+        inputreq = RewriteInputRequest(environ, urlkey, wb_url.url, content_rw)
 
         inputreq.include_post_query(wb_url.url)
 
@@ -267,15 +269,7 @@ class RewriterApp(object):
             cookie_rewriter = self.cookie_tracker.get_rewriter(urlrewriter,
                                                                cookie_key)
 
-        #result = self.content_rewriter.rewrite_content(urlrewriter,
-        #                                       record.http_headers,
-        #                                       record.raw_stream,
-        #                                       head_insert_func,
-        #                                       urlkey,
-        #                                       cdx,
-        #                                       cookie_rewriter,
-        #                                       environ)
-        result = self.content_rw(record, urlrewriter, cookie_rewriter, head_insert_func, cdx)
+        result = content_rw(record, urlrewriter, cookie_rewriter, head_insert_func, cdx)
 
         status_headers, gen, is_rw = result
 

@@ -2,8 +2,14 @@
 
 debug: true
 
+collections_root: _test_colls
+
 collections:
     pywb: ./sample_archive/cdx/
+
+    with-js-proxy:
+        index:  ./sample_archive/cdx/
+        use_js_obj_proxy: true
 
     # live collection
     live: $live

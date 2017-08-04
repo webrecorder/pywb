@@ -2,7 +2,6 @@
 # ========================================
 #
 # Settings for each collection
-js_local_scope_rewrite: true
 
 
 collections:

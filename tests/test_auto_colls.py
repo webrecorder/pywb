@@ -19,7 +19,7 @@ from mock import patch
 from pywb import get_test_dir
 from pywb.warcserver.test.testutils import TempDirTests, BaseTestClass
 
-from pywb.manager.manager import main
+from pywb.manager.manager import main, CollectionsManager
 
 import pywb.manager.autoindex
 
@@ -32,6 +32,9 @@ from pywb.apps.frontendapp import FrontEndApp
 #=============================================================================
 ARCHIVE_DIR = 'archive'
 INDEX_DIR = 'indexes'
+COLLECTIONS = '_test_colls'
+
+CollectionsManager.COLLS_DIR = COLLECTIONS
 
 INDEX_FILE = 'index.cdxj'
 AUTOINDEX_FILE = 'autoindex.cdxj'
@@ -76,7 +79,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
         with raises(SystemExit):
             wayback(['-a', '-p', '0'])
 
-        colls = os.path.join(self.root_dir, 'collections')
+        colls = os.path.join(self.root_dir, COLLECTIONS)
         os.mkdir(colls)
 
         pywb.manager.autoindex.keep_running = False
@@ -87,7 +90,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
         """
         main(['init', 'test'])
 
-        colls = os.path.join(self.root_dir, 'collections')
+        colls = os.path.join(self.root_dir, COLLECTIONS)
         assert os.path.isdir(colls)
 
         test = os.path.join(colls, 'test')
@@ -128,7 +131,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
         main(['add', 'test', warc1, warc2])
 
         # Spurrious file in collections
-        with open(os.path.join(self.root_dir, 'collections', 'blah'), 'w+b') as fh:
+        with open(os.path.join(self.root_dir, COLLECTIONS, 'blah'), 'w+b') as fh:
             fh.write(b'foo\n')
 
         with raises(IOError):
@@ -147,7 +150,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
 
         main(['init', 'nested'])
 
-        nested_root = os.path.join(self.root_dir, 'collections', 'nested', ARCHIVE_DIR)
+        nested_root = os.path.join(self.root_dir, COLLECTIONS, 'nested', ARCHIVE_DIR)
         nested_a = os.path.join(nested_root, 'A')
         nested_b = os.path.join(nested_root, 'B', 'sub')
 
@@ -166,7 +169,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
               os.path.join(nested_b, 'example.warc.gz')
              ])
 
-        nested_cdx = os.path.join(self.root_dir, 'collections', 'nested', INDEX_DIR, INDEX_FILE)
+        nested_cdx = os.path.join(self.root_dir, COLLECTIONS, 'nested', INDEX_DIR, INDEX_FILE)
         with open(nested_cdx) as fh:
             nested_cdx_index = fh.read()
 
@@ -190,7 +193,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
         to ensure equality of indexes
         """
         # ensure merged index is same as full reindex
-        coll_dir = os.path.join(self.root_dir, 'collections', 'test', INDEX_DIR)
+        coll_dir = os.path.join(self.root_dir, COLLECTIONS, 'test', INDEX_DIR)
         orig = os.path.join(coll_dir, INDEX_FILE)
         bak = os.path.join(coll_dir, 'index.bak')
 
@@ -210,7 +213,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
     def test_add_static(self):
         """ Test adding static file to collection, check access
         """
-        a_static = os.path.join(self.root_dir, 'collections', 'test', 'static', 'abc.js')
+        a_static = os.path.join(self.root_dir, COLLECTIONS, 'test', 'static', 'abc.js')
 
         with open(a_static, 'w+b') as fh:
             fh.write(b'/* Some JS File */')
@@ -281,7 +284,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
     def test_custom_template_search(self):
         """ Test manually added custom search template search.html
         """
-        a_static = os.path.join(self.root_dir, 'collections', 'test', 'templates', 'search.html')
+        a_static = os.path.join(self.root_dir, COLLECTIONS, 'test', 'templates', 'search.html')
 
         with open(a_static, 'w+b') as fh:
             fh.write(b'pywb custom search page')
@@ -299,7 +302,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
         Template is relative to collection-specific dir
         Add custom metadata and test its presence in custom search page
         """
-        custom_search = os.path.join(self.root_dir, 'collections', 'test',
+        custom_search = os.path.join(self.root_dir, COLLECTIONS, 'test',
                                      'templates', 'search.html')
 
         # add metadata
@@ -314,7 +317,8 @@ class TestManagedColls(TempDirTests, BaseTestClass):
         resp.charset = 'utf-8'
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'
-        assert 'overriden search page: {"some": "value"}' in resp.text
+        assert 'overriden search page: ' in resp.text
+        assert '"some": "value"' in resp.text
 
         resp = self.testapp.get('/test/20140103030321/http://example.com?example=1')
         assert resp.status_int == 200
@@ -328,7 +332,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
 
         # Add collection template
         main(['template', 'foo', '--add', 'query_html'])
-        assert os.path.isfile(os.path.join(self.root_dir, 'collections', 'foo', 'templates', 'query.html'))
+        assert os.path.isfile(os.path.join(self.root_dir, COLLECTIONS, 'foo', 'templates', 'query.html'))
 
         # overwrite -- force
         main(['template', 'foo', '--add', 'query_html', '-f'])
@@ -389,7 +393,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
     def test_no_templates(self):
         """ Test removing templates dir, using default template again
         """
-        shutil.rmtree(os.path.join(self.root_dir, 'collections', 'foo', 'templates'))
+        shutil.rmtree(os.path.join(self.root_dir, COLLECTIONS, 'foo', 'templates'))
 
         self._create_app()
 
@@ -462,7 +466,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
 
     def test_auto_index(self):
         main(['init', 'auto'])
-        auto_dir = os.path.join(self.root_dir, 'collections', 'auto')
+        auto_dir = os.path.join(self.root_dir, COLLECTIONS, 'auto')
         archive_dir = os.path.join(auto_dir, ARCHIVE_DIR)
 
         archive_sub_dir = os.path.join(archive_dir, 'sub')
@@ -545,7 +549,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
 
     def test_err_wrong_warcs(self):
         warc1 = self._get_sample_warc('example.warc.gz')
-        invalid_warc = os.path.join(self.root_dir, 'collections', 'test', ARCHIVE_DIR, 'invalid.warc.gz')
+        invalid_warc = os.path.join(self.root_dir, COLLECTIONS, 'test', ARCHIVE_DIR, 'invalid.warc.gz')
 
         # Empty warc list, argparse calls exit
         with raises(SystemExit):
@@ -572,7 +576,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
         """ Test various errors with missing warcs dir,
         missing cdx dir, non dir cdx file, and missing collections root
         """
-        colls = os.path.join(self.root_dir, 'collections')
+        colls = os.path.join(self.root_dir, COLLECTIONS)
 
         # No Statics -- ignorable
         shutil.rmtree(os.path.join(colls, 'foo', 'static'))

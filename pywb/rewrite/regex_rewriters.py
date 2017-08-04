@@ -226,7 +226,7 @@ class JSWombatProxyRewriter(JSWombatProxyRewriterMixin, RegexRewriter):
 
 # =================================================================
 # Set 'default' JSRewriter
-JSRewriter = JSLocationOnlyRewriter
+JSRewriter = JSLinkAndLocationRewriter
 
 
 # =================================================================

@@ -254,11 +254,13 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.content_length == 0
         assert resp.content_type == 'application/x-javascript'
 
-    #def test_redirect_exact(self):
-    #    resp = self.testapp.get('/pywb/20140127171237/http://www.iana.org/')
-    #    assert resp.status_int == 302
-
-    #    assert resp.headers['Location'].endswith('/pywb/20140127171238/http://iana.org')
+    def test_replay_js_obj_proxy(self, fmod):
+        # test js proxy obj with jquery
+        resp = self.get('/with-js-proxy/20140126200625{0}/http://www.iana.org/_js/2013.1/jquery.js', fmod)
+        assert resp.status_int == 200
+        assert resp.content_length != 0
+        assert resp.content_type == 'application/x-javascript'
+        assert 'let window = _____WB$wombat$assign$function_____(' in resp.text
 
     def test_replay_non_exact(self, fmod):
         # non-exact mode, don't redirect to exact capture
@@ -448,7 +450,7 @@ class TestWbIntegration(BaseConfigTest):
         resp = self.testapp.get('/collinfo.json')
         assert resp.content_type == 'application/json'
         value = resp.json
-        assert len(value['fixed']) == 4
+        assert len(value['fixed']) == 5
         assert len(value['dynamic']) == 0
 
    #def test_invalid_config(self):

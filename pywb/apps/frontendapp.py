@@ -88,13 +88,25 @@ class FrontEndApp(object):
         except:
             self.raise_not_found(environ, 'Static File Not Found: {0}'.format(filepath))
 
+    def get_metadata(self, coll):
+        metadata = {'coll': coll}
+
+        if coll in self.warcserver.list_fixed_routes():
+            metadata.update(self.warcserver.get_coll_config(coll))
+            metadata['type'] = 'replay-fixed'
+        else:
+            metadata.update(self.metadata_cache.load(coll))
+            metadata['type'] = 'replay-dyn'
+
+        return metadata
+
     def serve_coll_page(self, environ, coll):
         if not self.is_valid_coll(coll):
             self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
 
         self.setup_paths(environ, coll)
 
-        metadata = self.metadata_cache.load(coll)
+        metadata = self.get_metadata(coll)
 
         view = BaseInsertView(self.rewriterapp.jinja_env, 'search.html')
 
@@ -115,15 +127,10 @@ class FrontEndApp(object):
         if environ.get('QUERY_STRING'):
             wb_url_str += '?' + environ.get('QUERY_STRING')
 
-        kwargs = {'coll': coll}
-
-        if coll in self.warcserver.list_fixed_routes():
-            kwargs['type'] = 'replay-fixed'
-        else:
-            kwargs['type'] = 'replay-dyn'
+        metadata = self.get_metadata(coll)
 
         try:
-            response = self.rewriterapp.render_content(wb_url_str, kwargs, environ)
+            response = self.rewriterapp.render_content(wb_url_str, metadata, environ)
         except UpstreamException as ue:
             response = self.rewriterapp.handle_error(environ, ue)
             raise HTTPException(response=response)
