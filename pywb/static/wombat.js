@@ -2614,7 +2614,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var ownProps = getAllOwnProps($wbwindow);
 
         $wbwindow._WB_wombat_obj_proxy = new $wbwindow.Proxy({}, {
-           get(target, prop) {
+            get: function(target, prop) {
                 if (prop == 'top') {
                     return $wbwindow.WB_wombat_top._WB_wombat_obj_proxy;
                 }
@@ -2622,7 +2622,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return default_proxy_get($wbwindow, prop, ownProps);
             },
 
-            set(target, prop, value) {
+            set: function(target, prop, value) {
                 if (prop === 'location') {
                     $wbwindow.WB_wombat_location = value;
                     return true;
@@ -2638,13 +2638,13 @@ var _WBWombat = function($wbwindow, wbinfo) {
                     return Reflect.set($wbwindow, prop, value);
                 }
             },
-            has(target, prop) {
+            has: function(target, prop) {
                 return prop in $wbwindow;
             },
-            ownKeys (target) {
+            ownKeys: function(target) {
                 return Object.getOwnPropertyNames($wbwindow).concat(Object.getOwnPropertySymbols($wbwindow));
             },
-            getOwnPropertyDescriptor (target, key) {
+            getOwnPropertyDescriptor: function(target, key) {
                 // console.log(key);
                 // hack for some JS libraries that do a for in
                 // since we are proxying an empty object need to add configurable = true
@@ -2656,20 +2656,20 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 }
                 return descriptor;
             },
-            getPrototypeOf (target) {
+            getPrototypeOf: function(target) {
                 return Object.getPrototypeOf($wbwindow);
             },
-            setPrototypeOf (target, newProto) {
+            setPrototypeOf: function(target, newProto) {
                 return false;
             },
-            isExtensible (target) {
+            isExtensible: function(target) {
                 return Object.isExtensible($wbwindow);
             },
-            preventExtensions (target) {
+            preventExtensions: function(target) {
                 Object.preventExtensions($wbwindow);
                 return true;
             },
-            deleteProperty (target, prop) {
+            deleteProperty: function(target, prop) {
                 var propDescriptor = Object.getOwnPropertyDescriptor($wbwindow, prop);
                 if (propDescriptor === undefined) {
                     return true;
@@ -2680,7 +2680,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 delete $wbwindow[prop];
                 return true;
             },
-            defineProperty (target, prop, desc) {
+            defineProperty: function(target, prop, desc) {
                 desc = desc || {};
                 if (!desc.value && !desc.get) {
                     desc.value = $wbwindow[prop];
@@ -2705,11 +2705,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var ownProps = getAllOwnProps($document);
 
         $document._WB_wombat_obj_proxy = new $wbwindow.Proxy($document, {
-            get(target, prop) {
+            get: function(target, prop) {
                 return default_proxy_get($document, prop, ownProps);
             },
 
-            set (target, prop, value) {
+            set: function(target, prop, value) {
                 if (prop === 'location') {
                     $document.WB_wombat_location = value;
                     return true;
