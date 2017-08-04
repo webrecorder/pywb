@@ -16,6 +16,7 @@ from pywb.rewrite.rewrite_hls import RewriteHLS
 from pywb.rewrite.rewrite_amf import RewriteAMF
 
 import copy
+from werkzeug.useragents import UserAgent
 
 
 # ============================================================================
@@ -80,8 +81,8 @@ class DefaultRewriter(BaseContentRewriter):
 
     def __init__(self, rules_file=None, replay_mod=''):
         rules_file = rules_file or 'pkg://pywb/rules.yaml'
-        self.all_rewriters = copy.copy(self.DEFAULT_REWRITERS)
         super(DefaultRewriter, self).__init__(rules_file, replay_mod)
+        self.all_rewriters = copy.copy(self.DEFAULT_REWRITERS)
 
     def init_js_regex(self, regexs):
         return RegexRewriter.parse_rules_from_config(regexs)
@@ -91,8 +92,38 @@ class DefaultRewriter(BaseContentRewriter):
 
 
 # ============================================================================
-class DefaultRewriterWithJSProxy(DefaultRewriter):
+class RewriterWithJSProxy(DefaultRewriter):
     def __init__(self, *args, **kwargs):
-        super(DefaultRewriterWithJSProxy, self).__init__(*args, **kwargs)
-        self.all_rewriters['js'] = JSWombatProxyRewriter
+        super(RewriterWithJSProxy, self).__init__(*args, **kwargs)
 
+    def get_rewriter(self, rw_type, rwinfo=None):
+        if rw_type == 'js' and rwinfo:
+            # check if UA allows this
+            if self.ua_allows_obj_proxy(rwinfo.url_rewriter.rewrite_opts):
+                return JSWombatProxyRewriter
+
+        # otherwise, return default rewriter
+        return super(RewriterWithJSProxy, self).get_rewriter(rw_type, rwinfo)
+
+    def ua_allows_obj_proxy(self, opts):
+        ua = opts.get('ua')
+        if not ua:
+            ua_string = opts.get('ua_string')
+            if ua_string:
+                ua = UserAgent(ua_string)
+
+        if ua is None:
+            return True
+
+        supported = {
+            'chrome': '49.0',
+            'firefox': '44.0',
+            'safari': '10.0',
+            'opera': '36.0',
+            'edge': '12.0',
+            'msie': None,
+        }
+
+        min_vers = supported.get(ua.browser)
+
+        return (min_vers and ua.version >= min_vers)

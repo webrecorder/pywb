@@ -20,13 +20,15 @@ class BaseContentRewriter(object):
 
     def __init__(self, rules_file, replay_mod=''):
         self.rules = []
+        self.all_rewriters = []
         self.load_rules(rules_file)
         self.replay_mod = replay_mod
-        #for rw in self.known_rewriters:
-        #    self.all_rewriters[rw.name] = rw
 
     def add_rewriter(self, rw):
         self.all_rewriters[rw.name] = rw
+
+    def get_rewriter(self, rw_type, rwinfo=None):
+        return self.all_rewriters.get(rw_type)
 
     def load_rules(self, filename):
         config = load_yaml_config(filename)
@@ -68,7 +70,7 @@ class BaseContentRewriter(object):
             text_type = 'js-proxy'
 
         rw_type = rule.get(text_type, text_type)
-        rw_class = self.all_rewriters.get(rw_type)
+        rw_class = self.get_rewriter(rw_type, rwinfo)
 
         return rw_type, rw_class
 
@@ -98,7 +100,7 @@ class BaseContentRewriter(object):
 
         # if no js rewriter, then do banner insert only
         if not js_rewriter:
-            rw_class = self.all_rewriters.get('html-banner-only')
+            rw_class = self.get_rewriter('html-banner-only', rwinfo)
 
         rw = rw_class(rwinfo.url_rewriter,
                       js_rewriter=js_rewriter,
@@ -146,7 +148,7 @@ class BaseContentRewriter(object):
         return charset
 
     def rewrite_headers(self, rwinfo):
-        header_rw_class = self.all_rewriters.get('header')
+        header_rw_class = self.get_rewriter('header', rwinfo)
         return header_rw_class(rwinfo)()
 
     def __call__(self, record, url_rewriter, cookie_rewriter,
@@ -268,7 +270,7 @@ class RewriteInfo(object):
         self.url_rewriter = url_rewriter
 
         if not cookie_rewriter:
-            cookie_rw_class = content_rewriter.all_rewriters.get('cookie')
+            cookie_rw_class = content_rewriter.get_rewriter('cookie', self)
             if cookie_rw_class:
                 cookie_rewriter = cookie_rw_class(url_rewriter)
 
@@ -338,7 +340,7 @@ class RewriteInfo(object):
             if self.text_type in ('html', 'js'):
                 return False
 
-        elif self.text_type == 'plain':
+        if self.text_type == 'plain':
             if self.url_rewriter.wburl.mod not in ('js_', 'cs_'):
                 return False
 

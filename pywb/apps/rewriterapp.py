@@ -3,10 +3,7 @@ import requests
 from werkzeug.http import HTTP_STATUS_CODES
 from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
 
-#from pywb.rewrite.rewrite_amf import RewriteAMFMixin
-#from pywb.rewrite.rewrite_dash import RewriteDASHMixin
-#from pywb.rewrite.rewrite_content import RewriteContent
-from pywb.rewrite.default_rewriter import DefaultRewriter, DefaultRewriterWithJSProxy
+from pywb.rewrite.default_rewriter import DefaultRewriter, RewriterWithJSProxy
 
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter, SchemeOnlyUrlRewriter
@@ -67,7 +64,7 @@ class RewriterApp(object):
             self.replay_mod = ''
 
         self.default_rw = DefaultRewriter(replay_mod=self.replay_mod)
-        self.js_proxy_rw = DefaultRewriterWithJSProxy(replay_mod=self.replay_mod)
+        self.js_proxy_rw = RewriterWithJSProxy(replay_mod=self.replay_mod)
 
         if not jinja_env:
             jinja_env = JinjaEnv(globals={'static_path': 'static'})
@@ -269,6 +266,7 @@ class RewriterApp(object):
             cookie_rewriter = self.cookie_tracker.get_rewriter(urlrewriter,
                                                                cookie_key)
 
+        urlrewriter.rewrite_opts['ua_string'] = environ.get('HTTP_USER_AGENT')
         result = content_rw(record, urlrewriter, cookie_rewriter, head_insert_func, cdx)
 
         status_headers, gen, is_rw = result
