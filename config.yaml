@@ -3,6 +3,7 @@
 #
 # Settings for each collection
 
+
 collections:
     # <name>: <cdx_path>
     # collection will be accessed via /<name>

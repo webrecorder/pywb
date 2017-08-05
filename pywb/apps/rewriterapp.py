@@ -3,10 +3,7 @@ import requests
 from werkzeug.http import HTTP_STATUS_CODES
 from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
 
-#from pywb.rewrite.rewrite_amf import RewriteAMFMixin
-#from pywb.rewrite.rewrite_dash import RewriteDASHMixin
-#from pywb.rewrite.rewrite_content import RewriteContent
-from pywb.rewrite.default_rewriter import DefaultRewriter
+from pywb.rewrite.default_rewriter import DefaultRewriter, RewriterWithJSProxy
 
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter, SchemeOnlyUrlRewriter
@@ -66,10 +63,8 @@ class RewriterApp(object):
             self.frame_mod = None
             self.replay_mod = ''
 
-        #frame_type = 'inverse' if framed_replay else False
-
-        #self.content_rewriter = Rewriter(is_framed_replay=frame_type)
-        self.content_rw = DefaultRewriter(replay_mod=self.replay_mod)
+        self.default_rw = DefaultRewriter(replay_mod=self.replay_mod)
+        self.js_proxy_rw = RewriterWithJSProxy(replay_mod=self.replay_mod)
 
         if not jinja_env:
             jinja_env = JinjaEnv(globals={'static_path': 'static'})
@@ -148,8 +143,12 @@ class RewriterApp(object):
 
         urlkey = canonicalize(wb_url.url)
 
-        inputreq = RewriteInputRequest(environ, urlkey, wb_url.url,
-                                       self.content_rw)
+        if kwargs.get('use_js_obj_proxy'):
+            content_rw = self.js_proxy_rw
+        else:
+            content_rw = self.default_rw
+
+        inputreq = RewriteInputRequest(environ, urlkey, wb_url.url, content_rw)
 
         inputreq.include_post_query(wb_url.url)
 
@@ -267,15 +266,8 @@ class RewriterApp(object):
             cookie_rewriter = self.cookie_tracker.get_rewriter(urlrewriter,
                                                                cookie_key)
 
-        #result = self.content_rewriter.rewrite_content(urlrewriter,
-        #                                       record.http_headers,
-        #                                       record.raw_stream,
-        #                                       head_insert_func,
-        #                                       urlkey,
-        #                                       cdx,
-        #                                       cookie_rewriter,
-        #                                       environ)
-        result = self.content_rw(record, urlrewriter, cookie_rewriter, head_insert_func, cdx)
+        urlrewriter.rewrite_opts['ua_string'] = environ.get('HTTP_USER_AGENT')
+        result = content_rw(record, urlrewriter, cookie_rewriter, head_insert_func, cdx)
 
         status_headers, gen, is_rw = result
 

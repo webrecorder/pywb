@@ -108,6 +108,16 @@ class WarcServer(BaseWarcServer):
     def list_fixed_routes(self):
         return list(self.fixed_routes.keys())
 
+    def get_coll_config(self, name):
+        colls = self.config.get('collections', None)
+        if not colls:
+            return {}
+
+        res = colls.get(name, {})
+        if not isinstance(res, dict):
+            res = {'index': res}
+        return res
+
     def list_dynamic_routes(self):
         if not self.root_dir:
             return []

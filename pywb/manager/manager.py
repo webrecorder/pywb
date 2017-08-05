@@ -37,7 +37,10 @@ directory structure expected by pywb
 
     COLL_RX = re.compile('^[\w][-\w]*$')
 
-    def __init__(self, coll_name, colls_dir='collections', must_exist=True):
+    COLLS_DIR = 'collections'
+
+    def __init__(self, coll_name, colls_dir=None, must_exist=True):
+        colls_dir = colls_dir or self.COLLS_DIR
         self.default_config = load_yaml_config(DEFAULT_CONFIG)
 
         if coll_name and not self.COLL_RX.match(coll_name):

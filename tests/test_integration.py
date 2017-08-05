@@ -254,11 +254,25 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.content_length == 0
         assert resp.content_type == 'application/x-javascript'
 
-    #def test_redirect_exact(self):
-    #    resp = self.testapp.get('/pywb/20140127171237/http://www.iana.org/')
-    #    assert resp.status_int == 302
+    def test_replay_js_obj_proxy(self, fmod):
+        # test js proxy obj with jquery -- no user agent
+        resp = self.get('/with-js-proxy/20140126200625{0}/http://www.iana.org/_js/2013.1/jquery.js', fmod)
 
-    #    assert resp.headers['Location'].endswith('/pywb/20140127171238/http://iana.org')
+        assert resp.status_int == 200
+        assert resp.content_length != 0
+        assert resp.content_type == 'application/x-javascript'
+
+        # test with Chrome user agent
+        resp = self.get('/with-js-proxy/20140126200625{0}/http://www.iana.org/_js/2013.1/jquery.js', fmod,
+                        headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'})
+        assert 'let window = _____WB$wombat$assign$function_____(' in resp.text
+
+    def test_replay_js_ie11_no_obj_proxy(self, fmod):
+        # IE11 user-agent, no proxy
+        resp = self.get('/with-js-proxy/20140126200625{0}/http://www.iana.org/_js/2013.1/jquery.js', fmod,
+                        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko'})
+
+        assert 'let window = _____WB$wombat$assign$function_____(' not in resp.text
 
     def test_replay_non_exact(self, fmod):
         # non-exact mode, don't redirect to exact capture
@@ -448,7 +462,7 @@ class TestWbIntegration(BaseConfigTest):
         resp = self.testapp.get('/collinfo.json')
         assert resp.content_type == 'application/json'
         value = resp.json
-        assert len(value['fixed']) == 4
+        assert len(value['fixed']) == 5
         assert len(value['dynamic']) == 0
 
    #def test_invalid_config(self):

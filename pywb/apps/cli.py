@@ -57,7 +57,9 @@ class BaseCli(object):
 
     def load(self):
         if self.r.live:
-            self.extra_config = {'collections': {'live': '$live'}}
+            self.extra_config = {'collections':
+                                    {'live': {'index': '$live',
+                                              'use_js_obj_proxy': True}}}
 
     def run(self):
         self.run_gevent()
@@ -80,6 +82,7 @@ class ReplayCli(BaseCli):
 
     def load(self):
         super(ReplayCli, self).load()
+        import os
         if self.r.directory:  #pragma: no cover
             os.chdir(self.r.directory)
 

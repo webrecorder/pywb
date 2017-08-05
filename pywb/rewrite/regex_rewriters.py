@@ -1,9 +1,8 @@
 import re
-
 from pywb.rewrite.content_rewriter import StreamingRewriter
 
 
-#=================================================================
+# =================================================================
 def load_function(string):
     import importlib
 
@@ -12,10 +11,10 @@ def load_function(string):
     return getattr(mod, string[1])
 
 
-#=================================================================
+# =================================================================
 class RegexRewriter(StreamingRewriter):
-    #@staticmethod
-    #def comment_out(string):
+    # @staticmethod
+    # def comment_out(string):
     #    return '/*' + string + '*/'
 
     @staticmethod
@@ -34,17 +33,17 @@ class RegexRewriter(StreamingRewriter):
     def archival_rewrite(rewriter):
         return lambda string: rewriter.rewrite(string)
 
-    #@staticmethod
-    #def replacer(other):
+    # @staticmethod
+    # def replacer(other):
     #    return lambda m, string: other
 
     HTTPX_MATCH_STR = r'https?:\\?/\\?/[A-Za-z0-9:_@.-]+'
 
-    #DEFAULT_OP = add_prefix
+    # DEFAULT_OP = add_prefix
 
     def __init__(self, rewriter, rules):
         super(RegexRewriter, self).__init__(rewriter)
-        #rules = self.create_rules(http_prefix)
+        # rules = self.create_rules(http_prefix)
 
         # Build regexstr, concatenating regex list
         regex_str = '|'.join(['(' + rx + ')' for rx, op, count in rules])
@@ -79,7 +78,7 @@ class RegexRewriter(StreamingRewriter):
                 return m.group(0)
 
             # Custom func
-            #if not hasattr(op, '__call__'):
+            # if not hasattr(op, '__call__'):
             #    op = RegexRewriter.DEFAULT_OP(op)
 
             result = op(m.group(i))
@@ -109,19 +108,20 @@ class RegexRewriter(StreamingRewriter):
                 return result
 
             return list(map(parse_rule, config))
+
         return run_parse_rules
 
 
-#=================================================================
+# =================================================================
 class JSLinkRewriterMixin(object):
     """
     JS Rewriter which rewrites absolute http://, https:// and // urls
     at the beginning of a string
     """
-    #JS_HTTPX = r'(?:(?:(?<=["\';])https?:)|(?<=["\']))\\{0,4}/\\{0,4}/[A-Za-z0-9:_@.-]+.*(?=["\s\';&\\])'
-    #JS_HTTPX = r'(?<=["\';])(?:https?:)?\\{0,4}/\\{0,4}/[A-Za-z0-9:_@.\-/\\?&#]+(?=["\';&\\])'
+    # JS_HTTPX = r'(?:(?:(?<=["\';])https?:)|(?<=["\']))\\{0,4}/\\{0,4}/[A-Za-z0-9:_@.-]+.*(?=["\s\';&\\])'
+    # JS_HTTPX = r'(?<=["\';])(?:https?:)?\\{0,4}/\\{0,4}/[A-Za-z0-9:_@.\-/\\?&#]+(?=["\';&\\])'
 
-    #JS_HTTPX = r'(?:(?<=["\';])https?:|(?<=["\']))\\{0,4}/\\{0,4}/[A-Za-z0-9:_@.-][^"\s\';&\\]*(?=["\';&\\])'
+    # JS_HTTPX = r'(?:(?<=["\';])https?:|(?<=["\']))\\{0,4}/\\{0,4}/[A-Za-z0-9:_@.-][^"\s\';&\\]*(?=["\';&\\])'
     JS_HTTPX = r'(?:(?<=["\';])https?:|(?<=["\']))\\{0,4}/\\{0,4}/[A-Za-z0-9:_@%.\\-]+/'
 
     def __init__(self, rewriter, rules=[]):
@@ -131,7 +131,7 @@ class JSLinkRewriterMixin(object):
         super(JSLinkRewriterMixin, self).__init__(rewriter, rules)
 
 
-#=================================================================
+# =================================================================
 class JSLocationRewriterMixin(object):
     """
     JS Rewriter mixin which rewrites location and domain to the
@@ -140,46 +140,96 @@ class JSLocationRewriterMixin(object):
 
     def __init__(self, rewriter, rules=[], prefix='WB_wombat_'):
         rules = rules + [
-          (r'(?<![$\'"])\b(?:location|top)\b(?![$\'":])', RegexRewriter.add_prefix(prefix), 0),
+            (r'(?<![$\'"])\b(?:location|top)\b(?![$\'":])', RegexRewriter.add_prefix(prefix), 0),
 
-          (r'(?<=[?])\s*(?:\w+[.])?(location)\s*(?=[:])', RegexRewriter.add_prefix(prefix), 1),
+            (r'(?<=[?])\s*(?:\w+[.])?(location)\s*(?=[:])', RegexRewriter.add_prefix(prefix), 1),
 
-          (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(self.window).'), 0),
+            (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(self.window).'), 0),
 
-          (r'(?<=\.)frameElement\b', RegexRewriter.add_prefix(prefix), 0),
+            (r'(?<=\.)frameElement\b', RegexRewriter.add_prefix(prefix), 0),
         ]
         super(JSLocationRewriterMixin, self).__init__(rewriter, rules)
 
 
-#=================================================================
+# =================================================================
+class JSWombatProxyRewriterMixin(object):
+    """
+    JS Rewriter mixin which wraps the contents of the
+    script in an anonymous block scope and inserts
+    Wombat js-proxy setup
+    """
+
+    local_init_func = '\nvar {0} = function(name) {{\
+return (self._wb_wombat && self._wb_wombat.local_init &&\
+ self._wb_wombat.local_init(name)) || self[name]; }}\n\
+if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
+{{\n'
+
+    local_init_func_name = '_____WB$wombat$assign$function_____'
+
+    local_var_line = 'let {0} = {1}("{0}");'
+
+    local_objs = ['window',
+                  'self',
+                  'document',
+                  'location',
+                  'top',
+                  'parent',
+                  'frames',
+                  'opener']
+
+    def __init__(self, rewriter, rules=[]):
+        rules = rules + [
+           (r'Function\(["\']return this["\']\)', RegexRewriter.format('Function("return this._WB_wombat_obj_proxy || this")'), 0),
+           (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(self).'), 0),
+        ]
+
+        super(JSWombatProxyRewriterMixin, self).__init__(rewriter, rules)
+
+        local_declares = '\n'.join([self.local_var_line.format(obj, self.local_init_func_name) for obj in self.local_objs])
+
+        self.first_buff = self.local_init_func.format(self.local_init_func_name) + local_declares
+
+        self.close_string = '\n\n}'
+
+    def final_read(self):
+        return self.close_string
+
+
+# =================================================================
 class JSLocationOnlyRewriter(JSLocationRewriterMixin, RegexRewriter):
     pass
 
 
-#=================================================================
+# =================================================================
 class JSLinkOnlyRewriter(JSLinkRewriterMixin, RegexRewriter):
     pass
 
 
-#=================================================================
+# =================================================================
 class JSLinkAndLocationRewriter(JSLocationRewriterMixin,
                                 JSLinkRewriterMixin,
                                 RegexRewriter):
     pass
 
 
-#=================================================================
+# =================================================================
 class JSNoneRewriter(RegexRewriter):
     def __init__(self, rewriter, rules=[]):
         super(JSNoneRewriter, self).__init__(rewriter, rules)
 
 
-#=================================================================
+# =================================================================
+class JSWombatProxyRewriter(JSWombatProxyRewriterMixin, RegexRewriter):
+    pass
+
+
+# =================================================================
 # Set 'default' JSRewriter
 JSRewriter = JSLinkAndLocationRewriter
 
 
-#=================================================================
+# =================================================================
 class XMLRewriter(RegexRewriter):
     def __init__(self, rewriter, extra=[]):
         rules = self._create_rules(rewriter)
@@ -202,9 +252,8 @@ class XMLRewriter(RegexRewriter):
         ]
 
 
-#=================================================================
+# =================================================================
 class CSSRewriter(RegexRewriter):
-
     CSS_URL_REGEX = "url\\s*\\(\\s*(?:[\\\\\"']|(?:&.{1,4};))*\\s*([^)'\"]+)\\s*(?:[\\\\\"']|(?:&.{1,4};))*\\s*\\)"
 
     CSS_IMPORT_NO_URL_REGEX = ("@import\\s+(?!url)\\(?\\s*['\"]?" +
