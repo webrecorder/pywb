@@ -47,7 +47,7 @@ def test_timeout_long_all_pass():
 
 
 def test_timeout_slower_skipped_1():
-    agg = GeventTimeoutAggregator(sources, timeout=0.49)
+    agg = GeventTimeoutAggregator(sources, timeout=0.40)
 
     res, errs = agg(dict(url='http://example.com/'))
 
