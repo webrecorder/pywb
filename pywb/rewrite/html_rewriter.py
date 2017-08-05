@@ -73,6 +73,13 @@ class HTMLRewriterMixin(StreamingRewriter):
 
     DATA_RW_PROTOCOLS = ('http://', 'https://', '//')
 
+    PRELOAD_TYPES = {'script': 'js_',
+                     'style': 'cs_',
+                     'image': 'im_',
+                     'document': 'if_',
+                     'fetch': 'mp_'
+                    }
+
     #===========================
     class AccumBuff:
         def __init__(self):
@@ -317,18 +324,7 @@ class HTMLRewriterMixin(StreamingRewriter):
             # don't rewrite rel=canonical
             elif tag == 'link' and attr_name == 'href':
                 rw_mod = handler.get(attr_name)
-
-                if self.has_attr(tag_attrs, ('rel', 'canonical')):
-                    if self.opts.get('rewrite_rel_canon', True):
-                        attr_value = self._rewrite_url(attr_value, rw_mod)
-                    else:
-                        # resolve relative rel=canonical URLs so that they
-                        # refer to the same absolute URL as on the original
-                        # page (see https://github.com/hypothesis/via/issues/65
-                        # for context)
-                        attr_value = urljoin(self.orig_url, attr_value)
-                else:
-                    attr_value = self._rewrite_url(attr_value, rw_mod)
+                attr_value = self._rewrite_link_href(attr_value, tag_attrs, rw_mod)
 
             # special case: meta tag
             elif (tag == 'meta') and (attr_name == 'content'):
@@ -369,6 +365,29 @@ class HTMLRewriterMixin(StreamingRewriter):
             self._write_attr(attr_name, attr_value, empty_attr)
 
         return True
+
+    def _rewrite_link_href(self, attr_value, tag_attrs, rw_mod):
+        # rel="canonical"
+        rel = self.get_attr(tag_attrs, 'rel')
+        if rel == 'canonical':
+            if self.opts.get('rewrite_rel_canon', True):
+                return self._rewrite_url(attr_value, rw_mod)
+            else:
+                # resolve relative rel=canonical URLs so that they
+                # refer to the same absolute URL as on the original
+                # page (see https://github.com/hypothesis/via/issues/65
+                # for context)
+                return urljoin(self.orig_url, attr_value)
+
+        # find proper mod for preload
+        elif rel == 'preload':
+            preload = self.get_attr(tag_attrs, 'as')
+            rw_mod = self.PRELOAD_TYPES.get(preload, rw_mod)
+
+        elif rel == 'stylesheet':
+            rw_mod = 'cs_'
+
+        return self._rewrite_url(attr_value, rw_mod)
 
     def _set_parse_context(self, tag, tag_attrs):
         # special case: script or style parse context
