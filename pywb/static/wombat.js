@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.33
+// Wombat JS-Rewriting Library v2.40
 //============================================
 
 
@@ -1176,96 +1176,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
     }
 
-
-    //============================================
-/*    function init_mutation_obs($wbwindow) {
-        if (!$wbwindow.MutationObserver) {
-            return;
-        }
-
-        var m = new MutationObserver(function(records, observer)
-                                     {
-            for (var i = 0; i < records.length; i++) {
-                var r = records[i];
-                if (r.type == "attributes" && r.attributeName == "style") {
-                    var style = r.target.style.cssText;
-                    if (style.indexOf("url(") > 0) {
-                        var new_style = rewrite_style(style);
-                        if (new_style != style) {
-                            r.target.style.cssText = new_style;
-                        }
-                    }
-                }
-            }
-        });
-
-        m.observe($wbwindow.document.documentElement, {
-            childList: false,
-            attributes: true,
-            subtree: true,
-            //attributeOldValue: true,
-            attributeFilter: ["style"]});
-    }
-*/
-    //============================================
-/*    function init_href_src_obs($wbwindow)
-    {
-        if (!$wbwindow.MutationObserver) {
-            return;
-        }
-
-        var m = new MutationObserver(function(records, observer)
-                                     {
-            for (var i = 0; i < records.length; i++) {
-                var r = records[i];
-                if (r.type == "attributes") {
-                    //var curr = wb_getAttribute(r.target, r.attributeName);
-                    var curr = r.target.getAttribute(r.attributeName);
-                    var new_url = rewrite_url(curr);
-                    if (curr != new_url) {
-                        wb_setAttribute.call(r.target, r.attributeName, new_url);
-                    }
-                }
-            }
-        });
-
-        m.observe($wbwindow.document.documentElement, {
-            childList: false,
-            attributes: true,
-            subtree: true,
-            //attributeOldValue: true,
-            attributeFilter: ["src", "href"]});
-
-    }
-
-
-    //============================================
-    function init_iframe_insert_obs(root)
-    {
-        if (!$wbwindow.MutationObserver) {
-            return;
-        }
-
-        var m = new MutationObserver(function(records, observer)
-        {
-            for (var i = 0; i < records.length; i++) {
-                var r = records[i];
-                if (r.type == "childList") {
-                    for (var j = 0; j < r.addedNodes.length; j++) {
-                        if (r.addedNodes[j].tagName == "IFRAME") {
-                            init_iframe_wombat(r.addedNodes[j]);
-                        }
-                    }
-                }
-            }
-        });
-
-        m.observe(root, {
-            childList: true,
-            subtree: true,
-        });
-    }
-*/
     //============================================
     function rewrite_attr(elem, name, abs_url_only) {
         if (!elem || !elem.getAttribute) {
@@ -1945,7 +1855,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         function receive_hash_change(event)
         {
-            var source = event.source.__WBProxyGetO__ || event.source;
+            var source = event.source.__WBProxyRealObj__ || event.source;
 
             if (!event.data || source != $wbwindow.__WB_top_frame) {
                 return;
@@ -2062,7 +1972,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                         source = win.__WB_win_id[event.data.src_id];
                     }
 
-                    source = source.__WBProxyGetO__ || source;
+                    source = source.__WBProxyRealObj__ || source;
 
                     ne = new MessageEvent("message",
                                           {"bubbles": event.bubbles,
@@ -2164,6 +2074,18 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_prop_to_proxy($wbwindow.MessageEvent.prototype, "source");
 
         $wbwindow.MessageEvent.prototype.__extended = true;
+    }
+
+    //============================================
+    function init_mo_from_proxy() {
+        var orig_observe = $wbwindow.MutationObserver.prototype.observe;
+
+        function observe_deproxy(target, options) {
+            target = target && target.__WBProxyRealObj__ || target;
+            return orig_observe.call(this, target, options);
+        }
+
+        $wbwindow.MutationObserver.prototype.observe = observe_deproxy;
     }
 
     //============================================
@@ -2382,6 +2304,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         init_new_window_wombat(win, src);
     }
 
+    //============================================
     function init_new_window_wombat(win, src) {
         if (!win || win._wb_wombat) {
             return;
@@ -2556,6 +2479,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
         init_bad_prefixes(wb_replay_prefix);
     }
 
+
+    //============================================
+    // New Proxy Obj Override Functions
+    // Original Concept by John Berlin (https://github.com/N0taN3rd)
+    //============================================
     function getAllOwnProps(obj) {
         var ownProps = [];
 
@@ -2584,8 +2512,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
         return ownProps;
     }
 
+    //============================================
     function default_proxy_get(obj, prop, ownProps) {
-        if (prop == '__WBProxyGetO__') {
+        if (prop == '__WBProxyRealObj__') {
             return obj;
         } else if (prop == 'location') {
             return obj._WB_wombat_location;
@@ -2606,6 +2535,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         return retVal;
     }
 
+    //============================================
     function init_window_obj_proxy($wbwindow) {
         if (!$wbwindow.Proxy) {
             return undefined;
@@ -2695,6 +2625,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         return $wbwindow._WB_wombat_obj_proxy;
     }
 
+    //============================================
     function init_document_obj_proxy($document) {
         init_doc_overrides($document);
 
@@ -2723,6 +2654,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
         return $document._WB_wombat_obj_proxy;
     }
 
+    // End Proxy Obj Override System
+
+
+    //============================================
     function wombat_init(wbinfo) {
         init_paths(wbinfo);
 
@@ -2864,6 +2799,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
         // add window and document obj proxies, if available
         init_window_obj_proxy($wbwindow);
         init_document_obj_proxy($wbwindow.document);
+
+        init_mo_from_proxy();
 
         // expose functions
         var obj = {}
