@@ -51,8 +51,8 @@ class TestManagedColls(TempDirTests, BaseTestClass):
 
     @classmethod
     def teardown_class(cls):
-        super(TestManagedColls, cls).teardown_class()
         os.chdir(cls.orig_cwd)
+        super(TestManagedColls, cls).teardown_class()
 
     def _check_dirs(self, base, dirlist):
         for dir_ in dirlist:

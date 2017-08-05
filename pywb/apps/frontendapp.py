@@ -142,9 +142,10 @@ class FrontEndApp(object):
         if not coll or not self.warcserver.root_dir:
             return
 
-        environ['pywb.templates_dir'] = os.path.join(self.warcserver.root_dir,
-                                                     coll,
-                                                     self.templates_dir)
+        # jinja2 template paths always use '/' as separator
+        environ['pywb.templates_dir'] = '/'.join([self.warcserver.root_dir,
+                                                  coll,
+                                                  self.templates_dir])
 
     def serve_listing(self, environ):
         result = {'fixed': self.warcserver.list_fixed_routes(),

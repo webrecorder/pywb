@@ -206,6 +206,9 @@ class TestDirAgg(TempDirTests, BaseTestClass):
 
         new_file = os.path.join(self.root_dir, to_path('colls/C/indexes/empty.cdxj'))
 
+        # ensure new file is created at least a second later
+        time.sleep(1.0)
+
         with open(new_file, 'a') as fh:
             os.utime(new_file, None)
 
