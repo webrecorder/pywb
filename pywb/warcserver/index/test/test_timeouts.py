@@ -58,8 +58,8 @@ def test_timeout_slower_skipped_1():
     assert(errs == {'slower': 'timeout'})
 
 
-def test_timeout_slower_skipped_2():
-    agg = GeventTimeoutAggregator(sources, timeout=0.19)
+def test_timeout_slower_all_skipped():
+    agg = GeventTimeoutAggregator(sources, timeout=0.10)
 
     res, errs = agg(dict(url='http://example.com/'))
 
@@ -74,8 +74,8 @@ def test_timeout_skipping():
     assert(sources['slow'].calls == 3)
     assert(sources['slower'].calls == 3)
 
-    agg = GeventTimeoutAggregator(sources, timeout=0.49,
-                                  t_count=2, t_duration=2.0)
+    agg = GeventTimeoutAggregator(sources, timeout=0.40,
+                                  t_count=2, t_duration=1.0)
 
     exp = [{'source': 'slow', 'timestamp': '20160225042329'}]
 
@@ -107,7 +107,7 @@ def test_timeout_skipping():
 
     assert(errs == {})
 
-    time.sleep(2.01)
+    time.sleep(1.5)
 
     res, errs = agg(dict(url='http://example.com/'))
     assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
