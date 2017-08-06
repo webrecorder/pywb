@@ -248,6 +248,27 @@ r"""
 >>> parse('<link rel=canonical href="/relative/path">', urlrewriter=no_base_canon_rewriter)
 <link rel="canonical" href="http://example.com/relative/path">
 
+# Preload tests
+>>> parse('<link rel="preload" as="script" href="http://example.com/some/other/path">')
+<link rel="preload" as="script" href="/web/20131226101010js_/http://example.com/some/other/path">
+
+>>> parse('<link rel="preload" as="style" href="http://example.com/some/other/path">')
+<link rel="preload" as="style" href="/web/20131226101010cs_/http://example.com/some/other/path">
+
+>>> parse('<link rel="preload" as="image" href="http://example.com/some/other/path">')
+<link rel="preload" as="image" href="/web/20131226101010im_/http://example.com/some/other/path">
+
+>>> parse('<link rel="preload" as="document" href="http://example.com/some/other/path">')
+<link rel="preload" as="document" href="/web/20131226101010if_/http://example.com/some/other/path">
+
+>>> parse('<link rel="preload" as="video" href="http://example.com/some/other/path">')
+<link rel="preload" as="video" href="/web/20131226101010oe_/http://example.com/some/other/path">
+
+# stylesheet
+>>> parse('<link rel="stylesheet" href="http://example.com/some/other/path">')
+<link rel="stylesheet" href="/web/20131226101010cs_/http://example.com/some/other/path">
+
+
 # doctype
 >>> parse('<!doctype html PUBLIC "public">')
 <!doctype html PUBLIC "public">
