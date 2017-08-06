@@ -274,7 +274,7 @@ class BaseDirectoryIndexSource(BaseAggregator):
                 if rel_path == '.':
                     full_name = name
                 else:
-                    full_name = rel_path + '/' + name
+                    full_name = os.path.join(rel_path, name)
 
                 yield full_name, FileIndexSource(filename)
 
@@ -294,6 +294,8 @@ class BaseDirectoryIndexSource(BaseAggregator):
 
     @classmethod
     def init_from_string(cls, value):
+        if os.path.sep != '/':
+            value = value.replace('/', os.path.sep)
         if '://' not in value and os.path.isdir(value):
             return cls(value)
 

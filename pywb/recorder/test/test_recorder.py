@@ -66,7 +66,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         dedup_index = WritableRedisIndexer(redis_url=redis_url,
                         file_key_template=file_key_template,
-                        rel_path_template=self.root_dir + '/warcs/',
+                        rel_path_template=to_path(self.root_dir + '/warcs/'),
                         dupe_policy=dupe_policy)
 
         return dedup_index
@@ -293,11 +293,11 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert cdx['urlkey'] == 'org,httpbin)/user-agent'
         assert cdx['mime'] == 'application/json'
         assert cdx['offset'] == '0'
-        assert cdx['filename'].startswith('USER/COLL/')
+        assert cdx['filename'].startswith(to_path('USER/COLL/'))
         assert cdx['filename'].endswith('.warc.gz')
 
         warcs = r.hgetall('USER:COLL:warc')
-        full_path = self.root_dir + '/warcs/' + cdx['filename']
+        full_path = to_path(self.root_dir + '/warcs/' + cdx['filename'])
         assert warcs == {cdx['filename'].encode('utf-8'): full_path.encode('utf-8')}
 
     def test_record_param_user_coll_same_dir(self):
@@ -353,7 +353,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert cdx['urlkey'] == 'org,httpbin)/user-agent'
         assert cdx['mime'] == 'warc/revisit'
         assert cdx['offset'] == '0'
-        assert cdx['filename'].startswith('USER/COLL/')
+        assert cdx['filename'].startswith(to_path('USER/COLL/'))
         assert cdx['filename'].endswith('.warc.gz')
 
         fullwarc = os.path.join(self.root_dir, 'warcs', cdx['filename'])
@@ -436,10 +436,13 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert os.path.isfile(path)
         assert len(writer.fh_cache) == 1
 
+        writer.close()
+        assert len(writer.fh_cache) == 0
+
     def test_record_multiple_writes_keep_open(self):
         warc_path = to_path(self.root_dir + '/warcs/FOO/ABC-{hostname}-{timestamp}.warc.gz')
 
-        rel_path = self.root_dir + '/warcs/'
+        rel_path = to_path(self.root_dir + '/warcs/')
 
         dedup_index = self._get_dedup_index(user=False)
 
@@ -487,7 +490,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         assert len(writer.fh_cache) == 1
 
-        writer.close_key(self.root_dir + '/warcs/FOO/')
+        writer.close_key(to_path(self.root_dir + '/warcs/FOO/'))
 
         assert len(writer.fh_cache) == 0
 
@@ -501,10 +504,13 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         warcs = r.hgetall('FOO:warc')
         assert len(warcs) == 2
 
+        writer.close()
+        assert len(writer.fh_cache) == 0
+
     def test_record_multiple_writes_rollover_idle(self):
         warc_path = to_path(self.root_dir + '/warcs/GOO/ABC-{hostname}-{timestamp}.warc.gz')
 
-        rel_path = self.root_dir + '/warcs/'
+        rel_path = to_path(self.root_dir + '/warcs/')
 
         dedup_index = self._get_dedup_index(user=False)
 
@@ -539,13 +545,16 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         self._test_all_warcs('/warcs/GOO/', 2)
 
+        writer.close()
+        assert len(writer.fh_cache) == 0
+
     def test_record_custom_record(self):
         dedup_index = self._get_dedup_index(user=False)
 
         warc_path = to_path(self.root_dir + '/warcs/meta/meta.warc.gz')
 
-        recorder_app = RecorderApp(self.upstream_url,
-                        MultiFileWARCWriter(warc_path, dedup_index=dedup_index))
+        writer = MultiFileWARCWriter(warc_path, dedup_index=dedup_index)
+        recorder_app = RecorderApp(self.upstream_url, writer)
 
         req_url = '/live/resource/postreq?url=custom://httpbin.org&param.recorder.coll=META&put_record=resource'
 
@@ -568,7 +577,9 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         warcs = r.hgetall('META:warc')
         assert len(warcs) == 1
 
-        with open(warcs[b'meta/meta.warc.gz'], 'rb') as fh:
+        warc_key = os.path.join('meta', 'meta.warc.gz').encode('utf-8')
+
+        with open(warcs[warc_key], 'rb') as fh:
             decomp = DecompressingBufferedReader(fh)
             record = ArcWarcRecordLoader().parse_record_stream(decomp, ensure_http_headers=True)
 
@@ -591,6 +602,9 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
 
         assert status_headers.get_header('Content-Type') == 'text/plain'
         assert status_headers.get_header('Content-Length') == str(len(buff))
+
+        writer.close()
+        assert len(writer.fh_cache) == 0
 
     def test_record_video_metadata(self):
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')

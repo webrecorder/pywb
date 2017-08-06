@@ -351,7 +351,15 @@ class ZipNumIndexSource(BaseIndexSource):
             for line in BytesIO(buff):
                 yield line
 
-        iter_ = itertools.chain(*map(decompress_block, ranges))
+        def iter_blocks(reader):
+            try:
+                for r in ranges:
+                    yield decompress_block(r)
+            finally:
+                reader.close()
+
+        # iterate over all blocks
+        iter_ = itertools.chain.from_iterable(iter_blocks(reader))
 
         # start bound
         iter_ = linearsearch(iter_, query.key)

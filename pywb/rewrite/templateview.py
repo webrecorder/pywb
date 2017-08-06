@@ -119,10 +119,13 @@ class BaseInsertView(object):
         template_path = env.get('pywb.templates_dir')
 
         if template_path:
-            template_path = os.path.join(template_path, self.insert_file)
+            # jinja paths are not os paths, always use '/' as separator
+            # https://github.com/pallets/jinja/issues/411
+            template_path = template_path + '/' + self.insert_file
+
             try:
                 template = self.jenv.jinja_env.get_template(template_path)
-            except TemplateNotFound:
+            except TemplateNotFound as te:
                 pass
 
         if not template:

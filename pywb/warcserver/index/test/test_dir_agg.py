@@ -57,7 +57,7 @@ class TestDirAgg(TempDirTests, BaseTestClass):
     def test_agg_collA_found(self):
         res, errs = self.dir_loader({'url': 'example.com/', 'param.coll': 'A'})
 
-        exp = [{'source': 'colls/A/indexes/example2.cdxj', 'timestamp': '20160225042329', 'filename': 'example2.warc.gz'}]
+        exp = [{'source': to_path('colls/A/indexes/example2.cdxj'), 'timestamp': '20160225042329', 'filename': 'example2.warc.gz'}]
 
         assert(to_json_list(res) == exp)
         assert(errs == {})
@@ -73,7 +73,7 @@ class TestDirAgg(TempDirTests, BaseTestClass):
     def test_agg_collB_found(self):
         res, errs = self.dir_loader({'url': 'iana.org/', 'param.coll': 'B'})
 
-        exp = [{'source': 'colls/B/indexes/iana.cdxj', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'}]
+        exp = [{'source': to_path('colls/B/indexes/iana.cdxj'), 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'}]
 
         assert(to_json_list(res) == exp)
         assert(errs == {})
@@ -83,7 +83,7 @@ class TestDirAgg(TempDirTests, BaseTestClass):
         agg_source = SimpleAggregator({'dir': self.dir_loader})
         res, errs = agg_source({'url': 'iana.org/', 'param.coll': 'B'})
 
-        exp = [{'source': 'dir:colls/B/indexes/iana.cdxj', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'}]
+        exp = [{'source': to_path('dir:colls/B/indexes/iana.cdxj'), 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'}]
 
         assert(to_json_list(res) == exp)
         assert(errs == {})
@@ -93,9 +93,9 @@ class TestDirAgg(TempDirTests, BaseTestClass):
         res, errs = self.dir_loader({'url': 'iana.org/', 'param.coll': '*'})
 
         exp = [
-            {'source': 'colls/B/indexes/iana.cdxj', 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'},
-            {'source': 'colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171238', 'filename': 'dupes.warc.gz'},
-            {'source': 'colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171238', 'filename': 'dupes.warc.gz'},
+            {'source': to_path('colls/B/indexes/iana.cdxj'), 'timestamp': '20140126200624', 'filename': 'iana.warc.gz'},
+            {'source': to_path('colls/C/indexes/dupes.cdxj'), 'timestamp': '20140127171238', 'filename': 'dupes.warc.gz'},
+            {'source': to_path('colls/C/indexes/dupes.cdxj'), 'timestamp': '20140127171238', 'filename': 'dupes.warc.gz'},
         ]
 
         assert(to_json_list(res) == exp)
@@ -106,9 +106,9 @@ class TestDirAgg(TempDirTests, BaseTestClass):
         res, errs = self.dir_loader({'url': 'example.com/', 'param.coll': '*'})
 
         exp = [
-            {'source': 'colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171200', 'filename': 'dupes.warc.gz'},
-            {'source': 'colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171251', 'filename': 'dupes.warc.gz'},
-            {'source': 'colls/A/indexes/example2.cdxj', 'timestamp': '20160225042329', 'filename': 'example2.warc.gz'}
+            {'source': to_path('colls/C/indexes/dupes.cdxj'), 'timestamp': '20140127171200', 'filename': 'dupes.warc.gz'},
+            {'source': to_path('colls/C/indexes/dupes.cdxj'), 'timestamp': '20140127171251', 'filename': 'dupes.warc.gz'},
+            {'source': to_path('colls/A/indexes/example2.cdxj'), 'timestamp': '20160225042329', 'filename': 'example2.warc.gz'}
         ]
 
         assert(to_json_list(res) == exp)
@@ -126,9 +126,9 @@ class TestDirAgg(TempDirTests, BaseTestClass):
             {'source': 'ia', 'timestamp': '20100514231857', 'load_url': 'http://web.archive.org/web/20100514231857id_/http://example.com/'},
             {'source': 'ia', 'timestamp': '20100519202418', 'load_url': 'http://web.archive.org/web/20100519202418id_/http://example.com/'},
             {'source': 'ia', 'timestamp': '20100501123414', 'load_url': 'http://web.archive.org/web/20100501123414id_/http://example.com/'},
-            {'source': 'local:colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171200', 'filename': 'dupes.warc.gz'},
-            {'source': 'local:colls/C/indexes/dupes.cdxj', 'timestamp': '20140127171251', 'filename': 'dupes.warc.gz'},
-            {'source': 'local:colls/A/indexes/example2.cdxj', 'timestamp': '20160225042329', 'filename': 'example2.warc.gz'}
+            {'source': to_path('local:colls/C/indexes/dupes.cdxj'), 'timestamp': '20140127171200', 'filename': 'dupes.warc.gz'},
+            {'source': to_path('local:colls/C/indexes/dupes.cdxj'), 'timestamp': '20140127171251', 'filename': 'dupes.warc.gz'},
+            {'source': to_path('local:colls/A/indexes/example2.cdxj'), 'timestamp': '20160225042329', 'filename': 'example2.warc.gz'}
         ]
 
         assert(to_json_list(res) == exp)
@@ -156,9 +156,9 @@ class TestDirAgg(TempDirTests, BaseTestClass):
 
     def test_agg_dir_sources_1(self):
         res = self.dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '*'})
-        exp = {'sources': {'colls/A/indexes/example2.cdxj': 'file',
-                           'colls/B/indexes/iana.cdxj': 'file',
-                           'colls/C/indexes/dupes.cdxj': 'file'}
+        exp = {'sources': {to_path('colls/A/indexes/example2.cdxj'): 'file',
+                           to_path('colls/B/indexes/iana.cdxj'): 'file',
+                           to_path('colls/C/indexes/dupes.cdxj'): 'file'}
               }
 
         assert(res == exp)
@@ -166,8 +166,8 @@ class TestDirAgg(TempDirTests, BaseTestClass):
 
     def test_agg_dir_sources_2(self):
         res = self.dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '[A,C]'})
-        exp = {'sources': {'colls/A/indexes/example2.cdxj': 'file',
-                           'colls/C/indexes/dupes.cdxj': 'file'}
+        exp = {'sources': {to_path('colls/A/indexes/example2.cdxj'): 'file',
+                           to_path('colls/C/indexes/dupes.cdxj'): 'file'}
               }
 
         assert(res == exp)
@@ -193,9 +193,9 @@ class TestDirAgg(TempDirTests, BaseTestClass):
 
 
     def test_cache_dir_sources_1(self):
-        exp = {'sources': {'colls/A/indexes/example2.cdxj': 'file',
-                           'colls/B/indexes/iana.cdxj': 'file',
-                           'colls/C/indexes/dupes.cdxj': 'file'}
+        exp = {'sources': {to_path('colls/A/indexes/example2.cdxj'): 'file',
+                           to_path('colls/B/indexes/iana.cdxj'): 'file',
+                           to_path('colls/C/indexes/dupes.cdxj'): 'file'}
               }
 
         res = self.cache_dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '*'})
@@ -204,7 +204,10 @@ class TestDirAgg(TempDirTests, BaseTestClass):
         res = self.cache_dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '*'})
         assert(res == exp)
 
-        new_file = os.path.join(self.root_dir, 'colls/C/indexes/empty.cdxj')
+        new_file = os.path.join(self.root_dir, to_path('colls/C/indexes/empty.cdxj'))
+
+        # ensure new file is created at least a second later
+        time.sleep(1.0)
 
         with open(new_file, 'a') as fh:
             os.utime(new_file, None)
@@ -212,5 +215,5 @@ class TestDirAgg(TempDirTests, BaseTestClass):
         res = self.cache_dir_loader.get_source_list({'url': 'example.com/', 'param.coll': '*'})
 
         # New File Included
-        exp['sources']['colls/C/indexes/empty.cdxj'] = 'file'
+        exp['sources'][to_path('colls/C/indexes/empty.cdxj')] = 'file'
         assert(res == exp)

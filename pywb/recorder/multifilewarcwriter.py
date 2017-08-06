@@ -97,7 +97,8 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
     def _close_file(self, fh):
         try:
-            portalocker.lock(fh, portalocker.LOCK_UN)
+            if os.name != 'nt':
+                portalocker.lock(fh, portalocker.LOCK_UN)
             fh.close()
         except Exception as e:
             print(e)
@@ -222,7 +223,8 @@ class MultiFileWARCWriter(BaseWARCWriter):
                     self.fh_cache.pop(dir_key, None)
 
             elif is_new:
-                portalocker.lock(out, portalocker.LOCK_EX | portalocker.LOCK_NB)
+                if os.name != 'nt':
+                    portalocker.lock(out, portalocker.LOCK_EX | portalocker.LOCK_NB)
                 self.fh_cache[dir_key] = (out, filename)
 
     def iter_open_files(self):

@@ -36,7 +36,7 @@ aggs_inv = {'simple': SimpleAggregator(sources, invert_sources=True),
 
 agg_tm = {'gevent': GeventTimeoutAggregator(sources, timeout=0.0)}
 
-nf = {'notfound': FileIndexSource(to_path('testdata/not-found-x'))}
+nf = {'notfound': FileIndexSource('testdata/not-found-x')}
 agg_nf = {'simple': SimpleAggregator(nf),
           'gevent': GeventTimeoutAggregator(nf, timeout=5.0),
          }
