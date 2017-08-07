@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.40
+// Wombat JS-Rewriting Library v2.41
 //============================================
 
 
@@ -447,6 +447,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         if (parser.origin) {
             loc._origin = parser.origin;
+        } else {
+            loc._origin = parser.protocol + "//" + parser.hostname + (parser.port ? ':' + parser.port: '');
         }
 
         loc._pathname = parser.pathname;
@@ -1350,19 +1352,72 @@ var _WBWombat = function($wbwindow, wbinfo) {
             write_buff = "";
         }
 
-        var orig_string = string;
+        if (string.indexOf("<script") <= 0) {
+            //string = string.replace(/WB_wombat_/g, "");
+            string = string.replace(/((id|class)=".*)WB_wombat_([^"]+)/, '$1$3');
+        }
 
-        string = string.replace(/<(\/?)(FRAME)\b/ig, "<$1PYWB_$2");
+        if (!$wbwindow.HTMLTemplateElement || starts_with(string, ["<html", "<head", "<body"])) {
+            return rewrite_html_full(string, check_end_tag);
+        }
 
+        var inner_doc = new DOMParser().parseFromString("<template>" + string + "</template>", "text/html");
+
+        if (!inner_doc || !inner_doc.head || !inner_doc.head.children || !inner_doc.head.children[0].content) {
+            return string;
+        }
+
+        var template = inner_doc.head.children[0];
+
+        function recurse_rewrite(curr) {
+            var changed = false;
+
+            var children = curr && (curr.children || curr.childNodes);
+
+            if (children) {
+                for (var i = 0; i < children.length; i++) {
+                    if (children[i].nodeType == Node.ELEMENT_NODE) {
+                        changed = rewrite_elem(children[i]) || changed;
+                        changed = recurse_rewrite(children[i]) || changed;
+                    }
+                }
+            }
+
+            return changed;
+        }
+
+        function get_new_html() {
+            var new_html = template.innerHTML;
+
+            if (check_end_tag) {
+                var first_elem = template.content.hildren && template.content.children[0];
+                if (first_elem) {
+                    var end_tag = "</" + first_elem.tagName.toLowerCase() + ">";
+                    if (ends_with(new_html, end_tag) && !ends_with(string, end_tag)) {
+                        new_html = new_html.substring(0, new_html.length - end_tag.length);
+                    }
+                } else if (string[0] != "<" || string[string.length - 1] != ">") {
+                    write_buff += string;
+                    return;
+                }
+            }
+
+            return new_html;
+        }
+
+        if (recurse_rewrite(template.content)) {
+            string = get_new_html();
+        }
+
+        return string;
+    }
+
+    //============================================
+    function rewrite_html_full(string, check_end_tag) {
         var inner_doc = new DOMParser().parseFromString(string, "text/html");
 
         if (!inner_doc) {
             return string;
-        }
-
-        if (string.indexOf("<script") <= 0) {
-            //string = string.replace(/WB_wombat_/g, "");
-            string = string.replace(/((id|class)=".*)WB_wombat_([^"]+)/, '$1$3');
         }
 
         var changed = false;
@@ -1400,10 +1455,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         if (changed) {
             string = get_new_html();
-        }
-
-        if (string && string != orig_string) {
-            string = string.replace(/<(\/?)PYWB_(FRAME)\b/ig, "<$1$2");
         }
 
         return string;
