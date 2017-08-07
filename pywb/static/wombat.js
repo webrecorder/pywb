@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.40
+// Wombat JS-Rewriting Library v2.41
 //============================================
 
 
