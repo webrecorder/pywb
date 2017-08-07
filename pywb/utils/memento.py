@@ -11,6 +11,9 @@ LINK_SEG_SPLIT = re.compile(';\s*')
 LINK_URL = re.compile('<(.*)>')
 LINK_PROP = re.compile('([\w]+)="([^"]+)')
 
+FIND_DT = re.compile('datetime=\"([^\"]+)\"')
+
+
 #=============================================================================
 class MementoException(BadRequestException):
     pass
@@ -18,8 +21,8 @@ class MementoException(BadRequestException):
 
 #=============================================================================
 class MementoUtils(object):
-    @staticmethod
-    def parse_links(link_header, def_name='timemap'):
+    @classmethod
+    def parse_links(cls, link_header, def_name='timemap'):
         links = LINK_SPLIT.split(link_header)
         results = {}
         mementos = []
@@ -61,9 +64,9 @@ class MementoUtils(object):
         results['mementos'] = mementos
         return results
 
-    @staticmethod
-    def make_timemap_memento_link(cdx, datetime=None, rel='memento', end=',\n'):
-        url = cdx.get('load_url')
+    @classmethod
+    def make_timemap_memento_link(cls, cdx, datetime=None, rel='memento', end=',\n'):
+        url = cdx.get('url')
         if not url:
             url = 'file://{0}:{1}:{2}'.format(cdx.get('filename'), cdx.get('offset'), cdx.get('length'))
 
@@ -74,37 +77,43 @@ class MementoUtils(object):
 
         return memento.format(url, rel, datetime, cdx.get('source', ''))
 
-    @staticmethod
-    def make_timemap(cdx_iter):
-        # get first memento as it'll be used for 'from' field
-        try:
-            first_cdx = six.next(cdx_iter)
-            from_date = timestamp_to_http_date(first_cdx['timestamp'])
-        except StopIteration:
-            first_cdx = None
-            return
-
-        # first memento link
-        yield MementoUtils.make_timemap_memento_link(first_cdx, datetime=from_date)
-
+    @classmethod
+    def make_timemap(cls, cdx_iter):
         prev_cdx = None
 
         for cdx in cdx_iter:
             if prev_cdx:
-                yield MementoUtils.make_timemap_memento_link(prev_cdx)
+                yield cls.make_timemap_memento_link(prev_cdx)
 
             prev_cdx = cdx
 
         # last memento link, if any
         if prev_cdx:
-            yield MementoUtils.make_timemap_memento_link(prev_cdx, end='\n')
+            yield cls.make_timemap_memento_link(prev_cdx, end='\n')
 
-    @staticmethod
-    def make_link(url, type):
+    @classmethod
+    def wrap_timemap_header(cls, url, timegate_url, timemap_url, timemap):
+        string = cls.make_link(timemap_url, "self")
+        m = FIND_DT.search(timemap)
+        if m:
+            string += '; from="{0}"'.format(m.group(1))
+
+        string += ',\n'
+
+        string += cls.make_link(timegate_url, "timegate") + ',\n'
+        string += cls.make_link(url, "original") + ',\n'
+        string += timemap
+        return string
+
+    @classmethod
+    def make_link(cls, url, type):
+        if type in ('timemap', 'self'):
+            return '<{0}>; rel="{1}"; type="application/link-format"'.format(url, type)
+
         return '<{0}>; rel="{1}"'.format(url, type)
 
-    @staticmethod
-    def make_memento_link(url, type, dt):
+    @classmethod
+    def make_memento_link(cls, url, type, dt):
         return '<{0}>; rel="{1}"; datetime="{2}"'.format(url, type, dt)
 
 
