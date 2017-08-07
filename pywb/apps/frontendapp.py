@@ -43,6 +43,7 @@ class FrontEndApp(object):
         self.url_map.add(Rule('/static/_/<coll>/<path:filepath>', endpoint=self.serve_static))
         self.url_map.add(Rule('/static/<path:filepath>', endpoint=self.serve_static))
         self.url_map.add(Rule('/<coll>/', endpoint=self.serve_coll_page))
+        self.url_map.add(Rule('/<coll>/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
         self.url_map.add(Rule('/<coll>/<path:url>', endpoint=self.serve_content))
         self.url_map.add(Rule('/collinfo.json', endpoint=self.serve_listing))
         self.url_map.add(Rule('/', endpoint=self.serve_home))
@@ -116,7 +117,7 @@ class FrontEndApp(object):
 
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
 
-    def serve_content(self, environ, coll='', url=''):
+    def serve_content(self, environ, coll='', url='', timemap_output=''):
         if not self.is_valid_coll(coll):
             self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
 
@@ -128,6 +129,8 @@ class FrontEndApp(object):
             wb_url_str += '?' + environ.get('QUERY_STRING')
 
         metadata = self.get_metadata(coll)
+        if timemap_output:
+            metadata['output'] = timemap_output
 
         try:
             response = self.rewriterapp.render_content(wb_url_str, metadata, environ)

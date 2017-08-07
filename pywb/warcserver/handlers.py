@@ -24,7 +24,7 @@ def to_text(cdx_iter, fields):
     return content_type, (cdx.to_text(fields) for cdx in cdx_iter)
 
 def to_link(cdx_iter, fields):
-    content_type = 'application/link'
+    content_type = 'application/link-format'
     return content_type, MementoUtils.make_timemap(cdx_iter)
 
 
