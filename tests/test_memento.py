@@ -20,7 +20,14 @@ class TestMemento(MementoMixin, BaseConfigTest):
         assert resp.headers[MEMENTO_DATETIME] == dt
 
         # memento link
-        assert self.make_memento_link(url, ts, dt, fmod) in links
+        memento_link = self.make_memento_link(url, ts, dt, fmod)
+        assert memento_link in links
+
+        # content location
+        assert '/pywb/{1}{0}/{2}'.format(fmod, ts, url) in resp.headers['Content-Location']
+
+        # content location part of memento link
+        assert resp.headers['Content-Location'] in memento_link
 
         # timegate link
         assert self.make_timegate_link(url, fmod) in links
@@ -31,7 +38,6 @@ class TestMemento(MementoMixin, BaseConfigTest):
         # original
         assert self.make_original_link(url) in links
 
-        assert '/pywb/{1}{0}/{2}'.format(fmod, ts, url) in resp.headers['Content-Location']
 
     # Memento Pattern 2.2 (no redirect, 200 negotiation)
     def test_memento_top_frame(self):

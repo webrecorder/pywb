@@ -291,7 +291,7 @@ class RewriterApp(object):
             status_headers.statusline += ' None'
 
         if not is_ajax and self.enable_memento:
-            self._add_memento_links(urlrewriter.wburl, full_prefix,
+            self._add_memento_links(cdx['url'], full_prefix,
                                     memento_dt, cdx['timestamp'], status_headers,
                                     is_timegate)
 
@@ -323,11 +323,11 @@ class RewriterApp(object):
 
             response = WbResponse.text_response(response, content_type=content_type)
 
-        self._add_memento_links(wb_url, full_prefix, None, memento_ts,
+        self._add_memento_links(wb_url.url, full_prefix, None, memento_ts,
                                 response.status_headers, is_timegate)
         return response
 
-    def _add_memento_links(self, wb_url, full_prefix, memento_dt, memento_ts,
+    def _add_memento_links(self, url, full_prefix, memento_dt, memento_ts,
                            status_headers, is_timegate):
 
         # memento url + header
@@ -338,14 +338,14 @@ class RewriterApp(object):
             status_headers.headers.append(('Memento-Datetime', memento_dt))
 
             memento_url = full_prefix + memento_ts + self.replay_mod
-            memento_url += '/' + wb_url.url
+            memento_url += '/' + url
         else:
             memento_url = None
 
-        timegate_url, timemap_url = self._get_timegate_timemap(wb_url, full_prefix)
+        timegate_url, timemap_url = self._get_timegate_timemap(url, full_prefix)
 
         link = []
-        link.append(MementoUtils.make_link(wb_url.url, 'original'))
+        link.append(MementoUtils.make_link(url, 'original'))
         link.append(MementoUtils.make_link(timegate_url, 'timegate'))
         link.append(MementoUtils.make_link(timemap_url, 'timemap'))
 
@@ -359,16 +359,16 @@ class RewriterApp(object):
         if is_timegate:
             status_headers.headers.append(('Vary', 'accept-datetime'))
 
-    def _get_timegate_timemap(self, wb_url, full_prefix):
+    def _get_timegate_timemap(self, url, full_prefix):
         # timegate url
         timegate_url = full_prefix
         if self.replay_mod:
             timegate_url += self.replay_mod + '/'
 
-        timegate_url += wb_url.url
+        timegate_url += url
 
         # timemap url
-        timemap_url = full_prefix + 'timemap/link/' + wb_url.url
+        timemap_url = full_prefix + 'timemap/link/' + url
         return timegate_url, timemap_url
 
     def get_top_url(self, full_prefix, wb_url, cdx, kwargs):
@@ -475,7 +475,7 @@ class RewriterApp(object):
             status = str(res.status_code) + ' ' + res.reason
 
             if res.status_code == 200:
-                timegate, timemap = self._get_timegate_timemap(wb_url, full_prefix)
+                timegate, timemap = self._get_timegate_timemap(wb_url.url, full_prefix)
 
                 text = MementoUtils.wrap_timemap_header(wb_url.url,
                                                         timegate,
