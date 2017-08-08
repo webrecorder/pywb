@@ -899,11 +899,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         if (orig_getter) {
             var new_getter = function() {
-                var res = orig_getter.call(this);
-                try {
-                    res = (res && res._WB_wombat_obj_proxy) || res;
-                } catch (e) { }
-                return res;
+                return obj_to_proxy(orig_getter.call(this));
             }
 
             def_prop(proto, prop, undefined, new_getter);
@@ -1722,11 +1718,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         var getter = function() {
             init_iframe_wombat(this);
-            var res = orig_getter.call(this);
-            res = (res && res._WB_wombat_obj_proxy) || res;
-            return res;
-        };
-        
+            return obj_to_proxy(orig_getter.call(this));
+        }
+
         def_prop(obj, prop, orig_setter, getter);
         obj["_get_" + prop] = orig_getter;
     }
@@ -1908,7 +1902,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         function receive_hash_change(event)
         {
-            var source = event.source.__WBProxyRealObj__ || event.source;
+            var source = proxy_to_obj(event.source);
 
             if (!event.data || source != $wbwindow.__WB_top_frame) {
                 return;
@@ -2025,7 +2019,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                         source = win.__WB_win_id[event.data.src_id];
                     }
 
-                    source = source.__WBProxyRealObj__ || source;
+                    source = proxy_to_obj(source);
 
                     ne = new MessageEvent("message",
                                           {"bubbles": event.bubbles,
@@ -2134,7 +2128,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var orig_observe = $wbwindow.MutationObserver.prototype.observe;
 
         function observe_deproxy(target, options) {
-            target = target && target.__WBProxyRealObj__ || target;
+            target = proxy_to_obj(target);
             return orig_observe.call(this, target, options);
         }
 
@@ -2537,6 +2531,22 @@ var _WBWombat = function($wbwindow, wbinfo) {
     // New Proxy Obj Override Functions
     // Original Concept by John Berlin (https://github.com/N0taN3rd)
     //============================================
+    function proxy_to_obj(source) {
+        try {
+            return source.__WBProxyRealObj__ || source;
+        } catch (e) {
+            return source;
+        }
+    }
+
+    function obj_to_proxy(obj) {
+        try {
+            return (obj && obj._WB_wombat_obj_proxy) || obj;
+        } catch (e) {
+            return obj;
+        }
+    }
+
     function getAllOwnProps(obj) {
         var ownProps = [];
 
