@@ -900,7 +900,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
         if (orig_getter) {
             var new_getter = function() {
                 var res = orig_getter.call(this);
-                res = (res && res._WB_wombat_obj_proxy) || res;
+                try {
+                    res = (res && res._WB_wombat_obj_proxy) || res;
+                } catch (e) { }
                 return res;
             }
 
@@ -2568,7 +2570,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         if (prop == '__WBProxyRealObj__') {
             return obj;
         } else if (prop == 'location') {
-            return obj._WB_wombat_location;
+            return obj._WB_wombat_location || (obj.defaultView && obj._WB_wombat_location);
         } else if (prop == "_WB_wombat_obj_proxy") {
             return obj._WB_wombat_obj_proxy;
         }
