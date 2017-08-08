@@ -42,11 +42,19 @@ class FrontEndApp(object):
         self.url_map = Map()
         self.url_map.add(Rule('/static/_/<coll>/<path:filepath>', endpoint=self.serve_static))
         self.url_map.add(Rule('/static/<path:filepath>', endpoint=self.serve_static))
-        self.url_map.add(Rule('/<coll>/', endpoint=self.serve_coll_page))
-        self.url_map.add(Rule('/<coll>/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
-        self.url_map.add(Rule('/<coll>/<path:url>', endpoint=self.serve_content))
         self.url_map.add(Rule('/collinfo.json', endpoint=self.serve_listing))
-        self.url_map.add(Rule('/', endpoint=self.serve_home))
+
+        if self.is_valid_coll('$root'):
+            self.url_map.add(Rule('/', endpoint=self.serve_coll_page))
+            self.url_map.add(Rule('/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
+            self.url_map.add(Rule('/<path:url>', endpoint=self.serve_content))
+
+        else:
+            self.url_map.add(Rule('/<coll>/', endpoint=self.serve_coll_page))
+            self.url_map.add(Rule('/<coll>/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
+            self.url_map.add(Rule('/<coll>/<path:url>', endpoint=self.serve_content))
+
+            self.url_map.add(Rule('/', endpoint=self.serve_home))
 
         self.rewriterapp.paths = self.get_upstream_paths(self.warcserver_server.port)
 
@@ -101,7 +109,7 @@ class FrontEndApp(object):
 
         return metadata
 
-    def serve_coll_page(self, environ, coll):
+    def serve_coll_page(self, environ, coll='$root'):
         if not self.is_valid_coll(coll):
             self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
 
@@ -111,13 +119,17 @@ class FrontEndApp(object):
 
         view = BaseInsertView(self.rewriterapp.jinja_env, 'search.html')
 
+        wb_prefix = environ.get('SCRIPT_NAME')
+        if wb_prefix:
+            wb_prefix += '/'
+
         content = view.render_to_string(environ,
-                                        wb_prefix=environ.get('SCRIPT_NAME') + '/',
+                                        wb_prefix=wb_prefix,
                                         metadata=metadata)
 
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
 
-    def serve_content(self, environ, coll='', url='', timemap_output=''):
+    def serve_content(self, environ, coll='$root', url='', timemap_output=''):
         if not self.is_valid_coll(coll):
             self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
 
@@ -141,14 +153,21 @@ class FrontEndApp(object):
         return response
 
     def setup_paths(self, environ, coll):
-        pop_path_info(environ)
         if not coll or not self.warcserver.root_dir:
             return
 
+        if coll != '$root':
+            pop_path_info(environ)
+
+        paths = [self.warcserver.root_dir]
+
+        if coll != '$root':
+            paths.append(coll)
+
+        paths.append(self.templates_dir)
+
         # jinja2 template paths always use '/' as separator
-        environ['pywb.templates_dir'] = '/'.join([self.warcserver.root_dir,
-                                                  coll,
-                                                  self.templates_dir])
+        environ['pywb.templates_dir'] = '/'.join(paths)
 
     def serve_listing(self, environ):
         result = {'fixed': self.warcserver.list_fixed_routes(),
