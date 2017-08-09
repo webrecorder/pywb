@@ -20,99 +20,92 @@ class TimeoutFileSource(FileIndexSource):
         time.sleep(self.timeout)
         return super(TimeoutFileSource, self).load_index(params)
 
-TimeoutAggregator = GeventTimeoutAggregator
 
+class TestTimeouts(object):
+    @classmethod
+    def setup_class(cls):
+        cls.sources = {'slow': TimeoutFileSource(TEST_CDX_PATH + 'example2.cdxj', 0.2),
+                       'slower': TimeoutFileSource(TEST_CDX_PATH + 'dupes.cdxj', 0.5)
+                      }
 
+    def test_timeout_long_all_pass(self):
+        agg = GeventTimeoutAggregator(self.sources, timeout=1.0)
 
-def setup_module():
-    global sources
-    sources = {'slow': TimeoutFileSource(TEST_CDX_PATH + 'example2.cdxj', 0.2),
-               'slower': TimeoutFileSource(TEST_CDX_PATH + 'dupes.cdxj', 0.5)
-              }
+        res, errs = agg(dict(url='http://example.com/'))
 
+        exp = [{'source': 'slower', 'timestamp': '20140127171200'},
+               {'source': 'slower', 'timestamp': '20140127171251'},
+               {'source': 'slow', 'timestamp': '20160225042329'}]
 
+        assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
 
-def test_timeout_long_all_pass():
-    agg = TimeoutAggregator(sources, timeout=1.0)
+        assert(errs == {})
 
-    res, errs = agg(dict(url='http://example.com/'))
+    def test_timeout_slower_skipped_1(self):
+        agg = GeventTimeoutAggregator(self.sources, timeout=0.40)
 
-    exp = [{'source': 'slower', 'timestamp': '20140127171200'},
-           {'source': 'slower', 'timestamp': '20140127171251'},
-           {'source': 'slow', 'timestamp': '20160225042329'}]
+        res, errs = agg(dict(url='http://example.com/'))
 
-    assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
+        exp = [{'source': 'slow', 'timestamp': '20160225042329'}]
 
-    assert(errs == {})
+        assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
 
+        assert(errs == {'slower': 'timeout'})
 
-def test_timeout_slower_skipped_1():
-    agg = GeventTimeoutAggregator(sources, timeout=0.40)
+    def test_timeout_slower_all_skipped(self):
+        agg = GeventTimeoutAggregator(self.sources, timeout=0.10)
 
-    res, errs = agg(dict(url='http://example.com/'))
+        res, errs = agg(dict(url='http://example.com/'))
 
-    exp = [{'source': 'slow', 'timestamp': '20160225042329'}]
+        exp = []
 
-    assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
+        assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
 
-    assert(errs == {'slower': 'timeout'})
+        assert(errs == {'slower': 'timeout', 'slow': 'timeout'})
 
+    def test_timeout_skipping(self):
+        assert(self.sources['slow'].calls == 3)
+        assert(self.sources['slower'].calls == 3)
 
-def test_timeout_slower_all_skipped():
-    agg = GeventTimeoutAggregator(sources, timeout=0.10)
+        agg = GeventTimeoutAggregator(self.sources, timeout=0.40,
+                                      t_count=2, t_duration=1.0)
 
-    res, errs = agg(dict(url='http://example.com/'))
+        exp = [{'source': 'slow', 'timestamp': '20160225042329'}]
 
-    exp = []
+        res, errs = agg(dict(url='http://example.com/'))
+        assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
+        assert(self.sources['slow'].calls == 4)
+        assert(self.sources['slower'].calls == 4)
 
-    assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
+        assert(errs == {'slower': 'timeout'})
 
-    assert(errs == {'slower': 'timeout', 'slow': 'timeout'})
+        res, errs = agg(dict(url='http://example.com/'))
+        assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
+        assert(self.sources['slow'].calls == 5)
+        assert(self.sources['slower'].calls == 5)
 
+        assert(errs == {'slower': 'timeout'})
 
-def test_timeout_skipping():
-    assert(sources['slow'].calls == 3)
-    assert(sources['slower'].calls == 3)
+        res, errs = agg(dict(url='http://example.com/'))
+        assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
+        assert(self.sources['slow'].calls == 6)
+        assert(self.sources['slower'].calls == 5)
 
-    agg = GeventTimeoutAggregator(sources, timeout=0.40,
-                                  t_count=2, t_duration=1.0)
+        assert(errs == {})
 
-    exp = [{'source': 'slow', 'timestamp': '20160225042329'}]
+        res, errs = agg(dict(url='http://example.com/'))
+        assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
+        assert(self.sources['slow'].calls == 7)
+        assert(self.sources['slower'].calls == 5)
 
-    res, errs = agg(dict(url='http://example.com/'))
-    assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
-    assert(sources['slow'].calls == 4)
-    assert(sources['slower'].calls == 4)
+        assert(errs == {})
 
-    assert(errs == {'slower': 'timeout'})
+        time.sleep(1.5)
 
-    res, errs = agg(dict(url='http://example.com/'))
-    assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
-    assert(sources['slow'].calls == 5)
-    assert(sources['slower'].calls == 5)
+        res, errs = agg(dict(url='http://example.com/'))
+        assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
+        assert(self.sources['slow'].calls == 8)
+        assert(self.sources['slower'].calls == 6)
 
-    assert(errs == {'slower': 'timeout'})
-
-    res, errs = agg(dict(url='http://example.com/'))
-    assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
-    assert(sources['slow'].calls == 6)
-    assert(sources['slower'].calls == 5)
-
-    assert(errs == {})
-
-    res, errs = agg(dict(url='http://example.com/'))
-    assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
-    assert(sources['slow'].calls == 7)
-    assert(sources['slower'].calls == 5)
-
-    assert(errs == {})
-
-    time.sleep(1.5)
-
-    res, errs = agg(dict(url='http://example.com/'))
-    assert(to_json_list(res, fields=['source', 'timestamp']) == exp)
-    assert(sources['slow'].calls == 8)
-    assert(sources['slower'].calls == 6)
-
-    assert(errs == {'slower': 'timeout'})
+        assert(errs == {'slower': 'timeout'})
 

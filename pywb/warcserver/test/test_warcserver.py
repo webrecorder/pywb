@@ -125,9 +125,3 @@ class TestWarcServer(TempDirTests, BaseTestClass):
         assert len(sources) == 1
         assert isinstance(sources['live'], LiveIndexSource)
 
-
-
-
-
-
-

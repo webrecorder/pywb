@@ -522,7 +522,7 @@ class WBMementoIndexSource(MementoIndexSource):
 
     def handle_timegate(self, params, timestamp):
         url = params['url']
-        load_url = self.timegate_url.format(url=url, timestamp=ts)
+        load_url = self.timegate_url.format(url=url, timestamp=timestamp)
 
         try:
             headers = self._get_headers(params)

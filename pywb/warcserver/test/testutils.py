@@ -62,22 +62,23 @@ class FakeStrictRedisSharedPubSub(FakeStrictRedis):
 # ============================================================================
 class FakeRedisTests(object):
     @classmethod
-    def setup_class(cls):
+    def setup_class(cls, redis_url='redis://localhost:6379/2'):
         super(FakeRedisTests, cls).setup_class()
         cls.redismock = patch('redis.StrictRedis', FakeStrictRedisSharedPubSub)
         cls.redismock.start()
 
-    @staticmethod
-    def add_cdx_to_redis(filename, key, redis_url='redis://localhost:6379/2'):
-        r = FakeStrictRedis.from_url(redis_url)
+        cls.redis = FakeStrictRedis.from_url(redis_url)
+
+    @classmethod
+    def add_cdx_to_redis(cls, filename, key):
         with open(filename, 'rb') as fh:
             for line in fh:
-                r.zadd(key, 0, line.rstrip())
+                cls.redis.zadd(key, 0, line.rstrip())
 
     @classmethod
     def teardown_class(cls):
         super(FakeRedisTests, cls).teardown_class()
-        FakeStrictRedis().flushall()
+        cls.redis.flushall()
         cls.redismock.stop()
 
 
