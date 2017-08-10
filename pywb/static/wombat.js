@@ -721,9 +721,15 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     //============================================
     function init_fixed_ratio() {
+        // otherwise, just set it
+        $wbwindow.devicePixelRatio = 1;
+
+        // prevent changing, if possible
         if (Object.defineProperty) {
-            // fixed pix ratio
-            Object.defineProperty($wbwindow, "devicePixelRatio", {value: 1, configurable: false});
+            try {
+                // fixed pix ratio
+                Object.defineProperty($wbwindow, "devicePixelRatio", {value: 1, writable: false});
+            } catch (e) { }
         }
     }
 
