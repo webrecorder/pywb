@@ -80,7 +80,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         if not recorder_app.write_queue.empty():
             recorder_app._write_one()
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'live'
+        assert resp.headers['Warcserver-Source-Coll'] == 'live'
 
         if not link_url:
             link_url = unquote(url)

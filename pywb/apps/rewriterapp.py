@@ -235,7 +235,7 @@ class RewriterApp(object):
         memento_dt = r.headers.get('Memento-Datetime')
         target_uri = r.headers.get('WARC-Target-URI')
 
-        cdx = CDXObject(r.headers.get('Webagg-Cdx').encode('utf-8'))
+        cdx = CDXObject(r.headers.get('Warcserver-Cdx').encode('utf-8'))
 
         #cdx['urlkey'] = urlkey
         #cdx['timestamp'] = http_date_to_timestamp(memento_dt)
@@ -589,8 +589,6 @@ class RewriterApp(object):
 
     def _add_custom_params(self, cdx, headers, kwargs):
         pass
-        #if resp_headers.get('Webagg-Source-Live') == '1':
-        #    cdx['is_live'] = 'true'
 
     def get_top_frame_params(self, wb_url, kwargs):
         return None

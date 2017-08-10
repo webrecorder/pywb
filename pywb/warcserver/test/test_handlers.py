@@ -148,7 +148,7 @@ class TestBaseWarcServer(MementoOverrideTests, FakeRedisTests, BaseTestClass):
         headers = {'foo': 'bar'}
         resp = self.testapp.get('/live/resource?url=http://httpbin.org/get?foo=bar', headers=headers)
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'live'
+        assert resp.headers['Warcserver-Source-Coll'] == 'live'
 
         self._check_uri_date(resp, 'http://httpbin.org/get?foo=bar', True)
 
@@ -164,7 +164,7 @@ class TestBaseWarcServer(MementoOverrideTests, FakeRedisTests, BaseTestClass):
         resp = self.testapp.post('/live/resource?url=http://httpbin.org/post',
                                  OrderedDict([('foo', 'bar')]))
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'live'
+        assert resp.headers['Warcserver-Source-Coll'] == 'live'
 
         self._check_uri_date(resp, 'http://httpbin.org/post', True)
 
@@ -180,7 +180,7 @@ class TestBaseWarcServer(MementoOverrideTests, FakeRedisTests, BaseTestClass):
     def test_agg_select_mem_1(self):
         resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20141001')
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'rhiz'
+        assert resp.headers['Warcserver-Source-Coll'] == 'rhiz'
 
         self._check_uri_date(resp, 'http://www.vvork.com/', '2014-10-06T18:43:57Z')
 
@@ -195,7 +195,7 @@ class TestBaseWarcServer(MementoOverrideTests, FakeRedisTests, BaseTestClass):
     def test_agg_select_mem_2(self):
         resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20151231')
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'ia'
+        assert resp.headers['Warcserver-Source-Coll'] == 'ia'
 
         self._check_uri_date(resp, 'http://vvork.com/', '2016-01-10T13:48:55Z')
 
@@ -209,7 +209,7 @@ class TestBaseWarcServer(MementoOverrideTests, FakeRedisTests, BaseTestClass):
     def test_agg_select_mem_unrewrite_headers(self):
         resp = self.testapp.get('/cdx_api/resource?closest=20161103124134&url=http://iana.org/')
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'ia-cdx'
+        assert resp.headers['Warcserver-Source-Coll'] == 'ia-cdx'
 
         buff = BytesIO(resp.body)
         record = ArcWarcRecordLoader().parse_record_stream(buff, no_record_parse=False)
@@ -221,7 +221,7 @@ class TestBaseWarcServer(MementoOverrideTests, FakeRedisTests, BaseTestClass):
     def test_agg_select_live(self):
         resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=now')
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'live'
+        assert resp.headers['Warcserver-Source-Coll'] == 'live'
 
         self._check_uri_date(resp, 'http://vvork.com/', True)
 
@@ -234,7 +234,7 @@ class TestBaseWarcServer(MementoOverrideTests, FakeRedisTests, BaseTestClass):
     def test_agg_select_local(self):
         resp = self.testapp.get('/many/resource?url=http://iana.org/&closest=20140126200624')
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'local:iana.cdxj'
+        assert resp.headers['Warcserver-Source-Coll'] == 'local:iana.cdxj'
 
         self._check_uri_date(resp, 'http://www.iana.org/', '2014-01-26T20:06:24Z')
 
@@ -254,7 +254,7 @@ Host: iana.org
 
         resp = self.testapp.post('/many/resource/postreq?url=http://iana.org/&closest=20140126200624', req_data)
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'local:iana.cdxj'
+        assert resp.headers['Warcserver-Source-Coll'] == 'local:iana.cdxj'
 
         self._check_uri_date(resp, 'http://www.iana.org/', '2014-01-26T20:06:24Z')
 
@@ -274,7 +274,7 @@ Host: httpbin.org
 
         resp = self.testapp.post('/many/resource/postreq?url=http://httpbin.org/get?foo=bar&closest=now', req_data)
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'live'
+        assert resp.headers['Warcserver-Source-Coll'] == 'live'
 
         self._check_uri_date(resp, 'http://httpbin.org/get?foo=bar', True)
 
@@ -299,7 +299,7 @@ foo=bar&test=abc"""
 
         resp = self.testapp.post('/posttest/resource/postreq?url=http://httpbin.org/post', req_data)
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'post'
+        assert resp.headers['Warcserver-Source-Coll'] == 'post'
 
         self._check_uri_date(resp, 'http://httpbin.org/post', True)
 
@@ -318,7 +318,7 @@ foo=bar&test=abc"""
 
         resp = self.testapp.post('/fallback/resource?url=http://httpbin.org/post', req_data)
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'post'
+        assert resp.headers['Warcserver-Source-Coll'] == 'post'
 
         self._check_uri_date(resp, 'http://httpbin.org/post', True)
 
@@ -334,7 +334,7 @@ foo=bar&test=abc"""
     def test_agg_seq_fallback_1(self):
         resp = self.testapp.get('/fallback/resource?url=http://httpbin.org/status/200')
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'live'
+        assert resp.headers['Warcserver-Source-Coll'] == 'live'
 
         self._check_uri_date(resp, 'http://httpbin.org/status/200', True)
 
@@ -347,7 +347,7 @@ foo=bar&test=abc"""
     def test_agg_seq_fallback_2(self):
         resp = self.testapp.get('/fallback/resource?url=http://www.example.com/')
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'example'
+        assert resp.headers['Warcserver-Source-Coll'] == 'example'
 
         self._check_uri_date(resp, 'http://example.com/', '2016-02-25T04:23:29Z')
 
@@ -364,7 +364,7 @@ foo=bar&test=abc"""
 
         resp = self.testapp.get('/allredis/resource?url=http://www.example.com/')
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'example'
+        assert resp.headers['Warcserver-Source-Coll'] == 'example'
 
     def test_url_agnost(self):
         f = FakeStrictRedis.from_url('redis://localhost/2')
@@ -375,7 +375,7 @@ foo=bar&test=abc"""
 
         assert resp.status_int == 200
         assert resp.headers['Link'] == MementoUtils.make_link('http://test@example.com/', 'original')
-        assert resp.headers['WebAgg-Source-Coll'] == 'url-agnost'
+        assert resp.headers['Warcserver-Source-Coll'] == 'url-agnost'
         assert resp.headers['Memento-Datetime'] == 'Mon, 29 Jul 2013 19:51:51 GMT'
 
     def test_live_video_loader(self):
@@ -385,7 +385,7 @@ foo=bar&test=abc"""
 
         resp = self.testapp.get('/live/resource', params=params)
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'live'
+        assert resp.headers['Warcserver-Source-Coll'] == 'live'
 
         self._check_uri_date(resp, 'metadata://www.youtube.com/v/BfBgWtAIbRc', True)
 
@@ -409,7 +409,7 @@ host: www.youtube.com\
 
         resp = self.testapp.post('/live/resource/postreq?&' + urlencode(params), req_data)
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'live'
+        assert resp.headers['Warcserver-Source-Coll'] == 'live'
 
         self._check_uri_date(resp, 'metadata://www.youtube.com/v/BfBgWtAIbRc', True)
 
@@ -451,7 +451,7 @@ host: www.youtube.com\
     def test_agg_local_revisit(self):
         resp = self.testapp.get('/many/resource?url=http://www.example.com/&closest=20140127171251&sources=local')
 
-        assert resp.headers['WebAgg-Source-Coll'] == 'local:dupes.cdxj'
+        assert resp.headers['Warcserver-Source-Coll'] == 'local:dupes.cdxj'
 
         buff = BytesIO(resp.body)
         status_headers = StatusAndHeadersParser(['WARC/1.0']).parse(buff)

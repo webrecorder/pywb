@@ -5,10 +5,10 @@ import logging
 
 
 #=============================================================================
-def webagg(args=None):
+def warcserver(args=None):
     WarcServerCli(args=args,
               default_port=8070,
-              desc='pywb Web Aggregator Server').run()
+              desc='pywb WarcServer').run()
 
 
 #=============================================================================

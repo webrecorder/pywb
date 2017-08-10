@@ -131,7 +131,7 @@ class BaseInsertView(object):
         if not template:
             template = self.jenv.jinja_env.get_template(self.insert_file)
 
-        params = env.get('webrec.template_params')
+        params = env.get('pywb.template_params')
         if params:
             kwargs.update(params)
         kwargs['env'] = env

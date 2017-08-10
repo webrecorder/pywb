@@ -69,7 +69,7 @@ setup(
     url='https://github.com/ikreymer/pywb',
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
-    description='Python WayBack for web archive replay and live web proxy',
+    description='Pywb Webrecorder web archive replay and capture tools',
     long_description=long_description,
     license='GPL',
     packages=find_packages(),
@@ -77,17 +77,14 @@ setup(
     provides=[
         'pywb',
         'pywb.utils',
-        'pywb.cdx',
-        'pywb.warc',
-        'pywb.rewrite',
-        'pywb.framework',
-        'pywb.manager',
-        'pywb.perms',
-        'pywb.webapp',
-        'pywb.apps',
-        'pywb.webagg',
+        'pywb.warcserver',
+        'pywb.warcserver.index',
+        'pywb.warcserver.resource',
         'pywb.recorder',
-        'pywb.urlrewrite'
+        'pywb.rewrite',
+        'pywb.indexer',
+        'pywb.manager',
+        'pywb.apps',
         ],
     package_data={
         'pywb': ['static/flowplayer/*', 'static/*.*', 'templates/*', '*.yaml'],
@@ -123,8 +120,7 @@ setup(
         live-rewrite-server = pywb.apps.cli:live_rewrite_server
         cdx-indexer = pywb.indexer.cdxindexer:main
         wb-manager = pywb.manager.manager:main_wrap_exc
-        webagg-server = pywb.apps.cli:webagg
-        new-wayback = pywb.apps.cli:new_wayback
+        warcserver = pywb.apps.cli:warcserver
         """,
     classifiers=[
         'Development Status :: 5 - Production/Stable',

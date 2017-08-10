@@ -96,7 +96,7 @@ class CollectionFilter(SkipDefaultFilter):
         if not rx:
             rx = self.rx_accept_map.get('*')
 
-        if rx and not rx.match(resp_headers.get('WebAgg-Source-Coll', '')):
+        if rx and not rx.match(resp_headers.get('Warcserver-Source-Coll', '')):
             return True
 
         return False

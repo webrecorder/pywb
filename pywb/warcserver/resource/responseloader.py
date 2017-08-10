@@ -50,15 +50,15 @@ class BaseLoader(object):
         source = self._get_source_id(cdx)
 
         out_headers = {}
-        out_headers['WebAgg-Type'] = 'warc'
+        out_headers['Warcserver-Type'] = 'warc'
         out_headers['Content-Type'] = 'application/warc-record'
 
         if params.get('recorder_skip'):
             out_headers['Recorder-Skip'] = '1'
             cdx['recorder_skip'] = '1'
 
-        out_headers['WebAgg-Cdx'] = to_native_str(cdx.to_cdxj().rstrip())
-        out_headers['WebAgg-Source-Coll'] = to_native_str(source)
+        out_headers['Warcserver-Cdx'] = to_native_str(cdx.to_cdxj().rstrip())
+        out_headers['Warcserver-Source-Coll'] = to_native_str(source)
 
         if not warc_headers:
             if other_headers:
@@ -304,9 +304,9 @@ class LiveWebLoader(BaseLoader):
         # then its an error
             return None
 
-        agg_type = upstream_res.headers.get('WebAgg-Type')
+        agg_type = upstream_res.headers.get('Warcserver-Type')
         if agg_type == 'warc':
-            cdx['source'] = unquote(upstream_res.headers.get('WebAgg-Source-Coll'))
+            cdx['source'] = unquote(upstream_res.headers.get('Warcserver-Source-Coll'))
             return None, upstream_res.headers, upstream_res
 
         if upstream_res.version == 11:
