@@ -717,7 +717,15 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         $wbwindow.Crypto.prototype.getRandomValues = new_getrandom;
         $wbwindow.crypto.getRandomValues = new_getrandom;
-    } 
+    }
+
+    //============================================
+    function init_fixed_ratio() {
+        if (Object.defineProperty) {
+            // fixed pix ratio
+            Object.defineProperty($wbwindow, "devicePixelRatio", {value: 1, configurable: false});
+        }
+    }
 
     //============================================
     function override_history_func(func_name) {
@@ -2849,6 +2857,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         // Crypto Random
         init_crypto_random();
+
+        // set fixed pixel ratio
+        init_fixed_ratio();
 
         // Date
         init_date_override(wbinfo.wombat_sec);
