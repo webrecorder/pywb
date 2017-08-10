@@ -283,6 +283,7 @@ class RewriteInfo(object):
     def _fill_text_type_and_charset(self):
         content_type = self.record.http_headers.get_header('Content-Type')
         if not content_type:
+            self.text_type = 'html-guess'
             return
 
         parts = content_type.split(';', 1)
@@ -304,17 +305,27 @@ class RewriteInfo(object):
             self.text_type = 'css'
 
         # only attempt to resolve between html and other text types
-        if self.text_type != 'html':
-            return
+        if self.text_type == 'html':
+            if mod != 'js_' and mod != 'cs_':
+                return
 
-        if mod != 'js_' and mod != 'cs_':
+        elif self.text_type != 'html-guess':
             return
 
         buff = self.read_and_keep(128)
 
         # check if doesn't start with a tag, then likely not html
-        if not self.TAG_REGEX.match(buff):
+        is_html = self.TAG_REGEX.match(buff)
+
+        if not is_html:
+            if self.text_type == 'html-guess' and mod not in ('js_', 'cs_'):
+                self.text_type = None
+                return
+
             self.text_type = 'js' if mod == 'js_' else 'css'
+        else:
+            if self.text_type == 'html-guess':
+                self.text_type = 'html'
 
     @property
     def content_stream(self):
