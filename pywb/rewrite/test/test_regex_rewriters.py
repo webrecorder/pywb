@@ -127,6 +127,32 @@ r"""
 '"a=b&amp;/web/20131010/http:\\/\\/example.com/;c=d"'
 
 #=================================================================
+# JS Obj Proxy Rewriter
+#=================================================================
+
+>>> _test_js_obj_proxy('var foo = this;   location = bar')
+'var foo =(this && this._WB_wombat_obj_proxy || this);   location = bar'
+
+>>> _test_js_obj_proxy('var foo = this.location')
+'var foo = (this && this._WB_wombat_obj_proxy || this).location'
+
+>>> _test_js_obj_proxy('var foo = this.location2')
+'var foo = this.location2'
+
+>>> _test_js_obj_proxy('func(Function("return this"));')
+'func(Function("return (this && this._WB_wombat_obj_proxy || this)"));'
+
+>>> _test_js_obj_proxy('this.document.location = foo')
+'(this && this._WB_wombat_obj_proxy || this).document.location = foo'
+
+# not rewritten
+>>> _test_js_obj_proxy('var window = this$')
+'var window = this$'
+
+>>> _test_js_obj_proxy('var window = $this')
+'var window = $this'
+
+#=================================================================
 # XML Rewriting
 #=================================================================
 
@@ -206,6 +232,7 @@ r"""
 #=================================================================
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.regex_rewriters import RegexRewriter, JSRewriter, CSSRewriter, XMLRewriter
+from pywb.rewrite.regex_rewriters import JSWombatProxyRewriter
 
 
 urlrewriter = UrlRewriter('20131010/http://example.com/', '/web/', 'https://localhost/web/')
@@ -213,6 +240,12 @@ urlrewriter = UrlRewriter('20131010/http://example.com/', '/web/', 'https://loca
 
 def _test_js(string, extra = []):
     return JSRewriter(urlrewriter, extra).rewrite(string)
+
+def _test_js_obj_proxy(string):
+    rw = JSWombatProxyRewriter(urlrewriter)
+    rw.first_buff = ''
+    rw.close_string = ''
+    return rw.rewrite(string)
 
 def _test_xml(string):
     return XMLRewriter(urlrewriter).rewrite(string)
