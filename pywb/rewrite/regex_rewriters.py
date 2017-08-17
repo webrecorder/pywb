@@ -22,6 +22,10 @@ class RegexRewriter(StreamingRewriter):
         return lambda string: template.format(string)
 
     @staticmethod
+    def fixed(string):
+        return lambda _: string
+
+    @staticmethod
     def remove_https(string):
         return string.replace("https", "http")
 
@@ -33,9 +37,6 @@ class RegexRewriter(StreamingRewriter):
     def archival_rewrite(rewriter):
         return lambda string: rewriter.rewrite(string)
 
-    # @staticmethod
-    # def replacer(other):
-    #    return lambda m, string: other
 
     HTTPX_MATCH_STR = r'https?:\\?/\\?/[A-Za-z0-9:_@.-]+'
 
@@ -178,12 +179,17 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
                   'frames',
                   'opener']
 
+    THIS_RW = '(this && this._WB_wombat_obj_proxy || this)'
+
     def __init__(self, rewriter, rules=[]):
+        func_rw = 'Function("return {0}")'.format(self.THIS_RW)
+
         rules = rules + [
-           (r'Function\(["\']return this["\']\)', RegexRewriter.format('Function("return this._WB_wombat_obj_proxy || this")'), 0),
-           (r'(?<![$.])\bthis\b(?=(?:\.(?:{0})))'.format('|'.join(self.local_objs)),
-            RegexRewriter.format('(this && this._WB_wombat_obj_proxy || this)'), 0),
-           (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(self).'), 0),
+           (r'Function\(["\']return this["\']\)', self.fixed(func_rw), 0),
+           (r'(?<![$.])\bthis\b(?=(?:\.(?:{0})\b))'.format('|'.join(self.local_objs)),
+            self.fixed(self.THIS_RW), 0),
+           (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
+           (r'(?<=[=])\s*this\b\s*(?![.$])', self.fixed(self.THIS_RW), 0),
         ]
 
         super(JSWombatProxyRewriterMixin, self).__init__(rewriter, rules)
