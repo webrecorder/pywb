@@ -79,6 +79,12 @@ class DefaultRewriter(BaseContentRewriter):
         'text/plain': 'plain',
     }
 
+    default_content_types = {
+        'html': 'text/html',
+        'css': 'text/css',
+        'js': 'text/javascript'
+    }
+
     def __init__(self, rules_file=None, replay_mod=''):
         rules_file = rules_file or 'pkg://pywb/rules.yaml'
         super(DefaultRewriter, self).__init__(rules_file, replay_mod)
