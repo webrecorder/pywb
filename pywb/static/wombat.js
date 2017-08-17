@@ -2124,15 +2124,15 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_mo_from_proxy() {
-        var orig_observe = $wbwindow.MutationObserver.prototype.observe;
+    function override_func_first_arg_proxy_to_obj(prototype, method) {
+        var orig = prototype[method];
 
-        function observe_deproxy(target, options) {
-            target = proxy_to_obj(target);
-            return orig_observe.call(this, target, options);
+        function deproxy() {
+            arguments[0] = proxy_to_obj(arguments[0]);
+            orig.apply(this, arguments);
         }
 
-        $wbwindow.MutationObserver.prototype.observe = observe_deproxy;
+        prototype[method] = deproxy;
     }
 
     //============================================
@@ -2803,6 +2803,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
             override_iframe_content_access("contentWindow");
             override_iframe_content_access("contentDocument");
 
+            // override funcs to convert first arg proxy->obj
+            override_func_first_arg_proxy_to_obj($wbwindow.MutationObserver.prototype, "observe");
+            override_func_first_arg_proxy_to_obj($wbwindow.Node.prototype, "compareDocumentPosition");
+
             override_frames_access($wbwindow);
 
             // setAttribute
@@ -2862,8 +2866,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
         // add window and document obj proxies, if available
         init_window_obj_proxy($wbwindow);
         init_document_obj_proxy($wbwindow.document);
-
-        init_mo_from_proxy();
 
         // expose functions
         var obj = {}
