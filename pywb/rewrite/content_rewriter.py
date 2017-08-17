@@ -276,9 +276,27 @@ class RewriteInfo(object):
 
         self.cookie_rewriter = cookie_rewriter
 
-        if self.record:
-            self._fill_text_type_and_charset()
-            self._resolve_text_type()
+        if not self.record:
+            return
+
+        self._fill_text_type_and_charset()
+
+        orig_text_type = self.text_type
+
+        self._resolve_text_type()
+
+        if not self.text_type or (self.text_type != 'html' and self.text_type == orig_text_type):
+            return
+
+        # text type changed, ensure content-type header matches
+        content_type = content_rewriter.default_content_types.get(self.text_type)
+        if not content_type:
+            return
+
+        if self.charset:
+           content_type += '; charset=' + self.charset
+
+        self.record.http_headers.replace_header('Content-Type', content_type)
 
     def _fill_text_type_and_charset(self):
         content_type = self.record.http_headers.get_header('Content-Type')
