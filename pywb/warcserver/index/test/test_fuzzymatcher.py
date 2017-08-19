@@ -81,8 +81,16 @@ class TestFuzzy(object):
         assert list(cdx_iter) == self.get_expected(actual_url, mime)
 
     def test_fuzzy_jquery(self):
-        url = 'http://example.com/someresponse?a=b&foocallbackname=jQuery123_456&foo=bar&_=1234'
-        actual_url = 'http://example.com/someresponse?a=b&foocallbackname=jQuery789_000&foo=bar&_=123'
+        url = 'http://example.com/someresponse?a=b&foocallbackname=jQuery123_456&foo=bar&_=12345&'
+        actual_url = 'http://example.com/someresponse?a=b&foocallbackname=jQuery789_000&foo=bar&_=789&'
+        params = self.get_params(url, actual_url)
+        cdx_iter, errs = self.fuzzy(self.source, params)
+        assert list(cdx_iter) == self.get_expected(actual_url)
+
+    def test_fuzzy_jquery_2(self):
+        # test removal of two adjacent params
+        url = 'http://example.com/someresponse?_=1234&callbackname=jQuery123_456&foo=bar'
+        actual_url = 'http://example.com/someresponse?_=123&callbackname=jQuery789_000&foo=bar'
         params = self.get_params(url, actual_url)
         cdx_iter, errs = self.fuzzy(self.source, params)
         assert list(cdx_iter) == self.get_expected(actual_url)

@@ -180,9 +180,6 @@ class FuzzyMatcher(object):
                 rx_cache[remove_rx[0]] = curr_urlkey
                 urlkey = curr_urlkey
 
-            print(curr_urlkey)
-            print(match_urlkey)
-
             if curr_urlkey == match_urlkey:
                 return True
 

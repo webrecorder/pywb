@@ -15,13 +15,13 @@ default_filters:
         - 'application/x-shockwave-flash'
 
     remove_query_args:
-        - match: '[?&](_|cb|uncache)=([\d]+)(&|$)'
+        - match: '[?&](_|cb|uncache)=([\d]+)(?=&|$)'
           replace: ''
 
-        - match: '[?&](\w+=jquery)[\d]+_[\d]+'
+        - match: '[?&]((?:\w+)=jquery)[\d]+_[\d]+'
           replace: '\1'
 
-        - match: '[?&](\w*bust\w*=1[\d]{12,15})(&|$)'
+        - match: '[?&](\w*bust\w*=1[\d]{12,15})(?=&|$)'
           replace: ''
 
 rules:
