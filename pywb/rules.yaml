@@ -18,7 +18,7 @@ default_filters:
         - match: '[?&](_|cb|uncache)=([\d]+)(&|$)'
           replace: ''
 
-        - match: '([?&]callback=jquery)[\d]+_[\d]+'
+        - match: '[?&](\w+=jquery)[\d]+_[\d]+'
           replace: '\1'
 
         - match: '[?&](\w*bust\w*=1[\d]{12,15})(&|$)'
