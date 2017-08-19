@@ -2820,6 +2820,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             // override funcs to convert first arg proxy->obj
             override_func_first_arg_proxy_to_obj($wbwindow.MutationObserver.prototype, "observe");
             override_func_first_arg_proxy_to_obj($wbwindow.Node.prototype, "compareDocumentPosition");
+            override_func_first_arg_proxy_to_obj($wbwindow.Document.prototype, "createTreeWalker");
 
             override_frames_access($wbwindow);
 
