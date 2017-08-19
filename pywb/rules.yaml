@@ -1,5 +1,30 @@
-rules:
+# Default Filters
+default_filters:
+    # exts that should *not* be treated as files (ignore all query args)
+    not_exts:
+        - asp
+        - aspx
+        - jsp
+        - php
+        - pl
+        - exe
+        - dll
 
+    mimes:
+        - 'application/dash+xml'
+        - 'application/x-shockwave-flash'
+
+    remove_query_args:
+        - match: '[?&](_|cb|uncache)=([\d]+)(&|$)'
+          replace: ''
+
+        - match: '([?&]callback=jquery)[\d]+_[\d]+'
+          replace: '\1'
+
+        - match: '[?&](\w*bust\w*=1[\d]{12,15})(&|$)'
+          replace: ''
+
+rules:
 
     # twitter rules
     #=================================================================
@@ -348,24 +373,4 @@ rules:
     - url_prefix: ''
       fuzzy_lookup:
         match: '()'
-        match_filters:
-            - not_ext:
-                - asp
-                - aspx
-                - jsp
-                - php
-                - pl
-                - exe
-                - dll
-
-              match: '()'
-
-            - mime: 'application/dash+xml'
-              match: '()'
-
-            - mime: 'application/x-shockwave-flash'
-              match: '()'
-
-            - mime: '*'
-              match: '(.*)[&?](?:_|cb|uncache)=[\d]+[&]?'
 

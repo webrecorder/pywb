@@ -12,7 +12,7 @@ from collections import namedtuple
 # ============================================================================
 FuzzyRule = namedtuple('FuzzyRule',
                        'url_prefix, regex, replace_after, filter_str, ' +
-                       'match_type, match_filters')
+                       'match_type')
 
 
 # ============================================================================
@@ -32,6 +32,10 @@ class FuzzyMatcher(object):
             if rule:
                 self.rules.append(rule)
 
+        self.default_filters = config.get('default_filters')
+
+        self.remove_query_args = [(re.compile(rule['match']), rule['replace']) for rule in self.default_filters['remove_query_args']]
+
     def parse_fuzzy_rule(self, rule):
         """ Parse rules using all the different supported forms
         """
@@ -48,32 +52,16 @@ class FuzzyMatcher(object):
             replace_after = self.DEFAULT_REPLACE_AFTER
             filter_str = self.DEFAULT_FILTER
             match_type = self.DEFAULT_MATCH_TYPE
-            match_filters = None
 
         else:
             regex = self.make_regex(config.get('match'))
             replace_after = config.get('replace', self.DEFAULT_REPLACE_AFTER)
             filter_str = config.get('filter', self.DEFAULT_FILTER)
             match_type = config.get('type', self.DEFAULT_MATCH_TYPE)
-            match_filters = self._init_match_filters(config.get('match_filters'))
 
-        return FuzzyRule(url_prefix, regex, replace_after, filter_str,
-                         match_type, match_filters)
+        return FuzzyRule(url_prefix, regex, replace_after, filter_str, match_type)
 
-    def _init_match_filters(self, filter_config):
-        if not filter_config:
-            return
-
-        filters = []
-        for filter_ in filter_config:
-            filter_['match'] = re.compile(filter_['match'])
-            filters.append(filter_)
-
-        return filters
-
-    def get_fuzzy_match(self, params):
-        urlkey = to_native_str(params['key'], 'utf-8')
-
+    def get_fuzzy_match(self, urlkey, params):
         filters = []
         matched_rule = None
 
@@ -151,8 +139,9 @@ class FuzzyMatcher(object):
             return
 
         url = params['url']
+        urlkey = to_native_str(params['key'], 'utf-8')
 
-        res = self.get_fuzzy_match(params)
+        res = self.get_fuzzy_match(urlkey, params)
         if not res:
             return
 
@@ -160,30 +149,42 @@ class FuzzyMatcher(object):
 
         new_iter, errs = index_source(fuzzy_params)
 
+        is_custom = (rule.url_prefix != [''])
+
+        rx_cache = {}
+
         for cdx in new_iter:
-            if self.allow_fuzzy_result(rule, url, cdx):
+            if is_custom or self.match_general_fuzzy_query(url, urlkey, cdx, rx_cache):
                 cdx['is_fuzzy'] = True
                 yield cdx
 
-    def allow_fuzzy_result(self, rule, url, cdx):
-        if not rule.match_filters:
+    def match_general_fuzzy_query(self, url, urlkey, cdx, rx_cache):
+        # check ext
+        ext = self.get_ext(url)
+        if ext and ext not in self.default_filters['not_exts']:
             return True
 
+        # check mime
         mime = cdx.get('mime')
-        if not mime:
-            return False
+        if mime and mime in self.default_filters['mimes']:
+            return True
 
-        for match_filter in rule.match_filters:
-            not_ext = match_filter.get('not_ext')
-            if not_ext:
-                ext = self.get_ext(url)
-                if not ext or ext in not_ext:
-                    continue
+        match_urlkey = cdx['urlkey']
 
-            elif match_filter.get('mime', '--') not in (mime, '*'):
-                continue
+        for remove_rx in self.remove_query_args:
+            match_urlkey = re.sub(remove_rx[0], remove_rx[1], match_urlkey)
+            curr_urlkey = rx_cache.get(remove_rx[0])
 
-            return match_filter['match'].search(url)
+            if not curr_urlkey:
+                curr_urlkey = re.sub(remove_rx[0], remove_rx[1], urlkey)
+                rx_cache[remove_rx[0]] = curr_urlkey
+                urlkey = curr_urlkey
+
+            print(curr_urlkey)
+            print(match_urlkey)
+
+            if curr_urlkey == match_urlkey:
+                return True
 
         return False
 

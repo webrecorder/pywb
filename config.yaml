@@ -2,6 +2,7 @@
 # ========================================
 #
 # Settings for each collection
+use_js_obj_proxy: true
 
 
 collections:

@@ -4,7 +4,7 @@ from pywb.rewrite.content_rewriter import StreamingRewriter
 
 # ============================================================================
 class JSONPRewriter(StreamingRewriter):
-    JSONP = re.compile(r'^(\w+)\(\{')
+    JSONP = re.compile(r'^[/*\s]*(\w+)\(\{')
     CALLBACK = re.compile(r'[?].*callback=([^&]+)')
 
     def rewrite(self, string):
