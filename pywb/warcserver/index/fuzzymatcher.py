@@ -34,7 +34,7 @@ class FuzzyMatcher(object):
 
         self.default_filters = config.get('default_filters')
 
-        self.remove_query_args = [(re.compile(rule['match']), rule['replace']) for rule in self.default_filters['remove_query_args']]
+        self.url_normalize_rx = [(re.compile(rule['match']), rule['replace']) for rule in self.default_filters['url_normalize']]
 
     def parse_fuzzy_rule(self, rule):
         """ Parse rules using all the different supported forms
@@ -171,13 +171,13 @@ class FuzzyMatcher(object):
 
         match_urlkey = cdx['urlkey']
 
-        for remove_rx in self.remove_query_args:
-            match_urlkey = re.sub(remove_rx[0], remove_rx[1], match_urlkey)
-            curr_urlkey = rx_cache.get(remove_rx[0])
+        for normalize_rx in self.url_normalize_rx:
+            match_urlkey = re.sub(normalize_rx[0], normalize_rx[1], match_urlkey)
+            curr_urlkey = rx_cache.get(normalize_rx[0])
 
             if not curr_urlkey:
-                curr_urlkey = re.sub(remove_rx[0], remove_rx[1], urlkey)
-                rx_cache[remove_rx[0]] = curr_urlkey
+                curr_urlkey = re.sub(normalize_rx[0], normalize_rx[1], urlkey)
+                rx_cache[normalize_rx[0]] = curr_urlkey
                 urlkey = curr_urlkey
 
             if curr_urlkey == match_urlkey:

@@ -80,6 +80,13 @@ class TestFuzzy(object):
         cdx_iter, errs = self.fuzzy(self.source, params)
         assert list(cdx_iter) == self.get_expected(actual_url, mime)
 
+    def test_fuzzy_ga_utm(self):
+        url = 'http://example.com/someresponse?_=1234&utm_A=123&id=xyz&utm_robot=blue&utm_foo=bar&A=B&utm_id=xyz'
+        actual_url = 'http://example.com/someresponse?utm_B=234&id=xyz&utm_bar=foo&utm_foo=bar&_=789&A=B'
+        params = self.get_params(url, actual_url)
+        cdx_iter, errs = self.fuzzy(self.source, params)
+        assert list(cdx_iter) == self.get_expected(actual_url)
+
     def test_fuzzy_jquery(self):
         url = 'http://example.com/someresponse?a=b&foocallbackname=jQuery123_456&foo=bar&_=12345&'
         actual_url = 'http://example.com/someresponse?a=b&foocallbackname=jQuery789_000&foo=bar&_=789&'
@@ -120,6 +127,13 @@ class TestFuzzy(object):
     def test_no_fuzzy_ext_restrict(self):
         url = 'http://example.com/somefile.php?a=b'
         actual_url = 'http://example.com/'
+        params = self.get_params(url, actual_url)
+        cdx_iter, errs = self.fuzzy(self.source, params)
+        assert list(cdx_iter) == []
+
+    def test_no_fuzzy_ga_utm(self):
+        url = 'http://example.com/someresponse?_=1234&utm_A=123&id=xyz&utm_robot=blue&utm_foo=bar&A=B&utm_id=xyz'
+        actual_url = 'http://example.com/someresponse?utm_B=234&id=xyw&utm_bar=foo&utm_foo=bar&_=789&A=B'
         params = self.get_params(url, actual_url)
         cdx_iter, errs = self.fuzzy(self.source, params)
         assert list(cdx_iter) == []

@@ -10,17 +10,29 @@ default_filters:
         - exe
         - dll
 
+    # ignore query args for the following mime types
     mimes:
         - 'application/dash+xml'
         - 'application/x-shockwave-flash'
 
-    remove_query_args:
+    # apply following url normalization rules
+    # on both match url and request url
+    # to find a match (not limited to query argument removal)
+    url_normalize:
+        # remove known cache busting args
         - match: '[?&](_|cb|uncache)=([\d]+)(?=&|$)'
           replace: ''
 
+        # GA cache busting params
+        - match: '[?&]utm_[^=]+=[^&]+(?=&|$)'
+          replace: ''
+
+        # remove jquery callback dynamic timestamp
         - match: '[?&]((?:\w+)=jquery)[\d]+_[\d]+'
           replace: '\1'
 
+        # remove more generic cache-busting params:
+        # name contains 'bust', value appears to be a timestamp
         - match: '[?&](\w*bust\w*=1[\d]{12,15})(?=&|$)'
           replace: ''
 
