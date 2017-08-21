@@ -1,5 +1,42 @@
-rules:
+# Default Filters
+default_filters:
+    # exts that should *not* be treated as files (ignore all query args)
+    not_exts:
+        - asp
+        - aspx
+        - jsp
+        - php
+        - pl
+        - exe
+        - dll
 
+    # ignore query args for the following mime types
+    mimes:
+        - 'application/dash+xml'
+        - 'application/x-shockwave-flash'
+
+    # apply following url normalization rules
+    # on both match url and request url
+    # to find a match (not limited to query argument removal)
+    url_normalize:
+        # remove known cache busting args
+        - match: '[?&](_|cb|uncache)=([\d]+)(?=&|$)'
+          replace: ''
+
+        # GA cache busting params
+        - match: '[?&]utm_[^=]+=[^&]+(?=&|$)'
+          replace: ''
+
+        # remove jquery callback dynamic timestamp
+        - match: '[?&]((?:\w+)=jquery)[\d]+_[\d]+'
+          replace: '\1'
+
+        # remove more generic cache-busting params:
+        # name contains 'bust', value appears to be a timestamp
+        - match: '[?&](\w*bust\w*=1[\d]{12,15})(?=&|$)'
+          replace: ''
+
+rules:
 
     # twitter rules
     #=================================================================
@@ -348,24 +385,4 @@ rules:
     - url_prefix: ''
       fuzzy_lookup:
         match: '()'
-        match_filters:
-            - not_ext:
-                - asp
-                - aspx
-                - jsp
-                - php
-                - pl
-                - exe
-                - dll
-
-              match: '()'
-
-            - mime: 'application/dash+xml'
-              match: '()'
-
-            - mime: 'application/x-shockwave-flash'
-              match: '()'
-
-            - mime: '*'
-              match: '(.*)[&?](?:_|cb|uncache)=[\d]+[&]?'
 
