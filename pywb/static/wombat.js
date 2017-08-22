@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.41
+// Wombat JS-Rewriting Library v2.42
 //============================================
 
 
@@ -2066,20 +2066,16 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
 
         var addEventListener_rewritten = function(type, listener, useCapture) {
+            var obj = proxy_to_obj(this);
+
             if (type == "message") {
                 var wrapped_listener = new WrappedListener(listener, this);
 
-                //if (listen_map[listener]) {
-                    //console.log("Listener Already Added");
-                    //_orig_removeEventListener.call(this, type, listen_map[listener], useCapture);
-                    //return;
-                //}
-
                 listen_map[listener] = wrapped_listener;
 
-                return _orig_addEventListener.call(this, type, wrapped_listener.listen, useCapture);
+                return _orig_addEventListener.call(obj, type, wrapped_listener.listen, useCapture);
             } else {
-                return _orig_addEventListener.call(this, type, listener, useCapture);
+                return _orig_addEventListener.call(obj, type, listener, useCapture);
             }
         }
 
@@ -2088,14 +2084,17 @@ var _WBWombat = function($wbwindow, wbinfo) {
         // REMOVE
         
         var removeEventListener_rewritten = function(type, listener, useCapture) {
+            var obj = proxy_to_obj(this);
+
             if (type == "message") {
                 var wrapped_listener = listen_map[listener];
-                if (wrapped_listener) {
-                    delete listen_map[listener];
-                    return _orig_removeEventListener.call(this, type, wrapped_listener.listen, useCapture);
+                if (!wrapped_listener) {
+                    return;
                 }
+                delete listen_map[listener];
+                return _orig_removeEventListener.call(obj, type, wrapped_listener.listen, useCapture);
             } else {
-                return _orig_removeEventListener.call(this, type, listener, useCapture);
+                return _orig_removeEventListener.call(obj, type, listener, useCapture);
             }
         }
 
@@ -2138,7 +2137,20 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function override_func_first_arg_proxy_to_obj(prototype, method) {
+    function override_func_this_proxy_to_obj(cls, method) {
+        var prototype = cls.prototype;
+        var orig = prototype[method];
+
+        function deproxy() {
+            orig.apply(proxy_to_obj(this), arguments);
+        }
+
+        prototype[method] = deproxy;
+    }
+
+    //============================================
+    function override_func_first_arg_proxy_to_obj(cls, method) {
+        var prototype = cls.prototype;
         var orig = prototype[method];
 
         function deproxy() {
@@ -2818,9 +2830,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
             override_iframe_content_access("contentDocument");
 
             // override funcs to convert first arg proxy->obj
-            override_func_first_arg_proxy_to_obj($wbwindow.MutationObserver.prototype, "observe");
-            override_func_first_arg_proxy_to_obj($wbwindow.Node.prototype, "compareDocumentPosition");
-            override_func_first_arg_proxy_to_obj($wbwindow.Document.prototype, "createTreeWalker");
+            override_func_first_arg_proxy_to_obj($wbwindow.MutationObserver, "observe");
+            override_func_first_arg_proxy_to_obj($wbwindow.Node, "compareDocumentPosition");
+            override_func_first_arg_proxy_to_obj($wbwindow.Document, "createTreeWalker");
+
+            override_func_this_proxy_to_obj($wbwindow.EventTarget, "addEventListener");
+            override_func_this_proxy_to_obj($wbwindow.EventTarget, "removeEventListener");
 
             override_frames_access($wbwindow);
 
