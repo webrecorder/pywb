@@ -59,7 +59,8 @@ rules:
     #=================================================================
     - url_prefix: 'com,facebook)/ajax/pagelet/generic.php/'
 
-      fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|query_type[^,]+))'
+      #fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|query_type[^,]+))'
+      fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|(?:query_type|fbid)[^,]+))'
 
     - url_prefix: 'com,facebook)/ajax/ufi/'
 

@@ -2138,6 +2138,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     //============================================
     function override_func_this_proxy_to_obj(cls, method) {
+        if (!cls || !cls.prototype) {
+            return;
+        }
         var prototype = cls.prototype;
         var orig = prototype[method];
 
@@ -2150,6 +2153,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     //============================================
     function override_func_first_arg_proxy_to_obj(cls, method) {
+        if (!cls || !cls.prototype) {
+            return;
+        }
         var prototype = cls.prototype;
         var orig = prototype[method];
 
@@ -2415,7 +2421,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         // domain
         var domain_setter = function(val) {
-            if (ends_with(this._WB_wombat_location.hostname, val)) {
+            var loc = this._WB_wombat_location || this.defaultView._WB_wombat_location;
+
+            if (loc && ends_with(loc.hostname, val)) {
                 this.__wb_domain = val;
             }
         }
