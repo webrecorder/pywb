@@ -292,8 +292,12 @@ class RedisIndexSource(BaseIndexSource):
 
         key = res_template(member_key, params)
 
-        keys = self.redis.smembers(key)
-        params['scan:' + key] = keys
+        scan_key = 'scan:' + key
+        # check if already have keys to avoid extra smembers call
+        keys = params.get(scan_key)
+        if not keys:
+            keys = self.redis.smembers(key)
+            params[scan_key] = keys
 
         match_templ = match_templ.encode('utf-8')
 

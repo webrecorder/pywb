@@ -9,6 +9,6 @@ brotlipy
 pyyaml
 werkzeug
 webencodings
-gevent==1.2.1
+gevent==1.2.2
 webassets==0.12.1
 portalocker
