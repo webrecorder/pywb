@@ -285,6 +285,9 @@ class RewriteInfo(object):
 
         self._resolve_text_type()
 
+        if self.text_type == 'js' and '.json?' in self.url_rewriter.wburl.url:
+            self.text_type = 'json'
+
         if not self.text_type or (self.text_type != 'html' and self.text_type == orig_text_type):
             return
 

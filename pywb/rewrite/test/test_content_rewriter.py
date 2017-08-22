@@ -105,5 +105,40 @@ class TestContentRewriter(object):
 
         assert is_rw == False
 
+    def test_rewrite_json(self):
+        headers = {'Content-Type': 'application/json'}
+        content = '/**/ jQuery_ABC({"foo": "bar"});'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_',
+                                                  url='http://example.com/path/file?callback=jQuery_DEF')
+
+        assert ('Content-Type', 'application/json') in headers.headers
+
+        exp = 'jQuery_DEF({"foo": "bar"});'
+        assert b''.join(gen).decode('utf-8') == exp
+
+    def test_rewrite_js_as_json(self):
+        headers = {'Content-Type': 'text/javascript'}
+        content = '/**/ jQuery_ABC({"foo": "bar"});'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_',
+                                                  url='http://example.com/path/file.json?callback=jQuery_DEF')
+
+        assert ('Content-Type', 'text/javascript') in headers.headers
+
+        exp = 'jQuery_DEF({"foo": "bar"});'
+
+    def test_rewrite_js_not_json(self):
+        headers = {}
+        content = '/**/ jQuery_ABC({"foo": "bar"});'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_',
+                                                  url='http://example.com/path/file?callback=jQuery_DEF')
+
+        assert ('Content-Type', 'text/javascript') in headers.headers
+
+        #exp = 'jQuery_DEF({"foo": "bar"});'
+        assert b''.join(gen).decode('utf-8') == content
+
 
 
