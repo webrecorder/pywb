@@ -757,11 +757,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             if (!abs_url) {
                 abs_url = $wbwindow.WB_wombat_location.href;
-            }
-
-            if (abs_url &&
-                (abs_url != $wbwindow.WB_wombat_location.origin && $wbwindow.WB_wombat_location.href != "about:blank") &&
-                !starts_with(abs_url, $wbwindow.WB_wombat_location.origin + "/")) {
+            } else if (abs_url[0] == "/") {
+                abs_url = $wbwindow.WB_wombat_location.origin + abs_url;
+            } else if ((abs_url != $wbwindow.WB_wombat_location.origin && $wbwindow.WB_wombat_location.href != "about:blank") &&
+                    !starts_with(abs_url, $wbwindow.WB_wombat_location.origin + "/")) {
                 throw new DOMException("Invalid history change: " + abs_url);
             }
 

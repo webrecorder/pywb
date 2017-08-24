@@ -296,7 +296,7 @@ class RewriteInfo(object):
         if text_type == 'js' and '.json?' in self.url_rewriter.wburl.url:
             text_type = 'json'
 
-        if text_type and orig_text_type != text_type or text_type == 'html':
+        if (text_type and orig_text_type != text_type) or text_type == 'html':
             # check if default content_type that needs to be set
             new_mime = content_rewriter.default_content_types.get(text_type)
 
@@ -322,14 +322,14 @@ class RewriteInfo(object):
 
         # if html or no-content type, allow resolving on js, css,
         # or other templates
-        if text_type in ('guess-none', 'html'):
+        if text_type == 'guess-none':
             if not is_js_or_css and not mod in ('if_', 'mp_', ''):
-                return text_type
+                return None
 
         # if application/octet-stream binary, only resolve if in js/css content
-        elif text_type == 'guess-bin':
+        elif text_type in ('guess-bin', 'html'):
             if not is_js_or_css:
-                return None
+                return text_type
 
         else:
             return text_type

@@ -43,7 +43,7 @@ class TestHeaderRewriter(object):
         res = """\
 HTTP/1.0 200 OK\r\n\
 X-Archive-Orig-Date: Fri, 03 Jan 2014 03:03:21 GMT\r\n\
-X-Archive-Orig-Content-Length: 5\r\n\
+Content-Length: 5\r\n\
 Content-Type: text/html;charset=UTF-8\r\n\
 """
         rwinfo = self.do_rewrite('200 OK', headers)
