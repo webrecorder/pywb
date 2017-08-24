@@ -294,8 +294,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function resolve_rel_url(url) {
-        var parser = make_parser(extract_orig($wbwindow.document.baseURI));
+    function resolve_rel_url(url, doc) {
+        doc = doc || $wbwindow.document;
+        var parser = make_parser(extract_orig(doc.baseURI), doc);
         var href = parser.href;
         var hash = href.lastIndexOf("#");
 
@@ -410,20 +411,20 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
 
     //============================================
-    function make_parser(href) {
+    function make_parser(href, doc) {
         href = extract_orig(href);
 
-        var baseWin;
-
-        // special case: for newly opened blank windows, use the opener
-        // to create parser to have the proper baseURI
-        if ($wbwindow.location.href == "about:blank" && $wbwindow.opener) {
-            baseWin = $wbwindow.opener;
-        } else {
-            baseWin = $wbwindow;
+        if (!doc) {
+            // special case: for newly opened blank windows, use the opener
+            // to create parser to have the proper baseURI
+            if ($wbwindow.location.href == "about:blank" && $wbwindow.opener) {
+                doc = $wbwindow.opener.document;
+            } else {
+                doc = $wbwindow.document;
+            }
         }
 
-        var p = baseWin.document.createElement("a");
+        var p = doc.createElement("a");
         p._no_rewrite = true;
         p.href = href;
         return p;
@@ -432,7 +433,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     //============================================
     function set_loc(loc, orig_href) {
-        var parser = make_parser(orig_href);
+        var parser = make_parser(orig_href, loc.ownerDocument);
 
         loc._orig_href = orig_href;
         loc._parser = parser;
@@ -508,14 +509,14 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
                 if (!this._parser) {
                     var href = orig_getter.call(this);
-                    this._parser = make_parser(href);
+                    this._parser = make_parser(href, this.ownerDocument);
                 }
 
                 //Special case for href="." assignment
                 if (prop == "href" && typeof(value) == "string") {
                     if (value) {
                         if (value[0] == ".") {
-                            value = resolve_rel_url(value);
+                            value = resolve_rel_url(value, this.ownerDocument);
                         } else if (value[0] == "/" && (value.length <= 1 || value[1] != "/")) {
                             value = WB_wombat_location.origin + value;
                         }
