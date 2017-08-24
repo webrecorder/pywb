@@ -12,11 +12,11 @@ from pywb.rewrite.default_rewriter import DefaultRewriter
 
 import pytest
 
-
 @pytest.fixture(params=[{'Content-Type': 'text/html'},
                         {'Content-Type': 'application/xhtml+xml'},
+                        {'Content-Type': 'application/octet-stream'},
                         {}],
-                ids=['html', 'xhtml', 'none'])
+                ids=['html', 'xhtml', 'octet-stream', 'none'])
 def headers(request):
     return request.param
 
@@ -39,13 +39,12 @@ class TestContentRewriter(object):
                                          length=len(payload),
                                          http_headers=http_headers)
 
-    def rewrite_record(self, headers, content, url='http://example.com/',
-                       ts='20170102030000000', prefix='http://localhost:8080/prefix/'):
+    def rewrite_record(self, headers, content, ts, url='http://example.com/',
+                       prefix='http://localhost:8080/prefix/'):
 
         record = self._create_response_record(url, headers, content)
 
         wburl = WbUrl(ts + '/' + url)
-        print(wburl.mod)
         url_rewriter = UrlRewriter(wburl, prefix)
 
         cdx = CDXObject()
@@ -58,11 +57,32 @@ class TestContentRewriter(object):
     def test_rewrite_html(self, headers):
         content = '<html><body><a href="http://example.com/"></a></body></html>'
 
-        headers, gen, is_rw = self.rewrite_record(headers, content)
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
 
-        assert ('Content-Type', 'text/html') in headers.headers
+        # if octet-stream, don't attempt to rewrite (only for JS/CSS)
+        if headers.get('Content-Type') == 'application/octet-stream':
+            exp_rw = False
+            exp_ct = ('Content-Type', 'application/octet-stream')
+            exp = content
 
-        exp = '<html><body><a href="http://localhost:8080/prefix/20170102030000000/http://example.com/"></a></body></html>'
+        else:
+            exp_rw = True
+            exp_ct = ('Content-Type', 'text/html')
+            exp = '<html><body><a href="http://localhost:8080/prefix/201701/http://example.com/"></a></body></html>'
+
+        assert exp_ct in headers.headers
+        assert is_rw == exp_rw
+        assert b''.join(gen).decode('utf-8') == exp
+
+    def test_rewrite_html_change_mime_keep_charset(self):
+        headers = {'Content-Type': 'application/xhtml+xml; charset=UTF-8'}
+        content = '<html><body><a href="http://example.com/"></a></body></html>'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        exp = '<html><body><a href="http://localhost:8080/prefix/201701/http://example.com/"></a></body></html>'
+        assert is_rw
+        assert ('Content-Type', 'text/html; charset=UTF-8') in headers.headers
         assert b''.join(gen).decode('utf-8') == exp
 
     def test_rewrite_html_js_mod(self, headers):
@@ -96,12 +116,32 @@ class TestContentRewriter(object):
 
         assert b''.join(gen).decode('utf-8') == exp
 
+    def test_rewrite_js_mod_alt_ct(self):
+        headers = {'Content-Type': 'application/x-javascript'}
+        content = 'function() { location.href = "http://example.com/"; }'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_')
+
+        assert ('Content-Type', 'application/x-javascript') in headers.headers
+
+        exp = 'function() { WB_wombat_location.href = "http://example.com/"; }'
+        assert b''.join(gen).decode('utf-8') == exp
+
     def test_binary_no_content_type(self):
         headers = {}
         content = '\x11\x12\x13\x14'
         headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
 
-        assert 'Content-Type' not in headers.headers
+        assert ('Content-Type', 'application/octet-stream') not in headers.headers
+
+        assert is_rw == False
+
+    def test_binary_octet_stream(self):
+        headers = {'Content-Type': 'application/octet-stream'}
+        content = '\x11\x12\x13\x14'
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        assert ('Content-Type', 'application/octet-stream') in headers.headers
 
         assert is_rw == False
 

@@ -77,6 +77,10 @@ class DefaultRewriter(BaseContentRewriter):
 
         # PLAIN
         'text/plain': 'plain',
+
+        # DEFAULT or octet-stream
+        '': 'guess-none',
+        'application/octet-stream': 'guess-bin'
     }
 
     default_content_types = {

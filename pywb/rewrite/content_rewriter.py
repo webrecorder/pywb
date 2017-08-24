@@ -276,77 +276,78 @@ class RewriteInfo(object):
 
         self.cookie_rewriter = cookie_rewriter
 
-        if not self.record:
-            return
+        if self.record:
+            self.text_type, self.charset = self._fill_text_type_and_charset(content_rewriter)
 
-        self._fill_text_type_and_charset()
-
-        orig_text_type = self.text_type
-
-        self._resolve_text_type()
-
-        if self.text_type == 'js' and '.json?' in self.url_rewriter.wburl.url:
-            self.text_type = 'json'
-
-        if not self.text_type or (self.text_type != 'html' and self.text_type == orig_text_type):
-            return
-
-        # text type changed, ensure content-type header matches
-        content_type = content_rewriter.default_content_types.get(self.text_type)
-        if not content_type:
-            return
-
-        if self.charset:
-           content_type += '; charset=' + self.charset
-
-        self.record.http_headers.replace_header('Content-Type', content_type)
-
-    def _fill_text_type_and_charset(self):
-        content_type = self.record.http_headers.get_header('Content-Type')
-        if not content_type:
-            self.text_type = 'html-guess'
-            return
+    def _fill_text_type_and_charset(self, content_rewriter):
+        content_type = self.record.http_headers.get_header('Content-Type', '')
+        charset = None
 
         parts = content_type.split(';', 1)
         mime = parts[0]
 
-        self.text_type = self.rewrite_types.get(mime)
-        if not self.text_type:
-            return
+        orig_text_type = self.rewrite_types.get(mime)
 
-        if len(parts) == 2:
-            parts = parts[1].lower().split('charset=', 1)
+        text_type = self._resolve_text_type(orig_text_type)
+
+        if text_type in ('guess-none', 'guess-bin'):
+            text_type = None
+
+        if text_type == 'js' and '.json?' in self.url_rewriter.wburl.url:
+            text_type = 'json'
+
+        if text_type and orig_text_type != text_type or text_type == 'html':
+            # check if default content_type that needs to be set
+            new_mime = content_rewriter.default_content_types.get(text_type)
+
+            if new_mime and new_mime != mime:
+                new_content_type = content_type.replace(mime, new_mime)
+                self.record.http_headers.replace_header('Content-Type', new_content_type)
+
+            # set charset
             if len(parts) == 2:
-                self.charset = parts[1].strip()
+                parts = parts[1].lower().split('charset=', 1)
+                if len(parts) == 2:
+                    charset = parts[1].strip()
 
-    def _resolve_text_type(self):
+        return text_type, charset
+
+    def _resolve_text_type(self, text_type):
         mod = self.url_rewriter.wburl.mod
 
-        if self.text_type == 'css' and mod == 'js_':
-            self.text_type = 'css'
+        if text_type == 'css' and mod == 'js_':
+            text_type = 'css'
 
-        # only attempt to resolve between html and other text types
-        if self.text_type == 'html':
-            if mod != 'js_' and mod != 'cs_':
-                return
+        is_js_or_css = mod in ('js_', 'cs_')
 
-        elif self.text_type != 'html-guess':
-            return
+        # if html or no-content type, allow resolving on js, css,
+        # or other templates
+        if text_type in ('guess-none', 'html'):
+            if not is_js_or_css and not mod in ('if_', 'mp_', ''):
+                return text_type
+
+        # if application/octet-stream binary, only resolve if in js/css content
+        elif text_type == 'guess-bin':
+            if not is_js_or_css:
+                return None
+
+        else:
+            return text_type
 
         buff = self.read_and_keep(128)
 
         # check if doesn't start with a tag, then likely not html
-        is_html = self.TAG_REGEX.match(buff)
+        if self.TAG_REGEX.match(buff):
+            return 'html'
 
-        if not is_html:
-            if self.text_type == 'html-guess' and mod not in ('js_', 'cs_'):
-                self.text_type = None
-                return
-
-            self.text_type = 'js' if mod == 'js_' else 'css'
+        if not is_js_or_css:
+            return text_type
+        elif mod == 'js_':
+            return 'js'
         else:
-            if self.text_type == 'html-guess':
-                self.text_type = 'html'
+            return 'css'
+
+        #text_type = 'js' if mod == 'js_' else 'css'
 
     @property
     def content_stream(self):
