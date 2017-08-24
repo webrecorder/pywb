@@ -183,6 +183,10 @@ r"""
 >>> parse('<div style="background: url(\'abc.html\')" onblah onclick="location = \'redirect.html\'"></div>')
 <div style="background: url('abc.html')" onblah onclick="window.WB_wombat_location = 'redirect.html'"></div>
 
+# on- not rewritten
+>>> parse('<div style="background: url(\'abc.html\')" onblah on-click="location = \'redirect.html\'"></div>')
+<div style="background: url('abc.html')" onblah on-click="location = 'redirect.html'"></div>
+
 >>> parse('<div style="background: url(\'/other_path/abc.html\')" onblah onclick="window.location = \'redirect.html\'"></div>')
 <div style="background: url('/web/20131226101010/http://example.com/other_path/abc.html')" onblah onclick="window.WB_wombat_location = 'redirect.html'"></div>
 

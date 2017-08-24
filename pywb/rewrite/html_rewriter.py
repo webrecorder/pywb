@@ -298,7 +298,7 @@ class HTMLRewriterMixin(StreamingRewriter):
 
             # special case: inline JS/event handler
             if ((attr_value and attr_value.startswith('javascript:'))
-                 or attr_name.startswith('on')):
+                 or attr_name.startswith('on') and attr_name[2:3] != '-'):
                 attr_value = self._rewrite_script(attr_value, True)
 
             # special case: inline CSS/style attribute
