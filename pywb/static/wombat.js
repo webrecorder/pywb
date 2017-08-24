@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.42
+// Wombat JS-Rewriting Library v2.43
 //============================================
 
 
@@ -29,7 +29,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     var wb_abs_prefix;
     var wb_rel_prefix;
-    var wb_rel_prefix_check;
 
     var wb_capture_date_part;
     var wb_orig_scheme;
@@ -215,7 +214,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
 
             // relative collection 
-            if ((url.indexOf(wb_rel_prefix) == 1) && (url.indexOf("http") > 1)) {
+            if ((url.indexOf(wb_rel_prefix) == 0) && (url.indexOf("http") > 1)) {
                 var scheme_sep = url.indexOf(":/");
                 if (scheme_sep > 0 && url[scheme_sep + 2] != '/') {
                     url = url.substring(0, scheme_sep + 2) + "/" + url.substring(scheme_sep + 2);
@@ -223,7 +222,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return url;
             }
 
-            return get_final_url(use_rel ? wb_rel_prefix : wb_abs_prefix, mod, wb_orig_origin + url);
+            return get_final_url(true, mod, wb_orig_origin + url);
         }
 
         // Use a parser
@@ -251,8 +250,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 var path = url.substring(prefix_host.length);
                 var rebuild = false;
 
-                if (path.indexOf(wb_rel_prefix_check) < 0 && url.indexOf("/static/") < 0) {
-                    path = get_final_url(wb_rel_prefix, mod, WB_wombat_location.origin + "/" + path);
+                if (path.indexOf(wb_rel_prefix) < 0 && url.indexOf("/static/") < 0) {
+                    path = get_final_url(true, mod, WB_wombat_location.origin + "/" + path);
                     rebuild = true;
                 }
 
@@ -273,7 +272,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
                 return url;
             }
-            return get_final_url(wb_abs_prefix, mod, url);
+            return get_final_url(use_rel, mod, url);
         }
 
         // Check for common bad prefixes and remove them
@@ -281,21 +280,22 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         if (prefix) {
             url = extract_orig(url);
-            return get_final_url(wb_abs_prefix, mod, url);
+            return get_final_url(use_rel, mod, url);
         }
 
         // May or may not be a hostname, call function to determine
         // If it is, add the prefix and make sure port is removed
         if (is_host_url(url) && !starts_with(url, $wbwindow.location.host + '/')) {
-            return get_final_url(wb_abs_prefix, mod, wb_orig_scheme + url);
+            return get_final_url(use_rel, mod, wb_orig_scheme + url);
         }
 
         return url;
     }
 
     //============================================
-    function resolve_rel_url(url) {
-        var parser = make_parser(extract_orig($wbwindow.document.baseURI));
+    function resolve_rel_url(url, doc) {
+        doc = doc || $wbwindow.document;
+        var parser = make_parser(extract_orig(doc.baseURI), doc);
         var href = parser.href;
         var hash = href.lastIndexOf("#");
 
@@ -410,20 +410,20 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
 
     //============================================
-    function make_parser(href) {
+    function make_parser(href, doc) {
         href = extract_orig(href);
 
-        var baseWin;
-
-        // special case: for newly opened blank windows, use the opener
-        // to create parser to have the proper baseURI
-        if ($wbwindow.location.href == "about:blank" && $wbwindow.opener) {
-            baseWin = $wbwindow.opener;
-        } else {
-            baseWin = $wbwindow;
+        if (!doc) {
+            // special case: for newly opened blank windows, use the opener
+            // to create parser to have the proper baseURI
+            if ($wbwindow.location.href == "about:blank" && $wbwindow.opener) {
+                doc = $wbwindow.opener.document;
+            } else {
+                doc = $wbwindow.document;
+            }
         }
 
-        var p = baseWin.document.createElement("a");
+        var p = doc.createElement("a");
         p._no_rewrite = true;
         p.href = href;
         return p;
@@ -432,7 +432,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     //============================================
     function set_loc(loc, orig_href) {
-        var parser = make_parser(orig_href);
+        var parser = make_parser(orig_href, loc.ownerDocument);
 
         loc._orig_href = orig_href;
         loc._parser = parser;
@@ -508,15 +508,18 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
                 if (!this._parser) {
                     var href = orig_getter.call(this);
-                    this._parser = make_parser(href);
+                    this._parser = make_parser(href, this.ownerDocument);
                 }
+
+                var rel = false;
 
                 //Special case for href="." assignment
                 if (prop == "href" && typeof(value) == "string") {
                     if (value) {
                         if (value[0] == ".") {
-                            value = resolve_rel_url(value);
+                            value = resolve_rel_url(value, this.ownerDocument);
                         } else if (value[0] == "/" && (value.length <= 1 || value[1] != "/")) {
+                            rel = true;
                             value = WB_wombat_location.origin + value;
                         }
                     }
@@ -532,7 +535,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                     value = this._parser[prop];
                 } else {
                     prop = "href";
-                    var rel = (value == this._parser.pathname);
+                    rel = rel || (value == this._parser.pathname);
                     value = rewrite_url(this._parser.href, rel);
                 }
 
@@ -1864,11 +1867,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
                             child.textContent = rewrite_style(child.textContent);
                         }
                     }
-
-                    // if fragment, rewrite children before adding
-                    //if (child instanceof DocumentFragment) {
-                    //   rewrite_children(child);
-                    //}
                 }
 
                 var created = orig.apply(this, arguments);
@@ -2514,7 +2512,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function get_final_url(prefix, mod, url) {
+    function get_final_url(use_rel, mod, url) {
+        var prefix = use_rel ? wb_rel_prefix : wb_abs_prefix;
+
         if (mod == undefined) {
             mod = wb_info.mod;
         }
@@ -2767,19 +2767,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
             init_wombat_top($wbwindow);
 
             if (wb_replay_prefix && wb_replay_prefix.indexOf($wbwindow.__WB_replay_top.location.origin) == 0) {
-                wb_rel_prefix = wb_replay_prefix.substring($wbwindow.__WB_replay_top.location.origin.length + 1);
+                wb_rel_prefix = wb_replay_prefix.substring($wbwindow.__WB_replay_top.location.origin.length);
             } else {
                 wb_rel_prefix = wb_replay_prefix;
             }
-            wb_rel_prefix_check = wb_rel_prefix;
-
-            //if ($wbwindow.opener) {
-            //    $wbwindow.opener.WB_wombat_location = copy_location_obj($wbwindow.opener.location);
-            //}
-
-            // Domain
-            //$wbwindow.document.WB_wombat_domain = wbinfo.wombat_host;
-            //$wbwindow.document.WB_wombat_referrer = extract_orig($wbwindow.document.referrer);
 
             // History
             override_history_func("pushState");
