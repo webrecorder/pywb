@@ -293,8 +293,9 @@ class RewriteInfo(object):
         if text_type in ('guess-none', 'guess-bin'):
             text_type = None
 
-        if text_type == 'js' and '.json?' in self.url_rewriter.wburl.url:
-            text_type = 'json'
+        if text_type == 'js':
+            if 'callback=jQuery' in self.url_rewriter.wburl.url or '.json?' in self.url_rewriter.wburl.url:
+                text_type = 'json'
 
         if (text_type and orig_text_type != text_type) or text_type == 'html':
             # check if default content_type that needs to be set

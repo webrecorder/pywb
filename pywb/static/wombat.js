@@ -759,6 +759,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 abs_url = $wbwindow.WB_wombat_location.href;
             } else if (abs_url[0] == "/") {
                 abs_url = $wbwindow.WB_wombat_location.origin + abs_url;
+            } else if (abs_url[0] == "#") {
+                abs_url = $wbwindow.WB_wombat_location.href.split("#", 1)[0] + abs_url;
             } else if ((abs_url != $wbwindow.WB_wombat_location.origin && $wbwindow.WB_wombat_location.href != "about:blank") &&
                     !starts_with(abs_url, $wbwindow.WB_wombat_location.origin + "/")) {
                 throw new DOMException("Invalid history change: " + abs_url);
@@ -1004,6 +1006,55 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return result;
         }
 
+    }
+
+    //============================================
+    function init_svg_image_overrides()
+    {
+        if (!$wbwindow.SVGImageElement) {
+            return;
+        }
+
+        var orig_getAttr = $wbwindow.SVGImageElement.prototype.getAttribute;
+        var orig_getAttrNS = $wbwindow.SVGImageElement.prototype.getAttributeNS;
+        var orig_setAttr = $wbwindow.SVGImageElement.prototype.setAttribute;
+        var orig_setAttrNS = $wbwindow.SVGImageElement.prototype.setAttributeNS;
+
+        $wbwindow.SVGImageElement.prototype.getAttribute = function(name) {
+            var value = orig_getAttr.call(this, name);
+
+            if (name.indexOf("xlink:href") >= 0 || name == "href") {
+                value = extract_orig(value);
+            }
+
+            return value;
+        }
+
+        $wbwindow.SVGImageElement.prototype.getAttributeNS = function(ns, name) {
+            var value = orig_getAttrNS.call(this, ns, name);
+
+            if (name == "href") {
+                value = extract_orig(value);
+            }
+
+            return value;
+        }
+
+        $wbwindow.SVGImageElement.prototype.setAttribute = function(name, value) {
+            if (name.indexOf("xlink:href") >= 0 || name == "href") {
+                value = rewrite_url(value);
+            }
+
+            return orig_setAttr.call(this, name, value);
+        }
+
+        $wbwindow.SVGImageElement.prototype.setAttributeNS = function(ns, name, value) {
+            if (name == "href") {
+                value = rewrite_url(value);
+            }
+
+            return orig_setAttrNS.call(this, ns, name, value);
+        }
     }
 
     //============================================
@@ -2842,6 +2893,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 init_setAttribute_override();
                 init_getAttribute_override();
             }
+            init_svg_image_overrides();
 
             // override href and src attrs
             init_attr_overrides();
