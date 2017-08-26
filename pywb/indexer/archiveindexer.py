@@ -265,6 +265,9 @@ class DefaultRecordParser(object):
             entry.extract_mime(record.http_headers.
                                get_header('Content-Type'),
                                def_mime)
+            # detected mime from WARC-Identified-Payload-Type
+            entry['mime-detected'] = record.rec_headers.get_header(
+                                        'WARC-Identified-Payload-Type')
 
         # status -- only for response records (by convention):
         if record.rec_type == 'response' and not self.options.get('minimal'):
