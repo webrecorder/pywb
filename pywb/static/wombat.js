@@ -1935,6 +1935,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         override_prop_to_proxy($wbwindow.Node.prototype, "ownerDocument");
         override_prop_to_proxy($wbwindow.HTMLHtmlElement.prototype, "parentNode");
+        override_prop_to_proxy($wbwindow.Event.prototype, "target");
     }
 
 
@@ -2881,6 +2882,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             // override funcs to convert first arg proxy->obj
             override_func_first_arg_proxy_to_obj($wbwindow.MutationObserver, "observe");
             override_func_first_arg_proxy_to_obj($wbwindow.Node, "compareDocumentPosition");
+            override_func_first_arg_proxy_to_obj($wbwindow.Node, "contains");
             override_func_first_arg_proxy_to_obj($wbwindow.Document, "createTreeWalker");
 
             override_func_this_proxy_to_obj($wbwindow.EventTarget, "addEventListener");

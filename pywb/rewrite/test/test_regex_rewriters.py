@@ -139,6 +139,9 @@ r"""
 >>> _test_js_obj_proxy('var foo = this.location')
 'var foo = (this && this._WB_wombat_obj_proxy || this).location'
 
+>>> _test_js_obj_proxy('A = B\nthis.location = "foo"')
+'A = B\n;(this && this._WB_wombat_obj_proxy || this).location = "foo"'
+
 >>> _test_js_obj_proxy('var foo = this.location2')
 'var foo = this.location2'
 
