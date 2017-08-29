@@ -2194,7 +2194,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var orig = prototype[method];
 
         function deproxy() {
-            orig.apply(proxy_to_obj(this), arguments);
+            return orig.apply(proxy_to_obj(this), arguments);
         }
 
         prototype[method] = deproxy;
@@ -2210,7 +2210,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         function deproxy() {
             arguments[0] = proxy_to_obj(arguments[0]);
-            orig.apply(this, arguments);
+            return orig.apply(this, arguments);
         }
 
         prototype[method] = deproxy;
