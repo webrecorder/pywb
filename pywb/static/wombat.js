@@ -1299,6 +1299,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return n1 + rewrite_url(n2) + n3;
         }
 
+        if (typeof(value) === "object") {
+            value = value.toString();
+        }
+
         if (typeof(value) === "string") {
             value = value.replace(STYLE_REGEX, style_replacer);
             value = value.replace(/WB_wombat_/g, '');
@@ -1636,10 +1640,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return val;
         }
 
-        var getter = function() {
-            if (orig_getter) {
-                return orig_getter.call(this);
-            } else {
+        var getter = orig_getter;
+
+        if (!getter) {
+            getter = function() {
                 return this.getPropertyValue(prop_name);
             }
         }
@@ -1692,6 +1696,19 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_style_attr(style_proto, "border", "border");
         override_style_attr(style_proto, "borderImage", "border-image");
         override_style_attr(style_proto, "borderImageSource", "border-image-source");
+
+        override_style_setProp(style_proto);
+    }
+
+    //============================================
+    function override_style_setProp(style_proto) {
+        var orig_setProp = style_proto.setProperty;
+
+        style_proto.setProperty = function(name, value, priority) {
+            value = rewrite_style(value);
+
+            return orig_setProp.call(this, name, value, priority);
+        }
     }
 
     //============================================
