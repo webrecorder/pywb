@@ -292,7 +292,7 @@ class RewriteInfo(object):
 
         text_type = self._resolve_text_type(orig_text_type)
 
-        if text_type in ('guess-none', 'guess-bin'):
+        if text_type in ('guess-text', 'guess-bin'):
             text_type = None
 
         if text_type == 'js':
@@ -325,7 +325,7 @@ class RewriteInfo(object):
 
         # if html or no-content type, allow resolving on js, css,
         # or other templates
-        if text_type == 'guess-none':
+        if text_type == 'guess-text':
             if not is_js_or_css and not mod in ('if_', 'mp_', ''):
                 return None
 
@@ -374,10 +374,6 @@ class RewriteInfo(object):
 
         if self.url_rewriter.rewrite_opts.get('is_ajax'):
             if self.text_type in ('html', 'js'):
-                return False
-
-        if self.text_type == 'plain':
-            if self.url_rewriter.wburl.mod not in ('js_', 'cs_'):
                 return False
 
         elif self.text_type == 'css' or self.text_type == 'xml':

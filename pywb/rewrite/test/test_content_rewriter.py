@@ -15,8 +15,9 @@ import pytest
 @pytest.fixture(params=[{'Content-Type': 'text/html'},
                         {'Content-Type': 'application/xhtml+xml'},
                         {'Content-Type': 'application/octet-stream'},
+                        {'Content-Type': 'text/plain'},
                         {}],
-                ids=['html', 'xhtml', 'octet-stream', 'none'])
+                ids=['html', 'xhtml', 'octet-stream', 'text', 'none'])
 def headers(request):
     return request.param
 
@@ -202,6 +203,17 @@ class TestContentRewriter(object):
                                                   url='http://example.com/path/file')
 
         assert headers.headers == []
+
+        assert b''.join(gen).decode('utf-8') == content
+
+    def test_rewrite_text_plain_as_js(self):
+        headers = {'Content-Type': 'text/plain'}
+        content = '{"Just Some Text"}'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_',
+                                                  url='http://example.com/path/file')
+
+        assert headers.headers == [('Content-Type', 'text/javascript')]
 
         assert b''.join(gen).decode('utf-8') == content
 

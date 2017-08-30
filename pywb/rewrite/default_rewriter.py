@@ -76,10 +76,10 @@ class DefaultRewriter(BaseContentRewriter):
         #'application/rss+xml': 'xml',
 
         # PLAIN
-        'text/plain': 'plain',
+        'text/plain': 'guess-text',
 
         # DEFAULT or octet-stream
-        '': 'guess-none',
+        '': 'guess-text',
         'application/octet-stream': 'guess-bin'
     }
 
