@@ -182,18 +182,20 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
     THIS_RW = '(this && this._WB_wombat_obj_proxy || this)'
 
     @classmethod
-    def replace_str(self):
-        return lambda x: x.replace('this', self.THIS_RW)
+    def replace_str(cls, replacer):
+        return lambda x: x.replace('this', replacer)
 
     def __init__(self, rewriter, rules=[]):
         func_rw = 'Function("return {0}")'.format(self.THIS_RW)
 
+        prop_str = '|'.join(self.local_objs)
+
         rules = rules + [
-           (r'Function\(["\']return this["\']\)', self.fixed(func_rw), 0),
-           (r'(?<![$.])\bthis\b(?=(?:\.(?:{0})\b))'.format('|'.join(self.local_objs)),
-            self.fixed(self.THIS_RW), 0),
            (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
-           (r'(?<=[&|=])\s*this\b\s*(?![.$])', self.replace_str(), 0),
+           (r'Function\(["\']return this["\']\)', self.fixed(func_rw), 0),
+           (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + self.THIS_RW), 0),
+           (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(self.THIS_RW), 0),
+           (r'(?<=[&|=])\s*this\b\s*(?![.$])', self.replace_str(self.THIS_RW), 0),
         ]
 
         super(JSWombatProxyRewriterMixin, self).__init__(rewriter, rules)

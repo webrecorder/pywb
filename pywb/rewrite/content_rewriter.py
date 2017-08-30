@@ -164,6 +164,8 @@ class BaseContentRewriter(object):
 
         if content_rewriter:
             gen = content_rewriter(rwinfo)
+        elif rwinfo.is_content_rw:
+            gen = StreamIter(rwinfo.content_stream)
         else:
             gen = StreamIter(rwinfo.record.raw_stream)
 

@@ -1299,6 +1299,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return n1 + rewrite_url(n2) + n3;
         }
 
+        if (typeof(value) === "object") {
+            value = value.toString();
+        }
+
         if (typeof(value) === "string") {
             value = value.replace(STYLE_REGEX, style_replacer);
             value = value.replace(/WB_wombat_/g, '');
@@ -1636,10 +1640,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return val;
         }
 
-        var getter = function() {
-            if (orig_getter) {
-                return orig_getter.call(this);
-            } else {
+        var getter = orig_getter;
+
+        if (!getter) {
+            getter = function() {
                 return this.getPropertyValue(prop_name);
             }
         }
@@ -1692,6 +1696,19 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_style_attr(style_proto, "border", "border");
         override_style_attr(style_proto, "borderImage", "border-image");
         override_style_attr(style_proto, "borderImageSource", "border-image-source");
+
+        override_style_setProp(style_proto);
+    }
+
+    //============================================
+    function override_style_setProp(style_proto) {
+        var orig_setProp = style_proto.setProperty;
+
+        style_proto.setProperty = function(name, value, priority) {
+            value = rewrite_style(value);
+
+            return orig_setProp.call(this, name, value, priority);
+        }
     }
 
     //============================================
@@ -1935,6 +1952,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         override_prop_to_proxy($wbwindow.Node.prototype, "ownerDocument");
         override_prop_to_proxy($wbwindow.HTMLHtmlElement.prototype, "parentNode");
+        override_prop_to_proxy($wbwindow.Event.prototype, "target");
     }
 
 
@@ -2193,7 +2211,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var orig = prototype[method];
 
         function deproxy() {
-            orig.apply(proxy_to_obj(this), arguments);
+            return orig.apply(proxy_to_obj(this), arguments);
         }
 
         prototype[method] = deproxy;
@@ -2209,7 +2227,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         function deproxy() {
             arguments[0] = proxy_to_obj(arguments[0]);
-            orig.apply(this, arguments);
+            return orig.apply(this, arguments);
         }
 
         prototype[method] = deproxy;
@@ -2881,6 +2899,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             // override funcs to convert first arg proxy->obj
             override_func_first_arg_proxy_to_obj($wbwindow.MutationObserver, "observe");
             override_func_first_arg_proxy_to_obj($wbwindow.Node, "compareDocumentPosition");
+            override_func_first_arg_proxy_to_obj($wbwindow.Node, "contains");
             override_func_first_arg_proxy_to_obj($wbwindow.Document, "createTreeWalker");
 
             override_func_this_proxy_to_obj($wbwindow.EventTarget, "addEventListener");

@@ -194,5 +194,16 @@ class TestContentRewriter(object):
 
         assert b''.join(gen).decode('utf-8') == content
 
+    def test_rewrite_text_no_type(self):
+        headers = {}
+        content = 'Just Some Text'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_',
+                                                  url='http://example.com/path/file')
+
+        assert headers.headers == []
+
+        assert b''.join(gen).decode('utf-8') == content
+
 
 
