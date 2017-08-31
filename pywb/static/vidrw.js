@@ -252,7 +252,8 @@ __wbvidrw = (function() {
             }
 
             //add placeholder child to remove
-            var placeholder = document.createElement("div", true);
+            var placeholder = document.createElement("div");
+            placeholder._no_rewrite = true;
             elem.appendChild(placeholder);
             check_replacement(placeholder, wbinfo.url);
         }
@@ -462,7 +463,8 @@ __wbvidrw = (function() {
         });
 
         // Try HTML5 Video
-        var htmlelem = document.createElement("video", true);
+        var htmlelem = document.createElement("video");
+        htmlelem._no_rewrite = true;
 
         var replacement = null;
 
@@ -471,7 +473,8 @@ __wbvidrw = (function() {
 
             if (type) {
                 if (type == "audio") {
-                    htmlelem = document.createElement("audio", true);
+                    htmlelem = document.createElement("audio");
+                    htmlelem._no_rewrite = true;
                 }
                 if (_pywbvid != "flash") {
                     replacement = init_html_player(htmlelem, type, width, height, info, thumb_url);
@@ -488,7 +491,8 @@ __wbvidrw = (function() {
                 return;
             }
 
-            replacement = document.createElement("div", true);
+            replacement = document.createElement("div");
+            replacement._no_rewrite = true;
 
             vidId = "_wb_vid" + Date.now() + Math.random();
             replacement.setAttribute("id", vidId);
@@ -567,7 +571,8 @@ __wbvidrw = (function() {
                 return;
             }
 
-            var replacement = document.createElement("div", true);
+            var replacement = document.createElement("div");
+            replacement._no_rewrite = true;
 
             var vidId = "_wb_vid" + Date.now();
             replacement.setAttribute("id", vidId);
@@ -578,7 +583,8 @@ __wbvidrw = (function() {
         };
 
         for (var i = -1; i < info.formats.length; i++) {
-            var source = document.createElement("source", true);
+            var source = document.createElement("source");
+            source._no_rewrite = true;
 
             var url, format;
 
@@ -650,7 +656,7 @@ __wbvidrw = (function() {
         };
 
         if (!window.flashembed) {
-            var script = document.createElement("script", true);
+            var script = document.createElement("script");
             script._no_rewrite = true;
             script.onload = do_embed;
             script.setAttribute("src", wbinfo.static_prefix + "/flowplayer/toolbox.flashembed.js");

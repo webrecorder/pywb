@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.43
+// Wombat JS-Rewriting Library v2.45
 //============================================
 
 
@@ -1058,39 +1058,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function init_createElement_override()
-    {
-        if (!$wbwindow.document.createElement ||
-            !$wbwindow.Document.prototype.createElement) {
-            return;
-        }
-
-        var orig_createElement = $wbwindow.document.createElement;
-
-        var createElement_override = function(tagName, skip)
-        {
-            var created = orig_createElement.call(this, tagName);
-            if (!created) {
-                return created;
-            }
-            if (skip) {
-                created._no_rewrite = true;
-            }
-            else {
-                // form override
-                if (created.tagName == "FORM") {
-                    override_attr(created, "action", "", true);
-                }
-            }
-
-            return created;
-        }
-
-        $wbwindow.Document.prototype.createElement = createElement_override;
-        $wbwindow.document.createElement = createElement_override;
-    }
-
-    //============================================
     function init_createElementNS_fix()
     {
         if (!$wbwindow.document.createElementNS ||
@@ -1109,18 +1076,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
         $wbwindow.Document.prototype.createElementNS = createElementNS_fix;
         $wbwindow.document.createElementNS = createElementNS_fix;
     }
-
-    //============================================
-    //function init_image_override() {
-    //    $wbwindow.__Image = $wbwindow.Image;
-    //    $wbwindow.Image = function (Image) {
-    //        return function (width, height) {
-    //            var image = new Image(width, height);
-    //            override_attr(image, "src");
-    //            return image;
-    //        }
-    //    }($wbwindow.Image);
-    //}
 
     //============================================
     function init_date_override(timestamp) {
@@ -1673,6 +1628,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         override_attr($wbwindow.HTMLBaseElement.prototype, "href", "mp_");
         override_attr($wbwindow.HTMLMetaElement.prototype, "content", "mp_");
+
+        override_attr($wbwindow.HTMLFormElement.prototype, "action", "mp_");
      
         override_anchor_elem();
 
@@ -1927,9 +1884,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 var child = arguments[0];
 
                 if (child) {
-                    if (child instanceof $wbwindow.Element) {
+                    if (child.nodeType == Node.ELEMENT_NODE) {
                         rewrite_elem(child);
-                    } else if (child instanceof $wbwindow.Text) {
+                    } else if (child.nodeType == Node.TEXT_NODE) {
                         if (this.tagName == "STYLE") {
                             child.textContent = rewrite_style(child.textContent);
                         }
@@ -2499,33 +2456,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         def_prop($document, "domain", domain_setter, domain_getter);
-
-        // override form action
-        init_form_overrides($document);
     }
-
-
-    //============================================
-    // Necessary since HTMLFormElement.prototype.action is not consistently
-    // overridable
-    function init_form_overrides($document) {
-        var do_init_forms = function() {
-            for (var i = 0; i < $document.forms.length; i++) {
-                var new_action = rewrite_url($document.forms[i].action);
-                if (new_action != $document.forms[i].action) {
-                    $document.forms[i].action = new_action;
-                }
-                override_attr($document.forms[i], "action", "", true);
-            }
-        }
-
-        if (document.readyState == "loading") {
-            document.addEventListener("DOMContentLoaded", do_init_forms);
-        } else {
-            do_init_forms();
-        }
-    }
-
 
     //============================================
     function init_registerPH_override()
@@ -2919,11 +2850,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             // Cookies
             init_cookies_override();
-
-            // createElement attr override
-            if (!wb_opts.skip_createElement) {
-                init_createElement_override();
-            }
 
             // ensure namespace urls are NOT rewritten
             init_createElementNS_fix();
