@@ -144,15 +144,15 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
         resp = self._check_revisit(resp, params)
         if not resp:
-            print('Skipping due to dedup')
+            return
+
+        if not self._is_write_resp(resp, params):
             return
 
         def write_callback(out, filename):
             #url = resp.rec_headers.get_header('WARC-Target-URI')
             #print('Writing req/resp {0} to {1} '.format(url, filename))
-
-            if resp and self._is_write_resp(resp, params):
-                self._write_warc_record(out, resp)
+            self._write_warc_record(out, resp)
 
             if req and self._is_write_req(req, params):
                 self._write_warc_record(out, req)
