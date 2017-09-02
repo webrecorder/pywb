@@ -533,13 +533,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
                 if (prop == "hash") {
                     value = this._parser[prop];
+                    orig_setter.call(this, "hash", value);
                 } else {
-                    prop = "href";
                     rel = rel || (value == this._parser.pathname);
                     value = rewrite_url(this._parser.href, rel);
+                    orig_setter.call(this, "href", value);
                 }
-
-                orig_setter.call(this, prop, value);
             }
 
             return setter;
@@ -1773,7 +1772,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         var getter = function() {
             for (var i = 0; i < this.__wb_frames.length; i++) {
-                init_new_window_wombat(this.__wb_frames[i]);
+                try {
+                    init_new_window_wombat(this.__wb_frames[i]);
+                } catch (e) {}
             }
             return this.__wb_frames;
         };
