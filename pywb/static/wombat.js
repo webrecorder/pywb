@@ -2095,14 +2095,16 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         var _orig_removeEventListener = $wbwindow.removeEventListener;
 
-
         var addEventListener_rewritten = function(type, listener, useCapture) {
             var obj = proxy_to_obj(this);
 
             if (type == "message") {
-                var wrapped_listener = new WrappedListener(listener, this);
+                var wrapped_listener = listen_map[listener];
 
-                listen_map[listener] = wrapped_listener;
+                if (!wrapped_listener) {
+                    wrapped_listener = new WrappedListener(listener, this);
+                    listen_map[listener] = wrapped_listener;
+                }
 
                 return _orig_addEventListener.call(obj, type, wrapped_listener.listen, useCapture);
             } else {
