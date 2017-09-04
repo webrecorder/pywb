@@ -1318,6 +1318,42 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
+    function rewrite_script(elem) {
+        if (elem.getAttribute("src") || !elem.textContent || !$wbwindow.Proxy) {
+            return rewrite_attr(elem, "src");
+        }
+
+        if (elem.textContent.indexOf("_____WB$wombat$assign$function_____") >= 0) {
+            return false;
+        }
+
+        var override_props = ["window",
+                              "self",
+                              "document",
+                              "location",
+                              "top",
+                              "parent",
+                              "frames",
+                              "opener"];
+
+        var insert_str =
+'var _____WB$wombat$assign$function_____ = function(name) {return (self._wb_wombat && self._wb_wombat.local_init && self._wb_wombat.local_init(name)) || self[name]; }\n' +
+'if (!self.__WB_pmw) { self.__WB_pmw = function(obj) { return obj; } }\n' +
+'{\n';
+
+        var prop;
+
+        for (var i = 0; i < override_props.length; i++) {
+            prop = override_props[i];
+            insert_str += 'let ' + prop + ' = _____WB$wombat$assign$function_____("' + prop + '");\n';
+        }
+
+        var content = elem.textContent.replace(/(.postMessage\s*\()/, ".__WB_pmw(self.window)$1");
+        elem.textContent = insert_str + content + "\n\n}";
+        return true;
+    }
+
+    //============================================
     function rewrite_elem(elem)
     {
         if (!elem) {
@@ -1340,6 +1376,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             changed = rewrite_attr(elem, "value", true);
         } else if (elem.tagName == "IFRAME" || elem.tagName == "FRAME") {
             changed = rewrite_frame_src(elem, "src");
+        } else if (elem.tagName == "SCRIPT") {
+            changed = rewrite_script(elem);
         } else if (elem.tagName == "image") {
             changed = rewrite_attr(elem, "xlink:href");
         } else {
