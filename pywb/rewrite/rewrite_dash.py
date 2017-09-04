@@ -1,5 +1,5 @@
 from contextlib import closing
-from io import BytesIO, StringIO
+from io import BytesIO
 import json
 
 import xml.etree.ElementTree as ET
@@ -30,20 +30,18 @@ class RewriteDASH(BufferedRewriter):
                 best = None
                 for repres in adaptset.findall('mpd:Representation', namespaces):
                     bandwidth = int(repres.get('bandwidth', '0'))
-                    if bandwidth < max_bandwidth and (not best or bandwidth > int(best.get('bandwidth', '0'))):
+                    if bandwidth < max_bandwidth and (best is None or bandwidth > int(best.get('bandwidth', '0'))):
                         best = repres
 
-                if best:
+                if best is not None:
                     best_ids.append(best.get('id'))
 
                 for repres in adaptset.findall('mpd:Representation', namespaces):
                     if repres != best:
                         adaptset.remove(repres)
 
-        string_io = StringIO()
-        tree.write(string_io, encoding='unicode', xml_declaration=True)
         buff_io = BytesIO()
-        buff_io.write(string_io.getvalue().encode('utf-8'))
+        tree.write(buff_io, encoding='UTF-8', xml_declaration=True)
         buff_io.seek(0)
         return buff_io, best_ids
 
