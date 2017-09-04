@@ -12,8 +12,15 @@ default_filters:
 
     # ignore query args for the following mime types
     mimes:
-        - 'application/dash+xml'
+        # flash
         - 'application/x-shockwave-flash'
+
+        # dash
+        - 'application/dash+xml'
+
+        # hls
+        - 'application/x-mpegURL'
+        - 'application/vnd.apple.mpegurl'
 
     # apply following url normalization rules
     # on both match url and request url

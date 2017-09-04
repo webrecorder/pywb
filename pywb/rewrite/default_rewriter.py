@@ -63,6 +63,7 @@ class DefaultRewriter(BaseContentRewriter):
 
         # HLS
         'application/x-mpegURL': 'hls',
+        'application/vnd.apple.mpegurl': 'hls',
 
         # DASH
         'application/dash+xml': 'dash',

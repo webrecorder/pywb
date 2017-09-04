@@ -8,11 +8,12 @@ from pywb.rewrite.content_rewriter import BufferedRewriter
 class RewriteHLS(BufferedRewriter):
     EXT_INF = re.compile('#EXT-X-STREAM-INF:(?:.*[,])?BANDWIDTH=([\d]+)')
 
-    def rewrite_stream(self, stream):
+    def rewrite_stream(self, stream, rwinfo):
+        max_bandwidth = self._get_metadata(rwinfo, 'adaptive_max_bandwidth', 10000000000)
         buff = stream.read()
 
         lines = buff.decode('utf-8').split('\n')
-        best = None
+        best = 0
         indexes = []
         count = 0
         best_index = None
@@ -22,7 +23,7 @@ class RewriteHLS(BufferedRewriter):
             if m:
                 indexes.append(count)
                 bandwidth = int(m.group(1))
-                if not best or bandwidth > best:
+                if bandwidth > best and bandwidth <= max_bandwidth:
                     best = bandwidth
                     best_index = count
 
