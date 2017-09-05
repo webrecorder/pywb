@@ -2573,7 +2573,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             this.data = {}
             this.getItem = function(name) {
-                return this.data.hasOwnProperty(name) ? this.data[name] : undefined;
+                return this.data.hasOwnProperty(name) ? this.data[name] : null;
             }
             this.setItem = function(name, value) {
                 name = String(name);
