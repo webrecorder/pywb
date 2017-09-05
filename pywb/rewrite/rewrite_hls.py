@@ -7,24 +7,43 @@ from pywb.rewrite.content_rewriter import BufferedRewriter
 # ============================================================================
 class RewriteHLS(BufferedRewriter):
     EXT_INF = re.compile('#EXT-X-STREAM-INF:(?:.*[,])?BANDWIDTH=([\d]+)')
+    EXT_RESOLUTION = re.compile('RESOLUTION=([\d]+)x([\d]+)')
 
     def rewrite_stream(self, stream, rwinfo):
-        max_bandwidth = self._get_metadata(rwinfo, 'adaptive_max_bandwidth', 10000000000)
+        max_resolution, max_bandwidth = self._get_adaptive_metadata(rwinfo)
+
         buff = stream.read()
 
         lines = buff.decode('utf-8').split('\n')
-        best = 0
         indexes = []
         count = 0
         best_index = None
+
+        best_bandwidth = 0
+        best_resolution = 0
 
         for line in lines:
             m = self.EXT_INF.match(line)
             if m:
                 indexes.append(count)
-                bandwidth = int(m.group(1))
-                if bandwidth > best and bandwidth <= max_bandwidth:
-                    best = bandwidth
+                curr_bandwidth = int(m.group(1))
+
+                # resolution
+                m2 = self.EXT_RESOLUTION.search(line)
+                if m2:
+                    curr_resolution = int(m2.group(1)) * int(m2.group(2))
+                else:
+                    curr_resolution = 0
+
+                if max_resolution and curr_resolution:
+                    if curr_resolution > best_resolution and curr_resolution <= max_resolution:
+                        best_resolution = curr_resolution
+                        best_bandwidth = curr_bandwidth
+                        best_index = count
+
+                elif curr_bandwidth > best_bandwidth and curr_bandwidth <= max_bandwidth:
+                    best_resolution = curr_resolution
+                    best_bandwidth = curr_bandwidth
                     best_index = count
 
             count = count + 1

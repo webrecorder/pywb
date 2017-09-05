@@ -468,7 +468,8 @@ class LiveWebLoader(BaseLoader):
 
     def get_custom_metadata(self, content_type, dt):
         if content_type in self.VIDEO_MIMES:
-            return {'adaptive_max_bandwidth': 2000000}
+            return {'adaptive_max_resolution': 1280 * 720,
+                    'adaptive_max_bandwidth': 2000000}
 
     def __str__(self):
         return  'LiveWebLoader'

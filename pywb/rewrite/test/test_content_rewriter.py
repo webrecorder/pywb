@@ -12,6 +12,7 @@ from pywb.rewrite.default_rewriter import DefaultRewriter
 
 from pywb import get_test_dir
 import os
+import json
 import pytest
 
 
@@ -241,14 +242,38 @@ http://example.com/video_6.m3u8
 
         assert b''.join(gen).decode('utf-8') == filtered
 
+    def test_hls_custom_max_resolution(self):
+        headers = {'Content-Type': 'application/x-mpegURL'}
+        with open(os.path.join(get_test_dir(), 'text_content', 'sample_hls.m3u8'), 'rt') as fh:
+            content = fh.read()
+
+        metadata = {'adaptive_max_resolution': 921600,
+                    'adaptive_max_bandwidth': 2000000}
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701oe_',
+                                                  url='http://example.com/path/master.m3u8',
+                                                  warc_headers={'WARC-JSON-Metadata': json.dumps(metadata)})
+
+        assert headers.headers == [('Content-Type', 'application/x-mpegURL')]
+        filtered = """\
+#EXTM3U
+#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="WebVTT",NAME="English",DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,URI="https://example.com/subtitles/"
+#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=2505000,RESOLUTION=1280x720,CODECS="avc1.77.30, mp4a.40.2",SUBTITLES="WebVTT"
+http://example.com/video_5.m3u8
+"""
+
+        assert b''.join(gen).decode('utf-8') == filtered
+
     def test_hls_custom_max_bandwidth(self):
         headers = {'Content-Type': 'application/x-mpegURL'}
         with open(os.path.join(get_test_dir(), 'text_content', 'sample_hls.m3u8'), 'rt') as fh:
             content = fh.read()
 
+        metadata = {'adaptive_max_bandwidth': 2000000}
+
         headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701oe_',
                                                   url='http://example.com/path/master.m3u8',
-                                                  warc_headers={'WARC-JSON-Metadata': '{"adaptive_max_bandwidth": 2000000}'})
+                                                  warc_headers={'WARC-JSON-Metadata': json.dumps(metadata)})
 
         assert headers.headers == [('Content-Type', 'application/x-mpegURL')]
         filtered = """\
@@ -296,14 +321,58 @@ http://example.com/video_4.m3u8
 </MPD>"""
         assert b''.join(gen).decode('utf-8') == filtered
 
+    def test_dash_custom_max_resolution(self):
+        headers = {'Content-Type': 'application/dash+xml'}
+        with open(os.path.join(get_test_dir(), 'text_content', 'sample_dash.mpd'), 'rt') as fh:
+            content = fh.read()
+
+        metadata = {'adaptive_max_resolution': 921600,
+                    'adaptive_max_bandwidth': 2000000}
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701oe_',
+                                                  url='http://example.com/path/manifest.mpd',
+                                                  warc_headers={'WARC-JSON-Metadata': json.dumps(metadata)})
+
+        assert headers.headers == [('Content-Type', 'application/dash+xml')]
+
+        filtered = """\
+<?xml version='1.0' encoding='UTF-8'?>
+<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" mediaPresentationDuration="PT0H3M1.63S" minBufferTime="PT1.5S" profiles="urn:mpeg:dash:profile:isoff-on-demand:2011" type="static">
+  <Period duration="PT0H3M1.63S" start="PT0S">
+    <AdaptationSet>
+      <ContentComponent contentType="video" id="1" />
+      <Representation bandwidth="2073921" codecs="avc1.4d401f" height="720" id="2" mimeType="video/mp4" width="1280">
+        <BaseURL>http://example.com/video-9.mp4</BaseURL>
+        <SegmentBase indexRange="708-1183">
+          <Initialization range="0-707" />
+        </SegmentBase>
+      </Representation>
+      </AdaptationSet>
+    <AdaptationSet>
+      <ContentComponent contentType="audio" id="2" />
+      <Representation bandwidth="255236" codecs="mp4a.40.2" id="7" mimeType="audio/mp4" numChannels="2" sampleRate="44100">
+        <BaseURL>http://example.com/audio-2.mp4</BaseURL>
+        <SegmentBase indexRange="592-851">
+          <Initialization range="0-591" />
+        </SegmentBase>
+      </Representation>
+      </AdaptationSet>
+  </Period>
+</MPD>"""
+
+        assert b''.join(gen).decode('utf-8') == filtered
+
+
     def test_dash_custom_max_bandwidth(self):
         headers = {'Content-Type': 'application/dash+xml'}
         with open(os.path.join(get_test_dir(), 'text_content', 'sample_dash.mpd'), 'rt') as fh:
             content = fh.read()
 
+        metadata = {'adaptive_max_bandwidth': 2000000}
+
         headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701oe_',
                                                   url='http://example.com/path/manifest.mpd',
-                                                  warc_headers={'WARC-JSON-Metadata': '{"adaptive_max_bandwidth": 2000000}'})
+                                                  warc_headers={'WARC-JSON-Metadata': json.dumps(metadata)})
 
         assert headers.headers == [('Content-Type', 'application/dash+xml')]
 

@@ -203,16 +203,21 @@ class BufferedRewriter(object):
     def rewrite_stream(self, stream, rwinfo):
         raise NotImplemented('implement in subclass')
 
-    def _get_metadata(self, rwinfo, field, default_value):
-        value = default_value
+    def _get_record_metadata(self, rwinfo):
         client_metadata = rwinfo.record.rec_headers.get_header('WARC-JSON-Metadata')
         if client_metadata:
             try:
-                value = json.loads(client_metadata)[field]
+                return json.loads(client_metadata)
             except:
                 pass
 
-        return value
+        return {}
+
+    def _get_adaptive_metadata(self, rwinfo):
+        metadata = self._get_record_metadata(rwinfo)
+        max_resolution = int(metadata.get('adaptive_max_resolution', 0))
+        max_bandwidth = int(metadata.get('adaptive_max_bandwidth', 1000000000))
+        return max_resolution, max_bandwidth
 
 
 # ============================================================================

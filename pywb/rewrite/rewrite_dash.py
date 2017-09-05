@@ -10,11 +10,11 @@ from pywb.rewrite.content_rewriter import BufferedRewriter
 # ============================================================================
 class RewriteDASH(BufferedRewriter):
     def rewrite_stream(self, stream, rwinfo):
-        max_bandwidth = self._get_metadata(rwinfo, 'adaptive_max_bandwidth', 10000000000)
-        res_buff, best_ids = self.rewrite_dash(stream, max_bandwidth)
+        res_buff, best_ids = self.rewrite_dash(stream, rwinfo)
         return res_buff
 
-    def rewrite_dash(self, stream, max_bandwidth):
+    def rewrite_dash(self, stream, rwinfo):
+        max_resolution, max_bandwidth = self._get_adaptive_metadata(rwinfo)
         ET.register_namespace('', 'urn:mpeg:dash:schema:mpd:2011')
         namespaces = {'mpd': 'urn:mpeg:dash:schema:mpd:2011'}
 
@@ -28,9 +28,20 @@ class RewriteDASH(BufferedRewriter):
         for period in root.findall('mpd:Period', namespaces):
             for adaptset in period.findall('mpd:AdaptationSet', namespaces):
                 best = None
+                best_resolution = 0
+                best_bandwidth = 0
+
                 for repres in adaptset.findall('mpd:Representation', namespaces):
-                    bandwidth = int(repres.get('bandwidth', '0'))
-                    if bandwidth < max_bandwidth and (best is None or bandwidth > int(best.get('bandwidth', '0'))):
+                    curr_resolution = int(repres.get('width', '0')) * int(repres.get('height', '0'))
+                    curr_bandwidth = int(repres.get('bandwidth', 0))
+                    if curr_resolution and max_resolution:
+                        if curr_resolution <= max_resolution and curr_resolution > best_resolution:
+                            best_resolution = curr_resolution
+                            best_bandwidth = curr_bandwidth
+                            best = repres
+                    elif curr_bandwidth <= max_bandwidth and curr_bandwidth > best_bandwidth:
+                        best_resolution = curr_resolution
+                        best_bandwidth = curr_bandwidth
                         best = repres
 
                 if best is not None:
