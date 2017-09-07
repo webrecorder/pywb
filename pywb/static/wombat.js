@@ -192,7 +192,17 @@ var _WBWombat = function($wbwindow, wbinfo) {
         // If starts with prefix, no rewriting needed
         // Only check replay prefix (no date) as date may be different for each
         // capture
-        if (starts_with(url, wb_replay_prefix) || starts_with(url, $wbwindow.location.origin + wb_replay_prefix)) {
+
+        // if scheme relative, prepend current scheme
+        var check_url;
+
+        if (url.indexOf("//") == 0) {
+            check_url = window.location.protocol + url;
+        } else {
+            check_url = url;
+        }
+
+        if (starts_with(check_url, wb_replay_prefix) || starts_with(check_url, $wbwindow.location.origin + wb_replay_prefix)) {
             return url;
         }
 
@@ -2669,15 +2679,17 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return Object.getOwnPropertyNames($wbwindow).concat(Object.getOwnPropertySymbols($wbwindow));
             },
             getOwnPropertyDescriptor: function(target, key) {
-                // console.log(key);
-                // hack for some JS libraries that do a for in
-                // since we are proxying an empty object need to add configurable = true
-                // Proxies know we are an empty object and if window says not configurable
-                // throws an error
-                var descriptor =  Object.getOwnPropertyDescriptor($wbwindow, key);
-                if (descriptor && !descriptor.configurable) {
-                    descriptor.configurable = true;
+                // first try the underlying object's descriptor
+                // (to match defineProperty() behavior)
+                var descriptor =  Object.getOwnPropertyDescriptor(target, key);
+                if (!descriptor) {
+                    descriptor = Object.getOwnPropertyDescriptor($wbwindow, key);
+                    // if using window's descriptor, must ensure it's configurable
+                    if (descriptor) {
+                        descriptor.configurable = true;
+                    }
                 }
+
                 return descriptor;
             },
             getPrototypeOf: function(target) {
