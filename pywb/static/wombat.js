@@ -2651,14 +2651,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             session = wrap_proxy(session);
         }
 
-        $wbwindow.__WB_localStorage = local;
-        $wbwindow.__WB_sessionStorage = session;
-
-        //Object.defineProperty($wbwindow, "localStorage", {"value": local});
-        //Object.defineProperty($wbwindow, "sessionStorage", {"value": session});
-
-        def_prop($wbwindow, "localStorage", undefined, function() { return this.__WB_localStorage });
-        def_prop($wbwindow, "sessionStorage", undefined, function() { return this.__WB_sessionStorage });
+        def_prop($wbwindow, "localStorage", undefined, function() { return local; });
+        def_prop($wbwindow, "sessionStorage", undefined, function() { return session; });
     }
 
     //============================================
