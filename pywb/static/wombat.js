@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.45
+// Wombat JS-Rewriting Library v2.46
 //============================================
 
 
@@ -46,6 +46,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
     var wb_opts;
 
     var wb_is_proxy = false;
+
+    var storage_listeners = {};
 
     //============================================
     function is_host_url(str) {
@@ -2082,6 +2084,17 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         $wbwindow.Window.prototype.postMessage = postmessage_rewritten;
 
+        function SameOriginListener(orig_listener, win) {
+            function listen(event) {
+                if (window != win) {
+                    return;
+                }
+
+                return orig_listener(event);
+            }
+            return {"listen": listen};
+        }
+
         function WrappedListener(orig_listener, win) {
 
             function listen(event) {
@@ -2133,16 +2146,28 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         var _orig_removeEventListener = $wbwindow.removeEventListener;
 
-
         var addEventListener_rewritten = function(type, listener, useCapture) {
             var obj = proxy_to_obj(this);
 
             if (type == "message") {
-                var wrapped_listener = new WrappedListener(listener, this);
+                var wrapped = listen_map[listener];
+                if (!wrapped) {
+                    wrapped = new WrappedListener(listener, this).listen;
+                    listen_map[listener] = wrapped;
+                }
 
-                listen_map[listener] = wrapped_listener;
+                listener = wrapped;
 
-                return _orig_addEventListener.call(obj, type, wrapped_listener.listen, useCapture);
+                return _orig_addEventListener.call(obj, type, listener, useCapture);
+
+            } else if (type == "storage") {
+                var wrapped = storage_listeners[listener];
+                if (!wrapped) {
+                    wrapped = new SameOriginListener(listener, this).listen;
+                    storage_listeners[listener] = wrapped;
+                }
+
+                listener = wrapped;
             } else {
                 return _orig_addEventListener.call(obj, type, listener, useCapture);
             }
@@ -2151,23 +2176,51 @@ var _WBWombat = function($wbwindow, wbinfo) {
         $wbwindow.addEventListener = addEventListener_rewritten;
 
         // REMOVE
-        
         var removeEventListener_rewritten = function(type, listener, useCapture) {
             var obj = proxy_to_obj(this);
 
             if (type == "message") {
-                var wrapped_listener = listen_map[listener];
-                if (!wrapped_listener) {
+                if (!listen_map[listener]) {
                     return;
                 }
+                listener = listen_map[listener];
                 delete listen_map[listener];
-                return _orig_removeEventListener.call(obj, type, wrapped_listener.listen, useCapture);
-            } else {
-                return _orig_removeEventListener.call(obj, type, listener, useCapture);
+
+            } else if (type == "storage") {
+                if (!storage_listeners[listener]) {
+                    return;
+                }
+                listener = storage_listeners[listener];
+                delete storage_listeners[listener];
             }
+
+            return _orig_removeEventListener.call(obj, type, listener, useCapture);
         }
 
         $wbwindow.removeEventListener = removeEventListener_rewritten;
+    }
+
+    //============================================
+    function addEventOverride(attr, event_proto)
+    {
+        if (!event_proto) {
+            event_proto = $wbwindow.MessageEvent.prototype;
+        }
+
+        var orig_getter = get_orig_getter(event_proto, attr);
+
+        if (!orig_getter) {
+            return;
+        }
+
+        function getter() {
+            if (this["_" + attr] != undefined) {
+                return this["_" + attr];
+            }
+            return orig_getter.call(this);
+        }
+
+        def_prop(event_proto, attr, undefined, getter);
     }
 
     //============================================
@@ -2176,29 +2229,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return;
         }
 
-        function addMEOverride(attr)
-        {
-            var orig_getter = get_orig_getter($wbwindow.MessageEvent.prototype, attr);
-
-            if (!orig_getter) {
-                return;
-            }
-
-            function getter() {
-                if (this["_" + attr] != undefined) {
-                    return this["_" + attr];
-                }
-                return orig_getter.call(this);
-            }
-
-            def_prop($wbwindow.MessageEvent.prototype, attr, undefined, getter);
-        }
-
-        addMEOverride("target");
-        addMEOverride("srcElement");
-        addMEOverride("currentTarget");
-        addMEOverride("eventPhase");
-        addMEOverride("path");
+        addEventOverride("target");
+        addEventOverride("srcElement");
+        addEventOverride("currentTarget");
+        addEventOverride("eventPhase");
+        addEventOverride("path");
 
         override_prop_to_proxy($wbwindow.MessageEvent.prototype, "source");
 
@@ -2554,6 +2589,108 @@ var _WBWombat = function($wbwindow, wbinfo) {
             window.geolocation.getCurrentPosition = disabled;
             window.geolocation.watchPosition = disabled;
         }
+    }
+
+    //============================================
+    function init_storage_override() {
+        var CustomStorage = function() {
+            function fire_event(store, key, old_val, new_val) {
+                var sevent = new StorageEvent("storage", {
+                    "key": key,
+                    "newValue": new_val,
+                    "oldValue": old_val,
+                    "url": $wbwindow.WB_wombat_location.href,
+                });
+
+                sevent._storageArea = store;
+
+                for (var list in storage_listeners) {
+                    storage_listeners[list](sevent);
+                }
+            }
+
+            this.data = {}
+            this.getItem = function(name) {
+                return this.data.hasOwnProperty(name) ? this.data[name] : null;
+            }
+            this.setItem = function(name, value) {
+                name = String(name);
+                //if (name.length > 1000) {
+                //    name = name.substr(0, 1000);
+                //}
+                value = String(value);
+
+                var old_val = this.getItem(name);
+
+                this.data[name] = value;
+
+                fire_event(this, name, old_val, value);
+            }
+            this.removeItem = function(name) {
+                var old_val = this.getItem(name);
+
+                res = delete this.data[name];
+
+                fire_event(this, name, old_val, null);
+
+                return res;
+            }
+            this.clear = function() {
+                this.data = {};
+
+                fire_event(this, null, null, null);
+            }
+            this.key = function(n) {
+                var keys = Object.keys(this.data);
+                if (typeof(n) === "number" && n >= 0 && n < keys.length) {
+                    return keys[n];
+                } else {
+                    return null;
+                }
+            }
+
+            Object.defineProperty(this, "length", {"get": function() {
+                return Object.keys(this.data).length;
+            }});
+        }
+
+        addEventOverride("storageArea", $wbwindow.StorageEvent.prototype);
+
+        var local = new CustomStorage();
+        var session = new CustomStorage();
+
+        if ($wbwindow.Proxy) {
+            function wrap_proxy(obj) {
+                return new $wbwindow.Proxy(obj, {
+                    get: function(target, prop) {
+                        if (prop in target) {
+                            return target[prop];
+                        }
+
+                        return target.getItem(prop);
+                    },
+
+                    set: function(target, prop, value) {
+                        if (target.hasOwnProperty(prop)) {
+                            return false;
+                        }
+                        target.setItem(prop, value);
+                        return true;
+                    },
+
+                    getOwnPropertyDescriptor: function(target, prop) {
+                        var descriptor =  Object.getOwnPropertyDescriptor(target, prop);
+                        return descriptor;
+                    }
+                });
+            }
+
+            local = wrap_proxy(local);
+            session = wrap_proxy(session);
+        }
+
+        def_prop($wbwindow, "localStorage", undefined, function() { return local; });
+        def_prop($wbwindow, "sessionStorage", undefined, function() { return session; });
     }
 
     //============================================
@@ -2938,6 +3075,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         // disable notifications
         init_disable_notifications();
+
+        // custom storage
+        init_storage_override();
 
         // add window and document obj proxies, if available
         init_window_obj_proxy($wbwindow);
