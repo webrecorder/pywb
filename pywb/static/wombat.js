@@ -295,7 +295,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
     //============================================
     function resolve_rel_url(url, doc) {
         doc = doc || $wbwindow.document;
-        var parser = make_parser(extract_orig(doc.baseURI), doc);
+        var parser = make_parser(doc.baseURI, doc);
         var href = parser.href;
         var hash = href.lastIndexOf("#");
 
@@ -750,23 +750,20 @@ var _WBWombat = function($wbwindow, wbinfo) {
         $wbwindow.history['_orig_' + func_name] = orig_func;
 
         function rewritten_func(state_obj, title, url) {
-            url = rewrite_url(url);
+            var parser = $wbwindow.document.createElement("a");
+            parser.href = url;
 
-            var abs_url = extract_orig(url);
+            var abs_url = parser.href;
 
-            if (!abs_url) {
-                abs_url = $wbwindow.WB_wombat_location.href;
-            } else if (abs_url[0] == "/") {
-                abs_url = $wbwindow.WB_wombat_location.origin + abs_url;
-            } else if (abs_url[0] == "#") {
-                abs_url = $wbwindow.WB_wombat_location.href.split("#", 1)[0] + abs_url;
-            } else if ((abs_url != $wbwindow.WB_wombat_location.origin && $wbwindow.WB_wombat_location.href != "about:blank") &&
-                    !starts_with(abs_url, $wbwindow.WB_wombat_location.origin + "/")) {
-                throw new DOMException("Invalid history change: " + abs_url);
-            }
+            url = rewrite_url(abs_url);
 
             if (url == $wbwindow.location.href) {
                 return;
+            }
+
+            if (abs_url && (abs_url != $wbwindow.WB_wombat_location.origin && $wbwindow.WB_wombat_location.href != "about:blank") &&
+                    !starts_with(abs_url, $wbwindow.WB_wombat_location.origin + "/")) {
+                throw new DOMException("Invalid history change: " + abs_url);
             }
 
             orig_func.call(this, state_obj, title, url);
