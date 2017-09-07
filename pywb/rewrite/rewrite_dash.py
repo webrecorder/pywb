@@ -1,5 +1,5 @@
 from contextlib import closing
-from io import BytesIO, StringIO
+from io import BytesIO
 import json
 
 import xml.etree.ElementTree as ET
@@ -9,11 +9,12 @@ from pywb.rewrite.content_rewriter import BufferedRewriter
 
 # ============================================================================
 class RewriteDASH(BufferedRewriter):
-    def rewrite_stream(self, stream):
-        res_buff, best_ids = self.rewrite_dash(stream)
+    def rewrite_stream(self, stream, rwinfo):
+        res_buff, best_ids = self.rewrite_dash(stream, rwinfo)
         return res_buff
 
-    def rewrite_dash(self, stream):
+    def rewrite_dash(self, stream, rwinfo):
+        max_resolution, max_bandwidth = self._get_adaptive_metadata(rwinfo)
         ET.register_namespace('', 'urn:mpeg:dash:schema:mpd:2011')
         namespaces = {'mpd': 'urn:mpeg:dash:schema:mpd:2011'}
 
@@ -26,24 +27,32 @@ class RewriteDASH(BufferedRewriter):
 
         for period in root.findall('mpd:Period', namespaces):
             for adaptset in period.findall('mpd:AdaptationSet', namespaces):
-
                 best = None
+                best_resolution = 0
+                best_bandwidth = 0
+
                 for repres in adaptset.findall('mpd:Representation', namespaces):
-                    bandwidth = int(repres.get('bandwidth', '0'))
-                    if not best or bandwidth > int(best.get('bandwidth', '0')):
+                    curr_resolution = int(repres.get('width', '0')) * int(repres.get('height', '0'))
+                    curr_bandwidth = int(repres.get('bandwidth', 0))
+                    if curr_resolution and max_resolution:
+                        if curr_resolution <= max_resolution and curr_resolution > best_resolution:
+                            best_resolution = curr_resolution
+                            best_bandwidth = curr_bandwidth
+                            best = repres
+                    elif curr_bandwidth <= max_bandwidth and curr_bandwidth > best_bandwidth:
+                        best_resolution = curr_resolution
+                        best_bandwidth = curr_bandwidth
                         best = repres
 
-                if best:
+                if best is not None:
                     best_ids.append(best.get('id'))
 
                 for repres in adaptset.findall('mpd:Representation', namespaces):
                     if repres != best:
                         adaptset.remove(repres)
 
-        string_io = StringIO()
-        tree.write(string_io, encoding='unicode', xml_declaration=True)
         buff_io = BytesIO()
-        buff_io.write(string_io.getvalue().encode('utf-8'))
+        tree.write(buff_io, encoding='UTF-8', xml_declaration=True)
         buff_io.seek(0)
         return buff_io, best_ids
 

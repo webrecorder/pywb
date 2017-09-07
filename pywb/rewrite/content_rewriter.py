@@ -8,6 +8,7 @@ from warcio.utils import to_native_str
 import re
 import webencodings
 import tempfile
+import json
 
 from pywb.utils.io import StreamIter, BUFF_SIZE
 
@@ -197,10 +198,26 @@ class BufferedRewriter(object):
                 stream_buffer.write(buff)
 
         stream_buffer.seek(0)
-        return StreamIter(self.rewrite_stream(stream_buffer))
+        return StreamIter(self.rewrite_stream(stream_buffer, rwinfo))
 
-    def rewrite_stream(self, stream):
+    def rewrite_stream(self, stream, rwinfo):
         raise NotImplemented('implement in subclass')
+
+    def _get_record_metadata(self, rwinfo):
+        client_metadata = rwinfo.record.rec_headers.get_header('WARC-JSON-Metadata')
+        if client_metadata:
+            try:
+                return json.loads(client_metadata)
+            except:
+                pass
+
+        return {}
+
+    def _get_adaptive_metadata(self, rwinfo):
+        metadata = self._get_record_metadata(rwinfo)
+        max_resolution = int(metadata.get('adaptive_max_resolution', 0))
+        max_bandwidth = int(metadata.get('adaptive_max_bandwidth', 1000000000))
+        return max_resolution, max_bandwidth
 
 
 # ============================================================================

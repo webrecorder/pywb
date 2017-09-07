@@ -237,6 +237,10 @@ class LiveWebLoader(BaseLoader):
 
     UNREWRITE_HEADERS = ('location', 'content-location')
 
+    VIDEO_MIMES = ('application/x-mpegURL',
+                   'application/vnd.apple.mpegurl',
+                   'application/dash+xml')
+
     def __init__(self, forward_proxy_prefix=None, adapter=None):
         self.forward_proxy_prefix = forward_proxy_prefix
 
@@ -378,7 +382,14 @@ class LiveWebLoader(BaseLoader):
         if remote_ip:
             warc_headers['WARC-IP-Address'] = remote_ip
 
+        ct = upstream_res.headers.get('Content-Type')
+        if ct:
+            metadata = self.get_custom_metadata(ct, dt)
+            if metadata:
+                warc_headers['WARC-JSON-Metadata'] = json.dumps(metadata)
+
         warc_headers['Content-Type'] = 'application/http; msgtype=response'
+
 
         self._set_content_len(upstream_res.headers.get('Content-Length', -1),
                               warc_headers,
@@ -454,6 +465,11 @@ class LiveWebLoader(BaseLoader):
         except Exception as e:
             logger.debug('FAILED: ' + method + ' ' + load_url + ': ' + str(e))
             raise LiveResourceException(load_url)
+
+    def get_custom_metadata(self, content_type, dt):
+        if content_type in self.VIDEO_MIMES:
+            return {'adaptive_max_resolution': 1280 * 720,
+                    'adaptive_max_bandwidth': 2000000}
 
     def __str__(self):
         return  'LiveWebLoader'
