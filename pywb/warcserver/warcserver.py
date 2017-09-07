@@ -55,16 +55,14 @@ class WarcServer(BaseWarcServer):
         super(WarcServer, self).__init__(debug=config.get('debug', False))
         self.config = config
 
-        if self.config.get('enable_auto_colls', True):
-            auto_handler = self.load_auto_colls()
-            self.add_route('/_', auto_handler)
-
         self.fixed_routes = self.load_colls()
 
         for name, route in iteritems(self.fixed_routes):
             self.add_route('/' + name, route)
 
-        self._add_simple_route('/<coll>-cdx', self.cdx_compat)
+        if self.config.get('enable_auto_colls', True):
+            auto_handler = self.load_auto_colls()
+            self.add_route('/<path:path_param_value>', auto_handler, path_param_name='param.coll')
 
     def _lookup(self, environ, path):
         urls = self.url_map.bind(environ['HTTP_HOST'], path_info=path)
@@ -76,17 +74,6 @@ class WarcServer(BaseWarcServer):
         except Exception as e:
             print(e)
             return None
-
-    def cdx_compat(self, environ, coll=''):
-        """ -cdx server api
-        """
-        result = self._lookup(environ, '/{0}/index'.format(coll))
-        if result:
-            return result
-
-        environ['QUERY_STRING'] += '&param.coll=' + coll
-        result = self._lookup(environ, '/_/index')
-        return result
 
     def load_auto_colls(self):
         self.root_dir = self.config.get('collections_root', '')

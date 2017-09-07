@@ -37,3 +37,9 @@ class TestRootColl(BaseConfigTest):
         resp = self.testapp.get('/')
         assert 'Search' in resp.text
 
+    def test_root_cdx(self):
+        resp = self.testapp.get('/cdx?url=http://www.iana.org/&output=json&limit=1')
+        resp.content_type = 'application/json'
+        assert resp.json['is_live'] == 'true'
+        assert resp.json['url'] == 'http://www.iana.org/'
+        assert resp.json['source'] == '$root'

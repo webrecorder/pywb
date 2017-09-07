@@ -428,15 +428,15 @@ class TestWbIntegration(BaseConfigTest):
         resp = self.testapp.get('/static/notfound.css', status = 404)
         assert resp.status_int == 404
 
-    def _test_cdx_server_filters(self):
-        resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mime:warc/revisit&filter=filename:dupes.warc.gz')
-        self._assert_basic_text(resp)
+    def test_cdx_server_filters(self):
+        resp = self.testapp.get('/pywb/cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mime:warc/revisit&filter=filename:dupes.warc.gz')
+        assert resp.content_type == 'text/x-cdxj'
         actual_len = len(resp.text.rstrip().split('\n'))
         assert actual_len == 1, actual_len
 
-    def _test_cdx_server_advanced(self):
+    def test_cdx_server_advanced(self):
         # combine collapsing, reversing and revisit resolving
-        resp = self.testapp.get('/pywb-cdx?url=http://www.iana.org/_css/2013.1/print.css&collapseTime=11&resolveRevisits=true&reverse=true')
+        resp = self.testapp.get('/pywb/cdx?url=http://www.iana.org/_css/2013.1/print.css&collapseTime=11&resolveRevisits=true&reverse=true')
 
         # convert back to CDXObject
         cdxs = list(map(CDXObject, resp.body.rstrip().split(b'\n')))

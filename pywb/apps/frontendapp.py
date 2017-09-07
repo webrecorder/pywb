@@ -22,6 +22,7 @@ from pywb.apps.wbrequestresponse import WbResponse
 
 import os
 import traceback
+import requests
 
 
 # ============================================================================
@@ -32,8 +33,6 @@ class FrontEndApp(object):
                                      custom_config=custom_config)
 
         framed_replay = self.warcserver.config.get('framed_replay', True)
-
-        self.rewriterapp = RewriterApp(framed_replay, config=self.warcserver.config)
 
         self.warcserver_server = GeventServer(self.warcserver, port=0)
 
@@ -47,16 +46,21 @@ class FrontEndApp(object):
         if self.is_valid_coll('$root'):
             self.url_map.add(Rule('/', endpoint=self.serve_coll_page))
             self.url_map.add(Rule('/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
+            self.url_map.add(Rule('/cdx', endpoint=self.serve_cdx))
             self.url_map.add(Rule('/<path:url>', endpoint=self.serve_content))
 
         else:
             self.url_map.add(Rule('/<coll>/', endpoint=self.serve_coll_page))
             self.url_map.add(Rule('/<coll>/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
+            self.url_map.add(Rule('/<coll>/cdx', endpoint=self.serve_cdx))
             self.url_map.add(Rule('/<coll>/<path:url>', endpoint=self.serve_content))
 
             self.url_map.add(Rule('/', endpoint=self.serve_home))
 
-        self.rewriterapp.paths = self.get_upstream_paths(self.warcserver_server.port)
+        upstream_paths = self.get_upstream_paths(self.warcserver_server.port)
+        self.rewriterapp = RewriterApp(framed_replay,
+                                       config=self.warcserver.config,
+                                       paths=upstream_paths)
 
         self.templates_dir = self.warcserver.config.get('templates_dir', 'templates')
         self.static_dir = self.warcserver.config.get('static_dir', 'static')
@@ -65,8 +69,9 @@ class FrontEndApp(object):
         self.metadata_cache = MetadataCache(metadata_templ)
 
     def get_upstream_paths(self, port):
-        return {'replay-dyn': 'http://localhost:%s/_/resource/postreq?param.coll={coll}' % port,
-                'replay-fixed': 'http://localhost:%s/{coll}/resource/postreq' % port
+        return {
+                'replay': 'http://localhost:%s/{coll}/resource/postreq' % port,
+                'cdx-server': 'http://localhost:%s/{coll}/index' % port,
                }
 
     def serve_home(self, environ):
@@ -98,17 +103,16 @@ class FrontEndApp(object):
             self.raise_not_found(environ, 'Static File Not Found: {0}'.format(filepath))
 
     def get_metadata(self, coll):
-        metadata = {'coll': coll}
+        metadata = {'coll': coll,
+                    'type': 'replay'}
 
         if self.warcserver.config.get('use_js_obj_proxy'):
             metadata['use_js_obj_proxy'] = True
 
         if coll in self.warcserver.list_fixed_routes():
             metadata.update(self.warcserver.get_coll_config(coll))
-            metadata['type'] = 'replay-fixed'
         else:
             metadata.update(self.metadata_cache.load(coll))
-            metadata['type'] = 'replay-dyn'
 
         return metadata
 
@@ -131,6 +135,22 @@ class FrontEndApp(object):
                                         metadata=metadata)
 
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
+
+    def serve_cdx(self, environ, coll='$root'):
+        base_url = self.rewriterapp.paths['cdx-server']
+
+        cdx_url = base_url.format(coll=coll)
+
+        if environ.get('QUERY_STRING'):
+            cdx_url += '&' if '?' in cdx_url else '?'
+            cdx_url += environ.get('QUERY_STRING')
+
+        try:
+            res = requests.get(cdx_url, stream=True)
+            return WbResponse.bin_stream(res.raw, content_type=res.headers.get('Content-Type'))
+
+        except Exception as e:
+            return WbResponse.text_content('Error: ' + str(e), status='400 Bad Request')
 
     def serve_content(self, environ, coll='$root', url='', timemap_output=''):
         if not self.is_valid_coll(coll):

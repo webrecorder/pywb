@@ -26,16 +26,20 @@ class BaseWarcServer(object):
 
         self.url_map.add(Rule('/', endpoint=list_routes))
 
-    def add_route(self, path, handler):
-        def direct_input_request(environ, mode=''):
+    def add_route(self, path, handler, path_param_name=''):
+        def direct_input_request(environ, mode='', path_param_value=''):
             params = self.get_query_dict(environ)
             params['mode'] = mode
+            if path_param_value:
+                params[path_param_name] = path_param_value
             params['_input_req'] = DirectWSGIInputRequest(environ)
             return handler(params)
 
-        def post_fullrequest(environ, mode=''):
+        def post_fullrequest(environ, mode='', path_param_value=''):
             params = self.get_query_dict(environ)
             params['mode'] = mode
+            if path_param_value:
+                params[path_param_name] = path_param_value
             params['_input_req'] = POSTInputRequest(environ)
             return handler(params)
 

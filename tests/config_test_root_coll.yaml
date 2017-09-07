@@ -3,6 +3,6 @@ debug: true
 collections_root: _test_colls
 
 collections:
-    '$root': $live
+    '$root': '$live'
 
 
