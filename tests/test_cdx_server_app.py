@@ -24,7 +24,7 @@ class TestCDXApp(BaseTestClass):
 
     def query(self, url, is_error=False, **params):
         params['url'] = url
-        return self.testapp.get('/pywb-cdx?' + urlencode(params, doseq=1), expect_errors=is_error)
+        return self.testapp.get('/pywb/index?' + urlencode(params, doseq=1), expect_errors=is_error)
 
     def test_exact_url(self):
         """

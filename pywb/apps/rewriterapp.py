@@ -48,11 +48,11 @@ class UpstreamException(WbException):
 class RewriterApp(object):
     VIDEO_INFO_CONTENT_TYPE = 'application/vnd.youtube-dl_formats+json'
 
-    def __init__(self, framed_replay=False, jinja_env=None, config=None):
+    def __init__(self, framed_replay=False, jinja_env=None, config=None, paths=None):
         self.loader = ArcWarcRecordLoader()
 
         self.config = config or {}
-        self.paths = {}
+        self.paths = paths or {}
 
         self.framed_replay = framed_replay
 
