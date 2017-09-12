@@ -4,7 +4,7 @@ from warcio.timeutils import datetime_to_http_date
 
 from pywb.rewrite.content_rewriter import RewriteInfo
 from pywb.rewrite.default_rewriter import DefaultRewriter
-from pywb.rewrite.header_rewriter import PrefixHeaderRewriter
+from pywb.rewrite.header_rewriter import DefaultHeaderRewriter
 from pywb.rewrite.url_rewriter import UrlRewriter
 
 from datetime import datetime
@@ -42,12 +42,12 @@ class TestHeaderRewriter(object):
 
         res = """\
 HTTP/1.0 200 OK\r\n\
-X-Archive-Orig-Date: Fri, 03 Jan 2014 03:03:21 GMT\r\n\
+Date: Fri, 03 Jan 2014 03:03:21 GMT\r\n\
 Content-Length: 5\r\n\
 Content-Type: text/html;charset=UTF-8\r\n\
 """
         rwinfo = self.do_rewrite('200 OK', headers)
-        http_headers = PrefixHeaderRewriter(rwinfo)()
+        http_headers = DefaultHeaderRewriter(rwinfo)()
         assert str(http_headers) == res
 
         assert rwinfo.text_type == 'html'
@@ -63,7 +63,7 @@ X-Archive-Orig-Connection: close\r\n\
 Location: /warc/20171226/http://example.com/other.html\r\n\
 """
         rwinfo = self.do_rewrite('302 Redirect', headers)
-        http_headers = PrefixHeaderRewriter(rwinfo)()
+        http_headers = DefaultHeaderRewriter(rwinfo)()
         assert str(http_headers) == res
 
         assert rwinfo.text_type == None
@@ -85,7 +85,7 @@ Content-Type: text/javascript\r\n\
 Content-Encoding: gzip\r\n\
 X-Archive-Orig-Transfer-Encoding: chunked\r\n\
 """
-        http_headers = PrefixHeaderRewriter(rwinfo)()
+        http_headers = DefaultHeaderRewriter(rwinfo)()
         assert str(http_headers) == res
 
         assert rwinfo.text_type == 'js'
@@ -102,7 +102,7 @@ Content-Type: text/javascript\r\n\
 X-Archive-Orig-Content-Encoding: gzip\r\n\
 X-Archive-Orig-Transfer-Encoding: chunked\r\n\
 """
-        http_headers = PrefixHeaderRewriter(rwinfo)()
+        http_headers = DefaultHeaderRewriter(rwinfo)()
         assert str(http_headers) == res
 
     def test_header_rewrite_binary(self):
@@ -114,7 +114,7 @@ X-Archive-Orig-Transfer-Encoding: chunked\r\n\
                    ('X-Custom', 'test')]
 
         rwinfo = self.do_rewrite('200 OK', headers)
-        http_headers = PrefixHeaderRewriter(rwinfo)()
+        http_headers = DefaultHeaderRewriter(rwinfo)()
 
         assert(('Content-Length', '200000')) in http_headers.headers
         assert(('Content-Type', 'image/png')) in http_headers.headers
@@ -124,7 +124,7 @@ X-Archive-Orig-Transfer-Encoding: chunked\r\n\
 
         assert(('Content-Encoding', 'gzip') in http_headers.headers)
         assert(('X-Archive-Orig-Transfer-Encoding', 'chunked') in http_headers.headers)
-        assert(('X-Archive-Orig-X-Custom', 'test') in http_headers.headers)
+        assert(('X-Custom', 'test') in http_headers.headers)
 
         assert(len(http_headers.headers) == 7)
 

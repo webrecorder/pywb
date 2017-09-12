@@ -4,27 +4,77 @@ from datetime import datetime, timedelta
 
 
 #=============================================================================
-class PrefixHeaderRewriter(object):
+class DefaultHeaderRewriter(object):
     header_rules = {
-        'content-type': 'keep',
-        'content-disposition': 'keep',
-        'content-range': 'keep',
-        'accept-rangees': 'keep',
-        'www-authenticate': 'keep',
-        'proxy-authenticate': 'keep',
+        'access-control-allow-origin': 'prefix-if-url-rewrite',
+        'access-control-allow-credentials': 'prefix-if-url-rewrite',
+        'access-control-expose-headers': 'prefix-if-url-rewrite',
+        'access-control-max-age': 'prefix-if-url-rewrite',
+        'access-control-allow-methods': 'prefix-if-url-rewrite',
+        'access-control-allow-headers': 'prefix-if-url-rewrite',
 
-        'location': 'url-rewrite',
-        'content-location': 'url-rewrite',
-        'content-base': 'url-rewrite',
+        'accept-patch': 'keep',
+        'accept-ranges': 'keep',
 
-        'transfer-encoding': 'prefix',
+        'age': 'prefix',
+
+        'allow': 'keep',
+
+        'alt-svc': 'prefix',
+        'cache-control': 'prefix',
+
         'connection': 'prefix',
 
-        'content-encoding': 'keep-if-no-content-rewrite',
+        'content-base': 'url-rewrite',
+        'content-disposition': 'keep',
+        'content-encoding': 'prefix-if-content-rewrite',
+        'content-language': 'keep',
         'content-length': 'content-length',
+        'content-location': 'url-rewrite',
+        'content-md5': 'prefix',
+        'content-range': 'keep',
+        'content-security-policy': 'prefix',
+        'content-type': 'keep',
+
+        'date': 'keep',
+
+        'etag': 'prefix',
+        'expires': 'prefix',
+
+        'last-modified': 'keep',
+        'link': 'keep',
+        'location': 'url-rewrite',
+
+        'p3p': 'prefix',
+        'pragma': 'prefix',
+
+        'proxy-authenticate': 'keep',
+
+        'public-key-pins': 'prefix',
+        'retry-after': 'prefix',
+        'server': 'prefix',
 
         'set-cookie': 'cookie',
-        'cookie': 'cookie',
+
+        'strict-transport-security': 'prefix',
+
+        'trailer': 'prefix',
+        'transfer-encoding': 'prefix',
+        'tk': 'prefix',
+
+        'upgrade': 'prefix',
+        'upgrade-insecure-requests': 'prefix',
+
+        'vary': 'prefix',
+
+        'via': 'prefix',
+
+        'warning': 'prefix',
+
+        'www-authenticate': 'keep',
+
+        'x-frame-options': 'prefix',
+        'x-xss-protection': 'prefix',
     }
 
     def __init__(self, rwinfo, header_prefix='X-Archive-Orig-'):
@@ -32,15 +82,10 @@ class PrefixHeaderRewriter(object):
         self.rwinfo = rwinfo
         self.http_headers = rwinfo.record.http_headers
 
-        if rwinfo.is_url_rw():
-            self.default_rule = 'prefix'
-        else:
-            self.default_rule = 'keep'
-
     def __call__(self):
         new_headers_list = []
         for name, value in self.http_headers.headers:
-            rule = self.header_rules.get(name.lower(), self.default_rule)
+            rule = self.header_rules.get(name.lower())
             new_header = self.rewrite_header(name, value, rule)
             if new_header:
                 if isinstance(new_header, list):
@@ -59,8 +104,16 @@ class PrefixHeaderRewriter(object):
         elif rule == 'url-rewrite':
             return (name, self.rwinfo.url_rewriter.rewrite(value))
 
-        elif rule == 'keep-if-no-content-rewrite':
-            if not self.rwinfo.is_content_rw:
+        elif rule == 'prefix-if-content-rewrite':
+            if self.rwinfo.is_content_rw:
+                return (self.header_prefix + name, value)
+            else:
+                return (name, value)
+
+        elif rule == 'prefix-if-url-rewrite':
+            if self.rwinfo.is_url_rw():
+                return (self.header_prefix + name, value)
+            else:
                 return (name, value)
 
         elif rule == 'content-length':
@@ -74,14 +127,18 @@ class PrefixHeaderRewriter(object):
                 except:
                     pass
 
+            return (self.header_prefix + name, value)
+
         elif rule == 'cookie':
             if self.rwinfo.cookie_rewriter:
                 return self.rwinfo.cookie_rewriter.rewrite(value)
             else:
                 return (name, value)
 
-        # default 'prefix'
-        return (self.header_prefix + name, value)
+        elif rule == 'prefix':
+            return (self.header_prefix + name, value)
+
+        return (name, value)
 
     def _add_cache_headers(self, new_headers, http_cache):
         try:

@@ -6,7 +6,7 @@ from pywb.rewrite.html_insert_rewriter import HTMLInsertOnlyRewriter
 from pywb.rewrite.regex_rewriters import RegexRewriter, CSSRewriter, XMLRewriter
 from pywb.rewrite.regex_rewriters import JSLocationOnlyRewriter, JSNoneRewriter, JSWombatProxyRewriter
 
-from pywb.rewrite.header_rewriter import PrefixHeaderRewriter
+from pywb.rewrite.header_rewriter import DefaultHeaderRewriter
 from pywb.rewrite.cookie_rewriter import HostScopeCookieRewriter
 
 from pywb.rewrite.jsonp_rewriter import JSONPRewriter
@@ -22,7 +22,7 @@ from werkzeug.useragents import UserAgent
 # ============================================================================
 class DefaultRewriter(BaseContentRewriter):
     DEFAULT_REWRITERS = {
-        'header': PrefixHeaderRewriter,
+        'header': DefaultHeaderRewriter,
         'cookie': HostScopeCookieRewriter,
 
         'html': HTMLRewriter,

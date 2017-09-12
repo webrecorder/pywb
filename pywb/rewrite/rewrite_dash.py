@@ -69,7 +69,7 @@ def rewrite_fb_dash(string):
     buff = string.encode('utf-8').decode('unicode-escape')
     buff = buff.encode('utf-8')
     io = BytesIO(buff)
-    io, best_ids = RewriteDASH().rewrite_dash(io)
+    io, best_ids = RewriteDASH().rewrite_dash(io, None)
     string = json.dumps(io.read().decode('utf-8'))
     string = string[1:-1].replace('<', r'\x3C')
 

@@ -214,7 +214,7 @@ class BufferedRewriter(object):
         return {}
 
     def _get_adaptive_metadata(self, rwinfo):
-        metadata = self._get_record_metadata(rwinfo)
+        metadata = self._get_record_metadata(rwinfo) if rwinfo else {}
         max_resolution = int(metadata.get('adaptive_max_resolution', 0))
         max_bandwidth = int(metadata.get('adaptive_max_bandwidth', 1000000000))
         return max_resolution, max_bandwidth

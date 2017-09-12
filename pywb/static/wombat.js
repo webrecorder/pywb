@@ -1460,7 +1460,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var new_html = template.innerHTML;
 
             if (check_end_tag) {
-                var first_elem = template.content.hildren && template.content.children[0];
+                var first_elem = template.content.children && template.content.children[0];
                 if (first_elem) {
                     var end_tag = "</" + first_elem.tagName.toLowerCase() + ">";
                     if (ends_with(new_html, end_tag) && !ends_with(string, end_tag)) {
