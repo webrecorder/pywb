@@ -1262,6 +1262,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return n1 + rewrite_url(n2) + n3;
         }
 
+        if (!value) {
+            return value;
+        }
+
         if (typeof(value) === "object") {
             value = value.toString();
         }
@@ -2035,6 +2039,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var postmessage_rewritten = function(message, targetOrigin, transfer, from_top) {
             var from = undefined;
             var src_id = undefined;
+            var obj = proxy_to_obj(this);
 
             if (window.__WB_source && window.__WB_source.WB_wombat_location) {
                 var source = window.__WB_source;
@@ -2060,7 +2065,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             var to_origin = targetOrigin;
             
-            if (starts_with(to_origin, this.location.origin)) {
+            if (starts_with(to_origin, obj.location.origin)) {
                 to_origin = "*";
             }
 
@@ -2072,12 +2077,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
                               }
 
             if (targetOrigin != "*") {
-                targetOrigin = this.location.origin;
+                targetOrigin = obj.location.origin;
             }
 
             //console.log("Sending " + from + " -> " + to + " (" + targetOrigin + ") " + message);
             
-            return orig.call(this, new_message, targetOrigin, transfer);
+            return orig.call(obj, new_message, targetOrigin, transfer);
         }
 
         $wbwindow.postMessage = postmessage_rewritten;
@@ -2282,7 +2287,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         var open_rewritten = function(strUrl, strWindowName, strWindowFeatures) {
             strUrl = rewrite_url(strUrl, false, "");
-            var res = orig.call(this, strUrl, strWindowName, strWindowFeatures);
+            var res = orig.call(proxy_to_obj(this), strUrl, strWindowName, strWindowFeatures);
             init_new_window_wombat(res, strUrl);
             return res;
         };

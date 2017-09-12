@@ -195,7 +195,8 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
            (r'Function\(["\']return this["\']\)', self.fixed(func_rw), 0),
            (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + self.THIS_RW), 0),
            (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(self.THIS_RW), 0),
-           (r'(?<=[&|=])\s*this\b\s*(?![.$])', self.replace_str(self.THIS_RW), 0),
+           (r'(?<=[=])\s*this\b\s*(?![.$])', self.replace_str(self.THIS_RW), 0),
+           (r'(?<=[^|&][|&]{2})\s*this\b\s*(?![.$])', self.replace_str(self.THIS_RW), 0),
         ]
 
         super(JSWombatProxyRewriterMixin, self).__init__(rewriter, rules)
