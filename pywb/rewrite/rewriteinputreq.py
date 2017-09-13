@@ -57,6 +57,9 @@ class RewriteInputRequest(DirectWSGIInputRequest):
             elif name in ('HTTP_CONNECTION', 'HTTP_PROXY_CONNECTION'):
                 continue
 
+            elif name in ('HTTP_IF_MODIFIED_SINCE', 'HTTP_IF_UNMODIFIED_SINCE'):
+                continue
+
             elif name == 'HTTP_X_FORWARDED_PROTO':
                 name = 'X-Forwarded-Proto'
                 value = self.splits.scheme

@@ -67,7 +67,7 @@ class WbResponse(object):
         start_response(self.status_headers.statusline,
                        self.status_headers.headers)
 
-        if env['REQUEST_METHOD'] == 'HEAD':
+        if env['REQUEST_METHOD'] == 'HEAD' or self.status_headers.statusline.startswith('304'):
             if hasattr(self.body, 'close'):
                 self.body.close()
             return []

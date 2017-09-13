@@ -41,7 +41,7 @@ class DefaultHeaderRewriter(object):
         'etag': 'prefix',
         'expires': 'prefix',
 
-        'last-modified': 'keep',
+        'last-modified': 'prefix',
         'link': 'keep',
         'location': 'url-rewrite',
 
