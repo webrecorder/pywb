@@ -43,44 +43,41 @@ function make_url(url, ts, mod, prefix)
 }
 
 function push_state(state) {
-    state.outer_url = make_url(state.url, state.request_ts, wbinfo.frame_mod, wbinfo.outer_prefix);
-    state.inner_url = make_url(state.url, state.request_ts, wbinfo.replay_mod);
+    //state.outer_url = make_url(state.url, state.request_ts, wbinfo.frame_mod, wbinfo.outer_prefix);
+    //state.inner_url = make_url(state.url, state.request_ts, wbinfo.replay_mod);
+    if (!state.url) {
+        return;
+    }
 
     var canon_url = make_url(state.url, state.request_ts, "", wbinfo.outer_prefix);
 
-    if (window.location.href != canon_url) {
-        switch (state.wb_type) {
-            case "load":
-                // default is to replaceState as the history already contains iframe history
-                // due to "joint session history" requirement, so just replacing the latest state.
-                // see: https://html.spec.whatwg.org/multipage/browsers.html#joint-session-history
-                if (!window.pushStateOnLoad) {
-                    window.history.replaceState(state, "", canon_url);
-                } else {
-                // if the window.history is not working as expected (eg. embedded application)
-                // then need to pushState() explicitly to add to the top-level window history
-                    window.history.pushState(state, "", canon_url);
-                }
-                break;
-
-            case "replaceState":
-                window.history.replaceState(state, "", canon_url);
-                break;
-
-            case "pushState":
-                window.history.pushState(state, "", canon_url);
-                break;
-        }
+    if (window.history.state && canon_url == window.history.state.url) {
+        return;
     }
 
-    set_state(state);
+    switch (state.wb_type) {
+        case "load":
+            // default is to replaceState as the history already contains iframe history
+            // due to "joint session history" requirement, so just replacing the latest state.
+            // see: https://html.spec.whatwg.org/multipage/browsers.html#joint-session-history
+            if (!window.pushStateOnLoad) {
+                window.history.replaceState(state, "", canon_url);
+            } else {
+            // if the window.history is not working as expected (eg. embedded application)
+            // then need to pushState() explicitly to add to the top-level window history
+                window.history.pushState(state, "", canon_url);
+            }
+            break;
+
+        // always replaceState to avoid adding another history entry!
+        case "replace-url":
+            window.history.replaceState(state, "", canon_url);
+            break;
+    }
 }
 
 function pop_state(state) {
     set_state(state);
-
-    //var frame = document.getElementById(IFRAME_ID);
-    //frame.src = state.inner_url;
 }
 
 function extract_ts(url)
@@ -174,7 +171,7 @@ function init_pm(frame) {
 function handle_message(state) {
     var type = state.wb_type;
 
-    if (type == "load" || type == "pushState" || type == "replaceState") {
+    if (type == "load" || type == "replace") {
         update_wb_url(state);
     } else if (type == "go") {
         window.history.go(state.param);
@@ -194,11 +191,11 @@ function update_wb_url(state) {
     }
 
     // don't set the state again current state is already same url + ts
-    if (window.history.state &&
-        window.history.state.url == state.url &&
-        window.history.state.request_ts == state.request_ts) {
-        return;
-    }
+    //if (window.history.state &&
+    //    window.history.state.url == state.url &&
+    //    window.history.state.request_ts == state.request_ts) {
+    //    return;
+    //}
 
     push_state(state);
 }

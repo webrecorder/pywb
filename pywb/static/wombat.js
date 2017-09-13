@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.46
+// Wombat JS-Rewriting Library v2.48
 //============================================
 
 
@@ -748,6 +748,32 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
+    function send_history_update(url, title) {
+        if ($wbwindow.__WB_top_frame && $wbwindow == $wbwindow.__WB_replay_top) {
+            var message = {
+                       "url": url,
+                       "ts": wb_info.timestamp,
+                       "request_ts": wb_info.request_ts,
+                       "is_live": wb_info.is_live,
+                       "title": title,
+                       "wb_type": "replace-url",
+                      }
+
+            $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
+        }
+    }
+
+    //============================================
+    function init_history_overrides() {
+        override_history_func("pushState");
+        override_history_func("replaceState");
+
+        $wbwindow.addEventListener("popstate", function(event) {
+            send_history_update($wbwindow.WB_wombat_location.href, $wbwindow.document.title);
+        });
+    }
+
+    //============================================
     function override_history_func(func_name) {
         if (!$wbwindow.history) {
             return;
@@ -762,77 +788,26 @@ var _WBWombat = function($wbwindow, wbinfo) {
         $wbwindow.history['_orig_' + func_name] = orig_func;
 
         function rewritten_func(state_obj, title, url) {
-            var parser = $wbwindow.document.createElement("a");
-            parser.href = url;
+            var rewritten_url = undefined;
 
-            var abs_url = parser.href;
+            if (url) {
+                var parser = $wbwindow.document.createElement("a");
+                parser.href = url;
+                url = parser.href;
 
-            url = rewrite_url(abs_url);
+                rewritten_url = rewrite_url(url);
 
-            if (url == $wbwindow.location.href) {
-                return;
+                if (url && (url != $wbwindow.WB_wombat_location.origin && $wbwindow.WB_wombat_location.href != "about:blank") &&
+                        !starts_with(url, $wbwindow.WB_wombat_location.origin + "/")) {
+                    throw new DOMException("Invalid history change: " + url);
+                }
+            } else {
+                url = $wbwindow.WB_wombat_location.href;
             }
 
-            if (abs_url && (abs_url != $wbwindow.WB_wombat_location.origin && $wbwindow.WB_wombat_location.href != "about:blank") &&
-                    !starts_with(abs_url, $wbwindow.WB_wombat_location.origin + "/")) {
-                throw new DOMException("Invalid history change: " + abs_url);
-            }
+            orig_func.call(this, state_obj, title, rewritten_url);
 
-            orig_func.call(this, state_obj, title, url);
-
-            if ($wbwindow.__WB_top_frame) {
-                var message = {
-                           "url": abs_url,
-                           "ts": wb_info.timestamp,
-                           "request_ts": wb_info.request_ts,
-                           "is_live": wb_info.is_live,
-                           "title": title,
-                           "wb_type": func_name,
-                          }
-
-                $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
-            }
-        }
-
-        $wbwindow.history[func_name] = rewritten_func;
-        if ($wbwindow.History && $wbwindow.History.prototype) {
-            $wbwindow.History.prototype[func_name] = rewritten_func;
-        }
-
-        return rewritten_func;
-    }
-
-    //============================================
-    function override_history_nav(func_name) {
-        if (!$wbwindow.history) {
-            return;
-        }
-
-        // Only useful for framed replay
-        if (!$wbwindow.__WB_top_frame) {
-            return;
-        }
-
-        var orig_func = $wbwindow.history[func_name];
-
-        if (!orig_func) {
-            return;
-        }
-
-        function rewritten_func() {
-            orig_func.apply(this, arguments);
-
-            var message = {
-                       "wb_type": func_name,
-                      }
-
-            if (func_name == "go") {
-                message["param"] = arguments[0];
-            }
-
-            if ($wbwindow.__WB_top_frame) {
-                $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
-            }
+            send_history_update(url, title);
         }
 
         $wbwindow.history[func_name] = rewritten_func;
@@ -2962,12 +2937,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
 
             // History
-            override_history_func("pushState");
-            override_history_func("replaceState");
-
-            override_history_nav("go");
-            override_history_nav("back");
-            override_history_nav("forward");
+            init_history_overrides();
 
             // postMessage
             // OPT skip
