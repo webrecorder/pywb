@@ -2221,18 +2221,21 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function override_func_this_proxy_to_obj(cls, method, prototype) {
-        prototype = prototype || cls.prototype;
-        if (!cls || !prototype) {
+    function override_func_this_proxy_to_obj(cls, method, obj) {
+        if (!cls) {
             return;
         }
-        var orig = prototype[method];
+        obj = obj || cls.prototype;
+        if (!obj) {
+            return;
+        }
+        var orig = obj[method];
 
         function deproxy() {
             return orig.apply(proxy_to_obj(this), arguments);
         }
 
-        prototype[method] = deproxy;
+        obj[method] = deproxy;
     }
 
     //============================================
