@@ -2221,11 +2221,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function override_func_this_proxy_to_obj(cls, method) {
-        if (!cls || !cls.prototype) {
+    function override_func_this_proxy_to_obj(cls, method, prototype) {
+        prototype = prototype || cls.prototype;
+        if (!cls || !prototype) {
             return;
         }
-        var prototype = cls.prototype;
         var orig = prototype[method];
 
         function deproxy() {
@@ -2993,6 +2993,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             override_func_first_arg_proxy_to_obj($wbwindow.Node, "contains");
             override_func_first_arg_proxy_to_obj($wbwindow.Document, "createTreeWalker");
 
+            override_func_this_proxy_to_obj($wbwindow, "getComputedStyle", $wbwindow);
             override_func_this_proxy_to_obj($wbwindow.EventTarget, "addEventListener");
             override_func_this_proxy_to_obj($wbwindow.EventTarget, "removeEventListener");
 
