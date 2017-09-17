@@ -34,22 +34,32 @@ class WritableRedisIndexer(RedisIndexSource):
         self.full_warc_prefix = kwargs.get('full_warc_prefix', '')
         self.dupe_policy = kwargs.get('dupe_policy', WriteRevisitDupePolicy())
 
-    def add_warc_file(self, full_filename, params):
+    def _get_rel_or_base_name(self, filename, params):
         rel_path = res_template(self.rel_path_template, params)
-        rel_filename = os.path.relpath(full_filename, rel_path)
+        try:
+            base_name = os.path.relpath(filename, rel_path)
+            assert '..' not in base_name
+        except Exception:
+            base_name = None
 
+        if not base_name:
+            base_name = os.path.basename(filename)
+
+        return base_name
+
+    def add_warc_file(self, full_filename, params):
+        base_filename = self._get_rel_or_base_name(full_filename, params)
         file_key = res_template(self.file_key_template, params)
 
         full_load_path = self.full_warc_prefix + full_filename
 
-        self.redis.hset(file_key, rel_filename, full_load_path)
+        self.redis.hset(file_key, base_filename, full_load_path)
 
     def add_urls_to_index(self, stream, params, filename, length):
-        rel_path = res_template(self.rel_path_template, params)
-        filename = os.path.relpath(filename, rel_path)
+        base_filename = self._get_rel_or_base_name(filename, params)
 
         cdxout = BytesIO()
-        write_cdx_index(cdxout, stream, filename,
+        write_cdx_index(cdxout, stream, base_filename,
                         cdxj=True, append_post=True,
                         writer_cls=params.get('writer_cls'))
 
