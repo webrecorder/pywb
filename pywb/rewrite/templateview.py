@@ -134,6 +134,7 @@ class BaseInsertView(object):
         params = env.get('webrec.template_params')
         if params:
             kwargs.update(params)
+        kwargs['env'] = env
 
         return template.render(**kwargs)
 
@@ -149,27 +150,21 @@ class HeadInsertView(BaseInsertView):
                            coll='',
                            include_ts=True):
 
-        url = wb_url.get_url()
-
-        include_wombat = not wb_url.is_banner_only
-
-        wbrequest = {'host_prefix': host_prefix,
-                     'wb_prefix': wb_prefix,
-                     'wb_url': wb_url,
-                     'coll': coll,
-                     'env': env,
-                     'options': {'is_framed': is_framed},
-                     'rewrite_opts': {}
-                    }
+        params = {'host_prefix': host_prefix,
+                  'wb_prefix': wb_prefix,
+                  'wb_url': wb_url,
+                  'coll': coll,
+                  'is_framed': 'true' if is_framed else 'false',
+                  'top_url': top_url,
+                  'banner_html': self.banner_file,
+                 }
 
         def make_head_insert(rule, cdx):
-            return (self.render_to_string(env, wbrequest=wbrequest,
-                                          cdx=cdx,
-                                          top_url=top_url,
-                                          include_ts=include_ts,
-                                          include_wombat=include_wombat,
-                                          banner_html=self.banner_file,
-                                          rule=rule))
+            params['wombat_ts'] = cdx['timestamp'] if include_ts else ''
+            params['wombat_sec'] = timestamp_to_sec(cdx['timestamp'])
+            params['is_live'] = 'true' if cdx.get('is_live') else 'false'
+            return self.render_to_string(env, cdx=cdx, **params)
+
         return make_head_insert
 
 

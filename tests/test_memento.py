@@ -60,8 +60,8 @@ class TestMemento(MementoMixin, BaseConfigTest):
         assert self.make_timegate_link(url, 'mp_') in links
 
         # Body
-        assert '<iframe ' in resp.text
-        assert '/pywb/20140127171238mp_/http://www.iana.org/' in resp.text, resp.text
+        assert '"20140127171238"' in resp.text
+        assert '"http://www.iana.org/"' in resp.text, resp.text
 
     def test_memento_content_replay_exact(self, fmod):
         resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/', fmod)
@@ -72,7 +72,7 @@ class TestMemento(MementoMixin, BaseConfigTest):
 
         # Body
         assert '"20140127171238"' in resp.text
-        assert 'wb.js' in resp.text
+        assert 'wombat.js' in resp.text
         assert 'new _WBWombat' in resp.text, resp.text
         assert '/pywb/20140127171238{0}/http://www.iana.org/time-zones"'.format(fmod) in resp.text
 

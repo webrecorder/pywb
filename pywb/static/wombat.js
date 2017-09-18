@@ -3077,7 +3077,57 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return res;
         }
 
+        if (wbinfo.is_framed && wbinfo.mod != "bn_") {
+            init_frame_notify();
+        }
+
         return obj;
+    }
+
+    function init_frame_notify() {
+        function notify_top(event) {
+            if (!window.__WB_top_frame) {
+                var hash = window.location.hash;
+
+                //var loc = window.location.href.replace(window.location.hash, "");
+                //loc = decodeURI(loc);
+
+                //if (wbinfo.top_url && (loc != decodeURI(wbinfo.top_url))) {
+                    // Auto-redirect to top frame
+                window.location.replace(wbinfo.top_url + hash);
+                //}
+
+                return;
+            }
+
+            if (!window.WB_wombat_location) {
+                return;
+            }
+
+            if (typeof(window.WB_wombat_location.href) != "string") {
+                return;
+            }
+
+            var message = {
+                       "url": window.WB_wombat_location.href,
+                       "ts": wbinfo.timestamp,
+                       "request_ts": wbinfo.request_ts,
+                       "is_live": wbinfo.is_live,
+                       "title": document ? document.title : "",
+                       "readyState": document.readyState,
+                       "wb_type": "load"
+            }
+
+            window.__WB_top_frame.postMessage(message, wbinfo.top_host);
+        }
+
+        if (document.readyState == "complete") {
+            notify_top();
+        } else if (window.addEventListener) {
+            document.addEventListener("readystatechange", notify_top);
+        } else if (window.attachEvent) {
+            document.attachEvent("onreadystatechange", notify_top);
+        }
     }
 
     function init_top_frame($wbwindow) {
@@ -3099,7 +3149,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                     return (win._wb_wombat != undefined);
                 } else {
                 // otherwise, ensure that it is not a top container frame
-                    return !win.wbinfo.is_frame;
+                    return !(win.wbinfo && win.is_framed);
                 }
 
             } catch (e) {
