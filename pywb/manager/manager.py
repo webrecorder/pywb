@@ -33,7 +33,6 @@ It may be used via cmdline to setup and maintain the
 directory structure expected by pywb
     """
     DEF_INDEX_FILE = 'index.cdxj'
-    AUTO_INDEX_FILE = 'autoindex.cdxj'
 
     COLL_RX = re.compile('^[\w][-\w]*$')
 
@@ -48,12 +47,12 @@ directory structure expected by pywb
 
         self.colls_dir = os.path.join(os.getcwd(), colls_dir)
 
-        self._set_coll_dirs(coll_name)
+        self.change_collection(coll_name)
 
         if must_exist:
             self._assert_coll_exists()
 
-    def _set_coll_dirs(self, coll_name):
+    def change_collection(self, coll_name):
         self.coll_name = coll_name
         self.curr_coll_dir = os.path.join(self.colls_dir, coll_name)
 
@@ -330,35 +329,6 @@ directory structure expected by pywb
 
         migrate.convert_to_cdxj()
 
-    def autoindex(self, interval=30.0, do_loop=True):
-        from pywb.manager.autoindex import CDXAutoIndexer
-
-        if self.coll_name:
-            any_coll = False
-            path = self.archive_dir
-        else:
-            path = self.colls_dir
-            any_coll = True
-
-        def do_index(warc):
-            if any_coll:
-                coll_name = warc.split(self.colls_dir + os.path.sep)
-                coll_name = coll_name[-1].split(os.path.sep)[0]
-
-                if coll_name != self.coll_name:
-                    self._set_coll_dirs(coll_name)
-
-            print('Auto-Indexing: ' + warc)
-            self.index_merge([warc], self.AUTO_INDEX_FILE)
-            print('Done.. Waiting for file updates')
-
-
-        indexer = CDXAutoIndexer(do_index, path)
-        indexer.start(interval)
-        #indexer.start_watch()
-        if do_loop:
-            indexer.do_loop(interval)
-
 
 #=============================================================================
 def main(args=None):
@@ -469,17 +439,7 @@ Create manage file based web archive collections
     migrate.add_argument('-f', '--force', action='store_true')
     migrate.set_defaults(func=do_migrate)
 
-    # Auto Index
-    def do_autoindex(r):
-        m = CollectionsManager(r.coll_name, must_exist=False)
-        m.autoindex(r.interval, True)
-
-    autoindex_help = 'Automatically index any change archive files'
-    autoindex = subparsers.add_parser('autoindex', help=autoindex_help)
-    autoindex.add_argument('coll_name', nargs='?', default='')
-    autoindex.add_argument('--interval', type=float, default=30.0)
-    autoindex.set_defaults(func=do_autoindex)
-
+    # Parse
     r = parser.parse_args(args=args)
     r.func(r)
 

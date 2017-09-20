@@ -3,7 +3,8 @@ from gevent import monkey; monkey.patch_all(thread=False)
 import pytest
 import webtest
 
-from pywb.warcserver.test.testutils import BaseTestClass
+from pywb.warcserver.test.testutils import BaseTestClass, TempDirTests
+from pywb.manager.manager import main, CollectionsManager
 
 from pywb.apps.frontendapp import FrontEndApp
 import os
@@ -61,3 +62,21 @@ class BaseConfigTest(BaseTestClass):
         return app.head(url.format(fmod), *args, **kwargs)
 
 
+#=============================================================================
+class CollsDirMixin(TempDirTests):
+    COLLS_DIR = '_test_colls'
+
+    @classmethod
+    def setup_class(cls, *args, **kwargs):
+        super(CollsDirMixin, cls).setup_class(*args, **kwargs)
+        cls.orig_cwd = os.getcwd()
+        cls.root_dir = os.path.realpath(cls.root_dir)
+        os.chdir(cls.root_dir)
+        cls.orig_collections = CollectionsManager.COLLS_DIR
+        CollectionsManager.COLLS_DIR = cls.COLLS_DIR
+
+    @classmethod
+    def teardown_class(cls):
+        os.chdir(cls.orig_cwd)
+        CollectionsManager.COLLS_DIR = cls.orig_collections
+        super(CollsDirMixin, cls).teardown_class()

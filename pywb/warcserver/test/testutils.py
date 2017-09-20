@@ -85,8 +85,8 @@ class FakeRedisTests(object):
 # ============================================================================
 class TempDirTests(object):
     @classmethod
-    def setup_class(cls):
-        super(TempDirTests, cls).setup_class()
+    def setup_class(cls, *args, **kwargs):
+        super(TempDirTests, cls).setup_class(*args, **kwargs)
         cls.root_dir = tempfile.mkdtemp()
 
     @classmethod

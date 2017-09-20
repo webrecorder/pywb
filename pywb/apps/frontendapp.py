@@ -9,6 +9,9 @@ from six import iteritems
 
 from warcio.utils import to_native_str
 
+from pywb.recorder.multifilewarcwriter import MultiFileWARCWriter
+from pywb.recorder.recorderapp import RecorderApp
+
 from pywb.utils.loaders import load_yaml_config
 from pywb.utils.geventserver import GeventServer
 
@@ -32,9 +35,13 @@ class FrontEndApp(object):
         self.warcserver = WarcServer(config_file=config_file,
                                      custom_config=custom_config)
 
-        framed_replay = self.warcserver.config.get('framed_replay', True)
+        config = self.warcserver.config
+
+        framed_replay = config.get('framed_replay', True)
 
         self.warcserver_server = GeventServer(self.warcserver, port=0)
+
+        self.init_recorder(config)
 
         self.static_handler = StaticHandler('pywb/static/')
 
@@ -44,35 +51,58 @@ class FrontEndApp(object):
         self.url_map.add(Rule('/collinfo.json', endpoint=self.serve_listing))
 
         if self.is_valid_coll('$root'):
-            self.url_map.add(Rule('/', endpoint=self.serve_coll_page))
-            self.url_map.add(Rule('/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
-            self.url_map.add(Rule('/cdx', endpoint=self.serve_cdx))
-            self.url_map.add(Rule('/<path:url>', endpoint=self.serve_content))
-
+            coll_prefix = ''
         else:
-            self.url_map.add(Rule('/<coll>/', endpoint=self.serve_coll_page))
-            self.url_map.add(Rule('/<coll>/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
-            self.url_map.add(Rule('/<coll>/cdx', endpoint=self.serve_cdx))
-            self.url_map.add(Rule('/<coll>/<path:url>', endpoint=self.serve_content))
-
+            coll_prefix = '/<coll>'
             self.url_map.add(Rule('/', endpoint=self.serve_home))
 
+        self.url_map.add(Rule(coll_prefix + '/', endpoint=self.serve_coll_page))
+        self.url_map.add(Rule(coll_prefix + '/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
+        self.url_map.add(Rule(coll_prefix + '/cdx', endpoint=self.serve_cdx))
+        if self.recorder:
+            self.url_map.add(Rule(coll_prefix + '/record/<path:url>', endpoint=self.serve_record))
+
+        self.url_map.add(Rule(coll_prefix + '/<path:url>', endpoint=self.serve_content))
+
         upstream_paths = self.get_upstream_paths(self.warcserver_server.port)
+
         self.rewriterapp = RewriterApp(framed_replay,
-                                       config=self.warcserver.config,
+                                       config=config,
                                        paths=upstream_paths)
 
-        self.templates_dir = self.warcserver.config.get('templates_dir', 'templates')
-        self.static_dir = self.warcserver.config.get('static_dir', 'static')
+        self.templates_dir = config.get('templates_dir', 'templates')
+        self.static_dir = config.get('static_dir', 'static')
 
         metadata_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'metadata.yaml')
         self.metadata_cache = MetadataCache(metadata_templ)
 
     def get_upstream_paths(self, port):
-        return {
+        base_paths = {
                 'replay': 'http://localhost:%s/{coll}/resource/postreq' % port,
                 'cdx-server': 'http://localhost:%s/{coll}/index' % port,
                }
+
+        if self.recorder:
+            base_paths['record'] = 'http://localhost:%s/%s/resource/postreq?param.recorder.coll={coll}' % (self.recorder_port, self.recorder_source)
+
+        return base_paths
+
+    def init_recorder(self, config):
+        self.recorder_source = config.get('recorder')
+
+        if not self.recorder_source:
+            self.recorder = None
+            self.recorder_server = None
+            self.recorder_port = 0
+            return
+
+        dedup_index = None
+        warc_writer = MultiFileWARCWriter(self.warcserver.archive_templ, max_size=1000000000, max_idle_secs=600,
+                                          dedup_index=dedup_index)
+
+        self.recorder = RecorderApp('http://localhost:' + str(self.warcserver_server.port), warc_writer)
+        self.recorder_server = GeventServer(self.recorder, port=0)
+        self.recorder_port = self.recorder_server.port
 
     def serve_home(self, environ):
         home_view = BaseInsertView(self.rewriterapp.jinja_env, 'index.html')
@@ -150,13 +180,19 @@ class FrontEndApp(object):
             return WbResponse.bin_stream(res.raw, content_type=res.headers.get('Content-Type'))
 
         except Exception as e:
-            return WbResponse.text_content('Error: ' + str(e), status='400 Bad Request')
+            return WbResponse.text_response('Error: ' + str(e), status='400 Bad Request')
 
-    def serve_content(self, environ, coll='$root', url='', timemap_output=''):
+    def serve_record(self, environ, coll='$root', url=''):
+        if coll in self.warcserver.list_fixed_routes():
+            return WbResponse.text_response('Error: Can Not Record Into Custom Collection "{0}"'.format(coll))
+
+        return self.serve_content(environ, coll, url, record=True)
+
+    def serve_content(self, environ, coll='$root', url='', timemap_output='', record=False):
         if not self.is_valid_coll(coll):
             self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
 
-        self.setup_paths(environ, coll)
+        self.setup_paths(environ, coll, record)
 
         wb_url_str = to_native_str(url)
 
@@ -164,6 +200,10 @@ class FrontEndApp(object):
             wb_url_str += '?' + environ.get('QUERY_STRING')
 
         metadata = self.get_metadata(coll)
+        if record:
+            metadata['type'] = 'record'
+            print('RECORD')
+
         if timemap_output:
             metadata['output'] = timemap_output
 
@@ -175,12 +215,14 @@ class FrontEndApp(object):
 
         return response
 
-    def setup_paths(self, environ, coll):
+    def setup_paths(self, environ, coll, record=False):
         if not coll or not self.warcserver.root_dir:
             return
 
         if coll != '$root':
             pop_path_info(environ)
+            if record:
+                pop_path_info(environ)
 
         paths = [self.warcserver.root_dir]
 

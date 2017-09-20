@@ -1,4 +1,4 @@
-from gevent.monkey import patch_all; patch_all()
+from .base_config_test import CollsDirMixin
 
 import os
 import tempfile
@@ -17,11 +17,10 @@ from pytest import raises
 from mock import patch
 
 from pywb import get_test_dir
-from pywb.warcserver.test.testutils import TempDirTests, BaseTestClass
+from pywb.warcserver.test.testutils import BaseTestClass
 
-from pywb.manager.manager import main, CollectionsManager
-
-import pywb.manager.autoindex
+from pywb.manager.autoindex import AutoIndexer
+from pywb.manager.manager import main
 
 from pywb.indexer.cdxindexer import main as cdxindexer_main
 from pywb.warcserver.index.cdxobject import CDXObject
@@ -34,26 +33,12 @@ ARCHIVE_DIR = 'archive'
 INDEX_DIR = 'indexes'
 COLLECTIONS = '_test_colls'
 
-CollectionsManager.COLLS_DIR = COLLECTIONS
-
 INDEX_FILE = 'index.cdxj'
 AUTOINDEX_FILE = 'autoindex.cdxj'
 
 
 #=============================================================================
-class TestManagedColls(TempDirTests, BaseTestClass):
-    @classmethod
-    def setup_class(cls):
-        super(TestManagedColls, cls).setup_class()
-        cls.orig_cwd = os.getcwd()
-        cls.root_dir = os.path.realpath(cls.root_dir)
-        os.chdir(cls.root_dir)
-
-    @classmethod
-    def teardown_class(cls):
-        os.chdir(cls.orig_cwd)
-        super(TestManagedColls, cls).teardown_class()
-
+class TestManagedColls(CollsDirMixin, BaseTestClass):
     def _check_dirs(self, base, dirlist):
         for dir_ in dirlist:
             assert os.path.isdir(os.path.join(base, dir_))
@@ -82,8 +67,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
         colls = os.path.join(self.root_dir, COLLECTIONS)
         os.mkdir(colls)
 
-        pywb.manager.autoindex.keep_running = False
-        wayback(['-a', '-p', '0'])
+        wayback(['-a', '-p', '0', '--auto-interval', '0'])
 
     def test_create_first_coll(self):
         """ Test first collection creation, with all required dirs
@@ -472,8 +456,6 @@ class TestManagedColls(TempDirTests, BaseTestClass):
         archive_sub_dir = os.path.join(archive_dir, 'sub')
         os.makedirs(archive_sub_dir)
 
-        pywb.manager.autoindex.keep_running = True
-
         def do_copy():
             try:
                 time.sleep(1.0)
@@ -481,16 +463,12 @@ class TestManagedColls(TempDirTests, BaseTestClass):
                 shutil.copy(self._get_sample_warc('example-extra.warc'), archive_sub_dir)
                 time.sleep(1.0)
             finally:
-                pywb.manager.autoindex.keep_running = False
+                indexer.interval = 0
 
-        #thread = threading.Thread(target=do_copy)
-        #thread.daemon = True
-        #thread.start()
+        indexer = AutoIndexer(interval=0.25)
+        indexer.start()
+
         ge = gevent.spawn(do_copy)
-
-        main(['autoindex', 'auto', '--interval', '0.25'])
-
-        #thread.join()
         ge.join()
 
         index_file = os.path.join(auto_dir, INDEX_DIR, AUTOINDEX_FILE)
@@ -505,7 +483,8 @@ class TestManagedColls(TempDirTests, BaseTestClass):
         mtime = os.path.getmtime(index_file)
 
         # Update
-        pywb.manager.autoindex.keep_running = True
+        indexer.interval = 0.25
+        indexer.start()
 
         os.remove(index_file)
 
@@ -514,7 +493,7 @@ class TestManagedColls(TempDirTests, BaseTestClass):
         #thread.start()
         ge = gevent.spawn(do_copy)
 
-        main(['autoindex', 'auto', '--interval', '0.25'])
+        #wayback(['-p', '0', '-a', '--auto-interval', '0.25'])
 
         #thread.join()
         ge.join()
