@@ -14,15 +14,17 @@ html, body
 </style>
 <link rel='stylesheet' href='{{ wbrequest.host_prefix }}/{{ static_path }}/wb.css'/>
 <script src='{{ wbrequest.host_prefix }}/{{ static_path }}/wb_frame.js'> </script>
+</head>
+<body style="margin: 0px; padding: 0px;">
+<div id="wb_iframe_div">
+<iframe id="replay_iframe" frameborder="0" seamless="seamless" scrolling="yes" class="wb_iframe"></iframe>
+</div>
 <script>
   var cframe = new ContentFrame({"url": "{{ url }}",
                                  "prefix": "{{ wbrequest.wb_prefix }}",
                                  "request_ts": "{{ wbrequest.wb_url.timestamp }}",
-                                 "iframe_div": "#wb_iframe_div"});
+                                 "iframe": "#replay_iframe"});
 
 </script>
-</head>
-<body style="margin: 0px; padding: 0px;">
-<div id="wb_iframe_div"></div>
 </body>
 </html>

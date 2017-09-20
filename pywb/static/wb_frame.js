@@ -24,23 +24,18 @@ function ContentFrame(content_info) {
     this.last_ts = content_info.request_ts;
 
     this.init_iframe = function() {
-        var iframe = document.createElement("iframe");
-        iframe.seamless = "seamless";
-        iframe.scrolling = "yes";
+        if (typeof(content_info.iframe) === "string") {
+            this.iframe = document.querySelector(content_info.iframe);
+        } else {
+            this.iframe = content_info.iframe;
+        }
 
-        content_info.iframe_div = content_info.iframe_div || "#wb_iframe_div";
-        content_info.iframe_class = content_info.iframe_class || "wb_iframe";
-
-        var container = document.querySelector(content_info.iframe_div);
-
-        if (!container) {
-            console.warn("No Iframe container: " + content_info.iframe_div + " found");
+        if (!this.iframe) {
+            console.warn("no iframe found " + content_info.iframe + " found");
             return;
         }
 
         this.extract_prefix();
-
-        this.iframe = container.appendChild(iframe);
 
         if (content_info.iframe_class) {
             this.iframe.className += " " + content_info.iframe_class;
