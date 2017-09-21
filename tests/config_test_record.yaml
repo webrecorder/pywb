@@ -1,0 +1,10 @@
+debug: true
+
+collections_root: _test_colls
+
+recorder: live
+
+collections:
+    'live': '$live'
+
+
