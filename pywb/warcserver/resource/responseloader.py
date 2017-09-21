@@ -58,7 +58,7 @@ class BaseLoader(object):
             cdx['recorder_skip'] = '1'
 
         out_headers['WebAgg-Cdx'] = to_native_str(cdx.to_cdxj().rstrip())
-        out_headers['WebAgg-Source-Coll'] = source
+        out_headers['WebAgg-Source-Coll'] = to_native_str(source)
 
         if not warc_headers:
             if other_headers:
