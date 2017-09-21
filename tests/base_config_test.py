@@ -25,16 +25,28 @@ class BaseConfigTest(BaseTestClass):
     @classmethod
     def get_test_app(cls, config_file, override=None):
         config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
-        return webtest.TestApp(FrontEndApp(config_file=config_file, custom_config=override))
+        app = FrontEndApp(config_file=config_file, custom_config=override)
+        return app, webtest.TestApp(app)
 
     @classmethod
     def setup_class(cls, config_file, include_non_frame=True):
         super(BaseConfigTest, cls).setup_class()
-        cls.testapp = cls.get_test_app(config_file)
+        cls.app, cls.testapp = cls.get_test_app(config_file)
 
         if include_non_frame:
-            cls.testapp_non_frame = cls.get_test_app(config_file,
-                                                     override={'framed_replay': False})
+            cls.app_non_frame, cls.testapp_non_frame = cls.get_test_app(config_file,
+                                                        override={'framed_replay': False})
+
+    @classmethod
+    def teardown_class(cls):
+        if cls.app.recorder:
+            cls.app.recorder.writer.close()
+
+        if cls.app_non_frame.recorder:
+            cls.app_non_frame.recorder.writer.close()
+
+        super(BaseConfigTest, cls).teardown_class()
+
     def _assert_basic_html(self, resp):
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'

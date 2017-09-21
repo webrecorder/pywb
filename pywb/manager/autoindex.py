@@ -21,13 +21,27 @@ class AutoIndexer(object):
 
         self.interval = interval
 
-    def is_newer_than(self, path1, path2):
+        self.last_size = {}
+
+    def is_newer_than(self, path1, path2, track=False):
         try:
             mtime1 = os.path.getmtime(path1)
             mtime2 = os.path.getmtime(path2)
-            return mtime1 > mtime2
+            newer = mtime1 > mtime2
         except:
-            return True
+            newer = True
+
+        if track:
+            size = os.path.getsize(path1)
+            try:
+                if size != self.last_size[path1]:
+                    newer = True
+            except:
+                pass
+
+            self.last_size[path1] = size
+
+        return newer
 
     def do_index(self, files):
         logging.info('Auto-Indexing... ' + str(files))
@@ -50,7 +64,7 @@ class AutoIndexer(object):
             index_file = os.path.join(self.manager.indexes_dir, self.AUTO_INDEX_FILE)
 
             if os.path.isfile(index_file):
-                if self.is_newer_than(archive_dir, index_file):
+                if os.name != 'nt' and self.is_newer_than(archive_dir, index_file):
                     continue
             else:
                 try:
@@ -67,7 +81,7 @@ class AutoIndexer(object):
 
                     full_filename = os.path.join(dirpath, filename)
 
-                    if self.is_newer_than(full_filename, index_file):
+                    if self.is_newer_than(full_filename, index_file, True):
                         to_index.append(full_filename)
 
             if to_index:
