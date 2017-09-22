@@ -186,13 +186,13 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
         return lambda x: x.replace('this', replacer)
 
     def __init__(self, rewriter, rules=[]):
-        func_rw = 'Function("return {0}")'.format(self.THIS_RW)
-
+        #func_rw = 'Function("return {0}")'.format(self.THIS_RW)
         prop_str = '|'.join(self.local_objs)
 
         rules = rules + [
            (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
-           (r'Function\(["\']return this["\']\)', self.fixed(func_rw), 0),
+           #(r'Function\(["\']return this["\']\)', self.fixed(func_rw), 0),
+           (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(self.THIS_RW), 0),
            (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + self.THIS_RW), 0),
            (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(self.THIS_RW), 0),
            (r'(?<=[=])\s*this\b\s*(?![.$])', self.replace_str(self.THIS_RW), 0),
