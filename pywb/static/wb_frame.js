@@ -41,7 +41,7 @@ function ContentFrame(content_info) {
             this.iframe.className += " " + content_info.iframe_class;
         }
 
-        this.iframe.src = this.make_url(content_info.url + window.location.hash, content_info.request_ts, true);
+        this.iframe.src = this.load_url(content_info.url, content_info.request_ts);
     }
 
     this.extract_prefix = function() {
@@ -114,7 +114,6 @@ function ContentFrame(content_info) {
         }
     }
 
-
     this.set_url = function(state) {
         if (state.url && (state.url != this.last_url || state.request_ts != this.last_ts)) {
             var new_url = this.make_url(state.url, state.request_ts, false);
@@ -124,6 +123,10 @@ function ContentFrame(content_info) {
             this.last_url = state.url;
             this.last_ts = state.request_ts;
         }
+    }
+
+    this.load_url = function(newUrl, newTs) {
+        this.iframe.src = this.make_url(newUrl, newTs, true);
     }
 
     this.inner_hash_changed = function(state) {
@@ -145,15 +148,26 @@ function ContentFrame(content_info) {
         }
     }
 
-    var obj = this;
+    this.close = function () {
+        window.removeEventListener("hashchange", this.outer_hash_changed);
+        window.removeEventListener("message", this.handle_event);
+    }
 
-    document.addEventListener("DOMContentLoaded", function(event) { obj.init_iframe(event); });
-    window.addEventListener("hashchange", function(event) { obj.outer_hash_changed(event); }, false);
-    window.addEventListener("message", function(event) { obj.handle_event(event); });
+    // bind event callbacks
+    this.outer_hash_changed = this.outer_hash_changed.bind(this);
+    this.handle_event = this.handle_event.bind(this);
+
+    window.addEventListener("hashchange", this.outer_hash_changed, false);
+    window.addEventListener("message", this.handle_event);
+
+    if (document.readyState === "complete") {
+        this.init_iframe();
+    } else {
+        document.addEventListener("DOMContentLoaded", this.init_iframe.bind(this), { once: true });
+    }
 
     window.__WB_pmw = function(win) {
         this.pm_source = win;
         return this;
     }
 }
-

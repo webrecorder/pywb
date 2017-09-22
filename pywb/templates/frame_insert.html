@@ -20,7 +20,7 @@ html, body
 <iframe id="replay_iframe" frameborder="0" seamless="seamless" scrolling="yes" class="wb_iframe"></iframe>
 </div>
 <script>
-  var cframe = new ContentFrame({"url": "{{ url }}",
+  var cframe = new ContentFrame({"url": "{{ url }}" + window.location.hash,
                                  "prefix": "{{ wbrequest.wb_prefix }}",
                                  "request_ts": "{{ wbrequest.wb_url.timestamp }}",
                                  "iframe": "#replay_iframe"});
