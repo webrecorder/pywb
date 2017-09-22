@@ -9,27 +9,30 @@ with the wayback machine.
 
 There WbUrl may represent one of the following forms:
 
-query form: [/modifier]/[timestamp][-end_timestamp]*/<url>
+query form: ``[/modifier]/[timestamp][-end_timestamp]*/<url>``
 
-modifier, timestamp and end_timestamp are optional
+modifier, timestamp and end_timestamp are optional::
 
-*/example.com
-20101112030201*/http://example.com
-2009-2015*/http://example.com
-/cdx/*/http://example.com
+  */example.com
+  20101112030201*/http://example.com
+  2009-2015*/http://example.com
+  /cdx/*/http://example.com
 
 url query form: used to indicate query across urls
-same as query form but with a final *
-*/example.com*
-20101112030201*/http://example.com*
+same as query form but with a final ``*``::
+
+  */example.com*
+  20101112030201*/http://example.com*
 
 
-replay form:
-20101112030201/http://example.com
-20101112030201im_/http://example.com
+replay form::
 
-latest_replay: (no timestamp)
-http://example.com
+  20101112030201/http://example.com
+  20101112030201im_/http://example.com
+
+latest_replay: (no timestamp)::
+
+  http://example.com
 
 Additionally, the BaseWbUrl provides the base components
 (url, timestamp, end_timestamp, modifier, type) which

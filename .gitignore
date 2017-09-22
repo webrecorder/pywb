@@ -47,3 +47,6 @@ node_modules/
 
 # git_hash
 git_hash.py
+
+# Sphinx documentation
+docs/_build/*
