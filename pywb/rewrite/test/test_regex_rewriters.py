@@ -148,8 +148,8 @@ r"""
 >>> _test_js_obj_proxy('func(Function("return this"));')
 'func(Function("return (this && this._WB_wombat_obj_proxy || this)"));'
 
->>> _test_js_obj_proxy('A.call(function() { return this });')
-'A.call(function() { return (this && this._WB_wombat_obj_proxy || this) });'
+>>> _test_js_obj_proxy('A.call(function() { return   this });')
+'A.call(function() { return   (this && this._WB_wombat_obj_proxy || this) });'
 
 >>> _test_js_obj_proxy('this.document.location = foo')
 '(this && this._WB_wombat_obj_proxy || this).document.location = foo'
@@ -169,6 +169,9 @@ r"""
 
 >>> _test_js_obj_proxy('|||this|||')
 '|||this|||'
+
+>>> _test_js_obj_proxy('return this.foo')
+'return this.foo'
 
 
 #=================================================================
