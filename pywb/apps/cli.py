@@ -88,19 +88,19 @@ class ReplayCli(BaseCli):
 
     def run(self):
         if self.r.autoindex:
-            from pywb.manager.manager import CollectionsManager
+            from pywb.manager.autoindex import AutoIndexer
             import os
 
-            m = CollectionsManager('', must_exist=False)
-            if not os.path.isdir(m.colls_dir):
+            indexer = AutoIndexer(interval=self.r.auto_interval)
+            if not os.path.isdir(indexer.root_path):
                 msg = 'No managed directory "{0}" for auto-indexing'
-                logging.error(msg.format(m.colls_dir))
+                logging.error(msg.format(indexer.root_path))
                 import sys
                 sys.exit(2)
-            else:
-                msg = 'Auto-Indexing Enabled on "{0}", checking every {1} secs'
-                logging.info(msg.format(m.colls_dir, self.r.auto_interval))
-                m.autoindex(interval=self.r.auto_interval, do_loop=False)
+
+            msg = 'Auto-Indexing Enabled on "{0}", checking every {1} secs'
+            logging.info(msg.format(indexer.root_path, self.r.auto_interval))
+            indexer.start()
 
         super(ReplayCli, self).run()
 

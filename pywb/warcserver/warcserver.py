@@ -57,6 +57,9 @@ class WarcServer(BaseWarcServer):
 
         self.fixed_routes = self.load_colls()
 
+        self.archive_templ = None
+        self.indexes_templ = None
+
         for name, route in iteritems(self.fixed_routes):
             self.add_route('/' + name, route)
 
@@ -82,13 +85,13 @@ class WarcServer(BaseWarcServer):
             return
 
         #indexes_templ = os.path.join('{coll}', 'indexes') + os.path.sep
-        indexes_templ = self.AUTO_DIR_INDEX_PATH.replace('/', os.path.sep)
-        dir_source = CacheDirectoryIndexSource(self.root_dir, indexes_templ)
+        self.indexes_templ = self.AUTO_DIR_INDEX_PATH.replace('/', os.path.sep)
+        dir_source = CacheDirectoryIndexSource(self.root_dir, self.indexes_templ)
 
-        archive_templ = self.AUTO_DIR_ARCHIVE_PATH.replace('/', os.path.sep)
-        archive_templ = os.path.join(self.root_dir, archive_templ)
+        self.archive_templ = self.AUTO_DIR_ARCHIVE_PATH.replace('/', os.path.sep)
+        self.archive_templ = os.path.join(self.root_dir, self.archive_templ)
 
-        handler = DefaultResourceHandler(dir_source, archive_templ)
+        handler = DefaultResourceHandler(dir_source, self.archive_templ)
 
         return handler
 

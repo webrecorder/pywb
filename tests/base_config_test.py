@@ -3,7 +3,8 @@ from gevent import monkey; monkey.patch_all(thread=False)
 import pytest
 import webtest
 
-from pywb.warcserver.test.testutils import BaseTestClass
+from pywb.warcserver.test.testutils import BaseTestClass, TempDirTests
+from pywb.manager.manager import main, CollectionsManager
 
 from pywb.apps.frontendapp import FrontEndApp
 import os
@@ -24,16 +25,28 @@ class BaseConfigTest(BaseTestClass):
     @classmethod
     def get_test_app(cls, config_file, override=None):
         config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
-        return webtest.TestApp(FrontEndApp(config_file=config_file, custom_config=override))
+        app = FrontEndApp(config_file=config_file, custom_config=override)
+        return app, webtest.TestApp(app)
 
     @classmethod
     def setup_class(cls, config_file, include_non_frame=True):
         super(BaseConfigTest, cls).setup_class()
-        cls.testapp = cls.get_test_app(config_file)
+        cls.app, cls.testapp = cls.get_test_app(config_file)
 
         if include_non_frame:
-            cls.testapp_non_frame = cls.get_test_app(config_file,
-                                                     override={'framed_replay': False})
+            cls.app_non_frame, cls.testapp_non_frame = cls.get_test_app(config_file,
+                                                        override={'framed_replay': False})
+
+    @classmethod
+    def teardown_class(cls):
+        if cls.app.recorder:
+            cls.app.recorder.writer.close()
+
+        if cls.app_non_frame.recorder:
+            cls.app_non_frame.recorder.writer.close()
+
+        super(BaseConfigTest, cls).teardown_class()
+
     def _assert_basic_html(self, resp):
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'
@@ -61,3 +74,21 @@ class BaseConfigTest(BaseTestClass):
         return app.head(url.format(fmod), *args, **kwargs)
 
 
+#=============================================================================
+class CollsDirMixin(TempDirTests):
+    COLLS_DIR = '_test_colls'
+
+    @classmethod
+    def setup_class(cls, *args, **kwargs):
+        super(CollsDirMixin, cls).setup_class(*args, **kwargs)
+        cls.orig_cwd = os.getcwd()
+        cls.root_dir = os.path.realpath(cls.root_dir)
+        os.chdir(cls.root_dir)
+        cls.orig_collections = CollectionsManager.COLLS_DIR
+        CollectionsManager.COLLS_DIR = cls.COLLS_DIR
+
+    @classmethod
+    def teardown_class(cls):
+        os.chdir(cls.orig_cwd)
+        CollectionsManager.COLLS_DIR = cls.orig_collections
+        super(CollsDirMixin, cls).teardown_class()
