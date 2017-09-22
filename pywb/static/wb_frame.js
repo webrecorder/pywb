@@ -41,7 +41,7 @@ function ContentFrame(content_info) {
             this.iframe.className += " " + content_info.iframe_class;
         }
 
-        this.iframe.src = this.make_url(content_info.url, content_info.request_ts, true);
+        this.iframe.src = this.load_url(content_info.url, content_info.request_ts);
     }
 
     this.extract_prefix = function() {
