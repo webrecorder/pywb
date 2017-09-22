@@ -13,7 +13,7 @@ help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 apidoc:
-	@sphinx-apidoc -o code ../pywb/ "../*test*"
+	@sphinx-apidoc -f -T -o code ../pywb/ "../*test*" "../*git_hash*"
 
 .PHONY: help Makefile
 

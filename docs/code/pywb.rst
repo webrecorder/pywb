@@ -14,18 +14,6 @@ Subpackages
     pywb.utils
     pywb.warcserver
 
-Submodules
-----------
-
-pywb\.git\_hash module
-----------------------
-
-.. automodule:: pywb.git_hash
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
 Module contents
 ---------------
 

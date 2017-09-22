@@ -19,6 +19,7 @@ develop-eggs
 lib
 lib64
 __pycache__
+.DS_Store
 
 # ignore auto-gen certs
 ca/pywb-ca.pem
