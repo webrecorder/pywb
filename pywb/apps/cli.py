@@ -34,6 +34,8 @@ class BaseCli(object):
         parser.add_argument('--debug', action='store_true')
         parser.add_argument('--profile', action='store_true')
 
+        parser.add_argument('--proxy', help='Enable HTTP/S Proxy on specified collection')
+
         parser.add_argument('--live', action='store_true', help='Add /live handler')
 
         self.desc = desc
@@ -47,6 +49,9 @@ class BaseCli(object):
                             level=logging.DEBUG if self.r.debug else logging.INFO)
 
         self.application = self.load()
+
+        if self.r.proxy:
+            self.application = self.application.init_proxy(self.r.proxy)
 
         if self.r.profile:
             from werkzeug.contrib.profiler import ProfilerMiddleware

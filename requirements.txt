@@ -12,3 +12,4 @@ webencodings
 gevent==1.2.2
 webassets==0.12.1
 portalocker
+wsgiprox>=1.4.0

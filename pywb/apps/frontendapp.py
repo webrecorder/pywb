@@ -8,6 +8,7 @@ from six.moves.urllib.parse import urljoin
 from six import iteritems
 
 from warcio.utils import to_native_str
+from wsgiprox.wsgiprox import WSGIProxMiddleware
 
 from pywb.recorder.multifilewarcwriter import MultiFileWARCWriter
 from pywb.recorder.recorderapp import RecorderApp
@@ -202,7 +203,6 @@ class FrontEndApp(object):
         metadata = self.get_metadata(coll)
         if record:
             metadata['type'] = 'record'
-            print('RECORD')
 
         if timemap_output:
             metadata['output'] = timemap_output
@@ -303,6 +303,17 @@ class FrontEndApp(object):
         app = FrontEndApp()
         app_server = GeventServer(app, port=port, hostname='0.0.0.0')
         return app_server
+
+    def init_proxy(self, proxy_coll, opts=None):
+        if not opts:
+            opts = {'ca_name': 'pywb HTTPS Proxy CA',
+                    'ca_file_cache': os.path.join('proxy-certs', 'pywb-ca.pem')}
+
+        prefix = '/{0}/bn_/'.format(proxy_coll)
+
+        return WSGIProxMiddleware(self, prefix,
+                                  proxy_host='pywb.proxy',
+                                  proxy_options=opts)
 
 
 # ============================================================================
