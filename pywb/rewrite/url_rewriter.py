@@ -161,7 +161,28 @@ class UrlRewriter(object):
 
 
 #=================================================================
-class SchemeOnlyUrlRewriter(UrlRewriter):
+class IdentityUrlRewriter(UrlRewriter):
+    """
+    No rewriting performed, return original url
+    """
+    def rewrite(self, url, mod=None):
+        return url
+
+    def get_new_url(self, **kwargs):
+        return kwargs.get('url', self.wburl.url)
+
+    def rebase_rewriter(self, new_url):
+        return self
+
+    def get_cookie_rewriter(self, scope=None):
+        return None
+
+    def deprefix_url(self):
+        return self.wburl.url
+
+
+#=================================================================
+class SchemeOnlyUrlRewriter(IdentityUrlRewriter):
     """
     A url rewriter which ensures that any urls have the same
     scheme (http or https) as the base url.
@@ -182,14 +203,3 @@ class SchemeOnlyUrlRewriter(UrlRewriter):
 
         return url
 
-    def get_new_url(self, **kwargs):
-        return kwargs.get('url', self.wburl.url)
-
-    def rebase_rewriter(self, new_url):
-        return self
-
-    def get_cookie_rewriter(self, scope=None):
-        return None
-
-    def deprefix_url(self):
-        return self.wburl.url

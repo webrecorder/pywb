@@ -19,9 +19,14 @@ class RewriteInputRequest(DirectWSGIInputRequest):
         self.rewriter = rewriter
         self.extra_cookie = None
 
-        self.splits = urlsplit(self.url)
+        is_proxy = ('wsgiprox.proxy_host' in env)
+
+        self.splits = urlsplit(self.url) if not is_proxy else None
 
     def get_full_request_uri(self):
+        if not self.splits:
+            return self.url
+
         uri = self.splits.path
         if not uri:
             uri = '/'
@@ -39,17 +44,20 @@ class RewriteInputRequest(DirectWSGIInputRequest):
         for name, value in iteritems(self.env):
             if name == 'HTTP_HOST':
                 name = 'Host'
-                value = self.splits.netloc
+                if self.splits:
+                    value = self.splits.netloc
 
             elif name == 'HTTP_ORIGIN':
                 name = 'Origin'
-                value = (self.splits.scheme + '://' + self.splits.netloc)
+                if self.splits:
+                    value = (self.splits.scheme + '://' + self.splits.netloc)
 
             elif name == 'HTTP_X_CSRFTOKEN':
                 name = 'X-CSRFToken'
-                cookie_val = extract_client_cookie(self.env, 'csrftoken')
-                if cookie_val:
-                    value = cookie_val
+                if self.splits:
+                    cookie_val = extract_client_cookie(self.env, 'csrftoken')
+                    if cookie_val:
+                        value = cookie_val
 
             elif name == 'HTTP_X_PYWB_REQUESTED_WITH':
                 continue
@@ -62,12 +70,8 @@ class RewriteInputRequest(DirectWSGIInputRequest):
 
             elif name == 'HTTP_X_FORWARDED_PROTO':
                 name = 'X-Forwarded-Proto'
-                value = self.splits.scheme
-
-            elif name == 'HTTP_COOKIE':
-                name = 'Cookie'
-                value = self._req_cookie_rewrite(value)
-                has_cookies = True
+                if self.splits:
+                    value = self.splits.scheme
 
             elif name.startswith('HTTP_'):
                 name = name[5:].title().replace('_', '-')
@@ -81,30 +85,10 @@ class RewriteInputRequest(DirectWSGIInputRequest):
             if value:
                 headers[name] = value
 
-        if not has_cookies:
-            value = self._req_cookie_rewrite('')
-            if value:
-                headers['Cookie'] = value
-
         if self.extra_cookie:
             headers['Cookie'] = self.extra_cookie + ';' + headers.get('Cookie', '')
 
         return headers
-
-    def _req_cookie_rewrite(self, value):
-        return value
-
-        rule = self.rewriter.ruleset.get_first_match(self.urlkey)
-        if not rule or not rule.req_cookie_rewrite:
-            return value
-
-        for cr in rule.req_cookie_rewrite:
-            try:
-                value = cr['rx'].sub(cr['replace'], value)
-            except KeyError:
-                pass
-
-        return value
 
     def extract_range(self):
         use_206 = False

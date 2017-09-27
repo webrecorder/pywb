@@ -3,8 +3,8 @@ from warcio.statusandheaders import StatusAndHeadersParser
 
 from warcio.utils import to_native_str
 
-from six.moves.urllib.parse import urlsplit, quote, unquote_plus
-from six import iteritems, StringIO
+from six.moves.urllib.parse import urlsplit, quote, unquote_plus, urlencode
+from six import iteritems, StringIO, PY3
 from io import BytesIO
 
 import base64
@@ -230,7 +230,7 @@ class PostQueryExtractor(object):
                         environ=env,
                         keep_blank_values=True)
 
-            if six.PY3:
+            if PY3:
                 args['encoding'] = 'utf-8'
 
             data = cgi.FieldStorage(**args)

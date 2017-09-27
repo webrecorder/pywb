@@ -34,6 +34,7 @@ class DefaultHeaderRewriter(object):
         'content-md5': 'prefix',
         'content-range': 'keep',
         'content-security-policy': 'prefix',
+        'content-security-policy-report-only': 'prefix',
         'content-type': 'keep',
 
         'date': 'keep',
@@ -102,7 +103,10 @@ class DefaultHeaderRewriter(object):
             return (name, value)
 
         elif rule == 'url-rewrite':
-            return (name, self.rwinfo.url_rewriter.rewrite(value))
+            if self.rwinfo.is_url_rw():
+                return (name, self.rwinfo.url_rewriter.rewrite(value))
+            else:
+                return (name, value)
 
         elif rule == 'prefix-if-content-rewrite':
             if self.rwinfo.is_content_rw:

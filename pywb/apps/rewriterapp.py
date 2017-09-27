@@ -6,7 +6,7 @@ from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
 from pywb.rewrite.default_rewriter import DefaultRewriter, RewriterWithJSProxy
 
 from pywb.rewrite.wburl import WbUrl
-from pywb.rewrite.url_rewriter import UrlRewriter, SchemeOnlyUrlRewriter
+from pywb.rewrite.url_rewriter import UrlRewriter, IdentityUrlRewriter
 
 from pywb.utils.wbexception import WbException
 from pywb.utils.canonicalize import canonicalize
@@ -122,18 +122,18 @@ class RewriterApp(object):
         rel_prefix = self.get_rel_prefix(environ)
         full_prefix = host_prefix + rel_prefix
 
+        is_proxy = ('wsgiprox.proxy_host' in environ)
+
         response = self.handle_custom_response(environ, wb_url,
                                                full_prefix, host_prefix,
                                                kwargs)
 
         if response:
-            return self.format_response(response, wb_url, full_prefix, is_timegate)
-
-        is_proxy = ('wsgiprox.proxy_host' in environ)
+            return self.format_response(response, wb_url, full_prefix, is_timegate, is_proxy)
 
         if is_proxy:
             environ['pywb_proxy_magic'] = environ['wsgiprox.proxy_host']
-            urlrewriter = SchemeOnlyUrlRewriter(wb_url, '')
+            urlrewriter = IdentityUrlRewriter(wb_url, '')
             framed_replay = False
 
         else:
@@ -293,24 +293,18 @@ class RewriterApp(object):
         if not is_ajax and self.enable_memento:
             self._add_memento_links(cdx['url'], full_prefix,
                                     memento_dt, cdx['timestamp'], status_headers,
-                                    is_timegate)
+                                    is_timegate, is_proxy)
 
             set_content_loc = True
 
         if set_content_loc:
             status_headers.headers.append(('Content-Location', urlrewriter.get_new_url(timestamp=cdx['timestamp'],
                                                                                        url=cdx['url'])))
-        #gen = buffer_iter(status_headers, gen)
         response = WbResponse(status_headers, gen)
-
-        if is_proxy:
-            response.status_headers.remove_header('Content-Security-Policy-Report-Only')
-            response.status_headers.remove_header('Content-Security-Policy')
-            response.status_headers.remove_header('X-Frame-Options')
 
         return response
 
-    def format_response(self, response, wb_url, full_prefix, is_timegate):
+    def format_response(self, response, wb_url, full_prefix, is_timegate, is_proxy):
         memento_ts = None
         if not isinstance(response, WbResponse):
             content_type = 'text/html'
@@ -324,11 +318,11 @@ class RewriterApp(object):
             response = WbResponse.text_response(response, content_type=content_type)
 
         self._add_memento_links(wb_url.url, full_prefix, None, memento_ts,
-                                response.status_headers, is_timegate)
+                                response.status_headers, is_timegate, is_proxy)
         return response
 
     def _add_memento_links(self, url, full_prefix, memento_dt, memento_ts,
-                           status_headers, is_timegate):
+                           status_headers, is_timegate, is_proxy):
 
         # memento url + header
         if not memento_dt and memento_ts:
@@ -337,17 +331,21 @@ class RewriterApp(object):
         if memento_dt:
             status_headers.headers.append(('Memento-Datetime', memento_dt))
 
-            memento_url = full_prefix + memento_ts + self.replay_mod
-            memento_url += '/' + url
+            if is_proxy:
+                memento_url = url
+            else:
+                memento_url = full_prefix + memento_ts + self.replay_mod
+                memento_url += '/' + url
         else:
             memento_url = None
 
         timegate_url, timemap_url = self._get_timegate_timemap(url, full_prefix)
 
         link = []
-        link.append(MementoUtils.make_link(url, 'original'))
-        link.append(MementoUtils.make_link(timegate_url, 'timegate'))
-        link.append(MementoUtils.make_link(timemap_url, 'timemap'))
+        if not is_proxy:
+            link.append(MementoUtils.make_link(url, 'original'))
+            link.append(MementoUtils.make_link(timegate_url, 'timegate'))
+            link.append(MementoUtils.make_link(timemap_url, 'timemap'))
 
         if memento_dt:
             link.append(MementoUtils.make_memento_link(memento_url, 'memento', memento_dt))
