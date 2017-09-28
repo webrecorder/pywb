@@ -10,6 +10,7 @@ import six
 
 import os
 import logging
+import glob
 
 """
 The purpose of this module is to 'resolve' a warc/arc filename,
@@ -51,7 +52,7 @@ class PrefixResolver(object):
             return path
 
     def __repr__(self):
-        return "PrefixResolver('{0}')".format(self.prefix)
+        return "PrefixResolver('{0}')".format(self.template)
 
 
 #=============================================================================
