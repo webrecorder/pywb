@@ -31,8 +31,8 @@ class TestPathIndex(object):
         assert res[0] == os.path.join(get_test_dir(), 'warcs', 'example.warc.gz')
 
     def test_resolver_dir_wildcard_as_file_url(self):
-        url = to_file_url(get_test_dir()) + os.path.sep + '*' + os.path.sep
-        resolver = PrefixResolver(url)
+        url = to_file_url(get_test_dir()) +  '/*/'
+        resolver = DefaultResolverMixin.make_best_resolver(url)
 
         cdx = CDXObject()
         res = resolver('example.warc.gz', cdx)

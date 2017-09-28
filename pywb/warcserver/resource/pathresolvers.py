@@ -5,7 +5,7 @@ from pywb.utils.binsearch import iter_exact
 
 from pywb.warcserver.index.indexsource import RedisIndexSource
 
-from six.moves.urllib.request import url2pathname
+from pywb.utils.loaders import from_file_url
 import six
 
 import os
@@ -40,9 +40,7 @@ class PrefixResolver(object):
         if '*' not in path:
             return path
 
-        if path.startswith('file://'):
-            path = path[7:]
-        elif '://' in path:
+        if '://' in path:
             return path
 
         paths = glob.glob(path)
@@ -112,8 +110,7 @@ class DefaultResolverMixin(object):
         if path.startswith('redis://'):
             return RedisResolver(path)
 
-        if path.startswith('file://'):
-            path = url2pathname(path[len('file://'):])
+        path = from_file_url(path)
 
         if os.path.isfile(path):
             return PathIndexResolver(path)

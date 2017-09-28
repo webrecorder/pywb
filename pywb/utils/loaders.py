@@ -11,7 +11,6 @@ import requests
 import yaml
 
 import six
-from six.moves.urllib.request import pathname2url, url2pathname
 from six.moves.urllib.parse import urljoin, unquote_plus, urlsplit, urlencode
 
 import time
@@ -38,8 +37,17 @@ def is_http(filename):
 def to_file_url(filename):
     """ Convert a filename to a file:// url
     """
-    url = os.path.abspath(filename)
-    url = urljoin('file:', pathname2url(url))
+    url = 'file://' + os.path.abspath(filename).replace(os.path.sep, '/')
+    return url
+
+
+#=================================================================
+def from_file_url(url):
+    """ Convert from file:// url to file path
+    """
+    if url.startswith('file://'):
+        url = url[len('file://'):].replace('/', os.path.sep)
+
     return url
 
 
@@ -259,9 +267,10 @@ class LocalFileLoader(PackageLoader):
         file_only = url.startswith(('/', '.'))
 
         # convert to filename
-        if url.startswith('file://'):
+        filename = from_file_url(url)
+        if filename != url:
             file_only = True
-            url = url2pathname(url[len('file://'):])
+            url = filename
 
         try:
             # first, try as file

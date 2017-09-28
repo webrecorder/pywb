@@ -104,7 +104,7 @@ class TestRecordReplay(CollsDirMixin, BaseConfigTest):
         link_lines = res.text.rstrip().split('\n')
         assert len(link_lines) == 5
 
-        assert '_test_colls:test2/indexes/autoindex.cdxj' in link_lines[3]
-        assert '_test_colls:test/indexes/autoindex.cdxj' in link_lines[4]
+        assert to_path('_test_colls:test2/indexes/autoindex.cdxj') in link_lines[3]
+        assert to_path('_test_colls:test/indexes/autoindex.cdxj') in link_lines[4]
 
 
