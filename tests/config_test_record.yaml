@@ -2,6 +2,8 @@ debug: true
 
 collections_root: _test_colls
 
+all_coll: all
+
 recorder: live
 
 collections:

@@ -46,6 +46,8 @@ class FrontEndApp(object):
 
         self.static_handler = StaticHandler('pywb/static/')
 
+        self.all_coll = config.get('all_coll', None)
+
         self.url_map = Map()
         self.url_map.add(Rule('/static/_/<coll>/<path:filepath>', endpoint=self.serve_static))
         self.url_map.add(Rule('/static/<path:filepath>', endpoint=self.serve_static))
@@ -60,6 +62,7 @@ class FrontEndApp(object):
         self.url_map.add(Rule(coll_prefix + '/', endpoint=self.serve_coll_page))
         self.url_map.add(Rule(coll_prefix + '/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
         self.url_map.add(Rule(coll_prefix + '/cdx', endpoint=self.serve_cdx))
+
         if self.recorder:
             self.url_map.add(Rule(coll_prefix + '/record/<path:url>', endpoint=self.serve_record))
 
@@ -134,6 +137,9 @@ class FrontEndApp(object):
             self.raise_not_found(environ, 'Static File Not Found: {0}'.format(filepath))
 
     def get_metadata(self, coll):
+        if coll == self.all_coll:
+            coll = '*'
+
         metadata = {'coll': coll,
                     'type': 'replay'}
 
@@ -169,6 +175,9 @@ class FrontEndApp(object):
 
     def serve_cdx(self, environ, coll='$root'):
         base_url = self.rewriterapp.paths['cdx-server']
+
+        if coll == self.all_coll:
+            coll = '*'
 
         cdx_url = base_url.format(coll=coll)
 
@@ -242,6 +251,9 @@ class FrontEndApp(object):
         return WbResponse.json_response(result)
 
     def is_valid_coll(self, coll):
+        if coll == self.all_coll:
+            return True
+
         return (coll in self.warcserver.list_fixed_routes() or
                 coll in self.warcserver.list_dynamic_routes())
 

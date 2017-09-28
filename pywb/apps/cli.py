@@ -34,12 +34,12 @@ class BaseCli(object):
         parser.add_argument('--debug', action='store_true')
         parser.add_argument('--profile', action='store_true')
 
+        parser.add_argument('--live', action='store_true', help='Add live-web handler at /live')
+
         parser.add_argument('--proxy', help='Enable HTTP/S Proxy on specified collection')
 
-        parser.add_argument('--live', action='store_true', help='Add /live handler')
-
         self.desc = desc
-        self.extra_config = None
+        self.extra_config = {}
 
         self._extend_parser(parser)
 
@@ -62,9 +62,12 @@ class BaseCli(object):
 
     def load(self):
         if self.r.live:
-            self.extra_config = {'collections':
-                                    {'live': {'index': '$live',
-                                              'use_js_obj_proxy': True}}}
+            self.extra_config['collections'] = {'live':
+                    {'index': '$live',
+                     'use_js_obj_proxy': True}}
+
+        if self.r.debug:
+            self.extra_config['debug'] = True
 
     def run(self):
         self.run_gevent()
@@ -81,12 +84,18 @@ class ReplayCli(BaseCli):
         parser.add_argument('-a', '--autoindex', action='store_true')
         parser.add_argument('--auto-interval', type=int, default=30)
 
+        parser.add_argument('--all-coll', help='Set "all" collection')
+
         help_dir='Specify root archive dir (default is current working directory)'
         parser.add_argument('-d', '--directory', help=help_dir)
 
 
     def load(self):
         super(ReplayCli, self).load()
+
+        if self.r.all_coll:
+            self.extra_config['all_coll'] = self.r.all_coll
+
         import os
         if self.r.directory:  #pragma: no cover
             os.chdir(self.r.directory)
