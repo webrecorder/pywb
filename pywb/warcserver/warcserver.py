@@ -86,7 +86,9 @@ class WarcServer(BaseWarcServer):
 
         #indexes_templ = os.path.join('{coll}', 'indexes') + os.path.sep
         self.indexes_templ = self.AUTO_DIR_INDEX_PATH.replace('/', os.path.sep)
-        dir_source = CacheDirectoryIndexSource(self.root_dir, self.indexes_templ)
+        dir_source = CacheDirectoryIndexSource(base_prefix=self.root_dir,
+                                               base_dir=self.indexes_templ,
+                                               name=self.root_dir)
 
         self.archive_templ = self.AUTO_DIR_ARCHIVE_PATH.replace('/', os.path.sep)
         self.archive_templ = os.path.join(self.root_dir, self.archive_templ)

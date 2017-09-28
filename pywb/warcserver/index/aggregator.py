@@ -245,9 +245,10 @@ class GeventTimeoutAggregator(TimeoutMixin, GeventMixin, BaseSourceListAggregato
 
 #=============================================================================
 class BaseDirectoryIndexSource(BaseAggregator):
-    def __init__(self, base_prefix, base_dir=''):
+    def __init__(self, base_prefix, base_dir='', name=''):
         self.base_prefix = base_prefix
         self.base_dir = base_dir
+        self.name = name
 
     def _iter_sources(self, params):
         the_dir = res_template(self.base_dir, params)
@@ -275,6 +276,9 @@ class BaseDirectoryIndexSource(BaseAggregator):
                     full_name = name
                 else:
                     full_name = os.path.join(rel_path, name)
+
+                if self.name:
+                    full_name = self.name + ':' + full_name
 
                 yield full_name, FileIndexSource(filename)
 
