@@ -99,3 +99,12 @@ class TestRecordReplay(CollsDirMixin, BaseConfigTest):
 
         assert cdxj_lines[0]['filename'] == cdxj_lines[2]['filename']
 
+    def test_timemap_all_coll(self):
+        res = self.testapp.get('/all/timemap/link/http://httpbin.org/get?C=D')
+        link_lines = res.text.rstrip().split('\n')
+        assert len(link_lines) == 5
+
+        assert '_test_colls:test2/indexes/autoindex.cdxj' in link_lines[3]
+        assert '_test_colls:test/indexes/autoindex.cdxj' in link_lines[4]
+
+

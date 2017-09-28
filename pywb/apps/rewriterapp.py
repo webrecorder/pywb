@@ -460,7 +460,7 @@ class RewriterApp(object):
 
         return r
 
-    def make_timemap(self, wb_url, res, full_prefix):
+    def make_timemap(self, wb_url, res, full_prefix, output):
         wb_url.type = wb_url.QUERY
 
         content_type = res.headers.get('Content-Type')
@@ -472,7 +472,7 @@ class RewriterApp(object):
         elif res.status_code:
             status = str(res.status_code) + ' ' + res.reason
 
-            if res.status_code == 200:
+            if res.status_code == 200 and output == 'link':
                 timegate, timemap = self._get_timegate_timemap(wb_url.url, full_prefix)
 
                 text = MementoUtils.wrap_timemap_header(wb_url.url,
@@ -486,8 +486,9 @@ class RewriterApp(object):
     def handle_query(self, environ, wb_url, kwargs, full_prefix):
         res = self.do_query(wb_url, kwargs)
 
-        if kwargs.get('output'):
-            return self.make_timemap(wb_url, res, full_prefix)
+        output = kwargs.get('output')
+        if output:
+            return self.make_timemap(wb_url, res, full_prefix, output)
 
         def format_cdx(text):
             cdx_lines = text.rstrip().split('\n')

@@ -136,6 +136,23 @@ class TestMemento(MementoMixin, BaseConfigTest):
 """
         assert exp == resp.text
 
+    def test_timemap_cdxj(self):
+        """
+        Test test/x-cdxj timemap
+        """
+
+        resp = self.testapp.get('/pywb/timemap/cdxj/http://example.com?example=1')
+        assert resp.status_int == 200
+        assert resp.content_type == 'text/x-cdxj'
+
+        resp.charset = 'utf-8'
+
+        exp = """\
+com,example)/?example=1 20140103030321 {"url": "http://example.com?example=1", "mime": "text/html", "status": "200", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "redirect": "-", "robotflags": "-", "length": "1043", "offset": "333", "filename": "example.warc.gz", "source": "pywb:example.cdx"}
+com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "mime": "warc/revisit", "status": "-", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "redirect": "-", "robotflags": "-", "length": "553", "offset": "1864", "filename": "example.warc.gz", "source": "pywb:example.cdx"}
+"""
+        assert exp == resp.text
+
     def test_timemap_2(self):
         """
         Test application/link-format timemap total count
