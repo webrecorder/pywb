@@ -93,9 +93,9 @@ class TestRecordReplay(CollsDirMixin, BaseConfigTest):
         assert cdxj_lines[1]['url'] == 'http://httpbin.org/get?C=D'
         assert cdxj_lines[2]['url'] == 'http://httpbin.org/get?C=D'
 
-        assert cdxj_lines[0]['source'] == to_path('_test_colls:test/indexes/autoindex.cdxj')
-        assert cdxj_lines[1]['source'] == to_path('_test_colls:test2/indexes/autoindex.cdxj')
-        assert cdxj_lines[2]['source'] == to_path('_test_colls:test/indexes/autoindex.cdxj')
+        assert cdxj_lines[0]['source'] == to_path('test/indexes/autoindex.cdxj')
+        assert cdxj_lines[1]['source'] == to_path('test2/indexes/autoindex.cdxj')
+        assert cdxj_lines[2]['source'] == to_path('test/indexes/autoindex.cdxj')
 
         assert cdxj_lines[0]['filename'] == cdxj_lines[2]['filename']
 
@@ -104,7 +104,7 @@ class TestRecordReplay(CollsDirMixin, BaseConfigTest):
         link_lines = res.text.rstrip().split('\n')
         assert len(link_lines) == 5
 
-        assert to_path('_test_colls:test2/indexes/autoindex.cdxj') in link_lines[3]
-        assert to_path('_test_colls:test/indexes/autoindex.cdxj') in link_lines[4]
+        assert to_path('test2/indexes/autoindex.cdxj') in link_lines[3]
+        assert to_path('test/indexes/autoindex.cdxj') in link_lines[4]
 
 

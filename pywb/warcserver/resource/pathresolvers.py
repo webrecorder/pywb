@@ -33,12 +33,17 @@ class PrefixResolver(object):
 
     def __call__(self, filename, cdx):
         full_path = self.template
+
         if hasattr(cdx, '_formatter') and cdx._formatter:
             full_path = cdx._formatter.format(full_path)
 
         path = full_path + filename
         if '*' not in path:
             return path
+
+        res_path = self.resolve_coll(path, cdx.get('source'))
+        if res_path:
+            return res_path
 
         if '://' in path:
             return path
@@ -48,6 +53,13 @@ class PrefixResolver(object):
             return paths
         else:
             return path
+
+    def resolve_coll(self, path, source):
+        if not source:
+            return
+
+        coll = source.split('/', 1)[0]
+        return path.replace('*', coll)
 
     def __repr__(self):
         return "PrefixResolver('{0}')".format(self.template)

@@ -84,14 +84,14 @@ class WarcServer(BaseWarcServer):
             print('No Root Dir, Skip Auto Colls!')
             return
 
-        #indexes_templ = os.path.join('{coll}', 'indexes') + os.path.sep
-        self.indexes_templ = self.AUTO_DIR_INDEX_PATH.replace('/', os.path.sep)
-        dir_source = CacheDirectoryIndexSource(base_prefix=self.root_dir,
-                                               base_dir=self.indexes_templ,
-                                               name=self.root_dir)
+        self.indexes_templ = self.config.get('dyn_index_path', self.AUTO_DIR_INDEX_PATH).replace('/', os.path.sep)
 
-        self.archive_templ = self.AUTO_DIR_ARCHIVE_PATH.replace('/', os.path.sep)
-        self.archive_templ = os.path.join(self.root_dir, self.archive_templ)
+        dir_source = CacheDirectoryIndexSource(base_prefix=self.root_dir,
+                                               base_dir=self.indexes_templ)
+
+        self.archive_templ = self.config.get('dyn_archive_path', self.AUTO_DIR_ARCHIVE_PATH).replace('/', os.path.sep)
+        if '://' not in self.archive_templ:
+            self.archive_templ = os.path.join(self.root_dir, self.archive_templ)
 
         handler = DefaultResourceHandler(dir_source, self.archive_templ)
 

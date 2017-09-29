@@ -30,6 +30,15 @@ class TestPathIndex(object):
         assert len(res) == 1
         assert res[0] == os.path.join(get_test_dir(), 'warcs', 'example.warc.gz')
 
+    def test_resolver_dir_wildcard_with_coll(self):
+        resolver = DefaultResolverMixin.make_best_resolver('s3://bucket/colls/*/archives/')
+
+        cdx = CDXObject()
+        cdx['source'] = 'my-coll/indexes/index.cdxj'
+
+        res = resolver('example.warc.gz', cdx)
+        assert res == 's3://bucket/colls/my-coll/archives/example.warc.gz'
+
     def test_resolver_dir_wildcard_as_file_url(self):
         url = to_file_url(get_test_dir()) +  '/*/'
         resolver = DefaultResolverMixin.make_best_resolver(url)

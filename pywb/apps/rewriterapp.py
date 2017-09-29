@@ -556,8 +556,9 @@ class RewriterApp(object):
 
         if referrer.startswith(full_prefix):
             referrer = referrer[len(full_prefix):]
-            environ['HTTP_REFERER'] = WbUrl(referrer).url
-            return True
+            if referrer:
+                environ['HTTP_REFERER'] = WbUrl(referrer).url
+                return True
 
         return False
 
