@@ -37,15 +37,14 @@ function ContentFrame(content_info) {
 
         this.extract_prefix();
 
-        if (content_info.iframe_class) {
-            this.iframe.className += " " + content_info.iframe_class;
-        }
-
         this.iframe.src = this.load_url(content_info.url, content_info.request_ts);
     }
 
     this.extract_prefix = function() {
-        if (content_info.prefix) {
+        content_info.app_prefix = content_info.app_prefix || content_info.prefix;
+        content_info.content_prefix = content_info.content_prefix || content_info.prefix;
+
+        if (content_info.app_prefix && content_info.content_prefix) {
             return;
         }
 
@@ -61,6 +60,9 @@ function ContentFrame(content_info) {
         }
 
         content_info.prefix = window.location.href.substr(0, inx);
+
+        content_info.app_prefix = content_info.app_prefix || content_info.prefix;
+        content_info.content_prefix = content_info.content_prefix || content_info.prefix;
     }
 
 
@@ -69,10 +71,10 @@ function ContentFrame(content_info) {
 
         if (content_url) {
             mod = "mp_";
-            prefix = content_info.content_prefix || content_info.prefix;
+            prefix = content_info.content_prefix;
         } else {
             mod = "";
-            prefix = content_info.prefix;
+            prefix = content_info.app_prefix;
         }
 
         if (ts || mod) {

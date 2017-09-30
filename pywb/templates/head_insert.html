@@ -15,6 +15,7 @@
   wbinfo.proxy_magic = "{{ env.pywb_proxy_magic }}";
   wbinfo.static_prefix = "{{ host_prefix }}/{{ static_path }}";
 
+{% if not wb_url.is_banner_only %}
   wbinfo.wombat_ts = "{{ wombat_ts }}";
   wbinfo.wombat_sec = "{{ wombat_sec }}";
   wbinfo.wombat_scheme = "{{ urlsplit.scheme }}";
@@ -29,8 +30,8 @@
   } else {
     console.warn("_wb_wombat missing!");
   }
+{% endif %}
+
 </script>
-
-
 <!-- End WB Insert -->
 
