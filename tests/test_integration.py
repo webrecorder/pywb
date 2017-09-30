@@ -413,14 +413,14 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.status_int == 404
 
     def test_static_content(self):
-        resp = self.testapp.get('/static/wb.css')
+        resp = self.testapp.get('/static/default_banner.css')
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
         assert resp.content_length > 0
 
     def test_static_content_filewrapper(self):
         from wsgiref.util import FileWrapper
-        resp = self.testapp.get('/static/wb.css', extra_environ = {'wsgi.file_wrapper': FileWrapper})
+        resp = self.testapp.get('/static/default_banner.css', extra_environ = {'wsgi.file_wrapper': FileWrapper})
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
         assert resp.content_length > 0

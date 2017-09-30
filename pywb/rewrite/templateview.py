@@ -109,9 +109,10 @@ class JinjaEnv(object):
 
 # ============================================================================
 class BaseInsertView(object):
-    def __init__(self, jenv, insert_file):
+    def __init__(self, jenv, insert_file, banner_view=None):
         self.jenv = jenv
         self.insert_file = insert_file
+        self.banner_view = banner_view
 
     def render_to_string(self, env, **kwargs):
         template = None
@@ -140,10 +141,6 @@ class BaseInsertView(object):
 
 # ============================================================================
 class HeadInsertView(BaseInsertView):
-    def __init__(self, jenv, insert_file, banner_view=None):
-        super(HeadInsertView, self).__init__(jenv, insert_file)
-        self.banner_view = banner_view
-
     def create_insert_func(self, wb_url,
                            wb_prefix,
                            host_prefix,
@@ -216,6 +213,10 @@ class TopFrameView(BaseInsertView):
 
         if extra_params:
             params.update(extra_params)
+
+        if self.banner_view:
+            banner_html = self.banner_view.render_to_string(env, **params)
+            params['banner_html'] = banner_html
 
         return self.render_to_string(env, **params)
 

@@ -1,4 +1,4 @@
-from .base_config_test import CollsDirMixin
+from .base_config_test import BaseConfigTest, CollsDirMixin, fmod
 
 import os
 import tempfile
@@ -38,18 +38,17 @@ AUTOINDEX_FILE = 'autoindex.cdxj'
 
 
 #=============================================================================
-class TestManagedColls(CollsDirMixin, BaseTestClass):
+class TestManagedColls(CollsDirMixin, BaseConfigTest):
+    @classmethod
+    def setup_class(cls):
+        super(TestManagedColls, cls).setup_class('config_test.yaml')
+
     def _check_dirs(self, base, dirlist):
         for dir_ in dirlist:
             assert os.path.isdir(os.path.join(base, dir_))
 
     def _get_sample_warc(self, name):
         return os.path.join(get_test_dir(), 'warcs', name)
-
-    def _create_app(self):
-        config_file = 'config_test.yaml'
-        config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
-        self.testapp = webtest.TestApp(FrontEndApp(config_file=config_file))
 
     @patch('pywb.apps.cli.BaseCli.run_gevent', lambda *args, **kwargs: None)
     def test_run_cli(self):
@@ -89,8 +88,8 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
 
         main(['add', 'test', warc1])
 
-        self._create_app()
-        resp = self.testapp.get('/test/20140103030321/http://example.com?example=1')
+    def test_add_warcs_replay(self, fmod):
+        resp = self.get('/test/20140103030321{0}/http://example.com/?example=1', fmod)
         assert resp.status_int == 200
 
     def test_another_coll(self):
@@ -102,8 +101,8 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
 
         main(['add', 'foo', warc1])
 
-        self._create_app()
-        resp = self.testapp.get('/foo/20140103030321/http://example.com?example=1')
+    def test_another_coll_replay(self, fmod):
+        resp = self.get('/foo/20140103030321{0}/http://example.com/?example=1', fmod)
         assert resp.status_int == 200
 
     def test_add_more_warcs(self):
@@ -121,9 +120,9 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
         with raises(IOError):
             main(['add', 'test', 'non-existent-file.warc.gz'])
 
+    def test_add_more_warcs_replay(self, fmod):
         # check new cdx
-        self._create_app()
-        resp = self.testapp.get('/test/20140126200624/http://www.iana.org/')
+        resp = self.get('/test/20140126200624{0}/http://www.iana.org/', fmod)
         assert resp.status_int == 200
 
     def test_add_custom_nested_warcs(self):
@@ -165,11 +164,11 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
         assert '334' in nested_cdx_index
         assert 'A/iana.warc.gz' in nested_cdx_index
 
-        self._create_app()
-        resp = self.testapp.get('/nested/20140126200624/http://www.iana.org/')
+    def test_nested_replay(self, fmod):
+        resp = self.get('/nested/20140126200624{0}/http://www.iana.org/', fmod)
         assert resp.status_int == 200
 
-        resp = self.testapp.get('/nested/20140103030321/http://example.com?example=1')
+        resp = self.get('/nested/20140103030321{0}/http://example.com/?example=1', fmod)
         assert resp.status_int == 200
 
     def test_merge_vs_reindex_equality(self):
@@ -202,7 +201,6 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
         with open(a_static, 'w+b') as fh:
             fh.write(b'/* Some JS File */')
 
-        self._create_app()
         resp = self.testapp.get('/static/_/test/abc.js')
         assert resp.status_int == 200
         assert resp.content_type == 'application/javascript'
@@ -217,7 +215,6 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
         with open(a_static, 'w+b') as fh:
             fh.write(b'/* Some CSS File */')
 
-        self._create_app()
         resp = self.testapp.get('/static/foo.css')
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
@@ -230,7 +227,6 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
         """
         main(['metadata', 'foo', '--set', 'title=Collection Title'])
 
-        self._create_app()
         resp = self.testapp.get('/')
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'
@@ -242,7 +238,6 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
         resp.charset = 'utf-8'
         assert '(Collection Title)' in resp.text
 
-
     def test_other_metadata_search_page(self):
         main(['metadata', 'foo', '--set',
               'desc=Some Description Text',
@@ -251,7 +246,6 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
         with raises(ValueError):
             main(['metadata', 'foo', '--set', 'name_only'])
 
-        self._create_app()
         resp = self.testapp.get('/foo/')
         resp.charset = 'utf-8'
         assert resp.status_int == 200
@@ -268,17 +262,31 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
     def test_custom_template_search(self):
         """ Test manually added custom search template search.html
         """
-        a_static = os.path.join(self.root_dir, COLLECTIONS, 'test', 'templates', 'search.html')
+        custom_search = os.path.join(self.root_dir, COLLECTIONS, 'test',
+                                      'templates', 'search.html')
 
-        with open(a_static, 'w+b') as fh:
+        with open(custom_search, 'w+b') as fh:
             fh.write(b'pywb custom search page')
 
-        self._create_app()
         resp = self.testapp.get('/test/')
         resp.charset = 'utf-8'
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'
         assert 'pywb custom search page' in resp.text
+
+    def test_add_custom_banner(self):
+        """ Test adding custom banner.html per-collection template
+        """
+
+        banner_file = os.path.join(self.root_dir, COLLECTIONS, 'test',
+                                   'templates', 'banner.html')
+
+        with open(banner_file, 'w+b') as fh:
+            fh.write(b'<div>Custom Banner Here!</div>')
+
+    def test_add_custom_banner_replay(self, fmod):
+        resp = self.get('/test/20140103030321/http://example.com/?example=1', fmod)
+        assert '<div>Custom Banner Here!</div>' in resp.text
 
     def test_more_custom_templates(self):
         """
@@ -287,7 +295,7 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
         Add custom metadata and test its presence in custom search page
         """
         custom_search = os.path.join(self.root_dir, COLLECTIONS, 'test',
-                                     'templates', 'search.html')
+                                      'templates', 'search.html')
 
         # add metadata
         main(['metadata', 'test', '--set', 'some=value'])
@@ -296,7 +304,9 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
             fh.write(b'overriden search page: ')
             fh.write(b'{{ metadata | tojson }}\n')
 
-        self._create_app()
+        # force clear of jinja env cache to reload
+        self.app.rewriterapp.jinja_env.jinja_env.cache = {}
+
         resp = self.testapp.get('/test/')
         resp.charset = 'utf-8'
         assert resp.status_int == 200
@@ -304,7 +314,8 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
         assert 'overriden search page: ' in resp.text
         assert '"some": "value"' in resp.text
 
-        resp = self.testapp.get('/test/20140103030321/http://example.com?example=1')
+    def test_more_custom_templates_replay(self, fmod):
+        resp = self.get('/test/20140103030321{0}/http://example.com/?example=1', fmod)
         assert resp.status_int == 200
 
     def test_add_default_coll_templates(self):
@@ -334,7 +345,6 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
             fh.seek(0)
             fh.write(buf)
 
-        self._create_app()
         resp = self.testapp.get('/')
         resp.charset = 'utf-8'
         assert resp.content_type == 'text/html'
@@ -378,8 +388,6 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
         """ Test removing templates dir, using default template again
         """
         shutil.rmtree(os.path.join(self.root_dir, COLLECTIONS, 'foo', 'templates'))
-
-        self._create_app()
 
         resp = self.testapp.get('/foo/')
         resp.charset = 'utf-8'
@@ -559,7 +567,6 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
 
         # No Statics -- ignorable
         shutil.rmtree(os.path.join(colls, 'foo', 'static'))
-        self._create_app()
 
         # No WARCS
         warcs_path = os.path.join(colls, 'foo', ARCHIVE_DIR)
@@ -572,15 +579,9 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
         cdx_path = os.path.join(colls, 'foo', INDEX_DIR)
         shutil.rmtree(cdx_path)
 
-        #with raises(Exception):
-        #    self._create_app()
-
         # CDX a file not a dir
         with open(cdx_path, 'w+b') as fh:
             fh.write(b'foo\n')
-
-        #with raises(Exception):
-        #    self._create_app()
 
         shutil.rmtree(colls)
 
@@ -589,7 +590,6 @@ class TestManagedColls(CollsDirMixin, BaseTestClass):
             main(['list'])
 
         # No Collections
-        self._create_app()
         resp = self.testapp.get('/test/', status=404)
         assert resp.status_int == 404
 

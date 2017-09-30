@@ -78,7 +78,8 @@ class RewriterApp(object):
                                                self.banner_view)
 
         self.frame_insert_view = TopFrameView(self.jinja_env,
-                                               self._html_templ('frame_insert_html'))
+                                               self._html_templ('frame_insert_html'),
+                                               self.banner_view)
 
         self.error_view = BaseInsertView(self.jinja_env, self._html_templ('error_html'))
         self.not_found_view = BaseInsertView(self.jinja_env, self._html_templ('not_found_html'))
