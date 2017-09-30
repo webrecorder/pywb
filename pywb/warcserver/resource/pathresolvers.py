@@ -58,6 +58,9 @@ class PrefixResolver(object):
         if not source:
             return
 
+        if os.path.sep != '/':
+            source = source.replace(os.path.sep, '/')
+
         coll = source.split('/', 1)[0]
         return path.replace('*', coll)
 
