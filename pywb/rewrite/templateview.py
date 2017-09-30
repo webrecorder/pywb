@@ -109,10 +109,9 @@ class JinjaEnv(object):
 
 # ============================================================================
 class BaseInsertView(object):
-    def __init__(self, jenv, insert_file, banner_file=''):
+    def __init__(self, jenv, insert_file):
         self.jenv = jenv
         self.insert_file = insert_file
-        self.banner_file = banner_file
 
     def render_to_string(self, env, **kwargs):
         template = None
@@ -141,6 +140,10 @@ class BaseInsertView(object):
 
 # ============================================================================
 class HeadInsertView(BaseInsertView):
+    def __init__(self, jenv, insert_file, banner_view=None):
+        super(HeadInsertView, self).__init__(jenv, insert_file)
+        self.banner_view = banner_view
+
     def create_insert_func(self, wb_url,
                            wb_prefix,
                            host_prefix,
@@ -156,13 +159,17 @@ class HeadInsertView(BaseInsertView):
                   'coll': coll,
                   'is_framed': 'true' if is_framed else 'false',
                   'top_url': top_url,
-                  'banner_html': self.banner_file,
                  }
 
         def make_head_insert(rule, cdx):
             params['wombat_ts'] = cdx['timestamp'] if include_ts else ''
             params['wombat_sec'] = timestamp_to_sec(cdx['timestamp'])
             params['is_live'] = 'true' if cdx.get('is_live') else 'false'
+
+            if self.banner_view:
+                banner_html = self.banner_view.render_to_string(env, cdx=cdx, **params)
+                params['banner_html'] = banner_html
+
             return self.render_to_string(env, cdx=cdx, **params)
 
         return make_head_insert
@@ -193,21 +200,19 @@ class TopFrameView(BaseInsertView):
         else:
             iframe_url = wb_prefix + embed_url
 
-        wbrequest = {'host_prefix': host_prefix,
-                     'wb_prefix': wb_prefix,
-                     'wb_url': wb_url,
-                     'coll': coll,
+        params = {'host_prefix': host_prefix,
+                  'wb_prefix': wb_prefix,
+                  'wb_url': wb_url,
+                  'coll': coll,
 
-                     'options': {'frame_mod': frame_mod,
-                                 'replay_mod': replay_mod},
-                    }
+                  'options': {'frame_mod': frame_mod,
+                              'replay_mod': replay_mod},
 
-        params = dict(embed_url=embed_url,
-                      iframe_url=iframe_url,
-                      wbrequest=wbrequest,
-                      timestamp=timestamp,
-                      url=wb_url.get_url(),
-                      banner_html=self.banner_file)
+                  'embed_url': embed_url,
+                  'iframe_url': iframe_url,
+                  'timestamp': timestamp,
+                  'url': wb_url.get_url()
+                 }
 
         if extra_params:
             params.update(extra_params)
