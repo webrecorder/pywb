@@ -23,19 +23,21 @@ def fmod_sl(request):
 # ============================================================================
 class BaseConfigTest(BaseTestClass):
     @classmethod
-    def get_test_app(cls, config_file, override=None):
+    def get_test_app(cls, config_file, custom_config=None):
         config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
-        app = FrontEndApp(config_file=config_file, custom_config=override)
+        app = FrontEndApp(config_file=config_file, custom_config=custom_config)
         return app, webtest.TestApp(app)
 
     @classmethod
-    def setup_class(cls, config_file, include_non_frame=True):
+    def setup_class(cls, config_file, include_non_frame=True, custom_config=None):
         super(BaseConfigTest, cls).setup_class()
-        cls.app, cls.testapp = cls.get_test_app(config_file)
+        cls.app, cls.testapp = cls.get_test_app(config_file, custom_config)
 
         if include_non_frame:
+            custom_config = custom_config or {}
+            custom_config['framed_replay'] = False
             cls.app_non_frame, cls.testapp_non_frame = cls.get_test_app(config_file,
-                                                        override={'framed_replay': False})
+                                                        custom_config)
 
     @classmethod
     def teardown_class(cls):

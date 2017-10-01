@@ -27,27 +27,59 @@ from pywb.apps.wbrequestresponse import WbResponse
 import os
 import traceback
 import requests
+import logging
 
 
 # ============================================================================
 class FrontEndApp(object):
+    REPLAY_API = 'http://localhost:%s/{coll}/resource/postreq'
+    CDX_API = 'http://localhost:%s/{coll}/index'
+    RECORD_SERVER = 'http://localhost:%s'
+    RECORD_API = 'http://localhost:%s/%s/resource/postreq?param.recorder.coll={coll}'
+
+    RECORD_ROUTE = '/record'
+
+    PROXY_CA_NAME = 'pywb HTTPS Proxy CA'
+
+    PROXY_CA_PATH = os.path.join('proxy-certs', 'pywb-ca.pem')
+
     def __init__(self, config_file='./config.yaml', custom_config=None):
-        self.debug = True
+        print('CUSTOM', custom_config)
+        self.handler = self.handle_request
         self.warcserver = WarcServer(config_file=config_file,
                                      custom_config=custom_config)
 
         config = self.warcserver.config
 
-        framed_replay = config.get('framed_replay', True)
+        self.debug = config.get('debug', False)
 
         self.warcserver_server = GeventServer(self.warcserver, port=0)
 
-        self.init_recorder(config)
+        self.init_proxy(config)
 
-        self.static_handler = StaticHandler('pywb/static/')
+        self.init_recorder(config.get('recorder'))
+
+        static_path = config.get('static_path', 'pywb/static/').replace('/', os.path.sep)
+        self.static_handler = StaticHandler(static_path)
 
         self.all_coll = config.get('all_coll', None)
 
+        self._init_routes()
+
+        upstream_paths = self.get_upstream_paths(self.warcserver_server.port)
+
+        framed_replay = config.get('framed_replay', True)
+        self.rewriterapp = RewriterApp(framed_replay,
+                                       config=config,
+                                       paths=upstream_paths)
+
+        self.templates_dir = config.get('templates_dir', 'templates')
+        self.static_dir = config.get('static_dir', 'static')
+
+        metadata_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'metadata.yaml')
+        self.metadata_cache = MetadataCache(metadata_templ)
+
+    def _init_routes(self):
         self.url_map = Map()
         self.url_map.add(Rule('/static/_/<coll>/<path:filepath>', endpoint=self.serve_static))
         self.url_map.add(Rule('/static/<path:filepath>', endpoint=self.serve_static))
@@ -63,50 +95,47 @@ class FrontEndApp(object):
         self.url_map.add(Rule(coll_prefix + '/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
         self.url_map.add(Rule(coll_prefix + '/cdx', endpoint=self.serve_cdx))
 
-        if self.recorder:
-            self.url_map.add(Rule(coll_prefix + '/record/<path:url>', endpoint=self.serve_record))
+        if self.recorder_path:
+            self.url_map.add(Rule(coll_prefix + self.RECORD_ROUTE + '/<path:url>', endpoint=self.serve_record))
 
         self.url_map.add(Rule(coll_prefix + '/<path:url>', endpoint=self.serve_content))
 
-        upstream_paths = self.get_upstream_paths(self.warcserver_server.port)
-
-        self.rewriterapp = RewriterApp(framed_replay,
-                                       config=config,
-                                       paths=upstream_paths)
-
-        self.templates_dir = config.get('templates_dir', 'templates')
-        self.static_dir = config.get('static_dir', 'static')
-
-        metadata_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'metadata.yaml')
-        self.metadata_cache = MetadataCache(metadata_templ)
-
     def get_upstream_paths(self, port):
         base_paths = {
-                'replay': 'http://localhost:%s/{coll}/resource/postreq' % port,
-                'cdx-server': 'http://localhost:%s/{coll}/index' % port,
+                'replay': self.REPLAY_API % port,
+                'cdx-server': self.CDX_API % port,
                }
 
-        if self.recorder:
-            base_paths['record'] = 'http://localhost:%s/%s/resource/postreq?param.recorder.coll={coll}' % (self.recorder_port, self.recorder_source)
+        if self.recorder_path:
+            base_paths['record'] = self.recorder_path
 
         return base_paths
 
-    def init_recorder(self, config):
-        self.recorder_source = config.get('recorder')
-
-        if not self.recorder_source:
+    def init_recorder(self, recorder_config):
+        if not recorder_config:
             self.recorder = None
-            self.recorder_server = None
-            self.recorder_port = 0
+            self.recorder_path = None
             return
 
+        if isinstance(recorder_config, str):
+            recorder_coll = recorder_config
+            recorder_config = {}
+        else:
+            recorder_coll = recorder_config['source_coll']
+
+        # TODO: support dedup
         dedup_index = None
-        warc_writer = MultiFileWARCWriter(self.warcserver.archive_templ, max_size=1000000000, max_idle_secs=600,
+        warc_writer = MultiFileWARCWriter(self.warcserver.archive_templ,
+                                          max_size=int(recorder_config.get('max_size', 1000000000)),
+                                          max_idle_secs=int(recorder_config.get('max_idle_secs', 600)),
+                                          filename_template=recorder_config.get('filename_template'),
                                           dedup_index=dedup_index)
 
-        self.recorder = RecorderApp('http://localhost:' + str(self.warcserver_server.port), warc_writer)
-        self.recorder_server = GeventServer(self.recorder, port=0)
-        self.recorder_port = self.recorder_server.port
+        self.recorder = RecorderApp(self.RECORD_SERVER % str(self.warcserver_server.port), warc_writer)
+
+        recorder_server = GeventServer(self.recorder, port=0)
+
+        self.recorder_path = self.RECORD_API % (recorder_server.port, recorder_coll)
 
     def serve_home(self, environ):
         home_view = BaseInsertView(self.rewriterapp.jinja_env, 'index.html')
@@ -289,6 +318,9 @@ class FrontEndApp(object):
         return WbResponse.redir_response(full_url, '307 Redirect')
 
     def __call__(self, environ, start_response):
+        return self.handler(environ, start_response)
+
+    def handle_request(self, environ, start_response):
         urls = self.url_map.bind_to_environ(environ)
         try:
             endpoint, args = urls.match()
@@ -316,16 +348,40 @@ class FrontEndApp(object):
         app_server = GeventServer(app, port=port, hostname='0.0.0.0')
         return app_server
 
-    def init_proxy(self, proxy_coll, opts=None):
-        if not opts:
-            opts = {'ca_name': 'pywb HTTPS Proxy CA',
-                    'ca_file_cache': os.path.join('proxy-certs', 'pywb-ca.pem')}
+    def init_proxy(self, config):
+        proxy_config = config.get('proxy')
+        if not proxy_config:
+            return
+
+        if isinstance(proxy_config, str):
+            proxy_coll = proxy_config
+            proxy_config = {}
+        else:
+            proxy_coll = proxy_config['coll']
+
+        if '/' in proxy_coll:
+            raise Exception('Proxy collection can not contain "/"')
+
+        proxy_config['ca_name'] = proxy_config.get('ca_name', self.PROXY_CA_NAME)
+        proxy_config['ca_file_cache'] = proxy_config.get('ca_file_cache', self.PROXY_CA_PATH)
+
+        if proxy_config.get('recording'):
+            logging.info('Proxy recording into collection "{0}"'.format(proxy_coll))
+            if proxy_coll in self.warcserver.list_fixed_routes():
+                raise Exception('Can not record into fixed collection')
+
+            proxy_coll += self.RECORD_ROUTE
+            if not config.get('recorder'):
+                config['recorder'] = 'live'
+
+        else:
+            logging.info('Proxy enabled for collection "{0}"'.format(proxy_coll))
 
         prefix = '/{0}/bn_/'.format(proxy_coll)
 
-        return WSGIProxMiddleware(self, prefix,
-                                  proxy_host='pywb.proxy',
-                                  proxy_options=opts)
+        self.handler = WSGIProxMiddleware(self.handle_request, prefix,
+                                  proxy_host=proxy_config.get('host', 'pywb.proxy'),
+                                  proxy_options=proxy_config)
 
 
 # ============================================================================

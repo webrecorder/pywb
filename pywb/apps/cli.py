@@ -6,23 +6,23 @@ import logging
 
 #=============================================================================
 def warcserver(args=None):
-    WarcServerCli(args=args,
-              default_port=8070,
-              desc='pywb WarcServer').run()
+    return WarcServerCli(args=args,
+                         default_port=8070,
+                         desc='pywb WarcServer').run()
 
 
 #=============================================================================
 def wayback(args=None):
-    WaybackCli(args=args,
-               default_port=8080,
-               desc='pywb Wayback Machine Server').run()
+    return WaybackCli(args=args,
+                      default_port=8080,
+                      desc='pywb Wayback Machine Server').run()
 
 
 #=============================================================================
 def live_rewrite_server(args=None):
-    LiveCli(args=args,
-            default_port=8090,
-            desc='pywb Live Rewrite Proxy Server').run()
+    return LiveCli(args=args,
+                   default_port=8090,
+                   desc='pywb Live Rewrite Proxy Server').run()
 
 
 #=============================================================================
@@ -37,6 +37,7 @@ class BaseCli(object):
         parser.add_argument('--live', action='store_true', help='Add live-web handler at /live')
 
         parser.add_argument('--proxy', help='Enable HTTP/S Proxy on specified collection')
+        parser.add_argument('--proxy-record', action='store_true', help='Enable Proxy Recording into specified collection')
 
         self.desc = desc
         self.extra_config = {}
@@ -48,10 +49,12 @@ class BaseCli(object):
         logging.basicConfig(format='%(asctime)s: [%(levelname)s]: %(message)s',
                             level=logging.DEBUG if self.r.debug else logging.INFO)
 
-        self.application = self.load()
-
         if self.r.proxy:
-            self.application = self.application.init_proxy(self.r.proxy)
+            self.extra_config['proxy'] = {'coll': self.r.proxy,
+                                          'recording': self.r.proxy_record}
+            self.r.live = True
+
+        self.application = self.load()
 
         if self.r.profile:
             from werkzeug.contrib.profiler import ProfilerMiddleware
@@ -71,6 +74,7 @@ class BaseCli(object):
 
     def run(self):
         self.run_gevent()
+        return self
 
     def run_gevent(self):
         from gevent.pywsgi import WSGIServer
@@ -116,7 +120,7 @@ class ReplayCli(BaseCli):
             logging.info(msg.format(indexer.root_path, self.r.auto_interval))
             indexer.start()
 
-        super(ReplayCli, self).run()
+        return super(ReplayCli, self).run()
 
 
 #=============================================================================

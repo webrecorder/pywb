@@ -108,3 +108,25 @@ class TestRecordReplay(CollsDirMixin, BaseConfigTest):
         assert to_path('test/indexes/autoindex.cdxj') in link_lines[4]
 
 
+# ============================================================================
+class TestRecordCustomConfig(CollsDirMixin, BaseConfigTest):
+    @classmethod
+    def setup_class(cls):
+        rec_custom = {'recorder': {'source_coll': 'live',
+                                   'filename_template': 'pywb-rec-test-{timestamp}.warcgz'}}
+        super(TestRecordCustomConfig, cls).setup_class('config_test_record.yaml', custom_config=rec_custom)
+
+    def test_init_and_rec(self):
+        manager(['init', 'test-new'])
+        dir_name = os.path.join(self.root_dir, '_test_colls', 'test-new', 'archive')
+        assert os.path.isdir(dir_name)
+
+        res = self.testapp.get('/test-new/record/mp_/http://httpbin.org/get?A=B')
+        assert '"A": "B"' in res.text
+
+        names = os.listdir(dir_name)
+        assert len(names) == 1
+        assert names[0].startswith('pywb-rec-test-')
+        assert names[0].endswith('.warcgz')
+
+
