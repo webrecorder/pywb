@@ -21,7 +21,7 @@ Two command line utilities are provided:
 
 (For more details, run ``wb-manager -h`` and ``wayback -h``)
 
-For example, to install pywb and create a new collection ``my-web-archive``
+For example, to install pywb and create a new collection "my-web-archive" in ``./collections/my-web-archive``.
 
 .. code:: console
 
@@ -35,12 +35,13 @@ Point your browser to ``http://localhost:8080/my-web-archive/<url>/`` where ``<u
 If all worked well, you should see your archived version of ``<url>``. Congrats, you are now running your own web archive!
 
 
-
 Using Existing Web Archive Collections
 --------------------------------------
 
 Existing archives of WARCs/ARCs files can be used with pywb with minimal amount of setup. By using ``wb-manager add``,
 WARC/ARC files will automatically be placed in the collection archive directory and indexed.
+
+By default ``wb-manager``, places new collections in ``collections/<coll name>`` subdirectory in the current working directory. To specify a different root directory, the ``wb-manager -d <dir>``. Other options can be set in the config file.
 
 If you have a large number of existing CDX index files, pywb will be able to read them as well after running through a simple conversion process.
 
