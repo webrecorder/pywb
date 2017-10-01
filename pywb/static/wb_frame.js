@@ -17,100 +17,80 @@ This file is part of pywb, https://github.com/ikreymer/pywb
     along with pywb.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var LIVE_COOKIE_REGEX = /pywb.timestamp=([\d]{1,14})/;
 
-var TS_REGEX = /\/([\d]{1,14})(?:\w+_)?\/(?:\w+[:])?\/\//;
+function ContentFrame(content_info) {
+    this.last_inner_hash = window.location.hash;
+    this.last_url = content_info.url;
+    this.last_ts = content_info.request_ts;
 
-//var curr_state = {};
-
-var IFRAME_ID = "replay_iframe";
-
-var last_inner_hash = undefined;
-
-function make_url(url, ts, mod, prefix)
-{
-    if (ts || mod) {
-        mod += "/";
-    }
-
-    prefix = prefix || wbinfo.prefix;
-
-    if (ts) {
-        return prefix + ts + mod + url;
-    } else {
-        return prefix + mod + url;
-    }
-}
-
-function pop_state(state) {
-    set_state(state);
-}
-
-function extract_ts(url)
-{
-    var result = url.match(TS_REGEX);
-    if (!result) {
-        return "";
-    }
-
-    return result[1];
-}
-
-function extract_replay_url(url) {
-    var inx = url.indexOf("/http:");
-    if (inx < 0) {
-        inx = url.indexOf("/https:");
-        if (inx < 0) {
-            return "";
-        }
-    }
-    return url.substring(inx + 1);
-}
-
-function set_state(state) {
-    var capture_info = document.getElementById("_wb_capture_info");
-    if (capture_info) {
-        capture_info.innerHTML = state.capture_str;
-    }
-
-    var label = document.getElementById("_wb_label");
-    if (label && window._wb_js) {
-        if (state.is_live) {
-            label.innerHTML = _wb_js.banner_labels.LIVE_MSG;
+    this.init_iframe = function() {
+        if (typeof(content_info.iframe) === "string") {
+            this.iframe = document.querySelector(content_info.iframe);
         } else {
-            label.innerHTML = _wb_js.banner_labels.REPLAY_MSG;
+            this.iframe = content_info.iframe;
+        }
+
+        if (!this.iframe) {
+            console.warn("no iframe found " + content_info.iframe + " found");
+            return;
+        }
+
+        this.extract_prefix();
+
+        this.load_url(content_info.url, content_info.request_ts);
+    }
+
+    this.extract_prefix = function() {
+        this.app_prefix = content_info.app_prefix || content_info.prefix;
+        this.content_prefix = content_info.content_prefix || content_info.prefix;
+
+        if (this.app_prefix && this.content_prefix) {
+            return;
+        }
+
+        var inx = window.location.href.indexOf(content_info.url);
+
+        if (inx < 0) {
+            inx = window.location.href.indexOf("/http") + 1;
+            if (inx <= 0) {
+                inx = window.location.href.indexOf("///") + 1;
+                if (inx <= 0) {
+                    console.warn("No Prefix Found!");
+                }
+            }
+        }
+
+        this.prefix = window.location.href.substr(0, inx);
+
+        this.app_prefix = this.app_prefix || this.prefix;
+        this.content_prefix = this.content_prefix || this.prefix;
+    }
+
+
+    this.make_url = function(url, ts, content_url) {
+        var mod, prefix;
+
+        if (content_url) {
+            mod = "mp_";
+            prefix = this.content_prefix;
+        } else {
+            mod = "";
+            prefix = this.app_prefix;
+        }
+
+        if (ts || mod) {
+            mod += "/";
+        }
+
+        if (ts) {
+            return prefix + ts + mod + url;
+        } else {
+            return prefix + mod + url;
         }
     }
 
-    //curr_state = state;
-}
-
-window.onpopstate = function(event) {
-    var state = event.state;
-
-    if (state) {
-        pop_state(state);
-    }
-}
-
-function extract_ts_cookie(value) {
-    var result = value.match(LIVE_COOKIE_REGEX);
-    if (result) {
-        return result[1];
-    } else {
-        return "";
-    }
-}
-
-
-function init_pm(frame) {
-    if (!frame) {
-        return;
-    }
-
-    var frame_win = frame.contentWindow;
-
-    window.addEventListener("message", function(event) {
+    this.handle_event = function(event) {
+        var frame_win = this.iframe.contentWindow;
         if (event.source == window.parent) {
             // Pass to replay frame
             frame_win.postMessage(event.data, "*");
@@ -118,101 +98,79 @@ function init_pm(frame) {
 
             // Check if iframe url change message
             if (typeof(event.data) == "object" && event.data["wb_type"]) {
-                handle_message(event.data);
+                this.handle_message(event.data);
 
             } else {
                 // Pass to parent
                 window.parent.postMessage(event.data, "*");
             }
         }
-    });
+    }
+
+    this.handle_message = function(state) {
+        var type = state.wb_type;
+
+        if (type == "load" || type == "replace-url") {
+            this.set_url(state);
+        } else if (type == "hashchange") {
+            this.inner_hash_changed(state);
+        }
+    }
+
+    this.set_url = function(state) {
+        if (state.url && (state.url != this.last_url || state.request_ts != this.last_ts)) {
+            var new_url = this.make_url(state.url, state.request_ts, false);
+
+            window.history.replaceState(state, "", new_url);
+
+            this.last_url = state.url;
+            this.last_ts = state.request_ts;
+        }
+    }
+
+    this.load_url = function(newUrl, newTs) {
+        this.iframe.src = this.make_url(newUrl, newTs, true);
+    }
+
+    this.inner_hash_changed = function(state) {
+        if (window.location.hash != state.hash) {
+            window.location.hash = state.hash;
+        }
+        this.last_inner_hash = state.hash;
+    }
+
+    this.outer_hash_changed = function(event) {
+        if (window.location.hash == this.last_inner_hash) {
+            return;
+        }
+
+        if (this.iframe) {
+            var message = {"wb_type": "outer_hashchange", "hash": window.location.hash}
+
+            this.iframe.contentWindow.postMessage(message, "*", undefined, true);
+        }
+    }
+
+    this.close = function() {
+        window.removeEventListener("hashchange", this.outer_hash_changed);
+        window.removeEventListener("message", this.handle_event);
+    }
+
+    // bind event callbacks
+    this.outer_hash_changed = this.outer_hash_changed.bind(this);
+    this.handle_event = this.handle_event.bind(this);
+
+    window.addEventListener("hashchange", this.outer_hash_changed, false);
+    window.addEventListener("message", this.handle_event);
+
+    if (document.readyState === "complete") {
+        this.init_iframe();
+    } else {
+        document.addEventListener("DOMContentLoaded", this.init_iframe.bind(this), { once: true });
+    }
 
     window.__WB_pmw = function(win) {
         this.pm_source = win;
         return this;
     }
 }
-
-
-function handle_message(state) {
-    var type = state.wb_type;
-
-    if (type == "load" || type == "replace-url") {
-        update_wb_url(state);
-    } else if (type == "hashchange") {
-        inner_hash_changed(state);
-    }
-}
-
-
-function update_wb_url(state) {
-    if (window._wb_js) {
-        state['capture_str'] = _wb_js.ts_to_date(state.ts, true);
-    }
-
-    if (!state.url) {
-        return;
-    }
-
-    var canon_url = make_url(state.url, state.request_ts, "", wbinfo.outer_prefix);
-
-    window.history.replaceState(state, "", canon_url);
-
-    set_state(state);
-}
-
-function inner_hash_changed(state) {
-    if (window.location.hash != state.hash) {
-        window.location.hash = state.hash;
-    }
-    last_inner_hash = state.hash;
-}
-
-function outer_hash_changed(event) {
-    if (window.location.hash == last_inner_hash) {
-        return;
-    }
-
-    var frame = document.getElementById(IFRAME_ID);
-
-    if (frame) {
-        var message = {"wb_type": "outer_hashchange", "hash": window.location.hash}
-
-        frame.contentWindow.postMessage(message, "*", undefined, true);
-    }
-}
-
-function init_hash_connect() {
-    var frame = document.getElementById(IFRAME_ID);
-
-    if (!frame) {
-        return;
-    }
-    
-    if (window.location.hash) {
-        var curr_url = wbinfo.capture_url + window.location.hash;
-
-        frame.src = make_url(curr_url, wbinfo.request_ts, wbinfo.replay_mod);
-
-        last_inner_hash = window.location.hash;
-        //frame.location.href = make_url(curr_url, wbinfo.request_ts, wbinfo.replay_mod);
-        //frame.location.hash = window.location.hash;
-    }
-
-    if ("onhashchange" in window) {
-        window.addEventListener("hashchange", outer_hash_changed, false);
-    }
-
-    // Init Post Message connect
-    init_pm(frame);
-}
-
-document.addEventListener("DOMContentLoaded", init_hash_connect);
-
-// Load Banner
-if (window._wb_js) {
-    _wb_js.load();
-}
-
-
-

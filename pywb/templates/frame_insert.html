@@ -12,26 +12,21 @@ html, body
 }
 
 </style>
-<script>
-  wbinfo = {}
-  wbinfo.prefix = "{{ wbrequest.wb_prefix }}";
-  wbinfo.capture_url = "{{ url }}";
-  wbinfo.timestamp = "{{ wbrequest.wb_url.timestamp }}";
-  wbinfo.is_frame = true;
-  wbinfo.frame_mod = "{{ wbrequest.options.frame_mod }}";
-  wbinfo.replay_mod = "{{ wbrequest.options.replay_mod }}";
-</script>
-<script src='{{ wbrequest.host_prefix }}/{{ static_path }}/wb.js'> </script>
-<link rel='stylesheet' href='{{ wbrequest.host_prefix }}/{{ static_path }}/wb.css'/>
-<link rel='stylesheet' href='{{ wbrequest.host_prefix }}/{{ static_path }}/scroll-webkit.css'/>
+<script src='{{ host_prefix }}/{{ static_path }}/wb_frame.js'> </script>
 
-{% include banner_html ignore missing %}
+{{ banner_html }}
 
-<script src='{{ wbrequest.host_prefix }}/{{ static_path }}/wb_frame.js'> </script>
 </head>
 <body style="margin: 0px; padding: 0px;">
-<div class="wb_iframe_div">
-<iframe id="replay_iframe" src="{{ iframe_url }}" onload="" frameborder="0" seamless="seamless" scrolling="yes" class="wb_iframe"></iframe>
+<div id="wb_iframe_div">
+<iframe id="replay_iframe" frameborder="0" seamless="seamless" scrolling="yes" class="wb_iframe"></iframe>
 </div>
+<script>
+  var cframe = new ContentFrame({"url": "{{ url }}" + window.location.hash,
+                                 "prefix": "{{ wb_prefix }}",
+                                 "request_ts": "{{ wb_url.timestamp }}",
+                                 "iframe": "#replay_iframe"});
+
+</script>
 </body>
 </html>

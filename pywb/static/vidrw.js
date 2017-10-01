@@ -34,7 +34,7 @@ if (window.location.hash) {
     if (_pywbvid == "html" || _pywbvid == "flash") {
         var YT_W_E_RX = /^(https?:\/\/.*youtube.com)\/(watch|embed).*$/;
 
-        if (wbinfo.url.match(YT_W_E_RX)) {
+        if (window.wbinfo && window.wbinfo.url.match(YT_W_E_RX)) {
             // special case: prevent yt player from being inited
             Object.defineProperty(window, 'yt', {writeable: false});
             Object.defineProperty(window, 'ytplayer', {writeable: false});
@@ -44,6 +44,10 @@ if (window.location.hash) {
 
 
 __wbvidrw = (function() {
+
+    if (!window.wbinfo) {
+        return;
+    }
 
     var checked_embeds = false;
 

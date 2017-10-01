@@ -74,15 +74,16 @@ class TestWbIntegration(BaseConfigTest):
     def test_replay_top_frame(self):
         resp = self.testapp.get('/pywb/20140127171238/http://www.iana.org/')
 
-        assert '<iframe ' in resp.text
-        assert '/pywb/20140127171238mp_/http://www.iana.org/' in resp.text, resp.text
+        assert 'new ContentFrame' in resp.text
+        assert '"20140127171238"' in resp.text
+        assert 'http://www.iana.org/' in resp.text, resp.text
 
     def test_replay_content(self, fmod):
         resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/', fmod)
         self._assert_basic_html(resp)
 
         assert '"20140127171238"' in resp.text, resp.text
-        assert 'wb.js' in resp.text
+        assert 'wombat.js' in resp.text
         assert 'new _WBWombat' in resp.text, resp.text
         assert '/pywb/20140127171238{0}/http://www.iana.org/time-zones"'.format(fmod) in resp.text
 
@@ -112,7 +113,7 @@ class TestWbIntegration(BaseConfigTest):
         self._assert_basic_html(resp)
 
         assert '"20140103030321"' in resp.text
-        assert 'wb.js' in resp.text
+        assert 'wombat.js' in resp.text
         assert '/pywb-cdxj/20140103030321{0}/http://www.iana.org/domains/example'.format(fmod) in resp.text
 
     def test_replay_cdxj_revisit(self, fmod):
@@ -120,7 +121,7 @@ class TestWbIntegration(BaseConfigTest):
         self._assert_basic_html(resp)
 
         assert '"20140103030341"' in resp.text
-        assert 'wb.js' in resp.text
+        assert 'wombat.js' in resp.text
         assert '/pywb-cdxj/20140103030341{0}/http://www.iana.org/domains/example'.format(fmod) in resp.text
 
     def test_zero_len_revisit(self, fmod):
@@ -128,7 +129,7 @@ class TestWbIntegration(BaseConfigTest):
         self._assert_basic_html(resp)
 
         assert '"20140603030341"' in resp.text
-        assert 'wb.js' in resp.text
+        assert 'wombat.js' in resp.text
         assert '/pywb/20140603030341{0}/http://www.iana.org/domains/example'.format(fmod) in resp.text
 
     def test_replay_url_agnostic_revisit(self, fmod):
@@ -136,7 +137,7 @@ class TestWbIntegration(BaseConfigTest):
         self._assert_basic_html(resp)
 
         assert '"20130729195151"' in resp.text
-        assert 'wb.js' in resp.text
+        assert 'wombat.js' in resp.text
         assert '/pywb/20130729195151{0}/http://www.iana.org/domains/example"'.format(fmod) in resp.text
 
     def test_video_info_not_found(self):
@@ -155,8 +156,8 @@ class TestWbIntegration(BaseConfigTest):
     def test_replay_banner_only(self):
         resp = self.testapp.get('/pywb/20140126201054bn_/http://www.iana.org/domains/reserved')
 
-        # wb.js header insertion
-        assert 'wb.js' in resp.text
+        # wombat.js header insertion
+        assert 'wombat.js' in resp.text
 
         # no wombat present
         assert '_WBWombat' not in resp.text
@@ -169,7 +170,7 @@ class TestWbIntegration(BaseConfigTest):
         resp = self.testapp.get('/pywb/20140127171251id_/http://example.com/')
 
         # no wb header insertion
-        assert 'wb.js' not in resp.text
+        assert 'wombat.js' not in resp.text
 
         assert resp.content_length == 1270, resp.content_length
 
@@ -185,7 +186,7 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.headers['Content-Range'] == 'bytes 0-200/1270', resp.headers['Content-Range']
         assert resp.content_length == 201, resp.content_length
 
-        assert 'wb.js' not in resp.text
+        assert 'wombat.js' not in resp.text
 
     def _test_replay_content_ignore_range(self):
         headers = [('Range', 'bytes=0-200')]
@@ -198,7 +199,7 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.content_length == 1270, resp.content_length
 
         # identity, no header insertion
-        assert 'wb.js' not in resp.text
+        assert 'wombat.js' not in resp.text
 
     def _test_replay_range_cache_content_bound_end(self):
         headers = [('Range', 'bytes=10-10000')]
@@ -210,7 +211,7 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.content_length == 1260, resp.content_length
         assert len(resp.text) == resp.content_length
 
-        assert 'wb.js' not in resp.text
+        assert 'wombat.js' not in resp.text
 
     def _test_replay_redir_no_cache(self):
         headers = [('Range', 'bytes=10-10000')]
@@ -223,7 +224,7 @@ class TestWbIntegration(BaseConfigTest):
         resp = self.testapp.get('/pywb/20140216050221id_/http://arc.gz.test.example.com/')
 
         # no wb header insertion
-        assert 'wb.js' not in resp.text
+        assert 'wombat.js' not in resp.text
 
         # original unrewritten url present
         assert '"http://www.iana.org/domains/example"' in resp.text
@@ -232,7 +233,7 @@ class TestWbIntegration(BaseConfigTest):
         resp = self.testapp.get('/pywb/20140216050221id_/http://arc.test.example.com/')
 
         # no wb header insertion
-        assert 'wb.js' not in resp.text
+        assert 'wombat.js' not in resp.text
 
         # original unrewritten url present
         assert '"http://www.iana.org/domains/example"' in resp.text
@@ -412,14 +413,14 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.status_int == 404
 
     def test_static_content(self):
-        resp = self.testapp.get('/static/wb.css')
+        resp = self.testapp.get('/static/default_banner.css')
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
         assert resp.content_length > 0
 
     def test_static_content_filewrapper(self):
         from wsgiref.util import FileWrapper
-        resp = self.testapp.get('/static/wb.css', extra_environ = {'wsgi.file_wrapper': FileWrapper})
+        resp = self.testapp.get('/static/default_banner.css', extra_environ = {'wsgi.file_wrapper': FileWrapper})
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
         assert resp.content_length > 0

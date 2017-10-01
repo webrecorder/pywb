@@ -19,43 +19,85 @@ This file is part of pywb, https://github.com/ikreymer/pywb
 */
 
 // Creates the default pywb banner.
-// Override this function/script to create a different type of banner
 
+(function() {
+    function ts_to_date(ts, is_gmt) {
+        if (!ts) {
+            return "";
+        }
 
-_wb_js.create_banner_element = function(banner_id)
-{
+        if (ts.length < 14) {
+            ts += "00000000000000".substr(ts.length);
+        }
 
-    var banner = document.createElement("wb_div", true);
-    banner.setAttribute("id", banner_id);
-    banner.setAttribute("lang", "en");
+        var datestr = (ts.substring(0, 4) + "-" +
+                      ts.substring(4, 6) + "-" +
+                      ts.substring(6, 8) + "T" +
+                      ts.substring(8, 10) + ":" +
+                      ts.substring(10, 12) + ":" +
+                      ts.substring(12, 14) + "-00:00");
 
-    var text;
+        var date = new Date(datestr);
 
-    if (wbinfo.is_frame) {
-        text = _wb_js.banner_labels.LOADING_MSG;
-    } else if (wbinfo.is_live) {
-        text = _wb_js.banner_labels.LIVE_MSG;
-    } else {
-        text = _wb_js.banner_labels.REPLAY_MSG;
+        if (is_gmt) {
+            return date.toGMTString();
+        } else {
+            return date.toLocaleString();
+        }
     }
-    
-    text = "<span id='_wb_label'>" + text + "</span>";
 
-    var capture_str = "";
-    if (wbinfo && wbinfo.timestamp) {
-        capture_str = _wb_js.ts_to_date(wbinfo.timestamp, true);
+    function init(bid) {
+        var banner = document.createElement("wb_div", true);
+
+        banner.setAttribute("id", bid);
+        banner.setAttribute("lang", "en");
+
+        var text = "<span id='_wb_capture_info'>Loading...</span>";
+
+        banner.innerHTML = text;
+        document.body.insertBefore(banner, document.body.firstChild);
     }
 
-    text += "<b id='_wb_capture_info'>" + capture_str + "</b>";
+    function set_banner(url, ts, is_live) {
+        var capture_str;
 
-    if (wbinfo.proxy_magic && wbinfo.url) {
-        var select_url = wbinfo.proxy_magic + "/" + wbinfo.url;
-        var query_url = wbinfo.proxy_magic + "/*/" + wbinfo.url;
-        text += '&nbsp;<a href="//query.' + query_url + '">All Capture Times</a>';
-        text += '<br/>'
-        text += 'From collection <b>"' + wbinfo.coll + '"</b>&nbsp;<a href="//select.' + select_url + '">All Collections</a>';
+        if (!ts) {
+            return;
+        }
+
+        if (is_live) {
+            capture_str = "This is a <b>live</b> page from ";
+        } else {
+            capture_str = "This is an <b>archived</b> page from ";
+        }
+
+        capture_str += ts_to_date(ts, true);
+        document.querySelector("#_wb_capture_info").innerHTML = capture_str;
     }
-    
-    banner.innerHTML = text;
-    document.body.insertBefore(banner, document.body.firstChild);
-}
+
+    if (window.top != window) {
+        return;
+    }
+
+    window.addEventListener("load", function() {
+        if (window.wbinfo) {
+            init("_wb_plain_banner");
+
+            set_banner(window.wbinfo.url,
+                       window.wbinfo.timestamp,
+                       window.wbinfo.is_live);
+        } else {
+            init("_wb_frame_top_banner");
+
+            window.addEventListener("message", function(event) {
+                var state = event.data;
+                if (state.wb_type) {
+                    set_banner(state.url, state.ts, state.is_live);
+                }
+            });
+        }
+    });
+
+})();
+
+
