@@ -52,7 +52,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
         banner.setAttribute("id", bid);
         banner.setAttribute("lang", "en");
 
-        var text = "<span id='_wb_capture_info'></span>";
+        var text = "<span id='_wb_capture_info'>Loading...</span>";
 
         banner.innerHTML = text;
         document.body.insertBefore(banner, document.body.firstChild);
@@ -60,6 +60,10 @@ This file is part of pywb, https://github.com/ikreymer/pywb
 
     function set_banner(url, ts, is_live) {
         var capture_str;
+
+        if (!ts) {
+            return;
+        }
 
         if (is_live) {
             capture_str = "This is a <b>live</b> page from ";
