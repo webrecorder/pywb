@@ -110,3 +110,18 @@ In this configuration, the indexing happens every 10 seconds.. After 10 seconds,
 (Note: this recorder is still experimental)
 
 
+HTTP/S Proxy Mode Access
+------------------------
+
+It is also possible to access any pywb collection via HTTP/S proxy mode, providing possibly better replay
+without client-side url rewriting.
+
+At this time, a single collection for proxy mode access can be specified with the ``--proxy`` flag.
+
+For example, ``wayback --proxy my-web-archive`` will start pywb and enable proxy mode access.
+
+You can then configure a browser to Proxy Settings host port to: ``localhost:8080`` and then loading any url, eg. ``http://example.com/`` should
+load the latest copy from the ``my-web-archive`` collection.
+
+
+

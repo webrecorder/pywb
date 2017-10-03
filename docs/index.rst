@@ -14,6 +14,7 @@ It provides command-line tools and an extensible framework for high-fidelity web
 
    manual/intro
    manual/usage
+   manual/configuring
    manual/index
    code/pywb
 
