@@ -1,68 +1,48 @@
 collections_root: collections
 
-paths:
-    archive_paths: archive
-    index_paths: indexes
-    static_path: static
+# Per-Collection Paths
+archive_paths: archive
+index_paths: indexes
+static_path: static
 
-    templates_dir: templates
+templates_dir: templates
 
-    template_files:
-        banner_html: banner.html
-        head_insert_html: head_insert.html
-        frame_insert_html: frame_insert.html
-
-        query_html: query.html
-        search_html: search.html
-        not_found_html: not_found.html
-
-    shared_template_files:
-        home_html: index.html
-        error_html: error.html
-
-        proxy_cert_download_html: proxy_cert_download.html
-        proxy_select_html: proxy_select.html
-
-        info_json: collinfo.json
-
-templates_dirs:
-    - templates
-    - '.'
-    - '/'
-
-template_packages:
-    - pywb
-
+# Template HTML
+banner_html: banner.html
 head_insert_html: head_insert.html
 frame_insert_html: frame_insert.html
-banner_html: banner.html
-
-#archive_paths: ./
-
-home_html: index.html
 
 query_html: query.html
 search_html: search.html
-
-error_html: error.html
 not_found_html: not_found.html
+
+home_html: index.html
+error_html: error.html
 
 proxy_cert_download_html: proxy_cert_download.html
 proxy_select_html: proxy_select.html
 
+# Info JSON
 info_json: collinfo.json
 
-static_default_prefix: &static_default_prefix static/__pywb
-static_shared_prefix: static/__shared
+# HTML Templates List
+html_templates:
+    - banner_html
+    - head_insert_html
+    - frame_insert_html
 
-template_globals:
-    static_path: *static_default_prefix
+    - query_html
+    - search_html
+    - not_found_html
 
-static_routes:
-    *static_default_prefix: pywb/static/
+    - home_html
+    - error_html
+    - proxy_cert_download_html
+    - proxy_select_html
 
+# Other Settings
 enable_memento: true
 
-domain_specific_rules: pywb/rules.yaml
+rules_config: pkg://pywb/rules.yaml
 
-framed_replay: inverse
+

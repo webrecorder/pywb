@@ -44,7 +44,6 @@ class FrontEndApp(object):
     PROXY_CA_PATH = os.path.join('proxy-certs', 'pywb-ca.pem')
 
     def __init__(self, config_file='./config.yaml', custom_config=None):
-        print('CUSTOM', custom_config)
         self.handler = self.handle_request
         self.warcserver = WarcServer(config_file=config_file,
                                      custom_config=custom_config)
@@ -59,7 +58,7 @@ class FrontEndApp(object):
 
         self.init_recorder(config.get('recorder'))
 
-        static_path = config.get('static_path', 'pywb/static/').replace('/', os.path.sep)
+        static_path = config.get('static_url_path', 'pywb/static/').replace('/', os.path.sep)
         self.static_handler = StaticHandler(static_path)
 
         self.all_coll = config.get('all_coll', None)
@@ -125,7 +124,7 @@ class FrontEndApp(object):
 
         # TODO: support dedup
         dedup_index = None
-        warc_writer = MultiFileWARCWriter(self.warcserver.archive_templ,
+        warc_writer = MultiFileWARCWriter(self.warcserver.archive_paths,
                                           max_size=int(recorder_config.get('max_size', 1000000000)),
                                           max_idle_secs=int(recorder_config.get('max_idle_secs', 600)),
                                           filename_template=recorder_config.get('filename_template'),
@@ -166,8 +165,8 @@ class FrontEndApp(object):
             self.raise_not_found(environ, 'Static File Not Found: {0}'.format(filepath))
 
     def get_metadata(self, coll):
-        if coll == self.all_coll:
-            coll = '*'
+        #if coll == self.all_coll:
+        #    coll = '*'
 
         metadata = {'coll': coll,
                     'type': 'replay'}
@@ -205,8 +204,8 @@ class FrontEndApp(object):
     def serve_cdx(self, environ, coll='$root'):
         base_url = self.rewriterapp.paths['cdx-server']
 
-        if coll == self.all_coll:
-            coll = '*'
+        #if coll == self.all_coll:
+        #    coll = '*'
 
         cdx_url = base_url.format(coll=coll)
 
@@ -280,8 +279,8 @@ class FrontEndApp(object):
         return WbResponse.json_response(result)
 
     def is_valid_coll(self, coll):
-        if coll == self.all_coll:
-            return True
+        #if coll == self.all_coll:
+        #    return True
 
         return (coll in self.warcserver.list_fixed_routes() or
                 coll in self.warcserver.list_dynamic_routes())

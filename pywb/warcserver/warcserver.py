@@ -32,8 +32,7 @@ SOURCE_LIST = [LiveIndexSource,
 
 # ============================================================================
 class WarcServer(BaseWarcServer):
-    AUTO_DIR_INDEX_PATH = '{coll}/indexes/'
-    AUTO_DIR_ARCHIVE_PATH = '{coll}/archive/'
+    AUTO_COLL_TEMPL = '{coll}'
 
     def __init__(self, config_file='./config.yaml', custom_config=None):
         config = load_yaml_config(DEFAULT_CONFIG)
@@ -55,47 +54,49 @@ class WarcServer(BaseWarcServer):
         super(WarcServer, self).__init__(debug=config.get('debug', False))
         self.config = config
 
-        self.fixed_routes = self.load_colls()
+        self.root_dir = self.config.get('collections_root', '')
+        self.index_paths = self.init_paths('index_paths')
+        self.archive_paths = self.init_paths('archive_paths', self.root_dir)
 
-        self.archive_templ = None
-        self.indexes_templ = None
-
-        for name, route in iteritems(self.fixed_routes):
-            self.add_route('/' + name, route)
+        self.auto_handler = None
 
         if self.config.get('enable_auto_colls', True):
-            auto_handler = self.load_auto_colls()
-            self.add_route('/<path:path_param_value>', auto_handler, path_param_name='param.coll')
+            self.auto_handler = self.load_auto_colls()
 
-    def _lookup(self, environ, path):
-        urls = self.url_map.bind(environ['HTTP_HOST'], path_info=path)
+        self.fixed_routes = self.load_colls()
 
-        try:
-            endpoint, args = urls.match()
-            result = endpoint(environ, **args)
-            return result
-        except Exception as e:
-            print(e)
-            return None
+        for name, route in iteritems(self.fixed_routes):
+            if route == self.auto_handler:
+                self.add_route('/' + name, route, path_param_name='param.coll', default_value='*')
+            else:
+                self.add_route('/' + name, route)
+
+        if self.auto_handler:
+            self.add_route('/<path:path_param_value>', self.auto_handler, path_param_name='param.coll')
+
+    def init_paths(self, name, abs_path=None):
+        templ = self.config.get(name)
+
+        def get_full_path(path):
+            path = os.path.join(self.AUTO_COLL_TEMPL, path, '')
+            if abs_path and '://' not in path:
+                path = os.path.join(abs_path, path)
+            return path
+
+        if isinstance(templ, str):
+            return get_full_path(templ)
+        else:
+            return [get_full_path(t) for t in templ]
 
     def load_auto_colls(self):
-        self.root_dir = self.config.get('collections_root', '')
         if not self.root_dir:
             print('No Root Dir, Skip Auto Colls!')
             return
 
-        self.indexes_templ = self.config.get('dyn_index_path', self.AUTO_DIR_INDEX_PATH).replace('/', os.path.sep)
-
         dir_source = CacheDirectoryIndexSource(base_prefix=self.root_dir,
-                                               base_dir=self.indexes_templ)
+                                               base_dir=self.index_paths)
 
-        self.archive_templ = self.config.get('dyn_archive_path', self.AUTO_DIR_ARCHIVE_PATH).replace('/', os.path.sep)
-        if '://' not in self.archive_templ:
-            self.archive_templ = os.path.join(self.root_dir, self.archive_templ)
-
-        handler = DefaultResourceHandler(dir_source, self.archive_templ)
-
-        return handler
+        return DefaultResourceHandler(dir_source, self.archive_paths)
 
     def list_fixed_routes(self):
         return list(self.fixed_routes.keys())
@@ -126,8 +127,6 @@ class WarcServer(BaseWarcServer):
         if not colls:
             return routes
 
-        self.default_archive_paths = self.config.get('archive_paths')
-
         for name, coll_config in iteritems(colls):
             try:
                 handler = self.load_coll(name, coll_config)
@@ -143,6 +142,9 @@ class WarcServer(BaseWarcServer):
         return routes
 
     def load_coll(self, name, coll_config):
+        if coll_config == '$all' and self.auto_handler:
+            return self.auto_handler
+
         if isinstance(coll_config, str):
             index = coll_config
             resource = None
@@ -176,7 +178,7 @@ class WarcServer(BaseWarcServer):
             agg = init_index_agg(index_group, True, timeout)
 
         if not resource:
-            resource = self.default_archive_paths
+            resource = self.config.get('archive_paths')
 
         return DefaultResourceHandler(agg, resource)
 

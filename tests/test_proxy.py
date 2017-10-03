@@ -3,10 +3,7 @@ from pywb.warcserver.test.testutils import BaseTestClass, TempDirTests
 from .base_config_test import CollsDirMixin
 from pywb.utils.geventserver import GeventServer
 from pywb.apps.frontendapp import FrontEndApp
-from pywb.apps.cli import wayback
 from pywb.manager.manager import main as manager
-
-from mock import patch
 
 import os
 import requests
@@ -104,30 +101,4 @@ class TestRecordingProxy(CollsDirMixin, BaseTestProxy):
 
         assert 'is_live = false' in res.text
         assert 'httpbin(1)' in res.text
-
-
-# ============================================================================
-def _run_patch(self):
-    return self
-
-
-@patch('pywb.apps.cli.ReplayCli.run', _run_patch)
-class TestProxyCLIConfig(object):
-    def test_proxy_cli(self):
-        res = wayback(['--proxy', 'test'])
-        exp = {'ca_file_cache': os.path.join('proxy-certs', 'pywb-ca.pem'),
-               'ca_name': 'pywb HTTPS Proxy CA',
-               'coll': 'test',
-               'recording': False}
-        assert res.extra_config['proxy'] == exp
-
-    def test_proxy_cli_rec(self):
-        res = wayback(['--proxy', 'test', '--proxy-record'])
-        assert res.extra_config['proxy']['recording'] == True
-        assert res.extra_config['collections']['live'] == {'index': '$live', 'use_js_obj_proxy': True}
-
-    def test_proxy_cli_err_coll(self):
-        with pytest.raises(Exception):
-            res = wayback(['--proxy', 'test/foo'])
-
 

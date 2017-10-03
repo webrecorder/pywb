@@ -5,7 +5,9 @@ debug: true
 collections_root: _test_colls
 
 collections:
-    pywb: ./sample_archive/cdx/
+    pywb:
+        index: ./sample_archive/cdx/
+        resource: ./sample_archive/warcs/
 
     with-js-proxy:
         index:  ./sample_archive/cdx/
@@ -31,10 +33,10 @@ collections:
     pywb-cdxj:
         index_paths: ./sample_archive/cdxj/
 
-
 archive_paths:
     - ./invalid/path/to/ignore/
     - ./sample_archive/warcs/
+    - archive
 
 
 enable_memento: true

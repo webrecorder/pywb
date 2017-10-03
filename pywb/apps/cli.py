@@ -98,7 +98,9 @@ class ReplayCli(BaseCli):
         super(ReplayCli, self).load()
 
         if self.r.all_coll:
-            self.extra_config['all_coll'] = self.r.all_coll
+            if 'collections' not in self.extra_config:
+                self.extra_config['collections'] = {}
+            self.extra_config['collections'][self.r.all_coll] = '$all'
 
         import os
         if self.r.directory:  #pragma: no cover

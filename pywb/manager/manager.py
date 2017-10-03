@@ -74,11 +74,11 @@ directory structure expected by pywb
 
     def _get_root_dir(self, name):
         return os.path.join(os.getcwd(),
-                            self.default_config['paths'][name])
+                            self.default_config[name])
 
     def _get_dir(self, name):
         return os.path.join(self.curr_coll_dir,
-                            self.default_config['paths'][name])
+                            self.default_config[name])
 
     def _create_dir(self, dirname):
         if not os.path.isdir(dirname):
@@ -208,33 +208,22 @@ directory structure expected by pywb
     def _load_templates_map(self):
         defaults = load_yaml_config(DEFAULT_CONFIG)
 
-        temp_dir = defaults['paths']['templates_dir']
+        temp_dir = defaults['templates_dir']
 
         # Coll Templates
-        templates = defaults['paths']['template_files']
+        templates = defaults['html_templates']
 
-        for name, _ in six.iteritems(templates):
-            templates[name] = os.path.join(temp_dir, defaults[name])
+        for name in templates:
+            defaults[name] = os.path.join(temp_dir, defaults[name])
 
-        # Shared Templates
-        shared_templates = defaults['paths']['shared_template_files']
-
-        for name, _ in six.iteritems(shared_templates):
-            shared_templates[name] = os.path.join(temp_dir, defaults[name])
-
-        return templates, shared_templates
+        return defaults, templates
 
     def list_templates(self):
-        templates, shared_templates = self._load_templates_map()
+        defaults, templates = self._load_templates_map()
 
-        print('Shared Templates')
-        for n, v in six.iteritems(shared_templates):
-            print('- {0}: (pywb/{1})'.format(n, v))
-
-        print('')
-
-        print('Collection Templates')
-        for n, v in six.iteritems(templates):
+        print('HTML Shared and Per-Collection Templates')
+        for n in templates:
+            v = defaults[n]
             print('- {0}: (pywb/{1})'.format(n, v))
 
     def _confirm_overwrite(self, full_path, msg):
@@ -251,10 +240,10 @@ directory structure expected by pywb
             raise IOError('Skipping, {0} already exists'.format(full_path))
 
     def _get_template_path(self, template_name, verb):
-        templates, shared_templates = self._load_templates_map()
+        defaults, templates = self._load_templates_map()
 
         try:
-            filename = templates[template_name]
+            filename = defaults[template_name]
             if not self.coll_name:
                 full_path = os.path.join(os.getcwd(), filename)
             else:
@@ -262,14 +251,9 @@ directory structure expected by pywb
                                          os.path.basename(filename))
 
         except KeyError:
-            try:
-                filename = shared_templates[template_name]
-                full_path = os.path.join(os.getcwd(), filename)
-
-            except KeyError:
-                msg = 'template name must be one of {0} or {1}'
-                msg = msg.format(templates.keys(), shared_templates.keys())
-                raise KeyError(msg)
+            msg = 'template name must be one of {0}'
+            msg = msg.format(templates)
+            raise KeyError(msg)
 
         return full_path, filename
 
