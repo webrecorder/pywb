@@ -32,11 +32,16 @@ class JinjaEnv(object):
                        assets_path=None,
                        globals=None,
                        overlay=None,
-                       extensions=None):
+                       extensions=None,
+                       env_template_params_key='pywb.template_params',
+                       env_template_dir_key='pywb.templates_dir'):
 
         self._init_filters()
 
         loader = ChoiceLoader(self._make_loaders(paths, packages))
+
+        self.env_template_params_key = env_template_params_key
+        self.env_template_dir_key = env_template_dir_key
 
         extensions = extensions or []
 
@@ -116,7 +121,7 @@ class BaseInsertView(object):
 
     def render_to_string(self, env, **kwargs):
         template = None
-        template_path = env.get('pywb.templates_dir')
+        template_path = env.get(self.jenv.env_template_dir_key)
 
         if template_path:
             # jinja paths are not os paths, always use '/' as separator
@@ -131,7 +136,7 @@ class BaseInsertView(object):
         if not template:
             template = self.jenv.jinja_env.get_template(self.insert_file)
 
-        params = env.get('pywb.template_params')
+        params = env.get(self.jenv.env_template_params_key)
         if params:
             kwargs.update(params)
         kwargs['env'] = env
@@ -190,12 +195,7 @@ class TopFrameView(BaseInsertView):
         else:
             timestamp = timestamp_now()
 
-        if 'wsgiprox.proxy_host' in env:
-            if not wb_url.url.startswith(env['wsgi.url_scheme'] + ':'):
-                wb_url.url = env['wsgi.url_scheme'] + ':' + wb_url.url.split(':', 1)[-1]
-            iframe_url = wb_url.url
-        else:
-            iframe_url = wb_prefix + embed_url
+        is_proxy = 'wsgiprox.proxy_host' in env
 
         params = {'host_prefix': host_prefix,
                   'wb_prefix': wb_prefix,
@@ -206,7 +206,7 @@ class TopFrameView(BaseInsertView):
                               'replay_mod': replay_mod},
 
                   'embed_url': embed_url,
-                  'iframe_url': iframe_url,
+                  'is_proxy': is_proxy,
                   'timestamp': timestamp,
                   'url': wb_url.get_url()
                  }
