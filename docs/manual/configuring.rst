@@ -33,21 +33,26 @@ The pywb system assumes the following default directory structure for a web arch
     +-- static (optional)
     |
     +-- collections
-    |
-    |----+ <coll name>
-         |
-         +----+ archives
-              |
-              +---- (WARC or ARC files here)
-              |
-              + indexes
-              |
-              +---- (CDXJ index files here)
-              |
-              + templates (optional)
-              |
-              + static (optional)
+        |
+        +-- <coll name>
+            |
+            +-- archives
+            |     |
+            |     +-- (WARC or ARC files here)
+            |
+            +-- indexes
+            |     |
+            |     +-- (CDXJ index files here)
+            | 
+            +-- templates
+            |     |
+            |     +-- (optional html templates here)
+            |
+            +-- static
+                  |
+                  +-- (optional custom static assets here)
               
+
 If running with default settings, the ``config.yaml`` can be omitted.
 
 It is possible to config these paths in the config.yaml
@@ -139,8 +144,8 @@ remote archives, aggregation and fallback sequences (link)
 
 This format also makes it easier to move legacy collections that have unique path requirements.
 
-Root Collection Access
-^^^^^^^^^^^^^^^^^^^^^^
+Root Collection
+^^^^^^^^^^^^^^^
 
 It is also possible to define a "root" collection, for example, accessible at ``http://localhost:8080/<url>``
 Such a collection must be defined explicitly using the ``$root`` as collection name::
@@ -153,12 +158,13 @@ Such a collection must be defined explicitly using the ``$root`` as collection n
 Note: When a root collection is set, no other collections are currently accessible, they are ignored.
 
 
+Recording Mode
+--------------
+
+
 HTTP/S Proxy Mode
 -----------------
 
-
-Recording Mode
---------------
 
 
 UI Customizations
