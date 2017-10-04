@@ -51,11 +51,36 @@ The pywb system assumes the following default directory structure for a web arch
 If running with default settings, the ``config.yaml`` can be omitted.
 
 It is possible to config these paths in the config.yaml
-The following are the implicit default settings which can be customized::
+The following are some of the implicit default settings which can be customized::
 
   collections_root: collections
-  dyn_archive_path: {coll}/archive
-  dyn_index_path: {coll}/indexes
+  archive_paths: archive
+  index_paths: indexes
+
+(For a complete list of defaults, see the ``pywb/default_config.yaml`` file for reference)
+
+Index Paths
+^^^^^^^^^^^
+
+The ``index_paths`` key defines the subdirectory for index files (usually CDXJ) and determine the contents of each archive collection.
+
+The index files usually contain a pointer to a WARC file, but not the absolute path.
+
+Archive Paths
+^^^^^^^^^^^^^
+
+The ``archive_paths`` key indicates how pywb will resolve WARC files listed in the index.
+
+For example, it is possible to configure multiple archive paths::
+
+  archive_paths:
+    - archive
+    - http://remote-bakup.example.com/collections/
+
+When resolving a ``example.warc.gz``, pywb will then check (in order):
+
+ * First, ``collections/<coll name>/example.warc.gz``
+ * Then, ``http://remote-backup.example.com/collections/<coll name>/example.warc.gz`` (if first lookup unsuccessful)
 
 
 Custom Defined Collections
@@ -72,20 +97,60 @@ All custom defined collections are placed under the ``collections`` key in ``con
 Live Web Collection
 ^^^^^^^^^^^^^^^^^^^
 
-The live web collection proxies all data to the live web.
-This collection is especially useful with (recording) and can be defined as follows::
+The live web collection proxies all data to the live web, and can be defined as follows::
 
   collections:
-     live: $live
+    live: $live
 
 This configures the ``/live/`` route to point to the live web.
 
 (As a shortcut, ``wayback --live`` adds this collection via cli w/o modifiying the config.yaml)
 
+This collection can be useful for testing, or even more powerful, when combined with recording.
 
-Auto "All" Collection
-^^^^^^^^^^^^^^^^^^^^^
 
+Auto "All" Aggregate Collection
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The aggregate all collections automatically aggregates data from all collections in the ``collections`` directory::
+
+  collections:
+    all: $all
+
+Accessing ``/all/<url>`` will cause an aggregate lookup within the collections directory.
+
+Note: It is not (yet) possible to exclude collections from the all collection, although "special" collections are not included.
+
+
+Generic Collection Definitions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The collection definition syntax allows for explicitly setting the index, archive paths
+and all other templates, per collection, for example::
+
+  collections:
+    custom:
+       index: ./path/to/indexes
+       resource: ./some/other/path/to/archive/
+       query_html: ./path/to/templates/query.html
+
+This configuration supports the full Warcserver config syntax, including
+remote archives, aggregation and fallback sequences (link)
+
+This format also makes it easier to move legacy collections that have unique path requirements.
+
+Root Collection Access
+^^^^^^^^^^^^^^^^^^^^^^
+
+It is also possible to define a "root" collection, for example, accessible at ``http://localhost:8080/<url>``
+Such a collection must be defined explicitly using the ``$root`` as collection name::
+
+  collections:
+    $root:
+       index: ./path/to/indexes
+       resource: ./path/to/archive/
+
+Note: When a root collection is set, no other collections are currently accessible, they are ignored.
 
 
 HTTP/S Proxy Mode
