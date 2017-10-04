@@ -1,22 +1,30 @@
 Configuring the Web Archive
 ===========================
 
-pywb offers an extensible YAML based configuration format via a main ``config.yaml`` at the root of each web archive
+pywb offers an extensible YAML based configuration format via a main ``config.yaml`` at the root of each web archive.
+
+Framed vs Frameless Replay vs HTTPS proxy
+-----------------------------------------
+
+pywb supports several modes for serving archived web content.
+
+With **framed replay**, the archived content is loaded into an iframe, and a top frame UI provides info and metadata.
+In this mode, the top frame url is for example, ``http://my-archive.example.com/<coll name>/http://example.com/`` while
+the actual content is served at ``http://my-archive.example.com/<coll name>/mp_/http://example.com/``
 
 
-Framed vs Frameless replay
----------------------------
+With **frameless replay**, the archived content is loaded directly, and a banner UI is injected into the page.
 
-pywb supports both two replay modes:
- * Framed replay, where the replayed content is loaded into an iframe, and a top frame UI provides info and metadata
- * Frameless replay, where the replayed content is loaded directly, and a banner UI is injected into the page.
+In this mode, the content is served directly at ``http://my-archive.example.com/<coll name>/http://example.com/``
+
+(pywb can also supports HTTP/S **proxy mode** which requires additional setup. See :ref:`https-proxy` for more details).
 
 For security reasons, we recommend running pywb in framed mode, because a malicious site
 `could tamper with the banner <http://labs.rhizome.org/presentations/security.html#/13>`_
 
 However, for certain situations, frameless replay made be appropriate.
 
-To disable framed replay, simply add:
+To disable framed replay add:
 
 ``framed_replay: false`` to your config.yaml
 
@@ -147,7 +155,7 @@ This format also makes it easier to move legacy collections that have unique pat
 Root Collection
 ^^^^^^^^^^^^^^^
 
-It is also possible to define a "root" collection, for example, accessible at ``http://localhost:8080/<url>``
+It is also possible to define a "root" collection, for example, accessible at ``http://my-archive.example.com/<url>``
 Such a collection must be defined explicitly using the ``$root`` as collection name::
 
   collections:
@@ -161,11 +169,14 @@ Note: When a root collection is set, no other collections are currently accessib
 Recording Mode
 --------------
 
+TODO
+
+.. _https-proxy:
 
 HTTP/S Proxy Mode
 -----------------
 
-
+TODO
 
 UI Customizations
 -----------------
@@ -178,9 +189,9 @@ Static Files
 
 The replay server will automatically support static files placed under the following directories:
 
-* Files under the root ``static`` directory can be accessed via ``http://localhost:8080/static/<filename>``
+* Files under the root ``static`` directory can be accessed via ``http://my-archive.example.com/static/<filename>``
 
-* Files under the per-collection ``./collections/<coll name>/static`` directory can be accessed via ``http://localhost:8080/static/_/<coll name>/<filename>``
+* Files under the per-collection ``./collections/<coll name>/static`` directory can be accessed via ``http://my-archive.example.com/static/_/<coll name>/<filename>``
 
 Templates
 ^^^^^^^^^
@@ -194,11 +205,11 @@ To copy the default pywb template to the template directory run:
 
 The following templates are available:
 
- * ``home.html`` -- Home Page Template, used for ``http://localhost:8080/``
+ * ``home.html`` -- Home Page Template, used for ``http://my-archive.example.com/``
 
- * ``search.html`` -- Collection Template, used for each collection page ``http://localhost:8080/<coll name>/``
+ * ``search.html`` -- Collection Template, used for each collection page ``http://my-archive.example.com/<coll name>/``
 
- * ``query.html`` -- Capture Query Page for a given url, used for ``http://localhost:8080/<coll name/*/<url>``
+ * ``query.html`` -- Capture Query Page for a given url, used for ``http://my-archive.example.com/<coll name/*/<url>``
 
 Error Pages:
 
@@ -215,4 +226,44 @@ Replay and Banner templates:
 
  * ``banner.html`` -- The banner used for frameless replay. Can be set to blank to disable the banner.
 
+
+Custom Outer Replay Frame
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The top-frame used for framed replay can be replaced or augmented
+by modifiying the ``frame_insert.html``.
+
+To start with modifiying the default outer page, you can add it to the current
+templates directory by running ``wb-frame template --add frame_insert.html``
+
+To initialize the replay, the outer page should include ``wb_frame.js``,
+create an ``<iframe>`` element and pass the id (or element itself) to the ``ContentFrame`` constructor:
+
+.. code-block:: html
+
+  <script src='{{ host_prefix }}/{{ static_path }}/wb_frame.js'> </script>
+  <script>
+  var cframe = new ContentFrame({"url": "{{ url }}" + window.location.hash,
+                                 "prefix": "{{ wb_prefix }}",
+                                 "request_ts": "{{ wb_url.timestamp }}",
+                                 "iframe": "#replay_iframe"});
+  </script>
+
+
+The outer frame can receive notifications of changes to the replay via ``postMessage``
+
+For example, to detect when the content frame changed and log the new url and timestamp,
+use the following script to the outer frame html:
+
+.. code-block:: javascript
+
+  window.addEventListener("message", function(event.data) {
+     if (event.data.wb_type == "load" && event.data.wb_type == "replace-url") {
+        console.log("New Url: " + event.data.url);
+        console.log("New Timestamp: " + event.data.ts);
+     }
+  }
+
+The ``load`` message is sent when a new page is first loaded, while ``replace-url`` is used
+for url changes caused by content frame History navigation.
 
