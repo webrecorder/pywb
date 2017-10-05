@@ -7,13 +7,12 @@ Subpackages
 .. toctree::
 
     pywb.apps
-    pywb.cdx
-    pywb.core
-    pywb.framework
-    pywb.perms
+    pywb.indexer
+    pywb.manager
+    pywb.recorder
     pywb.rewrite
     pywb.utils
-    pywb.warc
+    pywb.warcserver
 
 Module contents
 ---------------

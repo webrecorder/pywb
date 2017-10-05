@@ -136,7 +136,7 @@ class JSLinkRewriterMixin(object):
 class JSLocationRewriterMixin(object):
     """
     JS Rewriter mixin which rewrites location and domain to the
-    specified prefix (default: 'WB_wombat_')
+    specified prefix (default: ``WB_wombat_``)
     """
 
     def __init__(self, rewriter, rules=[], prefix='WB_wombat_'):
