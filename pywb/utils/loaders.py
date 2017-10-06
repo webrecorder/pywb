@@ -349,14 +349,15 @@ class S3Loader(BaseLoader):
             bucket_name = parts.netloc
 
         if not self.client:
-            config = None
-            if not aws_access_key_id or not aws_secret_access_key:
+            try:
+                self.client = boto3.client('s3', aws_access_key_id=aws_access_key_id,
+                                                 aws_secret_access_key=aws_secret_access_key)
+            except:
                 config = Config(signature_version=UNSIGNED)
+                self.client = boto3.client('s3', aws_access_key_id=aws_access_key_id,
+                                                 aws_secret_access_key=aws_secret_access_key,
+                                                 config=config)
 
-            self.client = boto3.client('s3', aws_access_key_id=aws_access_key_id,
-                                             aws_secret_access_key=aws_secret_access_key,
-                                             region_name='us-east-1',
-                                             config=config)
 
         if offset == 0 and length == -1:
             Range = None
