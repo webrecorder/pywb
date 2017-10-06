@@ -22,7 +22,9 @@ from io import open, BytesIO
 from warcio.limitreader import LimitReader
 
 try:
-    from boto import connect_s3
+    import boto3
+    from botocore import UNSIGNED
+    from botocore.client import Config
     s3_avail = True
 except ImportError:  #pragma: no cover
     s3_avail = False
@@ -325,7 +327,8 @@ class HttpLoader(BaseLoader):
 #=================================================================
 class S3Loader(BaseLoader):
     def __init__(self, **kwargs):
-        self.s3conn = None
+        self.client = None
+        self.unsigned_config = Config(signature_version=UNSIGNED)
         self.aws_access_key_id = kwargs.get('aws_access_key_id')
         self.aws_secret_access_key = kwargs.get('aws_secret_access_key')
 
@@ -346,24 +349,25 @@ class S3Loader(BaseLoader):
         else:
             bucket_name = parts.netloc
 
-        if not self.s3conn:
-            try:
-                self.s3conn = connect_s3(aws_access_key_id, aws_secret_access_key)
-            except Exception:  #pragma: no cover
-                self.s3conn = connect_s3(anon=True)
+        if not self.client:
+            config = None
+            if not aws_access_key_id or not aws_secret_access_key:
+                config = self.unsigned_config
 
-        bucket = self.s3conn.get_bucket(bucket_name)
-
-        key = bucket.get_key(parts.path)
+            self.client = boto3.client('s3', aws_access_key_id=aws_access_key_id,
+                                             aws_secret_access_key=aws_secret_access_key,
+                                             region_name='us-east-1',
+                                             config=config)
 
         if offset == 0 and length == -1:
-            headers = {}
+            Range = None
         else:
-            headers = {'Range': BlockLoader._make_range_header(offset, length)}
+            Range = BlockLoader._make_range_header(offset, length)
 
-        # Read range
-        key.open_read(headers=headers)
-        return key
+        obj = self.client.get_object(Bucket=bucket_name, Key=parts.path[1:],
+                       Range=Range)
+
+        return obj['Body']
 
 
 #=================================================================

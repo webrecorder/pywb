@@ -17,6 +17,7 @@ from pywb.utils.format import ParamFormatter, res_template
 from pywb.warcserver.index.indexsource import FileIndexSource, RedisIndexSource
 from pywb.warcserver.index.cdxops import process_cdx
 from pywb.warcserver.index.query import CDXQuery
+from pywb.warcserver.index.zipnum import ZipNumIndexSource
 
 import six
 import glob
@@ -245,10 +246,11 @@ class GeventTimeoutAggregator(TimeoutMixin, GeventMixin, BaseSourceListAggregato
 
 #=============================================================================
 class BaseDirectoryIndexSource(BaseAggregator):
-    def __init__(self, base_prefix, base_dir='', name=''):
+    def __init__(self, base_prefix, base_dir='', name='', config=None):
         self.base_prefix = base_prefix
         self.base_dir = base_dir
         self.name = name
+        self.config = config
 
     def _iter_sources(self, params):
         the_dir = res_template(self.base_dir, params)
@@ -269,7 +271,10 @@ class BaseDirectoryIndexSource(BaseAggregator):
         for name in os.listdir(the_dir):
             filename = os.path.join(the_dir, name)
 
-            if filename.endswith(FileIndexSource.CDX_EXT):
+            is_cdx = filename.endswith(FileIndexSource.CDX_EXT)
+            is_zip = filename.endswith(ZipNumIndexSource.IDX_EXT)
+
+            if is_cdx or is_zip:
                 #print('Adding ' + filename)
                 rel_path = os.path.relpath(the_dir, self.base_prefix)
                 if rel_path == '.':
@@ -280,7 +285,12 @@ class BaseDirectoryIndexSource(BaseAggregator):
                 if self.name:
                     full_name = self.name + ':' + full_name
 
-                yield full_name, FileIndexSource(filename)
+                if is_cdx:
+                    index_src = FileIndexSource(filename)
+                else:
+                    index_src = ZipNumIndexSource(filename, self.config)
+
+                yield full_name, index_src
 
     def __repr__(self):
         return '{0}(file://{1})'.format(self.__class__.__name__,

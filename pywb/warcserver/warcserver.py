@@ -94,7 +94,8 @@ class WarcServer(BaseWarcServer):
             return
 
         dir_source = CacheDirectoryIndexSource(base_prefix=self.root_dir,
-                                               base_dir=self.index_paths)
+                                               base_dir=self.index_paths,
+                                               config=self.config)
 
         return DefaultResourceHandler(dir_source, self.archive_paths)
 
