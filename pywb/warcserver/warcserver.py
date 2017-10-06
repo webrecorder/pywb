@@ -79,7 +79,7 @@ class WarcServer(BaseWarcServer):
 
         def get_full_path(path):
             if '://' not in path:
-                path = os.path.join(self.AUTO_COLL_TEMPL, path)
+                path = os.path.join(self.AUTO_COLL_TEMPL, path, '')
                 if abs_path:
                     path = os.path.join(abs_path, path)
             return path

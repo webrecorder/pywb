@@ -348,24 +348,43 @@ class S3Loader(BaseLoader):
         else:
             bucket_name = parts.netloc
 
-        if not self.client:
-            try:
-                self.client = boto3.client('s3', aws_access_key_id=aws_access_key_id,
-                                                 aws_secret_access_key=aws_secret_access_key)
-            except:
-                config = Config(signature_version=UNSIGNED)
-                self.client = boto3.client('s3', aws_access_key_id=aws_access_key_id,
-                                                 aws_secret_access_key=aws_secret_access_key,
-                                                 config=config)
-
+        key = parts.path[1:]
 
         if offset == 0 and length == -1:
-            Range = None
+            range_ = None
         else:
-            Range = BlockLoader._make_range_header(offset, length)
+            range_ = BlockLoader._make_range_header(offset, length)
 
-        obj = self.client.get_object(Bucket=bucket_name, Key=parts.path[1:],
-                       Range=Range)
+        def s3_load(anon=False):
+                if not self.client:
+                    if anon:
+                        config = Config(signature_version=UNSIGNED)
+                    else:
+                        config = None
+
+                    client = boto3.client('s3', aws_access_key_id=aws_access_key_id,
+                                                aws_secret_access_key=aws_secret_access_key,
+                                                config=config)
+                else:
+                    client = self.client
+
+                res = client.get_object(Bucket=bucket_name,
+                                        Key=key,
+                                        Range=range_)
+
+                if not self.client:
+                    self.client = client
+
+                return res
+
+        try:
+            obj = s3_load(anon=False)
+
+        except Exception:
+            if not self.client:
+                obj = s3_load(anon=True)
+            else:
+                raise
 
         return obj['Body']
 
