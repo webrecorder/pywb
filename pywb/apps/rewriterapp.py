@@ -48,6 +48,8 @@ class UpstreamException(WbException):
 class RewriterApp(object):
     VIDEO_INFO_CONTENT_TYPE = 'application/vnd.youtube-dl_formats+json'
 
+    DEFAULT_CSP = "default-src 'unsafe-eval' 'unsafe-inline' 'self' data: blob: mediastream: ws: wss: ; form-action 'self'"
+
     def __init__(self, framed_replay=False, jinja_env=None, config=None, paths=None):
         self.loader = ArcWarcRecordLoader()
 
@@ -88,6 +90,16 @@ class RewriterApp(object):
         self.cookie_tracker = None
 
         self.enable_memento = self.config.get('enable_memento')
+
+        csp_header = self.config.get('csp-header', self.DEFAULT_CSP)
+        if csp_header:
+            self.csp_header = ('Content-Security-Policy', csp_header)
+        else:
+            self.csp_header = None
+
+    def add_csp_header(self, wb_url, status_headers):
+        if self.csp_header and wb_url.mod == self.replay_mod:
+            status_headers.headers.append(self.csp_header)
 
     def _html_templ(self, name):
         value = self.config.get(name)
@@ -302,6 +314,10 @@ class RewriterApp(object):
         if set_content_loc:
             status_headers.headers.append(('Content-Location', urlrewriter.get_new_url(timestamp=cdx['timestamp'],
                                                                                        url=cdx['url'])))
+
+        if not is_proxy:
+            self.add_csp_header(wb_url, status_headers)
+
         response = WbResponse(status_headers, gen)
 
         return response

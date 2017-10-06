@@ -78,6 +78,8 @@ class TestWbIntegration(BaseConfigTest):
         assert '"20140127171238"' in resp.text
         assert 'http://www.iana.org/' in resp.text, resp.text
 
+        assert 'Content-Security-Policy' not in resp.headers
+
     def test_replay_content(self, fmod):
         resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/', fmod)
         self._assert_basic_html(resp)
@@ -88,6 +90,9 @@ class TestWbIntegration(BaseConfigTest):
         assert '/pywb/20140127171238{0}/http://www.iana.org/time-zones"'.format(fmod) in resp.text
 
         assert ('wbinfo.is_framed = ' + ('true' if fmod else 'false')) in resp.text
+
+        csp = "default-src 'unsafe-eval' 'unsafe-inline' 'self' data: blob: mediastream: ws: wss: ; form-action 'self'"
+        assert resp.headers['Content-Security-Policy'] == csp
 
     def test_replay_fuzzy_1(self, fmod):
         resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/?_=123', fmod)
