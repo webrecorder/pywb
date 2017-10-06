@@ -328,7 +328,6 @@ class HttpLoader(BaseLoader):
 class S3Loader(BaseLoader):
     def __init__(self, **kwargs):
         self.client = None
-        self.unsigned_config = Config(signature_version=UNSIGNED)
         self.aws_access_key_id = kwargs.get('aws_access_key_id')
         self.aws_secret_access_key = kwargs.get('aws_secret_access_key')
 
@@ -352,7 +351,7 @@ class S3Loader(BaseLoader):
         if not self.client:
             config = None
             if not aws_access_key_id or not aws_secret_access_key:
-                config = self.unsigned_config
+                config = Config(signature_version=UNSIGNED)
 
             self.client = boto3.client('s3', aws_access_key_id=aws_access_key_id,
                                              aws_secret_access_key=aws_secret_access_key,
