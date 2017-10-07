@@ -9,10 +9,10 @@ import json
 
 
 # ============================================================================
-class TestAutoZipnumDir(CollsDirMixin, BaseConfigTest):
+class TestZipnumAutoDir(CollsDirMixin, BaseConfigTest):
     @classmethod
     def setup_class(cls):
-        super(TestAutoZipnumDir, cls).setup_class('config_test.yaml')
+        super(TestZipnumAutoDir, cls).setup_class('config_test.yaml')
 
         manager(['init', 'testzip'])
 
@@ -34,17 +34,17 @@ class TestAutoZipnumDir(CollsDirMixin, BaseConfigTest):
     def test_num_pages_query(self):
         res = self.testapp.get('/testzip/cdx?url=http://iana.org/domains/&matchType=domain&showNumPages=true&pageSize=4')
         res.content_type = 'text/json'
-        assert(res.json == {"blocks": 38, "pages": 10, "pageSize": 4, 'source': 'testzip/indexes/zipnum-sample.idx'})
+        assert(res.json == {"blocks": 38, "pages": 10, "pageSize": 4})
 
     def test_paged_index_query(self):
         res = self.testapp.get('/testzip/cdx?url=http://iana.org/domains/&matchType=domain&output=json&showPagedIndex=true&pageSize=4&page=1')
 
         lines = [json.loads(line) for line in res.text.rstrip().split('\n')]
 
-        assert lines[0] == {"urlkey": "org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200912", "part": "zipnum", "offset": 1150, "length": 235, "lineno": 5, 'source': 'testzip/indexes/zipnum-sample.idx'}
-        assert lines[1] == {"urlkey": "org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126201240", "part": "zipnum", "offset": 1385, "length": 307, "lineno": 6, 'source': 'testzip/indexes/zipnum-sample.idx'}
-        assert lines[2] == {"urlkey": "org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126200654", "part": "zipnum", "offset": 1692, "length": 235, "lineno": 7, 'source': 'testzip/indexes/zipnum-sample.idx'}
-        assert lines[3] == {"urlkey": "org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126200816", "part": "zipnum", "offset": 1927, "length": 231, "lineno": 8, 'source': 'testzip/indexes/zipnum-sample.idx'}
+        assert lines[0] == {"urlkey": "org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200912", "part": "zipnum", "offset": 1150, "length": 235, "lineno": 5}
+        assert lines[1] == {"urlkey": "org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126201240", "part": "zipnum", "offset": 1385, "length": 307, "lineno": 6}
+        assert lines[2] == {"urlkey": "org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126200654", "part": "zipnum", "offset": 1692, "length": 235, "lineno": 7}
+        assert lines[3] == {"urlkey": "org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126200816", "part": "zipnum", "offset": 1927, "length": 231, "lineno": 8}
 
 
 
