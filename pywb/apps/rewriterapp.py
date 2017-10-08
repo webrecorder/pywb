@@ -177,7 +177,7 @@ class RewriterApp(object):
 
         inputreq = RewriteInputRequest(environ, urlkey, wb_url.url, content_rw)
 
-        inputreq.include_post_query(wb_url.url)
+        inputreq.include_method_query(wb_url.url)
 
         mod_url = None
         use_206 = False

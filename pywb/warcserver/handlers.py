@@ -55,7 +55,7 @@ class IndexHandler(object):
 
         input_req = params.get('_input_req')
         if input_req:
-            params['alt_url'] = input_req.include_post_query(url)
+            params['alt_url'] = input_req.include_method_query(url)
 
         return self.fuzzy(self.index_source, params)
 

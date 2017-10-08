@@ -1,4 +1,4 @@
-from pywb.warcserver.inputrequest import DirectWSGIInputRequest, POSTInputRequest, PostQueryExtractor
+from pywb.warcserver.inputrequest import DirectWSGIInputRequest, POSTInputRequest, MethodQueryCanonicalizer
 from werkzeug.routing import Map, Rule
 
 import webtest
@@ -84,54 +84,58 @@ class TestPostQueryExtract(object):
         cls.post_data = b'foo=bar&dir=%2Fbaz'
 
     def test_post_extract_1(self):
-        pq = PostQueryExtractor('POST', 'application/x-www-form-urlencoded',
+        mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
                                 len(self.post_data), BytesIO(self.post_data))
 
-        assert pq.append_post_query('http://example.com/') == 'http://example.com/?foo=bar&dir=/baz'
+        assert mq.append_query('http://example.com/') == 'http://example.com/?foo=bar&dir=/baz'
 
-        assert pq.append_post_query('http://example.com/?123=ABC') == 'http://example.com/?123=ABC&foo=bar&dir=/baz'
+        assert mq.append_query('http://example.com/?123=ABC') == 'http://example.com/?123=ABC&foo=bar&dir=/baz'
 
     def test_post_extract_wrong_method(self):
-        pq = PostQueryExtractor('PUT', 'application/x-www-form-urlencoded',
+        mq = MethodQueryCanonicalizer('PUT', 'application/x-www-form-urlencoded',
                                 len(self.post_data), BytesIO(self.post_data))
 
-        assert pq.append_post_query('http://example.com/') == 'http://example.com/'
+        assert mq.append_query('http://example.com/') == 'http://example.com/'
 
     def test_post_extract_non_form_data_1(self):
-        pq = PostQueryExtractor('POST', 'application/octet-stream',
+        mq = MethodQueryCanonicalizer('POST', 'application/octet-stream',
                                 len(self.post_data), BytesIO(self.post_data))
 
         #base64 encoded data
-        assert pq.append_post_query('http://example.com/') == 'http://example.com/?__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6'
+        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6'
 
     def test_post_extract_non_form_data_2(self):
-        pq = PostQueryExtractor('POST', 'text/plain',
+        mq = MethodQueryCanonicalizer('POST', 'text/plain',
                                 len(self.post_data), BytesIO(self.post_data))
 
         #base64 encoded data
-        assert pq.append_post_query('http://example.com/pathbar?id=123') == 'http://example.com/pathbar?id=123&__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6'
+        assert mq.append_query('http://example.com/pathbar?id=123') == 'http://example.com/pathbar?id=123&__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6'
 
     def test_post_extract_length_invalid_ignore(self):
-        pq = PostQueryExtractor('POST', 'application/x-www-form-urlencoded',
+        mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
                                 0, BytesIO(self.post_data))
 
-        assert pq.append_post_query('http://example.com/') == 'http://example.com/'
+        assert mq.append_query('http://example.com/') == 'http://example.com/'
 
-        pq = PostQueryExtractor('POST', 'application/x-www-form-urlencoded',
+        mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
                                 'abc', BytesIO(self.post_data))
 
-        assert pq.append_post_query('http://example.com/') == 'http://example.com/'
+        assert mq.append_query('http://example.com/') == 'http://example.com/'
 
     def test_post_extract_length_too_short(self):
-        pq = PostQueryExtractor('POST', 'application/x-www-form-urlencoded',
+        mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
                                 len(self.post_data) - 4, BytesIO(self.post_data))
 
-        assert pq.append_post_query('http://example.com/') == 'http://example.com/?foo=bar&dir=%2'
+        assert mq.append_query('http://example.com/') == 'http://example.com/?foo=bar&dir=%2'
 
     def test_post_extract_length_too_long(self):
-        pq = PostQueryExtractor('POST', 'application/x-www-form-urlencoded',
+        mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
                                 len(self.post_data) + 4, BytesIO(self.post_data))
 
-        assert pq.append_post_query('http://example.com/') == 'http://example.com/?foo=bar&dir=/baz'
+        assert mq.append_query('http://example.com/') == 'http://example.com/?foo=bar&dir=/baz'
+
+    def test_options(self):
+        mq = MethodQueryCanonicalizer('OPTIONS', '', 0, BytesIO())
+        assert mq.append_query('http://example.com/') == 'http://example.com/?__pywb_method=options'
 
 
