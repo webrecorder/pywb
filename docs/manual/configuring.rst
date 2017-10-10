@@ -257,12 +257,12 @@ use the following script to the outer frame html:
 
 .. code-block:: javascript
 
-  window.addEventListener("message", function(event.data) {
-     if (event.data.wb_type == "load" && event.data.wb_type == "replace-url") {
-        console.log("New Url: " + event.data.url);
-        console.log("New Timestamp: " + event.data.ts);
-     }
-  }
+  window.addEventListener("message", function(event) {
+    if (event.data.wb_type == "load" || event.data.wb_type == "replace-url") {
+      console.log("New Url: " + event.data.url);
+      console.log("New Timestamp: " + event.data.ts);
+    }
+  });
 
 The ``load`` message is sent when a new page is first loaded, while ``replace-url`` is used
 for url changes caused by content frame History navigation.
