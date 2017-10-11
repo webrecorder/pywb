@@ -1,8 +1,9 @@
+from io import BytesIO
+
 import os
 import collections
 import itertools
 import logging
-from io import BytesIO
 import datetime
 import json
 import six
@@ -20,8 +21,8 @@ from pywb.utils.loaders import BlockLoader, read_last_line
 from pywb.utils.binsearch import iter_range, linearsearch, search
 
 
-#=================================================================
-class ZipBlocks:
+# ============================================================================
+class ZipBlocks(object):
     def __init__(self, part, offset, length, count):
         self.part = part
         self.offset = offset
@@ -29,7 +30,19 @@ class ZipBlocks:
         self.count = count
 
 
-#=================================================================
+# ============================================================================
+class AlwaysJsonResponse(dict):
+    def to_json(self, *args):
+        return json.dumps(self)
+
+    def to_text(self, *args):
+        return json.dumps(self)
+
+    def to_cdxj(self, *args):
+        return json.dumps(self)
+
+
+# ============================================================================
 #TODO: see if these could be combined with warc path resolvers
 
 class LocMapResolver(object):
@@ -76,7 +89,7 @@ class LocMapResolver(object):
         return self.loc_map[part]
 
 
-#=================================================================
+# ============================================================================
 class LocPrefixResolver(object):
     """ Use a prefix lookup, where the prefix can either be a fixed
     string or can be a regex replacement of the index summary path
@@ -95,10 +108,11 @@ class LocPrefixResolver(object):
         return [self.prefix + part]
 
 
-#=================================================================
+# ============================================================================
 class ZipNumIndexSource(BaseIndexSource):
     DEFAULT_RELOAD_INTERVAL = 10  # in minutes
     DEFAULT_MAX_BLOCKS = 10
+    IDX_EXT = ('.idx', '.summary')
 
     def __init__(self, summary, config=None):
         self.max_blocks = self.DEFAULT_MAX_BLOCKS
@@ -118,7 +132,6 @@ class ZipNumIndexSource(BaseIndexSource):
 
             reload_ival = config.get('reload_interval', reload_ival)
 
-
         if isinstance(loc, dict):
             self.loc_resolver = LocPrefixResolver(summary, loc)
         else:
@@ -131,23 +144,6 @@ class ZipNumIndexSource(BaseIndexSource):
         self.reload_interval = datetime.timedelta(minutes=reload_ival)
 
         self.blk_loader = BlockLoader(cookie_maker=cookie_maker)
-
-#    @staticmethod
-#    def reload_timed(timestamp, val, delta, func):
-#        now = datetime.datetime.now()
-#        if now - timestamp >= delta:
-#            func()
-#            return now
-#        return None
-#
-#    def reload_loc(self):
-#        reload_time = self.reload_timed(self.loc_update_time,
-#                                        self.loc_map,
-#                                        self.reload_interval,
-#                                        self.load_loc)
-#
-#        if reload_time:
-#            self.loc_update_time = reload_time
 
     def load_index(self, params):
         self.loc_resolver.load_loc()
@@ -177,12 +173,12 @@ class ZipNumIndexSource(BaseIndexSource):
 
         return gen_cdx()
 
-
     def _page_info(self, pages, pagesize, blocks):
-        info = dict(pages=pages,
+        info = AlwaysJsonResponse(
+                    pages=pages,
                     pageSize=pagesize,
                     blocks=blocks)
-        #return json.dumps(info) + '\n'
+
         return info
 
     def compute_page_range(self, reader, query):
@@ -338,7 +334,6 @@ class ZipNumIndexSource(BaseIndexSource):
         a line iterator which decompresses and returns one line at a time,
         bounded by query.key and query.end_key
         """
-
         if (logging.getLogger().getEffectiveLevel() <= logging.DEBUG):
             msg = 'Loading {b.count} blocks from {loc}:{b.offset}+{b.length}'
             logging.debug(msg.format(b=blocks, loc=location))
@@ -391,7 +386,7 @@ class ZipNumIndexSource(BaseIndexSource):
         if value.startswith('file://'):
             value = value[7:]
 
-        if is_zipnum or value.endswith(('.idx', '.summary')):
+        if is_zipnum or value.endswith(cls.IDX_EXT):
             return cls(value, None)
 
     @classmethod

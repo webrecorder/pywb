@@ -16,7 +16,7 @@ def to_cdxj(cdx_iter, fields):
     return content_type, (cdx.to_cdxj(fields) for cdx in cdx_iter)
 
 def to_json(cdx_iter, fields):
-    content_type = 'application/x-ndjson'
+    content_type = 'text/x-ndjson'
     return content_type, (cdx.to_json(fields) for cdx in cdx_iter)
 
 def to_text(cdx_iter, fields):

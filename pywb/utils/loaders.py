@@ -22,7 +22,9 @@ from io import open, BytesIO
 from warcio.limitreader import LimitReader
 
 try:
-    from boto import connect_s3
+    import boto3
+    from botocore import UNSIGNED
+    from botocore.client import Config
     s3_avail = True
 except ImportError:  #pragma: no cover
     s3_avail = False
@@ -325,14 +327,14 @@ class HttpLoader(BaseLoader):
 #=================================================================
 class S3Loader(BaseLoader):
     def __init__(self, **kwargs):
-        self.s3conn = None
+        self.client = None
         self.aws_access_key_id = kwargs.get('aws_access_key_id')
         self.aws_secret_access_key = kwargs.get('aws_secret_access_key')
 
     def load(self, url, offset, length):
         if not s3_avail:  #pragma: no cover
            raise IOError('To load from s3 paths, ' +
-                          'you must install boto: pip install boto')
+                          'you must install boto3: pip install boto3')
 
         aws_access_key_id = self.aws_access_key_id
         aws_secret_access_key = self.aws_secret_access_key
@@ -346,24 +348,45 @@ class S3Loader(BaseLoader):
         else:
             bucket_name = parts.netloc
 
-        if not self.s3conn:
-            try:
-                self.s3conn = connect_s3(aws_access_key_id, aws_secret_access_key)
-            except Exception:  #pragma: no cover
-                self.s3conn = connect_s3(anon=True)
-
-        bucket = self.s3conn.get_bucket(bucket_name)
-
-        key = bucket.get_key(parts.path)
+        key = parts.path[1:]
 
         if offset == 0 and length == -1:
-            headers = {}
+            range_ = ''
         else:
-            headers = {'Range': BlockLoader._make_range_header(offset, length)}
+            range_ = BlockLoader._make_range_header(offset, length)
 
-        # Read range
-        key.open_read(headers=headers)
-        return key
+        def s3_load(anon=False):
+            if not self.client:
+                if anon:
+                    config = Config(signature_version=UNSIGNED)
+                else:
+                    config = None
+
+                client = boto3.client('s3', aws_access_key_id=aws_access_key_id,
+                                            aws_secret_access_key=aws_secret_access_key,
+                                            config=config)
+            else:
+                client = self.client
+
+            res = client.get_object(Bucket=bucket_name,
+                                    Key=key,
+                                    Range=range_)
+
+            if not self.client:
+                self.client = client
+
+            return res
+
+        try:
+            obj = s3_load(anon=False)
+
+        except Exception:
+            if not self.client:
+                obj = s3_load(anon=True)
+            else:
+                raise
+
+        return obj['Body']
 
 
 #=================================================================

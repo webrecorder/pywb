@@ -175,7 +175,7 @@ def test_zip_prefix_load():
         cdx_iter, err = results
         results = list(cdx_iter)
         assert len(results) == 1, results
-        assert results[0] == {"blocks": 38, "pages": 4, "pageSize": 10, "source": "zip"}
+        assert results[0] == {"blocks": 38, "pages": 4, "pageSize": 10}
 
 
         # Test simple query

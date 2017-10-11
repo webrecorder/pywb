@@ -78,9 +78,10 @@ class WarcServer(BaseWarcServer):
         templ = self.config.get(name)
 
         def get_full_path(path):
-            path = os.path.join(self.AUTO_COLL_TEMPL, path, '')
-            if abs_path and '://' not in path:
-                path = os.path.join(abs_path, path)
+            if '://' not in path:
+                path = os.path.join(self.AUTO_COLL_TEMPL, path, '')
+                if abs_path:
+                    path = os.path.join(abs_path, path)
             return path
 
         if isinstance(templ, str):
@@ -94,7 +95,8 @@ class WarcServer(BaseWarcServer):
             return
 
         dir_source = CacheDirectoryIndexSource(base_prefix=self.root_dir,
-                                               base_dir=self.index_paths)
+                                               base_dir=self.index_paths,
+                                               config=self.config)
 
         return DefaultResourceHandler(dir_source, self.archive_paths)
 

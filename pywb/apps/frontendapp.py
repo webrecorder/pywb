@@ -61,7 +61,7 @@ class FrontEndApp(object):
         static_path = config.get('static_url_path', 'pywb/static/').replace('/', os.path.sep)
         self.static_handler = StaticHandler(static_path)
 
-        self.all_coll = config.get('all_coll', None)
+        self.cdx_api_endpoint = config.get('cdx_api_endpoint', '/cdx')
 
         self._init_routes()
 
@@ -90,9 +90,9 @@ class FrontEndApp(object):
             coll_prefix = '/<coll>'
             self.url_map.add(Rule('/', endpoint=self.serve_home))
 
+        self.url_map.add(Rule(coll_prefix + self.cdx_api_endpoint, endpoint=self.serve_cdx))
         self.url_map.add(Rule(coll_prefix + '/', endpoint=self.serve_coll_page))
         self.url_map.add(Rule(coll_prefix + '/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
-        self.url_map.add(Rule(coll_prefix + '/cdx', endpoint=self.serve_cdx))
 
         if self.recorder_path:
             self.url_map.add(Rule(coll_prefix + self.RECORD_ROUTE + '/<path:url>', endpoint=self.serve_record))
@@ -197,7 +197,8 @@ class FrontEndApp(object):
 
         content = view.render_to_string(environ,
                                         wb_prefix=wb_prefix,
-                                        metadata=metadata)
+                                        metadata=metadata,
+                                        coll=coll)
 
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
 
