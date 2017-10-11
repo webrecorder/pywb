@@ -351,7 +351,7 @@ class S3Loader(BaseLoader):
         key = parts.path[1:]
 
         if offset == 0 and length == -1:
-            range_ = None
+            range_ = ''
         else:
             range_ = BlockLoader._make_range_header(offset, length)
 
