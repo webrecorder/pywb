@@ -334,7 +334,7 @@ class S3Loader(BaseLoader):
     def load(self, url, offset, length):
         if not s3_avail:  #pragma: no cover
            raise IOError('To load from s3 paths, ' +
-                          'you must install boto: pip install boto')
+                          'you must install boto3: pip install boto3')
 
         aws_access_key_id = self.aws_access_key_id
         aws_secret_access_key = self.aws_secret_access_key
