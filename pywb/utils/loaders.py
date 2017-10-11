@@ -356,26 +356,26 @@ class S3Loader(BaseLoader):
             range_ = BlockLoader._make_range_header(offset, length)
 
         def s3_load(anon=False):
-                if not self.client:
-                    if anon:
-                        config = Config(signature_version=UNSIGNED)
-                    else:
-                        config = None
-
-                    client = boto3.client('s3', aws_access_key_id=aws_access_key_id,
-                                                aws_secret_access_key=aws_secret_access_key,
-                                                config=config)
+            if not self.client:
+                if anon:
+                    config = Config(signature_version=UNSIGNED)
                 else:
-                    client = self.client
+                    config = None
 
-                res = client.get_object(Bucket=bucket_name,
-                                        Key=key,
-                                        Range=range_)
+                client = boto3.client('s3', aws_access_key_id=aws_access_key_id,
+                                            aws_secret_access_key=aws_secret_access_key,
+                                            config=config)
+            else:
+                client = self.client
 
-                if not self.client:
-                    self.client = client
+            res = client.get_object(Bucket=bucket_name,
+                                    Key=key,
+                                    Range=range_)
 
-                return res
+            if not self.client:
+                self.client = client
+
+            return res
 
         try:
             obj = s3_load(anon=False)
