@@ -169,12 +169,13 @@ class CDXFilter(object):
         if string.startswith('='):
             string = string[1:]
             self.compare_func = self.exact
-        # contains match
+        # regex match
         elif string.startswith('~'):
             string = string[1:]
-            self.compare_func = self.contains
-        else:
             self.compare_func = self.rx_match
+        # contains match
+        else:
+            self.compare_func = self.contains
 
         parts = string.split(':', 1)
         # no field set, apply filter to entire cdx

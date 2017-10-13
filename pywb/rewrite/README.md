@@ -16,19 +16,19 @@ which will fetch a live url and apply the registered rewriting rules to that url
 
 Run:
 
-`python ./pywb.rewrite/rewrite_live.py http://example.com`
+`python ./pywb/rewrite/rewrite_live.py http://example.com`
 
 To specify custom timestamp and prefix:
 
 ```
-python ./pywb.rewrite/rewrite_live.py http://example.com /mycoll/20141026000102/http://mysite.example.com/path.html
+python ./pywb/rewrite/rewrite_live.py http://example.com /mycoll/20141026000102/http://mysite.example.com/path.html
 ```
 
 This will print to stdout the content of `http://example.com` with all urls rewritten relative to 
 `/mycoll/20141026000102/http://mysite.example.com/path.html`.
 
 Headers are also rewritten, for further details, consult the `get_rewritten` function in
-[pywb_rewrite/rewrite_live.py](pywb_rewrite/rewrite_live.py)
+[rewrite_live.py](rewrite_live.py)
 
 
 #### Tests
