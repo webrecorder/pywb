@@ -17,7 +17,7 @@ FuzzyRule = namedtuple('FuzzyRule',
 
 # ============================================================================
 class FuzzyMatcher(object):
-    DEFAULT_FILTER = ['~urlkey:{0}']
+    DEFAULT_FILTER = ['urlkey:{0}']
     DEFAULT_MATCH_TYPE = 'prefix'
     DEFAULT_REPLACE_AFTER = '?'
 
