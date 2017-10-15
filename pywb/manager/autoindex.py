@@ -63,16 +63,13 @@ class AutoIndexer(object):
 
             index_file = os.path.join(self.manager.indexes_dir, self.AUTO_INDEX_FILE)
 
-            if os.path.isfile(index_file):
-                if os.name != 'nt' and self.is_newer_than(archive_dir, index_file):
-                    continue
-            else:
+            if not os.path.isfile(index_file):
                 try:
                     os.makedirs(self.manager.indexes_dir)
                 except Exception as e:
                     pass
 
-            logging.info('Collection Possibly Changed: ' + coll)
+            logging.info('Checking Collection: ' + coll)
             to_index = []
             for dirpath, dirnames, filenames in os.walk(archive_dir):
                 for filename in filenames:
@@ -88,6 +85,14 @@ class AutoIndexer(object):
                 self.do_index(to_index)
 
     def run(self):
+        try:
+            # If running in uwsgi, run AutoIndexer only in first worker!
+            import uwsgi
+            if uwsgi.worker_id() != 1:
+                return
+        except:
+            pass
+
         try:
             while self.keep_running:
                 self.check_path()
