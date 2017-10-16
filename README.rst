@@ -8,18 +8,22 @@ Webrecorder pywb 2.0
 
 **pywb** is a Python (2 and 3) web archive replay and recording toolkit.
 
-Please see the `official Webrecorder pywb documentation <https://pywb.readthedocs.org>`_ for the latest info.
+This toolset forms the foundation of Webrecorder, but also provides a variety of web archiving tools,
+such as the traditional "Wayback Machine" functionality.
 
+Note: this version, which represents a major overhaul of pywb, is not yet released on pypi, but you can:
 
-Note: this version is not yet released on pypi, but you can:
+* Install with ``python setup.py install``
 
- * Install with ``python setup.py install``
+* Run tests with ``python setup.py test``
 
- * Run tests with ``python setup.py test``
+* Run Wayback with ``wayback`` (see docs for info on how to setup collections)
 
- * Run Wayback with ``wayback`` (see docs for info on how to setup collections)
+* Build docs locally with:  ``cd docs; make html``
 
- * Build docs locally with:  ``cd docs; make html``
+* ..and a lot more!
+
+Please see the `Webrecorder pywb documentation for usage and configuration info <https://pywb.readthedocs.org>`_
 
 
 
