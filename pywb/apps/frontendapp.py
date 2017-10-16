@@ -58,6 +58,8 @@ class FrontEndApp(object):
 
         self.init_recorder(config.get('recorder'))
 
+        self.init_autoindex(config.get('autoindex'))
+
         static_path = config.get('static_url_path', 'pywb/static/').replace('/', os.path.sep)
         self.static_handler = StaticHandler(static_path)
 
@@ -125,8 +127,8 @@ class FrontEndApp(object):
         # TODO: support dedup
         dedup_index = None
         warc_writer = MultiFileWARCWriter(self.warcserver.archive_paths,
-                                          max_size=int(recorder_config.get('max_size', 1000000000)),
-                                          max_idle_secs=int(recorder_config.get('max_idle_secs', 600)),
+                                          max_size=int(recorder_config.get('rollover_size', 1000000000)),
+                                          max_idle_secs=int(recorder_config.get('rollover_idle_secs', 600)),
                                           filename_template=recorder_config.get('filename_template'),
                                           dedup_index=dedup_index)
 
@@ -135,6 +137,22 @@ class FrontEndApp(object):
         recorder_server = GeventServer(self.recorder, port=0)
 
         self.recorder_path = self.RECORD_API % (recorder_server.port, recorder_coll)
+
+    def init_autoindex(self, auto_interval):
+        if not auto_interval:
+            return
+
+        from pywb.manager.autoindex import AutoIndexer
+        indexer = AutoIndexer(interval=int(auto_interval))
+        if not os.path.isdir(indexer.root_path):
+            msg = 'No managed directory "{0}" for auto-indexing'
+            logging.error(msg.format(indexer.root_path))
+            import sys
+            sys.exit(2)
+
+        msg = 'Auto-Indexing Enabled on "{0}", checking every {1} secs'
+        logging.info(msg.format(indexer.root_path, auto_interval))
+        indexer.start()
 
     def serve_home(self, environ):
         home_view = BaseInsertView(self.rewriterapp.jinja_env, 'index.html')

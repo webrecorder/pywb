@@ -32,7 +32,11 @@ To disable framed replay add:
 Directory Structure
 -------------------
 
-The pywb system assumes the following default directory structure for a web archive::
+The pywb system is designed to automatically access and manage web archive collections that follow a defined directory structure.
+The directory structure can be fully customized and "special" collections can be defined outside the structure as well.
+
+The default directory structure for a web archive is as follows::
+
 
     +-- config.yaml (optional)
     |
@@ -63,7 +67,7 @@ The pywb system assumes the following default directory structure for a web arch
 
 If running with default settings, the ``config.yaml`` can be omitted.
 
-It is possible to config these paths in the config.yaml
+It is possible to config these directory paths in the config.yaml
 The following are some of the implicit default settings which can be customized::
 
   collections_root: collections
@@ -106,6 +110,8 @@ In addition, several "special" collection definitions are possible.
 
 All custom defined collections are placed under the ``collections`` key in ``config.yaml``
 
+
+.. _live-web:
 
 Live Web Collection
 ^^^^^^^^^^^^^^^^^^^
@@ -165,18 +171,152 @@ Such a collection must be defined explicitly using the ``$root`` as collection n
 
 Note: When a root collection is set, no other collections are currently accessible, they are ignored.
 
+.. _recording-mode:
 
 Recording Mode
 --------------
 
-TODO
+A new recording mode can be enabled for any automatically managed collection by adding a ``recorder`` block in
+the root of ``config.yaml``.
+The mode can be configured with the following options::
+
+  recorder:
+     source_coll: live
+     rollover_size: 100000000
+     rollover_idle_secs: 600
+     filename_template: my-warc-{timestamp}-{hostname}-{random}.warc.gz
+
+
+This will enable the ``/record/`` access point under every managed collection, writing new WARCs directly into each collection.
+The required ``source_coll`` setting specifies the source collection from which to load content that will be recorded.
+
+Most likely this will be the :ref:`live-web` collection, which should also be defined. 
+However, it could be any other collection, allowing for "extraction" from other collections or remote web archives.
+Both the request and response are recorded into the WARC file, and most standard HTTP verbs should be recordable.
+
+The other options are optional and may be omitted. The ``rollover_size`` and ``rollover_idle_secs`` specified
+the maximum size and maximum idle time, respectively, after which a new WARC file is created.
+For example, a new WARC will be created if more than 100MB are recorded, or after 600 seconds have elapsed between
+subsequent requests. This allows the WARC size to be more manageable and prevents files from being left open for long periods of time.
+
+The ``filename-template`` specifies the naming convention for WARC files, and allows a timestamp, current hostname, and
+random string to be inserted into the filename.
+
+For example, if recording with the above config into a collection called ``my-coll``, the user would access:
+
+``http://my-archive.example.com/my-coll/record/http://example.com/``, which would load ``http://example.com/`` from the live web
+and write the request and response to a WARC named something like:
+
+``./collections/my-coll/archive/my-warc-20170102030000000000-archive.example.com-QRTGER.warc.gz``
+
+If running with auto indexing, the WARC will also get automatically indexd and available for replay after the index interval.
+
+As a shortcut, ``recorder: live`` can also be used to specify only the ``source_coll`` option.
+
+
+Auto-Indexing Mode
+------------------
+
+If auto-indexing is enabled, pywb will update the indexes stored in the ``indexes`` directory whenever files are added or modified in the
+``archive`` directory. Auto-indexing can be enabled via the ``autoindex`` option set to the check interval in seconds::
+
+  autoindex: 30
+
+This specifies that the ``archive`` directories should be every 30 seconds. Auto-indexing is useful when WARCs are being
+appened to or added to the ``archive`` by an extneral operation.
+
+If a user is manually adding a new WARC to the collection, ``wb-manager add <coll> <path/to/warc>`` is recommended,
+as this will add the WARC and perform a one-time reindex the collection, without the need for auto-indexing.
+
+Note: Auto-indexing also does not support deletion of removal of WARCs from the ``archive`` directory.
+
+This is not a common operation for web archives, a WARC must be manually removed from the 
+``collections/<coll>/archive/`` directory and then collection index can be regenreated from the remaining WARCs
+by running ``wb-manager reindex <coll>``
+
+The auto-indexing mode can also be enabled via commandline by running ``wayback -a`` or ``wayback -a --auto-interval 30`` to also set the interval.
+
+(If running pywb with uWSGI in multi-process mode, the auto-indexing is only run in a single worker to avoid race conditions and duplicate indexing)
+
 
 .. _https-proxy:
 
 HTTP/S Proxy Mode
 -----------------
 
-TODO
+In addition to "url rewritinng prefix mode" (the default), pywb can also act as a full-fledged HTTP and HTTPS proxy, allowing
+any browser or client supporting HTTP and HTTPS proxy to access web archives through the proxy.
+
+Proxy mode can provide access to a single collection at time, eg. instead of accessing ``http://localhost:8080/my-coll/2017/http://example.com/``,
+the user enters ``http://example.com/`` and is served content from the ``my-coll`` collection.
+As a result, the collection and timestamp must be specified separately.
+
+Configuring HTTP Proxy
+^^^^^^^^^^^^^^^^^^^^^^
+
+At this time, pywb requires the collection to be configured at setup time (though collection switching will be added soon).
+
+The collection can be specified by running: ``wayback --proxy my-coll`` or by adding to the config::
+
+  proxy:
+    coll: my-coll
+    
+For HTTP proxy access, this is all that is needed to use the proxy. If pywb is running on port 8080 on localhost, the following curl command should provide proxy access: ``curl -x "localhost:8080"  http://example.com/``
+
+
+Proxy Recording
+^^^^^^^^^^^^^^^
+
+The proxy can additional be set to recording mode, equivalent to access the ``/<my-coll>/record/`` path,
+by adding ``recording: true``, as follows::
+
+  proxy:
+    coll: my-coll
+    recording: true
+
+By default, proxy recording will use the ``live`` collection if not otherwise configured.
+
+See :ref:`recording-mode` for full set of configurable recording options.
+
+
+HTTPS Proxy and pywb Certificate Authority
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For HTTPS proxy access, pywb provides its own Certificate Authority and dynamically generates certificates for each host and signes the responses
+with these certificates. By design, this allows pywb to act as "man-in-the-middle" servring archived copies of a given site.
+
+However, the pywb certificate authority (CA) will need to be accepted by the browser. The CA cert can be downloaded from pywb directly
+using the specical download paths. Recommended set up for using the proxy is as follows:
+
+1. Configure the browser proxy settings host port, for example ``localhost`` and ``8080`` (if running locally)
+
+2. Download the CA:
+
+   * For most browsers, use the PEM format: ``http://wsgiprox/download/pem``
+
+   * For windows, use the PKCS12 format: ``http://wsgiprox/download/p12``
+
+3. You may need to agree to "Trust this CA" to identify websites.
+
+The pywb CA file is automatically generated if it does not exist, and may be added to the key store directly.
+
+Additional proxy options ``ca_name`` and ``ca_file_cache`` allow configuring the location and name of the CA file.
+
+The following are all the available proxy options (only ``coll`` is required)::
+
+  proxy:
+    coll: my-coll
+    ca_name: pywb HTTPS Proxy CA
+    ca_file_cache: ./proxy-certs/pywb-ca.pem
+    recording: false
+
+The HTTP/S functionality is provided by the separate :mod:`wsgiprox` utility which provides HTTP/S proxy
+for any WSGI application.
+
+See the `wsgiprox README <https://github.com/webrecorder/wsgiprox/blob/master/README.rst>`_ for additional details on how it works.
+
+For more information on custom certificate authority (CA) installation, the `mitmproxy certificate page <http://docs.mitmproxy.org/en/stable/certinstall.html>`_ provides a good overview for installing a custom CA on different platforms.
+
 
 UI Customizations
 -----------------
