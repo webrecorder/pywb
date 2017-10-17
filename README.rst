@@ -9,6 +9,8 @@ pywb 2.0 beta
 Web Archiving Tools for All
 ---------------------------
 
+`View the full pywb 2.0 documentation here <https://pywb.readthedocs.org>`_
+
 **pywb** is a Python (2 and 3) web archiving toolkit for replaying web archives large and small as accurately as possible.
 The toolkit now also includes new features for creating high-fidelity web archives.
 
@@ -36,7 +38,7 @@ The 2.0 beta release includes a major overhaul of pywb and introduces the follow
 * Significantly improved client-side rewriting to handle most modern web sites.
 
 
-Please see the `Webrecorder pywb documentation for usage and configuration info <https://pywb.readthedocs.org>`_
+Please see the `full documentation <https://pywb.readthedocs.org>`_ for more detailed info on all these features.
 
 
 Work in Progress / Coming Soon
