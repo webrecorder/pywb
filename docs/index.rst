@@ -6,16 +6,18 @@
 Webrecorder pywb documentation!
 ================================
 
-Webrecorder (:mod:`pywb`) toolkit is a full-featured, advanced web archiving capture and replay framework for python.
+The Webrecorder (:mod:`pywb`) toolkit is a full-featured, advanced web archiving capture and replay framework for python.
 It provides command-line tools and an extensible framework for high-fidelity web archive access and creation.
+A subset of features provides the basic functionality of a "Wayback Machine".
+
 
 .. toctree::
    :maxdepth: 2
 
-   manual/intro
    manual/usage
    manual/configuring
-   manual/index
+   manual/architecture
+   manual/cdxserver_api
    code/pywb
 
 

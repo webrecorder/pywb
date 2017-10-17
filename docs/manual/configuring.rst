@@ -1,3 +1,5 @@
+.. _configuring-pywb:
+
 Configuring the Web Archive
 ===========================
 
@@ -153,10 +155,24 @@ and all other templates, per collection, for example::
        resource: ./some/other/path/to/archive/
        query_html: ./path/to/templates/query.html
 
-This configuration supports the full Warcserver config syntax, including
-remote archives, aggregation and fallback sequences (link)
 
-This format also makes it easier to move legacy collections that have unique path requirements.
+If possible, it is recommended to use the default directory structure to avoid per-collection configuration.
+However, this configuration allows for using pywb with existing collections that have unique path requirements.
+
+
+Remote Memento Collection
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It's also possible to define remote archives as easily as location collections.
+For example, the following defines a collection ``/ia/`` which accesses
+Internet Archive's Wayback Machine as a single collection::
+
+  collections:
+    ia: memento+https://web.archive.org/web/
+
+Many additional options, including memento "aggregation", fallback chains are possible
+using the Warcserver configuration syntax. See :ref:`warcserver-config` for more info.
+
 
 Root Collection
 ^^^^^^^^^^^^^^^
