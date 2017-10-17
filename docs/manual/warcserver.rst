@@ -90,9 +90,9 @@ index data was found), a 404 is returned.
 WARC Record HTTP Response
 """""""""""""""""""""""""
 
-When using Warcserver, the entire **WARC Record** is included in the HTTP response. This may seem confusing as the WARC record itself contains an HTTP response! Warcserver also includes additional metadata as custom HTTP headers.
+When using Warcserver, the entire *WARC record* is included in the HTTP response. This may seem confusing as the WARC record itself contains an HTTP response! Warcserver also includes additional metadata as custom HTTP headers.
 
-The following example illustrates what is transmitted when retrieving ``curl http://localhost:8070/pywb/index?url=iana.org``::
+The following example illustrates what is transmitted when retrieving ``curl``-ing ``http://localhost:8070/pywb/index?url=iana.org``::
 
   > GET /pywb/resource?url=iana.org HTTP/1.1
   > Host: localhost:8070
@@ -110,11 +110,11 @@ The following example illustrates what is transmitted when retrieving ``curl htt
   < Warcserver-Type: warc
   < Date: Tue, 17 Oct 2017 00:32:12 GMT
 
-  WARC/1.0
-  WARC-Type: response
-  WARC-Date: 2014-01-26T20:06:24Z
-  WARC-Target-URI: http://www.iana.org/
-  WARC-Record-ID: <urn:uuid:4eec4942-a541-410a-99f4-50de39b62118>
+  < WARC/1.0
+  < WARC-Type: response
+  < WARC-Date: 2014-01-26T20:06:24Z
+  < WARC-Target-URI: http://www.iana.org/
+  < WARC-Record-ID: <urn:uuid:4eec4942-a541-410a-99f4-50de39b62118>
   ...
 
 The HTTP payload is the WARC record itself but HTTP headers returned "surface" additional information
@@ -156,7 +156,7 @@ The sources include:
 * CDX Server API Endpoint
 
 
-The index types can be defined using either shorthand **sourcename+<url>** notation or a long-form full property declaration
+The index types can be defined using either shorthand *sourcename+<url>* notation or a long-form full property declaration
 
 The following is an example of defining different special collections::
 
@@ -281,7 +281,7 @@ It should be easy to add a custom index source, by extending :class:`pywb.warcse
 You can then use the index in a ``config.yaml``::
 
   collections:
-    my-coll: my-cool-index
+    my-coll: my-index-src
 
     
 For more information and definition of existing indexes, see :mod:`pywb.warcserver.index.indexsource`

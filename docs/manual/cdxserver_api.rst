@@ -203,7 +203,7 @@ Pagination API
 ^^^^^^^^^^^^^^
 
 The cdx server supports an optional pagination api, but it is currently
-only available when using `ZipNum Compressed Index`_ instead of a plain
+only available when using :ref:`zipnum` instead of a plain
 text cdx files. (Additional pagination support may be added for CDXJ
 files as well).
 
