@@ -40,7 +40,7 @@ default_filters:
 
         # remove more generic cache-busting params:
         # name contains 'bust', value appears to be a timestamp
-        - match: '[?&](\w*bust\w*=1[\d]{12,15})(?=&|$)'
+        - match: '[?&](\w*(bust|ts)\w*=1[\d]{12,15})(?=&|$)'
           replace: ''
 
 rules:
