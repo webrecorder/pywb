@@ -2,11 +2,31 @@ Usage
 =====
 
 
+New Features
+------------
+
+The 2.0 release of :mod:`pywb` is a significant overhaul from the previous iteration,
+and introduces many new features, including:
+
+* Dynamic multi-collection configuration system with no-restart updates.
+
+* New recording capability to create new web archives from the live web or other archives.
+
+* Componentized architecture with standalone Warcserver, Recorder and Rewriter components.
+
+* Support for advanced "memento aggregation" and fallback chains for querying multiple remote and local archival sources.
+
+* HTTP/S Proxy Mode with customizable Certificate Authority for proxy mode recording and replay.
+
+* Flexible rewriting system with pluggable rewriters for different content-types.
+
+* Significantly improved client-side rewriting to handle most modern web sites.
+
+
 Getting Started
 ---------------
 
-At its core, pywb includes a fully featured web archive replay system, sometimes known as 'wayback machine', to provide the ability to replay,
-or view, archived web content in the browser.
+At its core, pywb includes a fully featured web archive replay system, sometimes known as 'wayback machine', to provide the ability to replay, or view, archived web content in the browser.
 
 If you have existing web archive (WARC or legacy ARC) files, here's how to make them accessible using :mod:`pywb`
 

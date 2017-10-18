@@ -170,7 +170,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'pywb', 'pywb Documentation',
-     author, 'pywb', 'One line description of project.',
+     author, 'pywb', 'Web Archiving Tools for All.',
      'Miscellaneous'),
 ]
 
