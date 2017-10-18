@@ -15,6 +15,8 @@ from pywb.rewrite.rewrite_dash import RewriteDASH
 from pywb.rewrite.rewrite_hls import RewriteHLS
 from pywb.rewrite.rewrite_amf import RewriteAMF
 
+from pywb import DEFAULT_RULES_FILE
+
 import copy
 from werkzeug.useragents import UserAgent
 
@@ -90,8 +92,9 @@ class DefaultRewriter(BaseContentRewriter):
         'js': 'text/javascript'
     }
 
-    def __init__(self, rules_file=None, replay_mod=''):
-        rules_file = rules_file or 'pkg://pywb/rules.yaml'
+    def __init__(self, replay_mod='', config=None):
+        config = config or {}
+        rules_file = config.get('rules_file', DEFAULT_RULES_FILE)
         super(DefaultRewriter, self).__init__(rules_file, replay_mod)
         self.all_rewriters = copy.copy(self.DEFAULT_REWRITERS)
 

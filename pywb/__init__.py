@@ -2,6 +2,8 @@ __version__ = '0.52.0'
 
 DEFAULT_CONFIG = 'pywb/default_config.yaml'
 
+DEFAULT_RULES_FILE = 'pkg://pywb/rules.yaml'
+
 
 def get_test_dir():
     import os

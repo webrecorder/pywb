@@ -42,7 +42,7 @@ class IndexHandler(object):
     def __init__(self, index_source, opts=None, *args, **kwargs):
         self.index_source = index_source
         self.opts = opts or {}
-        self.fuzzy = FuzzyMatcher('pkg://pywb/rules.yaml')
+        self.fuzzy = FuzzyMatcher(kwargs.get('rules_file'))
 
     def get_supported_modes(self):
         return dict(modes=['list_sources', 'index'])
@@ -96,8 +96,8 @@ class IndexHandler(object):
 
 #=============================================================================
 class ResourceHandler(IndexHandler):
-    def __init__(self, index_source, resource_loaders):
-        super(ResourceHandler, self).__init__(index_source)
+    def __init__(self, index_source, resource_loaders, rules_file=None):
+        super(ResourceHandler, self).__init__(index_source, rules_file=rules_file)
         self.resource_loaders = resource_loaders
 
     def get_supported_modes(self):
@@ -133,12 +133,14 @@ class ResourceHandler(IndexHandler):
 
 #=============================================================================
 class DefaultResourceHandler(ResourceHandler):
-    def __init__(self, index_source, warc_paths='', forward_proxy_prefix=''):
+    def __init__(self, index_source, warc_paths='', forward_proxy_prefix='',
+                 rules_file=''):
         loaders = [WARCPathLoader(warc_paths, index_source),
                    LiveWebLoader(forward_proxy_prefix),
                    VideoLoader()
                   ]
-        super(DefaultResourceHandler, self).__init__(index_source, loaders)
+        super(DefaultResourceHandler, self).__init__(index_source, loaders,
+                                                     rules_file=rules_file)
 
 
 #=============================================================================

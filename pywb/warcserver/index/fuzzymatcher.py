@@ -1,5 +1,6 @@
 from warcio.utils import to_native_str
 from pywb.utils.loaders import load_yaml_config
+from pywb import DEFAULT_RULES_FILE
 
 import re
 import os
@@ -24,7 +25,8 @@ class FuzzyMatcher(object):
     FUZZY_SKIP_PARAMS = ('alt_url', 'reverse', 'closest', 'end_key',
                          'url', 'matchType', 'filter')
 
-    def __init__(self, filename):
+    def __init__(self, filename=None):
+        filename = filename or DEFAULT_RULES_FILE
         config = load_yaml_config(filename)
         self.rules = []
         for rule in config.get('rules'):

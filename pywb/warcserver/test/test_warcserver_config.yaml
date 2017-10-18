@@ -46,18 +46,18 @@ collections:
     # Local Dir CDX
     local:
         index: ./local/indexes
-        resource: ./local/data
+        archive_paths: ./local/data
 
     local_file:
         index: ./local/indexes/file.cdxj
-        resource: ./local/data
+        archive_paths: ./local/data
 
     # Sequence
     many_seq:
         sequence:
             - 
               index: ./local/indexes
-              resource: ./local/data
+              archive_paths: ./local/data
               name: local
 
             - 

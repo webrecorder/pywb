@@ -2,16 +2,14 @@
 
 debug: true
 
+use_js_obj_proxy: true
+
 collections_root: _test_colls
 
 collections:
     pywb:
         index: ./sample_archive/cdx/
-        resource: ./sample_archive/warcs/
-
-    with-js-proxy:
-        index:  ./sample_archive/cdx/
-        use_js_obj_proxy: true
+        archive_paths: ./sample_archive/warcs/
 
     # live collection
     live: $live

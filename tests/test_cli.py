@@ -25,7 +25,7 @@ class TestProxyCLIConfig(CollsDirMixin, BaseTestClass):
     def test_proxy_cli_rec(self):
         res = wayback(['--proxy', 'test', '--proxy-record'])
         assert res.extra_config['proxy']['recording'] == True
-        assert res.extra_config['collections']['live'] == {'index': '$live', 'use_js_obj_proxy': True}
+        assert res.extra_config['collections']['live'] == {'index': '$live'}
 
     def test_proxy_cli_err_coll(self):
         with pytest.raises(Exception):
@@ -37,6 +37,6 @@ class TestProxyCLIConfig(CollsDirMixin, BaseTestClass):
 
     def test_live_all_cli(self):
         res = wayback(['--all-coll', 'all', '--live'])
-        assert res.extra_config['collections'] == {'live': {'index': '$live', 'use_js_obj_proxy': True},
+        assert res.extra_config['collections'] == {'live': {'index': '$live'},
                                                    'all': '$all'}
 

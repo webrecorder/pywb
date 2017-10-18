@@ -189,9 +189,6 @@ class FrontEndApp(object):
         metadata = {'coll': coll,
                     'type': 'replay'}
 
-        if self.warcserver.config.get('use_js_obj_proxy'):
-            metadata['use_js_obj_proxy'] = True
-
         if coll in self.warcserver.list_fixed_routes():
             metadata.update(self.warcserver.get_coll_config(coll))
         else:
