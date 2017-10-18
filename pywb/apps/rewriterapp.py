@@ -65,7 +65,9 @@ class RewriterApp(object):
             self.frame_mod = None
             self.replay_mod = ''
 
-        self.default_rw = DefaultRewriter(replay_mod=self.replay_mod)
+        self.default_rw = DefaultRewriter(replay_mod=self.replay_mod,
+                                          config=config)
+
         self.js_proxy_rw = RewriterWithJSProxy(replay_mod=self.replay_mod)
 
         if not jinja_env:
@@ -86,6 +88,8 @@ class RewriterApp(object):
         self.error_view = BaseInsertView(self.jinja_env, self._html_templ('error_html'))
         self.not_found_view = BaseInsertView(self.jinja_env, self._html_templ('not_found_html'))
         self.query_view = BaseInsertView(self.jinja_env, self._html_templ('query_html'))
+
+        self.use_js_obj_proxy = config.get('use_js_obj_proxy', False)
 
         self.cookie_tracker = None
 
@@ -170,7 +174,7 @@ class RewriterApp(object):
 
         urlkey = canonicalize(wb_url.url)
 
-        if kwargs.get('use_js_obj_proxy'):
+        if self.use_js_obj_proxy:
             content_rw = self.js_proxy_rw
         else:
             content_rw = self.default_rw

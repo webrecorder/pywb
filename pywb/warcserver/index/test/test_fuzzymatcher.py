@@ -26,7 +26,7 @@ class TestFuzzy(object):
     @classmethod
     def setup_class(cls):
         cls.source = SimpleAggregator({'source': EchoParamsSource()})
-        cls.fuzzy = FuzzyMatcher('pkg://pywb/rules.yaml')
+        cls.fuzzy = FuzzyMatcher()
 
     def get_params(self, url, actual_url, mime='text/html'):
         params = {'url': url,

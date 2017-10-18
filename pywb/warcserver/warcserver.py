@@ -58,6 +58,8 @@ class WarcServer(BaseWarcServer):
         self.index_paths = self.init_paths('index_paths')
         self.archive_paths = self.init_paths('archive_paths', self.root_dir)
 
+        self.rules_file = self.config.get('rules_file', '')
+
         self.auto_handler = None
 
         if self.config.get('enable_auto_colls', True):
@@ -98,7 +100,8 @@ class WarcServer(BaseWarcServer):
                                                base_dir=self.index_paths,
                                                config=self.config)
 
-        return DefaultResourceHandler(dir_source, self.archive_paths)
+        return DefaultResourceHandler(dir_source, self.archive_paths,
+                                      rules_file=self.rules_file)
 
     def list_fixed_routes(self):
         return list(self.fixed_routes.keys())
@@ -149,14 +152,12 @@ class WarcServer(BaseWarcServer):
 
         if isinstance(coll_config, str):
             index = coll_config
-            resource = None
+            archive_paths = None
         elif isinstance(coll_config, dict):
             index = coll_config.get('index')
             if not index:
                 index = coll_config.get('index_paths')
-            resource = coll_config.get('resource')
-            if not resource:
-                resource = coll_config.get('archive_paths')
+            archive_paths = coll_config.get('archive_paths')
 
         else:
             raise Exception('collection config must be string or dict')
@@ -179,10 +180,11 @@ class WarcServer(BaseWarcServer):
             timeout = int(coll_config.get('timeout', 0))
             agg = init_index_agg(index_group, True, timeout)
 
-        if not resource:
-            resource = self.config.get('archive_paths')
+        if not archive_paths:
+            archive_paths = self.config.get('archive_paths')
 
-        return DefaultResourceHandler(agg, resource)
+        return DefaultResourceHandler(agg, archive_paths,
+                                      rules_file=self.rules_file)
 
     def init_sequence(self, coll_name, seq_config):
         if not isinstance(seq_config, list):
