@@ -111,9 +111,13 @@ var years =[];
     {% endfor %}
     <script type="text/javascript">
     /*Insert number of versions for each year*/
-    years = uniques(years); /*get list of years with versions*/	
+    years = uniques(years); /*get list of years with versions*/
+    var numberofVersions ;
+    var versionsString;	
 	for (var i = 0; i < years.length; i++) {
-		$('#'+years[i]+'_right').prepend($('#year_'+ years[i].toString()).parent().next().find(".day").length + " versions ");
+		numberofVersions = $('#year_'+ years[i].toString()).parent().next().find(".day").length;
+		numberofVersionsString= numberofVersions == 1 ? numberofVersions + " version " : numberofVersions + " versions ";
+    $('#'+years[i]+'_right').prepend(numberofVersionsString);
 	}
     </script>
    </div>
