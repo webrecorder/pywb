@@ -1308,6 +1308,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return false;
         }
 
+        var text = elem.textContent.trim();
+
+        if (!text || text.indexOf("<") == 0) {
+            return false;
+        }
+
         var override_props = ["window",
                               "self",
                               "document",
@@ -1317,6 +1323,19 @@ var _WBWombat = function($wbwindow, wbinfo) {
                               "frames",
                               "opener"];
 
+        var contains_props = false;
+
+        for (var i = 0; i < override_props.length; i++) {
+            if (text.indexOf(override_props[i]) >= 0) {
+                contains_props = true;
+                break;
+            }
+        }
+
+        if (!contains_props) {
+            return false;
+        }
+
         var insert_str =
 'var _____WB$wombat$assign$function_____ = function(name) {return (self._wb_wombat && self._wb_wombat.local_init && self._wb_wombat.local_init(name)) || self[name]; }\n' +
 'if (!self.__WB_pmw) { self.__WB_pmw = function(obj) { return obj; } }\n' +
@@ -1324,7 +1343,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         var prop;
 
-        for (var i = 0; i < override_props.length; i++) {
+        for (i = 0; i < override_props.length; i++) {
             prop = override_props[i];
             insert_str += 'let ' + prop + ' = _____WB$wombat$assign$function_____("' + prop + '");\n';
         }

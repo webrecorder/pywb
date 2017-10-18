@@ -233,7 +233,7 @@ class StreamingRewriter(object):
     def rewrite(self, string):
         return string
 
-    def rewrite_complete(self, string):
+    def rewrite_complete(self, string, **kwargs):
         return self.first_buff + self.rewrite(string) + self.final_read()
 
     def final_read(self):

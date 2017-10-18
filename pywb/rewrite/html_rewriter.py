@@ -248,12 +248,13 @@ class HTMLRewriterMixin(StreamingRewriter):
         else:
             return ''
 
-    def _rewrite_script(self, script_content, ensure_window=False):
+    def _rewrite_script(self, script_content, inline_attr=False):
         if not script_content:
             return ''
 
-        content = self.js_rewriter.rewrite_complete(script_content)
-        if ensure_window:
+        content = self.js_rewriter.rewrite_complete(script_content,
+                                                    inline_attr=inline_attr)
+        if inline_attr:
             content = self.ADD_WINDOW.sub('window.\\1', content)
 
         return content

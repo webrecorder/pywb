@@ -305,6 +305,17 @@ r"""
 >>> parse('<HTML><A Href="">Text</a></hTmL>')
 <html><a href="">Text</a></html>
 
+# parse attr with js proxy, wrap script, prepend WB_wombat_ for location assignment
+>>> parse('<html><a href="javascript:location=\'foo.html\'"></a></html>', js_proxy=True)
+<html><a href="javascript:{ window.WB_wombat_location='foo.html' }"></a></html>
+
+# parse attr with js proxy, wrap script, no WB_wombat_ needed
+>>> parse('<html><a href="javascript:location.href=\'foo.html\'"></a></html>', js_proxy=True)
+<html><a href="javascript:{ location.href='foo.html' }"></a></html>
+
+# parse attr with js proxy, no rewrite needed
+>>> parse('<html><a href="javascript:alert()"></a></html>', js_proxy=True)
+<html><a href="javascript:alert()"></a></html>
 
 
 
@@ -321,6 +332,7 @@ r"""
 
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.html_rewriter import HTMLRewriter
+from pywb.rewrite.regex_rewriters import JSWombatProxyRewriter
 
 import pprint
 import six
@@ -341,10 +353,22 @@ urlrewriter_pencode = new_rewriter(rewrite_opts=dict(punycode_links=True))
 no_base_canon_rewriter = new_rewriter(rewrite_opts=dict(rewrite_rel_canon=False,
                                                         rewrite_base=False))
 
-def parse(data, head_insert=None, urlrewriter=urlrewriter, parse_comments=False):
+def parse(data, head_insert=None, urlrewriter=urlrewriter, parse_comments=False,
+          js_proxy=False):
+
+    if js_proxy:
+        js_rewriter_class = JSWombatProxyRewriter
+    else:
+        js_rewriter_class = None
+
     parser = HTMLRewriter(urlrewriter, head_insert=head_insert,
                           url=ORIGINAL_URL,
+                          js_rewriter_class=js_rewriter_class,
                           parse_comments=parse_comments)
+
+    if js_proxy:
+        parser.js_rewriter.first_buff = '{ '
+        parser.js_rewriter.last_buff = ' }'
 
     if six.PY2 and isinstance(data, six.text_type):
         data = data.encode('utf-8')

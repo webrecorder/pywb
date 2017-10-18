@@ -162,7 +162,7 @@ class JSWombatProxyRewriterMixin(object):
 
     local_init_func = '\nvar {0} = function(name) {{\
 return (self._wb_wombat && self._wb_wombat.local_init &&\
- self._wb_wombat.local_init(name)) || self[name]; }}\n\
+ self._wb_wombat.local_init(name)) || self[name]; }};\n\
 if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
 {{\n'
 
@@ -191,7 +191,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
 
         rules = rules + [
            (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
-           #(r'Function\(["\']return this["\']\)', self.fixed(func_rw), 0),
+           (r'(?<!\.)\blocation\b[=]\s*(?![=])', self.add_prefix('WB_wombat_'), 0),
            (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(self.THIS_RW), 0),
            (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + self.THIS_RW), 0),
            (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(self.THIS_RW), 0),
@@ -205,10 +205,30 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
 
         self.first_buff = self.local_init_func.format(self.local_init_func_name) + local_declares
 
-        self.close_string = '\n\n}'
+        self.last_buff = '\n\n}'
+
+    def rewrite_complete(self, string, **kwargs):
+        if not kwargs.get('inline_attr'):
+            return super(JSWombatProxyRewriterMixin, self).rewrite_complete(string)
+
+        # check if any of the wrapped objects are used in the script
+        # if not, don't rewrite
+        if not any(obj in string for obj in self.local_objs):
+            return string
+
+        if string.startswith('javascript:'):
+            string = 'javascript:' + self.first_buff + self.rewrite(string[len('javascript:'):])
+        else:
+            string = self.first_buff + self.rewrite(string)
+
+        string += self.last_buff
+
+        string = string.replace('\n', '')
+
+        return string
 
     def final_read(self):
-        return self.close_string
+        return self.last_buff
 
 
 # =================================================================
