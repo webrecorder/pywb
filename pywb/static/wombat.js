@@ -882,8 +882,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var orig_getter = get_orig_getter(proto, prop);
         if (orig_getter) {
             var new_getter = function() {
-                var res = orig_getter.call(this);
-                if (!cond || cond(this)) {
+                var obj = proxy_to_obj(this);
+                var res = orig_getter.call(obj);
+                if (!cond || cond(obj)) {
                     res = extract_orig(res);
                 }
                 return res;
@@ -2395,10 +2396,14 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             value = cookies.join(",")
 
-            return orig_set_cookie.call(this, value);
+            return orig_set_cookie.call(proxy_to_obj(this), value);
         }
 
-        def_prop($wbwindow.document, "cookie", set_cookie, orig_get_cookie);
+        function get_cookie() {
+            return orig_get_cookie.call(proxy_to_obj(this));
+        }
+
+        def_prop($wbwindow.document, "cookie", set_cookie, get_cookie);
     }
 
     //============================================

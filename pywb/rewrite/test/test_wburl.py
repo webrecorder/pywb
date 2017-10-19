@@ -53,6 +53,9 @@ u"""
 >>> repr(WbUrl('http://example.com?example=2'))
 "('latest_replay', '', '', 'http://example.com?example=2', 'http://example.com?example=2')"
 
+>>> repr(WbUrl('http://example.com/xyz##abc'))
+"('latest_replay', '', '', 'http://example.com/xyz%23%23abc', 'http://example.com/xyz%23%23abc')"
+
 # support urn: prefix
 >>> repr(WbUrl('urn:X-wpull:log'))
 "('latest_replay', '', '', 'urn:X-wpull:log', 'urn:X-wpull:log')"
