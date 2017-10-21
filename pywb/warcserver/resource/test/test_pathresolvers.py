@@ -35,6 +35,7 @@ class TestPathIndex(object):
 
         cdx = CDXObject()
         cdx['source'] = 'my-coll/indexes/index.cdxj'
+        cdx['source-coll'] = 'my-coll'
 
         res = resolver('example.warc.gz', cdx)
         assert res == 's3://bucket/colls/my-coll/archives/example.warc.gz'

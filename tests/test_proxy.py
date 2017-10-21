@@ -60,7 +60,7 @@ class TestProxy(BaseTestProxy):
         assert 'WB Insert' in res.text
         assert 'Example Domain' in res.text
 
-        assert res.headers['Link'] == '<http://example.com>; rel="memento"; datetime="Mon, 27 Jan 2014 17:12:51 GMT"'
+        assert res.headers['Link'] == '<http://example.com>; rel="memento"; datetime="Mon, 27 Jan 2014 17:12:51 GMT"; collection="pywb"'
         assert res.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
 
 

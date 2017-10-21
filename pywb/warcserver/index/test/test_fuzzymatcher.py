@@ -41,6 +41,7 @@ class TestFuzzy(object):
                'is_fuzzy': True,
                'urlkey': canonicalize(url),
                'source': 'source',
+               'source-coll': 'source',
                'url': url,
                'mime': mime}]
 

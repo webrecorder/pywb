@@ -54,7 +54,7 @@ class TestMemento(MementoMixin, BaseConfigTest):
 
         links = self.get_links(resp)
 
-        assert self.make_memento_link(url, '20140127171238', dt, 'mp_') in links
+        assert self.make_memento_link(url, '20140127171238', dt, 'mp_', include_coll=False) in links
 
         #timegate link
         assert self.make_timegate_link(url, 'mp_') in links
@@ -131,8 +131,8 @@ class TestMemento(MementoMixin, BaseConfigTest):
 <http://localhost:80/pywb/timemap/link/http://example.com?example=1>; rel="self"; type="application/link-format"; from="Fri, 03 Jan 2014 03:03:21 GMT",
 <http://localhost:80/pywb/mp_/http://example.com?example=1>; rel="timegate",
 <http://example.com?example=1>; rel="original",
-<http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT"; src="pywb:example.cdx",
-<http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"; src="pywb:example.cdx"
+<http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT"; collection="pywb",
+<http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"; collection="pywb"
 """
         assert exp == resp.text
 
@@ -148,8 +148,8 @@ class TestMemento(MementoMixin, BaseConfigTest):
         resp.charset = 'utf-8'
 
         exp = """\
-com,example)/?example=1 20140103030321 {"url": "http://example.com?example=1", "mime": "text/html", "status": "200", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "redirect": "-", "robotflags": "-", "length": "1043", "offset": "333", "filename": "example.warc.gz", "source": "pywb:example.cdx"}
-com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "mime": "warc/revisit", "status": "-", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "redirect": "-", "robotflags": "-", "length": "553", "offset": "1864", "filename": "example.warc.gz", "source": "pywb:example.cdx"}
+com,example)/?example=1 20140103030321 {"url": "http://example.com?example=1", "mime": "text/html", "status": "200", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "redirect": "-", "robotflags": "-", "length": "1043", "offset": "333", "filename": "example.warc.gz", "source": "pywb:example.cdx", "source-coll": "pywb"}
+com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "mime": "warc/revisit", "status": "-", "digest": "B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A", "redirect": "-", "robotflags": "-", "length": "553", "offset": "1864", "filename": "example.warc.gz", "source": "pywb:example.cdx", "source-coll": "pywb"}
 """
         assert exp == resp.text
 

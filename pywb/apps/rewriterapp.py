@@ -311,7 +311,7 @@ class RewriterApp(object):
         if not is_ajax and self.enable_memento:
             self._add_memento_links(cdx['url'], full_prefix,
                                     memento_dt, cdx['timestamp'], status_headers,
-                                    is_timegate, is_proxy)
+                                    is_timegate, is_proxy, cdx.get('source-coll'))
 
             set_content_loc = True
 
@@ -344,7 +344,7 @@ class RewriterApp(object):
         return response
 
     def _add_memento_links(self, url, full_prefix, memento_dt, memento_ts,
-                           status_headers, is_timegate, is_proxy):
+                           status_headers, is_timegate, is_proxy, coll=None):
 
         # memento url + header
         if not memento_dt and memento_ts:
@@ -370,7 +370,7 @@ class RewriterApp(object):
             link.append(MementoUtils.make_link(timemap_url, 'timemap'))
 
         if memento_dt:
-            link.append(MementoUtils.make_memento_link(memento_url, 'memento', memento_dt))
+            link.append(MementoUtils.make_memento_link(memento_url, 'memento', memento_dt, coll))
 
         link_str = ', '.join(link)
 

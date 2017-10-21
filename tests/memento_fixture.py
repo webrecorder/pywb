@@ -23,8 +23,10 @@ class MementoMixin(object):
         format_ = '<http://localhost:80/{2}/{1}{0}>; rel="timegate"'
         return format_.format(url, fmod_slash, coll)
 
-    def make_memento_link(self, url, ts, dt, fmod='', coll='pywb'):
+    def make_memento_link(self, url, ts, dt, fmod='', coll='pywb', include_coll=True):
         format_ = '<http://localhost:80/{4}/{1}{3}/{0}>; rel="memento"; datetime="{2}"'
+        if include_coll:
+            format_ += '; collection="{4}"'
         return format_.format(url, ts, dt, fmod, coll)
 
 
