@@ -102,6 +102,96 @@ When resolving a ``example.warc.gz``, pywb will then check (in order):
  * Then, ``http://remote-backup.example.com/collections/<coll name>/example.warc.gz`` (if first lookup unsuccessful)
 
 
+UI Customizations
+-----------------
+
+pywb supports UI customizations, either for an entire archive,
+or per-collection.
+
+Static Files
+^^^^^^^^^^^^
+
+The replay server will automatically support static files placed under the following directories:
+
+* Files under the root ``static`` directory can be accessed via ``http://my-archive.example.com/static/<filename>``
+
+* Files under the per-collection ``./collections/<coll name>/static`` directory can be accessed via ``http://my-archive.example.com/static/_/<coll name>/<filename>``
+
+Templates
+^^^^^^^^^
+
+pywb users Jinja2 templates to render HTML to render the HTML for all aspects of the application.
+A version placed in the ``templates`` directory, either in the root or per collection, will override that template.
+
+To copy the default pywb template to the template directory run:
+
+``wb-manager template --add search_html``
+
+The following templates are available:
+
+ * ``home.html`` -- Home Page Template, used for ``http://my-archive.example.com/``
+
+ * ``search.html`` -- Collection Template, used for each collection page ``http://my-archive.example.com/<coll name>/``
+
+ * ``query.html`` -- Capture Query Page for a given url, used for ``http://my-archive.example.com/<coll name/*/<url>``
+
+Error Pages:
+
+ * ``not_found.html`` -- Page to show when a url is not found in the archive
+
+ * ``error.html`` -- Generic Error Page for any error (except not found)
+
+Replay and Banner templates:
+
+ * ``frame_insert.html`` -- Top-frame for framed replay mode (not used with frameless mode)
+
+ * ``head_insert.html`` -- Rewriting code injected into ``<head>`` of each replayed page. 
+   This template includes the banner template and itself should generally not need to be modified.
+
+ * ``banner.html`` -- The banner used for frameless replay. Can be set to blank to disable the banner.
+
+
+Custom Outer Replay Frame
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The top-frame used for framed replay can be replaced or augmented
+by modifiying the ``frame_insert.html``.
+
+To start with modifiying the default outer page, you can add it to the current
+templates directory by running ``wb-frame template --add frame_insert.html``
+
+To initialize the replay, the outer page should include ``wb_frame.js``,
+create an ``<iframe>`` element and pass the id (or element itself) to the ``ContentFrame`` constructor:
+
+.. code-block:: html
+
+  <script src='{{ host_prefix }}/{{ static_path }}/wb_frame.js'> </script>
+  <script>
+  var cframe = new ContentFrame({"url": "{{ url }}" + window.location.hash,
+                                 "prefix": "{{ wb_prefix }}",
+                                 "request_ts": "{{ wb_url.timestamp }}",
+                                 "iframe": "#replay_iframe"});
+  </script>
+
+
+The outer frame can receive notifications of changes to the replay via ``postMessage``
+
+For example, to detect when the content frame changed and log the new url and timestamp,
+use the following script to the outer frame html:
+
+.. code-block:: javascript
+
+  window.addEventListener("message", function(event) {
+    if (event.data.wb_type == "load" || event.data.wb_type == "replace-url") {
+      console.log("New Url: " + event.data.url);
+      console.log("New Timestamp: " + event.data.ts);
+    }
+  });
+
+The ``load`` message is sent when a new page is first loaded, while ``replace-url`` is used
+for url changes caused by content frame History navigation.
+
+
 Custom Defined Collections
 --------------------------
 
@@ -332,94 +422,4 @@ for any WSGI application.
 See the `wsgiprox README <https://github.com/webrecorder/wsgiprox/blob/master/README.rst>`_ for additional details on how it works.
 
 For more information on custom certificate authority (CA) installation, the `mitmproxy certificate page <http://docs.mitmproxy.org/en/stable/certinstall.html>`_ provides a good overview for installing a custom CA on different platforms.
-
-
-UI Customizations
------------------
-
-pywb supports UI customizations, either for an entire archive,
-or per-collection.
-
-Static Files
-^^^^^^^^^^^^
-
-The replay server will automatically support static files placed under the following directories:
-
-* Files under the root ``static`` directory can be accessed via ``http://my-archive.example.com/static/<filename>``
-
-* Files under the per-collection ``./collections/<coll name>/static`` directory can be accessed via ``http://my-archive.example.com/static/_/<coll name>/<filename>``
-
-Templates
-^^^^^^^^^
-
-pywb users Jinja2 templates to render HTML to render the HTML for all aspects of the application.
-A version placed in the ``templates`` directory, either in the root or per collection, will override that template.
-
-To copy the default pywb template to the template directory run:
-
-``wb-manager template --add search_html``
-
-The following templates are available:
-
- * ``home.html`` -- Home Page Template, used for ``http://my-archive.example.com/``
-
- * ``search.html`` -- Collection Template, used for each collection page ``http://my-archive.example.com/<coll name>/``
-
- * ``query.html`` -- Capture Query Page for a given url, used for ``http://my-archive.example.com/<coll name/*/<url>``
-
-Error Pages:
-
- * ``not_found.html`` -- Page to show when a url is not found in the archive
-
- * ``error.html`` -- Generic Error Page for any error (except not found)
-
-Replay and Banner templates:
-
- * ``frame_insert.html`` -- Top-frame for framed replay mode (not used with frameless mode)
-
- * ``head_insert.html`` -- Rewriting code injected into ``<head>`` of each replayed page. 
-   This template includes the banner template and itself should generally not need to be modified.
-
- * ``banner.html`` -- The banner used for frameless replay. Can be set to blank to disable the banner.
-
-
-Custom Outer Replay Frame
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The top-frame used for framed replay can be replaced or augmented
-by modifiying the ``frame_insert.html``.
-
-To start with modifiying the default outer page, you can add it to the current
-templates directory by running ``wb-frame template --add frame_insert.html``
-
-To initialize the replay, the outer page should include ``wb_frame.js``,
-create an ``<iframe>`` element and pass the id (or element itself) to the ``ContentFrame`` constructor:
-
-.. code-block:: html
-
-  <script src='{{ host_prefix }}/{{ static_path }}/wb_frame.js'> </script>
-  <script>
-  var cframe = new ContentFrame({"url": "{{ url }}" + window.location.hash,
-                                 "prefix": "{{ wb_prefix }}",
-                                 "request_ts": "{{ wb_url.timestamp }}",
-                                 "iframe": "#replay_iframe"});
-  </script>
-
-
-The outer frame can receive notifications of changes to the replay via ``postMessage``
-
-For example, to detect when the content frame changed and log the new url and timestamp,
-use the following script to the outer frame html:
-
-.. code-block:: javascript
-
-  window.addEventListener("message", function(event) {
-    if (event.data.wb_type == "load" || event.data.wb_type == "replace-url") {
-      console.log("New Url: " + event.data.url);
-      console.log("New Timestamp: " + event.data.ts);
-    }
-  });
-
-The ``load`` message is sent when a new page is first loaded, while ``replace-url`` is used
-for url changes caused by content frame History navigation.
 

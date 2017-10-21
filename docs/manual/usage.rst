@@ -144,4 +144,14 @@ You can then configure a browser to Proxy Settings host port to: ``localhost:808
 load the latest copy from the ``my-web-archive`` collection.
 
 
+Deployment
+----------
+
+For testing, development and small production loads, the default ``wayback`` command line may be sufficient.
+pywb uses the gevent coroutine library, and the default app will support many concurrent connections in a single process.
+
+For larger scale production deployments, running with `uwsgi <http://uwsgi-docs.readthedocs.io/>`_ server application is recommended. The ``uwsgi.ini`` script provided can be used to launch pywb with uwsgi. uwsgi can be scaled to multiple processes to support the necessary workload, and pywb must be run with the `Gevent Loop Engine <http://uwsgi-docs.readthedocs.io/en/latest/Gevent.html>`_. Nginx or Apache can be used as an additional frontend for uwsgi.
+
+Although uwsgi does not provide a way to specify command line, all command line options can alternatively be configured via ``config.yaml``. See :ref:`configuring-pywb` for more info on available configuration options.
+
 
