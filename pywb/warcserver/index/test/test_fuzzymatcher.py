@@ -36,7 +36,7 @@ class TestFuzzy(object):
         return params
 
     def get_expected(self, url, mime='text/html', filters=None):
-        filters = filters or ['urlkey:']
+        filters = filters or {'urlkey:'}
         exp = [{'filter': filters,
                'is_fuzzy': True,
                'urlkey': canonicalize(url),
@@ -102,12 +102,23 @@ class TestFuzzy(object):
         cdx_iter, errs = self.fuzzy(self.source, params)
         assert list(cdx_iter) == self.get_expected(actual_url)
 
-    def test_fuzzy_custom_rule(self):
+    def test_fuzzy_custom_rule_yt(self):
         url = 'http://youtube.com/get_video_info?a=b&html5=true&___abc=123&video_id=ABCD&id=1234'
         actual_url = 'http://youtube.com/get_video_info?a=d&html5=true&___abc=125&video_id=ABCD&id=1234'
         params = self.get_params(url, actual_url)
         cdx_iter, errs = self.fuzzy(self.source, params)
-        filters = ['urlkey:html5=true', 'urlkey:video_id=abcd']
+        filters = {'urlkey:html5=true', 'urlkey:video_id=abcd'}
+        assert list(cdx_iter) == self.get_expected(url=actual_url, filters=filters)
+
+    def test_fuzzy_custom_rule_yt_2(self):
+        url = 'https://r1---sn-xyz.googlevideo.com/videoplayback?id=ABCDEFG&itag=22&food=abc'
+        actual_url = 'https://r1---sn-abcdefg.googlevideo.com/videoplayback?id=ABCDEFG&itag=22&foo=abc&_1=2'
+        params = self.get_params(url, actual_url)
+        cdx_iter, errs = self.fuzzy(self.source, params)
+        filters = {'urlkey:id=abcdefg',
+                   'urlkey:itag=22',
+                   '!mimetype:text/plain'}
+
         assert list(cdx_iter) == self.get_expected(url=actual_url, filters=filters)
 
     def test_no_fuzzy_custom_rule_video_id_diff(self):
@@ -158,4 +169,5 @@ class TestFuzzy(object):
         params = self.get_params(url, actual_url)
         cdx_iter, errs = self.fuzzy(self.source, params)
         assert list(cdx_iter) == []
+
 

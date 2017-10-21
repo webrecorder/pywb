@@ -64,7 +64,7 @@ class FuzzyMatcher(object):
         return FuzzyRule(url_prefix, regex, replace_after, filter_str, match_type)
 
     def get_fuzzy_match(self, urlkey, params):
-        filters = []
+        filters = set()
         matched_rule = None
 
         for rule in self.rules:
@@ -78,7 +78,7 @@ class FuzzyMatcher(object):
             matched_rule = rule
             for g in m.groups():
                 for f in matched_rule.filter_str:
-                    filters.append(f.format(g))
+                    filters.add(f.format(g))
 
             break
 

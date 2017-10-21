@@ -303,7 +303,7 @@ rules:
                   #- mime
 
           filter:
-              - '~urlkey:{0}'
+              - 'urlkey:{0}'
               - '!mimetype:text/plain'
 
           type: 'domain'
