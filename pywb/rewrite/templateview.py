@@ -153,15 +153,16 @@ class HeadInsertView(BaseInsertView):
                            env,
                            is_framed,
                            coll='',
-                           include_ts=True):
+                           include_ts=True,
+                           **kwargs):
 
-        params = {'host_prefix': host_prefix,
-                  'wb_prefix': wb_prefix,
-                  'wb_url': wb_url,
-                  'coll': coll,
-                  'is_framed': 'true' if is_framed else 'false',
-                  'top_url': top_url,
-                 }
+        params = kwargs
+        params['host_prefix'] = host_prefix
+        params['wb_prefix'] = wb_prefix
+        params['wb_url'] = wb_url
+        params['top_url'] = top_url
+        params['coll'] = coll
+        params['is_framed'] = 'true' if is_framed else 'false'
 
         def make_head_insert(rule, cdx):
             params['wombat_ts'] = cdx['timestamp'] if include_ts else ''

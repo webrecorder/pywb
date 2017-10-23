@@ -34,6 +34,10 @@
 
 </script>
 
+{% if config.enable_flash_video_rewrite %}
+<script src='{{ host_prefix }}/{{ static_path }}/vidrw.js'> </script>
+{% endif %}
+
 {{ banner_html }}
 
 <!-- End WB Insert -->

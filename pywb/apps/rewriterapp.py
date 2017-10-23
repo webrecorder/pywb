@@ -75,6 +75,8 @@ class RewriterApp(object):
 
         self.jinja_env = jinja_env
 
+        self.redirect_to_exact = config.get('redirect_to_exact')
+
         self.banner_view = BaseInsertView(self.jinja_env, self._html_templ('banner_html'))
 
         self.head_insert_view = HeadInsertView(self.jinja_env,
@@ -89,7 +91,7 @@ class RewriterApp(object):
         self.not_found_view = BaseInsertView(self.jinja_env, self._html_templ('not_found_html'))
         self.query_view = BaseInsertView(self.jinja_env, self._html_templ('query_html'))
 
-        self.use_js_obj_proxy = config.get('use_js_obj_proxy', False)
+        self.use_js_obj_proxy = config.get('use_js_obj_proxy', True)
 
         self.cookie_tracker = None
 
@@ -167,8 +169,13 @@ class RewriterApp(object):
             scheme, netloc, path, query, frag = url_parts
             path = '/'
             url = urlunsplit((scheme, netloc, path, query, frag))
-            return WbResponse.redir_response(urlrewriter.rewrite(url),
+            resp = WbResponse.redir_response(urlrewriter.rewrite(url),
                                              '307 Temporary Redirect')
+
+            if self.enable_memento:
+                resp.status_headers['Link'] = MementoUtils.make_link(url, 'original')
+
+            return resp
 
         self.unrewrite_referrer(environ, full_prefix)
 
@@ -263,8 +270,27 @@ class RewriterApp(object):
         if target_uri != wb_url.url and cdx.get('is_fuzzy') == '1':
             set_content_loc = True
 
-        #    return WbResponse.redir_response(urlrewriter.rewrite(target_uri),
-        #                                     '307 Temporary Redirect')
+        # if redir to exact, redir if url or ts are different
+        if self.redirect_to_exact:
+            if (set_content_loc or
+                (wb_url.timestamp != cdx.get('timestamp') and not cdx.get('is_live'))):
+
+                new_url = urlrewriter.get_new_url(url=target_uri,
+                                                  timestamp=cdx['timestamp'],
+                                                  mod=wb_url.mod)
+
+                resp = WbResponse.redir_response(new_url, '307 Temporary Redirect')
+                if self.enable_memento:
+                    if is_timegate and not is_proxy:
+                        self._add_memento_links(target_uri, full_prefix,
+                                                memento_dt, cdx['timestamp'],
+                                                resp.status_headers,
+                                                is_timegate, is_proxy)
+
+                    else:
+                        resp.status_headers['Link'] = MementoUtils.make_link(target_uri, 'original')
+
+                return resp
 
         self._add_custom_params(cdx, r.headers, kwargs)
 
@@ -290,7 +316,8 @@ class RewriterApp(object):
                                                        host_prefix,
                                                        top_url,
                                                        environ,
-                                                       framed_replay))
+                                                       framed_replay,
+                                                       config=self.config))
 
         cookie_rewriter = None
         if self.cookie_tracker:
@@ -315,10 +342,9 @@ class RewriterApp(object):
 
             set_content_loc = True
 
-        if set_content_loc:
+        if set_content_loc and not self.redirect_to_exact:
             status_headers.headers.append(('Content-Location', urlrewriter.get_new_url(timestamp=cdx['timestamp'],
                                                                                        url=cdx['url'])))
-
         if not is_proxy:
             self.add_csp_header(wb_url, status_headers)
 
@@ -339,8 +365,9 @@ class RewriterApp(object):
 
             response = WbResponse.text_response(response, content_type=content_type)
 
-        self._add_memento_links(wb_url.url, full_prefix, None, memento_ts,
-                                response.status_headers, is_timegate, is_proxy)
+        if self.enable_memento:
+            self._add_memento_links(wb_url.url, full_prefix, None, memento_ts,
+                                    response.status_headers, is_timegate, is_proxy)
         return response
 
     def _add_memento_links(self, url, full_prefix, memento_dt, memento_ts,
