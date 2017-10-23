@@ -142,7 +142,8 @@ class TestBaseWarcServer(MementoOverrideTests, FakeRedisTests, BaseTestClass):
         cdxlist = list([json.loads(cdx) for cdx in resp.text.rstrip().split('\n')])
         cdxlist[0]['timestamp'] = '2016'
         assert(cdxlist == [{'url': 'http://httpbin.org/get', 'urlkey': 'org,httpbin)/get', 'is_live': 'true',
-                            'mime': '', 'load_url': 'http://httpbin.org/get', 'source': 'live', 'timestamp': '2016'}])
+                            'mime': '', 'load_url': 'http://httpbin.org/get',
+                            'source': 'live', 'source-coll': 'live', 'timestamp': '2016'}])
 
     def test_live_resource(self):
         headers = {'foo': 'bar'}

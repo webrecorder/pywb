@@ -55,7 +55,7 @@ class BaseAggregator(object):
             cdx_iter = iter([])
             err_list = [(name, repr(wbe))]
 
-        def add_name(cdx, name):
+        def add_source(cdx, name):
             if not cdx.get('url'):
                 return cdx
 
@@ -63,6 +63,9 @@ class BaseAggregator(object):
                 cdx['source'] = name + ':' + cdx['source']
             else:
                 cdx['source'] = name
+
+            cdx['source-coll'] = self._get_coll(name)
+
             return cdx
 
         if params.get('nosource') != 'true':
@@ -70,9 +73,12 @@ class BaseAggregator(object):
             if src_coll:
                 name += ':' + src_coll
 
-            cdx_iter = (add_name(cdx, name) for cdx in cdx_iter)
+            cdx_iter = (add_source(cdx, name) for cdx in cdx_iter)
 
         return cdx_iter, err_list
+
+    def _get_coll(self, name):
+        return name
 
     def load_index(self, params):
         res_list = self._load_all(params)
@@ -294,6 +300,9 @@ class BaseDirectoryIndexSource(BaseAggregator):
                     index_src = ZipNumIndexSource(filename, self.config)
 
                 yield full_name, index_src
+
+    def _get_coll(self, name):
+        return name.split(os.path.sep, 1)[0]
 
     def __repr__(self):
         return '{0}(file://{1})'.format(self.__class__.__name__,

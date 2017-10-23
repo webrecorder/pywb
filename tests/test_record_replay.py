@@ -97,6 +97,10 @@ class TestRecordReplay(CollsDirMixin, BaseConfigTest):
         assert cdxj_lines[1]['source'] == to_path('test2/indexes/autoindex.cdxj')
         assert cdxj_lines[2]['source'] == to_path('test/indexes/autoindex.cdxj')
 
+        assert cdxj_lines[0]['source-coll'] == 'test'
+        assert cdxj_lines[1]['source-coll'] == 'test2'
+        assert cdxj_lines[2]['source-coll'] == 'test'
+
         assert cdxj_lines[0]['filename'] == cdxj_lines[2]['filename']
 
     def test_timemap_all_coll(self):
@@ -104,8 +108,8 @@ class TestRecordReplay(CollsDirMixin, BaseConfigTest):
         link_lines = res.text.rstrip().split('\n')
         assert len(link_lines) == 5
 
-        assert to_path('test2/indexes/autoindex.cdxj') in link_lines[3]
-        assert to_path('test/indexes/autoindex.cdxj') in link_lines[4]
+        assert to_path('collection="test2"') in link_lines[3]
+        assert to_path('collection="test"') in link_lines[4]
 
 
 # ============================================================================

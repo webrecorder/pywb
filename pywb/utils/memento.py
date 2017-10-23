@@ -70,12 +70,10 @@ class MementoUtils(object):
         if not url:
             url = 'file://{0}:{1}:{2}'.format(cdx.get('filename'), cdx.get('offset'), cdx.get('length'))
 
-        memento = '<{0}>; rel="{1}"; datetime="{2}"; src="{3}"' + end
-
         if not datetime:
             datetime = timestamp_to_http_date(cdx['timestamp'])
 
-        return memento.format(url, rel, datetime, cdx.get('source', ''))
+        return cls.make_memento_link(url, rel, datetime, cdx.get('source-coll')) + end
 
     @classmethod
     def make_timemap(cls, cdx_iter):
@@ -113,7 +111,11 @@ class MementoUtils(object):
         return '<{0}>; rel="{1}"'.format(url, type)
 
     @classmethod
-    def make_memento_link(cls, url, type, dt):
-        return '<{0}>; rel="{1}"; datetime="{2}"'.format(url, type, dt)
+    def make_memento_link(cls, url, type, dt, coll=None):
+        res = '<{0}>; rel="{1}"; datetime="{2}"'.format(url, type, dt)
+        if coll:
+            res += '; collection="{0}"'.format(coll)
+
+        return res
 
 

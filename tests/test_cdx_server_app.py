@@ -181,7 +181,7 @@ class TestCDXApp(BaseTestClass):
         originals = {}
         for cdx in cdxes:
             cdx = CDXObject(cdx.encode('utf-8'))
-            assert len(cdx) == 15
+            assert len(cdx) == 16
 
             # orig.* fields are either all '-' or (int, int, filename)
             # check if orig.* fields are equals to corresponding fields

@@ -41,9 +41,10 @@ class PrefixResolver(object):
         if '*' not in path:
             return path
 
-        res_path = self.resolve_coll(path, cdx.get('source'))
-        if res_path:
-            return res_path
+        #res_path = self.resolve_coll(path, cdx.get('source'))
+        coll = cdx.get('source-coll')
+        if coll:
+            return path.replace('*', coll)
 
         if '://' in path:
             return path
