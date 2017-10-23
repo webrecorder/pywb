@@ -138,4 +138,8 @@ class TestPostQueryExtract(object):
         mq = MethodQueryCanonicalizer('OPTIONS', '', 0, BytesIO())
         assert mq.append_query('http://example.com/') == 'http://example.com/?__pywb_method=options'
 
+    def test_head(self):
+        mq = MethodQueryCanonicalizer('HEAD', '', 0, BytesIO())
+        assert mq.append_query('http://example.com/') == 'http://example.com/?__pywb_method=head'
+
 

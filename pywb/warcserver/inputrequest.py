@@ -77,7 +77,7 @@ class DirectWSGIInputRequest(object):
 
         method = self.get_req_method()
 
-        if method not in ('OPTIONS', 'POST'):
+        if method not in ('OPTIONS', 'HEAD', 'POST'):
             return url
 
         mime = self._get_content_type()
@@ -185,8 +185,9 @@ class MethodQueryCanonicalizer(object):
                        buffered_stream=None,
                        environ=None):
         """
-        Extract a url-encoded form POST from stream
-        content length, return None
+        Append the method for HEAD/OPTIONS as __pywb_method=<method>
+        For POST requests, requests extract a url-encoded form from stream
+        read content length and convert to query params, if possible
         Attempt to decode application/x-www-form-urlencoded or multipart/*,
         otherwise read whole block and b64encode
         """
@@ -194,8 +195,8 @@ class MethodQueryCanonicalizer(object):
 
         method = method.upper()
 
-        if method == 'OPTIONS':
-            self.query = '__pywb_method=options'
+        if method in ('OPTIONS', 'HEAD'):
+            self.query = '__pywb_method=' + method.lower()
             return
 
         if method != 'POST':
