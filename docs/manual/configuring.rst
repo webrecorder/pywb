@@ -230,7 +230,25 @@ The aggregate all collections automatically aggregates data from all collections
 
 Accessing ``/all/<url>`` will cause an aggregate lookup within the collections directory.
 
-Note: It is not (yet) possible to exclude collections from the all collection, although "special" collections are not included.
+Note: It is not (yet) possible to exclude collections from the auto-all collection, although "special" collections are not included.
+
+Collection Provenance
+"""""""""""""""""""""
+
+When using the auto-all collection, it is possible to determine the original collection of each resource by looking at the ``Link`` header metadata
+if Memento API is enabled. The header will include the extra ``rel="collection"``, specifying the collection::
+
+  Link: <http://example.com/>; rel="original", <http://localhost:8080/all/mp_/http://example.com/>; rel="timegate", <http://localhost:8080/all/timemap/link/http://example.com/>; rel="timemap"; type="application/link-format", <http://localhost:8080/all/20170920185327mp_/http://example.com/>; rel="memento"; datetime="Wed, 20 Sep 2017 18:20:19 GMT"; collection="coll-1"
+
+
+For example, if two collections ``coll-1`` and ``coll-2`` contain ``http://example.com/``, loading the timemap for
+``/all/timemap/link/http://example.com/`` might look like as follows::
+
+  <http://localhost:8080/all/timemap/link/http://example.com/>; rel="self"; type="application/link-format"; from="Wed, 20 Sep 2017 03:53:27 GMT",
+  <http://localhost:8080/all/mp_/http://example.com/>; rel="timegate",
+  <http://example.com/>; rel="original",
+  <http://example.com/>; rel="memento"; datetime="Wed, 20 Sep 2017 03:53:27 GMT"; collection="coll-1",
+  <http://example.com/>; rel="memento"; datetime="Wed, 20 Sep 2017 04:53:27 GMT"; collection="coll-2",
 
 Identifiying the Collections
 """"""""""""""""""""""""""""
