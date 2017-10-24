@@ -63,6 +63,19 @@ class TestProxy(BaseTestProxy):
         assert res.headers['Link'] == '<http://example.com>; rel="memento"; datetime="Mon, 27 Jan 2014 17:12:51 GMT"; collection="pywb"'
         assert res.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
 
+    def test_proxy_replay_change_dt(self, scheme):
+        headers = {'Accept-Datetime':  'Mon, 26 Dec 2011 17:12:51 GMT'}
+        res = requests.get('{0}://example.com/'.format(scheme),
+                           proxies=self.proxies,
+                           headers=headers,
+                           verify=self.root_ca_file)
+
+        assert 'WB Insert' in res.text
+        assert 'Example Domain' in res.text
+
+        assert res.headers['Link'] == '<http://test@example.com/>; rel="memento"; datetime="Mon, 29 Jul 2013 19:51:51 GMT"; collection="pywb"'
+        assert res.headers['Memento-Datetime'] == 'Mon, 29 Jul 2013 19:51:51 GMT'
+
 
 # ============================================================================
 class TestRecordingProxy(CollsDirMixin, BaseTestProxy):
