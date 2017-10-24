@@ -71,22 +71,26 @@ class DirectWSGIInputRequest(object):
     def _get_header(self, name):
         return self.env.get('HTTP_' + name.upper().replace('-', '_'))
 
-    def include_post_query(self, url):
-        if not url or self.get_req_method() != 'POST':
+    def include_method_query(self, url):
+        if not url:
+            return url
+
+        method = self.get_req_method()
+
+        if method not in ('OPTIONS', 'HEAD', 'POST'):
             return url
 
         mime = self._get_content_type()
-        #mime = mime.split(';')[0] if mime else ''
         length = self._get_content_length()
         stream = self.env['wsgi.input']
 
         buffered_stream = BytesIO()
 
-        post_query = PostQueryExtractor('POST', mime, length, stream,
-                                        buffered_stream=buffered_stream,
-                                        environ=self.env)
+        query = MethodQueryCanonicalizer(method, mime, length, stream,
+                                           buffered_stream=buffered_stream,
+                                           environ=self.env)
 
-        new_url = post_query.append_post_query(url)
+        new_url = query.append_query(url)
         if new_url != url:
             self.env['wsgi.input'] = buffered_stream
 
@@ -176,19 +180,26 @@ class POSTInputRequest(DirectWSGIInputRequest):
 
 
 # ============================================================================
-class PostQueryExtractor(object):
+class MethodQueryCanonicalizer(object):
     def __init__(self, method, mime, length, stream,
                        buffered_stream=None,
                        environ=None):
         """
-        Extract a url-encoded form POST from stream
-        content length, return None
+        Append the method for HEAD/OPTIONS as __pywb_method=<method>
+        For POST requests, requests extract a url-encoded form from stream
+        read content length and convert to query params, if possible
         Attempt to decode application/x-www-form-urlencoded or multipart/*,
         otherwise read whole block and b64encode
         """
-        self.post_query = b''
+        self.query = b''
 
-        if method.upper() != 'POST':
+        method = method.upper()
+
+        if method in ('OPTIONS', 'HEAD'):
+            self.query = '__pywb_method=' + method.lower()
+            return
+
+        if method != 'POST':
             return
 
         try:
@@ -199,7 +210,7 @@ class PostQueryExtractor(object):
         if length <= 0:
             return
 
-        post_query = b''
+        query = b''
 
         while length > 0:
             buff = stream.read(length)
@@ -208,25 +219,25 @@ class PostQueryExtractor(object):
             if not buff:
                 break
 
-            post_query += buff
+            query += buff
 
         if buffered_stream:
-            buffered_stream.write(post_query)
+            buffered_stream.write(query)
             buffered_stream.seek(0)
 
         if not mime:
             mime = ''
 
         if mime.startswith('application/x-www-form-urlencoded'):
-            post_query = to_native_str(post_query)
-            post_query = unquote_plus(post_query)
+            query = to_native_str(query)
+            query = unquote_plus(query)
 
         elif mime.startswith('multipart/'):
             env = {'REQUEST_METHOD': 'POST',
                    'CONTENT_TYPE': mime,
-                   'CONTENT_LENGTH': len(post_query)}
+                   'CONTENT_LENGTH': len(query)}
 
-            args = dict(fp=BytesIO(post_query),
+            args = dict(fp=BytesIO(query),
                         environ=env,
                         keep_blank_values=True)
 
@@ -239,17 +250,17 @@ class PostQueryExtractor(object):
             for item in data.list:
                 values.append((item.name, item.value))
 
-            post_query = urlencode(values, True)
+            query = urlencode(values, True)
 
         elif mime.startswith('application/x-amf'):
-            post_query = self.amf_parse(post_query, environ)
+            query = self.amf_parse(query, environ)
 
         else:
-            post_query = base64.b64encode(post_query)
-            post_query = to_native_str(post_query)
-            post_query = '__wb_post_data=' + post_query
+            query = base64.b64encode(query)
+            query = to_native_str(query)
+            query = '__wb_post_data=' + query
 
-        self.post_query = post_query
+        self.query = query
 
     def amf_parse(self, string, environ):
         try:
@@ -284,8 +295,8 @@ class PostQueryExtractor(object):
             print(e)
             return None
 
-    def append_post_query(self, url):
-        if not self.post_query:
+    def append_query(self, url):
+        if not self.query:
             return url
 
         if '?' not in url:
@@ -293,6 +304,6 @@ class PostQueryExtractor(object):
         else:
             url += '&'
 
-        url += self.post_query
+        url += self.query
         return url
 
