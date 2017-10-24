@@ -148,7 +148,6 @@ class WbUrl(BaseWbUrl):
 
         if six.PY2 and isinstance(scheme_dom, six.binary_type):
             if scheme_dom == parts[0]:
-                url = url.replace('#', '%23')
                 return url
 
             scheme_dom = scheme_dom.decode('utf-8', 'ignore')
@@ -178,7 +177,6 @@ class WbUrl(BaseWbUrl):
 
             url += rest
 
-        url = url.replace('#', '%23')
         return url
 
     # ======================

@@ -24,6 +24,11 @@ class TestLiveRewriter(BaseConfigTest):
         assert '"test": "abc"' in resp.text
         assert resp.status_int == 200
 
+    def test_live_anchor_encode(self, fmod_sl):
+        resp = self.get('/live/{0}httpbin.org/anything/abc%23%23xyz', fmod_sl)
+        assert '"http://httpbin.org/anything/abc##xyz"' in resp.text
+        assert resp.status_int == 200
+
     def test_live_live_frame(self):
         resp = self.testapp.get('/live/http://example.com/')
         assert resp.status_int == 200

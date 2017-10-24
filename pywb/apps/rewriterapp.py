@@ -135,6 +135,7 @@ class RewriterApp(object):
         return is_timegate
 
     def render_content(self, wb_url, kwargs, environ):
+        wb_url = wb_url.replace('#', '%23')
         wb_url = WbUrl(wb_url)
         is_timegate = self._check_accept_dt(wb_url, environ)
 
