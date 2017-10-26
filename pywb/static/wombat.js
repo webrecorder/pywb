@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.48
+// Wombat JS-Rewriting Library v2.50
 //============================================
 
 
@@ -1142,6 +1142,17 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             var resp = x.responseText.replace(/__WB_pmw\(.*?\)\.(?=postMessage\()/g, "");
 
+            if (wbinfo.static_prefix || wbinfo.ww_rw_script) {
+                var ww_rw = wbinfo.ww_rw_script || wbinfo.static_prefix + "ww_rw.js";
+                var rw = "(function() { " +
+"self.importScripts('" + ww_rw + "');" +
+
+"new WBWombat({'prefix': '" + wb_abs_prefix + wb_info.mod + "/'}); " +
+
+"})();";
+                resp = rw + resp;
+            }
+
             if (resp != x.responseText) {
                 var blob = new Blob([resp], {"type": "text/javascript"});
                 return URL.createObjectURL(blob);
@@ -1869,19 +1880,21 @@ var _WBWombat = function($wbwindow, wbinfo) {
         if (Object.defineProperty) {
 
             var setter = function(value) {
-                if (this._WB_wombat_location) {
-                    this._WB_wombat_location.href = value;
-                } else {
-                    this.location = value;
+                var loc = this._WB_wombat_location ||
+                          (this.defaultView && this.defaultView._WB_wombat_location) ||
+                          this.location;
+
+                if (loc) {
+                    loc.href = value;
                 }
             }
 
             var getter = function() {
-                if (this._WB_wombat_location) {
-                    return this._WB_wombat_location;
-                } else {
-                    return this.location;
-                }
+                var loc = this._WB_wombat_location ||
+                          (this.defaultView && this.defaultView._WB_wombat_location) ||
+                          this.location;
+
+                return loc;
             }
 
             def_prop(win.Object.prototype, "WB_wombat_location", setter, getter);
@@ -1889,10 +1902,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             init_proto_pm_origin(win);
 
             win._WB_wombat_location = wombat_location;
-            win.document._WB_wombat_location = wombat_location;
         } else {
             win.WB_wombat_location = wombat_location;
-            win.document.WB_wombat_location = wombat_location;
 
             // Check quickly after page load
             setTimeout(check_all_locations, 500);
@@ -1971,7 +1982,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         try {
-            win.Object.defineProperty(win.Object.prototype, "__WB_pmw", {value: pm_origin, configurable: false, enumerable: false});
+            win.Object.defineProperty(win.Object.prototype, "__WB_pmw", {get: function() { return pm_origin }, set: function() {}, configurable: true, enumerable: false});
         } catch(e) {
 
         }
@@ -2528,11 +2539,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_prop_extract($document, "referrer");
 
         // origin
-        def_prop($document, "origin", undefined, function() { return this._WB_wombat_location.origin; });
+        def_prop($document, "origin", undefined, function() { return this.WB_wombat_location.origin; });
 
         // domain
         var domain_setter = function(val) {
-            var loc = this._WB_wombat_location || this.defaultView._WB_wombat_location;
+            var loc = this.WB_wombat_location;
 
             if (loc && ends_with(loc.hostname, val)) {
                 this.__wb_domain = val;
@@ -2540,7 +2551,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         var domain_getter = function() {
-            return this.__wb_domain || this._WB_wombat_location.hostname;
+            return this.__wb_domain || this.WB_wombat_location.hostname;
         }
 
         def_prop($document, "domain", domain_setter, domain_getter);
@@ -2803,7 +2814,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         if (prop == '__WBProxyRealObj__') {
             return obj;
         } else if (prop == 'location') {
-            return obj._WB_wombat_location || (obj.defaultView && obj.defaultView._WB_wombat_location);
+            return obj.WB_wombat_location;
         } else if (prop == "_WB_wombat_obj_proxy") {
             return obj._WB_wombat_obj_proxy;
         }
@@ -3233,7 +3244,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return res;
         }
 
-        def_prop($wbwindow.Object.prototype, "WB_wombat_frameElement", undefined, getter);
+        def_prop($wbwindow.Object.prototype, "WB_wombat_frameElement", function() {}, getter);
 
         // Also try disabling frameElement directly, though may no longer be supported in all browsers
         if ($wbwindow.__WB_replay_top == $wbwindow) {
