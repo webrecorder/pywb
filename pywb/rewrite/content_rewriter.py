@@ -2,7 +2,7 @@ from io import BytesIO
 
 from contextlib import closing
 
-from warcio.bufferedreaders import BufferedReader
+from warcio.bufferedreaders import BufferedReader, ChunkedDataReader
 from warcio.utils import to_native_str
 
 import re
@@ -163,14 +163,25 @@ class BaseContentRewriter(object):
             rule = self.get_rule(cdx)
             content_rewriter = self.create_rewriter(rwinfo.text_type, rule, rwinfo, cdx, head_insert_func)
 
+        gen = None
+
         if content_rewriter:
             gen = content_rewriter(rwinfo)
         elif rwinfo.is_content_rw:
             gen = StreamIter(rwinfo.content_stream)
-        else:
-            gen = StreamIter(rwinfo.record.raw_stream)
 
         rw_http_headers = self.rewrite_headers(rwinfo)
+
+        if not gen:
+            # if not rewriting content, still need to dechunk
+            # to conform to WSGI spec
+            if rwinfo.is_chunked:
+                stream = ChunkedDataReader(rwinfo.record.raw_stream,
+                                           decomp_type=None)
+            else:
+                stream = rwinfo.record.raw_stream
+
+            gen = StreamIter(stream)
 
         return rw_http_headers, gen, (content_rewriter != None)
 
@@ -280,6 +291,7 @@ class RewriteInfo(object):
 
         self._content_stream = None
         self.is_content_rw = False
+        self.is_chunked = False
 
         self.rewrite_types = content_rewriter.get_rewrite_types()
 

@@ -60,7 +60,7 @@ class DefaultHeaderRewriter(object):
         'strict-transport-security': 'prefix',
 
         'trailer': 'prefix',
-        'transfer-encoding': 'prefix',
+        'transfer-encoding': 'transfer-encoding',
         'tk': 'prefix',
 
         'upgrade': 'prefix',
@@ -131,6 +131,10 @@ class DefaultHeaderRewriter(object):
                 except:
                     pass
 
+            return (self.header_prefix + name, value)
+
+        elif rule == 'transfer-encoding':
+            self.rwinfo.is_chunked = True
             return (self.header_prefix + name, value)
 
         elif rule == 'cookie':

@@ -6,6 +6,8 @@ from io import BytesIO
 from pywb.warcserver.index.cdxobject import CDXObject
 from pywb.utils.canonicalize import canonicalize
 
+from pywb.utils.io import chunk_encode_iter
+
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.default_rewriter import DefaultRewriter
@@ -152,6 +154,34 @@ class TestContentRewriter(object):
         assert ('Content-Type', 'application/octet-stream') in headers.headers
 
         assert is_rw == False
+
+    def test_binary_dechunk(self):
+        headers = {'Content-Type': 'application/octet-stream',
+                   'Transfer-Encoding': 'chunked'}
+
+        content = b''.join(chunk_encode_iter([b'ABCD'] * 10)).decode('utf-8')
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        exp = ''.join(['ABCD'] * 10)
+        assert b''.join(gen).decode('utf-8') == exp
+
+        assert is_rw == False
+
+        assert ('Transfer-Encoding', 'chunked') not in headers.headers
+
+    def test_binary_dechunk_not_actually_chunked(self):
+        headers = {'Content-Type': 'application/octet-stream',
+                   'Transfer-Encoding': 'chunked'}
+
+        content = ''.join(['ABCD'] * 10)
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        exp = ''.join(['ABCD'] * 10)
+        assert b''.join(gen).decode('utf-8') == exp
+
+        assert is_rw == False
+
+        assert ('Transfer-Encoding', 'chunked') not in headers.headers
 
     def test_rewrite_json(self):
         headers = {'Content-Type': 'application/json'}
