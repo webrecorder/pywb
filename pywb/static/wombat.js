@@ -873,7 +873,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             init_opts = init_opts || {};
             init_opts["credentials"] = "include";
 
-            return orig_fetch.call(this, input, init_opts);
+            return orig_fetch.call(proxy_to_obj(this), input, init_opts);
         }
     }
 
@@ -2400,7 +2400,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         function get_cookie() {
-            return orig_get_cookie.call(proxy_to_obj(this));
+            var res = orig_get_cookie.call(proxy_to_obj(this));
+            return res;
         }
 
         def_prop($wbwindow.document, "cookie", set_cookie, get_cookie);
@@ -2756,7 +2757,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
     //============================================
     function proxy_to_obj(source) {
         try {
-            return source.__WBProxyRealObj__ || source;
+            return (source && source.__WBProxyRealObj__) || source;
         } catch (e) {
             return source;
         }

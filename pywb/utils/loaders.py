@@ -30,6 +30,15 @@ except ImportError:  #pragma: no cover
     s3_avail = False
 
 
+# =================================================================
+def load_py_name(string):
+    import importlib
+
+    string = string.split(':', 1)
+    mod = importlib.import_module(string[0])
+    return getattr(mod, string[1])
+
+
 #=================================================================
 def is_http(filename):
     return filename.startswith(('http://', 'https://'))

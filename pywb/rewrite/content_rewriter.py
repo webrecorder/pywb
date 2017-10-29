@@ -12,7 +12,7 @@ import json
 
 from pywb.utils.io import StreamIter, BUFF_SIZE
 
-from pywb.utils.loaders import load_yaml_config
+from pywb.utils.loaders import load_yaml_config, load_py_name
 
 
 # ============================================================================
@@ -72,6 +72,11 @@ class BaseContentRewriter(object):
 
         rw_type = rule.get(text_type, text_type)
         rw_class = self.get_rewriter(rw_type, rwinfo)
+
+        mixin = rule.get('mixin')
+        if mixin:
+            mixin = load_py_name(mixin)
+            rw_class = type('custom_js_rewriter', (mixin, rw_class), {})
 
         return rw_type, rw_class
 
@@ -159,6 +164,8 @@ class BaseContentRewriter(object):
         rwinfo = RewriteInfo(record, self, url_rewriter, cookie_rewriter)
         content_rewriter = None
 
+        url_rewriter.rewrite_opts['cdx'] = cdx
+
         if rwinfo.should_rw_content():
             rule = self.get_rule(cdx)
             content_rewriter = self.create_rewriter(rwinfo.text_type, rule, rwinfo, cdx, head_insert_func)
@@ -237,8 +244,10 @@ class StreamingRewriter(object):
         self.url_rewriter = url_rewriter
         self.align_to_line = align_to_line
         self.first_buff = first_buff
+        self.rwinfo = None
 
     def __call__(self, rwinfo):
+        self.rwinfo = rwinfo
         return self.rewrite_text_stream_to_gen(rwinfo.content_stream)
 
     def rewrite(self, string):
