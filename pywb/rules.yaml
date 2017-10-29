@@ -64,10 +64,28 @@ rules:
 
     # facebook rules
     #=================================================================
+    - url_prefix: 'com,facebook)/ajax/pagelet/generic.php/photoviewerinitpagelet'
+
+      rewrite:
+        mixin: 'pywb.rewrite.regex_rewriters:JSReplaceFuzzy'
+        
+      fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|(?:query_type|fbid)[^,]+))'
+        #js_regexs:
+        #  - match: '1503423881163'
+        #    group: 0
+        #    function: 'pywb.rewrite.rewrite_dash:rewrite_photo'
+
     - url_prefix: 'com,facebook)/ajax/pagelet/generic.php/'
 
       #fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|query_type[^,]+))'
       fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|(?:query_type|fbid)[^,]+))'
+
+    - url_prefix: 'com,facebook)/ajax/ufi/replay_fetch'
+
+      fuzzy_lookup:
+          - 'ft_ent_identifier'
+          - 'parent_comment_ids[0]'
+          - lsd
 
     - url_prefix: 'com,facebook)/ajax/ufi/'
 

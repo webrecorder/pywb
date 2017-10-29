@@ -1,14 +1,7 @@
 import re
 from pywb.rewrite.content_rewriter import StreamingRewriter
-
-
-# =================================================================
-def load_function(string):
-    import importlib
-
-    string = string.split(':', 1)
-    mod = importlib.import_module(string[0])
-    return getattr(mod, string[1])
+from pywb.utils.loaders import load_py_name
+from six.moves.urllib.parse import unquote
 
 
 # =================================================================
@@ -19,11 +12,11 @@ class RegexRewriter(StreamingRewriter):
 
     @staticmethod
     def format(template):
-        return lambda string: template.format(string)
+        return lambda string, _: template.format(string)
 
     @staticmethod
     def fixed(string):
-        return lambda _: string
+        return lambda _, _2: string
 
     @staticmethod
     def remove_https(string):
@@ -31,11 +24,11 @@ class RegexRewriter(StreamingRewriter):
 
     @staticmethod
     def add_prefix(prefix):
-        return lambda string: prefix + string
+        return lambda string, _: prefix + string
 
     @staticmethod
     def archival_rewrite(rewriter):
-        return lambda string: rewriter.rewrite(string)
+        return lambda string, _: rewriter.rewrite(string)
 
 
     HTTPX_MATCH_STR = r'https?:\\?/\\?/[A-Za-z0-9:_@.-]+'
@@ -82,7 +75,7 @@ class RegexRewriter(StreamingRewriter):
             # if not hasattr(op, '__call__'):
             #    op = RegexRewriter.DEFAULT_OP(op)
 
-            result = op(m.group(i))
+            result = op(m.group(i), self.url_rewriter)
             final_str = result
 
             # if extracting partial match
@@ -101,7 +94,7 @@ class RegexRewriter(StreamingRewriter):
                 if 'rewrite' in obj:
                     replace = RegexRewriter.archival_rewrite(rewriter)
                 elif 'function' in obj:
-                    replace = load_function(obj['function'])
+                    replace = load_py_name(obj['function'])
                 else:
                     replace = RegexRewriter.format(obj.get('replace', '{0}'))
                 group = obj.get('group', 0)
@@ -183,7 +176,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
 
     @classmethod
     def replace_str(cls, replacer):
-        return lambda x: x.replace('this', replacer)
+        return lambda x, _: x.replace('this', replacer)
 
     def __init__(self, rewriter, rules=[]):
         #func_rw = 'Function("return {0}")'.format(self.THIS_RW)
@@ -257,6 +250,32 @@ class JSNoneRewriter(RegexRewriter):
 # =================================================================
 class JSWombatProxyRewriter(JSWombatProxyRewriterMixin, RegexRewriter):
     pass
+
+
+# =================================================================
+class JSReplaceFuzzy(object):
+    def __init__(self, *args, **kwargs):
+        super(JSReplaceFuzzy, self).__init__(*args, **kwargs)
+        self.rx = re.compile('"ssid":([\d]+)')
+
+    def rewrite(self, string):
+        string = super(JSReplaceFuzzy, self).rewrite(string)
+        cdx = self.url_rewriter.rewrite_opts['cdx']
+        if cdx.get('is_fuzzy'):
+            expected = unquote(cdx['url'])
+            actual = unquote(self.url_rewriter.wburl.url)
+
+            exp_m = self.rx.search(expected)
+            act_m = self.rx.search(actual)
+            print('ACT', act_m and act_m.group(1))
+            print('EXP', exp_m and exp_m.group(1))
+            if exp_m and act_m:
+                result = string.replace(exp_m.group(1), act_m.group(1))
+                if result != string:
+                    print(result)
+                    string = result
+
+        return string
 
 
 # =================================================================

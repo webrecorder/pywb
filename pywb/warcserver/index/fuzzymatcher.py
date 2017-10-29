@@ -98,7 +98,7 @@ class FuzzyMatcher(object):
         fuzzy_params = {'url': url,
                         'matchType': matched_rule.match_type,
                         'filter': filters,
-                        'is_fuzzy': True}
+                        'is_fuzzy': 'true'}
 
         for key in iterkeys(params):
             if key not in self.FUZZY_SKIP_PARAMS:
@@ -157,7 +157,7 @@ class FuzzyMatcher(object):
 
         for cdx in new_iter:
             if is_custom or self.match_general_fuzzy_query(url, urlkey, cdx, rx_cache):
-                cdx['is_fuzzy'] = True
+                cdx['is_fuzzy'] = 'true'
                 yield cdx
 
     def match_general_fuzzy_query(self, url, urlkey, cdx, rx_cache):
