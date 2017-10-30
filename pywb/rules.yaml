@@ -68,24 +68,33 @@ rules:
 
       rewrite:
         mixin: 'pywb.rewrite.regex_rewriters:JSReplaceFuzzy'
+        mixin_params:
+            rx: '"ssid":([\d]+)'
+
+        force_type: 'json'
         
       fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|(?:query_type|fbid)[^,]+))'
-        #js_regexs:
-        #  - match: '1503423881163'
-        #    group: 0
-        #    function: 'pywb.rewrite.rewrite_dash:rewrite_photo'
 
     - url_prefix: 'com,facebook)/ajax/pagelet/generic.php/'
 
       #fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|query_type[^,]+))'
       fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|(?:query_type|fbid)[^,]+))'
 
-    - url_prefix: 'com,facebook)/ajax/ufi/replay_fetch'
+    - url_prefix: 'com,facebook)/ajax/ufi/reply_fetch'
 
       fuzzy_lookup:
           - 'ft_ent_identifier'
           - 'parent_comment_ids[0]'
           - lsd
+
+    #- url_prefix: 'com,facebook)/ajax/typeahead/'
+
+    #  fuzzy_lookup:
+    #    - 'filter[0]'
+
+    #- url_prefix: 'com,facebook)/typeahead/'
+
+    #  fuzzy_lookup: '([?&][^_]\w+=[^&]+)+'
 
     - url_prefix: 'com,facebook)/ajax/ufi/'
 
@@ -116,6 +125,9 @@ rules:
       fuzzy_lookup: '([?&][^_]\w+=[^&]+)+'
 
     - url_prefix: 'com,facebook)/'
+
+      fuzzy_lookup: '()'
+
       rewrite:
         js_regexs:
             - match: 'Bootloader\.configurePage.*?;'

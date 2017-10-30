@@ -90,6 +90,10 @@ class FuzzyMatcher(object):
         inx = url.find(matched_rule.replace_after)
         if inx > 0:
             url = url[:inx + len(matched_rule.replace_after)]
+        else:
+            pass
+            #url += matched_rule.replace_after[0]
+            #print('*********************** PREFIX', url)
 
         if matched_rule.match_type == 'domain':
             host = urlsplit(url).netloc
@@ -98,7 +102,7 @@ class FuzzyMatcher(object):
         fuzzy_params = {'url': url,
                         'matchType': matched_rule.match_type,
                         'filter': filters,
-                        'is_fuzzy': 'true'}
+                        'is_fuzzy': '1'}
 
         for key in iterkeys(params):
             if key not in self.FUZZY_SKIP_PARAMS:
@@ -157,7 +161,7 @@ class FuzzyMatcher(object):
 
         for cdx in new_iter:
             if is_custom or self.match_general_fuzzy_query(url, urlkey, cdx, rx_cache):
-                cdx['is_fuzzy'] = 'true'
+                cdx['is_fuzzy'] = '1'
                 yield cdx
 
     def match_general_fuzzy_query(self, url, urlkey, cdx, rx_cache):

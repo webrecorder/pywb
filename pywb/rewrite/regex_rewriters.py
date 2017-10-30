@@ -12,11 +12,11 @@ class RegexRewriter(StreamingRewriter):
 
     @staticmethod
     def format(template):
-        return lambda string, _: template.format(string)
+        return lambda string: template.format(string)
 
     @staticmethod
     def fixed(string):
-        return lambda _, _2: string
+        return lambda _: string
 
     @staticmethod
     def remove_https(string):
@@ -24,11 +24,11 @@ class RegexRewriter(StreamingRewriter):
 
     @staticmethod
     def add_prefix(prefix):
-        return lambda string, _: prefix + string
+        return lambda string: prefix + string
 
     @staticmethod
     def archival_rewrite(rewriter):
-        return lambda string, _: rewriter.rewrite(string)
+        return lambda string: rewriter.rewrite(string)
 
 
     HTTPX_MATCH_STR = r'https?:\\?/\\?/[A-Za-z0-9:_@.-]+'
@@ -75,7 +75,7 @@ class RegexRewriter(StreamingRewriter):
             # if not hasattr(op, '__call__'):
             #    op = RegexRewriter.DEFAULT_OP(op)
 
-            result = op(m.group(i), self.url_rewriter)
+            result = op(m.group(i))
             final_str = result
 
             # if extracting partial match
@@ -176,7 +176,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
 
     @classmethod
     def replace_str(cls, replacer):
-        return lambda x, _: x.replace('this', replacer)
+        return lambda x: x.replace('this', replacer)
 
     def __init__(self, rewriter, rules=[]):
         #func_rw = 'Function("return {0}")'.format(self.THIS_RW)
@@ -256,7 +256,9 @@ class JSWombatProxyRewriter(JSWombatProxyRewriterMixin, RegexRewriter):
 class JSReplaceFuzzy(object):
     def __init__(self, *args, **kwargs):
         super(JSReplaceFuzzy, self).__init__(*args, **kwargs)
-        self.rx = re.compile('"ssid":([\d]+)')
+        assert(self.rx)
+        if isinstance(self.rx, str):
+            self.rx = re.compile(self.rx)
 
     def rewrite(self, string):
         string = super(JSReplaceFuzzy, self).rewrite(string)
@@ -267,12 +269,9 @@ class JSReplaceFuzzy(object):
 
             exp_m = self.rx.search(expected)
             act_m = self.rx.search(actual)
-            print('ACT', act_m and act_m.group(1))
-            print('EXP', exp_m and exp_m.group(1))
             if exp_m and act_m:
                 result = string.replace(exp_m.group(1), act_m.group(1))
                 if result != string:
-                    print(result)
                     string = result
 
         return string
