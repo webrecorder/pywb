@@ -279,7 +279,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
                     } else {
                         url = "";
                     }
-                    url += "/" + path;
+                    if (path && path[0] != "/") {
+                        url += "/";
+                    }
+                    url += path;
                 }
 
                 return url;
@@ -513,6 +516,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
             function setter(value) {
                 if (this._no_rewrite) {
                     orig_setter.call(this, prop, value);
+                    return;
+                }
+
+                if (this["_" + prop] == value) {
                     return;
                 }
 
@@ -875,6 +882,40 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             return orig_fetch.call(proxy_to_obj(this), input, init_opts);
         }
+    }
+
+
+    //============================================
+    function init_request_override()
+    {
+        var orig_request = $wbwindow.Request;
+
+        if (!orig_request) {
+            return;
+        }
+
+        $wbwindow.Request = (function (Request) {
+            return function(input, init_opts) {
+                if (typeof(input) === "string") {
+                    input = rewrite_url(input);
+                } else if (typeof(input) === "object" && input.url) {
+                    var new_url = rewrite_url(input.url);
+
+                    if (new_url != input.url) {
+                    //    input = new Request(new_url, input);
+                        input.url = new_url;
+                    }
+                }
+
+                init_opts = init_opts || {};
+                init_opts["credentials"] = "include";
+
+                return new Request(input, init_opts);
+            }
+
+        })($wbwindow.Request);
+
+        $wbwindow.Request.prototype = orig_request.prototype;
     }
 
     //============================================
@@ -2987,6 +3028,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             // Fetch
             init_fetch_rewrite();
+            init_request_override();
 
             // Worker override (experimental)
             init_web_worker_override();

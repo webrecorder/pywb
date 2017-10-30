@@ -74,9 +74,10 @@ class BaseContentRewriter(object):
         rw_class = self.get_rewriter(rw_type, rwinfo)
 
         mixin = rule.get('mixin')
+        mixin_params = rule.get('mixin_params', {})
         if mixin:
             mixin = load_py_name(mixin)
-            rw_class = type('custom_js_rewriter', (mixin, rw_class), {})
+            rw_class = type('custom_js_rewriter', (mixin, rw_class), mixin_params)
 
         return rw_type, rw_class
 
@@ -166,8 +167,13 @@ class BaseContentRewriter(object):
 
         url_rewriter.rewrite_opts['cdx'] = cdx
 
+        rule = self.get_rule(cdx)
+
+        force_type = rule.get('force_type')
+        if force_type:
+            rwinfo.text_type = force_type
+
         if rwinfo.should_rw_content():
-            rule = self.get_rule(cdx)
             content_rewriter = self.create_rewriter(rwinfo.text_type, rule, rwinfo, cdx, head_insert_func)
 
         gen = None

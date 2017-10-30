@@ -58,7 +58,7 @@ class RewriteDASH(BufferedRewriter):
 
 
 # ============================================================================
-def rewrite_fb_dash(string, url_rewriter):
+def rewrite_fb_dash(string):
     DASH_SPLIT = r'\n",dash_prefetched_representation_ids:'
     inx = string.find(DASH_SPLIT)
     if inx < 0:
@@ -76,14 +76,4 @@ def rewrite_fb_dash(string, url_rewriter):
     string += DASH_SPLIT
     string += json.dumps(best_ids)
     return string
-
-
-# ============================================================================
-def rewrite_photo(string, url_rewriter):
-    from urllib.parse import unquote
-    import re
-    url = url_rewriter.wburl.url
-    ssid = re.search('"ssid":([\d]+)', unquote(url)).group(1)
-    print('SSID', ssid)
-    return ssid
 

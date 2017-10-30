@@ -158,6 +158,9 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
         if url.endswith('/') and not start_key.endswith('/'):
             start_key += '/'
 
+        if url.endswith('?') and not start_key.endswith('?'):
+            start_key += '?'
+
         end_key = inc_last_char(start_key)
 
     elif match_type == 'host':
