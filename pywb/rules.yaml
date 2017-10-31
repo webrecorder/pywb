@@ -124,9 +124,22 @@ rules:
 
       fuzzy_lookup: '([?&][^_]\w+=[^&]+)+'
 
+    - url_prefix: 'com,facebook)/api/graphqlbatch'
+
+      fuzzy_lookup:
+        #match: '((?:q[\d]")|(?:queryfragment[^:]+))'
+        match: '"q[\d]":'
+        find_all: true
+
+    - url_prefix: 'com,facebook)/sem_campaigns2/'
+
+      #fuzzy_lookup: '([?&][^_]\w+=[^&]+)+'
+      fuzzy_lookup: '()'
+
     - url_prefix: 'com,facebook)/'
 
-      fuzzy_lookup: '()'
+      fuzzy_lookup: '([?&][^_]\w+=[^&]+)+'
+      #fuzzy_lookup: '()'
 
       rewrite:
         js_regexs:

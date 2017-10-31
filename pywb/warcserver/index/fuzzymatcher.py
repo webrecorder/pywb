@@ -13,7 +13,7 @@ from collections import namedtuple
 # ============================================================================
 FuzzyRule = namedtuple('FuzzyRule',
                        'url_prefix, regex, replace_after, filter_str, ' +
-                       'match_type')
+                       'match_type, find_all')
 
 
 # ============================================================================
@@ -54,14 +54,16 @@ class FuzzyMatcher(object):
             replace_after = self.DEFAULT_REPLACE_AFTER
             filter_str = self.DEFAULT_FILTER
             match_type = self.DEFAULT_MATCH_TYPE
+            find_all = False
 
         else:
             regex = self.make_regex(config.get('match'))
             replace_after = config.get('replace', self.DEFAULT_REPLACE_AFTER)
             filter_str = config.get('filter', self.DEFAULT_FILTER)
             match_type = config.get('type', self.DEFAULT_MATCH_TYPE)
+            find_all = config.get('find_all', False)
 
-        return FuzzyRule(url_prefix, regex, replace_after, filter_str, match_type)
+        return FuzzyRule(url_prefix, regex, replace_after, filter_str, match_type, find_all)
 
     def get_fuzzy_match(self, urlkey, params):
         filters = set()
@@ -71,12 +73,18 @@ class FuzzyMatcher(object):
             if not any((urlkey.startswith(prefix) for prefix in rule.url_prefix)):
                 continue
 
-            m = rule.regex.search(urlkey)
-            if not m:
+            groups = None
+            if rule.find_all:
+                groups = rule.regex.findall(urlkey)
+            else:
+                m = rule.regex.search(urlkey)
+                groups = m and m.groups()
+
+            if not groups:
                 continue
 
             matched_rule = rule
-            for g in m.groups():
+            for g in groups:
                 for f in matched_rule.filter_str:
                     filters.add(f.format(g))
 
@@ -91,9 +99,7 @@ class FuzzyMatcher(object):
         if inx > 0:
             url = url[:inx + len(matched_rule.replace_after)]
         else:
-            pass
-            #url += matched_rule.replace_after[0]
-            #print('*********************** PREFIX', url)
+            url += matched_rule.replace_after[0]
 
         if matched_rule.match_type == 'domain':
             host = urlsplit(url).netloc
