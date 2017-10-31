@@ -139,7 +139,6 @@ rules:
     - url_prefix: 'com,facebook)/'
 
       fuzzy_lookup: '([?&][^_]\w+=[^&]+)+'
-      #fuzzy_lookup: '()'
 
       rewrite:
         js_regexs:

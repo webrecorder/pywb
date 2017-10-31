@@ -918,6 +918,40 @@ var _WBWombat = function($wbwindow, wbinfo) {
         $wbwindow.Request.prototype = orig_request.prototype;
     }
 
+
+    //============================================
+    function init_request_override()
+    {
+        var orig_request = $wbwindow.Request;
+
+        if (!orig_request) {
+            return;
+        }
+
+        $wbwindow.Request = (function (Request) {
+            return function(input, init_opts) {
+                if (typeof(input) === "string") {
+                    input = rewrite_url(input);
+                } else if (typeof(input) === "object" && input.url) {
+                    var new_url = rewrite_url(input.url);
+
+                    if (new_url != input.url) {
+                    //    input = new Request(new_url, input);
+                        input.url = new_url;
+                    }
+                }
+
+                init_opts = init_opts || {};
+                init_opts["credentials"] = "include";
+
+                return new Request(input, init_opts);
+            }
+
+        })($wbwindow.Request);
+
+        $wbwindow.Request.prototype = orig_request.prototype;
+    }
+
     //============================================
     function override_prop_extract(proto, prop, cond) {
         var orig_getter = get_orig_getter(proto, prop);
