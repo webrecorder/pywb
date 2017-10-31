@@ -13,7 +13,7 @@
   wbinfo.is_live = {{ is_live }};
   wbinfo.coll = "{{ coll }}";
   wbinfo.proxy_magic = "{{ env.pywb_proxy_magic }}";
-  wbinfo.static_prefix = "{{ host_prefix }}/{{ static_path }}";
+  wbinfo.static_prefix = "{{ host_prefix }}/{{ static_path }}/";
 
 {% if not wb_url.is_banner_only %}
   wbinfo.wombat_ts = "{{ wombat_ts }}";
