@@ -80,12 +80,21 @@ rules:
       #fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|query_type[^,]+))'
       fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|(?:query_type|fbid)[^,]+))'
 
-    - url_prefix: 'com,facebook)/ajax/ufi/reply_fetch'
+    - url_prefix: 'com,facebook)/ajax/ufi/reply_fetch.php'
 
       fuzzy_lookup:
           - 'ft_ent_identifier'
           - 'parent_comment_ids[0]'
           - lsd
+
+    - url_prefix: 'com,facebook)/ajax/ufi/comment_fetch.php'
+
+      fuzzy_lookup:
+          - 'source'
+          - 'offset'
+          - 'length'
+          - 'ft_ent_identifier'
+          - 'feed_context'
 
     - url_prefix: 'com,facebook)/ajax/ufi/'
 

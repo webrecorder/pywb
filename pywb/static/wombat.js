@@ -2452,8 +2452,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         function get_cookie() {
-            var res = orig_get_cookie.call(proxy_to_obj(this));
-            return res;
+            return orig_get_cookie.call(proxy_to_obj(this));
         }
 
         def_prop($wbwindow.document, "cookie", set_cookie, get_cookie);
