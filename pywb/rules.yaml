@@ -71,14 +71,18 @@ rules:
         mixin_params:
             rx: '"ssid":([\d]+)'
 
-        force_type: 'json'
-        
-      fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|(?:query_type|fbid)[^,]+))'
+      fuzzy_lookup: 'com,facebook\)/.*[?&]data=(?:.*?(?:[&]|(query_type|fbid|v|cursor|data)[^,]+))'
+
+    - url_prefix: 'com,facebook)/ajax/pagelet/generic.php/photoviewerpagelet'
+
+      fuzzy_lookup:
+        match: '("(?:cursor|cursorindex)":["\d\w]+)'
+        find_all: true
 
     - url_prefix: 'com,facebook)/ajax/pagelet/generic.php/'
 
       #fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|query_type[^,]+))'
-      fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|(?:query_type|fbid)[^,]+))'
+      fuzzy_lookup: 'com,facebook\)/.*[?&]data=(?:.*?(?:[&]|(query_type|fbid|v|cursor|data)[^,]+))'
 
     - url_prefix: 'com,facebook)/ajax/ufi/reply_fetch.php'
 
@@ -118,6 +122,13 @@ rules:
 
       fuzzy_lookup:
           - __user
+
+    - url_prefix: 'com,facebook)/ajax/photos/'
+
+      fuzzy_lookup:
+          - __spin_r
+          - __spin_t
+          - __dyn
 
     # fallback for all /ajax/
     - url_prefix: 'com,facebook)/ajax/'

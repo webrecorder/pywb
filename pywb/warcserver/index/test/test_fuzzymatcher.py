@@ -122,6 +122,17 @@ class TestFuzzy(object):
 
         assert list(cdx_iter) == self.get_expected(url=actual_url, filters=filters)
 
+    def test_fuzzy_find_all_rule(self):
+        url = 'http://facebook.com/ajax/pagelet/generic.php/photoviewerpagelet?data={"cursor":"ABC","food":"bar","cursorindex":6,"A":12345,"B":"foo"}'
+        actual_url = 'http://facebook.com/ajax/pagelet/generic.php/photoviewerpagelet?data={"some":data","cursor":"ABC","foo":"bar","cursorindex":6}'
+
+        params = self.get_params(url, actual_url)
+        cdx_iter, errs = self.fuzzy(self.source, params)
+        filters = {'urlkey:"cursor":"abc"',
+                   'urlkey:"cursorindex":6'}
+
+        assert list(cdx_iter) == self.get_expected(url=actual_url, filters=filters)
+
     def test_no_fuzzy_custom_rule_video_id_diff(self):
         url = 'http://youtube.com/get_video_info?a=b&html=true&___abc=123&video_id=ABCD&id=1234'
         actual_url = 'http://youtube.com/get_video_info?a=d&html=true&___abc=125&video_id=ABCE&id=1234'

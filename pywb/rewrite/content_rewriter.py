@@ -172,9 +172,8 @@ class BaseContentRewriter(object):
 
         rule = self.get_rule(cdx)
 
-        force_type = rule.get('force_type')
-        if force_type:
-            rwinfo.text_type = force_type
+        if rule.get('mixin') and not rwinfo.text_type:
+            rwinfo.text_type = rule.get('mixin_type', 'json')
 
         if rwinfo.should_rw_content():
             content_rewriter = self.create_rewriter(rwinfo.text_type, rule, rwinfo, cdx, head_insert_func)
