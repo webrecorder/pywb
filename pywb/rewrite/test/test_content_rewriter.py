@@ -50,17 +50,20 @@ class TestContentRewriter(object):
                                          warc_headers_dict=warc_headers)
 
     def rewrite_record(self, headers, content, ts, url='http://example.com/',
-                       prefix='http://localhost:8080/prefix/', warc_headers=None):
+                       prefix='http://localhost:8080/prefix/', warc_headers=None,
+                       request_url=None):
 
         record = self._create_response_record(url, headers, content, warc_headers)
 
-        wburl = WbUrl(ts + '/' + url)
+        wburl = WbUrl(ts + '/' + (request_url or url))
         url_rewriter = UrlRewriter(wburl, prefix)
 
         cdx = CDXObject()
         cdx['url'] = url
         cdx['timestamp'] = ts
         cdx['urlkey'] = canonicalize(url)
+        if request_url != url:
+            cdx['is_fuzzy'] = '1'
 
         return self.content_rewriter(record, url_rewriter, None, cdx=cdx)
 
@@ -253,6 +256,21 @@ class TestContentRewriter(object):
         assert headers.headers == [('Content-Type', 'text/javascript')]
 
         assert b''.join(gen).decode('utf-8') == content
+
+    def test_custom_fuzzy_replace(self):
+        headers = {'Content-Type': 'application/octet-stream'}
+        content = '{"ssid":"1234"}'
+
+        actual_url = 'http://facebook.com/ajax/pagelet/generic.php/photoviewerinitpagelet?data="ssid":1234'
+        request_url = 'http://facebook.com/ajax/pagelet/generic.php/photoviewerinitpagelet?data="ssid":5678'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_',
+                                                  url=actual_url,
+                                                  request_url=request_url)
+
+        assert headers.headers == [('Content-Type', 'application/octet-stream')]
+
+        assert b''.join(gen).decode('utf-8') == '{"ssid":"5678"}'
 
     def test_hls_default_max(self):
         headers = {'Content-Type': 'application/vnd.apple.mpegurl'}

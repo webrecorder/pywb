@@ -254,11 +254,12 @@ class JSWombatProxyRewriter(JSWombatProxyRewriterMixin, RegexRewriter):
 
 # =================================================================
 class JSReplaceFuzzy(object):
+    rx_obj = None
+
     def __init__(self, *args, **kwargs):
         super(JSReplaceFuzzy, self).__init__(*args, **kwargs)
-        assert(self.rx)
-        if isinstance(self.rx, str):
-            self.rx = re.compile(self.rx)
+        if not self.rx_obj:
+            self.rx_obj = re.compile(self.rx)
 
     def rewrite(self, string):
         string = super(JSReplaceFuzzy, self).rewrite(string)
@@ -267,8 +268,9 @@ class JSReplaceFuzzy(object):
             expected = unquote(cdx['url'])
             actual = unquote(self.url_rewriter.wburl.url)
 
-            exp_m = self.rx.search(expected)
-            act_m = self.rx.search(actual)
+            exp_m = self.rx_obj.search(expected)
+            act_m = self.rx_obj.search(actual)
+
             if exp_m and act_m:
                 result = string.replace(exp_m.group(1), act_m.group(1))
                 if result != string:

@@ -55,6 +55,10 @@ class BaseContentRewriter(object):
             parse_rules_func = self.init_js_regex(regexs)
             rule['js_regex_func'] = parse_rules_func
 
+        mixin = rule.get('mixin')
+        if mixin:
+            rule['mixin'] = load_py_name(mixin)
+
         return rule
 
     def get_rule(self, cdx):
@@ -74,9 +78,8 @@ class BaseContentRewriter(object):
         rw_class = self.get_rewriter(rw_type, rwinfo)
 
         mixin = rule.get('mixin')
-        mixin_params = rule.get('mixin_params', {})
         if mixin:
-            mixin = load_py_name(mixin)
+            mixin_params = rule.get('mixin_params', {})
             rw_class = type('custom_js_rewriter', (mixin, rw_class), mixin_params)
 
         return rw_type, rw_class
@@ -250,10 +253,8 @@ class StreamingRewriter(object):
         self.url_rewriter = url_rewriter
         self.align_to_line = align_to_line
         self.first_buff = first_buff
-        self.rwinfo = None
 
     def __call__(self, rwinfo):
-        self.rwinfo = rwinfo
         return self.rewrite_text_stream_to_gen(rwinfo.content_stream)
 
     def rewrite(self, string):
