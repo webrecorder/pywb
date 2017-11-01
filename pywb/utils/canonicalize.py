@@ -108,6 +108,16 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
     >>> calc_search_range('http://example.com/path/file.html', 'prefix')
     ('com,example)/path/file.html', 'com,example)/path/file.htmm')
 
+    # slash and ?
+    >>> calc_search_range('http://example.com/path/', 'prefix')
+    ('com,example)/path/', 'com,example)/path0')
+
+    >>> calc_search_range('http://example.com/path?', 'prefix')
+    ('com,example)/path?', 'com,example)/path@')
+
+    >>> calc_search_range('http://example.com/path/?', 'prefix')
+    ('com,example)/path?', 'com,example)/path@')
+
     >>> calc_search_range('http://example.com/path/file.html', 'host')
     ('com,example)/', 'com,example*')
 

@@ -95,10 +95,17 @@ class FuzzyMatcher(object):
 
         url = params['url']
 
+        # support matching w/o query if no additional filters
+        # don't include trailing '?' if no filters and replace_after '?'
+        no_filters = (filters == {'urlkey:'}) and (matched_rule.replace_after == '?')
+
         inx = url.find(matched_rule.replace_after)
         if inx > 0:
-            url = url[:inx + len(matched_rule.replace_after)]
-        else:
+            length = inx + len(matched_rule.replace_after)
+            if no_filters:
+                length -= 1
+            url = url[:length]
+        elif not no_filters:
             url += matched_rule.replace_after[0]
 
         if matched_rule.match_type == 'domain':

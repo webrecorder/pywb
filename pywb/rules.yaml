@@ -87,15 +87,6 @@ rules:
           - 'parent_comment_ids[0]'
           - lsd
 
-    #- url_prefix: 'com,facebook)/ajax/typeahead/'
-
-    #  fuzzy_lookup:
-    #    - 'filter[0]'
-
-    #- url_prefix: 'com,facebook)/typeahead/'
-
-    #  fuzzy_lookup: '([?&][^_]\w+=[^&]+)+'
-
     - url_prefix: 'com,facebook)/ajax/ufi/'
 
       fuzzy_lookup:
@@ -127,14 +118,8 @@ rules:
     - url_prefix: 'com,facebook)/api/graphqlbatch'
 
       fuzzy_lookup:
-        #match: '((?:q[\d]")|(?:queryfragment[^:]+))'
-        match: '"q[\d]":'
+        match: '("q[\d]+":|after:\\"[^"]+)'
         find_all: true
-
-    - url_prefix: 'com,facebook)/sem_campaigns2/'
-
-      #fuzzy_lookup: '([?&][^_]\w+=[^&]+)+'
-      fuzzy_lookup: '()'
 
     - url_prefix: 'com,facebook)/'
 
