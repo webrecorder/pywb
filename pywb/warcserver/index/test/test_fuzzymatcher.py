@@ -38,7 +38,7 @@ class TestFuzzy(object):
     def get_expected(self, url, mime='text/html', filters=None):
         filters = filters or {'urlkey:'}
         exp = [{'filter': filters,
-               'is_fuzzy': True,
+               'is_fuzzy': '1',
                'urlkey': canonicalize(url),
                'source': 'source',
                'source-coll': 'source',

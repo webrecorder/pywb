@@ -13,7 +13,7 @@ from collections import namedtuple
 # ============================================================================
 FuzzyRule = namedtuple('FuzzyRule',
                        'url_prefix, regex, replace_after, filter_str, ' +
-                       'match_type')
+                       'match_type, find_all')
 
 
 # ============================================================================
@@ -54,14 +54,16 @@ class FuzzyMatcher(object):
             replace_after = self.DEFAULT_REPLACE_AFTER
             filter_str = self.DEFAULT_FILTER
             match_type = self.DEFAULT_MATCH_TYPE
+            find_all = False
 
         else:
             regex = self.make_regex(config.get('match'))
             replace_after = config.get('replace', self.DEFAULT_REPLACE_AFTER)
             filter_str = config.get('filter', self.DEFAULT_FILTER)
             match_type = config.get('type', self.DEFAULT_MATCH_TYPE)
+            find_all = config.get('find_all', False)
 
-        return FuzzyRule(url_prefix, regex, replace_after, filter_str, match_type)
+        return FuzzyRule(url_prefix, regex, replace_after, filter_str, match_type, find_all)
 
     def get_fuzzy_match(self, urlkey, params):
         filters = set()
@@ -71,12 +73,18 @@ class FuzzyMatcher(object):
             if not any((urlkey.startswith(prefix) for prefix in rule.url_prefix)):
                 continue
 
-            m = rule.regex.search(urlkey)
-            if not m:
+            groups = None
+            if rule.find_all:
+                groups = rule.regex.findall(urlkey)
+            else:
+                m = rule.regex.search(urlkey)
+                groups = m and m.groups()
+
+            if not groups:
                 continue
 
             matched_rule = rule
-            for g in m.groups():
+            for g in groups:
                 for f in matched_rule.filter_str:
                     filters.add(f.format(g))
 
@@ -87,9 +95,18 @@ class FuzzyMatcher(object):
 
         url = params['url']
 
+        # support matching w/o query if no additional filters
+        # don't include trailing '?' if no filters and replace_after '?'
+        no_filters = (filters == {'urlkey:'}) and (matched_rule.replace_after == '?')
+
         inx = url.find(matched_rule.replace_after)
         if inx > 0:
-            url = url[:inx + len(matched_rule.replace_after)]
+            length = inx + len(matched_rule.replace_after)
+            if no_filters:
+                length -= 1
+            url = url[:length]
+        elif not no_filters:
+            url += matched_rule.replace_after[0]
 
         if matched_rule.match_type == 'domain':
             host = urlsplit(url).netloc
@@ -98,7 +115,7 @@ class FuzzyMatcher(object):
         fuzzy_params = {'url': url,
                         'matchType': matched_rule.match_type,
                         'filter': filters,
-                        'is_fuzzy': True}
+                        'is_fuzzy': '1'}
 
         for key in iterkeys(params):
             if key not in self.FUZZY_SKIP_PARAMS:
@@ -157,7 +174,7 @@ class FuzzyMatcher(object):
 
         for cdx in new_iter:
             if is_custom or self.match_general_fuzzy_query(url, urlkey, cdx, rx_cache):
-                cdx['is_fuzzy'] = True
+                cdx['is_fuzzy'] = '1'
                 yield cdx
 
     def match_general_fuzzy_query(self, url, urlkey, cdx, rx_cache):

@@ -1,14 +1,7 @@
 import re
 from pywb.rewrite.content_rewriter import StreamingRewriter
-
-
-# =================================================================
-def load_function(string):
-    import importlib
-
-    string = string.split(':', 1)
-    mod = importlib.import_module(string[0])
-    return getattr(mod, string[1])
+from pywb.utils.loaders import load_py_name
+from six.moves.urllib.parse import unquote
 
 
 # =================================================================
@@ -101,7 +94,7 @@ class RegexRewriter(StreamingRewriter):
                 if 'rewrite' in obj:
                     replace = RegexRewriter.archival_rewrite(rewriter)
                 elif 'function' in obj:
-                    replace = load_function(obj['function'])
+                    replace = load_py_name(obj['function'])
                 else:
                     replace = RegexRewriter.format(obj.get('replace', '{0}'))
                 group = obj.get('group', 0)
@@ -257,6 +250,33 @@ class JSNoneRewriter(RegexRewriter):
 # =================================================================
 class JSWombatProxyRewriter(JSWombatProxyRewriterMixin, RegexRewriter):
     pass
+
+
+# =================================================================
+class JSReplaceFuzzy(object):
+    rx_obj = None
+
+    def __init__(self, *args, **kwargs):
+        super(JSReplaceFuzzy, self).__init__(*args, **kwargs)
+        if not self.rx_obj:
+            self.rx_obj = re.compile(self.rx)
+
+    def rewrite(self, string):
+        string = super(JSReplaceFuzzy, self).rewrite(string)
+        cdx = self.url_rewriter.rewrite_opts['cdx']
+        if cdx.get('is_fuzzy'):
+            expected = unquote(cdx['url'])
+            actual = unquote(self.url_rewriter.wburl.url)
+
+            exp_m = self.rx_obj.search(expected)
+            act_m = self.rx_obj.search(actual)
+
+            if exp_m and act_m:
+                result = string.replace(exp_m.group(1), act_m.group(1))
+                if result != string:
+                    string = result
+
+        return string
 
 
 # =================================================================

@@ -12,7 +12,7 @@ import json
 
 from pywb.utils.io import StreamIter, BUFF_SIZE
 
-from pywb.utils.loaders import load_yaml_config
+from pywb.utils.loaders import load_yaml_config, load_py_name
 
 
 # ============================================================================
@@ -55,6 +55,10 @@ class BaseContentRewriter(object):
             parse_rules_func = self.init_js_regex(regexs)
             rule['js_regex_func'] = parse_rules_func
 
+        mixin = rule.get('mixin')
+        if mixin:
+            rule['mixin'] = load_py_name(mixin)
+
         return rule
 
     def get_rule(self, cdx):
@@ -72,6 +76,11 @@ class BaseContentRewriter(object):
 
         rw_type = rule.get(text_type, text_type)
         rw_class = self.get_rewriter(rw_type, rwinfo)
+
+        mixin = rule.get('mixin')
+        if mixin:
+            mixin_params = rule.get('mixin_params', {})
+            rw_class = type('custom_js_rewriter', (mixin, rw_class), mixin_params)
 
         return rw_type, rw_class
 
@@ -159,8 +168,15 @@ class BaseContentRewriter(object):
         rwinfo = RewriteInfo(record, self, url_rewriter, cookie_rewriter)
         content_rewriter = None
 
+        url_rewriter.rewrite_opts['cdx'] = cdx
+
+        rule = self.get_rule(cdx)
+
+        force_type = rule.get('force_type')
+        if force_type:
+            rwinfo.text_type = force_type
+
         if rwinfo.should_rw_content():
-            rule = self.get_rule(cdx)
             content_rewriter = self.create_rewriter(rwinfo.text_type, rule, rwinfo, cdx, head_insert_func)
 
         gen = None

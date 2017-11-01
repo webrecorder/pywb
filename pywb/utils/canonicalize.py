@@ -108,6 +108,16 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
     >>> calc_search_range('http://example.com/path/file.html', 'prefix')
     ('com,example)/path/file.html', 'com,example)/path/file.htmm')
 
+    # slash and ?
+    >>> calc_search_range('http://example.com/path/', 'prefix')
+    ('com,example)/path/', 'com,example)/path0')
+
+    >>> calc_search_range('http://example.com/path?', 'prefix')
+    ('com,example)/path?', 'com,example)/path@')
+
+    >>> calc_search_range('http://example.com/path/?', 'prefix')
+    ('com,example)/path?', 'com,example)/path@')
+
     >>> calc_search_range('http://example.com/path/file.html', 'host')
     ('com,example)/', 'com,example*')
 
@@ -157,6 +167,9 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
         # add trailing slash if url has it
         if url.endswith('/') and not start_key.endswith('/'):
             start_key += '/'
+
+        if url.endswith('?') and not start_key.endswith('?'):
+            start_key += '?'
 
         end_key = inc_last_char(start_key)
 
