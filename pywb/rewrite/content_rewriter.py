@@ -71,6 +71,9 @@ class BaseContentRewriter(object):
         return {}
 
     def get_rw_class(self, rule, text_type, rwinfo):
+        if text_type == 'json' and 'js_regex_func' in rule:
+            text_type = 'js-proxy'
+
         if text_type == 'js' and not rwinfo.is_url_rw():
             text_type = 'js-proxy'
 
