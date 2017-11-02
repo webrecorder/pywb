@@ -18,11 +18,51 @@ This file is part of pywb, https://github.com/ikreymer/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.50
+// Wombat JS-Rewriting Library v2.51
 //============================================
 
 
 var _WBWombat = function($wbwindow, wbinfo) {
+
+    // associative array for func->handler for message and storage events
+    function FuncMap() {
+        this._arr = [];
+
+        this.find = function(func) {
+            for (var i = 0; i < this._arr.length; i++) {
+                if (this._arr[i][0] == func) {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        this.add_or_get = function(func, initter) {
+            var res = this.find(func);
+            if (res >= 0) {
+                return this._arr[res][1];
+            }
+            var value = initter();
+            this._arr.push([func, value]);
+            return value;
+        }
+
+        this.remove = function(func) {
+            var res = this.find(func);
+            if (res >= 0) {
+                return this._arr.splice(res, 1)[0][1];
+            }
+            return null;
+        }
+
+        this.map = function(param) {
+            for (var i = 0; i < this._arr.length; i++) {
+                (this._arr[i][0])(param);
+            }
+        }
+    }
+
 
     // Globals
     var wb_replay_prefix;
@@ -47,7 +87,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     var wb_is_proxy = false;
 
-    var storage_listeners = {};
+    var message_listeners = new FuncMap();
+    var storage_listeners = new FuncMap();
 
     //============================================
     function is_host_url(str) {
@@ -2189,9 +2230,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
 
             return {"listen": listen};
-        }
 
-        var listen_map = {};
+        }
 
         // ADD
         var _orig_addEventListener = $wbwindow.addEventListener;
@@ -2202,24 +2242,13 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var obj = proxy_to_obj(this);
 
             if (type == "message") {
-                var wrapped = listen_map[listener];
-                if (!wrapped) {
-                    wrapped = new WrappedListener(listener, this).listen;
-                    listen_map[listener] = wrapped;
-                }
-
-                listener = wrapped;
+                listener = message_listeners.add_or_get(listener, function() { return new WrappedListener(listener, obj).listen });
 
                 return _orig_addEventListener.call(obj, type, listener, useCapture);
 
             } else if (type == "storage") {
-                var wrapped = storage_listeners[listener];
-                if (!wrapped) {
-                    wrapped = new SameOriginListener(listener, this).listen;
-                    storage_listeners[listener] = wrapped;
-                }
+                listener = storage_listeners.add_or_get(listener, function() { return new SameOriginListener(listener, obj).listen });
 
-                listener = wrapped;
             } else {
                 return _orig_addEventListener.call(obj, type, listener, useCapture);
             }
@@ -2232,21 +2261,16 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var obj = proxy_to_obj(this);
 
             if (type == "message") {
-                if (!listen_map[listener]) {
-                    return;
-                }
-                listener = listen_map[listener];
-                delete listen_map[listener];
+                listener = message_listeners.remove(listener);
 
             } else if (type == "storage") {
-                if (!storage_listeners[listener]) {
-                    return;
-                }
-                listener = storage_listeners[listener];
-                delete storage_listeners[listener];
+                listener = storage_listeners.remove(listener);
+
             }
 
-            return _orig_removeEventListener.call(obj, type, listener, useCapture);
+            if (listener) {
+                return _orig_removeEventListener.call(obj, type, listener, useCapture);
+            }
         }
 
         $wbwindow.removeEventListener = removeEventListener_rewritten;
@@ -2663,9 +2687,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
                 sevent._storageArea = store;
 
-                for (var list in storage_listeners) {
-                    storage_listeners[list](sevent);
-                }
+                storage_listeners.map(sevent);
             }
 
             this.data = {}
