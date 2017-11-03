@@ -35,6 +35,7 @@ class BaseCli(object):
         parser.add_argument('--profile', action='store_true')
 
         parser.add_argument('--live', action='store_true', help='Add live-web handler at /live')
+        parser.add_argument('--record', action='store_true')
 
         parser.add_argument('--proxy', help='Enable HTTP/S Proxy on specified collection')
         parser.add_argument('--proxy-record', action='store_true', help='Enable Proxy Recording into specified collection')
@@ -70,6 +71,9 @@ class BaseCli(object):
 
         if self.r.debug:
             self.extra_config['debug'] = True
+
+        if self.r.record:
+            self.extra_config['recorder'] = 'live'
 
     def run(self):
         self.run_gevent()

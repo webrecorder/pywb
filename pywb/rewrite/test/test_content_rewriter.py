@@ -13,11 +13,13 @@ from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.default_rewriter import DefaultRewriter
 
 from pywb import get_test_dir
+
 import os
 import json
 import pytest
 
 
+# ============================================================================
 @pytest.fixture(params=[{'Content-Type': 'text/html'},
                         {'Content-Type': 'application/xhtml+xml'},
                         {'Content-Type': 'application/octet-stream'},
@@ -51,7 +53,7 @@ class TestContentRewriter(object):
 
     def rewrite_record(self, headers, content, ts, url='http://example.com/',
                        prefix='http://localhost:8080/prefix/', warc_headers=None,
-                       request_url=None):
+                       request_url=None, is_live=None):
 
         record = self._create_response_record(url, headers, content, warc_headers)
 
@@ -64,6 +66,7 @@ class TestContentRewriter(object):
         cdx['urlkey'] = canonicalize(url)
         if request_url != url:
             cdx['is_fuzzy'] = '1'
+        cdx['is_live'] = is_live
 
         return self.content_rewriter(record, url_rewriter, None, cdx=cdx)
 
@@ -271,6 +274,24 @@ class TestContentRewriter(object):
         assert headers.headers == [('Content-Type', 'application/octet-stream')]
 
         assert b''.join(gen).decode('utf-8') == '{"ssid":"5678"}'
+
+    def test_custom_live_only(self):
+        headers = {'Content-Type': 'application/json'}
+        content = '{"foo":"bar", "dash": {"on": "true"}, "some": ["list"]'
+
+        # is_live
+        rw_headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_',
+                                                  url='https://player.vimeo.com/video/123445/config/config?A=B',
+                                                  is_live='1')
+
+        # rewritten
+        assert b''.join(gen).decode('utf-8') == '{"foo":"bar", "__dash": {"on": "true"}, "some": ["list"]'
+
+        # not is_live
+        rw_headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_',
+                                                  url='https://player.vimeo.com/video/123445/config/config?A=B')
+
+        assert b''.join(gen).decode('utf-8') == content
 
     def test_hls_default_max(self):
         headers = {'Content-Type': 'application/vnd.apple.mpegurl'}

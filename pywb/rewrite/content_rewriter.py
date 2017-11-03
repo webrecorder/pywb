@@ -70,6 +70,15 @@ class BaseContentRewriter(object):
 
         return {}
 
+    def has_custom_rules(self, rule, cdx):
+        if 'js_regex_func' not in rule:
+            return False
+
+        if rule.get('live_only') and not cdx.get('is_live'):
+            return False
+
+        return True
+
     def get_rw_class(self, rule, text_type, rwinfo):
         if text_type == 'json' and 'js_regex_func' in rule:
             text_type = 'js-proxy'
@@ -92,7 +101,7 @@ class BaseContentRewriter(object):
 
         if rw_type in ('js', 'js-proxy'):
             extra_rules = []
-            if 'js_regex_func' in rule:
+            if self.has_custom_rules(rule, cdx):
                 extra_rules = rule['js_regex_func'](rwinfo.url_rewriter)
 
             # if js-proxy and no rules, default to none
