@@ -261,6 +261,21 @@ rules:
       # only use non query part of url, ignore query
       fuzzy_lookup: '()'
 
+    - url_prefix: 'com,vimeo,player)/video/'
+
+      fuzzy_lookup:
+        match:
+          regex: 'com,vimeo.player\)/video/[\d]+/config?.*'
+
+      rewrite:
+        live_only: true
+        js_regexs:
+            - match: '"dash":'
+              replace: '"__dash":'
+
+            - match: '"hls":'
+              replace: '"__hls":'
+
     - url_prefix: 'com,vimeocdn,'
 
       fuzzy_lookup: '()'
@@ -279,7 +294,9 @@ rules:
           - videoFileId
           - signature
 
+
     # vine
+    #=================================================================
     - url_prefix: 'co,vine,cdn,'
 
       fuzzy_lookup:
