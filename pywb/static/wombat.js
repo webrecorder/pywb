@@ -2321,7 +2321,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
         if (!cls) {
             return;
         }
-        obj = obj || cls.prototype;
+        if (!obj && cls.prototype && cls.prototype[method]) {
+            obj = cls.prototype;
+        } else if (!obj && cls[method]) {
+            obj = cls;
+        }
+
         if (!obj) {
             return;
         }
@@ -3068,6 +3073,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             // innerHTML can be overriden on prototype!
             override_html_assign($wbwindow.HTMLElement, "innerHTML");
+            override_html_assign($wbwindow.HTMLElement, "outerHTML");
             override_html_assign($wbwindow.HTMLIFrameElement, "srcdoc");
             override_html_assign($wbwindow.HTMLStyleElement, "textContent");
 
@@ -3095,6 +3101,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             override_func_first_arg_proxy_to_obj($wbwindow.Node, "contains");
             override_func_first_arg_proxy_to_obj($wbwindow.Document, "createTreeWalker");
 
+            override_func_this_proxy_to_obj($wbwindow, "setTimeout");
+            override_func_this_proxy_to_obj($wbwindow, "setInterval");
             override_func_this_proxy_to_obj($wbwindow, "getComputedStyle", $wbwindow);
             override_func_this_proxy_to_obj($wbwindow.EventTarget, "addEventListener");
             override_func_this_proxy_to_obj($wbwindow.EventTarget, "removeEventListener");
@@ -3298,22 +3306,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return;
         }
 
-        var getter = function() {
-            var res = this.frameElement;
-
-            if (this.__WB_replay_top == this) {
-                return null;
-            }
-
-            return res;
-        }
-
-        def_prop($wbwindow.Object.prototype, "WB_wombat_frameElement", function() {}, getter);
-
         // Also try disabling frameElement directly, though may no longer be supported in all browsers
-        if ($wbwindow.__WB_replay_top == $wbwindow) {
+        if (proxy_to_obj($wbwindow.__WB_replay_top) == proxy_to_obj($wbwindow)) {
             try {
-                Object.defineProperty($wbwindow, "frameElement", {value: undefined, configurable: false});
+                Object.defineProperty($wbwindow, "frameElement", {value: null, configurable: false});
             } catch (e) {}
         }
     }
