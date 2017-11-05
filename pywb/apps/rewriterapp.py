@@ -14,7 +14,7 @@ from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.io import BUFF_SIZE
 from pywb.utils.memento import MementoUtils
 
-from warcio.timeutils import http_date_to_timestamp, timestamp_to_http_date
+from warcio.timeutils import http_date_to_timestamp, timestamp_to_http_date, iso_date_to_timestamp
 from warcio.bufferedreaders import BufferedReader
 from warcio.recordloader import ArcWarcRecordLoader
 
@@ -24,7 +24,7 @@ from pywb.apps.wbrequestresponse import WbResponse
 from pywb.rewrite.rewriteinputreq import RewriteInputRequest
 from pywb.rewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView, BaseInsertView
 
-
+import re
 from io import BytesIO
 from copy import copy
 
@@ -144,6 +144,7 @@ class RewriterApp(object):
         full_prefix = host_prefix + rel_prefix
 
         is_proxy = ('wsgiprox.proxy_host' in environ)
+        is_ajax = self.is_ajax(environ)
 
         response = self.handle_custom_response(environ, wb_url,
                                                full_prefix, host_prefix,
@@ -223,6 +224,13 @@ class RewriterApp(object):
             res = self.cookie_tracker.get_cookie_headers(wb_url.url, urlrewriter, cookie_key)
             inputreq.extra_cookie, setcookie_headers = res
 
+        # TWITTER TEST
+        if is_ajax:
+            print('AJAX')
+            m = re.match('https://twitter[.]com/[^/]+/status/([^/]+)', wb_url.url)
+            if m:
+                wb_url.url += '?conversation'
+
         r = self._do_req(inputreq, wb_url, kwargs, skip)
 
         if r.status_code >= 400:
@@ -293,6 +301,22 @@ class RewriterApp(object):
 
                 return resp
 
+        if record.rec_type == 'metadata' and record.rec_headers.get('WARC-Profile') == 'history':
+            history_state = record.content_stream().read().decode('utf-8')
+            orig_wb_url = WbUrl(record.rec_headers.get('WARC-Refers-To-Target-URI'))
+            orig_wb_url.timestamp = iso_date_to_timestamp(record.rec_headers.get('WARC-Refers-To-Date'))
+            print(orig_wb_url.url, orig_wb_url.timestamp)
+            new_r = self._do_req(inputreq, orig_wb_url, kwargs, skip)
+
+            stream = BufferedReader(new_r.raw, block_size=BUFF_SIZE)
+            record = self.loader.parse_record_stream(stream,
+                                                     ensure_http_headers=True)
+
+            print(record.rec_headers)
+
+        else:
+            history_state = 'undefined'
+
         self._add_custom_params(cdx, r.headers, kwargs)
 
         if readd_range and record.http_headers.get_statuscode() == '200':
@@ -318,7 +342,8 @@ class RewriterApp(object):
                                                        top_url,
                                                        environ,
                                                        framed_replay,
-                                                       config=self.config))
+                                                       config=self.config,
+                                                       history_state=history_state))
 
         cookie_rewriter = None
         if self.cookie_tracker:

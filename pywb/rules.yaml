@@ -60,6 +60,10 @@ rules:
     - url_prefix: 'com,twitter)/i/videos/tweet'
 
       fuzzy_lookup: '()'
+
+    - url_prefix: 'com,twitter)/'
+
+      fuzzy_lookup: '.*(conversation)?.*'
      
 
     # facebook rules
