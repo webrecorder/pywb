@@ -14,7 +14,7 @@ from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.io import BUFF_SIZE, OffsetLimitReader
 from pywb.utils.memento import MementoUtils
 
-from warcio.timeutils import http_date_to_timestamp, timestamp_to_http_date
+from warcio.timeutils import http_date_to_timestamp, timestamp_to_http_date, iso_date_to_timestamp
 from warcio.bufferedreaders import BufferedReader
 from warcio.recordloader import ArcWarcRecordLoader
 
@@ -24,7 +24,7 @@ from pywb.apps.wbrequestresponse import WbResponse
 from pywb.rewrite.rewriteinputreq import RewriteInputRequest
 from pywb.rewrite.templateview import JinjaEnv, HeadInsertView, TopFrameView, BaseInsertView
 
-
+import re
 from io import BytesIO
 from copy import copy
 
@@ -209,6 +209,7 @@ class RewriterApp(object):
         full_prefix = host_prefix + rel_prefix
 
         is_proxy = ('wsgiprox.proxy_host' in environ)
+        is_ajax = self.is_ajax(environ)
 
         response = self.handle_custom_response(environ, wb_url,
                                                full_prefix, host_prefix,
@@ -263,6 +264,12 @@ class RewriterApp(object):
             cookie_key = self.get_cookie_key(kwargs)
             res = self.cookie_tracker.get_cookie_headers(wb_url.url, urlrewriter, cookie_key)
             inputreq.extra_cookie, setcookie_headers = res
+
+        if is_ajax and kwargs.get('type') != 'record':
+            accept_filter = inputreq.get_accept_filter(wb_url.url)
+            if accept_filter:
+                kwargs['filter'] = '~mime:' + accept_filter
+                kwargs['matchType'] = 'prefix'
 
         r = self._do_req(inputreq, wb_url, kwargs, skip_record)
 
@@ -323,6 +330,8 @@ class RewriterApp(object):
 
                 return resp
 
+        record, history_state = self._resolve_history(record, inputreq, kwargs, skip_record)
+
         self._add_custom_params(cdx, r.headers, kwargs)
 
         if self._add_range(record, wb_url, range_start, range_end):
@@ -342,7 +351,8 @@ class RewriterApp(object):
                                                        top_url,
                                                        environ,
                                                        framed_replay,
-                                                       config=self.config))
+                                                       config=self.config,
+                                                       history_state=history_state))
 
         cookie_rewriter = None
         if self.cookie_tracker:
@@ -377,6 +387,31 @@ class RewriterApp(object):
         response = WbResponse(status_headers, gen)
 
         return response
+
+    def _resolve_history(self, record, inputreq, kwargs, skip_record):
+        history_state = None
+        while True:
+            if record.rec_type != 'metadata' or record.rec_headers.get('WARC-Profile') != 'history':
+                break
+
+            stream = record.content_stream()
+            try:
+                if not history_state:
+                    history_state = stream.read().decode('utf-8')
+            finally:
+                stream.close()
+
+            orig_wb_url = WbUrl(record.rec_headers.get('WARC-Refers-To-Target-URI'))
+            orig_wb_url.timestamp = iso_date_to_timestamp(record.rec_headers.get('WARC-Refers-To-Date'))
+            orig_wb_url.type = orig_wb_url.REPLAY
+            kwargs['filter'] = '!status:302'
+            new_r = self._do_req(inputreq, orig_wb_url, kwargs, skip_record)
+
+            stream = BufferedReader(new_r.raw, block_size=BUFF_SIZE)
+            record = self.loader.parse_record_stream(stream,
+                                                     ensure_http_headers=True)
+
+        return record, (history_state or 'undefined')
 
     def format_response(self, response, wb_url, full_prefix, is_timegate, is_proxy):
         memento_ts = None
@@ -488,12 +523,16 @@ class RewriterApp(object):
         params = {}
         params['url'] = wb_url.url
         params['closest'] = closest
-        params['matchType'] = 'exact'
+        params['matchType'] = kwargs.get('matchType', 'exact')
 
         if wb_url.mod == 'vi_':
             params['content_type'] = self.VIDEO_INFO_CONTENT_TYPE
 
         upstream_url = self.get_upstream_url(wb_url, kwargs, params)
+
+        if 'filter' in kwargs:
+            upstream_url += '&filter=' + kwargs['filter']
+
 
         r = requests.post(upstream_url,
                           data=BytesIO(req_data),

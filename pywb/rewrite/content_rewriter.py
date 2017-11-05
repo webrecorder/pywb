@@ -38,6 +38,12 @@ class BaseContentRewriter(object):
             if rule:
                 self.rules.append(rule)
 
+        self.accept_filter_prefixes = config.get('accept_filter_prefixes', [])
+        print(self.accept_filter_prefixes)
+
+    def allow_accept_filter(self, url):
+        return any(url.startswith(prefix) for prefix in self.accept_filter_prefixes)
+
     def parse_rewrite_rule(self, config):
         rw_config = config.get('rewrite')
         if not rw_config:

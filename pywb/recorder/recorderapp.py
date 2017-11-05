@@ -141,7 +141,7 @@ class RecorderApp(object):
             payload_length = req_stream.out.tell()
             req_stream.out.seek(0)
 
-            record = self.writer.create_warc_record(uri=params['url'],
+            record = self.writer.create_warc_record(uri=params.get('url', ''),
                                                     record_type=record_type,
                                                     payload=req_stream.out,
                                                     length=payload_length,
@@ -152,6 +152,10 @@ class RecorderApp(object):
 
             msg = {'success': 'true',
                    'WARC-Date': record.rec_headers.get_header('WARC-Date')}
+
+        except:
+            import traceback
+            traceback.print_exc()
 
         finally:
             if req_stream:

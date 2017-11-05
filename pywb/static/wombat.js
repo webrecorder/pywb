@@ -23,7 +23,6 @@ This file is part of pywb, https://github.com/webrecorder/pywb
 
 
 var _WBWombat = function($wbwindow, wbinfo) {
-
     // associative array for func->handler for message and storage events
     function FuncMap() {
         this._arr = [];
@@ -794,14 +793,19 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function send_history_update(url, title) {
+    function send_history_update(state, type, url, title) {
         var message = {
+                   "base_url": wb_info.url,
+                   "base_ts": wb_info.timestamp,
                    "url": url,
-                   "ts": wb_info.timestamp,
+                   "ts": Date.__WB_ts_now(),
                    "request_ts": wb_info.request_ts,
                    "is_live": wb_info.is_live,
                    "title": title,
                    "wb_type": "replace-url",
+                   "state": state,
+                   "change_type": type,
+                   "coll": wb_info.coll,
                   }
 
         send_top_message(message);
@@ -813,7 +817,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_history_func("replaceState");
 
         $wbwindow.addEventListener("popstate", function(event) {
-            send_history_update($wbwindow.WB_wombat_location.href, $wbwindow.document.title);
+            send_history_update(event.state, "popState", $wbwindow.WB_wombat_location.href, $wbwindow.document.title);
         });
     }
 
@@ -843,7 +847,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
                 if (url && (url != $wbwindow.WB_wombat_location.origin && $wbwindow.WB_wombat_location.href != "about:blank") &&
                         !starts_with(url, $wbwindow.WB_wombat_location.origin + "/")) {
-                    throw new DOMException("Invalid history change: " + url);
+                    //throw new DOMException("Invalid history change: " + url);
                 }
             } else {
                 url = $wbwindow.WB_wombat_location.href;
@@ -851,7 +855,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             orig_func.call(this, state_obj, title, rewritten_url);
 
-            send_history_update(url, title);
+            send_history_update(state_obj, func_name, url, title);
         }
 
         $wbwindow.history[func_name] = rewritten_func;
@@ -1219,6 +1223,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
         $wbwindow.Date.parse = orig_parse;
 
         $wbwindow.Date.__WB_timediff = timediff;
+
+        $wbwindow.Date.__WB_ts_now = function(precision) {
+            precision = precision || 14;
+            return new $wbwindow.Date().toISOString().replace(/[^\d]/g, "").substr(0, precision);
+        }
 
         Object.defineProperty($wbwindow.Date.prototype, "constructor", {value: $wbwindow.Date});
     }
@@ -2468,8 +2477,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
         orig_func_to_string.apply = orig_apply;
     }
 
-
-
     //============================================
     function init_open_override()
     {
@@ -3047,7 +3054,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 }
             },
             has: function(target, prop) {
-                return prop in $wbwindow;
+                return Reflect.has(target, prop) || Reflect.has($wbwindow, prop);
+                //return prop in $wbwindow;
             },
             ownKeys: function(target) {
                 return Object.getOwnPropertyNames($wbwindow).concat(Object.getOwnPropertySymbols($wbwindow));
@@ -3055,7 +3063,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             getOwnPropertyDescriptor: function(target, key) {
                 // first try the underlying object's descriptor
                 // (to match defineProperty() behavior)
-                var descriptor =  Object.getOwnPropertyDescriptor(target, key);
+                var descriptor = Object.getOwnPropertyDescriptor(target, key);
                 if (!descriptor) {
                     descriptor = Object.getOwnPropertyDescriptor($wbwindow, key);
                     // if using window's descriptor, must ensure it's configurable
@@ -3137,6 +3145,65 @@ var _WBWombat = function($wbwindow, wbinfo) {
     // End Proxy Obj Override System
 
 
+    function init_history_replay($wbwindow, wbinfo) {
+        if (!wbinfo.history_state) {
+            return;
+        }
+
+        if ($wbwindow.__WB_replay_top != $wbwindow) {
+            return;
+        }
+
+        // replace initial state
+        if (!wbinfo.history_state.init_state) {
+            wbinfo.history_state.init_state = [wbinfo.history_state.base_state || $wbwindow.history.state,
+                                               $wbwindow.document.title,
+                                               wbinfo.history_state.base_url];
+        }
+
+        wbinfo.history_state.init_state[2] = wbinfo.prefix + wbinfo.history_state.base_timestamp + wbinfo.mod + "/" + wbinfo.history_state.init_state[2];
+
+        $wbwindow.history.replaceState.apply($wbwindow.history, wbinfo.history_state.init_state);
+
+        var replayed = false;
+
+        $wbwindow.addEventListener("load", function() {
+            setTimeout(replay, 500);
+        });
+
+        function replay() {
+            if (replayed) {
+                return;
+            }
+
+            if (document.readyState != "complete") {
+                return;
+            }
+
+            replayed = true;
+
+            var states = wbinfo.history_state.states;
+            var lastState = states[states.length - 1][0];
+
+            if ($wbwindow.history.state == lastState) {
+                return;
+            }
+
+            if ($wbwindow.WB_wombat_location.href == states[states.length - 1][2]) {
+                return;
+            }
+
+            for (var i = 0; i < states.length; i++) {
+                //if (states[i][2] == wbinfo.history_state.base_url) {
+                //    continue;
+                //}
+                $wbwindow.history.pushState.apply($wbwindow.history, states[i]);
+            }
+
+            $wbwindow.dispatchEvent(new PopStateEvent('popstate', { state: lastState}));
+        };
+    }
+
     //============================================
     function wombat_init(wbinfo) {
         init_paths(wbinfo);
@@ -3144,6 +3211,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
         init_top_frame($wbwindow);
 
         init_wombat_loc($wbwindow);
+
+        init_history_replay($wbwindow, wbinfo);
 
         // archival mode: init url-rewriting intercepts
         if (!wb_is_proxy) {
@@ -3267,6 +3336,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             init_beacon_override();
         }
 
+
         // other overrides
         // proxy mode: only using these overrides
 
@@ -3321,7 +3391,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
         function notify_top(event) {
             if (!$wbwindow.__WB_top_frame) {
                 var hash = $wbwindow.location.hash;
-
                 //var loc = window.location.href.replace(window.location.hash, "");
                 //loc = decodeURI(loc);
 
@@ -3330,6 +3399,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 $wbwindow.location.replace(wbinfo.top_url + hash);
                 //}
 
+                return;
+            }
+
+            if ($wbwindow != $wbwindow.__WB_replay_top) {
                 return;
             }
 
@@ -3344,13 +3417,16 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
 
             var message = {
+                       "base_url": wbinfo.url,
+                       "base_ts": wbinfo.timestamp,
                        "url": $wbwindow.WB_wombat_location.href,
-                       "ts": wbinfo.timestamp,
+                       "ts": Date.__WB_ts_now(),
                        "request_ts": wbinfo.request_ts,
                        "is_live": wbinfo.is_live,
                        "title": $wbwindow.document ? $wbwindow.document.title : "",
                        "readyState": $wbwindow.document.readyState,
                        "wb_type": "load"
+                       "coll": wbinfo.coll,
             }
 
             send_top_message(message);

@@ -90,6 +90,16 @@ class RewriteInputRequest(DirectWSGIInputRequest):
 
         return headers
 
+    def get_accept_filter(self, url):
+        if not self.rewriter.allow_accept_filter(url):
+            return
+
+        accept = self.env.get('HTTP_ACCEPT')
+        if not accept:
+            return
+
+        return '|'.join(accept.split(', ')[:-1])
+
     def extract_range(self):
         use_206 = False
         start = None

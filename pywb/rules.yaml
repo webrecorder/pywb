@@ -43,6 +43,10 @@ default_filters:
         - match: '[?&](\w*(bust|ts)\w*=1[\d]{12,15})(?=&|$)'
           replace: ''
 
+accept_filter_prefixes:
+    - https://twitter.com/
+
+
 rules:
 
     # twitter rules
@@ -60,7 +64,7 @@ rules:
     - url_prefix: 'com,twitter)/i/videos/tweet'
 
       fuzzy_lookup: '()'
-     
+
 
     # facebook rules
     #=================================================================

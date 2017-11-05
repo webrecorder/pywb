@@ -6,6 +6,10 @@ from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.wsgi import pop_path_info
 from six.moves.urllib.parse import urljoin
 from six import iteritems
+from io import BytesIO
+
+from warcio.timeutils import timestamp_to_iso_date, timestamp_now
+from warcio.timeutils import sec_to_timestamp, timestamp_to_sec
 
 from warcio.utils import to_native_str
 from wsgiprox.wsgiprox import WSGIProxMiddleware
@@ -16,6 +20,7 @@ from pywb.recorder.recorderapp import RecorderApp
 from pywb.utils.loaders import load_yaml_config
 from pywb.utils.geventserver import GeventServer
 from pywb.utils.io import StreamIter
+from pywb.utils.format import query_to_dict
 
 from pywb.warcserver.warcserver import WarcServer
 
@@ -29,6 +34,7 @@ import os
 import traceback
 import requests
 import logging
+import json
 
 
 # ============================================================================
@@ -101,6 +107,73 @@ class FrontEndApp(object):
             self.url_map.add(Rule(coll_prefix + self.RECORD_ROUTE + '/<path:url>', endpoint=self.serve_record))
 
         self.url_map.add(Rule(coll_prefix + '/<path:url>', endpoint=self.serve_content))
+
+        self.url_map.add(Rule('/_/add_waypoint', endpoint=self.serve_add_history))
+
+    def serve_add_history(self, environ):
+        if environ.get('REQUEST_METHOD') != 'POST':
+            res = {'error_message': 'POST required'}
+        else:
+            try:
+                res = self.add_history(environ)
+            except Exception as e:
+                res = {'error_message': str(e)}
+
+        return WbResponse.json_response(res)
+
+    def add_history(self, environ):
+        if not self.recorder_path:
+            return {'error': 'not recording'}
+
+        params = query_to_dict(environ.get('QUERY_STRING'))
+        if 'coll' not in params:
+            return {'error': 'collection required'}
+
+        upstream_url = self.recorder_path + '&put_record=metadata'
+
+        hist_data = environ['wsgi.input'].read()
+
+        hist_json = json.loads(hist_data.decode('utf-8'))
+
+        if not hist_json.get('states'):
+            return {}
+
+        base_url = hist_json.get('base_url')
+
+        final_url = hist_json.get('final_url')
+        if not final_url:
+            final_url = base_url
+
+        upstream_url = upstream_url.format(url=final_url,
+                                           coll=params['coll'].strip())
+
+        now = timestamp_now()
+        if now == hist_json['base_timestamp']:
+            now = sec_to_timestamp(timestamp_to_sec() + 1)
+
+        headers = {'Content-Type': 'application/vnd.pywb-waypoint+json; charset=utf-8',
+                   'WARC-Refers-To-Target-URI': hist_json['base_url'],
+                   'WARC-Refers-To-Date': timestamp_to_iso_date(hist_json['base_timestamp']),
+                   'WARC-Profile': 'history',
+                   'WARC-Target-URI': final_url,
+                   'WARC-Date': timestamp_to_iso_date(now)
+                  }
+
+        r = requests.put(upstream_url,
+                         data=BytesIO(hist_data),
+                         headers=headers,
+                        )
+
+        try:
+            r.raise_for_status()
+            res = r.json()
+
+            assert(res['success'] == 'true')
+            return {}
+
+        except Exception as e:
+            print(e)
+            return {'error_message': 'history save failed'}
 
     def get_upstream_paths(self, port):
         base_paths = {
@@ -268,6 +341,8 @@ class FrontEndApp(object):
 
         if timemap_output:
             metadata['output'] = timemap_output
+
+        environ['pywb.template_params'] = {'coll': coll}
 
         try:
             response = self.rewriterapp.render_content(wb_url_str, metadata, environ)

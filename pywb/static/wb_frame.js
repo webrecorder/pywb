@@ -23,6 +23,14 @@ function ContentFrame(content_info) {
     this.last_url = content_info.url;
     this.last_ts = content_info.request_ts;
 
+    window.wr_history = {
+                         "base_url": content_info.url,
+                         "base_timestamp": content_info.timestamp,
+                         "states": [],
+                         "init_state": null,
+                        };
+
+
     this.init_iframe = function() {
         if (typeof(content_info.iframe) === "string") {
             this.iframe = document.querySelector(content_info.iframe);
@@ -111,13 +119,14 @@ function ContentFrame(content_info) {
         var type = state.wb_type;
 
         if (type == "load" || type == "replace-url") {
-            this.set_url(state);
+            this.set_url(state, type);
+            this.saveHistory(state);
         } else if (type == "hashchange") {
             this.inner_hash_changed(state);
         }
     }
 
-    this.set_url = function(state) {
+    this.set_url = function(state, type) {
         if (state.url && (state.url != this.last_url || state.request_ts != this.last_ts)) {
             var new_url = this.make_url(state.url, state.request_ts, false);
 
@@ -172,5 +181,56 @@ function ContentFrame(content_info) {
     window.__WB_pmw = function(win) {
         this.pm_source = win;
         return this;
+    }
+
+    this.saveHistory = function(message) {
+        if (!message.is_live) {
+            return;
+        }
+
+        var event = [message.state, message.title, message.url];
+
+        if (message.wb_type == "load") {
+            if (window.wr_history.base_timestamp == message.base_ts &&
+                window.wr_history.base_url == message.base_url) {
+                return;
+            }
+
+            window.wr_history.base_timestamp = message.base_ts;
+            window.wr_history.base_url = message.base_url;
+            window.wr_history.states = [];
+            window.wr_history.init_state = event;
+        }
+
+        if (message.change_type == "popState") {
+            window.wr_history.states.pop();
+            return;
+        }
+        
+        if (message.change_type == "pushState" || message.change_type == "replaceState") {
+            if (message.change_type == "replaceState") {
+                if (message.url == window.wr_history.base_url) {
+                    return;
+                }
+
+                if (window.wr_history.states.length == 0) {
+                    window.wr_history.init_state = event;
+                } else {
+                    window.wr_history.states[window.wr_history.states.length - 1] = event;
+                }
+            } else {
+                window.wr_history.states.push(event);
+            }
+            window.wr_history.final_url = message.url;
+        }
+
+        var data = JSON.stringify(window.wr_history);
+        console.log(data);
+
+        var xhr = new XMLHttpRequest();
+        xhr.addEventListener("load", function(res) { console.log(xhr.responseText); });
+        xhr.open("POST", "/_/add_waypoint?coll=" + message.coll);
+        xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+        xhr.send(data);
     }
 }
