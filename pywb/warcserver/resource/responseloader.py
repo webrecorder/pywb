@@ -27,13 +27,43 @@ import json
 import glob
 import datetime
 import logging
+import os
 
 from requests.models import PreparedRequest
-
 import six.moves.http_client
 six.moves.http_client._MAXHEADERS = 10000
 
 logger = logging.getLogger('warcserver')
+
+
+#=============================================================================
+def patch_socks():
+    SOCKS_PORT = os.environ.get('SOCKS_PORT', 9050)
+    import socket
+    import socks
+
+    # Set socks proxy and wrap the urllib module
+    socks.set_default_proxy(socks.PROXY_TYPE_SOCKS5, os.environ.get('SOCKS_HOST'), SOCKS_PORT, True)
+    #socket.socket = socks.socksocket # sets default socket to be the sockipy socket
+
+    # Perform DNS resolution through the socket
+    orig_getaddrinfo = socks.socket.getaddrinfo
+
+    def getaddrinfo(*args):
+        if args[0] in ('127.0.0.1', 'localhost'):
+            res = orig_getaddrinfo(*args)
+
+        else:
+            res = [(socket.AF_INET, socket.SOCK_STREAM, 6, '', (args[0], args[1]))]
+            #res = [(2, 1, 6, '', (args[0], args[1]))]
+
+        return res
+
+    socks.socket.getaddrinfo = getaddrinfo
+
+
+if os.environ.get('SOCKS_HOST'):
+    patch_socks()
 
 
 #=============================================================================
@@ -447,11 +477,20 @@ class LiveWebLoader(BaseLoader):
 
     def _do_request(self, method, load_url, data, req_headers, params, is_live):
         adapter = DefaultAdapters.live_adapter if is_live else DefaultAdapters.remote_adapter
-        pool = adapter.poolmanager
+        #pool = adapter.poolmanager
         max_retries = adapter.max_retries
 
+        if os.environ.get('SOCKS_HOST'):
+            proxies = {'http': 'socks5h://{0}:9050'.format(os.environ['SOCKS_HOST']),
+                       'https': 'socks5h://{0}:9050'.format(os.environ['SOCKS_HOST'])
+                      }
+        else:
+            proxies = None
+
+        conn = adapter.get_connection(load_url, proxies)
+
         try:
-            upstream_res = pool.urlopen(method=method,
+            upstream_res = conn.urlopen(method=method,
                                         url=load_url,
                                         body=data,
                                         headers=req_headers,
@@ -465,6 +504,8 @@ class LiveWebLoader(BaseLoader):
             return upstream_res
 
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             logger.debug('FAILED: ' + method + ' ' + load_url + ': ' + str(e))
             raise LiveResourceException(load_url)
 
