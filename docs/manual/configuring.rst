@@ -158,7 +158,7 @@ The top-frame used for framed replay can be replaced or augmented
 by modifiying the ``frame_insert.html``.
 
 To start with modifiying the default outer page, you can add it to the current
-templates directory by running ``wb-frame template --add frame_insert.html``
+templates directory by running ``wb-manager template --add frame_insert_html``
 
 To initialize the replay, the outer page should include ``wb_frame.js``,
 create an ``<iframe>`` element and pass the id (or element itself) to the ``ContentFrame`` constructor:
