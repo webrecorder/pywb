@@ -27,6 +27,10 @@ class RegexRewriter(StreamingRewriter):
         return lambda string: prefix + string
 
     @staticmethod
+    def add_suffix(suffix):
+        return lambda string: string + suffix
+
+    @staticmethod
     def archival_rewrite(rewriter):
         return lambda string: rewriter.rewrite(string)
 
@@ -174,6 +178,8 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
 
     THIS_RW = '(this && this._WB_wombat_obj_proxy || this)'
 
+    CHECK_LOC = '(self.__WB_check_loc && self.__WB_check_loc(location) || {}).href = '
+
     @classmethod
     def replace_str(cls, replacer):
         return lambda x: x.replace('this', replacer)
@@ -184,7 +190,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
 
         rules = rules + [
            (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
-           (r'(?<!\.)\blocation\b[=]\s*(?![=])', self.add_prefix('WB_wombat_'), 0),
+           (r'(?<!\.)\blocation\b\s*[=]\s*(?![=])', self.add_suffix(self.CHECK_LOC), 0),
            (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(self.THIS_RW), 0),
            (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + self.THIS_RW), 0),
            (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(self.THIS_RW), 0),

@@ -2068,6 +2068,15 @@ var _WBWombat = function($wbwindow, wbinfo) {
         } catch(e) {
 
         }
+
+
+        win.__WB_check_loc = function(loc) {
+            if ((loc instanceof Location) || (loc instanceof WombatLocation)) {
+                return this.WB_wombat_location;
+            } else {
+                return {}
+            }
+        }
     }
 
     //============================================

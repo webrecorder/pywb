@@ -131,10 +131,13 @@ r"""
 #=================================================================
 
 >>> _test_js_obj_proxy('var foo = this;   location = bar')
-'var foo = (this && this._WB_wombat_obj_proxy || this);   location = bar'
+'var foo = (this && this._WB_wombat_obj_proxy || this);   location = (self.__WB_check_loc && self.__WB_check_loc(location) || {}).href = bar'
 
 >>> _test_js_obj_proxy('var that =    this\n   location = bar')
-'var that =    (this && this._WB_wombat_obj_proxy || this)\n   location = bar'
+'var that =    (this && this._WB_wombat_obj_proxy || this)\n   location = (self.__WB_check_loc && self.__WB_check_loc(location) || {}).href = bar'
+
+>>> _test_js_obj_proxy('location = "xyz"')
+'location = (self.__WB_check_loc && self.__WB_check_loc(location) || {}).href = "xyz"'
 
 >>> _test_js_obj_proxy('var foo = this.location')
 'var foo = (this && this._WB_wombat_obj_proxy || this).location'
