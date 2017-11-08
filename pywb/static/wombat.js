@@ -1689,6 +1689,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             if (mod == "cs_" && orig.indexOf("data:text/css") == 0) {
                 val = rewrite_inline_style(orig);
+            } else if (attr == "srcset") {
+                val = rewrite_srcset(orig);
             } else {
                 val = rewrite_url(orig, false, mod);
             }
@@ -1752,6 +1754,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_attr($wbwindow.HTMLLinkElement.prototype, "href", "cs_");
         override_attr($wbwindow.CSSStyleSheet.prototype, "href", "cs_");
         override_attr($wbwindow.HTMLImageElement.prototype, "src", "im_");
+        override_attr($wbwindow.HTMLImageElement.prototype, "srcset", "im_");
         override_attr($wbwindow.HTMLIFrameElement.prototype, "src", "if_");
         override_attr($wbwindow.HTMLScriptElement.prototype, "src", "js_");
         override_attr($wbwindow.HTMLVideoElement.prototype, "src", "oe_");
