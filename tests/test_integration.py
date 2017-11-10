@@ -350,6 +350,12 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.status_int == 200
         assert resp.headers['Content-Location'].endswith('/pywb/20140126200928{0}/http://www.iana.org/domains/root/db'.format(fmod))
 
+    def test_non_exact_replay_skip_self_redir_slash(self, fmod):
+        uri = '/pywb/20140126200927{0}/http://www.iana.org/domains/root/db/'
+        resp = self.get(uri, fmod)
+        assert resp.status_int == 200
+        assert resp.headers['Content-Location'].endswith('/pywb/20140126200928{0}/http://www.iana.org/domains/root/db'.format(fmod))
+
     def test_not_existant_warc_other_capture(self, fmod):
         resp = self.get('/pywb/20140703030321{0}/http://example.com/?example=2', fmod)
         assert resp.status_int == 200

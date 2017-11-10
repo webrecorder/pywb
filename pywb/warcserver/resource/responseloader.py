@@ -139,8 +139,8 @@ class BaseLoader(object):
             host = urlsplit(cdx['url']).netloc
             location_url = host + location_url
 
-        location_url = location_url.split('://', 1)[-1]
-        request_url = request_url.split('://', 1)[-1]
+        location_url = location_url.split('://', 1)[-1].rstrip('/')
+        request_url = request_url.split('://', 1)[-1].rstrip('/')
 
         if request_url == location_url:
             msg = 'Self Redirect {0} -> {1}'
