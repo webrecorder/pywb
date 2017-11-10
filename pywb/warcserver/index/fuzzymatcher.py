@@ -102,8 +102,12 @@ class FuzzyMatcher(object):
         inx = url.find(matched_rule.replace_after)
         if inx > 0:
             length = inx + len(matched_rule.replace_after)
+            # don't include trailing '?' for default filter
             if no_filters:
                 length -= 1
+                # don't include trailing '/' if match '/?'
+                if url[length - 1] == '/':
+                    length -= 1
             url = url[:length]
         elif not no_filters:
             url += matched_rule.replace_after[0]
