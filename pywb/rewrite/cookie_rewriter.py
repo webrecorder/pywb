@@ -7,14 +7,14 @@ import re
 class WbUrlBaseCookieRewriter(object):
     """ Base Cookie rewriter for wburl-based requests.
     """
-    UTC_RX = re.compile('((?:.*)Expires=(?:.*))UTC', re.I)
+    REMOVE_EXPIRES = re.compile('[;]\s*?expires=.{4}[^,;]+', re.I)
 
     def __init__(self, url_rewriter):
         self.url_rewriter = url_rewriter
 
     def rewrite(self, cookie_str, header='Set-Cookie'):
         results = []
-        cookie_str = self.UTC_RX.sub('\\1GMT', cookie_str)
+        cookie_str = self.REMOVE_EXPIRES.sub('', cookie_str)
         try:
             cookie = SimpleCookie(cookie_str)
         except CookieError:

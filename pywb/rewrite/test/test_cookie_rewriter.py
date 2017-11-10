@@ -89,38 +89,45 @@ def rewrite_cookie(cookie_str, rewriter=urlrewriter, scope='default'):
     return cookie_rewriter(rewriter).rewrite(cookie_str)
 
 
+# ============================================================================
 @pytest.mark.skipif(sys.version_info < (2,7), reason='Unsupported')
-def test_with_expires():
-    # keep expires
-    res = rewrite_cookie('abc=def; Path=/file.html; Expires=Wed, 13 Jan 2021 22:23:01 GMT', urlrewriter2, 'coll')
-    assert len(res) == 1
-    assert res[0][1].lower() == 'abc=def; expires=wed, 13 jan 2021 22:23:01 gmt; path=/preview/em_/http://example.com/file.html'
+class TestCookies(object):
+    def test_remove_expires(self):
+        res = rewrite_cookie('abc=def; Path=/file.html; Expires=Wed, 13 Jan 2021 22:23:01 GMT', urlrewriter2, 'coll')
+        assert len(res) == 1
+        assert res[0][1].lower() == 'abc=def; path=/preview/em_/http://example.com/file.html'
 
-@pytest.mark.skipif(sys.version_info < (2,7), reason='Unsupported')
-def test_with_expires_utc_replace():
-    # keep expires, UTC->GMT
-    res = rewrite_cookie('abc=def; Path=/file.html; Expires=Wed, 13 Jan 2021 22:23:01 UTC', urlrewriter2, 'coll')
-    assert len(res) == 1
-    assert res[0][1].lower() == 'abc=def; expires=wed, 13 jan 2021 22:23:01 gmt; path=/preview/em_/http://example.com/file.html'
+    def test_remove_expires_2(self):
+        res = rewrite_cookie('abc=def; Path=/file.html; Expires=Wed, 13 Jan 2021 22:23:01 UTC', urlrewriter2, 'coll')
+        assert len(res) == 1
+        assert res[0][1].lower() == 'abc=def; path=/preview/em_/http://example.com/file.html'
 
+    def test_remove_expires_3(self):
+        res = rewrite_cookie('abc=def; Path=/file.html; Expires=Wed, 13 Jan 2021 22:23:01 GMT; httponly; Max-Age=100', urlrewriter2, 'coll')
+        assert len(res) == 1
+        assert res[0][1].lower() == 'abc=def; httponly; max-age=100; path=/preview/em_/http://example.com/file.html'
 
-@pytest.mark.skipif(sys.version_info < (2,7), reason='Unsupported')
-def test_http_secure_flag():
-    res = rewrite_cookie('some=value; Domain=.example.com; Secure; Path=/diff/path/; HttpOnly; Max-Age=1500', urlrewriter, 'host')
-    assert len(res) == 1
-    assert res[0][1].lower() == 'some=value; httponly; path=/pywb/20131226101010/http://example.com/'
+    def test_remove_expires_4(self):
+        res = rewrite_cookie('abc=def; Path=/file.html; Expires=Wed, 13 Jan 2021 22:23:01 GMT, foo=bar', urlrewriter2, 'coll')
+        assert len(res) == 2
+        res = sorted(res)
+        assert res[0][1].lower() == 'abc=def; path=/preview/em_/http://example.com/file.html,'
+        assert res[1][1].lower() == 'foo=bar'
 
-@pytest.mark.skipif(sys.version_info < (2,7), reason='Unsupported')
-def test_secure_flag_remove():
-    # Secure Remove
-    res = rewrite_cookie('abc=def; Path=/file.html; HttpOnly; Secure', urlrewriter2, 'coll')
-    assert len(res) == 1
-    assert res[0][1].lower() == 'abc=def; httponly; path=/preview/em_/http://example.com/file.html'
+    def test_http_secure_flag(self):
+        res = rewrite_cookie('some=value; Domain=.example.com; Secure; Path=/diff/path/; HttpOnly; Max-Age=1500', urlrewriter, 'host')
+        assert len(res) == 1
+        assert res[0][1].lower() == 'some=value; httponly; path=/pywb/20131226101010/http://example.com/'
 
-@pytest.mark.skipif(sys.version_info < (2,7), reason='Unsupported')
-def test_secure_flag_keep():
-    # Secure Keep
-    res = rewrite_cookie('abc=def; Path=/file.html; HttpOnly; Secure', urlrewriter3, 'coll')
-    assert res[0][1].lower() == 'abc=def; httponly; path=/preview/em_/http://example.com/file.html; secure'
+    def test_secure_flag_remove(self):
+        # Secure Remove
+        res = rewrite_cookie('abc=def; Path=/file.html; HttpOnly; Secure', urlrewriter2, 'coll')
+        assert len(res) == 1
+        assert res[0][1].lower() == 'abc=def; httponly; path=/preview/em_/http://example.com/file.html'
+
+    def test_secure_flag_keep(self):
+        # Secure Keep
+        res = rewrite_cookie('abc=def; Path=/file.html; HttpOnly; Secure', urlrewriter3, 'coll')
+        assert res[0][1].lower() == 'abc=def; httponly; path=/preview/em_/http://example.com/file.html; secure'
 
 
