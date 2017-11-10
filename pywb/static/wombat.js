@@ -3071,7 +3071,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var states = wbinfo.history_state.states;
             var lastState = states[states.length - 1][0];
 
-            if ($wbwindow.history.state == lastState) {
+            //if ($wbwindow.history.state == lastState) {
+            //    return;
+            //}
+            if ($wbwindow.WB_wombat_location.href == states[states.length - 1][2]) {
                 return;
             }
 
