@@ -15,6 +15,7 @@ from pywb.recorder.recorderapp import RecorderApp
 
 from pywb.utils.loaders import load_yaml_config
 from pywb.utils.geventserver import GeventServer
+from pywb.utils.io import StreamIter
 
 from pywb.warcserver.warcserver import WarcServer
 
@@ -231,7 +232,11 @@ class FrontEndApp(object):
 
         try:
             res = requests.get(cdx_url, stream=True)
-            return WbResponse.bin_stream(res.raw, content_type=res.headers.get('Content-Type'))
+
+            content_type = res.headers.get('Content-Type')
+
+            return WbResponse.bin_stream(StreamIter(res.raw),
+                                         content_type=content_type)
 
         except Exception as e:
             return WbResponse.text_response('Error: ' + str(e), status='400 Bad Request')
