@@ -539,40 +539,18 @@ class RewriterApp(object):
                                         content_type=content_type,
                                         status=status)
 
-    def handle_query(self, environ, wb_url, kwargs, full_prefix):
-        res = self.do_query(wb_url, kwargs)
-
+    def handle_timemap(self, wb_url, kwargs, full_prefix):
         output = kwargs.get('output')
-        if output:
-            return self.make_timemap(wb_url, res, full_prefix, output)
+        res = self.do_query(wb_url, kwargs)
+        return self.make_timemap(wb_url, res, full_prefix, output)
 
-        def format_cdx(text):
-            cdx_lines = text.rstrip().split('\n')
-            for cdx in cdx_lines:
-                if not cdx:
-                    continue
-
-                cdx = json.loads(cdx)
-                self.process_query_cdx(cdx, wb_url, kwargs)
-                yield cdx
-
+    def handle_query(self, environ, wb_url, kwargs, full_prefix):
         prefix = self.get_full_prefix(environ)
 
         params = dict(url=wb_url.url,
-                      prefix=prefix,
-                      cdx_lines=list(format_cdx(res.text)))
-
-        extra_params = self.get_query_params(wb_url, kwargs)
-        if extra_params:
-            params.update(extra_params)
+                      prefix=prefix)
 
         return self.query_view.render_to_string(environ, **params)
-
-    def process_query_cdx(self, cdx, wb_url, kwargs):
-        return
-
-    def get_query_params(self, wb_url, kwargs):
-        return None
 
     def get_host_prefix(self, environ):
         scheme = environ['wsgi.url_scheme'] + '://'
@@ -648,7 +626,10 @@ class RewriterApp(object):
         return None
 
     def handle_custom_response(self, environ, wb_url, full_prefix, host_prefix, kwargs):
-        if wb_url.is_query() or kwargs.get('output'):
+        if kwargs.get('output'):
+            return self.handle_timemap(wb_url, kwargs, full_prefix)
+
+        if wb_url.is_query():
             return self.handle_query(environ, wb_url, kwargs, full_prefix)
 
         if self.is_framed_replay(wb_url):

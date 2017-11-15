@@ -33,14 +33,14 @@ class TestWbIntegration(BaseConfigTest):
         resp = self.testapp.get('/pywb/*/iana.org')
         self._assert_basic_html(resp)
         # 3 Captures + header
-        assert len(resp.html.find_all('tr')) == 4
+        #assert len(resp.html.find_all('tr')) == 4
 
     def test_calendar_query_2(self):
         # unfiltered collection
         resp = self.testapp.get('/pywb/*/http://www.iana.org/_css/2013.1/screen.css')
         self._assert_basic_html(resp)
         # 17 Captures + header
-        assert len(resp.html.find_all('tr')) == 18
+        #assert len(resp.html.find_all('tr')) == 18
 
         # filtered collection
         #resp = self.testapp.get('/pywb-filt/*/http://www.iana.org/_css/2013.1/screen.css')
@@ -48,35 +48,29 @@ class TestWbIntegration(BaseConfigTest):
         # 1 Capture (filtered) + header
         #assert len(resp.html.find_all('tr')) == 2
 
-    def test_calendar_query_fuzzy_match(self):
+    def test_cdxj_query_fuzzy_match(self):
         # fuzzy match removing _= according to standard rules.yaml
-        resp = self.testapp.get('/pywb/*/http://www.iana.org/_css/2013.1/screen.css?_=3141592653')
-        self._assert_basic_html(resp)
-        # 17 Captures + header
-        assert len(resp.html.find_all('tr')) == 18
+        resp = self.testapp.get('/pywb/cdx?url=http://www.iana.org/_css/2013.1/screen.css%3F_=3141592653')
+        assert len(resp.text.rstrip().split('\n')) == 17
 
-    def test_calendar_query_fuzzy_match_add_slash(self):
+    def test_cdxj_query_fuzzy_match_add_slash(self):
         # fuzzy match removing _= according to standard rules.yaml
-        resp = self.testapp.get('/pywb/*/http://www.iana.org/_css/2013.1/screen.css/?_=3141592653')
-        self._assert_basic_html(resp)
+        resp = self.testapp.get('/pywb/cdx?url=http://www.iana.org/_css/2013.1/screen.css/%3F_=3141592653')
         # 17 Captures + header
-        assert len(resp.html.find_all('tr')) == 18
+        assert len(resp.text.rstrip().split('\n')) == 17
 
-    def test_calendar_not_found(self):
+    def test_cdxj_not_found(self):
         # query with no results
-        resp = self.testapp.get('/pywb/*/http://not-exist.example.com')
-        self._assert_basic_html(resp)
-        assert 'No captures found' in resp.text, resp.text
-        assert len(resp.html.find_all('tr')) == 0
+        resp = self.testapp.get('/pywb/cdx?url=http://not-exist.example.com')
+        assert resp.text == ''
 
-    def _test_cdx_query(self):
-        resp = self.testapp.get('/pywb/cdx_/*/http://www.iana.org/')
-        self._assert_basic_text(resp)
+    def test_cdxj_query(self):
+        resp = self.testapp.get('/pywb/cdx?url=http://www.iana.org/')
 
-        assert '20140127171238 http://www.iana.org/ warc/revisit - OSSAPWJ23L56IYVRW3GFEAR4MCJMGPTB' in resp
+        assert 'org,iana)/ 20140126200624 {"url": "http://www.iana.org/", "mime": "text/html", "status": "200", "digest": "OSSAPWJ23L56IYVRW3GFEAR4MCJMGPTB"' in resp.text
+
         # check for 3 cdx lines (strip final newline)
-        actual_len = len(str(resp.text).rstrip().split('\n'))
-        assert actual_len == 3, actual_len
+        assert len(resp.text.rstrip().split('\n')) == 3
 
     def test_replay_top_frame(self):
         resp = self.testapp.get('/pywb/20140127171238/http://www.iana.org/')
@@ -165,14 +159,6 @@ class TestWbIntegration(BaseConfigTest):
         # not actually archived, but ensure video info path is tested
         resp = self.testapp.get('/pywb/vi_/https://www.youtube.com/watch?v=DjFZyFWSt1M', status=404)
         assert resp.status_int == 404
-
-    def _test_replay_cdx_mod(self):
-        resp = self.testapp.get('/pywb/20140127171239cdx_/http://www.iana.org/_css/2013.1/print.css')
-        self._assert_basic_text(resp)
-
-        lines = resp.text.rstrip().split('\n')
-        assert len(lines) == 17
-        assert lines[0].startswith('org,iana)/_css/2013.1/print.css 20140127171239')
 
     def test_replay_banner_only(self):
         resp = self.testapp.get('/pywb/20140126201054bn_/http://www.iana.org/domains/reserved')
