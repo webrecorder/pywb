@@ -248,6 +248,10 @@ class FrontEndApp(object):
         return self.serve_content(environ, coll, url, record=True)
 
     def serve_content(self, environ, coll='$root', url='', timemap_output='', record=False):
+        src_coll = ''
+        if ':' in coll:
+            coll, src_coll = coll.split(':', 1)
+
         if not self.is_valid_coll(coll):
             self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
 
@@ -264,6 +268,9 @@ class FrontEndApp(object):
 
         if timemap_output:
             metadata['output'] = timemap_output
+
+        if src_coll:
+            metadata['src_coll'] = src_coll
 
         try:
             response = self.rewriterapp.render_content(wb_url_str, metadata, environ)
@@ -300,9 +307,6 @@ class FrontEndApp(object):
         return WbResponse.json_response(result)
 
     def is_valid_coll(self, coll):
-        #if coll == self.all_coll:
-        #    return True
-
         return (coll in self.warcserver.list_fixed_routes() or
                 coll in self.warcserver.list_dynamic_routes())
 

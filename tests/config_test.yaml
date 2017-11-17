@@ -31,6 +31,15 @@ collections:
     pywb-cdxj:
         index_paths: ./sample_archive/cdxj/
 
+
+    ait:
+        index:
+            type: cdx
+            api_url: https://wayback.archive-it.org/cdx?url={url}&closest={closest}&sort=closest&filter=filename:ARCHIVEIT-({src_coll})-.*
+            replay_url: http://wayback.archive-it.org/{src_coll}/{timestamp}id_/{url}
+
+
+
 archive_paths:
     - ./invalid/path/to/ignore/
     - ./sample_archive/warcs/

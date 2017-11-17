@@ -484,6 +484,10 @@ class RewriterApp(object):
         params['closest'] = closest
         params['matchType'] = 'exact'
 
+        src_coll = kwargs.get('src_coll')
+        if src_coll:
+            params['src_coll'] = src_coll
+
         if wb_url.mod == 'vi_':
             params['content_type'] = self.VIDEO_INFO_CONTENT_TYPE
 

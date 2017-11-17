@@ -300,6 +300,14 @@ class TestWbIntegration(BaseConfigTest):
         assert 'timestamp = "20140127171238"' in resp.text
         assert '/pywb/20140127171237{0}/http://www.iana.org/about/'.format(fmod) in resp.text
 
+    def test_replay_remote_ait(self, fmod):
+        resp = self.get('/ait:1068/2011{0}/http://www.iana.org/domains/example/', fmod)
+        self._assert_basic_html(resp)
+
+        assert '"20120119230023"' in resp.text, resp.text
+        assert '<h1>Example Domains</h1>' in resp.text
+        assert 'new _WBWombat' in resp.text, resp.text
+
     def test_latest_replay(self, fmod):
         fmod_slash = fmod + '/' if fmod else ''
         resp = self.get('/pywb/{0}http://example.com/', fmod_slash)
@@ -483,7 +491,7 @@ class TestWbIntegration(BaseConfigTest):
         resp = self.testapp.get('/collinfo.json')
         assert resp.content_type == 'application/json'
         value = resp.json
-        assert len(value['fixed']) == 4
+        assert len(value['fixed']) == 5
         assert len(value['dynamic']) == 0
 
    #def test_invalid_config(self):

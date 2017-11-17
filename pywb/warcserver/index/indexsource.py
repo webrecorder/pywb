@@ -143,9 +143,13 @@ class RemoteIndexSource(BaseIndexSource):
         if name:
             source_coll = params.get('param.' + name + '.src_coll', '')
 
+        if not source_coll:
+            source_coll = params.get('src_coll', '')
+
         cdx[self.url_field] = self.replay_url.format(url=cdx['url'],
                                                      timestamp=cdx['timestamp'],
                                                      src_coll=source_coll)
+
     def __repr__(self):
         return '{0}({1}, {2})'.format(self.__class__.__name__,
                                       self.api_url,
