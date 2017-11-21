@@ -242,6 +242,15 @@ rules:
               replace: '"WB_wombat_location"'
 
 
+    # readspeaker
+    #=================================================================
+
+    - url_prefix: 'com,readspeaker,app)/enterprise/iframeproxy'
+
+      fuzzy_lookup:
+          - readid
+          - audioformat
+
     # medium
     #=================================================================
 
