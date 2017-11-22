@@ -11,7 +11,7 @@ from pywb.rewrite.url_rewriter import UrlRewriter, IdentityUrlRewriter
 from pywb.utils.wbexception import WbException
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.loaders import extract_client_cookie
-from pywb.utils.io import BUFF_SIZE
+from pywb.utils.io import BUFF_SIZE, OffsetLimitReader
 from pywb.utils.memento import MementoUtils
 
 from warcio.timeutils import http_date_to_timestamp, timestamp_to_http_date
@@ -134,6 +134,72 @@ class RewriterApp(object):
 
         return is_timegate
 
+    def _check_range(self, inputreq, wb_url):
+        skip_record = False
+        range_start = None
+        range_end = None
+
+        rangeres = inputreq.extract_range()
+
+        if not rangeres:
+            return range_start, range_end, skip_record
+
+        mod_url, start, end, use_206 = rangeres
+
+        # remove the range and still proxy
+        if not use_206:
+            return range_start, range_end, skip_record
+
+        wb_url.url = mod_url
+        inputreq.url = mod_url
+
+        range_start = start
+        range_end = end
+
+        # disable rewriting
+        wb_url.mod = 'id_'
+
+        #if start with 0, load from upstream, but add range after
+        if start == 0:
+            del inputreq.env['HTTP_RANGE']
+        else:
+            skip_record = True
+
+        return range_start, range_end, skip_record
+
+    def _add_range(self, record, wb_url, range_start, range_end):
+        if range_end is None and range_start is None:
+            return
+
+        if record.http_headers.get_statuscode() != '200':
+            return
+
+        content_length = (record.http_headers.
+                          get_header('Content-Length'))
+        try:
+            content_length = int(content_length)
+            if not range_end:
+                range_end = content_length - 1
+
+            if range_start >= content_length or range_end >= content_length:
+                details = 'Invalid Range: {0} >= {2} or {1} >= {2}'.format(range_start, range_end, content_length)
+                try:
+                    r.raw.close()
+                except:
+                    pass
+
+                raise UpstreamException(416, url=wb_url.url, details=details)
+
+            range_len = range_end - range_start + 1
+            record.http_headers.add_range(range_start, range_len,
+                                          content_length)
+
+            record.http_headers.replace_header('Content-Length', str(range_len))
+
+            record.raw_stream = OffsetLimitReader(record.raw_stream, range_start, range_len)
+        except (ValueError, TypeError):
+            pass
+
     def render_content(self, wb_url, kwargs, environ):
         wb_url = wb_url.replace('#', '%23')
         wb_url = WbUrl(wb_url)
@@ -191,31 +257,7 @@ class RewriterApp(object):
 
         inputreq.include_method_query(wb_url.url)
 
-        mod_url = None
-        use_206 = False
-        rangeres = None
-
-        readd_range = False
-        async_record_url = None
-
-        if kwargs.get('type') in ('record', 'patch'):
-            rangeres = inputreq.extract_range()
-
-            if rangeres:
-                mod_url, start, end, use_206 = rangeres
-
-                # if bytes=0- Range request,
-                # simply remove the range and still proxy
-                if start == 0 and not end and use_206:
-                    wb_url.url = mod_url
-                    inputreq.url = mod_url
-
-                    del environ['HTTP_RANGE']
-                    readd_range = True
-                else:
-                    async_record_url = mod_url
-
-        skip = async_record_url is not None
+        range_start, range_end, skip_record = self._check_range(inputreq, wb_url)
 
         setcookie_headers = None
         if self.cookie_tracker:
@@ -223,7 +265,7 @@ class RewriterApp(object):
             res = self.cookie_tracker.get_cookie_headers(wb_url.url, urlrewriter, cookie_key)
             inputreq.extra_cookie, setcookie_headers = res
 
-        r = self._do_req(inputreq, wb_url, kwargs, skip)
+        r = self._do_req(inputreq, wb_url, kwargs, skip_record)
 
         if r.status_code >= 400:
             error = None
@@ -240,17 +282,6 @@ class RewriterApp(object):
 
             details = dict(args=kwargs, error=error)
             raise UpstreamException(r.status_code, url=wb_url.url, details=details)
-
-        if async_record_url:
-            environ.pop('HTTP_RANGE', '')
-            new_wb_url = copy(wb_url)
-            new_wb_url.url = async_record_url
-
-            gevent.spawn(self._do_async_req,
-                         inputreq,
-                         new_wb_url,
-                         kwargs,
-                         False)
 
         stream = BufferedReader(r.raw, block_size=BUFF_SIZE)
         record = self.loader.parse_record_stream(stream,
@@ -295,17 +326,10 @@ class RewriterApp(object):
 
         self._add_custom_params(cdx, r.headers, kwargs)
 
-        if readd_range and record.http_headers.get_statuscode() == '200':
-            content_length = (record.http_headers.
-                              get_header('Content-Length'))
-            try:
-                content_length = int(content_length)
-                record.http_headers.add_range(0, content_length,
-                                                   content_length)
-            except (ValueError, TypeError):
-                pass
+        self._add_range(record, wb_url, range_start, range_end)
 
         is_ajax = self.is_ajax(environ)
+
         if is_ajax:
             head_insert_func = None
             urlrewriter.rewrite_opts['is_ajax'] = True
@@ -326,6 +350,7 @@ class RewriterApp(object):
                                                                cookie_key)
 
         urlrewriter.rewrite_opts['ua_string'] = environ.get('HTTP_USER_AGENT')
+
         result = content_rw(record, urlrewriter, cookie_rewriter, head_insert_func, cdx)
 
         status_headers, gen, is_rw = result
@@ -424,25 +449,6 @@ class RewriterApp(object):
         top_url += wb_url.to_str(mod='')
         return top_url
 
-    def _do_async_req(self, *args):
-        count = 0
-        try:
-            r = self._do_req(*args)
-            while True:
-                buff = r.raw.read(8192)
-                count += len(buff)
-                if not buff:
-                    return
-        except:
-            import traceback
-            traceback.print_exc()
-
-        finally:
-            try:
-                r.raw.close()
-            except:
-                pass
-
     def handle_error(self, environ, ue):
         if ue.status_code == 404:
             return self._not_found_response(environ, ue.url)
@@ -465,13 +471,13 @@ class RewriterApp(object):
         return WbResponse.text_response(resp, status=status, content_type='text/html')
 
 
-    def _do_req(self, inputreq, wb_url, kwargs, skip):
+    def _do_req(self, inputreq, wb_url, kwargs, skip_record):
         req_data = inputreq.reconstruct_request(wb_url.url)
 
         headers = {'Content-Length': str(len(req_data)),
                    'Content-Type': 'application/request'}
 
-        if skip:
+        if skip_record:
             headers['Recorder-Skip'] = '1'
 
         if wb_url.is_latest_replay():
