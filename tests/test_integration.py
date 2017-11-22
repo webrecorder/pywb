@@ -189,42 +189,6 @@ class TestWbIntegration(BaseConfigTest):
         # original unrewritten url present
         assert '"http://www.iana.org/domains/example"' in resp.text
 
-    def _test_replay_range_cache_content(self):
-        headers = [('Range', 'bytes=0-200')]
-        resp = self.testapp.get('/pywb/20140127171250id_/http://example.com', headers=headers)
-
-        assert resp.status_int == 206
-        assert resp.headers['Accept-Ranges'] == 'bytes'
-        assert resp.headers['Content-Range'] == 'bytes 0-200/1270', resp.headers['Content-Range']
-        assert resp.content_length == 201, resp.content_length
-
-        assert 'wombat.js' not in resp.text
-
-    def _test_replay_content_ignore_range(self):
-        headers = [('Range', 'bytes=0-200')]
-        resp = self.testapp.get('/pywb-norange/20140127171251id_/http://example.com', headers=headers)
-
-        # range request ignored
-        assert resp.status_int == 200
-
-        # full response
-        assert resp.content_length == 1270, resp.content_length
-
-        # identity, no header insertion
-        assert 'wombat.js' not in resp.text
-
-    def _test_replay_range_cache_content_bound_end(self):
-        headers = [('Range', 'bytes=10-10000')]
-        resp = self.testapp.get('/pywb/20140127171251id_/http://example.com', headers=headers)
-
-        assert resp.status_int == 206
-        assert resp.headers['Accept-Ranges'] == 'bytes'
-        assert resp.headers['Content-Range'] == 'bytes 10-1269/1270', resp.headers['Content-Range']
-        assert resp.content_length == 1260, resp.content_length
-        assert len(resp.text) == resp.content_length
-
-        assert 'wombat.js' not in resp.text
-
     def _test_replay_redir_no_cache(self):
         headers = [('Range', 'bytes=10-10000')]
         # Range ignored

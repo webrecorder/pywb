@@ -2,6 +2,7 @@ import zlib
 from contextlib import closing, contextmanager
 
 from warcio.utils import BUFF_SIZE
+from warcio.limitreader import LimitReader
 from tempfile import SpooledTemporaryFile
 
 
@@ -76,4 +77,28 @@ def compress_gzip_iter(orig_iter):
 
     yield compressobj.flush()
 
+
+# ============================================================================
+class OffsetLimitReader(LimitReader):
+    def __init__(self, stream, offset, length):
+        super(OffsetLimitReader, self).__init__(stream, length)
+        self.offset = offset
+        if offset > 0:
+            self._skip_reader = LimitReader(stream, offset)
+        else:
+            self._skip_reader = None
+
+    def _skip(self):
+        while self._skip_reader:
+            buff = self._skip_reader.read()
+            if not buff:
+                self._skip_reader = None
+
+    def read(self, length=None):
+        self._skip()
+        return super(OffsetLimitReader, self).read(length)
+
+    def readline(self, length=None):
+        self._skip()
+        return super(OffsetLimitReader, self).readline(length)
 
