@@ -185,10 +185,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
                         "http:/" + prefix, "https:/" + prefix];
     }
 
-    var SRC_TAGS = ["IFRAME", "IMG", "SCRIPT", "VIDEO", "AUDIO", "SOURCE", "EMBED", "INPUT"];
-
-    var HREF_TAGS = ["LINK", "A"];
-
     var URL_PROPS = ["href", "hash", "pathname", "host", "hostname", "protocol", "origin", "search", "port"];
 
 
@@ -1345,7 +1341,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
     //============================================
     function rewrite_style(value)
     {
-        STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
+        var STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
+
+        var IMPORT_REGEX = /(@import\s+[\\"']*)([^)'";]+)([\\"']*\s*;?)/gi;
 
         function style_replacer(match, n1, n2, n3, offset, string) {
             return n1 + rewrite_url(n2) + n3;
@@ -1361,6 +1359,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         if (typeof(value) === "string") {
             value = value.replace(STYLE_REGEX, style_replacer);
+            value = value.replace(IMPORT_REGEX, style_replacer);
             value = value.replace(/WB_wombat_/g, '');
         }
 
@@ -1486,8 +1485,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             changed = rewrite_attr(elem, "data", true);
         } else if (elem.tagName == "FORM") {
             changed = rewrite_attr(elem, "action", true);
-        } else if (elem.tagName == "INPUT") {
-            changed = rewrite_attr(elem, "value", true);
+        //} else if (elem.tagName == "INPUT") {
+        //    changed = rewrite_attr(elem, "value", true);
         } else if (elem.tagName == "IFRAME" || elem.tagName == "FRAME") {
             changed = rewrite_frame_src(elem, "src");
         } else if (elem.tagName == "SCRIPT") {
