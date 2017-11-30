@@ -262,6 +262,18 @@ rules:
               replace: '"noitacol_tabmow_BW"'
 
 
+    # soundcloud
+    #=================================================================
+
+    - url_prefix: 'com,soundcloud,api)/i1/tracks/'
+
+      rewrite:
+        live_only: true
+        js_regexs:
+            - match: '"hls'
+              replace: '"__hls'
+
+
     # vimeo rules
     #=================================================================
 
