@@ -1,0 +1,1 @@
+org,httpbin)/anything/resource.json 20171130220904 {"filename":"httpbin-resource.warc.gz","digest":"UQ3W6RIQVJO6ZEL55355BJODG2DMWBPH","length":"465","offset":"0","mime":"application/json","url":"http://httpbin.org/anything/resource.json"}

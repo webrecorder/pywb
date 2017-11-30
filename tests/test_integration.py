@@ -101,6 +101,10 @@ class TestWbIntegration(BaseConfigTest):
         csp = "default-src 'unsafe-eval' 'unsafe-inline' 'self' data: blob: mediastream: ws: wss: ; form-action 'self'"
         assert resp.headers['Content-Security-Policy'] == csp
 
+    def test_replay_resource(self, fmod):
+        resp = self.get('/pywb/20171122230223{0}/http://httpbin.org/anything/resource.json', fmod)
+        assert resp.headers['Content-Type'] == 'application/json'
+
     def test_replay_fuzzy_1(self, fmod):
         resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/?_=123', fmod)
         assert resp.status_int == 200

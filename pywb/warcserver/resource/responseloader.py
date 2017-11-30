@@ -195,15 +195,17 @@ class WARCPathLoader(DefaultResolverMixin, BaseLoader):
                                                       failed_files,
                                                       local_index_query))
 
-        status = cdx.get('status')
-        if not status or status.startswith('3'):
-            http_headers = self.headers_parser.parse(payload.raw_stream)
-            self.raise_on_self_redirect(params, cdx,
-                                        http_headers.get_statuscode(),
-                                        http_headers.get_header('Location'))
-            http_headers_buff = http_headers.to_bytes()
-        else:
-            http_headers_buff = None
+        http_headers_buff = None
+        if payload.rec_type in ('response', 'revisit'):
+            status = cdx.get('status')
+            # status may not be set for 'revisit'
+            if not status or status.startswith('3'):
+                http_headers = self.headers_parser.parse(payload.raw_stream)
+                self.raise_on_self_redirect(params, cdx,
+                                            http_headers.get_statuscode(),
+                                            http_headers.get_header('Location'))
+
+                http_headers_buff = http_headers.to_bytes()
 
         warc_headers = payload.rec_headers
 
