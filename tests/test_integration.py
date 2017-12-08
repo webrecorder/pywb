@@ -105,6 +105,11 @@ class TestWbIntegration(BaseConfigTest):
         resp = self.get('/pywb/20171122230223{0}/http://httpbin.org/anything/resource.json', fmod)
         assert resp.headers['Content-Type'] == 'application/json'
 
+    def test_replay_redirect(self, fmod):
+        resp = self.get('/pywb/2014{0}/http://www.iana.org/domains/example', fmod)
+        assert resp.headers['Location'].startswith('/pywb/2014{0}/'.format(fmod))
+        assert resp.status_code == 302
+
     def test_replay_fuzzy_1(self, fmod):
         resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/?_=123', fmod)
         assert resp.status_int == 200
@@ -192,13 +197,6 @@ class TestWbIntegration(BaseConfigTest):
 
         # original unrewritten url present
         assert '"http://www.iana.org/domains/example"' in resp.text
-
-    def _test_replay_redir_no_cache(self):
-        headers = [('Range', 'bytes=10-10000')]
-        # Range ignored
-        resp = self.testapp.get('/pywb/20140126200927/http://www.iana.org/domains/root/db/', headers=headers)
-        assert resp.status_int == 302
-        assert resp.content_length == 0
 
     def test_replay_identity_2_arcgz(self):
         resp = self.testapp.get('/pywb/20140216050221id_/http://arc.gz.test.example.com/')

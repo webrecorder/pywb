@@ -156,9 +156,6 @@ class RewriterApp(object):
         range_start = start
         range_end = end
 
-        # disable rewriting
-        wb_url.mod = 'id_'
-
         #if start with 0, load from upstream, but add range after
         if start == 0:
             del inputreq.env['HTTP_RANGE']
@@ -197,6 +194,8 @@ class RewriterApp(object):
             record.http_headers.replace_header('Content-Length', str(range_len))
 
             record.raw_stream = OffsetLimitReader(record.raw_stream, range_start, range_len)
+            return True
+
         except (ValueError, TypeError):
             pass
 
@@ -326,7 +325,8 @@ class RewriterApp(object):
 
         self._add_custom_params(cdx, r.headers, kwargs)
 
-        self._add_range(record, wb_url, range_start, range_end)
+        if self._add_range(record, wb_url, range_start, range_end):
+            wb_url.mod = 'id_'
 
         is_ajax = self.is_ajax(environ)
 

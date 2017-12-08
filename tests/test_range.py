@@ -59,6 +59,12 @@ class TestReplayRange(BaseConfigTest):
 
         assert 'wombat.js' not in resp.text
 
+    def test_replay_range_on_redirect(self, fmod):
+        headers = [('Range', 'bytes=0-')]
+        resp = self.get('/pywb/2014{0}/http://www.iana.org/domains/example', fmod, headers=headers)
+        assert resp.headers['Location'].startswith('/pywb/2014{0}/'.format(fmod))
+        assert resp.status_code == 302
+
     def test_error_range_out_of_bounds_1(self, fmod):
         headers = [('Range', 'bytes=10-2000')]
         resp = self.get('/pywb/20140127171251{0}/http://example.com/', fmod, headers=headers, status=416)
@@ -66,7 +72,6 @@ class TestReplayRange(BaseConfigTest):
         assert resp.status_int == 416
 
         assert self.recorder_skip == '1'
-
 
     def test_error_range_out_of_bounds_2(self, fmod):
         headers = [('Range', 'bytes=2000-10')]
