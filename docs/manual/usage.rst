@@ -106,7 +106,7 @@ Using Webrecorder
 
 If you do not have a web archive to test, one easy way to create one is to use `Webrecorder <https://webrecorder.io>`_
 
-After recording, you can click ``Stop`` and then click `Download Collection` to receive a WARC (`.warc.gz`) file.
+After recording, you can click **Stop** and then click `Download Collection` to receive a WARC (`.warc.gz`) file.
 
 You can then use this with work with pywb.
 
@@ -117,17 +117,14 @@ Using pywb Recorder
 The core recording functinality in Webrecorder ia also part of :mod:`pywb`. If you want to create a WARC locally, this can be
 done by directly recording into your pywb collection:
 
-1. Edit ``config.yaml`` to add ``recorder: live``
-2. Create a collection: ``wb-manager init my-web-archive`` (if you haven't already created a web archive collection)
-3. Run: ``wayback --live -a --auto-interval 10``
+1. Create a collection: ``wb-manager init my-web-archive`` (if you haven't already created a web archive collection)
+3. Run: ``wayback --record --live -a --auto-interval 10``
 4. Point your browser to ``http://localhost:8080/my-web-archive/record/<url>``
 
 For example, to record ``http://example.com/``, visit ``http://localhost:8080/my-web-archive/record/<url>``
 
 In this configuration, the indexing happens every 10 seconds.. After 10 seconds, the recorded url will be accessible for replay, eg:
 ``http://localhost:8080/my-web-archive/http://example.com/``
-
-(Note: this recorder is still experimental)
 
 
 HTTP/S Proxy Mode Access

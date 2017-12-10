@@ -234,9 +234,9 @@ fails to produce a result, a "fallback" aggregator is tried, until there is a re
 
             - 
               index_group:
-              rhiz: memento+http://webenact.rhizome.org/all/
-              ia:   cdx+http://web.archive.org/cdx;/web
-              apt:  memento+http://arquivo.pt/wayback/
+                  rhiz: memento+http://webenact.rhizome.org/all/
+                  ia:   cdx+http://web.archive.org/cdx;/web
+                  apt:  memento+http://arquivo.pt/wayback/
 
             - 
               index: $live

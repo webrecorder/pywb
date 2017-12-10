@@ -318,9 +318,17 @@ Note: When a root collection is set, no other collections are currently accessib
 Recording Mode
 --------------
 
-A new recording mode can be enabled for any automatically managed collection by adding a ``recorder`` block in
-the root of ``config.yaml``.
-The mode can be configured with the following options::
+Recording mode enables pywb to support recording into any automatically managed collection, using
+the ``/<coll>/record/<url>`` path. Accessing this path will result in pywb writing new WARCs directly into 
+the collection ``<coll>``.
+
+To enable recording from the live web, simply run ``wayback --record``.
+
+To further customize recording mode, add the ``recorder`` block to the root of ``config.yaml``.
+
+The command-line option is equivalent to adding ``recorder: live``.
+
+The full set of configurable options (with their default settings) is as follows::
 
   recorder:
      source_coll: live
@@ -329,9 +337,7 @@ The mode can be configured with the following options::
      filename_template: my-warc-{timestamp}-{hostname}-{random}.warc.gz
 
 
-This will enable the ``/record/`` access point under every managed collection, writing new WARCs directly into each collection.
 The required ``source_coll`` setting specifies the source collection from which to load content that will be recorded.
-
 Most likely this will be the :ref:`live-web` collection, which should also be defined. 
 However, it could be any other collection, allowing for "extraction" from other collections or remote web archives.
 Both the request and response are recorded into the WARC file, and most standard HTTP verbs should be recordable.
