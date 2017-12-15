@@ -12,8 +12,8 @@ class AutoIndexer(object):
     EXT_RX = re.compile('.*\.w?arc(\.gz)?$')
     AUTO_INDEX_FILE = 'autoindex.cdxj'
 
-    def __init__(self, interval=30, keep_running=True):
-        self.manager = CollectionsManager('', must_exist=False)
+    def __init__(self, colls_dir=None, interval=30, keep_running=True):
+        self.manager = CollectionsManager('', colls_dir=colls_dir, must_exist=False)
 
         self.root_path = self.manager.colls_dir
 
