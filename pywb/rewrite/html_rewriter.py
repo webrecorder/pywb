@@ -240,7 +240,7 @@ class HTMLRewriterMixin(StreamingRewriter):
 
         values = value.split(',')
         values = [self._rewrite_url(v.strip()) for v in values]
-        return ','.join(values)
+        return ', '.join(values)
 
     def _rewrite_css(self, css_content):
         if css_content:

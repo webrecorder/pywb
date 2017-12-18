@@ -1379,7 +1379,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             values[i] = rewrite_url(values[i].trim());
         }
 
-        return values.join(",");
+        return values.join(", ");
     }
 
     //============================================
