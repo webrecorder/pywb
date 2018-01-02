@@ -1373,7 +1373,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return "";
         }
 
-        values = value.split(',');
+        // Filter removes non-truthy values like null, undefined, and ""
+        values = value.split(/\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,\s+)/).filter(Boolean);
 
         for (var i = 0; i < values.length; i++) {
             values[i] = rewrite_url(values[i].trim());

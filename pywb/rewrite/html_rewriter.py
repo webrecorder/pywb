@@ -238,8 +238,8 @@ class HTMLRewriterMixin(StreamingRewriter):
         if not value:
             return ''
 
-        values = value.split(',')
-        values = [self._rewrite_url(v.strip()) for v in values]
+        values = (url.strip() for url in re.split("\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,\s+)", value) if url)
+        values = [self._rewrite_url(v) for v in values]
         return ', '.join(values)
 
     def _rewrite_css(self, css_content):
