@@ -44,10 +44,10 @@ class BaseWarcServer(object):
             return handler(params)
 
         self.url_map.add(Rule(path, endpoint=direct_input_request))
-        self.url_map.add(Rule(path + '/<path:mode>', endpoint=direct_input_request))
+        self.url_map.add(Rule(path + '/<mode>', endpoint=direct_input_request))
 
         self.url_map.add(Rule(path + '/postreq', endpoint=post_fullrequest))
-        self.url_map.add(Rule(path + '/<path:mode>/postreq', endpoint=post_fullrequest))
+        self.url_map.add(Rule(path + '/<mode>/postreq', endpoint=post_fullrequest))
 
         handler_dict = handler.get_supported_modes()
 

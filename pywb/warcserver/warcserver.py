@@ -74,7 +74,7 @@ class WarcServer(BaseWarcServer):
                 self.add_route('/' + name, route)
 
         if self.auto_handler:
-            self.add_route('/<path:path_param_value>', self.auto_handler, path_param_name='param.coll')
+            self.add_route('/<path_param_value>', self.auto_handler, path_param_name='param.coll')
 
     def init_paths(self, name, abs_path=None):
         templ = self.config.get(name)
