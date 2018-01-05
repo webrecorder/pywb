@@ -168,9 +168,9 @@ r"""
 >>> parse('<img srcset="http://example.com/123 2x,http://example.com/">')
 <img srcset="/web/20131226101010/http://example.com/123 2x, /web/20131226101010/http://example.com/">
 
-# TODO: try to handle absolute url without descriptor, separated by comma (no space) from absolute url with descriptor
-# >>> parse('<img srcset="http://example.com/123,http://example.com/ 2x">')
-# <img srcset="/web/20131226101010/http://example.com/123, /web/20131226101010/http://example.com/ 2x">
+# srcset attrib: absolute url without descriptor, separated by comma (no space) from absolute url with descriptor
+>>> parse('<img srcset="http://example.com/123,http://example.com/ 2x">')
+<img srcset="/web/20131226101010/http://example.com/123, /web/20131226101010/http://example.com/ 2x">
 
 # complex srcset attrib
 >>> parse('<img srcset="//example.com/1x,1x 2w, //example1.com/foo 2x, http://example.com/bar,bar 4x">')

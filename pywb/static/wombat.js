@@ -1374,7 +1374,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         // Filter removes non-truthy values like null, undefined, and ""
-        values = value.split(/\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,\s+)/).filter(Boolean);
+        values = value.split(/\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))/).filter(Boolean);
 
         for (var i = 0; i < values.length; i++) {
             values[i] = rewrite_url(values[i].trim());
