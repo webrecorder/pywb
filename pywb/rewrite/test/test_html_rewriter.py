@@ -140,9 +140,41 @@ r"""
 >>> parse('<param value="foo bar"/>')
 <param value="foo bar"/>
 
-# srcset attrib
->>> parse('<img srcset="//example.com/1x 1x, //example.com/foo 2x, https://example.com/bar 4x">')
-<img srcset="/web/20131226101010///example.com/1x 1x,/web/20131226101010///example.com/foo 2x,/web/20131226101010/https://example.com/bar 4x">
+# srcset attrib: simple
+>>> parse('<img srcset="http://example.com">')
+<img srcset="/web/20131226101010/http://example.com">
+
+# srcset attrib: single comma-containing
+>>> parse('<img srcset="http://example.com/123,foo">')
+<img srcset="/web/20131226101010/http://example.com/123,foo">
+
+# srcset attrib: single comma-containing plus descriptor
+>>> parse('<img srcset="http://example.com/123,foo 2w">')
+<img srcset="/web/20131226101010/http://example.com/123,foo 2w">
+
+# srcset attrib: comma-containing absolute url and relative url, separated by comma and space
+>>> parse('<img srcset="http://example.com/123,foo, /bar,bar 2w">')
+<img srcset="/web/20131226101010/http://example.com/123,foo, /web/20131226101010/http://example.com/bar,bar 2w">
+
+# srcset attrib: comma-containing relative url and absolute url, separated by comma and space
+>>> parse('<img srcset="/bar,bar 2w, http://example.com/123,foo">')
+<img srcset="/web/20131226101010/http://example.com/bar,bar 2w, /web/20131226101010/http://example.com/123,foo">
+
+# srcset attrib: absolute urls with descriptors, separated by comma (no space)
+>>> parse('<img srcset="http://example.com/123 2w,http://example.com/ 4w">')
+<img srcset="/web/20131226101010/http://example.com/123 2w, /web/20131226101010/http://example.com/ 4w">
+
+# srcset attrib: absolute url with descriptor, separated by comma (no space) from absolute url without descriptor
+>>> parse('<img srcset="http://example.com/123 2x,http://example.com/">')
+<img srcset="/web/20131226101010/http://example.com/123 2x, /web/20131226101010/http://example.com/">
+
+# srcset attrib: absolute url without descriptor, separated by comma (no space) from absolute url with descriptor
+>>> parse('<img srcset="http://example.com/123,http://example.com/ 2x">')
+<img srcset="/web/20131226101010/http://example.com/123, /web/20131226101010/http://example.com/ 2x">
+
+# complex srcset attrib
+>>> parse('<img srcset="//example.com/1x,1x 2w, //example1.com/foo 2x, http://example.com/bar,bar 4x">')
+<img srcset="/web/20131226101010///example.com/1x,1x 2w, /web/20131226101010///example1.com/foo 2x, /web/20131226101010/http://example.com/bar,bar 4x">
 
 # empty srcset attrib
 >>> parse('<img srcset="">')
