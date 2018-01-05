@@ -144,7 +144,11 @@ class FrontEndApp(object):
             return
 
         from pywb.manager.autoindex import AutoIndexer
-        indexer = AutoIndexer(interval=int(auto_interval))
+
+        colls_dir = self.warcserver.root_dir if self.warcserver.root_dir else None
+
+        indexer = AutoIndexer(colls_dir=colls_dir, interval=int(auto_interval))
+
         if not os.path.isdir(indexer.root_path):
             msg = 'No managed directory "{0}" for auto-indexing'
             logging.error(msg.format(indexer.root_path))
