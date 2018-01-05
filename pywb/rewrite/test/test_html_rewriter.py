@@ -153,20 +153,20 @@ r"""
 <img srcset="/web/20131226101010/http://example.com/123,foo 2w">
 
 # srcset attrib: comma-containing absolute url and relative url, separated by comma and space
-#>>> parse('<img srcset="http://example.com/123,foo, /bar,bar 2w">')
-#<img srcset="/web/20131226101010/http://example.com/123,foo, /web/20131226101010/bar,bar 2w">
+>>> parse('<img srcset="http://example.com/123,foo, /bar,bar 2w">')
+<img srcset="/web/20131226101010/http://example.com/123,foo, /web/20131226101010/http://example.com/bar,bar 2w">
 
 # srcset attrib: comma-containing relative url and absolute url, separated by comma and space
-#>>> parse('<img srcset="/bar,bar 2w, http://example.com/123,foo">')
-#<img srcset="/web/20131226101010/bar,bar 2w, /web/20131226101010/http://example.com/123,foo">
+>>> parse('<img srcset="/bar,bar 2w, http://example.com/123,foo">')
+<img srcset="/web/20131226101010/http://example.com/bar,bar 2w, /web/20131226101010/http://example.com/123,foo">
 
 # srcset attrib: absolute urls with descriptors, separated by comma (no space)
 >>> parse('<img srcset="http://example.com/123 2w,http://example.com/ 4w">')
 <img srcset="/web/20131226101010/http://example.com/123 2w, /web/20131226101010/http://example.com/ 4w">
 
 # srcset attrib: absolute url with descriptor, separated by comma (no space) from absolute url without descriptor
-# >>> parse('<img srcset="http://example.com/123 2x,http://example.com/">')
-# <img srcset="/web/20131226101010/http://example.com/123 2x, /web/20131226101010/http://example.com/">
+>>> parse('<img srcset="http://example.com/123 2x,http://example.com/">')
+<img srcset="/web/20131226101010/http://example.com/123 2x, /web/20131226101010/http://example.com/">
 
 # TODO: try to handle absolute url without descriptor, separated by comma (no space) from absolute url with descriptor
 # >>> parse('<img srcset="http://example.com/123,http://example.com/ 2x">')
