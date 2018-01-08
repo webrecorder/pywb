@@ -907,13 +907,17 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var orig_fetch = $wbwindow.fetch;
 
         $wbwindow.fetch = function(input, init_opts) {
-            if (typeof(input) === "string") {
+            var inputType = typeof(input);
+            if (inputType === "string") {
                 input = rewrite_url(input);
-            } else if (typeof(input) === "object" && input.url) {
+            } else if (inputType === "object" && input.url) {
                 var new_url = rewrite_url(input.url);
                 if (new_url != input.url) {
                     input = new Request(new_url, input);
                 }
+            } else if (inputType === "object" && input.href) {
+                // it is likely that input is either window.location or window.URL
+                input = rewrite_url(input.href);
             }
 
             init_opts = init_opts || {};
