@@ -333,6 +333,8 @@ class HTMLRewriterMixin(StreamingRewriter):
             elif (tag == 'meta') and (attr_name == 'content'):
                 if self.has_attr(tag_attrs, ('http-equiv', 'refresh')):
                     attr_value = self._rewrite_meta_refresh(attr_value)
+                elif self.has_attr(tag_attrs, ('http-equiv', 'content-security-policy')):
+                    attr_name = '_' + attr_name
                 elif self.has_attr(tag_attrs, ('name', 'referrer')):
                     attr_value = 'no-referrer-when-downgrade'
                 elif attr_value.startswith(self.DATA_RW_PROTOCOLS):

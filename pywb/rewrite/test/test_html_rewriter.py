@@ -129,6 +129,9 @@ r"""
 >>> parse('<meta name="referrer" content="origin">')
 <meta name="referrer" content="no-referrer-when-downgrade">
 
+>>> parse('<meta http-equiv="Content-Security-Policy" content="default-src http://example.com" />')
+<meta http-equiv="Content-Security-Policy" _content="default-src http://example.com"/>
+
 # Custom -data attribs
 >>> parse('<div data-url="http://example.com/a/b/c.html" data-some-other-value="http://example.com/img.gif">')
 <div data-url="/web/20131226101010oe_/http://example.com/a/b/c.html" data-some-other-value="/web/20131226101010oe_/http://example.com/img.gif">
