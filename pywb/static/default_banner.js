@@ -52,23 +52,32 @@ This file is part of pywb, https://github.com/ikreymer/pywb
         banner.setAttribute("id", bid);
         banner.setAttribute("lang", "en");
 
-        var text = "<span id='_wb_capture_info'>Loading...</span>";
+        var text = "";
+        text += "<span id='_wb_capture_info'>Loading...</span>";
 
         banner.innerHTML = text;
         document.body.insertBefore(banner, document.body.firstChild);
     }
 
-    function set_banner(url, ts, is_live) {
+    function set_banner(url, ts, is_live, title) {
         var capture_str;
 
         if (!ts) {
             return;
         }
 
+        if (title) {
+            capture_str = '"' + title + '"';
+        }  else {
+            capture_str = url;
+        }
+
+        capture_str = "<b id='title_or_url'>" + capture_str + "</b>";
+
         if (is_live) {
-            capture_str = "This is a <b>live</b> page from ";
+            capture_str += "<i>Live on&nbsp;</i>";
         } else {
-            capture_str = "This is an <b>archived</b> page from ";
+            capture_str += "<i>Archived on&nbsp;</i>";
         }
 
         capture_str += ts_to_date(ts, true);
@@ -92,7 +101,7 @@ This file is part of pywb, https://github.com/ikreymer/pywb
             window.addEventListener("message", function(event) {
                 var state = event.data;
                 if (state.wb_type) {
-                    set_banner(state.url, state.ts, state.is_live);
+                    set_banner(state.url, state.ts, state.is_live, state.title);
                 }
             });
         }

@@ -6,12 +6,20 @@
     left: 0px !important;
     font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
     width: 100% !important;
-    font-size: 24px !important;
-    background-color: lightYellow !important;
-    color: black !important;
+    font-size: 18px !important;
+    background-color: #444 !important;
+    color: white !important;
     text-align: center !important;
     z-index: 2147483643 !important;
     line-height: normal !important;
+}
+
+#title_or_url {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 4px;
+  display: block;
 }
 
 #_wb_plain_banner
@@ -25,7 +33,7 @@
 {
     position: absolute !important;
     border: 0px;
-    height: 40px !important;
+    height: 44px !important;
 }
 
 #wb_iframe_div
@@ -33,7 +41,7 @@
     position: absolute;
     width: 100%;
     height: 100%;
-    padding: 40px 4px 4px 0px;
+    padding: 44px 4px 4px 0px;
     border: none;
     box-sizing: border-box;
     -moz-box-sizing: border-box;
@@ -45,7 +53,7 @@
 {
     width: 100%;
     height: 100%;
-    border: 2px solid tan;
+    border: 2px solid #545454;
     padding: 0px 0px 0px 0px;
     overflow: scroll;
 }
