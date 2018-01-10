@@ -1,5 +1,5 @@
-pywb 2.0 beta
-=============
+Webrecorder pywb 2.0
+====================
 
 .. image:: https://travis-ci.org/ikreymer/pywb.svg?branch=master
       :target: https://travis-ci.org/ikreymer/pywb
@@ -21,7 +21,7 @@ that is used by other web archives, including the traditional "Wayback Machine" 
 New Features
 ^^^^^^^^^^^^
 
-The 2.0 beta release includes a major overhaul of pywb and introduces the following new features, including:
+The 2.0 release includes a major overhaul of pywb and introduces the following new features, including:
 
 * Dynamic multi-collection configuration system with no-restart updates.
 
@@ -36,6 +36,8 @@ The 2.0 beta release includes a major overhaul of pywb and introduces the follow
 * Flexible rewriting system with pluggable rewriters for different content-types.
 
 * Significantly improved client-side rewriting to handle most modern web sites.
+
+* Improved 'calendar' query UI, groping results by year and month, and updated replay banner.
 
 
 Please see the `full documentation <https://pywb.readthedocs.org>`_ for more detailed info on all these features.
@@ -64,7 +66,7 @@ To run and install locally you can:
 
 * Run Wayback with ``wayback`` (see docs for info on how to setup collections)
 
-* Build docs locally with:  ``cd docs; make html``. (The docs will be built in `./_build/html/index.html`)
+* Build docs locally with:  ``cd docs; make html``. (The docs will be built in ``./_build/html/index.html``)
 
 
 Consult the local or `online docs <https://pywb.readthedocs.org>`_ for latest usage and configuration details.

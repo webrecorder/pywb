@@ -17,7 +17,7 @@ A subset of features provides the basic functionality of a "Wayback Machine".
    manual/usage
    manual/configuring
    manual/architecture
-   manual/cdxserver_api
+   manual/apis
    code/pywb
 
 
