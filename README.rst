@@ -1,5 +1,5 @@
-Webrecorder pywb 2.0
-====================
+Webrecorder pywb 2.0.0
+======================
 
 .. image:: https://travis-ci.org/ikreymer/pywb.svg?branch=master
       :target: https://travis-ci.org/ikreymer/pywb
@@ -50,7 +50,7 @@ A few key features are high on list of priorities, but have not yet been impleme
 
 * Url Exclusion System
 
-* New Default UI (calendar and banner)
+* UI Improvements
 
 If you are intersted in contributing, especially to any of these areas, please let us know!
 

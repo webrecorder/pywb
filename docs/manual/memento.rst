@@ -70,7 +70,7 @@ As this approach always includes a redirect, use of this system is discouraged w
 URL-M Headers
 -------------
 
-When replaying archived content (a url that is a URL-M in memento terms), several memento header are included:
+When serving a URL-M (any archived url), the following additional headers are included in accordance with Memento spec:
 
 * ``Vary: accept-datetime`` is included as required
 * ``Link`` header with at least ``original``, ``timegate`` and ``timemap`` relations
