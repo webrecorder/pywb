@@ -477,11 +477,11 @@ Compatibility: Redirects, Memento, Flash video overrides
 Exact Timestamp Redirects
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, pywb does not redirect urls to the 'canonical' respresntation of a url with the exact timestamp, eg. if requesting
+By default, pywb does not redirect urls to the 'canonical' respresntation of a url with the exact timestamp.
 
-``/my-coll/2017js_/http://example.com/example.js`` but the actual timestamp of the resource is ``2017010203000400``,
+For example, when requesting ``/my-coll/2017js_/http://example.com/example.js`` but the actual timestamp of the resource is ``2017010203000400``,
 
-there is not a redirect to ``/my-coll/2017010203000400js_/http://example.com/example.js``. Instead, the 'canonical' url is returned in
+there is not a redirect to ``/my-coll/2017010203000400js_/http://example.com/example.js``. Instead, this 'canonical' url is returned in
 
 the ``Content-Location`` value. This behavior is recommended for performance reasons as it avoids an extra roundtrip to the server for a redirect.
 
@@ -498,11 +498,9 @@ Memento Protocol
 
 :ref:`memento-api` support is enabled by default, and works with no-timestamp-redirect and classic redirect behaviors.
 
-Howevet, it can be disabled by adding::
+However, Memento API support can be disabled by adding::
 
   enable_memento: false
-
-to the config.
 
 
 Flash Video Override
