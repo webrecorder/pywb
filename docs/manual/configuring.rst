@@ -5,8 +5,10 @@ Configuring the Web Archive
 
 pywb offers an extensible YAML based configuration format via a main ``config.yaml`` at the root of each web archive.
 
-Framed vs Frameless Replay vs HTTPS proxy
------------------------------------------
+.. _framed_vs_frameless:
+
+Framed vs Frameless Replay
+--------------------------
 
 pywb supports several modes for serving archived web content.
 
@@ -19,8 +21,6 @@ With **frameless replay**, the archived content is loaded directly, and a banner
 
 In this mode, the content is served directly at ``http://my-archive.example.com/<coll name>/http://example.com/``
 
-(pywb can also supports HTTP/S **proxy mode** which requires additional setup. See :ref:`https-proxy` for more details).
-
 For security reasons, we recommend running pywb in framed mode, because a malicious site
 `could tamper with the banner <http://labs.rhizome.org/presentations/security.html#/13>`_
 
@@ -29,6 +29,9 @@ However, for certain situations, frameless replay made be appropriate.
 To disable framed replay add:
 
 ``framed_replay: false`` to your config.yaml
+
+
+Note: pywb also supports HTTP/S **proxy mode** which requires additional setup. See :ref:`https-proxy` for more details.
 
 
 Directory Structure
@@ -220,6 +223,8 @@ This configures the ``/live/`` route to point to the live web.
 This collection can be useful for testing, or even more powerful, when combined with recording.
 
 
+.. _auto-all:
+
 Auto "All" Aggregate Collection
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -236,7 +241,7 @@ Collection Provenance
 """""""""""""""""""""
 
 When using the auto-all collection, it is possible to determine the original collection of each resource by looking at the ``Link`` header metadata
-if Memento API is enabled. The header will include the extra ``rel="collection"``, specifying the collection::
+if :ref:`memento-api` is enabled. The header will include the extra ``collection`` field, specifying the collection::
 
   Link: <http://example.com/>; rel="original", <http://localhost:8080/all/mp_/http://example.com/>; rel="timegate", <http://localhost:8080/all/timemap/link/http://example.com/>; rel="timemap"; type="application/link-format", <http://localhost:8080/all/20170920185327mp_/http://example.com/>; rel="memento"; datetime="Wed, 20 Sep 2017 18:20:19 GMT"; collection="coll-1"
 
@@ -254,7 +259,7 @@ Identifiying the Collections
 """"""""""""""""""""""""""""
 
 When using the "all" collection, it is possible to determine the actual collection of each url by looking at the ``Link`` header metadata,
-which in addition to memento relations, include the extra ``rel="collection"``, specifying the collection::
+which in addition to memento relations, include the extra ``collection=`` field, specifying the collection::
 
   Link: <http://example.com/>; rel="original", <http://localhost:8080/all/mp_/http://example.com/>; rel="timegate", <http://localhost:8080/all/timemap/link/http://example.com/>; rel="timemap"; type="application/link-format", <http://localhost:8080/all/20170920185327mp_/http://example.com/>; rel="memento"; datetime="Wed, 20 Sep 2017 18:20:19 GMT"; collection="coll-1"
 
@@ -465,3 +470,48 @@ See the `wsgiprox README <https://github.com/webrecorder/wsgiprox/blob/master/RE
 
 For more information on custom certificate authority (CA) installation, the `mitmproxy certificate page <http://docs.mitmproxy.org/en/stable/certinstall.html>`_ provides a good overview for installing a custom CA on different platforms.
 
+
+Compatibility: Redirects, Memento, Flash video overrides
+--------------------------------------------------------
+
+Exact Timestamp Redirects
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, pywb does not redirect urls to the 'canonical' respresntation of a url with the exact timestamp.
+
+For example, when requesting ``/my-coll/2017js_/http://example.com/example.js`` but the actual timestamp of the resource is ``2017010203000400``,
+
+there is not a redirect to ``/my-coll/2017010203000400js_/http://example.com/example.js``. Instead, this 'canonical' url is returned in
+
+the ``Content-Location`` value. This behavior is recommended for performance reasons as it avoids an extra roundtrip to the server for a redirect.
+
+However, if the classic redirect behavior is desired, it can be enable by adding::
+
+  redirect_to_exact: true
+
+to the config. This will force any url to be redirected to the exact url, and is consistent with previous behavior and other wayback machine implementations,
+at expense of additional network traffic.
+
+
+Memento Protocol
+^^^^^^^^^^^^^^^^
+
+:ref:`memento-api` support is enabled by default, and works with no-timestamp-redirect and classic redirect behaviors.
+
+However, Memento API support can be disabled by adding::
+
+  enable_memento: false
+
+
+Flash Video Override
+^^^^^^^^^^^^^^^^^^^^
+
+A custom system to override Flash video with a custom download via ``youtube-dl`` and replay with a custom player was enabled in previous versions of pywb.
+However, this system was not widely used and is in need of maintainance. The system is of less need now that most video is HTML5 based.
+For these reasons, this system, previosuly enabled by including the script ``/static/vidrw.js``, is disabled by default.
+
+To enable previous behavior, add to config::
+
+  enable_flash_video_rewrite: true
+
+The system may be revamped in the future and enabled by default, but for now, it is provided for compatibility reasons.

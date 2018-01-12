@@ -1,3 +1,11 @@
+pywb 2.0.0 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+See the docs at https://pywb.readthedocs.org for more info.
+
+**TODO: more detailed changelist**
+
+
 pywb 0.33.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
