@@ -12,7 +12,9 @@ var Text = {
    '10': "October",
    '11': "November",
    '12': "December",
-  }
+  },
+  version: "capture",
+  versions: "captures",
 };
 
 function RenderCalendar(prefix, url) {
@@ -81,13 +83,20 @@ function RenderCalendar(prefix, url) {
       data: {"url": url, "output": "json"},
       dataType: "text",
       success: function(data) {
-        processAll(data.trim().split("\n"));
+        processAll(data.trim());
       }
     });
   }
 
-  function processAll(cdxLines) {
-    $("#count").text(cdxLines.length);
+  function processAll(data) {
+    var cdxLines = [];
+
+    if (data) {
+        cdxLines = data.split("\n");
+    }
+
+    $("#count").text(numVersionsText(cdxLines.length));
+
     for (var i = 0; i < cdxLines.length; i++) {
       var obj = JSON.parse(cdxLines[i]);
       processUrl(prefix, obj.timestamp, obj.url);
@@ -95,6 +104,13 @@ function RenderCalendar(prefix, url) {
     yearCount();
     handleClicks();
   }
+
+  function numVersionsText(count) {
+    var text = count + " ";
+    text += count == 1 ? Text.version : Text.versions;
+    return text;
+  }
+ 
 
   function processUrl(prefix, ts, url) {
     var currentYear = getYearTs(ts);
@@ -124,8 +140,7 @@ function RenderCalendar(prefix, url) {
 
     for (var i = 0; i < years.length; i++) {
       numberofVersions = $('#year_' + years[i].toString()).parent().next().find(".day").length;
-      numberofVersionsString = numberofVersions == 1 ? numberofVersions + " version " : numberofVersions + " versions ";
-      $('#' + years[i] + '_right').prepend(numberofVersionsString);
+      $('#' + years[i] + '_right').prepend(numVersionsText(numberofVersions));
     }
   }
 
