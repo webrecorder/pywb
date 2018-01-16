@@ -17,14 +17,18 @@ from warcio.timeutils import timestamp20_now
 
 from pywb import DEFAULT_CONFIG
 
+from six.moves import input
 
 #=============================================================================
 # to allow testing by mocking get_input
-def get_input(msg):  #pragma: no cover
-    return raw_input(msg)
 
+
+def get_input(msg):  # pragma: no cover
+    return input(msg)
 
 #=============================================================================
+
+
 class CollectionsManager(object):
     """ This utility is designed to
 simplify the creation and management of web archive collections
@@ -319,13 +323,13 @@ def main(args=None):
     description = """
 Create manage file based web archive collections
 """
-    #format(os.path.basename(sys.argv[0]))
+    # format(os.path.basename(sys.argv[0]))
 
     logging.basicConfig(format='%(asctime)s: [%(levelname)s]: %(message)s',
                         level=logging.DEBUG)
 
     parser = ArgumentParser(description=description,
-                            #epilog=epilog,
+                            # epilog=epilog,
                             formatter_class=RawTextHelpFormatter)
 
     subparsers = parser.add_subparsers(dest='type')
@@ -359,7 +363,6 @@ Create manage file based web archive collections
     addwarc.add_argument('coll_name')
     addwarc.add_argument('files', nargs='+')
     addwarc.set_defaults(func=do_add)
-
 
     # Reindex All
     def do_reindex(r):
@@ -429,7 +432,7 @@ Create manage file based web archive collections
 
 
 # special wrapper for cli to avoid printing stack trace
-def main_wrap_exc():  #pragma: no cover
+def main_wrap_exc():  # pragma: no cover
     try:
         main()
     except Exception as e:
