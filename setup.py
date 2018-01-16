@@ -60,6 +60,19 @@ def load_requirements(filename):
         return fh.read().rstrip().split('\n')
 
 
+def get_package_data():
+    pkgs = ['static/*.*',
+            'templates/*',
+            '*.yaml']
+
+    for root, dirs, files in os.walk(os.path.join('pywb', 'static')):
+        for dir_ in dirs:
+            pkgs.append(os.path.relpath(os.path.join(root, dir_, '*'), 'pywb'))
+
+    return pkgs
+
+
+
 generate_git_hash_py('pywb')
 
 
@@ -87,7 +100,7 @@ setup(
         'pywb.apps',
         ],
     package_data={
-        'pywb': ['static/flowplayer/*', 'static/*.*', 'templates/*', '*.yaml'],
+        'pywb': get_package_data(),
         },
     data_files=[
         ('sample_archive/cdx', glob.glob('sample_archive/cdx/*')),
