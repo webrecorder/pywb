@@ -25,4 +25,10 @@ build_script:
 test_script:
   - "python setup.py test"
 
+after_test:
+  - rm -rf tests/coverages
+  - if not exist dist mkdir dist
+  - if exist .coverage (cp .coverage dist\) else (echo no .coverage)
+  - codecov
+  - if exist coverage.xml (cp coverage.xml dist\) else (echo no coverage.xml)
 
