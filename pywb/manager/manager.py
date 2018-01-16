@@ -333,6 +333,7 @@ Create manage file based web archive collections
                             formatter_class=RawTextHelpFormatter)
 
     subparsers = parser.add_subparsers(dest='type')
+    subparsers.required = True
 
     # Init Coll
     def do_init(r):
