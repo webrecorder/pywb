@@ -446,7 +446,10 @@ class LiveWebLoader(BaseLoader):
         adapter = DefaultAdapters.live_adapter if is_live else DefaultAdapters.remote_adapter
         max_retries = adapter.max_retries
 
-        conn = adapter.get_connection(load_url, SOCKS_PROXIES)
+        if SOCKS_PROXIES:
+            conn = adapter.get_connection(load_url, SOCKS_PROXIES)
+        else:
+            conn = adapter.poolmanager
 
         try:
             upstream_res = conn.urlopen(method=method,
@@ -463,7 +466,7 @@ class LiveWebLoader(BaseLoader):
             return upstream_res
 
         except Exception as e:
-            if logger.isEnabledFor(logger.DEBUG):
+            if logger.isEnabledFor(logging.DEBUG):
                 import traceback
                 traceback.print_exc()
                 logger.debug('FAILED: ' + method + ' ' + load_url + ': ' + str(e))

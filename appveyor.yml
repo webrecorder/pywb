@@ -17,7 +17,7 @@ install:
   - "pip install coverage pytest-cov coveralls"
   - "pip install cffi"
   - "pip install pyopenssl"
-  - "pip install certauth boto3 youtube-dl"
+  - "pip install certauth boto3 youtube-dl pysocks"
   - "pip install codecov"
 
 build_script:

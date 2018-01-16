@@ -5,9 +5,9 @@ import os
 import six.moves.http_client
 six.moves.http_client._MAXHEADERS = 10000
 
-SOCKS_PORT = os.environ.get('SOCKS_PORT', 9050)
-SOCKS_HOST = os.environ.get('SOCKS_HOST')
 SOCKS_PROXIES = None
+orig_getaddrinfo = None
+
 
 #=============================================================================
 class DefaultAdapters(object):
@@ -19,16 +19,26 @@ requests.packages.urllib3.disable_warnings()
 
 #=============================================================================
 def patch_socks():
+    try:
+        import socks
+    except ImportError:  #pragma: no cover
+        print('Ignoring SOCKS_HOST: PySocks must be installed to use SOCKS proxy')
+        return
+
     import socket
-    import socks
+
+    socks_host = os.environ.get('SOCKS_HOST')
+    socks_port = os.environ.get('SOCKS_PORT', 9050)
 
     # Set socks proxy and wrap the urllib module
-    socks.set_default_proxy(socks.PROXY_TYPE_SOCKS5, SOCKS_HOST, SOCKS_PORT, True)
+    socks.set_default_proxy(socks.PROXY_TYPE_SOCKS5, socks_host, socks_port, True)
     #socket.socket = socks.socksocket # sets default socket to be the sockipy socket
 
-    # Perform DNS resolution through the socket
+    # store original getaddrinfo
+    global orig_getaddrinfo
     orig_getaddrinfo = socks.socket.getaddrinfo
 
+    # Perform DNS resolution through socket
     def getaddrinfo(*args):
         if args[0] in ('127.0.0.1', 'localhost'):
             res = orig_getaddrinfo(*args)
@@ -40,15 +50,28 @@ def patch_socks():
 
     socks.socket.getaddrinfo = getaddrinfo
 
-    socks_url = 'socks5h://{0}:{1}'.format(SOCKS_HOST, SOCKS_PORT)
+    socks_url = 'socks5h://{0}:{1}'.format(socks_host, socks_port)
 
     global SOCKS_PROXIES
     SOCKS_PROXIES = {'http': socks_url,
                      'https': socks_url}
 
+# =============================================================================
+def unpatch_socks():
+    global orig_getaddrinfo
+    if not orig_getaddrinfo:
+        return
 
-#=============================================================================
-if SOCKS_HOST:
+    import socks
+    socks.socket.getaddrinfo = orig_getaddrinfo
+    orig_getaddrinfo = None
+
+    global SOCKS_PROXIES
+    SOCKS_PROXIES = None
+
+
+# =============================================================================
+if os.environ.get('SOCKS_HOST'):
     patch_socks()
 
 
