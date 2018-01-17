@@ -37,7 +37,7 @@ script:
 after_success:
   - codecov
 
-deploy:
-  - cd karma-tests && make test
+#deploy:
+#  - cd karma-tests && make test
 
 
