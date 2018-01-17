@@ -24,6 +24,7 @@ install:
   - python setup.py -q install
   - pip install -r extra_requirements.txt
   - pip install coverage pytest-cov coveralls
+  - pip install codecov
   - npm install
 
 before_script:
@@ -32,7 +33,8 @@ before_script:
 
 script:
   - python setup.py test
-  - cd karma-tests && make test
+  - cd karma-tests && make test && cd ..
 
 after_success:
-    coveralls
+  - codecov
+

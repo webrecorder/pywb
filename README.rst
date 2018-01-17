@@ -1,10 +1,12 @@
 Webrecorder pywb 2.0.0
 ======================
 
-.. image:: https://travis-ci.org/ikreymer/pywb.svg?branch=master
-      :target: https://travis-ci.org/ikreymer/pywb
-.. image:: https://coveralls.io/repos/ikreymer/pywb/badge.svg?branch=master
-      :target: https://coveralls.io/r/ikreymer/pywb?branch=master
+.. image:: https://travis-ci.org/webrecorder/pywb.svg?branch=develop
+      :target: https://travis-ci.org/webrecorder/pywb
+.. image:: https://ci.appveyor.com/api/projects/status/qxnbunw65o929599/branch/develop?svg=true
+      :target: https://ci.appveyor.com/project/webrecorder/pywb/branch/develop
+.. image:: https://codecov.io/gh/webrecorder/pywb/branch/develop/graph/badge.svg
+      :target: https://codecov.io/gh/webrecorder/pywb
 
 Web Archiving Tools for All
 ---------------------------
