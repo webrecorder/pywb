@@ -13,7 +13,7 @@
   <div class="col-md-2">
     <ul class="nav nav-pills nav-stacked" role="tablist">
       <!-- All Bookmarks-->
-      <li role="presentation">
+      <li role="presentation" class="active">
         <a class="nav-link" data-toggle="pill" role="tab" aria-controls="all" href="#all">All Bookmarks</a>
       </li>
       {% for name, plist in lists | dictsort %}
@@ -27,7 +27,7 @@
   <div class="col-md-10">
     <div class="tab-content">
       <!-- All Bookmarks -->
-      <div role="tabpanel" class="tab-pane" id="all">
+      <div role="tabpanel" class="tab-pane active" id="all">
         <b>All Bookmarks</b>
         <ul>
         {% for key, page in pages | dictsort %}
