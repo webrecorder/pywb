@@ -33,11 +33,8 @@ before_script:
 
 script:
   - python setup.py test
+  - cd karma-tests && make test && cd ..
 
 after_success:
   - codecov
-
-#deploy:
-#  - cd karma-tests && make test
-
 
