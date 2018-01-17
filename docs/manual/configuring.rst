@@ -223,6 +223,16 @@ This configures the ``/live/`` route to point to the live web.
 This collection can be useful for testing, or even more powerful, when combined with recording.
 
 
+SOCKS Proxy for Live Web
+""""""""""""""""""""""""
+
+pywb can be configured to use a SOCKS5 proxy when connecting to the live web. This allows pywb to be used with `Tor <https://torproject.org/>`_ and other
+services that require a SOCKS proxy.
+
+If the ``SOCKS_HOST`` and optionally ``SOCKS_PORT`` environment variables are set, pywb will attempt to route all live web traffic through the SOCKS5 proxy.
+Note that, at this time, it is not possible to configure a SOCKS proxy per pywb collection -- all live web traffic will use the SOCKS proxy if enabled.
+
+
 .. _auto-all:
 
 Auto "All" Aggregate Collection

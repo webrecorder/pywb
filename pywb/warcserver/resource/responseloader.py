@@ -14,7 +14,7 @@ from pywb.utils.format import ParamFormatter
 from pywb.warcserver.resource.resolvingloader import ResolvingLoader
 from pywb.warcserver.resource.pathresolvers import DefaultResolverMixin
 
-from pywb.warcserver.http import DefaultAdapters
+from pywb.warcserver.http import DefaultAdapters, SOCKS_PROXIES
 
 from six.moves.urllib.parse import urlsplit, quote, unquote
 
@@ -29,9 +29,6 @@ import datetime
 import logging
 
 from requests.models import PreparedRequest
-
-import six.moves.http_client
-six.moves.http_client._MAXHEADERS = 10000
 
 logger = logging.getLogger('warcserver')
 
@@ -447,11 +444,15 @@ class LiveWebLoader(BaseLoader):
 
     def _do_request(self, method, load_url, data, req_headers, params, is_live):
         adapter = DefaultAdapters.live_adapter if is_live else DefaultAdapters.remote_adapter
-        pool = adapter.poolmanager
         max_retries = adapter.max_retries
 
+        if SOCKS_PROXIES:
+            conn = adapter.get_connection(load_url, SOCKS_PROXIES)
+        else:
+            conn = adapter.poolmanager
+
         try:
-            upstream_res = pool.urlopen(method=method,
+            upstream_res = conn.urlopen(method=method,
                                         url=load_url,
                                         body=data,
                                         headers=req_headers,
@@ -465,7 +466,11 @@ class LiveWebLoader(BaseLoader):
             return upstream_res
 
         except Exception as e:
-            logger.debug('FAILED: ' + method + ' ' + load_url + ': ' + str(e))
+            if logger.isEnabledFor(logging.DEBUG):
+                import traceback
+                traceback.print_exc()
+                logger.debug('FAILED: ' + method + ' ' + load_url + ': ' + str(e))
+
             raise LiveResourceException(load_url)
 
     def get_custom_metadata(self, content_type, dt):
