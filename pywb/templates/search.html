@@ -1,21 +1,71 @@
-{% if metadata %}
+{% extends "base_bootstrap.html" %}
 
-<h2>{{ metadata.title if metadata.title else coll }} Search Page</h2>
 
-<div>
-<table style="text-align: left">
-{% for key, val in metadata.items() %}
-<tr><th>{{ key }}:</th><td>{{ val }}</td>
-{% endfor %}
-</table>
+{% block title %}
+{{ metadata.title | default(coll) }}
+{% endblock %}
+
+{% block body %}
+<h2 class="text-center">{{ metadata.title | default(coll) }} Collection</h2>
+<h3>Bookmarks</h3>
+
+<div class="row">
+  <div class="col-md-2">
+    <ul class="nav nav-pills nav-stacked" role="tablist">
+      <!-- All Bookmarks-->
+      <li role="presentation">
+        <a class="nav-link" data-toggle="pill" role="tab" aria-controls="all" href="#all">All Bookmarks</a>
+      </li>
+      {% for name, plist in lists | dictsort %}
+      <li role="presentation">
+        <a class="nav-link" data-toggle="pill" role="tab" aria-controls="{{ name }}" href="#{{ name }}">{{ plist.title | default(name) }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="col-md-10">
+    <div class="tab-content">
+      <!-- All Bookmarks -->
+      <div role="tabpanel" class="tab-pane" id="all">
+        <b>All Bookmarks</b>
+        <ul>
+        {% for key, page in pages | dictsort %}
+          <li>
+            <h4><a href="{{ wb_prefix + key }}">{{ page.title | default(page.url)}}</a></h4>
+          </li>
+        {% endfor %}
+        </ul>
+      </div>
+
+      {% for name, plist in lists | dictsort %}
+      <div role="tabpanel" class="tab-pane" id="{{ name }}">
+        <b>{{ plist.description }}</b>
+        <ul>
+          {% for key in plist.pages %}
+          {% if key in pages %}
+          <li>
+            <h4><a href="{{ wb_prefix + key }}">{{ pages[key].title | default(pages[key].url)}}</a></h4>
+          </li>
+          {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
 </div>
 
-{% endif %}
+<div class="row">
+  <h3>Url Search</h3>
+  <div class="row"><p>Search this collection by url:</p>
+    <form onsubmit="url = document.getElementById('search').value; if (url != '') { document.location.href = '{{ wb_prefix }}' + '*/' + url; } return false;">
+      <input id="search" name="search" placeholder="Enter url to search"/>
+      <button type="submit">Search</button>
+    </form>
+  </div>
+</div>
 
-<p>
-Search this collection by url:
-<form onsubmit="url = document.getElementById('search').value; if (url != '') { document.location.href = '{{ wb_prefix }}' + '*/' + url; } return false;">
-<input id="search" name="search" placeholder="Enter url to search"/>
-<button type="submit">Search</button>
-</form>
-</p>
+{% endblock %}
+
+

@@ -13,7 +13,7 @@ from wsgiprox.wsgiprox import WSGIProxMiddleware
 from pywb.recorder.multifilewarcwriter import MultiFileWARCWriter
 from pywb.recorder.recorderapp import RecorderApp
 
-from pywb.utils.loaders import load_yaml_config
+from pywb.utils.loaders import load_yaml_config, load
 from pywb.utils.geventserver import GeventServer
 from pywb.utils.io import StreamIter
 
@@ -29,6 +29,7 @@ import os
 import traceback
 import requests
 import logging
+import yaml
 
 
 # ============================================================================
@@ -79,7 +80,11 @@ class FrontEndApp(object):
         self.static_dir = config.get('static_dir', 'static')
 
         metadata_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'metadata.yaml')
+        pages_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'pages.yaml')
+        lists_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'lists.yaml')
         self.metadata_cache = MetadataCache(metadata_templ)
+        self.pages_cache = PagesCache(pages_templ)
+        self.lists_cache = ListsCache(lists_templ)
 
     def _init_routes(self):
         self.url_map = Map()
@@ -188,9 +193,6 @@ class FrontEndApp(object):
             self.raise_not_found(environ, 'Static File Not Found: {0}'.format(filepath))
 
     def get_metadata(self, coll):
-        #if coll == self.all_coll:
-        #    coll = '*'
-
         metadata = {'coll': coll,
                     'type': 'replay'}
 
@@ -209,6 +211,9 @@ class FrontEndApp(object):
 
         metadata = self.get_metadata(coll)
 
+        pages = self.pages_cache.load(coll)
+        lists = self.lists_cache.load(coll)
+
         view = BaseInsertView(self.rewriterapp.jinja_env, 'search.html')
 
         wb_prefix = environ.get('SCRIPT_NAME')
@@ -218,6 +223,8 @@ class FrontEndApp(object):
         content = view.render_to_string(environ,
                                         wb_prefix=wb_prefix,
                                         metadata=metadata,
+                                        pages=pages,
+                                        lists=lists,
                                         coll=coll)
 
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
@@ -431,8 +438,11 @@ class MetadataCache(object):
 
         return self.store_new(coll, path, mtime)
 
+    def init_obj(self, coll, path):
+        return load_yaml_config(path)
+
     def store_new(self, coll, path, mtime):
-        obj = load_yaml_config(path)
+        obj = self.init_obj(coll, path)
         self.cache[coll] = (mtime, obj)
         return obj
 
@@ -441,6 +451,58 @@ class MetadataCache(object):
             self.load(route)
 
         return {name: value[1] for name, value in iteritems(self.cache)}
+
+    def _get_id(url, config):
+        timestamp = config.get('timestamp')
+        url = config.get('url')
+        if timestamp:
+            return str(timestamp) + '/' + url
+        else:
+            return url
+
+
+# ============================================================================
+class PagesCache(MetadataCache):
+    def init_obj(self, coll, path):
+        configdata = None
+        page_map = {}
+        try:
+            configdata = load(path)
+            config_gen = yaml.load_all(configdata)
+
+            for config in config_gen:
+                if 'url' not in config:
+                    continue
+
+                page_map[self._get_id(config)] = config
+
+        finally:
+            if configdata:
+                configdata.close()
+
+        return page_map
+
+
+# ============================================================================
+class ListsCache(MetadataCache):
+    def init_obj(self, coll, path):
+        configdata = None
+        page_lists = {}
+        try:
+            configdata = load(path)
+            config_gen = yaml.load_all(configdata)
+            for config in config_gen:
+                for name, listobj in iteritems(config):
+                    if not listobj.get('pages'):
+                        continue
+
+                    page_lists[name] = listobj
+
+        finally:
+            if configdata:
+                configdata.close()
+
+        return page_lists
 
 
 # ============================================================================

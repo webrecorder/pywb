@@ -1,17 +1,12 @@
-<html>
-<head>
-<!-- jquery and bootstrap dependencies query view -->
-<link rel="stylesheet" href="{{ host_prefix }}/{{ static_path }}/css/query.css">
-<link rel="stylesheet" href="{{ host_prefix }}/{{ static_path }}/css/bootstrap.min.css">
-<link rel="stylesheet" href="{{ host_prefix }}/{{ static_path }}/css/font-awesome.min.css">
-<script src="{{ host_prefix }}/{{ static_path }}/js/jquery-latest.min.js"></script>
-<script src="{{ host_prefix }}/{{ static_path }}/js/bootstrap.min.js"></script>
+{% extends "base_bootstrap.html" %}
+
+{% block head %}
 <script src="{{ host_prefix }}/{{ static_path }}/query.js"></script>
-</head>
-<body>
+{% endblock %}
+
+{% block body %}
   <h2 class="text-center">pywb Query Results</h2>
   <h3 class="text-center"><b id="count"></b> of <b>{{ url }}</b></h3>
   <div id="captureYears"></div>
   <script>new RenderCalendar("{{ prefix }}", "{{ url }}");</script>
-</body>
-</html>
+{% endblock %}

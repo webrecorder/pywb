@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>{% block title %}{% endblock %}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- jquery and bootstrap dependencies query view -->
+        <link rel="stylesheet" href="{{ host_prefix }}/{{ static_path }}/css/query.css">
+        <link rel="stylesheet" href="{{ host_prefix }}/{{ static_path }}/css/bootstrap.min.css">
+        <link rel="stylesheet" href="{{ host_prefix }}/{{ static_path }}/css/font-awesome.min.css">
+        <script src="{{ host_prefix }}/{{ static_path }}/js/jquery-latest.min.js"></script>
+        <script src="{{ host_prefix }}/{{ static_path }}/js/bootstrap.min.js"></script>
+         
+        {% block head %}
+        {% endblock %}
+    </head>
+    <body>
+        {% block body %}
+        {% endblock %}
+    </body>
+</html>
