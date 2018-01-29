@@ -1,5 +1,7 @@
 from warcio.utils import to_native_str
+
 from pywb.utils.loaders import load_yaml_config
+from pywb.utils.format import to_bool
 from pywb import DEFAULT_RULES_FILE
 
 import re
@@ -65,7 +67,7 @@ class FuzzyMatcher(object):
 
         return FuzzyRule(url_prefix, regex, replace_after, filter_str, match_type, find_all)
 
-    def get_fuzzy_match(self, urlkey, params):
+    def get_fuzzy_match(self, urlkey, url, params):
         filters = set()
         matched_rule = None
 
@@ -92,8 +94,6 @@ class FuzzyMatcher(object):
 
         if not matched_rule:
             return None
-
-        url = params['url']
 
         # support matching w/o query if no additional filters
         # don't include trailing '?' if no filters and replace_after '?'
@@ -161,10 +161,14 @@ class FuzzyMatcher(object):
         if found:
             return
 
+        # if fuzzy matching disabled
+        if not to_bool(params.get('allowFuzzy', True)):
+            return
+
         url = params['url']
         urlkey = to_native_str(params['key'], 'utf-8')
 
-        res = self.get_fuzzy_match(urlkey, params)
+        res = self.get_fuzzy_match(urlkey, url, params)
         if not res:
             return
 

@@ -61,7 +61,7 @@ class TestCDXApp(BaseTestClass):
                 suburls += 1
         assert suburls > 0
 
-    def test_filters(self):
+    def test_filters_1(self):
         """
         filter cdxes by mimetype and filename field, exact match.
         """
@@ -71,11 +71,49 @@ class TestCDXApp(BaseTestClass):
         assert resp.status_code == 200
         assert resp.content_type == 'text/x-cdxj'
 
-        for l in resp.text.splitlines():
+        lines = resp.text.splitlines()
+        assert len(lines) > 0
+
+        for l in lines:
             cdx = CDXObject(l.encode('utf-8'))
             assert cdx['urlkey'] == 'org,iana)/_css/2013.1/screen.css'
+            assert cdx['timestamp'] == '20140127171239'
             assert cdx['mime'] == 'warc/revisit'
             assert cdx['filename'] == 'dupes.warc.gz'
+
+    def test_filters_2_no_fuzzy_no_match(self):
+        """
+        two filters, disable fuzzy matching
+        """
+        resp = self.query('http://www.iana.org/_css/2013.1/screen.css',
+                     filter=('!mime:warc/revisit', 'filename:dupes.warc.gz'),
+                     allowFuzzy='false')
+
+        assert resp.status_code == 200
+        assert resp.content_type == 'text/x-cdxj'
+
+        lines = resp.text.splitlines()
+        assert len(lines) == 0
+
+    def test_filters_3(self):
+        """
+        filter cdxes by mimetype and filename field, exact match.
+        """
+        resp = self.query('http://www.iana.org/_css/2013.1/screen.css',
+                     filter=('!mime:warc/revisit', '!filename:dupes.warc.gz'))
+
+        assert resp.status_code == 200
+        assert resp.content_type == 'text/x-cdxj'
+
+        lines = resp.text.splitlines()
+        assert len(lines) == 1
+
+        for l in lines:
+            cdx = CDXObject(l.encode('utf-8'))
+            assert cdx['urlkey'] == 'org,iana)/_css/2013.1/screen.css'
+            assert cdx['timestamp'] == '20140126200625'
+            assert cdx['mime'] == 'text/css'
+            assert cdx['filename'] == 'iana.warc.gz'
 
     def test_limit(self):
         resp = self.query('http://www.iana.org/_css/2013.1/screen.css',
