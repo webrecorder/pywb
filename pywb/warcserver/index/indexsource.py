@@ -315,6 +315,10 @@ class RedisIndexSource(BaseIndexSource):
         elif self.member_key_type == b'hash':
             return self.redis.hvals(key)
 
+        # don't cache if any other type
+        else:
+            self.member_key_type = None
+
         return []
 
     def load_index(self, params):
