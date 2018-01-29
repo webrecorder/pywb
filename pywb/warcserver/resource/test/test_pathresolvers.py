@@ -87,6 +87,56 @@ class TestPathIndex(object):
         assert resolver('example.warc.gz', cdx) == 'some_path/example.warc.gz'
         assert resolver('example-2.warc.gz', cdx) == 'some_path/example-2.warc.gz'
 
+    @patch('redis.StrictRedis', FakeStrictRedis)
+    def test_redis_resolver_multi_key_with_member_set(self):
+        resolver = RedisResolver('redis://127.0.0.1:6379/0/*:warc',
+                                 member_key_templ='member_set')
+
+        cdx = CDXObject()
+        assert resolver('example.warc.gz', cdx) == None
+
+        resolver.redis.hset('A:warc', 'example.warc.gz', 'some_path/example.warc.gz')
+        resolver.redis.hset('B:warc', 'example-2.warc.gz', 'some_path/example-2.warc.gz')
+
+        resolver.redis.sadd('member_set', 'A')
+
+        # only A:warc used
+        assert resolver('example.warc.gz', cdx) == 'some_path/example.warc.gz'
+        assert resolver('example-2.warc.gz', cdx) == None
+
+        resolver.redis.sadd('member_set', 'B')
+
+        # A:warc and B:warc used
+        assert resolver('example.warc.gz', cdx) == 'some_path/example.warc.gz'
+        assert resolver('example-2.warc.gz', cdx) == 'some_path/example-2.warc.gz'
+
+        assert resolver.member_key_type == b'set'
+
+    @patch('redis.StrictRedis', FakeStrictRedis)
+    def test_redis_resolver_multi_key_with_member_hash(self):
+        resolver = RedisResolver('redis://127.0.0.1:6379/0/*:warc',
+                                 member_key_templ='member_hash')
+
+        cdx = CDXObject()
+        assert resolver('example.warc.gz', cdx) == None
+
+        resolver.redis.hset('A:warc', 'example.warc.gz', 'some_path/example.warc.gz')
+        resolver.redis.hset('B:warc', 'example-2.warc.gz', 'some_path/example-2.warc.gz')
+
+        resolver.redis.hset('member_hash', '1', 'A')
+
+        # only A:warc used
+        assert resolver('example.warc.gz', cdx) == 'some_path/example.warc.gz'
+        assert resolver('example-2.warc.gz', cdx) == None
+
+        resolver.redis.hset('member_hash', '2', 'B')
+
+        # A:warc and B:warc used
+        assert resolver('example.warc.gz', cdx) == 'some_path/example.warc.gz'
+        assert resolver('example-2.warc.gz', cdx) == 'some_path/example-2.warc.gz'
+
+        assert resolver.member_key_type == b'hash'
+
     def test_make_best_resolver_http(self):
         res = DefaultResolverMixin.make_best_resolver('http://myhost.example.com/warcs/')
         assert isinstance(res, PrefixResolver)
