@@ -1,6 +1,7 @@
 from six.moves.urllib.parse import urlencode
 from pywb.warcserver.index.cdxobject import CDXException
 from pywb.utils.canonicalize import calc_search_range
+from pywb.utils.format import to_bool
 
 
 #=================================================================
@@ -128,17 +129,9 @@ class CDXQuery(object):
     def page_count(self):
         return self._get_bool('showNumPages')
 
-    def _get_bool(self, name, def_val=False):
+    def _get_bool(self, name):
         v = self.params.get(name)
-        if v:
-            try:
-                v = int(v)
-            except ValueError as ex:
-                v = (v.lower() == 'true')
-        else:
-            v = def_val
-
-        return bool(v)
+        return to_bool(v)
 
     def urlencode(self):
         return urlencode(self.params, True)

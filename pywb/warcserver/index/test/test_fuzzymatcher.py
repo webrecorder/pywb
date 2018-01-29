@@ -133,6 +133,14 @@ class TestFuzzy(object):
 
         assert list(cdx_iter) == self.get_expected(url=actual_url, filters=filters)
 
+    def test_no_fuzzy_disabled(self):
+        url = 'http://example.com/?_=123'
+        actual_url = 'http://example.com/'
+        params = self.get_params(url, actual_url)
+        params['allowFuzzy'] = 0
+        cdx_iter, errs = self.fuzzy(self.source, params)
+        assert list(cdx_iter) == []
+
     def test_no_fuzzy_custom_rule_video_id_diff(self):
         url = 'http://youtube.com/get_video_info?a=b&html=true&___abc=123&video_id=ABCD&id=1234'
         actual_url = 'http://youtube.com/get_video_info?a=d&html=true&___abc=125&video_id=ABCE&id=1234'

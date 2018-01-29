@@ -1,4 +1,5 @@
 from pywb.warcserver.inputrequest import DirectWSGIInputRequest, POSTInputRequest
+from pywb.utils.format import query_to_dict
 
 from werkzeug.routing import Map, Rule
 from werkzeug.exceptions import HTTPException
@@ -7,7 +8,6 @@ import requests
 import traceback
 import json
 
-from six.moves.urllib.parse import parse_qsl
 import six
 
 JSON_CT = 'application/json; charset=utf-8'
@@ -60,7 +60,7 @@ class BaseWarcServer(object):
     def get_query_dict(self, environ):
         query_str = environ.get('QUERY_STRING')
         if query_str:
-            return dict(parse_qsl(query_str))
+            return query_to_dict(query_str, multi=['filter'])
         else:
             return {}
 

@@ -1,8 +1,8 @@
-from six.moves.urllib.parse import quote
+from six.moves.urllib.parse import quote, parse_qsl
 import string
 
 
-#=============================================================================
+# ============================================================================
 class ParamFormatter(string.Formatter):
     def __init__(self, params, name='', prefix='param.'):
         self.params = params
@@ -33,7 +33,7 @@ class ParamFormatter(string.Formatter):
         return value
 
 
-#=============================================================================
+# =============================================================================
 def res_template(template, params, **extra_params):
     formatter = params.get('_formatter')
     if not formatter:
@@ -47,5 +47,39 @@ def res_template(template, params, **extra_params):
     res = formatter.format(template, url=url, **extra_params)
 
     return res
+
+
+# =============================================================================
+def to_bool(val):
+    if not val:
+        return False
+
+    if isinstance(val, str):
+        return val.lower() not in ('0', 'false', 'f', 'off')
+    else:
+        return bool(val)
+
+
+# =============================================================================
+def query_to_dict(query_str, multi=None):
+    pairlist = parse_qsl(query_str)
+    if not multi:
+        return dict(pairlist)
+
+    obj = {}
+    for n, v in pairlist:
+        if n not in multi:
+            obj[n] = v
+            continue
+
+        # make_list
+        if n not in obj:
+            obj[n] = v
+        elif isinstance(obj[n], list):
+            obj[n].append(v)
+        else:
+            obj[n] = [obj[n], v]
+
+    return obj
 
 
