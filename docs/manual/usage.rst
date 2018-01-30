@@ -34,10 +34,10 @@ If you have existing web archive (WARC or legacy ARC) files, here's how to make 
 
 By default, pywb provides directory-based collections system to run your own web archive directly from archive collections on disk.
 
-Two command line utilities are provided:
+pywb ships with several :ref:`cli-apps`. The following two are useful to get started:
 
-* ``wb-manager`` is a command line tool for managing common collection operations.
-* ``wayback`` starts a web server that provides the access to web archives.
+* :ref:`cli-wb-manager` is a command line tool for managing common collection operations.
+* :ref:`cli-wayback` starts a web server that provides the access to web archives.
 
 (For more details, run ``wb-manager -h`` and ``wayback -h``)
 
