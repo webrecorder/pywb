@@ -10,17 +10,19 @@ and introduces many new features, including:
 
 * Dynamic multi-collection configuration system with no-restart updates.
 
-* New recording capability to create new web archives from the live web or other archives.
+* New :ref:`recording-mode` capability to create new web archives from the live web or from other archives.
 
-* Componentized architecture with standalone Warcserver, Recorder and Rewriter components.
+* Componentized architecture with standalone :ref:`warcserver`, :ref:`recorder` and :ref:`rewriter` components.
 
-* Support for advanced "memento aggregation" and fallback chains for querying multiple remote and local archival sources.
+* Support for :ref:`memento-api` aggregration and fallback chains for querying multiple remote and local archival sources.
 
-* HTTP/S Proxy Mode with customizable Certificate Authority for proxy mode recording and replay.
+* :ref:`https-proxy` with customizable certificate authority for proxy mode recording and replay.
 
 * Flexible rewriting system with pluggable rewriters for different content-types.
 
 * Significantly improved client-side rewriting to handle most modern web sites.
+
+* Improved 'calendar' query UI, groping results by year and month, and updated replay banner.
 
 
 Getting Started

@@ -1,7 +1,7 @@
 /*
-Copyright(c) 2013-2015 Ilya Kreymer. Released under the GNU General Public License.
+Copyright(c) 2013-2018 Rhizome and Ilya Kreymer. Released under the GNU General Public License.
 
-This file is part of pywb, https://github.com/ikreymer/pywb
+This file is part of pywb, https://github.com/webrecorder/pywb
 
     pywb is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -437,7 +437,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         // if no getter function was supplied, skip the override.
-        // See https://github.com/ikreymer/pywb/issues/147 for context
+        // See https://github.com/webrecorder/pywb/issues/147 for context
         if (!get_func) {
             return;
         }
