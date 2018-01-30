@@ -87,18 +87,6 @@ setup(
     license='GPL',
     packages=find_packages(exclude=['tests_disabled']),
     zip_safe=True,
-    provides=[
-        'pywb',
-        'pywb.utils',
-        'pywb.warcserver',
-        'pywb.warcserver.index',
-        'pywb.warcserver.resource',
-        'pywb.recorder',
-        'pywb.rewrite',
-        'pywb.indexer',
-        'pywb.manager',
-        'pywb.apps',
-        ],
     package_data={
         'pywb': get_package_data(),
         },
