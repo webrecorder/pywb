@@ -11,7 +11,7 @@ Webrecorder pywb 2.0.0
 Web Archiving Tools for All
 ---------------------------
 
-`View the full pywb 2.0 documentation here <https://pywb.readthedocs.org>`_
+`View the full pywb 2.0 documentation <https://pywb.readthedocs.org>`_
 
 **pywb** is a Python (2 and 3) web archiving toolkit for replaying web archives large and small as accurately as possible.
 The toolkit now also includes new features for creating high-fidelity web archives.
@@ -31,9 +31,9 @@ The 2.0 release includes a major overhaul of pywb and introduces the following n
 
 * Componentized architecture with standalone Warcserver, Recorder and Rewriter components.
 
-* Support for advanced "memento aggregation" and fallback chains for querying multiple remote and local archival sources.
+* Support for Memento API aggregation and fallback chains for querying multiple remote and local archival sources.
 
-* HTTP/S Proxy Mode with customizable Certificate Authority for proxy mode recording and replay.
+* HTTP/S Proxy Mode with customizable certificate authority for proxy mode recording and replay.
 
 * Flexible rewriting system with pluggable rewriters for different content-types.
 
@@ -43,18 +43,6 @@ The 2.0 release includes a major overhaul of pywb and introduces the following n
 
 
 Please see the `full documentation <https://pywb.readthedocs.org>`_ for more detailed info on all these features.
-
-
-Work in Progress / Coming Soon
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-A few key features are high on list of priorities, but have not yet been implemented, including:
-
-* Url Exclusion System
-
-* UI Improvements
-
-If you are intersted in contributing, especially to any of these areas, please let us know!
 
 
 Installation
@@ -79,5 +67,14 @@ Contributions & Bug Reports
 
 Users are encouraged to fork and contribute to this project to keep improving web archiving tools.
 
-Please take a look at list of current issues and feel free to open new ones about any aspect of pywb, including the new documentation.
+A few key features are high on list of priorities, but have not yet been implemented, including:
+
+* Url Exclusion System
+
+* UI Improvements
+
+If you are interested in contributing, especially to any of these areas, please let us know!
+
+Otherwise, please take a look at `list of current issues <https://github.com/webrecorder/pywb/issues>`_ and feel free to open new ones about any aspect of pywb, including the new documentation.
+
 

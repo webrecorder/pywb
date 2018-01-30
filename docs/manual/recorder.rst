@@ -1,3 +1,5 @@
+.. _recorder:
+
 Recorder
 ========
 
@@ -43,7 +45,7 @@ Filters include:
 
 * Filtering out certain HTTP headers, for example, http-only cookies
 
-The additional recorder functionality will be enchanced in a future version.
+The additional recorder functionality will be enhanced in a future version.
 
 For a more detailed examples, please consult the tests in :mod:`pywb.recorder.test.test_recorder`
 

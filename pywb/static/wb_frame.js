@@ -1,7 +1,7 @@
 /*
-Copyright(c) 2013-2014 Ilya Kreymer. Released under the GNU General Public License.
+Copyright(c) 2013-2018 Rhizome and Ilya Kreymer. Released under the GNU General Public License.
 
-This file is part of pywb, https://github.com/ikreymer/pywb
+This file is part of pywb, https://github.com/webrecorder/pywb
 
     pywb is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

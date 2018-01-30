@@ -1,3 +1,5 @@
+.. _rewriter:
+
 Rewriter
 ========
 
@@ -16,7 +18,7 @@ pywb avoids URL rewriting in JavaScript, to allow that to be handled by the clie
 (No url rewriting is performed when running in :ref:`https-proxy` mode)
 
 Most of the rewriting performed is **url-rewriting**, changing the original URLs to point to
-the pywb server instead of the live web. Typically, the rewriting converst:
+the pywb server instead of the live web. Typically, the rewriting converts:
 
 ``<url>`` -> ``<pywb host>/<coll>/<timestamp><modifier>/<url>``
 
@@ -39,7 +41,7 @@ Identity Modifier (``id_``)
 """""""""""""""""""""""""""
 
 When this modifier is used, eg. ``/my-coll/id_/http://example.com/``, no content rewriting is performed
-on the response, and the original, unrewritten content is returned.
+on the response, and the original, un-rewritten content is returned.
 This is useful for HTML or other text resources that are normally rewritten when using the default (``mp_`` modifier).
 
 Note that certain HTTP headers (hop-by-hop or cookie related) may still be prefixed with ``X-Orig-Archive-`` as they may affect the transmission,
@@ -87,7 +89,7 @@ However, these modifiers are essentially treated the same as ``mp_``, deferring 
 Configuring Rewriters
 ---------------------
 
-pywb provides customizeable rewriting based on content-type, the available types are configured
+pywb provides customizable rewriting based on content-type, the available types are configured
 in the :py:mod:`pywb.rewriter.default_rewriter`, which specifies rewriter classes per known type,
 and mapping of content-types to rewriters.
 
@@ -128,7 +130,7 @@ For more information, see :py:mod:`pywb.rewriter.regex_rewriters.JSWombatProxyRe
 JSONP Rewriting
 ~~~~~~~~~~~~~~~
 
-A special case of JS rewritting is JSONP rewriting, which is applied if the url and content is determined to be JSONP, to ensure
+A special case of JS rewriting is JSONP rewriting, which is applied if the url and content is determined to be JSONP, to ensure
 the JSONP callback matches the expected param.
 
 For example, a requested url might be ``/my-coll/http://example.com?callback=jQuery123`` but the returned content might be:
