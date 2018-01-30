@@ -128,6 +128,7 @@ setup(
     test_suite='',
     entry_points="""
         [console_scripts]
+        pywb = pywb.apps.cli:wayback
         wayback = pywb.apps.cli:wayback
         cdx-server = pywb.apps.cli:cdx_server
         live-rewrite-server = pywb.apps.cli:live_rewrite_server

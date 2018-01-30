@@ -13,6 +13,8 @@ The warcserver can be started directly installing pywb simply by running ``warcs
 Note: when running ``wayback``, an instance of ``warcserver`` is also started automatically.
 
 
+.. _warcserver-api:
+
 Warcserver API
 ^^^^^^^^^^^^^^
 

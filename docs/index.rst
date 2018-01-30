@@ -12,7 +12,7 @@ A subset of features provides the basic functionality of a "Wayback Machine".
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    manual/usage
    manual/configuring

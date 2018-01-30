@@ -195,16 +195,15 @@ The ``load`` message is sent when a new page is first loaded, while ``replace-ur
 for url changes caused by content frame History navigation.
 
 
-Custom Defined Collections
---------------------------
+Special and Custom Collections
+------------------------------
 
 While pywb can detect automatically collections following the above directory structure,
-it may be useful to declare custom collections explicitly.
+it also provides the option to fully declare :ref:`custom-coll` explicitly.
 
 In addition, several "special" collection definitions are possible.
 
 All custom defined collections are placed under the ``collections`` key in ``config.yaml``
-
 
 .. _live-web:
 
@@ -265,41 +264,6 @@ For example, if two collections ``coll-1`` and ``coll-2`` contain ``http://examp
   <http://example.com/>; rel="memento"; datetime="Wed, 20 Sep 2017 03:53:27 GMT"; collection="coll-1",
   <http://example.com/>; rel="memento"; datetime="Wed, 20 Sep 2017 04:53:27 GMT"; collection="coll-2",
 
-Identifiying the Collections
-""""""""""""""""""""""""""""
-
-When using the "all" collection, it is possible to determine the actual collection of each url by looking at the ``Link`` header metadata,
-which in addition to memento relations, include the extra ``collection=`` field, specifying the collection::
-
-  Link: <http://example.com/>; rel="original", <http://localhost:8080/all/mp_/http://example.com/>; rel="timegate", <http://localhost:8080/all/timemap/link/http://example.com/>; rel="timemap"; type="application/link-format", <http://localhost:8080/all/20170920185327mp_/http://example.com/>; rel="memento"; datetime="Wed, 20 Sep 2017 18:20:19 GMT"; collection="coll-1"
-
-
-For example, if two collections ``coll-1`` and ``coll-2`` contain ``http://example.com/``, loading the timemap for
-``/all/timemap/link/http://example.com/`` might look like as follows::
-
-  <http://localhost:8080/all/timemap/link/http://example.com/>; rel="self"; type="application/link-format"; from="Wed, 20 Sep 2017 03:53:27 GMT",
-  <http://localhost:8080/all/mp_/http://example.com/>; rel="timegate",
-  <http://example.com/>; rel="original",
-  <http://example.com/>; rel="memento"; datetime="Wed, 20 Sep 2017 03:53:27 GMT"; collection="coll-1",
-  <http://example.com/>; rel="memento"; datetime="Wed, 20 Sep 2017 04:53:27 GMT"; collection="coll-2",
-
-
-Generic Collection Definitions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The collection definition syntax allows for explicitly setting the index, archive paths
-and all other templates, per collection, for example::
-
-  collections:
-    custom:
-       index: ./path/to/indexes
-       resource: ./some/other/path/to/archive/
-       query_html: ./path/to/templates/query.html
-
-
-If possible, it is recommended to use the default directory structure to avoid per-collection configuration.
-However, this configuration allows for using pywb with existing collections that have unique path requirements.
-
 
 Remote Memento Collection
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -315,6 +279,25 @@ Many additional options, including memento "aggregation", fallback chains are po
 using the Warcserver configuration syntax. See :ref:`warcserver-config` for more info.
 
 
+.. _custom-coll:
+
+Custom User-Defined Collections
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The collection definition syntax allows for explicitly setting the index, archive paths
+and all other templates, per collection, for example::
+
+  collections:
+    custom:
+       index: ./path/to/indexes
+       resource: ./some/other/path/to/archive/
+       query_html: ./path/to/templates/query.html
+
+
+If possible, it is recommended to use the default directory structure to avoid per-collection configuration.
+However, this configuration allows for using pywb with existing collections that have unique path requirements.
+
+
 Root Collection
 ^^^^^^^^^^^^^^^
 
@@ -327,6 +310,7 @@ Such a collection must be defined explicitly using the ``$root`` as collection n
        resource: ./path/to/archive/
 
 Note: When a root collection is set, no other collections are currently accessible, they are ignored.
+
 
 .. _recording-mode:
 
@@ -487,20 +471,20 @@ Compatibility: Redirects, Memento, Flash video overrides
 Exact Timestamp Redirects
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, pywb does not redirect urls to the 'canonical' respresntation of a url with the exact timestamp.
+By default, pywb does not redirect urls to the 'canonical' representation of a url with the exact timestamp.
 
 For example, when requesting ``/my-coll/2017js_/http://example.com/example.js`` but the actual timestamp of the resource is ``2017010203000400``,
+there is not a redirect to ``/my-coll/2017010203000400js_/http://example.com/example.js``.
 
-there is not a redirect to ``/my-coll/2017010203000400js_/http://example.com/example.js``. Instead, this 'canonical' url is returned in
 
-the ``Content-Location`` value. This behavior is recommended for performance reasons as it avoids an extra roundtrip to the server for a redirect.
+Instead, this 'canonical' url is returned with the response in the ``Content-Location`` header.
+(This behavior is recommended for performance reasons as it avoids an extra roundtrip to the server for a redirect.)
 
 However, if the classic redirect behavior is desired, it can be enable by adding::
 
   redirect_to_exact: true
 
-to the config. This will force any url to be redirected to the exact url, and is consistent with previous behavior and other wayback machine implementations,
-at expense of additional network traffic.
+to the config. This will force any url to be redirected to the exact url, and is consistent with previous behavior and other "wayback machine" implementations.
 
 
 Memento Protocol
@@ -517,11 +501,13 @@ Flash Video Override
 ^^^^^^^^^^^^^^^^^^^^
 
 A custom system to override Flash video with a custom download via ``youtube-dl`` and replay with a custom player was enabled in previous versions of pywb.
-However, this system was not widely used and is in need of maintainance. The system is of less need now that most video is HTML5 based.
-For these reasons, this system, previosuly enabled by including the script ``/static/vidrw.js``, is disabled by default.
+However, this system was not widely used and is in need of improvements, and was designed when most video was Flash-based.
+The system is seldom usedd now that most video is HTML5 based.
 
-To enable previous behavior, add to config::
+For these reasons, this functionality, previosuly enabled by including the script ``/static/vidrw.js``, is disabled by default.
+
+To enable the previous behavior, add to config::
 
   enable_flash_video_rewrite: true
 
-The system may be revamped in the future and enabled by default, but for now, it is provided for compatibility reasons.
+The system may be revamped in the future and enabled by default, but for now, it is provided "as-is" for compatibility reasons.
