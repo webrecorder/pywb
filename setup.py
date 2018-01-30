@@ -85,7 +85,7 @@ setup(
     description='Pywb Webrecorder web archive replay and capture tools',
     long_description=long_description,
     license='GPL',
-    packages=find_packages(),
+    packages=find_packages(exclude=['tests_disabled']),
     zip_safe=True,
     provides=[
         'pywb',
