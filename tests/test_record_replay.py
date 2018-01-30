@@ -32,12 +32,24 @@ class TestRecordReplay(CollsDirMixin, BaseConfigTest):
         res = self.testapp.get('/test/record/mp_/http://httpbin.org/get?A=B')
         assert '"A": "B"' in res.text
 
+    def test_record_head(self):
+        res = self.testapp.head('/test/record/mp_/http://httpbin.org/get?A=B')
+        assert res.status_code == 200
+        assert res.text == ''
+
     def test_replay_1(self, fmod):
         self.ensure_empty()
 
         fmod_slash = fmod + '/' if fmod else ''
         res = self.get('/test/{0}http://httpbin.org/get?A=B', fmod_slash)
         assert '"A": "B"' in res.text
+
+    def test_replay_head(self, fmod):
+        fmod_slash = fmod + '/' if fmod else ''
+
+        res = self.testapp.head('/test/{0}http://httpbin.org/get?A=B'.format(fmod_slash))
+        assert res.status_code == 200
+        assert res.text == ''
 
     def test_record_2(self):
         res = self.testapp.get('/test2/record/mp_/http://httpbin.org/get?C=D')
@@ -87,21 +99,29 @@ class TestRecordReplay(CollsDirMixin, BaseConfigTest):
 
         cdxj_lines = [json.loads(line) for line in res.text.rstrip().split('\n')]
 
-        assert len(cdxj_lines) == 3
+        assert len(cdxj_lines) == 4
 
         assert cdxj_lines[0]['url'] == 'http://httpbin.org/get?A=B'
-        assert cdxj_lines[1]['url'] == 'http://httpbin.org/get?C=D'
+        assert cdxj_lines[1]['url'] == 'http://httpbin.org/get?A=B'
         assert cdxj_lines[2]['url'] == 'http://httpbin.org/get?C=D'
+        assert cdxj_lines[3]['url'] == 'http://httpbin.org/get?C=D'
+
+        assert cdxj_lines[0]['urlkey'] == 'org,httpbin)/get?__pywb_method=head&a=b'
+        assert cdxj_lines[1]['urlkey'] == 'org,httpbin)/get?a=b'
+        assert cdxj_lines[2]['urlkey'] == 'org,httpbin)/get?c=d'
+        assert cdxj_lines[3]['urlkey'] == 'org,httpbin)/get?c=d'
 
         assert cdxj_lines[0]['source'] == to_path('test/indexes/autoindex.cdxj')
-        assert cdxj_lines[1]['source'] == to_path('test2/indexes/autoindex.cdxj')
-        assert cdxj_lines[2]['source'] == to_path('test/indexes/autoindex.cdxj')
+        assert cdxj_lines[1]['source'] == to_path('test/indexes/autoindex.cdxj')
+        assert cdxj_lines[2]['source'] == to_path('test2/indexes/autoindex.cdxj')
+        assert cdxj_lines[3]['source'] == to_path('test/indexes/autoindex.cdxj')
 
         assert cdxj_lines[0]['source-coll'] == 'test'
-        assert cdxj_lines[1]['source-coll'] == 'test2'
-        assert cdxj_lines[2]['source-coll'] == 'test'
+        assert cdxj_lines[1]['source-coll'] == 'test'
+        assert cdxj_lines[2]['source-coll'] == 'test2'
+        assert cdxj_lines[3]['source-coll'] == 'test'
 
-        assert cdxj_lines[0]['filename'] == cdxj_lines[2]['filename']
+        assert cdxj_lines[1]['filename'] == cdxj_lines[3]['filename']
 
     def test_timemap_all_coll(self):
         res = self.testapp.get('/all/timemap/link/http://httpbin.org/get?C=D')

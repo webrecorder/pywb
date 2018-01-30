@@ -389,8 +389,12 @@ class LiveWebLoader(BaseLoader):
 
         warc_headers['Content-Type'] = 'application/http; msgtype=response'
 
+        if method == 'HEAD':
+            content_len = 0
+        else:
+            content_len = upstream_res.headers.get('Content-Length', -1)
 
-        self._set_content_len(upstream_res.headers.get('Content-Length', -1),
+        self._set_content_len(content_len,
                               warc_headers,
                               len(http_headers_buff))
 

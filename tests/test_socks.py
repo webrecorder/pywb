@@ -12,7 +12,7 @@ class TestSOCKSProxy(BaseConfigTest):
     @classmethod
     def setup_class(cls):
         os.environ['SOCKS_HOST'] = 'localhost'
-        os.environ['SOCKS_PORT'] = '8080'
+        os.environ['SOCKS_PORT'] = '0'
 
         pywb_http.patch_socks()
         import pywb.warcserver.resource.responseloader
@@ -25,8 +25,8 @@ class TestSOCKSProxy(BaseConfigTest):
         super(TestSOCKSProxy, cls).teardown_class()
 
     def test_socks_proxy_set(self):
-        assert pywb_http.SOCKS_PROXIES == {'http': 'socks5h://localhost:8080',
-                                           'https': 'socks5h://localhost:8080'
+        assert pywb_http.SOCKS_PROXIES == {'http': 'socks5h://localhost:0',
+                                           'https': 'socks5h://localhost:0'
                                           }
 
     def test_socks_attempt_connect(self, fmod_sl):
