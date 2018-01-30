@@ -3,7 +3,8 @@
 Warcserver
 ----------
 
-The Warcserver component is the base component of the pywb stack and can functiona as a standalone HTTP server.
+The Warcserver component is the base component of the pywb stack and can function as a standalone HTTP server.
+
 The Warcserver receives as input an HTTP request, and can serve WARC records from a variety of sources, including local WARC (or ARC) files, remote archives and the live web.
 
 This process consists of an index lookup and a resource fetch. The index lookup is performed using the index (CDX) Server API, which is also exposed by the warcserver as a standalone API.
@@ -85,9 +86,10 @@ While switching to ``resource``, the result might be::
   ...
 
 
-The resource lookup attempts to load the first available record. If the record indicated by first line CDXJ line is not available,
-the next CDXJ line is tried in succession until one succeeeds. If none of the resources specified by any of the CDXJ result (or if no
-index data was found), a 404 is returned.
+The resource lookup attempts to load the first available record (eg. by loading from specified WARC). If the record indicated by first line CDXJ line is not available,
+the next CDXJ line is tried in succession, and so on, until one succeeds.
+
+If no record can be loaded from any of the CDXJ index results (or if there are no index results), a 404 Not Found error is returned.
 
 WARC Record HTTP Response
 """""""""""""""""""""""""

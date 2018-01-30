@@ -73,7 +73,7 @@ A few key features are high on list of priorities, but have not yet been impleme
 
 * UI Improvements
 
-If you are intersted in contributing, especially to any of these areas, please let us know!
+If you are interested in contributing, especially to any of these areas, please let us know!
 
 Otherwise, please take a look at `list of current issues <https://github.com/webrecorder/pywb/issues>`_ and feel free to open new ones about any aspect of pywb, including the new documentation.
 

@@ -158,9 +158,9 @@ Custom Outer Replay Frame
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The top-frame used for framed replay can be replaced or augmented
-by modifiying the ``frame_insert.html``.
+by modifying the ``frame_insert.html``.
 
-To start with modifiying the default outer page, you can add it to the current
+To start with modifying the default outer page, you can add it to the current
 templates directory by running ``wb-manager template --add frame_insert_html``
 
 To initialize the replay, the outer page should include ``wb_frame.js``,
@@ -217,7 +217,7 @@ The live web collection proxies all data to the live web, and can be defined as 
 
 This configures the ``/live/`` route to point to the live web.
 
-(As a shortcut, ``wayback --live`` adds this collection via cli w/o modifiying the config.yaml)
+(As a shortcut, ``wayback --live`` adds this collection via cli w/o modifying the config.yaml)
 
 This collection can be useful for testing, or even more powerful, when combined with recording.
 
@@ -356,7 +356,7 @@ and write the request and response to a WARC named something like:
 
 ``./collections/my-coll/archive/my-warc-20170102030000000000-archive.example.com-QRTGER.warc.gz``
 
-If running with auto indexing, the WARC will also get automatically indexd and available for replay after the index interval.
+If running with auto indexing, the WARC will also get automatically indexed and available for replay after the index interval.
 
 As a shortcut, ``recorder: live`` can also be used to specify only the ``source_coll`` option.
 
@@ -370,7 +370,7 @@ If auto-indexing is enabled, pywb will update the indexes stored in the ``indexe
   autoindex: 30
 
 This specifies that the ``archive`` directories should be every 30 seconds. Auto-indexing is useful when WARCs are being
-appened to or added to the ``archive`` by an extneral operation.
+appended to or added to the ``archive`` by an external operation.
 
 If a user is manually adding a new WARC to the collection, ``wb-manager add <coll> <path/to/warc>`` is recommended,
 as this will add the WARC and perform a one-time reindex the collection, without the need for auto-indexing.
@@ -381,7 +381,7 @@ This is not a common operation for web archives, a WARC must be manually removed
 ``collections/<coll>/archive/`` directory and then collection index can be regenreated from the remaining WARCs
 by running ``wb-manager reindex <coll>``
 
-The auto-indexing mode can also be enabled via commandline by running ``wayback -a`` or ``wayback -a --auto-interval 30`` to also set the interval.
+The auto-indexing mode can also be enabled via command-line by running ``wayback -a`` or ``wayback -a --auto-interval 30`` to also set the interval.
 
 (If running pywb with uWSGI in multi-process mode, the auto-indexing is only run in a single worker to avoid race conditions and duplicate indexing)
 
@@ -391,7 +391,7 @@ The auto-indexing mode can also be enabled via commandline by running ``wayback 
 HTTP/S Proxy Mode
 -----------------
 
-In addition to "url rewritinng prefix mode" (the default), pywb can also act as a full-fledged HTTP and HTTPS proxy, allowing
+In addition to "url rewriting prefix mode" (the default), pywb can also act as a full-fledged HTTP and HTTPS proxy, allowing
 any browser or client supporting HTTP and HTTPS proxy to access web archives through the proxy.
 
 Proxy mode can provide access to a single collection at time, eg. instead of accessing ``http://localhost:8080/my-coll/2017/http://example.com/``,
@@ -429,11 +429,11 @@ See :ref:`recording-mode` for full set of configurable recording options.
 HTTPS Proxy and pywb Certificate Authority
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For HTTPS proxy access, pywb provides its own Certificate Authority and dynamically generates certificates for each host and signes the responses
-with these certificates. By design, this allows pywb to act as "man-in-the-middle" servring archived copies of a given site.
+For HTTPS proxy access, pywb provides its own Certificate Authority and dynamically generates certificates for each host and signs the responses
+with these certificates. By design, this allows pywb to act as "man-in-the-middle" serving archived copies of a given site.
 
 However, the pywb certificate authority (CA) will need to be accepted by the browser. The CA cert can be downloaded from pywb directly
-using the specical download paths. Recommended set up for using the proxy is as follows:
+using the special download paths. Recommended set up for using the proxy is as follows:
 
 1. Configure the browser proxy settings host port, for example ``localhost`` and ``8080`` (if running locally)
 
@@ -502,9 +502,9 @@ Flash Video Override
 
 A custom system to override Flash video with a custom download via ``youtube-dl`` and replay with a custom player was enabled in previous versions of pywb.
 However, this system was not widely used and is in need of improvements, and was designed when most video was Flash-based.
-The system is seldom usedd now that most video is HTML5 based.
+The system is seldom used now that most video is HTML5 based.
 
-For these reasons, this functionality, previosuly enabled by including the script ``/static/vidrw.js``, is disabled by default.
+For these reasons, this functionality, previously enabled by including the script ``/static/vidrw.js``, is disabled by default.
 
 To enable the previous behavior, add to config::
 

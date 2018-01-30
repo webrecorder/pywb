@@ -226,8 +226,8 @@ count query, a 400 error will be returned.
 ``showNumPages=true``
 """""""""""""""""""""
 
-This is a special query which, if successful, always returns a json
-result of the form. The query should be very quick regardless of the
+This is a special query which, if successful, always returns a JSON
+response indicating the size of the full results. The query should be very quick regardless of the
 size of the query.
 
 ::

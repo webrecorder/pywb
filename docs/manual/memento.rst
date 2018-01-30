@@ -4,7 +4,7 @@ Memento API
 ===========
 
 pywb supports the Memento Protocol as specified in `RFC 7089 <https://tools.ietf.org/html/rfc7089>`_ and provides API endpoints
-for Memento Timemaps and Timegates per collection.
+for Memento TimeMaps and TimeGates per collection.
 
 Memento support is enabled by default and can be controlled via the ``enable_memento: true|false`` setting in the ``config.yaml``
 

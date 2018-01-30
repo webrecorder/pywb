@@ -14,7 +14,7 @@ and introduces many new features, including:
 
 * Componentized architecture with standalone :ref:`warcserver`, :ref:`recorder` and :ref:`rewriter` components.
 
-* Support for :ref:`memento-api` aggregration and fallback chains for querying multiple remote and local archival sources.
+* Support for :ref:`memento-api` aggregation and fallback chains for querying multiple remote and local archival sources.
 
 * :ref:`https-proxy` with customizable certificate authority for proxy mode recording and replay.
 
@@ -116,7 +116,7 @@ You can then use this with work with pywb.
 Using pywb Recorder
 ^^^^^^^^^^^^^^^^^^^
 
-The core recording functinality in Webrecorder ia also part of :mod:`pywb`. If you want to create a WARC locally, this can be
+The core recording functionality in Webrecorder is also part of :mod:`pywb`. If you want to create a WARC locally, this can be
 done by directly recording into your pywb collection:
 
 1. Create a collection: ``wb-manager init my-web-archive`` (if you haven't already created a web archive collection)
