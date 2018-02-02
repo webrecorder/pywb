@@ -226,6 +226,7 @@ class BlockLoader(BaseLoader):
         BlockLoader.loaders['s3'] = S3Loader
         BlockLoader.loaders['file'] = LocalFileLoader
         BlockLoader.loaders['pkg'] = PackageLoader
+        BlockLoader.loaders['webhdfs'] = WebHDFSLoader
 
     @staticmethod
     def set_profile_loader(src):
@@ -396,6 +397,27 @@ class S3Loader(BaseLoader):
                 raise
 
         return obj['Body']
+
+
+#=================================================================
+class WebHDFSLoader(HttpLoader):
+    HTTP_URL = 'http://{host}/webhdfs/v1{path}?op=OPEN&offset={offset}'
+    LENGTH_PARAM = '&length={length}'
+
+    def load(self, url, offset, length):
+        parts = urlsplit(url)
+
+        http_url = self.HTTP_URL
+
+        if length > 0:
+            http_url += self.LENGTH_PARAM
+
+        full_url = http_url.format(host=parts.netloc,
+                                   path=parts.path,
+                                   offset=offset,
+                                   length=length)
+
+        return super(WebHDFSLoader, self).load(full_url, 0, -1)
 
 
 #=================================================================
