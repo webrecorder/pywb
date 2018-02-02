@@ -85,6 +85,8 @@ from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
 from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.loaders import read_last_line
 
+from mock import patch
+
 from warcio.bufferedreaders import DecompressingBufferedReader
 
 from pywb import get_test_dir
@@ -117,6 +119,21 @@ def test_s3_read_2():
     reader = DecompressingBufferedReader(BytesIO(buff))
     assert reader.readline() == b'<!DOCTYPE html>\n'
 
+def test_mock_webhdfs_load():
+    def mock_load(expected):
+        def mock(self, url, offset, length):
+            assert url == expected
+            assert offset == 0
+            assert length == -1
+            return None
+
+        return mock
+
+    with patch('pywb.utils.loaders.HttpLoader.load', mock_load('http://remote-host:1234/webhdfs/v1/some/file.warc.gz?op=OPEN&offset=10&length=50')):
+        res = BlockLoader().load('webhdfs://remote-host:1234/some/file.warc.gz', 10, 50)
+
+    with patch('pywb.utils.loaders.HttpLoader.load', mock_load('http://remote-host/webhdfs/v1/some/file.warc.gz?op=OPEN&offset=10')):
+        res = BlockLoader().load('webhdfs://remote-host/some/file.warc.gz', 10, -1)
 
 
 # Error
