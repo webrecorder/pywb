@@ -7,12 +7,36 @@ from warcio.timeutils import PAD_14_DOWN, http_date_to_timestamp, pad_timestamp,
 
 from pywb.utils.binsearch import iter_range
 from pywb.utils.canonicalize import canonicalize
+from pywb.utils.wbexception import NotFoundException, BadRequestException
+
+from warcio.timeutils import timestamp_to_http_date, http_date_to_timestamp
+from warcio.timeutils import timestamp_now, pad_timestamp, PAD_14_DOWN
+
 from pywb.utils.format import res_template
 from pywb.utils.io import no_except_close
 from pywb.utils.memento import MementoUtils
 from pywb.utils.wbexception import NotFoundException
 from pywb.warcserver.http import DefaultAdapters
 from pywb.warcserver.index.cdxobject import CDXObject
+
+from pywb.utils.format import ParamFormatter, res_template
+from pywb.utils.memento import MementoUtils
+
+from pywb.warcserver.index.cdxops import cdx_sort_closest
+
+from six.moves.urllib.parse import quote_plus
+
+try:
+    from lxml import etree
+except:
+    import xml.etree.ElementTree as etree
+
+import redis
+
+import requests
+
+import re
+import logging
 
 
 #=============================================================================
@@ -190,7 +214,92 @@ class RemoteIndexSource(BaseIndexSource):
         return cls(config['api_url'], config['replay_url'])
 
 
-#=============================================================================
+# =============================================================================
+class XmlQueryIndexSource(BaseIndexSource):
+    EXACT_SUFFIX = '?q=type:urlquery+url:{url}'
+    PREFIX_SUFFIX = '?q=type:prefixquery+url:{url}'
+
+    def __init__(self, query_api_url):
+        self.query_api_url = query_api_url
+        self.session = requests.session()
+
+    def load_index(self, params):
+        closest = params.get('closest')
+
+        url = params.get('url', '')
+
+        matchType = params.get('matchType', 'exact')
+
+        if matchType == 'exact':
+            query_url = self.query_api_url + self.EXACT_SUFFIX
+        elif matchType == 'prefix':
+            query_url = self.query_api_url + self.PREFIX_SUFFIX
+        else:
+            raise BadRequestException('matchType={0} is not supported'.format(matchType=matchType))
+
+        query_url = query_url.format(url=quote_plus(url))
+
+        try:
+            response = self.session.get(query_url)
+            response.raise_for_status()
+
+            results = etree.fromstring(response.text)
+
+            items = results.find('results').findall('result')
+
+            if matchType == 'exact':
+                cdx_iter = [self.convert_to_cdx(item) for item in items]
+                if closest:
+                    cdx_iter = cdx_sort_closest(closest, cdx_iter, limit=10000)
+
+            else:
+                cdx_iter = self.prefix_query_iter(items)
+
+        except Exception:
+            if self.logger.getEffectiveLevel() == logging.DEBUG:
+                import traceback
+                traceback.print_exc()
+
+            raise NotFoundException('url {0} not found'.format(url))
+
+        return cdx_iter
+
+    def prefix_query_iter(self, items):
+        for item in items:
+            url = self.gettext(item, 'originalurl')
+            if not url:
+                continue
+
+            cdx_iter = self.load_index({'url': url})
+            for cdx in cdx_iter:
+                yield cdx
+
+    def convert_to_cdx(self, item):
+        cdx = CDXObject()
+        cdx['urlkey'] = self.gettext(item, 'urlkey')
+        cdx['timestamp'] = self.gettext(item, 'capturedate')[:14]
+        cdx['url'] = self.gettext(item, 'url')
+        cdx['mime'] = self.gettext(item, 'mimetype')
+        cdx['status'] = self.gettext(item, 'httpresponsecode')
+        cdx['digest'] = self.gettext(item, 'digest')
+        cdx['offset'] = self.gettext(item, 'compressedoffset')
+        cdx['filename'] = self.gettext(item, 'file')
+        return cdx
+
+    def gettext(self, item, name):
+        elem = item.find(name)
+        if elem is not None:
+            return elem.text
+        else:
+            return ''
+
+    @classmethod
+    def init_from_string(cls, value):
+        if value.startswith('xmlquery+'):
+            return cls(value[9:])
+
+
+# =============================================================================
 class LiveIndexSource(BaseIndexSource):
     def __init__(self):
         self._init_sesh(DefaultAdapters.live_adapter)
