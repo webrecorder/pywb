@@ -288,6 +288,14 @@ class XmlQueryIndexSource(BaseIndexSource):
             return cls(value[9:])
 
 
+    @classmethod
+    def init_from_config(cls, config):
+        if config['type'] != 'xmlquery':
+            return
+
+        return cls(config['api_url'])
+
+
 # =============================================================================
 class LiveIndexSource(BaseIndexSource):
     def __init__(self, proxy_url='{url}'):
