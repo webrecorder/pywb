@@ -2394,6 +2394,36 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
+    function override_apply_func($wbwindow) {
+        if ($wbwindow.Function.prototype.__WB_orig_apply) {
+            return;
+        }
+
+        var orig_func_to_string = Function.prototype.toString;
+
+        var orig_apply = $wbwindow.Function.prototype.apply;
+
+        $wbwindow.Function.prototype.__WB_orig_apply = orig_apply;
+
+        function deproxy(obj, args) {
+            if (orig_func_to_string.call(this).indexOf("[native code]") >= 0) {
+                if (args) {
+                    for (var i = 0; i < args.length; i++) {
+                        args[i] = proxy_to_obj(args[i]);
+                    }
+                }
+                obj = proxy_to_obj(obj);
+            }
+            return this.__WB_orig_apply(obj, args);
+        }
+
+        $wbwindow.Function.prototype.apply = deproxy;
+        orig_func_to_string.apply = orig_apply;
+    }
+
+
+
+    //============================================
     function init_open_override()
     {
         var orig = $wbwindow.open;
@@ -3153,6 +3183,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             override_func_this_proxy_to_obj($wbwindow.EventTarget, "addEventListener");
             override_func_this_proxy_to_obj($wbwindow.EventTarget, "removeEventListener");
 
+            override_apply_func($wbwindow);
+
             override_frames_access($wbwindow);
 
             // setAttribute
@@ -3231,55 +3263,55 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         if (wbinfo.is_framed && wbinfo.mod != "bn_") {
-            init_frame_notify();
+            init_top_frame_notify(wbinfo);
         }
 
         return obj;
     }
 
-    function init_frame_notify() {
+    function init_top_frame_notify(wbinfo) {
         function notify_top(event) {
-            if (!window.__WB_top_frame) {
-                var hash = window.location.hash;
+            if (!$wbwindow.__WB_top_frame) {
+                var hash = $wbwindow.location.hash;
 
                 //var loc = window.location.href.replace(window.location.hash, "");
                 //loc = decodeURI(loc);
 
                 //if (wbinfo.top_url && (loc != decodeURI(wbinfo.top_url))) {
                     // Auto-redirect to top frame
-                window.location.replace(wbinfo.top_url + hash);
+                $wbwindow.location.replace(wbinfo.top_url + hash);
                 //}
 
                 return;
             }
 
-            if (!window.WB_wombat_location) {
+            if (!$wbwindow.WB_wombat_location) {
                 return;
             }
 
-            if (typeof(window.WB_wombat_location.href) != "string") {
+            if (typeof($wbwindow.WB_wombat_location.href) != "string") {
                 return;
             }
 
             var message = {
-                       "url": window.WB_wombat_location.href,
+                       "url": $wbwindow.WB_wombat_location.href,
                        "ts": wbinfo.timestamp,
                        "request_ts": wbinfo.request_ts,
                        "is_live": wbinfo.is_live,
-                       "title": document ? document.title : "",
-                       "readyState": document.readyState,
+                       "title": $wbwindow.document ? $wbwindow.document.title : "",
+                       "readyState": $wbwindow.document.readyState,
                        "wb_type": "load"
             }
 
-            window.__WB_top_frame.postMessage(message, wbinfo.top_host);
+            $wbwindow.__WB_top_frame.postMessage(message, wbinfo.top_host);
         }
 
-        if (document.readyState == "complete") {
+        if ($wbwindow.document.readyState == "complete") {
             notify_top();
-        } else if (window.addEventListener) {
-            document.addEventListener("readystatechange", notify_top);
-        } else if (window.attachEvent) {
-            document.attachEvent("onreadystatechange", notify_top);
+        } else if ($wbwindow.addEventListener) {
+            $wbwindow.document.addEventListener("readystatechange", notify_top);
+        } else if ($wbwindow.attachEvent) {
+            $wbwindow.document.attachEvent("onreadystatechange", notify_top);
         }
     }
 
