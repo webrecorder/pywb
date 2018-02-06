@@ -404,7 +404,7 @@ class RewriterApp(object):
             orig_wb_url = WbUrl(record.rec_headers.get('WARC-Refers-To-Target-URI'))
             orig_wb_url.timestamp = iso_date_to_timestamp(record.rec_headers.get('WARC-Refers-To-Date'))
             orig_wb_url.type = orig_wb_url.REPLAY
-            kwargs['filter'] = '!status:302'
+            #kwargs['filter'] = '!status:302'
             new_r = self._do_req(inputreq, orig_wb_url, kwargs, skip_record)
 
             stream = BufferedReader(new_r.raw, block_size=BUFF_SIZE)

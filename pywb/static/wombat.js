@@ -3425,7 +3425,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                        "is_live": wbinfo.is_live,
                        "title": $wbwindow.document ? $wbwindow.document.title : "",
                        "readyState": $wbwindow.document.readyState,
-                       "wb_type": "load"
+                       "wb_type": "load",
                        "coll": wbinfo.coll,
             }
 
