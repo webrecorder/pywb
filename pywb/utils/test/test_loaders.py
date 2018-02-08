@@ -85,6 +85,8 @@ from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
 from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.loaders import read_last_line
 
+from pywb.utils.canonicalize import canonicalize
+
 from mock import patch
 
 from warcio.bufferedreaders import DecompressingBufferedReader
@@ -119,20 +121,36 @@ def test_s3_read_2():
     reader = DecompressingBufferedReader(BytesIO(buff))
     assert reader.readline() == b'<!DOCTYPE html>\n'
 
-def test_mock_webhdfs_load():
-    def mock_load(expected):
-        def mock(self, url, offset, length):
-            assert url == expected
-            assert offset == 0
-            assert length == -1
-            return None
+def mock_load(expected):
+    def mock(self, url, offset, length):
+        assert canonicalize(url) == canonicalize(expected)
+        assert offset == 0
+        assert length == -1
+        return None
 
-        return mock
+    return mock
 
-    with patch('pywb.utils.loaders.HttpLoader.load', mock_load('http://remote-host:1234/webhdfs/v1/some/file.warc.gz?op=OPEN&offset=10&length=50')):
+def test_mock_webhdfs_load_1():
+    expected = 'http://remote-host:1234/webhdfs/v1/some/file.warc.gz?op=OPEN&offset=10&length=50'
+    with patch('pywb.utils.loaders.HttpLoader.load', mock_load(expected)):
         res = BlockLoader().load('webhdfs://remote-host:1234/some/file.warc.gz', 10, 50)
 
-    with patch('pywb.utils.loaders.HttpLoader.load', mock_load('http://remote-host/webhdfs/v1/some/file.warc.gz?op=OPEN&offset=10')):
+def test_mock_webhdfs_load_2():
+    expected = 'http://remote-host/webhdfs/v1/some/file.warc.gz?op=OPEN&offset=10'
+    with patch('pywb.utils.loaders.HttpLoader.load', mock_load(expected)):
+        res = BlockLoader().load('webhdfs://remote-host/some/file.warc.gz', 10, -1)
+
+def test_mock_webhdfs_load_3_username():
+    os.environ['WEBHDFS_USER'] = 'someuser'
+    expected = 'http://remote-host/webhdfs/v1/some/file.warc.gz?op=OPEN&offset=10&user.name=someuser'
+    with patch('pywb.utils.loaders.HttpLoader.load', mock_load(expected)):
+        res = BlockLoader().load('webhdfs://remote-host/some/file.warc.gz', 10, -1)
+
+def test_mock_webhdfs_load_4_token():
+    os.environ['WEBHDFS_USER'] = ''
+    os.environ['WEBHDFS_TOKEN'] = 'ATOKEN'
+    expected = 'http://remote-host/webhdfs/v1/some/file.warc.gz?op=OPEN&offset=10&delegation=ATOKEN'
+    with patch('pywb.utils.loaders.HttpLoader.load', mock_load(expected)):
         res = BlockLoader().load('webhdfs://remote-host/some/file.warc.gz', 10, -1)
 
 

@@ -401,23 +401,30 @@ class S3Loader(BaseLoader):
 
 #=================================================================
 class WebHDFSLoader(HttpLoader):
-    HTTP_URL = 'http://{host}/webhdfs/v1{path}?op=OPEN&offset={offset}'
-    LENGTH_PARAM = '&length={length}'
+    HTTP_URL = 'http://{host}/webhdfs/v1{path}?'
 
     def load(self, url, offset, length):
         parts = urlsplit(url)
 
-        http_url = self.HTTP_URL
+        http_url = self.HTTP_URL.format(host=parts.netloc,
+                                        path=parts.path)
+
+        params = {'op': 'OPEN',
+                  'offset': str(offset)
+                 }
 
         if length > 0:
-            http_url += self.LENGTH_PARAM
+            params['length'] = str(length)
 
-        full_url = http_url.format(host=parts.netloc,
-                                   path=parts.path,
-                                   offset=offset,
-                                   length=length)
+        if os.environ.get('WEBHDFS_USER'):
+            params['user.name'] = os.environ.get('WEBHDFS_USER')
 
-        return super(WebHDFSLoader, self).load(full_url, 0, -1)
+        if os.environ.get('WEBHDFS_TOKEN'):
+            params['delegation'] = os.environ.get('WEBHDFS_TOKEN')
+
+        http_url += urlencode(params)
+
+        return super(WebHDFSLoader, self).load(http_url, 0, -1)
 
 
 #=================================================================
