@@ -25,23 +25,23 @@ r"""
 
 # Base Tests -- w/ rewrite (default)
 >>> parse('<html><head><base href="http://example.com/diff/path/file.html"/>')
-<html><head><base href="/web/20131226101010/http://example.com/diff/path/file.html"/>
+<html><head><base href="/web/20131226101010ba_/http://example.com/diff/path/file.html"/>
 
 # Full Path
 >>> parse('<html><head><base href="http://example.com/diff/path/file.html"/>', urlrewriter=full_path_urlrewriter)
-<html><head><base href="http://localhost:80/web/20131226101010/http://example.com/diff/path/file.html"/>
+<html><head><base href="http://localhost:80/web/20131226101010ba_/http://example.com/diff/path/file.html"/>
 
 # Full Path Scheme Rel Base
 >>> parse('<base href="//example.com"/><img src="/foo.gif"/>', urlrewriter=full_path_urlrewriter)
-<base href="//localhost:80/web/20131226101010///example.com/"/><img src="/web/20131226101010im_/http://example.com/foo.gif"/>
+<base href="//localhost:80/web/20131226101010ba_///example.com/"/><img src="/web/20131226101010im_/http://example.com/foo.gif"/>
 
 # Rel Base
 >>> parse('<html><head><base href="/other/file.html"/>', urlrewriter=full_path_urlrewriter)
-<html><head><base href="/web/20131226101010/http://example.com/other/file.html"/>
+<html><head><base href="/web/20131226101010ba_/http://example.com/other/file.html"/>
 
 # Rel Base + example
 >>> parse('<html><head><base href="/other/file.html"/><a href="/path.html">', urlrewriter=full_path_urlrewriter)
-<html><head><base href="/web/20131226101010/http://example.com/other/file.html"/><a href="/web/20131226101010/http://example.com/path.html">
+<html><head><base href="/web/20131226101010ba_/http://example.com/other/file.html"/><a href="/web/20131226101010/http://example.com/path.html">
 
 # Rel Base
 >>> parse('<base href="./static/"/><img src="image.gif"/>', urlrewriter=full_path_urlrewriter)
@@ -53,7 +53,7 @@ r"""
 
 # ensure trailing slash added
 >>> parse('<base href="http://example.com"/>')
-<base href="/web/20131226101010/http://example.com/"/>
+<base href="/web/20131226101010ba_/http://example.com/"/>
 
 # Base Tests -- no rewrite
 >>> parse('<html><head><base href="http://example.com/diff/path/file.html"/>', urlrewriter=no_base_canon_rewriter)
@@ -244,29 +244,29 @@ r"""
 <div style="background: url('abc.html')" onblah on-click="location = 'redirect.html'"></div>
 
 >>> parse('<div style="background: url(\'/other_path/abc.html\')" onblah onclick="window.location = \'redirect.html\'"></div>')
-<div style="background: url('/web/20131226101010/http://example.com/other_path/abc.html')" onblah onclick="window.WB_wombat_location = 'redirect.html'"></div>
+<div style="background: url('/web/20131226101010ce_/http://example.com/other_path/abc.html')" onblah onclick="window.WB_wombat_location = 'redirect.html'"></div>
 
 >>> parse('<i style="background-image: url(http://foo-.bar_.example.com/)"></i>')
-<i style="background-image: url(/web/20131226101010/http://foo-.bar_.example.com/)"></i>
+<i style="background-image: url(/web/20131226101010ce_/http://foo-.bar_.example.com/)"></i>
 
 >>> parse('<i style=\'background-image: url("http://foo.example.com/")\'></i>')
-<i style="background-image: url(&quot;/web/20131226101010/http://foo.example.com/&quot;)"></i>
+<i style="background-image: url(&quot;/web/20131226101010ce_/http://foo.example.com/&quot;)"></i>
 
 >>> parse('<i style=\'background-image: url(&quot;http://foo.example.com/&quot;)\'></i>')
-<i style="background-image: url(&quot;/web/20131226101010/http://foo.example.com/&quot;)"></i>
+<i style="background-image: url(&quot;/web/20131226101010ce_/http://foo.example.com/&quot;)"></i>
 
 >>> parse('<i style=\'background-image: url(&#x27;http://foo.example.com/&#x27;)\'></i>')
 <i style="background-image: url('/web/20131226101010/http://foo.example.com/')"></i>
 
 >>> parse("<i style='background-image: url(&apos;http://foo.example.com/&apos;)'></i>")
-<i style="background-image: url(&apos;/web/20131226101010/http://foo.example.com/&apos;)"></i>
+<i style="background-image: url(&apos;/web/20131226101010ce_/http://foo.example.com/&apos;)"></i>
 
 #>>> parse('<i style=\'background-image: url(&quot;http://исп/&quot;)\'></i>')
 <i style="background-image: url(&quot;/web/20131226101010/http://%D0%B8%D1%81%D0%BF/&quot;)"></i>
 
 # Style
 >>> parse('<style>@import "/styles.css" .a { font-face: url(\'../myfont.ttf\') }</style>')
-<style>@import "/web/20131226101010/http://example.com/styles.css" .a { font-face: url('/web/20131226101010/http://example.com/some/myfont.ttf') }</style>
+<style>@import "/web/20131226101010cs_/http://example.com/styles.css" .a { font-face: url('/web/20131226101010ce_/http://example.com/some/myfont.ttf') }</style>
 
 # Unterminated style tag, handle and auto-terminate
 >>> parse('<style>@import url(styles.css)')
