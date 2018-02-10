@@ -57,13 +57,16 @@ class FrontEndApp(object):
 
     PROXY_CA_PATH = os.path.join('proxy-certs', 'pywb-ca.pem')
 
+    REWRITER_APP_CLS = RewriterApp
+
     ALL_DIGITS = re.compile(r'^\d+$')
 
-    def __init__(self, config_file='./config.yaml', custom_config=None):
+    def __init__(self, config_file=None, custom_config=None):
         """
         :param str config_file: Path to the config file
         :param dict custom_config: Dictionary containing additional configuration information
         """
+        config_file = config_file or './config.yaml'
         self.handler = self.handle_request
         self.warcserver = WarcServer(config_file=config_file,
                                      custom_config=custom_config)
@@ -92,9 +95,9 @@ class FrontEndApp(object):
         upstream_paths = self.get_upstream_paths(self.warcserver_server.port)
 
         framed_replay = config.get('framed_replay', True)
-        self.rewriterapp = RewriterApp(framed_replay,
-                                       config=config,
-                                       paths=upstream_paths)
+        self.rewriterapp = self.REWRITER_APP_CLS(framed_replay,
+                                                 config=config,
+                                                 paths=upstream_paths)
 
         self.templates_dir = config.get('templates_dir', 'templates')
         self.static_dir = config.get('static_dir', 'static')
