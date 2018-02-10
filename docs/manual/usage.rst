@@ -22,7 +22,7 @@ and introduces many new features, including:
 
 * Significantly improved client-side rewriting to handle most modern web sites.
 
-* Improved 'calendar' query UI, groping results by year and month, and updated replay banner.
+* Improved 'calendar' query UI, grouping results by year and month, and updated replay banner.
 
 
 Getting Started

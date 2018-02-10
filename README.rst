@@ -23,7 +23,7 @@ that is used by other web archives, including the traditional "Wayback Machine" 
 New Features
 ^^^^^^^^^^^^
 
-The 2.0 release includes a major overhaul of pywb and introduces the following new features, including:
+The 2.0 release includes a major overhaul of pywb and introduces many new features, including the following:
 
 * Dynamic multi-collection configuration system with no-restart updates.
 
@@ -39,7 +39,7 @@ The 2.0 release includes a major overhaul of pywb and introduces the following n
 
 * Significantly improved client-side rewriting to handle most modern web sites.
 
-* Improved 'calendar' query UI, groping results by year and month, and updated replay banner.
+* Improved 'calendar' query UI, grouping results by year and month, and updated replay banner.
 
 
 Please see the `full documentation <https://pywb.readthedocs.org>`_ for more detailed info on all these features.

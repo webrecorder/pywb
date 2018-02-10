@@ -1,3 +1,13 @@
+pywb 2.0.1 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Override ``Function.apply()`` to remove rewriting Proxy object from any native function calls
+* Fix top-frame notifications in new system to use correct window
+* Calendar query: Add back second display
+* Fix tests when no youtube-dl installed (#270)
+* Fix typos, setup.py classifiers, remove py2.6
+
+
 pywb 2.0.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
