@@ -33,7 +33,7 @@ class HTMLRewriterMixin(StreamingRewriter):
                         'archive': 'oe_'},
             'area':    {'href': defmod},
             'audio':   {'src': 'oe_'},
-            'base':    {'href': defmod},
+            'base':    {'href': 'ba_'},
             'blockquote': {'cite': defmod},
             'body':    {'background': 'im_'},
             'button':  {'formaction': defmod},

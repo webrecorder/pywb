@@ -31,8 +31,8 @@ class RegexRewriter(StreamingRewriter):
         return lambda string: string + suffix
 
     @staticmethod
-    def archival_rewrite(rewriter):
-        return lambda string: rewriter.rewrite(string)
+    def archival_rewrite(rewriter, mod=None):
+        return lambda string: rewriter.rewrite(string, mod)
 
 
     HTTPX_MATCH_STR = r'https?:\\?/\\?/[A-Za-z0-9:_@.-]+'
@@ -317,8 +317,10 @@ class XMLRewriter(RegexRewriter):
 class CSSRewriter(RegexRewriter):
     CSS_URL_REGEX = "url\\s*\\(\\s*(?:[\\\\\"']|(?:&.{1,4};))*\\s*([^)'\"]+)\\s*(?:[\\\\\"']|(?:&.{1,4};))*\\s*\\)"
 
-    CSS_IMPORT_NO_URL_REGEX = ("@import\\s+(?!url)\\(?\\s*['\"]?" +
-                               "(?!url[\\s\\(])([\w.:/\\\\-]+)")
+    #CSS_IMPORT_NO_URL_REGEX = ("@import\\s+(?!url)\\(?\\s*['\"]?" +
+    #                           "(?!url[\\s\\(])([\w.:/\\\\-]+)")
+
+    CSS_IMPORT_REGEX = ("@import\\s+(?:url\\s*)?\\(?\\s*['\"]?([\w.:/\\\\-]+)")
 
     def __init__(self, rewriter):
         rules = self._create_rules(rewriter)
@@ -327,8 +329,8 @@ class CSSRewriter(RegexRewriter):
     def _create_rules(self, rewriter):
         return [
             (CSSRewriter.CSS_URL_REGEX,
-             RegexRewriter.archival_rewrite(rewriter), 1),
+             RegexRewriter.archival_rewrite(rewriter, 'ce_'), 1),
 
-            (CSSRewriter.CSS_IMPORT_NO_URL_REGEX,
-             RegexRewriter.archival_rewrite(rewriter), 1),
+            (CSSRewriter.CSS_IMPORT_REGEX,
+             RegexRewriter.archival_rewrite(rewriter, 'cs_'), 1),
         ]

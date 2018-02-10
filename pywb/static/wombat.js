@@ -1350,7 +1350,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var IMPORT_REGEX = /(@import\s+[\\"']*)([^)'";]+)([\\"']*\s*;?)/gi;
 
         function style_replacer(match, n1, n2, n3, offset, string) {
-            return n1 + rewrite_url(n2) + n3;
+            var mod = ends_with(n2, ".css") ? "cs_": "ce_";
+            return n1 + rewrite_url(n2, false, mod) + n3;
         }
 
         if (!value) {
@@ -1779,7 +1780,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_attr($wbwindow.HTMLEmbedElement.prototype, "src", "oe_");
         override_attr($wbwindow.HTMLObjectElement.prototype, "data", "oe_");
 
-        override_attr($wbwindow.HTMLBaseElement.prototype, "href", "mp_");
+        override_attr($wbwindow.HTMLBaseElement.prototype, "href", "ba_");
         override_attr($wbwindow.HTMLMetaElement.prototype, "content", "mp_");
 
         override_attr($wbwindow.HTMLFormElement.prototype, "action", "mp_");
@@ -2822,7 +2823,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var prefix = use_rel ? wb_rel_prefix : wb_abs_prefix;
 
         if (mod == undefined) {
-            mod = wb_info.mod;
+            //mod = wb_info.mod;
+            mod = "je_";
         }
 
         // if live, don't add the timestamp
