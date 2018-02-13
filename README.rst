@@ -1,5 +1,5 @@
-Webrecorder pywb 2.0.0
-======================
+Webrecorder pywb 2.0
+====================
 
 .. image:: https://travis-ci.org/webrecorder/pywb.svg?branch=master
       :target: https://travis-ci.org/webrecorder/pywb

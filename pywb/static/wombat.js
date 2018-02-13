@@ -18,7 +18,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
  */
 
 //============================================
-// Wombat JS-Rewriting Library v2.52
+// Wombat JS-Rewriting Library v2.53
 //============================================
 
 
@@ -795,18 +795,16 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     //============================================
     function send_history_update(url, title) {
-        if ($wbwindow.__WB_top_frame && $wbwindow == $wbwindow.__WB_replay_top) {
-            var message = {
-                       "url": url,
-                       "ts": wb_info.timestamp,
-                       "request_ts": wb_info.request_ts,
-                       "is_live": wb_info.is_live,
-                       "title": title,
-                       "wb_type": "replace-url",
-                      }
+        var message = {
+                   "url": url,
+                   "ts": wb_info.timestamp,
+                   "request_ts": wb_info.request_ts,
+                   "is_live": wb_info.is_live,
+                   "title": title,
+                   "wb_type": "replace-url",
+                  }
 
-            $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
-        }
+        send_top_message(message);
     }
 
     //============================================
@@ -2141,9 +2139,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                            "hash": $wbwindow.location.hash
                           }
 
-            if ($wbwindow.__WB_top_frame) {
-                $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
-            }
+            send_top_message(message);
         }
 
         $wbwindow.addEventListener("message", receive_hash_change);
@@ -2485,9 +2481,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                               }
 
                 // norify of cookie setting to allow server-side tracking
-                if ($wbwindow.__WB_top_frame) {
-                    $wbwindow.__WB_top_frame.postMessage(message, wb_info.top_host);
-                }
+                send_top_message(message, true);
 
                 // if no subdomain, eg. "localhost", just remove domain altogether
                 if ($wbwindow.location.hostname.indexOf(".") >= 0 && !IP_RX.test($wbwindow.location.hostname)) {
@@ -3289,7 +3283,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return;
             }
 
-            if (typeof($wbwindow.WB_wombat_location.href) != "string") {
+            var url = $wbwindow.WB_wombat_location.href;
+
+            if (typeof(url) != "string" || url == "about:blank" || url.indexOf("javascript:") == 0) {
                 return;
             }
 
@@ -3303,7 +3299,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                        "wb_type": "load"
             }
 
-            $wbwindow.__WB_top_frame.postMessage(message, wbinfo.top_host);
+            send_top_message(message);
         }
 
         if ($wbwindow.document.readyState == "complete") {
@@ -3313,6 +3309,18 @@ var _WBWombat = function($wbwindow, wbinfo) {
         } else if ($wbwindow.attachEvent) {
             $wbwindow.document.attachEvent("onreadystatechange", notify_top);
         }
+    }
+
+    function send_top_message(message, skip_top_check) {
+        if (!$wbwindow.__WB_top_frame) {
+            return;
+        }
+
+        if (!skip_top_check && $wbwindow != $wbwindow.__WB_replay_top) {
+            return;
+        }
+
+        $wbwindow.__WB_top_frame.postMessage(message, wbinfo.top_host);
     }
 
     function init_top_frame($wbwindow) {
