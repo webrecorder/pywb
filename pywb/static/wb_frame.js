@@ -27,8 +27,10 @@ function ContentFrame(content_info) {
                          "base_url": content_info.url,
                          "base_timestamp": content_info.timestamp,
                          "states": [],
-                         "init_state": null,
+                         "init_state": [null, "", content_info.url],
                         };
+
+    window.wr_history.curr_state = window.wr_history.init_state;
 
 
     this.init_iframe = function() {
@@ -123,6 +125,9 @@ function ContentFrame(content_info) {
             this.saveHistory(state);
         } else if (type == "hashchange") {
             this.inner_hash_changed(state);
+            this.saveHistory(state);
+        } else if (type == "title") {
+            this.saveHistory(state);
         }
     }
 
@@ -200,6 +205,17 @@ function ContentFrame(content_info) {
             window.wr_history.base_url = message.base_url;
             window.wr_history.states = [];
             window.wr_history.init_state = event;
+            window.wr_history.curr_state = event;
+        }
+
+        if (message.wb_type == "title") {
+            window.wr_history.curr_state[1] = message.title;
+            return;
+        }
+
+        if (message.wb_type == "hashchange") {
+            //window.wr_history.curr_state[2];
+            return;
         }
 
         if (message.change_type == "popState") {
@@ -221,6 +237,8 @@ function ContentFrame(content_info) {
             } else {
                 window.wr_history.states.push(event);
             }
+
+            window.wr_history.curr_state = event;
             window.wr_history.final_url = message.url;
         }
 
