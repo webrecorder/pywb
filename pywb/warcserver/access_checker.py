@@ -1,5 +1,6 @@
 from pywb.warcserver.index.indexsource import FileIndexSource
 from pywb.warcserver.index.aggregator import DirectoryIndexSource, CacheDirectoryMixin
+from pywb.warcserver.index.aggregator import SimpleAggregator
 
 from pywb.utils.binsearch import search
 from pywb.utils.merge import merge
@@ -18,11 +19,19 @@ class FileAccessIndexSource(FileIndexSource):
 
 
 # ============================================================================
-class DirectoryAccessSource(DirectoryIndexSource):
-    INDEX_SOURCES = [('.aclj', FileAccessIndexSource)]
-
+class ReverseMergeMixin(object):
     def _merge(self, iter_list):
         return merge(*(iter_list), reverse=True)
+
+
+# ============================================================================
+class AccessRulesAggregator(ReverseMergeMixin, SimpleAggregator):
+    pass
+
+
+# ============================================================================
+class DirectoryAccessSource(ReverseMergeMixin, DirectoryIndexSource):
+    INDEX_SOURCES = [('.aclj', FileAccessIndexSource)]
 
 
 # ============================================================================
@@ -32,15 +41,25 @@ class CacheDirectoryAccessSource(CacheDirectoryMixin, DirectoryAccessSource):
 
 # ============================================================================
 class AccessChecker(object):
-    def __init__(self, access_source_file, default_access='allow'):
-        if isinstance(access_source_file, str):
-            self.aggregator = self.create_access_aggregator(access_source_file)
+    def __init__(self, access_source, default_access='allow'):
+        if isinstance(access_source, str):
+            self.aggregator = self.create_access_aggregator([access_source])
+        elif isinstance(access_source, list):
+            self.aggregator = self.create_access_aggregator(access_source)
         else:
-            self.aggregator = access_source_file
+            self.aggregator = access_source
 
         self.default_rule = {'urlkey': '', 'access': default_access}
 
-    def create_access_aggregator(self, filename):
+    def create_access_aggregator(self, source_files):
+        sources = {}
+        for filename in source_files:
+            sources[filename] = self.create_access_source(filename)
+
+        aggregator = AccessRulesAggregator(sources)
+        return aggregator
+
+    def create_access_source(self, filename):
         if os.path.isdir(filename):
             return CacheDirectoryAccessSource(filename)
 
@@ -52,18 +71,18 @@ class AccessChecker(object):
 
     def find_access_rule(self, url, ts=None, urlkey=None):
         params = {'url': url, 'urlkey': urlkey}
-        cdx_iter, errs = self.aggregator(params)
+        acl_iter, errs = self.aggregator(params)
         if errs:
             print(errs)
 
         key = params['key'].decode('utf-8')
 
-        for cdx in cdx_iter:
-            if 'urlkey' not in cdx:
+        for acl in acl_iter:
+            if 'urlkey' not in acl:
                 continue
 
-            if key.startswith(cdx['urlkey']):
-                return cdx
+            if key.startswith(acl['urlkey']):
+                return acl
 
         return self.default_rule
 

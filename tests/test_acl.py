@@ -12,9 +12,10 @@ class TestACLApp(BaseConfigTest):
     def setup_class(cls):
         super(TestACLApp, cls).setup_class('config_test_access.yaml')
 
-    def query(self, url, is_error=False, **params):
+    def query(self, url, coll='pywb'):
+        params = {}
         params['url'] = url
-        return self.testapp.get('/pywb/cdx?' + urlencode(params, doseq=1), expect_errors=is_error)
+        return self.testapp.get('/{coll}/cdx?'.format(coll=coll) + urlencode(params, doseq=1))
 
     def test_excluded_url(self):
         resp = self.query('http://www.iana.org/')
@@ -51,5 +52,24 @@ class TestACLApp(BaseConfigTest):
         resp = self.testapp.get('/pywb/mp_/http://httpbin.org/anything/resource.json', status=451)
 
         assert 'Access Blocked' in resp.text
+
+    def test_allowed_different_coll_acl_list(self):
+        resp = self.query('http://httpbin.org/anything/resource.json', coll='pywb-acl-list')
+
+        assert len(resp.text.splitlines()) > 0
+
+        resp = self.testapp.get('/pywb-acl-list/mp_/http://httpbin.org/anything/resource.json')
+
+        assert '"http://httpbin.org/anything/resource.json"' in resp.text
+
+    def test_allowed_different_coll_acl_dir(self):
+        resp = self.query('http://httpbin.org/anything/resource.json', coll='pywb-acl-dir')
+
+        assert len(resp.text.splitlines()) > 0
+
+        resp = self.testapp.get('/pywb-acl-dir/mp_/http://httpbin.org/anything/resource.json')
+
+        assert '"http://httpbin.org/anything/resource.json"' in resp.text
+
 
 

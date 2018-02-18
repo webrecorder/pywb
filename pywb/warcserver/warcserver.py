@@ -178,9 +178,9 @@ class WarcServer(BaseWarcServer):
         else:
             raise Exception('collection config must be string or dict')
 
+        # INDEX CONFIG
         if index:
             agg = init_index_agg({name: index})
-
         else:
             if not isinstance(coll_config, dict):
                 raise Exception('collection config missing')
@@ -196,9 +196,11 @@ class WarcServer(BaseWarcServer):
             timeout = int(coll_config.get('timeout', 0))
             agg = init_index_agg(index_group, True, timeout)
 
+        # ARCHIVE CONFIG
         if not archive_paths:
             archive_paths = self.config.get('archive_paths')
 
+        # ACCESS CONFIG
         access_checker = None
         if acl_paths:
             access_checker = AccessChecker(acl_paths, default_access)
