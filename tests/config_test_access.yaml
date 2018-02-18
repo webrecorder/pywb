@@ -1,0 +1,9 @@
+debug: true
+
+collections:
+    pywb:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        acl_paths: ./sample_archive/access/
+        default_access: block
+

@@ -67,21 +67,26 @@ class BaseIndexSource(object):
 class FileIndexSource(BaseIndexSource):
     CDX_EXT = ('.cdx', '.cdxj')
 
-    def __init__(self, filename):
+    def __init__(self, filename, config=None):
         self.filename_template = filename
+
+    def _do_open(self, filename):
+        try:
+            return open(filename, 'rb')
+        except IOError:
+            raise NotFoundException(filename)
+
+    def _get_gen(self, fh, params):
+        return iter_range(fh, params['key'], params['end_key'])
 
     def load_index(self, params):
         filename = res_template(self.filename_template, params)
 
-        try:
-            fh = open(filename, 'rb')
-        except IOError:
-            raise NotFoundException(filename)
+        fh = self._do_open(filename)
 
         def do_load(fh):
             with fh:
-                gen = iter_range(fh, params['key'], params['end_key'])
-                for line in gen:
+                for line in self._get_gen(fh, params):
                     yield CDXObject(line)
 
         return do_load(fh)

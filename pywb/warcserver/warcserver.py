@@ -14,6 +14,8 @@ from pywb.warcserver.index.indexsource import XmlQueryIndexSource
 
 from pywb.warcserver.index.zipnum import ZipNumIndexSource
 
+from pywb.warcserver.access_checker import AccessChecker, CacheDirectoryAccessSource
+
 from pywb import DEFAULT_CONFIG
 
 from six import iteritems, iterkeys, itervalues
@@ -60,6 +62,9 @@ class WarcServer(BaseWarcServer):
         self.root_dir = self.config.get('collections_root', '')
         self.index_paths = self.init_paths('index_paths')
         self.archive_paths = self.init_paths('archive_paths', self.root_dir)
+        self.acl_paths = self.init_paths('acl_paths')
+
+        self.default_access = self.config.get('default_access')
 
         self.rules_file = self.config.get('rules_file', '')
 
@@ -103,8 +108,12 @@ class WarcServer(BaseWarcServer):
                                                base_dir=self.index_paths,
                                                config=self.config)
 
+        access_checker = AccessChecker(CacheDirectoryAccessSource(self.acl_paths),
+                                       self.default_access)
+
         return DefaultResourceHandler(dir_source, self.archive_paths,
-                                      rules_file=self.rules_file)
+                                      rules_file=self.rules_file,
+                                      access_checker=access_checker)
 
     def list_fixed_routes(self):
         return list(self.fixed_routes.keys())
@@ -156,11 +165,15 @@ class WarcServer(BaseWarcServer):
         if isinstance(coll_config, str):
             index = coll_config
             archive_paths = None
+            acl_paths = None
+            default_access = self.default_access
         elif isinstance(coll_config, dict):
             index = coll_config.get('index')
             if not index:
                 index = coll_config.get('index_paths')
             archive_paths = coll_config.get('archive_paths')
+            acl_paths = coll_config.get('acl_paths')
+            default_access = coll_config.get('default_access', self.default_access)
 
         else:
             raise Exception('collection config must be string or dict')
@@ -186,8 +199,13 @@ class WarcServer(BaseWarcServer):
         if not archive_paths:
             archive_paths = self.config.get('archive_paths')
 
+        access_checker = None
+        if acl_paths:
+            access_checker = AccessChecker(acl_paths, default_access)
+
         return DefaultResourceHandler(agg, archive_paths,
-                                      rules_file=self.rules_file)
+                                      rules_file=self.rules_file,
+                                      access_checker=access_checker)
 
     def init_sequence(self, coll_name, seq_config):
         if not isinstance(seq_config, list):

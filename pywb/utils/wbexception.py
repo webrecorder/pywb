@@ -1,3 +1,4 @@
+from werkzeug.http import HTTP_STATUS_CODES
 
 
 #=================================================================
@@ -6,6 +7,13 @@ class WbException(Exception):
         Exception.__init__(self, msg)
         self.msg = msg
         self.url = url
+
+    @property
+    def status_code(self):
+        return 500
+
+    def status(self):
+        return str(self.status_code) + ' ' + HTTP_STATUS_CODES.get(self.status_code, 'Unknown Error')
 
     def __repr__(self):
         return "{0}('{1}',)".format(self.__class__.__name__,  self.msg)
@@ -17,25 +25,28 @@ class WbException(Exception):
 
 #=================================================================
 class AccessException(WbException):
-    def status(self):
-        return '403 Access Denied'
+    @property
+    def status_code(self):
+        return 451
 
 
 #=================================================================
 class BadRequestException(WbException):
-    def status(self):
-        return '400 Bad Request'
+    @property
+    def status_code(self):
+        return 400
 
 
 #=================================================================
 class NotFoundException(WbException):
-    def status(self):
-        return '404 Not Found'
+    @property
+    def status_code(self):
+        return 404
 
 
 #=================================================================
 class LiveResourceException(WbException):
-    def status(self):
-        return '400 Bad Live Resource'
-
+    @property
+    def status_code(self):
+        return 400
 

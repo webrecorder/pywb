@@ -1,6 +1,8 @@
 from pywb.warcserver.inputrequest import DirectWSGIInputRequest, POSTInputRequest
 from pywb.utils.format import query_to_dict
 
+from pywb.utils.wbexception import AccessException
+
 from werkzeug.routing import Map, Rule
 from werkzeug.exceptions import HTTPException
 
@@ -90,6 +92,12 @@ class BaseWarcServer(object):
             start_response('200 OK', list(out_headers.items()))
             return res
 
+        except AccessException as ae:
+            out_headers = {}
+            res = self.json_encode(ae.msg, out_headers)
+            start_response(ae.status(), list(out_headers.items()))
+            return res
+
         except Exception as e:
             if self.debug:
                 traceback.print_exc()
@@ -107,6 +115,7 @@ class BaseWarcServer(object):
 
     def send_error(self, errs, start_response,
                    message='No Resource Found', status=404):
+
         last_exc = errs.pop('last_exc', None)
         if last_exc:
             if self.debug:
