@@ -10,9 +10,7 @@ import sys
 from pywb import __version__
 
 
-long_description = open('README.rst').read()
-
-
+# ============================================================================
 class PyTest(TestCommand):
     user_options = []
     def finalize_options(self):
@@ -33,7 +31,7 @@ class PyTest(TestCommand):
         sys.exit(errcode)
 
 
-
+# ============================================================================
 def get_git_short_hash():
     import subprocess
     try:
@@ -45,6 +43,8 @@ def get_git_short_hash():
     except:
         return ''
 
+
+# ============================================================================
 def generate_git_hash_py(pkg, filename='git_hash.py'):
     try:
         git_hash = get_git_short_hash()
@@ -54,12 +54,13 @@ def generate_git_hash_py(pkg, filename='git_hash.py'):
         pass
 
 
-
+# ============================================================================
 def load_requirements(filename):
     with open(filename, 'rt') as fh:
         return fh.read().rstrip().split('\n')
 
 
+# ============================================================================
 def get_package_data():
     pkgs = ['static/*.*',
             'templates/*',
@@ -69,13 +70,28 @@ def get_package_data():
         for dir_ in dirs:
             pkgs.append(os.path.relpath(os.path.join(root, dir_, '*'), 'pywb'))
 
-    return pkgs
+    return {'pywb': pkgs}
 
 
+# ============================================================================
+def get_data_files():
+    dirs = []
 
+    for dirname in os.listdir('sample_archive'):
+        dirs.append(('sample_archive/' + dirname,
+                     glob.glob('sample_archive/' + dirname + '/*')))
+
+    return dirs
+
+
+# ============================================================================
 generate_git_hash_py('pywb')
 
+long_description = open('README.rst').read()
 
+
+# ============================================================================
+# SETUP
 setup(
     name='pywb',
     version=__version__,
@@ -86,19 +102,9 @@ setup(
     long_description=long_description,
     license='GPL',
     packages=find_packages(exclude=['tests_disabled']),
-    zip_safe=True,
-    package_data={
-        'pywb': get_package_data(),
-        },
-    data_files=[
-        ('sample_archive/cdx', glob.glob('sample_archive/cdx/*')),
-        ('sample_archive/cdxj', glob.glob('sample_archive/cdxj/*')),
-        ('sample_archive/non-surt-cdx', glob.glob('sample_archive/non-surt-cdx/*')),
-        ('sample_archive/zipcdx', glob.glob('sample_archive/zipcdx/*')),
-        ('sample_archive/warcs', glob.glob('sample_archive/warcs/*')),
-        ('sample_archive/text_content',
-            glob.glob('sample_archive/text_content/*')),
-        ],
+    zip_safe=False,
+    package_data=get_package_data(),
+    data_files=get_data_files(),
     install_requires=load_requirements('requirements.txt'),
     dependency_links=[
         #'git+https://github.com/t0m/pyamf.git@python3#egg=pyamf-0.8.0'
