@@ -3,7 +3,10 @@ collections_root: collections
 # Per-Collection Paths
 archive_paths: archive
 index_paths: indexes
+acl_paths: acl
 static_path: static
+
+default_access: allow
 
 templates_dir: templates
 

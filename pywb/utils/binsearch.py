@@ -89,9 +89,13 @@ def linearsearch(iter_, key, prev_size=0, compare_func=cmp):
             matched = True
             break
 
-    # no matches, so return empty iterator
+    # no matches, so pop last line, but return rest of prev lines, if any
     if not matched:
-        return iter([])
+        if not prev_size or len(prev_deque) <= 1:
+            return iter([])
+
+        prev_deque.popleft()
+        return iter(prev_deque)
 
     return itertools.chain(prev_deque, iter_)
 

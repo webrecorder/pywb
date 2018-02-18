@@ -1,6 +1,5 @@
 import requests
 
-from werkzeug.http import HTTP_STATUS_CODES
 from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
 
 from pywb.rewrite.default_rewriter import DefaultRewriter, RewriterWithJSProxy
@@ -36,7 +35,11 @@ import json
 class UpstreamException(WbException):
     def __init__(self, status_code, url, details):
         super(UpstreamException, self).__init__(url=url, msg=details)
-        self.status_code = status_code
+        self._status_code = status_code
+
+    @property
+    def status_code(self):
+        return self._status_code
 
 
 # ============================================================================
@@ -449,24 +452,24 @@ class RewriterApp(object):
         top_url += wb_url.to_str(mod='')
         return top_url
 
-    def handle_error(self, environ, ue):
-        if ue.status_code == 404:
-            return self._not_found_response(environ, ue.url)
-
+    def handle_error(self, environ, wbe):
+        if wbe.status_code == 404:
+            return self._not_found_response(environ, wbe.url)
         else:
-            status = str(ue.status_code) + ' ' + HTTP_STATUS_CODES.get(ue.status_code, 'Unknown Error')
-            return self._error_response(environ, ue.url, ue.msg,
-                                        status=status)
+            return self._error_response(environ, wbe)
 
     def _not_found_response(self, environ, url):
         resp = self.not_found_view.render_to_string(environ, url=url)
 
         return WbResponse.text_response(resp, status='404 Not Found', content_type='text/html')
 
-    def _error_response(self, environ, msg='', details='', status='404 Not Found'):
+    def _error_response(self, environ, wbe):
+        status = wbe.status()
+
         resp = self.error_view.render_to_string(environ,
-                                                err_msg=msg,
-                                                err_details=details)
+                                                err_msg=wbe.url,
+                                                err_details=wbe.msg,
+                                                err_status=wbe.status_code)
 
         return WbResponse.text_response(resp, status=status, content_type='text/html')
 

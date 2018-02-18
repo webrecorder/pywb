@@ -16,13 +16,14 @@ from pywb.recorder.recorderapp import RecorderApp
 from pywb.utils.loaders import load_yaml_config
 from pywb.utils.geventserver import GeventServer
 from pywb.utils.io import StreamIter
+from pywb.utils.wbexception import NotFoundException, WbException
 
 from pywb.warcserver.warcserver import WarcServer
 
 from pywb.rewrite.templateview import BaseInsertView
 
 from pywb.apps.static_handler import StaticHandler
-from pywb.apps.rewriterapp import RewriterApp, UpstreamException
+from pywb.apps.rewriterapp import RewriterApp
 from pywb.apps.wbrequestresponse import WbResponse
 
 import os
@@ -274,8 +275,8 @@ class FrontEndApp(object):
 
         try:
             response = self.rewriterapp.render_content(wb_url_str, metadata, environ)
-        except UpstreamException as ue:
-            response = self.rewriterapp.handle_error(environ, ue)
+        except WbException as wbe:
+            response = self.rewriterapp.handle_error(environ, wbe)
             raise HTTPException(response=response)
 
         return response
@@ -314,7 +315,7 @@ class FrontEndApp(object):
                 coll in self.warcserver.list_dynamic_routes())
 
     def raise_not_found(self, environ, msg):
-        raise NotFound(response=self.rewriterapp._error_response(environ, msg))
+        raise NotFound(response=self.rewriterapp._error_response(environ, NotFoundException(msg)))
 
     def _check_refer_redirect(self, environ):
         referer = environ.get('HTTP_REFERER')
@@ -366,7 +367,7 @@ class FrontEndApp(object):
             if self.debug:
                 traceback.print_exc()
 
-            response = self.rewriterapp._error_response(environ, 'Internal Error: ' + str(e), '500 Server Error')
+            response = self.rewriterapp._error_response(environ, WbException('Internal Error: ' + str(e)))
             return response(environ, start_response)
 
     @classmethod

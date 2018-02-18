@@ -1,4 +1,9 @@
 <h2>Pywb Error</h2>
+
+{% if err_status == 451 %}
+Access Blocked to {{ err_msg }}
+{% else %}
+
 <b>{{ err_msg }}</b>
 
 {% if err_details %}
@@ -8,4 +13,5 @@
 {{ err_details }}
 </pre>
 </p>
+{% endif %}
 {% endif %}

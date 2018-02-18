@@ -1,4 +1,4 @@
-from pywb.utils.wbexception import BadRequestException, WbException
+from pywb.utils.wbexception import BadRequestException, WbException, AccessException
 from pywb.utils.wbexception import NotFoundException
 from pywb.utils.memento import MementoUtils
 
@@ -43,6 +43,7 @@ class IndexHandler(object):
         self.index_source = index_source
         self.opts = opts or {}
         self.fuzzy = FuzzyMatcher(kwargs.get('rules_file'))
+        self.access_checker = kwargs.get('access_checker')
 
     def get_supported_modes(self):
         return dict(modes=['list_sources', 'index'])
@@ -57,7 +58,12 @@ class IndexHandler(object):
         if input_req:
             params['alt_url'] = input_req.include_method_query(url)
 
-        return self.fuzzy(self.index_source, params)
+        cdx_iter = self.fuzzy(self.index_source, params)
+
+        if self.access_checker:
+            cdx_iter = self.access_checker(cdx_iter)
+
+        return cdx_iter
 
     def __call__(self, params):
         mode = params.get('mode', 'index')
@@ -96,8 +102,8 @@ class IndexHandler(object):
 
 #=============================================================================
 class ResourceHandler(IndexHandler):
-    def __init__(self, index_source, resource_loaders, rules_file=None):
-        super(ResourceHandler, self).__init__(index_source, rules_file=rules_file)
+    def __init__(self, index_source, resource_loaders, **kwargs):
+        super(ResourceHandler, self).__init__(index_source, **kwargs)
         self.resource_loaders = resource_loaders
 
     def get_supported_modes(self):
@@ -116,6 +122,11 @@ class ResourceHandler(IndexHandler):
         last_exc = None
 
         for cdx in cdx_iter:
+            if cdx.get('access', 'allow') != 'allow':
+                raise AccessException(msg={'access': cdx['access'],
+                                           'access_status': cdx.get('access_status', 451)},
+                                      url=cdx['url'])
+
             for loader in self.resource_loaders:
                 try:
                     out_headers, resp = loader(cdx, params)
@@ -134,13 +145,12 @@ class ResourceHandler(IndexHandler):
 #=============================================================================
 class DefaultResourceHandler(ResourceHandler):
     def __init__(self, index_source, warc_paths='', forward_proxy_prefix='',
-                 rules_file=''):
+                 **kwargs):
         loaders = [WARCPathLoader(warc_paths, index_source),
                    LiveWebLoader(forward_proxy_prefix),
                    VideoLoader()
                   ]
-        super(DefaultResourceHandler, self).__init__(index_source, loaders,
-                                                     rules_file=rules_file)
+        super(DefaultResourceHandler, self).__init__(index_source, loaders, **kwargs)
 
 
 #=============================================================================

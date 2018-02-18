@@ -36,8 +36,9 @@ ORIG_FILENAME = 'orig.filename'
 
 #=================================================================
 class CDXException(WbException):
-    def status(self):
-        return '400 Bad Request'
+    @property
+    def status_code(self):
+        return 400
 
 
 #=================================================================
@@ -132,7 +133,7 @@ class CDXObject(OrderedDict):
                         v = quote(v.encode('utf-8'), safe=':/')
 
                 if n != 'filename':
-                    v = to_native_str(v, 'utf-8')
+                    v = to_native_str(v, 'utf-8') or v
 
                 self[n] = v
 

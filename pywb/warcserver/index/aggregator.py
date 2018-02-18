@@ -90,9 +90,12 @@ class BaseAggregator(object):
         if len(iter_list) <= 1:
             cdx_iter = iter_list[0] if iter_list else iter([])
         else:
-            cdx_iter = merge(*(iter_list))
+            cdx_iter = self._merge(iter_list)
 
         return cdx_iter, err_list
+
+    def _merge(self, iter_list):
+        return merge(*(iter_list))
 
     def _on_source_error(self, name):  #pragma: no cover
         pass
@@ -255,6 +258,11 @@ class GeventTimeoutAggregator(TimeoutMixin, GeventMixin, BaseSourceListAggregato
 
 #=============================================================================
 class BaseDirectoryIndexSource(BaseAggregator):
+    INDEX_SOURCES = [
+                     (FileIndexSource.CDX_EXT, FileIndexSource),
+                     (ZipNumIndexSource.IDX_EXT, ZipNumIndexSource)
+                    ]
+
     def __init__(self, base_prefix, base_dir='', name='', config=None):
         self.base_prefix = base_prefix
         self.base_dir = base_dir
@@ -278,13 +286,13 @@ class BaseDirectoryIndexSource(BaseAggregator):
 
     def _load_files_single_dir(self, the_dir):
         for name in os.listdir(the_dir):
-            filename = os.path.join(the_dir, name)
+            for ext, cls in self.INDEX_SOURCES:
+                if not name.endswith(ext):
+                    continue
 
-            is_cdx = filename.endswith(FileIndexSource.CDX_EXT)
-            is_zip = filename.endswith(ZipNumIndexSource.IDX_EXT)
+                filename = os.path.join(the_dir, name)
 
-            if is_cdx or is_zip:
-                #print('Adding ' + filename)
+                 #print('Adding ' + filename)
                 rel_path = os.path.relpath(the_dir, self.base_prefix)
                 if rel_path == '.':
                     full_name = name
@@ -294,10 +302,7 @@ class BaseDirectoryIndexSource(BaseAggregator):
                 if self.name:
                     full_name = self.name + ':' + full_name
 
-                if is_cdx:
-                    index_src = FileIndexSource(filename)
-                else:
-                    index_src = ZipNumIndexSource(filename, self.config)
+                index_src = cls(filename, self.config)
 
                 yield full_name, index_src
 
@@ -339,9 +344,9 @@ class DirectoryIndexSource(SeqAggMixin, BaseDirectoryIndexSource):
 
 
 #=============================================================================
-class CacheDirectoryIndexSource(DirectoryIndexSource):
+class CacheDirectoryMixin(object):
     def __init__(self, *args, **kwargs):
-        super(CacheDirectoryIndexSource, self).__init__(*args, **kwargs)
+        super(CacheDirectoryMixin, self).__init__(*args, **kwargs)
         self.cached_file_list = {}
 
     def _load_files_single_dir(self, the_dir):
@@ -358,10 +363,15 @@ class CacheDirectoryIndexSource(DirectoryIndexSource):
                 print('Dir {0} unchanged'.format(the_dir))
                 return files
 
-        files = super(CacheDirectoryIndexSource, self)._load_files_single_dir(the_dir)
+        files = super(CacheDirectoryMixin, self)._load_files_single_dir(the_dir)
         files = list(files)
         self.cached_file_list[the_dir] = (stat, files)
         return files
+
+
+#=============================================================================
+class CacheDirectoryIndexSource(CacheDirectoryMixin, DirectoryIndexSource):
+    pass
 
 
 #=============================================================================
