@@ -1,5 +1,6 @@
 from requests.adapters import HTTPAdapter
 import requests
+import logging
 import os
 
 import six.moves.http_client
@@ -9,13 +10,15 @@ SOCKS_PROXIES = None
 orig_getaddrinfo = None
 
 
+logging.getLogger('urllib3').setLevel(logging.ERROR)
+
+
 #=============================================================================
 class DefaultAdapters(object):
     live_adapter = HTTPAdapter(max_retries=3)
     remote_adapter = HTTPAdapter(max_retries=3)
 
 requests.packages.urllib3.disable_warnings()
-
 
 #=============================================================================
 def patch_socks():

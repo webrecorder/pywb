@@ -121,7 +121,7 @@ class CDXObject(OrderedDict):
         if fields[-1].startswith(b'{'):
             self[URLKEY] = to_native_str(fields[0], 'utf-8')
             self[TIMESTAMP] = to_native_str(fields[1], 'utf-8')
-            json_fields = json_decode(to_native_str(fields[-1], 'utf-8'))
+            json_fields = self.json_decode(to_native_str(fields[-1], 'utf-8'))
             for n, v in six.iteritems(json_fields):
                 n = to_native_str(n, 'utf-8')
                 n = self.CDX_ALT_FIELDS.get(n, n)
@@ -245,6 +245,10 @@ class CDXObject(OrderedDict):
 
         res = (self._cached_json <= other._cached_json)
         return res
+
+    @classmethod
+    def json_decode(cls, string):
+        return json_decode(string, object_pairs_hook=OrderedDict)
 
 
 #=================================================================
