@@ -1,6 +1,7 @@
 from pywb.warcserver.index.indexsource import FileIndexSource
 from pywb.warcserver.index.aggregator import DirectoryIndexSource, CacheDirectoryMixin
 from pywb.warcserver.index.aggregator import SimpleAggregator
+from pywb.warcserver.index.cdxobject import CDXObject
 
 from pywb.utils.binsearch import search
 from pywb.utils.merge import merge
@@ -49,7 +50,11 @@ class AccessChecker(object):
         else:
             self.aggregator = access_source
 
-        self.default_rule = {'urlkey': '', 'access': default_access}
+        self.default_rule = CDXObject()
+        self.default_rule['urlkey'] = ''
+        self.default_rule['timestamp'] = '-'
+        self.default_rule['access'] = default_access
+        self.default_rule['default'] = 'true'
 
     def create_access_aggregator(self, source_files):
         sources = {}
