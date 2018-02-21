@@ -40,11 +40,14 @@ class ACLManager(CollectionsManager):
         else:
             self.acl_file = r.coll_name
 
-        if r.op == 'add':
+        # for add/import, file doesn't have to exist
+        if r.op in ('add', 'importtxt'):
             self.load_acl(False)
 
+        # otherwise, ensure file loaded successfully and log errors
         else:
             if not self.load_acl(True):
+                sys.exit(2)
                 return
 
         # if 'validate', the command itself is validation
@@ -83,7 +86,7 @@ class ACLManager(CollectionsManager):
     def save_acl(self, r=None):
         try:
             os.makedirs(os.path.dirname(self.acl_file))
-        except IOError:
+        except OSError:
             pass
 
         try:
@@ -105,6 +108,7 @@ class ACLManager(CollectionsManager):
     def validate_access(self, access):
         if access not in self.VALID_ACCESS:
             print('Valid access values are: ' + ', '.join(self.VALID_ACCESS))
+            sys.exit(1)
             return False
 
         return True
@@ -226,6 +230,7 @@ class ACLManager(CollectionsManager):
 
         except Exception as e:
             print('Error Importing: ' + str(e))
+            sys.exit(1)
 
     def print_rule(self, rule):
         print('    ' + rule.to_cdxj())
@@ -235,14 +240,14 @@ class ACLManager(CollectionsManager):
         subparsers = parser.add_subparsers(dest='op')
         subparsers.required = True
 
-        def command(name, *args, func=None):
+        def command(name, *args, **kwargs):
             op = subparsers.add_parser(name)
             for arg in args:
                 if arg == 'default_access':
                     op.add_argument(arg, nargs='?', default='allow')
                 else:
                     op.add_argument(arg)
-            op.set_defaults(acl_func=func)
+            op.set_defaults(acl_func=kwargs['func'])
 
         command('add', 'coll_name', 'url', 'access', func=cls.add_rule)
         command('remove', 'coll_name', 'url', func=cls.remove_rule)
