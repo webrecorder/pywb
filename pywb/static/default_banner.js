@@ -94,7 +94,8 @@ This file is part of pywb, https://github.com/webrecorder/pywb
 
             set_banner(window.wbinfo.url,
                        window.wbinfo.timestamp,
-                       window.wbinfo.is_live);
+                       window.wbinfo.is_live,
+                       window.wbinfo.is_framed ? "" : document.title);
         } else {
             init("_wb_frame_top_banner");
 
