@@ -14,5 +14,6 @@ enable_flash_video_rewrite: true
 redirect_to_exact: true
 
 enable_memento: true
+enable_prefer: true
 
 debug: true
