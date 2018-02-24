@@ -68,6 +68,11 @@ class RewriterApp(object):
             self.frame_mod = None
             self.replay_mod = ''
 
+        self.enable_prefer = self.config.get('enable_prefer', False)
+        self.prefs = {'raw': 'id_',
+                      'rewritten': self.replay_mod
+                     }
+
         self.default_rw = DefaultRewriter(replay_mod=self.replay_mod,
                                           config=config)
 
@@ -136,6 +141,19 @@ class RewriterApp(object):
                 wb_url.type = wb_url.REPLAY
 
         return is_timegate
+
+    def _get_prefer_mod(self, wb_url, environ):
+        if not self.enable_prefer:
+            return None, None
+
+        prefer = environ.get('HTTP_PREFER')
+        if not prefer:
+            return None, 'raw' if wb_url.is_identity else 'rewritten'
+
+        try:
+            return self.prefs[prefer], prefer
+        except:
+            raise UpstreamException(400, url=wb_url.url, details='Invalid Prefer: ' + prefer)
 
     def _check_range(self, inputreq, wb_url):
         skip_record = False
@@ -246,6 +264,24 @@ class RewriterApp(object):
 
             return resp
 
+        # Check Prefer
+        pref_mod, pref_applied = self._get_prefer_mod(wb_url, environ)
+
+        # fast-redirect to preferred
+        if pref_mod is not None:
+            if self.redirect_to_exact and not is_timegate and pref_mod != wb_url.mod:
+                new_url = urlrewriter.get_new_url(url=wb_url.url,
+                                                  timestamp=wb_url.timestamp,
+                                                  mod=pref_mod)
+                headers = [('Preference-Applied', pref_applied),
+                           ('Vary', 'Prefer')]
+
+                return WbResponse.redir_response(new_url,
+                                                 '307 Temporary Redirect',
+                                                 headers=headers)
+            else:
+                wb_url.mod = pref_mod
+
         self.unrewrite_referrer(environ, full_prefix)
 
         urlkey = canonicalize(wb_url.url)
@@ -319,7 +355,9 @@ class RewriterApp(object):
                         self._add_memento_links(target_uri, full_prefix,
                                                 memento_dt, cdx['timestamp'],
                                                 resp.status_headers,
-                                                is_timegate, is_proxy)
+                                                is_timegate, is_proxy,
+                                                pref_applied=pref_applied,
+                                                mod=pref_mod)
 
                     else:
                         resp.status_headers['Link'] = MementoUtils.make_link(target_uri, 'original')
@@ -367,13 +405,15 @@ class RewriterApp(object):
         if not is_ajax and self.enable_memento:
             self._add_memento_links(cdx['url'], full_prefix,
                                     memento_dt, cdx['timestamp'], status_headers,
-                                    is_timegate, is_proxy, cdx.get('source-coll'))
+                                    is_timegate, is_proxy, cdx.get('source-coll'),
+                                    mod=pref_mod, pref_applied=pref_applied)
 
             set_content_loc = True
 
         if set_content_loc and not self.redirect_to_exact:
             status_headers.headers.append(('Content-Location', urlrewriter.get_new_url(timestamp=cdx['timestamp'],
                                                                                        url=cdx['url'])))
+
         if not is_proxy:
             self.add_csp_header(wb_url, status_headers)
 
@@ -400,7 +440,10 @@ class RewriterApp(object):
         return response
 
     def _add_memento_links(self, url, full_prefix, memento_dt, memento_ts,
-                           status_headers, is_timegate, is_proxy, coll=None):
+                           status_headers, is_timegate, is_proxy, coll=None,
+                           pref_applied=None, mod=None):
+
+        mod = mod or self.replay_mod
 
         # memento url + header
         if not memento_dt and memento_ts:
@@ -412,12 +455,12 @@ class RewriterApp(object):
             if is_proxy:
                 memento_url = url
             else:
-                memento_url = full_prefix + memento_ts + self.replay_mod
+                memento_url = full_prefix + memento_ts + mod
                 memento_url += '/' + url
         else:
             memento_url = None
 
-        timegate_url, timemap_url = self._get_timegate_timemap(url, full_prefix)
+        timegate_url, timemap_url = self._get_timegate_timemap(url, full_prefix, mod)
 
         link = []
         if not is_proxy:
@@ -432,14 +475,22 @@ class RewriterApp(object):
 
         status_headers.headers.append(('Link', link_str))
 
+        vary = ''
         if is_timegate:
-            status_headers.headers.append(('Vary', 'accept-datetime'))
+            vary = 'accept-datetime'
 
-    def _get_timegate_timemap(self, url, full_prefix):
+        if pref_applied:
+            vary = 'Prefer' if not vary else vary + ', Prefer'
+            status_headers.headers.append(('Preference-Applied', pref_applied))
+
+        if vary:
+            status_headers.headers.append(('Vary', vary))
+
+    def _get_timegate_timemap(self, url, full_prefix, mod):
         # timegate url
         timegate_url = full_prefix
-        if self.replay_mod:
-            timegate_url += self.replay_mod + '/'
+        if mod:
+            timegate_url += mod + '/'
 
         timegate_url += url
 
@@ -532,7 +583,7 @@ class RewriterApp(object):
             status = str(res.status_code) + ' ' + res.reason
 
             if res.status_code == 200 and output == 'link':
-                timegate, timemap = self._get_timegate_timemap(wb_url.url, full_prefix)
+                timegate, timemap = self._get_timegate_timemap(wb_url.url, full_prefix, self.replay_mod)
 
                 text = MementoUtils.wrap_timemap_header(wb_url.url,
                                                         timegate,
