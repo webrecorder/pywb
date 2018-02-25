@@ -1,8 +1,7 @@
 from gevent.monkey import patch_all; patch_all()
 
 #from bottle import run, Bottle, request, response, debug
-from werkzeug.routing import Map, Rule
-from werkzeug.exceptions import HTTPException, NotFound
+from werkzeug.routing import Map, Rule, HTTPException
 from werkzeug.wsgi import pop_path_info
 from six.moves.urllib.parse import urljoin
 from six import iteritems
@@ -273,12 +272,7 @@ class FrontEndApp(object):
         if timemap_output:
             metadata['output'] = timemap_output
 
-        try:
-            response = self.rewriterapp.render_content(wb_url_str, metadata, environ)
-        except WbException as wbe:
-            response = self.rewriterapp.handle_error(environ, wbe)
-            raise HTTPException(response=response)
-
+        response = self.rewriterapp.render_content(wb_url_str, metadata, environ)
         return response
 
     def setup_paths(self, environ, coll, record=False):
@@ -315,7 +309,7 @@ class FrontEndApp(object):
                 coll in self.warcserver.list_dynamic_routes())
 
     def raise_not_found(self, environ, msg):
-        raise NotFound(response=self.rewriterapp._error_response(environ, NotFoundException(msg)))
+        raise NotFoundException(msg)
 
     def _check_refer_redirect(self, environ):
         referer = environ.get('HTTP_REFERER')
@@ -354,21 +348,29 @@ class FrontEndApp(object):
             endpoint, args = urls.match()
 
             response = endpoint(environ, **args)
-            return response(environ, start_response)
 
-        except HTTPException as e:
+        except HTTPException as hte:
             redir = self._check_refer_redirect(environ)
             if redir:
                 return redir(environ, start_response)
 
-            return e(environ, start_response)
+            response = hte
+
+        except WbException as wbe:
+            if wbe.status_code == 404:
+                redir = self._check_refer_redirect(environ)
+                if redir:
+                    return redir(environ, start_response)
+
+            response = self.rewriterapp.handle_error(environ, wbe)
 
         except Exception as e:
             if self.debug:
                 traceback.print_exc()
 
             response = self.rewriterapp._error_response(environ, WbException('Internal Error: ' + str(e)))
-            return response(environ, start_response)
+
+        return response(environ, start_response)
 
     @classmethod
     def create_app(cls, port):
