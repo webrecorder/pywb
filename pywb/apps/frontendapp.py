@@ -447,7 +447,7 @@ class FrontEndApp(object):
         :param dict environ: The WSGI environment dictionary for the request
         :param str msg: The error message
         """
-        raise NotFound(response=self.rewriterapp._error_response(environ, NotFoundException(msg)))
+        raise NotFoundException(msg)
 
     def _check_refer_redirect(self, environ):
         """Returns a WbResponse for a HTTP 307 redirection if the HTTP referer header is the same as the HTTP host header
@@ -501,21 +501,29 @@ class FrontEndApp(object):
             environ['pywb.app_prefix'] = environ.get('SCRIPT_NAME', '')
 
             response = endpoint(environ, **args)
-            return response(environ, start_response)
 
-        except HTTPException as e:
+        except HTTPException as hte:
             redir = self._check_refer_redirect(environ)
             if redir:
                 return redir(environ, start_response)
 
-            return e(environ, start_response)
+            response = hte
+
+        except WbException as wbe:
+            if wbe.status_code == 404:
+                redir = self._check_refer_redirect(environ)
+                if redir:
+                    return redir(environ, start_response)
+
+            response = self.rewriterapp.handle_error(environ, wbe)
 
         except Exception as e:
             if self.debug:
                 traceback.print_exc()
 
             response = self.rewriterapp._error_response(environ, WbException('Internal Error: ' + str(e)))
-            return response(environ, start_response)
+
+        return response(environ, start_response)
 
     @classmethod
     def create_app(cls, port):

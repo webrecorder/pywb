@@ -250,15 +250,7 @@ class XmlQueryIndexSource(BaseIndexSource):
 
             results = etree.fromstring(response.text)
 
-            items = results.find('results').findall('result')
-
-            if matchType == 'exact':
-                cdx_iter = [self.convert_to_cdx(item) for item in items]
-                if closest:
-                    cdx_iter = cdx_sort_closest(closest, cdx_iter, limit=10000)
-
-            else:
-                cdx_iter = self.prefix_query_iter(items)
+            items = results.find('results')
 
         except Exception:
             if self.logger.getEffectiveLevel() == logging.DEBUG:
@@ -266,6 +258,19 @@ class XmlQueryIndexSource(BaseIndexSource):
                 traceback.print_exc()
 
             raise NotFoundException('url {0} not found'.format(url))
+
+        if not items:
+            raise NotFoundException('url {0} not found'.format(url))
+
+        items = items.findall('result')
+
+        if matchType == 'exact':
+            cdx_iter = [self.convert_to_cdx(item) for item in items]
+            if closest:
+                cdx_iter = cdx_sort_closest(closest, cdx_iter, limit=10000)
+
+        else:
+            cdx_iter = self.prefix_query_iter(items)
 
         return cdx_iter
 
