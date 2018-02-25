@@ -80,6 +80,7 @@ import six
 from six import StringIO
 from io import BytesIO
 import requests
+import yaml
 
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
 from pywb.utils.loaders import extract_client_cookie
@@ -167,6 +168,28 @@ def test_err_unknown_loader():
         BlockLoader().load('foo://example.com', 10).read()
 #IOError: No Loader for type: foo
 
+
+
+def test_yaml_resolve_env():
+    os.environ['PYWB_PATH'] = './test'
+    os.environ['PYWB_FOO'] = 'bar'
+
+    config = """\
+collection:
+    coll:
+        index: ${PYWB_PATH}/index
+        archive: ${PYWB_PATH}/archive/${PYWB_FOO}
+        other: ${PYWB_NOT}/archive/${PYWB_FOO}
+"""
+
+    config_data = yaml.load(config)
+
+    assert config_data['collection']['coll']['index'] == './test/index'
+    assert config_data['collection']['coll']['archive'] == './test/archive/bar'
+    assert config_data['collection']['coll']['other'] == '${PYWB_NOT}/archive/bar'
+
+    del os.environ['PYWB_PATH']
+    del os.environ['PYWB_FOO']
 
 def print_str(string):
     return string.decode('utf-8') if six.PY3 else string
