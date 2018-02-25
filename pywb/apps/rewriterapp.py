@@ -261,9 +261,28 @@ class RewriterApp(object):
             'pywb.static_prefix', '/static/')
         is_proxy = ('wsgiprox.proxy_host' in environ)
 
-        response = self.handle_custom_response(environ, wb_url,
-                                               full_prefix, host_prefix,
-                                               kwargs)
+        # Check Prefer
+        pref_mod, pref_applied = self._get_prefer_mod(wb_url, environ)
+
+        response = None
+
+        # prefer overrides custom response?
+        if pref_mod is not None:
+            # fast-redirect to preferred
+            if self.redirect_to_exact and not is_timegate and pref_mod != wb_url.mod:
+                new_url = full_prefix + wb_url.to_str(mod=pref_mod)
+                headers = [('Preference-Applied', pref_applied),
+                           ('Vary', 'Prefer')]
+
+                return WbResponse.redir_response(new_url,
+                                                 '307 Temporary Redirect',
+                                                 headers=headers)
+            else:
+                wb_url.mod = pref_mod
+        else:
+            response = self.handle_custom_response(environ, wb_url,
+                                                   full_prefix, host_prefix,
+                                                   kwargs)
 
         if response:
             return self.format_response(response, wb_url, full_prefix, is_timegate, is_proxy)
@@ -285,24 +304,6 @@ class RewriterApp(object):
         url_parts = urlsplit(wb_url.url)
         if not url_parts.path:
             return self.send_redirect('/', url_parts, urlrewriter)
-
-        # Check Prefer
-        pref_mod, pref_applied = self._get_prefer_mod(wb_url, environ)
-
-        # fast-redirect to preferred
-        if pref_mod is not None:
-            if self.redirect_to_exact and not is_timegate and pref_mod != wb_url.mod:
-                new_url = urlrewriter.get_new_url(url=wb_url.url,
-                                                  timestamp=wb_url.timestamp,
-                                                  mod=pref_mod)
-                headers = [('Preference-Applied', pref_applied),
-                           ('Vary', 'Prefer')]
-
-                return WbResponse.redir_response(new_url,
-                                                 '307 Temporary Redirect',
-                                                 headers=headers)
-            else:
-                wb_url.mod = pref_mod
 
         self.unrewrite_referrer(environ, full_prefix)
 
