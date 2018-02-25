@@ -16,7 +16,9 @@ from six.moves.urllib.parse import urljoin, unquote_plus, urlsplit, urlencode
 import time
 import pkgutil
 import base64
+import yaml
 import cgi
+import re
 
 from io import open, BytesIO
 from warcio.limitreader import LimitReader
@@ -30,7 +32,21 @@ except ImportError:  #pragma: no cover
     s3_avail = False
 
 
-# =================================================================
+# ============================================================================
+def init_yaml_env_vars():
+    env_rx = re.compile(r'\$\{[^}]+\}')
+
+    yaml.add_implicit_resolver('!envvar', env_rx)
+
+    def envvar_constructor(loader, node):
+        value = loader.construct_scalar(node)
+        value = os.path.expandvars(value)
+        return value
+
+    yaml.add_constructor('!envvar', envvar_constructor)
+
+
+# ============================================================================
 def load_py_name(string):
     import importlib
 
@@ -465,3 +481,4 @@ class HMACCookieMaker(object):
 # ============================================================================
 BlockLoader.init_default_loaders()
 
+init_yaml_env_vars()
