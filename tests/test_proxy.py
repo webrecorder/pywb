@@ -60,6 +60,9 @@ class TestProxy(BaseTestProxy):
         assert 'WB Insert' in res.text
         assert 'Example Domain' in res.text
 
+        # no wombat.js
+        assert 'wombat.js' not in res.text
+
         assert res.headers['Link'] == '<http://example.com>; rel="memento"; datetime="Mon, 27 Jan 2014 17:12:51 GMT"; collection="pywb"'
         assert res.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
 
@@ -72,6 +75,9 @@ class TestProxy(BaseTestProxy):
 
         assert 'WB Insert' in res.text
         assert 'Example Domain' in res.text
+
+        # no wombat.js
+        assert 'wombat.js' not in res.text
 
         assert res.headers['Link'] == '<http://test@example.com/>; rel="memento"; datetime="Mon, 29 Jul 2013 19:51:51 GMT"; collection="pywb"'
         assert res.headers['Memento-Datetime'] == 'Mon, 29 Jul 2013 19:51:51 GMT'

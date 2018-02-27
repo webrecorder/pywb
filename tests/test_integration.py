@@ -163,8 +163,8 @@ class TestWbIntegration(BaseConfigTest):
     def test_replay_banner_only(self):
         resp = self.testapp.get('/pywb/20140126201054bn_/http://www.iana.org/domains/reserved')
 
-        # wombat.js header insertion
-        assert 'wombat.js' in resp.text
+        # wombat.js header not inserted
+        assert 'wombat.js' not in resp.text
 
         # no wombat present
         assert '_WBWombat' not in resp.text

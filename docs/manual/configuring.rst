@@ -403,7 +403,7 @@ Configuring HTTP Proxy
 
 At this time, pywb requires the collection to be configured at setup time (though collection switching will be added soon).
 
-The collection can be specified by running: ``wayback --proxy my-coll`` or by adding to the config::
+To enable proxy mode, the collection can be specified by running: ``wayback --proxy my-coll`` or by adding to the config::
 
   proxy:
     coll: my-coll
@@ -432,24 +432,28 @@ HTTPS Proxy and pywb Certificate Authority
 For HTTPS proxy access, pywb provides its own Certificate Authority and dynamically generates certificates for each host and signs the responses
 with these certificates. By design, this allows pywb to act as "man-in-the-middle" serving archived copies of a given site.
 
-However, the pywb certificate authority (CA) will need to be accepted by the browser. The CA cert can be downloaded from pywb directly
+However, the pywb Certificate Authority (CA) certificate will need to be accepted by the browser. The CA cert can be downloaded from pywb directly
 using the special download paths. Recommended set up for using the proxy is as follows:
 
-1. Configure the browser proxy settings host port, for example ``localhost`` and ``8080`` (if running locally)
+1. Start pywb with proxy mode enabled (with ``--proxy`` option or with a ``proxy:`` option block present in the config).
 
-2. Download the CA:
+   (The CA root certificate will be auto-created when first starting pywb with proxy mode if it doesn't exist.)
+
+2. Configure the browser proxy settings host port, for example ``localhost`` and ``8080`` (if running locally)
+
+3. Download the CA:
 
    * For most browsers, use the PEM format: ``http://wsgiprox/download/pem``
 
    * For windows, use the PKCS12 format: ``http://wsgiprox/download/p12``
 
-3. You may need to agree to "Trust this CA" to identify websites.
+4. You may need to agree to "Trust this CA" to identify websites.
 
-The pywb CA file is automatically generated if it does not exist, and may be added to the key store directly.
+The auto-generated pywb CA, created at ``./proxy-certs/pywb-ca.pem`` may also be added to a keystore directly.
 
-Additional proxy options ``ca_name`` and ``ca_file_cache`` allow configuring the location and name of the CA file.
+The location of the CA file and the CA name displayed can be changed by setting the  ``ca_file_cache`` and ``ca_name`` proxy options, respectively.
 
-The following are all the available proxy options (only ``coll`` is required)::
+The following are all the available proxy options -- only ``coll`` is required::
 
   proxy:
     coll: my-coll

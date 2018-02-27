@@ -142,6 +142,8 @@ For example, ``wayback --proxy my-web-archive`` will start pywb and enable proxy
 You can then configure a browser to Proxy Settings host port to: ``localhost:8080`` and then loading any url, eg. ``http://example.com/`` should
 load the latest copy from the ``my-web-archive`` collection.
 
+See :ref:`https-proxy` section for additional configuration details.
+
 
 Deployment
 ----------
