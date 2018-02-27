@@ -69,8 +69,6 @@ class FrontEndApp(object):
 
         self.cdx_api_endpoint = config.get('cdx_api_endpoint', '/cdx')
 
-        self._init_routes()
-
         upstream_paths = self.get_upstream_paths(self.warcserver_server.port)
 
         framed_replay = config.get('framed_replay', True)
@@ -84,6 +82,8 @@ class FrontEndApp(object):
         metadata_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'metadata.yaml')
         self.metadata_cache = MetadataCache(metadata_templ)
 
+        self._init_routes()
+
     def _init_routes(self):
         self.url_map = Map()
         self.url_map.add(Rule('/static/_/<coll>/<path:filepath>', endpoint=self.serve_static))
@@ -96,14 +96,25 @@ class FrontEndApp(object):
             coll_prefix = '/<coll>'
             self.url_map.add(Rule('/', endpoint=self.serve_home))
 
-        self.url_map.add(Rule(coll_prefix + self.cdx_api_endpoint, endpoint=self.serve_cdx))
-        self.url_map.add(Rule(coll_prefix + '/', endpoint=self.serve_coll_page))
-        self.url_map.add(Rule(coll_prefix + '/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
+        self._init_coll_routes(coll_prefix)
+
+    def _init_coll_routes(self, coll_prefix):
+        routes = self._make_coll_routes(coll_prefix)
+        for route in routes:
+            self.url_map.add(route)
+
+    def _make_coll_routes(self, coll_prefix):
+        routes = [
+            Rule(coll_prefix + self.cdx_api_endpoint, endpoint=self.serve_cdx),
+            Rule(coll_prefix + '/', endpoint=self.serve_coll_page),
+            Rule(coll_prefix + '/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content),
+            Rule(coll_prefix + '/<path:url>', endpoint=self.serve_content)
+        ]
 
         if self.recorder_path:
-            self.url_map.add(Rule(coll_prefix + self.RECORD_ROUTE + '/<path:url>', endpoint=self.serve_record))
+            routes.append(Rule(coll_prefix + self.RECORD_ROUTE + '/<path:url>', endpoint=self.serve_record))
 
-        self.url_map.add(Rule(coll_prefix + '/<path:url>', endpoint=self.serve_content))
+        return routes
 
     def get_upstream_paths(self, port):
         base_paths = {
@@ -346,6 +357,11 @@ class FrontEndApp(object):
         urls = self.url_map.bind_to_environ(environ)
         try:
             endpoint, args = urls.match()
+
+            lang = args.pop('lang', '')
+            if lang:
+                pop_path_info(environ)
+                environ['pywb_lang'] = lang
 
             response = endpoint(environ, **args)
 
