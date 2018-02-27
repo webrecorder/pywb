@@ -30,6 +30,7 @@ class BaseCli(object):
     def __init__(self, args=None, default_port=8080, desc=''):
         parser = ArgumentParser(description=desc)
         parser.add_argument('-p', '--port', type=int, default=default_port)
+        parser.add_argument('-b', '--bind', default='0.0.0.0')
         parser.add_argument('-t', '--threads', type=int, default=4)
         parser.add_argument('--debug', action='store_true')
         parser.add_argument('--profile', action='store_true')
@@ -82,7 +83,7 @@ class BaseCli(object):
     def run_gevent(self):
         from gevent.pywsgi import WSGIServer
         logging.info('Starting Gevent Server on ' + str(self.r.port))
-        WSGIServer(('', self.r.port), self.application).serve_forever()
+        WSGIServer((self.r.bind, self.r.port), self.application).serve_forever()
 
 
 #=============================================================================
