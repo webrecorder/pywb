@@ -1,7 +1,6 @@
 <!-- WB Insert -->
-<script src='{{ host_prefix }}/{{ static_path }}/wombat.js'> </script>
 <script>
-{% set urlsplit = cdx.url | urlsplit %}
+  {% set urlsplit = cdx.url | urlsplit %}
   wbinfo = {}
   wbinfo.url = "{{ cdx.url }}";
   wbinfo.timestamp = "{{ cdx.timestamp }}";
@@ -14,8 +13,11 @@
   wbinfo.coll = "{{ coll }}";
   wbinfo.proxy_magic = "{{ env.pywb_proxy_magic }}";
   wbinfo.static_prefix = "{{ host_prefix }}/{{ static_path }}/";
+</script>
 
 {% if not wb_url.is_banner_only %}
+<script src='{{ host_prefix }}/{{ static_path }}/wombat.js'> </script>
+<script>
   wbinfo.wombat_ts = "{{ wombat_ts }}";
   wbinfo.wombat_sec = "{{ wombat_sec }}";
   wbinfo.wombat_scheme = "{{ urlsplit.scheme }}";
@@ -30,9 +32,12 @@
   } else {
     console.warn("_wb_wombat missing!");
   }
-{% endif %}
-
 </script>
+{% else %}
+<script>
+  window.devicePixelRatio = 1;
+</script>
+{% endif %}
 
 {% if config.enable_flash_video_rewrite %}
 <script src='{{ host_prefix }}/{{ static_path }}/vidrw.js'> </script>
