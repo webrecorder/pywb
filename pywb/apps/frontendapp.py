@@ -91,8 +91,6 @@ class FrontEndApp(object):
 
         self.cdx_api_endpoint = config.get('cdx_api_endpoint', '/cdx')
 
-        self._init_routes()
-
         upstream_paths = self.get_upstream_paths(self.warcserver_server.port)
 
         framed_replay = config.get('framed_replay', True)
@@ -105,6 +103,8 @@ class FrontEndApp(object):
 
         metadata_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'metadata.yaml')
         self.metadata_cache = MetadataCache(metadata_templ)
+
+        self._init_routes()
 
     def _init_routes(self):
         """Initialize the routes and based on the configuration file makes available
@@ -499,6 +499,11 @@ class FrontEndApp(object):
             endpoint, args = urls.match()
             # store original script_name (original prefix) before modifications are made
             environ['pywb.app_prefix'] = environ.get('SCRIPT_NAME', '')
+
+            lang = args.pop('lang', '')
+            if lang:
+                pop_path_info(environ)
+                environ['pywb_lang'] = lang
 
             response = endpoint(environ, **args)
 
