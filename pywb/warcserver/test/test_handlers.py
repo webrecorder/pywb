@@ -381,7 +381,7 @@ foo=bar&test=abc"""
         assert resp.headers['Memento-Datetime'] == 'Mon, 29 Jul 2013 19:51:51 GMT'
 
     def test_live_video_loader(self):
-        pytest.importorskip('youtube-dl')
+        pytest.importorskip('youtube_dl')
         params = {'url': 'http://www.youtube.com/v/BfBgWtAIbRc',
                   'content_type': 'application/vnd.youtube-dl_formats+json'
                  }
@@ -399,7 +399,7 @@ foo=bar&test=abc"""
         assert b'Content-Type: application/vnd.youtube-dl_formats+json' in resp.body
 
     def test_live_video_loader_post(self):
-        pytest.importorskip('youtube-dl')
+        pytest.importorskip('youtube_dl')
         req_data = """\
 GET /v/BfBgWtAIbRc HTTP/1.1
 accept-encoding: gzip, deflate

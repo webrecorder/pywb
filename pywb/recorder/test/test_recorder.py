@@ -607,7 +607,7 @@ class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass)
         assert len(writer.fh_cache) == 0
 
     def test_record_video_metadata(self):
-        pytest.importorskip('youtube-dl')
+        pytest.importorskip('youtube_dl')
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
 
         dedup_index = self._get_dedup_index()
