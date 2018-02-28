@@ -1,14 +1,25 @@
 <!-- WB Insert -->
 <script>
-  {% set urlsplit = cdx.url | urlsplit %}
+{% set urlsplit = cdx.url | urlsplit %}
   wbinfo = {}
+  wbinfo.top_url = "{{ top_url }}";
+{% if is_framed == 'true' %}
+  // Fast Top-Frame Redirect
+  if (window == window.top && wbinfo.top_url) {
+    var loc = window.location.href.replace(window.location.hash, "");
+    loc = decodeURI(loc);
+ 
+    if (loc != decodeURI(wbinfo.top_url)) {
+        window.location.href = wbinfo.top_url + window.location.hash;
+    }
+  }
+{% endif %}
   wbinfo.url = "{{ cdx.url }}";
   wbinfo.timestamp = "{{ cdx.timestamp }}";
   wbinfo.request_ts = "{{ wb_url.timestamp }}";
   wbinfo.prefix = decodeURI("{{ wb_prefix }}");
   wbinfo.mod = "{{ wb_url.mod }}";
-  wbinfo.top_url = "{{ top_url }}";
-  wbinfo.is_framed = {{ is_framed  }};
+  wbinfo.is_framed = {{ is_framed }};
   wbinfo.is_live = {{ is_live }};
   wbinfo.coll = "{{ coll }}";
   wbinfo.proxy_magic = "{{ env.pywb_proxy_magic }}";
