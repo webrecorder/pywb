@@ -39,10 +39,21 @@ class BasePreferTests(BaseConfigTest):
         assert '"/time-zones"' in resp.text, resp.text
         assert 'wombat.js' not in resp.text
 
+    def _assert_banner_only(self, resp):
+        self._assert_pref_headers(resp, 'banner-only')
+
+        assert '"20140127171238"' in resp.text
+        assert 'WB Insert' in resp.text
+
+        assert 'wombat.js' not in resp.text
+        assert 'new _WBWombat' not in resp.text, resp.text
+
     def _assert_rewritten(self, resp):
         self._assert_pref_headers(resp, 'rewritten')
 
         assert '"20140127171238"' in resp.text
+        assert 'WB Insert' in resp.text
+
         assert 'wombat.js' in resp.text
         assert 'new _WBWombat' in resp.text, resp.text
 
@@ -66,6 +77,14 @@ class TestPreferWithRedirects(BasePreferTests):
 
         self._assert_raw(resp)
 
+    def _assert_redir_to_banner_only(self, resp):
+        self._assert_pref_headers(resp, 'banner-only')
+
+        assert resp.location.endswith('/pywb/20140127171238bn_/http://www.iana.org/')
+        resp = resp.follow()
+
+        self._assert_banner_only(resp)
+
     def _assert_redir_to_rewritten(self, resp, fmod):
         self._assert_pref_headers(resp, 'rewritten')
 
@@ -80,6 +99,12 @@ class TestPreferWithRedirects(BasePreferTests):
 
         self._assert_redir_to_raw(resp)
 
+    def test_prefer_redir_timegate_banner_only(self, fmod):
+        headers = {'Prefer': 'banner-only'}
+        resp = self.get('/pywb/{0}http://www.iana.org/', fmod, with_slash=True, headers=headers, status=307)
+
+        self._assert_redir_to_banner_only(resp)
+
     def test_prefer_redir_timegate_rewritten(self, fmod):
         headers = {'Prefer': 'rewritten'}
         resp = self.get('/pywb/{0}http://www.iana.org/', fmod, with_slash=True, headers=headers, status=307)
@@ -91,6 +116,18 @@ class TestPreferWithRedirects(BasePreferTests):
         resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/', fmod, headers=headers, status=307)
 
         self._assert_redir_to_raw(resp)
+
+    def test_prefer_redir_memento_to_banner_only(self, fmod):
+        headers = {'Prefer': 'banner-only'}
+        resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/', fmod, headers=headers, status=307)
+
+        self._assert_redir_to_banner_only(resp)
+
+    def test_prefer_redir_memento_redir_to_banner_only_diff_mod(self, fmod):
+        headers = {'Prefer': 'banner-only'}
+        resp = self.get('/pywb/20140127171238js_/http://www.iana.org/', fmod, headers=headers, status=307)
+
+        self._assert_redir_to_banner_only(resp)
 
     def test_prefer_redir_memento_redir_to_rewritten_diff_mod(self, fmod):
         headers = {'Prefer': 'rewritten'}
@@ -121,6 +158,12 @@ class TestPreferWithRedirects(BasePreferTests):
 
         self._assert_raw(resp)
 
+    def test_prefer_redir_memento_matches_banner_only(self):
+        headers = {'Prefer': 'banner-only'}
+        resp = self.testapp.get('/pywb/20140127171238bn_/http://www.iana.org/', headers=headers, status=200)
+
+        self._assert_banner_only(resp)
+
     def test_prefer_redir_invalid(self, fmod):
         headers = {'Prefer': 'unknown'}
         resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/', fmod, headers=headers, status=400)
@@ -143,11 +186,24 @@ class TestPreferWithNoRedirects(BasePreferTests):
 
         assert resp.headers['Content-Location'].endswith(self.format('/pywb/20140127171238{0}/http://www.iana.org/', fmod[0]))
 
+    def _assert_banner_only(self, resp):
+        super(TestPreferWithNoRedirects, self)._assert_banner_only(resp)
+
+        assert resp.headers['Content-Location'].endswith('/pywb/20140127171238bn_/http://www.iana.org/')
+
     def test_prefer_timegate_raw(self, fmod):
         headers = {'Prefer': 'raw'}
         resp = self.get('/pywb/{0}http://www.iana.org/', fmod, with_slash=True, headers=headers, status=200)
 
+        assert '"/time-zones"' in resp.text
         self._assert_raw(resp)
+
+    def test_prefer_timegate_banner_only(self, fmod):
+        headers = {'Prefer': 'banner-only'}
+        resp = self.get('/pywb/{0}http://www.iana.org/', fmod, with_slash=True, headers=headers, status=200)
+
+        assert '"/time-zones"' in resp.text
+        self._assert_banner_only(resp)
 
     def test_prefer_timegate_rewritten(self, fmod):
         headers = {'Prefer': 'rewritten'}
@@ -162,6 +218,12 @@ class TestPreferWithNoRedirects(BasePreferTests):
 
         self._assert_raw(resp)
 
+    def test_prefer_memento_banner_only(self, fmod):
+        headers = {'Prefer': 'banner-only'}
+        resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/', fmod, headers=headers, status=200)
+
+        self._assert_banner_only(resp)
+
     def test_prefer_memento_rewritten(self, fmod):
         headers = {'Prefer': 'rewritten'}
         resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/', fmod, headers=headers, status=200)
@@ -175,17 +237,29 @@ class TestPreferWithNoRedirects(BasePreferTests):
 
         self._assert_raw(resp)
 
-    def test_prefer_memento_rewritten_id_mod(self, fmod):
+    def test_prefer_memento_rewritten_from_id_mod(self, fmod):
         headers = {'Prefer': 'rewritten'}
         resp = self.get('/pywb/20140127171238id_/http://www.iana.org/', fmod, headers=headers, status=200)
 
         self._assert_rewritten(resp, fmod)
+
+    def test_prefer_memento_banner_only_no_mod(self, fmod):
+        headers = {'Prefer': 'banner-only'}
+        resp = self.get('/pywb/20140127171238/http://www.iana.org/', fmod, headers=headers, status=200)
+
+        self._assert_banner_only(resp)
 
     def test_prefer_memento_rewritten_diff_mod(self, fmod):
         headers = {'Prefer': 'raw'}
         resp = self.get('/pywb/20140127171238js_/http://www.iana.org/', fmod, headers=headers, status=200)
 
         self._assert_raw(resp)
+
+    def test_prefer_memento_banner_only_diff_mod(self, fmod):
+        headers = {'Prefer': 'banner-only'}
+        resp = self.get('/pywb/20140127171238js_/http://www.iana.org/', fmod, headers=headers, status=200)
+
+        self._assert_banner_only(resp)
 
     def test_prefer_invalid(self, fmod):
         headers = {'Prefer': 'unknown'}
