@@ -90,7 +90,12 @@ class TestWbIntegration(BaseConfigTest):
         assert 'new _WBWombat' in resp.text, resp.text
         assert '/pywb/20140127171238{0}/http://www.iana.org/time-zones"'.format(fmod) in resp.text
 
-        assert ('wbinfo.is_framed = ' + ('true' if fmod else 'false')) in resp.text
+        if fmod == 'mp_':
+            assert 'window == window.top' in resp.text
+            assert 'wbinfo.is_framed = true' in resp.text
+        else:
+            assert 'window == window.top' not in resp.text
+            assert 'wbinfo.is_framed = false' in resp.text
 
         csp = "default-src 'unsafe-eval' 'unsafe-inline' 'self' data: blob: mediastream: ws: wss: ; form-action 'self'"
         assert resp.headers['Content-Security-Policy'] == csp
@@ -163,11 +168,14 @@ class TestWbIntegration(BaseConfigTest):
     def test_replay_banner_only(self):
         resp = self.testapp.get('/pywb/20140126201054bn_/http://www.iana.org/domains/reserved')
 
-        # wombat.js header insertion
-        assert 'wombat.js' in resp.text
+        # wombat.js header not inserted
+        assert 'wombat.js' not in resp.text
 
         # no wombat present
         assert '_WBWombat' not in resp.text
+
+        # top-frame redirect check
+        assert 'window == window.top' in resp.text
 
         # url not rewritten
         #assert '"http://www.iana.org/domains/example"' in resp.text

@@ -11,6 +11,7 @@ import pytest
 class TestSOCKSProxy(BaseConfigTest):
     @classmethod
     def setup_class(cls):
+        pytest.importorskip('socks')
         os.environ['SOCKS_HOST'] = 'localhost'
         os.environ['SOCKS_PORT'] = '0'
 
@@ -30,7 +31,6 @@ class TestSOCKSProxy(BaseConfigTest):
                                           }
 
     def test_socks_attempt_connect(self, fmod_sl):
-        pytest.importorskip('socks')
         # no proxy is set, expect to fail if socks is being used
         resp = self.get('/live/{0}http://httpbin.org/get', fmod_sl, status=400)
         assert resp.status_int == 400

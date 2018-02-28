@@ -22,7 +22,7 @@ and introduces many new features, including:
 
 * Significantly improved client-side rewriting to handle most modern web sites.
 
-* Improved 'calendar' query UI, groping results by year and month, and updated replay banner.
+* Improved 'calendar' query UI, grouping results by year and month, and updated replay banner.
 
 
 Getting Started
@@ -141,6 +141,8 @@ For example, ``wayback --proxy my-web-archive`` will start pywb and enable proxy
 
 You can then configure a browser to Proxy Settings host port to: ``localhost:8080`` and then loading any url, eg. ``http://example.com/`` should
 load the latest copy from the ``my-web-archive`` collection.
+
+See :ref:`https-proxy` section for additional configuration details.
 
 
 Deployment

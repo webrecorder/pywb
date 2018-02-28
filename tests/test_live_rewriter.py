@@ -1,4 +1,5 @@
 from .base_config_test import BaseConfigTest, fmod_sl
+import pytest
 
 
 # ============================================================================
@@ -53,6 +54,7 @@ class TestLiveRewriter(BaseConfigTest):
         assert resp.status_int == 400
 
     def test_live_video_info(self):
+        pytest.importorskip('youtube_dl')
         resp = self.testapp.get('/live/vi_/https://www.youtube.com/watch?v=DjFZyFWSt1M')
         assert resp.status_int == 200
         assert resp.content_type == 'application/vnd.youtube-dl_formats+json', resp.content_type

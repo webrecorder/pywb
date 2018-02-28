@@ -57,8 +57,10 @@ function RenderCalendar(prefix, url) {
     return day;
   }
 
-  function getHoursMinutesTs(ts){
-    return ts.substring(8, 10) + ':' + ts.substring(10, 12);
+  function getTime(ts){
+    return ts.substring(8, 10) + ":" +
+           ts.substring(10, 12) + ":" +
+           ts.substring(12, 14);
   }
 
 
@@ -118,7 +120,7 @@ function RenderCalendar(prefix, url) {
 
     var currentMonth = getMonthName(ts);
     var currentDay = getDayTs(ts);
-    var currentHoursMinutes = getHoursMinutesTs(ts);
+    var currentTime = getTime(ts);
 
     if (! $('#year_' + currentYear).length){
       $("#captureYears").append('<div class="row"><a class="year col-xs-12 col-md-offset-1 col-md-10 col-lg-offset-2 col-lg-8" id="year_' + currentYear + '"><h4 class="text-left ">' + getYearTs(ts) + '<span id="'  +currentYear + '_right" class="pull-right"><i class="fa iCarret yearCarret fa-caret-down" aria-hidden="true"></i></span></h4></a></div><div class="months" id="months_' + currentYear + '"></div></div>'); /*insert year div if it does not exist*/
@@ -129,7 +131,7 @@ function RenderCalendar(prefix, url) {
     }
 
     //always insert current capture, assuming no duplicates
-    $('#days_' + currentYear + '_' + currentMonth).append('<div class="row"><div id="day_' + currentYear + '_' + currentMonth + '_' + currentDay + '"><a class="day col-xs-12 col-md-offset-1 col-md-10 col-lg-offset-2 col-lg-8" href="' + prefix + ts + "/" + url + '">' + currentDay + ' ' + currentMonth + ' at ' + currentHoursMinutes + '</a></div></div>'); /*insert month div if it does not exist*/
+    $('#days_' + currentYear + '_' + currentMonth).append('<div class="row"><div id="day_' + currentYear + '_' + currentMonth + '_' + currentDay + '"><a class="day col-xs-12 col-md-offset-1 col-md-10 col-lg-offset-2 col-lg-8" href="' + prefix + ts + "/" + url + '">' + currentDay + ' ' + currentMonth + ' at ' + currentTime + '</a></div></div>'); /*insert month div if it does not exist*/
   }
 
   function yearCount() {

@@ -1,3 +1,32 @@
+pywb 2.0.2 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Top frame interaction improvements:
+   - Only notify from top replay frame, never from inner replay frames
+   - Don't update top frame from 'about:blank' or 'javascript:' urls
+   - New title change message when 'document.title' changes
+   - Fast redirect to top-frame when loading inner frame first
+
+* addEventListener/removeEventListener override improvements: more generic override, also handle window.onmessage
+
+* Proxy-mode improvements:
+   - don't include wombat.js (unused in proxy mode by default)
+   - set banner title to document.title on load
+   - update docs for configuring proxy mode HTTPS certs
+
+* cli: add -b/--bind flag to wayback cli to specify bind host (default to 0.0.0.0)
+
+
+pywb 2.0.1 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Override ``Function.apply()`` to remove rewriting Proxy object from any native function calls
+* Fix top-frame notifications in new system to use correct window
+* Calendar query: Add back second display
+* Fix tests when no youtube-dl installed (#270)
+* Fix typos, setup.py classifiers, remove py2.6
+
+
 pywb 2.0.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

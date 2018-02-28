@@ -95,7 +95,7 @@ long_description = open('README.rst').read()
 setup(
     name='pywb',
     version=__version__,
-    url='https://github.com/ikreymer/pywb',
+    url='https://github.com/webrecorder/pywb',
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
     description='Pywb Webrecorder web archive replay and capture tools',
@@ -106,9 +106,6 @@ setup(
     package_data=get_package_data(),
     data_files=get_data_files(),
     install_requires=load_requirements('requirements.txt'),
-    dependency_links=[
-        #'git+https://github.com/t0m/pyamf.git@python3#egg=pyamf-0.8.0'
-    ],
     tests_require=[
         'pytest',
         'WebTest',
@@ -136,7 +133,6 @@ setup(
         'License :: OSI Approved :: GNU General Public License (GPL)',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',

@@ -99,11 +99,22 @@ This file is part of pywb, https://github.com/webrecorder/pywb
         } else {
             init("_wb_frame_top_banner");
 
+            var state;
+            var title = "";
+
             window.addEventListener("message", function(event) {
-                var state = event.data;
-                if (state.wb_type) {
-                    set_banner(state.url, state.ts, state.is_live, state.title);
+                var type = event.data.wb_type;
+
+                if (type == "load" || type == "replace-url") {
+                    state = event.data;
+                    title = event.data.title || title;
+                } else if (type == "title") {
+                    title = event.data.title;
+                } else {
+                    return;
                 }
+
+                set_banner(state.url, state.ts, state.is_live, title);
             });
         }
     });
