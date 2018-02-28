@@ -25,6 +25,23 @@ class BaseContentRewriter(object):
         self.load_rules(rules_file)
         self.replay_mod = replay_mod
 
+        self._mod_to_pref = {}
+        self._pref_to_mod = {}
+
+    def add_prefer_mod(self, pref, mod):
+        self._mod_to_pref[mod] = pref
+        self._pref_to_mod[pref] = mod
+
+    def mod_to_prefer(self, mod):
+        pref = self._mod_to_pref.get(mod)
+        if not pref:
+            pref = self._mod_to_pref.get(self.replay_mod)
+
+        return pref
+
+    def prefer_to_mod(self, pref):
+        return self._pref_to_mod.get(pref)
+
     def add_rewriter(self, rw):
         self.all_rewriters[rw.name] = rw
 

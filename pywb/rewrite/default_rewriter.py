@@ -95,8 +95,13 @@ class DefaultRewriter(BaseContentRewriter):
     def __init__(self, replay_mod='', config=None):
         config = config or {}
         rules_file = config.get('rules_file', DEFAULT_RULES_FILE)
+
         super(DefaultRewriter, self).__init__(rules_file, replay_mod)
         self.all_rewriters = copy.copy(self.DEFAULT_REWRITERS)
+
+        self.add_prefer_mod('raw', 'id_')
+        self.add_prefer_mod('banner-only', 'bn_')
+        self.add_prefer_mod('rewritten', replay_mod)
 
     def init_js_regex(self, regexs):
         return RegexRewriter.parse_rules_from_config(regexs)

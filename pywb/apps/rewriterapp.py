@@ -69,9 +69,6 @@ class RewriterApp(object):
             self.replay_mod = ''
 
         self.enable_prefer = self.config.get('enable_prefer', False)
-        self.prefs = {'raw': 'id_',
-                      'rewritten': self.replay_mod
-                     }
 
         self.default_rw = DefaultRewriter(replay_mod=self.replay_mod,
                                           config=config)
@@ -142,18 +139,24 @@ class RewriterApp(object):
 
         return is_timegate
 
-    def _get_prefer_mod(self, wb_url, environ):
+    def _get_prefer_mod(self, wb_url, environ, content_rw, is_proxy):
         if not self.enable_prefer:
             return None, None
 
         prefer = environ.get('HTTP_PREFER')
         if not prefer:
-            return None, 'raw' if wb_url.is_identity else 'rewritten'
+            return None, content_rw.mod_to_prefer(wb_url.mod)
 
-        try:
-            return self.prefs[prefer], prefer
-        except:
+        mod = content_rw.prefer_to_mod(prefer)
+
+        if mod is None:
             raise UpstreamException(400, url=wb_url.url, details='Invalid Prefer: ' + prefer)
+
+        if is_proxy and mod == self.replay_mod:
+            mod = 'bn_'
+            prefer = content_rw.mod_to_prefer('bn_')
+
+        return mod, prefer
 
     def _check_range(self, inputreq, wb_url):
         skip_record = False
@@ -231,15 +234,24 @@ class RewriterApp(object):
 
         is_proxy = ('wsgiprox.proxy_host' in environ)
 
+        if self.use_js_obj_proxy:
+            content_rw = self.js_proxy_rw
+        else:
+            content_rw = self.default_rw
+
+        # no redirects if in proxy
+        redirect_to_exact = self.redirect_to_exact and not is_proxy
+
         # Check Prefer
-        pref_mod, pref_applied = self._get_prefer_mod(wb_url, environ)
+        pref_mod, pref_applied = self._get_prefer_mod(wb_url, environ,
+                                                      content_rw, is_proxy)
 
         response = None
 
         # prefer overrides custom response?
         if pref_mod is not None:
             # fast-redirect to preferred
-            if self.redirect_to_exact and not is_timegate and pref_mod != wb_url.mod:
+            if redirect_to_exact and not is_timegate and pref_mod != wb_url.mod:
                 new_url = full_prefix + wb_url.to_str(mod=pref_mod)
                 headers = [('Preference-Applied', pref_applied),
                            ('Vary', 'Prefer')]
@@ -286,11 +298,6 @@ class RewriterApp(object):
         self.unrewrite_referrer(environ, full_prefix)
 
         urlkey = canonicalize(wb_url.url)
-
-        if self.use_js_obj_proxy:
-            content_rw = self.js_proxy_rw
-        else:
-            content_rw = self.default_rw
 
         inputreq = RewriteInputRequest(environ, urlkey, wb_url.url, content_rw)
 
@@ -342,7 +349,7 @@ class RewriterApp(object):
             set_content_loc = True
 
         # if redir to exact, redir if url or ts are different
-        if self.redirect_to_exact:
+        if redirect_to_exact:
             if (set_content_loc or
                 (wb_url.timestamp != cdx.get('timestamp') and not cdx.get('is_live'))):
 
@@ -411,7 +418,7 @@ class RewriterApp(object):
 
             set_content_loc = True
 
-        if set_content_loc and not self.redirect_to_exact:
+        if set_content_loc and not redirect_to_exact and not is_proxy:
             status_headers.headers.append(('Content-Location', urlrewriter.get_new_url(timestamp=cdx['timestamp'],
                                                                                        url=cdx['url'])))
 

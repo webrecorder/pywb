@@ -62,6 +62,7 @@ class TestProxy(BaseTestProxy):
 
         assert res.headers['Link'] == '<http://example.com>; rel="memento"; datetime="Mon, 27 Jan 2014 17:12:51 GMT"; collection="pywb"'
         assert res.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
+        assert 'Content-Location' not in res.headers
 
     def test_proxy_replay_change_dt(self, scheme):
         headers = {'Accept-Datetime':  'Mon, 26 Dec 2011 17:12:51 GMT'}
@@ -75,6 +76,90 @@ class TestProxy(BaseTestProxy):
 
         assert res.headers['Link'] == '<http://test@example.com/>; rel="memento"; datetime="Mon, 29 Jul 2013 19:51:51 GMT"; collection="pywb"'
         assert res.headers['Memento-Datetime'] == 'Mon, 29 Jul 2013 19:51:51 GMT'
+        assert 'Content-Location' not in res.headers
+
+
+# ============================================================================
+class TestRedirectClassicProxy(TestProxy):
+    @classmethod
+    def setup_class(cls):
+        super(TestRedirectClassicProxy, cls).setup_class('pywb', config_file='config_test_redirect_classic.yaml')
+
+    def test_proxy_replay_prefer_raw(self, scheme):
+        headers = {'Prefer': 'raw'}
+        res = requests.get('{0}://example.com/'.format(scheme),
+                           proxies=self.proxies,
+                           headers=headers,
+                           verify=self.root_ca_file)
+
+        # no rewriting
+        assert 'WB Insert' not in res.text
+        assert 'wbinfo' not in res.text
+
+        # content
+        assert 'Example Domain' in res.text
+
+        # no wombat.js
+        assert 'wombat.js' not in res.text
+
+        # no redirect check
+        assert 'window == window.top' not in res.text
+
+        assert res.headers['Link'] == '<http://example.com>; rel="memento"; datetime="Mon, 27 Jan 2014 17:12:51 GMT"; collection="pywb"'
+        assert res.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
+        assert res.headers['Preference-Applied'] == 'raw'
+        assert 'Content-Location' not in res.headers
+
+    def test_proxy_replay_prefer_rewritten_to_banner_only(self, scheme):
+        headers = {'Prefer': 'rewritten'}
+        res = requests.get('{0}://example.com/'.format(scheme),
+                           proxies=self.proxies,
+                           headers=headers,
+                           verify=self.root_ca_file)
+
+        assert 'WB Insert' in res.text
+        assert 'Example Domain' in res.text
+
+        # no wombat.js
+        assert 'wombat.js' not in res.text
+
+        # no redirect check
+        assert 'window == window.top' not in res.text
+
+        assert res.headers['Link'] == '<http://example.com>; rel="memento"; datetime="Mon, 27 Jan 2014 17:12:51 GMT"; collection="pywb"'
+        assert res.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
+        assert res.headers['Preference-Applied'] == 'banner-only'
+        assert 'Content-Location' not in res.headers
+
+    def test_proxy_replay_prefer_banner_only(self, scheme):
+        headers = {'Prefer': 'banner-only'}
+        res = requests.get('{0}://example.com/'.format(scheme),
+                           proxies=self.proxies,
+                           headers=headers,
+                           verify=self.root_ca_file)
+
+        assert 'WB Insert' in res.text
+        assert 'Example Domain' in res.text
+
+        # no wombat.js
+        assert 'wombat.js' not in res.text
+
+        # no redirect check
+        assert 'window == window.top' not in res.text
+
+        assert res.headers['Link'] == '<http://example.com>; rel="memento"; datetime="Mon, 27 Jan 2014 17:12:51 GMT"; collection="pywb"'
+        assert res.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
+        assert res.headers['Preference-Applied'] == 'banner-only'
+
+    def test_proxy_replay_prefer_invalid(self, scheme):
+        headers = {'Prefer': 'invalid'}
+        res = requests.get('{0}://example.com/'.format(scheme),
+                           proxies=self.proxies,
+                           headers=headers,
+                           verify=self.root_ca_file)
+
+        assert 'Preference-Applied' not in res.headers
+        assert res.status_code == 400
 
 
 # ============================================================================
