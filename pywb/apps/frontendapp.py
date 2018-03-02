@@ -251,7 +251,7 @@ class FrontEndApp(object):
                 response.add_access_control_headers(env=environ)
             return response
         except:
-            self.raise_not_found(environ, 'Static File Not Found: {0}'.format(filepath))
+            self.raise_not_found(environ, 'static_file_not_found', filepath)
 
     def get_metadata(self, coll):
         """Retrieve the metadata associated with a collection
@@ -282,7 +282,7 @@ class FrontEndApp(object):
         :rtype: WbResponse
         """
         if not self.is_valid_coll(coll):
-            self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
+            self.raise_not_found(environ, 'coll_not_found', coll)
 
         self.setup_paths(environ, coll)
 
@@ -358,7 +358,7 @@ class FrontEndApp(object):
         :rtype: WbResponse
         """
         if not self.is_valid_coll(coll):
-            self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
+            self.raise_not_found(environ, 'coll_not_found', coll)
 
         self.setup_paths(environ, coll, record)
 
@@ -440,14 +440,8 @@ class FrontEndApp(object):
         return (coll in self.warcserver.list_fixed_routes() or
                 coll in self.warcserver.list_dynamic_routes())
 
-    def raise_not_found(self, environ, msg):
-        """Utility function for raising a werkzeug.exceptions.NotFound execption with the supplied WSGI environment
-        and message.
-
-        :param dict environ: The WSGI environment dictionary for the request
-        :param str msg: The error message
-        """
-        raise NotFoundException(msg)
+    def raise_not_found(self, environ, err_type, url):
+        raise AppPageNotFound(err_type, url)
 
     def _check_refer_redirect(self, environ):
         """Returns a WbResponse for a HTTP 307 redirection if the HTTP referer header is the same as the HTTP host header
@@ -640,6 +634,13 @@ class FrontEndApp(object):
         if isinstance(response, WbResponse):
             response.add_access_control_headers(env=env)
         return response
+
+
+# ============================================================================
+class AppPageNotFound(WbException):
+    @property
+    def status_code(self):
+        return 404
 
 
 # ============================================================================

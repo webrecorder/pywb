@@ -15,6 +15,9 @@ from pywb.rewrite.rewriteinputreq import RewriteInputRequest
 from pywb.rewrite.templateview import BaseInsertView, HeadInsertView, JinjaEnv, TopFrameView
 from pywb.rewrite.url_rewriter import IdentityUrlRewriter, UrlRewriter
 from pywb.rewrite.wburl import WbUrl
+from pywb.rewrite.url_rewriter import UrlRewriter, IdentityUrlRewriter
+
+from pywb.utils.wbexception import WbException, NotFoundException
 from pywb.rewrite.cookies import CookieTracker
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.io import BUFF_SIZE, OffsetLimitReader, no_except_close
@@ -566,7 +569,7 @@ class RewriterApp(object):
         return top_url
 
     def handle_error(self, environ, wbe):
-        if wbe.status_code == 404:
+        if isinstance(wbe, NotFoundException):
             return self._not_found_response(environ, wbe.url)
         else:
             return self._error_response(environ, wbe)
