@@ -199,7 +199,7 @@ class FrontEndApp(object):
         try:
             return self.static_handler(environ, filepath)
         except:
-            self.raise_not_found(environ, 'Static File Not Found: {0}'.format(filepath))
+            self.raise_not_found(environ, 'static_file_not_found', filepath)
 
     def get_metadata(self, coll):
         #if coll == self.all_coll:
@@ -217,7 +217,7 @@ class FrontEndApp(object):
 
     def serve_coll_page(self, environ, coll='$root'):
         if not self.is_valid_coll(coll):
-            self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
+            self.raise_not_found(environ, 'coll_not_found', coll)
 
         self.setup_paths(environ, coll)
 
@@ -267,7 +267,7 @@ class FrontEndApp(object):
 
     def serve_content(self, environ, coll='$root', url='', timemap_output='', record=False):
         if not self.is_valid_coll(coll):
-            self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
+            self.raise_not_found(environ, 'coll_not_found', coll)
 
         self.setup_paths(environ, coll, record)
 
@@ -319,8 +319,8 @@ class FrontEndApp(object):
         return (coll in self.warcserver.list_fixed_routes() or
                 coll in self.warcserver.list_dynamic_routes())
 
-    def raise_not_found(self, environ, msg):
-        raise NotFoundException(msg)
+    def raise_not_found(self, environ, err_type, url):
+        raise AppPageNotFound(err_type, url)
 
     def _check_refer_redirect(self, environ):
         referer = environ.get('HTTP_REFERER')
@@ -428,6 +428,13 @@ class FrontEndApp(object):
         self.handler = WSGIProxMiddleware(self.handle_request, prefix,
                                   proxy_host=proxy_config.get('host', 'pywb.proxy'),
                                   proxy_options=proxy_config)
+
+
+# ============================================================================
+class AppPageNotFound(WbException):
+    @property
+    def status_code(self):
+        return 404
 
 
 # ============================================================================

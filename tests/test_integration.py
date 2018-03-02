@@ -24,10 +24,12 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.content_type == 'text/html'
         assert resp.status_int == 200
 
-    def test_pywb_invalid_path(self):
-        resp = self.testapp.head('/blah/', status=404)
+    def test_pywb_invalid_collection(self):
+        resp = self.testapp.get('/blah/http://example.com/', status=404)
         assert resp.content_type == 'text/html'
         assert resp.status_int == 404
+
+        assert 'Collection not found: <b>blah</b>' in resp.text
 
     def test_calendar_query(self):
         resp = self.testapp.get('/pywb/*/iana.org')
@@ -414,6 +416,8 @@ class TestWbIntegration(BaseConfigTest):
         resp = self.testapp.get('/static/notfound.css', status = 404)
         assert resp.status_int == 404
 
+        assert 'Static file not found: <b>notfound.css</b>' in resp.text
+
     def test_cdx_server_filters(self):
         resp = self.testapp.get('/pywb/cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mime:warc/revisit&filter=filename:dupes.warc.gz')
         assert resp.content_type == 'text/x-cdxj'
@@ -435,7 +439,6 @@ class TestWbIntegration(BaseConfigTest):
         # verify orig filenames (2 revisits, one non)
         origfilenames = list(map(lambda cdx: cdx['orig.filename'], cdxs))
         assert origfilenames == ['iana.warc.gz', 'iana.warc.gz', '-']
-
 
     # surt() no longer errors on this in 0.3b
     #def test_error(self):

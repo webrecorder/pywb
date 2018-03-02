@@ -7,7 +7,7 @@ from pywb.rewrite.default_rewriter import DefaultRewriter, RewriterWithJSProxy
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter, IdentityUrlRewriter
 
-from pywb.utils.wbexception import WbException
+from pywb.utils.wbexception import WbException, NotFoundException
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.io import BUFF_SIZE, OffsetLimitReader
@@ -512,7 +512,7 @@ class RewriterApp(object):
         return top_url
 
     def handle_error(self, environ, wbe):
-        if wbe.status_code == 404:
+        if isinstance(wbe, NotFoundException):
             return self._not_found_response(environ, wbe.url)
         else:
             return self._error_response(environ, wbe)

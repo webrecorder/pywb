@@ -2,6 +2,15 @@
 
 {% if err_status == 451 %}
 Access Blocked to {{ err_msg }}
+
+{% elif err_status == 404 and err_details == 'coll_not_found' %}
+Collection not found: <b>{{ err_msg }}</b>
+
+<p><a href="/">See list of valid collections</a></p>
+
+{% elif err_status == 404 and err_details == 'static_file_not_found' %}
+Static file not found: <b>{{ err_msg }}</b>
+
 {% else %}
 
 <b>{{ err_msg }}</b>
