@@ -327,7 +327,11 @@ class RewriterApp(object):
                 error = ''
 
             details = dict(args=kwargs, error=error)
-            raise UpstreamException(r.status_code, url=wb_url.url, details=details)
+            if r.status_code == 404:
+                raise NotFoundException(url=wb_url.url, msg=details)
+
+            else:
+                raise UpstreamException(r.status_code, url=wb_url.url, details=details)
 
         stream = BufferedReader(r.raw, block_size=BUFF_SIZE)
         record = self.loader.parse_record_stream(stream,
