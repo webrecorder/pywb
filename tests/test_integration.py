@@ -405,9 +405,12 @@ class TestWbIntegration(BaseConfigTest):
 
     def test_replay_not_found(self, fmod):
         fmod_slash = fmod + '/' if fmod else ''
-        resp = self.head('/pywb/{0}http://not-exist.example.com/', fmod_slash, status=404)
+        resp = self.get('/pywb/{0}http://not-exist.example.com/path?A=B', fmod_slash, status=404)
         assert resp.content_type == 'text/html'
         assert resp.status_int == 404
+
+        assert 'Url Not Found' in resp.text
+        assert 'The url <b>http://not-exist.example.com/path?A=B</b> could not be found in this collection.' in resp.text
 
     def test_static_content(self):
         resp = self.testapp.get('/static/default_banner.css')
