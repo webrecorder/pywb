@@ -77,7 +77,7 @@ class DirectWSGIInputRequest(object):
 
         method = self.get_req_method()
 
-        if method not in ('OPTIONS', 'HEAD', 'POST'):
+        if method not in ('OPTIONS', 'POST'):
             return url
 
         mime = self._get_content_type()
