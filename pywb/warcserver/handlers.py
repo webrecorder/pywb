@@ -123,6 +123,8 @@ class ResourceHandler(IndexHandler):
                         return out_headers, resp, errs
                 except (WbException, ArchiveLoadFailed) as e:
                     last_exc = e
+                    import traceback
+                    traceback.print_exc()
                     errs[str(loader)] = str(e)
 
         if last_exc:

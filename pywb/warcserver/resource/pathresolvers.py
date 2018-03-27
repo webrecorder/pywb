@@ -82,15 +82,13 @@ class RedisResolver(RedisIndexSource):
 
         if '*' in redis_key:
             for key in self.scan_keys(redis_key, params):
-                #key = key.decode('utf-8')
                 res = self.redis.hget(key, filename)
                 if res:
                     break
         else:
             res = self.redis.hget(redis_key, filename)
 
-        if res and six.PY3:
-            res = res.decode('utf-8')
+        res = to_native_str(res, 'utf-8')
 
         return res
 

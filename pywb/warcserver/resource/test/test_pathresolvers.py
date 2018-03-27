@@ -110,7 +110,7 @@ class TestPathIndex(object):
         assert resolver('example.warc.gz', cdx) == 'some_path/example.warc.gz'
         assert resolver('example-2.warc.gz', cdx) == 'some_path/example-2.warc.gz'
 
-        assert resolver.member_key_type == b'set'
+        assert resolver.member_key_type == 'set'
 
     @patch('redis.StrictRedis', FakeStrictRedis)
     def test_redis_resolver_multi_key_with_member_hash(self):
@@ -135,7 +135,7 @@ class TestPathIndex(object):
         assert resolver('example.warc.gz', cdx) == 'some_path/example.warc.gz'
         assert resolver('example-2.warc.gz', cdx) == 'some_path/example-2.warc.gz'
 
-        assert resolver.member_key_type == b'hash'
+        assert resolver.member_key_type == 'hash'
 
     def test_make_best_resolver_http(self):
         res = DefaultResolverMixin.make_best_resolver('http://myhost.example.com/warcs/')
