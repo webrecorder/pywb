@@ -282,7 +282,7 @@ class RedisIndexSource(BaseIndexSource):
 
         redis_key_template = key_prefix
         if not redis_:
-            redis_ = redis.StrictRedis.from_url(redis_url)
+            redis_ = redis.StrictRedis.from_url(redis_url, decode_responses=True)
         return redis_, key_prefix
 
     def scan_keys(self, match_templ, params, member_key=None):
@@ -301,18 +301,18 @@ class RedisIndexSource(BaseIndexSource):
             keys = self._load_key_set(key)
             params[scan_key] = keys
 
-        match_templ = match_templ.encode('utf-8')
+        #match_templ = match_templ.encode('utf-8')
 
-        return [match_templ.replace(b'*', key) for key in keys]
+        return [match_templ.replace('*', key) for key in keys]
 
     def _load_key_set(self, key):
         if not self.member_key_type:
             self.member_key_type = self.redis.type(key)
 
-        if self.member_key_type == b'set':
+        if self.member_key_type == 'set':
             return self.redis.smembers(key)
 
-        elif self.member_key_type == b'hash':
+        elif self.member_key_type == 'hash':
             return self.redis.hvals(key)
 
         # don't cache if any other type
@@ -332,6 +332,8 @@ class RedisIndexSource(BaseIndexSource):
 
         def do_load(index_list):
             for line in index_list:
+                if isinstance(line, str):
+                    line = line.encode('utf-8')
                 yield CDXObject(line)
 
         return do_load(index_list)

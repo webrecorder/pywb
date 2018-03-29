@@ -17,6 +17,7 @@ install:
   - "pip install coverage pytest-cov"
   - "pip install cffi"
   - "pip install pyopenssl"
+  - "pip install pypiwin32"
   - "pip install certauth boto3 youtube-dl pysocks"
   - "pip install codecov"
 

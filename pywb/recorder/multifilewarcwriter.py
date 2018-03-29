@@ -100,8 +100,10 @@ class MultiFileWARCWriter(BaseWARCWriter):
             if os.name != 'nt':
                 portalocker.lock(fh, portalocker.LOCK_UN)
             fh.close()
+            return True
         except Exception as e:
             print(e)
+            return False
 
     def get_dir_key(self, params):
         return res_template(self.key_template, params)
@@ -115,8 +117,8 @@ class MultiFileWARCWriter(BaseWARCWriter):
             return
 
         out, filename = result
-        self._close_file(out)
-        return filename
+        if self._close_file(out):
+            return filename
 
     def close_file(self, match_filename):
         for dir_key, out, filename in self.iter_open_files():

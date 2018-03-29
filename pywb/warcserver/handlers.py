@@ -8,6 +8,11 @@ from pywb.warcserver.index.fuzzymatcher import FuzzyMatcher
 from pywb.warcserver.resource.responseloader import  WARCPathLoader, LiveWebLoader, VideoLoader
 
 import six
+import logging
+import traceback
+
+
+logger = logging.getLogger('warcserver')
 
 
 #=============================================================================
@@ -123,6 +128,8 @@ class ResourceHandler(IndexHandler):
                         return out_headers, resp, errs
                 except (WbException, ArchiveLoadFailed) as e:
                     last_exc = e
+                    if logger.isEnabledFor(logging.DEBUG):
+                        traceback.print_exc()
                     errs[str(loader)] = str(e)
 
         if last_exc:
