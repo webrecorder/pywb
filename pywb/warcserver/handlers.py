@@ -12,6 +12,9 @@ import logging
 import traceback
 
 
+logger = logging.getLogger('warcserver')
+
+
 #=============================================================================
 def to_cdxj(cdx_iter, fields):
     content_type = 'text/x-cdxj'
@@ -125,7 +128,7 @@ class ResourceHandler(IndexHandler):
                         return out_headers, resp, errs
                 except (WbException, ArchiveLoadFailed) as e:
                     last_exc = e
-                    if logging.isEnabledFor(logging.DEBUG):
+                    if logger.isEnabledFor(logging.DEBUG):
                         traceback.print_exc()
                     errs[str(loader)] = str(e)
 
