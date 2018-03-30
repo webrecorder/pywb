@@ -5,7 +5,7 @@ import shutil
 import yaml
 import time
 
-from fakeredis import FakeStrictRedis
+from fakeredis import FakeStrictRedis, DATABASES
 from mock import patch
 
 from pywb.warcserver.basewarcserver import BaseWarcServer
@@ -64,6 +64,10 @@ class FakeRedisTests(object):
     @classmethod
     def setup_class(cls, redis_url='redis://localhost:6379/2'):
         super(FakeRedisTests, cls).setup_class()
+
+        PUBSUBS.clear()
+        DATABASES.clear()
+
         cls.redismock = patch('redis.StrictRedis', FakeStrictRedisSharedPubSub)
         cls.redismock.start()
 
