@@ -65,7 +65,7 @@ class FakeRedisTests(object):
     def setup_class(cls, redis_url='redis://localhost:6379/2'):
         super(FakeRedisTests, cls).setup_class()
 
-        PUBSUBS.clear()
+        del PUBSUBS[:]
         DATABASES.clear()
 
         cls.redismock = patch('redis.StrictRedis', FakeStrictRedisSharedPubSub)
