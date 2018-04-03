@@ -138,7 +138,7 @@ class DefaultHeaderRewriter(object):
             return (self.header_prefix + name, value)
 
         elif rule == 'cookie':
-            if self.rwinfo.cookie_rewriter:
+            if self.rwinfo.cookie_rewriter and self.rwinfo.is_url_rw():
                 return self.rwinfo.cookie_rewriter.rewrite(value)
             else:
                 return (name, value)

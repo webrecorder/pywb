@@ -143,6 +143,30 @@ class TestContentRewriter(object):
         exp = 'function() { WB_wombat_location.href = "http://example.com/"; }'
         assert b''.join(gen).decode('utf-8') == exp
 
+    def test_banner_only_no_cookie_rewrite(self):
+        headers = {'Set-Cookie': 'foo=bar; Expires=Wed, 13 Jan 2021 22:23:01 GMT; Path=/',
+                   'Content-Type': 'text/javascript'}
+
+        content = 'function() { location.href = "http://example.com/"; }'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701bn_')
+
+        assert ('Content-Type', 'text/javascript') in headers.headers
+        assert ('Set-Cookie', 'foo=bar; Expires=Wed, 13 Jan 2021 22:23:01 GMT; Path=/') in headers.headers
+
+        exp = 'function() { location.href = "http://example.com/"; }'
+        assert b''.join(gen).decode('utf-8') == exp
+
+    def test_rewrite_cookies_only_binary_no_content_type(self):
+        headers = {'Set-Cookie': 'foo=bar; Expires=Wed, 13 Jan 2021 22:23:01 GMT; Path=/'}
+        content = '\x11\x12\x13\x14'
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        assert [('Set-Cookie', 'foo=bar; Path=/prefix/201701mp_/http://example.com/')] == headers.headers
+        #assert ('Content-Type', 'application/octet-stream') not in headers.headers
+
+        assert is_rw == False
+
     def test_binary_no_content_type(self):
         headers = {}
         content = '\x11\x12\x13\x14'
