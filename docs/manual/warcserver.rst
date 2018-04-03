@@ -216,8 +216,13 @@ lookup three remote archives, two using memento, and one using CDX Server API::
         ia:   cdx+http://web.archive.org/cdx;/web
         apt:  memento+http://arquivo.pt/wayback/
 
+      timeout: 10
+
 This allows Warcserver to serve as a "Memento Aggregator", aggregating results from
-multiple existing archives (using the Memento API and other APIs)
+multiple existing archives (using the Memento API and other APIs).
+
+An optional ``timeout`` property configures how many seconds to wait for each source before
+it is considered to have 'timed out'. (If unspecified, the default value is 5 seconds).
 
 Sequential Fallback Collections
 """""""""""""""""""""""""""""""

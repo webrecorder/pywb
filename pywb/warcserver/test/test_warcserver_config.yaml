@@ -43,6 +43,8 @@ collections:
             apt:  memento+http://arquivo.pt/wayback/
             liveweb: live
 
+        timeout: 10
+
     # Local Dir CDX
     local:
         index: ./local/indexes

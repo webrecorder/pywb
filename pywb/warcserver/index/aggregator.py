@@ -220,10 +220,12 @@ class TimeoutMixin(object):
 
 #=============================================================================
 class GeventMixin(object):
+    DEFAULT_TIMEOUT = 5.0
+
     def __init__(self, *args, **kwargs):
         super(GeventMixin, self).__init__(*args, **kwargs)
         self.pool = Pool(size=kwargs.get('size'))
-        self.timeout = kwargs.get('timeout', 5.0)
+        self.timeout = kwargs.get('timeout') or self.DEFAULT_TIMEOUT
 
     def _load_all(self, params):
         params['_timeout'] = self.timeout
