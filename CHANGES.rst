@@ -1,3 +1,22 @@
+pywb 2.0.3 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Fixes for Memento Aggregation when no timeout specified (#310)
+
+* Fix HEAD request for replay (#309)
+
+* Redis Index: always decode to native string format (decode_respones=True)
+
+* Test fixes: Support latest fakeredis, more consistent tests (#313)
+
+* Fix typo in rewrite_amf.py (#308)
+
+* Documentation improvements:
+   - Add docs for nginx deployment (#314)
+   - Fix typo in memento docs (#307)
+   - Mention timeout property Warcserver docs (#310)
+
+
 pywb 2.0.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
