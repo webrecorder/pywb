@@ -103,6 +103,8 @@ class RewriterApp(object):
         else:
             self.csp_header = None
 
+        self.force_scheme = config.get('force_scheme')
+
     def add_csp_header(self, wb_url, status_headers):
         if self.csp_header and wb_url.mod == self.replay_mod:
             status_headers.headers.append(self.csp_header)
@@ -202,6 +204,10 @@ class RewriterApp(object):
     def render_content(self, wb_url, kwargs, environ):
         wb_url = wb_url.replace('#', '%23')
         wb_url = WbUrl(wb_url)
+
+        if self.force_scheme:
+            environ['wsgi.url_scheme'] = self.force_scheme
+
         is_timegate = self._check_accept_dt(wb_url, environ)
 
         host_prefix = self.get_host_prefix(environ)
