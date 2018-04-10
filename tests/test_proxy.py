@@ -1,7 +1,7 @@
 from pywb.warcserver.test.testutils import BaseTestClass, TempDirTests
 
 from .base_config_test import CollsDirMixin
-from pywb.utils.geventserver import GeventServer
+from pywb.utils.geventserver import GeventServer, RequestURIWSGIHandler
 from pywb.apps.frontendapp import FrontEndApp
 from pywb.manager.manager import main as manager
 
@@ -34,7 +34,7 @@ class BaseTestProxy(TempDirTests, BaseTestClass):
         cls.app = FrontEndApp(config_file=config_file,
                               custom_config={'proxy': opts})
 
-        cls.server = GeventServer(cls.app)
+        cls.server = GeventServer(cls.app, handler_class=RequestURIWSGIHandler)
         cls.proxies = cls.proxy_dict(cls.server.port)
 
     @classmethod
@@ -126,4 +126,14 @@ class TestRecordingProxy(CollsDirMixin, BaseTestProxy):
 
         assert 'is_live = false' in res.text
         assert 'httpbin(1)' in res.text
+
+    def test_proxy_record_keep_percent(self, scheme):
+        self.app.handler.prefix_resolver.fixed_prefix = '/test/record/bn_/'
+
+        res = requests.get('{0}://example.com/%2A%2Ffoobar'.format(scheme),
+                           proxies=self.proxies,
+                           verify=self.root_ca_file)
+
+        # ensure %-encoded url stays as is
+        assert '"{0}://example.com/%2A%2Ffoobar"'.format(scheme) in res.text
 

@@ -257,10 +257,16 @@ class FrontEndApp(object):
 
         self.setup_paths(environ, coll, record)
 
-        wb_url_str = to_native_str(url)
+        request_uri = environ.get('REQUEST_URI')
+        script_name = environ.get('SCRIPT_NAME', '') + '/'
+        if request_uri and request_uri.startswith(script_name):
+            wb_url_str = request_uri[len(script_name):]
 
-        if environ.get('QUERY_STRING'):
-            wb_url_str += '?' + environ.get('QUERY_STRING')
+        else:
+            wb_url_str = to_native_str(url)
+
+            if environ.get('QUERY_STRING'):
+                wb_url_str += '?' + environ.get('QUERY_STRING')
 
         metadata = self.get_metadata(coll)
         if record:
