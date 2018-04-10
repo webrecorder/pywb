@@ -3,13 +3,14 @@ from pywb.utils.loaders import load_yaml_config, load_overlay_config
 from pywb.warcserver.basewarcserver import BaseWarcServer
 
 from pywb.warcserver.index.aggregator import CacheDirectoryIndexSource, RedisMultiKeyIndexSource
-from pywb.warcserver.index.aggregator import GeventTimeoutAggregator, SimpleAggregator
+from pywb.warcserver.index.aggregator import GeventTimeoutAggregator, SimpleAggregator, RulesAggregator
 
 from pywb.warcserver.handlers import DefaultResourceHandler, HandlerSeq
 
 from pywb.warcserver.index.indexsource import FileIndexSource, RemoteIndexSource
-from pywb.warcserver.index.indexsource import MementoIndexSource, RedisIndexSource
-from pywb.warcserver.index.indexsource import LiveIndexSource, WBMementoIndexSource
+from pywb.warcserver.index.indexsource import MementoIndexSource, WBMementoIndexSource
+from pywb.warcserver.index.indexsource import LiveIndexSource, LiveRewriteIndexSource
+from pywb.warcserver.index.indexsource import RedisIndexSource
 from pywb.warcserver.index.zipnum import ZipNumIndexSource
 
 from pywb import DEFAULT_CONFIG
@@ -27,6 +28,7 @@ SOURCE_LIST = [LiveIndexSource,
                FileIndexSource,
                RemoteIndexSource,
                ZipNumIndexSource,
+               LiveRewriteIndexSource,
               ]
 
 
@@ -137,6 +139,7 @@ class WarcServer(BaseWarcServer):
                 handler = self.load_coll(name, coll_config)
             except:
                 print('Invalid Collection: ' + name)
+                raise
                 if self.debug:
                     import traceback
                     traceback.print_exc()
@@ -178,7 +181,8 @@ class WarcServer(BaseWarcServer):
                 raise Exception('no index, index_group or sequence found')
 
             timeout = int(coll_config.get('timeout', 0))
-            agg = init_index_agg(index_group, True, timeout)
+            rules = coll_config.get('rules')
+            agg = init_index_agg(index_group, True, timeout, rules=rules)
 
         if not archive_paths:
             archive_paths = self.config.get('archive_paths')
@@ -232,10 +236,14 @@ def register_source(source_cls, end=False):
 
 
 # ============================================================================
-def init_index_agg(source_configs, use_gevent=False, timeout=0, source_list=None):
+def init_index_agg(source_configs, use_gevent=False, timeout=0, source_list=None,
+                   rules=None):
     sources = {}
     for n, v in iteritems(source_configs):
         sources[n] = init_index_source(v, source_list=source_list)
+
+    if rules:
+        return RulesAggregator(sources, rules=rules)
 
     if use_gevent:
         return GeventTimeoutAggregator(sources, timeout=timeout)

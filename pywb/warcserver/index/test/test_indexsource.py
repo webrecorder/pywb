@@ -1,7 +1,7 @@
 from pywb.warcserver.index.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource, RedisIndexSource
-from pywb.warcserver.index.indexsource import LiveIndexSource, WBMementoIndexSource
+from pywb.warcserver.index.indexsource import LiveIndexSource, WBMementoIndexSource, LiveRewriteIndexSource
 
-from pywb.warcserver.index.aggregator import SimpleAggregator
+from pywb.warcserver.index.aggregator import SimpleAggregator, RulesAggregator
 
 from warcio.timeutils import timestamp_now
 
@@ -143,6 +143,51 @@ com,instagram)/amaliaulman 20141014162333 http://webenact.rhizome.org/all/201410
 
         assert(key_ts_res(res, 'load_url') == expected)
         assert(errs == {})
+
+    def test_live_rewrite(self):
+        url = 'http://example.com/some/path?A=B'
+        source = LiveRewriteIndexSource(match='https?:\/\/example.com\/(.*)',
+                                        replace=r'https://other-host.example.org/\1')
+
+        res, errs = self.query_single_source(source, dict(url=url))
+
+        assert list(res)[0]['load_url'] == 'https://other-host.example.org/some/path?A=B'
+
+        assert(errs == {})
+
+    def test_cond_aggregator_rewrite(self):
+        match_url = 'https?:\/\/example.com\/(.*)'
+        live_rw = LiveRewriteIndexSource(match=match_url,
+                                         replace=r'https://other-host.example.org/\1')
+
+        rules = [dict(match=match_url, name='live_rw'),
+                 dict(match='.*', name='live')
+                ]
+
+        rules_agg = RulesAggregator(sources={'live': LiveIndexSource(),
+                                             'live_rw': live_rw},
+                                    rules=rules)
+
+        # Rewrite Matching url
+        res, errs = rules_agg({'url': 'http://example.com/some/path?A=B'})
+        cdx = list(res)[0]
+
+        # assert rewriting source used
+        assert cdx['load_url'] == 'https://other-host.example.org/some/path?A=B'
+        assert cdx['source'] == 'live_rw'
+
+        assert(errs == {})
+
+        # Don't rewrite other urls
+        res, errs = rules_agg({'url': 'http://example.net/some/path?A=B'})
+        cdx = list(res)[0]
+
+        # assert live source used
+        assert cdx['load_url'] == 'http://example.net/some/path?A=B'
+        assert cdx['source'] == 'live'
+
+        assert(errs == {})
+
 
     # Errors -- Not Found All
     def test_all_not_found(self, all_source):

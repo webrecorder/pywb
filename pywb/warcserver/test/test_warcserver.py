@@ -5,6 +5,7 @@ import os
 from pywb.warcserver.index.indexsource import RemoteIndexSource, LiveIndexSource, MementoIndexSource
 from pywb.warcserver.index.indexsource import WBMementoIndexSource, FileIndexSource
 from pywb.warcserver.index.aggregator import BaseSourceListAggregator, DirectoryIndexSource
+from pywb.warcserver.index.aggregator import RulesAggregator
 from pywb.warcserver.handlers import ResourceHandler, HandlerSeq
 
 
@@ -50,7 +51,7 @@ class TestWarcServer(TempDirTests, BaseTestClass):
         return handler.index_source.sources
 
     def test_list_static(self):
-        assert len(self.loader.list_fixed_routes()) == 13
+        assert len(self.loader.list_fixed_routes()) == 14
 
     def test_list_dynamic(self):
         assert set(self.loader.list_dynamic_routes()) == set(['auto1', 'auto2'])
@@ -124,4 +125,19 @@ class TestWarcServer(TempDirTests, BaseTestClass):
         sources = self._get_sources(handler=seq.handlers[2])
         assert len(sources) == 1
         assert isinstance(sources['live'], LiveIndexSource)
+
+    def test_rules_agg(self):
+        handler = self.loader.fixed_routes.get('many_rules')
+        assert(handler)
+        assert isinstance(handler.index_source, RulesAggregator)
+
+        res = handler.index_source.get_all_sources({'url': 'http://example.com/path'})
+        assert len(res) == 1
+        assert list(res.keys()) == ['local']
+
+        res = handler.index_source.get_all_sources({'url': 'http://httpbin.org/'})
+        assert len(res) == 1
+        assert list(res.keys()) == ['liveweb']
+
+
 

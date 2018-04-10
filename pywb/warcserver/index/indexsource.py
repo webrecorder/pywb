@@ -196,8 +196,7 @@ class RemoteIndexSource(BaseIndexSource):
 
 #=============================================================================
 class LiveIndexSource(BaseIndexSource):
-    def __init__(self, proxy_url='{url}'):
-        self.proxy_url = proxy_url
+    def __init__(self):
         self._init_sesh(DefaultAdapters.live_adapter)
 
     def load_index(self, params):
@@ -209,7 +208,7 @@ class LiveIndexSource(BaseIndexSource):
         cdx['urlkey'] = params.get('key').decode('utf-8')
         cdx['timestamp'] = timestamp_now()
         cdx['url'] = params['url']
-        cdx['load_url'] = res_template(self.proxy_url, params)
+        cdx['load_url'] = self.get_load_url(params)
         cdx['is_live'] = 'true'
 
         mime = params.get('content_type', '')
@@ -230,6 +229,9 @@ class LiveIndexSource(BaseIndexSource):
         cdx['mime'] = mime
 
         return iter([cdx])
+
+    def get_load_url(self, params):
+        return params['url']
 
     def __repr__(self):
         return '{0}()'.format(self.__class__.__name__)
@@ -257,6 +259,26 @@ class LiveIndexSource(BaseIndexSource):
             return
 
         return cls()
+
+
+#=============================================================================
+class LiveRewriteIndexSource(LiveIndexSource):
+    def __init__(self, match, replace):
+        super(LiveRewriteIndexSource, self).__init__()
+        self.rx = re.compile(match)
+        self.replace = replace
+
+    def get_load_url(self, params):
+        res = self.rx.sub(self.replace, params['url'])
+        print(res)
+        return res
+
+    @classmethod
+    def init_from_config(cls, config):
+        if config['type'] != 'live_rw':
+            return
+
+        return cls(config['match'], config['replace'])
 
 
 #=============================================================================
@@ -579,3 +601,4 @@ class WBMementoIndexSource(MementoIndexSource):
     @classmethod
     def _init_id(cls):
         return 'wb-memento'
+

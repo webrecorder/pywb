@@ -4,6 +4,7 @@ import gevent
 import json
 import time
 import os
+import re
 
 from warcio.timeutils import timestamp_now
 
@@ -390,5 +391,35 @@ class BaseRedisMultiKeyIndexSource(BaseAggregator, RedisIndexSource):
 
 #=============================================================================
 class RedisMultiKeyIndexSource(SeqAggMixin, BaseRedisMultiKeyIndexSource):
+    pass
+
+
+#=============================================================================
+class BaseRulesAggregator(BaseSourceListAggregator):
+    def __init__(self, sources, **kwargs):
+        super(BaseRulesAggregator, self).__init__(sources, **kwargs)
+        rules = kwargs.get('rules', [])
+
+        self.rules = []
+
+        for rule in rules:
+            match = rule['match']
+            name = rule['name']
+            self.rules.append((re.compile(match), name))
+
+    def get_all_sources(self, params):
+        url = params['url']
+
+        for rx, name in self.rules:
+            if rx.match(url):
+                source = self.sources.get(name)
+                if source:
+                    return {name: source}
+
+        return []
+
+
+#=============================================================================
+class RulesAggregator(SeqAggMixin, BaseRulesAggregator):
     pass
 

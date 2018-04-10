@@ -1,3 +1,5 @@
+debug: true
+
 collections:
 
     # Live Index
@@ -44,6 +46,23 @@ collections:
             liveweb: live
 
         timeout: 10
+
+    # many sources, conditional rules
+    many_rules:
+        index_group:
+            local:
+                path: ./local/indexes
+                archive_paths: ./local/data
+                type: file
+
+            liveweb: live
+
+        rules:
+            - match: 'https?:\/\/example\.com\/.*'
+              name: local
+
+            - match: '.*'
+              name: liveweb
 
     # Local Dir CDX
     local:
