@@ -81,9 +81,13 @@ class BaseCli(object):
         return self
 
     def run_gevent(self):
-        from gevent.pywsgi import WSGIServer
+        from pywb.utils.geventserver import GeventServer, RequestURIWSGIHandler
         logging.info('Starting Gevent Server on ' + str(self.r.port))
-        WSGIServer((self.r.bind, self.r.port), self.application).serve_forever()
+        ge = GeventServer(self.application,
+                          port=self.r.port,
+                          hostname=self.r.bind,
+                          handler_class=RequestURIWSGIHandler,
+                          direct=True)
 
 
 #=============================================================================
