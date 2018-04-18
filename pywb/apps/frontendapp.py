@@ -407,7 +407,10 @@ class FrontEndApp(object):
         else:
             logging.info('Proxy enabled for collection "{0}"'.format(proxy_coll))
 
-        prefix = '/{0}/bn_/'.format(proxy_coll)
+        if proxy_config.get('use_head_insert', True):
+            prefix = '/{0}/bn_/'.format(proxy_coll)
+        else:
+            prefix = '/{0}/id_/'.format(proxy_coll)
 
         self.handler = WSGIProxMiddleware(self.handle_request, prefix,
                                   proxy_host=proxy_config.get('host', 'pywb.proxy'),
