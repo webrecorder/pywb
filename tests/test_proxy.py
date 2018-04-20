@@ -19,7 +19,9 @@ def scheme(request):
 # ============================================================================
 class BaseTestProxy(TempDirTests, BaseTestClass):
     @classmethod
-    def setup_class(cls, coll='pywb', config_file='config_test.yaml', recording=False):
+    def setup_class(cls, coll='pywb', config_file='config_test.yaml', recording=False,
+                    extra_opts={}):
+
         super(BaseTestProxy, cls).setup_class()
         config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
 
@@ -30,6 +32,8 @@ class BaseTestProxy(TempDirTests, BaseTestClass):
                 'coll': coll,
                 'recording': recording,
                }
+
+        opts.update(extra_opts)
 
         cls.app = FrontEndApp(config_file=config_file,
                               custom_config={'proxy': opts})
@@ -57,8 +61,10 @@ class TestProxy(BaseTestProxy):
                            proxies=self.proxies,
                            verify=self.root_ca_file)
 
-        assert 'WB Insert' in res.text
         assert 'Example Domain' in res.text
+
+        # wb insert
+        assert 'WB Insert' in res.text
 
         # no wombat.js
         assert 'wombat.js' not in res.text
@@ -81,6 +87,9 @@ class TestProxy(BaseTestProxy):
 
         # no wombat.js
         assert 'wombat.js' not in res.text
+
+        # banner
+        assert 'default_banner.js' in res.text
 
         # no redirect check
         assert 'window == window.top' not in res.text
@@ -130,10 +139,71 @@ class TestRecordingProxy(CollsDirMixin, BaseTestProxy):
     def test_proxy_record_keep_percent(self, scheme):
         self.app.handler.prefix_resolver.fixed_prefix = '/test/record/bn_/'
 
-        res = requests.get('{0}://example.com/%2A%2Ffoobar'.format(scheme),
+        res = requests.get('{0}://example.com/path/%2A%2Ftest'.format(scheme),
                            proxies=self.proxies,
                            verify=self.root_ca_file)
 
         # ensure %-encoded url stays as is
-        assert '"{0}://example.com/%2A%2Ffoobar"'.format(scheme) in res.text
+        assert '"{0}://example.com/path/%2A%2Ftest"'.format(scheme) in res.text
+
+
+# ============================================================================
+class TestProxyNoBanner(BaseTestProxy):
+    @classmethod
+    def setup_class(cls):
+        super(TestProxyNoBanner, cls).setup_class(extra_opts={'use_banner': False})
+
+    def test_proxy_replay(self, scheme):
+        res = requests.get('{0}://example.com/'.format(scheme),
+                           proxies=self.proxies,
+                           verify=self.root_ca_file)
+
+        # content
+        assert 'Example Domain' in res.text
+
+        # head insert
+        assert 'WB Insert' in res.text
+
+        # no banner
+        assert 'default_banner.js' not in res.text
+
+        # no wombat.js
+        assert 'wombat.js' not in res.text
+
+        # no redirect check
+        assert 'window == window.top' not in res.text
+
+        assert res.headers['Link'] == '<http://example.com>; rel="memento"; datetime="Mon, 27 Jan 2014 17:12:51 GMT"; collection="pywb"'
+        assert res.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
+
+
+# ============================================================================
+class TestProxyNoHeadInsert(BaseTestProxy):
+    @classmethod
+    def setup_class(cls):
+        super(TestProxyNoHeadInsert, cls).setup_class(extra_opts={'use_head_insert': False})
+
+    def test_proxy_replay(self, scheme):
+        res = requests.get('{0}://example.com/'.format(scheme),
+                           proxies=self.proxies,
+                           verify=self.root_ca_file)
+
+        # content
+        assert 'Example Domain' in res.text
+
+        # no head insert
+        assert 'WB Insert' not in res.text
+
+        # no banner
+        assert 'default_banner.js' not in res.text
+
+        # no wombat.js
+        assert 'wombat.js' not in res.text
+
+        # no redirect check
+        assert 'window == window.top' not in res.text
+
+        assert res.headers['Link'] == '<http://example.com>; rel="memento"; datetime="Mon, 27 Jan 2014 17:12:51 GMT"; collection="pywb"'
+        assert res.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
+
 

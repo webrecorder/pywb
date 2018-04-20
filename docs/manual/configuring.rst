@@ -411,6 +411,21 @@ To enable proxy mode, the collection can be specified by running: ``wayback --pr
 For HTTP proxy access, this is all that is needed to use the proxy. If pywb is running on port 8080 on localhost, the following curl command should provide proxy access: ``curl -x "localhost:8080"  http://example.com/``
 
 
+Disabling Proxy Banner
+^^^^^^^^^^^^^^^^^^^^^^
+
+By default, pywb inserts a default banner into the proxy mode replay to make it clear to users that they are viewing replayed content.
+
+The default banner can be disabled by adding ``use_banner: false`` to the proxy config (this option is checked in the ``banner.html`` template).
+However, pywb may still insert additional rewriting code into the head to improve replay (using the ``head_insert.html`` template).
+To disable all modifications to the page in proxy mode, add ``use_head_insert: false`` to the config.
+Both options default to true, eg::
+
+   proxy:
+     use_banner: true
+     use_head_insert: true
+
+
 Proxy Recording
 ^^^^^^^^^^^^^^^
 
@@ -460,6 +475,11 @@ The following are all the available proxy options -- only ``coll`` is required::
     ca_name: pywb HTTPS Proxy CA
     ca_file_cache: ./proxy-certs/pywb-ca.pem
     recording: false
+    use_banner: true
+    use_head_insert: true
+
+(A final option, ``override_route``, allows setting a custom prefix to which to which the proxy requested will be routed.
+If set, this option overrides the proxy collection and all other settings, and it is intended for use when extending pywb with custom routing.)
 
 The HTTP/S functionality is provided by the separate :mod:`wsgiprox` utility which provides HTTP/S proxy
 for any WSGI application.
