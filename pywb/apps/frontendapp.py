@@ -380,6 +380,7 @@ class FrontEndApp(object):
 
     def init_proxy(self, config):
         proxy_config = config.get('proxy')
+        self.proxy_prefix = None
         if not proxy_config:
             return
 
@@ -407,16 +408,23 @@ class FrontEndApp(object):
         else:
             logging.info('Proxy enabled for collection "{0}"'.format(proxy_coll))
 
-        if proxy_config.get('override_route'):
-            prefix = proxy_config.get('override_route')
-        elif proxy_config.get('use_head_insert', True):
-            prefix = '/{0}/bn_/'.format(proxy_coll)
+        if proxy_config.get('use_head_insert', True):
+            self.proxy_prefix = '/{0}/bn_/'.format(proxy_coll)
         else:
-            prefix = '/{0}/id_/'.format(proxy_coll)
+            self.proxy_prefix = '/{0}/id_/'.format(proxy_coll)
 
-        self.handler = WSGIProxMiddleware(self.handle_request, prefix,
+        self.handler = WSGIProxMiddleware(self.handle_request,
+                                  self.proxy_route_request,
                                   proxy_host=proxy_config.get('host', 'pywb.proxy'),
                                   proxy_options=proxy_config)
+
+    def proxy_route_request(self, url, environ):
+        """ Return the full url that this proxy request will be routed to
+        The 'environ' PATH_INFO and REQUEST_URI will be modified based on the returned url
+
+        Default is to use the 'proxy_prefix' to point to the proxy collection
+        """
+        return self.proxy_prefix + url
 
 
 # ============================================================================

@@ -478,11 +478,11 @@ The following are all the available proxy options -- only ``coll`` is required::
     use_banner: true
     use_head_insert: true
 
-(A final option, ``override_route``, allows setting a custom prefix to which to which the proxy requested will be routed.
-If set, this option overrides the proxy collection and all other settings, and it is intended for use when extending pywb with custom routing.)
+The HTTP/S functionality is provided by the separate :mod:`wsgiprox` utility which provides HTTP/S proxy routing
+to any WSGI application.
 
-The HTTP/S functionality is provided by the separate :mod:`wsgiprox` utility which provides HTTP/S proxy
-for any WSGI application.
+Using ``wsgiprox``, pywb sets ``FrontEndApp.proxy_route_request()`` as the proxy resolver, and this function returns the full collection path that pywb uses to route each proxy request.
+Extensions to pywb can override ``proxy_route_request()`` to provide custom handling, such as setting the collection dynamically or based on external data sources.
 
 See the `wsgiprox README <https://github.com/webrecorder/wsgiprox/blob/master/README.rst>`_ for additional details on how it works.
 

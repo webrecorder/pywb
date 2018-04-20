@@ -127,7 +127,7 @@ class TestRecordingProxy(CollsDirMixin, BaseTestProxy):
     def test_proxy_replay_recorded(self, scheme):
         manager(['reindex', 'test'])
 
-        self.app.handler.prefix_resolver.fixed_prefix = '/test/bn_/'
+        self.app.proxy_prefix = '/test/bn_/'
 
         res = requests.get('{0}://httpbin.org/'.format(scheme),
                            proxies=self.proxies,
@@ -137,7 +137,7 @@ class TestRecordingProxy(CollsDirMixin, BaseTestProxy):
         assert 'httpbin(1)' in res.text
 
     def test_proxy_record_keep_percent(self, scheme):
-        self.app.handler.prefix_resolver.fixed_prefix = '/test/record/bn_/'
+        self.app.proxy_prefix = '/test/record/bn_/'
 
         res = requests.get('{0}://example.com/path/%2A%2Ftest'.format(scheme),
                            proxies=self.proxies,
