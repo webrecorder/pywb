@@ -395,6 +395,33 @@ def test_cdxj_middle_empty_records():
     assert len(lines) == 2, lines
 
 
+def test_invalid_decoding_uri_py2():
+    test_data = b'\
+WARC/1.0\r\n\
+WARC-Type: resource\r\n\
+WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
+WARC-Target-URI: http://example.com/\xc3\x83\xc2\xa9\r\n\
+WARC-Date: 2000-01-01T00:00:00Z\r\n\
+Content-Type: text/plain\r\n\
+Content-Length: 4\r\n\
+\r\n\
+ABCD\r\n\
+\r\n'
+
+    options = dict(include_all=True)
+
+    buff = BytesIO()
+
+    test_record = BytesIO(test_data)
+
+    write_cdx_index(buff, test_record,  'test.warc.gz', **options)
+
+    assert buff.getvalue() == b"""\
+ CDX N b a m s k r M S V g
+com,example)/%c3%83%c2%a9 20000101000000 http://example.com/\xc3\x83\xc2\xa9 text/plain - 7MXYLSEFM7Z4RTU3PGOHYVDEFUGHWQPW - - 222 0 test.warc.gz
+"""
+
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
