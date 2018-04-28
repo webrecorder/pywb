@@ -1,9 +1,10 @@
 from .base_config_test import BaseConfigTest, fmod_sl
+from pywb.warcserver.test.testutils import HttpBinLiveTests
 import pytest
 
 
 # ============================================================================
-class TestLiveRewriter(BaseConfigTest):
+class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
     @classmethod
     def setup_class(cls):
         super(TestLiveRewriter, cls).setup_class('config_test.yaml')

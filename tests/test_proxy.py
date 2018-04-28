@@ -1,4 +1,4 @@
-from pywb.warcserver.test.testutils import BaseTestClass, TempDirTests
+from pywb.warcserver.test.testutils import BaseTestClass, TempDirTests, HttpBinLiveTests
 
 from .base_config_test import CollsDirMixin
 from pywb.utils.geventserver import GeventServer, RequestURIWSGIHandler
@@ -99,7 +99,7 @@ class TestProxy(BaseTestProxy):
 
 
 # ============================================================================
-class TestRecordingProxy(CollsDirMixin, BaseTestProxy):
+class TestRecordingProxy(HttpBinLiveTests, CollsDirMixin, BaseTestProxy):
     @classmethod
     def setup_class(cls, coll='pywb', config_file='config_test.yaml'):
         super(TestRecordingProxy, cls).setup_class('test', 'config_test_record.yaml', recording=True)

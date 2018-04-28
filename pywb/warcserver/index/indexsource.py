@@ -209,7 +209,7 @@ class LiveIndexSource(BaseIndexSource):
         cdx['urlkey'] = params.get('key').decode('utf-8')
         cdx['timestamp'] = timestamp_now()
         cdx['url'] = params['url']
-        cdx['load_url'] = res_template(self.proxy_url, params)
+        cdx['load_url'] = self.get_load_url(params)
         cdx['is_live'] = 'true'
 
         mime = params.get('content_type', '')
@@ -230,6 +230,9 @@ class LiveIndexSource(BaseIndexSource):
         cdx['mime'] = mime
 
         return iter([cdx])
+
+    def get_load_url(self, params):
+        return res_template(self.proxy_url, params)
 
     def __repr__(self):
         return '{0}()'.format(self.__class__.__name__)

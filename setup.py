@@ -108,6 +108,7 @@ setup(
         'mock',
         'urllib3',
         'werkzeug',
+        'httpbin',
        ],
     cmdclass={'test': PyTest},
     test_suite='',
