@@ -27,13 +27,14 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
         assert resp.status_int == 200
 
     def test_live_anchor_encode(self, fmod_sl):
-        resp = self.get('/live/{0}httpbin.org/anything/abc%23%23xyz', fmod_sl)
-        assert '"http://httpbin.org/anything/abc##xyz"' in resp.text
+        resp = self.get('/live/{0}httpbin.org/get?val=abc%23%23xyz', fmod_sl)
+        assert 'get?val=abc%23%23xyz"' in resp.text
+        assert '"val": "abc##xyz"' in resp.text
+        #assert '"http://httpbin.org/anything/abc##xyz"' in resp.text
         assert resp.status_int == 200
 
     def test_live_head(self, fmod_sl):
-        resp = self.head('/live/{0}httpbin.org/anything/foo', fmod_sl)
-        #assert '"http://httpbin.org/anything/foo"' in resp.text
+        resp = self.head('/live/{0}httpbin.org/get?foo=bar', fmod_sl)
         assert resp.status_int == 200
 
     def test_live_live_frame(self):
