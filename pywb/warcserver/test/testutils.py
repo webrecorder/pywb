@@ -15,7 +15,6 @@ from pywb.warcserver.index.aggregator import SimpleAggregator
 from pywb.warcserver.index.indexsource import LiveIndexSource, MementoIndexSource
 
 from pywb.utils.geventserver import GeventServer
-from pywb.utils.format import res_template
 
 from pywb import get_test_dir
 from pywb.utils.wbexception import NotFoundException
@@ -176,7 +175,7 @@ class HttpBinLiveTests(object):
         def get_load_url(self, params):
             params['url'] = params['url'].replace('http://httpbin.org/', httpbin_local)
             params['url'] = params['url'].replace('https://httpbin.org/', httpbin_local)
-            return res_template(self.proxy_url, params)
+            return params['url']
 
         cls.indexmock = patch('pywb.warcserver.index.indexsource.LiveIndexSource.get_load_url', get_load_url)
         cls.indexmock.start()
