@@ -196,8 +196,7 @@ class RemoteIndexSource(BaseIndexSource):
 
 #=============================================================================
 class LiveIndexSource(BaseIndexSource):
-    def __init__(self, proxy_url='{url}'):
-        self.proxy_url = proxy_url
+    def __init__(self):
         self._init_sesh(DefaultAdapters.live_adapter)
 
     def load_index(self, params):
@@ -209,14 +208,14 @@ class LiveIndexSource(BaseIndexSource):
         cdx['urlkey'] = params.get('key').decode('utf-8')
         cdx['timestamp'] = timestamp_now()
         cdx['url'] = params['url']
-        cdx['load_url'] = res_template(self.proxy_url, params)
+        cdx['load_url'] = self.get_load_url(params)
         cdx['is_live'] = 'true'
 
         mime = params.get('content_type', '')
 
         if params.get('filter') and not mime:
             try:
-                res = self.sesh.head(cdx['url'])
+                res = self.sesh.head(cdx['load_url'])
                 if res.status_code != 405:
                     cdx['status'] = str(res.status_code)
 
@@ -230,6 +229,9 @@ class LiveIndexSource(BaseIndexSource):
         cdx['mime'] = mime
 
         return iter([cdx])
+
+    def get_load_url(self, params):
+        return params['url']
 
     def __repr__(self):
         return '{0}()'.format(self.__class__.__name__)

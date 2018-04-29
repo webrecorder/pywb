@@ -3,7 +3,7 @@ warcio>=1.5.0
 chardet
 requests
 redis
-jinja2<2.9
+jinja2
 surt>=0.3.0
 brotlipy
 pyyaml

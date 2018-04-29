@@ -142,7 +142,6 @@ class LiveServerTests(object):
     @classmethod
     def setup_class(cls):
         super(LiveServerTests, cls).setup_class()
-        #cls.server = ServerThreadRunner(cls.make_live_app())
         cls.server = GeventServer(cls.make_live_app())
 
     @staticmethod
@@ -157,5 +156,35 @@ class LiveServerTests(object):
 
     @classmethod
     def teardown_class(cls):
-        super(LiveServerTests, cls).teardown_class()
         cls.server.stop()
+        super(LiveServerTests, cls).teardown_class()
+
+
+# ============================================================================
+class HttpBinLiveTests(object):
+    @classmethod
+    def setup_class(cls, *args, **kwargs):
+        super(HttpBinLiveTests, cls).setup_class(*args, **kwargs)
+
+        from httpbin import app as httpbin_app
+        httpbin_app.config.update(JSONIFY_PRETTYPRINT_REGULAR=True)
+        cls.httpbin_server = GeventServer(httpbin_app)
+
+        httpbin_local = 'http://localhost:' + str(cls.httpbin_server.port) + '/'
+
+        def get_load_url(self, params):
+            params['url'] = params['url'].replace('http://httpbin.org/', httpbin_local)
+            params['url'] = params['url'].replace('https://httpbin.org/', httpbin_local)
+            return params['url']
+
+        cls.indexmock = patch('pywb.warcserver.index.indexsource.LiveIndexSource.get_load_url', get_load_url)
+        cls.indexmock.start()
+
+    @classmethod
+    def teardown_class(cls):
+        cls.indexmock.stop()
+        cls.httpbin_server.stop()
+        super(HttpBinLiveTests, cls).teardown_class()
+
+
+

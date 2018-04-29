@@ -1,7 +1,7 @@
 from .base_config_test import BaseConfigTest, fmod, CollsDirMixin
 from pywb.manager.manager import main as manager
 from pywb.manager.autoindex import AutoIndexer
-from pywb.warcserver.test.testutils import to_path
+from pywb.warcserver.test.testutils import to_path, HttpBinLiveTests
 
 import os
 import time
@@ -9,7 +9,7 @@ import json
 
 
 # ============================================================================
-class TestRecordReplay(CollsDirMixin, BaseConfigTest):
+class TestRecordReplay(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
     @classmethod
     def setup_class(cls):
         super(TestRecordReplay, cls).setup_class('config_test_record.yaml')
@@ -133,7 +133,7 @@ class TestRecordReplay(CollsDirMixin, BaseConfigTest):
 
 
 # ============================================================================
-class TestRecordCustomConfig(CollsDirMixin, BaseConfigTest):
+class TestRecordCustomConfig(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
     @classmethod
     def setup_class(cls):
         rec_custom = {'recorder': {'source_coll': 'live',
