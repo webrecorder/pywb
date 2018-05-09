@@ -43,11 +43,16 @@ class WbResponse(object):
         return WbResponse(status_headers, value=stream)
 
     @staticmethod
-    def text_response(text, status='200 OK', content_type='text/plain; charset=utf-8'):
+    def text_response(text, status='200 OK', content_type='text/plain; charset=utf-8', headers=None):
         encoded_text = text.encode('utf-8')
-        status_headers = StatusAndHeaders(status,
-                                          [('Content-Type', content_type),
-                                           ('Content-Length', str(len(encoded_text)))])
+
+        def_headers = [('Content-Type', content_type),
+                       ('Content-Length', str(len(encoded_text)))]
+
+        if headers:
+            def_headers += headers
+
+        status_headers = StatusAndHeaders(status, def_headers)
 
         return WbResponse(status_headers, value=[encoded_text])
 

@@ -56,6 +56,9 @@ class BaseLoader(object):
 
         out_headers['Warcserver-Cdx'] = to_native_str(cdx.to_cdxj().rstrip())
         out_headers['Warcserver-Source-Coll'] = to_native_str(source)
+        status = cdx.get('status')
+        if status:
+            out_headers['Warcserver-Status'] = str(status)
 
         if not warc_headers:
             if other_headers:
@@ -317,6 +320,8 @@ class LiveWebLoader(BaseLoader):
         status = status.format(version=version,
                                status=upstream_res.status,
                                reason=upstream_res.reason)
+
+        cdx['status'] = upstream_res.status
 
         http_headers_buff = status
 

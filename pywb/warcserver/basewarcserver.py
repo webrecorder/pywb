@@ -7,10 +7,12 @@ from werkzeug.exceptions import HTTPException
 import requests
 import traceback
 import json
-
+import logging
 import six
 
 JSON_CT = 'application/json; charset=utf-8'
+
+logger = logging.getLogger('warcserver')
 
 
 #=============================================================================
@@ -18,6 +20,9 @@ class BaseWarcServer(object):
     def __init__(self, *args, **kwargs):
         self.route_dict = {}
         self.debug = kwargs.get('debug', False)
+
+        if self.debug:
+            logger.setLevel(logging.DEBUG)
 
         self.url_map = Map()
 

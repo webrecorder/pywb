@@ -84,7 +84,7 @@ class IndexHandler(object):
             return None, None, errs
 
         cdx_iter, errs = self._load_index_source(params)
-        if not cdx_iter:
+        if not cdx_iter or errs:
             return None, None, errs
 
         content_type, res = handler(cdx_iter, fields)
@@ -152,8 +152,9 @@ class DefaultResourceHandler(ResourceHandler):
 
 #=============================================================================
 class HandlerSeq(object):
-    def __init__(self, handlers):
+    def __init__(self, handlers, filter_errors=True):
         self.handlers = handlers
+        self.filter_errors = filter_errors
 
     def get_supported_modes(self):
         if self.handlers:
@@ -163,11 +164,25 @@ class HandlerSeq(object):
 
     def __call__(self, params):
         all_errs = {}
+        err_res = None
+        err_out_headers = None
         for handler in self.handlers:
             out_headers, res, errs = handler(params)
+            if out_headers and self.filter_errors:
+                status = out_headers.get('Warcserver-Status')
+                if status and not status.startswith(('1', '2', '3')):
+                    errs = {'status_error': status}
+                    err_res = res
+                    err_out_headers = out_headers
+                    res = None
+
             all_errs.update(errs)
+
             if res is not None:
                 return out_headers, res, all_errs
+
+        if err_res and err_out_headers:
+            return err_out_headers, err_res, all_errs
 
         return None, None, all_errs
 

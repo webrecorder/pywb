@@ -467,7 +467,9 @@ class RewriterApp(object):
     def _not_found_response(self, environ, url):
         resp = self.not_found_view.render_to_string(environ, url=url)
 
-        return WbResponse.text_response(resp, status='404 Not Found', content_type='text/html')
+        return WbResponse.text_response(resp, status='404 Not Found',
+                                        content_type='text/html',
+                                        headers=[('Access-Control-Allow-Origin', '*')])
 
     def _error_response(self, environ, msg='', details='', status='404 Not Found'):
         resp = self.error_view.render_to_string(environ,

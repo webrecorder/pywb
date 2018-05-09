@@ -19,11 +19,11 @@ RUN python setup.py install
 RUN mkdir /webarchive
 COPY config.yaml /webarchive/
 
-VOLUME /webarchive
+#VOLUME /webarchive
 
 WORKDIR /webarchive
 
-EXPOSE 8080
+#EXPOSE 8080
 
 CMD ["uwsgi", "/uwsgi/uwsgi.ini"]
 
