@@ -287,6 +287,8 @@ class FrontEndApp(object):
         if not coll or not self.warcserver.root_dir:
             return
 
+        environ['ORIG_SCRIPT_NAME'] = environ.get('SCRIPT_NAME')
+
         if coll != '$root':
             pop_path_info(environ)
             if record:

@@ -348,6 +348,7 @@ class RewriterApp(object):
                                                        top_url,
                                                        environ,
                                                        framed_replay,
+                                                       static_prefix=self.get_static_prefix(environ),
                                                        config=self.config))
 
         cookie_rewriter = None
@@ -588,6 +589,9 @@ class RewriterApp(object):
         #return request.script_name
         return environ.get('SCRIPT_NAME') + '/'
 
+    def get_static_prefix(self, environ):
+        return self.get_host_prefix(environ) + environ.get('ORIG_SCRIPT_NAME', '') + '/static'
+
     def get_full_prefix(self, environ):
         return self.get_host_prefix(environ) + self.get_rel_prefix(environ)
 
@@ -641,7 +645,8 @@ class RewriterApp(object):
             return self.handle_query(environ, wb_url, kwargs, full_prefix)
 
         if self.is_framed_replay(wb_url):
-            extra_params = self.get_top_frame_params(wb_url, kwargs)
+            extra_params = self.get_top_frame_params(wb_url, kwargs) or {}
+            extra_params['static_prefix'] = self.get_static_prefix(environ)
             return self.frame_insert_view.get_top_frame(wb_url,
                                                         full_prefix,
                                                         host_prefix,
