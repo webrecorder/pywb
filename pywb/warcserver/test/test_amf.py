@@ -9,8 +9,7 @@ from pyamf.flex.messaging import RemotingMessage
 
 
 class CustomObject:
-    def __init__(self, secret):
-        self.secret = secret
+    secret = None
 
 
 pyamf.register_class(CustomObject, "custom.object")
@@ -34,7 +33,8 @@ def generate_flex_request(message_body=None):
 class TestAmf(object):
 
     def test_can_parse_custom_object(self):
-        a = CustomObject("a")
+        a = CustomObject()
+        a.secret = "a"
 
         encoded = generate_amf_request(request_body=[a])
         decoded = decode(BytesIO(encoded))
@@ -69,7 +69,7 @@ class TestAmf(object):
         assert Amf.get_representation(a) != Amf.get_representation(b)
 
     def test_limit_recursive_calls(self):
-        a = CustomObject("a")
+        a = CustomObject()
         a.secret = a
 
         encoded = generate_amf_request(request_body=[a])

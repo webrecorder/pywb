@@ -51,7 +51,7 @@ class Amf:
             return ""
 
         elif isinstance(request_object, object) and hasattr(request_object, "__dict__"):
-            classname = type(request_object).__name__
+            classname = request_object.__class__.__name__
             properties = request_object.__dict__
             bodies = dict()
             for prop in properties:
