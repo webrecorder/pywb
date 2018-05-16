@@ -1,5 +1,6 @@
 from warcio.limitreader import LimitReader
 from warcio.statusandheaders import StatusAndHeadersParser
+from pywb.warcserver.amf import Amf
 
 from warcio.utils import to_native_str
 
@@ -7,9 +8,10 @@ from six.moves.urllib.parse import urlsplit, quote, unquote_plus, urlencode
 from six import iteritems, StringIO, PY3
 from io import BytesIO
 
+from pyamf.remoting import decode
+
 import base64
 import cgi
-
 
 
 #=============================================================================
@@ -264,30 +266,8 @@ class MethodQueryCanonicalizer(object):
 
     def amf_parse(self, string, environ):
         try:
-            from pyamf import remoting
-
-            res = remoting.decode(BytesIO(string))
-
-            #print(res)
-            body = res.bodies[0][1].body[0]
-
-            values = {}
-
-            if hasattr(body, 'body'):
-                values['body'] = body.body
-
-            if hasattr(body, 'source'):
-                values['source'] = body.source
-
-            if hasattr(body, 'operation'):
-                values['op'] = body.operation
-
-            if environ is not None:
-                environ['pywb.inputdata'] = res
-
-            query = urlencode(values)
-            #print(query)
-            return query
+            res = decode(BytesIO(string))
+            return urlencode({"request": Amf.get_representation(res)})
 
         except Exception as e:
             import traceback
