@@ -1,14 +1,12 @@
 from warcio.limitreader import LimitReader
 from warcio.statusandheaders import StatusAndHeadersParser
 from pywb.warcserver.amf import Amf
-
+from pyamf.remoting import decode
 from warcio.utils import to_native_str
 
 from six.moves.urllib.parse import urlsplit, quote, unquote_plus, urlencode
 from six import iteritems, StringIO, PY3
 from io import BytesIO
-
-from pyamf.remoting import decode
 
 import base64
 import cgi
