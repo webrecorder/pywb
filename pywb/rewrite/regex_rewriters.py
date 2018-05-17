@@ -160,6 +160,10 @@ class JSWombatProxyRewriterMixin(object):
     local_init_func = '\nvar {0} = function(name) {{\
 return (self._wb_wombat && self._wb_wombat.local_init &&\
  self._wb_wombat.local_init(name)) || self[name]; }};\n\
+if (!self.__WB_pmw && typeof self.Client !== "undefined") {{ \n\
+  self.Client.prototype.__WB_pmw = function(obj) {{ return this; }}; \n\
+  self.MessagePort.prototype.__WB_pmw = function(obj) {{ return this; }}; \n\
+}}\n\
 if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
 {{\n'
 
