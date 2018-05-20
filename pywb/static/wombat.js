@@ -2617,8 +2617,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var orig_doc_write = $wbwindow.document.write;
 
         var new_write = function() {
+            var argLen = arguments.length;
             var string;
-            if (arguments.length <= 1) {
+            if (argLen === 0) {
+                return orig_doc_write.call(this);
+            } else if (argLen === 1) {
                 string = arguments[0];
             } else {
                 // using Array.apply for optimization reasons
@@ -2641,8 +2644,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var orig_doc_writeln = $wbwindow.document.writeln;
 
         var new_writeln = function() {
+            var argLen = arguments.length;
             var string;
-            if (arguments.length <= 1) {
+            if (argLen === 0) {
+                return orig_doc_write.call(this);
+            } else if (argLen === 1) {
                 string = arguments[0];
             } else {
                 var argArray = origFunctionApply.call($wbwindow.Array, arguments);
