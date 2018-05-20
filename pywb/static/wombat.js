@@ -92,6 +92,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
     var message_listeners = new FuncMap();
     var storage_listeners = new FuncMap();
 
+    // to avoid incurring the cost of our override
+    var origFunctionApply = $wbwindow.Function.prototype.apply;
+
     //============================================
     function is_host_url(str) {
         // Good guess that's its a hostname
@@ -2607,18 +2610,32 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return;
         }
 
+        // both document.[write,writeln] are variadic functions
+        // we must concatenate the arguments when length > 1
+
         // Write
         var orig_doc_write = $wbwindow.document.write;
 
-        var new_write = function(string) {
-            new_buff = rewrite_html(string, true);
+        var new_write = function() {
+            var argLen = arguments.length;
+            var string;
+            if (argLen === 0) {
+                return orig_doc_write.call(this);
+            } else if (argLen === 1) {
+                string = arguments[0];
+            } else {
+                // using Array.apply for optimization reasons
+                var argArray = origFunctionApply.call($wbwindow.Array, arguments);
+                string = argArray.join('');
+            }
+            var new_buff = rewrite_html(string, true);
             if (!new_buff) {
                 return;
             }
             var res = orig_doc_write.call(this, new_buff);
             init_new_window_wombat(this.defaultView);
             return res;
-        }
+        };
 
         $wbwindow.document.write = new_write;
         $wbwindow.Document.prototype.write = new_write;
@@ -2626,15 +2643,25 @@ var _WBWombat = function($wbwindow, wbinfo) {
         // Writeln
         var orig_doc_writeln = $wbwindow.document.writeln;
 
-        var new_writeln = function(string) {
-            new_buff = rewrite_html(string, true);
+        var new_writeln = function() {
+            var argLen = arguments.length;
+            var string;
+            if (argLen === 0) {
+                return orig_doc_writeln.call(this);
+            } else if (argLen === 1) {
+                string = arguments[0];
+            } else {
+                var argArray = origFunctionApply.call($wbwindow.Array, arguments);
+                string = argArray.join('');
+            }
+            var new_buff = rewrite_html(string, true);
             if (!new_buff) {
                 return;
             }
             var res = orig_doc_writeln.call(this, new_buff);
             init_new_window_wombat(this.defaultView);
             return res;
-        }
+        };
 
         $wbwindow.document.writeln = new_writeln;
         $wbwindow.Document.prototype.writeln = new_writeln;
@@ -2646,7 +2673,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var res = orig_doc_open.call(this);
             init_new_window_wombat(this.defaultView);
             return res;
-        }
+        };
 
         $wbwindow.document.open = new_open;
         $wbwindow.Document.prototype.open = new_open;
