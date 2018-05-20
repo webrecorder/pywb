@@ -2647,7 +2647,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var argLen = arguments.length;
             var string;
             if (argLen === 0) {
-                return orig_doc_write.call(this);
+                return orig_doc_writeln.call(this);
             } else if (argLen === 1) {
                 string = arguments[0];
             } else {
