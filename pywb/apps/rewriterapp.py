@@ -348,6 +348,7 @@ class RewriterApp(object):
                                                        top_url,
                                                        environ,
                                                        framed_replay,
+                                                       replay_mod=self.replay_mod,
                                                        config=self.config))
 
         cookie_rewriter = None
