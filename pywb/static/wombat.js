@@ -2206,9 +2206,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
 
             var to_origin = targetOrigin;
-            
-            if (starts_with(to_origin, obj.location.origin)) {
-                to_origin = "*";
+
+            // if passed in origin is the replay (rewriting missed somewhere?)
+            // set origin to current 'from' origin
+            if (to_origin == obj.location.origin) {
+                to_origin = from;
             }
 
             var new_message = {"from": from,
@@ -2218,7 +2220,14 @@ var _WBWombat = function($wbwindow, wbinfo) {
                                "from_top": from_top,
                               }
 
+            // set to 'real' origin if not '*'
             if (targetOrigin != "*") {
+                // if target origin is null (about:blank) or empty, don't pass event at all
+                // as it would never succeed
+                if (obj.location.origin == "null" || obj.location.origin == "") {
+                    return;
+                }
+                // set to actual (rewritten) origin
                 targetOrigin = obj.location.origin;
             }
 
