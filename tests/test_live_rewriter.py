@@ -64,3 +64,22 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
     def test_deflate(self, fmod_sl):
         resp = self.get('/live/{0}http://httpbin.org/deflate', fmod_sl)
         assert b'"deflated": true' in resp.body
+
+    def test_live_origin_and_referrer(self, fmod_sl):
+        headers = {'Referer': 'http://localhost:80/live/{0}http://example.com/test'.format(fmod_sl),
+                   'Origin': 'http://localhost:80'
+                  }
+
+        resp = self.get('/live/{0}http://httpbin.org/get?test=headers', fmod_sl, headers=headers)
+
+        assert resp.json['headers']['Referer'] == 'http://example.com/test'
+        assert resp.json['headers']['Origin'] == 'http://example.com'
+
+    def test_live_origin_no_referrer(self, fmod_sl):
+        headers = {'Origin': 'http://localhost:80'}
+
+        resp = self.get('/live/{0}http://httpbin.org/get?test=headers', fmod_sl, headers=headers)
+
+        assert resp.json['headers']['Origin'] == 'http://httpbin.org'
+
+
