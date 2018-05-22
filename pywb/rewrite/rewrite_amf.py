@@ -43,6 +43,8 @@ class RewriteAMF(BufferedRewriter):  #pragma: no cover
             import traceback
             traceback.print_exc()
             print(e)
+
+            stream.seek(0)
             return stream
 
 
