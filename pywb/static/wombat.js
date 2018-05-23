@@ -58,7 +58,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         this.map = function(param) {
             for (var i = 0; i < this._arr.length; i++) {
-                (this._arr[i][0])(param);
+                (this._arr[i][1])(param);
             }
         }
     }
@@ -2369,7 +2369,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         override_on_prop("onmessage", WrappedListener);
-        override_on_prop("onstroage", SameOriginListener);
+        override_on_prop("onstorage", SameOriginListener);
     }
 
 
