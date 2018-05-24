@@ -73,12 +73,20 @@ class HTMLRewriterMixin(StreamingRewriter):
 
     DATA_RW_PROTOCOLS = ('http://', 'https://', '//')
 
-    PRELOAD_TYPES = {'script': 'js_',
-                     'style': 'cs_',
-                     'image': 'im_',
-                     'document': 'if_',
-                     'fetch': 'mp_'
-                    }
+    PRELOAD_TYPES = {
+        'script': 'js_',
+        'worker': 'js_',
+        'style': 'cs_',
+        'image': 'im_',
+        'document': 'if_',
+        'fetch': 'mp_',
+        'font': 'oe_',
+        'audio': 'oe_',
+        'video': 'oe_',
+        'embed': 'oe_',
+        'object': 'oe_',
+        'track': 'oe_',
+    }
 
     #===========================
     class AccumBuff:
