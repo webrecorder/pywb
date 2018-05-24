@@ -374,6 +374,9 @@ class RewriteInfo(object):
     def _resolve_text_type(self, text_type):
         mod = self.url_rewriter.wburl.mod
 
+        if mod == 'sw_':
+            return None
+
         if text_type == 'css' and mod == 'js_':
             text_type = 'css'
 
@@ -439,7 +442,7 @@ class RewriteInfo(object):
         return True
 
     def is_url_rw(self):
-        if self.url_rewriter.wburl.mod in ('id_', 'bn_'):
+        if self.url_rewriter.wburl.mod in ('id_', 'bn_', 'sw_'):
             return False
 
         return True
