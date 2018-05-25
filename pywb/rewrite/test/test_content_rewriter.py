@@ -317,6 +317,18 @@ class TestContentRewriter(object):
 
         assert b''.join(gen).decode('utf-8') == content
 
+    def test_custom_ajax_rewrite(self):
+        headers = {'Content-Type': 'application/json',
+                   'X-Pywb-Requested-With': 'XMLHttpRequest'}
+
+        content = '{"player":{"value":123,"args":{"id":5}}}'
+
+        rw_headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_',
+                                                  url='http://www.youtube.com/watch?v=1234')
+
+        # rewritten
+        assert b''.join(gen).decode('utf-8') == '{"player":{"value":123,"args":{"dash":"0","dashmpd":"","id":5}}}'
+
     def test_hls_default_max(self):
         headers = {'Content-Type': 'application/vnd.apple.mpegurl'}
         with open(os.path.join(get_test_dir(), 'text_content', 'sample_hls.m3u8'), 'rt') as fh:
