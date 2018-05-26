@@ -14,7 +14,13 @@ from pywb.rewrite.regex_rewriters import JSRewriter, CSSRewriter
 from pywb.rewrite.content_rewriter import StreamingRewriter
 
 import six.moves.html_parser
-six.moves.html_parser.unescape = lambda x: x
+
+try:
+    orig_unescape = six.moves.html_parser.unescape
+    six.moves.html_parser.unescape = lambda x: x
+except:
+    orig_unescape = None
+
 from six import text_type
 
 
@@ -223,22 +229,25 @@ class HTMLRewriterMixin(StreamingRewriter):
         if not value:
             return ''
 
-        value = self.try_unescape(value)
-        return self.url_rewriter.rewrite(value, mod)
+        unesc_value = self.try_unescape(value)
+        rewritten_value = self.url_rewriter.rewrite(unesc_value, mod)
+
+        if unesc_value != value and rewritten_value != unesc_value:
+            rewritten_value = rewritten_value.replace(unesc_value, value)
+
+        return rewritten_value
 
     def try_unescape(self, value):
         if not value.startswith('http'):
             return value
 
         try:
-            new_value = HTMLParser.unescape(self, value)
-        except:
+            if orig_unescape:
+                new_value = orig_unescape(value)
+            else:
+                new_value = HTMLParser.unescape(self, value)
+        except Exception as e:
             return value
-
-        if value != new_value:
-            # ensure utf-8 encoded to avoid %-encoding query here
-            if isinstance(new_value, text_type):
-                new_value = new_value.encode('utf-8')
 
         return new_value
 
