@@ -1089,6 +1089,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
+
     function init_setAttribute_override()
     {
         if (!$wbwindow.Element ||
@@ -1110,6 +1111,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
                     value = rewrite_inline_style(value);
 
                 } else if (should_rewrite_attr(this.tagName, lowername)) {
+                    if (this.tagName === 'SCRIPT' && !this.__$removedWBOSRC$__) {
+                        if (this.hasAttribute("__wb_orig_src")) {
+                            this.removeAttribute("__wb_orig_src");
+                        }
+                        this.__$removedWBOSRC$__ = true;
+                    }
                     if (!this._no_rewrite) {
                         var mod = rwModForElement(this, lowername);
                         value = rewrite_url(value, false, mod);
@@ -1129,7 +1136,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
     {
         if (!$wbwindow.Element ||
             !$wbwindow.Element.prototype ||
-            !$wbwindow.Element.prototype.setAttribute) {
+            !$wbwindow.Element.prototype.getAttribute) {
             return;
         }
 
@@ -1140,6 +1147,13 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var result = orig_getAttribute.call(this, name);
 
             if (should_rewrite_attr(this.tagName, name)) {
+                if (this.tagName === 'script' && !this.__$removedWBOSRC$__) {
+                    var maybeWBOsrc = orig_getAttribute.call(this, '__wb_orig_src');
+                    if (maybeWBOsrc) {
+                        return maybeWBOsrc;
+                    }
+                    this.__$removedWBOSRC$__ = true;
+                }
                 result = extract_orig(result);
             } else if (starts_with(name, "data-") && starts_with(result, VALID_PREFIXES)) {
                 result = extract_orig(result);
@@ -1406,6 +1420,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         if (new_value != value) {
+            if (elem.tagName === 'SCRIPT' && !elem.__$removedWBOSRC$__) {
+                if (elem.hasAttribute("__wb_orig_src")) {
+                    elem.removeAttribute("__wb_orig_src");
+                }
+                elem.__$removedWBOSRC$__ = true;
+            }
             wb_setAttribute.call(elem, name, new_value);
             return true;
         }
@@ -1782,6 +1802,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 }
                 val = rewrite_url(orig, false, mod);
             } else {
+                if (this.tagName === 'SCRIPT' && !this.__$removedWBOSRC$__) {
+                    if (this.hasAttribute("__wb_orig_src")) {
+                        this.removeAttribute("__wb_orig_src");
+                    }
+                    this.__$removedWBOSRC$__ = true;
+                }
                 val = rewrite_url(orig, false, mod);
             }
 
@@ -2283,7 +2309,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 this.__WB_win_id[source.__WB_id] = source;
 
                 src_id = source.__WB_id;
-                
+
                 window.__WB_source = undefined;
             } else {
                 from = window.WB_wombat_location.origin;

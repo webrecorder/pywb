@@ -221,7 +221,7 @@ class HTMLRewriterMixin(StreamingRewriter):
         url = urlunsplit((scheme, netloc, path, query, frag))
         return url
 
-    def _rewrite_url(self, value, mod=None):
+    def _rewrite_url(self, value, mod=None, force_abs=False):
         if not value:
             return ''
 
@@ -379,6 +379,14 @@ class HTMLRewriterMixin(StreamingRewriter):
                 rw_mod = self.defmod
                 attr_value = self._rewrite_url(attr_value, rw_mod)
 
+            elif tag == 'script' and attr_name == 'src':
+                rw_mod = handler.get(attr_name)
+                ov = attr_value
+                attr_value = self._rewrite_url(attr_value, rw_mod)
+                if attr_value == ov and not ov.startswith(self.url_rewriter.NO_REWRITE_URI_PREFIX):
+                    # URL not skipped, likely src='js/....', forcing abs to make sure, cause PHP MIME(JS) === HTML
+                    attr_value = self._rewrite_url(attr_value, rw_mod, True)
+                    self._write_attr('__wb_orig_src', ov, empty_attr=None)
             else:
                 # rewrite url using tag handler
                 rw_mod = handler.get(attr_name)
@@ -407,6 +415,10 @@ class HTMLRewriterMixin(StreamingRewriter):
         elif rel == 'preload':
             preload = self.get_attr(tag_attrs, 'as')
             rw_mod = self.PRELOAD_TYPES.get(preload, rw_mod)
+
+        # for html imports with an optional as (google exclusive)
+        elif rel == 'import':
+            rw_mod = 'mp_'
 
         elif rel == 'stylesheet':
             rw_mod = 'cs_'
