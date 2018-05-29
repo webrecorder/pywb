@@ -88,6 +88,10 @@ r"""
 >>> parse('<input value="&amp;X&amp;&quot;">X</input>')
 <input value="&amp;X&amp;&quot;">X</input>
 
+# Ensure url is rewritten, but is not unescaped
+>>> parse('<a href="http&#x3a;&#x2f;&#x2f;example.com&#x2f;path&#x2f;">')
+<a href="/web/20131226101010/http&#x3a;&#x2f;&#x2f;example.com&#x2f;path&#x2f;">
+
 # Empty values should be ignored
 >>> parse('<input name="foo" value>')
 <input name="foo" value>
