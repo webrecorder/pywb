@@ -34,6 +34,10 @@ default_filters:
         - match: '[?&]utm_[^=]+=[^&]+(?=&|$)'
           replace: ''
 
+        # additional callback=jsonpCallbackXYZ
+        - match: '[?&](callback=jsonp)[^&]+(?=&|$)'
+          replace: '\1'
+
         # remove jquery callback dynamic timestamp
         - match: '[?&]((?:\w+)=jquery)[\d]+_[\d]+'
           replace: '\1'
