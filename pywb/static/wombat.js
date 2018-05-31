@@ -1375,9 +1375,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var orig_register = $wbwindow.ServiceWorkerContainer.prototype.register;
 
         $wbwindow.ServiceWorkerContainer.prototype.register = function(scriptURL, options) {
-            scriptURL = rewrite_url(scriptURL, false, "id_");
+            scriptURL = new URL(scriptURL, $wbwindow.document.baseURI).href;
+            scriptURL = rewrite_url(scriptURL, false, "sw_");
             if (options && options.scope) {
-                options.scope = rewrite_url(options.scope, false, "id_");
+                options.scope = rewrite_url(options.scope, false, "mp_");
+            } else {
+                options = {scope: rewrite_url("/", false, "mp_")};
             }
             return orig_register.call(this, scriptURL, options);
         }
@@ -2288,29 +2291,30 @@ var _WBWombat = function($wbwindow, wbinfo) {
         
         $wbwindow.__orig_postMessage = orig;
 
+        // use this_obj.__WB_source not window to fix google calendar embeds, pm_origin sets this.__WB_source
         var postmessage_rewritten = function(message, targetOrigin, transfer, from_top) {
             var from = undefined;
             var src_id = undefined;
-            var obj = proxy_to_obj(this);
+            var this_obj = proxy_to_obj(this);
 
-            if (window.__WB_source && window.__WB_source.WB_wombat_location) {
-                var source = window.__WB_source;
+            if (this_obj.__WB_source && this_obj.__WB_source.WB_wombat_location) {
+                var source = this_obj.__WB_source;
 
                 from = source.WB_wombat_location.origin;
 
-                if (!this.__WB_win_id) {
-                    this.__WB_win_id = {};
-                    this.__WB_counter = 0;
+                if (!this_obj.__WB_win_id) {
+                    this_obj.__WB_win_id = {};
+                    this_obj.__WB_counter = 0;
                 }
 
                 if (!source.__WB_id) {
-                    source.__WB_id = (this.__WB_counter++) + source.WB_wombat_location.href;
+                    source.__WB_id = (this_obj.__WB_counter++) + source.WB_wombat_location.href;
                 }
-                this.__WB_win_id[source.__WB_id] = source;
+                this_obj.__WB_win_id[source.__WB_id] = source;
 
                 src_id = source.__WB_id;
 
-                window.__WB_source = undefined;
+                this_obj.__WB_source = undefined;
             } else {
                 from = window.WB_wombat_location.origin;
             }
@@ -2319,7 +2323,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             // if passed in origin is the replay (rewriting missed somewhere?)
             // set origin to current 'from' origin
-            if (to_origin == obj.location.origin) {
+            if (to_origin == this_obj.location.origin) {
                 to_origin = from;
             }
 
@@ -2328,23 +2332,23 @@ var _WBWombat = function($wbwindow, wbinfo) {
                                "src_id":  src_id,
                                "message": message,
                                "from_top": from_top,
-                              }
+                              };
 
             // set to 'real' origin if not '*'
             if (targetOrigin != "*") {
                 // if target origin is null (about:blank) or empty, don't pass event at all
                 // as it would never succeed
-                if (obj.location.origin == "null" || obj.location.origin == "") {
+                if (this_obj.location.origin == "null" || this_obj.location.origin == "") {
                     return;
                 }
                 // set to actual (rewritten) origin
-                targetOrigin = obj.location.origin;
+                targetOrigin = this_obj.location.origin;
             }
 
             //console.log("Sending " + from + " -> " + to + " (" + targetOrigin + ") " + message);
-            
-            return orig.call(obj, new_message, targetOrigin, transfer);
-        }
+
+            return orig.call(this_obj, new_message, targetOrigin, transfer);
+        };
 
         $wbwindow.postMessage = postmessage_rewritten;
 
