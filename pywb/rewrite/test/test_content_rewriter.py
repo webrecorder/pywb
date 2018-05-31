@@ -143,6 +143,18 @@ class TestContentRewriter(object):
         exp = 'function() { WB_wombat_location.href = "http://example.com/"; }'
         assert b''.join(gen).decode('utf-8') == exp
 
+    def test_rewrite_sw_add_headers(self):
+        headers = {'Content-Type': 'application/x-javascript'}
+        content = 'function() { location.href = "http://example.com/"; }'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701sw_')
+
+        assert ('Content-Type', 'application/x-javascript') in headers.headers
+        assert ('Service-Worker-Allowed', 'http://localhost:8080/prefix/201701mp_/http://example.com/') in headers.headers
+
+        exp = 'function() { location.href = "http://example.com/"; }'
+        assert b''.join(gen).decode('utf-8') == exp
+
     def test_banner_only_no_cookie_rewrite(self):
         headers = {'Set-Cookie': 'foo=bar; Expires=Wed, 13 Jan 2021 22:23:01 GMT; Path=/',
                    'Content-Type': 'text/javascript'}

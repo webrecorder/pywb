@@ -1,7 +1,7 @@
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.timeutils import datetime_to_http_date
 from datetime import datetime, timedelta
-from six.moves.urllib.parse import urlsplit, urlunsplit
+from six.moves.urllib.parse import urlsplit
 
 
 #=============================================================================
