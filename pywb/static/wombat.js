@@ -1361,9 +1361,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var orig_register = $wbwindow.ServiceWorkerContainer.prototype.register;
 
         $wbwindow.ServiceWorkerContainer.prototype.register = function(scriptURL, options) {
-            scriptURL = rewrite_url(scriptURL, false, "id_");
+            scriptURL = new URL(scriptURL, $wbwindow.document.baseURI).href;
+            scriptURL = rewrite_url(scriptURL, false, "sw_");
             if (options && options.scope) {
-                options.scope = rewrite_url(options.scope, false, "id_");
+                options.scope = rewrite_url(options.scope, false, "mp_");
+            } else {
+                options = {scope: rewrite_url("/", false, "mp_")};
             }
             return orig_register.call(this, scriptURL, options);
         }
