@@ -230,7 +230,7 @@ class HTMLRewriterMixin(StreamingRewriter):
             return ''
 
         unesc_value = self.try_unescape(value)
-        rewritten_value = self.url_rewriter.rewrite(unesc_value, mod)
+        rewritten_value = self.url_rewriter.rewrite(unesc_value, mod, force_abs)
 
         if unesc_value != value and rewritten_value != unesc_value:
             rewritten_value = rewritten_value.replace(unesc_value, value)

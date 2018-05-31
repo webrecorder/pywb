@@ -1147,7 +1147,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var result = orig_getAttribute.call(this, name);
 
             if (should_rewrite_attr(this.tagName, name)) {
-                if (this.tagName === 'script' && !this.__$removedWBOSRC$__) {
+                if (this.tagName === 'SCRIPT' && !this.__$removedWBOSRC$__) {
                     var maybeWBOsrc = orig_getAttribute.call(this, '__wb_orig_src');
                     if (maybeWBOsrc) {
                         return maybeWBOsrc;
