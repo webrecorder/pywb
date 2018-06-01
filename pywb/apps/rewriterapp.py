@@ -329,7 +329,7 @@ class RewriterApp(object):
 
                 return resp
 
-        self._add_custom_params(cdx, r.headers, kwargs)
+        self._add_custom_params(cdx, r.headers, kwargs, record)
 
         if self._add_range(record, wb_url, range_start, range_end):
             wb_url.mod = 'id_'
@@ -626,7 +626,7 @@ class RewriterApp(object):
     def get_cookie_key(self, kwargs):
         raise NotImplemented()
 
-    def _add_custom_params(self, cdx, headers, kwargs):
+    def _add_custom_params(self, cdx, headers, kwargs, record):
         pass
 
     def get_top_frame_params(self, wb_url, kwargs):
