@@ -2074,6 +2074,30 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
+    function initFontFaceOverride ($wbwindow) {
+        if (!$wbwindow.FontFace || $wbwindow.FontFace.__wboverriden__) {
+            return;
+        }
+        // per https://drafts.csswg.org/css-font-loading/#FontFace-interface and Chrome, FF, Opera Support
+        var origFontFace = $wbwindow.FontFace;
+        $wbwindow.FontFace = (function (FontFace) {
+            return function (family, source, descriptors) {
+                var rwSource = source;
+                if (source != null) {
+                    if (typeof source !== 'string') {
+                        source = source.toString(); // is CSSOMString or ArrayBuffer or ArrayBufferView
+                    }
+                    rwSource = rewrite_inline_style(source);
+                }
+                return new FontFace(family, rwSource, descriptors);
+            }
+        })($wbwindow.FontFace);
+        $wbwindow.FontFace.prototype = origFontFace.prototype;
+        Object.defineProperty($wbwindow.FontFace.prototype, "constructor", {value: $wbwindow.FontFace});
+        $wbwindow.FontFace.__wboverriden__ = true;
+    }
+
+    //============================================
     function init_wombat_loc(win) {
 
         if (!win || (win.WB_wombat_location && win.document.WB_wombat_location)) {
@@ -3353,6 +3377,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             // Audio
             init_audio_override();
+
+            // FontFace
+            initFontFaceOverride($wbwindow);
 
             // Worker override (experimental)
             init_web_worker_override();
