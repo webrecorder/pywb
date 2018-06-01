@@ -1395,7 +1395,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         var new_value;
 
-        if (name == "style") {
+        if (name === 'filter') {
+            // for svg filter attribute which is url(...)
+            new_value = rewrite_inline_style(value);
+        } else if (name == "style") {
             new_value = rewrite_style(value);
         } else if (name == "srcset") {
             new_value = rewrite_srcset(value);
@@ -1570,6 +1573,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             changed = rewrite_script(elem);
         } else if (elem.tagName == "image") {
             changed = rewrite_attr(elem, "xlink:href");
+        } else if (elem instanceof SVGElement && elem.hasAttribute('filter')) {
+            changed = rewrite_attr(elem, 'filter');
         } else {
             changed = rewrite_attr(elem, "src");
             changed = rewrite_attr(elem, "srcset") || changed;
