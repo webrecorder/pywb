@@ -173,6 +173,7 @@ class HttpBinLiveTests(object):
         httpbin_local = 'http://localhost:' + str(cls.httpbin_server.port) + '/'
 
         def get_load_url(self, params):
+            params['url'] = params['url'].replace('http://test.httpbin.org/', httpbin_local)
             params['url'] = params['url'].replace('http://httpbin.org/', httpbin_local)
             params['url'] = params['url'].replace('https://httpbin.org/', httpbin_local)
             return params['url']
