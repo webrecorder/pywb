@@ -376,6 +376,9 @@ rules:
         - action_load_comments
         - filter
 
+    - url_prefix: 'com,youtube)/embed/'
+
+      fuzzy_lookup: '()'
 
     - url_prefix: 'com,googlevideo,'
 

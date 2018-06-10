@@ -205,6 +205,12 @@ class BaseContentRewriter(object):
             if rwinfo.is_chunked:
                 stream = ChunkedDataReader(rwinfo.record.raw_stream,
                                            decomp_type=None)
+            elif rw_http_headers.get_header('Content-Encoding') == 'br':
+                rw_http_headers.remove_header('Content-Encoding')
+                rw_http_headers.remove_header('Content-Length')
+                print('DECOMP')
+                stream = rwinfo.content_stream
+
             else:
                 stream = rwinfo.record.raw_stream
 

@@ -94,6 +94,9 @@ class DefaultHeaderRewriter(object):
                 else:
                     new_headers_list.append(new_header)
 
+        if not self.rwinfo.is_url_rw():
+            self._add_cache_headers(new_headers_list, 100000)
+
         return StatusAndHeaders(self.http_headers.statusline,
                                 headers=new_headers_list,
                                 protocol=self.http_headers.protocol)
@@ -159,7 +162,7 @@ class DefaultHeaderRewriter(object):
         else:
             dt = datetime.utcnow()
             dt = dt + timedelta(seconds=age)
-            new_headers.append(('Cache-Control', 'max-age=' + str(age)))
+            new_headers.append(('Cache-Control', 'public; max-age=' + str(age)))
             new_headers.append(('Expires', datetime_to_http_date(dt)))
 
 
