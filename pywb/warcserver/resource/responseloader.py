@@ -211,9 +211,15 @@ class WARCPathLoader(DefaultResolverMixin, BaseLoader):
             # status may not be set for 'revisit'
             if not status or status.startswith('3'):
                 http_headers = self.headers_parser.parse(payload.raw_stream)
-                self.raise_on_self_redirect(params, cdx,
-                                            http_headers.get_statuscode(),
-                                            http_headers.get_header('Location'))
+
+                try:
+                    self.raise_on_self_redirect(params, cdx,
+                                                http_headers.get_statuscode(),
+                                                http_headers.get_header('Location'))
+                except LiveResourceException:
+                    headers.raw_stream.close()
+                    payload.raw_stream.close()
+                    raise
 
                 http_headers_buff = http_headers.to_bytes()
 
