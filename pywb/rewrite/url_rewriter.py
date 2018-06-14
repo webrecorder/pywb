@@ -40,7 +40,7 @@ class UrlRewriter(object):
         if self.rewrite_opts.get('punycode_links'):
             self.wburl._do_percent_encode = False
 
-    def rewrite(self, url, mod=None):
+    def rewrite(self, url, mod=None, force_abs=False):
         # if special protocol, no rewriting at all
         if url.startswith(self.NO_REWRITE_URI_PREFIX):
             return url
@@ -63,7 +63,7 @@ class UrlRewriter(object):
         if url.startswith(self.REL_SCHEME):
             is_abs = True
             scheme_rel = True
-        elif (not is_abs and
+        elif (not force_abs and not is_abs and
               not url.startswith(self.REL_PATH) and
               self.PARENT_PATH not in url):
             return url
@@ -165,7 +165,7 @@ class IdentityUrlRewriter(UrlRewriter):
     """
     No rewriting performed, return original url
     """
-    def rewrite(self, url, mod=None):
+    def rewrite(self, url, mod=None, force_abs=False):
         return url
 
     def get_new_url(self, **kwargs):
@@ -197,7 +197,7 @@ class SchemeOnlyUrlRewriter(IdentityUrlRewriter):
         else:
             self.opposite_scheme = 'https'
 
-    def rewrite(self, url, mod=None):
+    def rewrite(self, url, mod=None, force_abs=False):
         if url.startswith(self.opposite_scheme + '://'):
             url = self.url_scheme + url[len(self.opposite_scheme):]
 
