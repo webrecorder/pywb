@@ -1,4 +1,4 @@
-from gevent.wsgi import WSGIServer, WSGIHandler
+from gevent.pywsgi import WSGIServer, WSGIHandler
 from gevent import spawn
 import logging
 
