@@ -201,6 +201,18 @@ class RewriterApp(object):
         except (ValueError, TypeError):
             pass
 
+    def send_redirect(self, new_path, url_parts, urlrewriter):
+        scheme, netloc, path, query, frag = url_parts
+        path = new_path
+        url = urlunsplit((scheme, netloc, path, query, frag))
+        resp = WbResponse.redir_response(urlrewriter.rewrite(url),
+                                         '307 Temporary Redirect')
+
+        if self.enable_memento:
+            resp.status_headers['Link'] = MementoUtils.make_link(url, 'original')
+
+        return resp
+
     def render_content(self, wb_url, kwargs, environ):
         wb_url = wb_url.replace('#', '%23')
         wb_url = WbUrl(wb_url)
@@ -238,16 +250,7 @@ class RewriterApp(object):
 
         url_parts = urlsplit(wb_url.url)
         if not url_parts.path:
-            scheme, netloc, path, query, frag = url_parts
-            path = '/'
-            url = urlunsplit((scheme, netloc, path, query, frag))
-            resp = WbResponse.redir_response(urlrewriter.rewrite(url),
-                                             '307 Temporary Redirect')
-
-            if self.enable_memento:
-                resp.status_headers['Link'] = MementoUtils.make_link(url, 'original')
-
-            return resp
+            return self.send_redirect('/', url_parts, urlrewriter)
 
         self.unrewrite_referrer(environ, full_prefix)
 
@@ -288,14 +291,27 @@ class RewriterApp(object):
             details = dict(args=kwargs, error=error)
             raise UpstreamException(r.status_code, url=wb_url.url, details=details)
 
+        cdx = CDXObject(r.headers.get('Warcserver-Cdx').encode('utf-8'))
+
+        cdx_url_parts = urlsplit(cdx['url'])
+
+        if cdx_url_parts.path.endswith('/') and not url_parts.path.endswith('/'):
+            # add trailing slash
+            new_path = url_parts.path + '/'
+
+            try:
+                r.raw.close()
+            except:
+                pass
+
+            return self.send_redirect(new_path, url_parts, urlrewriter)
+
         stream = BufferedReader(r.raw, block_size=BUFF_SIZE)
         record = self.loader.parse_record_stream(stream,
                                                  ensure_http_headers=True)
 
         memento_dt = r.headers.get('Memento-Datetime')
         target_uri = r.headers.get('WARC-Target-URI')
-
-        cdx = CDXObject(r.headers.get('Warcserver-Cdx').encode('utf-8'))
 
         #cdx['urlkey'] = urlkey
         #cdx['timestamp'] = http_date_to_timestamp(memento_dt)
