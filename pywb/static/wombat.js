@@ -153,6 +153,27 @@ var _WBWombat = function($wbwindow, wbinfo) {
         return mod;
     }
 
+    function removeWBOSRC(elem) {
+        if (elem.tagName === 'SCRIPT' && !elem.__$removedWBOSRC$__) {
+            if (elem.hasAttribute('__wb_orig_src')) {
+                elem.removeAttribute('__wb_orig_src');
+            }
+            elem.__$removedWBOSRC$__ = true;
+        }
+    }
+
+    function retrieveWBOSRC(elem) {
+        if (elem.tagName === 'SCRIPT' && !elem.__$removedWBOSRC$__) {
+            var maybeWBOSRC;
+            if (wb_getAttribute) {
+                maybeWBOSRC = wb_getAttribute.call(elem, '__wb_orig_src');
+            } else {
+                maybeWBOSRC = elem.getAttribute('__wb_orig_src');
+            }
+            return maybeWBOSRC;
+        }
+    }
+
     //============================================
     function is_host_url(str) {
         // Good guess that's its a hostname
@@ -703,7 +724,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         this.reload = function() {
             return this._orig_loc.reload();
         }
-       
+
         this.orig_getter = function(prop) {
             return this._orig_loc[prop];
         }
@@ -713,7 +734,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         init_loc_override(this, this.orig_setter, this.orig_getter);
-        
+
         set_loc(this, orig_loc.href);
 
         this.toString = function() {
@@ -1111,12 +1132,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                     value = rewrite_inline_style(value);
 
                 } else if (should_rewrite_attr(this.tagName, lowername)) {
-                    if (this.tagName === 'SCRIPT' && !this.__$removedWBOSRC$__) {
-                        if (this.hasAttribute("__wb_orig_src")) {
-                            this.removeAttribute("__wb_orig_src");
-                        }
-                        this.__$removedWBOSRC$__ = true;
-                    }
+                    removeWBOSRC(this);
                     if (!this._no_rewrite) {
                         var mod = rwModForElement(this, lowername);
                         value = rewrite_url(value, false, mod);
@@ -1147,12 +1163,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var result = orig_getAttribute.call(this, name);
 
             if (should_rewrite_attr(this.tagName, name)) {
-                if (this.tagName === 'SCRIPT' && !this.__$removedWBOSRC$__) {
-                    var maybeWBOsrc = orig_getAttribute.call(this, '__wb_orig_src');
-                    if (maybeWBOsrc) {
-                        return maybeWBOsrc;
-                    }
-                    this.__$removedWBOSRC$__ = true;
+                var maybeWBOSRC = retrieveWBOSRC(this);
+                if (maybeWBOSRC) {
+                    return maybeWBOSRC;
                 }
                 result = extract_orig(result);
             } else if (starts_with(name, "data-") && starts_with(result, VALID_PREFIXES)) {
@@ -1423,12 +1436,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         if (new_value != value) {
-            if (elem.tagName === 'SCRIPT' && !elem.__$removedWBOSRC$__) {
-                if (elem.hasAttribute("__wb_orig_src")) {
-                    elem.removeAttribute("__wb_orig_src");
-                }
-                elem.__$removedWBOSRC$__ = true;
-            }
+            removeWBOSRC(elem);
             wb_setAttribute.call(elem, name, new_value);
             return true;
         }
@@ -1805,12 +1813,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 }
                 val = rewrite_url(orig, false, mod);
             } else {
-                if (this.tagName === 'SCRIPT' && !this.__$removedWBOSRC$__) {
-                    if (this.hasAttribute("__wb_orig_src")) {
-                        this.removeAttribute("__wb_orig_src");
-                    }
-                    this.__$removedWBOSRC$__ = true;
-                }
+                removeWBOSRC(this);
                 val = rewrite_url(orig, false, mod);
             }
 
@@ -1890,7 +1893,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_attr($wbwindow.HTMLMetaElement.prototype, "content", "mp_");
 
         override_attr($wbwindow.HTMLFormElement.prototype, "action", "mp_");
-     
+
         override_anchor_elem();
 
         var style_proto = $wbwindow.CSSStyleDeclaration.prototype;
@@ -1939,7 +1942,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         for (var i = 0; i < URL_PROPS.length; i++) {
             save_prop(URL_PROPS[i]);
-        } 
+        }
 
         var anchor_setter = function(prop, value) {
             var func = anchor_orig["set_" + prop];
@@ -2072,7 +2075,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 //}
                 text = rewrite_html(text);
             }
- 
+
             return orig_insertAdjacentHTML.call(this, position, text);
         }
 
@@ -2288,7 +2291,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         var orig = $wbwindow.postMessage;
-        
+
         $wbwindow.__orig_postMessage = orig;
 
         // use this_obj.__WB_source not window to fix google calendar embeds, pm_origin sets this.__WB_source
