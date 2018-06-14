@@ -7,6 +7,8 @@ from warcio.statusandheaders import StatusAndHeaders, StatusAndHeadersParser
 
 from pywb.utils.wbexception import LiveResourceException, WbException
 
+from pywb.utils.canonicalize import canonicalize
+
 from pywb.utils.memento import MementoUtils
 from pywb.utils.io import StreamIter, compress_gzip_iter, call_release_conn
 from pywb.utils.format import ParamFormatter
@@ -131,6 +133,7 @@ class BaseLoader(object):
         if not location_url:
             return
 
+
         location_url = location_url.lower()
         if location_url.startswith('/'):
             host = urlsplit(cdx['url']).netloc
@@ -139,9 +142,19 @@ class BaseLoader(object):
         location_url = location_url.split('://', 1)[-1].rstrip('/')
         request_url = request_url.split('://', 1)[-1].rstrip('/')
 
+        self_redir = False
+
         if request_url == location_url:
+            self_redir = True
+        elif params.get('sr-urlkey'):
+            # if new location canonicalized matches old key, also self-redirect
+            if canonicalize(location_url) == params.get('sr-urlkey'):
+                self_redir = True
+
+        if self_redir:
             msg = 'Self Redirect {0} -> {1}'
             msg = msg.format(request_url, location_url)
+            params['sr-urlkey'] = cdx['urlkey']
             raise LiveResourceException(msg)
 
     @staticmethod
@@ -198,9 +211,15 @@ class WARCPathLoader(DefaultResolverMixin, BaseLoader):
             # status may not be set for 'revisit'
             if not status or status.startswith('3'):
                 http_headers = self.headers_parser.parse(payload.raw_stream)
-                self.raise_on_self_redirect(params, cdx,
-                                            http_headers.get_statuscode(),
-                                            http_headers.get_header('Location'))
+
+                try:
+                    self.raise_on_self_redirect(params, cdx,
+                                                http_headers.get_statuscode(),
+                                                http_headers.get_header('Location'))
+                except LiveResourceException:
+                    headers.raw_stream.close()
+                    payload.raw_stream.close()
+                    raise
 
                 http_headers_buff = http_headers.to_bytes()
 
