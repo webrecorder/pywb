@@ -77,6 +77,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     var wb_setAttribute = $wbwindow.Element.prototype.setAttribute;
     var wb_getAttribute = $wbwindow.Element.prototype.getAttribute;
+    var orig_func_to_string = Function.prototype.toString;
 
     var wb_info;
 
@@ -1325,6 +1326,59 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
+    function rewriteWorker(workerUrl) {
+        var fetch = true;
+        var makeBlob = false;
+        var rwURL;
+        if (!starts_with(workerUrl, 'blob:')) {
+            if (starts_with(workerUrl, 'javascript:')) {
+                // JS url, just strip javascript:
+                fetch = false;
+                rwURL = workerUrl.replace('javascript:', '');
+            } else if (!starts_with(workerUrl, VALID_PREFIXES) &&
+                       !starts_with(workerUrl, BAD_PREFIXES)) {
+                // super relative url assets/js/xyz.js
+                var rurl = resolve_rel_url(workerUrl, $wbwindow.document);
+                rwURL = rewrite_url(rurl, false, 'wkr_');
+            } else {
+                // just rewrite it
+                rwURL = rewrite_url(workerUrl, false, 'wkr_');
+            }
+        } else {
+            // blob
+            rwURL = workerUrl;
+        }
+
+        var workerCode;
+        if (fetch) {
+            // fetching only skipped if it was JS url
+            var x = new XMLHttpRequest();
+            // use sync ajax request to get the contents, remove postMessage() rewriting
+            x.open("GET", rwURL, false);
+            x.send();
+            workerCode = x.responseText.replace(/__WB_pmw\(.*?\)\.(?=postMessage\()/g, "");
+        } else {
+            // was JS url, simply make workerCode the JS string
+            workerCode = workerUrl;
+        }
+
+        if (wbinfo.static_prefix || wbinfo.ww_rw_script) {
+            // if we are here we can must return blob so set makeBlob to true
+            var ww_rw = wbinfo.ww_rw_script || wbinfo.static_prefix + "ww_rw.js";
+            var rw = "(function() { " + "self.importScripts('" + ww_rw + "');" +
+                "new WBWombat({'prefix': '" + wb_abs_prefix + 'wkr_' + "/'}); " + "})();";
+            workerCode = rw + workerCode;
+            makeBlob = true;
+        }
+
+        if (makeBlob) {
+            var blob = new Blob([workerCode], {"type": "text/javascript"});
+            return URL.createObjectURL(blob);
+        } else {
+            return url;
+        }
+    }
+
     function init_web_worker_override() {
         if (!$wbwindow.Worker) {
             return;
@@ -1337,46 +1391,31 @@ var _WBWombat = function($wbwindow, wbinfo) {
         // Worker unrewrite postMessage
         var orig_worker = $wbwindow.Worker;
 
-        function rewrite_blob(url) {
-            // use sync ajax request to get the contents, remove postMessage() rewriting
-            var x = new XMLHttpRequest();
-            x.open("GET", url, false);
-            x.send();
-
-            var resp = x.responseText.replace(/__WB_pmw\(.*?\)\.(?=postMessage\()/g, "");
-
-            if (wbinfo.static_prefix || wbinfo.ww_rw_script) {
-                var ww_rw = wbinfo.ww_rw_script || wbinfo.static_prefix + "ww_rw.js";
-                var rw = "(function() { " +
-"self.importScripts('" + ww_rw + "');" +
-
-"new WBWombat({'prefix': '" + wb_abs_prefix + wb_info.mod + "/'}); " +
-
-"})();";
-                resp = rw + resp;
-            }
-
-            if (resp != x.responseText) {
-                var blob = new Blob([resp], {"type": "text/javascript"});
-                return URL.createObjectURL(blob);
-            } else {
-                return url;
-            }
-        }
-
         $wbwindow.Worker = (function (Worker) {
             return function (url) {
-                if (starts_with(url, "blob:")) {
-                    url = rewrite_blob(url);
-                }
-                return new Worker(url);
+                return new Worker(rewriteWorker(url));
             }
 
-        })($wbwindow.Worker);
+        })(orig_worker);
 
         $wbwindow.Worker.prototype = orig_worker.prototype;
     }
 
+    function initSharedWorkerOverride() {
+        if (!$wbwindow.SharedWorker) {
+            return;
+        }
+        // pre https://html.spec.whatwg.org/multipage/workers.html#sharedworker
+        var oSharedWorker = $wbwindow.SharedWorker;
+
+        $wbwindow.SharedWorker = (function(SharedWorker) {
+            return function(url) {
+                return new SharedWorker(rewriteWorker(url));
+            };
+        })(oSharedWorker);
+
+        $wbwindow.SharedWorker.prototype = oSharedWorker.prototype;
+    }
 
     //============================================
     function init_service_worker_override() {
@@ -2639,9 +2678,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
         if ($wbwindow.Function.prototype.__WB_orig_apply) {
             return;
         }
-
-        var orig_func_to_string = Function.prototype.toString;
-
         var orig_apply = $wbwindow.Function.prototype.apply;
 
         $wbwindow.Function.prototype.__WB_orig_apply = orig_apply;
@@ -3220,7 +3256,14 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         var type = (typeof retVal);
 
-        if (type === "function" && ownProps.indexOf(prop) != -1) {
+        if (type === "function" && ownProps.indexOf(prop) !== -1) {
+            // facebook is applying their own requestAnimationFrame polyfill
+            // yes it is a native function but if we bind it to window
+            // they can detect it is not their own polyfill
+            if (prop === 'requestAnimationFrame' &&
+                orig_func_to_string.call(retVal).indexOf('[native code]') === -1) {
+                return retVal;
+            }
             return retVal.bind(obj);
         } else if (type === "object" && retVal && retVal._WB_wombat_obj_proxy) {
             return retVal._WB_wombat_obj_proxy;
@@ -3418,6 +3461,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             // Worker override (experimental)
             init_web_worker_override();
             init_service_worker_override();
+            initSharedWorkerOverride();
 
             // innerHTML can be overriden on prototype!
             override_html_assign($wbwindow.HTMLElement, "innerHTML", true);
@@ -3440,7 +3484,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             initInsertAdjacentElementOverride();
 
 
-            // iframe.contentWindow and iframe.contentDocument overrides to 
+            // iframe.contentWindow and iframe.contentDocument overrides to
             // ensure wombat is inited on the iframe $wbwindow!
             override_iframe_content_access("contentWindow");
             override_iframe_content_access("contentDocument");
