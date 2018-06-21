@@ -77,6 +77,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     var wb_setAttribute = $wbwindow.Element.prototype.setAttribute;
     var wb_getAttribute = $wbwindow.Element.prototype.getAttribute;
+    var wb_funToString = Function.prototype.toString;
 
     var wb_info;
 
@@ -2640,14 +2641,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return;
         }
 
-        var orig_func_to_string = Function.prototype.toString;
-
         var orig_apply = $wbwindow.Function.prototype.apply;
 
         $wbwindow.Function.prototype.__WB_orig_apply = orig_apply;
 
         function deproxy(obj, args) {
-            if (orig_func_to_string.call(this).indexOf("[native code]") >= 0) {
+            if (wb_funToString.call(this).indexOf("[native code]") >= 0) {
                 if (args) {
                     for (var i = 0; i < args.length; i++) {
                         args[i] = proxy_to_obj(args[i]);
@@ -2659,7 +2658,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         $wbwindow.Function.prototype.apply = deproxy;
-        orig_func_to_string.apply = orig_apply;
+        wb_funToString.apply = orig_apply;
     }
 
 
@@ -3221,7 +3220,22 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var type = (typeof retVal);
 
         if (type === "function" && ownProps.indexOf(prop) != -1) {
-            return retVal.bind(obj);
+            // certain sites (e.g. facebook) are applying polyfills to native functions
+            // treating the polyfill as a native function [fn.bind(obj)] causes incorrect execution of the polyfill
+            // also depending on the site, the site can detect we "tampered" with the polyfill by binding it to obj
+            // to avoid these situations, we do not bind the returned fn if we detect they were polyfilled
+            switch (prop) {
+                case 'requestAnimationFrame':
+                case 'cancelAnimationFrame': {
+                    var str = wb_funToString.call(retVal);
+                    if (str.indexOf('[native code]') === -1) {
+                        return retVal;
+                    }
+                }
+                default: {
+                    return retVal.bind(obj);
+                }
+            }
         } else if (type === "object" && retVal && retVal._WB_wombat_obj_proxy) {
             return retVal._WB_wombat_obj_proxy;
         }
