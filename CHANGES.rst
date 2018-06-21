@@ -1,3 +1,21 @@
+pywb 2.0.4 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Replay Fidelity Improvements:
+   - Improved wombat's ``document.write`` and ``document.writeln`` overrides to account for the variadic case (#325)
+   - Improved wombat's ``postmessage`` override's handling of the sending the message to the target origin (#328 and #338)
+   - Improved server-side rewriting of ``link[rel=preload]`` (#332)
+   - Improved server-side and client-side rewriting of "super relative"  script src values ``script[src=path/it.php?js]`` (#334)
+   - Improved wombat's un-rewrite regular expression (#332)
+   - Improved wombat's ``Node.[appendChild|replaceChild|insertBefore]`` overrides to account for edge cases (#332)
+   - Added ``MouseEvent`` override to wombat (#332)
+   - Added ``insertAdjacentElement`` override to wombat (#332)
+   - Added client-side rewriting of ``link[rel=preload]`` and ``link[rel=import]`` to wombat (#332)
+   - Added FontFace override to wombat (#340)
+   - Added server-side rewriting of ``link[rel=import]`` (#334)
+   - Added SVG filter attribute rewriting to wombat (#341)
+
+
 pywb 2.0.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
