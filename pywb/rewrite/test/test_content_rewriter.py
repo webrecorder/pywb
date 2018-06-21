@@ -155,6 +155,15 @@ class TestContentRewriter(object):
         exp = 'function() { location.href = "http://example.com/"; }'
         assert b''.join(gen).decode('utf-8') == exp
 
+    def test_rewrite_worker(self):
+        headers = {'Content-Type': 'application/x-javascript'}
+        content = 'importScripts("http://example.com/js.js")'
+
+        rwheaders, gen, is_rw = self.rewrite_record(headers, content, ts='201701wkr_')
+
+        exp = 'importScripts("http://example.com/js.js")'
+        assert b''.join(gen).decode('utf-8') == exp
+
     def test_banner_only_no_cookie_rewrite(self):
         headers = {'Set-Cookie': 'foo=bar; Expires=Wed, 13 Jan 2021 22:23:01 GMT; Path=/',
                    'Content-Type': 'text/javascript'}

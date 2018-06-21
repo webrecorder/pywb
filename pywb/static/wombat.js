@@ -1325,58 +1325,92 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
+    function rewriteWorker(workerUrl) {
+        var fetch = true;
+        var makeBlob = false;
+        var rwURL;
+        if (!starts_with(workerUrl, 'blob:')) {
+            if (starts_with(workerUrl, 'javascript:')) {
+                // JS url, just strip javascript:
+                fetch = false;
+                rwURL = workerUrl.replace('javascript:', '');
+            } else if (!starts_with(workerUrl, VALID_PREFIXES.concat('/')) &&
+                       !starts_with(workerUrl, BAD_PREFIXES)) {
+                // super relative url assets/js/xyz.js
+                var rurl = resolve_rel_url(workerUrl, $wbwindow.document);
+                rwURL = rewrite_url(rurl, false, 'wkr_');
+            } else {
+                // just rewrite it
+                rwURL = rewrite_url(workerUrl, false, 'wkr_');
+            }
+        } else {
+            // blob
+            rwURL = workerUrl;
+        }
+
+        var workerCode;
+        if (fetch) {
+            // fetching only skipped if it was JS url
+            var x = new XMLHttpRequest();
+            // use sync ajax request to get the contents, remove postMessage() rewriting
+            x.open("GET", rwURL, false);
+            x.send();
+            workerCode = x.responseText.replace(/__WB_pmw\(.*?\)\.(?=postMessage\()/g, "");
+        } else {
+            // was JS url, simply make workerCode the JS string
+            workerCode = workerUrl;
+        }
+
+        if (wbinfo.static_prefix || wbinfo.ww_rw_script) {
+            // if we are here we can must return blob so set makeBlob to true
+            var ww_rw = wbinfo.ww_rw_script || wbinfo.static_prefix + "ww_rw.js";
+            var rw = "(function() { " + "self.importScripts('" + ww_rw + "');" +
+                "new WBWombat({'prefix': '" + wb_abs_prefix + 'wkr_' + "/'}); " + "})();";
+            workerCode = rw + workerCode;
+            makeBlob = true;
+        }
+
+        if (makeBlob) {
+            var blob = new Blob([workerCode], {"type": "text/javascript"});
+            return URL.createObjectURL(blob);
+        } else {
+            return workerUrl;
+        }
+    }
+
     function init_web_worker_override() {
         if (!$wbwindow.Worker) {
             return;
         }
 
-        // for now, disabling workers until override of worker content can be supported
-        // hopefully, pages depending on workers will have a fallback
-        //$wbwindow.Worker = undefined;
-
         // Worker unrewrite postMessage
         var orig_worker = $wbwindow.Worker;
 
-        function rewrite_blob(url) {
-            // use sync ajax request to get the contents, remove postMessage() rewriting
-            var x = new XMLHttpRequest();
-            x.open("GET", url, false);
-            x.send();
-
-            var resp = x.responseText.replace(/__WB_pmw\(.*?\)\.(?=postMessage\()/g, "");
-
-            if (wbinfo.static_prefix || wbinfo.ww_rw_script) {
-                var ww_rw = wbinfo.ww_rw_script || wbinfo.static_prefix + "ww_rw.js";
-                var rw = "(function() { " +
-"self.importScripts('" + ww_rw + "');" +
-
-"new WBWombat({'prefix': '" + wb_abs_prefix + wb_info.mod + "/'}); " +
-
-"})();";
-                resp = rw + resp;
-            }
-
-            if (resp != x.responseText) {
-                var blob = new Blob([resp], {"type": "text/javascript"});
-                return URL.createObjectURL(blob);
-            } else {
-                return url;
-            }
-        }
-
         $wbwindow.Worker = (function (Worker) {
             return function (url) {
-                if (starts_with(url, "blob:")) {
-                    url = rewrite_blob(url);
-                }
-                return new Worker(url);
+                return new Worker(rewriteWorker(url));
             }
 
-        })($wbwindow.Worker);
+        })(orig_worker);
 
         $wbwindow.Worker.prototype = orig_worker.prototype;
     }
 
+    function initSharedWorkerOverride() {
+        if (!$wbwindow.SharedWorker) {
+            return;
+        }
+        // per https://html.spec.whatwg.org/multipage/workers.html#sharedworker
+        var oSharedWorker = $wbwindow.SharedWorker;
+
+        $wbwindow.SharedWorker = (function(SharedWorker) {
+            return function(url) {
+                return new SharedWorker(rewriteWorker(url));
+            };
+        })(oSharedWorker);
+
+        $wbwindow.SharedWorker.prototype = oSharedWorker.prototype;
+    }
 
     //============================================
     function init_service_worker_override() {
@@ -3418,6 +3452,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             // Worker override (experimental)
             init_web_worker_override();
             init_service_worker_override();
+            initSharedWorkerOverride();
+
 
             // innerHTML can be overriden on prototype!
             override_html_assign($wbwindow.HTMLElement, "innerHTML", true);
