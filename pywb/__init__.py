@@ -1,4 +1,4 @@
-__version__ = '2.0.4'
+__version__ = '2.0.5'
 
 DEFAULT_CONFIG = 'pywb/default_config.yaml'
 
