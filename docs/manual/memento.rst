@@ -14,7 +14,7 @@ TimeMap API
 
 The timemap API is available at ``/<coll>/timemap/<type>/<url>`` for any pywb collection ``<coll>`` and ``<url>`` in the collection.
 
-The timemap (URL-T) can be provided in several output formats, as specified by the ``<type>`` param:
+The timemap (URI-T) can be provided in several output formats, as specified by the ``<type>`` param:
 
 * ``link`` -- returns an ``application/link-format`` as required by the `Memento spec <https://tools.ietf.org/html/rfc7089#section-5>`_
 * ``cdxj`` -- returns a timemap in the native CDXJ format.
