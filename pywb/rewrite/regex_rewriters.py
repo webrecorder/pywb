@@ -63,10 +63,10 @@ class RxRules(object):
 class JSWombatProxyRules(RxRules):
     def __init__(self):
         local_init_func = '\nvar {0} = function(name) {{\
-    return (self._wb_wombat && self._wb_wombat.local_init &&\
-     self._wb_wombat.local_init(name)) || self[name]; }};\n\
-    if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
-    {{\n'
+return (self._wb_wombat && self._wb_wombat.local_init &&\
+self._wb_wombat.local_init(name)) || self[name]; }};\n\
+if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
+{{\n'
 
         local_init_func_name = '_____WB$wombat$assign$function_____'
 
@@ -240,9 +240,9 @@ class JSWombatProxyRewriter(RegexRewriter):
     rules_factory = JSWombatProxyRules()
 
     def __init__(self, rewriter, extra_rules=None):
-        super(JSWombatProxyRewriter, self).__init__(rewriter, extra_rules=extra_rules,
-                                                    first_buff=self.rules_factory.first_buff)
+        super(JSWombatProxyRewriter, self).__init__(rewriter, extra_rules=extra_rules)
 
+        self.first_buff = self.rules_factory.first_buff
         self.last_buff = self.rules_factory.last_buff
         self.local_objs = self.rules_factory.local_objs
 
