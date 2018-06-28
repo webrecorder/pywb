@@ -437,8 +437,8 @@ def parse(data, head_insert=None, urlrewriter=urlrewriter, parse_comments=False,
                           parse_comments=parse_comments)
 
     if js_proxy:
-        parser.js_rewriter.first_buff = '{ '
-        parser.js_rewriter.last_buff = ' }'
+        parser.js_rewriter.rules_factory.first_buff = '{ '
+        parser.js_rewriter.rules_factory.last_buff = ' }'
 
     if six.PY2 and isinstance(data, six.text_type):
         data = data.encode('utf-8')

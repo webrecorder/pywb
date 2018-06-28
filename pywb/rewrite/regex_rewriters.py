@@ -5,10 +5,12 @@ from six.moves.urllib.parse import unquote
 
 
 # =================================================================
-class RegexRewriter(StreamingRewriter):
-    # @staticmethod
-    # def comment_out(string):
-    #    return '/*' + string + '*/'
+class RxRules(object):
+    HTTPX_MATCH_STR = r'https?:\\?/\\?/[A-Za-z0-9:_@.-]+'
+
+    @staticmethod
+    def replace_str(replacer):
+        return lambda x: x.replace('this', replacer)
 
     @staticmethod
     def format(template):
@@ -31,26 +33,89 @@ class RegexRewriter(StreamingRewriter):
         return lambda string: string + suffix
 
     @staticmethod
-    def archival_rewrite(rewriter):
-        return lambda string: rewriter.rewrite(string)
-
-
-    HTTPX_MATCH_STR = r'https?:\\?/\\?/[A-Za-z0-9:_@.-]+'
-
-    # DEFAULT_OP = add_prefix
-
-    def __init__(self, rewriter, rules):
-        super(RegexRewriter, self).__init__(rewriter)
-        # rules = self.create_rules(http_prefix)
-
+    def compile_rules(rules):
         # Build regexstr, concatenating regex list
         regex_str = '|'.join(['(' + rx + ')' for rx, op, count in rules])
 
         # ensure it's not middle of a word, wrap in non-capture group
         regex_str = '(?<!\w)(?:' + regex_str + ')'
 
-        self.regex = re.compile(regex_str, re.M)
-        self.rules = rules
+        return re.compile(regex_str, re.M)
+
+    def __init__(self, rules=None):
+        self.rules = rules or []
+        self.regex = self.compile_rules(self.rules)
+
+    def __call__(self, extra_rules=None):
+        if not extra_rules:
+            return self.rules, self.regex
+
+        all_rules = self.rules + extra_rules
+        regex = self.compile_rules(all_rules)
+        return all_rules, regex
+
+
+# =================================================================
+class JSWombatProxyRules(RxRules):
+    def __init__(self):
+        local_init_func = '\nvar {0} = function(name) {{\
+    return (self._wb_wombat && self._wb_wombat.local_init &&\
+     self._wb_wombat.local_init(name)) || self[name]; }};\n\
+    if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
+    {{\n'
+
+        local_init_func_name = '_____WB$wombat$assign$function_____'
+
+        local_var_line = 'let {0} = {1}("{0}");'
+
+        this_rw = '(this && this._WB_wombat_obj_proxy || this)'
+
+        check_loc = '(self.__WB_check_loc && self.__WB_check_loc(location) || {}).href = '
+
+        self.local_objs = ['window',
+                      'self',
+                      'document',
+                      'location',
+                      'top',
+                      'parent',
+                      'frames',
+                      'opener']
+
+
+        local_declares = '\n'.join([local_var_line.format(obj, local_init_func_name) for obj in self.local_objs])
+
+        prop_str = '|'.join(self.local_objs)
+
+        rules = [
+           (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
+           (r'(?<!\.)\blocation\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
+           (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(this_rw), 0),
+           (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + this_rw), 0),
+           (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(this_rw), 0),
+           (r'(?<=[=])\s*this\b\s*(?![.$])', self.replace_str(this_rw), 0),
+           ('\}(?:\s*\))?\s*\(this\)', self.replace_str(this_rw), 0),
+           (r'(?<=[^|&][|&]{2})\s*this\b\s*(?![|&.$]([^|&]|$))', self.replace_str(this_rw), 0),
+        ]
+
+        super(JSWombatProxyRules, self).__init__(rules)
+
+        self.first_buff = local_init_func.format(local_init_func_name) + local_declares
+
+        self.last_buff = '\n\n}'
+
+
+# =================================================================
+class RegexRewriter(StreamingRewriter):
+    rules_factory = RxRules()
+
+    @staticmethod
+    def archival_rewrite(rewriter):
+        return lambda string: rewriter.rewrite(string)
+
+    def __init__(self, rewriter, extra_rules=None, first_buff=''):
+        super(RegexRewriter, self).__init__(rewriter, first_buff=first_buff)
+        # rules = self.create_rules(http_prefix)
+        self.rules, self.regex = self.rules_factory(extra_rules)
 
     def filter(self, m):
         return True
@@ -100,7 +165,7 @@ class RegexRewriter(StreamingRewriter):
                 elif 'function' in obj:
                     replace = load_py_name(obj['function'])
                 else:
-                    replace = RegexRewriter.format(obj.get('replace', '{0}'))
+                    replace = RxRules.format(obj.get('replace', '{0}'))
                 group = obj.get('group', 0)
                 result = (match, replace, group)
                 return result
@@ -138,97 +203,53 @@ class JSLocationRewriterMixin(object):
 
     def __init__(self, rewriter, rules=[], prefix='WB_wombat_'):
         rules = rules + [
-            (r'(?<![$\'"])\b(?:location|top)\b(?![$\'":])', RegexRewriter.add_prefix(prefix), 0),
+            (r'(?<![$\'"])\b(?:location|top)\b(?![$\'":])', RxRules.add_prefix(prefix), 0),
 
-            (r'(?<=[?])\s*(?:\w+[.])?(location)\s*(?=[:])', RegexRewriter.add_prefix(prefix), 1),
+            (r'(?<=[?])\s*(?:\w+[.])?(location)\s*(?=[:])', RxRules.add_prefix(prefix), 1),
 
-            (r'(?<=\.)postMessage\b\(', RegexRewriter.add_prefix('__WB_pmw(self.window).'), 0),
+            (r'(?<=\.)postMessage\b\(', RxRules.add_prefix('__WB_pmw(self.window).'), 0),
 
-            (r'(?<=\.)frameElement\b', RegexRewriter.add_prefix(prefix), 0),
+            (r'(?<=\.)frameElement\b', RxRules.add_prefix(prefix), 0),
         ]
         super(JSLocationRewriterMixin, self).__init__(rewriter, rules)
 
 
 # =================================================================
-class JSWombatProxyRewriterMixin(object):
+class JSWombatProxyRewriter(RegexRewriter):
     """
     JS Rewriter mixin which wraps the contents of the
     script in an anonymous block scope and inserts
     Wombat js-proxy setup
     """
 
-    local_init_func = '\nvar {0} = function(name) {{\
-return (self._wb_wombat && self._wb_wombat.local_init &&\
- self._wb_wombat.local_init(name)) || self[name]; }};\n\
-if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
-{{\n'
+    rules_factory = JSWombatProxyRules()
 
-    local_init_func_name = '_____WB$wombat$assign$function_____'
-
-    local_var_line = 'let {0} = {1}("{0}");'
-
-    local_objs = ['window',
-                  'self',
-                  'document',
-                  'location',
-                  'top',
-                  'parent',
-                  'frames',
-                  'opener']
-
-    THIS_RW = '(this && this._WB_wombat_obj_proxy || this)'
-
-    CHECK_LOC = '(self.__WB_check_loc && self.__WB_check_loc(location) || {}).href = '
-
-    @classmethod
-    def replace_str(cls, replacer):
-        return lambda x: x.replace('this', replacer)
-
-    def __init__(self, rewriter, rules=[]):
-        #func_rw = 'Function("return {0}")'.format(self.THIS_RW)
-        prop_str = '|'.join(self.local_objs)
-
-        rules = rules + [
-           (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
-           (r'(?<!\.)\blocation\b\s*[=]\s*(?![=])', self.add_suffix(self.CHECK_LOC), 0),
-           (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(self.THIS_RW), 0),
-           (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + self.THIS_RW), 0),
-           (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(self.THIS_RW), 0),
-           (r'(?<=[=])\s*this\b\s*(?![.$])', self.replace_str(self.THIS_RW), 0),
-           ('\}(?:\s*\))?\s*\(this\)', self.replace_str(self.THIS_RW), 0),
-           (r'(?<=[^|&][|&]{2})\s*this\b\s*(?![|&.$]([^|&]|$))', self.replace_str(self.THIS_RW), 0),
-        ]
-
-        super(JSWombatProxyRewriterMixin, self).__init__(rewriter, rules)
-
-        local_declares = '\n'.join([self.local_var_line.format(obj, self.local_init_func_name) for obj in self.local_objs])
-
-        self.first_buff = self.local_init_func.format(self.local_init_func_name) + local_declares
-
-        self.last_buff = '\n\n}'
+    def __init__(self, rewriter, extra_rules=None):
+        super(JSWombatProxyRewriter, self).__init__(rewriter, extra_rules=extra_rules,
+                                                    first_buff=self.rules_factory.first_buff)
 
     def rewrite_complete(self, string, **kwargs):
         if not kwargs.get('inline_attr'):
-            return super(JSWombatProxyRewriterMixin, self).rewrite_complete(string)
+            return super(JSWombatProxyRewriter, self).rewrite_complete(string)
 
         # check if any of the wrapped objects are used in the script
         # if not, don't rewrite
-        if not any(obj in string for obj in self.local_objs):
+        if not any(obj in string for obj in self.rules_factory.local_objs):
             return string
 
         if string.startswith('javascript:'):
-            string = 'javascript:' + self.first_buff + self.rewrite(string[len('javascript:'):])
+            string = 'javascript:' + self.rules_factory.first_buff + self.rewrite(string[len('javascript:'):])
         else:
-            string = self.first_buff + self.rewrite(string)
+            string = self.rules_factory.first_buff + self.rewrite(string)
 
-        string += self.last_buff
+        string += self.rules_factory.last_buff
 
         string = string.replace('\n', '')
 
         return string
 
     def final_read(self):
-        return self.last_buff
+        return self.rules_factory.last_buff
 
 
 # =================================================================
@@ -255,8 +276,8 @@ class JSNoneRewriter(RegexRewriter):
 
 
 # =================================================================
-class JSWombatProxyRewriter(JSWombatProxyRewriterMixin, RegexRewriter):
-    pass
+#class JSWombatProxyRewriter(JSWombatProxyRewriterMixin, RegexRewriter):
+#    pass
 
 
 # =================================================================
@@ -309,7 +330,7 @@ class XMLRewriter(RegexRewriter):
     def _create_rules(self, rewriter):
         return [
             ('([A-Za-z:]+[\s=]+)?["\'\s]*(' +
-             RegexRewriter.HTTPX_MATCH_STR + ')',
+             RxRules.HTTPX_MATCH_STR + ')',
              RegexRewriter.archival_rewrite(rewriter), 2),
         ]
 
