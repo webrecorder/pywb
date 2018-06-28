@@ -54,7 +54,7 @@ class RxRules(object):
         if not extra_rules:
             return self.rules, self.regex
 
-        all_rules = self.rules + extra_rules
+        all_rules = extra_rules + self.rules
         regex = self.compile_rules(all_rules)
         return all_rules, regex
 

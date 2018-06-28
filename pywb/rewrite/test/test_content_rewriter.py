@@ -10,7 +10,7 @@ from pywb.utils.io import chunk_encode_iter
 
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter
-from pywb.rewrite.default_rewriter import DefaultRewriter
+from pywb.rewrite.default_rewriter import DefaultRewriter, RewriterWithJSProxy
 
 from pywb import get_test_dir
 
@@ -35,6 +35,7 @@ class TestContentRewriter(object):
     @classmethod
     def setup_class(self):
         self.content_rewriter = DefaultRewriter()
+        self.js_proxy_content_rewriter = RewriterWithJSProxy()
 
     def _create_response_record(self, url, headers, payload, warc_headers):
         writer = BufferWARCWriter()
@@ -53,7 +54,7 @@ class TestContentRewriter(object):
 
     def rewrite_record(self, headers, content, ts, url='http://example.com/',
                        prefix='http://localhost:8080/prefix/', warc_headers=None,
-                       request_url=None, is_live=None):
+                       request_url=None, is_live=None, use_js_proxy=True):
 
         record = self._create_response_record(url, headers, content, warc_headers)
 
@@ -68,7 +69,10 @@ class TestContentRewriter(object):
             cdx['is_fuzzy'] = '1'
         cdx['is_live'] = is_live
 
-        return self.content_rewriter(record, url_rewriter, None, cdx=cdx)
+        if use_js_proxy:
+            return self.js_proxy_content_rewriter(record, url_rewriter, None, cdx=cdx)
+        else:
+            return self.content_rewriter(record, url_rewriter, None, cdx=cdx)
 
     def test_rewrite_html(self, headers):
         content = '<html><body><a href="http://example.com/"></a></body></html>'
@@ -109,17 +113,34 @@ class TestContentRewriter(object):
         assert ('Content-Type', 'text/html') in headers.headers
 
         exp = '<html><body><a href="http://localhost:8080/prefix/201701/http://example.com/"></a></body></html>'
-        assert b''.join(gen).decode('utf-8') == exp
+
+        result = b''.join(gen).decode('utf-8')
+        assert exp == result
 
     def test_rewrite_js_mod(self, headers):
         content = 'function() { location.href = "http://example.com/"; }'
 
-        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_')
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_', use_js_proxy=False)
 
         assert ('Content-Type', 'text/javascript') in headers.headers
 
         exp = 'function() { WB_wombat_location.href = "http://example.com/"; }'
-        assert b''.join(gen).decode('utf-8') == exp
+        result = b''.join(gen).decode('utf-8')
+
+        assert exp == result
+
+    def test_rewrite_js_mod_with_obj_proxy(self, headers):
+        content = 'function() { location.href = "http://example.com/"; }'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_', use_js_proxy=True)
+
+        assert ('Content-Type', 'text/javascript') in headers.headers
+
+        exp = 'function() { location.href = "http://example.com/"; }'
+        result = b''.join(gen).decode('utf-8')
+
+        assert 'let window ' in result
+        assert exp in result
 
     def test_rewrite_cs_mod(self, headers):
         content = '.foo { background: url(http://localhost:8080/prefix/201701cs_/http://example.com/) }'
@@ -136,7 +157,7 @@ class TestContentRewriter(object):
         headers = {'Content-Type': 'application/x-javascript'}
         content = 'function() { location.href = "http://example.com/"; }'
 
-        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_')
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_', use_js_proxy=False)
 
         assert ('Content-Type', 'application/x-javascript') in headers.headers
 
@@ -281,11 +302,14 @@ class TestContentRewriter(object):
         content = '/**/ jQuery_ABC({"foo": "bar"});'
 
         headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_',
-                                                  url='http://example.com/path/file')
+                                                  url='http://example.com/path/file',
+                                                  use_js_proxy=True)
 
         assert ('Content-Type', 'text/javascript') in headers.headers
 
-        assert b''.join(gen).decode('utf-8') == content
+        result = b''.join(gen).decode('utf-8')
+        assert 'let window' in result
+        assert content in result
 
     def test_rewrite_text_no_type(self):
         headers = {}
@@ -307,7 +331,9 @@ class TestContentRewriter(object):
 
         assert headers.headers == [('Content-Type', 'text/javascript')]
 
-        assert b''.join(gen).decode('utf-8') == content
+        result = b''.join(gen).decode('utf-8')
+        assert 'let window ' in result
+        assert content in result
 
     def test_custom_fuzzy_replace(self):
         headers = {'Content-Type': 'application/octet-stream'}
@@ -329,7 +355,7 @@ class TestContentRewriter(object):
         content = '{"foo":"bar", "dash": {"on": "true"}, "some": ["list"]'
 
         # is_live
-        rw_headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_',
+        rw_headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_',
                                                   url='https://player.vimeo.com/video/123445/config/config?A=B',
                                                   is_live='1')
 
@@ -341,6 +367,21 @@ class TestContentRewriter(object):
                                                   url='https://player.vimeo.com/video/123445/config/config?A=B')
 
         assert b''.join(gen).decode('utf-8') == content
+
+    def test_custom_live_js_obj_proxy(self):
+        headers = {'Content-Type': 'text/javascript'}
+        content = '{"foo":"bar", "dash": {"on": "true"}, "some": ["list"], "hls": {"A": "B"}'
+
+        # is_live
+        rw_headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_',
+                                                  url='https://player.vimeo.com/video/123445/config/config?A=B',
+                                                  is_live='1',
+                                                  use_js_proxy=True)
+
+        # rewritten
+        rw_content = '{"foo":"bar", "__dash": {"on": "true"}, "some": ["list"], "__hls": {"A": "B"}'
+
+        assert rw_content in b''.join(gen).decode('utf-8')
 
     def test_custom_ajax_rewrite(self):
         headers = {'Content-Type': 'application/json',
@@ -451,6 +492,26 @@ http://example.com/video_4.m3u8
 </MPD>"""
         assert b''.join(gen).decode('utf-8') == filtered
 
+
+    def test_dash_fb_in_js(self):
+        headers = {'Content-Type': 'text/javascript'}
+        with open(os.path.join(get_test_dir(), 'text_content', 'sample_dash.mpd'), 'rt') as fh:
+            content = 'dash_manifest:"' + fh.read().encode('unicode-escape').decode('utf-8')
+
+        rep_ids = r'\n",dash_prefetched_representation_ids:["4","5"]'
+        content += rep_ids
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_',
+                                                  url='http://facebook.com/example/dash/manifest.mpd')
+
+        assert headers.headers == [('Content-Type', 'text/javascript')]
+
+        result = b''.join(gen).decode('utf-8')
+
+        # 4, 5 representations removed, replaced with default 1, 7
+        assert 'dash_prefetched_representation_ids:["1", "7"]' in result
+        assert rep_ids not in result
+
     def test_dash_custom_max_resolution(self):
         headers = {'Content-Type': 'application/dash+xml'}
         with open(os.path.join(get_test_dir(), 'text_content', 'sample_dash.mpd'), 'rt') as fh:
@@ -532,6 +593,4 @@ http://example.com/video_4.m3u8
 </MPD>"""
 
         assert b''.join(gen).decode('utf-8') == filtered
-
-
 
