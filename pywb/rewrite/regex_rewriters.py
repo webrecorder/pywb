@@ -272,8 +272,7 @@ class JSWombatProxyRewriter(RegexRewriter):
 
 # =================================================================
 class JSNoneRewriter(RegexRewriter):
-    def __init__(self, rewriter, rules=[]):
-        super(JSNoneRewriter, self).__init__(rewriter, rules)
+    pass
 
 
 # =================================================================
