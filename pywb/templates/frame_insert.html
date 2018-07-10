@@ -22,6 +22,37 @@ html, body
 <iframe id="replay_iframe" frameborder="0" seamless="seamless" scrolling="yes" class="wb_iframe"></iframe>
 </div>
 <script>
+	
+	function messageListener (event) {
+		
+		var message = event.data;
+		if (message.wb_type === 'load') {
+			console.log('--- message : ', message);
+			
+			document.title = message.title;
+			
+			var iframe = document.querySelector('#replay_iframe');
+			var frame_dom = iframe.contentWindow.document;
+			
+			var iconDocumentList = document.querySelectorAll("link[rel*='icon']");
+			var iconFrameList = frame_dom.querySelectorAll("link[rel*='icon']");
+			
+			if (iconFrameList.length != 0) {
+				for (var i = 0; i < iconDocumentList.length; i++)
+				{
+					document.getElementsByTagName('head')[0].removeChild(iconDocumentList[i]);
+				}
+			}
+      
+			for (var i = 0; i < iconFrameList.length; i++)
+			{
+				document.getElementsByTagName('head')[0].appendChild(iconFrameList[i]);
+			}
+		}
+	}
+
+	window.addEventListener('message', messageListener, false);
+  
   var cframe = new ContentFrame({"url": "{{ url }}" + window.location.hash,
                                  "prefix": "{{ wb_prefix }}",
                                  "request_ts": "{{ wb_url.timestamp }}",
