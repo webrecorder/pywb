@@ -3583,15 +3583,26 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return;
             }
 
-            var message = {
-                       "url": $wbwindow.WB_wombat_location.href,
-                       "ts": wbinfo.timestamp,
-                       "request_ts": wbinfo.request_ts,
-                       "is_live": wbinfo.is_live,
-                       "title": $wbwindow.document ? $wbwindow.document.title : "",
-                       "readyState": $wbwindow.document.readyState,
-                       "wb_type": "load"
-            }
+            var icons = [];
+			var hicons = $wbwindow.document.querySelectorAll("link[rel*='icon']");
+			for (var i = 0; i < hicons.length; i++) {
+				var hicon = hicons[i];
+				icons.push({
+					rel: hicon.rel,
+					href: wb_getAttribute.call(hicon, 'href')
+				})
+			}
+
+			var message = {
+				"icons": icons,
+				"url": $wbwindow.WB_wombat_location.href,
+				"ts": wbinfo.timestamp,
+				"request_ts": wbinfo.request_ts,
+				"is_live": wbinfo.is_live,
+				"title": $wbwindow.document ? $wbwindow.document.title : "",
+				"readyState": $wbwindow.document.readyState,
+				"wb_type": "load"
+			}
 
             send_top_message(message);
         }
