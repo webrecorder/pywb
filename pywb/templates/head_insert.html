@@ -18,7 +18,7 @@
   wbinfo.timestamp = "{{ cdx.timestamp }}";
   wbinfo.request_ts = "{{ wb_url.timestamp }}";
   wbinfo.prefix = decodeURI("{{ wb_prefix }}");
-  wbinfo.mod = "{{ wb_url.mod }}";
+  wbinfo.mod = "{{ replay_mod }}";
   wbinfo.is_framed = {{ is_framed }};
   wbinfo.is_live = {{ is_live }};
   wbinfo.coll = "{{ coll }}";
@@ -38,9 +38,7 @@
 
   if (window && window._WBWombat && !window._wb_wombat) {
     window._wb_wombat = new _WBWombat(window, wbinfo);
-  } else if (window._wb_wombat) {
-    window._wb_wombat.init_paths(wbinfo);
-  } else {
+  } else if (!window._wb_wombat) {
     console.warn("_wb_wombat missing!");
   }
 </script>

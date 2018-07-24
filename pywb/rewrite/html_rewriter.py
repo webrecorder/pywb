@@ -14,7 +14,13 @@ from pywb.rewrite.regex_rewriters import JSRewriter, CSSRewriter
 from pywb.rewrite.content_rewriter import StreamingRewriter
 
 import six.moves.html_parser
-six.moves.html_parser.unescape = lambda x: x
+
+try:
+    orig_unescape = six.moves.html_parser.unescape
+    six.moves.html_parser.unescape = lambda x: x
+except:
+    orig_unescape = None
+
 from six import text_type
 
 
@@ -73,12 +79,20 @@ class HTMLRewriterMixin(StreamingRewriter):
 
     DATA_RW_PROTOCOLS = ('http://', 'https://', '//')
 
-    PRELOAD_TYPES = {'script': 'js_',
-                     'style': 'cs_',
-                     'image': 'im_',
-                     'document': 'if_',
-                     'fetch': 'mp_'
-                    }
+    PRELOAD_TYPES = {
+        'script': 'js_',
+        'worker': 'js_',
+        'style': 'cs_',
+        'image': 'im_',
+        'document': 'if_',
+        'fetch': 'mp_',
+        'font': 'oe_',
+        'audio': 'oe_',
+        'video': 'oe_',
+        'embed': 'oe_',
+        'object': 'oe_',
+        'track': 'oe_',
+    }
 
     #===========================
     class AccumBuff:
@@ -207,7 +221,7 @@ class HTMLRewriterMixin(StreamingRewriter):
         url = urlunsplit((scheme, netloc, path, query, frag))
         return url
 
-    def _rewrite_url(self, value, mod=None):
+    def _rewrite_url(self, value, mod=None, force_abs=False):
         if not value:
             return ''
 
@@ -215,22 +229,25 @@ class HTMLRewriterMixin(StreamingRewriter):
         if not value:
             return ''
 
-        value = self.try_unescape(value)
-        return self.url_rewriter.rewrite(value, mod)
+        unesc_value = self.try_unescape(value)
+        rewritten_value = self.url_rewriter.rewrite(unesc_value, mod, force_abs)
+
+        if unesc_value != value and rewritten_value != unesc_value:
+            rewritten_value = rewritten_value.replace(unesc_value, value)
+
+        return rewritten_value
 
     def try_unescape(self, value):
         if not value.startswith('http'):
             return value
 
         try:
-            new_value = HTMLParser.unescape(self, value)
-        except:
+            if orig_unescape:
+                new_value = orig_unescape(value)
+            else:
+                new_value = HTMLParser.unescape(self, value)
+        except Exception as e:
             return value
-
-        if value != new_value:
-            # ensure utf-8 encoded to avoid %-encoding query here
-            if isinstance(new_value, text_type):
-                new_value = new_value.encode('utf-8')
 
         return new_value
 
@@ -362,6 +379,14 @@ class HTMLRewriterMixin(StreamingRewriter):
                 rw_mod = self.defmod
                 attr_value = self._rewrite_url(attr_value, rw_mod)
 
+            elif tag == 'script' and attr_name == 'src':
+                rw_mod = handler.get(attr_name)
+                ov = attr_value
+                attr_value = self._rewrite_url(attr_value, rw_mod)
+                if attr_value == ov and not ov.startswith(self.url_rewriter.NO_REWRITE_URI_PREFIX):
+                    # URL not skipped, likely src='js/....', forcing abs to make sure, cause PHP MIME(JS) === HTML
+                    attr_value = self._rewrite_url(attr_value, rw_mod, True)
+                    self._write_attr('__wb_orig_src', ov, empty_attr=None)
             else:
                 # rewrite url using tag handler
                 rw_mod = handler.get(attr_name)
@@ -390,6 +415,10 @@ class HTMLRewriterMixin(StreamingRewriter):
         elif rel == 'preload':
             preload = self.get_attr(tag_attrs, 'as')
             rw_mod = self.PRELOAD_TYPES.get(preload, rw_mod)
+
+        # for html imports with an optional as (google exclusive)
+        elif rel == 'import':
+            rw_mod = 'mp_'
 
         elif rel == 'stylesheet':
             rw_mod = 'cs_'

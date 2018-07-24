@@ -1,7 +1,7 @@
 from .base_config_test import BaseConfigTest, fmod, CollsDirMixin
 from pywb.manager.manager import main as manager
 from pywb.manager.autoindex import AutoIndexer
-from pywb.warcserver.test.testutils import to_path
+from pywb.warcserver.test.testutils import to_path, HttpBinLiveTests
 
 import os
 import time
@@ -9,7 +9,7 @@ import json
 
 
 # ============================================================================
-class TestRecordReplay(CollsDirMixin, BaseConfigTest):
+class TestRecordReplay(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
     @classmethod
     def setup_class(cls):
         super(TestRecordReplay, cls).setup_class('config_test_record.yaml')
@@ -63,15 +63,15 @@ class TestRecordReplay(CollsDirMixin, BaseConfigTest):
         assert '"C": "D"' in res.text
 
     def test_record_again_1(self):
-        res = self.testapp.get('/test/record/mp_/http://httpbin.org/get?C=D')
-        assert '"C": "D"' in res.text
+        res = self.testapp.get('/test/record/mp_/http://httpbin.org/get?C=D2')
+        assert '"C": "D2"' in res.text
 
     def test_replay_again_1(self, fmod):
         self.ensure_empty()
 
         fmod_slash = fmod + '/' if fmod else ''
-        res = self.get('/test/{0}http://httpbin.org/get?C=D', fmod_slash)
-        assert '"C": "D"' in res.text
+        res = self.get('/test/{0}http://httpbin.org/get?C=D2', fmod_slash)
+        assert '"C": "D2"' in res.text
 
         assert len(os.listdir(os.path.join(self.root_dir, '_test_colls', 'test', 'archive'))) == 1
 
@@ -104,12 +104,12 @@ class TestRecordReplay(CollsDirMixin, BaseConfigTest):
         assert cdxj_lines[0]['url'] == 'http://httpbin.org/get?A=B'
         assert cdxj_lines[1]['url'] == 'http://httpbin.org/get?A=B'
         assert cdxj_lines[2]['url'] == 'http://httpbin.org/get?C=D'
-        assert cdxj_lines[3]['url'] == 'http://httpbin.org/get?C=D'
+        assert cdxj_lines[3]['url'] == 'http://httpbin.org/get?C=D2'
 
         assert cdxj_lines[0]['urlkey'] == 'org,httpbin)/get?__pywb_method=head&a=b'
         assert cdxj_lines[1]['urlkey'] == 'org,httpbin)/get?a=b'
         assert cdxj_lines[2]['urlkey'] == 'org,httpbin)/get?c=d'
-        assert cdxj_lines[3]['urlkey'] == 'org,httpbin)/get?c=d'
+        assert cdxj_lines[3]['urlkey'] == 'org,httpbin)/get?c=d2'
 
         assert cdxj_lines[0]['source'] == to_path('test/indexes/autoindex.cdxj')
         assert cdxj_lines[1]['source'] == to_path('test/indexes/autoindex.cdxj')
@@ -126,14 +126,14 @@ class TestRecordReplay(CollsDirMixin, BaseConfigTest):
     def test_timemap_all_coll(self):
         res = self.testapp.get('/all/timemap/link/http://httpbin.org/get?C=D')
         link_lines = res.text.rstrip().split('\n')
-        assert len(link_lines) == 5
+        assert len(link_lines) == 4
 
         assert to_path('collection="test2"') in link_lines[3]
-        assert to_path('collection="test"') in link_lines[4]
+        #assert to_path('collection="test"') in link_lines[4]
 
 
 # ============================================================================
-class TestRecordCustomConfig(CollsDirMixin, BaseConfigTest):
+class TestRecordCustomConfig(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
     @classmethod
     def setup_class(cls):
         rec_custom = {'recorder': {'source_coll': 'live',

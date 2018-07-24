@@ -34,6 +34,10 @@ default_filters:
         - match: '[?&]utm_[^=]+=[^&]+(?=&|$)'
           replace: ''
 
+        # additional callback=jsonpCallbackXYZ
+        - match: '[?&](callback=jsonp)[^&]+(?=&|$)'
+          replace: '\1'
+
         # remove jquery callback dynamic timestamp
         - match: '[?&]((?:\w+)=jquery)[\d]+_[\d]+'
           replace: '\1'
@@ -421,6 +425,9 @@ rules:
 
             - match: 'yt\.setConfig.*PLAYER_CONFIG.*args":\s*{'
               replace: '{0} "dash": "0", dashmpd: "", '
+
+            - match: '"player":.*"args":{'
+              replace: '{0}"dash":"0","dashmpd":"",'
 
     # testing rules -- not for valid domain
     #=================================================================

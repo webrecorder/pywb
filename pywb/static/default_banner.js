@@ -88,6 +88,8 @@ This file is part of pywb, https://github.com/webrecorder/pywb
         return;
     }
 
+    var last_state = {};
+
     window.addEventListener("load", function() {
         if (window.wbinfo) {
             init("_wb_plain_banner");
@@ -107,8 +109,10 @@ This file is part of pywb, https://github.com/webrecorder/pywb
 
                 if (type == "load" || type == "replace-url") {
                     state = event.data;
+                    last_state = state;
                     title = event.data.title || title;
                 } else if (type == "title") {
+                    state = last_state;
                     title = event.data.title;
                 } else {
                     return;

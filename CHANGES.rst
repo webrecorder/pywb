@@ -1,3 +1,65 @@
+pywb 2.0.4 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Replay Fidelity Improvements:
+   - Ensure title-only change event correctly handled by top-frame banner (#327)
+   - Improved wombat ``document.write`` and ``document.writeln`` overrides to account for the variadic case (#325)
+   - Improved wombat ``postMessage`` override logic of determining correct target origin (#328 and #338)
+   - Improved server-side rewriting of ``link[rel=preload]`` (#332)
+   - Improved server-side and client-side rewriting of "super relative" script src values ``script[src=path/it.php?js]`` (#334)
+   - Improved wombat un-rewrite regular expression (#332)
+   - Improved wombat ``Node.[appendChild|replaceChild|insertBefore]`` overrides to account for edge cases (#332)
+   - Added ``MouseEvent`` override to wombat (#332)
+   - Added ``insertAdjacentElement`` override to wombat (#332)
+   - Added client-side rewriting of ``link[rel=preload]`` and ``link[rel=import]`` to wombat (#332)
+   - Added FontFace override to wombat (#340)
+   - Added server-side rewriting of ``link[rel=import]`` (#334)
+   - Added SVG filter attribute rewriting to wombat (#341)
+   - Improved detection of ServiceWorker JS, use ``sw_`` modifier which performs no rewriting but adds ``Service-Worker-Allowed`` header.
+   - Don't bind already overridden ``requestAnimationFrame/clearAnimationFrame`` functions via JS object proxy (#350)
+   - Don't reinit wombat in same window if new document is imported (#339)
+   - Cookies: Use default mod ``mp_`` for client-side rewriting to ensure cookies set correctly on client-side documents (#330)
+
+* Server-Side Rewriting:
+   - Flash: Improved Rewriting for AMF, supporting py2 and py3 (#321)
+   - Improved ``Origin`` header detection: Detect from ``Referer`` header if available (#329)
+   - Expand JSONP matching if url contains 'callback=jsonp' (#336)
+   - Ensure entity-escaped urls are rewritten, with escaping preserved (#337)
+
+* Redirect Improvements:
+   - Improved self-redirect detection for adjacent self-redirect capture results, avoiding self-redirect loops (#345)
+   - Fix possible leak when handling self-redirects
+   - Add slash-preserving redirect, if original ended in '/', ensure replayed version also ends with '/' (#344, #346)
+
+* Misc Fixes:
+   - Testing: Run local ``httpbin`` for any ``httpbin.org`` or ``test.httpbin.org`` tests to avoid external dependency.
+   - Indexing: Avoid indexing error in py2 by decoding in utf-8 if warc has non-ascii target url (#312)
+   - Gevent: Preserve %-escaped request url via ``REQUEST_URI`` (if available) to pass correct url to live upstream.
+
+* Proxy Mode Options (#316, #317):
+   - Add ``use_banner`` option, if false, disables banner insert in proxy mode (default: true)
+   - Add ``use_head_insert`` option, if false, disables injecting ``head_insert.html`` in proxy mode (default: true)
+   - Add ``FrontEndApp.proxy_route_request()`` to allow more customized proxy routing (default: route to fixed default collection)
+   - Expand proxy mode docs
+
+
+pywb 2.0.3 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Miscelaneous fixes:
+   - Fixes for Memento Aggregation when no timeout specified (#310)
+   - Fix HEAD request for replay (#309)
+   - Redis Index: always decode to native string format (decode_respones=True)
+   - Test fixes: Support latest fakeredis, more consistent tests (#313)
+   - Support forcing scheme via ``force_scheme: https`` config option (#314)
+   - Fix typo in rewrite_amf.py (#308)
+
+* Documentation improvements:
+   - Add docs for nginx deployment (#314)
+   - Fix typo in memento docs (#307)
+   - Mention timeout property Warcserver docs (#310)
+
+
 pywb 2.0.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

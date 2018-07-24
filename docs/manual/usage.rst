@@ -156,3 +156,36 @@ For larger scale production deployments, running with `uwsgi <http://uwsgi-docs.
 Although uwsgi does not provide a way to specify command line, all command line options can alternatively be configured via ``config.yaml``. See :ref:`configuring-pywb` for more info on available configuration options.
 
 
+Sample Nginx Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following nginx configuration snippet can be used to deploy pywb with uwsgi and nginx.
+
+The configuration assumes pywb is running the uwsgi protocol on port 8081, as is the default
+when running ``uwsgi uwsgi.ini``.
+
+The ``location /static`` block allows nginx to serve static files, and is an optional optimization.
+
+This configuration can be updated to use HTTPS and run on 443, the ``UWSGI_SCHEME`` param ensures that pywb will use the correct scheme
+when rewriting.
+
+See the `Nginx Docs <https://nginx.org/en/docs/>`_ for a lot more details on how to configure Nginx.
+
+
+.. code:: nginx
+
+    server {
+        listen 80;
+
+        location /static {
+            alias /path/to/pywb/static;
+        }
+
+        location / {
+            uwsgi_pass localhost:8081;
+
+            include uwsgi_params;
+            uwsgi_param UWSGI_SCHEME $scheme;
+        }
+    }
+

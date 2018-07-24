@@ -99,7 +99,10 @@ class CDX09(object):
         out.write(' ')
         out.write(entry['timestamp'])
         out.write(' ')
-        out.write(entry['url'])
+        try:
+            out.write(entry['url'])
+        except UnicodeDecodeError:
+            out.write(entry['url'].decode('utf-8'))
         out.write(' ')
         out.write(entry['mime'])
         out.write(' ')
@@ -123,7 +126,10 @@ class CDX11(object):
         out.write(' ')
         out.write(entry['timestamp'])
         out.write(' ')
-        out.write(entry['url'])
+        try:
+            out.write(entry['url'])
+        except UnicodeDecodeError:
+            out.write(entry['url'].decode('utf-8'))
         out.write(' ')
         out.write(entry['mime'])
         out.write(' ')

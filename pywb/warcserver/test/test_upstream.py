@@ -14,10 +14,10 @@ from pywb.warcserver.index.aggregator import SimpleAggregator
 
 from pywb.warcserver.upstreamindexsource import UpstreamMementoIndexSource, UpstreamAggIndexSource
 
-from .testutils import LiveServerTests, BaseTestClass
+from .testutils import LiveServerTests, HttpBinLiveTests, BaseTestClass
 
 
-class TestUpstream(LiveServerTests, BaseTestClass):
+class TestUpstream(LiveServerTests, HttpBinLiveTests, BaseTestClass):
     def setup(self):
         app = BaseWarcServer()
 

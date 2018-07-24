@@ -49,8 +49,14 @@ class RewriteInputRequest(DirectWSGIInputRequest):
 
             elif name == 'HTTP_ORIGIN':
                 name = 'Origin'
-                if self.splits:
-                    value = (self.splits.scheme + '://' + self.splits.netloc)
+                referrer = self.env.get('HTTP_REFERER')
+                if referrer:
+                    splits = urlsplit(referrer)
+                else:
+                    splits = self.splits
+
+                if splits:
+                    value = (splits.scheme + '://' + splits.netloc)
 
             elif name == 'HTTP_X_CSRFTOKEN':
                 name = 'X-CSRFToken'

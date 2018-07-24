@@ -160,6 +160,12 @@ r"""
 >>> _test_js_obj_proxy('if (that != this) { ... }')
 'if (that != (this && this._WB_wombat_obj_proxy || this)) { ... }'
 
+>>> _test_js_obj_proxy('function(){...} (this)')
+'function(){...} ((this && this._WB_wombat_obj_proxy || this))'
+
+>>> _test_js_obj_proxy('function(){...} )   (this); foo(this)')
+'function(){...} )   ((this && this._WB_wombat_obj_proxy || this)); foo(this)'
+
 >>> _test_js_obj_proxy('var foo = that || this  ;')
 'var foo = that || (this && this._WB_wombat_obj_proxy || this)  ;'
 

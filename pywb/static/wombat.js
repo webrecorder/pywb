@@ -58,7 +58,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         this.map = function(param) {
             for (var i = 0; i < this._arr.length; i++) {
-                (this._arr[i][0])(param);
+                (this._arr[i][1])(param);
             }
         }
     }
@@ -77,6 +77,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     var wb_setAttribute = $wbwindow.Element.prototype.setAttribute;
     var wb_getAttribute = $wbwindow.Element.prototype.getAttribute;
+    var wb_funToString = Function.prototype.toString;
 
     var wb_info;
 
@@ -91,6 +92,88 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     var message_listeners = new FuncMap();
     var storage_listeners = new FuncMap();
+
+    // <link as="x"> types for proper rewriting of link rel=[import, preload]
+    var linkAsTypes = {
+        'script': 'js_',
+        'worker': 'js_',
+        'style': 'cs_',
+        'image': 'im_',
+        'document': 'if_',
+        'fetch': 'mp_',
+        'font': 'oe_',
+        'audio': 'oe_',
+        'video': 'oe_',
+        'embed': 'oe_',
+        'object': 'oe_',
+        'track': 'oe_',
+    };
+    // pre-computed modifiers for each tag
+    var tagToMod = {
+        'A': {'href': undefined},
+        'AREA': {'href': undefined},
+        'IMG': {'src': 'im_', 'srcset': 'im_'},
+        'IFRAME': {'src': 'if_'},
+        'FRAME': {'src': 'if_'},
+        'SCRIPT': {'src': 'js_'},
+        'VIDEO': {'src': 'oe_', 'poster': 'im_'},
+        'AUDIO': {'src': 'oe_', 'poster': 'im_'},
+        'SOURCE': {'src': 'oe_', 'srcset': 'oe_'},
+        'INPUT': {'src': 'oe_'},
+        'EMBED': {'src': 'oe_'},
+        'OBJECT': {'data': 'oe_'},
+        'BASE': {'href': 'mp_'},
+        'META': {'content': 'mp_'},
+        'FORM': {'action': 'mp_'},
+        'TRACK': {'src': 'oe_'},
+    };
+
+    function rwModForElement(elem, attrName) {
+        // this function was created to help add in retrial of element attribute rewrite modifiers
+        if (!elem) {
+            return undefined;
+        }
+        var mod;
+        if (elem.tagName === 'LINK' && attrName === 'href') {
+            // special case for link tags: check if import / preload with maybe as
+            // otherwise check for rel=stylesheet
+            var relV = elem.rel;
+            if (relV === 'import' || relV === 'preload') {
+                var maybeAs = linkAsTypes[elem.as];
+                mod = maybeAs != null ? maybeAs : 'mp_';
+            } else if (relV === 'stylesheet') {
+                mod = 'cs_';
+            }
+        } else {
+            // see if we know this element has rewrite modifiers
+            var maybeMod = tagToMod[elem.tagName];
+            if (maybeMod != null) {
+                mod = maybeMod[attrName]; // set mod to the correct modffier
+            }
+        }
+        return mod;
+    }
+
+    function removeWBOSRC(elem) {
+        if (elem.tagName === 'SCRIPT' && !elem.__$removedWBOSRC$__) {
+            if (elem.hasAttribute('__wb_orig_src')) {
+                elem.removeAttribute('__wb_orig_src');
+            }
+            elem.__$removedWBOSRC$__ = true;
+        }
+    }
+
+    function retrieveWBOSRC(elem) {
+        if (elem.tagName === 'SCRIPT' && !elem.__$removedWBOSRC$__) {
+            var maybeWBOSRC;
+            if (wb_getAttribute) {
+                maybeWBOSRC = wb_getAttribute.call(elem, '__wb_orig_src');
+            } else {
+                maybeWBOSRC = elem.getAttribute('__wb_orig_src');
+            }
+            return maybeWBOSRC;
+        }
+    }
 
     //============================================
     function is_host_url(str) {
@@ -642,7 +725,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         this.reload = function() {
             return this._orig_loc.reload();
         }
-       
+
         this.orig_getter = function(prop) {
             return this._orig_loc[prop];
         }
@@ -652,7 +735,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         init_loc_override(this, this.orig_setter, this.orig_getter);
-        
+
         set_loc(this, orig_loc.href);
 
         this.toString = function() {
@@ -660,7 +743,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         // Copy any remaining properties
-        for (prop in orig_loc) {
+        for (var prop in orig_loc) {
             if (this.hasOwnProperty(prop)) {
                 continue;
             }
@@ -769,7 +852,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var orig_getrandom = $wbwindow.Crypto.prototype.getRandomValues;
 
         var new_getrandom = function(array) {
-            for (i = 0; i < array.length; i++) {
+            for (var i = 0; i < array.length; i++) {
                 array[i] = parseInt($wbwindow.Math.random() * 4294967296);
             }
             return array;
@@ -902,7 +985,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 async = true;
             }
 
-            result = orig.call(this, method, url, async, user, password);
+            var result = orig.call(this, method, url, async, user, password);
             if (!starts_with(url, "data:")) {
                 this.setRequestHeader('X-Pywb-Requested-With', 'XMLHttpRequest');
             }
@@ -1028,6 +1111,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
+
     function init_setAttribute_override()
     {
         if (!$wbwindow.Element ||
@@ -1049,13 +1133,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
                     value = rewrite_inline_style(value);
 
                 } else if (should_rewrite_attr(this.tagName, lowername)) {
+                    removeWBOSRC(this);
                     if (!this._no_rewrite) {
-                        var old_value = value;
-
-                        var mod = undefined;
-                        if (this.tagName == "SCRIPT") {
-                            mod = "js_";
-                        }
+                        var mod = rwModForElement(this, lowername);
                         value = rewrite_url(value, false, mod);
                     }
                 } else if (lowername == "style") {
@@ -1073,7 +1153,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
     {
         if (!$wbwindow.Element ||
             !$wbwindow.Element.prototype ||
-            !$wbwindow.Element.prototype.setAttribute) {
+            !$wbwindow.Element.prototype.getAttribute) {
             return;
         }
 
@@ -1084,6 +1164,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var result = orig_getAttribute.call(this, name);
 
             if (should_rewrite_attr(this.tagName, name)) {
+                var maybeWBOSRC = retrieveWBOSRC(this);
+                if (maybeWBOSRC) {
+                    return maybeWBOSRC;
+                }
                 result = extract_orig(result);
             } else if (starts_with(name, "data-") && starts_with(result, VALID_PREFIXES)) {
                 result = extract_orig(result);
@@ -1305,9 +1389,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var orig_register = $wbwindow.ServiceWorkerContainer.prototype.register;
 
         $wbwindow.ServiceWorkerContainer.prototype.register = function(scriptURL, options) {
-            scriptURL = rewrite_url(scriptURL, false, "id_");
+            scriptURL = new URL(scriptURL, $wbwindow.document.baseURI).href;
+            scriptURL = rewrite_url(scriptURL, false, "sw_");
             if (options && options.scope) {
-                options.scope = rewrite_url(options.scope, false, "id_");
+                options.scope = rewrite_url(options.scope, false, "mp_");
+            } else {
+                options = {scope: rewrite_url("/", false, "mp_")};
             }
             return orig_register.call(this, scriptURL, options);
         }
@@ -1336,7 +1423,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         var new_value;
 
-        if (name == "style") {
+        if (name === 'filter') {
+            // for svg filter attribute which is url(...)
+            new_value = rewrite_inline_style(value);
+        } else if (name == "style") {
             new_value = rewrite_style(value);
         } else if (name == "srcset") {
             new_value = rewrite_srcset(value);
@@ -1345,16 +1435,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
             if (abs_url_only && !starts_with(value, VALID_PREFIXES)) {
                 return;
             }
-
-            var mod = undefined;
-
-            if (elem.tagName == "SCRIPT") {
-                mod = "js_";
-            }
+            var mod = rwModForElement(elem, name);
             new_value = rewrite_url(value, false, mod);
         }
 
         if (new_value != value) {
+            removeWBOSRC(elem);
             wb_setAttribute.call(elem, name, new_value);
             return true;
         }
@@ -1397,7 +1483,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         // Filter removes non-truthy values like null, undefined, and ""
-        values = value.split(/\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))/).filter(Boolean);
+        var values = value.split(/\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))/).filter(Boolean);
 
         for (var i = 0; i < values.length; i++) {
             values[i] = rewrite_url(values[i].trim());
@@ -1517,6 +1603,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
             changed = rewrite_script(elem);
         } else if (elem.tagName == "image") {
             changed = rewrite_attr(elem, "xlink:href");
+        } else if (elem instanceof SVGElement && elem.hasAttribute('filter')) {
+            changed = rewrite_attr(elem, 'filter');
         } else {
             changed = rewrite_attr(elem, "src");
             changed = rewrite_attr(elem, "srcset") || changed;
@@ -1698,7 +1786,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         } catch (e) {
             decoded = orig;
         }
-
+        var val;
         if (decoded != orig) {
             val = rewrite_style(decoded);
             var parts = val.split(",", 2);
@@ -1722,7 +1810,17 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 val = rewrite_inline_style(orig);
             } else if (attr == "srcset") {
                 val = rewrite_srcset(orig);
+            } else if (this.tagName === 'LINK' && attr === 'href') {
+                var relV = this.rel;
+                if (relV === 'import' || relV === 'preload') {
+                    var maybeAs = linkAsTypes[this.as];
+                    mod = maybeAs != null ? maybeAs : 'mp_';
+                } else if (relV === 'stylesheet' && mod !== 'cs_') {
+                    mod = 'cs_';
+                }
+                val = rewrite_url(orig, false, mod);
             } else {
+                removeWBOSRC(this);
                 val = rewrite_url(orig, false, mod);
             }
 
@@ -1802,7 +1900,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_attr($wbwindow.HTMLMetaElement.prototype, "content", "mp_");
 
         override_attr($wbwindow.HTMLFormElement.prototype, "action", "mp_");
-     
+
         override_anchor_elem();
 
         var style_proto = $wbwindow.CSSStyleDeclaration.prototype;
@@ -1851,7 +1949,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         for (var i = 0; i < URL_PROPS.length; i++) {
             save_prop(URL_PROPS[i]);
-        } 
+        }
 
         var anchor_setter = function(prop, value) {
             var func = anchor_orig["set_" + prop];
@@ -1909,7 +2007,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         var getter = function() {
-            res = orig_getter.call(this);
+            var res = orig_getter.call(this);
             if (!this._no_rewrite) {
                 res = res.replace(wb_unrewrite_rx, "");
             }
@@ -1984,11 +2082,55 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 //}
                 text = rewrite_html(text);
             }
- 
+
             return orig_insertAdjacentHTML.call(this, position, text);
         }
 
         $wbwindow.Element.prototype.insertAdjacentHTML = insertAdjacent_override;
+    }
+
+    function initInsertAdjacentElementOverride() {
+        if (!$wbwindow.Element ||
+            !$wbwindow.Element.prototype ||
+            !$wbwindow.Element.prototype.insertAdjacentElement) {
+            return;
+        }
+        var origIAdjElem = $wbwindow.Element.prototype.insertAdjacentElement;
+        $wbwindow.Element.prototype.insertAdjacentElement = function insertAdjacentElement (position, element) {
+            if (!this._no_rewrite) {
+                rewrite_elem(element);
+                // special check for nested elements
+                if (element.children || element.childNodes) {
+                    recurse_rewrite_elem(element);
+                }
+                return origIAdjElem.call(this, position, element);
+            }
+            return origIAdjElem.call(this, position, element);
+        }
+    }
+
+    //============================================
+    function initFontFaceOverride ($wbwindow) {
+        if (!$wbwindow.FontFace || $wbwindow.FontFace.__wboverriden__) {
+            return;
+        }
+        // per https://drafts.csswg.org/css-font-loading/#FontFace-interface and Chrome, FF, Opera Support
+        var origFontFace = $wbwindow.FontFace;
+        $wbwindow.FontFace = (function (FontFace) {
+            return function (family, source, descriptors) {
+                var rwSource = source;
+                if (source != null) {
+                    if (typeof source !== 'string') {
+                        source = source.toString(); // is CSSOMString or ArrayBuffer or ArrayBufferView
+                    }
+                    rwSource = rewrite_inline_style(source);
+                }
+                return new FontFace(family, rwSource, descriptors);
+            }
+        })($wbwindow.FontFace);
+        $wbwindow.FontFace.prototype = origFontFace.prototype;
+        Object.defineProperty($wbwindow.FontFace.prototype, "constructor", {value: $wbwindow.FontFace});
+        $wbwindow.FontFace.__wboverriden__ = true;
     }
 
     //============================================
@@ -2072,6 +2214,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 if (child) {
                     if (child.nodeType == Node.ELEMENT_NODE) {
                         rewrite_elem(child);
+                        // special check for nested elements
+                        if (child.children || child.childNodes) {
+                            recurse_rewrite_elem(child);
+                        }
                     } else if (child.nodeType == Node.TEXT_NODE) {
                         if (this.tagName == "STYLE") {
                             child.textContent = rewrite_style(child.textContent);
@@ -2176,40 +2322,43 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         var orig = $wbwindow.postMessage;
-        
+
         $wbwindow.__orig_postMessage = orig;
 
+        // use this_obj.__WB_source not window to fix google calendar embeds, pm_origin sets this.__WB_source
         var postmessage_rewritten = function(message, targetOrigin, transfer, from_top) {
             var from = undefined;
             var src_id = undefined;
-            var obj = proxy_to_obj(this);
+            var this_obj = proxy_to_obj(this);
 
-            if (window.__WB_source && window.__WB_source.WB_wombat_location) {
-                var source = window.__WB_source;
+            if (this_obj.__WB_source && this_obj.__WB_source.WB_wombat_location) {
+                var source = this_obj.__WB_source;
 
                 from = source.WB_wombat_location.origin;
 
-                if (!this.__WB_win_id) {
-                    this.__WB_win_id = {};
-                    this.__WB_counter = 0;
+                if (!this_obj.__WB_win_id) {
+                    this_obj.__WB_win_id = {};
+                    this_obj.__WB_counter = 0;
                 }
 
                 if (!source.__WB_id) {
-                    source.__WB_id = (this.__WB_counter++) + source.WB_wombat_location.href;
+                    source.__WB_id = (this_obj.__WB_counter++) + source.WB_wombat_location.href;
                 }
-                this.__WB_win_id[source.__WB_id] = source;
+                this_obj.__WB_win_id[source.__WB_id] = source;
 
                 src_id = source.__WB_id;
-                
-                window.__WB_source = undefined;
+
+                this_obj.__WB_source = undefined;
             } else {
                 from = window.WB_wombat_location.origin;
             }
 
             var to_origin = targetOrigin;
-            
-            if (starts_with(to_origin, obj.location.origin)) {
-                to_origin = "*";
+
+            // if passed in origin is the replay (rewriting missed somewhere?)
+            // set origin to current 'from' origin
+            if (to_origin == this_obj.location.origin) {
+                to_origin = from;
             }
 
             var new_message = {"from": from,
@@ -2217,16 +2366,23 @@ var _WBWombat = function($wbwindow, wbinfo) {
                                "src_id":  src_id,
                                "message": message,
                                "from_top": from_top,
-                              }
+                              };
 
+            // set to 'real' origin if not '*'
             if (targetOrigin != "*") {
-                targetOrigin = obj.location.origin;
+                // if target origin is null (about:blank) or empty, don't pass event at all
+                // as it would never succeed
+                if (this_obj.location.origin == "null" || this_obj.location.origin == "") {
+                    return;
+                }
+                // set to actual (rewritten) origin
+                targetOrigin = this_obj.location.origin;
             }
 
             //console.log("Sending " + from + " -> " + to + " (" + targetOrigin + ") " + message);
-            
-            return orig.call(obj, new_message, targetOrigin, transfer);
-        }
+
+            return orig.call(this_obj, new_message, targetOrigin, transfer);
+        };
 
         $wbwindow.postMessage = postmessage_rewritten;
 
@@ -2358,7 +2514,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         override_on_prop("onmessage", WrappedListener);
-        override_on_prop("onstroage", SameOriginListener);
+        override_on_prop("onstorage", SameOriginListener);
     }
 
 
@@ -2400,6 +2556,45 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_prop_to_proxy($wbwindow.MessageEvent.prototype, "source");
 
         $wbwindow.MessageEvent.prototype.__extended = true;
+    }
+
+    function initMouseEventOverride($wbwindow) {
+        // Mouse events take an init argument of view and view == window
+        if (!$wbwindow.MouseEvent || $wbwindow.MouseEvent.prototype.__extended) return;
+
+        // ensure if and when view is accessed from MouseEvent it is proxied
+        override_prop_to_proxy($wbwindow.MouseEvent.prototype, "view");
+
+        // override like window.Audio
+        var origME = $wbwindow.MouseEvent;
+
+        var origInitME = $wbwindow.MouseEvent.prototype.initMouseEvent;
+
+        // to intercept var evt = document.createEvent("MouseEvents"); evt.initMouseEvent(...);
+        $wbwindow.MouseEvent.prototype.initMouseEvent = function (type, canBubble, cancelable, view, detail, screenX,
+                                                                  screenY, clientX, clientY, ctrlKey, altKey, shiftKey,
+                                                                  metaKey, button, relatedTarget) {
+            if (view != null) {
+                view = proxy_to_obj(view);
+            }
+            return origInitME.call(this,type, canBubble, cancelable, view, detail, screenX, screenY, clientX, clientY,
+                     ctrlKey, altKey, shiftKey, metaKey, button, relatedTarget)
+        };
+
+        $wbwindow.MouseEvent = (function (MouseEvent) {
+            return function (type, init) {
+                if (init && init.view != null) {
+                    init.view = proxy_to_obj(init.view);
+                }
+                return new MouseEvent(type, init);
+            }
+        })($wbwindow.MouseEvent);
+
+        $wbwindow.MouseEvent.prototype = origME.prototype;
+        Object.defineProperty($wbwindow.MouseEvent.prototype, "constructor", {value: $wbwindow.MouseEvent});
+
+        // let ourselves know we already handled this
+        $wbwindow.MouseEvent.prototype.__extended = true;
     }
 
     //============================================
@@ -2447,14 +2642,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return;
         }
 
-        var orig_func_to_string = Function.prototype.toString;
-
         var orig_apply = $wbwindow.Function.prototype.apply;
 
         $wbwindow.Function.prototype.__WB_orig_apply = orig_apply;
 
         function deproxy(obj, args) {
-            if (orig_func_to_string.call(this).indexOf("[native code]") >= 0) {
+            if (wb_funToString.call(this).indexOf("[native code]") >= 0) {
                 if (args) {
                     for (var i = 0; i < args.length; i++) {
                         args[i] = proxy_to_obj(args[i]);
@@ -2466,7 +2659,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         $wbwindow.Function.prototype.apply = deproxy;
-        orig_func_to_string.apply = orig_apply;
+        wb_funToString.apply = orig_apply;
     }
 
 
@@ -2608,18 +2801,31 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return;
         }
 
+        // both document.[write,writeln] are variadic functions
+        // we must concatenate the arguments when length > 1
+
         // Write
         var orig_doc_write = $wbwindow.document.write;
 
-        var new_write = function(string) {
-            new_buff = rewrite_html(string, true);
+        var new_write = function() {
+            var argLen = arguments.length;
+            var string;
+            if (argLen === 0) {
+                return orig_doc_write.call(this);
+            } else if (argLen === 1) {
+                string = arguments[0];
+            } else {
+                // use Array.join rather than Array.apply because join works with array like objects
+                string = $wbwindow.Array.prototype.join.call(arguments, '');
+            }
+            var new_buff = rewrite_html(string, true);
             if (!new_buff) {
                 return;
             }
             var res = orig_doc_write.call(this, new_buff);
             init_new_window_wombat(this.defaultView);
             return res;
-        }
+        };
 
         $wbwindow.document.write = new_write;
         $wbwindow.Document.prototype.write = new_write;
@@ -2627,15 +2833,24 @@ var _WBWombat = function($wbwindow, wbinfo) {
         // Writeln
         var orig_doc_writeln = $wbwindow.document.writeln;
 
-        var new_writeln = function(string) {
-            new_buff = rewrite_html(string, true);
+        var new_writeln = function() {
+            var argLen = arguments.length;
+            var string;
+            if (argLen === 0) {
+                return orig_doc_writeln.call(this);
+            } else if (argLen === 1) {
+                string = arguments[0];
+            } else {
+                string = $wbwindow.Array.prototype.join.call(arguments, '');
+            }
+            var new_buff = rewrite_html(string, true);
             if (!new_buff) {
                 return;
             }
             var res = orig_doc_writeln.call(this, new_buff);
             init_new_window_wombat(this.defaultView);
             return res;
-        }
+        };
 
         $wbwindow.document.writeln = new_writeln;
         $wbwindow.Document.prototype.writeln = new_writeln;
@@ -2647,7 +2862,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var res = orig_doc_open.call(this);
             init_new_window_wombat(this.defaultView);
             return res;
-        }
+        };
 
         $wbwindow.document.open = new_open;
         $wbwindow.Document.prototype.open = new_open;
@@ -2829,7 +3044,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             this.removeItem = function(name) {
                 var old_val = this.getItem(name);
 
-                res = delete this.data[name];
+                var res = delete this.data[name];
 
                 fire_event(this, name, old_val, null);
 
@@ -3007,7 +3222,22 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var type = (typeof retVal);
 
         if (type === "function" && ownProps.indexOf(prop) != -1) {
-            return retVal.bind(obj);
+            // certain sites (e.g. facebook) are applying polyfills to native functions
+            // treating the polyfill as a native function [fn.bind(obj)] causes incorrect execution of the polyfill
+            // also depending on the site, the site can detect we "tampered" with the polyfill by binding it to obj
+            // to avoid these situations, we do not bind the returned fn if we detect they were polyfilled
+            switch (prop) {
+                case 'requestAnimationFrame':
+                case 'cancelAnimationFrame': {
+                    var str = wb_funToString.call(retVal);
+                    if (str.indexOf('[native code]') === -1) {
+                        return retVal;
+                    }
+                }
+                default: {
+                    return retVal.bind(obj);
+                }
+            }
         } else if (type === "object" && retVal && retVal._WB_wombat_obj_proxy) {
             return retVal._WB_wombat_obj_proxy;
         }
@@ -3151,15 +3381,18 @@ var _WBWombat = function($wbwindow, wbinfo) {
         if (!wb_is_proxy) {
             init_wombat_top($wbwindow);
 
+            // updated wb_unrewrite_rx for imgur.com
             var wb_origin = $wbwindow.__WB_replay_top.location.origin;
-
+            var wb_host = $wbwindow.__WB_replay_top.location.host;
+            var wb_proto = $wbwindow.__WB_replay_top.location.protocol;
             if (wb_replay_prefix && wb_replay_prefix.indexOf(wb_origin) == 0) {
                 wb_rel_prefix = wb_replay_prefix.substring(wb_origin.length);
             } else {
                 wb_rel_prefix = wb_replay_prefix;
             }
 
-            var rx = "(" + wb_origin + ")?" + wb_rel_prefix + "[^/]+/";
+            // make the protocol and host optional now
+            var rx = "((" + wb_proto + ")?\/\/" + wb_host + ")?" + wb_rel_prefix + "[^/]+/";
             wb_unrewrite_rx = new RegExp(rx, "g");
 
             // History
@@ -3174,6 +3407,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 init_postmessage_override($wbwindow);
                 init_messageevent_override($wbwindow);
             }
+
+            initMouseEventOverride($wbwindow);
 
             init_hash_change();
 
@@ -3192,6 +3427,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             // Audio
             init_audio_override();
+
+            // FontFace
+            initFontFaceOverride($wbwindow);
 
             // Worker override (experimental)
             init_web_worker_override();
@@ -3215,6 +3453,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
             // init insertAdjacentHTML() override
             init_insertAdjacentHTML_override();
+            initInsertAdjacentElementOverride();
+
 
             // iframe.contentWindow and iframe.contentDocument overrides to 
             // ensure wombat is inited on the iframe $wbwindow!

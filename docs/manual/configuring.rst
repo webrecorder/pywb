@@ -411,6 +411,21 @@ To enable proxy mode, the collection can be specified by running: ``wayback --pr
 For HTTP proxy access, this is all that is needed to use the proxy. If pywb is running on port 8080 on localhost, the following curl command should provide proxy access: ``curl -x "localhost:8080"  http://example.com/``
 
 
+Disabling Proxy Banner
+^^^^^^^^^^^^^^^^^^^^^^
+
+By default, pywb inserts a default banner into the proxy mode replay to make it clear to users that they are viewing replayed content.
+
+The default banner can be disabled by adding ``use_banner: false`` to the proxy config (this option is checked in the ``banner.html`` template).
+However, pywb may still insert additional rewriting code into the head to improve replay (using the ``head_insert.html`` template).
+To disable all modifications to the page in proxy mode, add ``use_head_insert: false`` to the config.
+Both options default to true, eg::
+
+   proxy:
+     use_banner: true
+     use_head_insert: true
+
+
 Proxy Recording
 ^^^^^^^^^^^^^^^
 
@@ -460,11 +475,17 @@ The following are all the available proxy options -- only ``coll`` is required::
     ca_name: pywb HTTPS Proxy CA
     ca_file_cache: ./proxy-certs/pywb-ca.pem
     recording: false
+    use_banner: true
+    use_head_insert: true
 
-The HTTP/S functionality is provided by the separate :mod:`wsgiprox` utility which provides HTTP/S proxy
-for any WSGI application.
+The HTTP/S functionality is provided by the separate :mod:`wsgiprox` utility which provides HTTP/S proxy routing
+to any WSGI application.
 
-See the `wsgiprox README <https://github.com/webrecorder/wsgiprox/blob/master/README.rst>`_ for additional details on how it works.
+Using `wsgiprox <https://github.com/webrecorder/wsgiprox>`_, pywb sets ``FrontEndApp.proxy_route_request()`` as the proxy resolver, and this function returns the full collection path that pywb uses to route each proxy request. The default implementation returns a path to the fixed collection ``coll`` and injects content into ``<head>`` if ``use_head_insert`` is true. The default banner is inserted if ``use_banner`` is set to true.
+
+Extensions to pywb can override ``proxy_route_request()`` to provide custom handling, such as setting the collection dynamically or based on external data sources.
+
+See the `wsgiprox README <https://github.com/webrecorder/wsgiprox/blob/master/README.rst>`_ for additional details on setting a proxy resolver.
 
 For more information on custom certificate authority (CA) installation, the `mitmproxy certificate page <http://docs.mitmproxy.org/en/stable/certinstall.html>`_ provides a good overview for installing a custom CA on different platforms.
 

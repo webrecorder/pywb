@@ -1,4 +1,5 @@
+{% if not env.pywb_proxy_magic or config.proxy.use_banner | default(true) %}
 <!-- default banner, create through js -->
 <script src='{{ host_prefix }}/{{ static_path }}/default_banner.js'> </script>
 <link rel='stylesheet' href='{{ host_prefix }}/{{ static_path }}/default_banner.css'/>
-
+{% endif %}
