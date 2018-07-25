@@ -139,7 +139,10 @@ class BaseInsertView(object):
         params = env.get(self.jenv.env_template_params_key)
         if params:
             kwargs.update(params)
+
         kwargs['env'] = env
+        kwargs['static_prefix'] = env.get('pywb.host_prefix', '') + env.get('ORIG_SCRIPT_NAME', '') + '/static'
+
 
         return template.render(**kwargs)
 
