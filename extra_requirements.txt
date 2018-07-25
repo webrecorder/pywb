@@ -2,6 +2,5 @@ certauth
 youtube-dl
 boto3
 uwsgi
-git+https://github.com/t0m/pyamf.git@python3
 git+https://github.com/esnme/ultrajson.git
 pysocks

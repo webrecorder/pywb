@@ -1,7 +1,7 @@
-from pywb.warcserver.test.testutils import BaseTestClass, TempDirTests
+from pywb.warcserver.test.testutils import BaseTestClass, TempDirTests, HttpBinLiveTests
 
 from .base_config_test import CollsDirMixin
-from pywb.utils.geventserver import GeventServer
+from pywb.utils.geventserver import GeventServer, RequestURIWSGIHandler
 from pywb.apps.frontendapp import FrontEndApp
 from pywb.manager.manager import main as manager
 
@@ -19,7 +19,9 @@ def scheme(request):
 # ============================================================================
 class BaseTestProxy(TempDirTests, BaseTestClass):
     @classmethod
-    def setup_class(cls, coll='pywb', config_file='config_test.yaml', recording=False):
+    def setup_class(cls, coll='pywb', config_file='config_test.yaml', recording=False,
+                    extra_opts={}):
+
         super(BaseTestProxy, cls).setup_class()
         config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
 
@@ -31,10 +33,12 @@ class BaseTestProxy(TempDirTests, BaseTestClass):
                 'recording': recording,
                }
 
+        opts.update(extra_opts)
+
         cls.app = FrontEndApp(config_file=config_file,
                               custom_config={'proxy': opts})
 
-        cls.server = GeventServer(cls.app)
+        cls.server = GeventServer(cls.app, handler_class=RequestURIWSGIHandler)
         cls.proxies = cls.proxy_dict(cls.server.port)
 
     @classmethod
@@ -57,8 +61,10 @@ class TestProxy(BaseTestProxy):
                            proxies=self.proxies,
                            verify=self.root_ca_file)
 
-        assert 'WB Insert' in res.text
         assert 'Example Domain' in res.text
+
+        # wb insert
+        assert 'WB Insert' in res.text
 
         # no wombat.js
         assert 'wombat.js' not in res.text
@@ -82,6 +88,9 @@ class TestProxy(BaseTestProxy):
 
         # no wombat.js
         assert 'wombat.js' not in res.text
+
+        # banner
+        assert 'default_banner.js' in res.text
 
         # no redirect check
         assert 'window == window.top' not in res.text
@@ -175,7 +184,7 @@ class TestRedirectClassicProxy(TestProxy):
 
 
 # ============================================================================
-class TestRecordingProxy(CollsDirMixin, BaseTestProxy):
+class TestRecordingProxy(HttpBinLiveTests, CollsDirMixin, BaseTestProxy):
     @classmethod
     def setup_class(cls, coll='pywb', config_file='config_test.yaml'):
         super(TestRecordingProxy, cls).setup_class('test', 'config_test_record.yaml', recording=True)
@@ -203,7 +212,7 @@ class TestRecordingProxy(CollsDirMixin, BaseTestProxy):
     def test_proxy_replay_recorded(self, scheme):
         manager(['reindex', 'test'])
 
-        self.app.handler.prefix_resolver.fixed_prefix = '/test/bn_/'
+        self.app.proxy_prefix = '/test/bn_/'
 
         res = requests.get('{0}://httpbin.org/'.format(scheme),
                            proxies=self.proxies,
@@ -211,4 +220,75 @@ class TestRecordingProxy(CollsDirMixin, BaseTestProxy):
 
         assert 'is_live = false' in res.text
         assert 'httpbin(1)' in res.text
+
+    def test_proxy_record_keep_percent(self, scheme):
+        self.app.proxy_prefix = '/test/record/bn_/'
+
+        res = requests.get('{0}://example.com/path/%2A%2Ftest'.format(scheme),
+                           proxies=self.proxies,
+                           verify=self.root_ca_file)
+
+        # ensure %-encoded url stays as is
+        assert '"{0}://example.com/path/%2A%2Ftest"'.format(scheme) in res.text
+
+
+# ============================================================================
+class TestProxyNoBanner(BaseTestProxy):
+    @classmethod
+    def setup_class(cls):
+        super(TestProxyNoBanner, cls).setup_class(extra_opts={'use_banner': False})
+
+    def test_proxy_replay(self, scheme):
+        res = requests.get('{0}://example.com/'.format(scheme),
+                           proxies=self.proxies,
+                           verify=self.root_ca_file)
+
+        # content
+        assert 'Example Domain' in res.text
+
+        # head insert
+        assert 'WB Insert' in res.text
+
+        # no banner
+        assert 'default_banner.js' not in res.text
+
+        # no wombat.js
+        assert 'wombat.js' not in res.text
+
+        # no redirect check
+        assert 'window == window.top' not in res.text
+
+        assert res.headers['Link'] == '<http://example.com>; rel="memento"; datetime="Mon, 27 Jan 2014 17:12:51 GMT"; collection="pywb"'
+        assert res.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
+
+
+# ============================================================================
+class TestProxyNoHeadInsert(BaseTestProxy):
+    @classmethod
+    def setup_class(cls):
+        super(TestProxyNoHeadInsert, cls).setup_class(extra_opts={'use_head_insert': False})
+
+    def test_proxy_replay(self, scheme):
+        res = requests.get('{0}://example.com/'.format(scheme),
+                           proxies=self.proxies,
+                           verify=self.root_ca_file)
+
+        # content
+        assert 'Example Domain' in res.text
+
+        # no head insert
+        assert 'WB Insert' not in res.text
+
+        # no banner
+        assert 'default_banner.js' not in res.text
+
+        # no wombat.js
+        assert 'wombat.js' not in res.text
+
+        # no redirect check
+        assert 'window == window.top' not in res.text
+
+        assert res.headers['Link'] == '<http://example.com>; rel="memento"; datetime="Mon, 27 Jan 2014 17:12:51 GMT"; collection="pywb"'
+        assert res.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
+
 

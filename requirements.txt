@@ -1,9 +1,9 @@
 six
-warcio>=1.5.0
+warcio>=1.5.2
 chardet
 requests
 redis
-jinja2<2.9
+jinja2
 surt>=0.3.0
 brotlipy
 pyyaml
@@ -12,4 +12,4 @@ webencodings
 gevent==1.2.2
 webassets==0.12.1
 portalocker
-wsgiprox>=1.4.1
+wsgiprox>=1.5.1

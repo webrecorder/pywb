@@ -148,6 +148,15 @@
 >>> x = SchemeOnlyUrlRewriter('http://example.com'); x.rebase_rewriter('https://example.com/') == x
 True
 
+# forcing absolute url rewrites
+>>> UrlRewriter('http://example.com/vucht.php', 'http://localhost:8080/live/').rewrite('js/bundle.php?v=1', 'js_', True)
+'/live/js_/http://example.com/js/bundle.php?v=1'
+
+>>> UrlRewriter('http://example.com/vucht.php', 'http://localhost:8080/live/').rewrite('js/bundle.php?v=1', 'js_')
+'js/bundle.php?v=1'
+
+>>> SchemeOnlyUrlRewriter('https://example.com/abc').rewrite('//example.com/abc', force_abs=True)
+'//example.com/abc'
 """
 
 

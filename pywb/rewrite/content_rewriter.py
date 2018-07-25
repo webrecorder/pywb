@@ -330,6 +330,11 @@ class StreamingRewriter(object):
 class RewriteInfo(object):
     TAG_REGEX = re.compile(b'^\s*\<')
 
+    JSONP_CONTAINS = ['callback=jQuery',
+                      'callback=jsonp',
+                      '.json?'
+                     ]
+
     def __init__(self, record, content_rewriter, url_rewriter, cookie_rewriter=None):
         self.record = record
 
@@ -364,12 +369,14 @@ class RewriteInfo(object):
         orig_text_type = self.rewrite_types.get(mime)
 
         text_type = self._resolve_text_type(orig_text_type)
+        url = self.url_rewriter.wburl.url
 
         if text_type in ('guess-text', 'guess-bin'):
             text_type = None
 
         if text_type == 'js':
-            if 'callback=jQuery' in self.url_rewriter.wburl.url or '.json?' in self.url_rewriter.wburl.url:
+            # determine if url contains strings that indicate jsonp
+            if any(jsonp_string in url for jsonp_string in self.JSONP_CONTAINS):
                 text_type = 'json'
 
         if (text_type and orig_text_type != text_type) or text_type == 'html':
@@ -390,6 +397,9 @@ class RewriteInfo(object):
 
     def _resolve_text_type(self, text_type):
         mod = self.url_rewriter.wburl.mod
+
+        if mod == 'sw_':
+            return None
 
         if text_type == 'css' and mod == 'js_':
             text_type = 'css'
@@ -456,7 +466,7 @@ class RewriteInfo(object):
         return True
 
     def is_url_rw(self):
-        if self.url_rewriter.wburl.mod in ('id_', 'bn_'):
+        if self.url_rewriter.wburl.mod in ('id_', 'bn_', 'sw_'):
             return False
 
         return True

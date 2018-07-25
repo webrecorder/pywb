@@ -22,7 +22,7 @@ class RewriteAMF(BufferedRewriter):  #pragma: no cover
             res = remoting.decode(iobuff)
 
             # TODO: revisit this
-            inputdata = url_rewriter.rewrite_opts.get('pywb.inputdata')
+            inputdata = rwinfo.url_rewriter.rewrite_opts.get('pywb.inputdata')
 
             if inputdata:
                 new_list = []
@@ -43,6 +43,8 @@ class RewriteAMF(BufferedRewriter):  #pragma: no cover
             import traceback
             traceback.print_exc()
             print(e)
+
+            stream.seek(0)
             return stream
 
 

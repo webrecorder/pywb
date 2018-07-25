@@ -1,4 +1,6 @@
+from gevent import monkey; monkey.patch_all()
 from .testutils import to_path, MementoOverrideTests, FakeRedisTests, BaseTestClass, TEST_CDX_PATH, TEST_WARC_PATH
+from .testutils import HttpBinLiveTests
 from collections import OrderedDict
 
 from io import BytesIO
@@ -42,7 +44,7 @@ ia_cdx = {
 
 
 
-class TestBaseWarcServer(MementoOverrideTests, FakeRedisTests, BaseTestClass):
+class TestBaseWarcServer(HttpBinLiveTests, MementoOverrideTests, FakeRedisTests, BaseTestClass):
     @classmethod
     def setup_class(cls):
         super(TestBaseWarcServer, cls).setup_class()
@@ -142,6 +144,7 @@ class TestBaseWarcServer(MementoOverrideTests, FakeRedisTests, BaseTestClass):
 
         cdxlist = list([json.loads(cdx) for cdx in resp.text.rstrip().split('\n')])
         cdxlist[0]['timestamp'] = '2016'
+        cdxlist[0]['load_url'] = 'http://httpbin.org/get'
         assert(cdxlist == [{'url': 'http://httpbin.org/get', 'urlkey': 'org,httpbin)/get', 'is_live': 'true',
                             'mime': '', 'load_url': 'http://httpbin.org/get',
                             'source': 'live', 'source-coll': 'live', 'timestamp': '2016'}])
@@ -286,7 +289,8 @@ Host: httpbin.org
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
 
-        assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('http://webenact.rhizome.org/vvork/http://httpbin.org/get?foo=bar',)"}
+        #assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('http://webenact.rhizome.org/vvork/http://httpbin.org/get?foo=bar',)"}
+        assert "NotFoundException('http://webenact.rhizome.org/vvork/" in json.loads(resp.headers['ResErrors'])['rhiz']
 
     def test_agg_post_resolve_postreq(self):
         req_data = """\

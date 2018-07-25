@@ -1,9 +1,10 @@
 from .base_config_test import BaseConfigTest, fmod_sl
+from pywb.warcserver.test.testutils import HttpBinLiveTests
 import pytest
 
 
 # ============================================================================
-class TestLiveRewriter(BaseConfigTest):
+class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
     @classmethod
     def setup_class(cls):
         super(TestLiveRewriter, cls).setup_class('config_test.yaml')
@@ -26,13 +27,14 @@ class TestLiveRewriter(BaseConfigTest):
         assert resp.status_int == 200
 
     def test_live_anchor_encode(self, fmod_sl):
-        resp = self.get('/live/{0}httpbin.org/anything/abc%23%23xyz', fmod_sl)
-        assert '"http://httpbin.org/anything/abc##xyz"' in resp.text
+        resp = self.get('/live/{0}httpbin.org/get?val=abc%23%23xyz', fmod_sl)
+        assert 'get?val=abc%23%23xyz"' in resp.text
+        assert '"val": "abc##xyz"' in resp.text
+        #assert '"http://httpbin.org/anything/abc##xyz"' in resp.text
         assert resp.status_int == 200
 
     def test_live_head(self, fmod_sl):
-        resp = self.head('/live/{0}httpbin.org/anything/foo', fmod_sl)
-        #assert '"http://httpbin.org/anything/foo"' in resp.text
+        resp = self.head('/live/{0}httpbin.org/get?foo=bar', fmod_sl)
         assert resp.status_int == 200
 
     def test_live_live_frame(self):
@@ -62,3 +64,22 @@ class TestLiveRewriter(BaseConfigTest):
     def test_deflate(self, fmod_sl):
         resp = self.get('/live/{0}http://httpbin.org/deflate', fmod_sl)
         assert b'"deflated": true' in resp.body
+
+    def test_live_origin_and_referrer(self, fmod_sl):
+        headers = {'Referer': 'http://localhost:80/live/{0}http://example.com/test'.format(fmod_sl),
+                   'Origin': 'http://localhost:80'
+                  }
+
+        resp = self.get('/live/{0}http://httpbin.org/get?test=headers', fmod_sl, headers=headers)
+
+        assert resp.json['headers']['Referer'] == 'http://example.com/test'
+        assert resp.json['headers']['Origin'] == 'http://example.com'
+
+    def test_live_origin_no_referrer(self, fmod_sl):
+        headers = {'Origin': 'http://localhost:80'}
+
+        resp = self.get('/live/{0}http://httpbin.org/get?test=headers', fmod_sl, headers=headers)
+
+        assert resp.json['headers']['Origin'] == 'http://httpbin.org'
+
+

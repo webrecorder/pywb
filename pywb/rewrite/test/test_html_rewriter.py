@@ -88,6 +88,10 @@ r"""
 >>> parse('<input value="&amp;X&amp;&quot;">X</input>')
 <input value="&amp;X&amp;&quot;">X</input>
 
+# Ensure url is rewritten, but is not unescaped
+>>> parse('<a href="http&#x3a;&#x2f;&#x2f;example.com&#x2f;path&#x2f;">')
+<a href="/web/20131226101010/http&#x3a;&#x2f;&#x2f;example.com&#x2f;path&#x2f;">
+
 # Empty values should be ignored
 >>> parse('<input name="foo" value>')
 <input name="foo" value>
@@ -207,6 +211,10 @@ r"""
 >>> parse('<script type="application/json">{"embed top test": "http://example.com/a/b/c.html"}</script>')
 <script type="application/json">{"embed top test": "http://example.com/a/b/c.html"}</script>
 
+# Script tag with super relative src
+>>> parse('<script src="js/fun.js"></script>')
+<script __wb_orig_src="js/fun.js" src="/web/20131226101010js_/http://example.com/some/path/js/fun.js"></script>
+
 # Script tag + crossorigin + integrity
 >>> parse('<script src="/js/scripts.js" crossorigin="anonymous" integrity="ABC"></script>')
 <script src="/web/20131226101010js_/http://example.com/js/scripts.js" _crossorigin="anonymous" _integrity="ABC"></script>
@@ -256,7 +264,7 @@ r"""
 <html><head><script src="cool.js"></script><script src="/web/20131226101010js_/http://example.com/other.js"></script></head><body>Test</body></html>
 
 >>> parse('<html><script src="other.js"></script></html>', head_insert = '<script src="cool.js"></script>')
-<html><script src="cool.js"></script><script src="other.js"></script></html>
+<html><script src="cool.js"></script><script __wb_orig_src="other.js" src="/web/20131226101010js_/http://example.com/some/path/other.js"></script></html>
 
 >>> parse('<html><head/><body>Test</body></html>', head_insert = '<script src="cool.js"></script>')
 <html><head><script src="cool.js"></script></head><body>Test</body></html>
@@ -306,10 +314,37 @@ r"""
 >>> parse('<link rel="preload" as="video" href="http://example.com/some/other/path">')
 <link rel="preload" as="video" href="/web/20131226101010oe_/http://example.com/some/other/path">
 
+>>> parse('<link rel="preload" as="worker" href="http://example.com/some/other/path">')
+<link rel="preload" as="worker" href="/web/20131226101010js_/http://example.com/some/other/path">
+
+>>> parse('<link rel="preload" as="font" href="http://example.com/some/other/path">')
+<link rel="preload" as="font" href="/web/20131226101010oe_/http://example.com/some/other/path">
+
+>>> parse('<link rel="preload" as="audio" href="http://example.com/some/other/path">')
+<link rel="preload" as="audio" href="/web/20131226101010oe_/http://example.com/some/other/path">
+
+>>> parse('<link rel="preload" as="embed" href="http://example.com/some/other/path">')
+<link rel="preload" as="embed" href="/web/20131226101010oe_/http://example.com/some/other/path">
+
+>>> parse('<link rel="preload" as="object" href="http://example.com/some/other/path">')
+<link rel="preload" as="object" href="/web/20131226101010oe_/http://example.com/some/other/path">
+
+>>> parse('<link rel="preload" as="track" href="http://example.com/some/other/path">')
+<link rel="preload" as="track" href="/web/20131226101010oe_/http://example.com/some/other/path">
+
+>>> parse('<link rel="preload" as="fetch" href="http://example.com/some/other/path">')
+<link rel="preload" as="fetch" href="/web/20131226101010mp_/http://example.com/some/other/path">
+
 # stylesheet
 >>> parse('<link rel="stylesheet" href="http://example.com/some/other/path">')
 <link rel="stylesheet" href="/web/20131226101010cs_/http://example.com/some/other/path">
 
+# rel='import'
+>>> parse('<link rel="import" href="http://example.com/componemts/app.html">')
+<link rel="import" href="/web/20131226101010mp_/http://example.com/componemts/app.html">
+
+>>> parse('<link rel="import" as="document" href="http://example.com/componemts/app.html">')
+<link rel="import" as="document" href="/web/20131226101010mp_/http://example.com/componemts/app.html">
 
 # doctype
 >>> parse('<!doctype html PUBLIC "public">')

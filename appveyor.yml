@@ -12,11 +12,12 @@ environment:
 
 install:        
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-  - "pip install --disable-pip-version-check --user --upgrade pip"
+  - "python -m pip install --upgrade pip"
   - "pip install -U setuptools"
   - "pip install coverage pytest-cov"
   - "pip install cffi"
   - "pip install pyopenssl"
+  - "pip install pypiwin32"
   - "pip install certauth boto3 youtube-dl pysocks"
   - "pip install codecov"
 

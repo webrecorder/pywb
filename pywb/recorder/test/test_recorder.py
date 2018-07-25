@@ -2,7 +2,7 @@ from gevent import monkey; monkey.patch_all()
 import gevent
 
 from pywb.warcserver.test.testutils import TempDirTests, LiveServerTests, BaseTestClass, to_path
-from pywb.warcserver.test.testutils import FakeRedisTests
+from pywb.warcserver.test.testutils import FakeRedisTests, HttpBinLiveTests
 
 import os
 import webtest
@@ -45,7 +45,7 @@ Cookie: boo=far\r\n\
 
 
 
-class TestRecorder(LiveServerTests, FakeRedisTests, TempDirTests, BaseTestClass):
+class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTests, BaseTestClass):
     @classmethod
     def setup_class(cls):
         super(TestRecorder, cls).setup_class()

@@ -143,6 +143,42 @@ class TestContentRewriter(object):
         exp = 'function() { WB_wombat_location.href = "http://example.com/"; }'
         assert b''.join(gen).decode('utf-8') == exp
 
+    def test_rewrite_sw_add_headers(self):
+        headers = {'Content-Type': 'application/x-javascript'}
+        content = 'function() { location.href = "http://example.com/"; }'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701sw_')
+
+        assert ('Content-Type', 'application/x-javascript') in headers.headers
+        assert ('Service-Worker-Allowed', 'http://localhost:8080/prefix/201701mp_/http://example.com/') in headers.headers
+
+        exp = 'function() { location.href = "http://example.com/"; }'
+        assert b''.join(gen).decode('utf-8') == exp
+
+    def test_banner_only_no_cookie_rewrite(self):
+        headers = {'Set-Cookie': 'foo=bar; Expires=Wed, 13 Jan 2021 22:23:01 GMT; Path=/',
+                   'Content-Type': 'text/javascript'}
+
+        content = 'function() { location.href = "http://example.com/"; }'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701bn_')
+
+        assert ('Content-Type', 'text/javascript') in headers.headers
+        assert ('Set-Cookie', 'foo=bar; Expires=Wed, 13 Jan 2021 22:23:01 GMT; Path=/') in headers.headers
+
+        exp = 'function() { location.href = "http://example.com/"; }'
+        assert b''.join(gen).decode('utf-8') == exp
+
+    def test_rewrite_cookies_only_binary_no_content_type(self):
+        headers = {'Set-Cookie': 'foo=bar; Expires=Wed, 13 Jan 2021 22:23:01 GMT; Path=/'}
+        content = '\x11\x12\x13\x14'
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        assert [('Set-Cookie', 'foo=bar; Path=/prefix/201701mp_/http://example.com/')] == headers.headers
+        #assert ('Content-Type', 'application/octet-stream') not in headers.headers
+
+        assert is_rw == False
+
     def test_binary_no_content_type(self):
         headers = {}
         content = '\x11\x12\x13\x14'
@@ -226,6 +262,19 @@ class TestContentRewriter(object):
         exp = 'jQuery_DEF({"foo": "bar"});'
         assert b''.join(gen).decode('utf-8') == exp
 
+    def test_rewrite_js_as_json_generic_jsonp(self):
+        headers = {'Content-Type': 'application/json'}
+        content = '/**/ jsonpCallbackABCDEF({"foo": "bar"});'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_',
+                                                  url='http://example.com/path/file?callback=jsonpCallback12345')
+
+        # content-type unchanged
+        assert ('Content-Type', 'application/json') in headers.headers
+
+        exp = 'jsonpCallback12345({"foo": "bar"});'
+        assert b''.join(gen).decode('utf-8') == exp
+
     def test_rewrite_js_not_json(self):
         # callback not set
         headers = {}
@@ -292,6 +341,18 @@ class TestContentRewriter(object):
                                                   url='https://player.vimeo.com/video/123445/config/config?A=B')
 
         assert b''.join(gen).decode('utf-8') == content
+
+    def test_custom_ajax_rewrite(self):
+        headers = {'Content-Type': 'application/json',
+                   'X-Pywb-Requested-With': 'XMLHttpRequest'}
+
+        content = '{"player":{"value":123,"args":{"id":5}}}'
+
+        rw_headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_',
+                                                  url='http://www.youtube.com/watch?v=1234')
+
+        # rewritten
+        assert b''.join(gen).decode('utf-8') == '{"player":{"value":123,"args":{"dash":"0","dashmpd":"","id":5}}}'
 
     def test_hls_default_max(self):
         headers = {'Content-Type': 'application/vnd.apple.mpegurl'}

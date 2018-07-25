@@ -1,6 +1,7 @@
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.timeutils import datetime_to_http_date
 from datetime import datetime, timedelta
+from six.moves.urllib.parse import urlsplit
 
 
 #=============================================================================
@@ -94,6 +95,12 @@ class DefaultHeaderRewriter(object):
                 else:
                     new_headers_list.append(new_header)
 
+        if self.rwinfo.url_rewriter.wburl.mod == 'sw_':
+            parts = urlsplit(self.rwinfo.url_rewriter.wburl.url)
+            new_url = parts.scheme + '://' + parts.netloc + '/'
+            rw_origin = self.rwinfo.url_rewriter.rewrite(new_url, mod='mp_')
+            new_headers_list.append(('Service-Worker-Allowed', rw_origin))
+
         return StatusAndHeaders(self.http_headers.statusline,
                                 headers=new_headers_list,
                                 protocol=self.http_headers.protocol)
@@ -138,7 +145,7 @@ class DefaultHeaderRewriter(object):
             return (self.header_prefix + name, value)
 
         elif rule == 'cookie':
-            if self.rwinfo.cookie_rewriter:
+            if self.rwinfo.cookie_rewriter and self.rwinfo.is_url_rw():
                 return self.rwinfo.cookie_rewriter.rewrite(value)
             else:
                 return (name, value)
