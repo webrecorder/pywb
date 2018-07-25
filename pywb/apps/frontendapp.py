@@ -494,6 +494,9 @@ class FrontEndApp(object):
             # store original script_name (original prefix) before modifications are made
             environ['pywb.app_prefix'] = environ.get('SCRIPT_NAME', '')
 
+            # store original script_name (original prefix) before modifications are made
+            environ['ORIG_SCRIPT_NAME'] = environ.get('SCRIPT_NAME')
+
             lang = args.pop('lang', '')
             if lang:
                 pop_path_info(environ)

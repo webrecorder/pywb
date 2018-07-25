@@ -267,6 +267,8 @@ class RewriterApp(object):
             'pywb.static_prefix', '/static/')
         is_proxy = ('wsgiprox.proxy_host' in environ)
 
+        environ['pywb.host_prefix'] = host_prefix
+
         if self.use_js_obj_proxy:
             content_rw = self.js_proxy_rw
         else:
