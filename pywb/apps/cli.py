@@ -29,17 +29,24 @@ def live_rewrite_server(args=None):
 class BaseCli(object):
     def __init__(self, args=None, default_port=8080, desc=''):
         parser = ArgumentParser(description=desc)
-        parser.add_argument('-p', '--port', type=int, default=default_port)
-        parser.add_argument('-b', '--bind', default='0.0.0.0')
-        parser.add_argument('-t', '--threads', type=int, default=4)
-        parser.add_argument('--debug', action='store_true')
-        parser.add_argument('--profile', action='store_true')
-
-        parser.add_argument('--live', action='store_true', help='Add live-web handler at /live')
-        parser.add_argument('--record', action='store_true')
-
-        parser.add_argument('--proxy', help='Enable HTTP/S Proxy on specified collection')
-        parser.add_argument('--proxy-record', action='store_true', help='Enable Proxy Recording into specified collection')
+        parser.add_argument('-p', '--port', type=int, default=default_port,
+                            help='Port to listen on (default %s)' % default_port)
+        parser.add_argument('-b', '--bind', default='0.0.0.0',
+                            help='Address to listen on (default 0.0.0.0)')
+        parser.add_argument('-t', '--threads', type=int, default=4,
+                            help='Number of threads to use (default 4)')
+        parser.add_argument('--debug', action='store_true',
+                            help='Enable debug mode')
+        parser.add_argument('--profile', action='store_true',
+                            help='Enable profile mode')
+        parser.add_argument('--live', action='store_true',
+                            help='Add live-web handler at /live')
+        parser.add_argument('--record', action='store_true',
+                            help='Enable recording from the live web')
+        parser.add_argument('--proxy',
+                            help='Enable HTTP/S proxy on specified collection')
+        parser.add_argument('--proxy-record', action='store_true',
+                            help='Enable proxy recording into specified collection')
 
         self.desc = desc
         self.extra_config = {}
@@ -93,8 +100,10 @@ class BaseCli(object):
 #=============================================================================
 class ReplayCli(BaseCli):
     def _extend_parser(self, parser):
-        parser.add_argument('-a', '--autoindex', action='store_true')
-        parser.add_argument('--auto-interval', type=int, default=30)
+        parser.add_argument('-a', '--autoindex', action='store_true',
+                            help='Enable auto-indexing')
+        parser.add_argument('--auto-interval', type=int, default=30,
+                            help='Auto-indexing interval (default 30 seconds)')
 
         parser.add_argument('--all-coll', help='Set "all" collection')
 
