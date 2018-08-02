@@ -193,7 +193,8 @@ class FuzzyMatcher(object):
 
         # check mime
         mime = cdx.get('mime')
-        if mime and mime in self.default_filters['mimes']:
+        if mime and mime in self.default_filters['mimes'] and \
+                ext == self.get_ext(cdx.get('url')):  # attempt to be stricter
             return True
 
         match_urlkey = cdx['urlkey']
