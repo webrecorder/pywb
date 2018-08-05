@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from warcio.warcwriter import BufferWARCWriter, GzippingWrapper
 from warcio.statusandheaders import StatusAndHeaders
 
@@ -99,6 +102,17 @@ class TestContentRewriter(object):
         exp = '<html><body><a href="http://localhost:8080/prefix/201701/http://example.com/"></a></body></html>'
         assert is_rw
         assert ('Content-Type', 'text/html; charset=UTF-8') in headers.headers
+        assert b''.join(gen).decode('utf-8') == exp
+
+    def test_rewrite_html_utf_8(self):
+        headers = {'Content-Type': 'text/html; charset=utf-8'}
+        content = u'<html><body><a href="http://éxample.com/tésté"></a></body></html>'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        exp = '<html><body><a href="http://localhost:8080/prefix/201701/http://%C3%A9xample.com/t%C3%A9st%C3%A9"></a></body></html>'
+        assert is_rw
+        assert ('Content-Type', 'text/html; charset=utf-8') in headers.headers
         assert b''.join(gen).decode('utf-8') == exp
 
     def test_rewrite_html_js_mod(self, headers):
