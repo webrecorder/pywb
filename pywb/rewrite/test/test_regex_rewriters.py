@@ -3,7 +3,7 @@ r"""
 # Custom Regex
 #=================================================================
 # Test https->http converter (other tests below in subclasses)
->>> RegexRewriter(urlrewriter, [(RegexRewriter.HTTPX_MATCH_STR, RegexRewriter.remove_https, 0)]).rewrite('a = https://example.com; b = http://example.com; c = https://some-url/path/https://embedded.example.com')
+>>> RegexRewriter(urlrewriter, [(RxRules.HTTPX_MATCH_STR, RxRules.remove_https, 0)]).rewrite('a = https://example.com; b = http://example.com; c = https://some-url/path/https://embedded.example.com')
 'a = http://example.com; b = http://example.com; c = http://some-url/path/http://embedded.example.com'
 
 
@@ -101,7 +101,7 @@ r"""
 '"/web/20131010/\\\\/\\\\/example.com/"'
 
 # custom rules added
->>> _test_js('window.location = "http://example.com/abc.html"; some_func(); ', [('some_func\(\).*', RegexRewriter.format('/*{0}*/'), 0)])
+>>> _test_js('window.location = "http://example.com/abc.html"; some_func(); ', [('some_func\(\).*', RxRules.format('/*{0}*/'), 0)])
 'window.WB_wombat_location = "/web/20131010/http://example.com/abc.html"; /*some_func(); */'
 
 # scheme-agnostic
@@ -274,7 +274,7 @@ r"""
 
 #=================================================================
 from pywb.rewrite.url_rewriter import UrlRewriter
-from pywb.rewrite.regex_rewriters import RegexRewriter, JSRewriter, CSSRewriter, XMLRewriter
+from pywb.rewrite.regex_rewriters import RegexRewriter, JSRewriter, CSSRewriter, XMLRewriter, RxRules
 from pywb.rewrite.regex_rewriters import JSWombatProxyRewriter
 
 

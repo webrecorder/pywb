@@ -58,7 +58,7 @@ class RewriteDASH(BufferedRewriter):
 
 
 # ============================================================================
-def rewrite_fb_dash(string):
+def rewrite_fb_dash(string, *args):
     DASH_SPLIT = r'\n",dash_prefetched_representation_ids:'
     inx = string.find(DASH_SPLIT)
     if inx < 0:
