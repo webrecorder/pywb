@@ -21,9 +21,9 @@ function WBWombat(info) {
                 async = true;
             }
 
-            result = orig.call(this, method, url, async, user, password);
+            var result = orig.call(this, method, url, async, user, password);
 
-            if (url.indexOf("data:") != 0) {
+            if (url.indexOf('data:') !== 0) {
                 this.setRequestHeader('X-Pywb-Requested-With', 'XMLHttpRequest');
             }
         }
@@ -32,6 +32,41 @@ function WBWombat(info) {
     }
 
     init_ajax_rewrite();
-}
 
+    function rewriteArgs(argsObj) {
+        // recreate the original arguments object just with URLs rewritten
+        var newArgObj = {length: argsObj.length};
+        for (var i = 0; i < argsObj.length; i++) {
+            var arg = argsObj[i];
+            newArgObj[i] = rewrite_url(arg);
+        }
+        return newArgObj;
+    }
+
+    var origImportScripts = self.importScripts;
+    self.importScripts = function importScripts() {
+        // rewrite the arguments object and call original function via fn.apply
+        var rwArgs = rewriteArgs(arguments);
+        return origImportScripts.apply(this, rwArgs);
+    };
+
+    if (self.fetch != null) {
+        // this fetch is Worker.fetch
+        var orig_fetch = self.fetch;
+        self.fetch = function(input, init_opts) {
+            var inputType = typeof(input);
+            if (inputType === 'string') {
+                input = rewrite_url(input);
+            } else if (inputType === 'object' && input.url) {
+                var new_url = rewrite_url(input.url);
+                if (new_url !== input.url) {
+                    input = new Request(new_url, input);
+                }
+            }
+            init_opts = init_opts || {};
+            init_opts['credentials'] = 'include';
+            return orig_fetch.call(this, input, init_opts);
+        };
+    }
+}
 
