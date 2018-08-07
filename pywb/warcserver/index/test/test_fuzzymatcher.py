@@ -133,6 +133,34 @@ class TestFuzzy(object):
 
         assert list(cdx_iter) == self.get_expected(url=actual_url, filters=filters)
 
+    def test_fuzzy_bar_baz_with_ext(self):
+        url = 'http://example.com/foo/bar.png?abc'
+        actual_url = 'http://example.com/foo/bar.png'
+        params = self.get_params(url, actual_url)
+        cdx_iter, errs = self.fuzzy(self.source, params)
+        assert list(cdx_iter) == self.get_expected(url=actual_url)
+
+    def test_fuzzy_bar_baz_with_ext_2(self):
+        url = 'http://example.com/foo/bar.png?abc'
+        actual_url = 'http://example.com/foo/bar.png?def'
+        params = self.get_params(url, actual_url)
+        cdx_iter, errs = self.fuzzy(self.source, params)
+        assert list(cdx_iter) == self.get_expected(url=actual_url)
+
+    def test_fuzzy_bar_baz_with_ext_3(self):
+        url = 'http://example.com/foo/bar.png'
+        actual_url = 'http://example.com/foo/bar.png?xyz'
+        params = self.get_params(url, actual_url)
+        cdx_iter, errs = self.fuzzy(self.source, params)
+        assert list(cdx_iter) == self.get_expected(url=actual_url)
+
+    def test_no_fuzzy_bar_baz_with_ext(self):
+        url = 'http://example.com/foo/bar.png?abc'
+        actual_url = 'http://example.com/foo/bar'
+        params = self.get_params(url, actual_url)
+        cdx_iter, errs = self.fuzzy(self.source, params)
+        assert list(cdx_iter) == []
+
     def test_no_fuzzy_disabled(self):
         url = 'http://example.com/?_=123'
         actual_url = 'http://example.com/'
@@ -190,4 +218,16 @@ class TestFuzzy(object):
         cdx_iter, errs = self.fuzzy(self.source, params)
         assert list(cdx_iter) == []
 
+    def test_no_fuzzy_bar_baz(self):
+        url = 'http://example.com/foo/bar'
+        actual_url = 'http://example.com/foo/bas'
+        params = self.get_params(url, actual_url)
+        cdx_iter, errs = self.fuzzy(self.source, params)
+        assert list(cdx_iter) == []
 
+    def test_fuzzy_no_deep_path_mime_match(self):
+        url = 'http://www.website.co.br/~dinosaurs/t'
+        actual_url = 'http://www.website.co.br/~dinosaurs/t/path2/deep-down/what.swf'
+        params = self.get_params(url, actual_url, mime='application/x-shockwave-flash')
+        cdx_iter, errs = self.fuzzy(self.source, params)
+        assert list(cdx_iter) == []

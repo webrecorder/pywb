@@ -186,15 +186,23 @@ class FuzzyMatcher(object):
                 yield cdx
 
     def match_general_fuzzy_query(self, url, urlkey, cdx, rx_cache):
-        # check ext
-        ext = self.get_ext(url)
-        if ext and ext not in self.default_filters['not_exts']:
-            return True
+        check_query = False
+        url_no_query, ext = self.get_ext(url)
 
-        # check mime
-        mime = cdx.get('mime')
-        if mime and mime in self.default_filters['mimes']:
-            return True
+        # check ext
+        if ext and ext not in self.default_filters['not_exts']:
+            check_query = True
+
+        else:
+            # check mime
+            mime = cdx.get('mime')
+            if mime and mime in self.default_filters['mimes']:
+                check_query = True
+
+        # if check_query, ensure matched url starts with original prefix, only differs by query
+        if check_query:
+            if cdx['url'] == url_no_query or cdx['url'].startswith(url_no_query + '?'):
+                return True
 
         match_urlkey = cdx['urlkey']
 
@@ -215,5 +223,6 @@ class FuzzyMatcher(object):
     def get_ext(self, url):
         # check last path segment
         # if contains '.', likely a file, so fuzzy match!
-        last_path = url.split('?', 1)[0].rsplit('/', 1)[-1]
-        return os.path.splitext(last_path)[1][1:]
+        url_no_query = url.split('?', 1)[0]
+        last_path = url_no_query.rsplit('/', 1)[-1]
+        return url_no_query, os.path.splitext(last_path)[1][1:]
