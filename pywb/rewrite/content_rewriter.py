@@ -130,31 +130,31 @@ class BaseContentRewriter(object):
                       head_insert=head_insert_str,
                       url=cdx['url'],
                       defmod=self.replay_mod,
-                      parse_comments=rule.get('parse_comments', False))
+                      parse_comments=rule.get('parse_comments', False),
+                      charset=rwinfo.charset)
 
         return rw
 
     def get_head_insert(self, rwinfo, rule, head_insert_func, cdx):
         head_insert_str = ''
-        charset = rwinfo.charset
 
         # if no charset set, attempt to extract from first 1024
-        if not charset:
+        if not rwinfo.charset:
             first_buff = rwinfo.read_and_keep(1024)
-            charset = self.extract_html_charset(first_buff)
+            rwinfo.charset = self.extract_html_charset(first_buff)
 
         if head_insert_func:
             head_insert_orig = head_insert_func(rule, cdx)
 
-            if charset:
+            if rwinfo.charset:
                 try:
-                    head_insert_str = webencodings.encode(head_insert_orig, charset)
+                    head_insert_str = webencodings.encode(head_insert_orig, rwinfo.charset)
                 except:
                     pass
 
             if not head_insert_str:
-                charset = 'utf-8'
-                head_insert_str = head_insert_orig.encode(charset)
+                rwinfo.charset = 'utf-8'
+                head_insert_str = head_insert_orig.encode(rwinfo.charset)
 
             head_insert_str = head_insert_str.decode('iso-8859-1')
 

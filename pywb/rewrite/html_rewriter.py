@@ -115,9 +115,11 @@ class HTMLRewriterMixin(StreamingRewriter):
                  css_rewriter_class=None,
                  url = '',
                  defmod='',
-                 parse_comments=False):
+                 parse_comments=False,
+                 charset='utf-8'):
 
         super(HTMLRewriterMixin, self).__init__(url_rewriter, False)
+        self.charset = charset
         self._wb_parse_context = None
 
         if js_rewriter:
@@ -228,6 +230,15 @@ class HTMLRewriterMixin(StreamingRewriter):
         value = value.strip()
         if not value:
             return ''
+
+        # if url is not ascii, ensure its reencoded in expected charset
+        try:
+            value.encode('ascii')
+        except:
+            try:
+                value = value.encode('iso-8859-1').decode(self.charset)
+            except:
+                pass
 
         unesc_value = self.try_unescape(value)
         rewritten_value = self.url_rewriter.rewrite(unesc_value, mod, force_abs)
