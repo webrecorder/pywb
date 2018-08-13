@@ -83,6 +83,9 @@ rules:
         match: '("(?:cursor|cursorindex)":["\d\w]+)'
         find_all: true
 
+    - url_prefix: 'com,facebook)/ajax/pagelet/generic.php/profiletimeline'
+      fuzzy_lookup: 'com,facebook\)/.*[?&](__adt=[^&]+).*[&]data=(?:.*?(?:[&]|(profile_id|pagelet_token)[^,]+))'
+
     - url_prefix: 'com,facebook)/ajax/pagelet/generic.php/'
 
       #fuzzy_lookup: 'com,facebook\)/.*[?&]data=(.*?(?:[&]|query_type[^,]+))'
