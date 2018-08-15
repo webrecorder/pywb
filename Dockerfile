@@ -1,34 +1,22 @@
 ARG PYTHON=python:3.5.3
 
 FROM $PYTHON
-
-RUN mkdir /uwsgi
-COPY uwsgi.ini /uwsgi/
+EXPOSE 8080
+CMD entrypoint.sh
 
 WORKDIR /pywb
 
-ADD requirements.txt .
-RUN pip install -r requirements.txt
+COPY requirements.txt extra_requirements.txt ./
+RUN pip install --upgrade pip \
+ && pip install --no-cache-dir -r requirements.txt -r extra_requirements.txt \
+ && useradd --create-home --shell /bin/bash -u 1000 archivist
 
-ADD extra_requirements.txt .
-RUN pip install -r extra_requirements.txt
-
-ADD . .
-RUN python setup.py install
-
-RUN mkdir /webarchive
-COPY config.yaml /webarchive/
+COPY . ./
+RUN python setup.py install \
+ && mkdir /uwsgi && mv ./uwsgi.ini /uwsgi/ \
+ && mkdir /webarchive && mv ./config.yaml /webarchive/
 
 VOLUME /webarchive
-
 WORKDIR /webarchive
 
-EXPOSE 8080
-
-CMD ["uwsgi", "/uwsgi/uwsgi.ini"]
-
-RUN useradd -ms /bin/bash -u 1000 archivist
-
 USER archivist
-
-
