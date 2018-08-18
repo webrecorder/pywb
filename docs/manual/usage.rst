@@ -120,8 +120,8 @@ The core recording functionality in Webrecorder is also part of :mod:`pywb`. If 
 done by directly recording into your pywb collection:
 
 1. Create a collection: ``wb-manager init my-web-archive`` (if you haven't already created a web archive collection)
-3. Run: ``wayback --record --live -a --auto-interval 10``
-4. Point your browser to ``http://localhost:8080/my-web-archive/record/<url>``
+2. Run: ``wayback --record --live -a --auto-interval 10``
+3. Point your browser to ``http://localhost:8080/my-web-archive/record/<url>``
 
 For example, to record ``http://example.com/``, visit ``http://localhost:8080/my-web-archive/record/<url>``
 
