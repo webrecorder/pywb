@@ -61,27 +61,36 @@ This file is part of pywb, https://github.com/webrecorder/pywb
 
     function set_banner(url, ts, is_live, title) {
         var capture_str;
+        var title_str;
 
         if (!ts) {
             return;
         }
 
+        var date_str = ts_to_date(ts, true);
+
         if (title) {
-            capture_str = '"' + title + '"';
+            capture_str = title;
         }  else {
             capture_str = url;
         }
 
+        title_str = capture_str;
         capture_str = "<b id='title_or_url'>" + capture_str + "</b>";
 
         if (is_live) {
+            title_str = " pywb Live: " + title_str;
             capture_str += "<i>Live on&nbsp;</i>";
         } else {
+            title_str += "pywb Archived: " + title_str;
             capture_str += "<i>Archived on&nbsp;</i>";
         }
 
-        capture_str += ts_to_date(ts, true);
+        title_str += " (" + date_str + ")";
+        capture_str += date_str;
+
         document.querySelector("#_wb_capture_info").innerHTML = capture_str;
+        window.document.title = title_str;
     }
 
     if (window.top != window) {
@@ -116,6 +125,25 @@ This file is part of pywb, https://github.com/webrecorder/pywb
                     title = event.data.title;
                 } else {
                     return;
+                }
+
+                // favicon update
+                if (type === 'load') {
+                    var head = document.querySelector('head');
+                    var oldLink = document.querySelectorAll("link[rel*='icon']");
+                    for (var i = 0; i < oldLink.length; i++) {
+                        head.removeChild(oldLink[i]);
+                    }
+
+                    if (state.icons) {
+                        for (var i = 0; i < state.icons.length; i++) {
+                            var icon = state.icons[i];
+                            var link = document.createElement('link');
+                            link.rel = icon.rel;
+                            link.href = icon.href;
+                            head.appendChild(link);
+                        }
+                    }
                 }
 
                 set_banner(state.url, state.ts, state.is_live, title);

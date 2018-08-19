@@ -109,23 +109,6 @@ function ContentFrame(content_info) {
 
     this.handle_message = function(state) {
         var type = state.wb_type;
-        
-        if (type === 'load') {
-			window.document.title = state.title + ' ' + state.ts;
-			var head = document.querySelector('head');
-			var oldLink = document.querySelectorAll("link[rel*='icon']");
-			for (var i = 0; i < oldLink.length; i++) {
-				head.removeChild(oldLink[i]);
-			}
-			var len = state.icons.length;
-			for (var i = 0; i < len; i++) {
-				var icon = state.icons[i];
-				var link = document.createElement('link');
-				link.rel = icon.rel;
-				link.href = icon.href;
-				head.appendChild(link);
-			}
-		}
 
         if (type == "load" || type == "replace-url") {
             this.set_url(state);
