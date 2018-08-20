@@ -312,6 +312,7 @@ class StreamingRewriter(object):
 # ============================================================================
 class RewriteInfo(object):
     TAG_REGEX = re.compile(b'^\s*\<')
+    JSON_REGEX = re.compile(b'^\s*[{[][{"]')  # if it starts with this then highly likely not HTML
 
     JSONP_CONTAINS = ['callback=jQuery',
                       'callback=jsonp',
@@ -363,6 +364,10 @@ class RewriteInfo(object):
                 text_type = 'json'
 
         if (text_type and orig_text_type != text_type) or text_type == 'html':
+            if url.endswith('.json'):
+                buff = self.read_and_keep(56)
+                if self.JSON_REGEX.match(buff) is not None:
+                    return 'json', charset
             # check if default content_type that needs to be set
             new_mime = content_rewriter.default_content_types.get(text_type)
 
@@ -392,7 +397,7 @@ class RewriteInfo(object):
         # if html or no-content type, allow resolving on js, css,
         # or other templates
         if text_type == 'guess-text':
-            if not is_js_or_css and not mod in ('if_', 'mp_', ''):
+            if not is_js_or_css and mod not in ('if_', 'mp_', ''):
                 return None
 
         # if application/octet-stream binary, only resolve if in js/css content

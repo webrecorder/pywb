@@ -617,3 +617,11 @@ http://example.com/video_4.m3u8
 
         assert b''.join(gen).decode('utf-8') == filtered
 
+    def test_json_body_but_mime_html(self):
+        headers = {'Content-Type': 'text/html'}
+        content = '{"foo":"bar", "dash": {"on": "true"}'
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_',
+                                                  url='http://example.com/path/file.json')
+        assert headers.headers == [('Content-Type', 'text/html')]
+        result = b''.join(gen).decode('utf-8')
+        assert result == content
