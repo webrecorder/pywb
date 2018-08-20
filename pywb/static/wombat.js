@@ -78,6 +78,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
     var wb_setAttribute = $wbwindow.Element.prototype.setAttribute;
     var wb_getAttribute = $wbwindow.Element.prototype.getAttribute;
     var wb_funToString = Function.prototype.toString;
+    var WBPreserWorker;
+    var wbSheetMediaQChecker;
+    var wbUsePresWorker = $wbwindow.Worker != null && wbinfo.is_live;
 
     var wb_info;
 
@@ -1326,6 +1329,131 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
+    function initPreserveWorker() {
+        if (!wbUsePresWorker) {
+            return;
+        }
+
+        var Preserver = (function(Worker) {
+            function PWorker(prefix, mod) {
+                if (!(this instanceof PWorker)) {
+                    return new PWorker(prefix, mod);
+                }
+                if ($wbwindow === $wbwindow.__WB_replay_top) {
+                    // we are top and can will own this worker
+                    // setup URL for the kewl case
+                    var workerURL = wbinfo.static_prefix +
+                        'wombatPreservationWorker.js?prefix=' +
+                        encodeURIComponent(prefix) + '&mod=' +
+                        encodeURIComponent(mod);
+                    this.worker = new Worker(workerURL);
+                } else {
+                    this.worker = null;
+                }
+            }
+
+            PWorker.prototype.deferredSheetExtraction = function(rules) {
+                // if no rules this a no op
+                if (rules.length === 0) return;
+                function extract() {
+                    // loop through each rule of the stylesheet
+                    var media = [];
+                    for (var j = 0; j < rules.length; ++j) {
+                        var rule = rules[j];
+                        if (rule instanceof CSSMediaRule) {
+                            // we are a media rule so get its text
+                            media.push(rule.cssText);
+                        }
+                    }
+                    if (media.length > 0) {
+                        // we have some media rules to preserve
+                        WBPreserWorker.preserveMedia(media);
+                    }
+                }
+                // defer things until next time the Promise.resolve Qs are cleared
+                $wbwindow.Promise.resolve().then(extract);
+            };
+
+            PWorker.prototype.terminate = function() {
+                // terminate the worker, a no op when not replay top
+                if ($wbwindow === $wbwindow.__WB_replay_top) {
+                    this.worker.terminate();
+                }
+            };
+
+            PWorker.prototype.postMessage = function(msg) {
+                if ($wbwindow === $wbwindow.__WB_replay_top) {
+                    // we are actually replay top so send directly to worker
+                    this.worker.postMessage(msg);
+                } else {
+                    // send message to replay top
+                    $wbwindow.__WB_replay_top.__orig_postMessage({
+                        'wb_type': 'pworker', 'msg': msg,
+                    }, '*');
+                }
+            };
+
+            PWorker.prototype.preserveSrcset = function(srcset) {
+                // send values from rewrite_srcset to the worker
+                this.postMessage({
+                    'type': 'values',
+                    'srcset': {'values': srcset, 'presplit': true},
+                });
+            };
+
+            PWorker.prototype.preserveMedia = function(media) {
+                // send CSSMediaRule values to the worker
+               this.postMessage({'type': 'values', 'media': media})
+            };
+
+            PWorker.prototype.extractFromLocalDoc = function() {
+                // get the values to be preserved from the  documents stylesheets
+                // and all elements with a srcset
+                var media = [];
+                var srcset = [];
+                var sheets = $wbwindow.document.styleSheets;
+                var i = 0;
+                for (; i < sheets.length; ++i) {
+                    var sheet = sheets[i];
+                    var rules = sheet.cssRules;
+                    for (var j = 0; j < rules.length; ++j) {
+                        var rule = rules[j];
+                        if (rule instanceof CSSMediaRule) {
+                            media.push(rule.cssText);
+                        }
+                    }
+                }
+                var srcsetElems = $wbwindow.document.querySelectorAll('*[srcset]');
+                for (i = 0; i < srcsetElems.length; i++) {
+                    var srcsetElem = srcsetElems[i];
+                    if (wb_getAttribute) {
+                        srcset.push(wb_getAttribute.call(srcsetElem,'srcset'));
+                    } else {
+                        srcset.push(srcsetElem.getAttribute('srcset'));
+                    }
+                }
+                this.postMessage({
+                    'type': 'values',
+                    'media': media,
+                    'srcset': {'values': srcset, 'presplit': false},
+                });
+            };
+
+            return PWorker;
+        })($wbwindow.Worker);
+
+        WBPreserWorker = new Preserver(wb_abs_prefix, wbinfo.mod);
+
+        wbSheetMediaQChecker = function checkStyle () {
+            // used only for link[rel='stylesheet'] so we remove our listener
+            this.removeEventListener('load', wbSheetMediaQChecker);
+            // check no op condition
+            if (this.sheet == null) return;
+            // defer extraction to be nice :)
+            WBPreserWorker.deferredSheetExtraction(this.sheet.cssRules);
+        };
+    }
+
     function rewriteWorker(workerUrl) {
         var fetch = true;
         var makeBlob = false;
@@ -1521,7 +1649,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
         for (var i = 0; i < values.length; i++) {
             values[i] = rewrite_url(values[i].trim());
         }
-
+        if (wbUsePresWorker) {
+            // send post split values to preservation worker
+            WBPreserWorker.preserveSrcset(values);
+        }
         return values.join(", ");
     }
 
@@ -1617,33 +1748,59 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         var changed;
-
-        if (elem.tagName == "STYLE") {
-            var new_content = rewrite_style(elem.textContent);
-            if (elem.textContent != new_content) {
-                elem.textContent = new_content;
-                changed = true;
-            }
-        } else if (elem.tagName == "OBJECT") {
-            changed = rewrite_attr(elem, "data", true);
-        } else if (elem.tagName == "FORM") {
-            changed = rewrite_attr(elem, "action", true);
-        //} else if (elem.tagName == "INPUT") {
-        //    changed = rewrite_attr(elem, "value", true);
-        } else if (elem.tagName == "IFRAME" || elem.tagName == "FRAME") {
-            changed = rewrite_frame_src(elem, "src");
-        } else if (elem.tagName == "SCRIPT") {
-            changed = rewrite_script(elem);
-        } else if (elem.tagName == "image") {
-            changed = rewrite_attr(elem, "xlink:href");
-        } else if (elem instanceof SVGElement && elem.hasAttribute('filter')) {
-            changed = rewrite_attr(elem, 'filter');
-        } else {
-            changed = rewrite_attr(elem, "src");
-            changed = rewrite_attr(elem, "srcset") || changed;
-            changed = rewrite_attr(elem, "href") || changed;
-            changed = rewrite_attr(elem, "style") || changed;
-            changed = rewrite_attr(elem, "poster") || changed;
+        // we use a switch now cause perf and complexity
+        switch (elem.tagName) {
+            case 'STYLE':
+                var new_content = rewrite_style(elem.textContent);
+                if (elem.textContent !== new_content) {
+                    elem.textContent = new_content;
+                    changed = true;
+                    if (wbUsePresWorker && elem.sheet != null) {
+                        // we have a stylesheet so lets be nice to UI thread
+                        // and defer extraction
+                        WBPreserWorker.deferredSheetExtraction(elem.sheet.cssRules);
+                    }
+                }
+                break;
+            case 'LINK':
+                changed = rewrite_attr(elem, 'href');
+                if (wbUsePresWorker && elem.rel === 'stylesheet') {
+                    // we can only check link[rel='stylesheet'] when it loads
+                    elem.addEventListener('load', wbSheetMediaQChecker);
+                }
+                break;
+            case 'IMG':
+                 changed = rewrite_attr(elem, 'src');
+                 changed = rewrite_attr(elem, 'srcset') || changed;
+                 changed = rewrite_attr(elem, 'style')  || changed;
+                break;
+            case 'OBJECT':
+                changed = rewrite_attr(elem, "data", true);
+                break;
+            case 'FORM':
+                changed = rewrite_attr(elem, "action", true);
+                break;
+            case 'IFRAME':
+            case 'FRAME':
+                changed = rewrite_frame_src(elem, "src");
+                break;
+            case 'SCRIPT':
+                changed = rewrite_script(elem);
+                break;
+            case 'image':
+                changed = rewrite_attr(elem, "xlink:href");
+                break;
+            default:
+                if (elem instanceof SVGElement && elem.hasAttribute('filter')) {
+                    changed = rewrite_attr(elem, 'filter');
+                } else {
+                    changed = rewrite_attr(elem, 'src');
+                    changed = rewrite_attr(elem, 'srcset') || changed;
+                    changed = rewrite_attr(elem, 'href') || changed;
+                    changed = rewrite_attr(elem, 'style') || changed;
+                    changed = rewrite_attr(elem, 'poster') || changed;
+                }
+                break;
         }
 
         if (elem.getAttribute) {
@@ -1657,7 +1814,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 changed = true;
             }
         }
-
         return changed;
     }
 
@@ -2030,14 +2186,18 @@ var _WBWombat = function($wbwindow, wbinfo) {
             var res = orig;
             if (!this._no_rewrite) {
                 //init_iframe_insert_obs(this);
-                if (this.tagName == "STYLE") {
+                if (this.tagName === "STYLE") {
                     res = rewrite_style(orig);
                 } else {
                     res = rewrite_html(orig);
                 }
             }
             orig_setter.call(this, res);
-        }
+            if (wbUsePresWorker && this.tagName === 'STYLE' && this.sheet != null) {
+                // got preserve all the things
+                WBPreserWorker.deferredSheetExtraction(this.sheet.rules);
+            }
+        };
 
         var getter = function() {
             var res = orig_getter.call(this);
@@ -2045,7 +2205,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 res = res.replace(wb_unrewrite_rx, "");
             }
             return res;
-        }
+        };
 
         def_prop(obj, prop, setter, rewrite_getter ? getter : orig_getter);
     }
@@ -3464,6 +3624,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             initFontFaceOverride($wbwindow);
 
             // Worker override (experimental)
+            initPreserveWorker();
             init_web_worker_override();
             init_service_worker_override();
             initSharedWorkerOverride();
@@ -3490,7 +3651,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             initInsertAdjacentElementOverride();
 
 
-            // iframe.contentWindow and iframe.contentDocument overrides to 
+            // iframe.contentWindow and iframe.contentDocument overrides to
             // ensure wombat is inited on the iframe $wbwindow!
             override_iframe_content_access("contentWindow");
             override_iframe_content_access("contentDocument");
@@ -3619,6 +3780,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return;
             }
 
+            if ($wbwindow.document.readyState === "complete" && wbUsePresWorker) {
+                WBPreserWorker.extractFromLocalDoc();
+            }
+
             if ($wbwindow != $wbwindow.__WB_replay_top) {
                 return;
             }
@@ -3643,12 +3808,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 "title": $wbwindow.document ? $wbwindow.document.title : "",
                 "readyState": $wbwindow.document.readyState,
                 "wb_type": "load"
-            }
+            };
 
             send_top_message(message);
         }
 
-        if ($wbwindow.document.readyState == "complete") {
+        if ($wbwindow.document.readyState === "complete") {
             notify_top();
         } else if ($wbwindow.addEventListener) {
             $wbwindow.document.addEventListener("readystatechange", notify_top);
@@ -3728,6 +3893,13 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         // Fix .parent only if not embeddable, otherwise leave for accessing embedding window
         if (!wb_opts.embedded && (replay_top == $wbwindow)) {
+            if (wbUsePresWorker) {
+                $wbwindow.addEventListener("message", function(event) {
+                    if (event.data && event.data.wb_type === 'pworker') {
+                        WBPreserWorker.postMessage(event.data.msg);
+                    }
+                }, false);
+            }
             $wbwindow.__WB_orig_parent = $wbwindow.parent;
             $wbwindow.parent = replay_top;
         }

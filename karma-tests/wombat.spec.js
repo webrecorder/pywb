@@ -127,6 +127,8 @@ describe('WombatJS', function () {
                 wbinfo = {
                     wombat_opts: {},
                     wombat_ts: '',
+                    is_live: false,
+                    top_url: ''
                 };
             },
             wombatScript: wombatScript,
@@ -142,6 +144,8 @@ describe('WombatJS', function () {
                         wombat_opts: {},
                         prefix: window.location.origin,
                         wombat_ts: '',
+                        is_live: false,
+                        top_url: ''
                     };
                 },
                 wombatScript: wombatScript,
@@ -179,6 +183,8 @@ describe('WombatJS', function () {
                         wombat_opts: {},
                         prefix: window.location.origin,
                         wombat_ts: '',
+                        is_live: false,
+                        top_url: ''
                     };
                 },
                 wombatScript: wombatScript,
@@ -199,6 +205,8 @@ describe('WombatJS', function () {
                 initScript: function () {
                     wbinfo = {
                         wombat_opts: {},
+                        is_live: false,
+                        top_url: ''
                     };
                 },
                 wombatScript: wombatScript,
