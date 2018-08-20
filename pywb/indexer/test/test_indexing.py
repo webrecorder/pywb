@@ -422,6 +422,47 @@ com,example)/%c3%83%c2%a9 20000101000000 http://example.com/\xc3\x83\xc2\xa9 tex
 """
 
 
+def test_no_index_metadata_mime_textanvl():
+    test_data = b'\
+WARC/0.18\r\n\
+WARC-Type: response\r\n\
+WARC-Record-ID: <urn:uuid:1fd7789c-9cd5-47ea-b7ba-2a97dc06680b>\r\n\
+WARC-Target-URI: http://example.com/xyz.pdf\r\n\
+WARC-Date: 2014-04-01T05:20:11Z\r\n\
+WARC-Payload-Digest: sha1:EDIYL6WNHDY62TPKUCPSEWMOAAGYTOAS\r\n\
+Content-Type: application/http; msgtype=response\r\n\
+Content-Length: 4\r\n\
+\r\n\
+ABCD\r\n\
+\r\n\
+\r\n\
+\r\n\
+WARC/0.18\r\n\
+WARC-Type: metadata\r\n\
+WARC-Record-ID: <urn:uuid:0735267f-5749-4c02-b08b-955af5d76032>\r\n\
+WARC-Target-URI: http://example.com/xyz.pdf\r\n\
+WARC-Date: 2014-04-01T05:20:11Z\r\n\
+WARC-Payload-Digest: sha1:EDIYL6WNHDY62TPKUCPSEWMOAAGYTOAS\r\n\
+Content-Type: text/anvl\r\n\
+Content-Length: 4\r\n\
+\r\n\
+ABCD\r\n\
+\r\n\
+'
+    options = dict(include_all=True)
+
+    buff = BytesIO()
+
+    test_record = BytesIO(test_data)
+
+    write_cdx_index(buff, test_record, 'test.warc.gz', **options)
+
+    assert buff.getvalue() == b"""\
+ CDX N b a m s k r M S V g
+com,example)/xyz.pdf 20140401052011 http://example.com/xyz.pdf application/http 200 EDIYL6WNHDY62TPKUCPSEWMOAAGYTOAS - - 310 0 test.warc.gz
+"""
+
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
