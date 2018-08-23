@@ -175,8 +175,9 @@ class BaseContentRewriter(object):
 
     def __call__(self, record, url_rewriter, cookie_rewriter,
                  head_insert_func=None,
-                 cdx=None):
+                 cdx=None, environ=None):
 
+        environ = environ or {}
         rwinfo = RewriteInfo(record, self, url_rewriter, cookie_rewriter)
         content_rewriter = None
 
@@ -191,6 +192,16 @@ class BaseContentRewriter(object):
             content_rewriter = self.create_rewriter(rwinfo.text_type, rule, rwinfo, cdx, head_insert_func)
 
         gen = None
+
+        # check if decoding is needed
+        if not rwinfo.is_content_rw:
+            content_encoding = rwinfo.record.http_headers.get_header('Content-Encoding')
+            accept_encoding = environ.get('HTTP_ACCEPT_ENCODING', '')
+
+            # if content-encoding is set but encoding is not in accept encoding,
+            # enable content_rw force decompression
+            if content_encoding and content_encoding not in accept_encoding:
+                rwinfo.is_content_rw = True
 
         if content_rewriter:
             gen = content_rewriter(rwinfo)

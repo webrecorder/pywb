@@ -374,7 +374,7 @@ class RewriterApp(object):
 
         urlrewriter.rewrite_opts['ua_string'] = environ.get('HTTP_USER_AGENT')
 
-        result = content_rw(record, urlrewriter, cookie_rewriter, head_insert_func, cdx)
+        result = content_rw(record, urlrewriter, cookie_rewriter, head_insert_func, cdx, environ)
 
         status_headers, gen, is_rw = result
 
