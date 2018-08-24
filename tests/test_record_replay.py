@@ -173,19 +173,23 @@ class TestRecordFilter(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
                                      }
                      }
         super(TestRecordFilter, cls).setup_class('config_test_record.yaml', custom_config=rec_custom)
-
-    def test_init_and_rec(self):
         manager(['init', 'test-new'])
+        
+    def test_skip_existing(self):
         dir_name = os.path.join(self.root_dir, '_test_colls', 'test-new', 'archive')
         assert os.path.isdir(dir_name)
         res = self.testapp.get('/fallback/cdx?url=http://example.com/?example=1')
         assert res.text != ''
-        res = self.testapp.get('/fallback/cdx?url=http://httpbin.org/get?A=B')
-        assert res.text == ''
-
+        
         res = self.testapp.get('/test-new/record/mp_/http://example.com/?example=1')
         assert 'Example Domain' in res.text
         assert os.listdir(dir_name) == []
+    
+    def test_record_new(self):
+        dir_name = os.path.join(self.root_dir, '_test_colls', 'test-new', 'archive')
+        assert os.path.isdir(dir_name)
+        res = self.testapp.get('/fallback/cdx?url=http://httpbin.org/get?A=B')
+        assert res.text == ''
 
         res = self.testapp.get('/test-new/record/mp_/http://httpbin.org/get?A=B')
         assert res.json['args']['A'] == 'B'
