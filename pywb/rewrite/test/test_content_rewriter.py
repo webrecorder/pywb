@@ -20,6 +20,7 @@ from pywb import get_test_dir
 import os
 import json
 import pytest
+import six
 
 
 # ============================================================================
@@ -45,7 +46,8 @@ class TestContentRewriter(object):
 
         warc_headers = warc_headers or {}
 
-        payload = payload.encode('utf-8')
+        if isinstance(payload, six.text_type):
+            payload = payload.encode('utf-8')
 
         http_headers = StatusAndHeaders('200 OK', headers, protocol='HTTP/1.0')
 
@@ -57,7 +59,7 @@ class TestContentRewriter(object):
 
     def rewrite_record(self, headers, content, ts, url='http://example.com/',
                        prefix='http://localhost:8080/prefix/', warc_headers=None,
-                       request_url=None, is_live=None, use_js_proxy=True):
+                       request_url=None, is_live=None, use_js_proxy=True, environ=None):
 
         record = self._create_response_record(url, headers, content, warc_headers)
 
@@ -73,9 +75,9 @@ class TestContentRewriter(object):
         cdx['is_live'] = is_live
 
         if use_js_proxy:
-            return self.js_proxy_content_rewriter(record, url_rewriter, None, cdx=cdx)
+            return self.js_proxy_content_rewriter(record, url_rewriter, None, cdx=cdx, environ=environ)
         else:
-            return self.content_rewriter(record, url_rewriter, None, cdx=cdx)
+            return self.content_rewriter(record, url_rewriter, None, cdx=cdx, environ=environ)
 
     def test_rewrite_html(self, headers):
         content = '<html><body><a href="http://example.com/"></a></body></html>'
@@ -268,6 +270,42 @@ class TestContentRewriter(object):
         assert is_rw == False
 
         assert ('Transfer-Encoding', 'chunked') not in headers.headers
+
+    @pytest.mark.importorskip('brotli')
+    def test_brotli_accepted_no_change(self):
+        import brotli
+        content = brotli.compress('ABCDEFG'.encode('utf-8'))
+
+        headers = {'Content-Type': 'application/octet-stream',
+                   'Content-Encoding': 'br',
+                   'Content-Length': str(len(content))
+                  }
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_',
+                                                  environ={'HTTP_ACCEPT_ENCODING': 'gzip, deflate, br'})
+
+        assert headers['Content-Encoding'] == 'br'
+        assert headers['Content-Length'] == str(len(content))
+
+        assert brotli.decompress(b''.join(gen)).decode('utf-8') == 'ABCDEFG'
+
+    @pytest.mark.importorskip('brotli')
+    def test_brotli_not_accepted_auto_decode(self):
+        import brotli
+        content = brotli.compress('ABCDEFG'.encode('utf-8'))
+
+        headers = {'Content-Type': 'application/octet-stream',
+                   'Content-Encoding': 'br',
+                   'Content-Length': str(len(content))
+                  }
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        assert 'Content-Encoding' not in headers
+        assert 'Content-Length' not in headers
+        assert headers['X-Archive-Orig-Content-Encoding'] == 'br'
+
+        assert b''.join(gen).decode('utf-8') == 'ABCDEFG'
 
     def test_rewrite_json(self):
         headers = {'Content-Type': 'application/json'}
