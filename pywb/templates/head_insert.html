@@ -23,11 +23,11 @@
   wbinfo.is_live = {{ is_live }};
   wbinfo.coll = "{{ coll }}";
   wbinfo.proxy_magic = "{{ env.pywb_proxy_magic }}";
-  wbinfo.static_prefix = "{{ host_prefix }}/{{ static_path }}/";
+  wbinfo.static_prefix = "{{ static_prefix }}/";
 </script>
 
 {% if not wb_url.is_banner_only %}
-<script src='{{ host_prefix }}/{{ static_path }}/wombat.js'> </script>
+<script src='{{ static_prefix }}/wombat.js'> </script>
 <script>
   wbinfo.wombat_ts = "{{ wombat_ts }}";
   wbinfo.wombat_sec = "{{ wombat_sec }}";
@@ -49,7 +49,7 @@
 {% endif %}
 
 {% if config.enable_flash_video_rewrite %}
-<script src='{{ host_prefix }}/{{ static_path }}/vidrw.js'> </script>
+<script src='{{ static_prefix }}/vidrw.js'> </script>
 {% endif %}
 
 {{ banner_html }}
