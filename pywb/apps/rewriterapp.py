@@ -256,6 +256,8 @@ class RewriterApp(object):
 
         urlkey = canonicalize(wb_url.url)
 
+        environ['pywb.host_prefix'] = host_prefix
+
         if self.use_js_obj_proxy:
             content_rw = self.js_proxy_rw
         else:

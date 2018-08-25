@@ -357,6 +357,9 @@ class FrontEndApp(object):
         try:
             endpoint, args = urls.match()
 
+            # store original script_name (original prefix) before modifications are made
+            environ['pywb.app_prefix'] = environ.get('SCRIPT_NAME')
+
             response = endpoint(environ, **args)
             return response(environ, start_response)
 

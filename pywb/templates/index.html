@@ -8,7 +8,7 @@ This archive contains the following collections:
 <ul>
 {% for route in routes %}
     <li>
-    <a href="{{ '/' + route }}">{{ '/' + route }}</a>
+    <a href="{{ env['pywb.app_prefix'] + '/' + route }}">{{ '/' + route }}</a>
     {% if all_metadata and all_metadata[route] %}
       ({{ all_metadata[route].title }})
     {% endif %}
