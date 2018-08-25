@@ -133,7 +133,9 @@ class FrontEndApp(object):
                                           filename_template=recorder_config.get('filename_template'),
                                           dedup_index=dedup_index)
 
-        self.recorder = RecorderApp(self.RECORD_SERVER % str(self.warcserver_server.port), warc_writer)
+        self.recorder = RecorderApp(self.RECORD_SERVER % str(self.warcserver_server.port), warc_writer,
+                                    accept_colls=recorder_config.get('source_filter'))
+
 
         recorder_server = GeventServer(self.recorder, port=0)
 

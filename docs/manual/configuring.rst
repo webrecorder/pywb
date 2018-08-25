@@ -334,6 +334,7 @@ The full set of configurable options (with their default settings) is as follows
      rollover_size: 100000000
      rollover_idle_secs: 600
      filename_template: my-warc-{timestamp}-{hostname}-{random}.warc.gz
+     source_filter: live
 
 
 The required ``source_coll`` setting specifies the source collection from which to load content that will be recorded.
@@ -348,6 +349,9 @@ subsequent requests. This allows the WARC size to be more manageable and prevent
 
 The ``filename-template`` specifies the naming convention for WARC files, and allows a timestamp, current hostname, and
 random string to be inserted into the filename.
+
+When using an aggregate collection or sequential fallback collection as the source, recording can be limited to pages
+fetched from certain child collection by specifying ``source_filter`` as an regex matching the name of the sub-collection.
 
 For example, if recording with the above config into a collection called ``my-coll``, the user would access:
 

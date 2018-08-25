@@ -1,7 +1,7 @@
 from .base_config_test import BaseConfigTest, fmod, CollsDirMixin
 from pywb.manager.manager import main as manager
 from pywb.manager.autoindex import AutoIndexer
-from pywb.warcserver.test.testutils import to_path, HttpBinLiveTests
+from pywb.warcserver.test.testutils import to_path, HttpBinLiveTests, TEST_WARC_PATH, TEST_CDX_PATH
 
 import os
 import time
@@ -152,5 +152,50 @@ class TestRecordCustomConfig(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
         assert len(names) == 1
         assert names[0].startswith('pywb-rec-test-')
         assert names[0].endswith('.warcgz')
+
+
+# ============================================================================
+class TestRecordFilter(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
+
+    @classmethod
+    def setup_class(cls):
+        rec_custom = {'collections': {'fallback': {'sequence': [
+                        {
+                            'index_paths': os.path.join(TEST_CDX_PATH, 'example.cdxj'),
+                            'archive_paths': TEST_WARC_PATH,
+                            'name': 'example'
+                        },{
+                            'index':'$live',
+                            'name': 'live'
+                        }]}},
+                        'recorder': {'source_coll': 'fallback',
+                                     'source_filter': 'live',
+                                     }
+                     }
+        super(TestRecordFilter, cls).setup_class('config_test_record.yaml', custom_config=rec_custom)
+        manager(['init', 'test-new'])
+        
+    def test_skip_existing(self):
+        dir_name = os.path.join(self.root_dir, '_test_colls', 'test-new', 'archive')
+        assert os.path.isdir(dir_name)
+        res = self.testapp.get('/fallback/cdx?url=http://example.com/?example=1')
+        assert res.text != ''
+        
+        res = self.testapp.get('/test-new/record/mp_/http://example.com/?example=1')
+        assert 'Example Domain' in res.text
+        assert os.listdir(dir_name) == []
+    
+    def test_record_new(self):
+        dir_name = os.path.join(self.root_dir, '_test_colls', 'test-new', 'archive')
+        assert os.path.isdir(dir_name)
+        res = self.testapp.get('/fallback/cdx?url=http://httpbin.org/get?A=B')
+        assert res.text == ''
+
+        res = self.testapp.get('/test-new/record/mp_/http://httpbin.org/get?A=B')
+        assert res.json['args']['A'] == 'B'
+        names = os.listdir(dir_name)
+        assert len(names) == 1
+        assert names[0].endswith('.warc.gz')
+
 
 
