@@ -189,3 +189,28 @@ See the `Nginx Docs <https://nginx.org/en/docs/>`_ for a lot more details on how
         }
     }
 
+Sample Apache Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following Apache configuration snippet can be used to deploy pywb *without* uwsgi. A configuration with uwsgi is also probably possible but this covers the simplest case of launching the `wayback` binary directly.
+
+The configuration assumes pywb is running on port 8080 on localhost, but it could be on a different machine as well. The configuration can be updated to use HTTPS (as below), but the `force_scheme: https` option needs to be added to the `config.yml` file.
+
+.. code:: apache
+
+    <VirtualHost *:80>
+         ServerName proxy.example.com
+         Redirect / https://proxy.example.com/
+         DocumentRoot /var/www/html/
+    </VirtualHost>
+
+    <VirtualHost *:443>
+         ServerName proxy.example.com
+         SSLEngine on
+         DocumentRoot /var/www/html/
+         ErrorDocument 404 /404.html
+         ProxyPreserveHost On
+         ProxyPass /.well-known/ !
+         ProxyPass / http://localhost:8080/
+         ProxyPassReverse / http://localhost:8080/
+    </VirtualHost>
