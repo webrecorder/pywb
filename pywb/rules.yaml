@@ -322,6 +322,11 @@ rules:
           - videoFileId
           - signature
 
+    - url_prefix: 'net,akamaized,gcs-vimeo)/'
+
+      fuzzy_lookup:
+        match: '([/\d]+\.mp4)$'
+        replace: '.net/'
 
     # vine
     #=================================================================
