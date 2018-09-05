@@ -231,10 +231,12 @@ class HTMLRewriterMixin(StreamingRewriter):
         if not value:
             return ''
 
-        # if url is not ascii, ensure its reencoded in expected charset
-        try:
-            value.encode('ascii')
-        except:
+
+        orig_value = value
+
+        # if not utf-8, then stream was encoded as iso-8859-1, and need to reencode
+        # into correct charset
+        if self.charset != 'utf-8' and self.charset != 'iso-8859-1':
             try:
                 value = value.encode('iso-8859-1').decode(self.charset)
             except:
@@ -242,6 +244,10 @@ class HTMLRewriterMixin(StreamingRewriter):
 
         unesc_value = self.try_unescape(value)
         rewritten_value = self.url_rewriter.rewrite(unesc_value, mod, force_abs)
+
+        # if no rewriting has occured, ensure we return original, not reencoded value
+        if rewritten_value == value:
+            return orig_value
 
         if unesc_value != value and rewritten_value != unesc_value:
             rewritten_value = rewritten_value.replace(unesc_value, value)

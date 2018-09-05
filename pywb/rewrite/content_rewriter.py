@@ -277,7 +277,7 @@ class StreamingRewriter(object):
         self.first_buff = first_buff
 
     def __call__(self, rwinfo):
-        return self.rewrite_text_stream_to_gen(rwinfo.content_stream)
+        return self.rewrite_text_stream_to_gen(rwinfo.content_stream, rwinfo)
 
     def rewrite(self, string):
         return string
@@ -288,7 +288,7 @@ class StreamingRewriter(object):
     def final_read(self):
         return ''
 
-    def rewrite_text_stream_to_gen(self, stream):
+    def rewrite_text_stream_to_gen(self, stream, rwinfo):
         """
         Convert stream to generator using applying rewriting func
         to each portion of the stream.
@@ -297,8 +297,15 @@ class StreamingRewriter(object):
         try:
             buff = self.first_buff
 
+            # if charset is utf-8, use that, otherwise default to encode to ascii-compatible encoding
+            # encoding only used for url rewriting, encoding back to bytes after rewriting
+            if rwinfo.charset == 'utf-8':
+                charset = 'utf-8'
+            else:
+                charset = 'iso-8859-1'
+
             if buff:
-                yield buff.encode('iso-8859-1')
+                yield buff.encode(charset)
 
             while True:
                 buff = stream.read(BUFF_SIZE)
@@ -308,13 +315,13 @@ class StreamingRewriter(object):
                 if self.align_to_line:
                     buff += stream.readline()
 
-                buff = self.rewrite(buff.decode('iso-8859-1'))
-                yield buff.encode('iso-8859-1')
+                buff = self.rewrite(buff.decode(charset))
+                yield buff.encode(charset)
 
             # For adding a tail/handling final buffer
             buff = self.final_read()
             if buff:
-                yield buff.encode('iso-8859-1')
+                yield buff.encode(charset)
 
         finally:
             stream.close()
