@@ -153,9 +153,9 @@ class BaseContentRewriter(object):
                 except:
                     pass
 
+            # no charset detected, encode banner as ascii html entities
             if not head_insert_str:
-                rwinfo.charset = 'utf-8'
-                head_insert_str = head_insert_orig.encode(rwinfo.charset)
+                head_insert_str = head_insert_orig.encode('ascii', 'xmlcharrefreplace')
 
             head_insert_str = head_insert_str.decode('iso-8859-1')
 
