@@ -110,6 +110,17 @@ class TestContentRewriter(object):
         assert ('Content-Type', 'text/html; charset=UTF-8') in headers.headers
         assert b''.join(gen).decode('utf-8') == exp
 
+    def test_rewrite_text_utf_8_long(self):
+        headers = {'Content-Type': 'text/html; charset=utf-8'}
+        exp = u'éeé' * 3277
+        content = exp.encode('utf-8')
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        assert is_rw
+        assert ('Content-Type', 'text/html; charset=utf-8') in headers.headers
+        assert b''.join(gen).decode('utf-8') == exp
+
     def test_rewrite_html_utf_8(self):
         headers = {'Content-Type': 'text/html; charset=utf-8'}
         content = u'<html><body><a href="http://éxample.com/tésté"></a></body></html>'
@@ -120,6 +131,39 @@ class TestContentRewriter(object):
         assert is_rw
         assert ('Content-Type', 'text/html; charset=utf-8') in headers.headers
         assert b''.join(gen).decode('utf-8') == exp
+
+    def test_rewrite_html_utf_8_anchor(self):
+        headers = {'Content-Type': 'text/html; charset=utf-8'}
+        content = u'<html><body><a href="#éxample-tésté"></a></body></html>'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        exp = u'<html><body><a href="#éxample-tésté"></a></body></html>'
+        assert is_rw
+        assert ('Content-Type', 'text/html; charset=utf-8') in headers.headers
+        assert b''.join(gen).decode('utf-8') == exp
+
+    def test_rewrite_html_other_encoding(self):
+        headers = {'Content-Type': 'text/html; charset=latin-1'}
+        content = b'<html><body><a href="http://\xe9xample.com/t\xe9st\xe9"></a></body></html>'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        exp = '<html><body><a href="http://localhost:8080/prefix/201701/http://%C3%A9xample.com/t%C3%A9st%C3%A9"></a></body></html>'
+        assert is_rw
+        assert ('Content-Type', 'text/html; charset=latin-1') in headers.headers
+        assert b''.join(gen).decode('latin-1') == exp
+
+    def test_rewrite_html_other_encoding_anchor(self):
+        headers = {'Content-Type': 'text/html; charset=latin-1'}
+        content = b'<html><body><a href="#\xe9xample-t\xe9st\xe9"></a></body></html>'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        exp = u'<html><body><a href="#éxample-tésté"></a></body></html>'
+        assert is_rw
+        assert ('Content-Type', 'text/html; charset=latin-1') in headers.headers
+        assert b''.join(gen).decode('latin-1') == exp
 
     def test_rewrite_html_js_mod(self, headers):
         content = '<html><body><a href="http://example.com/"></a></body></html>'
