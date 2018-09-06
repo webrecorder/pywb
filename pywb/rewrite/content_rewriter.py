@@ -9,6 +9,7 @@ import re
 import webencodings
 import tempfile
 import json
+import codecs
 
 from pywb.utils.io import StreamIter, BUFF_SIZE
 
@@ -307,6 +308,8 @@ class StreamingRewriter(object):
             if buff:
                 yield buff.encode(charset)
 
+            decoder = codecs.getincrementaldecoder(charset)()
+
             while True:
                 buff = stream.read(BUFF_SIZE)
                 if not buff:
@@ -315,11 +318,17 @@ class StreamingRewriter(object):
                 if self.align_to_line:
                     buff += stream.readline()
 
-                buff = self.rewrite(buff.decode(charset))
+                buff = decoder.decode(buff)
+                buff = self.rewrite(buff)
+
                 yield buff.encode(charset)
 
             # For adding a tail/handling final buffer
             buff = self.final_read()
+
+            # ensure decoder is marked as finished (final buffer already decoded)
+            decoder.decode(b'', final=True)
+
             if buff:
                 yield buff.encode(charset)
 

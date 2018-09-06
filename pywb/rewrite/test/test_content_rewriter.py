@@ -110,6 +110,17 @@ class TestContentRewriter(object):
         assert ('Content-Type', 'text/html; charset=UTF-8') in headers.headers
         assert b''.join(gen).decode('utf-8') == exp
 
+    def test_rewrite_text_utf_8_long(self):
+        headers = {'Content-Type': 'text/html; charset=utf-8'}
+        exp = u'éeé' * 3277
+        content = exp.encode('utf-8')
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        assert is_rw
+        assert ('Content-Type', 'text/html; charset=utf-8') in headers.headers
+        assert b''.join(gen).decode('utf-8') == exp
+
     def test_rewrite_html_utf_8(self):
         headers = {'Content-Type': 'text/html; charset=utf-8'}
         content = u'<html><body><a href="http://éxample.com/tésté"></a></body></html>'
