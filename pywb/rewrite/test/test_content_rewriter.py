@@ -74,10 +74,18 @@ class TestContentRewriter(object):
             cdx['is_fuzzy'] = '1'
         cdx['is_live'] = is_live
 
+        def insert_func(rule, cdx):
+            return ''
+
         if use_js_proxy:
-            return self.js_proxy_content_rewriter(record, url_rewriter, None, cdx=cdx, environ=environ)
+            rewriter = self.js_proxy_content_rewriter
         else:
-            return self.content_rewriter(record, url_rewriter, None, cdx=cdx, environ=environ)
+            rewriter = self.content_rewriter
+
+        return rewriter(record, url_rewriter, cookie_rewriter=None,
+                        head_insert_func=insert_func,
+                        cdx=cdx,
+                        environ=environ)
 
     def test_rewrite_html(self, headers):
         content = '<html><body><a href="http://example.com/"></a></body></html>'
@@ -154,15 +162,15 @@ class TestContentRewriter(object):
         assert ('Content-Type', 'text/html; charset=latin-1') in headers.headers
         assert b''.join(gen).decode('latin-1') == exp
 
-    def test_rewrite_html_other_encoding_anchor(self):
-        headers = {'Content-Type': 'text/html; charset=latin-1'}
+    def test_rewrite_html_no_encoding_anchor(self):
+        headers = {'Content-Type': 'text/html'}
         content = b'<html><body><a href="#\xe9xample-t\xe9st\xe9"></a></body></html>'
 
         headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
 
         exp = u'<html><body><a href="#éxample-tésté"></a></body></html>'
         assert is_rw
-        assert ('Content-Type', 'text/html; charset=latin-1') in headers.headers
+        assert ('Content-Type', 'text/html') in headers.headers
         assert b''.join(gen).decode('latin-1') == exp
 
     def test_rewrite_html_js_mod(self, headers):
