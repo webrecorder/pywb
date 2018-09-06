@@ -1352,9 +1352,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 }
             }
 
-            PWorker.prototype.deferredSheetExtraction = function(rules) {
+            PWorker.prototype.deferredSheetExtraction = function(sheet) {
+                var rules = sheet.cssRules || sheet.rules;
                 // if no rules this a no op
-                if (rules.length === 0) return;
+                if (!rules || rules.length === 0) return;
                 function extract() {
                     // loop through each rule of the stylesheet
                     var media = [];
@@ -1450,7 +1451,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             // check no op condition
             if (this.sheet == null) return;
             // defer extraction to be nice :)
-            WBPreserWorker.deferredSheetExtraction(this.sheet.cssRules);
+            WBPreserWorker.deferredSheetExtraction(this.sheet);
         };
     }
 
@@ -1758,7 +1759,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                     if (wbUsePresWorker && elem.sheet != null) {
                         // we have a stylesheet so lets be nice to UI thread
                         // and defer extraction
-                        WBPreserWorker.deferredSheetExtraction(elem.sheet.cssRules);
+                        WBPreserWorker.deferredSheetExtraction(elem.sheet);
                     }
                 }
                 break;
@@ -2195,7 +2196,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             orig_setter.call(this, res);
             if (wbUsePresWorker && this.tagName === 'STYLE' && this.sheet != null) {
                 // got preserve all the things
-                WBPreserWorker.deferredSheetExtraction(this.sheet.rules);
+                WBPreserWorker.deferredSheetExtraction(this.sheet);
             }
         };
 
