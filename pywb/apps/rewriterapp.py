@@ -366,6 +366,7 @@ class RewriterApp(object):
                                                        top_url,
                                                        environ,
                                                        framed_replay,
+                                                       coll=kwargs.get('coll', ''),
                                                        replay_mod=self.replay_mod,
                                                        config=self.config))
 

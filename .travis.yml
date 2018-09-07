@@ -9,6 +9,7 @@ os:
   - linux
 
 addons:
+  sauce_connect: true
   apt:
     packages:
       # This is required to run new chrome on old trusty
@@ -18,8 +19,6 @@ env:
   - WR_TEST=no
   - WR_TEST=yes
 
-addons:
-  sauce_connect: true
 
 cache:
   directories:

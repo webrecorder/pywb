@@ -1,9 +1,9 @@
 <!-- WB Insert -->
 <script>
 {% set urlsplit = cdx.url | urlsplit %}
-  wbinfo = {}
+  wbinfo = {};
   wbinfo.top_url = "{{ top_url }}";
-{% if is_framed == 'true' %}
+{% if is_framed %}
   // Fast Top-Frame Redirect
   if (window == window.top && wbinfo.top_url) {
     var loc = window.location.href.replace(window.location.hash, "");
@@ -19,15 +19,23 @@
   wbinfo.request_ts = "{{ wb_url.timestamp }}";
   wbinfo.prefix = decodeURI("{{ wb_prefix }}");
   wbinfo.mod = "{{ replay_mod }}";
-  wbinfo.is_framed = {{ is_framed }};
-  wbinfo.is_live = {{ is_live }};
+  wbinfo.is_framed = {{ is_framed | tobool }};
+  wbinfo.is_live = {{ is_live | tobool }};
   wbinfo.coll = "{{ coll }}";
   wbinfo.proxy_magic = "{{ env.pywb_proxy_magic }}";
   wbinfo.static_prefix = "{{ static_prefix }}/";
+{% if env.pywb_proxy_magic %}
+  wbinfo.use_auto_fetch_worker = {{ config.proxy.use_auto_fetch_worker | tobool }};
+  wbinfo.use_wombat = {{ config.proxy.use_wombat | tobool }} || wbinfo.use_auto_fetch_worker;
+{% endif %}
 </script>
-
-{% if not wb_url.is_banner_only %}
-<script src='{{ static_prefix }}/wombat.js'> </script>
+{% if env.pywb_proxy_magic %}
+{% set whichWombat = 'wombatProxyMode.js' %}
+{% else %}
+{% set whichWombat = 'wombat.js' %}
+{% endif %}
+{% if not wb_url.is_banner_only or (env.pywb_proxy_magic and (config.proxy.use_auto_fetch_worker or config.proxy.use_wombat)) %}
+<script src='{{ static_prefix }}/{{ whichWombat }}'> </script>
 <script>
   wbinfo.wombat_ts = "{{ wombat_ts }}";
   wbinfo.wombat_sec = "{{ wombat_sec }}";
