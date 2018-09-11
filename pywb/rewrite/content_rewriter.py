@@ -298,9 +298,10 @@ class StreamingRewriter(object):
         try:
             buff = self.first_buff
 
+            # for html rewriting:
             # if charset is utf-8, use that, otherwise default to encode to ascii-compatible encoding
             # encoding only used for url rewriting, encoding back to bytes after rewriting
-            if rwinfo.charset == 'utf-8':
+            if rwinfo.charset == 'utf-8' and rwinfo.text_type == 'html':
                 charset = 'utf-8'
             else:
                 charset = 'iso-8859-1'
@@ -318,7 +319,15 @@ class StreamingRewriter(object):
                 if self.align_to_line:
                     buff += stream.readline()
 
-                buff = decoder.decode(buff)
+                try:
+                    buff = decoder.decode(buff)
+                except UnicodeDecodeError:
+                    if charset == 'utf-8':
+                        rwinfo.charset = 'iso-8859-1'
+                        charset = rwinfo.charset
+                        decoder = codecs.getincrementaldecoder(charset)()
+                        buff = decoder.decode(buff)
+
                 buff = self.rewrite(buff)
 
                 yield buff.encode(charset)
