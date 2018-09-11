@@ -295,6 +295,26 @@ class TestContentRewriter(object):
 
         assert is_rw == False
 
+    def test_binary_wrong_content_type_html(self):
+        headers = {'Content-Type': 'text/html; charset=utf-8'}
+        content = b'\xe9\x11\x12\x13\x14'
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        assert ('Content-Type', 'text/html; charset=utf-8') in headers.headers
+
+        assert is_rw == True
+        assert b''.join(gen) == content
+
+    def test_binary_wrong_content_type_css(self):
+        headers = {'Content-Type': 'text/css; charset=utf-8'}
+        content = b'\xe9\x11\x12\x13\x14'
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701cs_')
+
+        assert ('Content-Type', 'text/css; charset=utf-8') in headers.headers
+
+        assert is_rw == True
+        assert b''.join(gen) == content
+
     def test_binary_dechunk(self):
         headers = {'Content-Type': 'application/octet-stream',
                    'Transfer-Encoding': 'chunked'}
