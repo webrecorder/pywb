@@ -350,7 +350,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return url;
             }
 
-            // relative collection 
+            // relative collection
             if ((url.indexOf(wb_rel_prefix) == 0) && (url.indexOf("http") > 1)) {
                 var scheme_sep = url.indexOf(":/");
                 if (scheme_sep > 0 && url[scheme_sep + 2] != '/') {
@@ -1687,6 +1687,19 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
+    function wrapScriptTextJsProxy(scriptText) {
+        return 'var _____WB$wombat$assign$function_____ = function(name) {return (self._wb_wombat && ' + 'self._wb_wombat.local_init &&self._wb_wombat.local_init(name)) || self[name]; };\n' +
+            'if (!self.__WB_pmw) { self.__WB_pmw = function(obj) { return obj; } }\n{\n' +
+            'let window = _____WB$wombat$assign$function_____("window");\n' +
+            'let self = _____WB$wombat$assign$function_____("self");\n' +
+            'let document = _____WB$wombat$assign$function_____("document");\n' +
+            'let location = _____WB$wombat$assign$function_____("location");\n' +
+            'let top = _____WB$wombat$assign$function_____("top");\n' +
+            'let parent = _____WB$wombat$assign$function_____("parent");\n' +
+            'let frames = _____WB$wombat$assign$function_____("frames");\n' +
+            'let opener = _____WB$wombat$assign$function_____("opener");\n' + scriptText + '\n\n}';
+    }
+
     function rewrite_script(elem) {
         if (elem.getAttribute("src") || !elem.textContent || !$wbwindow.Proxy) {
             return rewrite_attr(elem, "src");
@@ -1724,20 +1737,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return false;
         }
 
-        var insert_str =
-'var _____WB$wombat$assign$function_____ = function(name) {return (self._wb_wombat && self._wb_wombat.local_init && self._wb_wombat.local_init(name)) || self[name]; }\n' +
-'if (!self.__WB_pmw) { self.__WB_pmw = function(obj) { return obj; } }\n' +
-'{\n';
-
-        var prop;
-
-        for (i = 0; i < override_props.length; i++) {
-            prop = override_props[i];
-            insert_str += 'let ' + prop + ' = _____WB$wombat$assign$function_____("' + prop + '");\n';
-        }
-
-        var content = elem.textContent.replace(/(.postMessage\s*\()/, ".__WB_pmw(self.window)$1");
-        elem.textContent = insert_str + content + "\n\n}";
+        elem.textContent = wrapScriptTextJsProxy(elem.textContent.replace(/(.postMessage\s*\()/, ".__WB_pmw(self.window)$1"));
         return true;
     }
 
@@ -2856,7 +2856,35 @@ var _WBWombat = function($wbwindow, wbinfo) {
         wb_funToString.apply = orig_apply;
     }
 
-
+    function initTimeoutIntervalOverrides($wbwindow, which) {
+        // because [setTimeout|setInterval]('document.location.href = "xyz.com"', time) is legal and used
+        if ($wbwindow[which] && !$wbwindow[which].__$wbpatched$__) {
+            var original = $wbwindow[which];
+            $wbwindow[which] = function () {
+                // strings are primitives with a prototype or __proto__ of String depending on the browser
+                var rw = arguments[0] != null && Object.getPrototypeOf(arguments[0]) === String.prototype;
+                // do not mess with the arguments object unless you want instant de-optimization
+                var args = rw ? new Array(arguments.length) : arguments;
+                if (rw) {
+                    if ($wbwindow.Proxy) {
+                        args[0] = wrapScriptTextJsProxy(arguments[0]);
+                    } else {
+                        args[0] = arguments[0].replace(/\blocation\b/g, "WB_wombat_$&");
+                    }
+                    for (var i = 1; i < arguments.length; ++i) {
+                        args[i] = proxy_to_obj(arguments[i]);
+                    }
+                }
+                // setTimeout|setInterval does not require its this arg to be window so just in case
+                // someone got funky with it
+                if (original.__WB_orig_apply) {
+                    return original.__WB_orig_apply(null, args);
+                }
+                return original.apply(null, args);
+            };
+            $wbwindow[which].__$wbpatched$__ = true;
+        }
+    }
 
     //============================================
     function init_open_override()
@@ -3133,6 +3161,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         // origin
         def_prop($document, "origin", undefined, function() { return this.WB_wombat_location.origin; });
+        // https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/origin, chrome 59+ and ff 54+
+        def_prop($wbwindow, "origin", undefined, function() { return this.WB_wombat_location.origin; });
 
         // domain
         var domain_setter = function(val) {
@@ -3402,12 +3432,13 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     //============================================
     function default_proxy_get(obj, prop, ownProps) {
-        if (prop == '__WBProxyRealObj__') {
-            return obj;
-        } else if (prop == 'location') {
-            return obj.WB_wombat_location;
-        } else if (prop == "_WB_wombat_obj_proxy") {
-            return obj._WB_wombat_obj_proxy;
+        switch (prop) {
+            case '__WBProxyRealObj__':
+                return obj;
+            case 'location':
+                return obj.WB_wombat_location;
+            case '_WB_wombat_obj_proxy':
+                return obj._WB_wombat_obj_proxy;
         }
 
         var retVal = obj[prop];
@@ -3663,13 +3694,13 @@ var _WBWombat = function($wbwindow, wbinfo) {
             override_func_first_arg_proxy_to_obj($wbwindow.Node, "contains");
             override_func_first_arg_proxy_to_obj($wbwindow.Document, "createTreeWalker");
 
-            override_func_this_proxy_to_obj($wbwindow, "setTimeout");
-            override_func_this_proxy_to_obj($wbwindow, "setInterval");
             override_func_this_proxy_to_obj($wbwindow, "getComputedStyle", $wbwindow);
             //override_func_this_proxy_to_obj($wbwindow.EventTarget, "addEventListener");
             //override_func_this_proxy_to_obj($wbwindow.EventTarget, "removeEventListener");
 
             override_apply_func($wbwindow);
+            initTimeoutIntervalOverrides($wbwindow, "setTimeout");
+            initTimeoutIntervalOverrides($wbwindow, "setInterval");
 
             override_frames_access($wbwindow);
 
