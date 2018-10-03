@@ -6,7 +6,7 @@ from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.wsgi import pop_path_info
 from six.moves.urllib.parse import urljoin
 from six import iteritems
-
+from warcio.statusandheaders import StatusAndHeaders
 from warcio.utils import to_native_str
 from wsgiprox.wsgiprox import WSGIProxMiddleware
 
@@ -33,6 +33,16 @@ import logging
 
 # ============================================================================
 class FrontEndApp(object):
+    """Orchestrates pywb's core Wayback Machine functionality and is comprised of 2 core sub-apps and 3 optional apps.
+
+    Sub-apps:
+      - WarcServer: Serves the archive content (WARC/ARC and index) as well as from the live web in record/proxy mode
+      - RewriterApp: Rewrites the content served by pywb (if it is to be rewritten)
+      - WSGIProxMiddleware (Optional): If proxy mode is enabled, performs pywb's HTTP(s) proxy functionality
+      - AutoIndexer (Optional): If auto-indexing is enabled for the collections it is started here
+      - RecorderApp (Optional): Recording functionality, available when recording mode is enabled
+    """
+
     REPLAY_API = 'http://localhost:%s/{coll}/resource/postreq'
     CDX_API = 'http://localhost:%s/{coll}/index'
     RECORD_SERVER = 'http://localhost:%s'
@@ -45,6 +55,10 @@ class FrontEndApp(object):
     PROXY_CA_PATH = os.path.join('proxy-certs', 'pywb-ca.pem')
 
     def __init__(self, config_file='./config.yaml', custom_config=None):
+        """
+        :param str config_file: Path to the config file
+        :param dict custom_config: Dictionary containing additional configuration information
+        """
         self.handler = self.handle_request
         self.warcserver = WarcServer(config_file=config_file,
                                      custom_config=custom_config)
@@ -55,6 +69,8 @@ class FrontEndApp(object):
 
         self.warcserver_server = GeventServer(self.warcserver, port=0)
 
+        self.proxy_prefix = None  # the URL prefix to be used for the collection with proxy mode (e.g. /coll/id_/)
+        self.proxy_coll = None  # the name of the collection that has proxy mode enabled
         self.init_proxy(config)
 
         self.init_recorder(config.get('recorder'))
@@ -82,6 +98,8 @@ class FrontEndApp(object):
         self.metadata_cache = MetadataCache(metadata_templ)
 
     def _init_routes(self):
+        """Initialize the routes and based on the configuration file makes available
+        specific routes (proxy mode, record)"""
         self.url_map = Map()
         self.url_map.add(Rule('/static/_/<coll>/<path:filepath>', endpoint=self.serve_static))
         self.url_map.add(Rule('/static/<path:filepath>', endpoint=self.serve_static))
@@ -100,9 +118,19 @@ class FrontEndApp(object):
         if self.recorder_path:
             self.url_map.add(Rule(coll_prefix + self.RECORD_ROUTE + '/<path:url>', endpoint=self.serve_record))
 
+        if self.proxy_prefix is not None:
+            # Add the proxy-fetch endpoint to enable PreservationWorker to make CORS fetches worry free in proxy mode
+            self.url_map.add(Rule('/proxy-fetch/<path:url>', endpoint=self.proxy_fetch,
+                                  methods=['GET', 'HEAD', 'OPTIONS']))
         self.url_map.add(Rule(coll_prefix + '/<path:url>', endpoint=self.serve_content))
 
     def get_upstream_paths(self, port):
+        """Retrieve a dictionary containing the full URLs of the upstream apps
+
+        :param int port: The port used by the replay and cdx servers
+        :return: A dictionary containing the upstream paths (replay, cdx-server, record [if enabled])
+        :rtype: dict[str, str]
+        """
         base_paths = {
                 'replay': self.REPLAY_API % port,
                 'cdx-server': self.CDX_API % port,
@@ -114,6 +142,7 @@ class FrontEndApp(object):
         return base_paths
 
     def init_recorder(self, recorder_config):
+        """Initialize the recording functionality of pywb. If recording_config is None this function is a no op"""
         if not recorder_config:
             self.recorder = None
             self.recorder_path = None
@@ -142,6 +171,10 @@ class FrontEndApp(object):
         self.recorder_path = self.RECORD_API % (recorder_server.port, recorder_coll)
 
     def init_autoindex(self, auto_interval):
+        """Initialize and start the auto-indexing of the collections. If auto_interval is None this is a no op.
+
+        :param str|int auto_interval: The auto-indexing interval from the configuration file or CLI argument
+        """
         if not auto_interval:
             return
 
@@ -161,7 +194,16 @@ class FrontEndApp(object):
         logging.info(msg.format(indexer.root_path, auto_interval))
         indexer.start()
 
+    def is_proxy_enabled(self, environ):
+        return self.proxy_prefix is not None and 'wsgiprox.proxy_host' in environ
+
     def serve_home(self, environ):
+        """Serves the home (/) view of pywb (not a collections)
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :return: The WbResponse for serving the home (/) path
+        :rtype: WbResponse
+        """
         home_view = BaseInsertView(self.rewriterapp.jinja_env, 'index.html')
         fixed_routes = self.warcserver.list_fixed_routes()
         dynamic_routes = self.warcserver.list_dynamic_routes()
@@ -177,19 +219,38 @@ class FrontEndApp(object):
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
 
     def serve_static(self, environ, coll='', filepath=''):
+        """Serve a static file associated with a specific collection or one of pywb's own static assets
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :param str coll: The collection the static file is associated with
+        :param str filepath: The file path (relative to the collection) for the static assest
+        :return: The WbResponse for the static asset
+        :rtype: WbResponse
+        """
+        proxy_enabled = self.is_proxy_enabled(environ)
+        if proxy_enabled and environ.get('REQUEST_METHOD') == 'OPTIONS':
+            return WbResponse.options_response(environ)
         if coll:
             path = os.path.join(self.warcserver.root_dir, coll, self.static_dir)
         else:
             path = self.static_dir
 
         environ['pywb.static_dir'] = path
-
         try:
-            return self.static_handler(environ, filepath)
+            response = self.static_handler(environ, filepath)
+            if proxy_enabled:
+                response.add_access_control_headers(env=environ)
+            return response
         except:
             self.raise_not_found(environ, 'Static File Not Found: {0}'.format(filepath))
 
     def get_metadata(self, coll):
+        """Retrieve the metadata associated with a collection
+
+        :param str coll: The name of the collection to receive metadata for
+        :return: The collections metadata if it exists
+        :rtype: dict
+        """
         #if coll == self.all_coll:
         #    coll = '*'
 
@@ -204,6 +265,13 @@ class FrontEndApp(object):
         return metadata
 
     def serve_coll_page(self, environ, coll='$root'):
+        """Render and serve a collections search page (search.html).
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :param str coll: The name of the collection to serve the collections search page for
+        :return: The WbResponse containing the collections search page
+        :rtype: WbResponse
+        """
         if not self.is_valid_coll(coll):
             self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
 
@@ -225,6 +293,13 @@ class FrontEndApp(object):
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
 
     def serve_cdx(self, environ, coll='$root'):
+        """Make the upstream CDX query for a collection and response with the results of the query
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :param str coll: The name of the collection this CDX query is for
+        :return: The WbResponse containing the results of the CDX query
+        :rtype: WbResponse
+        """
         base_url = self.rewriterapp.paths['cdx-server']
 
         #if coll == self.all_coll:
@@ -248,12 +323,31 @@ class FrontEndApp(object):
             return WbResponse.text_response('Error: ' + str(e), status='400 Bad Request')
 
     def serve_record(self, environ, coll='$root', url=''):
+        """Serve a URL's content from a WARC/ARC record in replay mode or from the live web in
+        live, proxy, and record mode.
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :param str coll: The name of the collection the record is to be served from
+        :param str url: The URL for the corresponding record to be served if it exists
+        :return: WbResponse containing the contents of the record/URL
+        :rtype: WbResponse
+        """
         if coll in self.warcserver.list_fixed_routes():
             return WbResponse.text_response('Error: Can Not Record Into Custom Collection "{0}"'.format(coll))
 
         return self.serve_content(environ, coll, url, record=True)
 
     def serve_content(self, environ, coll='$root', url='', timemap_output='', record=False):
+        """Serve the contents of a URL/Record rewriting the contents of the response when applicable.
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :param str coll: The name of the collection the record is to be served from
+        :param str url: The URL for the corresponding record to be served if it exists
+        :param str timemap_output: The contents of the timemap included in the link header of the response
+        :param bool record: Should the content being served by recorded (save to a warc). Only valid in record mode
+        :return: WbResponse containing the contents of the record/URL
+        :rtype: WbResponse
+        """
         if not self.is_valid_coll(coll):
             self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
 
@@ -282,10 +376,16 @@ class FrontEndApp(object):
         except UpstreamException as ue:
             response = self.rewriterapp.handle_error(environ, ue)
             raise HTTPException(response=response)
-
         return response
 
     def setup_paths(self, environ, coll, record=False):
+        """Populates the WSGI environment dictionary with the path information necessary to perform a response for
+        content or record.
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :param str coll: The name of the collection the record is to be served from
+        :param bool record: Should the content being served by recorded (save to a warc). Only valid in record mode
+        """
         if not coll or not self.warcserver.root_dir:
             return
 
@@ -305,6 +405,12 @@ class FrontEndApp(object):
         environ['pywb.templates_dir'] = '/'.join(paths)
 
     def serve_listing(self, environ):
+        """Serves the response for WARCServer fixed and dynamic listing (paths)
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :return: WbResponse containing the frontend apps WARCServer URL paths
+        :rtype: WbResponse
+        """
         result = {'fixed': self.warcserver.list_fixed_routes(),
                   'dynamic': self.warcserver.list_dynamic_routes()
                  }
@@ -312,6 +418,12 @@ class FrontEndApp(object):
         return WbResponse.json_response(result)
 
     def is_valid_coll(self, coll):
+        """Determines if the collection name for a request is valid (exists)
+
+        :param str coll: The name of the collection to check
+        :return: True if the collection is valid, false otherwise
+        :rtype: bool
+        """
         #if coll == self.all_coll:
         #    return True
 
@@ -319,9 +431,21 @@ class FrontEndApp(object):
                 coll in self.warcserver.list_dynamic_routes())
 
     def raise_not_found(self, environ, msg):
+        """Utility function for raising a werkzeug.exceptions.NotFound execption with the supplied WSGI environment
+        and message.
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :param str msg: The error message
+        """
         raise NotFound(response=self.rewriterapp._error_response(environ, msg))
 
     def _check_refer_redirect(self, environ):
+        """Returns a WbResponse for a HTTP 307 redirection if the HTTP referer header is the same as the HTTP host header
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :return: WbResponse HTTP 307 redirection
+        :rtype: WbResponse
+        """
         referer = environ.get('HTTP_REFERER')
         if not referer:
             return
@@ -353,10 +477,16 @@ class FrontEndApp(object):
         return self.handler(environ, start_response)
 
     def handle_request(self, environ, start_response):
+        """Retrieves the route handler and calls the handler returning its the response
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :param start_response:
+        :return: The WbResponse for the request
+        :rtype: WbResponse
+        """
         urls = self.url_map.bind_to_environ(environ)
         try:
             endpoint, args = urls.match()
-
             # store original script_name (original prefix) before modifications are made
             environ['pywb.app_prefix'] = environ.get('SCRIPT_NAME')
 
@@ -379,13 +509,23 @@ class FrontEndApp(object):
 
     @classmethod
     def create_app(cls, port):
+        """Create a new instance of FrontEndApp that listens on port with a hostname of 0.0.0.0
+
+        :param int port: The port FrontEndApp is to listen on
+        :return: A new instance of FrontEndApp wrapped in GeventServer
+        :rtype: GeventServer
+        """
         app = FrontEndApp()
         app_server = GeventServer(app, port=port, hostname='0.0.0.0')
         return app_server
 
     def init_proxy(self, config):
+        """Initialize and start proxy mode. If proxy configuration entry is not contained in the config
+        this is a no op. Causes handler to become an instance of WSGIProxMiddleware.
+
+        :param dict config: The configuration object used to configure this instance of FrontEndApp
+        """
         proxy_config = config.get('proxy')
-        self.proxy_prefix = None
         if not proxy_config:
             return
 
@@ -418,10 +558,12 @@ class FrontEndApp(object):
         else:
             self.proxy_prefix = '/{0}/id_/'.format(proxy_coll)
 
+        self.proxy_coll = proxy_coll
+
         self.handler = WSGIProxMiddleware(self.handle_request,
-                                  self.proxy_route_request,
-                                  proxy_host=proxy_config.get('host', 'pywb.proxy'),
-                                  proxy_options=proxy_config)
+                                          self.proxy_route_request,
+                                          proxy_host=proxy_config.get('host', 'pywb.proxy'),
+                                          proxy_options=proxy_config)
 
     def proxy_route_request(self, url, environ):
         """ Return the full url that this proxy request will be routed to
@@ -431,14 +573,65 @@ class FrontEndApp(object):
         """
         return self.proxy_prefix + url
 
+    def proxy_fetch(self, env, url):
+        """Proxy mode only endpoint that handles OPTIONS requests and COR fetches for Preservation Worker.
+
+        Due to normal cross-origin browser restrictions in proxy mode, auto fetch worker cannot access the CSS rules
+        of cross-origin style sheets and must re-fetch them in a manner that is CORS safe. This endpoint facilitates
+        that by fetching the stylesheets for the auto fetch worker and then responds with its contents
+
+        :param dict env: The WSGI environment dictionary
+        :param str url:  The URL of the resource to be fetched
+        :return: WbResponse that is either response to an Options request or the results of fetching url
+        :rtype: WbResponse
+        """
+        if not self.is_proxy_enabled(env):
+            # we are not in proxy mode so just respond with forbidden
+            return WbResponse.text_response('proxy mode must be enabled to use this endpoint',
+                                            status='403 Forbidden')
+
+        if env.get('REQUEST_METHOD') == 'OPTIONS':
+            return WbResponse.options_response(env)
+
+        # ensure full URL
+        request_url = env['REQUEST_URI']
+        # replace with /id_ so we do not get rewritten
+        url = request_url.replace('/proxy-fetch', '/id_')
+        # update WSGI environment object
+        env['REQUEST_URI'] = self.proxy_coll + url
+        env['PATH_INFO'] = env['PATH_INFO'].replace('/proxy-fetch', self.proxy_coll + '/id_')
+        # make request using normal serve_content
+        response = self.serve_content(env, self.proxy_coll, url)
+        # for WR
+        if isinstance(response, WbResponse):
+            response.add_access_control_headers(env=env)
+        return response
+
 
 # ============================================================================
 class MetadataCache(object):
+    """This class holds the collection medata template string and
+    caches the metadata for a collection once it is rendered once.
+    Cached metadata is updated if its corresponding file has been updated since last cache time (file mtime based)"""
+
     def __init__(self, template_str):
+        """
+        :param str template_str: The template string to be cached
+        """
         self.template_str = template_str
         self.cache = {}
 
     def load(self, coll):
+        """Load and receive the metadata associated with a collection.
+
+        If the metadata for the collection is not cached yet its metadata file is read in and stored.
+        If the cache has seen the collection before the mtime of the metadata file is checked and if it is more recent
+        than the cached time, the cache is updated and returned otherwise the cached version is returned.
+
+        :param str coll: Name of a collection
+        :return: The cached metadata for a collection
+        :rtype: dict
+        """
         path = self.template_str.format(coll=coll)
         try:
             mtime = os.path.getmtime(path)
@@ -456,11 +649,25 @@ class MetadataCache(object):
         return self.store_new(coll, path, mtime)
 
     def store_new(self, coll, path, mtime):
+        """Load a collections metadata file and store it
+
+        :param str coll: The name of the collection the metadata is for
+        :param str path: The path to the collections metadata file
+        :param float mtime: The current mtime of the collections metadata file
+        :return: The collections metadata
+        :rtype: dict
+        """
         obj = load_yaml_config(path)
         self.cache[coll] = (mtime, obj)
         return obj
 
     def get_all(self, routes):
+        """Load the metadata for all routes (collections) and populate the cache
+
+        :param list[str] routes: List of collection names
+        :return: A dictionary containing each collections metadata
+        :rtype: dict
+        """
         for route in routes:
             self.load(route)
 

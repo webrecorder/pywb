@@ -113,6 +113,7 @@ setup(
         'urllib3',
         'werkzeug',
         'httpbin==0.5.0',
+        'ujson'
        ],
     cmdclass={'test': PyTest},
     test_suite='',

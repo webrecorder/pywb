@@ -78,9 +78,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
     var wb_setAttribute = $wbwindow.Element.prototype.setAttribute;
     var wb_getAttribute = $wbwindow.Element.prototype.getAttribute;
     var wb_funToString = Function.prototype.toString;
-    var WBPreserWorker;
+    var WBAutoFetchWorker;
     var wbSheetMediaQChecker;
-    var wbUsePresWorker = $wbwindow.Worker != null && wbinfo.is_live;
+    var wbUseAAWorker = $wbwindow.Worker != null && wbinfo.is_live;
 
     var wb_info;
 
@@ -130,6 +130,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
         'FORM': {'action': 'mp_'},
         'TRACK': {'src': 'oe_'},
     };
+
+    // pulled up rewrite_style and rewrite_srcset regex's as they are considered globals (uppercase)
+    var STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
+    var IMPORT_REGEX = /(@import\s+[\\"']*)([^)'";]+)([\\"']*\s*;?)/gi;
+    var SRCSET_REGEX = /\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))/;
 
     function rwModForElement(elem, attrName) {
         // this function was created to help add in retrial of element attribute rewrite modifiers
@@ -1329,85 +1334,91 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function initPreserveWorker() {
-        if (!wbUsePresWorker) {
+    function initAutoFetchWorker() {
+        if (!wbUseAAWorker) {
             return;
         }
 
-        var Preserver = (function(Worker) {
-            function PWorker(prefix, mod) {
-                if (!(this instanceof PWorker)) {
-                    return new PWorker(prefix, mod);
-                }
-                if ($wbwindow === $wbwindow.__WB_replay_top) {
-                    // we are top and can will own this worker
-                    // setup URL for the kewl case
+        var isTop = $wbwindow === $wbwindow.__WB_replay_top;
+
+        function AutoFetchWorker(prefix, mod) {
+            if (!(this instanceof AutoFetchWorker)) {
+                return new AutoFetchWorker(prefix, mod);
+            }
+            this.checkIntervalCB = this.checkIntervalCB.bind(this);
+            if (isTop) {
+                // we are top and can will own this worker
+                // setup URL for the kewl case
+                // Normal replay and preservation mode pworker setup, its all one origin so YAY!
                     var workerURL = wbinfo.static_prefix +
-                        'wombatPreservationWorker.js?prefix=' +
-                        encodeURIComponent(prefix) + '&mod=' +
-                        encodeURIComponent(mod);
-                    this.worker = new Worker(workerURL);
-                } else {
-                    this.worker = null;
+                        'autoFetchWorker.js?init='+
+                        encodeURIComponent(JSON.stringify({ 'mod': mod, 'prefix': prefix }));
+                    this.worker = new $wbwindow.Worker(workerURL);
+            } else {
+                // add only the portions of the worker interface we use since we are not top and if in proxy mode start check polling
+                this.worker = {
+                    "postMessage": function (msg) {
+                        if (!msg.wb_type) {
+                            msg = { 'wb_type': 'aaworker', 'msg': msg };
+                        }
+                        $wbwindow.__WB_replay_top.__orig_postMessage(msg, '*');
+                    },
+                    "terminate": function () {}
+                };
+            }
+        }
+
+        AutoFetchWorker.prototype.checkIntervalCB = function () {
+            this.extractFromLocalDoc();
+        };
+
+        AutoFetchWorker.prototype.deferredSheetExtraction = function (sheet) {
+            var rules = sheet.cssRules || sheet.rules;
+            // if no rules this a no op
+            if (!rules || rules.length === 0) return;
+            var self = this;
+            function extract() {
+                // loop through each rule of the stylesheet
+                var media = [];
+                for (var j = 0; j < rules.length; ++j) {
+                    var rule = rules[j];
+                    if (rule.type === CSSRule.MEDIA_RULE) {
+                        // we are a media rule so get its text
+                        media.push(rule.cssText);
+                    }
+                }
+                if (media.length > 0) {
+                    // we have some media rules to preserve
+                    self.preserveMedia(media);
                 }
             }
+            // defer things until next time the Promise.resolve Qs are cleared
+            $wbwindow.Promise.resolve().then(extract);
+        };
 
-            PWorker.prototype.deferredSheetExtraction = function(sheet) {
-                var rules = sheet.cssRules || sheet.rules;
-                // if no rules this a no op
-                if (!rules || rules.length === 0) return;
-                function extract() {
-                    // loop through each rule of the stylesheet
-                    var media = [];
-                    for (var j = 0; j < rules.length; ++j) {
-                        var rule = rules[j];
-                        if (rule instanceof CSSMediaRule) {
-                            // we are a media rule so get its text
-                            media.push(rule.cssText);
-                        }
-                    }
-                    if (media.length > 0) {
-                        // we have some media rules to preserve
-                        WBPreserWorker.preserveMedia(media);
-                    }
-                }
-                // defer things until next time the Promise.resolve Qs are cleared
-                $wbwindow.Promise.resolve().then(extract);
-            };
+        AutoFetchWorker.prototype.terminate = function () {
+            // terminate the worker, a no op when not replay top
+            this.worker.terminate();
+        };
 
-            PWorker.prototype.terminate = function() {
-                // terminate the worker, a no op when not replay top
-                if ($wbwindow === $wbwindow.__WB_replay_top) {
-                    this.worker.terminate();
-                }
-            };
+        AutoFetchWorker.prototype.postMessage = function (msg) {
+            this.worker.postMessage(msg);
+        };
 
-            PWorker.prototype.postMessage = function(msg) {
-                if ($wbwindow === $wbwindow.__WB_replay_top) {
-                    // we are actually replay top so send directly to worker
-                    this.worker.postMessage(msg);
-                } else {
-                    // send message to replay top
-                    $wbwindow.__WB_replay_top.__orig_postMessage({
-                        'wb_type': 'pworker', 'msg': msg,
-                    }, '*');
-                }
-            };
+        AutoFetchWorker.prototype.preserveSrcset = function (srcset) {
+            // send values from rewrite_srcset to the worker
+            this.postMessage({
+                'type': 'values',
+                'srcset': {'values': srcset, 'presplit': true},
+            });
+        };
 
-            PWorker.prototype.preserveSrcset = function(srcset) {
-                // send values from rewrite_srcset to the worker
-                this.postMessage({
-                    'type': 'values',
-                    'srcset': {'values': srcset, 'presplit': true},
-                });
-            };
+        AutoFetchWorker.prototype.preserveMedia = function (media) {
+            // send CSSMediaRule values to the worker
+            this.postMessage({'type': 'values', 'media': media})
+        };
 
-            PWorker.prototype.preserveMedia = function(media) {
-                // send CSSMediaRule values to the worker
-               this.postMessage({'type': 'values', 'media': media})
-            };
-
-            PWorker.prototype.extractFromLocalDoc = function() {
+        AutoFetchWorker.prototype.extractFromLocalDoc = function () {
                 // get the values to be preserved from the  documents stylesheets
                 // and all elements with a srcset
                 var media = [];
@@ -1415,20 +1426,19 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 var sheets = $wbwindow.document.styleSheets;
                 var i = 0;
                 for (; i < sheets.length; ++i) {
-                    var sheet = sheets[i];
-                    var rules = sheet.cssRules;
+                    var rules = sheets[i].cssRules;
                     for (var j = 0; j < rules.length; ++j) {
                         var rule = rules[j];
-                        if (rule instanceof CSSMediaRule) {
+                        if (rule.type === CSSRule.MEDIA_RULE) {
                             media.push(rule.cssText);
                         }
                     }
                 }
-                var srcsetElems = $wbwindow.document.querySelectorAll('*[srcset]');
+                var srcsetElems = $wbwindow.document.querySelectorAll('img[srcset]');
                 for (i = 0; i < srcsetElems.length; i++) {
                     var srcsetElem = srcsetElems[i];
                     if (wb_getAttribute) {
-                        srcset.push(wb_getAttribute.call(srcsetElem,'srcset'));
+                        srcset.push(wb_getAttribute.call(srcsetElem, 'srcset'));
                     } else {
                         srcset.push(srcsetElem.getAttribute('srcset'));
                     }
@@ -1440,18 +1450,15 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 });
             };
 
-            return PWorker;
-        })($wbwindow.Worker);
+        WBAutoFetchWorker = new AutoFetchWorker(wb_abs_prefix, wbinfo.mod);
 
-        WBPreserWorker = new Preserver(wb_abs_prefix, wbinfo.mod);
-
-        wbSheetMediaQChecker = function checkStyle () {
+        wbSheetMediaQChecker = function checkStyle() {
             // used only for link[rel='stylesheet'] so we remove our listener
             this.removeEventListener('load', wbSheetMediaQChecker);
             // check no op condition
             if (this.sheet == null) return;
             // defer extraction to be nice :)
-            WBPreserWorker.deferredSheetExtraction(this.sheet);
+            WBAutoFetchWorker.deferredSheetExtraction(this.sheet);
         };
     }
 
@@ -1612,10 +1619,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
     //============================================
     function rewrite_style(value)
     {
-        var STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
-
-        var IMPORT_REGEX = /(@import\s+[\\"']*)([^)'";]+)([\\"']*\s*;?)/gi;
-
         function style_replacer(match, n1, n2, n3, offset, string) {
             return n1 + rewrite_url(n2) + n3;
         }
@@ -1645,14 +1648,14 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         // Filter removes non-truthy values like null, undefined, and ""
-        var values = value.split(/\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))/).filter(Boolean);
+        var values = value.split(SRCSET_REGEX).filter(Boolean);
 
         for (var i = 0; i < values.length; i++) {
             values[i] = rewrite_url(values[i].trim());
         }
-        if (wbUsePresWorker) {
+        if (wbUseAAWorker) {
             // send post split values to preservation worker
-            WBPreserWorker.preserveSrcset(values);
+            WBAutoFetchWorker.preserveSrcset(values);
         }
         return values.join(", ");
     }
@@ -1756,16 +1759,16 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 if (elem.textContent !== new_content) {
                     elem.textContent = new_content;
                     changed = true;
-                    if (wbUsePresWorker && elem.sheet != null) {
+                    if (wbUseAAWorker && elem.sheet != null) {
                         // we have a stylesheet so lets be nice to UI thread
                         // and defer extraction
-                        WBPreserWorker.deferredSheetExtraction(elem.sheet);
+                        WBAutoFetchWorker.deferredSheetExtraction(elem.sheet);
                     }
                 }
                 break;
             case 'LINK':
                 changed = rewrite_attr(elem, 'href');
-                if (wbUsePresWorker && elem.rel === 'stylesheet') {
+                if (wbUseAAWorker && elem.rel === 'stylesheet') {
                     // we can only check link[rel='stylesheet'] when it loads
                     elem.addEventListener('load', wbSheetMediaQChecker);
                 }
@@ -2194,9 +2197,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 }
             }
             orig_setter.call(this, res);
-            if (wbUsePresWorker && this.tagName === 'STYLE' && this.sheet != null) {
+            if (wbUseAAWorker && this.tagName === 'STYLE' && this.sheet != null) {
                 // got preserve all the things
-                WBPreserWorker.deferredSheetExtraction(this.sheet);
+                WBAutoFetchWorker.deferredSheetExtraction(this.sheet);
             }
         };
 
@@ -3602,140 +3605,138 @@ var _WBWombat = function($wbwindow, wbinfo) {
         init_wombat_loc($wbwindow);
 
         // archival mode: init url-rewriting intercepts
-        if (!wb_is_proxy) {
-            init_wombat_top($wbwindow);
+        init_wombat_top($wbwindow);
 
-            // updated wb_unrewrite_rx for imgur.com
-            var wb_origin = $wbwindow.__WB_replay_top.location.origin;
-            var wb_host = $wbwindow.__WB_replay_top.location.host;
-            var wb_proto = $wbwindow.__WB_replay_top.location.protocol;
-            if (wb_replay_prefix && wb_replay_prefix.indexOf(wb_origin) == 0) {
-                wb_rel_prefix = wb_replay_prefix.substring(wb_origin.length);
-            } else {
-                wb_rel_prefix = wb_replay_prefix;
-            }
-
-            // make the protocol and host optional now
-            var rx = "((" + wb_proto + ")?\/\/" + wb_host + ")?" + wb_rel_prefix + "[^/]+/";
-            wb_unrewrite_rx = new RegExp(rx, "g");
-
-            // History
-            init_history_overrides();
-
-            // Doc Title
-            init_doc_title_override();
-
-            // postMessage
-            // OPT skip
-            if (!wb_opts.skip_postmessage) {
-                init_postmessage_override($wbwindow);
-                init_messageevent_override($wbwindow);
-            }
-
-            initMouseEventOverride($wbwindow);
-
-            init_hash_change();
-
-            // write
-            init_write_override();
-
-            // eval
-            //init_eval_override();
-
-            // Ajax
-            init_ajax_rewrite();
-
-            // Fetch
-            init_fetch_rewrite();
-            init_request_override();
-
-            // Audio
-            init_audio_override();
-
-            // FontFace
-            initFontFaceOverride($wbwindow);
-
-            // Worker override (experimental)
-            initPreserveWorker();
-            init_web_worker_override();
-            init_service_worker_override();
-            initSharedWorkerOverride();
-
-
-            // innerHTML can be overriden on prototype!
-            override_html_assign($wbwindow.HTMLElement, "innerHTML", true);
-            override_html_assign($wbwindow.HTMLElement, "outerHTML", true);
-            override_html_assign($wbwindow.HTMLIFrameElement, "srcdoc", true);
-            override_html_assign($wbwindow.HTMLStyleElement, "textContent");
-
-            // Document.URL override
-            override_prop_extract($wbwindow.Document.prototype, "URL");
-            override_prop_extract($wbwindow.Document.prototype, "documentURI");
-
-            // Node.baseURI override
-            override_prop_extract($wbwindow.Node.prototype, "baseURI");
-
-            // Attr nodeValue and value
-            override_attr_props();
-
-            // init insertAdjacentHTML() override
-            init_insertAdjacentHTML_override();
-            initInsertAdjacentElementOverride();
-
-
-            // iframe.contentWindow and iframe.contentDocument overrides to
-            // ensure wombat is inited on the iframe $wbwindow!
-            override_iframe_content_access("contentWindow");
-            override_iframe_content_access("contentDocument");
-
-            // override funcs to convert first arg proxy->obj
-            override_func_first_arg_proxy_to_obj($wbwindow.MutationObserver, "observe");
-            override_func_first_arg_proxy_to_obj($wbwindow.Node, "compareDocumentPosition");
-            override_func_first_arg_proxy_to_obj($wbwindow.Node, "contains");
-            override_func_first_arg_proxy_to_obj($wbwindow.Document, "createTreeWalker");
-
-            override_func_this_proxy_to_obj($wbwindow, "getComputedStyle", $wbwindow);
-            //override_func_this_proxy_to_obj($wbwindow.EventTarget, "addEventListener");
-            //override_func_this_proxy_to_obj($wbwindow.EventTarget, "removeEventListener");
-
-            override_apply_func($wbwindow);
-            initTimeoutIntervalOverrides($wbwindow, "setTimeout");
-            initTimeoutIntervalOverrides($wbwindow, "setInterval");
-
-            override_frames_access($wbwindow);
-
-            // setAttribute
-            if (!wb_opts.skip_setAttribute) {
-                init_setAttribute_override();
-                init_getAttribute_override();
-            }
-            init_svg_image_overrides();
-
-            // override href and src attrs
-            init_attr_overrides();
-
-            // Cookies
-            init_cookies_override();
-
-            // ensure namespace urls are NOT rewritten
-            init_createElementNS_fix();
-
-            // Image
-            //init_image_override();
-
-            // DOM
-            // OPT skip
-            if (!wb_opts.skip_dom) {
-                init_dom_override();
-            }
-
-            // registerProtocolHandler override
-            init_registerPH_override();
-
-            //sendBeacon override
-            init_beacon_override();
+        // updated wb_unrewrite_rx for imgur.com
+        var wb_origin = $wbwindow.__WB_replay_top.location.origin;
+        var wb_host = $wbwindow.__WB_replay_top.location.host;
+        var wb_proto = $wbwindow.__WB_replay_top.location.protocol;
+        if (wb_replay_prefix && wb_replay_prefix.indexOf(wb_origin) == 0) {
+            wb_rel_prefix = wb_replay_prefix.substring(wb_origin.length);
+        } else {
+            wb_rel_prefix = wb_replay_prefix;
         }
 
+        // make the protocol and host optional now
+        var rx = "((" + wb_proto + ")?\/\/" + wb_host + ")?" + wb_rel_prefix + "[^/]+/";
+        wb_unrewrite_rx = new RegExp(rx, "g");
+
+        // History
+        init_history_overrides();
+
+        // Doc Title
+        init_doc_title_override();
+
+        // postMessage
+        // OPT skip
+        if (!wb_opts.skip_postmessage) {
+            init_postmessage_override($wbwindow);
+            init_messageevent_override($wbwindow);
+        }
+
+        initMouseEventOverride($wbwindow);
+
+        init_hash_change();
+
+        // write
+        init_write_override();
+
+        // eval
+        //init_eval_override();
+
+        // Ajax
+        init_ajax_rewrite();
+
+        // Fetch
+        init_fetch_rewrite();
+        init_request_override();
+
+        // Audio
+        init_audio_override();
+
+        // FontFace
+        initFontFaceOverride($wbwindow);
+
+        // Worker override (experimental)
+        initAutoFetchWorker();
+        init_web_worker_override();
+        init_service_worker_override();
+        initSharedWorkerOverride();
+
+
+        // innerHTML can be overriden on prototype!
+        override_html_assign($wbwindow.HTMLElement, "innerHTML", true);
+        override_html_assign($wbwindow.HTMLElement, "outerHTML", true);
+        override_html_assign($wbwindow.HTMLIFrameElement, "srcdoc", true);
+        override_html_assign($wbwindow.HTMLStyleElement, "textContent");
+
+        // Document.URL override
+        override_prop_extract($wbwindow.Document.prototype, "URL");
+        override_prop_extract($wbwindow.Document.prototype, "documentURI");
+
+        // Node.baseURI override
+        override_prop_extract($wbwindow.Node.prototype, "baseURI");
+
+        // Attr nodeValue and value
+        override_attr_props();
+
+        // init insertAdjacentHTML() override
+        init_insertAdjacentHTML_override();
+        initInsertAdjacentElementOverride();
+
+
+        // iframe.contentWindow and iframe.contentDocument overrides to
+        // ensure wombat is inited on the iframe $wbwindow!
+        override_iframe_content_access("contentWindow");
+        override_iframe_content_access("contentDocument");
+
+        // override funcs to convert first arg proxy->obj
+        override_func_first_arg_proxy_to_obj($wbwindow.MutationObserver, "observe");
+        override_func_first_arg_proxy_to_obj($wbwindow.Node, "compareDocumentPosition");
+        override_func_first_arg_proxy_to_obj($wbwindow.Node, "contains");
+        override_func_first_arg_proxy_to_obj($wbwindow.Document, "createTreeWalker");
+
+
+        override_func_this_proxy_to_obj($wbwindow, "getComputedStyle", $wbwindow);
+        //override_func_this_proxy_to_obj($wbwindow.EventTarget, "addEventListener");
+        //override_func_this_proxy_to_obj($wbwindow.EventTarget, "removeEventListener");
+
+        override_apply_func($wbwindow);
+        initTimeoutIntervalOverrides($wbwindow, "setTimeout");
+        initTimeoutIntervalOverrides($wbwindow, "setInterval");
+
+        override_frames_access($wbwindow);
+
+        // setAttribute
+        if (!wb_opts.skip_setAttribute) {
+            init_setAttribute_override();
+            init_getAttribute_override();
+        }
+        init_svg_image_overrides();
+
+        // override href and src attrs
+        init_attr_overrides();
+
+        // Cookies
+        init_cookies_override();
+
+        // ensure namespace urls are NOT rewritten
+        init_createElementNS_fix();
+
+        // Image
+        //init_image_override();
+
+        // DOM
+        // OPT skip
+        if (!wb_opts.skip_dom) {
+            init_dom_override();
+        }
+
+        // registerProtocolHandler override
+        init_registerPH_override();
+
+        //sendBeacon override
+        init_beacon_override();
         // other overrides
         // proxy mode: only using these overrides
 
@@ -3765,13 +3766,13 @@ var _WBWombat = function($wbwindow, wbinfo) {
         init_document_obj_proxy($wbwindow.document);
 
         // expose functions
-        var obj = {}
+        var obj = {};
         obj.extract_orig = extract_orig;
         obj.rewrite_url = rewrite_url;
         obj.watch_elem = watch_elem;
         obj.init_new_window_wombat = init_new_window_wombat;
         obj.init_paths = init_paths;
-        obj.local_init = function(name) {
+        obj.local_init = function (name) {
             var res = $wbwindow._WB_wombat_obj_proxy[name];
             if (name === "document" && res && !res._WB_wombat_obj_proxy) {
                 return init_document_obj_proxy(res) || res;
@@ -3812,8 +3813,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return;
             }
 
-            if ($wbwindow.document.readyState === "complete" && wbUsePresWorker) {
-                WBPreserWorker.extractFromLocalDoc();
+            if ($wbwindow.document.readyState === "complete" && wbUseAAWorker) {
+                WBAutoFetchWorker.extractFromLocalDoc();
             }
 
             if ($wbwindow != $wbwindow.__WB_replay_top) {
@@ -3925,10 +3926,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         // Fix .parent only if not embeddable, otherwise leave for accessing embedding window
         if (!wb_opts.embedded && (replay_top == $wbwindow)) {
-            if (wbUsePresWorker) {
+            if (wbUseAAWorker) {
                 $wbwindow.addEventListener("message", function(event) {
-                    if (event.data && event.data.wb_type === 'pworker') {
-                        WBPreserWorker.postMessage(event.data.msg);
+                    if (event.data && event.data.wb_type === 'aaworker') {
+                        WBAutoFetchWorker.postMessage(event.data.msg);
                     }
                 }, false);
             }
@@ -3980,8 +3981,6 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         def_prop($wbwindow.Object.prototype, "WB_wombat_top", setter, getter);
     }
-
-
 
 
     // Utility functions used by rewriting rules
