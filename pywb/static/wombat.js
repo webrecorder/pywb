@@ -1617,12 +1617,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
+    function style_replacer(match, n1, n2, n3, offset, string) {
+        return n1 + rewrite_url(n2) + n3;
+    }
+    
     function rewrite_style(value)
     {
-        function style_replacer(match, n1, n2, n3, offset, string) {
-            return n1 + rewrite_url(n2) + n3;
-        }
-
         if (!value) {
             return value;
         }
@@ -2118,8 +2118,17 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_style_attr(style_proto, "borderImageSource", "border-image-source");
 
         override_style_setProp(style_proto);
+        
+        if ($wbwindow.CSSStyleSheet && $wbwindow.CSSStyleSheet.prototype) {
+            // https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleSheet/insertRule
+            // ruleText is a string of raw css....
+            var oInsertRule = $wbwindow.CSSStyleSheet.prototype.insertRule;
+            $wbwindow.CSSStyleSheet.prototype.insertRule = function (ruleText, index) {
+                return oInsertRule.call(this, rewrite_style(ruleText), index);
+            };
+        }
     }
-
+    
     //============================================
     function override_style_setProp(style_proto) {
         var orig_setProp = style_proto.setProperty;
@@ -2329,7 +2338,75 @@ var _WBWombat = function($wbwindow, wbinfo) {
         Object.defineProperty($wbwindow.FontFace.prototype, "constructor", {value: $wbwindow.FontFace});
         $wbwindow.FontFace.__wboverriden__ = true;
     }
-
+    
+    //============================================
+    function overrideTextProtoGetSet(textProto, whichProp) {
+        var orig_getter = get_orig_getter(textProto, whichProp);
+        var setter;
+        // data, from CharacterData, is both readable and writable whereas wholeText, from Text, is not
+        if (whichProp === 'data') {
+            var orig_setter = get_orig_setter(textProto, whichProp);
+            setter = function (orig) {
+                var res = orig;
+                if (!this._no_rewrite && this.parentElement && this.parentElement.tagName === 'STYLE') {
+                    res = rewrite_style(orig);
+                }
+                return orig_setter.call(this, res);
+            };
+        }
+        var getter = function () {
+            var res = orig_getter.call(this);
+            if (!this._no_rewrite && this.parentElement && this.parentElement.tagName === 'STYLE') {
+                res = res.replace(wb_unrewrite_rx, "");
+            }
+            return res;
+        };
+        def_prop(textProto, whichProp, setter, getter);
+    }
+    
+    function overrideTextProtoFunction(textProto, whichFN) {
+        var original = textProto[whichFN];
+        textProto[whichFN] = function () {
+            var args;
+            if (arguments.length > 0 && this.parentElement && this.parentElement.tagName === 'STYLE') {
+                // appendData(DOMString data); dataIndex = 0
+                // insertData(unsigned long offset, DOMString data); dataIndex = 1
+                // replaceData(unsigned long offset, unsigned long count, DOMString data); dataIndex = 2
+                args = new Array(arguments.length);
+                var dataIndex = arguments.length - 1;
+                if (dataIndex === 2) {
+                    args[0] = arguments[0];
+                    args[1] = arguments[1];
+                } else if (dataIndex === 1) {
+                    args[0] = arguments[0];
+                }
+                args[dataIndex] = rewrite_style(arguments[dataIndex]);
+            } else {
+                args = arguments;
+            }
+            if (original.__WB_orig_apply) {
+                return original.__WB_orig_apply(this, args);
+            }
+            return original.apply(this, args);
+        };
+    }
+    
+    function initTextNodeOverrides($wbwindow) {
+        if (!$wbwindow.Text || !$wbwindow.Text.prototype) return;
+        // https://dom.spec.whatwg.org/#characterdata and https://dom.spec.whatwg.org/#interface-text
+        // depending on the JS frameworks used some pages include JS that will append a single text node child
+        // to a style tag and then progressively modify that text nodes data for changing the css values that
+        // style tag contains
+        var textProto = $wbwindow.Text.prototype;
+        // override inherited CharacterData functions
+        overrideTextProtoFunction(textProto, 'appendData');
+        overrideTextProtoFunction(textProto, 'insertData');
+        overrideTextProtoFunction(textProto, 'replaceData');
+        // override property getters and setters
+        overrideTextProtoGetSet(textProto, 'data');
+        overrideTextProtoGetSet(textProto, 'wholeText');
+    }
+    
     //============================================
     function init_wombat_loc(win) {
 
@@ -3662,8 +3739,10 @@ var _WBWombat = function($wbwindow, wbinfo) {
         init_web_worker_override();
         init_service_worker_override();
         initSharedWorkerOverride();
-
-
+        
+        // text node overrides for js frameworks doing funky things with CSS
+        initTextNodeOverrides($wbwindow);
+        
         // innerHTML can be overriden on prototype!
         override_html_assign($wbwindow.HTMLElement, "innerHTML", true);
         override_html_assign($wbwindow.HTMLElement, "outerHTML", true);
