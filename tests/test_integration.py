@@ -101,7 +101,7 @@ class TestWbIntegration(BaseConfigTest):
 
         assert '"20140127171238"' in resp.text, resp.text
         assert 'wombat.js' in resp.text
-        assert 'new _WBWombat' in resp.text, resp.text
+        assert '_WBWombatInit' in resp.text, resp.text
         assert '/pywb/20140127171238{0}/http://www.iana.org/time-zones"'.format(fmod) in resp.text
 
         if fmod == 'mp_':
