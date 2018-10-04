@@ -44,10 +44,8 @@
 
   wbinfo.wombat_opts = {};
 
-  if (window && window._WBWombat && !window._wb_wombat) {
-    window._wb_wombat = new _WBWombat(window, wbinfo);
-  } else if (!window._wb_wombat) {
-    console.warn("_wb_wombat missing!");
+  if (window && window._WBWombatInit) {
+    window._WBWombatInit();
   }
 </script>
 {% else %}
