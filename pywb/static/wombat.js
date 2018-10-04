@@ -2253,6 +2253,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
     //============================================
     function override_frames_access($wbwindow)
     {
+        // If $wbwindow.frames is the window itself, nothing to override
+        // This can be handled in the Obj Proxy
+        if ($wbwindow.Proxy && $wbwindow === $wbwindow.frames) {
+            return;
+        }
+
         $wbwindow.__wb_frames = $wbwindow.frames;
 
         var getter = function() {
@@ -3543,6 +3549,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 }
             }
         } else if (type === "object" && retVal && retVal._WB_wombat_obj_proxy) {
+            if (retVal instanceof Window) {
+                init_new_window_wombat(retVal);
+            }
             return retVal._WB_wombat_obj_proxy;
         }
 
