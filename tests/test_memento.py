@@ -73,7 +73,7 @@ class TestMemento(MementoMixin, BaseConfigTest):
         # Body
         assert '"20140127171238"' in resp.text
         assert 'wombat.js' in resp.text
-        assert 'new _WBWombat' in resp.text, resp.text
+        assert 'WBWombatInit' in resp.text, resp.text
         assert '/pywb/20140127171238{0}/http://www.iana.org/time-zones"'.format(fmod) in resp.text
 
     def test_memento_at_timegate_latest(self, fmod):

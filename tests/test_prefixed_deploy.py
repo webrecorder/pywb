@@ -38,7 +38,7 @@ class TestPrefixedDeploy(BaseConfigTest):
         assert "'http://localhost:80/prefix/static/default_banner.js'" in resp.text
         assert '"http://localhost:80/prefix/static/"' in resp.text
         assert '"http://localhost:80/prefix/pywb/"' in resp.text
-        assert 'new _WBWombat' in resp.text, resp.text
+        assert 'WBWombatInit' in resp.text, resp.text
         assert '"/prefix/pywb/20140127171238{0}/http://www.iana.org/time-zones"'.format(fmod) in resp.text, resp.text
 
     def test_static_content(self):
