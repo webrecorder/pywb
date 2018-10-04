@@ -2971,6 +2971,23 @@ var _WBWombat = function($wbwindow, wbinfo) {
             $wbwindow[which].__$wbpatched$__ = true;
         }
     }
+    
+    function initDocumentEvaluateOverride($wbwindow) {
+        var replaceDocEvaluate = function (doc) {
+            var oDocEvaluate = doc.evaluate;
+            doc.evaluate = function evaluate(expression, contextNode, resolver, type, result) {
+                var thisObj = proxy_to_obj(this);
+                var newContextNode = contextNode != null ? proxy_to_obj(contextNode) : contextNode;
+                return oDocEvaluate.call(thisObj, expression, newContextNode, resolver, type, result);
+            };
+        };
+        if ($wbwindow.document && $wbwindow.document.evaluate) {
+            replaceDocEvaluate($wbwindow.document);
+        }
+        if ($wbwindow.Document && $wbwindow.Document.prototype && $wbwindow.Document.prototype.evaluate) {
+            replaceDocEvaluate($wbwindow.Document.prototype);
+        }
+    }
 
     //============================================
     function init_open_override()
@@ -3751,6 +3768,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         
         // text node overrides for js frameworks doing funky things with CSS
         initTextNodeOverrides($wbwindow);
+        initDocumentEvaluateOverride($wbwindow);
         
         // innerHTML can be overriden on prototype!
         override_html_assign($wbwindow.HTMLElement, "innerHTML", true);
