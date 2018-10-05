@@ -21,6 +21,7 @@ import os
 import json
 import pytest
 import six
+import re
 
 
 # ============================================================================
@@ -276,6 +277,36 @@ class TestContentRewriter(object):
         #assert ('Content-Type', 'application/octet-stream') not in headers.headers
 
         assert is_rw == False
+
+    def test_rewrite_cookies_all_mods(self):
+        headers = {'Set-Cookie': 'foo=bar; Expires=Wed, 13 Jan 2021 22:23:01 GMT; Path=/some/path/; HttpOnly'}
+        content = '\x11\x12\x13\x14'
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        mods = set()
+        assert len(headers.headers) == 6
+        for name, value in headers.headers:
+            assert name == 'Set-Cookie'
+            mods.add(re.search('Path=/prefix/201701([^/]+)', value).group(1))
+
+        assert mods == {'mp_', 'cs_', 'js_', 'im_', 'oe_', 'if_'}
+        assert is_rw == False
+
+    def test_rewrite_http_cookie_no_all_mods_no_slash(self):
+        headers = {'Set-Cookie': 'foo=bar; Expires=Wed, 13 Jan 2021 22:23:01 GMT; Path=/some/path; HttpOnly'}
+        content = 'abcdefg'
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        assert len(headers.headers) == 1
+        assert headers.headers[0][0] == 'Set-Cookie'
+
+    def test_rewrite_http_cookie_no_all_mods_wrong_mod(self):
+        headers = {'Set-Cookie': 'foo=bar; Expires=Wed, 13 Jan 2021 22:23:01 GMT; Path=/some/path/; HttpOnly'}
+        content = 'abcdefg'
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701id_')
+
+        assert len(headers.headers) == 1
+        assert headers.headers[0][0] == 'Set-Cookie'
 
     def test_binary_no_content_type(self):
         headers = {}

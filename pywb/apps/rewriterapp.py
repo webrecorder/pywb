@@ -175,6 +175,12 @@ class RewriterApp(object):
 
         content_length = (record.http_headers.
                           get_header('Content-Length'))
+
+        if content_length is None:
+            return
+
+        content_length = content_length.split(',')[0]
+
         try:
             content_length = int(content_length)
             if not range_end:

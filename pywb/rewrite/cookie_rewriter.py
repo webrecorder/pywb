@@ -26,9 +26,38 @@ class WbUrlBaseCookieRewriter(object):
             morsel = self.rewrite_cookie(name, morsel)
 
             self._filter_morsel(morsel)
-            results.append((header, morsel.OutputString()))
+
+            if not self.add_prefix_cookie_for_all_mods(morsel, results, header):
+                value = morsel.OutputString()
+                results.append((header, value))
 
         return results
+
+    def add_prefix_cookie_for_all_mods(self, morsel, results, header):
+        """  If HttpOnly cookie that is set to a path ending in /,
+             and current mod is mp_ or if_,
+             then assume its meant to be a prefix, and likely needed for
+             other content.
+             Set cookie with same prefix but for all common modifiers:
+             (mp_, js_, cs_, oe_, if_)
+        """
+        curr_mod = self.url_rewriter.wburl.mod
+        if curr_mod not in ('mp_', 'if_'):
+            return False
+
+        if not morsel.get('httponly'):
+            return False
+
+        path = morsel.get('path')
+        if not path or not path.endswith('/'):
+            return False
+
+        for mod in ('mp_', 'cs_', 'js_', 'im_', 'oe_', 'if_'):
+            new_path = path.replace(curr_mod + '/', mod + '/')
+            morsel['path'] = new_path
+            results.append((header, morsel.OutputString()))
+
+        return True
 
     def _filter_morsel(self, morsel):
         path = morsel.get('path')

@@ -1,6 +1,7 @@
 from .base_config_test import BaseConfigTest, fmod_sl
 from pywb.warcserver.test.testutils import HttpBinLiveTests
 import pytest
+import sys
 
 
 # ============================================================================
@@ -36,6 +37,26 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
     def test_live_head(self, fmod_sl):
         resp = self.head('/live/{0}httpbin.org/get?foo=bar', fmod_sl)
         assert resp.status_int == 200
+
+    @pytest.mark.skipif(sys.version_info < (3,0), reason='does not respond in 2.7')
+    def test_live_bad_content_length(self, fmod_sl):
+        resp = self.get('/live/{0}httpbin.org/response-headers?content-length=149,149', fmod_sl, status=200)
+        assert resp.headers['Content-Length'] == '149'
+
+        resp = self.get('/live/{0}httpbin.org/response-headers?Content-Length=xyz', fmod_sl, status=200)
+        assert resp.headers['Content-Length'] == '90'
+
+    @pytest.mark.skipif(sys.version_info < (3,0), reason='does not respond in 2.7')
+    def test_live_bad_content_length_with_range(self, fmod_sl):
+        resp = self.get('/live/{0}httpbin.org/response-headers?content-length=149,149', fmod_sl,
+                        headers={'Range': 'bytes=0-'}, status=206)
+        assert resp.headers['Content-Length'] == '149'
+        assert resp.headers['Content-Range'] == 'bytes 0-148/149'
+
+        resp = self.get('/live/{0}httpbin.org/response-headers?Content-Length=xyz', fmod_sl,
+                        headers={'Range': 'bytes=0-'}, status=206)
+        assert resp.headers['Content-Length'] == '90'
+        assert resp.headers['Content-Range'] == 'bytes 0-89/90'
 
     def test_live_live_frame(self):
         resp = self.testapp.get('/live/http://example.com/')
