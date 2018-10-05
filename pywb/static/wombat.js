@@ -4109,13 +4109,13 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
 window._WBWombat = _WBWombat;
 
-window._WBWombatInit = function() {
+window._WBWombatInit = function(wbinfo) {
   if (!this._wb_wombat || !this._wb_wombat.actual) {
     this._wb_wombat = new _WBWombat(this, wbinfo);
     this._wb_wombat.actual = true;
   } else if (!this._wb_wombat) {
     console.warn("_wb_wombat missing!");
   }
-}
+};
 
 
