@@ -1,3 +1,54 @@
+pywb 2.0.5 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Replay Fidelity Improvements:
+   - Improved wombat web worker rewriting overrides (#351)
+   - Added checks to wombat that preserve the behavior of non-wombat added polyfills to native functions (#350)
+   - Added web worker specific rewrite modifier ``wkr_``  (#351)
+   - Ensured the page title and favicon are correctly displayed (#356, #369)
+   - Improved replay of request sent as ``text/html`` but are actually ``application/json``` (#367)
+   - Added replay of compressed resources by forcing decompression if the UA did not indicate it could handle the resources encoding (#372)
+   - Added ```setTimeout``` and ```setInterval``` overrides to wombat to handle the non-function callback case (#381)
+   - Added ```window.origin`` overrides to wombat (#381)
+   - Added ```CSSStyleSheet.insertRule`` and ```Text``` overrides to wombat improve rewriting of dynamically added/modification of CSS (#382)
+   - Improved the intialization of wombat in-order to not call init twice (#383)
+   - Added ```document.evaluate``` override in-order to deproxy the context node (#385)
+   - Optimized argument de-proxying in wombat (#385)
+   - Improved iframe srcdoc rewriting in wombat (#386)
+
+* Image srcset and media query preservation system (#359, #379, #378):
+   - Added image srcset and media query preservation system to wombat
+   - Added ``proxy-with-wombat`` option, if true, enables the usage of ``wombatProxyMode.js`` in proxy mode (default: false)
+   - Added ``proxy-with-auto-fetch`` option, if true, enables the usage of ``autoFetchWorkerProxyMode.js`` in proxy mode (default: false)
+   - Added ``FrontEndApp.proxy_fetch()`` to allow the auto fetch worker to request cross-origin style sheets
+
+* Fuzzy Matching:
+    - Decreased the aggressiveness of fuzzy matching (#362)
+    - Added an additional Facebook rule targeting timeline replay (#363)
+    - Added vimeo rule that canonicalizes the variable ```hmac/timestamp``` portion of url (#375)
+
+
+* Server-Side Rewriting:
+    - Refactored the regular expression rewriters in-order to avoid multiple initialization (#354)
+    - Improved unicode URL rewriting (#361, #376, #377, #380)
+    - Improved cookie rewriting (#386)
+    - Improved handling of bad content-length HTTP header (#386)
+
+* Indexing:
+    - Ensure that WARC/0.18 metadata records with mime = ``text/anvl`` are not replayed
+
+* Recording:
+    - Added an option to filter the source collection (#368)
+
+* Misc Changes:
+    - Added Github Issue Templates (#353)
+    - Added replay testing to ci via webrecorder-tests (#355)
+    - Support deploying pywb under a prefix, non-root (#373)
+
+* Documentation improvements:
+   - Improved cli help message (#360)
+   - Fixed documentation enumeration bug (#364)
+
 pywb 2.0.4 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
