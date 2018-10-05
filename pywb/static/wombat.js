@@ -251,8 +251,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
     //============================================
     var rewrite_url = rewrite_url_;
 
-    function rewrite_url_debug(url, use_rel, mod) {
-        var rewritten = rewrite_url_(url, use_rel, mod);
+    function rewrite_url_debug(url, use_rel, mod, doc) {
+        var rewritten = rewrite_url_(url, use_rel, mod, doc);
         if (url != rewritten) {
             console.log('REWRITE: ' + url + ' -> ' + rewritten);
         } else {
@@ -280,7 +280,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
 
     //============================================
-    function rewrite_url_(url, use_rel, mod) {
+    function rewrite_url_(url, use_rel, mod, doc) {
         // If undefined, just return it
         if (!url) {
             return url;
@@ -369,7 +369,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         // Use a parser
         if (url.charAt(0) == ".") {
-            url = resolve_rel_url(url);
+            url = resolve_rel_url(url, doc);
         }
 
         // If full url starting with http://, https:// or //
@@ -1606,7 +1606,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return;
             }
             var mod = rwModForElement(elem, name);
-            new_value = rewrite_url(value, false, mod);
+            new_value = rewrite_url(value, false, mod, elem.ownerDocument);
         }
 
         if (new_value != value) {

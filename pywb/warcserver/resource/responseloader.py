@@ -108,7 +108,7 @@ class BaseLoader(object):
         # Try to set content-length, if it is available and valid
         try:
             content_len = int(content_len_str)
-        except (KeyError, TypeError):
+        except (ValueError, TypeError):
             content_len = -1
 
         if content_len >= 0:
