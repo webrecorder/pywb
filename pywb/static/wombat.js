@@ -2901,16 +2901,24 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function override_func_first_arg_proxy_to_obj(cls, method) {
+    function override_func_arg_proxy_to_obj(cls, method, arg) {
         if (!cls || !cls.prototype) {
             return;
         }
+        arg = arg || 0;
         var prototype = cls.prototype;
         var orig = prototype[method];
 
         function deproxy() {
-            arguments[0] = proxy_to_obj(arguments[0]);
-            return orig.apply(this, arguments);
+            var args = new Array(arguments.length);
+            for (var i = 0; i < args.length; i++) {
+                if (i == arg) {
+                  args[i] = proxy_to_obj(arguments[i]);
+                } else {
+                  args[i] = arguments[i];
+                }
+            }
+            return orig.__WB_orig_apply(proxy_to_obj(this), args);
         }
 
         prototype[method] = deproxy;
@@ -3779,10 +3787,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
         override_iframe_content_access("contentDocument");
 
         // override funcs to convert first arg proxy->obj
-        override_func_first_arg_proxy_to_obj($wbwindow.MutationObserver, "observe");
-        override_func_first_arg_proxy_to_obj($wbwindow.Node, "compareDocumentPosition");
-        override_func_first_arg_proxy_to_obj($wbwindow.Node, "contains");
-        override_func_first_arg_proxy_to_obj($wbwindow.Document, "createTreeWalker");
+        override_func_arg_proxy_to_obj($wbwindow.MutationObserver, "observe");
+        override_func_arg_proxy_to_obj($wbwindow.Node, "compareDocumentPosition");
+        override_func_arg_proxy_to_obj($wbwindow.Node, "contains");
+        override_func_arg_proxy_to_obj($wbwindow.Document, "createTreeWalker");
+        override_func_arg_proxy_to_obj($wbwindow.Document, "evaluate", 1);
 
 
         override_func_this_proxy_to_obj($wbwindow, "getComputedStyle", $wbwindow);
