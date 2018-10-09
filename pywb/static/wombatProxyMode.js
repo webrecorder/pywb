@@ -174,8 +174,8 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             if (!(this instanceof AutoFetchWorkerProxyMode)) {
                 return new AutoFetchWorkerProxyMode();
             }
-            this.checkIntervalTime = 15000;
             this.checkIntervalCB = this.checkIntervalCB.bind(this);
+            this.checkIntervalTime = 15000;
             this.elemSelector = ['img', 'source', 'video', 'audio'].map(function (which) {
                 if (which === 'source') {
                     return ['picture > ', 'video > ', 'audio >'].map(function (parent) {
@@ -185,21 +185,20 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                     return which + '[srcset], ' + which + '[data-srcset], ' + which + '[data-src]';
                 }
             }).join(', ');
-
+            // use our origins reference to the document in order for us to parse stylesheets :/
+            this.styleTag = document.createElement('style');
+            this.styleTag.id = '$wrStyleParser$';
+            document.documentElement.appendChild(this.styleTag);
             if (isTop) {
                 // Cannot directly load our worker from the proxy origin into the current origin
                 // however we fetch it from proxy origin and can blob it into the current origin :)
-                var self = this;
+                var afwpm = this;
                 fetch(wbAutoFetchWorkerPrefix)
                     .then(function (res) {
                         return res.text().then(function (text) {
-                            var blob = new Blob([text], {"type": "text/javascript"});
-                            self.worker = new $wbwindow.Worker(URL.createObjectURL(blob));
-                            // use our origins reference to the document in order for us to parse stylesheets :/
-                            self.styleTag = document.createElement('style');
-                            self.styleTag.id = '$wrStyleParser$';
-                            document.documentElement.appendChild(self.styleTag);
-                            self.startCheckingInterval();
+                            var blob = new Blob([text], { "type": "text/javascript" });
+                            afwpm.worker = new $wbwindow.Worker(URL.createObjectURL(blob));
+                            afwpm.startCheckingInterval();
                         });
                     });
             } else {
@@ -211,26 +210,40 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                         }
                         $wbwindow.top.postMessage(msg, '*');
                     },
-                    "terminate": function () {
-                    }
+                    "terminate": function () {}
                 };
                 this.startCheckingInterval();
             }
         }
 
+        AutoFetchWorkerProxyMode.prototype.resumeCheckInterval = function () {
+            // if the checkInterval is null (it is not active) restart the check interval
+            if (this.checkInterval == null) {
+                this.checkInterval = setInterval(this.checkIntervalCB, this.checkIntervalTime);
+            }
+        };
+
+        AutoFetchWorkerProxyMode.prototype.pauseCheckInterval = function () {
+            // if the checkInterval is not null (it is active) clear the check interval
+            if (this.checkInterval != null) {
+                clearInterval(this.checkInterval);
+                this.checkInterval = null;
+            }
+        };
+
         AutoFetchWorkerProxyMode.prototype.startCheckingInterval = function () {
             // if document ready state is complete do first extraction and start check polling
             // otherwise wait for document ready state to complete to extract and start check polling
-            var self = this;
+            var afwpm = this;
             if ($wbwindow.document.readyState === "complete") {
                 this.extractFromLocalDoc();
-                setInterval(this.checkIntervalCB, this.checkIntervalTime);
+                this.checkInterval = setInterval(this.checkIntervalCB, this.checkIntervalTime);
             } else {
                 var i = setInterval(function () {
                     if ($wbwindow.document.readyState === "complete") {
-                        self.extractFromLocalDoc();
+                        afwpm.extractFromLocalDoc();
                         clearInterval(i);
-                        setInterval(self.checkIntervalCB, self.checkIntervalTime);
+                        afwpm.checkInterval = setInterval(afwpm.checkIntervalCB, afwpm.checkIntervalTime);
                     }
                 }, 1000);
             }
@@ -245,46 +258,12 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             this.worker.terminate();
         };
 
-        AutoFetchWorkerProxyMode.prototype.postMessage = function (msg, deferred) {
-            if (deferred) {
-                var self = this;
-                return Promise.resolve().then(function () {
-                    self.worker.postMessage(msg);
-                });
-            }
+        AutoFetchWorkerProxyMode.prototype.justFetch = function (urls) {
+            this.worker.postMessage({ 'type': 'fetch-all', 'values': urls });
+        };
+
+        AutoFetchWorkerProxyMode.prototype.postMessage = function (msg) {
             this.worker.postMessage(msg);
-        };
-
-        AutoFetchWorkerProxyMode.prototype.extractMediaRules = function (rules, href) {
-            // We are in proxy mode and must include a URL to resolve relative URLs in media rules
-            if (!rules) return [];
-            var rvlen = rules.length;
-            var text = [];
-            var rule;
-            for (var i = 0; i < rvlen; ++i) {
-                rule = rules[i];
-                if (rule.type === CSSRule.MEDIA_RULE) {
-                    text.push({"cssText": rule.cssText, "resolve": href});
-                }
-            }
-            return text;
-        };
-
-        AutoFetchWorkerProxyMode.prototype.corsCSSFetch = function (href) {
-            // because this JS in proxy mode operates as it would on the live web
-            // the rules of CORS apply and we cannot rely on URLs being rewritten correctly
-            // fetch the cross origin css file and then parse it using a style tag to get the rules
-            var url = location.protocol + '//' + wb_info.proxy_magic + '/proxy-fetch/' + href;
-            var aaw = this;
-            return fetch(url).then(function (res) {
-                return res.text().then(function (text) {
-                    aaw.styleTag.textContent = text;
-                    var sheet = aaw.styleTag.sheet || {};
-                    return aaw.extractMediaRules(sheet.cssRules || sheet.rules, href);
-                });
-            }).catch(function (error) {
-                return [];
-            });
         };
 
         AutoFetchWorkerProxyMode.prototype.shouldSkipSheet = function (sheet) {
@@ -293,98 +272,146 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             return !!(sheet.href && sheet.href.indexOf(wb_info.proxy_magic) !== -1);
         };
 
-        AutoFetchWorkerProxyMode.prototype.getImgAVElems = function () {
-            var elem, srcv, mod;
-            var results = { 'srcset': [], 'src': []} ;
-            var baseURI = $wbwindow.document.baseURI;
-            var elems = $wbwindow.document.querySelectorAll(this.elemSelector);
-            for (var i = 0; i < elems.length; i++) {
-                elem = elems[i];
-                // we want the original src value in order to resolve URLs in the worker when needed
-                srcv = elem.src ? elem.src : null;
-                // get the correct mod in order to inform the backing worker where the URL(s) are from
-                mod = elem.tagName === "SOURCE" ?
-                    elem.parentElement.tagName === "PICTURE" ? 'im_' : 'oe_'
-                    : elem.tagName === "IMG" ? 'im_' : 'oe_';
-                if (elem.srcset) {
-                    results.srcset.push({ 'srcset': elem.srcset, 'resolve': srcv || baseURI, 'mod': mod });
-                }
-                if (elem.dataset.srcset) {
-                    results.srcset.push({ 'srcset': elem.dataset.srcset, 'resolve': srcv || baseURI, 'mod': mod });
-                }
-                if (elem.dataset.src) {
-                    results.src.push({'src': elem.dataset.src, 'resolve': srcv || baseURI, 'mod': mod});
-                }
-                if (elem.tagName === "SOURCE" && srcv) {
-                    results.src.push({'src': srcv, 'resolve': baseURI, 'mod': mod});
+        AutoFetchWorkerProxyMode.prototype.validateSrcV = function (srcV) {
+            // returns null if the supplied value is not usable for resolving rel URLs
+            // otherwise returns the supplied value
+            if (!srcV || srcV.indexOf('data:') === 0 || srcV.indexOf('blob:') === 0) return null;
+            return srcV;
+        };
+
+        AutoFetchWorkerProxyMode.prototype.fetchCSSAndExtract = function (cssURL) {
+            // because this JS in proxy mode operates as it would on the live web
+            // the rules of CORS apply and we cannot rely on URLs being rewritten correctly
+            // fetch the cross origin css file and then parse it using a style tag to get the rules
+            var url = location.protocol + '//' + wb_info.proxy_magic + '/proxy-fetch/' + cssURL;
+            var afwpm = this;
+            return fetch(url).then(function (res) {
+                return res.text().then(function (text) {
+                    afwpm.styleTag.textContent = text;
+                    return afwpm.extractMediaRules(afwpm.styleTag.sheet, cssURL);
+                });
+            }).catch(function (error) {
+                return [];
+            });
+        };
+
+        AutoFetchWorkerProxyMode.prototype.extractMediaRules = function (sheet, baseURI) {
+            // We are in proxy mode and must include a URL to resolve relative URLs in media rules
+            var results = [];
+            if (!sheet) return results;
+            var rules = sheet.cssRules || sheet.rules;
+            if (!rules || rules.length === 0) return results;
+            var len = rules.length;
+            var resolve = sheet.href || baseURI;
+            for (var i = 0; i < len; ++i) {
+                var rule = rules[i];
+                if (rule.type === CSSRule.MEDIA_RULE) {
+                    results.push({ "cssText": rule.cssText, "resolve": resolve });
                 }
             }
             return results;
         };
 
-        AutoFetchWorkerProxyMode.prototype.extractFromLocalDoc = function () {
+        AutoFetchWorkerProxyMode.prototype.extractSrcSrcsetFrom = function (fromElem, baseURI) {
+            // retrieve the auto-fetched elements from the supplied dom node
+            var elems = fromElem.querySelectorAll(this.elemSelector);
+            var len = elems.length;
+            var msg = {'type': 'values', 'srcset': [], 'src': []};
+            for (var i = 0; i < len; i++) {
+                var elem = elems[i];
+                // we want the original src value in order to resolve URLs in the worker when needed
+                var srcv = this.validateSrcV(elem.src);
+                var resolve = srcv || baseURI;
+                // get the correct mod in order to inform the backing worker where the URL(s) are from
+                var mod = elem.tagName === "SOURCE" ?
+                    elem.parentElement.tagName === "PICTURE" ? 'im_' : 'oe_'
+                    : elem.tagName === "IMG" ? 'im_' : 'oe_';
+                if (elem.srcset) {
+                    msg.srcset.push({'srcset': elem.srcset, 'resolve': resolve, 'mod': mod});
+                }
+                if (elem.dataset.srcset) {
+                    msg.srcset.push({'srcset': elem.dataset.srcset, 'resolve': resolve, 'mod': mod});
+                }
+                if (elem.dataset.src) {
+                    msg.src.push({'src': elem.dataset.src, 'resolve': resolve, 'mod': mod});
+                }
+                if (elem.tagName === "SOURCE" && srcv) {
+                    msg.src.push({'src': srcv, 'resolve': baseURI, 'mod': mod});
+                }
+            }
+            // send what we have extracted, if anything, to the worker for processing
+            if (msg.srcset.length || msg.src.length) {
+                this.postMessage(msg);
+            }
+        };
+
+        AutoFetchWorkerProxyMode.prototype.checkStyleSheets = function (doc) {
             var media = [];
-            var deferredMediaURLS = [];
-            var sheet;
-            var resolve;
-            // We must use the window reference passed to us to access this origins stylesheets
-            var styleSheets = $wbwindow.document.styleSheets;
-            for (var i = 0; i < styleSheets.length; i++) {
-                sheet = styleSheets[i];
+            var deferredMediaExtraction = [];
+            var styleSheets = doc.styleSheets;
+            var sheetLen = styleSheets.length;
+
+            for (var i = 0; i < sheetLen; i++) {
+                var sheet = styleSheets[i];
                 // if the sheet belongs to our parser node we must skip it
                 if (!this.shouldSkipSheet(sheet)) {
                     try {
                         // if no error is thrown due to cross origin sheet the urls then just add
                         // the resolved URLS if any to the media urls array
-                        if (sheet.cssRules != null) {
-                            resolve = sheet.href || $wbwindow.document.baseURI;
-                            media = media.concat(this.extractMediaRules(sheet.cssRules, resolve));
+                        if (sheet.cssRules || sheet.rules) {
+                            var extracted = this.extractMediaRules(sheet, doc.baseURI);
+                            if (extracted.length) {
+                                media = media.concat(extracted);
+                            }
                         } else if (sheet.href != null) {
                             // depending on the browser cross origin stylesheets will have their
                             // cssRules property null but href non-null
-                            deferredMediaURLS.push(this.corsCSSFetch(sheet.href));
+                            deferredMediaExtraction.push(this.fetchCSSAndExtract(sheet.href));
                         }
                     } catch (error) {
                         // the stylesheet is cross origin and we must re-fetch via PYWB to get the contents for checking
-                        deferredMediaURLS.push(this.corsCSSFetch(sheet.href));
+                        if (sheet.href != null) {
+                            deferredMediaExtraction.push(this.fetchCSSAndExtract(sheet.href));
+                        }
                     }
                 }
             }
-            // We must use the window reference passed to us to access this origins elements with srcset attr
-            // like cssRule handling we must include a URL to resolve relative URLs by
-            var results = this.getImgAVElems();
-            var msg = { 'type': 'values' };
-            // send what we have extracted, if anything, to the worker for processing
-            if (media.length > 0) {
-                msg.media = media;
-            }
-            if (results.srcset) {
-                msg.srcset = results.srcset;
-            }
-            if (results.src) {
-                msg.src = results.src;
-            }
-            if (msg.media || msg.srcset || msg.src) {
-                this.postMessage(msg);
+
+            if (media.length) {
+                // send
+                this.postMessage({'type': 'values', 'media': media});
             }
 
-            if (deferredMediaURLS.length > 0) {
+            if (deferredMediaExtraction.length) {
                 // wait for all our deferred fetching and extraction of cross origin
                 // stylesheets to complete and then send those values, if any, to the worker
-                var aaw = this;
-                Promise.all(deferredMediaURLS).then(function (values) {
-                    var results = [];
-                    while (values.length > 0) {
-                        results = results.concat(values.shift());
+                var afwpm = this;
+                Promise.all(deferredMediaExtraction).then(function (results) {
+                    if (results.length === 0) return;
+                    var len = results.length;
+                    var media = [];
+                    for (var i = 0; i < len; ++i) {
+                        media = media.concat(results[i]);
                     }
-                    if (results.length > 0) {
-                        aaw.postMessage({'type': 'values', 'media': results});
-                    }
+                    afwpm.postMessage({'type': 'values', 'media': media });
                 });
             }
         };
 
+        AutoFetchWorkerProxyMode.prototype.extractFromLocalDoc = function () {
+            // check for data-[src,srcset] and auto-fetched elems with srcset first
+            this.extractSrcSrcsetFrom($wbwindow.document, $wbwindow.document.baseURI);
+            // we must use the window reference passed to us to access this origins stylesheets
+            this.checkStyleSheets($wbwindow.document);
+        };
+
         WBAutoFetchWorker = new AutoFetchWorkerProxyMode();
+
+        // expose AutoFetchWorkerProxyMode
+        Object.defineProperty(window, '$WBAutoFetchWorker$', {
+            'enumerable': false,
+            'value': WBAutoFetchWorker
+        });
 
         if (isTop) {
             $wbwindow.addEventListener("message", function (event) {
