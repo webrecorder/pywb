@@ -137,6 +137,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
     var STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
     var IMPORT_REGEX = /(@import\s+[\\"']*)([^)'";]+)([\\"']*\s*;?)/gi;
     var SRCSET_REGEX = /\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))/;
+    var FullHTMLRegex = /^\s*<(?:html|head|body|!doctype html)/i;
 
     function rwModForElement(elem, attrName) {
         // this function was created to help add in retrial of element attribute rewrite modifiers
@@ -1767,12 +1768,19 @@ var _WBWombat = function($wbwindow, wbinfo) {
             return;
         }
 
-        var changed;
+        var changed = false;
         // we use a switch now cause perf and complexity
         switch (elem.tagName) {
+            case 'META':
+                var maybeCSP = wb_getAttribute.call(elem, 'http-equiv');
+                if (maybeCSP && maybeCSP.toLowerCase() === 'content-security-policy') {
+                    wb_setAttribute.call(elem, 'http-equiv', '_' + maybeCSP);
+                    changed = true;
+                }
+                break;
             case 'STYLE':
                 var new_content = rewrite_style(elem.textContent);
-                if (elem.textContent !== new_content) {
+                if (elem.textContent != new_content) {
                     elem.textContent = new_content;
                     changed = true;
                     if (wbUseAFWorker && elem.sheet != null) {
@@ -1799,10 +1807,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 break;
             case 'FORM':
                 changed = rewrite_attr(elem, "action", true);
+                changed = rewrite_attr(elem, 'style')  || changed;
                 break;
             case 'IFRAME':
             case 'FRAME':
                 changed = rewrite_frame_src(elem, "src");
+                changed = rewrite_attr(elem, 'style')  || changed;
                 break;
             case 'SCRIPT':
                 changed = rewrite_script(elem);
@@ -1813,6 +1823,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             default:
                 if (elem instanceof SVGElement && elem.hasAttribute('filter')) {
                     changed = rewrite_attr(elem, 'filter');
+                    changed = rewrite_attr(elem, 'style')  || changed;
                 } else {
                     changed = rewrite_attr(elem, 'src');
                     changed = rewrite_attr(elem, 'srcset') || changed;
@@ -1839,7 +1850,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     var write_buff = "";
 
-    //============================================
+    //===========================================
     function rewrite_html(string, check_end_tag) {
         if (!string) {
             return string;
@@ -1859,7 +1870,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             string = string.replace(/((id|class)=".*)WB_wombat_([^"]+)/, '$1$3');
         }
 
-        if (!$wbwindow.HTMLTemplateElement || starts_with(string, ["<html", "<head", "<body"])) {
+        if (!$wbwindow.HTMLTemplateElement || FullHTMLRegex.test(string)) {
             return rewrite_html_full(string, check_end_tag);
         }
 
