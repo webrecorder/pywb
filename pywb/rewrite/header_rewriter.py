@@ -58,6 +58,8 @@ class DefaultHeaderRewriter(object):
 
         'set-cookie': 'cookie',
 
+        'status': 'prefix',
+
         'strict-transport-security': 'prefix',
 
         'trailer': 'prefix',
