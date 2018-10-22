@@ -162,7 +162,7 @@ class TestRecordingProxy(HttpBinLiveTests, CollsDirMixin, BaseTestProxy):
 class TestProxyNoBanner(BaseTestProxy):
     @classmethod
     def setup_class(cls):
-        super(TestProxyNoBanner, cls).setup_class(proxy_opts={'use_banner': False})
+        super(TestProxyNoBanner, cls).setup_class(proxy_opts={'enable_banner': False})
 
     def test_proxy_replay(self, scheme):
         res = requests.get('{0}://example.com/'.format(scheme),
@@ -196,7 +196,7 @@ class TestProxyNoBanner(BaseTestProxy):
 class TestProxyNoHeadInsert(BaseTestProxy):
     @classmethod
     def setup_class(cls):
-        super(TestProxyNoHeadInsert, cls).setup_class(proxy_opts={'use_head_insert': False})
+        super(TestProxyNoHeadInsert, cls).setup_class(proxy_opts={'enable_content_rewrite': False})
 
     def test_proxy_replay(self, scheme):
         res = requests.get('{0}://example.com/'.format(scheme),

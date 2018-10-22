@@ -16,10 +16,10 @@ pywb 2.0.5 changelist
    - Optimized argument de-proxying in wombat (#385)
    - Improved iframe srcdoc rewriting in wombat (#386)
 
-* Image srcset and media query preservation system (#359, #379, #378):
+* Image srcset and media query auto-fetch system (#359, #379, #378):
    - Added image srcset and media query preservation system to wombat
-   - Added ``proxy-with-wombat`` option, if true, enables the usage of ``wombatProxyMode.js`` in proxy mode (default: false)
-   - Added ``proxy-with-auto-fetch`` option, if true, enables the usage of ``autoFetchWorkerProxyMode.js`` in proxy mode (default: false)
+   - Added ``--proxy-enable-wombat`` cli flag; if set, enables the usage of ``wombatProxyMode.js`` in proxy mode (default: false)
+   - Added ``--enable-auto-fetch`` cli flag; if set, enables the usage of auto fetch web worker in both url rewrite and proxy modes (default: false)
    - Added ``FrontEndApp.proxy_fetch()`` to allow the auto fetch worker to request cross-origin style sheets
 
 * Fuzzy Matching:
@@ -31,8 +31,10 @@ pywb 2.0.5 changelist
 * Server-Side Rewriting:
     - Refactored the regular expression rewriters in-order to avoid multiple initialization (#354)
     - Improved unicode URL rewriting (#361, #376, #377, #380)
-    - Improved cookie rewriting (#386)
+    - Improved cookie rewriting in framed replay mode (#386)
     - Improved handling of bad content-length HTTP header (#386)
+    - Fix parsing of self-closing <script> and <style> tags and rewrite SVG xlink:href (#392)
+    - Ensure 'Status' header is prefix-rewritten
 
 * Indexing:
     - Ensure that WARC/0.18 metadata records with mime = ``text/anvl`` are not replayed
@@ -48,6 +50,8 @@ pywb 2.0.5 changelist
 * Documentation improvements:
    - Improved cli help message (#360)
    - Fixed documentation enumeration bug (#364)
+   - Add documentation for auto-fetch system
+
 
 pywb 2.0.4 changelist
 ~~~~~~~~~~~~~~~~~~~~~
