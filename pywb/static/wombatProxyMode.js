@@ -347,28 +347,26 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         }
     }
     
-    if (wbinfo.use_auto_fetch_worker && wbinfo.is_live) {
+    if (wbinfo.enable_auto_fetch && wbinfo.is_live) {
         initAutoFetchWorker();
     }
     
-    if (wbinfo.use_wombat) {
-        // proxy mode overrides
-        // Random
-        init_seeded_random(wbinfo.wombat_sec);
-        
-        // Crypto Random
-        init_crypto_random();
-        
-        // set fixed pixel ratio
-        init_fixed_ratio();
-        
-        // Date
-        init_date_override(wbinfo.wombat_sec);
-        
-        // disable notifications
-        init_disable_notifications();
-    }
-    
+    // proxy mode overrides
+    // Random
+    init_seeded_random(wbinfo.wombat_sec);
+
+    // Crypto Random
+    init_crypto_random();
+
+    // set fixed pixel ratio
+    init_fixed_ratio();
+
+    // Date
+    init_date_override(wbinfo.wombat_sec);
+
+    // disable notifications
+    init_disable_notifications();
+
     return {};
 };
 

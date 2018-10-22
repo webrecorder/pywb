@@ -78,9 +78,11 @@ var _WBWombat = function($wbwindow, wbinfo) {
     var wb_setAttribute = $wbwindow.Element.prototype.setAttribute;
     var wb_getAttribute = $wbwindow.Element.prototype.getAttribute;
     var wb_funToString = Function.prototype.toString;
+
     var WBAutoFetchWorker;
     var wbSheetMediaQChecker;
-    var wbUseAAWorker = $wbwindow.Worker != null && wbinfo.is_live;
+
+    var wbUseAFWorker = wbinfo.enable_auto_fetch && ($wbwindow.Worker != null && wbinfo.is_live);
 
     var wb_info;
 
@@ -1335,7 +1337,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
     //============================================
     function initAutoFetchWorker() {
-        if (!wbUseAAWorker) {
+        if (!wbUseAFWorker) {
             return;
         }
 
@@ -1653,7 +1655,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         for (var i = 0; i < values.length; i++) {
             values[i] = rewrite_url(values[i].trim());
         }
-        if (wbUseAAWorker) {
+        if (wbUseAFWorker) {
             // send post split values to preservation worker
             WBAutoFetchWorker.preserveSrcset(values);
         }
@@ -1759,7 +1761,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 if (elem.textContent !== new_content) {
                     elem.textContent = new_content;
                     changed = true;
-                    if (wbUseAAWorker && elem.sheet != null) {
+                    if (wbUseAFWorker && elem.sheet != null) {
                         // we have a stylesheet so lets be nice to UI thread
                         // and defer extraction
                         WBAutoFetchWorker.deferredSheetExtraction(elem.sheet);
@@ -1768,7 +1770,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 break;
             case 'LINK':
                 changed = rewrite_attr(elem, 'href');
-                if (wbUseAAWorker && elem.rel === 'stylesheet') {
+                if (wbUseAFWorker && elem.rel === 'stylesheet') {
                     // we can only check link[rel='stylesheet'] when it loads
                     elem.addEventListener('load', wbSheetMediaQChecker);
                 }
@@ -2206,7 +2208,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 }
             }
             orig_setter.call(this, res);
-            if (wbUseAAWorker && this.tagName === 'STYLE' && this.sheet != null) {
+            if (wbUseAFWorker && this.tagName === 'STYLE' && this.sheet != null) {
                 // got preserve all the things
                 WBAutoFetchWorker.deferredSheetExtraction(this.sheet);
             }
@@ -3910,7 +3912,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 return;
             }
 
-            if ($wbwindow.document.readyState === "complete" && wbUseAAWorker) {
+            if ($wbwindow.document.readyState === "complete" && wbUseAFWorker) {
                 WBAutoFetchWorker.extractFromLocalDoc();
             }
 
@@ -4023,7 +4025,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         // Fix .parent only if not embeddable, otherwise leave for accessing embedding window
         if (!wb_opts.embedded && (replay_top == $wbwindow)) {
-            if (wbUseAAWorker) {
+            if (wbUseAFWorker) {
                 $wbwindow.addEventListener("message", function(event) {
                     if (event.data && event.data.wb_type === 'aaworker') {
                         WBAutoFetchWorker.postMessage(event.data.msg);
