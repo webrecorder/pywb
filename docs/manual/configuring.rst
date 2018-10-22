@@ -463,8 +463,20 @@ If omitted, the defaults for these options are::
 
    proxy:
      enable_banner: true
-     enable_content_rewrite: true
      enable_wombat: false
+     enable_content_rewrite: true
+
+
+For example, to enable wombat rewriting but disable the banner, use the config::
+
+   proxy:
+     enable_banner: false
+     enable_wombat: true
+
+To disable all content rewriting::
+
+   proxy:
+     enable_content_rewrite: false
 
 
 Proxy Recording
