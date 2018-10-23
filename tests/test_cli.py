@@ -23,6 +23,10 @@ class TestProxyCLIConfig(CollsDirMixin, BaseTestClass):
                'enable_wombat': False}
         assert res.extra_config['proxy'] == exp
 
+    def test_auto_fetch_cli(self):
+        res = wayback(['--enable-auto-fetch'])
+        assert res.extra_config['enable_auto_fetch'] == True
+
     def test_proxy_cli_rec(self):
         res = wayback(['--proxy', 'test', '--proxy-record'])
         assert res.extra_config['proxy']['recording'] == True
