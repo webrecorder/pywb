@@ -1151,7 +1151,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 } else if (lowername == "style") {
                     value = rewrite_style(value);
                 } else if (lowername == "srcset") {
-                    value = rewrite_srcset(value);
+                    value = rewrite_srcset(value, this.tagName === 'IMG');
                 }
             }
             orig_setAttribute.call(this, name, value);
@@ -1403,16 +1403,23 @@ var _WBWombat = function($wbwindow, wbinfo) {
             this.worker.terminate();
         };
 
-        AutoFetchWorker.prototype.postMessage = function (msg) {
+        AutoFetchWorker.prototype.postMessage = function (msg, deferred) {
+            if (deferred) {
+                var self = this;
+                return Promise.resolve().then(function () {
+                    self.worker.postMessage(msg);
+                });
+            }
             this.worker.postMessage(msg);
         };
 
         AutoFetchWorker.prototype.preserveSrcset = function (srcset) {
-            // send values from rewrite_srcset to the worker
+            // send values from rewrite_srcset to the worker deferred
+            // to ensure the page viewer sees the images first
             this.postMessage({
                 'type': 'values',
                 'srcset': {'values': srcset, 'presplit': true},
-            });
+            }, true);
         };
 
         AutoFetchWorker.prototype.preserveMedia = function (media) {
@@ -1421,36 +1428,42 @@ var _WBWombat = function($wbwindow, wbinfo) {
         };
 
         AutoFetchWorker.prototype.extractFromLocalDoc = function () {
-                // get the values to be preserved from the  documents stylesheets
-                // and all elements with a srcset
-                var media = [];
-                var srcset = [];
-                var sheets = $wbwindow.document.styleSheets;
-                var i = 0;
-                for (; i < sheets.length; ++i) {
-                    var rules = sheets[i].cssRules;
-                    for (var j = 0; j < rules.length; ++j) {
-                        var rule = rules[j];
-                        if (rule.type === CSSRule.MEDIA_RULE) {
-                            media.push(rule.cssText);
-                        }
+            // get the values to be preserved from the  documents stylesheets
+            // and all elements with a srcset
+            var media = [];
+            var srcset = [];
+            var sheets = $wbwindow.document.styleSheets;
+            var i = 0;
+            for (; i < sheets.length; ++i) {
+                var rules = sheets[i].cssRules;
+                for (var j = 0; j < rules.length; ++j) {
+                    var rule = rules[j];
+                    if (rule.type === CSSRule.MEDIA_RULE) {
+                        media.push(rule.cssText);
                     }
                 }
-                var srcsetElems = $wbwindow.document.querySelectorAll('img[srcset]');
-                for (i = 0; i < srcsetElems.length; i++) {
-                    var srcsetElem = srcsetElems[i];
-                    if (wb_getAttribute) {
-                        srcset.push(wb_getAttribute.call(srcsetElem, 'srcset'));
-                    } else {
-                        srcset.push(srcsetElem.getAttribute('srcset'));
-                    }
+            }
+            var srcsetElems = $wbwindow.document.querySelectorAll('img[srcset]');
+            for (i = 0; i < srcsetElems.length; i++) {
+                var ssv = {tagSrc: srcsetElems[i].src};
+                if (wb_getAttribute) {
+                    ssv.srcset = wb_getAttribute.call(srcsetElems[i], 'srcset');
+                } else {
+                    ssv.srcset = srcsetElems[i].getAttribute('srcset');
                 }
-                this.postMessage({
-                    'type': 'values',
-                    'media': media,
-                    'srcset': {'values': srcset, 'presplit': false},
-                });
-            };
+                srcset.push(ssv);
+            }
+            // send the extracted values to the worker deferred
+            // to ensure the page viewer sees the images first
+            this.postMessage({
+                'type': 'values',
+                'media': media,
+                'srcset': {'values': srcset, 'presplit': false},
+                'context': {
+                    'docBaseURI': $wbwindow.document.baseURI
+                }
+            }, true);
+        };
 
         WBAutoFetchWorker = new AutoFetchWorker(wb_abs_prefix, wbinfo.mod);
 
@@ -1601,7 +1614,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         } else if (name == "style") {
             new_value = rewrite_style(value);
         } else if (name == "srcset") {
-            new_value = rewrite_srcset(value);
+            new_value = rewrite_srcset(value, elem.tagName === 'IMG');
         } else {
             // Only rewrite if absolute url
             if (abs_url_only && !starts_with(value, VALID_PREFIXES)) {
@@ -1643,7 +1656,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
     }
 
     //============================================
-    function rewrite_srcset(value)
+    function rewrite_srcset(value, isImage)
     {
         if (!value) {
             return "";
@@ -1655,7 +1668,8 @@ var _WBWombat = function($wbwindow, wbinfo) {
         for (var i = 0; i < values.length; i++) {
             values[i] = rewrite_url(values[i].trim());
         }
-        if (wbUseAFWorker) {
+
+        if (wbUseAFWorker && isImage) {
             // send post split values to preservation worker
             WBAutoFetchWorker.preserveSrcset(values);
         }
@@ -2004,7 +2018,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             if (mod == "cs_" && orig.indexOf("data:text/css") == 0) {
                 val = rewrite_inline_style(orig);
             } else if (attr == "srcset") {
-                val = rewrite_srcset(orig);
+                val = rewrite_srcset(orig, this.tagName === 'IMG');
             } else if (this.tagName === 'LINK' && attr === 'href') {
                 var relV = this.rel;
                 if (relV === 'import' || relV === 'preload') {

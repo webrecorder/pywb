@@ -50,7 +50,6 @@ function AutoFetcher(init) {
     if (!(this instanceof AutoFetcher)) {
         return new AutoFetcher(init);
     }
-    this.proxyMode = init.proxyMode;
     this.prefix = init.prefix;
     this.mod = init.mod;
     this.prefixMod = init.prefix + init.mod;
@@ -88,14 +87,13 @@ AutoFetcher.prototype.fixupURL = function (url) {
 };
 
 AutoFetcher.prototype.safeFetch = function (url) {
-    var fixedURL = this.fixupURL(url);
     // check to see if we have seen this url before in order
     // to lessen the load against the server content is fetched from
     if (this.seen[url] != null) return;
     this.seen[url] = true;
     if (this.queuing) {
         // we are currently waiting for a batch of fetches to complete
-        return this.queue.push(fixedURL);
+        return this.queue.push(url);
     }
     // fetch this url
     this.fetches.push(fetch(url));
@@ -103,7 +101,7 @@ AutoFetcher.prototype.safeFetch = function (url) {
 
 AutoFetcher.prototype.urlExtractor = function (match, n1, n2, n3, offset, string) {
     // Same function as style_replacer in wombat.rewrite_style, n2 is our URL
-    this.safeFetch(n2);
+    this.safeFetch(this.fixupURL(n2));
     return n1 + n2 + n3;
 };
 
@@ -154,27 +152,79 @@ AutoFetcher.prototype.extractMedia = function (mediaRules) {
     }
 };
 
-AutoFetcher.prototype.extractSrcset = function (srcsets) {
+AutoFetcher.prototype.maybeFixUpRelSchemelessPrefix = function (url) {
+    // attempt to ensure rewritten relative or schemeless URLs become full URLS!
+    // otherwise returns null if this did not happen
+    if (url.indexOf(this.relative) === 0) {
+        return url.replace(this.relative, this.prefix);
+    }
+    if (url.indexOf(this.schemeless) === 0) {
+        return url.replace(this.schemeless, this.prefix);
+    }
+    return null;
+};
+
+AutoFetcher.prototype.maybeResolveURL = function (url, base) {
+    // given a url and base url returns a resolved full URL or
+    // null if resolution was unsuccessful
+    try {
+        var _url = new URL(url, base);
+        return _url.href;
+    } catch (e) {
+        return null;
+    }
+};
+
+
+AutoFetcher.prototype.fixupURLSrcSet = function (url, tagSrc, context) {
+    // attempt to fix up the url and do our best to ensure we can get dat 200 OK!
+    if (url.indexOf(this.prefix) !== 0) {
+        // first check for / (relative) or // (schemeless) rewritten urls
+        var maybeFixed = this.maybeFixUpRelSchemelessPrefix(url);
+        if (maybeFixed != null) {
+            return maybeFixed;
+        }
+        // resolve URL against tag src
+        maybeFixed = this.maybeResolveURL(url, tagSrc);
+        if (maybeFixed != null) {
+            return this.prefix + 'im_/' + maybeFixed;
+        }
+        // finally last attempt resolve the originating documents base URI
+        maybeFixed = this.maybeResolveURL(url, context.docBaseURI);
+        if (maybeFixed != null) {
+            return this.prefix + 'im_/' + maybeFixed;
+        }
+        // not much to do now.....
+        return this.prefixMod + '/' + url;
+    }
+    return url;
+};
+
+AutoFetcher.prototype.extractSrcset = function (srcsets, context) {
     if (srcsets == null || srcsets.values == null) return;
     var srcsetValues = srcsets.values;
-    // was srcsets from rewrite_srcset and if so no need to split
-    var presplit = srcsets.presplit;
+    if (!srcsets.presplit) {
+        // was from extract from local doc so we need to duplicate  work
+        return this.srcsetNotPreSplit(srcsetValues, context);
+    }
+    // was rewrite_srcset so just ensure we just
     for (var i = 0; i < srcsetValues.length; i++) {
-        var srcset = srcsetValues[i];
-        if (presplit) {
-            // was rewrite_srcset so just ensure we just
+        // grab the URL not width/height key
+        this.safeFetch(srcsetValues[i].split(' ')[0]);
+    }
+};
+
+AutoFetcher.prototype.srcsetNotPreSplit = function (values, context) {
+    // was from extract from local doc so we need to duplicate  work
+    var j;
+    for (var i = 0; i < values.length; i++) {
+        var srcsetValues = values[i].srcset.split(srcsetSplit);
+        var tagSrc = values[i].tagSrc;
+        for (j = 0; j < srcsetValues.length; j++) {
             // grab the URL not width/height key
-            this.safeFetch(srcset.split(' ')[0]);
-        } else {
-            // was from extract from local doc so we need to duplicate  work
-            var values = srcset.split(srcsetSplit);
-            for (var j = 0; j < values.length; j++) {
-                if (Boolean(values[j])) {
-                    var value = values[j].trim();
-                    if (value.length > 0) {
-                        this.safeFetch(value.split(' ')[0]);
-                    }
-                }
+            if (Boolean(srcsetValues[j])) {
+                var value = srcsetValues[j].trim().split(' ')[0];
+                this.safeFetch(this.fixupURLSrcSet(value, tagSrc, context));
             }
         }
     }
@@ -184,7 +234,7 @@ AutoFetcher.prototype.autofetchMediaSrcset = function (data) {
     // we got a message and now we autofetch!
     // these calls turn into no ops if they have no work
     this.extractMedia(data.media);
-    this.extractSrcset(data.srcset);
+    this.extractSrcset(data.srcset, data.context);
     this.fetchAll();
 };
 
