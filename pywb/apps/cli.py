@@ -61,7 +61,7 @@ class BaseCli(object):
         parser.add_argument('--proxy-enable-wombat', action='store_true',
                             help='Enable partial wombat JS overrides support in proxy mode')
         parser.add_argument('--enable-auto-fetch', action='store_true',
-                            help='Enable auto-fetch worker to capture resources from stylesheets, imgset when running in live/recording mode')
+                            help='Enable auto-fetch worker to capture resources from stylesheets, <img srcset> when running in live/recording mode')
 
         self.desc = desc
         self.extra_config = {}
@@ -78,9 +78,11 @@ class BaseCli(object):
                 'recording': self.r.proxy_record,
                 'enable_wombat': self.r.proxy_enable_wombat
             }
-            self.extra_config['enable_auto_fetch'] = self.r.enable_auto_fetch
 
             self.r.live = True
+
+        self.extra_config['enable_auto_fetch'] = self.r.enable_auto_fetch
+
         self.application = self.load()
 
         if self.r.profile:
