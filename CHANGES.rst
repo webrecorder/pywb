@@ -14,8 +14,9 @@ pywb 2.1.0 changelist
    - Added ``document.evaluate`` override in-order to deproxy the context node (#385)
    - Optimized argument de-proxying in wombat (#385)
    - Improved iframe srcdoc rewriting in wombat (#386)
+   - Improved rewriting strings of full HTML by making the check case insensitive and looking for ``<!doctype html`` in wombat (#398)
 
-* Auto Fetch System: Background image srcset and media query fetching (#359, #379, #378):
+* Auto Fetch System: Background image srcset and media query fetching (#359, #379, #378, #397):
    - Added image srcset and media query preservation system to wombat
    - Added ``--proxy-enable-wombat`` cli flag to enable the inject of ``wombatProxyMode.js`` in proxy mode (default: false)
    - Added ``--enable-auto-fetch`` cli flag to enable the auto fetch web worker system both url rewrite and proxy modes (default: false)
@@ -33,6 +34,7 @@ pywb 2.1.0 changelist
     - Improved handling of bad content-length HTTP header (#386)
     - Fix parsing of self-closing <script> and <style> tags and rewrite SVG xlink:href (#392)
     - Ensure 'Status' header is prefix-rewritten
+    - Support using ``X-Forwarded-Proto`` header to specify scheme for URL rewriting (#395)
 
 * Indexing:
     - Ensure that WARC/0.18 metadata records with mime = ``text/anvl`` are not replayed
