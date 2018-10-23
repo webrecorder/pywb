@@ -1,32 +1,30 @@
-pywb 2.0.5 changelist
+pywb 2.1.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
 * Replay Fidelity Improvements:
-   - Improved wombat web worker rewriting overrides (#351)
+   - Improved wombat web worker rewriting overrides, use custom modifier ``wkr_`` (#351)
    - Added checks to wombat that preserve the behavior of non-wombat added polyfills to native functions (#350)
-   - Added web worker specific rewrite modifier ``wkr_``  (#351)
-   - Ensured the page title and favicon are correctly displayed (#356, #369)
+   - Framed replay: Ensured the page title and favicon are displayed in the top-frame (#356, #369)
    - Improved replay of request sent as ``text/html`` but are actually ``application/json``` (#367)
    - Added replay of compressed resources by forcing decompression if the UA did not indicate it could handle the resources encoding (#372)
-   - Added ```setTimeout``` and ```setInterval``` overrides to wombat to handle the non-function callback case (#381)
-   - Added ```window.origin`` overrides to wombat (#381)
-   - Added ```CSSStyleSheet.insertRule`` and ```Text``` overrides to wombat improve rewriting of dynamically added/modification of CSS (#382)
-   - Improved the intialization of wombat in-order to not call init twice (#383)
-   - Added ```document.evaluate``` override in-order to deproxy the context node (#385)
+   - Added ``window.origin``, and ``setTimeout``, ``setInterval`` overrides to wombat to handle the non-function callback case (#381)
+   - Added ``CSSStyleSheet.insertRule`` and ```Text``` overrides to wombat improve rewriting of dynamically added/modification of CSS (#382)
+   - Remove extra ``window.frames`` override to avoid extra override if ``window.frames === window`` (#383)
+   - Wombat inited via ``window._WBWombatInit(wbinfo);``, allows for reinit if inited 'synethically' and not from the page html insert (#383)
+   - Added ``document.evaluate`` override in-order to deproxy the context node (#385)
    - Optimized argument de-proxying in wombat (#385)
    - Improved iframe srcdoc rewriting in wombat (#386)
 
-* Image srcset and media query auto-fetch system (#359, #379, #378):
+* Auto Fetch System: Background image srcset and media query fetching (#359, #379, #378):
    - Added image srcset and media query preservation system to wombat
-   - Added ``--proxy-enable-wombat`` cli flag; if set, enables the usage of ``wombatProxyMode.js`` in proxy mode (default: false)
-   - Added ``--enable-auto-fetch`` cli flag; if set, enables the usage of auto fetch web worker in both url rewrite and proxy modes (default: false)
+   - Added ``--proxy-enable-wombat`` cli flag to enable the inject of ``wombatProxyMode.js`` in proxy mode (default: false)
+   - Added ``--enable-auto-fetch`` cli flag to enable the auto fetch web worker system both url rewrite and proxy modes (default: false)
    - Added ``FrontEndApp.proxy_fetch()`` to allow the auto fetch worker to request cross-origin style sheets
 
 * Fuzzy Matching:
     - Decreased the aggressiveness of fuzzy matching (#362)
     - Added an additional Facebook rule targeting timeline replay (#363)
     - Added vimeo rule that canonicalizes the variable ```hmac/timestamp``` portion of url (#375)
-
 
 * Server-Side Rewriting:
     - Refactored the regular expression rewriters in-order to avoid multiple initialization (#354)
@@ -50,7 +48,7 @@ pywb 2.0.5 changelist
 * Documentation improvements:
    - Improved cli help message (#360)
    - Fixed documentation enumeration bug (#364)
-   - Add documentation for auto-fetch system
+   - Add documentation for auto-fetch system (#394)
 
 
 pywb 2.0.4 changelist
