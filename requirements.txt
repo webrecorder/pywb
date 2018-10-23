@@ -9,7 +9,7 @@ brotlipy
 pyyaml
 werkzeug
 webencodings
-gevent[dnspython]  # extra recommend by gevent, c-ares resolver to be deprecated soon
+gevent>=1.3[dnspython]
 webassets==0.12.1
 portalocker
 wsgiprox>=1.5.1

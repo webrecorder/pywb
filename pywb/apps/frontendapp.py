@@ -553,7 +553,7 @@ class FrontEndApp(object):
         else:
             logging.info('Proxy enabled for collection "{0}"'.format(proxy_coll))
 
-        if proxy_config.get('use_head_insert', True):
+        if proxy_config.get('enable_content_rewrite', True):
             self.proxy_prefix = '/{0}/bn_/'.format(proxy_coll)
         else:
             self.proxy_prefix = '/{0}/id_/'.format(proxy_coll)

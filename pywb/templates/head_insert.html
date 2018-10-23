@@ -24,17 +24,14 @@
   wbinfo.coll = "{{ coll }}";
   wbinfo.proxy_magic = "{{ env.pywb_proxy_magic }}";
   wbinfo.static_prefix = "{{ static_prefix }}/";
-{% if env.pywb_proxy_magic %}
-  wbinfo.use_auto_fetch_worker = {{ config.proxy.use_auto_fetch_worker | tobool }};
-  wbinfo.use_wombat = {{ config.proxy.use_wombat | tobool }} || wbinfo.use_auto_fetch_worker;
-{% endif %}
+  wbinfo.enable_auto_fetch = {{ config.enable_auto_fetch | tobool }};
 </script>
 {% if env.pywb_proxy_magic %}
 {% set whichWombat = 'wombatProxyMode.js' %}
 {% else %}
 {% set whichWombat = 'wombat.js' %}
 {% endif %}
-{% if not wb_url.is_banner_only or (env.pywb_proxy_magic and (config.proxy.use_auto_fetch_worker or config.proxy.use_wombat)) %}
+{% if not wb_url.is_banner_only or (env.pywb_proxy_magic and (config.enable_auto_fetch or config.proxy.enable_wombat)) %}
 <script src='{{ static_prefix }}/{{ whichWombat }}'> </script>
 <script>
   wbinfo.wombat_ts = "{{ wombat_ts }}";

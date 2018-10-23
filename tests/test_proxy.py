@@ -20,7 +20,7 @@ def scheme(request):
 class BaseTestProxy(TempDirTests, BaseTestClass):
     @classmethod
     def setup_class(cls, coll='pywb', config_file='config_test.yaml', recording=False,
-                    extra_opts={}):
+                    proxy_opts={}, config_opts={}):
 
         super(BaseTestProxy, cls).setup_class()
         config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
@@ -33,10 +33,13 @@ class BaseTestProxy(TempDirTests, BaseTestClass):
                 'recording': recording,
                }
 
-        opts.update(extra_opts)
+        opts.update(proxy_opts)
+
+        custom_config = config_opts
+        custom_config['proxy'] = opts
 
         cls.app = FrontEndApp(config_file=config_file,
-                              custom_config={'proxy': opts})
+                              custom_config=custom_config)
 
         cls.server = GeventServer(cls.app, handler_class=RequestURIWSGIHandler)
         cls.proxies = cls.proxy_dict(cls.server.port)
@@ -73,6 +76,9 @@ class TestProxy(BaseTestProxy):
         # no redirect check
         assert 'window == window.top' not in res.text
 
+        # no auto fetch
+        assert 'wbinfo.enable_auto_fetch = false;' in res.text
+
         assert res.headers['Link'] == '<http://example.com>; rel="memento"; datetime="Mon, 27 Jan 2014 17:12:51 GMT"; collection="pywb"'
         assert res.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
 
@@ -89,6 +95,9 @@ class TestProxy(BaseTestProxy):
         # no wombat.js and wombatProxyMode.js
         assert 'wombat.js' not in res.text
         assert 'wombatProxyMode.js' not in res.text
+
+        # no auto fetch
+        assert 'wbinfo.enable_auto_fetch = false;' in res.text
 
         # banner
         assert 'default_banner.js' in res.text
@@ -153,7 +162,7 @@ class TestRecordingProxy(HttpBinLiveTests, CollsDirMixin, BaseTestProxy):
 class TestProxyNoBanner(BaseTestProxy):
     @classmethod
     def setup_class(cls):
-        super(TestProxyNoBanner, cls).setup_class(extra_opts={'use_banner': False})
+        super(TestProxyNoBanner, cls).setup_class(proxy_opts={'enable_banner': False})
 
     def test_proxy_replay(self, scheme):
         res = requests.get('{0}://example.com/'.format(scheme),
@@ -173,6 +182,9 @@ class TestProxyNoBanner(BaseTestProxy):
         assert 'wombat.js' not in res.text
         assert 'wombatProxyMode.js' not in res.text
 
+        # no auto fetch
+        assert 'wbinfo.enable_auto_fetch = false;' in res.text
+
         # no redirect check
         assert 'window == window.top' not in res.text
 
@@ -184,7 +196,7 @@ class TestProxyNoBanner(BaseTestProxy):
 class TestProxyNoHeadInsert(BaseTestProxy):
     @classmethod
     def setup_class(cls):
-        super(TestProxyNoHeadInsert, cls).setup_class(extra_opts={'use_head_insert': False})
+        super(TestProxyNoHeadInsert, cls).setup_class(proxy_opts={'enable_content_rewrite': False})
 
     def test_proxy_replay(self, scheme):
         res = requests.get('{0}://example.com/'.format(scheme),
@@ -216,7 +228,7 @@ class TestProxyIncludeBothWombatAutoFetchWorker(BaseTestProxy):
     @classmethod
     def setup_class(cls):
         super(TestProxyIncludeBothWombatAutoFetchWorker, cls).setup_class(
-            extra_opts={'use_wombat': True, 'use_auto_fetch_worker': True}
+            proxy_opts={'enable_wombat': True}, config_opts={'enable_auto_fetch': True}
         )
 
     def test_include_both_wombat_auto_fetch_worker(self, scheme):
@@ -233,8 +245,7 @@ class TestProxyIncludeBothWombatAutoFetchWorker(BaseTestProxy):
         # no wombat.js, yes wombatProxyMode.js
         assert 'wombat.js' not in res.text
         assert 'wombatProxyMode.js' in res.text
-        assert 'wbinfo.use_wombat = true || wbinfo.use_auto_fetch_worker;' in res.text
-        assert 'wbinfo.use_auto_fetch_worker = true;' in res.text
+        assert 'wbinfo.enable_auto_fetch = true;' in res.text
 
 
 # ============================================================================
@@ -242,7 +253,7 @@ class TestProxyIncludeWombatNotAutoFetchWorker(BaseTestProxy):
     @classmethod
     def setup_class(cls):
         super(TestProxyIncludeWombatNotAutoFetchWorker, cls).setup_class(
-            extra_opts={'use_wombat': True, 'use_auto_fetch': False}
+            proxy_opts={'enable_wombat': True}, config_opts={'enable_auto_fetch': False}
         )
 
     def test_include_wombat_not_auto_fetch_worker(self, scheme):
@@ -259,8 +270,7 @@ class TestProxyIncludeWombatNotAutoFetchWorker(BaseTestProxy):
         # no wombat.js, yes wombatProxyMode.js
         assert 'wombat.js' not in res.text
         assert 'wombatProxyMode.js' in res.text
-        assert 'wbinfo.use_wombat = true || wbinfo.use_auto_fetch_worker;' in res.text
-        assert 'wbinfo.use_auto_fetch_worker = false;' in res.text
+        assert 'wbinfo.enable_auto_fetch = false;' in res.text
 
 
 # ============================================================================
@@ -268,7 +278,7 @@ class TestProxyIncludeAutoFetchWorkerNotWombat(BaseTestProxy):
     @classmethod
     def setup_class(cls):
         super(TestProxyIncludeAutoFetchWorkerNotWombat, cls).setup_class(
-            extra_opts={'use_wombat': False, 'use_auto_fetch': True}
+            proxy_opts={'enable_wombat': False}, config_opts={'enable_auto_fetch': True}
         )
 
     def test_include_auto_fetch_worker_not_wombat(self, scheme):
@@ -282,10 +292,11 @@ class TestProxyIncludeAutoFetchWorkerNotWombat(BaseTestProxy):
         # yes head insert
         assert 'WB Insert' in res.text
 
-        # no wombat.js, no wombatProxyMode.js
-        # auto fetch worker requires wombat
         assert 'wombat.js' not in res.text
-        assert 'wombatProxyMode.js' not in res.text
+
+        # auto fetch worker requires wombatProxyMode.js
+        assert 'wombatProxyMode.js' in res.text
+        assert 'wbinfo.enable_auto_fetch = true;' in res.text
 
 
 # ============================================================================
@@ -293,7 +304,7 @@ class TestProxyAutoFetchWorkerEndPoints(BaseTestProxy):
     @classmethod
     def setup_class(cls):
         super(TestProxyAutoFetchWorkerEndPoints, cls).setup_class(
-            extra_opts={'use_wombat': True, 'use_auto_fetch': True}
+            proxy_opts={'enable_wombat': True}, config_opts={'enable_auto_fetch': True}
         )
 
     def test_proxy_fetch_options_request(self, scheme):

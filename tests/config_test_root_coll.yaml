@@ -5,4 +5,5 @@ collections_root: _test_colls
 collections:
     '$root': '$live'
 
+enable_auto_fetch: true
 

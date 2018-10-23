@@ -20,8 +20,7 @@ class TestProxyCLIConfig(CollsDirMixin, BaseTestClass):
                'ca_name': 'pywb HTTPS Proxy CA',
                'coll': 'test',
                'recording': False,
-               'use_wombat': False,
-               'use_auto_fetch_worker': False}
+               'enable_wombat': False}
         assert res.extra_config['proxy'] == exp
 
     def test_proxy_cli_rec(self):
