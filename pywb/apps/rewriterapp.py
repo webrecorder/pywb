@@ -103,6 +103,7 @@ class RewriterApp(object):
         else:
             self.csp_header = None
 
+        # deprecated: Use X-Forwarded-Proto header instead!
         self.force_scheme = config.get('force_scheme')
 
     def add_csp_header(self, wb_url, status_headers):
@@ -223,8 +224,10 @@ class RewriterApp(object):
         wb_url = wb_url.replace('#', '%23')
         wb_url = WbUrl(wb_url)
 
-        if self.force_scheme:
-            environ['wsgi.url_scheme'] = self.force_scheme
+        proto = environ.get('HTTP_X_FORWARDED_PROTO', self.force_scheme)
+
+        if proto:
+            environ['wsgi.url_scheme'] = proto
 
         is_timegate = self._check_accept_dt(wb_url, environ)
 
