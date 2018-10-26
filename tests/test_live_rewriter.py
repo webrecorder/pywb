@@ -1,14 +1,44 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from .base_config_test import BaseConfigTest, fmod_sl
 from pywb.warcserver.test.testutils import HttpBinLiveTests
+
+from pywb.utils.geventserver import GeventServer
 import pytest
 import sys
+import six
+
+
+# ============================================================================
+def header_test_server(environ, start_response):
+    body = b'body'
+    value = u'⛄'
+    value = value.encode('utf-8')
+    if six.PY3:
+        value = value.decode('latin-1')
+
+    headers = []
+    if environ['PATH_INFO'] == '/unicode':
+        headers = [('Content-Length', str(len(body))),
+                   ('x-utf-8', value)]
+
+    start_response('200 OK', headers=headers)
+    return [body]
 
 
 # ============================================================================
 class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
     @classmethod
     def setup_class(cls):
+        cls.lint_app = False
         super(TestLiveRewriter, cls).setup_class('config_test.yaml')
+        cls.test_serv = GeventServer(header_test_server)
+
+    @classmethod
+    def teardown_class(cls):
+        cls.test_serv.stop()
+        super(TestLiveRewriter, cls).teardown_class()
 
     def test_live_live_1(self, fmod_sl):
         headers = [('User-Agent', 'python'), ('Referer', 'http://localhost:80/live/other.example.com')]
@@ -57,6 +87,15 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
                         headers={'Range': 'bytes=0-'}, status=206)
         assert resp.headers['Content-Length'] == '90'
         assert resp.headers['Content-Range'] == 'bytes 0-89/90'
+
+    def test_custom_unicode_header(self, fmod_sl):
+        value = u'⛄'
+        value = value.encode('utf-8')
+        if six.PY3:
+            value = value.decode('latin-1')
+
+        resp = self.get('/live/{0}http://localhost:%s/unicode' % self.test_serv.port, fmod_sl)
+        assert resp.headers['x-utf-8'] == value
 
     def test_live_live_frame(self):
         resp = self.testapp.get('/live/http://example.com/')
