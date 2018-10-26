@@ -22,11 +22,13 @@ def fmod_sl(request):
 
 # ============================================================================
 class BaseConfigTest(BaseTestClass):
+    lint_app = True
+
     @classmethod
     def get_test_app(cls, config_file, custom_config=None):
         config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
         app = FrontEndApp(config_file=config_file, custom_config=custom_config)
-        return app, webtest.TestApp(app)
+        return app, webtest.TestApp(app, lint=cls.lint_app)
 
     @classmethod
     def setup_class(cls, config_file, include_non_frame=True, custom_config=None):
