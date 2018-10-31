@@ -93,7 +93,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
 
         rules = [
            (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
-           (r'(?<!\.)\blocation\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
+           (r'(?<![$.])\s*location\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
            (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(this_rw), 0),
            (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + this_rw), 0),
            (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(this_rw), 0),
