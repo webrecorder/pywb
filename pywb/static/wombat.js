@@ -505,7 +505,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
 
             if (href != orig_href && !starts_with(href, VALID_PREFIXES)) {
-                href = HTTP_PREFIX + href;
+                href = wb_orig_scheme + href;
             }
         }
 
@@ -514,7 +514,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         if (starts_with(href, REL_PREFIX)) {
-            href = "http:" + href;
+            href = wb_info.wombat_scheme +  ":" + href;
         }
 
         return href;

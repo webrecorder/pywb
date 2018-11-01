@@ -142,6 +142,7 @@ describe('WombatJS', function () {
                 initScript: function () {
                     wbinfo = {
                         wombat_opts: {},
+                        wombat_scheme: 'http',
                         prefix: window.location.origin,
                         wombat_ts: '',
                         is_live: false,
@@ -183,6 +184,7 @@ describe('WombatJS', function () {
                         wombat_opts: {},
                         prefix: window.location.origin,
                         wombat_ts: '',
+                        wombat_scheme: 'http',
                         is_live: false,
                         top_url: ''
                     };
@@ -205,6 +207,7 @@ describe('WombatJS', function () {
                 initScript: function () {
                     wbinfo = {
                         wombat_opts: {},
+                        wombat_scheme: 'http',
                         is_live: false,
                         top_url: ''
                     };
