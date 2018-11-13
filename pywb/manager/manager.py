@@ -126,8 +126,10 @@ directory structure expected by pywb
             elif method == 'symlink':
                 os.symlink(filename, os.path.join(self.archive_dir,
                                                   os.path.basename(filename)))
-            else:
+            elif method == 'copy':
                 shutil.copy2(filename, self.archive_dir)
+            else:
+                raise NotImplementedError('unknown method name: %s' % method)
             full_paths.append(os.path.join(self.archive_dir, filename))
 
         self._index_merge_warcs(full_paths, self.DEF_INDEX_FILE)
