@@ -117,7 +117,7 @@ directory structure expected by pywb
         for filename in warcs:
             filename = os.path.abspath(filename)
             logging.info('%s %s to %s',
-                         method,
+                         method.title(),
                          filename,
                          self.archive_dir)
             if method == 'hardlink':
