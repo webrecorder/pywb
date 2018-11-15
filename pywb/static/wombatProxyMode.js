@@ -169,9 +169,9 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         
         var isTop = $wbwindow.self === $wbwindow.top;
         
-        function AutoFetchWorker() {
-            if (!(this instanceof AutoFetchWorker)) {
-                return new AutoFetchWorker();
+        function AutoFetchWorkerProxyMode() {
+            if (!(this instanceof AutoFetchWorkerProxyMode)) {
+                return new AutoFetchWorkerProxyMode();
             }
             this.checkIntervalTime = 15000;
             this.checkIntervalCB = this.checkIntervalCB.bind(this);
@@ -206,7 +206,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             }
         }
         
-        AutoFetchWorker.prototype.startCheckingInterval = function () {
+        AutoFetchWorkerProxyMode.prototype.startCheckingInterval = function () {
             // if document ready state is complete do first extraction and start check polling
             // otherwise wait for document ready state to complete to extract and start check polling
             var self = this;
@@ -224,20 +224,26 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             }
         };
         
-        AutoFetchWorker.prototype.checkIntervalCB = function () {
+        AutoFetchWorkerProxyMode.prototype.checkIntervalCB = function () {
             this.extractFromLocalDoc();
         };
         
-        AutoFetchWorker.prototype.terminate = function () {
+        AutoFetchWorkerProxyMode.prototype.terminate = function () {
             // terminate the worker, a no op when not replay top
             this.worker.terminate();
         };
         
-        AutoFetchWorker.prototype.postMessage = function (msg) {
+        AutoFetchWorkerProxyMode.prototype.postMessage = function (msg, deferred) {
+            if (deferred) {
+                var self = this;
+                return Promise.resolve().then(function () {
+                    self.worker.postMessage(msg);
+                });
+            }
             this.worker.postMessage(msg);
         };
         
-        AutoFetchWorker.prototype.extractMediaRules = function (rules, href) {
+        AutoFetchWorkerProxyMode.prototype.extractMediaRules = function (rules, href) {
             // We are in proxy mode and must include a URL to resolve relative URLs in media rules
             if (!rules) return [];
             var rvlen = rules.length;
@@ -252,7 +258,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             return text;
         };
         
-        AutoFetchWorker.prototype.corsCSSFetch = function (href) {
+        AutoFetchWorkerProxyMode.prototype.corsCSSFetch = function (href) {
             // because this JS in proxy mode operates as it would on the live web
             // the rules of CORS apply and we cannot rely on URLs being rewritten correctly
             // fetch the cross origin css file and then parse it using a style tag to get the rules
@@ -269,17 +275,64 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             });
         };
         
-        AutoFetchWorker.prototype.shouldSkipSheet = function (sheet) {
+        AutoFetchWorkerProxyMode.prototype.shouldSkipSheet = function (sheet) {
             // we skip extracting rules from sheets if they are from our parsing style or come from pywb
             if (sheet.id === '$wrStyleParser$') return true;
             return !!(sheet.href && sheet.href.indexOf(wb_info.proxy_magic) !== -1);
         };
+
+        AutoFetchWorkerProxyMode.prototype.extractImgPictureSourceSrcsets = function () {
+            var i;
+            var elem;
+            var srcset = [];
+            var baseURI = $wbwindow.document.baseURI;
+            var ssElements = $wbwindow.document.querySelectorAll('img[srcset], source[srcset]');
+            for (i = 0; i < ssElements.length; i++) {
+                elem = ssElements[i];
+                if (elem.tagName === 'SOURCE') {
+                    if (elem.parentElement && elem.parentElement.tagName === 'PICTURE') {
+                        srcset.push({srcset: elem.srcset, resolve: baseURI});
+                    }
+                } else {
+                    srcset.push({
+                        srcset: elem.srcset,
+                        resolve: elem.src != null && elem.src !== ' ' ? elem.src : baseURI
+                    });
+                }
+            }
+            return srcset;
+        };
+
+        AutoFetchWorkerProxyMode.prototype.checkForPictureSourceDataSrcsets = function () {
+            var baseURI = $wbwindow.document.baseURI;
+            var dataSS = $wbwindow.document.querySelectorAll('img[data-srcset], source[data-srcset]');
+            var elem;
+            var srcset = [];
+            for (var i = 0; i < dataSS.length; i++) {
+                elem = dataSS[i];
+                if (elem.tagName === 'SOURCE') {
+                    if (elem.parentElement && elem.parentElement.tagName === 'PICTURE' && elem.dataset.srcset) {
+                        srcset.push({srcset: elem.dataset.srcset, resolve: baseURI});
+                    }
+                } else if (elem.dataset.srcset) {
+                    srcset.push({srcset: elem.dataset.srcset, resolve: elem.src != null && elem.src !== ' ' ? elem.src : baseURI});
+                }
+            }
+            if (srcset.length) {
+                this.postMessage({
+                    'type': 'values',
+                    'srcset': {'values': srcset, 'presplit': false},
+                    'context': {
+                        'docBaseURI': $wbwindow.document.baseURI
+                    }
+                }, true);
+            }
+        };
         
-        AutoFetchWorker.prototype.extractFromLocalDoc = function () {
+        AutoFetchWorkerProxyMode.prototype.extractFromLocalDoc = function () {
             var i = 0;
             var media = [];
             var deferredMediaURLS = [];
-            var srcset = [];
             var sheet;
             var resolve;
             // We must use the window reference passed to us to access this origins stylesheets
@@ -307,17 +360,11 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             }
             // We must use the window reference passed to us to access this origins elements with srcset attr
             // like cssRule handling we must include a URL to resolve relative URLs by
-            var srcsetElems = $wbwindow.document.querySelectorAll('img[srcset]');
-            var ssElem, resolveAgainst;
-            for (i = 0; i < srcsetElems.length; i++) {
-                ssElem = srcsetElems[i];
-                resolveAgainst = ssElem.src != null && ssElem.src !== ' ' ? ssElem.src : $wbwindow.document.baseURI;
-                srcset.push({'srcset': ssElem.srcset, 'resolve': resolveAgainst});
-            }
+            var srcset = this.extractImgPictureSourceSrcsets();
             
             // send what we have extracted, if anything, to the worker for processing
             if (media.length > 0 || srcset.length > 0) {
-                this.postMessage({'type': 'values', 'media': media, 'srcset': srcset});
+                this.postMessage({'type': 'values', 'media': media, 'srcset': srcset}, true);
             }
             
             if (deferredMediaURLS.length > 0) {
@@ -334,9 +381,15 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                     }
                 });
             }
+            // deffer the checking of img/source data-srcset
+            // so that we do not clobber the UI thread
+            var self = this;
+            Promise.resolve().then(function () {
+                self.checkForPictureSourceDataSrcsets();
+            });
         };
         
-        WBAutoFetchWorker = new AutoFetchWorker();
+        WBAutoFetchWorker = new AutoFetchWorkerProxyMode();
         
         if (isTop) {
             $wbwindow.addEventListener("message", function (event) {

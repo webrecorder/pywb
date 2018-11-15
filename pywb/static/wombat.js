@@ -186,6 +186,16 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
     }
 
+    function isImageSrcset(elem) {
+        if (elem.tagName === 'IMG') return true;
+        return elem.tagName === 'SOURCE' && elem.parentElement && elem.parentElement.tagName === 'PICTURE';
+    }
+
+    function isImageDataSrcset(elem) {
+        if (isImageSrcset(elem)) return elem.dataset.srcset != null;
+        return false;
+    }
+
     //============================================
     function is_host_url(str) {
         // Good guess that's its a hostname
@@ -1152,7 +1162,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                 } else if (lowername == "style") {
                     value = rewrite_style(value);
                 } else if (lowername == "srcset") {
-                    value = rewrite_srcset(value, this.tagName === 'IMG');
+                    value = rewrite_srcset(value, isImageSrcset(this));
                 }
             }
             orig_setAttribute.call(this, name, value);
@@ -1423,16 +1433,74 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }, true);
         };
 
+        AutoFetchWorker.prototype.preserveDataSrcset = function (srcset) {
+            // send values from rewrite_attr srcset to the worker deferred
+            // to ensure the page viewer sees the images first
+            this.postMessage({
+                'type': 'values',
+                'srcset': {'values': srcset, 'presplit': false},
+            }, true);
+        };
+
         AutoFetchWorker.prototype.preserveMedia = function (media) {
             // send CSSMediaRule values to the worker
-            this.postMessage({'type': 'values', 'media': media})
+            this.postMessage({'type': 'values', 'media': media}, true);
+        };
+
+        AutoFetchWorker.prototype.extractSrcset = function (elem) {
+            if (wb_getAttribute) {
+                return wb_getAttribute.call(elem, 'srcset');
+            }
+            return elem.getAttribute('srcset');
+        };
+
+        AutoFetchWorker.prototype.checkForPictureSourceDataSrcsets = function () {
+            var dataSS = $wbwindow.document.querySelectorAll('img[data-srcset], source[data-srcset]');
+            var elem;
+            var srcset = [];
+            for (var i = 0; i < dataSS.length; i++) {
+                elem = dataSS[i];
+                if (elem.tagName === 'SOURCE') {
+                    if (elem.parentElement && elem.parentElement.tagName === 'PICTURE' && elem.dataset.srcset) {
+                        srcset.push({srcset: elem.dataset.srcset});
+                    }
+                } else if (elem.dataset.srcset) {
+                    srcset.push({srcset: elem.dataset.srcset});
+                }
+            }
+            if (srcset.length) {
+                this.postMessage({
+                    'type': 'values',
+                    'srcset': {'values': srcset, 'presplit': false},
+                    'context': {
+                        'docBaseURI': $wbwindow.document.baseURI
+                    }
+                }, true);
+            }
+        };
+
+        AutoFetchWorker.prototype.extractImgPictureSourceSrcsets = function () {
+            var i;
+            var elem = null;
+            var srcset = [];
+            var ssElements = $wbwindow.document.querySelectorAll('img[srcset], source[srcset]');
+            for (i = 0; i < ssElements.length; i++) {
+                elem = ssElements[i];
+                if (elem.tagName === 'SOURCE') {
+                    if (elem.parentElement && elem.parentElement.tagName === 'PICTURE') {
+                        srcset.push({srcset: this.extractSrcset(elem)});
+                    }
+                } else {
+                   srcset.push({tagSrc: elem.src, srcset: this.extractSrcset(elem)});
+                }
+            }
+            return srcset;
         };
 
         AutoFetchWorker.prototype.extractFromLocalDoc = function () {
             // get the values to be preserved from the  documents stylesheets
             // and all elements with a srcset
             var media = [];
-            var srcset = [];
             var sheets = $wbwindow.document.styleSheets;
             var i = 0;
             for (; i < sheets.length; ++i) {
@@ -1444,16 +1512,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
                     }
                 }
             }
-            var srcsetElems = $wbwindow.document.querySelectorAll('img[srcset]');
-            for (i = 0; i < srcsetElems.length; i++) {
-                var ssv = {tagSrc: srcsetElems[i].src};
-                if (wb_getAttribute) {
-                    ssv.srcset = wb_getAttribute.call(srcsetElems[i], 'srcset');
-                } else {
-                    ssv.srcset = srcsetElems[i].getAttribute('srcset');
-                }
-                srcset.push(ssv);
-            }
+            var srcset = this.extractImgPictureSourceSrcsets();
             // send the extracted values to the worker deferred
             // to ensure the page viewer sees the images first
             this.postMessage({
@@ -1464,6 +1523,12 @@ var _WBWombat = function($wbwindow, wbinfo) {
                     'docBaseURI': $wbwindow.document.baseURI
                 }
             }, true);
+            // deffer the checking of img/source data-srcset
+            // so that we do not clobber the UI thread
+            var self = this;
+            Promise.resolve().then(function () {
+                self.checkForPictureSourceDataSrcsets();
+            });
         };
 
         WBAutoFetchWorker = new AutoFetchWorker(wb_abs_prefix, wbinfo.mod);
@@ -1615,7 +1680,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         } else if (name == "style") {
             new_value = rewrite_style(value);
         } else if (name == "srcset") {
-            new_value = rewrite_srcset(value, elem.tagName === 'IMG');
+            new_value = rewrite_srcset(value, isImageSrcset(elem));
         } else {
             // Only rewrite if absolute url
             if (abs_url_only && !starts_with(value, VALID_PREFIXES)) {
@@ -1623,6 +1688,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
             var mod = rwModForElement(elem, name);
             new_value = rewrite_url(value, false, mod, elem.ownerDocument);
+            if (wbUseAFWorker && isImageDataSrcset(elem)) {
+                WBAutoFetchWorker.preserveDataSrcset(elem.dataset.srcset);
+            }
         }
 
         if (new_value != value) {
@@ -1724,7 +1792,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         if (elem.getAttribute("src") || !elem.textContent || !$wbwindow.Proxy) {
             return rewrite_attr(elem, "src");
         }
-
+        if (elem.type && (elem.type === 'application/json' || elem.type.indexOf('text/template') !== -1)) return;
         if (elem.textContent.indexOf("_____WB$wombat$assign$function_____") >= 0) {
             return false;
         }
@@ -2029,7 +2097,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             if (mod == "cs_" && orig.indexOf("data:text/css") == 0) {
                 val = rewrite_inline_style(orig);
             } else if (attr == "srcset") {
-                val = rewrite_srcset(orig, this.tagName === 'IMG');
+                val = rewrite_srcset(orig, isImageSrcset(this));
             } else if (this.tagName === 'LINK' && attr === 'href') {
                 var relV = this.rel;
                 if (relV === 'import' || relV === 'preload') {

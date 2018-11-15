@@ -53,8 +53,6 @@ function AutoFetcher() {
     }
     // local cache of URLs fetched, to reduce server load
     this.seen = {};
-    // array of promises returned by fetch(URL)
-    this.fetches = [];
     // array of URL to be fetched
     this.queue = [];
     // should we queue a URL or not
@@ -65,19 +63,14 @@ function AutoFetcher() {
     this.fetchDone = this.fetchDone.bind(this);
 }
 
-AutoFetcher.prototype.safeFetch = function (url) {
+AutoFetcher.prototype.queueURL = function (url) {
     // ensure we do not request data urls
     if (url.indexOf('data:') === 0) return;
     // check to see if we have seen this url before in order
     // to lessen the load against the server content is autofetchd from
     if (this.seen[url] != null) return;
     this.seen[url] = true;
-    if (this.queuing) {
-        // we are currently waiting for a batch of fetches to complete
-        return this.queue.push(url);
-    }
-    // fetch this url
-    this.fetches.push(fetch(url));
+    this.queue.push(url);
 };
 
 AutoFetcher.prototype.safeResolve = function (url, resolver) {
@@ -102,45 +95,50 @@ AutoFetcher.prototype.urlExtractor = function (match, n1, n2, n3, offset, string
     // (resolvedURL will be undefined if an error occurred)
     var resolvedURL = this.safeResolve(n2, this.currentResolver);
     if (resolvedURL) {
-        this.safeFetch(resolvedURL);
+        this.queueURL(resolvedURL);
     }
     return n1 + n2 + n3;
 };
 
+AutoFetcher.prototype.delay = function () {
+    // 2 second delay seem reasonable
+    return new Promise(function (resolve, reject) {
+        setTimeout(resolve, 2000);
+    });
+};
+
 AutoFetcher.prototype.fetchDone = function () {
-    // indicate we no longer need to Q
     this.queuing = false;
     if (this.queue.length > 0) {
         // we have a Q of some length drain it
-        this.drainQ();
+        var autofetcher = this;
+        // wait 2 seconds before doing another batch
+        this.delay().then(function () {
+            autofetcher.fetchAll();
+        });
     }
 };
 
 AutoFetcher.prototype.fetchAll = function () {
-    // if we are queuing or have no fetches this is a no op
-    if (this.queuing) return;
-    if (this.fetches.length === 0) return;
-    // we are about to fetch queue anything that comes our way
+    if (this.queuing || this.queue.length === 0) {
+        return;
+    }
+    // the number of fetches is limited to a maximum of 60 outstanding fetches
+    // the baseline maximum number of fetches is 50 but if the size(queue) <= 10
+    // we add them to the current batch    this.queuing = true;
     this.queuing = true;
-    // initiate fetches by turning the initial fetch promises
-    // into rejctionless promises and "await" all clearing
-    // our fetches array in place
     var runningFetchers = [];
-    while (this.fetches.length > 0) {
-        runningFetchers.push(this.fetches.shift().catch(noop))
+    while (this.queue.length > 0 && runningFetchers.length <= 50) {
+        runningFetchers.push(fetch(this.queue.shift()).catch(noop))
+    }
+    if (this.queue.length <= 10) {
+        while (this.queue.length > 0) {
+            runningFetchers.push(fetch(this.queue.shift()).catch(noop))
+        }
     }
     Promise.all(runningFetchers)
         .then(this.fetchDone)
         .catch(this.fetchDone);
-};
-
-AutoFetcher.prototype.drainQ = function () {
-    // clear our Q in place and fill our fetches array
-    while (this.queue.length > 0) {
-        this.fetches.push(fetch(this.queue.shift()));
-    }
-    // fetch all the things
-    this.fetchAll();
 };
 
 AutoFetcher.prototype.extractMedia = function (mediaRules) {
@@ -173,7 +171,7 @@ AutoFetcher.prototype.extractSrcset = function (srcsets) {
                     // resolve the URL in an exceptionless manner (resolvedURL will be undefined if an error occurred)
                     var resolvedURL = this.safeResolve(srcsetValue.split(' ')[0], extractedSrcSet.resolve);
                     if (resolvedURL) {
-                        this.safeFetch(resolvedURL);
+                        this.queueURL(resolvedURL);
                     }
                 }
             }
