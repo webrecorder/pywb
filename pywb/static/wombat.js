@@ -75,6 +75,9 @@ var _WBWombat = function($wbwindow, wbinfo) {
     var wb_orig_origin;
     var wb_curr_host;
 
+    // scheme to use when resolving scheme-relative urls
+    var wb_rel_scheme_default;
+
     var wb_setAttribute = $wbwindow.Element.prototype.setAttribute;
     var wb_getAttribute = $wbwindow.Element.prototype.getAttribute;
     var wb_funToString = Function.prototype.toString;
@@ -505,7 +508,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
             }
 
             if (href != orig_href && !starts_with(href, VALID_PREFIXES)) {
-                href = wb_orig_scheme + href;
+                href = wb_rel_scheme_default + "://" + href;
             }
         }
 
@@ -514,7 +517,7 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         if (starts_with(href, REL_PREFIX)) {
-            href = wb_info.wombat_scheme +  ":" + href;
+            href = wb_rel_scheme_default +  ":" + href;
         }
 
         return href;
@@ -3490,6 +3493,15 @@ var _WBWombat = function($wbwindow, wbinfo) {
 
         wb_orig_scheme = wbinfo.wombat_scheme + '://';
         wb_orig_origin = wb_orig_scheme + wbinfo.wombat_host;
+
+        var SCHEME_REL_CHANGE_TIMESTAMP = "20181101";
+
+        // if replaying ccontent from before this date, use http for replay
+        if (!wbinfo.is_live && wbinfo.timestamp < SCHEME_REL_CHANGE_TIMESTAMP) {
+          wb_rel_scheme_default = "http";
+        } else {
+          wb_rel_scheme_default = wbinfo.wombat_scheme;
+        }
 
         wb_abs_prefix = wb_replay_prefix;
 
