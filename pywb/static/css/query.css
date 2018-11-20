@@ -1,51 +1,20 @@
-.year{
-	background-color: #252525;
-    color: #999;
-    border-bottom: 1px solid #3E3E3E
+.auto-overflow {
+	overflow-y: auto;
 }
 
-.year:hover, .year:active, .month:hover, .month:active{
-	text-decoration: none;
-    color: #fff;
-    background: #515151;
-    cursor: pointer;
+.q-display {
+	height: 80% !important;
 }
 
-.month{
-	background-color: #343434;
-    color: #999;
-    border-bottom: 1px solid #3E3E3E;
-    padding-left: 30px!important;	
+.q-row {
+	height: 90% !important;
 }
 
-.day:active, .day:hover{
-	background: #515151;
-    cursor: pointer;	
-    color: white;
+.list-group-item.list-group-item-action.active {
+	background-color: transparent;
+	color: #007bff;
 }
 
-.day{
-	background-color: #454545;
-	color: #999;
-	text-decoration: underline;
-	padding-top: 10px;
-	padding-bottom: 10px;
-	padding-left: 45px!important;
-}
-
-.row{
-	margin-right: 0px!important;
-    margin-left: 0px!important;
-}
-
-.months{
-	display: none;
-}
-
-.days{
-	display: none;
-}
-
-.yearCarret{
-	padding-left: 15px
+.long-text {
+	word-wrap: break-word;
 }
