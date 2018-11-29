@@ -11,6 +11,9 @@ class TestMemento(MementoMixin, BaseConfigTest):
     def setup_class(cls):
         super(TestMemento, cls).setup_class('config_test.yaml')
 
+    def _timemap_get(self, url, **kwargs):
+        return self.testapp.get(url, extra_environ={'REQUEST_URI': url}, **kwargs)
+
     def _assert_memento(self, resp, url, ts, fmod, dt=''):
         dt = dt or timestamp_to_http_date(ts)
 
@@ -121,7 +124,7 @@ class TestMemento(MementoMixin, BaseConfigTest):
         Test application/link-format timemap
         """
 
-        resp = self.testapp.get('/pywb/timemap/link/http://example.com?example=1')
+        resp = self._timemap_get('/pywb/timemap/link/http://example.com?example=1')
         assert resp.status_int == 200
         assert resp.content_type == LINK_FORMAT
 
@@ -141,7 +144,7 @@ class TestMemento(MementoMixin, BaseConfigTest):
         Test test/x-cdxj timemap
         """
 
-        resp = self.testapp.get('/pywb/timemap/cdxj/http://example.com?example=1')
+        resp = self._timemap_get('/pywb/timemap/cdxj/http://example.com?example=1')
         assert resp.status_int == 200
         assert resp.content_type == 'text/x-cdxj'
 
@@ -158,7 +161,7 @@ com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "
         Test application/link-format timemap total count
         """
 
-        resp = self.testapp.get('/pywb/timemap/link/http://example.com')
+        resp = self._timemap_get('/pywb/timemap/link/http://example.com')
         assert resp.status_int == 200
         assert resp.content_type == LINK_FORMAT
 
@@ -167,11 +170,11 @@ com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "
         assert len(lines) == 7
 
     def test_timemap_error_not_found(self):
-        resp = self.testapp.get('/pywb/timemap/link/http://example.com/x-not-found', status=404)
+        resp = self._timemap_get('/pywb/timemap/link/http://example.com/x-not-found', status=404)
         assert resp.body == b''
 
     def test_timemap_error_invalid_format(self):
-        resp = self.testapp.get('/pywb/timemap/foo/http://example.com', status=400)
+        resp = self._timemap_get('/pywb/timemap/foo/http://example.com', status=400)
         assert resp.json == {'message': 'output=foo not supported'}
 
     def test_error_bad_accept_datetime(self):
