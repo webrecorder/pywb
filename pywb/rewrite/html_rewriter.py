@@ -455,8 +455,11 @@ class HTMLRewriterMixin(StreamingRewriter):
 
         elif rel == 'stylesheet':
             rw_mod = 'cs_'
-
-        return self._rewrite_url(attr_value, rw_mod)
+        # ensure that we rewrite to abs because if we do not and encounter a
+        # super relative URL (href='css/stylesheet.css') under a page rooted
+        # under the mp_ modifier and the response from the server does not
+        # indicate the right mime-type, fonts et al can get messed up
+        return self._rewrite_url(attr_value, rw_mod, True)
 
     def _set_parse_context(self, tag, tag_attrs):
         # special case: script or style parse context
