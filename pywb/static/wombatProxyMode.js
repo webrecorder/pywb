@@ -29,55 +29,56 @@ var _WBWombat = function ($wbwindow, wbinfo) {
     wbinfo.wombat_opts = wbinfo.wombat_opts || {};
     var wbAutoFetchWorkerPrefix = (wb_info.auto_fetch_worker_prefix || wb_info.static_prefix) + 'autoFetchWorkerProxyMode.js';
     var WBAutoFetchWorker;
-    
+
     function init_seeded_random(seed) {
         // Adapted from:
         // http://indiegamr.com/generate-repeatable-random-numbers-in-js/
-        
+
         $wbwindow.Math.seed = parseInt(seed);
-        
+
         function seeded_random() {
             $wbwindow.Math.seed = ($wbwindow.Math.seed * 9301 + 49297) % 233280;
             var rnd = $wbwindow.Math.seed / 233280;
-            
+
             return rnd;
         }
-        
+
         $wbwindow.Math.random = seeded_random;
     }
-    
+
     function init_crypto_random() {
         if (!$wbwindow.crypto || !$wbwindow.Crypto) {
             return;
         }
-        
+
         var orig_getrandom = $wbwindow.Crypto.prototype.getRandomValues;
-        
+
         var new_getrandom = function (array) {
             for (var i = 0; i < array.length; i++) {
                 array[i] = parseInt($wbwindow.Math.random() * 4294967296);
             }
             return array;
         };
-        
+
         $wbwindow.Crypto.prototype.getRandomValues = new_getrandom;
         $wbwindow.crypto.getRandomValues = new_getrandom;
     }
-    
+
     //============================================
     function init_fixed_ratio() {
         // otherwise, just set it
         $wbwindow.devicePixelRatio = 1;
-        
+
         // prevent changing, if possible
         if (Object.defineProperty) {
             try {
                 // fixed pix ratio
                 Object.defineProperty($wbwindow, "devicePixelRatio", {value: 1, writable: false});
-            } catch (e) {}
+            } catch (e) {
+            }
         }
     }
-    
+
     //========================================
     function init_date_override(timestamp) {
         timestamp = parseInt(timestamp) * 1000;
@@ -86,19 +87,19 @@ var _WBWombat = function ($wbwindow, wbinfo) {
         var timezone = 0;
         var start_now = $wbwindow.Date.now();
         var timediff = start_now - (timestamp - timezone);
-        
+
         if ($wbwindow.__wb_Date_now) {
             return;
         }
-        
+
         var orig_date = $wbwindow.Date;
-        
+
         var orig_utc = $wbwindow.Date.UTC;
         var orig_parse = $wbwindow.Date.parse;
         var orig_now = $wbwindow.Date.now;
-        
+
         $wbwindow.__wb_Date_now = orig_now;
-        
+
         $wbwindow.Date = function (Date) {
             return function (A, B, C, D, E, F, G) {
                 // Apply doesn't work for constructors and Date doesn't
@@ -123,21 +124,21 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 }
             }
         }($wbwindow.Date);
-        
+
         $wbwindow.Date.prototype = orig_date.prototype;
-        
+
         $wbwindow.Date.now = function () {
             return orig_now() - timediff;
         };
-        
+
         $wbwindow.Date.UTC = orig_utc;
         $wbwindow.Date.parse = orig_parse;
-        
+
         $wbwindow.Date.__WB_timediff = timediff;
-        
+
         Object.defineProperty($wbwindow.Date.prototype, "constructor", {value: $wbwindow.Date});
     }
-    
+
     //============================================
     function init_disable_notifications() {
         if (window.Notification) {
@@ -145,36 +146,46 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 if (callback) {
                     callback("denied");
                 }
-                
+
                 return Promise.resolve("denied");
             };
         }
-        
+
         if (window.geolocation) {
             var disabled = function (success, error, options) {
                 if (error) {
                     error({"code": 2, "message": "not available"});
                 }
             };
-            
+
             window.geolocation.getCurrentPosition = disabled;
             window.geolocation.watchPosition = disabled;
         }
     }
-    
+
     function initAutoFetchWorker() {
         if (!$wbwindow.Worker) {
             return;
         }
-        
+
         var isTop = $wbwindow.self === $wbwindow.top;
-        
+
         function AutoFetchWorkerProxyMode() {
             if (!(this instanceof AutoFetchWorkerProxyMode)) {
                 return new AutoFetchWorkerProxyMode();
             }
             this.checkIntervalTime = 15000;
             this.checkIntervalCB = this.checkIntervalCB.bind(this);
+            this.elemSelector = ['img', 'source', 'video', 'audio'].map(function (which) {
+                if (which === 'source') {
+                    return ['picture > ', 'video > ', 'audio >'].map(function (parent) {
+                        return parent + which + '[srcset], ' + parent + which + '[data-srcset], ' + parent + which + '[data-src]'
+                    }).join(', ');
+                } else {
+                    return which + '[srcset], ' + which + '[data-srcset], ' + which + '[data-src]';
+                }
+            }).join(', ');
+
             if (isTop) {
                 // Cannot directly load our worker from the proxy origin into the current origin
                 // however we fetch it from proxy origin and can blob it into the current origin :)
@@ -200,12 +211,13 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                         }
                         $wbwindow.top.postMessage(msg, '*');
                     },
-                    "terminate": function () {}
+                    "terminate": function () {
+                    }
                 };
                 this.startCheckingInterval();
             }
         }
-        
+
         AutoFetchWorkerProxyMode.prototype.startCheckingInterval = function () {
             // if document ready state is complete do first extraction and start check polling
             // otherwise wait for document ready state to complete to extract and start check polling
@@ -223,16 +235,16 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 }, 1000);
             }
         };
-        
+
         AutoFetchWorkerProxyMode.prototype.checkIntervalCB = function () {
             this.extractFromLocalDoc();
         };
-        
+
         AutoFetchWorkerProxyMode.prototype.terminate = function () {
             // terminate the worker, a no op when not replay top
             this.worker.terminate();
         };
-        
+
         AutoFetchWorkerProxyMode.prototype.postMessage = function (msg, deferred) {
             if (deferred) {
                 var self = this;
@@ -242,7 +254,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             }
             this.worker.postMessage(msg);
         };
-        
+
         AutoFetchWorkerProxyMode.prototype.extractMediaRules = function (rules, href) {
             // We are in proxy mode and must include a URL to resolve relative URLs in media rules
             if (!rules) return [];
@@ -257,7 +269,7 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             }
             return text;
         };
-        
+
         AutoFetchWorkerProxyMode.prototype.corsCSSFetch = function (href) {
             // because this JS in proxy mode operates as it would on the live web
             // the rules of CORS apply and we cannot rely on URLs being rewritten correctly
@@ -274,70 +286,50 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                 return [];
             });
         };
-        
+
         AutoFetchWorkerProxyMode.prototype.shouldSkipSheet = function (sheet) {
             // we skip extracting rules from sheets if they are from our parsing style or come from pywb
             if (sheet.id === '$wrStyleParser$') return true;
             return !!(sheet.href && sheet.href.indexOf(wb_info.proxy_magic) !== -1);
         };
 
-        AutoFetchWorkerProxyMode.prototype.extractImgPictureSourceSrcsets = function () {
-            var i;
-            var elem;
-            var srcset = [];
+        AutoFetchWorkerProxyMode.prototype.getImgAVElems = function () {
+            var elem, srcv, mod;
+            var results = { 'srcset': [], 'src': []} ;
             var baseURI = $wbwindow.document.baseURI;
-            var ssElements = $wbwindow.document.querySelectorAll('img[srcset], source[srcset]');
-            for (i = 0; i < ssElements.length; i++) {
-                elem = ssElements[i];
-                if (elem.tagName === 'SOURCE') {
-                    if (elem.parentElement && elem.parentElement.tagName === 'PICTURE') {
-                        srcset.push({srcset: elem.srcset, resolve: baseURI});
-                    }
-                } else {
-                    srcset.push({
-                        srcset: elem.srcset,
-                        resolve: elem.src != null && elem.src !== ' ' ? elem.src : baseURI
-                    });
+            var elems = $wbwindow.document.querySelectorAll(this.elemSelector);
+            for (var i = 0; i < elems.length; i++) {
+                elem = elems[i];
+                // we want the original src value in order to resolve URLs in the worker when needed
+                srcv = elem.src ? elem.src : null;
+                // get the correct mod in order to inform the backing worker where the URL(s) are from
+                mod = elem.tagName === "SOURCE" ?
+                    elem.parentElement.tagName === "PICTURE" ? 'im_' : 'oe_'
+                    : elem.tagName === "IMG" ? 'im_' : 'oe_';
+                if (elem.srcset) {
+                    results.srcset.push({ 'srcset': elem.srcset, 'resolve': srcv || baseURI, 'mod': mod });
+                }
+                if (elem.dataset.srcset) {
+                    results.srcset.push({ 'srcset': elem.dataset.srcset, 'resolve': srcv || baseURI, 'mod': mod });
+                }
+                if (elem.dataset.src) {
+                    results.src.push({'src': elem.dataset.src, 'resolve': srcv || baseURI, 'mod': mod});
+                }
+                if (elem.tagName === "SOURCE" && srcv) {
+                    results.src.push({'src': srcv, 'resolve': baseURI, 'mod': mod});
                 }
             }
-            return srcset;
+            return results;
         };
 
-        AutoFetchWorkerProxyMode.prototype.checkForPictureSourceDataSrcsets = function () {
-            var baseURI = $wbwindow.document.baseURI;
-            var dataSS = $wbwindow.document.querySelectorAll('img[data-srcset], source[data-srcset]');
-            var elem;
-            var srcset = [];
-            for (var i = 0; i < dataSS.length; i++) {
-                elem = dataSS[i];
-                if (elem.tagName === 'SOURCE') {
-                    if (elem.parentElement && elem.parentElement.tagName === 'PICTURE' && elem.dataset.srcset) {
-                        srcset.push({srcset: elem.dataset.srcset, resolve: baseURI});
-                    }
-                } else if (elem.dataset.srcset) {
-                    srcset.push({srcset: elem.dataset.srcset, resolve: elem.src != null && elem.src !== ' ' ? elem.src : baseURI});
-                }
-            }
-            if (srcset.length) {
-                this.postMessage({
-                    'type': 'values',
-                    'srcset': {'values': srcset, 'presplit': false},
-                    'context': {
-                        'docBaseURI': $wbwindow.document.baseURI
-                    }
-                }, true);
-            }
-        };
-        
         AutoFetchWorkerProxyMode.prototype.extractFromLocalDoc = function () {
-            var i = 0;
             var media = [];
             var deferredMediaURLS = [];
             var sheet;
             var resolve;
             // We must use the window reference passed to us to access this origins stylesheets
             var styleSheets = $wbwindow.document.styleSheets;
-            for (; i < styleSheets.length; ++i) {
+            for (var i = 0; i < styleSheets.length; i++) {
                 sheet = styleSheets[i];
                 // if the sheet belongs to our parser node we must skip it
                 if (!this.shouldSkipSheet(sheet)) {
@@ -360,13 +352,22 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             }
             // We must use the window reference passed to us to access this origins elements with srcset attr
             // like cssRule handling we must include a URL to resolve relative URLs by
-            var srcset = this.extractImgPictureSourceSrcsets();
-            
+            var results = this.getImgAVElems();
+            var msg = { 'type': 'values' };
             // send what we have extracted, if anything, to the worker for processing
-            if (media.length > 0 || srcset.length > 0) {
-                this.postMessage({'type': 'values', 'media': media, 'srcset': srcset}, true);
+            if (media.length > 0) {
+                msg.media = media;
             }
-            
+            if (results.srcset) {
+                msg.srcset = results.srcset;
+            }
+            if (results.src) {
+                msg.src = results.src;
+            }
+            if (msg.media || msg.srcset || msg.src) {
+                this.postMessage(msg);
+            }
+
             if (deferredMediaURLS.length > 0) {
                 // wait for all our deferred fetching and extraction of cross origin
                 // stylesheets to complete and then send those values, if any, to the worker
@@ -381,16 +382,10 @@ var _WBWombat = function ($wbwindow, wbinfo) {
                     }
                 });
             }
-            // deffer the checking of img/source data-srcset
-            // so that we do not clobber the UI thread
-            var self = this;
-            Promise.resolve().then(function () {
-                self.checkForPictureSourceDataSrcsets();
-            });
         };
-        
+
         WBAutoFetchWorker = new AutoFetchWorkerProxyMode();
-        
+
         if (isTop) {
             $wbwindow.addEventListener("message", function (event) {
                 if (event.data && event.data.wb_type === 'aaworker') {
@@ -399,11 +394,11 @@ var _WBWombat = function ($wbwindow, wbinfo) {
             }, false);
         }
     }
-    
+
     if (wbinfo.enable_auto_fetch && wbinfo.is_live) {
         initAutoFetchWorker();
     }
-    
+
     // proxy mode overrides
     // Random
     init_seeded_random(wbinfo.wombat_sec);
@@ -425,13 +420,13 @@ var _WBWombat = function ($wbwindow, wbinfo) {
 
 window._WBWombat = _WBWombat;
 
-window._WBWombatInit = function(wbinfo) {
-  if (!this._wb_wombat || !this._wb_wombat.actual) {
-    this._wb_wombat = new _WBWombat(this, wbinfo);
-    this._wb_wombat.actual = true;
-  } else if (!this._wb_wombat) {
-    console.warn("_wb_wombat missing!");
-  }
+window._WBWombatInit = function (wbinfo) {
+    if (!this._wb_wombat || !this._wb_wombat.actual) {
+        this._wb_wombat = new _WBWombat(this, wbinfo);
+        this._wb_wombat.actual = true;
+    } else if (!this._wb_wombat) {
+        console.warn("_wb_wombat missing!");
+    }
 };
 
 
