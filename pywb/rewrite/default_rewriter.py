@@ -48,7 +48,7 @@ class DefaultRewriter(BaseContentRewriter):
 
     rewrite_types = {
         # HTML
-        'text/html': 'html',
+        'text/html': 'guess-html',
         'application/xhtml': 'html',
         'application/xhtml+xml': 'html',
 

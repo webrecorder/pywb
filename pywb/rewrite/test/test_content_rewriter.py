@@ -126,7 +126,7 @@ class TestContentRewriter(object):
 
         headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
 
-        assert is_rw
+        assert is_rw == False
         assert ('Content-Type', 'text/html; charset=utf-8') in headers.headers
         assert b''.join(gen).decode('utf-8') == exp
 
@@ -333,8 +333,18 @@ class TestContentRewriter(object):
 
         assert ('Content-Type', 'text/html; charset=utf-8') in headers.headers
 
-        assert is_rw == True
+        assert is_rw == False
         assert b''.join(gen) == content
+
+    def test_binary_wrong_content_type_html_rw(self):
+        headers = {'Content-Type': 'text/html; charset=utf-8'}
+        content = b'Hello <a href="/foo.html">link</a>'
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        assert ('Content-Type', 'text/html; charset=utf-8') in headers.headers
+
+        assert is_rw
+        assert b''.join(gen) == b'Hello <a href="/prefix/201701/http://example.com/foo.html">link</a>'
 
     def test_binary_wrong_content_type_css(self):
         headers = {'Content-Type': 'text/css; charset=utf-8'}
