@@ -433,7 +433,7 @@ class RewriteInfo(object):
         # if html or no-content type, allow resolving on js, css,
         # or other templates
         if text_type == 'guess-text':
-            if not is_js_or_css and mod not in ('if_', 'mp_', ''):
+            if not is_js_or_css and mod not in ('if_', 'mp_', 'bn_', ''):
                 return None
 
         # if application/octet-stream binary, only resolve if in js/css content
