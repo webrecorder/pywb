@@ -348,6 +348,7 @@ class StreamingRewriter(object):
 # ============================================================================
 class RewriteInfo(object):
     TAG_REGEX = re.compile(b'^\s*\<')
+    TAG_REGEX2 = re.compile(b'^.*<\w+[\s>]')
     JSON_REGEX = re.compile(b'^\s*[{[][{"]')  # if it starts with this then highly likely not HTML
 
     JSONP_CONTAINS = ['callback=jQuery',
@@ -391,7 +392,7 @@ class RewriteInfo(object):
         text_type = self._resolve_text_type(orig_text_type)
         url = self.url_rewriter.wburl.url
 
-        if text_type in ('guess-text', 'guess-bin'):
+        if text_type in ('guess-text', 'guess-bin', 'guess-html'):
             text_type = None
 
         if text_type == 'js':
@@ -432,7 +433,7 @@ class RewriteInfo(object):
 
         # if html or no-content type, allow resolving on js, css,
         # or other templates
-        if text_type == 'guess-text':
+        if text_type in ('guess-text', 'guess-html'):
             if not is_js_or_css and mod not in ('if_', 'mp_', 'bn_', ''):
                 return None
 
@@ -449,6 +450,10 @@ class RewriteInfo(object):
         # check if doesn't start with a tag, then likely not html
         if self.TAG_REGEX.match(buff):
             return 'html'
+        # perform additional check to see if it has any html tags
+        elif text_type == 'guess-html' and not is_js_or_css:
+            if self.TAG_REGEX2.match(buff):
+                return 'html'
 
         if not is_js_or_css:
             return text_type
