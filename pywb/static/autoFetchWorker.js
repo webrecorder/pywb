@@ -3,6 +3,12 @@
 var STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
 var IMPORT_REGEX = /(@import\s+[\\"']*)([^)'";]+)([\\"']*\s*;?)/gi;
 var srcsetSplit = /\s*(\S*\s+[\d.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))/;
+var DefaultNumImFetches = 30;
+var FullImgQDrainLen = 10;
+var DefaultNumAvFetches = 5;
+var FullAVQDrainLen = 5;
+var DataURLPrefix = 'data:';
+
 // the autofetcher instance for this worker
 var autofetcher = null;
 
@@ -41,7 +47,7 @@ self.onmessage = function (event) {
     var data = event.data;
     switch (data.type) {
         case 'values':
-            autofetcher.autofetchMediaSrcset(data);
+            autofetcher.autoFetch(data);
             break;
     }
 };
@@ -53,52 +59,23 @@ function AutoFetcher(init) {
     this.prefix = init.prefix;
     this.mod = init.mod;
     this.prefixMod = init.prefix + init.mod;
+    this.rwRe = new RegExp(init.rwRe);
     // relative url, WorkerLocation is set by owning document
     this.relative = init.prefix.split(location.origin)[1];
     // schemeless url
     this.schemeless = '/' + this.relative;
     // local cache of URLs fetched, to reduce server load
     this.seen = {};
-    // array of URL to be fetched
+    // array of URLs to be fetched
     this.queue = [];
+    this.avQueue = [];
     // should we queue a URL or not
     this.queuing = false;
+    this.queuingAV = false;
     this.urlExtractor = this.urlExtractor.bind(this);
-    this.fetchDone = this.fetchDone.bind(this);
+    this.imgFetchDone = this.imgFetchDone.bind(this);
+    this.avFetchDone = this.avFetchDone.bind(this);
 }
-
-AutoFetcher.prototype.fixupURL = function (url) {
-    // attempt to fix up the url and do our best to ensure we can get dat 200 OK!
-    if (url.indexOf(this.prefixMod) === 0) {
-        return url;
-    }
-    if (url.indexOf(this.relative) === 0) {
-        return url.replace(this.relative, this.prefix);
-    }
-    if (url.indexOf(this.schemeless) === 0) {
-        return url.replace(this.schemeless, this.prefix);
-    }
-    if (url.indexOf(this.prefix) !== 0) {
-        return this.prefix + url;
-    }
-    return url;
-};
-
-AutoFetcher.prototype.queueURL = function (url) {
-    // ensure we do not request data urls
-    if (url.indexOf('data:') === 0) return;
-    // check to see if we have seen this url before in order
-    // to lessen the load against the server content is fetched from
-    if (this.seen[url] != null) return;
-    this.seen[url] = true;
-    this.queue.push(url);
-};
-
-AutoFetcher.prototype.urlExtractor = function (match, n1, n2, n3, offset, string) {
-    // Same function as style_replacer in wombat.rewrite_style, n2 is our URL
-    this.queueURL(this.fixupURL(n2));
-    return n1 + n2 + n3;
-};
 
 AutoFetcher.prototype.delay = function () {
     // 2 second delay seem reasonable
@@ -107,47 +84,105 @@ AutoFetcher.prototype.delay = function () {
     });
 };
 
-AutoFetcher.prototype.fetchDone = function () {
-    this.queuing = false;
+AutoFetcher.prototype.imgFetchDone = function () {
     if (this.queue.length > 0) {
         // we have a Q of some length drain it
         var autofetcher = this;
         this.delay().then(function () {
-            autofetcher.fetchAll();
+            autofetcher.queuing = false;
+            autofetcher.fetchImgs();
         });
+    } else {
+        this.queuing = false;
     }
 };
 
-AutoFetcher.prototype.fetchAll = function () {
+AutoFetcher.prototype.avFetchDone = function () {
+    if (this.avQueue.length > 0) {
+        // we have a Q of some length drain it
+        var autofetcher = this;
+        this.delay().then(function () {
+            autofetcher.queuingAV = false;
+            autofetcher.fetchAV();
+        });
+    } else {
+        this.queuingAV = false;
+    }
+};
+
+AutoFetcher.prototype.fetchAV = function () {
+    if (this.queuingAV || this.avQueue.length === 0) {
+        return;
+    }
+    // the number of fetches is limited to a maximum of DefaultNumAvFetches + FullAVQDrainLen outstanding fetches
+    // the baseline maximum number of fetches is DefaultNumAvFetches but if the size(avQueue) <= FullAVQDrainLen
+    // we add them to the current batch. Because audio video resources might be big
+    // we limit how many we fetch at a time drastically
+    this.queuingAV = true;
+    var runningFetchers = [];
+    while (this.avQueue.length > 0 && runningFetchers.length <= DefaultNumAvFetches) {
+        runningFetchers.push(fetch(this.avQueue.shift()).catch(noop))
+    }
+    if (this.avQueue.length <= FullAVQDrainLen) {
+        while (this.avQueue.length > 0) {
+            runningFetchers.push(fetch(this.avQueue.shift()).catch(noop))
+        }
+    }
+    Promise.all(runningFetchers)
+        .then(this.avFetchDone)
+        .catch(this.avFetchDone);
+};
+
+AutoFetcher.prototype.fetchImgs = function () {
     if (this.queuing || this.queue.length === 0) {
         return;
     }
-    // the number of fetches is limited to a maximum of 60 outstanding fetches
-    // the baseline maximum number of fetches is 50 but if the size(queue) <= 10
+    // the number of fetches is limited to a maximum of DefaultNumImFetches + FullImgQDrainLen outstanding fetches
+    // the baseline maximum number of fetches is DefaultNumImFetches but if the size(queue) <= FullImgQDrainLen
     // we add them to the current batch
     this.queuing = true;
     var runningFetchers = [];
-    while (this.queue.length > 0 && runningFetchers.length <= 50) {
+    while (this.queue.length > 0 && runningFetchers.length <= DefaultNumImFetches) {
         runningFetchers.push(fetch(this.queue.shift()).catch(noop))
     }
-    if (this.queue.length <= 10) {
+    if (this.queue.length <= FullImgQDrainLen) {
         while (this.queue.length > 0) {
             runningFetchers.push(fetch(this.queue.shift()).catch(noop))
         }
     }
     Promise.all(runningFetchers)
-        .then(this.fetchDone)
-        .catch(this.fetchDone);
+        .then(this.imgFetchDone)
+        .catch(this.imgFetchDone);
 };
 
-AutoFetcher.prototype.extractMedia = function (mediaRules) {
-    // this is a broken down rewrite_style
-    if (mediaRules == null || mediaRules.values === null) return;
-    var rules = mediaRules.values;
-    for (var i = 0; i < rules.length; i++) {
-        var rule = rules[i];
-        rule.replace(STYLE_REGEX, this.urlExtractor)
-            .replace(IMPORT_REGEX, this.urlExtractor);
+AutoFetcher.prototype.queueNonAVURL = function (url) {
+    // ensure we do not request data urls
+    if (url.indexOf(DataURLPrefix) === 0) return;
+    // check to see if we have seen this url before in order
+    // to lessen the load against the server content is fetched from
+    if (this.seen[url] != null) return;
+    this.seen[url] = true;
+    this.queue.push(url);
+};
+
+AutoFetcher.prototype.queueAVURL = function (url) {
+    // ensure we do not request data urls
+    if (url.indexOf(DataURLPrefix) === 0) return;
+    // check to see if we have seen this url before in order
+    // to lessen the load against the server content is fetched from
+    if (this.seen[url] != null) return;
+    this.seen[url] = true;
+    this.avQueue.push(url);
+};
+
+AutoFetcher.prototype.maybeResolveURL = function (url, base) {
+    // given a url and base url returns a resolved full URL or
+    // null if resolution was unsuccessful
+    try {
+        var _url = new URL(url, base);
+        return _url.href;
+    } catch (e) {
+        return null;
     }
 };
 
@@ -163,85 +198,149 @@ AutoFetcher.prototype.maybeFixUpRelSchemelessPrefix = function (url) {
     return null;
 };
 
-AutoFetcher.prototype.maybeResolveURL = function (url, base) {
-    // given a url and base url returns a resolved full URL or
-    // null if resolution was unsuccessful
-    try {
-        var _url = new URL(url, base);
-        return _url.href;
-    } catch (e) {
-        return null;
+AutoFetcher.prototype.maybeFixUpURL = function (url, resolveOpts) {
+    // attempt to fix up the url and do our best to ensure we can get dat 200 OK!
+    if (this.rwRe.test(url)) {
+        return url;
+    }
+    var mod = resolveOpts.mod || 'mp_';
+    // first check for / (relative) or // (schemeless) rewritten urls
+    var maybeFixed = this.maybeFixUpRelSchemelessPrefix(url);
+    if (maybeFixed != null) {
+        return maybeFixed;
+    }
+    // resolve URL against tag src
+    if (resolveOpts.tagSrc != null) {
+        maybeFixed = this.maybeResolveURL(url, resolveOpts.tagSrc);
+        if (maybeFixed != null) {
+            return this.prefix + mod + '/' + maybeFixed;
+        }
+    }
+    // finally last attempt resolve the originating documents base URI
+    if (resolveOpts.docBaseURI) {
+        maybeFixed = this.maybeResolveURL(url, resolveOpts.docBaseURI);
+        if (maybeFixed != null) {
+            return this.prefix + mod + '/' + maybeFixed;
+        }
+    }
+    // not much to do now.....
+    return this.prefixMod + '/' + url;
+};
+
+AutoFetcher.prototype.urlExtractor = function (match, n1, n2, n3, offset, string) {
+    // Same function as style_replacer in wombat.rewrite_style, n2 is our URL
+    this.queueNonAVURL(n2);
+    return n1 + n2 + n3;
+};
+
+AutoFetcher.prototype.handleMedia = function (mediaRules) {
+    // this is a broken down rewrite_style
+    if (mediaRules == null || mediaRules.length === 0) return;
+    // var rules = mediaRules.values;
+    for (var i = 0; i < mediaRules.length; i++) {
+        mediaRules[i]
+            .replace(STYLE_REGEX, this.urlExtractor)
+            .replace(IMPORT_REGEX, this.urlExtractor);
     }
 };
 
-
-AutoFetcher.prototype.fixupURLSrcSet = function (url, tagSrc, context) {
-    // attempt to fix up the url and do our best to ensure we can get dat 200 OK!
-    if (url.indexOf(this.prefix) !== 0) {
-        // first check for / (relative) or // (schemeless) rewritten urls
-        var maybeFixed = this.maybeFixUpRelSchemelessPrefix(url);
-        if (maybeFixed != null) {
-            return maybeFixed;
+AutoFetcher.prototype.handleSrc = function (srcValues, context) {
+    var resolveOpts = { 'docBaseURI': context.docBaseURI };
+    if (srcValues.value) {
+        resolveOpts.mod = srcValues.mod;
+        if (resolveOpts.mod === 1) {
+            return this.queueNonAVURL(this.maybeFixUpURL(srcValues.value.trim(), resolveOpts));
         }
-        // resolve URL against tag src
-        if (tagSrc != null) {
-            maybeFixed = this.maybeResolveURL(url, tagSrc);
-            if (maybeFixed != null) {
-                return this.prefix + 'im_/' + maybeFixed;
+        return this.queueAVURL(this.maybeFixUpURL(srcValues.value.trim(), resolveOpts));
+    }
+    var len = srcValues.values.length;
+    for (var i = 0; i < len; i++) {
+        var value = srcValues.values[i];
+        resolveOpts.mod = value.mod;
+        if (resolveOpts.mod  === 'im_') {
+            this.queueNonAVURL(this.maybeFixUpURL(value.src, resolveOpts));
+        } else {
+            this.queueAVURL(this.maybeFixUpURL(value.src, resolveOpts));
+        }
+    }
+};
+
+AutoFetcher.prototype.extractSrcSetNotPreSplit = function (ssV, resolveOpts) {
+    // was from extract from local doc so we need to duplicate  work
+    var srcsetValues = ssV.split(srcsetSplit);
+    for (var i = 0; i < srcsetValues.length; i++) {
+        // grab the URL not width/height key
+        if (srcsetValues[i]) {
+            var value = srcsetValues[i].trim().split(' ')[0];
+            var maybeResolvedURL = this.maybeFixUpURL(value.trim(), resolveOpts);
+            if (resolveOpts.mod === 'im_') {
+                this.queueNonAVURL(maybeResolvedURL);
+            } else {
+                this.queueAVURL(maybeResolvedURL);
             }
         }
-        // finally last attempt resolve the originating documents base URI
-        maybeFixed = this.maybeResolveURL(url, context.docBaseURI);
-        if (maybeFixed != null) {
-            return this.prefix + 'im_/' + maybeFixed;
-        }
-        // not much to do now.....
-        return this.prefixMod + '/' + url;
     }
-    return url;
 };
 
 AutoFetcher.prototype.extractSrcset = function (srcsets, context) {
-    if (srcsets == null || srcsets.values == null) return;
-    var srcsetValues = srcsets.values;
-    if (!srcsets.presplit) {
-        // was from extract from local doc so we need to duplicate  work
-        return this.srcsetNotPreSplit(srcsetValues, context);
-    }
-    // was rewrite_srcset so just ensure we just
-    for (var i = 0; i < srcsetValues.length; i++) {
+    // was rewrite_srcset and only need to q
+    for (var i = 0; i < srcsets.length; i++) {
         // grab the URL not width/height key
-        this.queueURL(srcsetValues[i].split(' ')[0]);
-    }
-};
-
-AutoFetcher.prototype.srcsetNotPreSplit = function (values, context) {
-    // was from extract from local doc so we need to duplicate  work
-    var j;
-    for (var i = 0; i < values.length; i++) {
-        var srcsetValues = values[i].srcset.split(srcsetSplit);
-        var tagSrc = values[i].tagSrc;
-        for (j = 0; j < srcsetValues.length; j++) {
-            // grab the URL not width/height key
-            if (Boolean(srcsetValues[j])) {
-                var value = srcsetValues[j].trim().split(' ')[0];
-                this.queueURL(this.fixupURLSrcSet(value, tagSrc, context));
-            }
+        var url = srcsets[i].split(' ')[0];
+        if (context.mod === 'im_') {
+            this.queueNonAVURL(url);
+        } else {
+            this.queueAVURL(url);
         }
     }
 };
 
-AutoFetcher.prototype.autofetchMediaSrcset = function (data) {
+AutoFetcher.prototype.handleSrcset = function (srcset, context) {
+    var resolveOpts = { 'docBaseURI': context.docBaseURI };
+    if (srcset.value) {
+        // we have a single value, this srcset came from either
+        // preserveDataSrcset (not presplit) preserveSrcset (presplit)
+        resolveOpts.mod = srcset.mod;
+        if (!srcset.presplit) {
+            // extract URLs from the srcset string
+            return this.extractSrcSetNotPreSplit(srcset.value, resolveOpts);
+        }
+        // we have an array of srcset URL strings
+        return this.extractSrcset(srcset.value, resolveOpts);
+    }
+    // we have an array of values, these srcsets came from extractFromLocalDoc
+    var len = srcset.values.length;
+    for (var i = 0; i < len; i++) {
+        var ssv = srcset.values[i];
+        resolveOpts.mod = ssv.mod;
+        resolveOpts.tagSrc = ssv.tagSrc;
+        this.extractSrcSetNotPreSplit(ssv.srcset, resolveOpts);
+    }
+};
+
+
+AutoFetcher.prototype.autoFetch = function (data) {
     // we got a message and now we autofetch!
     // these calls turn into no ops if they have no work
-    this.extractMedia(data.media);
-    this.extractSrcset(data.srcset, data.context);
-    this.fetchAll();
+    if (data.media) {
+        this.handleMedia(data.media);
+    }
+
+    if (data.src) {
+        this.handleSrc(data.src, data.context || {});
+    }
+
+    if (data.srcset) {
+        this.handleSrcset(data.srcset, data.context || {});
+    }
+
+    this.fetchImgs();
+    this.fetchAV();
 };
 
 // initialize ourselves from the query params :)
 try {
-    var loc = new self.URL(location);
+    var loc = new self.URL(location.href);
     autofetcher = new AutoFetcher(JSON.parse(loc.searchParams.get('init')));
 } catch (e) {
     // likely we are in an older version of safari
