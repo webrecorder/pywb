@@ -2,7 +2,7 @@ six
 warcio>=1.5.2
 chardet
 requests
-redis
+redis<3.0
 jinja2
 surt>=0.3.0
 brotlipy
