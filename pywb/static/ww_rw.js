@@ -1,13 +1,24 @@
 // pywb mini rewriter for injection into web worker scripts
 
 function WBWombat(info) {
+    function maybeResolveURL(origURL) {
+        try {
+            var resolved = new URL(origURL, info.originalURL);
+            return resolved.href;
+        } catch (e) {
+            return origURL;
+        }
+    }
 
     function rewrite_url(url) {
+        if (url.indexOf('blob:') === 0) return url;
+        if (url && info.originalURL && url.indexOf('/') === 0) {
+            url = maybeResolveURL(url);
+        }
         if (info.prefix) {
             return info.prefix + url;
-        } else {
-            return url;
         }
+        return url;
     }
 
     function init_ajax_rewrite() {
@@ -35,8 +46,8 @@ function WBWombat(info) {
 
     function rewriteArgs(argsObj) {
         // recreate the original arguments object just with URLs rewritten
-        var newArgObj = {length: argsObj.length};
-        for (var i = 0; i < argsObj.length; i++) {
+        var newArgObj = new Array(argsObj.length);
+        for (var i = 0; i < newArgObj.length; i++) {
             var arg = argsObj[i];
             newArgObj[i] = rewrite_url(arg);
         }
@@ -69,4 +80,3 @@ function WBWombat(info) {
         };
     }
 }
-

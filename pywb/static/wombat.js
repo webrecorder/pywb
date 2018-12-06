@@ -1564,19 +1564,22 @@ var _WBWombat = function($wbwindow, wbinfo) {
         var fetch = true;
         var makeBlob = false;
         var rwURL;
-        if (!starts_with(workerUrl, 'blob:')) {
+        var isBlob = workerUrl.indexOf('blob:') === 0;
+        var isJSURL = false;
+        if (!isBlob) {
             if (starts_with(workerUrl, 'javascript:')) {
                 // JS url, just strip javascript:
                 fetch = false;
+                isJSURL = true;
                 rwURL = workerUrl.replace('javascript:', '');
             } else if (!starts_with(workerUrl, VALID_PREFIXES.concat('/')) &&
                        !starts_with(workerUrl, BAD_PREFIXES)) {
                 // super relative url assets/js/xyz.js
                 var rurl = resolve_rel_url(workerUrl, $wbwindow.document);
-                rwURL = rewrite_url(rurl, false, 'wkr_');
+                rwURL = rewrite_url(rurl, false, 'wkr_', $wbwindow.document);
             } else {
                 // just rewrite it
-                rwURL = rewrite_url(workerUrl, false, 'wkr_');
+                rwURL = rewrite_url(workerUrl, false, 'wkr_', $wbwindow.document);
             }
         } else {
             // blob
@@ -1597,10 +1600,19 @@ var _WBWombat = function($wbwindow, wbinfo) {
         }
 
         if (wbinfo.static_prefix || wbinfo.ww_rw_script) {
+            var originalURL;
+            if (isBlob || isJSURL) {
+                originalURL = $wbwindow.document.baseURI;
+            } else if (workerUrl.indexOf('/') === 0) {
+                // console.log(workerUrl);
+                originalURL = resolve_rel_url(extract_orig(workerUrl), $wbwindow.document);
+            } else {
+                originalURL = extract_orig(workerUrl);
+            }
             // if we are here we can must return blob so set makeBlob to true
             var ww_rw = wbinfo.ww_rw_script || wbinfo.static_prefix + "ww_rw.js";
             var rw = "(function() { " + "self.importScripts('" + ww_rw + "');" +
-                "new WBWombat({'prefix': '" + wb_abs_prefix + 'wkr_' + "/'}); " + "})();";
+                "new WBWombat({'prefix': '" + wb_abs_prefix + 'wkr_' + "/','originalURL':'"+originalURL+"'}); " + "})();";
             workerCode = rw + workerCode;
             makeBlob = true;
         }
