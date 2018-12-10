@@ -131,7 +131,7 @@ function RenderCalendar(prefix, url) {
     }
 
     //always insert current capture, assuming no duplicates
-    $('#days_' + currentYear + '_' + currentMonth).append('<div class="row"><div id="day_' + currentYear + '_' + currentMonth + '_' + currentDay + '"><a class="day col-xs-12 col-md-offset-1 col-md-10 col-lg-offset-2 col-lg-8" href="' + prefix + ts + "/" + url + '">' + currentDay + ' ' + currentMonth + ' at ' + currentTime + '</a></div></div>'); /*insert month div if it does not exist*/
+    $('#days_' + currentYear + '_' + currentMonth).append('<div class="row"><div id="day_' + currentYear + '_' + currentMonth + '_' + currentDay + '"><a target="_blank" class="day col-xs-12 col-md-offset-1 col-md-10 col-lg-offset-2 col-lg-8" href="' + prefix + ts + "/" + url + '">' + currentDay + ' ' + currentMonth + ' at ' + currentTime + '</a></div></div>'); /*insert month div if it does not exist*/
   }
 
   function yearCount() {
