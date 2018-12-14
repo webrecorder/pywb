@@ -8,6 +8,7 @@ var FullImgQDrainLen = 10;
 var DefaultNumAvFetches = 5;
 var FullAVQDrainLen = 5;
 var DataURLPrefix = 'data:';
+var FetchDelay = 1000;
 // the autofetcher instance for this worker
 var autofetcher = null;
 
@@ -49,6 +50,9 @@ self.onmessage = function (event) {
         case 'values':
             autofetcher.autofetchMediaSrcset(data);
             break;
+        case 'fetch-all':
+            autofetcher.justFetch(data);
+            break;
     }
 };
 
@@ -74,9 +78,8 @@ function AutoFetcher() {
 }
 
 AutoFetcher.prototype.delay = function () {
-    // 2 second delay seem reasonable
     return new Promise(function (resolve, reject) {
-        setTimeout(resolve, 2000);
+        setTimeout(resolve, FetchDelay);
     });
 };
 
@@ -268,6 +271,15 @@ AutoFetcher.prototype.autofetchMediaSrcset = function (data) {
     this.extractSrc(data.src);
     this.fetchImgs();
     this.fetchAV();
+};
+
+AutoFetcher.prototype.justFetch = function (data) {
+    // we got a message containing only urls to be fetched
+    if (data == null || data.values == null) return;
+    for (var i = 0; i < data.values.length; ++i) {
+        this.queueNonAVURL(data.values[i]);
+    }
+    this.fetchImgs();
 };
 
 autofetcher = new AutoFetcher();
