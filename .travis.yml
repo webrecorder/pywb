@@ -5,15 +5,12 @@ python:
   - "3.5"
   - "3.6"
 
-os:
-  - linux
+dist: xenial
 
 addons:
+  chrome: stable
+  firefox: latest
   sauce_connect: true
-  apt:
-    packages:
-      # This is required to run new chrome on old trusty
-      - libnss3
 
 env:
   - WR_TEST=no
@@ -22,17 +19,17 @@ env:
 
 cache:
   directories:
-    - $HOME/.cache/pip
     - node_modules
 
-sudo: true
+sudo: required
 
 install:
   - ./.travis/install.sh
 
-before_script:
-  - export DISPLAY=:99.0
-  - sh -e /etc/init.d/xvfb start
+before_install:
+  - "sysctl kernel.unprivileged_userns_clone=1"
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
 
 script:
   - ./.travis/test.sh

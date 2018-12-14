@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+pip install --upgrade pip setuptools
 python setup.py -q install
 pip install -r extra_requirements.txt
 pip install coverage pytest-cov coveralls
