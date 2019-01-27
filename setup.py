@@ -108,7 +108,7 @@ setup(
         'pytest',
         'WebTest',
         'pytest-cov',
-        'fakeredis',
+        'fakeredis<1.0',
         'mock',
         'urllib3',
         'werkzeug',
