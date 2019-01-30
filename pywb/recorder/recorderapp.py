@@ -252,6 +252,10 @@ class RecorderApp(object):
 
         resp_iter = StreamIter(resp_stream)
 
+        # ensure TE header from upstream is not included,
+        # added automatically by wsgi app
+        res.headers.pop('Transfer-Encoding', '')
+
         start_response('200 OK', list(res.headers.items()))
         return resp_iter
 
