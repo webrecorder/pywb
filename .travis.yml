@@ -9,13 +9,13 @@ dist: xenial
 
 addons:
   chrome: stable
-  firefox: latest
   sauce_connect: true
 
 env:
   - WR_TEST=no
   - WR_TEST=yes
 
+services: xvfb
 
 cache:
   directories:
@@ -27,9 +27,7 @@ install:
   - ./.travis/install.sh
 
 before_install:
-  - "sysctl kernel.unprivileged_userns_clone=1"
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
+  - 'if [ "$WR_TEST" = "yes" ]; then sudo sysctl kernel.unprivileged_userns_clone=1; fi'
 
 script:
   - ./.travis/test.sh
