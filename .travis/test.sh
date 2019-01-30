@@ -6,5 +6,5 @@ if [ "$WR_TEST" = "no" ]; then
     cd karma-tests && make test && cd ..
 else
     cd webrecorder-tests
-    INTRAVIS=1 pytest -m "pywbtest"
+    INTRAVIS=1 pytest -m "pywbtest and chrometest"
 fi
