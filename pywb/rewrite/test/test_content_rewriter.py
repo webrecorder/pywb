@@ -524,6 +524,24 @@ class TestContentRewriter(object):
 
         assert b''.join(gen).decode('utf-8') == '{"ssid":"5678"}'
 
+    def test_rewrite_frameset_frame_content(self):
+        """Determines if the content rewriter correctly determines that HTML loaded via a frameset's frame,
+        frame's src url is rewritten with the **fr_** rewrite modifier, is content to be rewritten
+        """
+        headers = {'Content-Type': 'text/html; charset=UTF-8'}
+        prefix = 'http://localhost:8080/live/'
+        dt = '20190205180554%s'
+        content = '<!DOCTYPE html><head><link rel="icon" href="http://r-u-ins.tumblr.com/img/favicon/72.png" ' \
+                  'type="image/x-icon"></head>'
+        rw_headers, gen, is_rw = self.rewrite_record(headers, content, ts=dt % 'fr_',
+                                                     prefix=prefix,
+                                                     url='http://r-u-ins.tumblr.com/',
+                                                     is_live='1')
+        # is_rw should be true indicating the content was rewritten
+        assert is_rw
+        assert b''.join(gen).decode('utf-8') == content.replace('href="', 'href="%s%s' % (prefix, dt % 'oe_/'))
+        assert rw_headers.headers == [('Content-Type', 'text/html; charset=UTF-8')]
+
     def test_custom_live_only(self):
         headers = {'Content-Type': 'application/json'}
         content = '{"foo":"bar", "dash": {"on": "true"}, "some": ["list"]'
