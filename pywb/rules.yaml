@@ -148,6 +148,12 @@ rules:
         match: '("q[\d]+":|after:\\"[^"]+)'
         find_all: true
 
+    - url_prefix: 'com,facebook)/pages_reaction_units/more'
+
+      fuzzy_lookup:
+          - page_id
+          - cursor
+
     - url_prefix: 'com,facebook)/'
 
       fuzzy_lookup: '([?&][^_]\w+=[^&]+)+'
