@@ -286,6 +286,10 @@ r"""
 >>> parse('<!DOCTYPE html>Some Text without any tags <!-- comments -->', head_insert = '<script>load_stuff();</script>')
 <!DOCTYPE html>Some Text without any tags <!-- comments --><script>load_stuff();</script>
 
+# UTF-8 BOM
+>>> parse('\ufeff<!DOCTYPE html>Some Text without any tags <!-- comments -->', head_insert = '<script>load_stuff();</script>')
+\ufeff<!DOCTYPE html>Some Text without any tags <!-- comments --><script>load_stuff();</script>
+
 # no parse comments
 >>> parse('<html><!-- <a href="/foo.html"> --></html>')
 <html><!-- <a href="/foo.html"> --></html>
@@ -395,6 +399,13 @@ r"""
 >>> parse('<html><a href="javascript:alert()"></a></html>', js_proxy=True)
 <html><a href="javascript:alert()"></a></html>
 
+# IE conditional
+>>> parse('<!--[if !IE]><html><![endif]--><a href="http://example.com/"><!--[if IE]><![endif]--><a href="http://example.com/"></html>')
+<!--[if !IE]><html><![endif]--><a href="/web/20131226101010/http://example.com/"><!--[if IE]><![endif]--><a href="/web/20131226101010/http://example.com/"></html>
+
+# IE conditional with invalid ']-->' ending, rewritten as ']>'
+>>> parse('<!--[if !IE]> --><html><![endif]--><a href="http://example.com/"><!--[if IE]><![endif]--><a href="http://example.com/"></html>')
+<!--[if !IE]> --><html><![endif]><a href="/web/20131226101010/http://example.com/"><!--[if IE]><![endif]--><a href="/web/20131226101010/http://example.com/"></html>
 
 
 # Test blank
