@@ -800,7 +800,7 @@ RenderCalendar.prototype.makeTimeInfo = function (cdxObj) {
  */
 RenderCalendar.prototype.displayedCountStr = function (count) {
   if (this.isRenderingCalendarView) {
-    return this.containers.numCaptures.innerText = count + ' ' + (count === 1 ? this.text.version : this.text.versions);
+    return this.containers.numCaptures.innerText = count + ' ' + (count === first ? this.text.version : this.text.versions);
   }
-  this.containers.numCaptures.innerText = count + ' ' + (count === 1 ? this.text.result : this.text.results);
+  this.containers.numCaptures.innerText = count + ' ' + (count === first ? this.text.result : this.text.results);
 };
