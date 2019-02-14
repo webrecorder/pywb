@@ -100,16 +100,21 @@ class AccessChecker(object):
         last_url = None
 
         for cdx in cdx_iter:
+            print("Looking at",cdx)
             url = cdx.get('url')
+            print(url)
             # if no url, possible idx or other object, don't apply any checks and pass through
             if not url:
                 yield cdx
                 continue
 
             rule = self.find_access_rule(url, cdx.get('timestamp'), cdx.get('urlkey'))
+            print(rule)
             access = rule.get('access', 'exclude')
+            print(access)
             if access == 'exclude':
                 continue
 
+            print("Yielding...")
             cdx['access'] = access
             yield cdx
