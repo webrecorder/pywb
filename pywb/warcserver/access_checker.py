@@ -76,20 +76,26 @@ class AccessChecker(object):
 
     def find_access_rule(self, url, ts=None, urlkey=None):
         params = {'url': url, 'urlkey': urlkey}
-        print("Getting acl_iter...')
         acl_iter, errs = self.aggregator(params)
         if errs:
             print(errs)
 
         key = params['key'].decode('utf-8')
 
-        print("Iterating acl_iter...')
+        tld = key.split(',')[0]
+
         for acl in acl_iter:
+            # skip empty/invalid lines
             if 'urlkey' not in acl:
                 continue
 
             if key.startswith(acl['urlkey']):
                 return acl
+
+            # if acl key already less than first tld,
+            # no match can be found
+            if acl['urlkey'] < tld:
+                break
 
         return self.default_rule
 
@@ -102,21 +108,24 @@ class AccessChecker(object):
         last_url = None
 
         for cdx in cdx_iter:
-            print("Looking at",cdx)
             url = cdx.get('url')
-            print(url)
             # if no url, possible idx or other object, don't apply any checks and pass through
             if not url:
                 yield cdx
                 continue
 
-            rule = self.find_access_rule(url, cdx.get('timestamp'), cdx.get('urlkey'))
-            print(rule)
+            # TODO: optimization until date range support is included
+            if url == last_url:
+                rule = last_rule
+            else:
+                rule = self.find_access_rule(url, cdx.get('timestamp'), cdx.get('urlkey'))
+
             access = rule.get('access', 'exclude')
-            print(access)
             if access == 'exclude':
                 continue
 
-            print("Yielding...")
             cdx['access'] = access
             yield cdx
+
+            last_rule = rule
+            last_url = url
