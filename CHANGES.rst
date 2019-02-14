@@ -1,3 +1,34 @@
+pywb 2.2.0 changelist
+~~~~~~~~~~~~~~~~~~~~~
+* Auto Fetch System:
+    - Added ``picture > source[srcset]`` extraction and increased the robustness of relative srcset URLs resolution (#415)
+    - Enabled auto-fetching of video, audio resources (#427)
+
+* Fuzzy Matching:
+    - Added an additional Facebook rule targeting timeline replay (#440)
+
+* Memento:
+    - Fixed regression in FrontendApp when handling TimeMap requests (#423)
+
+* Misc Changes:
+    - Introduce new banner behavior and ensured that banner does not become stuck displaying "Loading..." (#418)
+    - Tweaked usage of wr-tests in CI (#431)
+    - Ensured that usage of XVFB works on travis.ci (#436)
+
+* Recording:
+    - Remove Transer-Encoding from internal response (#437)
+
+* Replay Fidelity Improvements:
+    - Wombat now uses the actual page scheme instead of defaulting to http when extracting the original url (#404)
+    - Improved URL rewriting in web workers (#420)
+    - Improved replay of content coming from a frameset's frame (#438)
+
+* Server-Side Rewriting:
+    - Improved the rewriting process of HTTP headers that are encoded in the non-standard ``UTF-8`` encoding (#402)
+    - Improved the JavaScript rewriter's rewrites of the ``location`` symbol in order to avoid rewriting ``$location`` (#403)
+    - Added an additional check of ``text/html`` content to ensure that it is actually ``html`` (#428)
+
+
 pywb 2.1.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
