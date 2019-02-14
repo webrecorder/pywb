@@ -76,12 +76,14 @@ class AccessChecker(object):
 
     def find_access_rule(self, url, ts=None, urlkey=None):
         params = {'url': url, 'urlkey': urlkey}
+        print("Getting acl_iter...')
         acl_iter, errs = self.aggregator(params)
         if errs:
             print(errs)
 
         key = params['key'].decode('utf-8')
 
+        print("Iterating acl_iter...')
         for acl in acl_iter:
             if 'urlkey' not in acl:
                 continue
