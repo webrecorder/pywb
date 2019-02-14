@@ -4,6 +4,7 @@ from pywb.warcserver.index.indexsource import XmlQueryIndexSource
 from pywb.warcserver.index.aggregator import SimpleAggregator
 
 from mock import patch
+import pytest
 
 
 # ============================================================================
@@ -27,6 +28,10 @@ def mock_get(self, url):
         def text(self):
             return self.string
 
+        @property
+        def content(self):
+            return self.string.encode('utf-8')
+
         def raise_for_status(self):
             pass
 
@@ -39,6 +44,19 @@ class TestXmlQueryIndexSource(BaseTestClass):
     @classmethod
     def setup_class(cls):
         super(TestXmlQueryIndexSource, cls).setup_class()
+
+        cls.xmlpatch = patch('pywb.warcserver.index.indexsource.etree', cls._get_etree())
+        cls.xmlpatch.start()
+
+    @classmethod
+    def _get_etree(cls):
+        import xml.etree.ElementTree as etree
+        return etree
+
+    @classmethod
+    def teardown_class(cls):
+        cls.xmlpatch.stop()
+        super(TestXmlQueryIndexSource, cls).teardown_class()
 
     def do_query(self, params):
         return SimpleAggregator({'source': XmlQueryIndexSource('http://localhost:8080/path')})(params)
@@ -73,6 +91,15 @@ com,example)/some/path 20180112200243 example.warc.gz
 com,example)/some/path 20180216200300 example.warc.gz"""
         assert(key_ts_res(res) == expected)
         assert(errs == {})
+
+
+# ============================================================================
+class TestXmlQueryIndexSourceLXML(TestXmlQueryIndexSource):
+    @classmethod
+    def _get_etree(cls):
+        pytest.importorskip('lxml.etree')
+        import lxml.etree
+        return lxml.etree
 
 
 # ============================================================================

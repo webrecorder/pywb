@@ -237,7 +237,7 @@ class XmlQueryIndexSource(BaseIndexSource):
             response = self.session.get(query_url)
             response.raise_for_status()
 
-            results = etree.fromstring(response.text)
+            results = etree.fromstring(response.content)
 
             items = results.find('results')
 
@@ -248,7 +248,7 @@ class XmlQueryIndexSource(BaseIndexSource):
 
             raise NotFoundException('url {0} not found'.format(url))
 
-        if not items:
+        if len(items) == 0:
             raise NotFoundException('url {0} not found'.format(url))
 
         items = items.findall('result')
