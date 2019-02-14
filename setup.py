@@ -117,6 +117,7 @@ setup(
         'werkzeug',
         'httpbin==0.5.0',
         'ujson'
+        'lxml',
        ],
     cmdclass={'test': PyTest},
     test_suite='',
