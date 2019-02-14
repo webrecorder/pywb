@@ -33,7 +33,7 @@ class TestMemento(MementoMixin, BaseConfigTest):
         assert resp.headers['Content-Location'] in memento_link
 
         # timegate link
-        assert self.make_timegate_link(url, fmod) in links
+        assert self.make_timegate_link(url, '') in links
 
         # timemap link
         assert self.make_timemap_link(url) in links
@@ -60,7 +60,7 @@ class TestMemento(MementoMixin, BaseConfigTest):
         assert self.make_memento_link(url, '20140127171238', dt, 'mp_', include_coll=False) in links
 
         #timegate link
-        assert self.make_timegate_link(url, 'mp_') in links
+        assert self.make_timegate_link(url, '') in links
 
         # Body
         assert '"20140127171238"' in resp.text
@@ -132,7 +132,7 @@ class TestMemento(MementoMixin, BaseConfigTest):
 
         exp = """\
 <http://localhost:80/pywb/timemap/link/http://example.com?example=1>; rel="self"; type="application/link-format"; from="Fri, 03 Jan 2014 03:03:21 GMT",
-<http://localhost:80/pywb/mp_/http://example.com?example=1>; rel="timegate",
+<http://localhost:80/pywb/http://example.com?example=1>; rel="timegate",
 <http://example.com?example=1>; rel="original",
 <http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT"; collection="pywb",
 <http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"; collection="pywb"
@@ -185,4 +185,76 @@ com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "
         resp = self.testapp.get('/pywb/http://www.iana.org/_css/2013.1/screen.css', headers=headers, status=400)
         assert resp.status_int == 400
 
+
+# ============================================================================
+class TestMementoRedirectClassic(MementoMixin, BaseConfigTest):
+    @classmethod
+    def setup_class(cls):
+        super(TestMementoRedirectClassic, cls).setup_class('config_test_redirect_classic.yaml')
+
+    def test_memento_top_frame_timegate(self, fmod):
+        resp = self.testapp.get('/pywb/http://www.iana.org/')
+        assert resp.status_code == 307
+        assert resp.headers['Location'].endswith('/20140127171238/http://www.iana.org/')
+        assert resp.headers['Link'] != ''
+
+        # Memento Headers
+        assert VARY in resp.headers
+        assert MEMENTO_DATETIME not in resp.headers
+
+        # memento link
+        dt = 'Mon, 27 Jan 2014 17:12:38 GMT'
+        url = 'http://www.iana.org/'
+
+        links = self.get_links(resp)
+
+        assert self.make_memento_link(url, '20140127171238', dt, 'mp_', include_coll=False) in links
+
+        #timegate link
+        assert self.make_timegate_link(url, '') in links
+
+
+        resp = resp.follow()
+
+        # Body
+        assert '"20140127171238"' in resp.text
+        assert '"http://www.iana.org/"' in resp.text, resp.text
+
+    def test_memento_top_frame_timegate_accept_dt(self, fmod):
+        headers = {'Accept-Datetime':  'Sun, 26 Jan 2014 20:06:24 GMT'}
+        resp = self.testapp.get('/pywb/http://www.iana.org/', headers=headers)
+        assert resp.status_code == 307
+        assert resp.headers['Location'].endswith('/20140126200624/http://www.iana.org/')
+        assert resp.headers['Link'] != ''
+
+        # Memento Headers
+        assert VARY in resp.headers
+        assert MEMENTO_DATETIME not in resp.headers
+
+        # memento link
+        dt = 'Sun, 26 Jan 2014 20:06:24 GMT'
+        url = 'http://www.iana.org/'
+
+        links = self.get_links(resp)
+
+        assert self.make_memento_link(url, '20140126200624', dt, 'mp_', include_coll=False) in links
+
+        #timegate link
+        assert self.make_timegate_link(url, '') in links
+
+
+        resp = resp.follow()
+
+        # Body
+        assert '"20140126200624"' in resp.text
+        assert '"http://www.iana.org/"' in resp.text, resp.text
+
+    def test_memento_not_time_gate(self, fmod):
+        headers = {'Accept-Datetime':  'Sun, 26 Jan 2014 20:06:24 GMT'}
+        resp = self.testapp.get('/pywb/2/http://www.iana.org/', headers=headers)
+        assert resp.status_code == 200
+
+    def test_timegate_error_not_found(self):
+        resp = self.testapp.get('/pywb/http://example.com/x-not-found', status=404)
+        assert resp.status_code == 404
 
