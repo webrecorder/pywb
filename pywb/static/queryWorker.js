@@ -14,10 +14,7 @@ var monthToText = {
   '12': 'December'
 };
 
-// because we may have a huge amount of records to process we check to see if we can use BigInt
-// which can handle integers larger than Number.MAX_SAFE_INTEGER (9,007,199,254,740,991)
-var haveBigInt = typeof self.BigInt === 'function';
-var recordCount = haveBigInt ? self.BigInt(0) : 0;
+var recordCount = 0;
 
 // sentinel representing the \n character as an uint8 value
 var newLine = 10;
@@ -63,7 +60,11 @@ function consumeResponseBodyAsStream(response) {
           bufferedPreviousChunk = null;
           consumeChunk(lastChunk, true);
         }
-        self.postMessage({ type: 'finished', recordCount: recordCount });
+        self.postMessage({
+          type: 'finished',
+          recordCount: recordCount,
+          recordCountFormatted: recordCount.toLocaleString()
+        });
         return;
       }
       transformChunk(result.value);
@@ -105,7 +106,7 @@ function consumeChunk(chunk, last) {
   var maybeCDXRecord;
   var chunkLen = chunk.length;
   while (true) {
-    // idx will equal the index of the next closing json bracket from the current offset
+    // idx will equal the index of the next \n from the current offset
     idx = offset >= chunkLen ? -1 : chunk.indexOf(newLine, offset);
     if (idx !== -1 && idx < chunkLen) {
       // extract the next json record from last match up to and including the newline
@@ -153,7 +154,7 @@ function handleCDXRecord(binaryCDXRecord) {
     console.error('bad JSON in the potential cdx record', e);
     return;
   }
-  recordCount += haveBigInt ? self.BigInt(1) : 1;
+  recordCount += 1;
   var ts = cdxRecord.timestamp;
   var day = ts.substring(6, 8);
   self.postMessage({
@@ -168,7 +169,8 @@ function handleCDXRecord(binaryCDXRecord) {
         ts.substring(12, 14)
     },
     wasError: false,
-    recordCount: recordCount
+    recordCount: recordCount,
+    recordCountFormatted: recordCount.toLocaleString()
   });
 }
 

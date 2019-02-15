@@ -7,10 +7,7 @@ var usingWorkerStrat = (
   typeof window.ReadableStream === 'function'
 );
 
-// because we may have a huge amount of records to process we check to see if we can use BigInt
-// which can handle integers larger than Number.MAX_SAFE_INTEGER (9,007,199,254,740,991) and
-// is the value for recordCount the query worker will be sending us if it is available
-var first = typeof window.BigInt === 'function' ? window.BigInt(1) : 1;
+var first = 1;
 
 /**
  * Class responsible for rendering the results of the query. If the query is considered regular
@@ -32,7 +29,9 @@ function RenderCalendar(init) {
     yearsListDiv: null,
     monthsListDiv: null,
     daysListDiv: null,
-    advancedResultsList: null
+    advancedResultsList: null,
+    countTextNode: null,
+    versionsTextNode: null
   };
   // ids of the to be created dom elements that are important to rendering the query results
   this.domStructureIds = {
@@ -47,7 +46,7 @@ function RenderCalendar(init) {
   // regular expressing for checking the URL when no query params are present
   this.starQueries = {
     regular: /\/[^/]+\/\*\/(.+)/i,
-    dt: /\/[^/]+\/([^-]+)-([^/]+)\/(.+)/i
+    dt: /\/[^/]+\/([^-/]+)-?([^/]+)?\/(.+)/i
   };
   // regex for extracting the filter constraints and filter mods to human explanation
   this.filterRE = /filter([^a-z]+)([a-z]+):(.+)/i;
@@ -79,6 +78,7 @@ function RenderCalendar(init) {
     result: 'result',
     results: 'results'
   };
+  this.versionString = null;
 }
 
 /**
@@ -91,18 +91,12 @@ RenderCalendar.prototype.init = function () {
   var searchURL = new URL(location.href);
   if (!searchURL.search) {
     // there is no search params so we need to check for the two cases of * queries
-    // if the URL contains a * these two checks handle it
-    var match = this.starQueries.regular.exec(searchURL.pathname);
-    if (match) {
-      // case /collection/*/url
-      this.queryURL = match[1];
-      return this.cdxRequest('?url=' + this.queryURL);
-    }
-    match = this.starQueries.dt.exec(searchURL.pathname);
-    if (match) {
-      // case /collection/fromDT-toDT*/url
-      this.queryURL = match[3];
-      return this.cdxRequest('?url=' + this.queryURL + '&from=' + match[1] + '&to=' + match[2]);
+    var query = this.constructRegularStarQuery(searchURL);
+    if (query) {
+      if (!this.isRenderingCalendarView) {
+        this.searchParams = searchURL.searchParams;
+      }
+      return this.cdxRequest(query);
     }
   }
   // there were search params and in this case when constructing the URL used for the CDX api request
@@ -114,6 +108,49 @@ RenderCalendar.prototype.init = function () {
   }
   this.isRenderingCalendarView = false;
   this.cdxRequest(location.search);
+};
+
+/**
+ * Constructs the query string used in the CDX api request if the path of our locations
+ * URL contains the two cases of regular star queries (did not originate from the collections query interface),
+ * otherwise undefined is returned to indicate no match.
+ *
+ * When the path does match the two cases the supplied instance of WHATWG URL's search params are updated
+ * if the url for the CDX API query is a prefix or domain match type in order to allow the advanced results
+ * view to be rendered properly and {@link RenderCalendar#isRenderingCalendarView} is set to false.
+ * @param {URL} url - The WHATWG URL instance representing our location
+ * @return {?string} - The query string for the CDX api request if the path matches
+ */
+RenderCalendar.prototype.constructRegularStarQuery = function (url) {
+  var query;
+  var match = this.starQueries.regular.exec(url.pathname);
+  if (match) {
+    // case possibility /collection/*/url*
+    this.queryURL = match[1];
+    query = '?url=' + this.queryURL;
+    if (this.queryURL.charAt(this.queryURL.length - 1) === '*') {
+      url.searchParams.set('matchType', 'prefix');
+      this.isRenderingCalendarView = false;
+    } else if (this.queryURL.substring(0, 2) === '*.') {
+      url.searchParams.set('matchType', 'domain');
+      this.isRenderingCalendarView = false;
+    }
+    return query;
+  }
+  match = this.starQueries.dt.exec(url.pathname);
+  if (match) {
+    // case possibility /collection/fromDT*-toDT*/url*
+    this.queryURL = match[3];
+    query = '?url=' + this.queryURL + '&from=' + match[1] + (match[2] ? '&to=' + match[2] : '');
+    if (this.queryURL.charAt(this.queryURL.length - 1) === '*') {
+      url.searchParams.set('matchType', 'prefix');
+      this.isRenderingCalendarView = false;
+    } else if (this.queryURL.substring(0, 2) === '*.') {
+      url.searchParams.set('matchType', 'domain');
+      this.isRenderingCalendarView = false;
+    }
+  }
+  return query;
 };
 
 /**
@@ -134,7 +171,7 @@ RenderCalendar.prototype.cdxRequest = function (query) {
   var memoizedYMDT = this.isRenderingCalendarView ? {} : null;
   var renderCal = this;
   // initialized the dom structure
-  this.createContainers(usingWorkerStrat);
+  this.createContainers();
   if (usingWorkerStrat) {
     // execute the query and render the results using the query worker
     var queryWorker = new window.Worker(this.staticPrefix + '/queryWorker.js');
@@ -145,7 +182,7 @@ RenderCalendar.prototype.cdxRequest = function (query) {
       var terminate = false;
       if (data.type === cdxRecordMsg) {
         // render the results sent to us from the worker
-        renderCal.displayedCountStr(data.recordCount);
+        renderCal.displayedCountStr(data.recordCount, data.recordCountFormatted);
         if (renderCal.isRenderingCalendarView) {
           renderCal.renderDateCalPart(memoizedYMDT, data.record, data.timeInfo, data.recordCount === first);
         } else {
@@ -155,7 +192,7 @@ RenderCalendar.prototype.cdxRequest = function (query) {
         // the worker has consumed the entirety of the response body
         terminate = true;
         // if there were no results we need to inform the user
-        renderCal.displayedCountStr(data.recordCount);
+        renderCal.displayedCountStr(data.recordCount, data.recordCountFormatted);
       }
       if (terminate) {
         queryWorker.terminate();
@@ -172,11 +209,11 @@ RenderCalendar.prototype.cdxRequest = function (query) {
     success: function (data) {
       var cdxLines = data ? data.trim().split('\n') : [];
       if (cdxLines.length === 0) {
-        renderCal.displayedCountStr(0);
+        renderCal.displayedCountStr(0, '0');
         return;
       }
       var numCdxEntries = cdxLines.length;
-      renderCal.displayedCountStr(numCdxEntries);
+      renderCal.displayedCountStr(numCdxEntries, numCdxEntries.toLocaleString());
       for (var i = 0; i < numCdxEntries; ++i) {
         var cdxObj = JSON.parse(cdxLines[i]);
         if (renderCal.isRenderingCalendarView) {
@@ -198,13 +235,36 @@ RenderCalendar.prototype.cdxRequest = function (query) {
 RenderCalendar.prototype.createContainers = function () {
   var queryResults = document.getElementById(this.domStructureIds.capturesMount);
   var queryInfo = document.getElementById(this.domStructureIds.queryInfoId);
-  var updateProgressSpinner = '<i id="' + this.domStructureIds.updatesSpinner + '" class="fas fa-spinner fa-pulse"></i> ';
+  var renderCal = this;
   if (this.isRenderingCalendarView) {
-    var renderCal = this;
     // create regulars count structure
     this.createAndAddElementTo(queryInfo, {
       tag: 'h3',
-      innerHTML: updateProgressSpinner + '<b id="' + this.domStructureIds.numCaptures + '"></b> of <b>' + this.queryURL + '</b>'
+      children: [
+        { tag: 'i', className: 'fas fa-spinner fa-pulse mr-2', id: this.domStructureIds.updatesSpinner },
+        {
+          tag: 'b',
+          child: {
+            tag: 'textNode',
+            value: '',
+            ref: function (refToElem) {
+              renderCal.containers.countTextNode = refToElem;
+            }
+          }
+        },
+        { tag: 'textNode', value: ' ' },
+        {
+          tag: 'b',
+          child: {
+            tag: 'textNode',
+            value: '',
+            ref: function (refToElem) {
+              renderCal.containers.versionsTextNode = refToElem;
+            }
+          }
+        },
+        { tag: 'textNode', value: ' of ' + this.queryURL }
+      ]
     });
     // create the row that will hold the results of the regular query
     this.createAndAddElementTo(queryResults, {
@@ -253,27 +313,50 @@ RenderCalendar.prototype.createContainers = function () {
         }
       ]
     });
-    this.containers.numCaptures = document.getElementById(this.domStructureIds.numCaptures);
     this.containers.updatesSpinner = document.getElementById(this.domStructureIds.updatesSpinner);
     return;
   }
   // create the advanced results query info DOM structure
-  var forString;
+  var forString = ' for ';
+  var forElems;
   if (this.searchParams.has('matchType')) {
-    forString = 'matching <b>' + this.queryURL + '</b> by <b>' + this.searchParams.get('matchType') + '</b>';
+    forString = ' for matching ';
+    forElems = [
+      { tag: 'b', innerText: this.queryURL },
+      { tag: 'textNode', value: ' by ' },
+      { tag: 'b', innerText: this.searchParams.get('matchType') }
+    ];
   } else if (this.searchParams.has('from') || this.searchParams.has('to')) {
-    forString = '<b>' + this.queryURL + '</b> ' + this.niceDateRange();
+    forElems = [{ tag: 'b', innerText: this.queryURL }, { tag: 'textNode', value: ' ' + this.niceDateRange() }];
   } else {
-    forString = '<b>' + this.queryURL + '</b>';
+    forElems = [{ tag: 'b', innerText: this.queryURL }];
   }
   this.createAndAddElementTo(queryInfo, {
-    tag: 'div',
-    className: 'col-12',
-    child: {
-      tag: 'h5',
-      className: 'text-center',
-      innerHTML: updateProgressSpinner + '<b id="' + this.domStructureIds.numCaptures + '"></b> for ' + forString
-    }
+    tag: 'h3',
+    children: [
+      { tag: 'i', className: 'fas fa-spinner fa-pulse mr-2', id: this.domStructureIds.updatesSpinner },
+      {
+        tag: 'b',
+        children: [
+          {
+            tag: 'textNode',
+            value: '',
+            ref: function (refToElem) {
+              renderCal.containers.countTextNode = refToElem;
+            }
+          },
+          { tag: 'textNode', value: ' ' },
+          {
+            tag: 'textNode',
+            value: '',
+            ref: function (refToElem) {
+              renderCal.containers.versionsTextNode = refToElem;
+            }
+          }
+        ]
+      },
+      { tag: 'textNode', value: forString }
+    ].concat(forElems)
   });
   // next we will display only the URL or the URL + match type or the URL + date range
   // if the executed query contained filters display the humanized version of them
@@ -302,7 +385,6 @@ RenderCalendar.prototype.createContainers = function () {
       className: 'list-group h-100 auto-overflow w-100'
     }
   }).firstElementChild;
-  this.containers.numCaptures = document.getElementById(this.domStructureIds.numCaptures);
 };
 
 /**
@@ -370,22 +452,30 @@ RenderCalendar.prototype.renderAdvancedSearchPart = function (cdxObj) {
   if (cdxObj.status) {
     displayedInfo.push({ tag: 'small', innerText: 'HTTP Status: ' + cdxObj.status });
   }
+  displayedInfo.push({
+    tag: 'a',
+    attributes: {
+      href: this.prefix + '*' + '/' + cdxObj.url,
+      target: '_blank'
+    },
+    child: { tag: 'small', innerText: 'View All Captures' }
+  });
   this.createAndAddElementTo(this.containers.advancedResultsList, {
     tag: 'li',
     className: 'list-group-item flex-column align-items-start w-100',
     children: [
       {
         tag: 'a',
-        className: 'w-100',
+        className: 'w-100 text-small long-text',
         attributes: {
           href: this.prefix + cdxObj.timestamp + '/' + cdxObj.url,
           target: '_blank'
         },
-        child: { tag: 'p', className: 'text-small w-100 long-text', innerText: cdxObj.url }
+        innerText: cdxObj.url
       },
       {
         tag: 'div',
-        className: 'd-flex w-100 justify-content-between',
+        className: 'pt-1 d-flex w-100 justify-content-between',
         children: displayedInfo
       }
     ]
@@ -589,7 +679,13 @@ RenderCalendar.prototype.ensureCorrectActive = function (year) {
  * @return {HTMLElement|Node} - The newly created element
  */
 RenderCalendar.prototype.createElement = function (creationOptions) {
-  if (creationOptions.tag === 'textNode') return document.createTextNode(creationOptions.value);
+  if (creationOptions.tag === 'textNode') {
+    var tn = document.createTextNode(creationOptions.value);
+    if (creationOptions.ref) {
+      creationOptions.ref(tn);
+    }
+    return tn;
+  }
   var elem = document.createElement(creationOptions.tag);
   if (creationOptions.id) {
     elem.id = creationOptions.id;
@@ -794,13 +890,24 @@ RenderCalendar.prototype.makeTimeInfo = function (cdxObj) {
 };
 
 /**
- * Updates the displayed number of query results
- * @param {number} count - The number of query results to be displayed
+ * Updates the displayed number of query results.
+ *
+ * The version(s) text that is displayed only needs to be updated a maximum of two times.
+ * When count (1) === first (1) we are displaying the first or only result and need the
+ * singular version text. Otherwise we are displaying result zero or n and need the
+ * plural version text. After these two version text updates we are needlessly modifying
+ * the element displaying the versions text with the same version.
+ * @param {number} count - The number of query results
+ * @param {string} countFormatted - The number of query results formatted for display
  * @returns {string}
  */
-RenderCalendar.prototype.displayedCountStr = function (count) {
-  if (this.isRenderingCalendarView) {
-    return this.containers.numCaptures.innerText = count + ' ' + (count === first ? this.text.version : this.text.versions);
+RenderCalendar.prototype.displayedCountStr = function (count, countFormatted) {
+  this.containers.countTextNode.data = countFormatted;
+  if (count === first) {
+    this.containers.versionsTextNode.data = this.isRenderingCalendarView ? this.text.version : this.text.result;
+  } else if (!this.versionString) {
+    // case count = 0 or first nth record
+    this.versionString = this.isRenderingCalendarView ? this.text.versions : this.text.results;
+    this.containers.versionsTextNode.data = this.versionString;
   }
-  this.containers.numCaptures.innerText = count + ' ' + (count === first ? this.text.result : this.text.results);
 };
