@@ -32,20 +32,24 @@ class ACLManager(CollectionsManager):
 
         super(ACLManager, self).__init__(coll_name, must_exist=False)
 
-        # if auto collection, use default file in ./collections/<coll>/acl/<DEFAULT_FILE>
-        if os.path.isdir(self.curr_coll_dir):
+        # if target exists as a file, use that
+        if os.path.isfile(self.target):
+            self.acl_file = self.target
+
+        # otherwise, if auto collection, use default file in ./collections/<coll>/acl/<DEFAULT_FILE>
+        elif os.path.isdir(self.curr_coll_dir):
             self.acl_file = os.path.join(self.acl_dir, self.DEFAULT_FILE)
 
-        # else, treat the 'r.coll_name' param as the filename
+        # else, assume filename (may not exist yet)
         else:
-            self.acl_file = r.coll_name
+            self.acl_file = self.target
 
         # for add/import, file doesn't have to exist
         if r.op in ('add', 'importtxt'):
             self.load_acl(False)
 
-        # otherwise, ensure file loaded successfully and log errors
-        else:
+        # for other ops (except matching), ensure entire file loads successfully, log errors
+        elif r.op not in ('match'):
             if not self.load_acl(True):
                 sys.exit(2)
                 return
