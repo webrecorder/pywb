@@ -43,7 +43,11 @@ self.onmessage = function (event) {
 
 function defaultErrorCatcher(error) {
   console.error('A fatal error occurred', error);
-  self.postMessage({ type: 'finished', recordCount: recordCount });
+  self.postMessage({
+    type: 'finished',
+    recordCount: recordCount,
+    recordCountFormatted: recordCount.toLocaleString()
+  });
 }
 
 /**

@@ -421,7 +421,7 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.content_length > 0
 
     def test_static_nested_dir(self):
-        resp = self.testapp.get('/static/fonts/font-awesome/fontawesome-webfont.woff')
+        resp = self.testapp.get('/static/fonts/font-awesome/fa-brands-400.eot')
         assert resp.status_int == 200
         assert resp.content_length > 0
 
