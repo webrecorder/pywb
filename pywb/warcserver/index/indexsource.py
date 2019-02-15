@@ -76,20 +76,21 @@ class FileIndexSource(BaseIndexSource):
         except IOError:
             raise NotFoundException(filename)
 
-    def _get_gen(self, fh, params):
-        return iter_range(fh, params['key'], params['end_key'])
-
     def load_index(self, params):
         filename = res_template(self.filename_template, params)
 
         fh = self._do_open(filename)
 
-        def do_load(fh):
+        def do_iter():
             with fh:
-                for line in self._get_gen(fh, params):
-                    yield CDXObject(line)
+                for obj in self._do_iter(fh, params):
+                    yield obj
 
-        return do_load(fh)
+        return do_iter()
+
+    def _do_iter(self, fh, params):
+        for line in iter_range(fh, params['key'], params['end_key']):
+            yield CDXObject(line)
 
     def __repr__(self):
         return '{0}(file://{1})'.format(self.__class__.__name__,

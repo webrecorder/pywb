@@ -15,8 +15,9 @@ class FileAccessIndexSource(FileIndexSource):
     def rev_cmp(a, b):
         return (a < b) - (a > b)
 
-    def _get_gen(self, fh, params):
-        return search(fh, params['key'], prev_size=1, compare_func=self.rev_cmp)
+    def _do_iter(self, fh, params):
+        for line in search(fh, params['key'], prev_size=1, compare_func=self.rev_cmp):
+            yield line
 
 
 # ============================================================================
@@ -75,26 +76,28 @@ class AccessChecker(object):
             raise Exception('Invalid Access Source: ' + filename)
 
     def find_access_rule(self, url, ts=None, urlkey=None):
-        params = {'url': url, 'urlkey': urlkey}
+        params = {'url': url, 'urlkey': urlkey, 'nosource': 'true'}
         acl_iter, errs = self.aggregator(params)
         if errs:
             print(errs)
 
-        key = params['key'].decode('utf-8')
+        key = params['key']
 
-        tld = key.split(',')[0]
+        tld = key.split(b',')[0]
 
         for acl in acl_iter:
             # skip empty/invalid lines
-            if 'urlkey' not in acl:
+            if not acl:
                 continue
 
-            if key.startswith(acl['urlkey']):
-                return acl
+            acl_key = acl.split(b' ')[0]
+
+            if key.startswith(acl_key):
+                return CDXObject(acl)
 
             # if acl key already less than first tld,
             # no match can be found
-            if acl['urlkey'] < tld:
+            if acl_key < tld:
                 break
 
         return self.default_rule

@@ -69,9 +69,9 @@ com,example)/ - {"access": "allow", "url": "http://example.com/"}
         assert out == """\
 Matched rule:
 
-    com,example, - {"access": "exclude", "url": "com,example,", "source": "%s", "source-coll": "%s"}
+    com,example, - {"access": "exclude", "url": "com,example,"}
 
-""" % (self.acl_filename, self.acl_filename)
+"""
 
     def test_remove_acl(self):
         wb_manager(['acl', 'remove', self.acl_filename, 'com,example,'])
