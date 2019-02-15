@@ -192,6 +192,9 @@ class TestMementoRedirectClassic(MementoMixin, BaseConfigTest):
     def setup_class(cls):
         super(TestMementoRedirectClassic, cls).setup_class('config_test_redirect_classic.yaml')
 
+    def _timemap_get(self, url, **kwargs):
+        return self.testapp.get(url, extra_environ={'REQUEST_URI': url}, **kwargs)
+
     def test_memento_top_frame_timegate(self, fmod):
         resp = self.testapp.get('/pywb/http://www.iana.org/')
         assert resp.status_code == 307
@@ -248,6 +251,26 @@ class TestMementoRedirectClassic(MementoMixin, BaseConfigTest):
         # Body
         assert '"20140126200624"' in resp.text
         assert '"http://www.iana.org/"' in resp.text, resp.text
+
+    def test_timemap(self):
+        """
+        Test application/link-format timemap
+        """
+
+        resp = self._timemap_get('/pywb/timemap/link/http://example.com?example=1')
+        assert resp.status_int == 200
+        assert resp.content_type == LINK_FORMAT
+
+        resp.charset = 'utf-8'
+
+        exp = """\
+<http://localhost:80/pywb/timemap/link/http://example.com?example=1>; rel="self"; type="application/link-format"; from="Fri, 03 Jan 2014 03:03:21 GMT",
+<http://localhost:80/pywb/http://example.com?example=1>; rel="timegate",
+<http://example.com?example=1>; rel="original",
+<http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT"; collection="pywb",
+<http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"; collection="pywb"
+"""
+        assert exp == resp.text
 
     def test_memento_not_time_gate(self, fmod):
         headers = {'Accept-Datetime':  'Sun, 26 Jan 2014 20:06:24 GMT'}

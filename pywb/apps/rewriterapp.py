@@ -297,14 +297,14 @@ class RewriterApp(object):
             else:
                 wb_url.mod = pref_mod
         else:
+            # don't return top-frame response for timegate with exact redirects
+            kwargs['is_timegate_redir'] = is_timegate and redirect_to_exact
             response = self.handle_custom_response(environ, wb_url,
                                                    full_prefix, host_prefix,
                                                    kwargs)
 
         if response:
-            # don't return top-frame response for timegate with exact redirects
-            if not is_timegate or not redirect_to_exact:
-                return self.format_response(response, wb_url, full_prefix, is_timegate, is_proxy)
+            return self.format_response(response, wb_url, full_prefix, is_timegate, is_proxy)
 
         if is_proxy:
             environ['pywb_proxy_magic'] = environ['wsgiprox.proxy_host']
@@ -767,7 +767,7 @@ class RewriterApp(object):
         if wb_url.is_query():
             return self.handle_query(environ, wb_url, kwargs, full_prefix)
 
-        if self.is_framed_replay(wb_url):
+        if self.is_framed_replay(wb_url) and not kwargs.get('is_timegate_redir'):
             extra_params = self.get_top_frame_params(wb_url, kwargs)
             return self.frame_insert_view.get_top_frame(wb_url,
                                                         full_prefix,
