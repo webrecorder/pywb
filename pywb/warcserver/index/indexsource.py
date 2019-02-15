@@ -260,7 +260,7 @@ class XmlQueryIndexSource(BaseIndexSource):
 
             raise NotFoundException('url {0} not found'.format(url))
 
-        if len(items) == 0:
+        if not items:
             raise NotFoundException('url {0} not found'.format(url))
 
         items = items.findall('result')
