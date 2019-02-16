@@ -16,21 +16,21 @@ logger = logging.getLogger('warcserver')
 
 
 #=============================================================================
-def to_cdxj(cdx_iter, fields):
+def to_cdxj(cdx_iter, fields, params):
     content_type = 'text/x-cdxj'
     return content_type, (cdx.to_cdxj(fields) for cdx in cdx_iter)
 
-def to_json(cdx_iter, fields):
+def to_json(cdx_iter, fields, params):
     content_type = 'text/x-ndjson'
     return content_type, (cdx.to_json(fields) for cdx in cdx_iter)
 
-def to_text(cdx_iter, fields):
+def to_text(cdx_iter, fields, params):
     content_type = 'text/plain'
     return content_type, (cdx.to_text(fields) for cdx in cdx_iter)
 
-def to_link(cdx_iter, fields):
+def to_link(cdx_iter, fields, params):
     content_type = 'application/link-format'
-    return content_type, MementoUtils.make_timemap(cdx_iter)
+    return content_type, MementoUtils.make_timemap(cdx_iter, params)
 
 
 #=============================================================================
@@ -93,7 +93,7 @@ class IndexHandler(object):
         if not cdx_iter:
             return None, None, errs
 
-        content_type, res = handler(cdx_iter, fields)
+        content_type, res = handler(cdx_iter, fields, params)
         out_headers = {'Content-Type': content_type}
 
         def check_str(lines):

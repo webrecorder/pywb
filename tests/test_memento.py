@@ -11,9 +11,6 @@ class TestMemento(MementoMixin, BaseConfigTest):
     def setup_class(cls):
         super(TestMemento, cls).setup_class('config_test.yaml')
 
-    def _timemap_get(self, url, **kwargs):
-        return self.testapp.get(url, extra_environ={'REQUEST_URI': url}, **kwargs)
-
     def _assert_memento(self, resp, url, ts, fmod, dt=''):
         dt = dt or timestamp_to_http_date(ts)
 
@@ -119,12 +116,12 @@ class TestMemento(MementoMixin, BaseConfigTest):
 
         self._assert_memento(resp, 'http://www.iana.org/domains/example', '20140128051539', fmod)
 
-    def test_timemap(self):
+    def test_timemap(self, fmod):
         """
         Test application/link-format timemap
         """
 
-        resp = self._timemap_get('/pywb/timemap/link/http://example.com?example=1')
+        resp = self._timemap_get('/pywb/timemap/link/http://example.com?example=1', fmod)
         assert resp.status_int == 200
         assert resp.content_type == LINK_FORMAT
 
@@ -134,17 +131,18 @@ class TestMemento(MementoMixin, BaseConfigTest):
 <http://localhost:80/pywb/timemap/link/http://example.com?example=1>; rel="self"; type="application/link-format"; from="Fri, 03 Jan 2014 03:03:21 GMT",
 <http://localhost:80/pywb/http://example.com?example=1>; rel="timegate",
 <http://example.com?example=1>; rel="original",
-<http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT"; collection="pywb",
-<http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"; collection="pywb"
-"""
+<http://localhost:80/pywb/20140103030321{0}/http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT"; collection="pywb",
+<http://localhost:80/pywb/20140103030341{0}/http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"; collection="pywb"
+""".format(fmod)
+
         assert exp == resp.text
 
-    def test_timemap_cdxj(self):
+    def test_timemap_cdxj(self, fmod):
         """
         Test test/x-cdxj timemap
         """
 
-        resp = self._timemap_get('/pywb/timemap/cdxj/http://example.com?example=1')
+        resp = self._timemap_get('/pywb/timemap/cdxj/http://example.com?example=1', fmod)
         assert resp.status_int == 200
         assert resp.content_type == 'text/x-cdxj'
 
@@ -156,12 +154,12 @@ com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "
 """
         assert exp == resp.text
 
-    def test_timemap_2(self):
+    def test_timemap_2(self, fmod):
         """
         Test application/link-format timemap total count
         """
 
-        resp = self._timemap_get('/pywb/timemap/link/http://example.com')
+        resp = self._timemap_get('/pywb/timemap/link/http://example.com', fmod)
         assert resp.status_int == 200
         assert resp.content_type == LINK_FORMAT
 
@@ -191,9 +189,6 @@ class TestMementoRedirectClassic(MementoMixin, BaseConfigTest):
     @classmethod
     def setup_class(cls):
         super(TestMementoRedirectClassic, cls).setup_class('config_test_redirect_classic.yaml')
-
-    def _timemap_get(self, url, **kwargs):
-        return self.testapp.get(url, extra_environ={'REQUEST_URI': url}, **kwargs)
 
     def test_memento_top_frame_timegate(self, fmod):
         resp = self.testapp.get('/pywb/http://www.iana.org/')
@@ -252,12 +247,12 @@ class TestMementoRedirectClassic(MementoMixin, BaseConfigTest):
         assert '"20140126200624"' in resp.text
         assert '"http://www.iana.org/"' in resp.text, resp.text
 
-    def test_timemap(self):
+    def test_timemap(self, fmod):
         """
         Test application/link-format timemap
         """
 
-        resp = self._timemap_get('/pywb/timemap/link/http://example.com?example=1')
+        resp = self._timemap_get('/pywb/timemap/link/http://example.com?example=1', fmod)
         assert resp.status_int == 200
         assert resp.content_type == LINK_FORMAT
 
@@ -267,9 +262,10 @@ class TestMementoRedirectClassic(MementoMixin, BaseConfigTest):
 <http://localhost:80/pywb/timemap/link/http://example.com?example=1>; rel="self"; type="application/link-format"; from="Fri, 03 Jan 2014 03:03:21 GMT",
 <http://localhost:80/pywb/http://example.com?example=1>; rel="timegate",
 <http://example.com?example=1>; rel="original",
-<http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT"; collection="pywb",
-<http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"; collection="pywb"
-"""
+<http://localhost:80/pywb/20140103030321{0}/http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT"; collection="pywb",
+<http://localhost:80/pywb/20140103030341{0}/http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"; collection="pywb"
+""".format(fmod)
+
         assert exp == resp.text
 
     def test_memento_not_time_gate(self, fmod):

@@ -635,6 +635,8 @@ class RewriterApp(object):
         params['output'] = kwargs.get('output', 'json')
         params['from'] = wb_url.timestamp
         params['to'] = wb_url.end_timestamp
+        if 'memento_format' in kwargs:
+            params['memento_format'] = kwargs['memento_format']
 
         upstream_url = self.get_upstream_url(wb_url, kwargs, params)
         upstream_url = upstream_url.replace('/resource/postreq', '/index')
@@ -668,6 +670,7 @@ class RewriterApp(object):
 
     def handle_timemap(self, wb_url, kwargs, full_prefix):
         output = kwargs.get('output')
+        kwargs['memento_format'] = full_prefix + '{timestamp}' + self.replay_mod + '/{url}'
         res = self.do_query(wb_url, kwargs)
         return self.make_timemap(wb_url, res, full_prefix, output)
 
