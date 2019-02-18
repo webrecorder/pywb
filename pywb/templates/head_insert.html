@@ -55,6 +55,10 @@
 <script src='{{ static_prefix }}/vidrw.js'> </script>
 {% endif %}
 
+{% if config.enable_transclusions %}
+<script src="{{ static_prefix }}/transclusions.js"> </script>
+{% endif %}
+
 {{ banner_html }}
 
 <!-- End WB Insert -->

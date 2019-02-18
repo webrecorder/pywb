@@ -506,7 +506,7 @@ class RewriterApp(object):
 
             response = WbResponse.text_response(response, content_type=content_type)
 
-        if self.enable_memento:
+        if self.enable_memento and response.status_headers.statusline.startswith('200'):
             self._add_memento_links(wb_url.url, full_prefix, None, memento_ts,
                                     response.status_headers, is_timegate, is_proxy)
         return response

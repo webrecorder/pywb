@@ -1,5 +1,8 @@
 # Default Filters
 default_filters:
+    # limit to fuzzy match prefix results
+    fuzzy_search_limit: '100'
+
     # exts that should *not* be treated as files (ignore all query args)
     not_exts:
         - asp

@@ -38,6 +38,8 @@ class FuzzyMatcher(object):
 
         self.default_filters = config.get('default_filters')
 
+        self.fuzzy_search_limit = self.default_filters.get('fuzzy_search_limit')
+
         self.url_normalize_rx = [(re.compile(rule['match']), rule['replace']) for rule in self.default_filters['url_normalize']]
 
     def parse_fuzzy_rule(self, rule):
@@ -120,6 +122,9 @@ class FuzzyMatcher(object):
                         'matchType': matched_rule.match_type,
                         'filter': filters,
                         'is_fuzzy': '1'}
+
+        if self.fuzzy_search_limit:
+            fuzzy_params['limit'] = self.fuzzy_search_limit
 
         for key in iterkeys(params):
             if key not in self.FUZZY_SKIP_PARAMS:

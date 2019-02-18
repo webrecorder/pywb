@@ -273,7 +273,25 @@ class TestMementoRedirectClassic(MementoMixin, BaseConfigTest):
         resp = self.testapp.get('/pywb/2/http://www.iana.org/', headers=headers)
         assert resp.status_code == 200
 
+        assert VARY not in resp.headers
+        assert MEMENTO_DATETIME in resp.headers
+
     def test_timegate_error_not_found(self):
         resp = self.testapp.get('/pywb/http://example.com/x-not-found', status=404)
         assert resp.status_code == 404
+
+        # No Memento Headers
+        assert VARY not in resp.headers
+        assert MEMENTO_DATETIME not in resp.headers
+        assert 'Link' not in resp.headers
+
+    def test_timemap_error_not_found(self):
+        resp = self.testapp.get('/pywb/timemap/link/http://example.com/x-not-found', status=404)
+        assert resp.status_code == 404
+
+        # No Memento Headers
+        assert VARY not in resp.headers
+        assert MEMENTO_DATETIME not in resp.headers
+        assert 'Link' not in resp.headers
+
 
