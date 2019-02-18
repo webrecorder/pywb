@@ -1,10 +1,27 @@
-<h2>Url Not Found</h2>
-
-The url <b>{{ url }}</b> could not be found in this collection.
-
-{% if wbrequest and wbrequest.env.pywb_proxy_magic and url %}
-<p>
-<a href="//select.{{ wbrequest and wbrequest.env.pywb_proxy_magic }}/{{ url }}">Try Different Collection</a>
-</p>
-{% endif %}
-
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8;charset=utf-8">
+    <title>URL Not Found</title>
+    <link rel="stylesheet" href="{{ static_prefix }}/css/bootstrap.min.css">
+    <script src="{{ static_prefix }}/js/jquery-latest.min.js"></script>
+    <script src="{{ static_prefix }}/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="row justify-content-center">
+        <h2 class="display-2">URL Not Found</h2>
+        <p class="lead">
+            The url <b>{{ url }}</b> could not be found in this collection.
+        </p>
+        {% if wbrequest and wbrequest.env.pywb_proxy_magic and url %}
+            <p>
+                <a href="//select.{{ wbrequest and wbrequest.env.pywb_proxy_magic }}/{{ url }}">
+                    Try Different Collection
+                </a>
+            </p>
+        {% endif %}
+    </div>
+</div>
+</body>
+</html>

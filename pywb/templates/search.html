@@ -1,21 +1,378 @@
-{% if metadata %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8;charset=utf-8">
+    <title>Pywb {% if metadata %} {{ metadata.title if metadata.title else coll }} {% else %} {{ coll }} {% endif %}
+        Collection Search Page</title>
+    <link rel="stylesheet" href="{{ static_prefix }}/css/bootstrap.min.css">
+    <style>
+        .inherit-height {
+            height: inherit;
+        }
 
-<h2>{{ metadata.title if metadata.title else coll }} Search Page</h2>
+        .filter-list {
+            height: 140px;
+            max-height: 140px;
+            overflow-y: scroll
+        }
 
-<div>
-<table style="text-align: left">
-{% for key, val in metadata.items() %}
-<tr><th>{{ key }}:</th><td>{{ val }}</td>
-{% endfor %}
-</table>
+        .show-optional-bad-input {
+            display: block;
+        }
+    </style>
+</head>
+<body style="overflow: hidden">
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <h4 class="display-4">
+            Collection Search Page
+        </h4>
+    </div>
 </div>
-
+<div class="container mt-4">
+    <form class="needs-validation" id="search-form" novalidate>
+        <div class="form-row">
+            <div class="col-12">
+                <label for="search-url" class="lead" aria-label="Search For Col">Search the
+                    <b>{% if metadata %}
+                        {{ metadata.title if metadata.title else coll }}
+                    {% else %}
+                        {{ coll }}
+                    {% endif %}</b> collection:
+                </label>
+                <input aria-label="url" aria-required="true" class="form-control form-control-lg" id="search-url"
+                       name="search" placeholder="Enter a URL to search for"
+                       title="Enter a URL to search for" type="search" required/>
+                <div class="invalid-feedback">
+                    Please enter a URL
+                </div>
+            </div>
+        </div>
+        <div class="form-row mt-2">
+            <div class="col-5">
+                <div class="custom-control custom-checkbox custom-control">
+                    <input type="checkbox" class="custom-control-input" id="open-results-new-window">
+                    <label class="custom-control-label" for="open-results-new-window">Open results in new window</label>
+                </div>
+            </div>
+            <div class="col-7">
+                <button type="submit" class="btn btn-outline-primary float-right" role="button" aria-label="Search">
+                    Search
+                </button>
+                <button class="btn btn-outline-info float-right mr-3" type="button" role="button"
+                        data-toggle="collapse" data-target="#advancedOptions"
+                        aria-expanded="false" aria-controls="advancedOptions" aria-label="Advanced Search Options">
+                    Advanced Search Options
+                </button>
+            </div>
+        </div>
+        <div class="collapse mt-3" id="advancedOptions">
+            <div class="form-group form-row">
+                <label for="match-type-select" class="col-sm-2 col-form-label" aria-label="Match Type">
+                    Match Type:
+                </label>
+                <select id="match-type-select" class="form-control form-control col-sm-6">
+                    <option value=""></option>
+                    <option value="prefix">Prefix</option>
+                    <option value="host">Host</option>
+                    <option value="domain">Domain</option>
+                </select>
+            </div>
+            <p style="cursor: help;">
+               <span data-toggle="tooltip" data-placement="right"
+                     title="Restricts the results to the given date/time range (inclusive)">
+                   Date/Time Range
+                </span>
+            </p>
+            <div class="form-row">
+                <div class="col-6">
+                    <label class="sr-only" for="dt-from" aria-label="Date/Time Range From">From:</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <div class="input-group-text">From:</div>
+                        </div>
+                        <input id="dt-from" type="number" name="date-range-from" class="form-control"
+                               pattern="^\d{4,14}$">
+                        <div class="invalid-feedback" id="dt-from-bad">
+                            Please enter a valid <b>From</b> timestamp. Timestamps may be 4 <= ts <=14 digits
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <label class="sr-only" for="dt-to" aria-label="Date/Time Range To">To:</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <div class="input-group-text">To:</div>
+                        </div>
+                        <input id="dt-to" type="number" name="date-range-to" class="form-control" pattern="^\d{4,14}$">
+                        <div class="invalid-feedback" id="dt-to-bad">
+                            Please enter a valid <b>To</b> timestamp. Timestamps may be 4 <= ts <=14 digits
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group mt-3">
+                <div class="form-row">
+                    <div class="col-6">
+                        <p>Filtering</p>
+                    </div>
+                    <div class="col-6">
+                        <button id="clear-filters" class="btn btn-outline-warning float-right" type="button">
+                            Clear Filters
+                        </button>
+                        <button id="add-filter" class="btn btn-outline-secondary float-right mr-2" type="button">
+                            Add Filter
+                        </button>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-6">
+                        <div class="row pb-1">
+                            <label for="filter-by" class="col-form-label col-3">By:</label>
+                            <select id="filter-by" class="form-control col-7">
+                                <option value="" selected></option>
+                                <option value="mime">Mime Type</option>
+                                <option value="status">Status</option>
+                                <option value="url">URL</option>
+                            </select>
+                        </div>
+                        <div class="row pb-1">
+                            <label for="filter-modifier" class="col-form-label col-3">How:</label>
+                            <select id="filter-modifier" class="form-control col-7">
+                                <option value="=">Contains</option>
+                                <option value="==">Matches Exactly</option>
+                                <option value="=~">Matches Regex</option>
+                                <option value="=!">Does Not Contains</option>
+                                <option value="=!=">Is Not</option>
+                                <option value="=!~">Does Not Begins With</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <label for="filter-expression" class="col-form-label col-3">Expr:</label>
+                            <input type="text" id="filter-expression" class="form-control col-7"
+                                   placeholder="Enter an expression to filter by"
+                            >
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <ul id="filter-list" class="filter-list">
+                            <li id="filtering-nothing">No Filter</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% if metadata %}
+    <div class="container mt-4 justify-content-center">
+        <p class="lead">Collection Metadata</p>
+        <div class="row">
+            <div class="col-4 pr-1">
+                <div class="list-group" id="collection-metadata" role="tablist">
+                    {% for key in metadata.keys() %}
+                        <a class="list-group-item list-group-item-action text-uppercase {% if loop.index0 == 0 %}active{% endif %}"
+                           data-toggle="list" href="#collection-metadata-{{ key }}" role="tab">
+                            {{ key }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-8 pl-1">
+                <div class="tab-content h-100">
+                    {% for key, val in metadata.items() %}
+                        <div class="tab-pane inherit-height {% if loop.index0 == 0 %}active{% endif %}"
+                             id="collection-metadata-{{ key }}" role="tabpanel">
+                            <div class="card inherit-height">
+                                <div class="card-body">
+                                    {{ val }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
 {% endif %}
+<script src="{{ static_prefix }}/js/jquery-latest.min.js"></script>
+<script src="{{ static_prefix }}/js/bootstrap.min.js"></script>
+<script>
+  var dtRE = /^\d{4,14}$/;
+  var didSetWasValidated = false;
+  var showBadDateTimeClass = 'show-optional-bad-input';
+  var filterMods = {
+    '=': 'Contains',
+    '==': 'Matches Exactly',
+    '=~': 'Matches Regex',
+    '=!': 'Does Not Contains',
+    '=!=': 'Is Not',
+    '=!~': 'Does Not Begins With'
+  };
 
-<p>
-Search this collection by url:
-<form onsubmit="url = document.getElementById('search').value; if (url != '') { document.location.href = '{{ wb_prefix }}' + '*/' + url; } return false;">
-<input id="search" name="search" placeholder="Enter url to search"/>
-<button type="submit">Search</button>
-</form>
-</p>
+  var elemIds = {
+    filtering: {
+      by: 'filter-by',
+      modifier: 'filter-modifier',
+      expression: 'filter-expression',
+      list: 'filter-list',
+      nothing: 'filtering-nothing',
+      add: 'add-filter',
+      clear: 'clear-filters'
+    },
+    dateTime: {
+      from: 'dt-from',
+      fromBad: 'dt-from-bad',
+      to: 'dt-to',
+      toBad: 'dt-to-bad'
+    },
+    match: 'match-type-select',
+    url: 'search-url',
+    form: 'search-form',
+    resultsNewWindow: 'open-results-new-window'
+  };
+
+
+  function makeCheckDateRangeChecker(dtInputId, dtBadNotice) {
+    var dtInput = document.getElementById(dtInputId);
+    dtInput.onblur = function () {
+      if (dtInput.validity.valid && dtBadNotice.classList.contains(showBadDateTimeClass)) {
+        return dtBadNotice.classList.remove(showBadDateTimeClass);
+      }
+      if (dtInput.validity.valueMissing) {
+        if (dtBadNotice.classList.contains(showBadDateTimeClass)) {
+          dtBadNotice.classList.remove(showBadDateTimeClass);
+        }
+        return;
+      }
+      if (dtInput.validity.badInput) {
+        if (!dtBadNotice.classList.contains(showBadDateTimeClass)) {
+          dtBadNotice.classList.add(showBadDateTimeClass);
+        }
+        return;
+      }
+      var validInput = dtRE.test(dtInput.value);
+      if (validInput && dtBadNotice.classList.contains(showBadDateTimeClass)) {
+        dtBadNotice.classList.remove(showBadDateTimeClass);
+      } else if (!validInput) {
+        dtBadNotice.classList.add(showBadDateTimeClass);
+      }
+    };
+  }
+
+  function createAndAddNoFilter(filterList) {
+    var nothing = document.createElement('li');
+    nothing.innerText = 'No Filter';
+    nothing.id = elemIds.filtering.nothing;
+    filterList.appendChild(nothing);
+  }
+
+  function addFilter(event) {
+    var by = document.getElementById(elemIds.filtering.by).value;
+    if (!by) return;
+    var modifier = document.getElementById(elemIds.filtering.modifier).value;
+    var expr = document.getElementById(elemIds.filtering.expression).value;
+    if (!expr) return;
+    var filterExpr = 'filter' + modifier + by + ':' + expr;
+    var filterList = document.getElementById(elemIds.filtering.list);
+    var filterNothing = document.getElementById(elemIds.filtering.nothing);
+    if (filterNothing) {
+      filterList.removeChild(filterNothing);
+    }
+    var li = document.createElement('li');
+    li.innerText = 'By ' + by[0].toUpperCase() + by.substr(1) + ' ' + filterMods[modifier] + ' ' + expr;
+    li.dataset.filter = filterExpr;
+    var nukeButton = document.createElement('button');
+    nukeButton.type = 'button';
+    nukeButton.role = 'button';
+    nukeButton.className = 'btn btn-outline-danger close';
+    nukeButton.setAttribute('aria-label', 'Remove Filter');
+    var buttonX = document.createElement('span');
+    buttonX.className = 'px-2';
+    buttonX.innerHTML = '&times;';
+    buttonX.setAttribute('aria-hidden', 'true');
+    nukeButton.appendChild(buttonX);
+    nukeButton.onclick = function () {
+      filterList.removeChild(li);
+      if (filterList.children.length === 0) {
+        createAndAddNoFilter(filterList);
+      }
+    };
+    li.appendChild(nukeButton);
+    filterList.appendChild(li);
+  }
+
+  function clearFilters(event) {
+    if (document.getElementById(elemIds.filtering.nothing)) return;
+    var filterList = document.getElementById(elemIds.filtering.list);
+    while (filterList.firstElementChild) {
+      filterList.firstElementChild.onclick = null;
+      filterList.removeChild(filterList.firstElementChild);
+    }
+    createAndAddNoFilter(filterList);
+  }
+
+  function performQuery(url) {
+    var query = ['{{ wb_prefix }}*?url=' + url];
+    var filterExpressions = document.getElementById(elemIds.filtering.list).children;
+    if (filterExpressions.length) {
+      for (var i = 0; i < filterExpressions.length; ++i) {
+        var fexpr = filterExpressions[i];
+        if (fexpr.dataset && fexpr.dataset.filter) {
+          query.push(fexpr.dataset.filter.trim());
+        }
+      }
+    }
+    var matchType = document.getElementById(elemIds.match).value;
+    if (matchType) {
+      query.push('matchType=' + matchType.trim());
+    }
+    var fromT = document.getElementById(elemIds.dateTime.from).value;
+    if (fromT) {
+      query.push('from=' + fromT.trim());
+    }
+    var toT = document.getElementById(elemIds.dateTime.to).value;
+    if (toT) {
+      query.push('to=' + toT.trim());
+    }
+    var builtQuery = query.join('&');
+    if (document.getElementById(elemIds.resultsNewWindow).checked) {
+      try {
+        var win = window.open(builtQuery);
+        win.focus();
+      } catch (e) {
+        document.location.href = builtQuery;
+      }
+    } else {
+      document.location.href = builtQuery;
+    }
+  }
+
+  $(document).ready(function () {
+    $('[data-toggle="tooltip"]').tooltip({
+      container: 'body',
+      delay: { show: 1000 }
+    });
+    makeCheckDateRangeChecker(elemIds.dateTime.from, document.getElementById(elemIds.dateTime.fromBad));
+    makeCheckDateRangeChecker(elemIds.dateTime.to, document.getElementById(elemIds.dateTime.toBad));
+    document.getElementById(elemIds.filtering.add).onclick = addFilter;
+    document.getElementById(elemIds.filtering.clear).onclick = clearFilters;
+    var searchURLInput = document.getElementById(elemIds.url);
+    var form = document.getElementById(elemIds.form);
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      var url = searchURLInput.value;
+      if (!url) {
+        if (!didSetWasValidated) {
+          form.classList.add('was-validated');
+          didSetWasValidated = true;
+        }
+        return;
+      }
+      performQuery(url);
+    });
+  });
+</script>
+</body>
+</html>

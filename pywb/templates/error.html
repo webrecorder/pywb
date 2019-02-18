@@ -1,11 +1,26 @@
-<h2>Pywb Error</h2>
-<b>{{ err_msg }}</b>
-
-{% if err_details %}
-<p>Error Details:</p>
-<p>
-<pre>
-{{ err_details }}
-</pre>
-</p>
-{% endif %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8;charset=utf-8">
+    <title>Pywb Error</title>
+    <link rel="stylesheet" href="{{ static_prefix }}/css/bootstrap.min.css">
+    <script src="{{ static_prefix }}/js/jquery-latest.min.js"></script>
+    <script src="{{ static_prefix }}/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container text-danger">
+    <div class="row justify-content-center">
+        <h2 class="display-2">Pywb Error</h2>
+    </div>
+    <div class="row">
+        <div class="col-12 text-center">
+            <p class="lead">{{ err_msg }}</p>
+            {% if err_details %}
+                <p class="lead">Error Details:</p>
+                <pre>{{ err_details }}</pre>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</body>
+</html>

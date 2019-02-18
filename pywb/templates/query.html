@@ -1,17 +1,28 @@
 <html>
 <head>
-<!-- jquery and bootstrap dependencies query view -->
-<link rel="stylesheet" href="{{ static_prefix }}/css/query.css">
-<link rel="stylesheet" href="{{ static_prefix }}/css/bootstrap.min.css">
-<link rel="stylesheet" href="{{ static_prefix }}/css/font-awesome.min.css">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8;charset=utf-8">
+    <title>Pywb Query Results</title>
+    <!-- jquery and bootstrap dependencies query view -->
+    <link rel="stylesheet" href="{{ static_prefix }}/css/query.css">
+    <link rel="stylesheet" href="{{ static_prefix }}/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ static_prefix }}/css/font-awesome.min.css">
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <h4 class="display-4 p-0">Pywb Query Results</h4>
+    </div>
+</div>
+<div class="container">
+    <div class="row justify-content-center mt-1" id="display-query-type-info"></div>
+</div>
+<div class="container mt-3 q-display" id="captures"></div>
 <script src="{{ static_prefix }}/js/jquery-latest.min.js"></script>
 <script src="{{ static_prefix }}/js/bootstrap.min.js"></script>
 <script src="{{ static_prefix }}/query.js"></script>
-</head>
-<body>
-  <h2 class="text-center">pywb Query Results</h2>
-  <h3 class="text-center"><b id="count"></b> of <b>{{ url }}</b></h3>
-  <div id="captureYears"></div>
-  <script>new RenderCalendar("{{ prefix }}", "{{ url }}");</script>
+<script>
+  var renderCal = new RenderCalendar({ prefix: "{{ prefix }}", staticPrefix: "{{ static_prefix }}" });
+  renderCal.init();
+</script>
 </body>
 </html>
