@@ -36,6 +36,9 @@ after_success:
   - codecov
 
 matrix:
+  allow_failures:
+    - env: WR_TEST=yes
+
   exclude:
     - env: WR_TEST=yes
       python: "2.7"

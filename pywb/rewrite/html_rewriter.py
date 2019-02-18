@@ -13,6 +13,8 @@ from pywb.rewrite.regex_rewriters import JSRewriter, CSSRewriter
 
 from pywb.rewrite.content_rewriter import StreamingRewriter
 
+from six import text_type
+
 import six.moves.html_parser
 
 try:
@@ -21,7 +23,15 @@ try:
 except:
     orig_unescape = None
 
-from six import text_type
+
+try:
+    import _markupbase as markupbase
+except:
+    import markupbase as markupbase
+
+# ensure invalid cond ending ']-->' closing decl
+# is treated same as ']>'
+markupbase._msmarkedsectionclose = re.compile(r']\s*-{0,2}>')
 
 
 #=================================================================

@@ -347,7 +347,7 @@ class StreamingRewriter(object):
 
 # ============================================================================
 class RewriteInfo(object):
-    TAG_REGEX = re.compile(b'^\s*\<')
+    TAG_REGEX = re.compile(b'^(\xef\xbb\xbf)?\s*\<')
     TAG_REGEX2 = re.compile(b'^.*<\w+[\s>]')
     JSON_REGEX = re.compile(b'^\s*[{[][{"]')  # if it starts with this then highly likely not HTML
 
