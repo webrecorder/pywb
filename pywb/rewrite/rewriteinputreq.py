@@ -87,7 +87,8 @@ class RewriteInputRequest(DirectWSGIInputRequest):
                     value = self.splits.scheme
 
             elif not has_brotli and name == 'HTTP_ACCEPT_ENCODING' and 'br' in value:
-                # if brotli not available, remove brotli encoded content
+                # if brotli not available, remove 'br' from accept-encoding to avoid
+                # capture brotli encoded content
                 name = 'Accept-Encoding'
                 value = ','.join([enc for enc in value.split(',') if enc.strip() != 'br'])
 
