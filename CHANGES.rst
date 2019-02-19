@@ -3,6 +3,7 @@ pywb 2.2.0 changelist
 * Auto Fetch System:
     - Added ``picture > source[srcset]`` extraction and increased the robustness of relative srcset URLs resolution (#415)
     - Enabled auto-fetching of video, audio resources (#427)
+    - Expoxed AutoFetchWorker api in proxy mode to allow external JS to initiate checks (#389)
 
 * Fuzzy Matching:
     - Added an additional Facebook rule targeting timeline replay (#440)
@@ -22,11 +23,17 @@ pywb 2.2.0 changelist
     - Wombat now uses the actual page scheme instead of defaulting to http when extracting the original url (#404)
     - Improved URL rewriting in web workers (#420)
     - Improved replay of content coming from a frameset's frame (#438)
+    - Updated rules for facebook (#440)
 
 * Server-Side Rewriting:
     - Improved the rewriting process of HTTP headers that are encoded in the non-standard ``UTF-8`` encoding (#402)
     - Improved the JavaScript rewriter's rewrites of the ``location`` symbol in order to avoid rewriting ``$location`` (#403)
     - Added an additional check of ``text/html`` content to ensure that it is actually ``html`` (#428)
+    - Fixed HTML detection for UTF-8 files starting with BOM (#441)
+    - Fixed parsing of invalid conditional comments, eg. treat '<![endif]-->' as '<![endif]>' (#441)
+
+* UI:
+   -  New Query UI with support for prefix queries, forms for advanced search via cdx server api, incremental results loading (#421)
 
 
 pywb 2.1.0 changelist
