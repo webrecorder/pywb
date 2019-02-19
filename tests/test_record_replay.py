@@ -3,9 +3,14 @@ from pywb.manager.manager import main as manager
 from pywb.manager.autoindex import AutoIndexer
 from pywb.warcserver.test.testutils import to_path, HttpBinLiveTests, TEST_WARC_PATH, TEST_CDX_PATH
 
+from warcio import ArchiveIterator
+
 import os
 import time
 import json
+
+from mock import patch
+import pytest
 
 
 # ============================================================================
@@ -153,6 +158,20 @@ class TestRecordCustomConfig(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
         assert names[0].startswith('pywb-rec-test-')
         assert names[0].endswith('.warcgz')
 
+        TestRecordCustomConfig.warc_name = os.path.join(dir_name, names[0])
+
+    @patch('pywb.rewrite.rewriteinputreq.has_brotli', False)
+    def test_no_brotli(self):
+        res = self.testapp.get('/test-new/record/mp_/http://httpbin.org/get?C=D',
+                               headers={'Accept-Encoding': 'gzip, deflate, br'})
+        assert '"C": "D"' in res.text
+
+        with open(self.warc_name, 'rb') as fh:
+            for record in ArchiveIterator(fh):
+                last_record = record
+
+        assert record.http_headers['Accept-Encoding'] == 'gzip, deflate'
+
 
 # ============================================================================
 class TestRecordFilter(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
@@ -174,17 +193,17 @@ class TestRecordFilter(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
                      }
         super(TestRecordFilter, cls).setup_class('config_test_record.yaml', custom_config=rec_custom)
         manager(['init', 'test-new'])
-        
+
     def test_skip_existing(self):
         dir_name = os.path.join(self.root_dir, '_test_colls', 'test-new', 'archive')
         assert os.path.isdir(dir_name)
         res = self.testapp.get('/fallback/cdx?url=http://example.com/?example=1')
         assert res.text != ''
-        
+
         res = self.testapp.get('/test-new/record/mp_/http://example.com/?example=1')
         assert 'Example Domain' in res.text
         assert os.listdir(dir_name) == []
-    
+
     def test_record_new(self):
         dir_name = os.path.join(self.root_dir, '_test_colls', 'test-new', 'archive')
         assert os.path.isdir(dir_name)
