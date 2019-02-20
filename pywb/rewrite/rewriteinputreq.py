@@ -6,6 +6,14 @@ from six.moves.urllib.parse import urlsplit
 import re
 
 
+try: # pragma: no cover
+    import brotli
+    has_brotli = True
+except Exception:  # pragma: no cover
+    has_brotli = False
+    print('Warning: brotli module could not be loaded, will not be able to replay brotli-encoded content')
+
+
 #=============================================================================
 class RewriteInputRequest(DirectWSGIInputRequest):
     RANGE_ARG_RX = re.compile('.*.googlevideo.com/videoplayback.*([&?]range=(\d+)-(\d+))')
@@ -78,6 +86,12 @@ class RewriteInputRequest(DirectWSGIInputRequest):
                 name = 'X-Forwarded-Proto'
                 if self.splits:
                     value = self.splits.scheme
+
+            elif not has_brotli and name == 'HTTP_ACCEPT_ENCODING' and 'br' in value:
+                # if brotli not available, remove 'br' from accept-encoding to avoid
+                # capture brotli encoded content
+                name = 'Accept-Encoding'
+                value = ','.join([enc for enc in value.split(',') if enc.strip() != 'br'])
 
             elif name.startswith('HTTP_'):
                 name = name[5:].title().replace('_', '-')
