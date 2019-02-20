@@ -5,10 +5,11 @@ from six import iteritems
 from six.moves.urllib.parse import urlsplit
 import re
 
+
 try: # pragma: no cover
     import brotli
     has_brotli = True
-except:  # pragma: no cover
+except Exception:  # pragma: no cover
     has_brotli = False
     print('Warning: brotli module could not be loaded, will not be able to replay brotli-encoded content')
 
