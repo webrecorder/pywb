@@ -1,34 +1,34 @@
-ARG PYTHON=python:3.5.3
+ARG PYTHON=python:3.7.2
 
 FROM $PYTHON
 
-RUN mkdir /uwsgi
-COPY uwsgi.ini /uwsgi/
-
 WORKDIR /pywb
 
-ADD requirements.txt .
-RUN pip install -r requirements.txt
+COPY requirements.txt extra_requirements.txt ./
 
-ADD extra_requirements.txt .
-RUN pip install -r extra_requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt -r extra_requirements.txt
 
-ADD . .
-RUN python setup.py install
+COPY . ./
 
-RUN mkdir /webarchive
-COPY config.yaml /webarchive/
-
-VOLUME /webarchive
+RUN python setup.py install \
+ && mv ./docker-entrypoint.sh / \
+ && mkdir /uwsgi && mv ./uwsgi.ini /uwsgi/ \
+ && mkdir /webarchive && mv ./config.yaml /webarchive/
 
 WORKDIR /webarchive
 
+# auto init collection
+ENV INIT_COLLECTION ''
+
+ENV VOLUME_DIR /webarchive
+
+#USER archivist
+COPY docker-entrypoint.sh ./
+
+# volume and port
+VOLUME /webarchive
 EXPOSE 8080
 
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["uwsgi", "/uwsgi/uwsgi.ini"]
-
-RUN useradd -ms /bin/bash -u 1000 archivist
-
-USER archivist
-
 
