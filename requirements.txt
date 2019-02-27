@@ -1,5 +1,3 @@
-cffi
-cython>=0.28
 six
 warcio>=1.5.2
 chardet
