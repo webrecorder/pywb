@@ -4,6 +4,7 @@ python:
   - "2.7"
   - "3.5"
   - "3.6"
+  - "3.7"
 
 dist: xenial
 
@@ -44,4 +45,6 @@ matrix:
       python: "2.7"
     - env: WR_TEST=yes
       python: "3.5"
+    - env: WR_TEST=yes
+      python: "3.7"
 

@@ -7,6 +7,9 @@ class WbException(Exception):
         self.msg = msg
         self.url = url
 
+    def __repr__(self):
+        return "{0}('{1}',)".format(self.__class__.__name__,  self.msg)
+
 # Default Error Code
 #    def status(self):
 #        return '500 Internal Server Error'
