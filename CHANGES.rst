@@ -1,9 +1,11 @@
 pywb 2.2.x changelist
 ~~~~~~~~~~~~~~~~~~~~~
-*Note: This release introduces a new ``major.minor.yyyymmdd`` versioning system for pywb.
+* Versioning:
+    - This release introduces the new ``major.minor.yyyymmdd`` versioning system for pywb. (#445)
 
-To faciliate more frequent releases for fidelity improvements and bug fixes, the ``.yyyymmdd`` component
-will be automatically updated. The major/minor version will be updated for larger changes*
+      The major/minor version will be updated for larger changes.
+      To faciliate more frequent releases, the ``.yyyymmdd`` component will be updated for smaller incremental
+      releases, for fidelity improvements and smaller bug fixes.
 
 * Auto Fetch System:
     - Added ``picture > source[srcset]`` extraction and increased the robustness of relative srcset URLs resolution (#415)
@@ -47,8 +49,7 @@ will be automatically updated. The major/minor version will be updated for large
 * UI:
    -  New Query UI with support for prefix queries, forms for advanced search via cdx server api, incremental results loading (#421)
 
-* Versioning:
-    - Switch to new ``major.minor.yyyymmdd`` versioning system to allow for more frequent releases (#445)
+
 
 
 
