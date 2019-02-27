@@ -12,7 +12,7 @@ pyyaml
 werkzeug
 webencodings
 dnspython
-git+https://github.com/gevent/gevent.git#egg=gevent
+gevent
 webassets==0.12.1
 portalocker
 wsgiprox>=1.5.1

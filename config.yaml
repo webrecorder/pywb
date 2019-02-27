@@ -3,6 +3,7 @@
 #
 
 collections:
+    live: $live
     all: $all
     pywb:
         index_paths: ./sample_archive/cdx/

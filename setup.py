@@ -59,14 +59,8 @@ def generate_git_hash_py(pkg, filename='git_hash.py'):
 
 
 def load_requirements(filename):
-    requirements = []
     with open(filename, 'rt') as fh:
-        for line in fh:
-            dep = line.rstrip()
-            if dep.endswith('#egg=gevent'):
-                requirements.append("gevent>=1.3")
-            else:
-                requirements.append(dep)
+        requirements = fh.read().rstrip().split('\n')
     if sys.version_info > (3, 0):
         requirements.append("py3AMF")
     else:
