@@ -1,5 +1,6 @@
 pywb 2.2.x changelist
 ~~~~~~~~~~~~~~~~~~~~~
+
 * Versioning:
     - This release introduces the new ``major.minor.yyyymmdd`` versioning system for pywb. (#445)
 
