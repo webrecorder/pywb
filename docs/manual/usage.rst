@@ -64,17 +64,17 @@ Getting Started Using Docker
 
 pywb also comes with an official production-ready Dockerfile, and several versions of automatically built Docker images.
 
-The Docker images are updated automatically with pywb updates on Github:
+The following Docker image tags are updated automatically with pywb updates on github:
 
 * ``webrecorder/pywb`` corresponds to the latest release of pywb and the ``master`` branch on github.
 * ``webrecorder/pywb:develop`` -- corresponds to the ``develop`` branch of pywb on github and contains the latest development work.
-* ``webrecorder/pywb:<MAJ.MIN.date>`` -- Starting with pywb 2.2.x, each incremental release will correspond to a Docker image with tag ``<MAJ.MIN.date>``
+* ``webrecorder/pywb:<VERSION>`` -- Starting with pywb 2.2, each incremental release will correspond to a Docker image with tag ``<VERSION>``
 
-Using a specific ``webrecorder/pywb:<MAJ.MIN.date>`` release is recommended for production.
+Using a specific ``webrecorder/pywb:<VERSION>`` release is recommended for production.
 
-The versions will correspond to `pywb release listed on pypi <https://pypi.org/project/pywb/#history>`_ (from pywb.2.2)
+Versioned Docker images are available for pywb releases >= 2.2. All releases of pywb are listed in the `Python Package Index for pywb <https://pypi.org/project/pywb/#history>`_
 
-All of the currently available Docker images (tags) are `listed on Docker hub <https://hub.docker.com/r/webrecorder/pywb/tags>`_
+All of the currently available Docker image tags are `listed on Docker hub <https://hub.docker.com/r/webrecorder/pywb/tags>`_
 
 For the below examples, the latest ``webrecorder/pywb`` image is used.
 
