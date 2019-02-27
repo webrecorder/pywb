@@ -62,7 +62,7 @@ If all worked well, you should see your archived version of ``<url>``. Congrats,
 Getting Started Using Docker
 ----------------------------
 
-pywb also comes with an official production-ready Dockerfile, and several versions of automatically built Docker images.
+pywb also comes with an official production-ready Dockerfile, and several automatically built Docker images.
 
 The following Docker image tags are updated automatically with pywb updates on github:
 
@@ -70,9 +70,9 @@ The following Docker image tags are updated automatically with pywb updates on g
 * ``webrecorder/pywb:develop`` -- corresponds to the ``develop`` branch of pywb on github and contains the latest development work.
 * ``webrecorder/pywb:<VERSION>`` -- Starting with pywb 2.2, each incremental release will correspond to a Docker image with tag ``<VERSION>``
 
-Using a specific ``webrecorder/pywb:<VERSION>`` release is recommended for production.
+Using a specific version, eg. ``webrecorder/pywb:<VERSION>`` release is recommended for production. Versioned Docker images are available for pywb releases >= 2.2.
 
-Versioned Docker images are available for pywb releases >= 2.2. All releases of pywb are listed in the `Python Package Index for pywb <https://pypi.org/project/pywb/#history>`_
+All releases of pywb are listed in the `Python Package Index for pywb <https://pypi.org/project/pywb/#history>`_
 
 All of the currently available Docker image tags are `listed on Docker hub <https://hub.docker.com/r/webrecorder/pywb/tags>`_
 
@@ -90,8 +90,9 @@ add the WARC to a new collection and start pywb:
 .. code:: console
 
       docker pull webrecorder/pywb
-      docker run -e INIT_COLLECTION=my-web-archive -v /pywb-data:/webarchive -v /path/to:/source webrecorder/pywb wb-manager add default /path/to/my_warc.warc.gz
-      docker run -p 8080:8080 -v /webarchive-data/:/webarchive wayback
+      docker run -e INIT_COLLECTION=my-web-archive -v /pywb-data:/webarchive \
+         -v /path/to:/source webrecorder/pywb wb-manager add default /path/to/my_warc.warc.gz
+      docker run -p 8080:8080 -v /pywb-data/:/webarchive wayback
 
 This example is equivalent to the non-Docker example above.
 
@@ -99,7 +100,7 @@ Setting ``INIT_COLLECTION=my-web-archive`` results in automatic collection initi
 
 The ``wayback`` command is launched on port 8080 and mapped to the same on the local host.
 
-If ``wayback`` is not specified, the Docker container launches with the ``uwsgi`` server recommended for production deployment.
+If the ``wayback`` command is not specified, the Docker container launches with the ``uwsgi`` server recommended for production deployment.
 See :ref:`deployment` for more info.
 
 
@@ -208,7 +209,7 @@ Docker Deployment
 
 The default pywb Docker image uses the production ready ``uwsgi`` server by default.
 
-The following will start pywb directly on port 80:
+The following will run pywb in Docker directly on port 80:
 
 
 .. code:: console
