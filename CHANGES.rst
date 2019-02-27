@@ -1,5 +1,10 @@
 pywb 2.2.x changelist
 ~~~~~~~~~~~~~~~~~~~~~
+*Note: This release introduces a new ``major.minor.yyyymmdd`` versioning system for pywb.
+
+To faciliate more frequent releases for fidelity improvements and bug fixes, the ``.yyyymmdd`` component
+will be automatically updated. The major/minor version will be updated for larger changes*
+
 * Auto Fetch System:
     - Added ``picture > source[srcset]`` extraction and increased the robustness of relative srcset URLs resolution (#415)
     - Enabled auto-fetching of video, audio resources (#427)
@@ -11,9 +16,9 @@ pywb 2.2.x changelist
     - Updated Docker image to support
     - Python 3.7 support and CI testing (#447)
 
-* Docker & Versioning:
+* Docker:
     - Updated Docker image to Python 3.7.2, match docker user uid/gid to that of existing volume (#446)
-    - Switch to new ``MAJ.MIN.YYYYMMDD`` versioning system to allow for more frequent releases (#445)
+    - Add documentation for using Docker image and automated images (#448)
 
 * Fuzzy Matching:
     - Added an additional Facebook rule targeting timeline replay (#440)
@@ -41,6 +46,10 @@ pywb 2.2.x changelist
 
 * UI:
    -  New Query UI with support for prefix queries, forms for advanced search via cdx server api, incremental results loading (#421)
+
+* Versioning:
+    - Switch to new ``major.minor.yyyymmdd`` versioning system to allow for more frequent releases (#445)
+
 
 
 pywb 2.1.0 changelist
