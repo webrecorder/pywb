@@ -1,12 +1,11 @@
 pywb 2.2.x changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* Versioning:
-    - This release introduces the new ``major.minor.yyyymmdd`` versioning system for pywb. (#445)
-
-      The major/minor version will be updated for larger changes.
-      To faciliate more frequent releases, the ``.yyyymmdd`` component will be updated for smaller incremental
-      releases, for fidelity improvements and smaller bug fixes.
+* New Versioning System: (#445)
+    - Switching to hybrid semantic / calendar ``major.minor.yyyymmdd`` versioning.
+    - The ``major.minor`` version will be updated for larger changes.
+    - The ``.yyyymmdd`` date component will be updated for smaller incremental releases, for fidelity improvements and smaller bug fixes.
+    
 
 * Auto Fetch System:
     - Added ``picture > source[srcset]`` extraction and increased the robustness of relative srcset URLs resolution (#415)
