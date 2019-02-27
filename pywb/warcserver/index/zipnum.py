@@ -214,9 +214,7 @@ class ZipNumIndexSource(BaseIndexSource):
                 reader.close()
                 if query.page_count:
                     yield self._page_info(0, pagesize, 0)
-                    return
-                else:
-                    raise
+                return
 
         first = IDXObject(first_line)
 
