@@ -57,6 +57,53 @@ Point your browser to ``http://localhost:8080/my-web-archive/<url>/`` where ``<u
 If all worked well, you should see your archived version of ``<url>``. Congrats, you are now running your own web archive!
 
 
+.. _getting-started-docker:
+
+Getting Started Using Docker
+----------------------------
+
+pywb also comes with an official production-ready Dockerfile, and several automatically built Docker images.
+
+The following Docker image tags are updated automatically with pywb updates on github:
+
+* ``webrecorder/pywb`` corresponds to the latest release of pywb and the ``master`` branch on github.
+* ``webrecorder/pywb:develop`` -- corresponds to the ``develop`` branch of pywb on github and contains the latest development work.
+* ``webrecorder/pywb:<VERSION>`` -- Starting with pywb 2.2, each incremental release will correspond to a Docker image with tag ``<VERSION>``
+
+Using a specific version, eg. ``webrecorder/pywb:<VERSION>`` release is recommended for production. Versioned Docker images are available for pywb releases >= 2.2.
+
+All releases of pywb are listed in the `Python Package Index for pywb <https://pypi.org/project/pywb/#history>`_
+
+All of the currently available Docker image tags are `listed on Docker hub <https://hub.docker.com/r/webrecorder/pywb/tags>`_
+
+For the below examples, the latest ``webrecorder/pywb`` image is used.
+
+To add WARCs in Docker, the source directory should be added as a volume.
+
+By default, pywb runs out of the ``/webarchive`` directory, which should generally be mounted as a volume to store the data on the host
+outside the container. pywb will not change permissions of the data mounted at ``/webarchive`` and will instead attempt to run as same user
+that owns the directory.
+
+For example, give a WARC at ``/path/to/my_warc.warc.gz`` and a pywb data directory of ``/pywb-data``, the following will
+add the WARC to a new collection and start pywb:
+
+.. code:: console
+
+      docker pull webrecorder/pywb
+      docker run -e INIT_COLLECTION=my-web-archive -v /pywb-data:/webarchive \
+         -v /path/to:/source webrecorder/pywb wb-manager add default /path/to/my_warc.warc.gz
+      docker run -p 8080:8080 -v /pywb-data/:/webarchive wayback
+
+This example is equivalent to the non-Docker example above.
+
+Setting ``INIT_COLLECTION=my-web-archive`` results in automatic collection initializiation via ``wb-manager init my-web-archive``.
+
+The ``wayback`` command is launched on port 8080 and mapped to the same on the local host.
+
+If the ``wayback`` command is not specified, the Docker container launches with the ``uwsgi`` server recommended for production deployment.
+See :ref:`deployment` for more info.
+
+
 Using Existing Web Archive Collections
 --------------------------------------
 
@@ -145,6 +192,8 @@ load the latest copy from the ``my-web-archive`` collection.
 See :ref:`https-proxy` section for additional configuration details.
 
 
+.. _deployment:
+
 Deployment
 ----------
 
@@ -154,6 +203,27 @@ pywb uses the gevent coroutine library, and the default app will support many co
 For larger scale production deployments, running with `uwsgi <http://uwsgi-docs.readthedocs.io/>`_ server application is recommended. The ``uwsgi.ini`` script provided can be used to launch pywb with uwsgi. uwsgi can be scaled to multiple processes to support the necessary workload, and pywb must be run with the `Gevent Loop Engine <http://uwsgi-docs.readthedocs.io/en/latest/Gevent.html>`_. Nginx or Apache can be used as an additional frontend for uwsgi.
 
 Although uwsgi does not provide a way to specify command line, all command line options can alternatively be configured via ``config.yaml``. See :ref:`configuring-pywb` for more info on available configuration options.
+
+Docker Deployment
+^^^^^^^^^^^^^^^^^
+
+The default pywb Docker image uses the production ready ``uwsgi`` server by default.
+
+The following will run pywb in Docker directly on port 80:
+
+
+.. code:: console
+
+      docker run -p 80:8080 -v /webarchive-data/:/webarchive
+
+To run pywb in Docker behind a local nginx (as shown below), port 8081 should also be mapped:
+
+.. code:: console
+
+      docker run -p 8081:8081 -v /webarchive-data/:/webarchive
+
+
+See :ref:`getting-started-docker` for more info on using pywb with Docker.
 
 
 Sample Nginx Configuration
