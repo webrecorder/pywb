@@ -222,8 +222,6 @@ class RemoteIndexSource(BaseIndexSource):
 
 # =============================================================================
 class XmlQueryIndexSource(BaseIndexSource):
-    EXACT_SUFFIX = '?q=type:urlquery+url:{url}'
-    PREFIX_SUFFIX = '?q=type:prefixquery+url:{url}'
 
     def __init__(self, query_api_url):
         self.query_api_url = query_api_url
@@ -237,13 +235,11 @@ class XmlQueryIndexSource(BaseIndexSource):
         matchType = params.get('matchType', 'exact')
 
         if matchType == 'exact':
-            query_url = self.query_api_url + self.EXACT_SUFFIX
+            query_url = self.query_api_url + '?q=' + quote_plus('type:urlquery+url:' + quote_plus(url))
         elif matchType == 'prefix':
-            query_url = self.query_api_url + self.PREFIX_SUFFIX
+            query_url = self.query_api_url + '?q=' + quote_plus('type:prefixquery+url:' + quote_plus(url))
         else:
             raise BadRequestException('matchType={0} is not supported'.format(matchType=matchType))
-
-        query_url = query_url.format(url=quote_plus(url))
 
         try:
             response = self.session.get(query_url)
