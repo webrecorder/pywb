@@ -17,10 +17,6 @@ RUN python setup.py install \
 
 WORKDIR /webarchive
 
-# gevent defaults
-#ENV GEVENT_LOOP libuv
-ENV GEVENT_RESOLVER dnspython
-
 # auto init collection
 ENV INIT_COLLECTION ''
 
