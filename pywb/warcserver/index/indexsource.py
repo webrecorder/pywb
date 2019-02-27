@@ -242,6 +242,7 @@ class XmlQueryIndexSource(BaseIndexSource):
             raise BadRequestException('matchType={0} is not supported'.format(matchType=matchType))
 
         try:
+            self.logger.debug("Running query: %s" % query_url)
             response = self.session.get(query_url)
             response.raise_for_status()
 
