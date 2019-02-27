@@ -1,3 +1,58 @@
+pywb 2.2.x changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* New Versioning System: (#445)
+    - Switching to hybrid semantic / calendar ``major.minor.yyyymmdd`` versioning.
+    - The ``major.minor`` version will be updated for larger changes.
+    - The ``.yyyymmdd`` date component will be updated for smaller incremental releases, for fidelity improvements and smaller bug fixes.
+    
+
+* Auto Fetch System:
+    - Added ``picture > source[srcset]`` extraction and increased the robustness of relative srcset URLs resolution (#415)
+    - Enabled auto-fetching of video, audio resources (#427)
+    - Expoxed AutoFetchWorker api in proxy mode to allow external JS to initiate checks (#389)
+
+* Build / CI Improvements:
+    - Tweaked usage of wr-tests in CI (#431)
+    - Ensured that usage of XVFB works on travis.ci (#436)
+    - Updated Docker image to support
+    - Python 3.7 support and CI testing (#447)
+
+* Docker:
+    - Updated Docker image to Python 3.7.2, match docker user uid/gid to that of existing volume (#446)
+    - Add documentation for using Docker image and automated images (#448)
+
+* Fuzzy Matching:
+    - Added an additional Facebook rule targeting timeline replay (#440)
+
+* Memento:
+    - Fixed regression in FrontendApp when handling TimeMap requests (#423)
+
+* Recording:
+    - Remove Transer-Encoding from internal response (#437)
+    - If brotli decoding package can't be loaded, remove ``br`` from ``Accept-Encoding`` header (#444)
+
+* Replay / Fidelity Improvements:
+    - Wombat now uses the actual page scheme instead of defaulting to http when extracting the original url (#404)
+    - Improved URL rewriting in web workers (#420)
+    - Improved replay of content coming from a frameset's frame (#438)
+    - Updated rules for facebook (#440)
+    - Introduce new banner behavior and ensured that banner does not become stuck displaying "Loading..." (#418)
+
+* Server-Side Rewriting:
+    - Improved the rewriting process of HTTP headers that are encoded in the non-standard ``UTF-8`` encoding (#402)
+    - Improved the JavaScript rewriter's rewrites of the ``location`` symbol in order to avoid rewriting ``$location`` (#403)
+    - Added an additional check of ``text/html`` content to ensure that it is actually ``html`` (#428)
+    - Fixed HTML detection for UTF-8 files starting with BOM (#441)
+    - Fixed parsing of invalid conditional comments, eg. treat '<![endif]-->' as '<![endif]>' (#441)
+
+* UI:
+   -  New Query UI with support for prefix queries, forms for advanced search via cdx server api, incremental results loading (#421)
+
+
+
+
+
 pywb 2.1.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
