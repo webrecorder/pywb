@@ -1,4 +1,4 @@
-ARG PYTHON=python:3.7
+ARG PYTHON=python:3.7.2
 
 FROM $PYTHON
 
