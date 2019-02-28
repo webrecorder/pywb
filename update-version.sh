@@ -1,9 +1,16 @@
 #!/bin/bash
 
 BASE=2.2
+
 NOW=$(date +%Y%m%d)
-sed -i='' -E  "s/(__version__ = ').*$/\1$BASE.$NOW'/" ./pywb/version.py 
-git tag v-$BASE.$NOW
-git commit -m "version: update to $BASE.$NOW" ./pywb/version.py
+
+TAG="$BASE.$NOW"
+
+# Update
+sed -i='' -E  "s/(__version__ = ').*$/\1$TAG'/" ./pywb/version.py 
+git commit -m "version: update to $TAG" ./pywb/version.py
 git push
-git push origin v-$BASE.$NOW
+
+# Tag
+git tag v-$TAG
+git push origin v-$TAG
