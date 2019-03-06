@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Test Page</title>
+    <link rel="stylesheet" href="./bootstrap.min.css" />
+    <style>
+      #wombatSandbox {
+        width: 0;
+        height: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        overflow: hidden;
+      }
+      .bottomBoarder {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+      }
+    </style>
+    <script src="./testPageBundle.js"></script>
+  </head>
+  <body>
+    <div class="container mt-2">
+      <div class="row">
+        <div class="col-12">
+          <h5 class="text-center">Messages sent by wombat</h5>
+        </div>
+      </div>
+      <div class="row mt-4 align-items-center bottomBoarder pb-1">
+        <div class="col-2 align-self-center">
+          <h5 class="mb-0 text-center">Load:</h5>
+        </div>
+        <div class="col-10 h-100">
+          <div class="row">
+            <div class="col-12">
+              <p class="mb-0 lead" id="load-url"><b>url:</b></p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <p class="mb-0 lead" id="load-title"><b>title:</b></p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <p class="mb-0 lead" id="load-readyState"><b>readyState:</b></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-1 align-items-center bottomBoarder pb-1">
+        <div class="col-2 align-self-center">
+          <h5 class="mb-0 text-center">Replace URL:</h5>
+        </div>
+        <div class="col-10 h-100">
+          <div class="row">
+            <div class="col-12">
+              <p class="mb-0 lead" id="replace-url-url"><b>url:</b></p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <p class="mb-0 lead" id="replace-url-title"><b>title:</b></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-1 align-items-center bottomBoarder pb-1">
+        <div class="col-2 align-self-center">
+          <h5 class="mb-0 text-center">Cookie:</h5>
+        </div>
+        <div class="col-10 h-100">
+          <div class="row">
+            <div class="col-12">
+              <p class="mb-0 lead" id="cookie-domain"><b>domain:</b></p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <p class="mb-0 lead" id="cookie-cookie"><b>cookie:</b></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-1 align-items-center bottomBoarder pb-1">
+        <div class="col-2 align-self-center">
+          <h5 class="mb-0 text-center">Title</h5>
+        </div>
+        <div class="col-10 h-100">
+          <div class="row">
+            <div class="col-12">
+              <p class="mb-0 lead" id="title-title"><b>title:</b></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-1 align-items-center bottomBoarder pb-1">
+        <div class="col-2 align-self-center">
+          <h5 class="mb-0 text-center">Hash Change</h5>
+        </div>
+        <div class="col-10 h-100">
+          <div class="row">
+            <div class="col-12">
+              <p class="mb-0 lead" id="hash-hash"><b>hash:</b></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-1 align-items-center bottomBoarder pb-1">
+        <div class="col-2 align-self-center">
+          <h5 class="mb-0 text-center">Unknown</h5>
+        </div>
+        <div class="col-10 h-100">
+          <div class="row">
+            <div class="col-12">
+              <p class="mb-0 lead" id="unknown-msg"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <iframe
+      id="wombatSandbox"
+      src="/live/20180803160549mp_/https://tests.wombat.io/"
+    ></iframe>
+    <script>
+      const defaultText = ' not sent';
+      const domStructure = {
+        sandbox: document.getElementById('wombatSandbox'),
+        load: {
+          url: document.createTextNode(defaultText),
+          title: document.createTextNode(defaultText),
+          readyState: document.createTextNode(defaultText),
+          reset() {
+            this.url.data = defaultText;
+            this.title.data = defaultText;
+            this.readyState.data = defaultText;
+          }
+        },
+        replaceURL: {
+          url: document.createTextNode(defaultText),
+          title: document.createTextNode(defaultText),
+          reset() {
+            this.url.data = defaultText;
+            this.title.data = defaultText;
+          }
+        },
+        cookie: {
+          domain: document.createTextNode(defaultText),
+          cookie: document.createTextNode(defaultText),
+          reset() {
+            this.cookie.data = defaultText;
+            this.domain.data = defaultText;
+          }
+        },
+        titleMsg: document.createTextNode(defaultText),
+        hashchange: document.createTextNode(defaultText),
+        unknown: document.createTextNode(defaultText),
+        reset() {
+          this.load.reset();
+          this.replaceURL.reset();
+          this.cookie.reset();
+          this.titleMsg.data = defaultText;
+          this.hashchange.data = defaultText;
+          this.unknown.data = defaultText;
+        }
+      };
+      document.getElementById('load-url').appendChild(domStructure.load.url);
+      document
+        .getElementById('load-title')
+        .appendChild(domStructure.load.title);
+      document
+        .getElementById('load-readyState')
+        .appendChild(domStructure.load.readyState);
+      document
+        .getElementById('replace-url-url')
+        .appendChild(domStructure.replaceURL.url);
+      document
+        .getElementById('replace-url-title')
+        .appendChild(domStructure.replaceURL.title);
+      document
+        .getElementById('cookie-cookie')
+        .appendChild(domStructure.cookie.cookie);
+      document
+        .getElementById('cookie-domain')
+        .appendChild(domStructure.cookie.domain);
+      document.getElementById('title-title').appendChild(domStructure.titleMsg);
+      document.getElementById('hash-hash').appendChild(domStructure.hashchange);
+      document.getElementById('unknown-msg').appendChild(domStructure.unknown);
+      window.overwatch = new TestOverwatch(domStructure);
+    </script>
+  </body>
+</html>

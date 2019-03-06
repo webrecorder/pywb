@@ -238,7 +238,8 @@ class RewriterApp(object):
         host_prefix = self.get_host_prefix(environ)
         rel_prefix = self.get_rel_prefix(environ)
         full_prefix = host_prefix + rel_prefix
-
+        pywb_static_prefix = environ.get('pywb.host_prefix', '') + environ.get('pywb.app_prefix', '') + environ.get(
+            'pywb.static_prefix', '/static/')
         is_proxy = ('wsgiprox.proxy_host' in environ)
 
         response = self.handle_custom_response(environ, wb_url,
@@ -257,7 +258,8 @@ class RewriterApp(object):
             urlrewriter = UrlRewriter(wb_url,
                                       prefix=full_prefix,
                                       full_prefix=full_prefix,
-                                      rel_prefix=rel_prefix)
+                                      rel_prefix=rel_prefix,
+                                      pywb_static_prefix=pywb_static_prefix)
 
             framed_replay = self.framed_replay
 

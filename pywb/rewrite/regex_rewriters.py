@@ -63,48 +63,59 @@ class RxRules(object):
 class JSWombatProxyRules(RxRules):
     def __init__(self):
         local_init_func = '\nvar {0} = function(name) {{\
-return (self._wb_wombat && self._wb_wombat.local_init &&\
+return (self._wb_wombat && self._wb_wombat.local_init && \
 self._wb_wombat.local_init(name)) || self[name]; }};\n\
 if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
 {{\n'
+        local_check_this_fn = 'var {0} = function (thisObj) {{ \
+if (thisObj && thisObj._WB_wombat_obj_proxy) return thisObj._WB_wombat_obj_proxy; return thisObj; }};'
 
         local_init_func_name = '_____WB$wombat$assign$function_____'
 
         local_var_line = 'let {0} = {1}("{0}");'
 
-        this_rw = '(this && this._WB_wombat_obj_proxy || this)'
+        local_check_this_func_name = '_____WB$wombat$check$this$function_____'
 
-        check_loc = '(self.__WB_check_loc && self.__WB_check_loc(location) || {}).href = '
+        # we must use a function to perform the this check because most minfiers reduce the number of statements
+        # by turning everything into one or more expressions. Our previous rewrite was an logical expression,
+        # (this && this._WB_wombat_obj_proxy || this), that would cause the outer expression to be invalid when
+        # it was used as the LHS of certain expressions.
+        # e.g. assignment expressions containing non parenthesized logical expression.
+        # By using a function the expression injected is an call expression that plays nice in those cases
+        this_rw = '_____WB$wombat$check$this$function_____(this)'
+
+        check_loc = '((self.__WB_check_loc && self.__WB_check_loc(location)) || {}).href = '
 
         self.local_objs = [
-                      'window',
-                      'self',
-                      'document',
-                      'location',
-                      'top',
-                      'parent',
-                      'frames',
-                      'opener']
-
+            'window',
+            'self',
+            'document',
+            'location',
+            'top',
+            'parent',
+            'frames',
+            'opener'
+        ]
 
         local_declares = '\n'.join([local_var_line.format(obj, local_init_func_name) for obj in self.local_objs])
 
         prop_str = '|'.join(self.local_objs)
 
         rules = [
-           (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
-           (r'(?<![$.])\s*location\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
-           (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(this_rw), 0),
-           (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + this_rw), 0),
-           (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(this_rw), 0),
-           (r'(?<=[=])\s*this\b\s*(?![.$])', self.replace_str(this_rw), 0),
-           ('\}(?:\s*\))?\s*\(this\)', self.replace_str(this_rw), 0),
-           (r'(?<=[^|&][|&]{2})\s*this\b\s*(?![|&.$]([^|&]|$))', self.replace_str(this_rw), 0),
+            (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
+            (r'(?<![$.])\s*location\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
+            (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(this_rw), 0),
+            (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + this_rw), 0),
+            (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(this_rw), 0),
+            (r'(?<=[=])\s*this\b\s*(?![.$])', self.replace_str(this_rw), 0),
+            ('\}(?:\s*\))?\s*\(this\)', self.replace_str(this_rw), 0),
+            (r'(?<=[^|&][|&]{2})\s*this\b\s*(?![|&.$]([^|&]|$))', self.replace_str(this_rw), 0),
         ]
 
         super(JSWombatProxyRules, self).__init__(rules)
 
-        self.first_buff = local_init_func.format(local_init_func_name) + local_declares
+        self.first_buff = local_check_this_fn.format(local_check_this_func_name) + local_init_func.format(
+            local_init_func_name) + local_declares + '\n\n'
 
         self.last_buff = '\n\n}'
 

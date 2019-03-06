@@ -15,6 +15,8 @@ from pywb.utils.io import StreamIter, BUFF_SIZE
 
 from pywb.utils.loaders import load_yaml_config, load_py_name
 
+WORKER_MODS = {"wkr_", "sw_"}  # type: Set[str]
+
 
 # ============================================================================
 class BaseContentRewriter(object):
@@ -423,8 +425,8 @@ class RewriteInfo(object):
     def _resolve_text_type(self, text_type):
         mod = self.url_rewriter.wburl.mod
 
-        if mod == 'sw_' or mod == 'wkr_':
-            return None
+        if mod in WORKER_MODS:
+            return 'js-worker'
 
         if text_type == 'css' and mod == 'js_':
             text_type = 'css'
@@ -495,7 +497,7 @@ class RewriteInfo(object):
         return True
 
     def is_url_rw(self):
-        if self.url_rewriter.wburl.mod in ('id_', 'bn_', 'sw_', 'wkr_'):
+        if self.url_rewriter.wburl.mod in ('id_', 'bn_', 'wkrf_'):
             return False
 
         return True

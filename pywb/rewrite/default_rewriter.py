@@ -15,6 +15,8 @@ from pywb.rewrite.rewrite_dash import RewriteDASH
 from pywb.rewrite.rewrite_hls import RewriteHLS
 from pywb.rewrite.rewrite_amf import RewriteAMF
 
+from pywb.rewrite.rewrite_js_workers import JSWorkerRewriter
+
 from pywb import DEFAULT_RULES_FILE
 
 import copy
@@ -34,6 +36,7 @@ class DefaultRewriter(BaseContentRewriter):
 
         'js': JSLocationOnlyRewriter,
         'js-proxy': JSNoneRewriter,
+        'js-worker': JSWorkerRewriter,
 
         'json': JSONPRewriter,
 

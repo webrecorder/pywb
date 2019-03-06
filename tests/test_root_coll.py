@@ -31,7 +31,7 @@ class TestRootColl(BaseConfigTest):
     def test_root_replay_redir(self, fmod):
         resp = self.get('/20140128051539{0}/http://www.iana.org/domains/example', fmod)
 
-        assert resp.status_int == 302
+        assert resp.status_int in (301, 302)
 
         assert resp.headers['Location'] == 'http://localhost:80/20140128051539{0}/https://www.iana.org/domains/reserved'.format(fmod)
 

@@ -1,0 +1,65 @@
+{
+  "name": "wombat",
+  "version": "2.53.0",
+  "main": "index.js",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/fs-extra": "^5.0.5",
+    "ava": "^1.4.1",
+    "chokidar": "^2.1.5",
+    "chrome-remote-interface-extra": "^1.0.0",
+    "eslint": "^5.16.0",
+    "eslint-config-prettier": "^4.2.0",
+    "eslint-plugin-prettier": "^3.0.1",
+    "fastify": "^2.3.0",
+    "fastify-favicon": "^2.0.0",
+    "fastify-graceful-shutdown": "^2.0.1",
+    "fastify-static": "^2.4.0",
+    "fs-extra": "^7.0.1",
+    "lodash-es": "^4.17.11",
+    "prettier": "^1.17.0",
+    "rollup": "^1.10.1",
+    "rollup-plugin-babel-minify": "^8.0.0",
+    "rollup-plugin-cleanup": "^3.1.1",
+    "rollup-plugin-commonjs": "^9.3.4",
+    "rollup-plugin-node-resolve": "^4.2.3",
+    "rollup-plugin-uglify": "^6.0.2",
+    "rollup-plugin-uglify-es": "^0.0.1",
+    "tls-keygen": "^3.7.0"
+  },
+  "scripts": {
+    "build-prod": "rollup -c rollup.config.prod.js",
+    "build-dev": "ALL=1 rollup -c rollup.config.dev.js",
+    "build-dev-watch": "rollup --watch -c rollup.config.dev.js",
+    "build-dev-watch-proxy": "PROXY=1 rollup --watch -c rollup.config.dev.js",
+    "build-test": "rollup -c rollup.config.test.js && rollup -c ./internal/rollup.testPageBundle.config.js",
+    "build-full-test": "rollup -c rollup.config.test.js",
+    "build-test-bundle": "rollup -c ./internal/rollup.testPageBundle.config.js",
+    "test": "ava --verbose"
+  },
+  "prettier": {
+    "singleQuote": true
+  },
+  "ava": {
+    "concurrency": 1,
+    "verbose": true,
+    "serial": true,
+    "files": [
+      "test/*.js",
+      "!test/helpers/*.js",
+      "!test/assests/*",
+      "!test/helpers/extractOrigFunky.js"
+    ],
+    "sources": [
+      "!src/**/*"
+    ]
+  },
+  "resolutions": {
+    "*/**/graceful-fs": "~4.1.15",
+    "*/**/jsonfile": "~5.0.0",
+    "*/**/universalify": "~0.1.2"
+  },
+  "dependencies": {
+    "chrome-launcher": "^0.10.5"
+  }
+}
