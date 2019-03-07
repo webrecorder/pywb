@@ -10,14 +10,14 @@ import pytest
 # ============================================================================
 def mock_get(self, url):
     string = ''
-    if 'type:urlquery' in url:
-        if 'http%3A%2F%2Fexample.com%2Fsome%2Fpath' in url:
+    if 'type%3Aurlquery' in url:
+        if 'http%253A%252F%252Fexample.com%252Fsome%252Fpath' in url:
             string = URL_RESPONSE_2
 
-        elif 'http%3A%2F%2Fexample.com%2F' in url:
+        elif 'http%253A%252F%252Fexample.com%252F' in url:
             string = URL_RESPONSE_1
 
-    elif 'type:prefixquery' in url:
+    elif 'type%3Aprefixquery' in url:
         string = PREFIX_QUERY
 
     class MockResponse(object):

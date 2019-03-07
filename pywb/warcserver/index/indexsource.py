@@ -222,6 +222,8 @@ class RemoteIndexSource(BaseIndexSource):
 
 # =============================================================================
 class XmlQueryIndexSource(BaseIndexSource):
+    EXACT_QUERY = 'type:urlquery url:'
+    PREFIX_QUERY = 'type:prefixquery url:'
 
     def __init__(self, query_api_url):
         self.query_api_url = query_api_url
@@ -235,13 +237,16 @@ class XmlQueryIndexSource(BaseIndexSource):
         matchType = params.get('matchType', 'exact')
 
         if matchType == 'exact':
-            query_url = self.query_api_url + '?q=' + quote_plus('type:urlquery url:' + quote_plus(url))
+            query = self.EXACT_QUERY
         elif matchType == 'prefix':
-            query_url = self.query_api_url + '?q=' + quote_plus('type:prefixquery url:' + quote_plus(url))
+            query = self.PREFIX_QUERY
         else:
             raise BadRequestException('matchType={0} is not supported'.format(matchType=matchType))
 
         try:
+            #OpenSearch API requires double-escaping
+            #TODO: add option to not double escape if needed
+            query_url = self.query_api_url + '?q' + quote_plus(query + quote_plus(url))
             self.logger.debug("Running query: %s" % query_url)
             response = self.session.get(query_url)
             response.raise_for_status()
