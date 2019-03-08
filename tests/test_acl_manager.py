@@ -81,6 +81,23 @@ Matched rule:
 com,example)/ - {"access": "allow", "url": "http://example.com/"}
 """
 
+    def test_acl_add_exact(self):
+        wb_manager(['acl', 'add', '--exact-match', self.acl_filename, 'example.com', 'block'])
+
+        with open(self.acl_filename, 'rt') as fh:
+            assert fh.read() == """\
+com,example)/### - {"access": "block", "url": "example.com"}
+com,example)/ - {"access": "allow", "url": "http://example.com/"}
+"""
+
+    def test_remove_acl_exact(self):
+        wb_manager(['acl', 'remove', '-e', self.acl_filename, 'https://example.com/'])
+
+        with open(self.acl_filename, 'rt') as fh:
+            assert fh.read() == """\
+com,example)/ - {"access": "allow", "url": "http://example.com/"}
+"""
+
     def test_validate_and_sort_acl(self):
         with open(self.acl_filename, 'at') as fh:
             fh.write('com,example)/subpath - {"access": "block", "url": "http://example.com/subpath"}\n')

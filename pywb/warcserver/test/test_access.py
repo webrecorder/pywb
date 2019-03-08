@@ -114,3 +114,17 @@ class TestAccess(TempDirTests, BaseTestClass):
         assert edx['urlkey'] == 'net,example)/abc/path'
         assert edx['access'] == 'block'
 
+        # exact-only matchc
+        edx = access.find_access_rule('https://www.iana.org/')
+        assert edx['urlkey'] == 'org,iana)/###'
+        assert edx['access'] == 'allow'
+
+        edx = access.find_access_rule('https://www.iana.org/any/other')
+        assert edx['urlkey'] == 'org,iana)/'
+        assert edx['access'] == 'exclude'
+
+        edx = access.find_access_rule('https://www.iana.org/x')
+        assert edx['urlkey'] == 'org,iana)/'
+        assert edx['access'] == 'exclude'
+
+

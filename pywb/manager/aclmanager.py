@@ -101,13 +101,19 @@ class ACLManager(CollectionsManager):
         except Exception as e:
             print('Error Saving ACL Rules: ' + str(e))
 
-    def to_key(self, url_or_surt):
+    def to_key(self, url_or_surt, exact_match=False):
         """ If 'url_or_surt' already a SURT, use as is
+        If exact match, add the exact match suffix
         """
         if self.SURT_RX.search(url_or_surt):
-            return url_or_surt
+            result = url_or_surt
         else:
-            return canonicalize(url_or_surt)
+            result = canonicalize(url_or_surt)
+
+        if exact_match:
+            result += AccessChecker.EXACT_SUFFIX
+
+        return result
 
     def validate_access(self, access):
         if access not in self.VALID_ACCESS:
@@ -118,14 +124,14 @@ class ACLManager(CollectionsManager):
         return True
 
     def add_rule(self, r):
-        return self._add_rule(r.url, r.access)
+        return self._add_rule(r.url, r.access, r.exact_match)
 
-    def _add_rule(self, url, access):
+    def _add_rule(self, url, access, exact_match=False):
         if not self.validate_access(access):
             return
 
         acl = CDXObject()
-        acl['urlkey'] = self.to_key(url)
+        acl['urlkey'] = self.to_key(url, exact_match)
         acl['timestamp'] = '-'
         acl['access'] = access
         acl['url'] = url
@@ -183,7 +189,7 @@ class ACLManager(CollectionsManager):
 
     def remove_rule(self, r):
         i = 0
-        urlkey = self.to_key(r.url)
+        urlkey = self.to_key(r.url, r.exact_match)
         for rule in self.rules:
             if urlkey == rule['urlkey']:# and r.timestamp == rule['timestamp']:
                 acl = self.rules.pop(i)
@@ -251,10 +257,14 @@ class ACLManager(CollectionsManager):
                     op.add_argument(arg, nargs='?', default='allow')
                 else:
                     op.add_argument(arg)
+
+            if kwargs.get('exact_opt'):
+                op.add_argument('-e', '--exact-match', action='store_true', default=False)
+
             op.set_defaults(acl_func=kwargs['func'])
 
-        command('add', 'coll_name', 'url', 'access', func=cls.add_rule)
-        command('remove', 'coll_name', 'url', func=cls.remove_rule)
+        command('add', 'coll_name', 'url', 'access', func=cls.add_rule, exact_opt=True)
+        command('remove', 'coll_name', 'url', func=cls.remove_rule, exact_opt=True)
         command('list', 'coll_name', func=cls.list_rules)
         command('validate', 'coll_name', func=cls.validate_save)
         command('match', 'coll_name', 'url', 'default_access', func=cls.find_match)

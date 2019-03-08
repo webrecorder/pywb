@@ -18,11 +18,18 @@ class TestACLApp(BaseConfigTest):
         return self.testapp.get('/{coll}/cdx?'.format(coll=coll) + urlencode(params, doseq=1))
 
     def test_excluded_url(self):
-        resp = self.query('http://www.iana.org/')
+        resp = self.query('http://www.iana.org/domains/root')
 
         assert len(resp.text.splitlines()) == 0
 
-        self.testapp.get('/pywb/mp_/http://www.iana.org/', status=404)
+        self.testapp.get('/pywb/mp_/http://www.iana.org/domains/root', status=404)
+
+    def test_allowed_exact_url(self):
+        resp = self.query('http://www.iana.org/')
+
+        assert len(resp.text.splitlines()) == 3
+
+        self.testapp.get('/pywb/mp_/http://www.iana.org/', status=200)
 
     def test_blocked_url(self):
         resp = self.query('http://www.iana.org/about/')

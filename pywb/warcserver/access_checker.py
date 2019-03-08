@@ -16,7 +16,12 @@ class FileAccessIndexSource(FileIndexSource):
         return (a < b) - (a > b)
 
     def _do_iter(self, fh, params):
-        for line in search(fh, params['key'], prev_size=1, compare_func=self.rev_cmp):
+        exact_suffix = params.get('exact_match_suffix')
+        key = params['key']
+        if exact_suffix:
+            key += exact_suffix
+
+        for line in search(fh, key, prev_size=1, compare_func=self.rev_cmp):
             yield line
 
 
@@ -43,6 +48,9 @@ class CacheDirectoryAccessSource(CacheDirectoryMixin, DirectoryAccessSource):
 
 # ============================================================================
 class AccessChecker(object):
+    EXACT_SUFFIX = '###'
+    EXACT_SUFFIX_B = b'###'
+
     def __init__(self, access_source, default_access='allow'):
         if isinstance(access_source, str):
             self.aggregator = self.create_access_aggregator([access_source])
@@ -76,21 +84,31 @@ class AccessChecker(object):
             raise Exception('Invalid Access Source: ' + filename)
 
     def find_access_rule(self, url, ts=None, urlkey=None):
-        params = {'url': url, 'urlkey': urlkey, 'nosource': 'true'}
+        params = {'url': url,
+                  'urlkey': urlkey,
+                  'nosource': 'true',
+                  'exact_match_suffix': self.EXACT_SUFFIX_B
+                 }
+
         acl_iter, errs = self.aggregator(params)
         if errs:
             print(errs)
 
         key = params['key']
+        key_exact = key + self.EXACT_SUFFIX_B
 
         tld = key.split(b',')[0]
 
         for acl in acl_iter:
+
             # skip empty/invalid lines
             if not acl:
                 continue
 
             acl_key = acl.split(b' ')[0]
+
+            if key_exact == acl_key:
+                return CDXObject(acl)
 
             if key.startswith(acl_key):
                 return CDXObject(acl)
