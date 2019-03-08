@@ -81,6 +81,7 @@ from six import StringIO
 from io import BytesIO
 import requests
 import yaml
+from yaml import Loader
 
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
 from pywb.utils.loaders import extract_client_cookie
@@ -182,7 +183,7 @@ collection:
         other: ${PYWB_NOT}/archive/${PYWB_FOO}
 """
 
-    config_data = yaml.load(config)
+    config_data = yaml.load(config, Loader=Loader)
 
     assert config_data['collection']['coll']['index'] == './test/index'
     assert config_data['collection']['coll']['archive'] == './test/archive/bar'

@@ -50,3 +50,21 @@ class LiveResourceException(WbException):
     def status_code(self):
         return 400
 
+
+# ============================================================================
+class UpstreamException(WbException):
+    def __init__(self, status_code, url, details):
+        super(UpstreamException, self).__init__(url=url, msg=details)
+        self._status_code = status_code
+
+    @property
+    def status_code(self):
+        return self._status_code
+
+
+# ============================================================================
+class AppPageNotFound(WbException):
+    @property
+    def status_code(self):
+        return 404
+

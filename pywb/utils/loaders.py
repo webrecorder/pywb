@@ -16,7 +16,6 @@ from six.moves.urllib.parse import unquote_plus, urlsplit, urlencode
 import time
 import pkgutil
 import base64
-import yaml
 import cgi
 import re
 

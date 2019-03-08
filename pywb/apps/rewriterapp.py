@@ -17,8 +17,8 @@ from pywb.rewrite.url_rewriter import IdentityUrlRewriter, UrlRewriter
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter, IdentityUrlRewriter
 
-from pywb.utils.wbexception import WbException, NotFoundException
 from pywb.rewrite.cookies import CookieTracker
+from pywb.utils.wbexception import WbException, NotFoundException, UpstreamException
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.io import BUFF_SIZE, OffsetLimitReader, no_except_close
 from pywb.utils.memento import MementoUtils

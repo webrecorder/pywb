@@ -246,7 +246,7 @@ class XmlQueryIndexSource(BaseIndexSource):
         try:
             #OpenSearch API requires double-escaping
             #TODO: add option to not double escape if needed
-            query_url = self.query_api_url + '?q' + quote_plus(query + quote_plus(url))
+            query_url = self.query_api_url + '?q=' + quote_plus(query + quote_plus(url))
             self.logger.debug("Running query: %s" % query_url)
             response = self.session.get(query_url)
             response.raise_for_status()

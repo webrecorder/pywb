@@ -17,7 +17,7 @@ from pywb.recorder.recorderapp import RecorderApp
 from pywb.utils.loaders import load_yaml_config
 from pywb.utils.geventserver import GeventServer
 from pywb.utils.io import StreamIter
-from pywb.utils.wbexception import NotFoundException, WbException
+from pywb.utils.wbexception import NotFoundException, WbException, AppPageNotFound
 
 from pywb.warcserver.warcserver import WarcServer
 
@@ -644,13 +644,6 @@ class FrontEndApp(object):
         if isinstance(response, WbResponse):
             response.add_access_control_headers(env=env)
         return response
-
-
-# ============================================================================
-class AppPageNotFound(WbException):
-    @property
-    def status_code(self):
-        return 404
 
 
 # ============================================================================

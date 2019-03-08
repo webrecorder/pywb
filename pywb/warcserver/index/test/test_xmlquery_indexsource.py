@@ -3,6 +3,8 @@ from pywb.warcserver.test.testutils import BaseTestClass, key_ts_res
 from pywb.warcserver.index.indexsource import XmlQueryIndexSource
 from pywb.warcserver.index.aggregator import SimpleAggregator
 
+from six.moves.urllib.parse import quote_plus
+
 from mock import patch
 import pytest
 
@@ -10,14 +12,14 @@ import pytest
 # ============================================================================
 def mock_get(self, url):
     string = ''
-    if 'type%3Aurlquery' in url:
-        if 'http%253A%252F%252Fexample.com%252Fsome%252Fpath' in url:
+    if quote_plus(XmlQueryIndexSource.EXACT_QUERY) in url:
+        if quote_plus(quote_plus('http://example.com/some/path')) in url:
             string = URL_RESPONSE_2
 
-        elif 'http%253A%252F%252Fexample.com%252F' in url:
+        elif quote_plus(quote_plus('http://example.com/')) in url:
             string = URL_RESPONSE_1
 
-    elif 'type%3Aprefixquery' in url:
+    elif quote_plus(XmlQueryIndexSource.PREFIX_QUERY) in url:
         string = PREFIX_QUERY
 
     class MockResponse(object):
