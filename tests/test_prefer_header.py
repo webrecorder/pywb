@@ -46,7 +46,7 @@ class BasePreferTests(BaseConfigTest):
         assert 'WB Insert' in resp.text
 
         assert 'wombat.js' not in resp.text
-        assert 'new _WBWombat' not in resp.text, resp.text
+        assert 'WBWombatInit' not in resp.text, resp.text
 
     def _assert_rewritten(self, resp):
         self._assert_pref_headers(resp, 'rewritten')
@@ -55,7 +55,7 @@ class BasePreferTests(BaseConfigTest):
         assert 'WB Insert' in resp.text
 
         assert 'wombat.js' in resp.text
-        assert 'new _WBWombat' in resp.text, resp.text
+        assert 'WBWombatInit' in resp.text, resp.text
 
 
 # ============================================================================

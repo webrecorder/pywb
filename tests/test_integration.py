@@ -409,7 +409,7 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.content_type == 'text/html'
         assert resp.status_int == 404
 
-        assert 'Url Not Found' in resp.text
+        assert 'URL Not Found' in resp.text, resp.text
         assert 'The url <b>http://not-exist.example.com/path?A=B</b> could not be found in this collection.' in resp.text
 
     def test_static_content(self):

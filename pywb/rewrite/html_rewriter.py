@@ -56,7 +56,7 @@ class HTMLRewriterMixin(StreamingRewriter):
                         'archive': 'oe_'},
             'area':    {'href': defmod},
             'audio':   {'src': 'oe_'},
-            'base':    {'href': 'ba_'},
+            'base':    {'href': defmod},
             'blockquote': {'cite': defmod},
             'body':    {'background': 'im_'},
             'button':  {'formaction': defmod},

@@ -251,28 +251,28 @@ r"""
 #=================================================================
 
 >>> _test_css("background: url('/some/path.html')")
-"background: url('/web/20131010ce_/http://example.com/some/path.html')"
+"background: url('/web/20131010oe_/http://example.com/some/path.html')"
 
 >>> _test_css("background: url('../path.html')")
-"background: url('/web/20131010ce_/http://example.com/path.html')"
+"background: url('/web/20131010oe_/http://example.com/path.html')"
 
 >>> _test_css("background: url(\"http://domain.com/path.html\")")
-'background: url("/web/20131010ce_/http://domain.com/path.html")'
+'background: url("/web/20131010oe_/http://domain.com/path.html")'
 
 >>> _test_css('background: url("   http://domain.com/path.html   ")')
-'background: url("   /web/20131010ce_/http://domain.com/path.html   ")'
+'background: url("   /web/20131010oe_/http://domain.com/path.html   ")'
 
 >>> _test_css('background: url(" http://domain.com/path.html x ")')
-'background: url(" /web/20131010ce_/http://domain.com/path.html x ")'
+'background: url(" /web/20131010oe_/http://domain.com/path.html x ")'
 
 >>> _test_css("background: url(file.jpeg)")
 'background: url(file.jpeg)'
 
 >>> _test_css("background:#abc url('/static/styles/../images/layout/logo.png')")
-"background:#abc url('/web/20131010ce_/http://example.com/static/images/layout/logo.png')"
+"background:#abc url('/web/20131010oe_/http://example.com/static/images/layout/logo.png')"
 
 >>> _test_css("background:#000 url('/static/styles/../../images/layout/logo.png')")
-"background:#000 url('/web/20131010ce_/http://example.com/images/layout/logo.png')"
+"background:#000 url('/web/20131010oe_/http://example.com/images/layout/logo.png')"
 
 >>> _test_css("background: url('')")
 "background: url('')"

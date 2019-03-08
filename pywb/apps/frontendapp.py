@@ -24,7 +24,7 @@ from pywb.warcserver.warcserver import WarcServer
 from pywb.rewrite.templateview import BaseInsertView
 
 from pywb.apps.static_handler import StaticHandler
-from pywb.apps.rewriterapp import RewriterApp
+from pywb.apps.rewriterapp import RewriterApp, UpstreamException
 from pywb.apps.wbrequestresponse import WbResponse
 
 import os
@@ -441,6 +441,13 @@ class FrontEndApp(object):
                 coll in self.warcserver.list_dynamic_routes())
 
     def raise_not_found(self, environ, err_type, url):
+        """Utility function for raising a werkzeug.exceptions.NotFound execption with the supplied WSGI environment
+        and message.
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :param str err_type: The identifier for type of error that occured
+        :param str url: The url of the archived page that was requested
+        """
         raise AppPageNotFound(err_type, url)
 
     def _check_refer_redirect(self, environ):
