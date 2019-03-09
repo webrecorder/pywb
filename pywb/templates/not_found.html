@@ -5,10 +5,10 @@
 {% block body %}
 <div class="container">
     <div class="col-12">
-        <h4 class="display-2">URL Not Found</h4>
+        <h4>{% trans %}URL Not Found{% endtrans %}</h4>
     </div>
     <p>
-        The url <b>{{ url }}</b> could not be found in this collection.
+        {% trans %}The url <b>{{ url }}</b> could not be found in this collection.{% endtrans %}
     </p>
     {% if wbrequest and wbrequest.env.pywb_proxy_magic and url %}
         <p>

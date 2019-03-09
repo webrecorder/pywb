@@ -51,12 +51,12 @@
 </script>
 {% endif %}
 
-{% if config.enable_flash_video_rewrite %}
+{% if config.enable_flash_video_rewrite or config.transclusions_version == 1 %}
 <script src='{{ static_prefix }}/vidrw.js'> </script>
-{% endif %}
 
-{% if config.enable_transclusions %}
+{% elif config.transclusions_version | default(2) == 2 %}
 <script src="{{ static_prefix }}/transclusions.js"> </script>
+
 {% endif %}
 
 {{ banner_html }}
