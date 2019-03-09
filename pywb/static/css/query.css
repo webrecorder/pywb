@@ -18,3 +18,18 @@
 .long-text {
 	word-wrap: break-word;
 }
+
+.inherit-height {
+    height: inherit;
+}
+
+.filter-list {
+    height: 140px;
+    max-height: 140px;
+    overflow-y: scroll
+}
+
+.show-optional-bad-input {
+    display: block;
+}
+

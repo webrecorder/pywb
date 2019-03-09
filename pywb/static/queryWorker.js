@@ -1,18 +1,4 @@
 var colon = ':';
-var monthToText = {
-  '01': 'January',
-  '02': 'February',
-  '03': 'March',
-  '04': 'April',
-  '05': 'May',
-  '06': 'June',
-  '07': 'July',
-  '08': 'August',
-  '09': 'September',
-  '10': 'October',
-  '11': 'November',
-  '12': 'December'
-};
 
 var recordCount = 0;
 
@@ -166,7 +152,7 @@ function handleCDXRecord(binaryCDXRecord) {
     record: cdxRecord,
     timeInfo: {
       year: ts.substring(0, 4),
-      month: monthToText[ts.substring(4, 6)],
+      month: ts.substring(4, 6),
       day: day.charAt(0) === '0' ? day.charAt(1) : day,
       time: ts.substring(8, 10) + colon +
         ts.substring(10, 12) + colon +

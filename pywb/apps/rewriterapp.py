@@ -71,7 +71,9 @@ class RewriterApp(object):
         self.js_proxy_rw = RewriterWithJSProxy(replay_mod=self.replay_mod)
 
         if not jinja_env:
-            jinja_env = JinjaEnv(globals={'static_path': 'static'})
+            jinja_env = JinjaEnv(globals={'static_path': 'static'},
+                                 extensions=['jinja2.ext.i18n', 'jinja2.ext.with_'])
+            jinja_env.jinja_env.install_null_translations()
 
         self.jinja_env = jinja_env
 

@@ -65,26 +65,7 @@ function RenderCalendar(init) {
     '=!=': 'Is Not',
     '=!~': 'Does Not Begins With'
   };
-  this.text = {
-    months: {
-      '01': 'January',
-      '02': 'February',
-      '03': 'March',
-      '04': 'April',
-      '05': 'May',
-      '06': 'June',
-      '07': 'July',
-      '08': 'August',
-      '09': 'September',
-      '10': 'October',
-      '11': 'November',
-      '12': 'December'
-    },
-    version: 'capture',
-    versions: 'captures',
-    result: 'result',
-    results: 'results'
-  };
+  this.text = init.text;
   this.versionString = null;
 }
 
@@ -268,10 +249,16 @@ RenderCalendar.prototype.makeCDXRequest = function() {
     var queryWorker = new window.Worker(this.staticPrefix + '/queryWorker.js');
     var cdxRecordMsg = 'cdxRecord';
     var done = 'finished';
+
+    var months = this.text.months;
+
     queryWorker.onmessage = function(msg) {
       var data = msg.data;
       var terminate = false;
       if (data.type === cdxRecordMsg) {
+
+        data.timeInfo.month = months[data.timeInfo.month];
+
         // render the results sent to us from the worker
         renderCal.displayedCountStr(
           data.recordCount,
@@ -599,14 +586,9 @@ RenderCalendar.prototype.renderDateCalPart = function(
  * Updates the advanced view with the supplied cdx information
  * @param {Object} cdxObj - CDX object for this capture
  */
-RenderCalendar.prototype.renderAdvancedSearchPart = function(cdxObj) {
+RenderCalendar.prototype.renderAdvancedSearchPart = function (cdxObj) {
   // display the URL of the result
-  var displayedInfo = [
-    {
-      tag: 'small',
-      innerText: 'Date Time: ' + this.tsToDate(cdxObj.timestamp)
-    }
-  ];
+  var displayedInfo = [{ tag: 'small', innerText: this.text.dateTime + this.ts_to_date(cdxObj.timestamp) }];
   // display additional information about the result under the URL
   if (cdxObj.mime) {
     displayedInfo.push({
@@ -626,7 +608,7 @@ RenderCalendar.prototype.renderAdvancedSearchPart = function(cdxObj) {
       href: this.prefix + '*' + '/' + cdxObj.url,
       target: '_blank'
     },
-    child: { tag: 'small', innerText: 'View All Captures' }
+    child: { tag: 'small', innerText: this.text.viewAllCaptures }
   });
   this.createAndAddElementTo(this.containers.advancedResultsList, {
     tag: 'li',
