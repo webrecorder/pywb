@@ -24,6 +24,8 @@ __pycache__
 # ignore auto-gen certs
 ca/pywb-ca.pem
 ca/certs/
+proxy-certs/
+collections/
 
 # Installer logs
 pip-log.txt

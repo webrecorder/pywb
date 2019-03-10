@@ -67,6 +67,19 @@ with the redirect.
 As this approach always includes a redirect, use of this system is discouraged when the intent is to render mementos. However, this approach is useful when the goal is to determine the URI-M and to provide backwards compatibility.
 
 
+.. _memento-proxy:
+Proxy Mode Memento API
+^^^^^^^^^^^^^^^^^^^^^^
+
+When running in :ref:`https-proxy`, pywb behaves roughly in accordance with `Memento Pattern 1.3 <https://tools.ietf.org/html/rfc7089#section-4.1.3>`_
+
+Every URI in proxy mode is also a TimeGate, and the ``Accept-Datetime`` header can be used to specify which timestamp to use in proxy mode.
+The ``Accept-Datetime`` header overrides any other timestamp setting in proxy mode.
+
+The main distinction from the standard is that the URI-R, the original resource, is not available in proxy mode. (It is simply the URL loaded without the proxy,
+which is not possible to specify via the URL alone).
+
+
 URI-M Headers
 -------------
 

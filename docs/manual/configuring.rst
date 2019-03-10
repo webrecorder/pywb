@@ -429,6 +429,14 @@ To enable proxy mode, the collection can be specified by running: ``wayback --pr
 
   proxy:
     coll: my-coll
+
+The timestamp/date can also be optionally specified by running: ``wayback --proxy my-coll --timestamp 20181226010203`` or by specifying the config::
+
+  proxy:
+    coll: my-coll
+    timestamp: 20181226010203
+
+If the timestamp is omitted, proxy mode replay defaults to the latest capture. The timestamp can also be dynamically overriden per-request using the :ref:`memento-proxy`.
     
 For HTTP proxy access, this is all that is needed to use the proxy. If pywb is running on port 8080 on localhost, the following curl command should provide proxy access: ``curl -x "localhost:8080"  http://example.com/``
 
@@ -465,7 +473,6 @@ If omitted, the defaults for these options are::
      enable_banner: true
      enable_wombat: false
      enable_content_rewrite: true
-
 
 For example, to enable wombat rewriting but disable the banner, use the config::
 
