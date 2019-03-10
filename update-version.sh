@@ -4,13 +4,24 @@ BASE=2.2
 
 NOW=$(date +%Y%m%d)
 
-TAG="$BASE.$NOW"
+VERSION="$BASE.$NOW"
 
 # Update
-sed -i='' -E  "s/(__version__ = ').*$/\1$TAG'/" ./pywb/version.py 
-git commit -m "version: update to $TAG" ./pywb/version.py
+echo "Updating version to $VERSION"
+sed -i='' -E  "s/(__version__ = ').*$/\1$VERSION'/" ./pywb/version.py
+
+if [ "$1" != "commit" ]; then
+  exit 0
+fi
+
+TAG=v-$VERSION
+
+echo "Committing Tag $TAG"
+
+git commit -m "version: update to $VERSION" ./pywb/version.py
 git push
 
 # Tag
-git tag v-$TAG
-git push origin v-$TAG
+git tag $TAG
+git push origin $TAG
+

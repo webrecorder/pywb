@@ -135,6 +135,10 @@ class RewriterApp(object):
 
                 wb_url.type = wb_url.REPLAY
 
+            elif 'pywb_proxy_timestamp' in environ:
+                wb_url.timestamp = environ['pywb_proxy_timestamp']
+                wb_url.type = wb_url.REPLAY
+
         return is_timegate
 
     def _check_range(self, inputreq, wb_url):
