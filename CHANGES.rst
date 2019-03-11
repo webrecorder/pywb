@@ -1,3 +1,10 @@
+pywb 2.2.20190311 changelist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Support for setting timestamp in proxy mode via ``--proxy-timestamp`` (fixes #352)
+* Remove any ``WB_wombat_`` found in POST requests from old versions of pywb.
+
+
 pywb 2.2.x changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

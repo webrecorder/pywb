@@ -110,6 +110,37 @@ class TestProxy(BaseTestProxy):
 
 
 # ============================================================================
+class TestProxyDefaultDate(BaseTestProxy):
+    @classmethod
+    def setup_class(cls):
+        super(TestProxyDefaultDate, cls).setup_class(proxy_opts={'default_timestamp': '20111226181251'})
+
+    def test_proxy_default_replay_dt(self, scheme):
+        res = requests.get('{0}://example.com/'.format(scheme),
+                           proxies=self.proxies,
+                           verify=self.root_ca_file)
+
+        assert 'WB Insert' in res.text
+        assert 'Example Domain' in res.text
+
+        # no wombat.js and wombatProxyMode.js
+        assert 'wombat.js' not in res.text
+        assert 'wombatProxyMode.js' not in res.text
+
+        # no auto fetch
+        assert 'wbinfo.enable_auto_fetch = false;' in res.text
+
+        # banner
+        assert 'default_banner.js' in res.text
+
+        # no redirect check
+        assert 'window == window.top' not in res.text
+
+        assert res.headers['Link'] == '<http://test@example.com/>; rel="memento"; datetime="Mon, 29 Jul 2013 19:51:51 GMT"; collection="pywb"'
+        assert res.headers['Memento-Datetime'] == 'Mon, 29 Jul 2013 19:51:51 GMT'
+
+
+# ============================================================================
 class TestRecordingProxy(HttpBinLiveTests, CollsDirMixin, BaseTestProxy):
     @classmethod
     def setup_class(cls, coll='pywb', config_file='config_test.yaml'):

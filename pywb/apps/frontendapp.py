@@ -8,6 +8,7 @@ from six.moves.urllib.parse import urljoin
 from six import iteritems
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.utils import to_native_str
+from warcio.timeutils import iso_date_to_timestamp
 from wsgiprox.wsgiprox import WSGIProxMiddleware
 
 from pywb.recorder.multifilewarcwriter import MultiFileWARCWriter
@@ -26,6 +27,8 @@ from pywb.apps.rewriterapp import RewriterApp, UpstreamException
 from pywb.apps.wbrequestresponse import WbResponse
 
 import os
+import re
+
 import traceback
 import requests
 import logging
@@ -53,6 +56,8 @@ class FrontEndApp(object):
     PROXY_CA_NAME = 'pywb HTTPS Proxy CA'
 
     PROXY_CA_PATH = os.path.join('proxy-certs', 'pywb-ca.pem')
+
+    ALL_DIGITS = re.compile(r'^\d+$')
 
     def __init__(self, config_file='./config.yaml', custom_config=None):
         """
@@ -559,6 +564,14 @@ class FrontEndApp(object):
         else:
             self.proxy_prefix = '/{0}/id_/'.format(proxy_coll)
 
+        self.proxy_default_timestamp = proxy_config.get('default_timestamp')
+        if self.proxy_default_timestamp:
+            if not self.ALL_DIGITS.match(self.proxy_default_timestamp):
+                try:
+                    self.proxy_default_timestamp = iso_date_to_timestamp(self.proxy_default_timestamp)
+                except:
+                    raise Exception('Invalid Proxy Timestamp: Must Be All-Digit Timestamp or ISO Date Format')
+
         self.proxy_coll = proxy_coll
 
         self.handler = WSGIProxMiddleware(self.handle_request,
@@ -572,6 +585,9 @@ class FrontEndApp(object):
 
         Default is to use the 'proxy_prefix' to point to the proxy collection
         """
+        if self.proxy_default_timestamp:
+            environ['pywb_proxy_default_timestamp'] = self.proxy_default_timestamp
+
         return self.proxy_prefix + url
 
     def proxy_fetch(self, env, url):

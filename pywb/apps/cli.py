@@ -56,6 +56,8 @@ class BaseCli(object):
                             help='Enable recording from the live web')
         parser.add_argument('--proxy',
                             help='Enable HTTP/S proxy on specified collection')
+        parser.add_argument('-pt', '--proxy-default-timestamp',
+                            help='Default timestamp / ISO date to use for proxy requests')
         parser.add_argument('--proxy-record', action='store_true',
                             help='Enable proxy recording into specified collection')
         parser.add_argument('--proxy-enable-wombat', action='store_true',
@@ -76,7 +78,8 @@ class BaseCli(object):
             self.extra_config['proxy'] = {
                 'coll': self.r.proxy,
                 'recording': self.r.proxy_record,
-                'enable_wombat': self.r.proxy_enable_wombat
+                'enable_wombat': self.r.proxy_enable_wombat,
+                'default_timestamp': self.r.proxy_default_timestamp,
             }
 
             self.r.live = True

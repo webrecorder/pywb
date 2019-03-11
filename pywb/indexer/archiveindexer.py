@@ -70,6 +70,7 @@ class ArchiveIndexEntryMixin(object):
         post_query = other.get('_post_query')
         url = self['url']
         new_url = post_query.append_query(url)
+        new_url = new_url.replace('WB_wombat_', '')
         if post_query and new_url != url:
             self['urlkey'] = canonicalize(new_url, surt_ordered)
             other['urlkey'] = self['urlkey']
