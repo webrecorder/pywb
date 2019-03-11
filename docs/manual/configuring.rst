@@ -430,16 +430,24 @@ To enable proxy mode, the collection can be specified by running: ``wayback --pr
   proxy:
     coll: my-coll
 
-The timestamp/date can also be optionally specified by running: ``wayback --proxy my-coll --timestamp 20181226010203`` or by specifying the config::
+For HTTP proxy access, this is all that is needed to use the proxy. If pywb is running on port 8080 on localhost, the following curl command should provide proxy access: ``curl -x "localhost:8080"  http://example.com/``
+
+
+Default Proxy Timestamp
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The timestamp can also be optionally specified by running: ``wayback --proxy my-coll --proxy-default-timestamp 20181226010203`` or by specifying the config::
 
   proxy:
     coll: my-coll
-    timestamp: 20181226010203
+    default-timestamp: 20181226010203
 
-If the timestamp is omitted, proxy mode replay defaults to the latest capture. The timestamp can also be dynamically overriden per-request using the :ref:`memento-proxy`.
+The ISO date format, eg. ``2018-12-26T01:02:03`` is also accepted.
+
+If the timestamp is omitted, proxy mode replay defaults to the latest capture.
+
+The timestamp can also be dynamically overriden per-request using the :ref:`memento-proxy`.
     
-For HTTP proxy access, this is all that is needed to use the proxy. If pywb is running on port 8080 on localhost, the following curl command should provide proxy access: ``curl -x "localhost:8080"  http://example.com/``
-
 
 Proxy Mode Rewriting
 ^^^^^^^^^^^^^^^^^^^^
@@ -537,6 +545,7 @@ The following are all the available proxy options -- only ``coll`` is required::
     recording: false
     enable_banner: true
     enable_content_rewrite: true
+    default_timestamp: ''
 
 The HTTP/S functionality is provided by the separate :mod:`wsgiprox` utility which provides HTTP/S proxy routing
 to any WSGI application.

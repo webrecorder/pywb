@@ -157,7 +157,7 @@ class FrontEndApp(object):
             recorder_coll = recorder_config
             recorder_config = {}
         else:
-            recorder_coll = recorder_config['source_coll']
+            recorder_coll = recorder_config['souroe_coll']
 
         # TODO: support dedup
         dedup_index = None
@@ -168,7 +168,7 @@ class FrontEndApp(object):
                                           dedup_index=dedup_index)
 
         self.recorder = RecorderApp(self.RECORD_SERVER % str(self.warcserver_server.port), warc_writer,
-                                    accept_colls=recorder_config.get('source_filter'))
+                                    accept_colls=recorder_config.get('souroe_filter'))
 
 
         recorder_server = GeventServer(self.recorder, port=0)
@@ -564,11 +564,11 @@ class FrontEndApp(object):
         else:
             self.proxy_prefix = '/{0}/id_/'.format(proxy_coll)
 
-        self.proxy_timestamp = proxy_config.get('timestamp')
-        if self.proxy_timestamp:
-            if not self.ALL_DIGITS.match(self.proxy_timestamp):
+        self.proxy_default_timestamp = proxy_config.get('default_timestamp')
+        if self.proxy_default_timestamp:
+            if not self.ALL_DIGITS.match(self.proxy_default_timestamp):
                 try:
-                    self.proxy_timestamp = iso_date_to_timestamp(self.proxy_timestamp)
+                    self.proxy_default_timestamp = iso_date_to_timestamp(self.proxy_default_timestamp)
                 except:
                     raise Exception('Invalid Proxy Timestamp: Must Be All-Digit Timestamp or ISO Date Format')
 
@@ -585,8 +585,8 @@ class FrontEndApp(object):
 
         Default is to use the 'proxy_prefix' to point to the proxy collection
         """
-        if self.proxy_timestamp:
-            environ['pywb_proxy_timestamp'] = self.proxy_timestamp
+        if self.proxy_default_timestamp:
+            environ['pywb_proxy_default_timestamp'] = self.proxy_default_timestamp
 
         return self.proxy_prefix + url
 

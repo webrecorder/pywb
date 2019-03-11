@@ -113,7 +113,7 @@ class TestProxy(BaseTestProxy):
 class TestProxyDefaultDate(BaseTestProxy):
     @classmethod
     def setup_class(cls):
-        super(TestProxyDefaultDate, cls).setup_class(proxy_opts={'timestamp': '20111226181251'})
+        super(TestProxyDefaultDate, cls).setup_class(proxy_opts={'default_timestamp': '20111226181251'})
 
     def test_proxy_default_replay_dt(self, scheme):
         res = requests.get('{0}://example.com/'.format(scheme),

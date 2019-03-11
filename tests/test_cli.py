@@ -21,21 +21,21 @@ class TestProxyCLIConfig(CollsDirMixin, BaseTestClass):
                'coll': 'test',
                'recording': False,
                'enable_wombat': False,
-               'timestamp': None
+               'default_timestamp': None
               }
         assert res.extra_config['proxy'] == exp
 
     def test_proxy_cli_ts_iso_date(self):
-        res = wayback(['--proxy', 'test', '--proxy-timestamp', '2014-01-03 00:01:02'])
-        assert res.application.proxy_timestamp == '20140103000102'
+        res = wayback(['--proxy', 'test', '--proxy-default-timestamp', '2014-01-03 00:01:02'])
+        assert res.application.proxy_default_timestamp == '20140103000102'
 
     def test_proxy_cli_ts(self):
-        res = wayback(['--proxy', 'test', '--proxy-timestamp', '20140103000102'])
-        assert res.application.proxy_timestamp == '20140103000102'
+        res = wayback(['--proxy', 'test', '--proxy-default-timestamp', '20140103000102'])
+        assert res.application.proxy_default_timestamp == '20140103000102'
 
     def test_proxy_cli_ts_err_invalid_ts(self):
         with pytest.raises(Exception):
-            res = wayback(['--proxy', 'test', '--proxy-timestamp', '2014abc'])
+            res = wayback(['--proxy', 'test', '--proxy-default-timestamp', '2014abc'])
 
     def test_proxy_cli_rec(self):
         res = wayback(['--proxy', 'test', '--proxy-record'])
