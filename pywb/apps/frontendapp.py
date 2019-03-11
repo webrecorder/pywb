@@ -157,7 +157,7 @@ class FrontEndApp(object):
             recorder_coll = recorder_config
             recorder_config = {}
         else:
-            recorder_coll = recorder_config['souroe_coll']
+            recorder_coll = recorder_config['source_coll']
 
         # TODO: support dedup
         dedup_index = None

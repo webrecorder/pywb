@@ -447,7 +447,7 @@ The ISO date format, eg. ``2018-12-26T01:02:03`` is also accepted.
 If the timestamp is omitted, proxy mode replay defaults to the latest capture.
 
 The timestamp can also be dynamically overriden per-request using the :ref:`memento-proxy`.
-    
+
 
 Proxy Mode Rewriting
 ^^^^^^^^^^^^^^^^^^^^
