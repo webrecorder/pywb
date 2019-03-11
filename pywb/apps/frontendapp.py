@@ -168,7 +168,7 @@ class FrontEndApp(object):
                                           dedup_index=dedup_index)
 
         self.recorder = RecorderApp(self.RECORD_SERVER % str(self.warcserver_server.port), warc_writer,
-                                    accept_colls=recorder_config.get('souroe_filter'))
+                                    accept_colls=recorder_config.get('source_filter'))
 
 
         recorder_server = GeventServer(self.recorder, port=0)
