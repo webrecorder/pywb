@@ -433,8 +433,8 @@ To enable proxy mode, the collection can be specified by running: ``wayback --pr
 For HTTP proxy access, this is all that is needed to use the proxy. If pywb is running on port 8080 on localhost, the following curl command should provide proxy access: ``curl -x "localhost:8080"  http://example.com/``
 
 
-Default Proxy Timestamp
-^^^^^^^^^^^^^^^^^^^^^^^
+Default Timestamp
+^^^^^^^^^^^^^^^^^
 
 The timestamp can also be optionally specified by running: ``wayback --proxy my-coll --proxy-default-timestamp 20181226010203`` or by specifying the config::
 

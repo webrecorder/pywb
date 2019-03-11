@@ -1,8 +1,9 @@
 pywb 2.2.20190311 changelist
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Support for setting timestamp in proxy mode via ``--proxy-timestamp`` (fixes #352)
+* Support for setting timestamp in proxy mode via ``--proxy-default-timestamp`` (fixes #452)
 * Remove any ``WB_wombat_`` found in POST requests from old versions of pywb.
+* Fixes new query UI when loading traditional calendar ``/*/<url>`` pages (#455, #456)
 
 
 pywb 2.2.x changelist
