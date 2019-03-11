@@ -1,11 +1,9 @@
 var colon = ':';
-var jsonOutput = '&output=json';
-var usingWorkerStrat = (
+var usingWorkerStrat =
   typeof window.Worker === 'function' &&
   typeof window.fetch === 'function' &&
   typeof window.TextDecoder === 'function' &&
-  typeof window.ReadableStream === 'function'
-);
+  typeof window.ReadableStream === 'function';
 
 var first = 1;
 
@@ -19,9 +17,17 @@ function RenderCalendar(init) {
   this.prefix = init.prefix;
   this.cdxURL = this.prefix + 'cdx';
   this.staticPrefix = init.staticPrefix;
-  this.queryURL = null;
-  this.searchParams = null;
-  this.isRenderingCalendarView = true;
+  this.queryInfo = {
+    calView: true,
+    complete: false,
+    cdxQueryURL: null,
+    url: null,
+    hasFilter: false,
+    searchParams: {
+      present: false,
+      includeInURL: false
+    }
+  };
   // references to the DOM structure elements that contain the to be rendered markup
   this.containers = {
     numCaptures: null,
@@ -45,8 +51,9 @@ function RenderCalendar(init) {
   this.lastActiveDaysTab = null;
   // regular expressing for checking the URL when no query params are present
   this.starQueries = {
-    regular: /\/[^/]+\/\*\/(.+)/i,
-    dt: /\/[^/]+\/([^-/]+)-?([^/]+)?\/(.+)/i
+    regularStr: '/*/',
+    dtFromTo: /\/([^-]+)-([^/]+)\/(.+)/i,
+    dtFrom: /\/([^/]+)\/(.+)/i
   };
   // regex for extracting the filter constraints and filter mods to human explanation
   this.filterRE = /filter([^a-z]+)([a-z]+):(.+)/i;
@@ -84,73 +91,159 @@ function RenderCalendar(init) {
 /**
  * Initializes the rendering process and checks the our locations URL to determine which
  * result view to render (calendar or advanced)
+ * @return {void}
  */
-RenderCalendar.prototype.init = function () {
-  // since we are mimicking the cdx api here we need to consider only the params our locations URL
-  // location.search is un-helpful here and need to parse our locations URL using the WHATWG URL Standard
-  var searchURL = new URL(location.href);
-  if (!searchURL.search) {
-    // there is no search params so we need to check for the two cases of * queries
-    var query = this.constructRegularStarQuery(searchURL);
-    if (query) {
-      if (!this.isRenderingCalendarView) {
-        this.searchParams = searchURL.searchParams;
-      }
-      return this.cdxRequest(query);
+RenderCalendar.prototype.init = function() {
+  // strip the prefix from our locations URL leaving us with /dt-info/url or /*?...
+  var queryPart = location.href.substring(this.prefix.length - 1);
+
+  // check for from the search interface
+  if (queryPart.indexOf('/*?url=') === 0) {
+    // the query info came from the collections query interface and since we are
+    // mimicking the cdx api here we need to parse our locations URL using the
+    // WHATWG URL Standard since location.search is un-helpful here
+    var searchURL = new URL(location.href);
+    this.queryInfo.url = searchURL.searchParams.get('url');
+    var haveMatchType = searchURL.searchParams.has('matchType');
+    var haveFilter = searchURL.searchParams.has('filter');
+    if (!haveMatchType) {
+      // be extra sure the user did not input a URL that includes the match type
+      this.determineViewFromQInfoURL();
+    } else {
+      this.queryInfo.searchParams.matchType = searchURL.searchParams.get(
+        'matchType'
+      );
     }
+    if (this.queryInfo.calView) {
+      this.queryInfo.calView = !(haveMatchType || haveFilter);
+    }
+    this.queryInfo.searchParams.from = searchURL.searchParams.get('from');
+    this.queryInfo.searchParams.to = searchURL.searchParams.get('to');
+    this.queryInfo.searchParams.present = true;
+    this.queryInfo.rawSearch = location.search;
+    this.queryInfo.hasFilter = haveFilter;
+    return this.makeCDXRequest();
   }
-  // there were search params and in this case when constructing the URL used for the CDX api request
-  // location.search is just what we need
-  this.queryURL = searchURL.searchParams.get('url');
-  this.searchParams = searchURL.searchParams;
-  if (this.shouldRenderCalenderView(this.searchParams)) {
-    return this.cdxRequest(location.search);
+
+  // check for /*/URL
+  if (queryPart.indexOf(this.starQueries.regularStr) === 0) {
+    this.queryInfo.url = queryPart.substring(
+      queryPart.indexOf(this.starQueries.regularStr) +
+        this.starQueries.regularStr.length
+    );
+    this.determineViewFromQInfoURL();
+    return this.makeCDXRequest();
   }
-  this.isRenderingCalendarView = false;
-  this.cdxRequest(location.search);
+
+  // check for /fromDT*-toDT*/url*
+  var maybeDTStarQ = this.maybeExtractDTStarQuery(queryPart);
+  if (maybeDTStarQ) {
+    this.queryInfo.searchParams.present = true;
+    this.queryInfo.searchParams.includeInURL = true;
+    this.queryInfo.searchParams.from = maybeDTStarQ.from;
+    this.queryInfo.searchParams.to = maybeDTStarQ.to;
+    this.queryInfo.url = maybeDTStarQ.url;
+    this.determineViewFromQInfoURL();
+    return this.makeCDXRequest();
+  }
 };
 
 /**
- * Constructs the query string used in the CDX api request if the path of our locations
- * URL contains the two cases of regular star queries (did not originate from the collections query interface),
- * otherwise undefined is returned to indicate no match.
- *
- * When the path does match the two cases the supplied instance of WHATWG URL's search params are updated
- * if the url for the CDX API query is a prefix or domain match type in order to allow the advanced results
- * view to be rendered properly and {@link RenderCalendar#isRenderingCalendarView} is set to false.
- * @param {URL} url - The WHATWG URL instance representing our location
- * @return {?string} - The query string for the CDX api request if the path matches
+ * Determines the match type from the query URL if it includes the shortcuts
+ * @return {void}
  */
-RenderCalendar.prototype.constructRegularStarQuery = function (url) {
-  var query;
-  var match = this.starQueries.regular.exec(url.pathname);
-  if (match) {
-    // case possibility /collection/*/url*
-    this.queryURL = match[1];
-    query = '?url=' + this.queryURL;
-    if (this.queryURL.charAt(this.queryURL.length - 1) === '*') {
-      url.searchParams.set('matchType', 'prefix');
-      this.isRenderingCalendarView = false;
-    } else if (this.queryURL.substring(0, 2) === '*.') {
-      url.searchParams.set('matchType', 'domain');
-      this.isRenderingCalendarView = false;
-    }
-    return query;
+RenderCalendar.prototype.determineViewFromQInfoURL = function() {
+  var purl;
+  var domainMatch =
+    this.queryInfo.url.charAt(this.queryInfo.url.length - 1) === '*';
+
+  try {
+    // if parsing the query url via the WHATWG URL class fails (no scheme)
+    // we are probably not rendering the date calendar
+    purl = new URL(this.queryInfo.url);
+  } catch (e) {}
+
+  if (!purl) {
+    // since purl is null we know we do not hav a valid URL and need to check
+    // for the match type cases and if one is present update queryInfo
+    var prefixMatch = this.queryInfo.url.substring(0, 2) === '*.';
+    return this.updateMatchType(prefixMatch, domainMatch);
   }
-  match = this.starQueries.dt.exec(url.pathname);
-  if (match) {
-    // case possibility /collection/fromDT*-toDT*/url*
-    this.queryURL = match[3];
-    query = '?url=' + this.queryURL + '&from=' + match[1] + (match[2] ? '&to=' + match[2] : '');
-    if (this.queryURL.charAt(this.queryURL.length - 1) === '*') {
-      url.searchParams.set('matchType', 'prefix');
-      this.isRenderingCalendarView = false;
-    } else if (this.queryURL.substring(0, 2) === '*.') {
-      url.searchParams.set('matchType', 'domain');
-      this.isRenderingCalendarView = false;
+
+  if (purl.search) {
+    // the URL we are querying with has some search params
+    // in this case we know we can not check for match type domain because
+    // http://example.com?it=* is valid and the * here is for the search param
+    return;
+  }
+
+  // there are no search params and may have http://example.com[*|/*]
+  // indicating we are operating under match type domain
+  return this.updateMatchType(null, domainMatch);
+};
+
+/**
+ * Updates the queryInfo's searchParams property to reflect if CDX query is
+ * using a match type depending on the supplied T/falsy mPrefix and mDomain values
+ * @param {?boolean} prefixMatch - T/falsy indicating if the match type prefix condition is satisfied
+ * @param {?boolean} domainMatch - T/falsy indicating if the match type domain condition is satisfied
+ * @return {void}
+ */
+RenderCalendar.prototype.updateMatchType = function(prefixMatch, domainMatch) {
+  // if mPrefix && mDomain something weird is up and we got *.xyz.com[*|/*]
+  // default to prefix just to be safe since we know we got that for sure
+  if ((prefixMatch && domainMatch) || prefixMatch) {
+    this.queryInfo.searchParams.present = true;
+    this.queryInfo.searchParams.matchType = 'prefix';
+    this.queryInfo.calView = false;
+    return;
+  }
+  if (domainMatch) {
+    this.queryInfo.searchParams.present = true;
+    this.queryInfo.searchParams.matchType = 'domain';
+    this.queryInfo.calView = false;
+  }
+};
+
+/**
+ * Extracts the datetime information and url from the query part of our
+ * locations URL if it exists otherwise returns null
+ * @param {string} queryPart
+ * @return {?{from: string, to?: string, url: string}}
+ */
+RenderCalendar.prototype.maybeExtractDTStarQuery = function(queryPart) {
+  // check /from-to/url first
+  var match = this.starQueries.dtFromTo.exec(queryPart);
+  if (match) return { from: match[1], to: match[2], url: match[3] };
+  // lastly check /from/url first
+  match = this.starQueries.dtFrom.exec(queryPart);
+  if (match) return { from: match[1], url: match[2] };
+  return null;
+};
+
+/**
+ * Constructs and returns the URL for the CDX query. Also updates the
+ * queryInfo's cdxQueryURL property with the constructed URL.
+ * @return {string}
+ */
+RenderCalendar.prototype.makeCDXQueryURL = function() {
+  var queryURL;
+  if (this.queryInfo.rawSearch) {
+    queryURL = this.cdxURL + this.queryInfo.rawSearch + '&output=json';
+  } else {
+    queryURL = this.cdxURL + '?output=json&url=' + this.queryInfo.url;
+  }
+  var querySearchParams = this.queryInfo.searchParams;
+  if (querySearchParams.present && querySearchParams.includeInURL) {
+    if (querySearchParams.from) {
+      queryURL += '&from=' + querySearchParams.from.trim();
+    }
+    if (querySearchParams.to) {
+      queryURL += '&to=' + querySearchParams.to.trim();
     }
   }
-  return query;
+  this.queryInfo.cdxQueryURL = queryURL;
+  return queryURL;
 };
 
 /**
@@ -162,13 +255,11 @@ RenderCalendar.prototype.constructRegularStarQuery = function (url) {
  * If we can use the web worker strategy a worker is created and updates the result view as it sends us the queries
  * cdx info. Otherwise the query is executed in the main thread and the results are both parsed and rendered in the
  * main thread.
- * @param {string} query - The CDX API query string to be used
+ * @return {void}
  */
-RenderCalendar.prototype.cdxRequest = function (query) {
-  // construct the full query url checking to determine if we need to add &output=json to the end
-  var queryURL = this.cdxURL + query + (query.indexOf(jsonOutput) === -1 ? jsonOutput : '');
+RenderCalendar.prototype.makeCDXRequest = function() {
   // if we are rendering the calendar view (regular result view) we need memoizedYMDT to be an object otherwise nothing
-  var memoizedYMDT = this.isRenderingCalendarView ? {} : null;
+  var memoizedYMDT = this.queryInfo.calView ? {} : null;
   var renderCal = this;
   // initialized the dom structure
   this.createContainers();
@@ -177,14 +268,22 @@ RenderCalendar.prototype.cdxRequest = function (query) {
     var queryWorker = new window.Worker(this.staticPrefix + '/queryWorker.js');
     var cdxRecordMsg = 'cdxRecord';
     var done = 'finished';
-    queryWorker.onmessage = function (msg) {
+    queryWorker.onmessage = function(msg) {
       var data = msg.data;
       var terminate = false;
       if (data.type === cdxRecordMsg) {
         // render the results sent to us from the worker
-        renderCal.displayedCountStr(data.recordCount, data.recordCountFormatted);
-        if (renderCal.isRenderingCalendarView) {
-          renderCal.renderDateCalPart(memoizedYMDT, data.record, data.timeInfo, data.recordCount === first);
+        renderCal.displayedCountStr(
+          data.recordCount,
+          data.recordCountFormatted
+        );
+        if (renderCal.queryInfo.calView) {
+          renderCal.renderDateCalPart(
+            memoizedYMDT,
+            data.record,
+            data.timeInfo,
+            data.recordCount === first
+          );
         } else {
           renderCal.renderAdvancedSearchPart(data.record);
         }
@@ -192,37 +291,55 @@ RenderCalendar.prototype.cdxRequest = function (query) {
         // the worker has consumed the entirety of the response body
         terminate = true;
         // if there were no results we need to inform the user
-        renderCal.displayedCountStr(data.recordCount, data.recordCountFormatted);
+        renderCal.displayedCountStr(
+          data.recordCount,
+          data.recordCountFormatted
+        );
       }
       if (terminate) {
         queryWorker.terminate();
-        var spinner = document.getElementById(renderCal.domStructureIds.updatesSpinner);
+        var spinner = document.getElementById(
+          renderCal.domStructureIds.updatesSpinner
+        );
         if (spinner) spinner.remove();
       }
     };
-    queryWorker.postMessage({ type: 'query', queryURL: queryURL });
+    queryWorker.postMessage({
+      type: 'query',
+      queryURL: this.makeCDXQueryURL()
+    });
     return;
   }
   // main thread processing
-  $.ajax(queryURL, {
+  $.ajax(this.makeCDXQueryURL(), {
     dataType: 'text',
-    success: function (data) {
+    success: function(data) {
       var cdxLines = data ? data.trim().split('\n') : [];
       if (cdxLines.length === 0) {
         renderCal.displayedCountStr(0, '0');
         return;
       }
       var numCdxEntries = cdxLines.length;
-      renderCal.displayedCountStr(numCdxEntries, numCdxEntries.toLocaleString());
+      renderCal.displayedCountStr(
+        numCdxEntries,
+        numCdxEntries.toLocaleString()
+      );
       for (var i = 0; i < numCdxEntries; ++i) {
         var cdxObj = JSON.parse(cdxLines[i]);
-        if (renderCal.isRenderingCalendarView) {
-          renderCal.renderDateCalPart(memoizedYMDT, cdxObj, renderCal.makeTimeInfo(cdxObj), i === 0);
+        if (renderCal.queryInfo.calView) {
+          renderCal.renderDateCalPart(
+            memoizedYMDT,
+            cdxObj,
+            renderCal.makeTimeInfo(cdxObj),
+            i === 0
+          );
         } else {
           renderCal.renderAdvancedSearchPart(cdxObj);
         }
       }
-      var spinner = document.getElementById(renderCal.domStructureIds.updatesSpinner);
+      var spinner = document.getElementById(
+        renderCal.domStructureIds.updatesSpinner
+      );
       if (spinner) spinner.remove();
     }
   });
@@ -232,22 +349,28 @@ RenderCalendar.prototype.cdxRequest = function (query) {
  * Creates the DOM structure required for rendering the query results based on if we are rendering the
  * calendar view or the advanced query view and populates the containers object
  */
-RenderCalendar.prototype.createContainers = function () {
-  var queryResults = document.getElementById(this.domStructureIds.capturesMount);
+RenderCalendar.prototype.createContainers = function() {
+  var queryResults = document.getElementById(
+    this.domStructureIds.capturesMount
+  );
   var queryInfo = document.getElementById(this.domStructureIds.queryInfoId);
   var renderCal = this;
-  if (this.isRenderingCalendarView) {
+  if (this.queryInfo.calView) {
     // create regulars count structure
     this.createAndAddElementTo(queryInfo, {
       tag: 'h3',
       children: [
-        { tag: 'i', className: 'fas fa-spinner fa-pulse mr-2', id: this.domStructureIds.updatesSpinner },
+        {
+          tag: 'i',
+          className: 'fas fa-spinner fa-pulse mr-2',
+          id: this.domStructureIds.updatesSpinner
+        },
         {
           tag: 'b',
           child: {
             tag: 'textNode',
             value: '',
-            ref: function (refToElem) {
+            ref: function(refToElem) {
               renderCal.containers.countTextNode = refToElem;
             }
           }
@@ -258,12 +381,12 @@ RenderCalendar.prototype.createContainers = function () {
           child: {
             tag: 'textNode',
             value: '',
-            ref: function (refToElem) {
+            ref: function(refToElem) {
               renderCal.containers.versionsTextNode = refToElem;
             }
           }
         },
-        { tag: 'textNode', value: ' of ' + this.queryURL }
+        { tag: 'textNode', value: ' of ' + this.queryInfo.url }
       ]
     });
     // create the row that will hold the results of the regular query
@@ -280,7 +403,7 @@ RenderCalendar.prototype.createContainers = function () {
             className: 'list-group h-100 auto-overflow',
             id: 'year-tab-list',
             attributes: { role: 'tablist' },
-            ref: function (refToElem) {
+            ref: function(refToElem) {
               renderCal.containers.yearsListDiv = refToElem;
             }
           }
@@ -293,7 +416,7 @@ RenderCalendar.prototype.createContainers = function () {
             tag: 'div',
             className: 'tab-content h-100',
             id: 'year-month-tab-list',
-            ref: function (refToElem) {
+            ref: function(refToElem) {
               renderCal.containers.monthsListDiv = refToElem;
             }
           }
@@ -306,85 +429,114 @@ RenderCalendar.prototype.createContainers = function () {
             tag: 'div',
             className: 'tab-content h-100',
             id: 'year-month-day-tab-list',
-            ref: function (refToElem) {
+            ref: function(refToElem) {
               renderCal.containers.daysListDiv = refToElem;
             }
           }
         }
       ]
     });
-    this.containers.updatesSpinner = document.getElementById(this.domStructureIds.updatesSpinner);
+    this.containers.updatesSpinner = document.getElementById(
+      this.domStructureIds.updatesSpinner
+    );
     return;
   }
   // create the advanced results query info DOM structure
   var forString = ' for ';
   var forElems;
-  if (this.searchParams.has('matchType')) {
+
+  if (this.queryInfo.searchParams.matchType) {
     forString = ' for matching ';
     forElems = [
-      { tag: 'b', innerText: this.queryURL },
+      { tag: 'b', innerText: this.queryInfo.url },
       { tag: 'textNode', value: ' by ' },
-      { tag: 'b', innerText: this.searchParams.get('matchType') }
+      { tag: 'b', innerText: this.queryInfo.searchParams.matchType }
     ];
-  } else if (this.searchParams.has('from') || this.searchParams.has('to')) {
-    forElems = [{ tag: 'b', innerText: this.queryURL }, { tag: 'textNode', value: ' ' + this.niceDateRange() }];
   } else {
-    forElems = [{ tag: 'b', innerText: this.queryURL }];
+    forElems = [{ tag: 'b', innerText: this.queryInfo.url }];
   }
   this.createAndAddElementTo(queryInfo, {
-    tag: 'h3',
-    children: [
-      { tag: 'i', className: 'fas fa-spinner fa-pulse mr-2', id: this.domStructureIds.updatesSpinner },
-      {
-        tag: 'b',
-        children: [
-          {
-            tag: 'textNode',
-            value: '',
-            ref: function (refToElem) {
-              renderCal.containers.countTextNode = refToElem;
+    tag: 'div',
+    className: 'col-12',
+    child: {
+      tag: 'h3',
+      className: 'text-center',
+      children: [
+        {
+          tag: 'i',
+          className: 'fas fa-spinner fa-pulse mr-2',
+          id: this.domStructureIds.updatesSpinner
+        },
+        {
+          tag: 'b',
+          children: [
+            {
+              tag: 'textNode',
+              value: '',
+              ref: function(refToElem) {
+                renderCal.containers.countTextNode = refToElem;
+              }
+            },
+            { tag: 'textNode', value: ' ' },
+            {
+              tag: 'textNode',
+              value: '',
+              ref: function(refToElem) {
+                renderCal.containers.versionsTextNode = refToElem;
+              }
             }
-          },
-          { tag: 'textNode', value: ' ' },
-          {
-            tag: 'textNode',
-            value: '',
-            ref: function (refToElem) {
-              renderCal.containers.versionsTextNode = refToElem;
-            }
-          }
-        ]
-      },
-      { tag: 'textNode', value: forString }
-    ].concat(forElems)
+          ]
+        },
+        { tag: 'textNode', value: forString }
+      ].concat(forElems)
+    }
   });
   // next we will display only the URL or the URL + match type or the URL + date range
   // if the executed query contained filters display the humanized version of them
-  if (this.searchParams.has('filter')) {
+
+  if (this.queryInfo.searchParams.from || this.queryInfo.searchParams.to) {
     this.createAndAddElementTo(queryInfo, {
-        tag: 'div',
-        className: 'col-6',
-        children: [
-          { tag: 'p', className: 'text-center mb-0 mt-1', innerText: 'Filtering by' },
-          {
-            tag: 'ul',
-            className: 'list-group auto-overflow',
-            style: 'max-height: 150px',
-            children: this.niceFilterDisplay()
-          }
-        ]
+      tag: 'div',
+      className: 'col-6 align-self-center',
+      child: {
+        tag: 'p',
+        className: 'lead text-center',
+        child: { tag: 'textNode', value: ' ' + this.niceDateRange() }
       }
-    );
+    });
+  }
+
+  if (this.queryInfo.hasFilter) {
+    this.createAndAddElementTo(queryInfo, {
+      tag: 'div',
+      className: 'col-6',
+      children: [
+        {
+          tag: 'p',
+          className: 'text-center mb-0 mt-1',
+          innerText: 'Filtering by'
+        },
+        {
+          tag: 'ul',
+          className: 'list-group auto-overflow',
+          style: 'max-height: 150px',
+          children: this.niceFilterDisplay()
+        }
+      ]
+    });
   }
   // create the advanced results DOM structure
-  this.containers.advancedResultsList = this.createAndAddElementTo(queryResults, {
-    tag: 'div',
-    className: 'row q-row',
-    child: {
-      tag: 'ul',
-      className: 'list-group h-100 auto-overflow w-100'
+  this.containers.advancedResultsList = this.createAndAddElementTo(
+    queryResults,
+    {
+      tag: 'div',
+      className: 'row q-row',
+      child: {
+        tag: 'ul',
+        className: 'list-group h-100 auto-overflow w-100'
+      }
     }
-  }).firstElementChild;
+  ).firstElementChild;
 };
 
 /**
@@ -394,7 +546,12 @@ RenderCalendar.prototype.createContainers = function () {
  * @param {Object} timeInfo - Object containing the date time information for this capture
  * @param {boolean} active - Should we add the active classes to the markup rendered here
  */
-RenderCalendar.prototype.renderDateCalPart = function (memoizedYMDT, cdxObj, timeInfo, active) {
+RenderCalendar.prototype.renderDateCalPart = function(
+  memoizedYMDT,
+  cdxObj,
+  timeInfo,
+  active
+) {
   if (memoizedYMDT[timeInfo.year] == null) {
     // we have not seen this year month day before
     // create the year month day structure (occurs once per result year)
@@ -442,15 +599,26 @@ RenderCalendar.prototype.renderDateCalPart = function (memoizedYMDT, cdxObj, tim
  * Updates the advanced view with the supplied cdx information
  * @param {Object} cdxObj - CDX object for this capture
  */
-RenderCalendar.prototype.renderAdvancedSearchPart = function (cdxObj) {
-// display the URL of the result
-  var displayedInfo = [{ tag: 'small', innerText: 'Date Time: ' + this.ts_to_date(cdxObj.timestamp) }];
+RenderCalendar.prototype.renderAdvancedSearchPart = function(cdxObj) {
+  // display the URL of the result
+  var displayedInfo = [
+    {
+      tag: 'small',
+      innerText: 'Date Time: ' + this.tsToDate(cdxObj.timestamp)
+    }
+  ];
   // display additional information about the result under the URL
   if (cdxObj.mime) {
-    displayedInfo.push({ tag: 'small', innerText: 'Mime Type: ' + cdxObj.mime });
+    displayedInfo.push({
+      tag: 'small',
+      innerText: 'Mime Type: ' + cdxObj.mime
+    });
   }
   if (cdxObj.status) {
-    displayedInfo.push({ tag: 'small', innerText: 'HTTP Status: ' + cdxObj.status });
+    displayedInfo.push({
+      tag: 'small',
+      innerText: 'HTTP Status: ' + cdxObj.status
+    });
   }
   displayedInfo.push({
     tag: 'a',
@@ -487,20 +655,21 @@ RenderCalendar.prototype.renderAdvancedSearchPart = function (cdxObj) {
  * @param {Object} timeInfo - Object containing the date time information for this capture
  * @param {boolean} active - Should we add the active classes to the markup rendered here
  */
-RenderCalendar.prototype.addRegYearListItem = function (timeInfo, active) {
+RenderCalendar.prototype.addRegYearListItem = function(timeInfo, active) {
   // adds an year to div[id=year-tab-list]
   var renderCal = this;
   var year = timeInfo.year;
   this.createAndAddElementTo(this.containers.yearsListDiv, {
     tag: 'a',
-    className: 'list-group-item list-group-item-action' + (active ? ' active' : ''),
+    className:
+      'list-group-item list-group-item-action' + (active ? ' active' : ''),
     innerText: year,
     attributes: { role: 'tab', href: '#' + this.displayMonthsId(year) },
     dataset: { toggle: 'list' },
     events: {
       // add a click listener to ensure we display the correct year month days combination
       // when choosing a new year or month
-      click: function () {
+      click: function() {
         renderCal.ensureCorrectActive(year);
       }
     }
@@ -512,7 +681,7 @@ RenderCalendar.prototype.addRegYearListItem = function (timeInfo, active) {
  * @param {Object} timeInfo - Object containing the date time information for this capture
  * @param {boolean} active - Should we add the active classes to the markup rendered here
  */
-RenderCalendar.prototype.addRegYearMonthListItem = function (timeInfo, active) {
+RenderCalendar.prototype.addRegYearMonthListItem = function(timeInfo, active) {
   var yeaMonthsId = this.displayMonthsId(timeInfo.year); // _year-Display-Month
   var yearMonthListId = this.displayMonthsListId(timeInfo.year); // _year-Month-Display-List
   var yml = document.getElementById(yearMonthListId);
@@ -543,15 +712,19 @@ RenderCalendar.prototype.addRegYearMonthListItem = function (timeInfo, active) {
   // adds an years month to div[id=_year-Display-Months-List]
   this.createAndAddElementTo(yml, {
     tag: 'a',
-    className: 'list-group-item list-group-item-action' + (active ? ' active' : ''),
+    className:
+      'list-group-item list-group-item-action' + (active ? ' active' : ''),
     innerText: timeInfo.month,
     attributes: {
       role: 'tab',
       href: '#' + showDaysId // _year-month-Display-Days
     },
     events: {
-      click: function () {
-        renderCal.lastActiveYMD[year] = { month: yeaMonthsId, days: showDaysId };
+      click: function() {
+        renderCal.lastActiveYMD[year] = {
+          month: yeaMonthsId,
+          days: showDaysId
+        };
         renderCal.lastActiveDaysTab = document.getElementById(showDaysId);
       }
     },
@@ -567,8 +740,16 @@ RenderCalendar.prototype.addRegYearMonthListItem = function (timeInfo, active) {
  * @param {number} numCaptures - How many captures do we have currently for this URL
  * @param {boolean} active - Should we add the active classes to the markup rendered here
  */
-RenderCalendar.prototype.addRegYearMonthDayListItem = function (cdxObj, timeInfo, numCaptures, active) {
-  var yearMonthDaysListId = this.displayYearMonthDaysListId(timeInfo.year, timeInfo.month); // _year-month-Display-Days-List
+RenderCalendar.prototype.addRegYearMonthDayListItem = function(
+  cdxObj,
+  timeInfo,
+  numCaptures,
+  active
+) {
+  var yearMonthDaysListId = this.displayYearMonthDaysListId(
+    timeInfo.year,
+    timeInfo.month
+  ); // _year-month-Display-Days-List
   var ymlDL = document.getElementById(yearMonthDaysListId);
   if (ymlDL == null) {
     /*
@@ -611,13 +792,23 @@ RenderCalendar.prototype.addRegYearMonthDayListItem = function (cdxObj, timeInfo
             href: this.prefix + cdxObj.timestamp + '/' + cdxObj.url,
             target: '_blank'
           },
-          innerText: timeInfo.month + ' ' + timeInfo.day + this.dateOrdinal(timeInfo.day) + ', ' + timeInfo.year + ' ' + ' at ' + timeInfo.time + '  '
+          innerText:
+            timeInfo.month +
+            ' ' +
+            timeInfo.day +
+            this.dateOrdinal(timeInfo.day) +
+            ', ' +
+            timeInfo.year +
+            ' ' +
+            ' at ' +
+            timeInfo.time +
+            '  '
         },
         {
           tag: 'span',
           id: existingDayId,
           className: 'badge badge-info badge-pill float-right',
-          ref: function (refToElem) {
+          ref: function(refToElem) {
             existingDayCount = refToElem;
           }
         }
@@ -641,14 +832,16 @@ RenderCalendar.prototype.addRegYearMonthDayListItem = function (cdxObj, timeInfo
  * Updates the lastActiveDaysTab property.
  * @param {string} year - The year to be shown
  */
-RenderCalendar.prototype.ensureCorrectActive = function (year) {
+RenderCalendar.prototype.ensureCorrectActive = function(year) {
   // un-activates currently active year month day display tab
   if (this.lastActiveDaysTab != null) {
     this.lastActiveDaysTab.classList.remove('active', 'show');
   }
   // activates the last year month day display tab for the current year chosen
   if (this.lastActiveYMD[year] && this.lastActiveYMD[year].days) {
-    this.lastActiveDaysTab = document.getElementById(this.lastActiveYMD[year].days);
+    this.lastActiveDaysTab = document.getElementById(
+      this.lastActiveYMD[year].days
+    );
     this.lastActiveDaysTab.classList.add('active', 'show');
   }
 };
@@ -678,7 +871,7 @@ RenderCalendar.prototype.ensureCorrectActive = function (year) {
  * @param {Object} creationOptions - Options for new element creation
  * @return {HTMLElement|Node} - The newly created element
  */
-RenderCalendar.prototype.createElement = function (creationOptions) {
+RenderCalendar.prototype.createElement = function(creationOptions) {
   if (creationOptions.tag === 'textNode') {
     var tn = document.createTextNode(creationOptions.value);
     if (creationOptions.ref) {
@@ -742,29 +935,20 @@ RenderCalendar.prototype.createElement = function (creationOptions) {
  *        See the description of {@link createElement} for more information.
  * @return {HTMLElement|Node} - The newly created element
  */
-RenderCalendar.prototype.createAndAddElementTo = function (addTo, creationOptions) {
+RenderCalendar.prototype.createAndAddElementTo = function(
+  addTo,
+  creationOptions
+) {
   var created = this.createElement(creationOptions);
   addTo.appendChild(created);
   return created;
 };
 
 /**
- * Returns T/F to indicate if the calender view should be rendered by checking the search params of our current location
- * @param {URLSearchParams} searchParams - The serach params for our current location
- * @returns {boolean}
- */
-RenderCalendar.prototype.shouldRenderCalenderView = function (searchParams) {
-  // a regular query is one that is just the URL (contains no wild cards) and has no additional constraints
-  var url = searchParams.get('url');
-  if (url.indexOf('*.') !== -1 || url.indexOf('/*') !== -1) return false;
-  return !(searchParams.has('matchType') || searchParams.has('filter'));
-};
-
-/**
  * Returns element creation options for the humanized filtering options of the advanced view
  * @returns {Array<Object>}
  */
-RenderCalendar.prototype.niceFilterDisplay = function () {
+RenderCalendar.prototype.niceFilterDisplay = function() {
   var filterList = [];
   var qSplit = location.search.split('&');
   for (var i = 0; i < qSplit.length; i++) {
@@ -784,15 +968,15 @@ RenderCalendar.prototype.niceFilterDisplay = function () {
  * Returns a humanized representation of an advanced queries from or to constraints
  * @returns {string}
  */
-RenderCalendar.prototype.niceDateRange = function () {
-  var from = this.searchParams.get('from');
-  var to = this.searchParams.get('to');
+RenderCalendar.prototype.niceDateRange = function() {
+  var from = this.queryInfo.searchParams.from;
+  var to = this.queryInfo.searchParams.to;
   if (from && to) {
-    return 'from ' + from + ' to ' + to;
+    return 'From ' + from + ' to ' + to;
   } else if (from) {
-    return 'from ' + from + ' until ' + 'present';
+    return 'From ' + from + ' until ' + 'present';
   }
-  return 'from earliest until ' + to;
+  return 'From earliest until ' + to;
 };
 
 /**
@@ -800,7 +984,7 @@ RenderCalendar.prototype.niceDateRange = function () {
  * @param {string} year - The year part for the id
  * @returns {string}
  */
-RenderCalendar.prototype.displayMonthsId = function (year) {
+RenderCalendar.prototype.displayMonthsId = function(year) {
   return '_' + year + '-Display-Month';
 };
 
@@ -809,7 +993,7 @@ RenderCalendar.prototype.displayMonthsId = function (year) {
  * @param {string} year - The year part for the id
  * @returns {string}
  */
-RenderCalendar.prototype.displayMonthsListId = function (year) {
+RenderCalendar.prototype.displayMonthsListId = function(year) {
   return '_' + year + '-Month-Display-List';
 };
 
@@ -819,7 +1003,7 @@ RenderCalendar.prototype.displayMonthsListId = function (year) {
  * @param {string} month - The month part for the id
  * @returns {string}
  */
-RenderCalendar.prototype.displayYearMonthDaysId = function (year, month) {
+RenderCalendar.prototype.displayYearMonthDaysId = function(year, month) {
   return '_' + year + '-' + month + '-Display-Days';
 };
 
@@ -829,7 +1013,7 @@ RenderCalendar.prototype.displayYearMonthDaysId = function (year, month) {
  * @param {string} month - The month part for the id
  * @returns {string}
  */
-RenderCalendar.prototype.displayYearMonthDaysListId = function (year, month) {
+RenderCalendar.prototype.displayYearMonthDaysListId = function(year, month) {
   return '_' + year + '-' + month + '-Display-Days-List';
 };
 
@@ -838,7 +1022,7 @@ RenderCalendar.prototype.displayYearMonthDaysListId = function (year, month) {
  * @param {number} d - The number to receive the ordinal string for
  * @returns {string}
  */
-RenderCalendar.prototype.dateOrdinal = function (d) {
+RenderCalendar.prototype.dateOrdinal = function(d) {
   if (d > 3 && d < 21) return 'th';
   switch (d % 10) {
     case 1:
@@ -858,14 +1042,21 @@ RenderCalendar.prototype.dateOrdinal = function (d) {
  * @param {boolean} [is_gmt] - Should the timestamp be converted to a gmt string
  * @returns {string}
  */
-RenderCalendar.prototype.ts_to_date = function ts_to_date(ts, is_gmt) {
+RenderCalendar.prototype.tsToDate = function ts_to_date(ts, is_gmt) {
   if (ts.length < 14) return ts;
-  var datestr = (ts.substring(0, 4) + '-' +
-    ts.substring(4, 6) + '-' +
-    ts.substring(6, 8) + 'T' +
-    ts.substring(8, 10) + colon +
-    ts.substring(10, 12) + colon +
-    ts.substring(12, 14) + '-00:00');
+  var datestr =
+    ts.substring(0, 4) +
+    '-' +
+    ts.substring(4, 6) +
+    '-' +
+    ts.substring(6, 8) +
+    'T' +
+    ts.substring(8, 10) +
+    colon +
+    ts.substring(10, 12) +
+    colon +
+    ts.substring(12, 14) +
+    '-00:00';
 
   var date = new Date(datestr);
   return is_gmt ? date.toGMTString() : date.toLocaleString();
@@ -876,15 +1067,18 @@ RenderCalendar.prototype.ts_to_date = function ts_to_date(ts, is_gmt) {
  * @param {Object} cdxObj - The cdx object to have its timestamp information extracted from
  * @returns {{month: string, year: string, time: string, day: string}}
  */
-RenderCalendar.prototype.makeTimeInfo = function (cdxObj) {
+RenderCalendar.prototype.makeTimeInfo = function(cdxObj) {
   var ts = cdxObj.timestamp;
   var day = ts.substring(6, 8);
   return {
     year: ts.substring(0, 4),
     month: this.text.months[ts.substring(4, 6)],
     day: day.charAt(0) === '0' ? day.charAt(1) : day,
-    time: ts.substring(8, 10) + colon +
-      ts.substring(10, 12) + colon +
+    time:
+      ts.substring(8, 10) +
+      colon +
+      ts.substring(10, 12) +
+      colon +
       ts.substring(12, 14)
   };
 };
@@ -901,13 +1095,17 @@ RenderCalendar.prototype.makeTimeInfo = function (cdxObj) {
  * @param {string} countFormatted - The number of query results formatted for display
  * @returns {string}
  */
-RenderCalendar.prototype.displayedCountStr = function (count, countFormatted) {
+RenderCalendar.prototype.displayedCountStr = function(count, countFormatted) {
   this.containers.countTextNode.data = countFormatted;
   if (count === first) {
-    this.containers.versionsTextNode.data = this.isRenderingCalendarView ? this.text.version : this.text.result;
+    this.containers.versionsTextNode.data = this.queryInfo.calView
+      ? this.text.version
+      : this.text.result;
   } else if (!this.versionString) {
     // case count = 0 or first nth record
-    this.versionString = this.isRenderingCalendarView ? this.text.versions : this.text.results;
+    this.versionString = this.queryInfo.calView
+      ? this.text.versions
+      : this.text.results;
     this.containers.versionsTextNode.data = this.versionString;
   }
 };
