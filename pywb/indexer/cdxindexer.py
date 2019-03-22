@@ -296,6 +296,7 @@ def write_multi_cdx_index(output, inputs, **options):
 
     # write one cdx per dir
     if output != '-' and os.path.isdir(output):
+        writer = None
         for fullpath, filename in iter_file_or_dir(inputs,
                                                    recurse,
                                                    rel_root):
@@ -304,8 +305,11 @@ def write_multi_cdx_index(output, inputs, **options):
 
             with open(outpath, 'wb') as outfile:
                 with open(fullpath, 'rb') as infile:
-                    return write_cdx_index(outfile, infile, filename,
-                                           **options)
+                    writer = write_cdx_index(outfile, infile, filename,
+                                             **options)
+
+        return writer
+
     # write to one cdx file
     else:
         if output == '-':

@@ -90,7 +90,9 @@ def load_overlay_config(main_env_var, main_default_file='',
     config = None
 
     if configfile:
-        configfile = os.path.expandvars(configfile)
+        # use abspath so that when pywb loads the config file, when the -d arg is given,
+        # it sees that config
+        configfile = os.path.abspath(os.path.expandvars(configfile))
 
         config = load_yaml_config(configfile)
 
@@ -99,7 +101,7 @@ def load_overlay_config(main_env_var, main_default_file='',
     overlay_configfile = os.environ.get(overlay_env_var, overlay_file)
 
     if overlay_configfile:
-        overlay_configfile = os.path.expandvars(overlay_configfile)
+        overlay_configfile = os.path.abspath(os.path.expandvars(overlay_configfile))
         config.update(load_yaml_config(overlay_configfile))
 
     return config
