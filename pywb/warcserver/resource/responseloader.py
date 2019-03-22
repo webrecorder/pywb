@@ -317,7 +317,7 @@ class LiveWebLoader(BaseLoader):
                 http_headers_buff.append(new_v)
                 http_headers_buff.append('\r\n')
             else:
-                http_headers_buff.append(http_headers_buff)
+                http_headers_buff.append(line)
 
         # if python2, already byte headers, so leave as is
         http_headers_buff.append('\r\n')
