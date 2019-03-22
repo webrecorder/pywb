@@ -6,6 +6,72 @@ from warcio.limitreader import LimitReader
 from tempfile import SpooledTemporaryFile
 
 
+def close_raw(r):
+    """Attempts to call the close and release_conn methods
+    on the supplied request objects raw property.
+    If the raw property is not found full_close is used.
+
+    This method does not raise exceptions
+
+    :param r: The object to be closed
+    :return: None
+    :rtype: None
+    """
+    raw = getattr(r, 'raw', None)
+    if raw is not None:
+        close = getattr(raw, 'close', None)
+        if close is not None:
+            try:
+                close()
+            except Exception:
+                pass
+        release_conn = getattr(raw, 'release_conn', None)
+        if release_conn is not None:
+            try:
+                release_conn()
+            except Exception:
+                pass
+    else:
+        full_close(r)
+
+
+def full_close(closable_object):
+    """Attempts to call the close and release_conn methods
+    on the supplied closable object.
+
+    This method does not raise exceptions
+
+    :param closable_object: The object to be fully closed
+    :return: None
+    :rtype: None
+    """
+    close = getattr(closable_object, 'close', None)
+    if close is not None:
+        try:
+            close()
+        except Exception:
+            pass
+    release_conn = getattr(closable_object, 'release_conn', None)
+    if release_conn is not None:
+        try:
+            release_conn()
+        except Exception:
+            pass
+
+
+def close_fh(fh):
+    """Calls the close method on the supplied file handle.
+
+    This method does not raise exceptions
+    :param fh: The file handle to be closed
+    :return: None
+    :rtype: None
+    """
+    try:
+        fh.close()
+    except Exception:
+        pass
+
 #=============================================================================
 def StreamIter(stream, header1=None, header2=None, size=BUFF_SIZE, closer=closing):
     with closer(stream):
@@ -28,10 +94,7 @@ def call_release_conn(stream):
     try:
         yield stream
     finally:
-        if hasattr(stream, 'release_conn'):
-            stream.release_conn()
-        else:
-            stream.close()
+        full_close(stream)
 
 
 #=============================================================================

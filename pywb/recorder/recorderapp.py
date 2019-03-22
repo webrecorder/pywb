@@ -1,26 +1,21 @@
-from pywb.utils.io import StreamIter, BUFF_SIZE
-from pywb.utils.format import ParamFormatter, res_template
-from pywb.warcserver.inputrequest import DirectWSGIInputRequest
-
-from warcio.recordloader import ArcWarcRecordLoader
-
-from pywb.recorder.filters import SkipRangeRequestFilter, CollectionFilter
-
-from six.moves.urllib.parse import parse_qsl
-import six
-
 import json
 import tempfile
-
-import requests
-
 import traceback
 
-import gevent.queue
 import gevent
+import gevent.queue
+import requests
+import six
+from six.moves.urllib.parse import parse_qsl
+from warcio.recordloader import ArcWarcRecordLoader
+
+from pywb.recorder.filters import CollectionFilter, SkipRangeRequestFilter
+from pywb.utils.format import ParamFormatter
+from pywb.utils.io import BUFF_SIZE, StreamIter, full_close
+from pywb.warcserver.inputrequest import DirectWSGIInputRequest
 
 
-#==============================================================================
+# ==============================================================================
 class RecorderApp(object):
     def __init__(self, upstream_host, writer, skip_filters=None, **kwargs):
         self.upstream_host = upstream_host
@@ -52,13 +47,13 @@ class RecorderApp(object):
 
     @staticmethod
     def default_create_buffer(params, name):
-        return tempfile.SpooledTemporaryFile(max_size=512*1024)
+        return tempfile.SpooledTemporaryFile(max_size=512 * 1024)
 
     def _write_loop(self):
         while True:
             try:
                 self._write_one()
-            except:
+            except Exception:
                 traceback.print_exc()
 
     def _write_one(self):
@@ -88,16 +83,11 @@ class RecorderApp(object):
             else:
                 self.writer.write_record(resp, params)
 
-
         finally:
-            try:
-                if req_pay:
-                    req_pay.close()
-
-                if resp_pay:
-                    resp_pay.close()
-            except Exception as e:
-                traceback.print_exc()
+            if req_pay:
+                full_close(req_pay)
+            if resp_pay:
+                full_close(resp_pay)
 
     def send_error(self, exc, start_response):
         return self.send_message({'error': repr(exc)},
@@ -155,7 +145,7 @@ class RecorderApp(object):
 
         finally:
             if req_stream:
-                req_stream.out.close()
+                full_close(req_stream.out)
 
         return self.send_message(msg,
                                  '200 OK',
@@ -169,8 +159,7 @@ class RecorderApp(object):
     def __call__(self, environ, start_response):
         try:
             return self.handle_call(environ, start_response)
-        except:
-            import traceback
+        except Exception:
             traceback.print_exc()
 
     def handle_call(self, environ, start_response):
@@ -217,15 +206,15 @@ class RecorderApp(object):
 
         try:
             res = requests.request(url=self.upstream_host + request_uri,
-                                 method=method,
-                                 data=data,
-                                 headers=headers,
-                                 allow_redirects=False,
-                                 stream=True)
+                                   method=method,
+                                   data=data,
+                                   headers=headers,
+                                   allow_redirects=False,
+                                   stream=True)
             res.raise_for_status()
         except Exception as e:
             if req_is_wrapped:
-                req_stream.out.close()
+                full_close(req_stream.out)
             return self.send_error(e, start_response)
 
         if not skipping:
@@ -233,8 +222,7 @@ class RecorderApp(object):
                                            req_stream.headers,
                                            res.headers,
                                            params)
-                            for x in self.skip_filters)
-
+                           for x in self.skip_filters)
 
         if not skipping:
             resp_stream = RespWrapper(res.raw,
@@ -248,7 +236,7 @@ class RecorderApp(object):
         else:
             resp_stream = res.raw
             if req_is_wrapped:
-                req_stream.out.close()
+                full_close(req_stream.out)
 
         resp_iter = StreamIter(resp_stream)
 
@@ -260,7 +248,7 @@ class RecorderApp(object):
         return resp_iter
 
 
-#==============================================================================
+# ==============================================================================
 class Wrapper(object):
     def __init__(self, stream, params, create_func):
         self.stream = stream
@@ -280,7 +268,7 @@ class Wrapper(object):
         return buff
 
 
-#==============================================================================
+# ==============================================================================
 class RespWrapper(Wrapper):
     def __init__(self, stream, headers, req,
                  params, queue, path, create_func):
@@ -319,34 +307,34 @@ class RespWrapper(Wrapper):
                 entry = (self.req.headers, self.req.out,
                          self.headers, self.out, self.params)
                 self.queue.put(entry)
-        except:
+        except Exception:
             traceback.print_exc()
             skipping = True
 
         finally:
             try:
                 if skipping:
-                    self.out.close()
-                    self.req.out.close()
-            except:
+                    full_close(self.out)
+                    full_close(self.req.out)
+            except Exception:
                 traceback.print_exc()
 
             self.req.close()
             self.req = None
 
 
-#==============================================================================
+# ==============================================================================
 class ReqWrapper(Wrapper):
     def __init__(self, stream, req_headers, params, create_func):
         super(ReqWrapper, self).__init__(stream, params, create_func)
-        self.headers = {}
+        headers = dict()
 
         for n in six.iterkeys(req_headers):
             if n.upper().startswith('WARC-'):
-                self.headers[n] = req_headers[n]
+                headers[n] = req_headers[n]
+
+        self.headers = headers
 
     def close(self):
         # no need to close wsgi.input
         pass
-
-

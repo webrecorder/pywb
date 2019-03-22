@@ -1,18 +1,13 @@
+import os
+from io import BytesIO
+
 from warcio.timeutils import iso_date_to_timestamp
 
-from io import BytesIO
-import os
-
-from pywb.utils.canonicalize import calc_search_range
-from pywb.utils.format import res_template
-
 from pywb.indexer.cdxindexer import write_cdx_index
-
-from pywb.warcserver.index.cdxobject import CDXObject
-from pywb.warcserver.index.indexsource import RedisIndexSource
-from pywb.warcserver.index.aggregator import SimpleAggregator
-
 from pywb.recorder.filters import WriteRevisitDupePolicy
+from pywb.utils.format import res_template
+from pywb.warcserver.index.aggregator import SimpleAggregator
+from pywb.warcserver.index.indexsource import RedisIndexSource
 
 
 #==============================================================================
@@ -74,7 +69,7 @@ class WritableRedisIndexer(RedisIndexSource):
         return cdx_list
 
     def lookup_revisit(self, lookup_params, digest, url, iso_dt):
-        params = {}
+        params = dict()
         for param in lookup_params:
             if param.startswith('param.'):
                 params[param] = lookup_params[param]
@@ -82,9 +77,7 @@ class WritableRedisIndexer(RedisIndexSource):
         params['url'] = url
         params['closest'] = iso_date_to_timestamp(iso_dt)
 
-        filters = []
-
-        filters.append('!mime:warc/revisit')
+        filters = ['!mime:warc/revisit']
 
         if digest and digest != '-':
             filters.append('digest:' + digest.split(':')[-1])

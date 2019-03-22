@@ -24,11 +24,8 @@ class HTMLInsertOnlyRewriter(StreamingRewriter):
         m = self.HEAD_REGEX.search(string)
         if m:
             inx = m.end()
-            buff = string[:inx]
-            buff += self.head_insert
-            buff += string[inx:]
-            return buff
-        else:
-            return string
+            return string[:inx] + self.head_insert + string[inx:]
+
+        return string
 
 

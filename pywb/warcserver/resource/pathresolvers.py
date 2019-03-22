@@ -1,16 +1,12 @@
-import redis
-
-from warcio.utils import to_native_str
-from pywb.utils.binsearch import iter_exact
-
-from pywb.warcserver.index.indexsource import RedisIndexSource
-
-from pywb.utils.loaders import from_file_url
-import six
-
-import os
-import logging
 import glob
+import os
+
+import six
+from warcio.utils import to_native_str
+
+from pywb.utils.binsearch import iter_exact
+from pywb.utils.loaders import from_file_url
+from pywb.warcserver.index.indexsource import RedisIndexSource
 
 """
 The purpose of this module is to 'resolve' a warc/arc filename,
@@ -23,10 +19,10 @@ make_best_resolver() attempts to guess the resolver method for given uri
 """
 
 
-#=============================================================================
+# =============================================================================
 # PrefixResolver - convert cdx file entry to url with prefix
 # if url contains specified string
-#=============================================================================
+# =============================================================================
 class PrefixResolver(object):
     def __init__(self, template):
         self.template = template
@@ -41,7 +37,7 @@ class PrefixResolver(object):
         if '*' not in path:
             return path
 
-        #res_path = self.resolve_coll(path, cdx.get('source'))
+        # res_path = self.resolve_coll(path, cdx.get('source'))
         coll = cdx.get('source-coll')
         if coll:
             return path.replace('*', coll)
@@ -65,15 +61,18 @@ class PrefixResolver(object):
         coll = source.split('/', 1)[0]
         return path.replace('*', coll)
 
-    def __repr__(self):
+    def __str__(self):
         return "PrefixResolver('{0}')".format(self.template)
 
+    def __repr__(self):
+        return self.__str__()
 
-#=============================================================================
+
+# =============================================================================
 class RedisResolver(RedisIndexSource):
     def __call__(self, filename, cdx):
         redis_key = self.redis_key_template
-        params = {}
+        params = dict()
         if hasattr(cdx, '_formatter') and cdx._formatter:
             redis_key = cdx._formatter.format(redis_key)
             params = cdx._formatter.params
@@ -92,11 +91,14 @@ class RedisResolver(RedisIndexSource):
 
         return res
 
-    def __repr__(self):
+    def __str__(self):
         return "RedisResolver('{0}')".format(self.redis_url)
 
+    def __repr__(self):
+        return self.__str__()
 
-#=================================================================
+
+# =================================================================
 class PathIndexResolver(object):
     def __init__(self, pathindex_file):
         self.pathindex_file = pathindex_file
@@ -110,15 +112,18 @@ class PathIndexResolver(object):
                 for path in paths:
                     yield to_native_str(path, 'utf-8')
 
-    def __repr__(self):  # pragma: no cover
+    def __str__(self):  # pragma: no cover
         return "PathIndexResolver('{0}')".format(self.pathindex_file)
 
+    def __repr__(self):
+        return self.__str__()
 
-#=================================================================
+
+# =================================================================
 class DefaultResolverMixin(object):
     @classmethod
     def make_best_resolver(cls, path):
-        if hasattr(path, '__call__'):
+        if callable(path):
             return path
 
         if path.startswith('redis://'):

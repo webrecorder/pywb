@@ -1,30 +1,29 @@
-from pywb.warcserver.inputrequest import DirectWSGIInputRequest, POSTInputRequest
-from pywb.utils.format import query_to_dict
-
-from werkzeug.routing import Map, Rule
-from werkzeug.exceptions import HTTPException
-
-import requests
-import traceback
 import json
+import traceback
 
 import six
+from werkzeug.exceptions import HTTPException
+from werkzeug.routing import Map, Rule
+
+from pywb.utils.format import query_to_dict
+from pywb.warcserver.inputrequest import DirectWSGIInputRequest, POSTInputRequest
 
 JSON_CT = 'application/json; charset=utf-8'
 
 
-#=============================================================================
+# =============================================================================
 class BaseWarcServer(object):
     def __init__(self, *args, **kwargs):
-        self.route_dict = {}
-        self.debug = kwargs.get('debug', False)
+        self.config = kwargs.get('config', dict())
+        self.route_dict = dict()
+        self.debug = self.config.get('debug', False)
 
         self.url_map = Map()
 
-        def list_routes(environ):
-            return {}, self.route_dict, {}
+        self.url_map.add(Rule('/', endpoint=self._bws_list_routes))
 
-        self.url_map.add(Rule('/', endpoint=list_routes))
+    def _bws_list_routes(self, environ, *args, **kwargs):
+        return dict(), self.route_dict, dict()
 
     def add_route(self, path, handler, path_param_name='', default_value=''):
         def direct_input_request(environ, mode='', path_param_value=default_value):
@@ -62,7 +61,7 @@ class BaseWarcServer(object):
         if query_str:
             return query_to_dict(query_str, multi=['filter'])
         else:
-            return {}
+            return dict()
 
     def __call__(self, environ, start_response):
         urls = self.url_map.bind_to_environ(environ)
@@ -95,7 +94,7 @@ class BaseWarcServer(object):
                 traceback.print_exc()
             message = 'Internal Error: ' + str(e)
             status = 500
-            return self.send_error({}, start_response,
+            return self.send_error(dict(), start_response,
                                    message=message,
                                    status=status)
 
@@ -123,7 +122,7 @@ class BaseWarcServer(object):
         if errs:
             res['errors'] = errs
 
-        out_headers = {}
+        out_headers = dict()
         res = self.json_encode(res, out_headers)
 
         if six.PY3:

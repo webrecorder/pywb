@@ -1,10 +1,11 @@
+from datetime import datetime, timedelta
+
+from six.moves.urllib.parse import urlsplit
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.timeutils import datetime_to_http_date
-from datetime import datetime, timedelta
-from six.moves.urllib.parse import urlsplit
 
 
-#=============================================================================
+# =============================================================================
 class DefaultHeaderRewriter(object):
     header_rules = {
         'access-control-allow-origin': 'prefix-if-url-rewrite',
@@ -109,58 +110,58 @@ class DefaultHeaderRewriter(object):
 
     def rewrite_header(self, name, value, rule):
         if rule == 'keep':
-            return (name, value)
+            return name, value
 
         elif rule == 'url-rewrite':
             if self.rwinfo.is_url_rw():
-                return (name, self.rwinfo.url_rewriter.rewrite(value))
+                return name, self.rwinfo.url_rewriter.rewrite(value)
             else:
-                return (name, value)
+                return name, value
 
         elif rule == 'prefix-if-content-rewrite':
             if self.rwinfo.is_content_rw:
-                return (self.header_prefix + name, value)
+                return self.header_prefix + name, value
             else:
-                return (name, value)
+                return name, value
 
         elif rule == 'prefix-if-url-rewrite':
             if self.rwinfo.is_url_rw():
-                return (self.header_prefix + name, value)
+                return self.header_prefix + name, value
             else:
-                return (name, value)
+                return name, value
 
         elif rule == 'content-length':
             if value == '0':
-                return (name, value)
+                return name, value
 
             if not self.rwinfo.is_content_rw:
                 try:
                     if int(value) >= 0:
-                        return (name, value)
-                except:
+                        return name, value
+                except Exception:
                     pass
 
-            return (self.header_prefix + name, value)
+            return self.header_prefix + name, value
 
         elif rule == 'transfer-encoding':
             self.rwinfo.is_chunked = True
-            return (self.header_prefix + name, value)
+            return self.header_prefix + name, value
 
         elif rule == 'cookie':
             if self.rwinfo.cookie_rewriter and self.rwinfo.is_url_rw():
                 return self.rwinfo.cookie_rewriter.rewrite(value)
             else:
-                return (name, value)
+                return name, value
 
         elif rule == 'prefix':
-            return (self.header_prefix + name, value)
+            return self.header_prefix + name, value
 
-        return (name, value)
+        return name, value
 
     def _add_cache_headers(self, new_headers, http_cache):
         try:
             age = int(http_cache)
-        except:
+        except Exception:
             age = 0
 
         if age <= 0:
@@ -170,5 +171,3 @@ class DefaultHeaderRewriter(object):
             dt = dt + timedelta(seconds=age)
             new_headers.append(('Cache-Control', 'max-age=' + str(age)))
             new_headers.append(('Expires', datetime_to_http_date(dt)))
-
-

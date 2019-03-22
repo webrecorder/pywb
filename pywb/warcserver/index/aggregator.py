@@ -1,29 +1,24 @@
-from gevent.pool import Pool
-import gevent
-
-import json
-import time
+import glob
 import os
-
-from warcio.timeutils import timestamp_now
-
-from heapq import merge
+import time
 from collections import deque
+from heapq import merge
 from itertools import chain
 
-from pywb.utils.wbexception import NotFoundException, WbException
-from pywb.utils.format import ParamFormatter, res_template
+import gevent
+import six
+from gevent.pool import Pool
+from warcio.timeutils import timestamp_now
 
-from pywb.warcserver.index.indexsource import FileIndexSource, RedisIndexSource
+from pywb.utils.format import ParamFormatter, res_template
+from pywb.utils.wbexception import NotFoundException, WbException
 from pywb.warcserver.index.cdxops import process_cdx
+from pywb.warcserver.index.indexsource import FileIndexSource, RedisIndexSource
 from pywb.warcserver.index.query import CDXQuery
 from pywb.warcserver.index.zipnum import ZipNumIndexSource
 
-import six
-import glob
 
-
-#=============================================================================
+# =============================================================================
 class BaseAggregator(object):
     def __call__(self, params):
         if params.get('closest') == 'now':
@@ -51,31 +46,33 @@ class BaseAggregator(object):
                 cdx_iter = res
                 err_list = []
         except WbException as wbe:
-            #print('Not found in ' + name)
+            # print('Not found in ' + name)
             cdx_iter = iter([])
             err_list = [(name, repr(wbe))]
-
-        def add_source(cdx, name):
-            if not cdx.get('url'):
-                return cdx
-
-            if cdx.get('source'):
-                cdx['source'] = name + ':' + cdx['source']
-            else:
-                cdx['source'] = name
-
-            cdx['source-coll'] = self._get_coll(name)
-
-            return cdx
 
         if params.get('nosource') != 'true':
             src_coll = params.get('param.' + name + '.src_coll')
             if src_coll:
-                name += ':' + src_coll
+                name_with_coll = name + ':' + src_coll
+            else:
+                name_with_coll = name
 
-            cdx_iter = (add_source(cdx, name) for cdx in cdx_iter)
+            cdx_iter = (self._add_source(cdx, name_with_coll) for cdx in cdx_iter)
 
         return cdx_iter, err_list
+
+    def _add_source(self, cdx, name):
+        if not cdx.get('url'):
+            return cdx
+
+        if cdx.get('source'):
+            cdx['source'] = name + ':' + cdx['source']
+        else:
+            cdx['source'] = name
+
+        cdx['source-coll'] = self._get_coll(name)
+
+        return cdx
 
     def _get_coll(self, name):
         return name
@@ -86,7 +83,7 @@ class BaseAggregator(object):
         iter_list = [res[0] for res in res_list]
         err_list = chain(*[res[1] for res in res_list])
 
-        #optimization: if only a single entry (or empty) just load directly
+        # optimization: if only a single entry (or empty) just load directly
         if len(iter_list) <= 1:
             cdx_iter = iter_list[0] if iter_list else iter([])
         else:
@@ -94,13 +91,13 @@ class BaseAggregator(object):
 
         return cdx_iter, err_list
 
-    def _on_source_error(self, name):  #pragma: no cover
+    def _on_source_error(self, name):  # pragma: no cover
         pass
 
-    def _load_all(self, params):  #pragma: no cover
+    def _load_all(self, params):  # pragma: no cover
         raise NotImplemented()
 
-    def _iter_sources(self, params):  #pragma: no cover
+    def _iter_sources(self, params):  # pragma: no cover
         raise NotImplemented()
 
     def get_source_list(self, params):
@@ -110,7 +107,7 @@ class BaseAggregator(object):
         return result
 
 
-#=============================================================================
+# =============================================================================
 class BaseSourceListAggregator(BaseAggregator):
     def __init__(self, sources, **kwargs):
         self.sources = sources
@@ -161,11 +158,10 @@ class BaseSourceListAggregator(BaseAggregator):
                 yield (name, sources[name])
 
 
-#=============================================================================
+# =============================================================================
 class SeqAggMixin(object):
     def __init__(self, *args, **kwargs):
         super(SeqAggMixin, self).__init__(*args, **kwargs)
-
 
     def _load_all(self, params):
         sources = self._iter_sources(params)
@@ -173,18 +169,18 @@ class SeqAggMixin(object):
                 for name, source in sources]
 
 
-#=============================================================================
+# =============================================================================
 class SimpleAggregator(SeqAggMixin, BaseSourceListAggregator):
     pass
 
 
-#=============================================================================
+# =============================================================================
 class TimeoutMixin(object):
     def __init__(self, *args, **kwargs):
         super(TimeoutMixin, self).__init__(*args, **kwargs)
         self.t_count = kwargs.get('t_count', 3)
         self.t_dura = kwargs.get('t_duration', 20)
-        self.timeouts = {}
+        self.timeouts = dict()
 
     def is_timed_out(self, name):
         timeout_deq = self.timeouts.get(name)
@@ -218,7 +214,7 @@ class TimeoutMixin(object):
         print(name + ' timed out!')
 
 
-#=============================================================================
+# =============================================================================
 class GeventMixin(object):
     DEFAULT_TIMEOUT = 5.0
 
@@ -250,12 +246,12 @@ class GeventMixin(object):
         return results
 
 
-#=============================================================================
+# =============================================================================
 class GeventTimeoutAggregator(TimeoutMixin, GeventMixin, BaseSourceListAggregator):
     pass
 
 
-#=============================================================================
+# =============================================================================
 class BaseDirectoryIndexSource(BaseAggregator):
     def __init__(self, base_prefix, base_dir='', name='', config=None):
         self.base_prefix = base_prefix
@@ -286,7 +282,7 @@ class BaseDirectoryIndexSource(BaseAggregator):
             is_zip = filename.endswith(ZipNumIndexSource.IDX_EXT)
 
             if is_cdx or is_zip:
-                #print('Adding ' + filename)
+                # print('Adding ' + filename)
                 rel_path = os.path.relpath(the_dir, self.base_prefix)
                 if rel_path == '.':
                     full_name = name
@@ -335,16 +331,16 @@ class BaseDirectoryIndexSource(BaseAggregator):
         return cls.init_from_string(config['path'])
 
 
-#=============================================================================
+# =============================================================================
 class DirectoryIndexSource(SeqAggMixin, BaseDirectoryIndexSource):
     pass
 
 
-#=============================================================================
+# =============================================================================
 class CacheDirectoryIndexSource(DirectoryIndexSource):
     def __init__(self, *args, **kwargs):
         super(CacheDirectoryIndexSource, self).__init__(*args, **kwargs)
-        self.cached_file_list = {}
+        self.cached_file_list = dict()
 
     def _load_files_single_dir(self, the_dir):
         try:
@@ -366,7 +362,7 @@ class CacheDirectoryIndexSource(DirectoryIndexSource):
         return files
 
 
-#=============================================================================
+# =============================================================================
 class BaseRedisMultiKeyIndexSource(BaseAggregator, RedisIndexSource):
     def _iter_sources(self, params):
         redis_key_pattern = res_template(self.redis_key_template, params)
@@ -388,7 +384,6 @@ class BaseRedisMultiKeyIndexSource(BaseAggregator, RedisIndexSource):
         return 'redis-multikey'
 
 
-#=============================================================================
+# =============================================================================
 class RedisMultiKeyIndexSource(SeqAggMixin, BaseRedisMultiKeyIndexSource):
     pass
-

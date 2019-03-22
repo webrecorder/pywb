@@ -2,15 +2,14 @@ import base64
 import datetime
 import os
 import shutil
-
 import traceback
 
 import portalocker
-
 from warcio.timeutils import timestamp20_now
 from warcio.warcwriter import BaseWARCWriter
 
 from pywb.utils.format import res_template
+from pywb.utils.io import close_fh
 
 
 # ============================================================================
@@ -38,7 +37,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
         else:
             self.max_idle_time = None
 
-        self.fh_cache = {}
+        self.fh_cache = dict()
 
     def _check_revisit(self, record, params):
         if not self.dedup_index or record.rec_type != 'response':
@@ -55,6 +54,8 @@ class MultiFileWARCWriter(BaseWARCWriter):
         except Exception as e:
             traceback.print_exc()
             result = None
+            url = None
+            digest = None
 
         if result == 'skip':
             return None
@@ -85,7 +86,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
         try:
             os.makedirs(path)
-        except:
+        except Exception:
             pass
 
         fh = open(filename, 'a+b')
@@ -99,11 +100,12 @@ class MultiFileWARCWriter(BaseWARCWriter):
         try:
             if os.name != 'nt':
                 portalocker.lock(fh, portalocker.LOCK_UN)
-            fh.close()
             return True
         except Exception as e:
             print(e)
             return False
+        finally:
+            close_fh(fh)
 
     def get_dir_key(self, params):
         return res_template(self.key_template, params)
@@ -132,7 +134,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
         return True
 
     def write_record(self, record, params=None):
-        params = params or {}
+        params = params or dict()
         self._do_write_req_resp(None, record, params)
 
     def _copy_header(self, from_rec, to_rec, name):
@@ -238,7 +240,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
         for dir_key, out, filename in self.iter_open_files():
             self._close_file(out)
 
-        self.fh_cache = {}
+        self.fh_cache = dict()
 
     def close_idle_files(self):
         if not self.max_idle_time:
@@ -249,7 +251,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
         for dir_key, out, filename in self.iter_open_files():
             try:
                 mtime = os.path.getmtime(filename)
-            except:
+            except Exception:
                 self.close_key(dir_key)
                 return
 

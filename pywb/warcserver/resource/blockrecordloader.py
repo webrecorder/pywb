@@ -1,11 +1,11 @@
 from warcio.bufferedreaders import DecompressingBufferedReader
 from warcio.recordloader import ArcWarcRecordLoader
 
-from pywb.utils.loaders import BlockLoader
 from pywb.utils.io import BUFF_SIZE
+from pywb.utils.loaders import BlockLoader
 
 
-#=================================================================
+# =================================================================
 class BlockArcWarcRecordLoader(ArcWarcRecordLoader):
     def __init__(self, loader=None, cookie_maker=None, block_size=BUFF_SIZE, *args, **kwargs):
         if not loader:
@@ -21,7 +21,7 @@ class BlockArcWarcRecordLoader(ArcWarcRecordLoader):
         """
         try:
             length = int(length)
-        except:
+        except Exception:
             length = -1
 
         stream = self.loader.load(url, int(offset), length)

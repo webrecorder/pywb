@@ -1,18 +1,19 @@
-from warcio.limitreader import LimitReader
-from warcio.statusandheaders import StatusAndHeadersParser
-from pywb.warcserver.amf import Amf
-from pyamf.remoting import decode
-from warcio.utils import to_native_str
-
-from six.moves.urllib.parse import urlsplit, quote, unquote_plus, urlencode
-from six import iteritems, StringIO, PY3
-from io import BytesIO
-
 import base64
 import cgi
+import traceback
+from io import BytesIO
+
+from pyamf.remoting import decode
+from six import PY3, StringIO, iteritems
+from six.moves.urllib.parse import quote, unquote_plus, urlencode, urlsplit
+from warcio.limitreader import LimitReader
+from warcio.statusandheaders import StatusAndHeadersParser
+from warcio.utils import to_native_str
+
+from pywb.warcserver.amf import Amf
 
 
-#=============================================================================
+# =============================================================================
 class DirectWSGIInputRequest(object):
     def __init__(self, env):
         self.env = env
@@ -27,24 +28,25 @@ class DirectWSGIInputRequest(object):
         return self._get_header('Referer')
 
     def get_req_headers(self):
-        headers = {}
+        headers = dict()
 
         for name, value in iteritems(self.env):
             # will be set by requests to match actual host
             if name == 'HTTP_HOST':
                 continue
 
-            elif name.startswith('HTTP_'):
-                name = name[5:].title().replace('_', '-')
+            if name.startswith('HTTP_'):
+                header_name = name[5:].title().replace('_', '-')
 
             elif name in ('CONTENT_LENGTH', 'CONTENT_TYPE'):
-                name = name.title().replace('_', '-')
+                header_name = name.title().replace('_', '-')
 
             else:
+                header_name = name
                 value = None
 
             if value:
-                headers[name] = value
+                headers[header_name] = value
 
         return headers
 
@@ -87,8 +89,8 @@ class DirectWSGIInputRequest(object):
         buffered_stream = BytesIO()
 
         query = MethodQueryCanonicalizer(method, mime, length, stream,
-                                           buffered_stream=buffered_stream,
-                                           environ=self.env)
+                                         buffered_stream=buffered_stream,
+                                         environ=self.env)
 
         new_url = query.append_query(url)
         if new_url != url:
@@ -104,7 +106,7 @@ class DirectWSGIInputRequest(object):
         req_uri = quote(self.env.get('PATH_INFO', ''), safe='/~!$&\'()*+,;=:@')
         query = self.env.get('QUERY_STRING')
         if query:
-            req_uri += '?' + query
+            return req_uri + '?' + query
 
         return req_uri
 
@@ -135,19 +137,19 @@ class DirectWSGIInputRequest(object):
             buff.write('\r\n')
 
         buff.write('\r\n')
-        buff = buff.getvalue().encode('latin-1')
+        final_buff = buff.getvalue().encode('latin-1')
 
         body = self.get_req_body()
         if body:
-            buff += body.read()
+            return final_buff + body.read()
 
-        return buff
+        return final_buff
 
 
-#=============================================================================
+# =============================================================================
 class POSTInputRequest(DirectWSGIInputRequest):
     def __init__(self, env):
-        self.env = env
+        super(POSTInputRequest, self).__init__(env)
 
         parser = StatusAndHeadersParser([], verify=False)
 
@@ -157,7 +159,7 @@ class POSTInputRequest(DirectWSGIInputRequest):
         return self.status_headers.protocol
 
     def get_req_headers(self):
-        headers = {}
+        headers = dict()
         for n, v in self.status_headers.headers:
             headers[n] = v
 
@@ -182,8 +184,8 @@ class POSTInputRequest(DirectWSGIInputRequest):
 # ============================================================================
 class MethodQueryCanonicalizer(object):
     def __init__(self, method, mime, length, stream,
-                       buffered_stream=None,
-                       environ=None):
+                 buffered_stream=None,
+                 environ=None):
         """
         Append the method for HEAD/OPTIONS as __pywb_method=<method>
         For POST requests, requests extract a url-encoded form from stream
@@ -210,7 +212,7 @@ class MethodQueryCanonicalizer(object):
         if length <= 0:
             return
 
-        query = b''
+        build_query = []
 
         while length > 0:
             buff = stream.read(length)
@@ -219,7 +221,9 @@ class MethodQueryCanonicalizer(object):
             if not buff:
                 break
 
-            query += buff
+            build_query.append(buff)
+
+        query = b''.join(build_query)
 
         if buffered_stream:
             buffered_stream.write(query)
@@ -229,8 +233,7 @@ class MethodQueryCanonicalizer(object):
             mime = ''
 
         if mime.startswith('application/x-www-form-urlencoded'):
-            query = to_native_str(query)
-            query = unquote_plus(query)
+            final_query = unquote_plus(to_native_str(query))
 
         elif mime.startswith('multipart/'):
             env = {'REQUEST_METHOD': 'POST',
@@ -250,17 +253,15 @@ class MethodQueryCanonicalizer(object):
             for item in data.list:
                 values.append((item.name, item.value))
 
-            query = urlencode(values, True)
+            final_query = urlencode(values, True)
 
         elif mime.startswith('application/x-amf'):
-            query = self.amf_parse(query, environ)
+            final_query = self.amf_parse(query, environ)
 
         else:
-            query = base64.b64encode(query)
-            query = to_native_str(query)
-            query = '__wb_post_data=' + query
+            final_query = '__wb_post_data=' + to_native_str(base64.b64encode(query))
 
-        self.query = query
+        self.query = final_query
 
     def amf_parse(self, string, environ):
         try:
@@ -268,7 +269,6 @@ class MethodQueryCanonicalizer(object):
             return urlencode({"request": Amf.get_representation(res)})
 
         except Exception as e:
-            import traceback
             traceback.print_exc()
             print(e)
             return None
@@ -278,10 +278,6 @@ class MethodQueryCanonicalizer(object):
             return url
 
         if '?' not in url:
-            url += '?'
+            return url + '?' + self.query
         else:
-            url += '&'
-
-        url += self.query
-        return url
-
+            return url + '&' + self.query

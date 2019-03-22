@@ -1,19 +1,15 @@
-from io import BytesIO
-
+import codecs
+import json
+import re
+import tempfile
 from contextlib import closing
 
+import webencodings
 from warcio.bufferedreaders import BufferedReader, ChunkedDataReader
 from warcio.utils import to_native_str
 
-import re
-import webencodings
-import tempfile
-import json
-import codecs
-
-from pywb.utils.io import StreamIter, BUFF_SIZE
-
-from pywb.utils.loaders import load_yaml_config, load_py_name
+from pywb.utils.io import BUFF_SIZE, StreamIter
+from pywb.utils.loaders import load_py_name, load_yaml_config
 
 
 # ============================================================================
@@ -69,7 +65,7 @@ class BaseContentRewriter(object):
             if any((urlkey.startswith(prefix) for prefix in rule['url_prefix'])):
                 return rule
 
-        return {}
+        return dict()
 
     def has_custom_rules(self, rule, cdx):
         if 'js_regex_func' not in rule:
@@ -92,7 +88,7 @@ class BaseContentRewriter(object):
 
         mixin = rule.get('mixin')
         if mixin:
-            mixin_params = rule.get('mixin_params', {})
+            mixin_params = rule.get('mixin_params', dict())
             rw_class = type('custom_js_rewriter', (mixin, rw_class), mixin_params)
 
         return rw_type, rw_class
@@ -150,7 +146,7 @@ class BaseContentRewriter(object):
             if rwinfo.charset:
                 try:
                     head_insert_str = webencodings.encode(head_insert_orig, rwinfo.charset)
-                except:
+                except Exception:
                     pass
 
             # no charset detected, encode banner as ascii html entities
@@ -178,7 +174,7 @@ class BaseContentRewriter(object):
                  head_insert_func=None,
                  cdx=None, environ=None):
 
-        environ = environ or {}
+        environ = environ or dict()
         rwinfo = RewriteInfo(record, self, url_rewriter, cookie_rewriter)
         content_rewriter = None
 
@@ -222,7 +218,7 @@ class BaseContentRewriter(object):
 
             gen = StreamIter(stream)
 
-        return rw_http_headers, gen, (content_rewriter != None)
+        return rw_http_headers, gen, content_rewriter is not None
 
     def init_js_regexs(self, regexs):
         raise NotImplemented()
@@ -258,13 +254,13 @@ class BufferedRewriter(object):
         if client_metadata:
             try:
                 return json.loads(client_metadata)
-            except:
+            except Exception:
                 pass
 
-        return {}
+        return dict()
 
     def _get_adaptive_metadata(self, rwinfo):
-        metadata = self._get_record_metadata(rwinfo) if rwinfo else {}
+        metadata = self._get_record_metadata(rwinfo) if rwinfo else dict()
         max_resolution = int(metadata.get('adaptive_max_resolution', 0))
         max_bandwidth = int(metadata.get('adaptive_max_bandwidth', 1000000000))
         return max_resolution, max_bandwidth

@@ -1,23 +1,26 @@
-from pywb.utils.loaders import load_yaml_config, load_overlay_config
+import os
+import traceback
 
-from pywb.warcserver.basewarcserver import BaseWarcServer
-
-from pywb.warcserver.index.aggregator import CacheDirectoryIndexSource, RedisMultiKeyIndexSource
-from pywb.warcserver.index.aggregator import GeventTimeoutAggregator, SimpleAggregator
-
-from pywb.warcserver.handlers import DefaultResourceHandler, HandlerSeq
-
-from pywb.warcserver.index.indexsource import FileIndexSource, RemoteIndexSource
-from pywb.warcserver.index.indexsource import MementoIndexSource, RedisIndexSource
-from pywb.warcserver.index.indexsource import LiveIndexSource, WBMementoIndexSource
-from pywb.warcserver.index.zipnum import ZipNumIndexSource
+from six import iteritems
 
 from pywb import DEFAULT_CONFIG
-
-from six import iteritems, iterkeys, itervalues
-from six.moves import zip
-import os
-
+from pywb.utils.loaders import load_overlay_config, load_yaml_config
+from pywb.warcserver.basewarcserver import BaseWarcServer
+from pywb.warcserver.handlers import DefaultResourceHandler, HandlerSeq
+from pywb.warcserver.index.aggregator import (
+    CacheDirectoryIndexSource,
+    GeventTimeoutAggregator,
+    RedisMultiKeyIndexSource,
+    SimpleAggregator
+)
+from pywb.warcserver.index.indexsource import (
+    FileIndexSource,
+    LiveIndexSource,
+    MementoIndexSource,
+    RemoteIndexSource,
+    WBMementoIndexSource
+)
+from pywb.warcserver.index.zipnum import ZipNumIndexSource
 
 SOURCE_LIST = [LiveIndexSource,
                WBMementoIndexSource,
@@ -27,7 +30,26 @@ SOURCE_LIST = [LiveIndexSource,
                FileIndexSource,
                RemoteIndexSource,
                ZipNumIndexSource,
-              ]
+               ]
+
+
+def load_warcserver_config(config_file, custom_config=None):
+    config = load_yaml_config(DEFAULT_CONFIG)
+
+    if config_file:
+        try:
+            file_config = load_overlay_config('PYWB_CONFIG_FILE', config_file)
+            config.update(file_config)
+        except Exception as e:
+            if not custom_config:
+                custom_config = {'debug': True}
+            print(e)
+
+    if custom_config:
+        if 'collections' in custom_config and 'collections' in config:
+            custom_config['collections'].update(config['collections'])
+        config.update(custom_config)
+    return config
 
 
 # ============================================================================
@@ -35,25 +57,7 @@ class WarcServer(BaseWarcServer):
     AUTO_COLL_TEMPL = '{coll}'
 
     def __init__(self, config_file='./config.yaml', custom_config=None):
-        config = load_yaml_config(DEFAULT_CONFIG)
-
-        if config_file:
-            try:
-                file_config = load_overlay_config('PYWB_CONFIG_FILE', config_file)
-                config.update(file_config)
-            except Exception as e:
-                if not custom_config:
-                    custom_config = {'debug': True}
-                print(e)
-
-        if custom_config:
-            if 'collections' in custom_config and 'collections' in config:
-                custom_config['collections'].update(config['collections'])
-            config.update(custom_config)
-
-        super(WarcServer, self).__init__(debug=config.get('debug', False))
-        self.config = config
-
+        super(WarcServer, self).__init__(config=load_warcserver_config(config_file, custom_config))
         self.root_dir = self.config.get('collections_root', '')
         self.index_paths = self.init_paths('index_paths')
         self.archive_paths = self.init_paths('archive_paths', self.root_dir)
@@ -76,20 +80,20 @@ class WarcServer(BaseWarcServer):
         if self.auto_handler:
             self.add_route('/<path_param_value>', self.auto_handler, path_param_name='param.coll')
 
+    def _get_full_path(self, path, abs_path):
+        if '://' not in path:
+            path = os.path.join(self.AUTO_COLL_TEMPL, path, '')
+            if abs_path:
+                path = os.path.join(abs_path, path)
+        return path
+
     def init_paths(self, name, abs_path=None):
         templ = self.config.get(name)
 
-        def get_full_path(path):
-            if '://' not in path:
-                path = os.path.join(self.AUTO_COLL_TEMPL, path, '')
-                if abs_path:
-                    path = os.path.join(abs_path, path)
-            return path
-
         if isinstance(templ, str):
-            return get_full_path(templ)
+            return self._get_full_path(templ, abs_path)
         else:
-            return [get_full_path(t) for t in templ]
+            return [self._get_full_path(t, abs_path) for t in templ]
 
     def load_auto_colls(self):
         if not self.root_dir:
@@ -109,11 +113,11 @@ class WarcServer(BaseWarcServer):
     def get_coll_config(self, name):
         colls = self.config.get('collections', None)
         if not colls:
-            return {}
+            return dict()
 
-        res = colls.get(name, {})
+        res = colls.get(name, dict())
         if not isinstance(res, dict):
-            res = {'index': res}
+            return {'index': res}
         return res
 
     def list_dynamic_routes(self):
@@ -126,7 +130,7 @@ class WarcServer(BaseWarcServer):
             return []
 
     def load_colls(self):
-        routes = {}
+        routes = dict()
 
         colls = self.config.get('collections', None)
         if not colls:
@@ -135,10 +139,9 @@ class WarcServer(BaseWarcServer):
         for name, coll_config in iteritems(colls):
             try:
                 handler = self.load_coll(name, coll_config)
-            except:
+            except Exception:
                 print('Invalid Collection: ' + name)
                 if self.debug:
-                    import traceback
                     traceback.print_exc()
                 continue
 
@@ -202,6 +205,7 @@ class WarcServer(BaseWarcServer):
 
         return HandlerSeq(handlers)
 
+
 # ============================================================================
 def init_index_source(value, source_list=None):
     source_list = source_list or SOURCE_LIST
@@ -233,7 +237,7 @@ def register_source(source_cls, end=False):
 
 # ============================================================================
 def init_index_agg(source_configs, use_gevent=False, timeout=0, source_list=None):
-    sources = {}
+    sources = dict()
     for n, v in iteritems(source_configs):
         sources[n] = init_index_source(v, source_list=source_list)
 
@@ -241,5 +245,3 @@ def init_index_agg(source_configs, use_gevent=False, timeout=0, source_list=None
         return GeventTimeoutAggregator(sources, timeout=timeout)
     else:
         return SimpleAggregator(sources)
-
-

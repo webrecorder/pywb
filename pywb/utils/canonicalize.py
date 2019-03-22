@@ -1,13 +1,13 @@
 """ Standard url-canonicalzation, surt and non-surt
 """
 
-import surt
 import six.moves.urllib.parse as urlparse
+import surt
 
 from pywb.utils.wbexception import BadRequestException
 
 
-#=================================================================
+# =================================================================
 class UrlCanonicalizer(object):
     def __init__(self, surt_ordered=True):
         self.surt_ordered = surt_ordered
@@ -16,12 +16,12 @@ class UrlCanonicalizer(object):
         return canonicalize(url, self.surt_ordered)
 
 
-#=================================================================
+# =================================================================
 class UrlCanonicalizeException(BadRequestException):
     pass
 
 
-#=================================================================
+# =================================================================
 def canonicalize(url, surt_ordered=True):
     """
     Canonicalize url and convert to surt
@@ -39,7 +39,7 @@ def canonicalize(url, surt_ordered=True):
     """
     try:
         key = surt.surt(url)
-    except Exception as e:  #pragma: no cover
+    except Exception as e:  # pragma: no cover
         # doesn't happen with surt from 0.3b
         # urn is already canonical, so just use as-is
         if url.startswith('urn:'):
@@ -49,12 +49,12 @@ def canonicalize(url, surt_ordered=True):
 
     # if not surt, unsurt the surt to get canonicalized non-surt url
     if not surt_ordered:
-        key = unsurt(key)
+        return unsurt(key)
 
     return key
 
 
-#=================================================================
+# =================================================================
 def unsurt(surt):
     """
     # Simple surt
@@ -75,16 +75,18 @@ index.html?a=b?c=)/')
         index = surt.index(')/')
         parts = surt[0:index].split(',')
         parts.reverse()
-        host = '.'.join(parts)
-        host += surt[index + 1:]
-        return host
+        return '.'.join(parts) + surt[index + 1:]
 
     except ValueError:
         # May not be a valid surt
         return surt
 
 
-#=================================================================
+# =================================================================
+def inc_last_char(x):
+    return x[0:-1] + chr(ord(x[-1]) + 1)
+
+
 def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
     """
     Canonicalize a url (either with custom canonicalizer or
@@ -148,9 +150,6 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
     UrlCanonicalizeException: Invalid match_type: blah
 
     """
-    def inc_last_char(x):
-        return x[0:-1] + chr(ord(x[-1]) + 1)
-
     if not url_canon:
         # make new canon
         url_canon = UrlCanonicalizer(surt_ordered)
@@ -158,24 +157,26 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
         # ensure surt order matches url_canon
         surt_ordered = url_canon.surt_ordered
 
-    start_key = url_canon(url)
+    cannoned = url_canon(url)
 
     if match_type == 'exact':
+        start_key = cannoned
         end_key = start_key + '!'
 
     elif match_type == 'prefix':
         # add trailing slash if url has it
-        if url.endswith('/') and not start_key.endswith('/'):
-            start_key += '/'
-
-        if url.endswith('?') and not start_key.endswith('?'):
-            start_key += '?'
+        if url.endswith('/') and not cannoned.endswith('/'):
+            start_key = cannoned + '/'
+        elif url.endswith('?') and not cannoned.endswith('?'):
+            start_key = cannoned + '?'
+        else:
+            start_key = cannoned
 
         end_key = inc_last_char(start_key)
 
     elif match_type == 'host':
         if surt_ordered:
-            host = start_key.split(')/')[0]
+            host = cannoned.split(')/')[0]
 
             start_key = host + ')/'
             end_key = host + '*'
@@ -190,7 +191,7 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
             msg = 'matchType=domain unsupported for non-surt'
             raise UrlCanonicalizeException(msg)
 
-        host = start_key.split(')/')[0]
+        host = cannoned.split(')/')[0]
 
         # if tld, use com, as start_key
         # otherwise, stick with com,example)/
@@ -203,9 +204,10 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
     else:
         raise UrlCanonicalizeException('Invalid match_type: ' + match_type)
 
-    return (start_key, end_key)
+    return start_key, end_key
 
 
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod()

@@ -1,13 +1,14 @@
-import gevent
-import time
-import re
-import os
 import logging
+import os
+import re
+import time
+
+import gevent
 
 from pywb.manager.manager import CollectionsManager
 
 
-#=============================================================================
+# =============================================================================
 class AutoIndexer(object):
     EXT_RX = re.compile('.*\.w?arc(\.gz)?$')
     AUTO_INDEX_FILE = 'autoindex.cdxj'
@@ -21,14 +22,15 @@ class AutoIndexer(object):
 
         self.interval = interval
 
-        self.last_size = {}
+        self.last_size = dict()
+        self.ge = None
 
     def is_newer_than(self, path1, path2, track=False):
         try:
             mtime1 = os.path.getmtime(path1)
             mtime2 = os.path.getmtime(path2)
             newer = mtime1 > mtime2
-        except:
+        except Exception:
             newer = True
 
         if track:
@@ -36,7 +38,7 @@ class AutoIndexer(object):
             try:
                 if size != self.last_size[path1]:
                     newer = True
-            except:
+            except Exception:
                 pass
 
             self.last_size[path1] = size
@@ -90,7 +92,7 @@ class AutoIndexer(object):
             import uwsgi
             if uwsgi.worker_id() != 1:
                 return
-        except:
+        except Exception:
             pass
 
         try:

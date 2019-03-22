@@ -3,20 +3,16 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     from ordereddict import OrderedDict
 
+from json import dumps as json_encode, loads as json_decode
+
 import six
 from six.moves import zip
-
-from six.moves.urllib.parse import urlencode, quote
-from six.moves.urllib.parse import parse_qs
-
-from pywb.utils.wbexception import WbException
+from six.moves.urllib.parse import quote
 from warcio.utils import to_native_str
 
-from json import loads as json_decode
-from json import dumps as json_encode
+from pywb.utils.wbexception import WbException
 
-
-#=================================================================
+# =================================================================
 URLKEY = 'urlkey'
 TIMESTAMP = 'timestamp'
 ORIGINAL = 'url'
@@ -34,13 +30,13 @@ ORIG_OFFSET = 'orig.offset'
 ORIG_FILENAME = 'orig.filename'
 
 
-#=================================================================
+# =================================================================
 class CDXException(WbException):
     def status(self):
         return '400 Bad Request'
 
 
-#=================================================================
+# =================================================================
 class CDXObject(OrderedDict):
     """
     dictionary object representing parsed CDX line.
@@ -78,29 +74,28 @@ class CDXObject(OrderedDict):
          ORIG_LENGTH, ORIG_OFFSET, ORIG_FILENAME],
     ]
 
-
     CDX_ALT_FIELDS = {
-                  'u': ORIGINAL,
-                  'original': ORIGINAL,
+        'u': ORIGINAL,
+        'original': ORIGINAL,
 
-                  'statuscode': STATUSCODE,
-                  's': STATUSCODE,
+        'statuscode': STATUSCODE,
+        's': STATUSCODE,
 
-                  'mimetype': MIMETYPE,
-                  'm': MIMETYPE,
+        'mimetype': MIMETYPE,
+        'm': MIMETYPE,
 
-                  'l': LENGTH,
-                  's': LENGTH,
+        'l': LENGTH,
+        's': LENGTH,
 
-                  'o': OFFSET,
+        'o': OFFSET,
 
-                  'd': DIGEST,
+        'd': DIGEST,
 
-                  't': TIMESTAMP,
+        't': TIMESTAMP,
 
-                  'k': URLKEY,
+        'k': URLKEY,
 
-                  'f': FILENAME
+        'f': FILENAME
     }
 
     def __init__(self, cdxline=b''):
@@ -115,7 +110,7 @@ class CDXObject(OrderedDict):
             self.cdxline = cdxline
             return
 
-        fields = cdxline.split(b' ' , 2)
+        fields = cdxline.split(b' ', 2)
         # Check for CDX JSON
         if fields[-1].startswith(b'{'):
             self[URLKEY] = to_native_str(fields[0], 'utf-8')
@@ -246,9 +241,8 @@ class CDXObject(OrderedDict):
         return res
 
 
-#=================================================================
+# =================================================================
 class IDXObject(OrderedDict):
-
     FORMAT = ['urlkey', 'part', 'offset', 'length', 'lineno']
     NUM_REQ_FIELDS = len(FORMAT) - 1  # lineno is an optional field
 

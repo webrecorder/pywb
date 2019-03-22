@@ -1,17 +1,13 @@
-from pywb.utils.canonicalize import canonicalize
-
-from pywb.warcserver.inputrequest import MethodQueryCanonicalizer
-from pywb.utils.io import BUFF_SIZE
-
-from warcio.timeutils import iso_date_to_timestamp
-from warcio.archiveiterator import ArchiveIterator
-
-import hashlib
 import base64
-import six
-
+import hashlib
 import re
-import sys
+
+from warcio.archiveiterator import ArchiveIterator
+from warcio.timeutils import iso_date_to_timestamp
+
+from pywb.utils.canonicalize import canonicalize
+from pywb.utils.io import BUFF_SIZE
+from pywb.warcserver.inputrequest import MethodQueryCanonicalizer
 
 try:  # pragma: no cover
     from collections import OrderedDict
@@ -19,12 +15,14 @@ except ImportError:  # pragma: no cover
     from ordereddict import OrderedDict
 
 
-#=================================================================
+# =================================================================
 class ArchiveIndexEntryMixin(object):
     MIME_RE = re.compile('[; ]')
 
     def __init__(self):
         super(ArchiveIndexEntryMixin, self).__init__()
+        self.buffer = None
+        self.record = None
         self.reset_entry()
 
     def reset_entry(self):
@@ -32,7 +30,6 @@ class ArchiveIndexEntryMixin(object):
         self['metadata'] = ''
         self.buffer = None
         self.record = None
-
 
     def extract_mime(self, mime, def_mime='unk'):
         """ Utility function to extract mimetype only
@@ -81,19 +78,20 @@ class ArchiveIndexEntryMixin(object):
         return True
 
 
-#=================================================================
+# =================================================================
 class DefaultRecordParser(object):
     def __init__(self, **options):
         self.options = options
-        self.entry_cache = {}
+        self.entry_cache = dict()
         self.digester = None
         self.buff = None
+        self.entry = None
 
     def _create_index_entry(self, rec_type):
         try:
             entry = self.entry_cache[rec_type]
             entry.reset_entry()
-        except:
+        except Exception:
             if self.options.get('cdxj'):
                 entry = OrderedArchiveIndexEntry()
             else:
@@ -152,8 +150,8 @@ class DefaultRecordParser(object):
 
             if record.format == 'warc':
                 if (record.rec_type in ('request', 'warcinfo') and
-                     not include_all and
-                     not append_post):
+                        not include_all and
+                        not append_post):
                     continue
 
                 elif (not include_all and
@@ -173,7 +171,7 @@ class DefaultRecordParser(object):
             compute_digest = False
 
             if (entry.get('digest', '-') == '-' and
-                record.rec_type not in ('revisit', 'request', 'warcinfo')):
+                    record.rec_type not in ('revisit', 'request', 'warcinfo')):
 
                 compute_digest = True
 
@@ -182,9 +180,9 @@ class DefaultRecordParser(object):
                 len_ = record.http_headers.get_header('Content-Length')
 
                 post_query = MethodQueryCanonicalizer(method,
-                                                entry.get('_content_type'),
-                                                len_,
-                                                record.raw_stream)
+                                                      entry.get('_content_type'),
+                                                      len_,
+                                                      record.raw_stream)
 
                 entry['_post_query'] = post_query
 
@@ -214,7 +212,7 @@ class DefaultRecordParser(object):
                 continue
 
             # check for url match
-            if (entry['url'] != prev_entry['url']):
+            if entry['url'] != prev_entry['url']:
                 pass
 
             # check for concurrency also
@@ -235,8 +233,7 @@ class DefaultRecordParser(object):
         if prev_entry:
             yield prev_entry
 
-
-    #=================================================================
+    # =================================================================
     def parse_warc_record(self, record):
         """ Parse warc record
         """
@@ -267,7 +264,7 @@ class DefaultRecordParser(object):
                                def_mime)
             # detected mime from WARC-Identified-Payload-Type
             entry['mime-detected'] = record.rec_headers.get_header(
-                                        'WARC-Identified-Payload-Type')
+                'WARC-Identified-Payload-Type')
 
         # status -- only for response records (by convention):
         if record.rec_type == 'response' and not self.options.get('minimal'):
@@ -291,8 +288,7 @@ class DefaultRecordParser(object):
 
         return entry
 
-
-    #=================================================================
+    # =================================================================
     def parse_arc_record(self, record):
         """ Parse arc record
         """
@@ -326,9 +322,9 @@ class DefaultRecordParser(object):
 
     def __call__(self, fh):
         aiter = ArchiveIterator(fh, self.options.get('minimal', False),
-                                    self.options.get('verify_http', False),
-                                    self.options.get('arc2warc', False),
-                                    ensure_http_headers=True)
+                                self.options.get('verify_http', False),
+                                self.options.get('arc2warc', False),
+                                ensure_http_headers=True)
 
         entry_iter = self.create_record_iter(aiter)
 
@@ -337,7 +333,7 @@ class DefaultRecordParser(object):
 
         for entry in entry_iter:
             if (entry.record.rec_type in ('request', 'warcinfo') and
-                 not self.options.get('include_all')):
+                    not self.options.get('include_all')):
                 continue
 
             yield entry
@@ -347,10 +343,10 @@ class DefaultRecordParser(object):
             for entry in self(fh):
                 yield entry
 
+
 class ArchiveIndexEntry(ArchiveIndexEntryMixin, dict):
     pass
 
+
 class OrderedArchiveIndexEntry(ArchiveIndexEntryMixin, OrderedDict):
     pass
-
-

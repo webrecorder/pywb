@@ -42,15 +42,13 @@ wayback url format.
 """
 
 import re
+
 import six
-
-from six.moves.urllib.parse import urlsplit, urlunsplit
-from six.moves.urllib.parse import quote_plus, quote, unquote_plus
-
+from six.moves.urllib.parse import quote, quote_plus, unquote_plus, urlsplit, urlunsplit
 from warcio.utils import to_native_str
 
 
-#=================================================================
+# =================================================================
 class BaseWbUrl(object):
     QUERY = 'query'
     URL_QUERY = 'url_query'
@@ -58,25 +56,24 @@ class BaseWbUrl(object):
     LATEST_REPLAY = 'latest_replay'
 
     def __init__(self, url='', mod='',
-                 timestamp='', end_timestamp='', type=None):
-
+                 timestamp='', end_timestamp='', type_=None):
         self.url = url
         self.timestamp = timestamp
         self.end_timestamp = end_timestamp
         self.mod = mod
-        self.type = type
+        self.type = type_
 
     def is_replay(self):
         return self.is_replay_type(self.type)
 
     def is_latest_replay(self):
-        return (self.type == BaseWbUrl.LATEST_REPLAY)
+        return self.type == BaseWbUrl.LATEST_REPLAY
 
     def is_query(self):
         return self.is_query_type(self.type)
 
     def is_url_query(self):
-        return (self.type == BaseWbUrl.URL_QUERY)
+        return self.type == BaseWbUrl.URL_QUERY
 
     @staticmethod
     def is_replay_type(type_):
@@ -89,13 +86,13 @@ class BaseWbUrl(object):
                 type_ == BaseWbUrl.URL_QUERY)
 
 
-#=================================================================
+# =================================================================
 class WbUrl(BaseWbUrl):
     # Regexs
     # ======================
     QUERY_REGEX = re.compile('^(?:([\w\-:]+)/)?(\d*)[*-](\d*)/?(.+)$')
     REPLAY_REGEX = re.compile('^(\d*)([a-z]+_|[$][a-z0-9:.-]+)?/{1,3}(.+)$')
-    #LATEST_REPLAY_REGEX = re.compile('^\w_)')
+    # LATEST_REPLAY_REGEX = re.compile('^\w_)')
 
     DEFAULT_SCHEME = 'http://'
 
@@ -103,6 +100,7 @@ class WbUrl(BaseWbUrl):
 
     SCHEME_RX = re.compile('[a-zA-Z0-9+-.]+(:/)')
 
+    EMBEDED_MODS = {'id_', 'mp_', 'tf_', 'bn_'}
 
     @staticmethod
     def percent_encode_host(url):
@@ -121,14 +119,13 @@ class WbUrl(BaseWbUrl):
             domain = domain.decode('idna')
             if six.PY2:
                 domain = domain.encode('utf-8', 'ignore')
-        except:
+        except Exception:
             # likely already encoded, so use as is
             pass
 
-        domain = quote(domain)#, safe=r':\/')
+        domain = quote(domain)  # , safe=r':\/')
 
         return urlunsplit((parts[0], domain, parts[2], parts[3], parts[4]))
-
 
     @staticmethod
     def to_uri(url):
@@ -167,15 +164,13 @@ class WbUrl(BaseWbUrl):
             url = domain
 
         if len(parts) > 1:
-            url += sep
-
             rest = parts[1]
             try:
                 rest.encode('ascii')
             except UnicodeEncodeError:
                 rest = quote(to_native_str(rest, 'utf-8'))
 
-            url += rest
+            return url + sep + rest
 
         return url
 
@@ -205,14 +200,14 @@ class WbUrl(BaseWbUrl):
 
         # protocol agnostic url -> http://
         # no protocol -> http://
-        #inx = self.url.find('://')
+        # inx = self.url.find('://')
         inx = -1
         m = self.SCHEME_RX.match(self.url)
         if m:
             inx = m.span(1)[0]
 
-        #if inx < 0:
-            # check for other partially encoded variants
+        # if inx < 0:
+        # check for other partially encoded variants
         #    m = self.PARTIAL_ENC_RX.match(self.url)
         #    if m:
         #        len_ = len(m.group(0))
@@ -298,7 +293,6 @@ class WbUrl(BaseWbUrl):
 
         return url
 
-
     # Str Representation
     # ====================
     def to_str(self, **overrides):
@@ -310,51 +304,48 @@ class WbUrl(BaseWbUrl):
         url = self.get_url(overrides.get('url', self.url))
 
         return self.to_wburl_str(url=url,
-                                 type=type_,
+                                 type_=type_,
                                  mod=mod,
                                  timestamp=timestamp,
                                  end_timestamp=end_timestamp)
 
     @staticmethod
-    def to_wburl_str(url, type=BaseWbUrl.LATEST_REPLAY,
+    def to_wburl_str(url, type_=BaseWbUrl.LATEST_REPLAY,
                      mod='', timestamp='', end_timestamp=''):
 
-        if WbUrl.is_query_type(type):
-            tsmod = ''
-            if mod:
-                tsmod += mod + "/"
+        if WbUrl.is_query_type(type_):
+            tsmod = [mod, "/"] if mod else []
+            tsmod.append(timestamp)
+            tsmod.append('*')
+            tsmod.append(end_timestamp)
+            tsmod.append("/")
+            tsmod.append(url)
+            if type_ == BaseWbUrl.URL_QUERY:
+                tsmod.append("*")
+            return ''.join(tsmod)
 
-            tsmod += timestamp
-            tsmod += '*'
-            tsmod += end_timestamp
-
-            tsmod += "/" + url
-            if type == BaseWbUrl.URL_QUERY:
-                tsmod += "*"
-            return tsmod
+        tsmod = timestamp + mod
+        if len(tsmod) > 0:
+            return tsmod + "/" + url
         else:
-            tsmod = timestamp + mod
-            if len(tsmod) > 0:
-                return tsmod + "/" + url
-            else:
-                return url
+            return url
 
     @property
     def is_embed(self):
         return (self.mod and
-                self.mod not in ('id_', 'mp_', 'tf_', 'bn_'))
+                self.mod not in self.EMBEDED_MODS)
 
     @property
     def is_banner_only(self):
-        return (self.mod == 'bn_')
+        return self.mod == 'bn_'
 
     @property
     def is_url_rewrite_only(self):
-        return (self.mod == 'uo_')
+        return self.mod == 'uo_'
 
     @property
     def is_identity(self):
-        return (self.mod == 'id_')
+        return self.mod == 'id_'
 
     def __str__(self):
         return self.to_str()

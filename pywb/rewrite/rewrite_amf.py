@@ -1,16 +1,24 @@
+import traceback
 from io import BytesIO
+
 from six.moves import zip
 
 from pywb.rewrite.content_rewriter import BufferedRewriter
 
+try:
+    from pyamf import remoting
+except Exception:
+    remoting = None
+
 
 # ============================================================================
 # Experimental: not fully tested
-class RewriteAMF(BufferedRewriter):  #pragma: no cover
+class RewriteAMF(BufferedRewriter):  # pragma: no cover
     def rewrite_stream(self, stream, rwinfo):
-        try:
-            from pyamf import remoting
+        if remoting is None:
+            return
 
+        try:
             iobuff = BytesIO()
             while True:
                 buff = stream.read()
@@ -28,9 +36,9 @@ class RewriteAMF(BufferedRewriter):  #pragma: no cover
                 new_list = []
 
                 for src, target in zip(inputdata.bodies, res.bodies):
-                    #print(target[0] + ' = ' + src[0])
+                    # print(target[0] + ' = ' + src[0])
 
-                    #print('messageId => corrId ' + target[1].body.correlationId + ' => ' + src[1].body[0].messageId)
+                    # print('messageId => corrId ' + target[1].body.correlationId + ' => ' + src[1].body[0].messageId)
                     target[1].body.correlationId = src[1].body[0].messageId
 
                     new_list.append((src[0], target[1]))
@@ -40,11 +48,8 @@ class RewriteAMF(BufferedRewriter):  #pragma: no cover
             return BytesIO(remoting.encode(res).getvalue())
 
         except Exception as e:
-            import traceback
             traceback.print_exc()
             print(e)
 
             stream.seek(0)
             return stream
-
-

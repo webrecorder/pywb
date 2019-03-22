@@ -1,12 +1,11 @@
 from gevent.monkey import patch_all; patch_all()
 
-#from bottle import run, Bottle, request, response, debug
+# from bottle import run, Bottle, request, response, debug
 from werkzeug.routing import Map, Rule
 from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.wsgi import pop_path_info
 from six.moves.urllib.parse import urljoin
 from six import iteritems
-from warcio.statusandheaders import StatusAndHeaders
 from warcio.utils import to_native_str
 from wsgiprox.wsgiprox import WSGIProxMiddleware
 
@@ -24,11 +23,13 @@ from pywb.rewrite.templateview import BaseInsertView
 from pywb.apps.static_handler import StaticHandler
 from pywb.apps.rewriterapp import RewriterApp, UpstreamException
 from pywb.apps.wbrequestresponse import WbResponse
+from pywb.manager.autoindex import AutoIndexer
 
 import os
 import traceback
 import requests
 import logging
+import sys
 
 
 # ============================================================================
@@ -59,6 +60,8 @@ class FrontEndApp(object):
         :param str config_file: Path to the config file
         :param dict custom_config: Dictionary containing additional configuration information
         """
+        self.recorder = None
+        self.recorder_path = None
         self.handler = self.handle_request
         self.warcserver = WarcServer(config_file=config_file,
                                      custom_config=custom_config)
@@ -132,9 +135,9 @@ class FrontEndApp(object):
         :rtype: dict[str, str]
         """
         base_paths = {
-                'replay': self.REPLAY_API % port,
-                'cdx-server': self.CDX_API % port,
-               }
+            'replay': self.REPLAY_API % port,
+            'cdx-server': self.CDX_API % port,
+        }
 
         if self.recorder_path:
             base_paths['record'] = self.recorder_path
@@ -142,7 +145,10 @@ class FrontEndApp(object):
         return base_paths
 
     def init_recorder(self, recorder_config):
-        """Initialize the recording functionality of pywb. If recording_config is None this function is a no op"""
+        """Initialize the recording functionality of pywb. If recording_config is None this function is a no op
+
+        :param str|dict recorder_config:
+        """
         if not recorder_config:
             self.recorder = None
             self.recorder_path = None
@@ -150,7 +156,7 @@ class FrontEndApp(object):
 
         if isinstance(recorder_config, str):
             recorder_coll = recorder_config
-            recorder_config = {}
+            recorder_config = dict()
         else:
             recorder_coll = recorder_config['source_coll']
 
@@ -165,7 +171,6 @@ class FrontEndApp(object):
         self.recorder = RecorderApp(self.RECORD_SERVER % str(self.warcserver_server.port), warc_writer,
                                     accept_colls=recorder_config.get('source_filter'))
 
-
         recorder_server = GeventServer(self.recorder, port=0)
 
         self.recorder_path = self.RECORD_API % (recorder_server.port, recorder_coll)
@@ -174,11 +179,10 @@ class FrontEndApp(object):
         """Initialize and start the auto-indexing of the collections. If auto_interval is None this is a no op.
 
         :param str|int auto_interval: The auto-indexing interval from the configuration file or CLI argument
+        :rtype: None
         """
         if not auto_interval:
             return
-
-        from pywb.manager.autoindex import AutoIndexer
 
         colls_dir = self.warcserver.root_dir if self.warcserver.root_dir else None
 
@@ -187,7 +191,6 @@ class FrontEndApp(object):
         if not os.path.isdir(indexer.root_path):
             msg = 'No managed directory "{0}" for auto-indexing'
             logging.error(msg.format(indexer.root_path))
-            import sys
             sys.exit(2)
 
         msg = 'Auto-Indexing Enabled on "{0}", checking every {1} secs'
@@ -195,6 +198,12 @@ class FrontEndApp(object):
         indexer.start()
 
     def is_proxy_enabled(self, environ):
+        """Returns T/F indicating if proxy mode is enabled
+
+        :param dict environ: The WSGI environ obj for a request
+        :return: T/F indicating if proxy mode is enabled
+        :rtype: bool
+        """
         return self.proxy_prefix is not None and 'wsgiprox.proxy_host' in environ
 
     def serve_home(self, environ):
@@ -241,7 +250,7 @@ class FrontEndApp(object):
             if proxy_enabled:
                 response.add_access_control_headers(env=environ)
             return response
-        except:
+        except Exception:
             self.raise_not_found(environ, 'Static File Not Found: {0}'.format(filepath))
 
     def get_metadata(self, coll):
@@ -251,7 +260,7 @@ class FrontEndApp(object):
         :return: The collections metadata if it exists
         :rtype: dict
         """
-        #if coll == self.all_coll:
+        # if coll == self.all_coll:
         #    coll = '*'
 
         metadata = {'coll': coll,
@@ -281,9 +290,10 @@ class FrontEndApp(object):
 
         view = BaseInsertView(self.rewriterapp.jinja_env, 'search.html')
 
-        wb_prefix = environ.get('SCRIPT_NAME')
-        if wb_prefix:
-            wb_prefix += '/'
+        if environ.get('SCRIPT_NAME'):
+            wb_prefix = environ.get('SCRIPT_NAME') + '/'
+        else:
+            wb_prefix = None
 
         content = view.render_to_string(environ,
                                         wb_prefix=wb_prefix,
@@ -302,14 +312,16 @@ class FrontEndApp(object):
         """
         base_url = self.rewriterapp.paths['cdx-server']
 
-        #if coll == self.all_coll:
+        # if coll == self.all_coll:
         #    coll = '*'
 
-        cdx_url = base_url.format(coll=coll)
+        base_col_url = base_url.format(coll=coll)
 
         if environ.get('QUERY_STRING'):
-            cdx_url += '&' if '?' in cdx_url else '?'
-            cdx_url += environ.get('QUERY_STRING')
+            query_joiner = '&' if '?' in base_col_url else '?'
+            cdx_url = base_col_url + query_joiner + environ.get('QUERY_STRING')
+        else:
+            cdx_url = base_col_url
 
         try:
             res = requests.get(cdx_url, stream=True)
@@ -357,12 +369,11 @@ class FrontEndApp(object):
         script_name = environ.get('SCRIPT_NAME', '') + '/'
         if request_uri and request_uri.startswith(script_name):
             wb_url_str = request_uri[len(script_name):]
-
         else:
-            wb_url_str = to_native_str(url)
-
             if environ.get('QUERY_STRING'):
-                wb_url_str += '?' + environ.get('QUERY_STRING')
+                wb_url_str = to_native_str(url) + '?' + environ.get('QUERY_STRING')
+            else:
+                wb_url_str = to_native_str(url)
 
         metadata = self.get_metadata(coll)
         if record:
@@ -414,7 +425,7 @@ class FrontEndApp(object):
         """
         result = {'fixed': self.warcserver.list_fixed_routes(),
                   'dynamic': self.warcserver.list_dynamic_routes()
-                 }
+                  }
 
         return WbResponse.json_response(result)
 
@@ -425,7 +436,7 @@ class FrontEndApp(object):
         :return: True if the collection is valid, false otherwise
         :rtype: bool
         """
-        #if coll == self.all_coll:
+        # if coll == self.all_coll:
         #    return True
 
         return (coll in self.warcserver.list_fixed_routes() or
@@ -466,22 +477,31 @@ class FrontEndApp(object):
 
         url = referer[inx + 1:]
         host = referer[:inx + 1]
+        path_info = environ['PATH_INFO']
 
-        orig_url = environ['PATH_INFO']
         if environ.get('QUERY_STRING'):
-            orig_url += '?' + environ['QUERY_STRING']
+            orig_url = path_info + '?' + environ['QUERY_STRING']
+        else:
+            orig_url = path_info
 
         full_url = host + urljoin(url, orig_url)
         return WbResponse.redir_response(full_url, '307 Redirect')
 
     def __call__(self, environ, start_response):
+        """Handle a WSGI request
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :param start_response: The WSGI start response function
+        :return: The WbResponse for the request
+        :rtype: WbResponse
+        """
         return self.handler(environ, start_response)
 
     def handle_request(self, environ, start_response):
         """Retrieves the route handler and calls the handler returning its the response
 
         :param dict environ: The WSGI environment dictionary for the request
-        :param start_response:
+        :param start_response: The WSGI start response function
         :return: The WbResponse for the request
         :rtype: WbResponse
         """
@@ -532,7 +552,7 @@ class FrontEndApp(object):
 
         if isinstance(proxy_config, str):
             proxy_coll = proxy_config
-            proxy_config = {}
+            proxy_config = dict()
         else:
             proxy_coll = proxy_config['coll']
 
@@ -620,7 +640,7 @@ class MetadataCache(object):
         :param str template_str: The template string to be cached
         """
         self.template_str = template_str
-        self.cache = {}
+        self.cache = dict()
 
     def load(self, coll):
         """Load and receive the metadata associated with a collection.
@@ -637,8 +657,8 @@ class MetadataCache(object):
         try:
             mtime = os.path.getmtime(path)
             obj = self.cache.get(path)
-        except:
-            return {}
+        except Exception:
+            return dict()
 
         if not obj:
             return self.store_new(coll, path, mtime)
@@ -679,5 +699,3 @@ class MetadataCache(object):
 if __name__ == "__main__":
     app_server = FrontEndApp.create_app(port=8080)
     app_server.join()
-
-

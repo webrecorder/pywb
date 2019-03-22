@@ -61,6 +61,7 @@ class JinjaEnv(object):
         if packages is None:
             packages = ['pywb']
 
+        self.filters = dict()
         self._init_filters()
 
         loader = ChoiceLoader(self._make_loaders(paths, packages))
@@ -134,7 +135,6 @@ class JinjaEnv(object):
 
     def _init_filters(self):
         """Initialize the default pywb provided Jninja filters available during template rendering"""
-        self.filters = {}
 
         @self.template_filter()
         def format_ts(value, format_='%a, %b %d %Y %H:%M:%S'):
@@ -175,7 +175,7 @@ class JinjaEnv(object):
         @self.template_filter()
         def tobool(bool_val):
             """Converts a python boolean to a JS "true" or "false" string
-            :param any obj: A value to be evaluated as a boolean
+            :param any bool_val: A value to be evaluated as a boolean
             :return: The string "true" or "false" to be inserted into JS
             """
 
@@ -227,7 +227,6 @@ class BaseInsertView(object):
 
         kwargs['env'] = env
         kwargs['static_prefix'] = env.get('pywb.host_prefix', '') + env.get('pywb.app_prefix', '') + '/static'
-
 
         return template.render(**kwargs)
 

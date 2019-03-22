@@ -13,3 +13,4 @@ gevent
 webassets==0.12.1
 portalocker
 wsgiprox>=1.5.1
+tldextract

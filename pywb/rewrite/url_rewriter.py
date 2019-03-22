@@ -35,7 +35,7 @@ class UrlRewriter(object):
             self.prefix_scheme = None
         self.prefix_abs = self.prefix and self.prefix.startswith(self.PROTOCOLS)
         self.cookie_scope = cookie_scope
-        self.rewrite_opts = rewrite_opts or {}
+        self.rewrite_opts = rewrite_opts or dict()
 
         if self.rewrite_opts.get('punycode_links'):
             self.wburl._do_percent_encode = False
@@ -46,13 +46,13 @@ class UrlRewriter(object):
             return url
 
         if (self.prefix and
-             self.prefix != '/' and
-             url.startswith(self.prefix)):
+                self.prefix != '/' and
+                url.startswith(self.prefix)):
             return url
 
         if (self.full_prefix and
-             self.full_prefix != self.prefix and
-             url.startswith(self.full_prefix)):
+                self.full_prefix != self.prefix and
+                url.startswith(self.full_prefix)):
             return url
 
         wburl = self.wburl
@@ -86,9 +86,10 @@ class UrlRewriter(object):
 
         if not is_abs and self.prefix_abs and not self.rewrite_opts.get('no_match_rel'):
             parts = final_url.split('/', 3)
-            final_url = '/'
             if len(parts) == 4:
-                final_url += parts[3]
+                final_url = '/' + parts[3]
+            else:
+                final_url = '/'
 
         # experiment for setting scheme rel url
         elif scheme_rel and self.prefix_abs:

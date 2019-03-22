@@ -1,21 +1,26 @@
-from warcio.utils import to_native_str
-
-from pywb.utils.loaders import load_yaml_config
-from pywb.utils.format import to_bool
-from pywb import DEFAULT_RULES_FILE
-
-import re
 import os
+import re
 
 from six import iterkeys
 from six.moves.urllib.parse import urlsplit
-from collections import namedtuple
+from warcio.utils import to_native_str
+
+from pywb import DEFAULT_RULES_FILE
+from pywb.utils.format import to_bool
+from pywb.utils.loaders import load_yaml_config
 
 
 # ============================================================================
-FuzzyRule = namedtuple('FuzzyRule',
-                       'url_prefix, regex, replace_after, filter_str, ' +
-                       'match_type, find_all')
+class FuzzyRule(object):
+    __slots__ = ('url_prefix', 'regex', 'replace_after', 'filter_str', 'match_type', 'find_all')
+
+    def __init__(self, url_prefix, regex, replace_after, filter_str, match_type, find_all):
+        self.url_prefix = url_prefix
+        self.regex = regex
+        self.replace_after = replace_after
+        self.filter_str = filter_str
+        self.match_type = match_type
+        self.find_all = find_all
 
 
 # ============================================================================
@@ -30,7 +35,7 @@ class FuzzyMatcher(object):
     def __init__(self, filename=None):
         filename = filename or DEFAULT_RULES_FILE
         config = load_yaml_config(filename)
-        self.rules = []
+        self.rules = []  # type: list[FuzzyRule]
         for rule in config.get('rules'):
             rule = self.parse_fuzzy_rule(rule)
             if rule:
@@ -41,7 +46,10 @@ class FuzzyMatcher(object):
         self.url_normalize_rx = [(re.compile(rule['match']), rule['replace']) for rule in self.default_filters['url_normalize']]
 
     def parse_fuzzy_rule(self, rule):
-        """ Parse rules using all the different supported forms
+        """Parse rules using all the different supported forms
+        :param dict rule:
+        :return: The parsed fuzzy rule
+        :rtype: FuzzyRule
         """
         url_prefix = rule.get('url_prefix')
         config = rule.get('fuzzy_lookup')
@@ -99,6 +107,7 @@ class FuzzyMatcher(object):
         # don't include trailing '?' if no filters and replace_after '?'
         no_filters = (filters == {'urlkey:'}) and (matched_rule.replace_after == '?')
 
+        final_url = url
         inx = url.find(matched_rule.replace_after)
         if inx > 0:
             length = inx + len(matched_rule.replace_after)
@@ -108,15 +117,15 @@ class FuzzyMatcher(object):
                 # don't include trailing '/' if match '/?'
                 if url[length - 1] == '/':
                     length -= 1
-            url = url[:length]
+            final_url = url[:length]
         elif not no_filters:
-            url += matched_rule.replace_after[0]
+            final_url = url + matched_rule.replace_after[0]
 
         if matched_rule.match_type == 'domain':
             host = urlsplit(url).netloc
-            url = host.split('.', 1)[1]
+            final_url = host.split('.', 1)[1]
 
-        fuzzy_params = {'url': url,
+        fuzzy_params = {'url': final_url,
                         'matchType': matched_rule.match_type,
                         'filter': filters,
                         'is_fuzzy': '1'}
@@ -129,24 +138,19 @@ class FuzzyMatcher(object):
 
     def make_regex(self, config):
         if isinstance(config, list):
-            string = self.make_query_match_regex(config)
-
+            regex_string = self.make_query_match_regex(config)
         elif isinstance(config, dict):
-            string = config.get('regex', '')
-            string += self.make_query_match_regex(config.get('args', []))
-
+            regex_string = config.get('regex', '') + self.make_query_match_regex(config.get('args', []))
         else:
-            string = str(config)
-
-        return re.compile(string)
+            regex_string = str(config)
+        return re.compile(regex_string)
 
     def make_query_match_regex(self, params_list):
         params_list.sort()
+        return '.*'.join([self._conv(param) for param in params_list])
 
-        def conv(value):
-            return '[?&]({0}=[^&]+)'.format(re.escape(value))
-
-        return '.*'.join([conv(param) for param in params_list])
+    def _conv(self, value):
+        return '[?&]({0}=[^&]+)'.format(re.escape(value))
 
     def __call__(self, index_source, params):
         cdx_iter, errs = index_source(params)
@@ -178,7 +182,7 @@ class FuzzyMatcher(object):
 
         is_custom = (rule.url_prefix != [''])
 
-        rx_cache = {}
+        rx_cache = dict()
 
         for cdx in new_iter:
             if is_custom or self.match_general_fuzzy_query(url, urlkey, cdx, rx_cache):

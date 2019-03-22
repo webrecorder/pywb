@@ -1,13 +1,11 @@
-from pywb.rewrite.cookie_rewriter import WbUrlBaseCookieRewriter, HostScopeCookieRewriter
-from warcio.timeutils import datetime_to_http_date
-from six.moves import zip
+import time
 
 import redis
-
-import tldextract
-import time
-import datetime
 import six
+import tldextract
+from six.moves import zip
+
+from pywb.rewrite.cookie_rewriter import HostScopeCookieRewriter, WbUrlBaseCookieRewriter
 
 
 # =============================================================================
@@ -49,8 +47,7 @@ class CookieTracker(object):
                 full = n + '=' + v
                 cookies.append(full.split(';')[0])
 
-                full += '; Max-Age=' + str(self.expire_time)
-                set_cookies.extend(host_cookie_rewriter.rewrite(full))
+                set_cookies.extend(host_cookie_rewriter.rewrite(full + '; Max-Age=' + str(self.expire_time)))
 
             expire_set.append(cookie_key + '.' + domain)
 
@@ -79,16 +76,24 @@ class CookieTracker(object):
         main = tld.domain + '.' + tld.suffix
         full = tld.subdomain + '.' + main
 
-        def get_all_subdomains(main, full):
-            doms = []
-            while main != full:
-                full = full.split('.', 1)[1]
-                doms.append(full)
-
-            return doms
-
-        all_subs = get_all_subdomains(main, full)
+        all_subs = CookieTracker.get_all_subdomains(main, full)
         return all_subs
+
+    @staticmethod
+    def get_all_subdomains(main, full):
+        """Extracts all subdomains from the supplied full domain
+
+        :param str main: The top level domain
+        :param str full: The full domain (includes the sub domains)
+        :return: A list of all sub domains
+        :rtype: list[str]
+        """
+        doms = []
+        while main != full:
+            full = full.split('.', 1)[1]
+            doms.append(full)
+
+        return doms
 
 
 # =============================================================================
@@ -115,20 +120,20 @@ class DomainCacheCookieRewriter(WbUrlBaseCookieRewriter):
             #self.cookiejar.set_cookie(self.morsel_to_cookie(morsel))
             #print(morsel, self.cookie_key + domain)
 
-            string = morsel.value
+            cookie_str = [morsel.value]
             if morsel.get('path'):
-                string += '; Path=' + morsel.get('path')
+                cookie_str.append('; Path=' + morsel.get('path'))
 
             if morsel.get('httponly'):
-                string += '; HttpOnly'
+                cookie_str.append('; HttpOnly')
 
             if morsel.get('secure'):
-                string += '; Secure'
+                cookie_str.append('; Secure')
 
             self.cookie_tracker.add_cookie(self.cookie_key,
                                            domain,
                                            morsel.key,
-                                           string)
+                                           ''.join(cookie_str))
 
         # else set cookie to rewritten path
         if morsel.get('path'):
@@ -150,12 +155,12 @@ class DomainCacheCookieRewriter(WbUrlBaseCookieRewriter):
 
         try:
             expires = time.strptime(expires, '%a, %d-%b-%Y %H:%M:%S GMT')
-        except:
+        except Exception:
             pass
 
         try:
             expires = time.strptime(expires, '%a, %d %b %Y %H:%M:%S GMT')
-        except:
+        except Exception:
             pass
 
         expires = time.mktime(expires)

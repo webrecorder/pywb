@@ -1,27 +1,29 @@
-from requests.adapters import HTTPAdapter
-import requests
 import os
 
+import requests
 import six.moves.http_client
+from requests.adapters import HTTPAdapter
+
 six.moves.http_client._MAXHEADERS = 10000
 
 SOCKS_PROXIES = None
 orig_getaddrinfo = None
 
 
-#=============================================================================
+# =============================================================================
 class DefaultAdapters(object):
     live_adapter = HTTPAdapter(max_retries=3)
     remote_adapter = HTTPAdapter(max_retries=3)
 
+
 requests.packages.urllib3.disable_warnings()
 
 
-#=============================================================================
+# =============================================================================
 def patch_socks():
     try:
         import socks
-    except ImportError:  #pragma: no cover
+    except ImportError:  # pragma: no cover
         print('Ignoring SOCKS_HOST: PySocks must be installed to use SOCKS proxy')
         return
 
@@ -32,7 +34,7 @@ def patch_socks():
 
     # Set socks proxy and wrap the urllib module
     socks.set_default_proxy(socks.PROXY_TYPE_SOCKS5, socks_host, socks_port, True)
-    #socket.socket = socks.socksocket # sets default socket to be the sockipy socket
+    # socket.socket = socks.socksocket # sets default socket to be the sockipy socket
 
     # store original getaddrinfo
     global orig_getaddrinfo
@@ -56,6 +58,7 @@ def patch_socks():
     SOCKS_PROXIES = {'http': socks_url,
                      'https': socks_url}
 
+
 # =============================================================================
 def unpatch_socks():
     global orig_getaddrinfo
@@ -73,6 +76,3 @@ def unpatch_socks():
 # =============================================================================
 if os.environ.get('SOCKS_HOST'):
     patch_socks()
-
-
-

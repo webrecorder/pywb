@@ -1,24 +1,25 @@
-from pywb.rewrite.content_rewriter import BaseContentRewriter
+import copy
 
-from pywb.rewrite.html_rewriter import HTMLRewriter
-from pywb.rewrite.html_insert_rewriter import HTMLInsertOnlyRewriter
-
-from pywb.rewrite.regex_rewriters import RegexRewriter, CSSRewriter, XMLRewriter
-from pywb.rewrite.regex_rewriters import JSLocationOnlyRewriter, JSNoneRewriter, JSWombatProxyRewriter
-
-from pywb.rewrite.header_rewriter import DefaultHeaderRewriter
-from pywb.rewrite.cookie_rewriter import HostScopeCookieRewriter
-
-from pywb.rewrite.jsonp_rewriter import JSONPRewriter
-
-from pywb.rewrite.rewrite_dash import RewriteDASH
-from pywb.rewrite.rewrite_hls import RewriteHLS
-from pywb.rewrite.rewrite_amf import RewriteAMF
+from werkzeug.useragents import UserAgent
 
 from pywb import DEFAULT_RULES_FILE
-
-import copy
-from werkzeug.useragents import UserAgent
+from pywb.rewrite.content_rewriter import BaseContentRewriter
+from pywb.rewrite.cookie_rewriter import HostScopeCookieRewriter
+from pywb.rewrite.header_rewriter import DefaultHeaderRewriter
+from pywb.rewrite.html_insert_rewriter import HTMLInsertOnlyRewriter
+from pywb.rewrite.html_rewriter import HTMLRewriter
+from pywb.rewrite.jsonp_rewriter import JSONPRewriter
+from pywb.rewrite.regex_rewriters import (
+    CSSRewriter,
+    JSLocationOnlyRewriter,
+    JSNoneRewriter,
+    JSWombatProxyRewriter,
+    RegexRewriter,
+    XMLRewriter
+)
+from pywb.rewrite.rewrite_amf import RewriteAMF
+from pywb.rewrite.rewrite_dash import RewriteDASH
+from pywb.rewrite.rewrite_hls import RewriteHLS
 
 
 # ============================================================================
@@ -74,9 +75,9 @@ class DefaultRewriter(BaseContentRewriter):
         'application/x-amf': 'amf',
 
         # XML -- don't rewrite xml
-        #'text/xml': 'xml',
-        #'application/xml': 'xml',
-        #'application/rss+xml': 'xml',
+        # 'text/xml': 'xml',
+        # 'application/xml': 'xml',
+        # 'application/rss+xml': 'xml',
 
         # PLAIN
         'text/plain': 'guess-text',
@@ -93,7 +94,7 @@ class DefaultRewriter(BaseContentRewriter):
     }
 
     def __init__(self, replay_mod='', config=None):
-        config = config or {}
+        config = config or dict()
         rules_file = config.get('rules_file', DEFAULT_RULES_FILE)
         super(DefaultRewriter, self).__init__(rules_file, replay_mod)
         self.all_rewriters = copy.copy(self.DEFAULT_REWRITERS)
@@ -140,4 +141,4 @@ class RewriterWithJSProxy(DefaultRewriter):
 
         min_vers = supported.get(ua.browser)
 
-        return (min_vers and ua.version >= min_vers)
+        return min_vers and ua.version >= min_vers

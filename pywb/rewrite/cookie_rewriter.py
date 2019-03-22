@@ -1,6 +1,8 @@
-from six.moves.http_cookies import SimpleCookie, CookieError
-import six
 import re
+import traceback
+
+import six
+from six.moves.http_cookies import CookieError, SimpleCookie
 
 
 #================================================================
@@ -18,7 +20,6 @@ class WbUrlBaseCookieRewriter(object):
         try:
             cookie = SimpleCookie(cookie_str)
         except CookieError:
-            import traceback
             traceback.print_exc()
             return results
 

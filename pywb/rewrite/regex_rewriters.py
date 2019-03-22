@@ -77,29 +77,28 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
         check_loc = '(self.__WB_check_loc && self.__WB_check_loc(location) || {}).href = '
 
         self.local_objs = [
-                      'window',
-                      'self',
-                      'document',
-                      'location',
-                      'top',
-                      'parent',
-                      'frames',
-                      'opener']
-
+            'window',
+            'self',
+            'document',
+            'location',
+            'top',
+            'parent',
+            'frames',
+            'opener']
 
         local_declares = '\n'.join([local_var_line.format(obj, local_init_func_name) for obj in self.local_objs])
 
         prop_str = '|'.join(self.local_objs)
 
         rules = [
-           (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
-           (r'(?<![$.])\s*location\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
-           (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(this_rw), 0),
-           (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + this_rw), 0),
-           (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(this_rw), 0),
-           (r'(?<=[=])\s*this\b\s*(?![.$])', self.replace_str(this_rw), 0),
-           ('\}(?:\s*\))?\s*\(this\)', self.replace_str(this_rw), 0),
-           (r'(?<=[^|&][|&]{2})\s*this\b\s*(?![|&.$]([^|&]|$))', self.replace_str(this_rw), 0),
+            (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
+            (r'(?<![$.])\s*location\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
+            (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(this_rw), 0),
+            (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + this_rw), 0),
+            (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(this_rw), 0),
+            (r'(?<=[=])\s*this\b\s*(?![.$])', self.replace_str(this_rw), 0),
+            ('\}(?:\s*\))?\s*\(this\)', self.replace_str(this_rw), 0),
+            (r'(?<=[^|&][|&]{2})\s*this\b\s*(?![|&.$]([^|&]|$))', self.replace_str(this_rw), 0),
         ]
 
         super(JSWombatProxyRules, self).__init__(rules)
@@ -146,15 +145,11 @@ class RegexRewriter(StreamingRewriter):
             #    op = RegexRewriter.DEFAULT_OP(op)
 
             result = op(m.group(i), self.url_rewriter)
-            final_str = result
-
             # if extracting partial match
             if i != full_m:
-                final_str = m.string[m.start(full_m):m.start(i)]
-                final_str += result
-                final_str += m.string[m.end(i):m.end(full_m)]
+                return m.string[m.start(full_m):m.start(i)] + result + m.string[m.end(i):m.end(full_m)]
 
-            return final_str
+            return result
 
     @staticmethod
     def parse_rules_from_config(config):
@@ -229,6 +224,7 @@ class JSLinkAndLocationRewriter(RegexRewriter):
 
 JSRewriter = JSLinkAndLocationRewriter
 
+
 # =================================================================
 class JSWombatProxyRewriter(RegexRewriter):
     """
@@ -256,15 +252,11 @@ class JSWombatProxyRewriter(RegexRewriter):
             return string
 
         if string.startswith('javascript:'):
-            string = 'javascript:' + self.first_buff + self.rewrite(string[len('javascript:'):])
+            final_string = ['javascript:', self.first_buff, self.rewrite(string[len('javascript:'):]), self.last_buff]
         else:
-            string = self.first_buff + self.rewrite(string)
+            final_string = [self.first_buff, self.rewrite(string), self.last_buff]
 
-        string += self.last_buff
-
-        string = string.replace('\n', '')
-
-        return string
+        return ''.join(final_string).replace('\n', '')
 
     def final_read(self):
         return self.last_buff
@@ -317,6 +309,7 @@ class CSSRules(RxRules):
 
         super(CSSRules, self).__init__(rules)
 
+
 # =================================================================
 class CSSRewriter(RegexRewriter):
     rules_factory = CSSRules()
@@ -345,6 +338,3 @@ class XMLRewriter(RegexRewriter):
             return False
 
         return True
-
-
-

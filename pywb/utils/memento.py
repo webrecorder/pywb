@@ -1,10 +1,8 @@
 import re
-import six
 
 from warcio.timeutils import timestamp_to_http_date
 
 from pywb.utils.wbexception import BadRequestException
-
 
 LINK_SPLIT = re.compile(',\s*(?=[<])')
 LINK_SEG_SPLIT = re.compile(';\s*')
@@ -14,17 +12,17 @@ LINK_PROP = re.compile('([\w]+)="([^"]+)')
 FIND_DT = re.compile('datetime=\"([^\"]+)\"')
 
 
-#=============================================================================
+# =============================================================================
 class MementoException(BadRequestException):
     pass
 
 
-#=============================================================================
+# =============================================================================
 class MementoUtils(object):
     @classmethod
     def parse_links(cls, link_header, def_name='timemap'):
         links = LINK_SPLIT.split(link_header)
-        results = {}
+        results = dict()
         mementos = []
 
         for link in links:
@@ -91,31 +89,29 @@ class MementoUtils(object):
 
     @classmethod
     def wrap_timemap_header(cls, url, timegate_url, timemap_url, timemap):
-        string = cls.make_link(timemap_url, "self")
+        header = [cls.make_link(timemap_url, "self")]
         m = FIND_DT.search(timemap)
         if m:
-            string += '; from="{0}"'.format(m.group(1))
+            header.append('; from="{0}"'.format(m.group(1)))
 
-        string += ',\n'
+        header.append(',\n')
 
-        string += cls.make_link(timegate_url, "timegate") + ',\n'
-        string += cls.make_link(url, "original") + ',\n'
-        string += timemap
-        return string
-
-    @classmethod
-    def make_link(cls, url, type):
-        if type in ('timemap', 'self'):
-            return '<{0}>; rel="{1}"; type="application/link-format"'.format(url, type)
-
-        return '<{0}>; rel="{1}"'.format(url, type)
+        header.append(cls.make_link(timegate_url, "timegate") + ',\n')
+        header.append(cls.make_link(url, "original") + ',\n')
+        header.append(timemap)
+        return ''.join(header)
 
     @classmethod
-    def make_memento_link(cls, url, type, dt, coll=None):
-        res = '<{0}>; rel="{1}"; datetime="{2}"'.format(url, type, dt)
+    def make_link(cls, url, type_):
+        if type_ in ('timemap', 'self'):
+            return '<{0}>; rel="{1}"; type="application/link-format"'.format(url, type_)
+
+        return '<{0}>; rel="{1}"'.format(url, type_)
+
+    @classmethod
+    def make_memento_link(cls, url, type_, dt, coll=None):
+        res = '<{0}>; rel="{1}"; datetime="{2}"'.format(url, type_, dt)
         if coll:
-            res += '; collection="{0}"'.format(coll)
+            return res + '; collection="{0}"'.format(coll)
 
         return res
-
-

@@ -1,22 +1,16 @@
-from pywb.warcserver.index.cdxobject import CDXObject, IDXObject
-from pywb.warcserver.index.cdxobject import TIMESTAMP, STATUSCODE, MIMETYPE, DIGEST
-from pywb.warcserver.index.cdxobject import OFFSET, LENGTH, FILENAME
-
-from pywb.warcserver.index.query import CDXQuery
-
-from warcio.timeutils import timestamp_to_sec, pad_timestamp
-from warcio.timeutils import PAD_14_DOWN, PAD_14_UP
-
 import bisect
-
-from six.moves import zip, range, map
 import re
-
-from heapq import merge
 from collections import deque
+from heapq import merge
+
+from six.moves import map, range, zip
+from warcio.timeutils import PAD_14_DOWN, PAD_14_UP, pad_timestamp, timestamp_to_sec
+
+from pywb.warcserver.index.cdxobject import CDXObject, DIGEST, FILENAME, IDXObject, LENGTH, MIMETYPE, OFFSET, \
+    STATUSCODE, TIMESTAMP
 
 
-#=================================================================
+# =================================================================
 def cdx_load(sources, query, process=True):
     """
     merge text CDX lines from sources, return an iterator for
@@ -48,19 +42,19 @@ def cdx_load(sources, query, process=True):
     return cdx_iter
 
 
-#=================================================================
+# =================================================================
 def cdx_to_text(cdx_iter, fields):
     for cdx in cdx_iter:
         yield cdx.to_text(fields)
 
 
-#=================================================================
+# =================================================================
 def cdx_to_json(cdx_iter, fields):
     for cdx in cdx_iter:
         yield cdx.to_json(fields)
 
 
-#=================================================================
+# =================================================================
 def process_cdx(cdx_iter, query):
     if query.resolve_revisits:
         cdx_iter = cdx_resolve_revisits(cdx_iter)
@@ -92,7 +86,7 @@ def process_cdx(cdx_iter, query):
     return cdx_iter
 
 
-#=================================================================
+# =================================================================
 def create_merged_cdx_gen(sources, query):
     """
     create a generator which loads and merges cdx streams
@@ -109,7 +103,7 @@ def create_merged_cdx_gen(sources, query):
         yield cdx
 
 
-#=================================================================
+# =================================================================
 def make_obj_iter(text_iter, query):
     """
     convert text cdx stream to CDXObject/IDXObject.
@@ -122,17 +116,17 @@ def make_obj_iter(text_iter, query):
     return (cls(line) for line in text_iter)
 
 
-#=================================================================
+# =================================================================
 def cdx_limit(cdx_iter, limit):
     """
     limit cdx to at most `limit`.
     """
-#    for cdx, _ in itertools.izip(cdx_iter, xrange(limit)):
-#        yield cdx
+    #    for cdx, _ in itertools.izip(cdx_iter, xrange(limit)):
+    #        yield cdx
     return (cdx for cdx, _ in zip(cdx_iter, range(limit)))
 
 
-#=================================================================
+# =================================================================
 def cdx_reverse(cdx_iter, limit):
     """
     return cdx records in reverse order.
@@ -157,7 +151,7 @@ def cdx_reverse(cdx_iter, limit):
         yield cdx
 
 
-#=================================================================
+# =================================================================
 class CDXFilter(object):
     def __init__(self, string):
         # invert filter
@@ -205,17 +199,17 @@ class CDXFilter(object):
         return matched ^ self.invert
 
     def exact(self, val):
-        return (self.filter_str == val)
+        return self.filter_str == val
 
     def contains(self, val):
-        return (self.filter_str in val)
+        return self.filter_str in val
 
     def rx_match(self, val):
         res = self.regex.match(val)
         return res is not None
 
 
-#=================================================================
+# =================================================================
 def cdx_filter(cdx_iter, filter_strings):
     """
     filter CDX by regex if each filter is :samp:`{field}:{regex}` form,
@@ -232,7 +226,7 @@ def cdx_filter(cdx_iter, filter_strings):
             yield cdx
 
 
-#=================================================================
+# =================================================================
 def cdx_clamp(cdx_iter, from_ts, to_ts):
     """
     Clamp by start and end ts
@@ -253,7 +247,7 @@ def cdx_clamp(cdx_iter, from_ts, to_ts):
         yield cdx
 
 
-#=================================================================
+# =================================================================
 def cdx_collapse_time_status(cdx_iter, timelen=10):
     """
     collapse by timestamp and status code.
@@ -271,7 +265,7 @@ def cdx_collapse_time_status(cdx_iter, timelen=10):
             yield cdx
 
 
-#=================================================================
+# =================================================================
 def cdx_sort_closest(closest, cdx_iter, limit=10):
     """
     sort CDXCaptureResult by closest to timestamp.
@@ -285,7 +279,7 @@ def cdx_sort_closest(closest, cdx_iter, limit=10):
         key = abs(closest_sec - sec)
 
         # create tuple to sort by key
-        #bisect.insort(closest_cdx, (key, cdx))
+        # bisect.insort(closest_cdx, (key, cdx))
 
         i = bisect.bisect_right(closest_keys, key)
         closest_keys.insert(i, key)
@@ -302,11 +296,11 @@ def cdx_sort_closest(closest, cdx_iter, limit=10):
     for cdx in closest_cdx:
         yield cdx
 
-    #for cdx in map(lambda x: x[1], closest_cdx):
+    # for cdx in map(lambda x: x[1], closest_cdx):
     #    yield cdx
 
 
-#=================================================================
+# =================================================================
 # resolve revisits
 
 # Fields to append from cdx original to revisit
@@ -322,7 +316,7 @@ def cdx_resolve_revisits(cdx_iter):
     field values in previous non-revisit (original) CDX record.
     They are all ``"-"`` for non-revisit records.
     """
-    originals = {}
+    originals = dict()
 
     for cdx in cdx_iter:
         is_revisit = cdx.is_revisit()
@@ -339,14 +333,18 @@ def cdx_resolve_revisits(cdx_iter):
                 originals[digest] = cdx
 
         if original_cdx and is_revisit:
-            fill_orig = lambda field: original_cdx.get(field, '-')
+
+            def fill_orig(a_field):
+                return original_cdx.get(a_field, '-')
+
             # Transfer mimetype and statuscode
             if MIMETYPE in cdx:
                 cdx[MIMETYPE] = original_cdx.get(MIMETYPE, '')
             if STATUSCODE in cdx:
                 cdx[STATUSCODE] = original_cdx.get(STATUSCODE, '')
         else:
-            fill_orig = lambda field: '-'
+            def fill_orig(a_field):
+                return '-'
 
         # Always add either the original or empty '- - -'
         for field in ORIG_TUPLE:

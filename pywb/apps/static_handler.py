@@ -1,15 +1,14 @@
 import mimetypes
 import os
 
-from pywb.utils.loaders import LocalFileLoader
-
 from pywb.apps.wbrequestresponse import WbResponse
+from pywb.utils.loaders import LocalFileLoader
 from pywb.utils.wbexception import NotFoundException
 
 
-#=================================================================
+# =================================================================
 # Static Content Handler
-#=================================================================
+# =================================================================
 class StaticHandler(object):
     def __init__(self, static_path):
         mimetypes.init()
@@ -42,7 +41,7 @@ class StaticHandler(object):
             if 'wsgi.file_wrapper' in environ:
                 try:
                     reader = environ['wsgi.file_wrapper'](data)
-                except:
+                except Exception:
                     pass
 
             if not reader:
@@ -61,5 +60,3 @@ class StaticHandler(object):
         except IOError:
             raise NotFoundException('Static File Not Found: ' +
                                     url_str)
-
-

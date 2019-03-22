@@ -1,31 +1,26 @@
+import logging
+import re
+
+import redis
+import requests
+from warcio.timeutils import PAD_14_DOWN, http_date_to_timestamp, pad_timestamp, timestamp_now, timestamp_to_http_date
+
 from pywb.utils.binsearch import iter_range
 from pywb.utils.canonicalize import canonicalize
+from pywb.utils.format import res_template
+from pywb.utils.memento import MementoUtils
 from pywb.utils.wbexception import NotFoundException
-
-from warcio.timeutils import timestamp_to_http_date, http_date_to_timestamp
-from warcio.timeutils import timestamp_now, pad_timestamp, PAD_14_DOWN
-
 from pywb.warcserver.http import DefaultAdapters
 from pywb.warcserver.index.cdxobject import CDXObject
 
-from pywb.utils.format import ParamFormatter, res_template
-from pywb.utils.memento import MementoUtils
 
-import redis
-
-import requests
-
-import re
-import logging
-
-
-#=============================================================================
+# =============================================================================
 class BaseIndexSource(object):
     WAYBACK_ORIG_SUFFIX = '{timestamp}id_/{url}'
 
     logger = logging.getLogger('warcserver')
 
-    def load_index(self, params):  #pragma: no cover
+    def load_index(self, params):  # pragma: no cover
         raise NotImplemented()
 
     def _get_referrer(self, params):
@@ -43,11 +38,12 @@ class BaseIndexSource(object):
         self.sesh.mount('https://', adapter)
 
 
-#=============================================================================
+# =============================================================================
 class FileIndexSource(BaseIndexSource):
     CDX_EXT = ('.cdx', '.cdxj')
 
     def __init__(self, filename):
+        super(FileIndexSource, self).__init__()
         self.filename_template = filename
 
     def load_index(self, params):
@@ -58,13 +54,7 @@ class FileIndexSource(BaseIndexSource):
         except IOError:
             raise NotFoundException(filename)
 
-        def do_load(fh):
-            with fh:
-                gen = iter_range(fh, params['key'], params['end_key'])
-                for line in gen:
-                    yield CDXObject(line)
-
-        return do_load(fh)
+        return self.__do_load(fh, params)
 
     def __repr__(self):
         return '{0}(file://{1})'.format(self.__class__.__name__,
@@ -78,6 +68,12 @@ class FileIndexSource(BaseIndexSource):
             return False
 
         return self.filename_template == other.filename_template
+
+    def __do_load(self, fh, params):
+        with fh:
+            gen = iter_range(fh, params['key'], params['end_key'])
+            for line in gen:
+                yield CDXObject(line)
 
     @classmethod
     def init_from_string(cls, value):
@@ -98,11 +94,12 @@ class FileIndexSource(BaseIndexSource):
         return cls.init_from_string(config['path'])
 
 
-#=============================================================================
+# =============================================================================
 class RemoteIndexSource(BaseIndexSource):
     CDX_MATCH_RX = re.compile('^cdxj?\+(?P<url>https?\:.*)')
 
     def __init__(self, api_url, replay_url, url_field='load_url', closest_limit=10):
+        super(RemoteIndexSource, self).__init__()
         self.api_url = api_url
         self.replay_url = replay_url
         self.url_field = url_field
@@ -112,7 +109,7 @@ class RemoteIndexSource(BaseIndexSource):
     def _get_api_url(self, params):
         api_url = res_template(self.api_url, params)
         if 'closest' in params and self.closest_limit:
-            api_url += '&limit=' + str(self.closest_limit)
+            return api_url + '&limit=' + str(self.closest_limit)
 
         return api_url
 
@@ -126,16 +123,16 @@ class RemoteIndexSource(BaseIndexSource):
             raise NotFoundException(api_url)
 
         lines = r.content.strip().split(b'\n')
-        def do_load(lines):
-            for line in lines:
-                if not line:
-                    continue
+        return self.__do_load(lines, params)
 
-                cdx = CDXObject(line)
-                self._set_load_url(cdx, params)
-                yield cdx
+    def __do_load(self, lines, params):
+        for line in lines:
+            if not line:
+                continue
 
-        return do_load(lines)
+            cdx = CDXObject(line)
+            self._set_load_url(cdx, params)
+            yield cdx
 
     def _set_load_url(self, cdx, params):
         source_coll = ''
@@ -146,6 +143,7 @@ class RemoteIndexSource(BaseIndexSource):
         cdx[self.url_field] = self.replay_url.format(url=cdx['url'],
                                                      timestamp=cdx['timestamp'],
                                                      src_coll=source_coll)
+
     def __repr__(self):
         return '{0}({1}, {2})'.format(self.__class__.__name__,
                                       self.api_url,
@@ -179,12 +177,10 @@ class RemoteIndexSource(BaseIndexSource):
         if not coll and url.endswith('-cdx'):
             replay = url[:-4] + '/' + cls.WAYBACK_ORIG_SUFFIX
         else:
-        # add specified coll, if any
+            # add specified coll, if any
             replay = url.rsplit('/', 1)[0] + coll + '/' + cls.WAYBACK_ORIG_SUFFIX
 
-        url += '?url={url}&closest={closest}&sort=closest'
-
-        return cls(url, replay)
+        return cls(url + '?url={url}&closest={closest}&sort=closest', replay)
 
     @classmethod
     def init_from_config(cls, config):
@@ -194,9 +190,10 @@ class RemoteIndexSource(BaseIndexSource):
         return cls(config['api_url'], config['replay_url'])
 
 
-#=============================================================================
+# =============================================================================
 class LiveIndexSource(BaseIndexSource):
     def __init__(self):
+        super(LiveIndexSource, self).__init__()
         self._init_sesh(DefaultAdapters.live_adapter)
 
     def load_index(self, params):
@@ -261,14 +258,15 @@ class LiveIndexSource(BaseIndexSource):
         return cls()
 
 
-#=============================================================================
+# =============================================================================
 class RedisIndexSource(BaseIndexSource):
-    def __init__(self, redis_url=None, redis=None, key_template=None, **kwargs):
+    def __init__(self, redis_url=None, redis_instance=None, key_template=None, **kwargs):
+        super(RedisIndexSource, self).__init__()
         if redis_url:
-            redis, key_template = self.parse_redis_url(redis_url, redis)
+            redis_instance, key_template = self.parse_redis_url(redis_url, redis_instance)
 
         self.redis_url = redis_url
-        self.redis = redis
+        self.redis = redis_instance
         self.redis_key_template = key_template
         self.member_key_template = kwargs.get('member_key_templ')
 
@@ -303,7 +301,7 @@ class RedisIndexSource(BaseIndexSource):
             keys = self._load_key_set(key)
             params[scan_key] = keys
 
-        #match_templ = match_templ.encode('utf-8')
+        # match_templ = match_templ.encode('utf-8')
 
         return [match_templ.replace('*', key) for key in keys]
 
@@ -331,14 +329,13 @@ class RedisIndexSource(BaseIndexSource):
         index_list = self.redis.zrangebylex(z_key,
                                             b'[' + params['key'],
                                             b'(' + params['end_key'])
+        return self.__do_load(index_list)
 
-        def do_load(index_list):
-            for line in index_list:
-                if isinstance(line, str):
-                    line = line.encode('utf-8')
-                yield CDXObject(line)
-
-        return do_load(index_list)
+    def __do_load(self, index_list):
+        for line in index_list:
+            if isinstance(line, str):
+                line = line.encode('utf-8')
+            yield CDXObject(line)
 
     def __repr__(self):
         return '{0}({1}, {2}, {3})'.format(self.__class__.__name__,
@@ -369,9 +366,10 @@ class RedisIndexSource(BaseIndexSource):
         return cls.init_from_string(config['redis_url'])
 
 
-#=============================================================================
+# =============================================================================
 class MementoIndexSource(BaseIndexSource):
     def __init__(self, timegate_url, timemap_url, replay_url):
+        super(MementoIndexSource, self).__init__()
         self.timegate_url = timegate_url
         self.timemap_url = timemap_url
         self.replay_url = replay_url
@@ -427,7 +425,7 @@ class MementoIndexSource(BaseIndexSource):
         return links
 
     def _get_headers(self, params):
-        return {}
+        return dict()
 
     def handle_timemap(self, params):
         url = res_template(self.timemap_url, params)
@@ -438,7 +436,7 @@ class MementoIndexSource(BaseIndexSource):
                                 timeout=params.get('_timeout'))
 
             res.raise_for_status()
-            assert(res.text)
+            assert (res.text)
 
         except Exception as e:
             self.logger.debug('FAILED: ' + str(e))
@@ -496,7 +494,6 @@ class MementoIndexSource(BaseIndexSource):
         if value.startswith(('http://', 'https://')):
             return cls.from_timegate_url(value, 'link')
 
-
     @classmethod
     def init_from_config(cls, config):
         if config['type'] != cls._init_id():
@@ -507,7 +504,7 @@ class MementoIndexSource(BaseIndexSource):
                    config['replay_url'])
 
 
-#=============================================================================
+# =============================================================================
 class WBMementoIndexSource(MementoIndexSource):
     WBURL_MATCH = re.compile('([0-9]{0,14})?(?:\w+_)?/{0,3}(.*)')
     WAYBACK_ORIG_SUFFIX = '{timestamp}im_/{url}'

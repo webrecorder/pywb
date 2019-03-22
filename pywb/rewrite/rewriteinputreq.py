@@ -40,14 +40,12 @@ class RewriteInputRequest(DirectWSGIInputRequest):
             uri = '/'
 
         if self.splits.query:
-            uri += '?' + self.splits.query
+            return uri + '?' + self.splits.query
 
         return uri
 
     def get_req_headers(self):
-        headers = {}
-
-        has_cookies = False
+        headers = dict()
 
         for name, value in iteritems(self.env):
             if name == 'HTTP_HOST':

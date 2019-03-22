@@ -1,14 +1,13 @@
 from warcio.timeutils import timestamp_now
 
+from pywb.utils.format import res_template
 from pywb.utils.wbexception import NotFoundException
-
 from pywb.warcserver.index.cdxobject import CDXObject
 from pywb.warcserver.index.indexsource import BaseIndexSource, RemoteIndexSource
 from pywb.warcserver.resource.responseloader import LiveWebLoader
-from pywb.utils.format import ParamFormatter, res_template
 
 
-#=============================================================================
+# =============================================================================
 class UpstreamAggIndexSource(RemoteIndexSource):
     def __init__(self, base_url):
         api_url = base_url + '/index?url={url}'
@@ -21,9 +20,10 @@ class UpstreamAggIndexSource(RemoteIndexSource):
         cdx.pop('load_url', '')
 
 
-#=============================================================================
+# =============================================================================
 class UpstreamMementoIndexSource(BaseIndexSource):
     def __init__(self, proxy_url='{url}'):
+        super(UpstreamMementoIndexSource, self).__init__()
         self.proxy_url = proxy_url
         self.loader = LiveWebLoader()
 
@@ -47,10 +47,11 @@ class UpstreamMementoIndexSource(BaseIndexSource):
         yield cdx
 
     def __str__(self):
-        return 'upstream'
+        return 'UpstreamMementoIndexSource'
+
+    def __repr__(self):
+        return self.__str__()
 
     @staticmethod
     def upstream_resource(base_url):
         return UpstreamMementoIndexSource(base_url + '/resource?url={url}&closest={closest}')
-
-

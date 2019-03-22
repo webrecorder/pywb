@@ -14,17 +14,17 @@ try:
 defaulting to regular json\n')
         raise
 
+
     def json_encode(obj):
         return ujson_dumps(obj, escape_forward_slashes=False)
 
-except:  # pragma: no cover
+except Exception:  # pragma: no cover
     from json import dumps as json_encode
 
 try:  # pragma: no cover
     from collections import OrderedDict
 except ImportError:  # pragma: no cover
     from ordereddict import OrderedDict
-
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 from bisect import insort
@@ -36,15 +36,15 @@ import codecs
 import six
 
 
-#=================================================================
+# =================================================================
 class BaseCDXWriter(object):
     # To ensure we do not index metadata mime types
     # from older WARC specs (Heritrix 1.x) that collide with response records
-    METADATA_NO_INDEX_TYPES = ('text/anvl', )
+    METADATA_NO_INDEX_TYPES = ('text/anvl',)
 
     def __init__(self, out):
         self.out = codecs.getwriter('utf-8')(out)
-        #self.out = out
+        # self.out = out
 
     def __enter__(self):
         self._write_header()
@@ -68,8 +68,10 @@ class BaseCDXWriter(object):
         return False
 
 
-#=================================================================
+# =================================================================
 class CDXJ(object):
+    SKIPPED_CDXJ_KEYS = ('urlkey', 'timestamp')
+
     def _write_header(self):
         pass
 
@@ -82,7 +84,7 @@ class CDXJ(object):
         outdict = OrderedDict()
 
         for n, v in six.iteritems(entry):
-            if n in ('urlkey', 'timestamp'):
+            if n in CDXJ.SKIPPED_CDXJ_KEYS:
                 continue
 
             if n.startswith('_'):
@@ -98,7 +100,7 @@ class CDXJ(object):
         out.write('\n')
 
 
-#=================================================================
+# =================================================================
 class CDX09(object):
     def _write_header(self):
         self.out.write(' CDX N b a m s k r V g\n')
@@ -125,7 +127,7 @@ class CDX09(object):
         out.write('\n')
 
 
-#=================================================================
+# =================================================================
 class CDX11(object):
     def _write_header(self):
         self.out.write(' CDX N b a m s k r M S V g\n')
@@ -154,8 +156,13 @@ class CDX11(object):
         out.write('\n')
 
 
-#=================================================================
+# =================================================================
 class SortedCDXWriter(BaseCDXWriter):
+    def __init__(self, out):
+        super(SortedCDXWriter, self).__init__(out)
+        self.sortlist = None
+        self.actual_out = None
+
     def __enter__(self):
         self.sortlist = []
         res = super(SortedCDXWriter, self).__enter__()
@@ -174,19 +181,43 @@ class SortedCDXWriter(BaseCDXWriter):
         return False
 
 
-#=================================================================
+class CDXJWriter(BaseCDXWriter, CDXJ):
+    pass
+
+
+class SortedCDXJWriter(SortedCDXWriter, CDXJ):
+    pass
+
+
+class CDX09Writer(BaseCDXWriter, CDX09):
+    pass
+
+
+class SortedCDX09Writer(SortedCDXWriter, CDX09):
+    pass
+
+
+class CDX11Writer(BaseCDXWriter, CDX11):
+    pass
+
+
+class SortedCDX11Writer(SortedCDXWriter, CDX11):
+    pass
+
+
+# =================================================================
 ALLOWED_EXT = ('.arc', '.arc.gz', '.warc', '.warc.gz')
 
 
-#=================================================================
+# =================================================================
 def _resolve_rel_path(path, rel_root):
     path = os.path.relpath(path, rel_root)
-    if os.path.sep != '/':  #pragma: no cover
+    if os.path.sep != '/':  # pragma: no cover
         path = path.replace(os.path.sep, '/')
     return path
 
 
-#=================================================================
+# =================================================================
 def iter_file_or_dir(inputs, recursive=True, rel_root=None):
     for input_ in inputs:
         if not os.path.isdir(input_):
@@ -216,7 +247,7 @@ def iter_file_or_dir(inputs, recursive=True, rel_root=None):
                         yield full_path, rel_path
 
 
-#=================================================================
+# =================================================================
 def remove_ext(filename):
     for ext in ALLOWED_EXT:
         if filename.endswith(ext):
@@ -226,12 +257,12 @@ def remove_ext(filename):
     return filename
 
 
-#=================================================================
+# =================================================================
 def cdx_filename(filename):
     return remove_ext(filename) + '.cdx'
 
 
-#=================================================================
+# =================================================================
 def get_cdx_writer_cls(options):
     if options.get('minimal'):
         options['cdxj'] = True
@@ -240,25 +271,25 @@ def get_cdx_writer_cls(options):
     if writer_cls:
         if not options.get('writer_add_mixin'):
             return writer_cls
-    elif options.get('sort'):
-        writer_cls = SortedCDXWriter
-    else:
-        writer_cls = BaseCDXWriter
 
     if options.get('cdxj'):
-        format_mixin = CDXJ
+        if options.get('sort'):
+            return SortedCDXJWriter
+        else:
+            return CDXJWriter
     elif options.get('cdx09'):
-        format_mixin = CDX09
+        if options.get('sort'):
+            return SortedCDX09Writer
+        else:
+            return CDX09Writer
     else:
-        format_mixin = CDX11
-
-    class CDXWriter(writer_cls, format_mixin):
-        pass
-
-    return CDXWriter
+        if options.get('sort'):
+            return SortedCDX11Writer
+        else:
+            return CDX11Writer
 
 
-#=================================================================
+# =================================================================
 def write_multi_cdx_index(output, inputs, **options):
     recurse = options.get('recurse', False)
     rel_root = options.get('rel_root')
@@ -273,11 +304,8 @@ def write_multi_cdx_index(output, inputs, **options):
 
             with open(outpath, 'wb') as outfile:
                 with open(fullpath, 'rb') as infile:
-                    writer = write_cdx_index(outfile, infile, filename,
-                                             **options)
-
-        return writer
-
+                    return write_cdx_index(outfile, infile, filename,
+                                           **options)
     # write to one cdx file
     else:
         if output == '-':
@@ -304,9 +332,9 @@ def write_multi_cdx_index(output, inputs, **options):
         return writer
 
 
-#=================================================================
+# =================================================================
 def write_cdx_index(outfile, infile, filename, **options):
-    #filename = filename.encode(sys.getfilesystemencoding())
+    # filename = filename.encode(sys.getfilesystemencoding())
 
     writer_cls = get_cdx_writer_cls(options)
 
@@ -319,7 +347,7 @@ def write_cdx_index(outfile, infile, filename, **options):
     return writer
 
 
-#=================================================================
+# =================================================================
 def main(args=None):
     description = """
 Generate .cdx index files for WARCs and ARCs
@@ -440,12 +468,12 @@ instead of current working directory
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-9', '--cdx09',
-                        action='store_true',
-                        help=cdx09_help)
+                       action='store_true',
+                       help=cdx09_help)
 
     group.add_argument('-j', '--cdxj',
-                        action='store_true',
-                        help=json_help)
+                       action='store_true',
+                       help=json_help)
 
     parser.add_argument('-mj', '--minimal-cdxj',
                         action='store_true',
