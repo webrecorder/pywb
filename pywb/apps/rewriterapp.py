@@ -41,8 +41,8 @@ class RewriterApp(object):
     def __init__(self, framed_replay=False, jinja_env=None, config=None, paths=None):
         self.loader = ArcWarcRecordLoader()
 
-        self.config = config or dict()
-        self.paths = paths or dict()
+        self.config = config or {}
+        self.paths = paths or {}
 
         self.framed_replay = framed_replay
 
@@ -405,11 +405,12 @@ class RewriterApp(object):
     def format_response(self, response, wb_url, full_prefix, is_timegate, is_proxy):
         memento_ts = None
         if not isinstance(response, WbResponse):
+            content_type = 'text/html'
+
             # if not replay outer frame, specify utf-8 charset
             if not self.is_framed_replay(wb_url):
-                content_type = 'text/html; charset=utf-8'
+                content_type += '; charset=utf-8'
             else:
-                content_type = 'text/html'
                 memento_ts = wb_url.timestamp
 
             response = WbResponse.text_response(response, content_type=content_type)
@@ -456,10 +457,11 @@ class RewriterApp(object):
 
     def _get_timegate_timemap(self, url, full_prefix):
         # timegate url
+        timegate_url = full_prefix
         if self.replay_mod:
-            timegate_url = full_prefix + self.replay_mod + '/' + url
-        else:
-            timegate_url = full_prefix + url
+            timegate_url += self.replay_mod + '/'
+
+        timegate_url += url
 
         # timemap url
         timemap_url = full_prefix + 'timemap/link/' + url
@@ -503,7 +505,7 @@ class RewriterApp(object):
         else:
             closest = wb_url.timestamp
 
-        params = dict()
+        params = {}
         params['url'] = wb_url.url
         params['closest'] = closest
         params['matchType'] = 'exact'
@@ -521,7 +523,7 @@ class RewriterApp(object):
         return r
 
     def do_query(self, wb_url, kwargs):
-        params = dict()
+        params = {}
         params['url'] = wb_url.url
         params['output'] = kwargs.get('output', 'json')
         params['from'] = wb_url.timestamp
@@ -575,22 +577,23 @@ class RewriterApp(object):
         scheme = environ['wsgi.url_scheme'] + '://'
 
         # proxy
-        proxy_host = environ.get('wsgiprox.proxy_host')
-        if proxy_host:
-            return scheme + proxy_host
+        host = environ.get('wsgiprox.proxy_host')
+        if host:
+            return scheme + host
 
         # default
-        http_host = environ.get('HTTP_HOST')
-        if http_host:
-            return scheme + http_host
+        host = environ.get('HTTP_HOST')
+        if host:
+            return scheme + host
 
         # if no host
-        if environ['wsgi.url_scheme'] == 'https' and environ['SERVER_PORT'] != '443':
-            host = environ['SERVER_NAME'] + ':' + environ['SERVER_PORT']
-        elif environ['SERVER_PORT'] != '80':
-            host = environ['SERVER_NAME'] + ':' + environ['SERVER_PORT']
+        host = environ['SERVER_NAME']
+        if environ['wsgi.url_scheme'] == 'https':
+            if environ['SERVER_PORT'] != '443':
+                host += ':' + environ['SERVER_PORT']
         else:
-            host = environ['SERVER_NAME']
+            if environ['SERVER_PORT'] != '80':
+                host += ':' + environ['SERVER_PORT']
 
         return scheme + host
 
@@ -641,7 +644,7 @@ class RewriterApp(object):
         pass
 
     def get_top_frame_params(self, wb_url, kwargs):
-        return dict()
+        return None
 
     def handle_custom_response(self, environ, wb_url, full_prefix, host_prefix, kwargs):
         if kwargs.get('output'):

@@ -1,6 +1,5 @@
+from warcio.timeutils import timestamp_to_datetime, datetime_to_iso_date
 import re
-
-from warcio.timeutils import datetime_to_iso_date, timestamp_to_datetime
 
 
 # ============================================================================
@@ -39,7 +38,7 @@ class ExcludeHttpOnlyCookieHeaders(object):
 class WriteRevisitDupePolicy(object):
     def __call__(self, cdx, params):
         dt = timestamp_to_datetime(cdx['timestamp'])
-        return 'revisit', cdx['url'], datetime_to_iso_date(dt)
+        return ('revisit', cdx['url'], datetime_to_iso_date(dt))
 
 
 # ============================================================================
@@ -77,8 +76,7 @@ class SkipDefaultFilter(object):
 # ============================================================================
 class CollectionFilter(SkipDefaultFilter):
     def __init__(self, accept_colls):
-        super(CollectionFilter, self).__init__()
-        self.rx_accept_map = dict()
+        self.rx_accept_map = {}
 
         if isinstance(accept_colls, str):
             self.rx_accept_map = {'*': re.compile(accept_colls)}

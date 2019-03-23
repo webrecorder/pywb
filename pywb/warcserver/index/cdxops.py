@@ -1,13 +1,19 @@
+from pywb.warcserver.index.cdxobject import CDXObject, IDXObject
+from pywb.warcserver.index.cdxobject import TIMESTAMP, STATUSCODE, MIMETYPE, DIGEST
+from pywb.warcserver.index.cdxobject import OFFSET, LENGTH, FILENAME
+
+from pywb.warcserver.index.query import CDXQuery
+
+from warcio.timeutils import timestamp_to_sec, pad_timestamp
+from warcio.timeutils import PAD_14_DOWN, PAD_14_UP
+
 import bisect
+
+from six.moves import zip, range, map
 import re
-from collections import deque
+
 from heapq import merge
-
-from six.moves import map, range, zip
-from warcio.timeutils import PAD_14_DOWN, PAD_14_UP, pad_timestamp, timestamp_to_sec
-
-from pywb.warcserver.index.cdxobject import CDXObject, DIGEST, FILENAME, IDXObject, LENGTH, MIMETYPE, OFFSET, \
-    STATUSCODE, TIMESTAMP
+from collections import deque
 
 
 # =================================================================
@@ -199,10 +205,10 @@ class CDXFilter(object):
         return matched ^ self.invert
 
     def exact(self, val):
-        return self.filter_str == val
+        return (self.filter_str == val)
 
     def contains(self, val):
-        return self.filter_str in val
+        return (self.filter_str in val)
 
     def rx_match(self, val):
         res = self.regex.match(val)
@@ -316,7 +322,7 @@ def cdx_resolve_revisits(cdx_iter):
     field values in previous non-revisit (original) CDX record.
     They are all ``"-"`` for non-revisit records.
     """
-    originals = dict()
+    originals = {}
 
     for cdx in cdx_iter:
         is_revisit = cdx.is_revisit()
@@ -333,18 +339,14 @@ def cdx_resolve_revisits(cdx_iter):
                 originals[digest] = cdx
 
         if original_cdx and is_revisit:
-
-            def fill_orig(a_field):
-                return original_cdx.get(a_field, '-')
-
+            fill_orig = lambda field: original_cdx.get(field, '-')
             # Transfer mimetype and statuscode
             if MIMETYPE in cdx:
                 cdx[MIMETYPE] = original_cdx.get(MIMETYPE, '')
             if STATUSCODE in cdx:
                 cdx[STATUSCODE] = original_cdx.get(STATUSCODE, '')
         else:
-            def fill_orig(a_field):
-                return '-'
+            fill_orig = lambda field: '-'
 
         # Always add either the original or empty '- - -'
         for field in ORIG_TUPLE:

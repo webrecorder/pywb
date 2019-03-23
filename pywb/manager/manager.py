@@ -13,8 +13,6 @@ from six.moves import input
 from warcio.timeutils import timestamp20_now
 
 from pywb import DEFAULT_CONFIG
-from pywb.indexer.cdxindexer import write_multi_cdx_index
-from pywb.manager.migrate import MigrateCDX
 from pywb.utils.loaders import load_yaml_config
 
 
@@ -135,6 +133,8 @@ directory structure expected by pywb
         self._cdx_index(cdx_file, [self.archive_dir])
 
     def _cdx_index(self, out, input_, rel_root=None):
+        from pywb.indexer.cdxindexer import write_multi_cdx_index
+
         options = dict(append_post=True,
                        cdxj=True,
                        sort=True,
@@ -200,7 +200,7 @@ directory structure expected by pywb
                 metadata = yaml.safe_load(fh)
 
         if not metadata:
-            metadata = dict()
+            metadata = {}
 
         msg = 'Metadata params must be in the form "name=value"'
         for pair in namevalue_pairs:
@@ -301,6 +301,8 @@ directory structure expected by pywb
         print('Removed template file "{0}"'.format(full_path))
 
     def migrate_cdxj(self, path, force=False):
+        from pywb.manager.migrate import MigrateCDX
+
         migrate = MigrateCDX(path)
         count = migrate.count_cdx()
         if count == 0:

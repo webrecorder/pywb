@@ -18,7 +18,7 @@ class BaseContentRewriter(object):
 
     def __init__(self, rules_file, replay_mod=''):
         self.rules = []
-        self.all_rewriters = []
+        self.all_rewriters = {}
         self.load_rules(rules_file)
         self.replay_mod = replay_mod
 
@@ -65,7 +65,7 @@ class BaseContentRewriter(object):
             if any((urlkey.startswith(prefix) for prefix in rule['url_prefix'])):
                 return rule
 
-        return dict()
+        return {}
 
     def has_custom_rules(self, rule, cdx):
         if 'js_regex_func' not in rule:
@@ -88,7 +88,7 @@ class BaseContentRewriter(object):
 
         mixin = rule.get('mixin')
         if mixin:
-            mixin_params = rule.get('mixin_params', dict())
+            mixin_params = rule.get('mixin_params', {})
             rw_class = type('custom_js_rewriter', (mixin, rw_class), mixin_params)
 
         return rw_type, rw_class
@@ -174,7 +174,7 @@ class BaseContentRewriter(object):
                  head_insert_func=None,
                  cdx=None, environ=None):
 
-        environ = environ or dict()
+        environ = environ or {}
         rwinfo = RewriteInfo(record, self, url_rewriter, cookie_rewriter)
         content_rewriter = None
 
@@ -257,7 +257,7 @@ class BufferedRewriter(object):
             except Exception:
                 pass
 
-        return dict()
+        return {}
 
     def _get_adaptive_metadata(self, rwinfo):
         metadata = self._get_record_metadata(rwinfo) if rwinfo else dict()
@@ -307,7 +307,7 @@ class StreamingRewriter(object):
 
             decoder = codecs.getincrementaldecoder(charset)()
 
-            while True:
+            while 1:
                 buff = stream.read(BUFF_SIZE)
                 if not buff:
                     break

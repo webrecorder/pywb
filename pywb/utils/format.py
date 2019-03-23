@@ -66,7 +66,7 @@ def query_to_dict(query_str, multi=None):
     if not multi:
         return dict(pairlist)
 
-    obj = dict()
+    obj = {}
     for n, v in pairlist:
         if n not in multi:
             obj[n] = v

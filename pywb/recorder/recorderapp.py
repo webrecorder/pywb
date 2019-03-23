@@ -281,7 +281,7 @@ class RespWrapper(Wrapper):
 
     def close(self):
         try:
-            while True:
+            while 1:
                 if not self.read(BUFF_SIZE):
                     break
 
@@ -327,13 +327,11 @@ class RespWrapper(Wrapper):
 class ReqWrapper(Wrapper):
     def __init__(self, stream, req_headers, params, create_func):
         super(ReqWrapper, self).__init__(stream, params, create_func)
-        headers = dict()
+        self.headers = {}
 
         for n in six.iterkeys(req_headers):
             if n.upper().startswith('WARC-'):
-                headers[n] = req_headers[n]
-
-        self.headers = headers
+                self.headers[n] = req_headers[n]
 
     def close(self):
         # no need to close wsgi.input

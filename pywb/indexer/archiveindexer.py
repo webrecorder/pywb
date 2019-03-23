@@ -82,7 +82,7 @@ class ArchiveIndexEntryMixin(object):
 class DefaultRecordParser(object):
     def __init__(self, **options):
         self.options = options
-        self.entry_cache = dict()
+        self.entry_cache = {}
         self.digester = None
         self.buff = None
         self.entry = None

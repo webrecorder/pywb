@@ -8,84 +8,71 @@ from warcio.timeutils import datetime_to_http_date
 # =============================================================================
 class DefaultHeaderRewriter(object):
     header_rules = {
-        'access-control-allow-origin': 'prefix-if-url-rewrite',
-        'access-control-allow-credentials': 'prefix-if-url-rewrite',
-        'access-control-expose-headers': 'prefix-if-url-rewrite',
-        'access-control-max-age': 'prefix-if-url-rewrite',
-        'access-control-allow-methods': 'prefix-if-url-rewrite',
-        'access-control-allow-headers': 'prefix-if-url-rewrite',
-
-        'accept-patch': 'keep',
-        'accept-ranges': 'keep',
-
-        'age': 'prefix',
-
-        'allow': 'keep',
-
-        'alt-svc': 'prefix',
-        'cache-control': 'prefix',
-
-        'connection': 'prefix',
-
-        'content-base': 'url-rewrite',
-        'content-disposition': 'keep',
-        'content-encoding': 'prefix-if-content-rewrite',
-        'content-language': 'keep',
-        'content-length': 'content-length',
-        'content-location': 'url-rewrite',
-        'content-md5': 'prefix',
-        'content-range': 'keep',
-        'content-security-policy': 'prefix',
-        'content-security-policy-report-only': 'prefix',
-        'content-type': 'keep',
-
-        'date': 'keep',
-
-        'etag': 'prefix',
-        'expires': 'prefix',
-
-        'last-modified': 'prefix',
-        'link': 'keep',
-        'location': 'url-rewrite',
-
-        'p3p': 'prefix',
-        'pragma': 'prefix',
-
-        'proxy-authenticate': 'keep',
-
-        'public-key-pins': 'prefix',
-        'retry-after': 'prefix',
-        'server': 'prefix',
-
-        'set-cookie': 'cookie',
-
-        'status': 'prefix',
-
-        'strict-transport-security': 'prefix',
-
-        'trailer': 'prefix',
-        'transfer-encoding': 'transfer-encoding',
-        'tk': 'prefix',
-
-        'upgrade': 'prefix',
-        'upgrade-insecure-requests': 'prefix',
-
-        'vary': 'prefix',
-
-        'via': 'prefix',
-
-        'warning': 'prefix',
-
-        'www-authenticate': 'keep',
-
-        'x-frame-options': 'prefix',
-        'x-xss-protection': 'prefix',
+        "access-control-allow-origin": "prefix-if-url-rewrite",
+        "access-control-allow-credentials": "prefix-if-url-rewrite",
+        "access-control-expose-headers": "prefix-if-url-rewrite",
+        "access-control-max-age": "prefix-if-url-rewrite",
+        "access-control-allow-methods": "prefix-if-url-rewrite",
+        "access-control-allow-headers": "prefix-if-url-rewrite",
+        "accept-patch": "keep",
+        "accept-ranges": "keep",
+        "age": "prefix",
+        "allow": "keep",
+        "alt-svc": "prefix",
+        "cache-control": "prefix",
+        "connection": "prefix",
+        "content-base": "url-rewrite",
+        "content-disposition": "keep",
+        "content-encoding": "prefix-if-content-rewrite",
+        "content-language": "keep",
+        "content-length": "content-length",
+        "content-location": "url-rewrite",
+        "content-md5": "prefix",
+        "content-range": "keep",
+        "content-security-policy": "prefix",
+        "content-security-policy-report-only": "prefix",
+        "content-type": "keep",
+        "date": "keep",
+        "etag": "prefix",
+        "expires": "prefix",
+        "last-modified": "prefix",
+        "link": "keep",
+        "location": "url-rewrite",
+        "p3p": "prefix",
+        "pragma": "prefix",
+        "proxy-authenticate": "keep",
+        "public-key-pins": "prefix",
+        "retry-after": "prefix",
+        "server": "prefix",
+        "set-cookie": "cookie",
+        "status": "prefix",
+        "strict-transport-security": "prefix",
+        "trailer": "prefix",
+        "transfer-encoding": "transfer-encoding",
+        "tk": "prefix",
+        "upgrade": "prefix",
+        "upgrade-insecure-requests": "prefix",
+        "vary": "prefix",
+        "via": "prefix",
+        "warning": "prefix",
+        "www-authenticate": "keep",
+        "x-frame-options": "prefix",
+        "x-xss-protection": "prefix",
     }
 
-    def __init__(self, rwinfo, header_prefix='X-Archive-Orig-'):
+    def __init__(self, rwinfo, header_prefix="X-Archive-Orig-"):
         self.header_prefix = header_prefix
         self.rwinfo = rwinfo
         self.http_headers = rwinfo.record.http_headers
+        self._header_rewriters_to_rule = {
+            "content-length": self._header_rewrite_content_length,
+            "cookie": self._header_rewrite_cookie,
+            "prefix": self._header_rewrite_prefix,
+            "prefix-if-content-rewrite": self._header_rewrite_prefix_if_content_rewrite,
+            "prefix-if-url-rewrite": self._header_rewrite_prefix_if_url_rewrite,
+            "transfer-encoding": self._header_rewrite_transfer_encoding,
+            "url-rewrite": self._header_rewrite_url_rewrite
+        }
 
     def __call__(self):
         new_headers_list = []
@@ -98,64 +85,22 @@ class DefaultHeaderRewriter(object):
                 else:
                     new_headers_list.append(new_header)
 
-        if self.rwinfo.url_rewriter.wburl.mod == 'sw_':
+        if self.rwinfo.url_rewriter.wburl.mod == "sw_":
             parts = urlsplit(self.rwinfo.url_rewriter.wburl.url)
-            new_url = parts.scheme + '://' + parts.netloc + '/'
-            rw_origin = self.rwinfo.url_rewriter.rewrite(new_url, mod='mp_')
-            new_headers_list.append(('Service-Worker-Allowed', rw_origin))
+            new_url = parts.scheme + "://" + parts.netloc + "/"
+            rw_origin = self.rwinfo.url_rewriter.rewrite(new_url, mod="mp_")
+            new_headers_list.append(("Service-Worker-Allowed", rw_origin))
 
-        return StatusAndHeaders(self.http_headers.statusline,
-                                headers=new_headers_list,
-                                protocol=self.http_headers.protocol)
+        return StatusAndHeaders(
+            self.http_headers.statusline,
+            headers=new_headers_list,
+            protocol=self.http_headers.protocol,
+        )
 
     def rewrite_header(self, name, value, rule):
-        if rule == 'keep':
-            return name, value
-
-        elif rule == 'url-rewrite':
-            if self.rwinfo.is_url_rw():
-                return name, self.rwinfo.url_rewriter.rewrite(value)
-            else:
-                return name, value
-
-        elif rule == 'prefix-if-content-rewrite':
-            if self.rwinfo.is_content_rw:
-                return self.header_prefix + name, value
-            else:
-                return name, value
-
-        elif rule == 'prefix-if-url-rewrite':
-            if self.rwinfo.is_url_rw():
-                return self.header_prefix + name, value
-            else:
-                return name, value
-
-        elif rule == 'content-length':
-            if value == '0':
-                return name, value
-
-            if not self.rwinfo.is_content_rw:
-                try:
-                    if int(value) >= 0:
-                        return name, value
-                except Exception:
-                    pass
-
-            return self.header_prefix + name, value
-
-        elif rule == 'transfer-encoding':
-            self.rwinfo.is_chunked = True
-            return self.header_prefix + name, value
-
-        elif rule == 'cookie':
-            if self.rwinfo.cookie_rewriter and self.rwinfo.is_url_rw():
-                return self.rwinfo.cookie_rewriter.rewrite(value)
-            else:
-                return name, value
-
-        elif rule == 'prefix':
-            return self.header_prefix + name, value
-
+        rewriter = self._header_rewriters_to_rule.get(rule)
+        if rewriter is not None:
+            return rewriter(name, value)
         return name, value
 
     def _add_cache_headers(self, new_headers, http_cache):
@@ -165,9 +110,49 @@ class DefaultHeaderRewriter(object):
             age = 0
 
         if age <= 0:
-            new_headers.append(('Cache-Control', 'no-cache; no-store'))
+            new_headers.append(("Cache-Control", "no-cache; no-store"))
         else:
             dt = datetime.utcnow()
             dt = dt + timedelta(seconds=age)
-            new_headers.append(('Cache-Control', 'max-age=' + str(age)))
-            new_headers.append(('Expires', datetime_to_http_date(dt)))
+            new_headers.append(("Cache-Control", "max-age=" + str(age)))
+            new_headers.append(("Expires", datetime_to_http_date(dt)))
+
+    def _header_rewrite_url_rewrite(self, name, value):
+        if self.rwinfo.is_url_rw():
+            return name, self.rwinfo.url_rewriter.rewrite(value)
+        return name, value
+
+    def _header_rewrite_prefix_if_content_rewrite(self, name, value):
+        if self.rwinfo.is_content_rw:
+            return self.header_prefix + name, value
+        return name, value
+
+    def _header_rewrite_prefix_if_url_rewrite(self, name, value):
+        if self.rwinfo.is_url_rw():
+            return self.header_prefix + name, value
+        return name, value
+
+    def _header_rewrite_content_length(self, name, value):
+        if value == "0":
+            return name, value
+
+        if not self.rwinfo.is_content_rw:
+            try:
+                if int(value) >= 0:
+                    return name, value
+            except Exception:
+                pass
+
+        return self.header_prefix + name, value
+
+    def _header_rewrite_transfer_encoding(self, name, value):
+        self.rwinfo.is_chunked = True
+        return self.header_prefix + name, value
+
+    def _header_rewrite_cookie(self, name, value):
+        if self.rwinfo.cookie_rewriter and self.rwinfo.is_url_rw():
+            return self.rwinfo.cookie_rewriter.rewrite(value)
+        return name, value
+
+    def _header_rewrite_prefix(self, name, value):
+        return self.header_prefix + name, value

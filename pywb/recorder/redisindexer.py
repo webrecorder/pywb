@@ -69,7 +69,7 @@ class WritableRedisIndexer(RedisIndexSource):
         return cdx_list
 
     def lookup_revisit(self, lookup_params, digest, url, iso_dt):
-        params = dict()
+        params = {}
         for param in lookup_params:
             if param.startswith('param.'):
                 params[param] = lookup_params[param]

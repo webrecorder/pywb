@@ -37,7 +37,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
         else:
             self.max_idle_time = None
 
-        self.fh_cache = dict()
+        self.fh_cache = {}
 
     def _check_revisit(self, record, params):
         if not self.dedup_index or record.rec_type != 'response':
@@ -134,7 +134,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
         return True
 
     def write_record(self, record, params=None):
-        params = params or dict()
+        params = params or {}
         self._do_write_req_resp(None, record, params)
 
     def _copy_header(self, from_rec, to_rec, name):
@@ -240,7 +240,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
         for dir_key, out, filename in self.iter_open_files():
             self._close_file(out)
 
-        self.fh_cache = dict()
+        self.fh_cache = {}
 
     def close_idle_files(self):
         if not self.max_idle_time:

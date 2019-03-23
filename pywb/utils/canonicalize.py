@@ -157,26 +157,24 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
         # ensure surt order matches url_canon
         surt_ordered = url_canon.surt_ordered
 
-    cannoned = url_canon(url)
+    start_key = url_canon(url)
 
     if match_type == 'exact':
-        start_key = cannoned
         end_key = start_key + '!'
 
     elif match_type == 'prefix':
         # add trailing slash if url has it
-        if url.endswith('/') and not cannoned.endswith('/'):
-            start_key = cannoned + '/'
-        elif url.endswith('?') and not cannoned.endswith('?'):
-            start_key = cannoned + '?'
-        else:
-            start_key = cannoned
+        if url.endswith('/') and not start_key.endswith('/'):
+            start_key += '/'
+
+        if url.endswith('?') and not start_key.endswith('?'):
+            start_key += '?'
 
         end_key = inc_last_char(start_key)
 
     elif match_type == 'host':
         if surt_ordered:
-            host = cannoned.split(')/')[0]
+            host = start_key.split(')/')[0]
 
             start_key = host + ')/'
             end_key = host + '*'
@@ -191,7 +189,7 @@ def calc_search_range(url, match_type, surt_ordered=True, url_canon=None):
             msg = 'matchType=domain unsupported for non-surt'
             raise UrlCanonicalizeException(msg)
 
-        host = cannoned.split(')/')[0]
+        host = start_key.split(')/')[0]
 
         # if tld, use com, as start_key
         # otherwise, stick with com,example)/

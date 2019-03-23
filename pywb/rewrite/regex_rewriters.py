@@ -252,11 +252,13 @@ class JSWombatProxyRewriter(RegexRewriter):
             return string
 
         if string.startswith('javascript:'):
-            final_string = ['javascript:', self.first_buff, self.rewrite(string[len('javascript:'):]), self.last_buff]
+            string = 'javascript:' + self.first_buff + self.rewrite(string[len('javascript:'):])
         else:
-            final_string = [self.first_buff, self.rewrite(string), self.last_buff]
+            string = self.first_buff + self.rewrite(string)
 
-        return ''.join(final_string).replace('\n', '')
+        string += self.last_buff
+
+        return string.replace('\n', '')
 
     def final_read(self):
         return self.last_buff

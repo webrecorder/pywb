@@ -96,7 +96,7 @@ def load_overlay_config(main_env_var, main_default_file='',
 
         config = load_yaml_config(configfile)
 
-    config = config or dict()
+    config = config or {}
 
     overlay_configfile = os.environ.get(overlay_env_var, overlay_file)
 
@@ -170,12 +170,11 @@ class BlockLoader(BaseLoader):
     Currently supports: http/https and file/local file system
     """
 
-    loaders = dict()
+    loaders = {}
     profile_loader = None
 
     def __init__(self, **kwargs):
-        super(BlockLoader, self).__init__(**kwargs)
-        self.cached = dict()
+        self.cached = {}
         self.kwargs = kwargs
 
     def load(self, url, offset=0, length=-1):
@@ -320,7 +319,7 @@ class HttpLoader(BaseLoader):
         Load a file-like reader over http using range requests
         and an optional cookie created via a cookie_maker
         """
-        headers = dict()
+        headers = {}
         if offset != 0 or length != -1:
             headers['Range'] = BlockLoader._make_range_header(offset, length)
 

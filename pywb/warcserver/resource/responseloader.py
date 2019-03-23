@@ -269,34 +269,34 @@ class LiveWebLoader(BaseLoader):
         self.forward_proxy_prefix = forward_proxy_prefix
 
     def build_http_headers(self, status, orig_resp, cdx):
-        http_headers_buff = [status]
+        http_headers_buff = status
 
         for n, v in orig_resp.headers._headers:
             nl = n.lower()
+            new_v = v
+
             if nl in self.SKIP_HEADERS:
                 continue
-            http_headers_buff.append(n)
-            http_headers_buff.append(': ')
-            if nl in self.UNREWRITE_HEADERS:
-                http_headers_buff.append(self.unrewrite_header(cdx, v))
-            else:
-                http_headers_buff.append(v)
-            http_headers_buff.append('\r\n')
 
-        http_headers_buff.append('\r\n')
+            if nl in self.UNREWRITE_HEADERS:
+                new_v = self.unrewrite_header(cdx, v)
+
+            http_headers_buff += n + ': ' + new_v + '\r\n'
+
+        http_headers_buff += '\r\n'
 
         try:
             # http headers could be encoded as utf-8 (though non-standard)
             # first try utf-8 encoding
-            http_headers = ''.join(http_headers_buff).encode('utf-8')
+            http_headers = http_headers_buff.encode('utf-8')
         except Exception:
             # then, fall back to latin-1
-            http_headers = ''.join(http_headers_buff).encode('latin-1')
+            http_headers = http_headers_buff.encode('latin-1')
 
         return http_headers
 
     def build_http_headers_fallback(self, status, orig_resp, cdx):
-        http_headers_buff = [status]
+        http_headers_buff = status
         resp_headers = orig_resp.msg.headers
 
         for line in resp_headers:
@@ -312,18 +312,14 @@ class LiveWebLoader(BaseLoader):
                 new_v = self.unrewrite_header(cdx, v)
 
             if new_v != v:
-                http_headers_buff.append(n)
-                http_headers_buff.append(': ')
-                http_headers_buff.append(new_v)
-                http_headers_buff.append('\r\n')
+                http_headers_buff += n + ': ' + new_v + '\r\n'
             else:
-                http_headers_buff.append(line)
+                http_headers_buff += line
 
         # if python2, already byte headers, so leave as is
-        http_headers_buff.append('\r\n')
-        http_headers = ''.join(http_headers_buff)
+        http_headers_buff += '\r\n'
 
-        return http_headers
+        return http_headers_buff
 
     def load_resource(self, cdx, params):
         load_url = cdx.get('load_url')

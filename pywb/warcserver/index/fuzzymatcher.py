@@ -107,7 +107,6 @@ class FuzzyMatcher(object):
         # don't include trailing '?' if no filters and replace_after '?'
         no_filters = (filters == {'urlkey:'}) and (matched_rule.replace_after == '?')
 
-        final_url = url
         inx = url.find(matched_rule.replace_after)
         if inx > 0:
             length = inx + len(matched_rule.replace_after)
@@ -117,15 +116,15 @@ class FuzzyMatcher(object):
                 # don't include trailing '/' if match '/?'
                 if url[length - 1] == '/':
                     length -= 1
-            final_url = url[:length]
+            url = url[:length]
         elif not no_filters:
-            final_url = url + matched_rule.replace_after[0]
+            url += matched_rule.replace_after[0]
 
         if matched_rule.match_type == 'domain':
             host = urlsplit(url).netloc
-            final_url = host.split('.', 1)[1]
+            url = host.split('.', 1)[1]
 
-        fuzzy_params = {'url': final_url,
+        fuzzy_params = {'url': url,
                         'matchType': matched_rule.match_type,
                         'filter': filters,
                         'is_fuzzy': '1'}
@@ -138,12 +137,16 @@ class FuzzyMatcher(object):
 
     def make_regex(self, config):
         if isinstance(config, list):
-            regex_string = self.make_query_match_regex(config)
+            string = self.make_query_match_regex(config)
+
         elif isinstance(config, dict):
-            regex_string = config.get('regex', '') + self.make_query_match_regex(config.get('args', []))
+            string = config.get('regex', '')
+            string += self.make_query_match_regex(config.get('args', []))
+
         else:
-            regex_string = str(config)
-        return re.compile(regex_string)
+            string = str(config)
+
+        return re.compile(string)
 
     def make_query_match_regex(self, params_list):
         params_list.sort()
@@ -182,7 +185,7 @@ class FuzzyMatcher(object):
 
         is_custom = (rule.url_prefix != [''])
 
-        rx_cache = dict()
+        rx_cache = {}
 
         for cdx in new_iter:
             if is_custom or self.match_general_fuzzy_query(url, urlkey, cdx, rx_cache):
@@ -210,13 +213,13 @@ class FuzzyMatcher(object):
 
         match_urlkey = cdx['urlkey']
 
-        for normalize_rx in self.url_normalize_rx:
-            match_urlkey = re.sub(normalize_rx[0], normalize_rx[1], match_urlkey)
-            curr_urlkey = rx_cache.get(normalize_rx[0])
+        for rx, replace in self.url_normalize_rx:
+            match_urlkey = re.sub(rx, replace, match_urlkey)
+            curr_urlkey = rx_cache.get(rx)
 
             if not curr_urlkey:
-                curr_urlkey = re.sub(normalize_rx[0], normalize_rx[1], urlkey)
-                rx_cache[normalize_rx[0]] = curr_urlkey
+                curr_urlkey = re.sub(rx, replace, urlkey)
+                rx_cache[rx] = curr_urlkey
                 urlkey = curr_urlkey
 
             if curr_urlkey == match_urlkey:

@@ -47,7 +47,8 @@ class CookieTracker(object):
                 full = n + '=' + v
                 cookies.append(full.split(';')[0])
 
-                set_cookies.extend(host_cookie_rewriter.rewrite(full + '; Max-Age=' + str(self.expire_time)))
+                full += '; Max-Age=' + str(self.expire_time)
+                set_cookies.extend(host_cookie_rewriter.rewrite(full))
 
             expire_set.append(cookie_key + '.' + domain)
 
@@ -120,20 +121,20 @@ class DomainCacheCookieRewriter(WbUrlBaseCookieRewriter):
             #self.cookiejar.set_cookie(self.morsel_to_cookie(morsel))
             #print(morsel, self.cookie_key + domain)
 
-            cookie_str = [morsel.value]
+            string = morsel.value
             if morsel.get('path'):
-                cookie_str.append('; Path=' + morsel.get('path'))
+                string += '; Path=' + morsel.get('path')
 
             if morsel.get('httponly'):
-                cookie_str.append('; HttpOnly')
+                string += '; HttpOnly'
 
             if morsel.get('secure'):
-                cookie_str.append('; Secure')
+                string += '; Secure'
 
             self.cookie_tracker.add_cookie(self.cookie_key,
                                            domain,
                                            morsel.key,
-                                           ''.join(cookie_str))
+                                           string)
 
         # else set cookie to rewritten path
         if morsel.get('path'):

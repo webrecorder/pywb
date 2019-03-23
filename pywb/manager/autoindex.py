@@ -22,7 +22,7 @@ class AutoIndexer(object):
 
         self.interval = interval
 
-        self.last_size = dict()
+        self.last_size = {}
         self.ge = None
 
     def is_newer_than(self, path1, path2, track=False):

@@ -94,7 +94,7 @@ class DefaultRewriter(BaseContentRewriter):
     }
 
     def __init__(self, replay_mod='', config=None):
-        config = config or dict()
+        config = config or {}
         rules_file = config.get('rules_file', DEFAULT_RULES_FILE)
         super(DefaultRewriter, self).__init__(rules_file, replay_mod)
         self.all_rewriters = copy.copy(self.DEFAULT_REWRITERS)
@@ -110,6 +110,14 @@ class DefaultRewriter(BaseContentRewriter):
 class RewriterWithJSProxy(DefaultRewriter):
     def __init__(self, *args, **kwargs):
         super(RewriterWithJSProxy, self).__init__(*args, **kwargs)
+        self.obj_proxy_supported_ua = {
+            'chrome': '49.0',
+            'firefox': '44.0',
+            'safari': '10.0',
+            'opera': '36.0',
+            'edge': '12.0',
+            'msie': None,
+        }
 
     def get_rewriter(self, rw_type, rwinfo=None):
         if rw_type == 'js' and rwinfo:
@@ -130,15 +138,6 @@ class RewriterWithJSProxy(DefaultRewriter):
         if ua is None:
             return True
 
-        supported = {
-            'chrome': '49.0',
-            'firefox': '44.0',
-            'safari': '10.0',
-            'opera': '36.0',
-            'edge': '12.0',
-            'msie': None,
-        }
-
-        min_vers = supported.get(ua.browser)
+        min_vers = self.obj_proxy_supported_ua.get(ua.browser)
 
         return min_vers and ua.version >= min_vers

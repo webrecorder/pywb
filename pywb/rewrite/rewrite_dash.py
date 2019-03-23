@@ -1,10 +1,9 @@
+from contextlib import closing
+from io import BytesIO
 import json
 import xml.etree.ElementTree as ET
-from io import BytesIO
 
 from pywb.rewrite.content_rewriter import BufferedRewriter
-
-DASH_SPLIT = r'\n",dash_prefetched_representation_ids:'
 
 
 # ============================================================================
@@ -59,11 +58,21 @@ class RewriteDASH(BufferedRewriter):
 
 # ============================================================================
 def rewrite_fb_dash(string, *args):
+    DASH_SPLIT = r'\n",dash_prefetched_representation_ids:'
     inx = string.find(DASH_SPLIT)
     if inx < 0:
         return string
-    buff = string[:inx].encode('utf-8').decode('unicode-escape').encode('utf-8')
-    io, best_ids = RewriteDASH().rewrite_dash(BytesIO(buff), None)
-    json_string = json.dumps(io.read().decode('utf-8'))
-    return json_string[1:-1].replace('<', r'\x3C') + DASH_SPLIT + json.dumps(best_ids)
+
+    string = string[:inx]
+
+    buff = string.encode('utf-8').decode('unicode-escape')
+    buff = buff.encode('utf-8')
+    io = BytesIO(buff)
+    io, best_ids = RewriteDASH().rewrite_dash(io, None)
+    string = json.dumps(io.read().decode('utf-8'))
+    string = string[1:-1].replace('<', r'\x3C')
+
+    string += DASH_SPLIT
+    string += json.dumps(best_ids)
+    return string
 

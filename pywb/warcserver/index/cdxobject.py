@@ -99,7 +99,7 @@ class CDXObject(OrderedDict):
     }
 
     def __init__(self, cdxline=b''):
-        OrderedDict.__init__(self)
+        super(CDXObject, self).__init__()
 
         cdxline = cdxline.rstrip()
         self._from_json = False
@@ -153,7 +153,8 @@ class CDXObject(OrderedDict):
         self.cdxline = cdxline
 
     def __setitem__(self, key, value):
-        OrderedDict.__setitem__(self, key, value)
+        super(CDXObject, self).__setitem__(key, value)
+        # OrderedDict.__setitem__(self, key, value)
 
         # force regen on next __str__ call
         self.cdxline = None
@@ -247,7 +248,7 @@ class IDXObject(OrderedDict):
     NUM_REQ_FIELDS = len(FORMAT) - 1  # lineno is an optional field
 
     def __init__(self, idxline):
-        OrderedDict.__init__(self)
+        super(IDXObject, self).__init__()
 
         idxline = idxline.rstrip()
         fields = idxline.split(b'\t')

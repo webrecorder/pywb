@@ -64,7 +64,7 @@ class BaseCli(object):
                             help='Enable auto-fetch worker to capture resources from stylesheets, <img srcset> when running in live/recording mode')
 
         self.desc = desc
-        self.extra_config = dict()
+        self.extra_config = {}
 
         self._extend_parser(parser)
 
@@ -145,7 +145,7 @@ class ReplayCli(BaseCli):
 
         if self.r.all_coll:
             if 'collections' not in self.extra_config:
-                self.extra_config['collections'] = dict()
+                self.extra_config['collections'] = {}
             self.extra_config['collections'][self.r.all_coll] = '$all'
 
         if self.r.autoindex:

@@ -19,27 +19,27 @@ class DirectWSGIInputRequest(object):
         self.env = env
 
     def get_req_method(self):
-        return self.env['REQUEST_METHOD'].upper()
+        return self.env["REQUEST_METHOD"].upper()
 
     def get_req_protocol(self):
-        return self.env['SERVER_PROTOCOL']
+        return self.env["SERVER_PROTOCOL"]
 
     def get_referrer(self):
-        return self._get_header('Referer')
+        return self._get_header("Referer")
 
     def get_req_headers(self):
-        headers = dict()
+        headers = {}
 
         for name, value in iteritems(self.env):
             # will be set by requests to match actual host
-            if name == 'HTTP_HOST':
+            if name == "HTTP_HOST":
                 continue
 
-            if name.startswith('HTTP_'):
-                header_name = name[5:].title().replace('_', '-')
+            if name.startswith("HTTP_"):
+                header_name = name[5:].title().replace("_", "-")
 
-            elif name in ('CONTENT_LENGTH', 'CONTENT_TYPE'):
-                header_name = name.title().replace('_', '-')
+            elif name in ("CONTENT_LENGTH", "CONTENT_TYPE"):
+                header_name = name.title().replace("_", "-")
 
             else:
                 header_name = name
@@ -51,9 +51,9 @@ class DirectWSGIInputRequest(object):
         return headers
 
     def get_req_body(self):
-        input_ = self.env['wsgi.input']
+        input_ = self.env["wsgi.input"]
         len_ = self._get_content_length()
-        enc = self._get_header('Transfer-Encoding')
+        enc = self._get_header("Transfer-Encoding")
 
         if len_:
             data = LimitReader(input_, int(len_))
@@ -65,13 +65,13 @@ class DirectWSGIInputRequest(object):
         return data
 
     def _get_content_type(self):
-        return self.env.get('CONTENT_TYPE')
+        return self.env.get("CONTENT_TYPE")
 
     def _get_content_length(self):
-        return self.env.get('CONTENT_LENGTH')
+        return self.env.get("CONTENT_LENGTH")
 
     def _get_header(self, name):
-        return self.env.get('HTTP_' + name.upper().replace('-', '_'))
+        return self.env.get("HTTP_" + name.upper().replace("-", "_"))
 
     def include_method_query(self, url):
         if not url:
@@ -79,65 +79,70 @@ class DirectWSGIInputRequest(object):
 
         method = self.get_req_method()
 
-        if method not in ('OPTIONS', 'POST'):
+        if method not in ("OPTIONS", "POST"):
             return url
 
         mime = self._get_content_type()
         length = self._get_content_length()
-        stream = self.env['wsgi.input']
+        stream = self.env["wsgi.input"]
 
         buffered_stream = BytesIO()
 
-        query = MethodQueryCanonicalizer(method, mime, length, stream,
-                                         buffered_stream=buffered_stream,
-                                         environ=self.env)
+        query = MethodQueryCanonicalizer(
+            method,
+            mime,
+            length,
+            stream,
+            buffered_stream=buffered_stream,
+            environ=self.env,
+        )
 
         new_url = query.append_query(url)
         if new_url != url:
-            self.env['wsgi.input'] = buffered_stream
+            self.env["wsgi.input"] = buffered_stream
 
         return new_url
 
     def get_full_request_uri(self):
-        req_uri = self.env.get('REQUEST_URI')
-        if req_uri and not self.env.get('SCRIPT_NAME'):
+        req_uri = self.env.get("REQUEST_URI")
+        if req_uri and not self.env.get("SCRIPT_NAME"):
             return req_uri
 
-        req_uri = quote(self.env.get('PATH_INFO', ''), safe='/~!$&\'()*+,;=:@')
-        query = self.env.get('QUERY_STRING')
+        req_uri = quote(self.env.get("PATH_INFO", ""), safe="/~!$&'()*+,;=:@")
+        query = self.env.get("QUERY_STRING")
         if query:
-            return req_uri + '?' + query
+            return req_uri + "?" + query
 
         return req_uri
 
     def reconstruct_request(self, url=None):
         buff = StringIO()
         buff.write(self.get_req_method())
-        buff.write(' ')
+        buff.write(" ")
         buff.write(self.get_full_request_uri())
-        buff.write(' ')
+        buff.write(" ")
         buff.write(self.get_req_protocol())
-        buff.write('\r\n')
+        buff.write("\r\n")
 
         headers = self.get_req_headers()
 
         if url:
             parts = urlsplit(url)
-            buff.write('Host: ')
+            buff.write("Host: ")
             buff.write(parts.netloc)
-            buff.write('\r\n')
+            buff.write("\r\n")
 
         for name, value in iteritems(headers):
-            if name.lower() == 'host':
+            if name.lower() == "host":
                 continue
 
             buff.write(name)
-            buff.write(': ')
+            buff.write(": ")
             buff.write(value)
-            buff.write('\r\n')
+            buff.write("\r\n")
 
-        buff.write('\r\n')
-        final_buff = buff.getvalue().encode('latin-1')
+        buff.write("\r\n")
+        final_buff = buff.getvalue().encode("latin-1")
 
         body = self.get_req_body()
         if body:
@@ -153,29 +158,29 @@ class POSTInputRequest(DirectWSGIInputRequest):
 
         parser = StatusAndHeadersParser([], verify=False)
 
-        self.status_headers = parser.parse(self.env['wsgi.input'])
+        self.status_headers = parser.parse(self.env["wsgi.input"])
 
     def get_req_method(self):
         return self.status_headers.protocol
 
     def get_req_headers(self):
-        headers = dict()
+        headers = {}
         for n, v in self.status_headers.headers:
             headers[n] = v
 
         return headers
 
     def get_full_request_uri(self):
-        return self.status_headers.statusline.split(' ', 1)[0]
+        return self.status_headers.statusline.split(" ", 1)[0]
 
     def get_req_protocol(self):
-        return self.status_headers.statusline.split(' ', 1)[-1]
+        return self.status_headers.statusline.split(" ", 1)[-1]
 
     def _get_content_type(self):
-        return self.status_headers.get_header('Content-Type')
+        return self.status_headers.get_header("Content-Type")
 
     def _get_content_length(self):
-        return self.status_headers.get_header('Content-Length')
+        return self.status_headers.get_header("Content-Length")
 
     def _get_header(self, name):
         return self.status_headers.get_header(name)
@@ -183,9 +188,9 @@ class POSTInputRequest(DirectWSGIInputRequest):
 
 # ============================================================================
 class MethodQueryCanonicalizer(object):
-    def __init__(self, method, mime, length, stream,
-                 buffered_stream=None,
-                 environ=None):
+    def __init__(
+        self, method, mime, length, stream, buffered_stream=None, environ=None
+    ):
         """
         Append the method for HEAD/OPTIONS as __pywb_method=<method>
         For POST requests, requests extract a url-encoded form from stream
@@ -193,15 +198,15 @@ class MethodQueryCanonicalizer(object):
         Attempt to decode application/x-www-form-urlencoded or multipart/*,
         otherwise read whole block and b64encode
         """
-        self.query = b''
+        self.query = b""
 
         method = method.upper()
 
-        if method in ('OPTIONS', 'HEAD'):
-            self.query = '__pywb_method=' + method.lower()
+        if method in ("OPTIONS", "HEAD"):
+            self.query = "__pywb_method=" + method.lower()
             return
 
-        if method != 'POST':
+        if method != "POST":
             return
 
         try:
@@ -212,7 +217,7 @@ class MethodQueryCanonicalizer(object):
         if length <= 0:
             return
 
-        build_query = []
+        query = b""
 
         while length > 0:
             buff = stream.read(length)
@@ -221,31 +226,29 @@ class MethodQueryCanonicalizer(object):
             if not buff:
                 break
 
-            build_query.append(buff)
-
-        query = b''.join(build_query)
+            query += buff
 
         if buffered_stream:
             buffered_stream.write(query)
             buffered_stream.seek(0)
 
         if not mime:
-            mime = ''
+            mime = ""
 
-        if mime.startswith('application/x-www-form-urlencoded'):
-            final_query = unquote_plus(to_native_str(query))
+        if mime.startswith("application/x-www-form-urlencoded"):
+            self.query = unquote_plus(to_native_str(query))
 
-        elif mime.startswith('multipart/'):
-            env = {'REQUEST_METHOD': 'POST',
-                   'CONTENT_TYPE': mime,
-                   'CONTENT_LENGTH': len(query)}
+        elif mime.startswith("multipart/"):
+            env = {
+                "REQUEST_METHOD": "POST",
+                "CONTENT_TYPE": mime,
+                "CONTENT_LENGTH": len(query),
+            }
 
-            args = dict(fp=BytesIO(query),
-                        environ=env,
-                        keep_blank_values=True)
+            args = dict(fp=BytesIO(query), environ=env, keep_blank_values=True)
 
             if PY3:
-                args['encoding'] = 'utf-8'
+                args["encoding"] = "utf-8"
 
             data = cgi.FieldStorage(**args)
 
@@ -253,15 +256,13 @@ class MethodQueryCanonicalizer(object):
             for item in data.list:
                 values.append((item.name, item.value))
 
-            final_query = urlencode(values, True)
+            self.query = urlencode(values, True)
 
-        elif mime.startswith('application/x-amf'):
-            final_query = self.amf_parse(query, environ)
+        elif mime.startswith("application/x-amf"):
+            self.query = self.amf_parse(query, environ)
 
         else:
-            final_query = '__wb_post_data=' + to_native_str(base64.b64encode(query))
-
-        self.query = final_query
+            self.query = "__wb_post_data=" + to_native_str(base64.b64encode(query))
 
     def amf_parse(self, string, environ):
         try:
@@ -277,7 +278,6 @@ class MethodQueryCanonicalizer(object):
         if not self.query:
             return url
 
-        if '?' not in url:
-            return url + '?' + self.query
-        else:
-            return url + '&' + self.query
+        if "?" not in url:
+            return url + "?" + self.query
+        return url + "&" + self.query

@@ -180,7 +180,7 @@ class TimeoutMixin(object):
         super(TimeoutMixin, self).__init__(*args, **kwargs)
         self.t_count = kwargs.get('t_count', 3)
         self.t_dura = kwargs.get('t_duration', 20)
-        self.timeouts = dict()
+        self.timeouts = {}
 
     def is_timed_out(self, name):
         timeout_deq = self.timeouts.get(name)
@@ -340,7 +340,7 @@ class DirectoryIndexSource(SeqAggMixin, BaseDirectoryIndexSource):
 class CacheDirectoryIndexSource(DirectoryIndexSource):
     def __init__(self, *args, **kwargs):
         super(CacheDirectoryIndexSource, self).__init__(*args, **kwargs)
-        self.cached_file_list = dict()
+        self.cached_file_list = {}
 
     def _load_files_single_dir(self, the_dir):
         try:

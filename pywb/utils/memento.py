@@ -22,7 +22,7 @@ class MementoUtils(object):
     @classmethod
     def parse_links(cls, link_header, def_name='timemap'):
         links = LINK_SPLIT.split(link_header)
-        results = dict()
+        results = {}
         mementos = []
 
         for link in links:
@@ -89,17 +89,17 @@ class MementoUtils(object):
 
     @classmethod
     def wrap_timemap_header(cls, url, timegate_url, timemap_url, timemap):
-        header = [cls.make_link(timemap_url, "self")]
+        string = cls.make_link(timemap_url, "self")
         m = FIND_DT.search(timemap)
         if m:
-            header.append('; from="{0}"'.format(m.group(1)))
+            string += '; from="{0}"'.format(m.group(1))
 
-        header.append(',\n')
+        string += ',\n'
 
-        header.append(cls.make_link(timegate_url, "timegate") + ',\n')
-        header.append(cls.make_link(url, "original") + ',\n')
-        header.append(timemap)
-        return ''.join(header)
+        string += cls.make_link(timegate_url, "timegate") + ',\n'
+        string += cls.make_link(url, "original") + ',\n'
+        string += timemap
+        return string
 
     @classmethod
     def make_link(cls, url, type_):
