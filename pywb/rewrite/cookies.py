@@ -6,12 +6,13 @@ import tldextract
 from six.moves import zip
 
 from pywb.rewrite.cookie_rewriter import HostScopeCookieRewriter, WbUrlBaseCookieRewriter
+from pywb.utils.constants import CharSets
 
 
 # =============================================================================
 class CookieTracker(object):
-    def __init__(self, redis, expire_time=120):
-        self.redis = redis
+    def __init__(self, redis_instance, expire_time=120):
+        self.redis = redis_instance
         self.expire_time = expire_time
 
     def get_rewriter(self, url_rewriter, cookie_key):
@@ -41,8 +42,8 @@ class CookieTracker(object):
 
             for n, v in six.iteritems(res):
                 if six.PY3 and type(n) == six.binary_type:
-                    n = n.decode('utf-8')
-                    v = v.decode('utf-8')
+                    n = n.decode(CharSets.utf)
+                    v = v.decode(CharSets.utf)
 
                 full = n + '=' + v
                 cookies.append(full.split(';')[0])

@@ -15,82 +15,66 @@ from pywb.rewrite.regex_rewriters import (
     JSNoneRewriter,
     JSWombatProxyRewriter,
     RegexRewriter,
-    XMLRewriter
+    XMLRewriter,
 )
 from pywb.rewrite.rewrite_amf import RewriteAMF
 from pywb.rewrite.rewrite_dash import RewriteDASH
 from pywb.rewrite.rewrite_hls import RewriteHLS
+from pywb.utils.constants import ContentRewriteTypes
 
 
 # ============================================================================
 class DefaultRewriter(BaseContentRewriter):
     DEFAULT_REWRITERS = {
-        'header': DefaultHeaderRewriter,
-        'cookie': HostScopeCookieRewriter,
-
-        'html': HTMLRewriter,
-        'html-banner-only': HTMLInsertOnlyRewriter,
-
-        'css': CSSRewriter,
-
-        'js': JSLocationOnlyRewriter,
-        'js-proxy': JSNoneRewriter,
-
-        'json': JSONPRewriter,
-
-        'xml': XMLRewriter,
-
-        'dash': RewriteDASH,
-
-        'hls': RewriteHLS,
-
-        'amf': RewriteAMF,
+        ContentRewriteTypes.header: DefaultHeaderRewriter,
+        ContentRewriteTypes.cookie: HostScopeCookieRewriter,
+        ContentRewriteTypes.html: HTMLRewriter,
+        ContentRewriteTypes.html_banner_only: HTMLInsertOnlyRewriter,
+        ContentRewriteTypes.css: CSSRewriter,
+        ContentRewriteTypes.js: JSLocationOnlyRewriter,
+        ContentRewriteTypes.js_proxy: JSNoneRewriter,
+        ContentRewriteTypes.json: JSONPRewriter,
+        ContentRewriteTypes.xml: XMLRewriter,
+        ContentRewriteTypes.dash: RewriteDASH,
+        ContentRewriteTypes.hls: RewriteHLS,
+        ContentRewriteTypes.amf: RewriteAMF,
     }
 
     rewrite_types = {
         # HTML
-        'text/html': 'guess-html',
-        'application/xhtml': 'html',
-        'application/xhtml+xml': 'html',
-
+        'text/html': ContentRewriteTypes.guess_html,
+        'application/xhtml': ContentRewriteTypes.html,
+        'application/xhtml+xml': ContentRewriteTypes.html,
         # CSS
-        'text/css': 'css',
-
+        'text/css': ContentRewriteTypes.css,
         # JS
-        'text/javascript': 'js',
-        'application/javascript': 'js',
-        'application/x-javascript': 'js',
-
+        'text/javascript': ContentRewriteTypes.js,
+        'application/javascript': ContentRewriteTypes.js,
+        'application/x-javascript': ContentRewriteTypes.js,
         # JSON
-        'application/json': 'json',
-
+        'application/json': ContentRewriteTypes.json,
         # HLS
-        'application/x-mpegURL': 'hls',
-        'application/vnd.apple.mpegurl': 'hls',
-
+        'application/x-mpegURL': ContentRewriteTypes.hls,
+        'application/vnd.apple.mpegurl': ContentRewriteTypes.hls,
         # DASH
-        'application/dash+xml': 'dash',
-
+        'application/dash+xml': ContentRewriteTypes.dash,
         # AMF
-        'application/x-amf': 'amf',
-
+        'application/x-amf': ContentRewriteTypes.amf,
         # XML -- don't rewrite xml
         # 'text/xml': 'xml',
         # 'application/xml': 'xml',
         # 'application/rss+xml': 'xml',
-
         # PLAIN
-        'text/plain': 'guess-text',
-
+        'text/plain': ContentRewriteTypes.guess_text,
         # DEFAULT or octet-stream
-        '': 'guess-text',
-        'application/octet-stream': 'guess-bin'
+        '': ContentRewriteTypes.guess_text,
+        'application/octet-stream': ContentRewriteTypes.guess_bin,
     }
 
     default_content_types = {
-        'html': 'text/html',
-        'css': 'text/css',
-        'js': 'text/javascript'
+        ContentRewriteTypes.html: 'text/html',
+        ContentRewriteTypes.css: 'text/css',
+        ContentRewriteTypes.js: 'text/javascript',
     }
 
     def __init__(self, replay_mod='', config=None):
@@ -108,19 +92,20 @@ class DefaultRewriter(BaseContentRewriter):
 
 # ============================================================================
 class RewriterWithJSProxy(DefaultRewriter):
+    OBJECT_PROXY_SUPPORTED_UA = {
+        'chrome': '49.0',
+        'firefox': '44.0',
+        'safari': '10.0',
+        'opera': '36.0',
+        'edge': '12.0',
+        'msie': None,
+    }
+
     def __init__(self, *args, **kwargs):
         super(RewriterWithJSProxy, self).__init__(*args, **kwargs)
-        self.obj_proxy_supported_ua = {
-            'chrome': '49.0',
-            'firefox': '44.0',
-            'safari': '10.0',
-            'opera': '36.0',
-            'edge': '12.0',
-            'msie': None,
-        }
 
     def get_rewriter(self, rw_type, rwinfo=None):
-        if rw_type == 'js' and rwinfo:
+        if rw_type == ContentRewriteTypes.js and rwinfo:
             # check if UA allows this
             if self.ua_allows_obj_proxy(rwinfo.url_rewriter.rewrite_opts):
                 return JSWombatProxyRewriter
@@ -138,6 +123,6 @@ class RewriterWithJSProxy(DefaultRewriter):
         if ua is None:
             return True
 
-        min_vers = self.obj_proxy_supported_ua.get(ua.browser)
+        min_vers = self.OBJECT_PROXY_SUPPORTED_UA.get(ua.browser)
 
         return min_vers and ua.version >= min_vers

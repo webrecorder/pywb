@@ -12,6 +12,7 @@ from six.moves.urllib.parse import urljoin, urlsplit, urlunsplit
 
 from pywb.rewrite.content_rewriter import StreamingRewriter
 from pywb.rewrite.regex_rewriters import CSSRewriter, JSRewriter
+from pywb.utils.constants import CharSets, RewriteMods
 
 try:
     orig_unescape = six.moves.html_parser.unescape
@@ -26,11 +27,11 @@ except Exception:
 
 # ensure invalid cond ending ']-->' closing decl
 # is treated same as ']>'
-markupbase._msmarkedsectionclose = re.compile(r"]\s*-{0,2}>")
+markupbase._msmarkedsectionclose = re.compile(r']\s*-{0,2}>')
 
 
 class AccumBuff:
-    __slots__ = ("ls",)
+    __slots__ = ('ls',)
 
     def __init__(self):
         self.ls = []
@@ -39,53 +40,57 @@ class AccumBuff:
         self.ls.append(string)
 
     def getvalue(self):
-        return "".join(self.ls)
+        return ''.join(self.ls)
 
 
 # =================================================================
 class HTMLParsingRewriter(HTMLParser):
     # tags allowed in the <head> of an html document
     HEAD_TAGS = [
-        "html",
-        "head",
-        "base",
-        "link",
-        "meta",
-        "title",
-        "style",
-        "script",
-        "object",
-        "bgsound",
+        'html',
+        'head',
+        'base',
+        'link',
+        'meta',
+        'title',
+        'style',
+        'script',
+        'object',
+        'bgsound',
     ]
 
-    BEFORE_HEAD_TAGS = ["html", "head"]
+    BEFORE_HEAD_TAGS = ['html', 'head']
 
-    DATA_RW_PROTOCOLS = ("http://", "https://", "//")
+    DATA_RW_PROTOCOLS = ('http://', 'https://', '//')
 
     PRELOAD_TYPES = {
-        "script": "js_",
-        "worker": "js_",
-        "style": "cs_",
-        "image": "im_",
-        "document": "if_",
-        "fetch": "mp_",
-        "font": "oe_",
-        "audio": "oe_",
-        "video": "oe_",
-        "embed": "oe_",
-        "object": "oe_",
-        "track": "oe_",
+        'script': RewriteMods.javascript,
+        'worker': RewriteMods.javascript,
+        'style': RewriteMods.css,
+        'image': RewriteMods.image,
+        'document': RewriteMods.iframe,
+        'fetch': RewriteMods.main_page,
+        'font': RewriteMods.object_embed,
+        'audio': RewriteMods.object_embed,
+        'video': RewriteMods.object_embed,
+        'embed': RewriteMods.object_embed,
+        'object': RewriteMods.object_embed,
+        'track': RewriteMods.object_embed,
     }
 
     META_REFRESH_REGEX = re.compile(
-        "^[\\d.]+\\s*;\\s*url\\s*=\\s*(.+?)\\s*$", re.IGNORECASE | re.MULTILINE
+        '^[\\d.]+\\s*;\\s*url\\s*=\\s*(.+?)\\s*$', re.IGNORECASE | re.MULTILINE
     )
 
-    ADD_WINDOW = re.compile("(?<![.])(WB_wombat_)")
+    ADD_WINDOW = re.compile('(?<![.])(WB_wombat_)')
 
-    SRCSET_REGEX = re.compile("\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))")
+    SRCSET_REGEX = re.compile('\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))')
 
-    PARSETAG = re.compile("[<]")
+    PARSETAG = re.compile('[<]')
+
+    META_REFRESH_ATTRS = ('http-equiv', 'refresh')
+    META_CSP_ATTRS = ('http-equiv', 'content-security-policy')
+    META_REFERRER_ATTRS = ('name', 'referrer')
 
     @staticmethod
     def _init_rewrite_tags(defmod):
@@ -96,37 +101,43 @@ class HTMLParsingRewriter(HTMLParser):
         :rtype: dict[str, dict[str, str]]
         """
         rewrite_tags = {
-            "a": {"href": defmod},
-            "applet": {"codebase": "oe_", "archive": "oe_"},
-            "area": {"href": defmod},
-            "audio": {"src": "oe_"},
-            "base": {"href": defmod},
-            "blockquote": {"cite": defmod},
-            "body": {"background": "im_"},
-            "button": {"formaction": defmod},
-            "command": {"icon": "im_"},
-            "del": {"cite": defmod},
-            "embed": {"src": "oe_"},
-            "head": {"": defmod},  # for head rewriting
-            "iframe": {"src": "if_"},
-            "image": {"src": "im_", "xlink:href": "im_"},
-            "img": {"src": "im_", "srcset": "im_"},
-            "ins": {"cite": defmod},
-            "input": {"src": "im_", "formaction": defmod},
-            "form": {"action": defmod},
-            "frame": {"src": "fr_"},
-            "link": {"href": "oe_"},
-            "meta": {"content": defmod},
-            "object": {"codebase": "oe_", "data": "oe_"},
-            "param": {"value": "oe_"},
-            "q": {"cite": defmod},
-            "ref": {"href": "oe_"},
-            "script": {
-                "src": "js_",
-                "xlink:href": "js_",
+            'a': {'href': defmod},
+            'applet': {
+                'codebase': RewriteMods.object_embed,
+                'archive': RewriteMods.object_embed,
+            },
+            'area': {'href': defmod},
+            'audio': {'src': RewriteMods.object_embed},
+            'base': {'href': defmod},
+            'blockquote': {'cite': defmod},
+            'body': {'background': RewriteMods.image},
+            'button': {'formaction': defmod},
+            'command': {'icon': RewriteMods.image},
+            'del': {'cite': defmod},
+            'embed': {'src': RewriteMods.object_embed},
+            'head': {'': defmod},  # for head rewriting
+            'iframe': {'src': RewriteMods.iframe},
+            'image': {'src': RewriteMods.image, 'xlink:href': RewriteMods.image},
+            'img': {'src': RewriteMods.image, 'srcset': RewriteMods.image},
+            'ins': {'cite': defmod},
+            'input': {'src': RewriteMods.image, 'formaction': defmod},
+            'form': {'action': defmod},
+            'frame': {'src': RewriteMods.frame},
+            'link': {'href': RewriteMods.object_embed},
+            'meta': {'content': defmod},
+            'object': {
+                'codebase': RewriteMods.object_embed,
+                'data': RewriteMods.object_embed,
+            },
+            'param': {'value': RewriteMods.object_embed},
+            'q': {'cite': defmod},
+            'ref': {'href': RewriteMods.object_embed},
+            'script': {
+                'src': RewriteMods.javascript,
+                'xlink:href': RewriteMods.javascript,
             },  # covers both HTML and SVG script tags
-            "source": {"src": "oe_"},
-            "video": {"src": "oe_", "poster": "im_"},
+            'source': {'src': RewriteMods.object_embed},
+            'video': {'src': RewriteMods.object_embed, 'poster': RewriteMods.image},
         }
 
         return rewrite_tags
@@ -137,10 +148,10 @@ class HTMLParsingRewriter(HTMLParser):
         head_insert=None,
         js_rewriter=None,
         css_rewriter=None,
-        url="",
-        defmod="",
+        url='',
+        defmod='',
         parse_comments=False,
-        charset="utf-8",
+        charset=CharSets.utf,
     ):
         if sys.version_info > (3, 4):  # pragma: no cover
             super(HTMLParsingRewriter, self).__init__(convert_charrefs=False)
@@ -161,16 +172,16 @@ class HTMLParsingRewriter(HTMLParser):
         # get opts from urlrewriter
         self.opts = url_rewriter.rewrite_opts
 
-        self.force_decl = self.opts.get("force_html_decl", None)
+        self.force_decl = self.opts.get('force_html_decl', None)
 
         self._tags_to_attr_rewrite_fns = {
-            "link": self._init_tag_attr_rewrite_lookup(href=self._rewrite_link_href),
-            "meta": self._init_tag_attr_rewrite_lookup(
+            'link': self._init_tag_attr_rewrite_lookup(href=self._rewrite_link_href),
+            'meta': self._init_tag_attr_rewrite_lookup(
                 content=self._rewrite_meta_content
             ),
-            "base": self._init_tag_attr_rewrite_lookup(href=self._rewrite_base_href),
-            "script": self._init_tag_attr_rewrite_lookup(src=self._rewrite_script_src),
-            "param": defaultdict(self._rewrite_param_tag),
+            'base': self._init_tag_attr_rewrite_lookup(href=self._rewrite_base_href),
+            'script': self._init_tag_attr_rewrite_lookup(src=self._rewrite_script_src),
+            'param': defaultdict(self._rewrite_param_tag),
         }
 
         self._attr_rewrite_fns = self._init_tag_attr_rewrite_lookup()
@@ -181,12 +192,12 @@ class HTMLParsingRewriter(HTMLParser):
 
     def _init_tag_attr_rewrite_lookup(self, **kwargs):
         tag_attr_rewrite_fns = {
-            "href": self._rewrite_href_attr,
-            "srcset": self._rewrite_srcset_attr,
-            "crossorigin": self._attr_name_prefix_rewrite,
-            "integrity": self._attr_name_prefix_rewrite,
-            "style": self._rewrite_style_attr,
-            "background": self._rewrite_background_attr,
+            'href': self._rewrite_href_attr,
+            'srcset': self._rewrite_srcset_attr,
+            'crossorigin': self._attr_name_prefix_rewrite,
+            'integrity': self._attr_name_prefix_rewrite,
+            'style': self._rewrite_style_attr,
+            'background': self._rewrite_background_attr,
         }
         tag_attr_rewrite_fns.update(**kwargs)
         return tag_attr_rewrite_fns
@@ -205,7 +216,7 @@ class HTMLParsingRewriter(HTMLParser):
         self.out = None
 
         if self.force_decl:
-            result = self.force_decl + "\n" + result
+            result = self.force_decl + '\n' + result
             self.force_decl = None
 
         return result
@@ -223,15 +234,15 @@ class HTMLParsingRewriter(HTMLParser):
         return result
 
     def parse_data(self, data):
-        if self._wb_parse_context == "script":
+        if self._wb_parse_context == 'script':
             data = self._rewrite_script(data)
-        elif self._wb_parse_context == "style":
+        elif self._wb_parse_context == 'style':
             data = self._rewrite_css(data)
 
         self.out.write(data)
 
     def try_unescape(self, value):
-        if not value.startswith("http"):
+        if not value.startswith('http'):
             return value
 
         try:
@@ -281,29 +292,29 @@ class HTMLParsingRewriter(HTMLParser):
     def handle_starttag(self, tag, attrs):
         self._rewrite_tag_attrs(tag, attrs)
 
-        if tag != "head" or not self._rewrite_head(False):
-            self.out.write(">")
+        if tag != 'head' or not self._rewrite_head(False):
+            self.out.write('>')
 
     def handle_startendtag(self, tag, attrs):
         self._rewrite_tag_attrs(tag, attrs, False)
 
-        if tag != "head" or not self._rewrite_head(True):
-            self.out.write("/>")
+        if tag != 'head' or not self._rewrite_head(True):
+            self.out.write('/>')
 
     def handle_endtag(self, tag):
         if tag == self._wb_parse_context:
             self._wb_parse_context = None
 
-        if tag == "head" and not self.has_base:
+        if tag == 'head' and not self.has_base:
             self._write_default_base()
 
-        self.out.write("</" + tag + ">")
+        self.out.write('</' + tag + '>')
 
     def handle_data(self, data):
         self.parse_data(data)
 
     def handle_comment(self, data):
-        self.out.write("<!--")
+        self.out.write('<!--')
         if self.parse_comments:
             # data = self._rewrite_script(data)
 
@@ -322,19 +333,19 @@ class HTMLParsingRewriter(HTMLParser):
             self.out.write(data)
         else:
             self.parse_data(data)
-        self.out.write("-->")
+        self.out.write('-->')
 
     def handle_decl(self, data):
-        self.out.write("<!" + data + ">")
+        self.out.write('<!' + data + '>')
         self.force_decl = None
 
     def handle_pi(self, data):
-        self.out.write("<?" + data + ">")
+        self.out.write('<?' + data + '>')
 
     def unknown_decl(self, data):
-        self.out.write("<![")
+        self.out.write('<![')
         self.parse_data(data)
-        self.out.write("]>")
+        self.out.write(']>')
 
     def error(self, message):
         print(message)
@@ -347,7 +358,7 @@ class HTMLParsingRewriter(HTMLParser):
         :rtype: str
         """
         if not meta_refresh:
-            return ""
+            return ''
 
         m = self.META_REFRESH_REGEX.match(meta_refresh)
         if not m:
@@ -361,7 +372,7 @@ class HTMLParsingRewriter(HTMLParser):
 
         return meta_refresh
 
-    def _rewrite_base(self, url, mod=""):
+    def _rewrite_base(self, url, mod=''):
         """
 
         :param url:
@@ -370,7 +381,7 @@ class HTMLParsingRewriter(HTMLParser):
         :rtype: str
         """
         if not url:
-            return ""
+            return ''
 
         url = self._ensure_url_has_path(url)
 
@@ -380,7 +391,7 @@ class HTMLParsingRewriter(HTMLParser):
 
         self.has_base = True
 
-        if self.opts.get("rewrite_base", True):
+        if self.opts.get('rewrite_base', True):
             return base_url
         return url
 
@@ -401,39 +412,39 @@ class HTMLParsingRewriter(HTMLParser):
         """ ensure the url has a path component
         eg. http://example.com#abc converted to http://example.com/#abc
         """
-        inx = url.find("://")
+        inx = url.find('://')
         if inx > 0:
             rest = url[inx + 3 :]
-        elif url.startswith("//"):
+        elif url.startswith('//'):
             rest = url[2:]
         else:
             rest = url
 
-        if "/" in rest:
+        if '/' in rest:
             return url
 
         scheme, netloc, path, query, frag = urlsplit(url)
         if not path:
-            path = "/"
+            path = '/'
 
         url = urlunsplit((scheme, netloc, path, query, frag))
         return url
 
     def _rewrite_url(self, value, mod=None, force_abs=False):
         if not value:
-            return ""
+            return ''
 
         value = value.strip()
         if not value:
-            return ""
+            return ''
 
         orig_value = value
 
         # if not utf-8, then stream was encoded as iso-8859-1, and need to reencode
         # into correct charset
-        if self.charset != "utf-8" and self.charset != "iso-8859-1":
+        if self.charset not in CharSets.utf_and_iso:
             try:
-                value = value.encode("iso-8859-1").decode(self.charset)
+                value = value.encode(CharSets.iso).decode(self.charset)
             except Exception:
                 pass
 
@@ -449,40 +460,40 @@ class HTMLParsingRewriter(HTMLParser):
 
         return rewritten_value
 
-    def _rewrite_srcset(self, value, mod=""):
+    def _rewrite_srcset(self, value, mod=''):
         if not value:
-            return ""
+            return ''
         values = [
             self._rewrite_url(url.strip())
             for url in re.split(self.SRCSET_REGEX, value)
             if url
         ]
-        return ", ".join(values)
+        return ', '.join(values)
 
     def _rewrite_css(self, css_content):
         if css_content:
             return self.css_rewriter.rewrite_complete(css_content)
-        return ""
+        return ''
 
     def _rewrite_script(self, script_content, inline_attr=False):
         if not script_content:
-            return ""
+            return ''
 
         content = self.js_rewriter.rewrite_complete(
             script_content, inline_attr=inline_attr
         )
 
         if inline_attr:
-            return self.ADD_WINDOW.sub("window.\\1", content)
+            return self.ADD_WINDOW.sub('window.\\1', content)
 
         return content
 
     def _default_attr_rewrite(self, handler, tag_attrs, attr_name, attr_value):
         rw_value = attr_value
         # special case: data- attrs, conditional rewrite
-        if attr_name and attr_value and attr_name.startswith("data-"):
+        if attr_name and attr_value and attr_name.startswith('data-'):
             if attr_value.startswith(self.DATA_RW_PROTOCOLS):
-                rw_mod = "oe_"
+                rw_mod = RewriteMods.object_embed
                 rw_value = self._rewrite_url(attr_value, rw_mod)
         # rewrite url using tag handler
         else:
@@ -493,13 +504,13 @@ class HTMLParsingRewriter(HTMLParser):
         return attr_name, rw_value
 
     def _rewrite_background_attr(self, rw_mod, tag_attrs, attr_name, attr_value):
-        return attr_name, self._rewrite_url(attr_value, "im_")
+        return attr_name, self._rewrite_url(attr_value, RewriteMods.image)
 
     def _rewrite_style_attr(self, handler, tag_attrs, attr_name, attr_value):
         return attr_name, self._rewrite_css(attr_value)
 
     def _attr_name_prefix_rewrite(self, handler, tag_attrs, attr_name, attr_value):
-        return "_" + attr_name, attr_value
+        return '_' + attr_name, attr_value
 
     def _rewrite_href_attr(self, handler, tag_attrs, attr_name, attr_value):
         return attr_name, self._rewrite_url(attr_value, self.defmod)
@@ -512,16 +523,16 @@ class HTMLParsingRewriter(HTMLParser):
                 for url in re.split(self.SRCSET_REGEX, attr_value)
                 if url
             ]
-            rw_value = ", ".join(values)
+            rw_value = ', '.join(values)
         return attr_name, rw_value
 
     def _rewrite_link_href(self, handler, tag_attrs, attr_name, attr_value):
         rw_mod = handler.get(attr_name)
-        # rel="canonical"
-        rel = self.get_attr(tag_attrs, "rel")
+        # rel='canonical'
+        rel = self.get_attr(tag_attrs, 'rel')
         if rel is not None:
-            if rel == "canonical":
-                if self.opts.get("rewrite_rel_canon", True):
+            if rel == 'canonical':
+                if self.opts.get('rewrite_rel_canon', True):
                     rw_value = self._rewrite_url(attr_value, rw_mod)
                 else:
                     # resolve relative rel=canonical URLs so that they
@@ -532,28 +543,28 @@ class HTMLParsingRewriter(HTMLParser):
                 return attr_name, rw_value
 
             # find proper mod for preload
-            elif rel == "preload":
-                preload = self.get_attr(tag_attrs, "as")
+            elif rel == 'preload':
+                preload = self.get_attr(tag_attrs, 'as')
                 rw_mod = self.PRELOAD_TYPES.get(preload, rw_mod)
 
             # for html imports with an optional as (google exclusive)
-            elif rel == "import":
-                rw_mod = "mp_"
+            elif rel == 'import':
+                rw_mod = RewriteMods.main_page
 
-            elif rel == "stylesheet":
-                rw_mod = "cs_"
+            elif rel == 'stylesheet':
+                rw_mod = RewriteMods.css
 
         return attr_name, self._rewrite_url(attr_value, rw_mod)
 
     def _rewrite_meta_content(self, handler, tag_attrs, attr_name, attr_value):
         rw_name = attr_name
         rw_value = attr_value
-        if self.has_attr(tag_attrs, ("http-equiv", "refresh")):
+        if self.has_attr(tag_attrs, self.META_REFRESH_ATTRS):
             rw_value = self._rewrite_meta_refresh(attr_value)
-        elif self.has_attr(tag_attrs, ("http-equiv", "content-security-policy")):
-            rw_name = "_" + attr_name
-        elif self.has_attr(tag_attrs, ("name", "referrer")):
-            rw_value = "no-referrer-when-downgrade"
+        elif self.has_attr(tag_attrs, self.META_CSP_ATTRS):
+            rw_name = '_' + attr_name
+        elif self.has_attr(tag_attrs, self.META_REFERRER_ATTRS):
+            rw_value = 'no-referrer-when-downgrade'
         elif attr_value.startswith(self.DATA_RW_PROTOCOLS):
             rw_mod = handler.get(attr_name)
             rw_value = self._rewrite_url(attr_value, rw_mod)
@@ -579,12 +590,12 @@ class HTMLParsingRewriter(HTMLParser):
         ):
             # URL not skipped, likely src='js/....', forcing abs to make sure, cause PHP MIME(JS) === HTML
             rw_value = self._rewrite_url(rw_value, rw_mod, True)
-            self._write_attr("__wb_orig_src", ov, empty_attr=None)
+            self._write_attr('__wb_orig_src', ov, empty_attr=None)
         return attr_name, rw_value
 
     def _is_inline_js(self, attr_name, attr_value):
-        return (attr_value and attr_value.startswith("javascript:")) or (
-            attr_name.startswith("on") and attr_name[2:3] != "-"
+        return (attr_value and attr_value.startswith('javascript:')) or (
+            attr_name.startswith('on') and attr_name[2:3] != '-'
         )
 
     def _rewrite_tag_attrs(self, tag, tag_attrs, set_parsing_context=True):
@@ -627,7 +638,7 @@ class HTMLParsingRewriter(HTMLParser):
         for attr_name, attr_value in tag_attrs:
             empty_attr = False
             if attr_value is None:
-                attr_value = ""
+                attr_value = ''
                 empty_attr = True
 
             # special case: inline JS/event handler
@@ -636,7 +647,9 @@ class HTMLParsingRewriter(HTMLParser):
                 rw_value = self._rewrite_script(attr_value, True)
             else:
                 rewrite_fn = attr_rewrite_fns.get(attr_name, self._default_attr_rewrite)
-                rw_name, rw_value = rewrite_fn(handler, tag_attrs, attr_name, attr_value)
+                rw_name, rw_value = rewrite_fn(
+                    handler, tag_attrs, attr_name, attr_value
+                )
 
             self._write_attr(rw_name, rw_value, empty_attr)
 
@@ -645,24 +658,24 @@ class HTMLParsingRewriter(HTMLParser):
     def _set_parse_context(self, tag, tag_attrs):
         # special case: script or style parse context
         if not self._wb_parse_context:
-            if tag == "style":
-                self._wb_parse_context = "style"
+            if tag == 'style':
+                self._wb_parse_context = 'style'
 
-            elif tag == "script" and self._allow_js_type(tag_attrs):
-                self._wb_parse_context = "script"
+            elif tag == 'script' and self._allow_js_type(tag_attrs):
+                self._wb_parse_context = 'script'
 
     def _allow_js_type(self, tag_attrs):
-        type_value = self.get_attr(tag_attrs, "type")
+        type_value = self.get_attr(tag_attrs, 'type')
 
         if not type_value:
             return True
 
         tv_l = type_value.lower()
 
-        if "javascript" in tv_l:
+        if 'javascript' in tv_l:
             return True
 
-        return "ecmascript" in tv_l
+        return 'ecmascript' in tv_l
 
     def _rewrite_head(self, start_end):
         # special case: head tag
@@ -671,7 +684,7 @@ class HTMLParsingRewriter(HTMLParser):
         if not self.head_insert or self._wb_parse_context:
             return False
 
-        self.out.write(">")
+        self.out.write('>')
         self.out.write(self.head_insert)
         self.head_insert = None
 
@@ -679,7 +692,7 @@ class HTMLParsingRewriter(HTMLParser):
             if not self.has_base:
                 self._write_default_base()
 
-            self.out.write("</head>")
+            self.out.write('</head>')
 
         return True
 
@@ -699,7 +712,7 @@ class HTMLParsingRewriter(HTMLParser):
 
     def _internal_close(self):
         if self._wb_parse_context:
-            end_tag = "</" + self._wb_parse_context + ">"
+            end_tag = '</' + self._wb_parse_context + '>'
             self.feed(end_tag)
             self._wb_parse_context = None
 
@@ -726,10 +739,10 @@ class HTMLRewriter(StreamingRewriter):
         js_rewriter=None,
         css_rewriter=None,
         css_rewriter_class=None,
-        url="",
-        defmod="",
+        url='',
+        defmod='',
         parse_comments=False,
-        charset="utf-8",
+        charset=CharSets.utf,
     ):
         super(HTMLRewriter, self).__init__(url_rewriter, False)
 
@@ -766,4 +779,3 @@ class HTMLRewriter(StreamingRewriter):
 
     def close(self):
         return self.final_read()
-

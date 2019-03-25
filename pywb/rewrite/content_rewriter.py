@@ -10,6 +10,7 @@ from warcio.utils import to_native_str
 
 from pywb.utils.io import BUFF_SIZE, StreamIter
 from pywb.utils.loaders import load_py_name, load_yaml_config
+from pywb.utils.constants import CharSets, ContentRewriteTypes, RewriteMods
 
 
 # ============================================================================
@@ -77,11 +78,11 @@ class BaseContentRewriter(object):
         return True
 
     def get_rw_class(self, rule, text_type, rwinfo):
-        if text_type == 'json' and 'js_regex_func' in rule:
-            text_type = 'js-proxy'
+        if text_type == ContentRewriteTypes.json and 'js_regex_func' in rule:
+            text_type = ContentRewriteTypes.js_proxy
 
-        if text_type == 'js' and not rwinfo.is_url_rw():
-            text_type = 'js-proxy'
+        if text_type == ContentRewriteTypes.js and not rwinfo.is_url_rw():
+            text_type = ContentRewriteTypes.js_proxy
 
         rw_type = rule.get(text_type, text_type)
         rw_class = self.get_rewriter(rw_type, rwinfo)
@@ -96,39 +97,41 @@ class BaseContentRewriter(object):
     def create_rewriter(self, text_type, rule, rwinfo, cdx, head_insert_func=None):
         rw_type, rw_class = self.get_rw_class(rule, text_type, rwinfo)
 
-        if rw_type in ('js', 'js-proxy'):
+        if rw_type in ContentRewriteTypes.js_and_js_proxy:
             extra_rules = []
             if self.has_custom_rules(rule, cdx):
                 extra_rules = rule['js_regex_func'](rwinfo.url_rewriter)
 
             # if js-proxy and no rules, default to none
             # js rewriting in proxy only if extra rules apply
-            if rw_type == 'js-proxy' and not extra_rules:
+            if rw_type == ContentRewriteTypes.js_proxy and not extra_rules:
                 return None
 
             return rw_class(rwinfo.url_rewriter, extra_rules)
 
-        elif rw_type != 'html':
+        elif rw_type != ContentRewriteTypes.html:
             return rw_class(rwinfo.url_rewriter)
 
         # HTML Rewriter
         head_insert_str = self.get_head_insert(rwinfo, rule, head_insert_func, cdx)
 
-        js_rewriter = self.create_rewriter('js', rule, rwinfo, cdx)
-        css_rewriter = self.create_rewriter('css', rule, rwinfo, cdx)
+        js_rewriter = self.create_rewriter(ContentRewriteTypes.js, rule, rwinfo, cdx)
+        css_rewriter = self.create_rewriter(ContentRewriteTypes.css, rule, rwinfo, cdx)
 
         # if no js rewriter, then do banner insert only
         if not js_rewriter:
             rw_class = self.get_rewriter('html-banner-only', rwinfo)
 
-        rw = rw_class(rwinfo.url_rewriter,
-                      js_rewriter=js_rewriter,
-                      css_rewriter=css_rewriter,
-                      head_insert=head_insert_str,
-                      url=cdx['url'],
-                      defmod=self.replay_mod,
-                      parse_comments=rule.get('parse_comments', False),
-                      charset=rwinfo.charset)
+        rw = rw_class(
+            rwinfo.url_rewriter,
+            js_rewriter=js_rewriter,
+            css_rewriter=css_rewriter,
+            head_insert=head_insert_str,
+            url=cdx['url'],
+            defmod=self.replay_mod,
+            parse_comments=rule.get('parse_comments', False),
+            charset=rwinfo.charset,
+        )
 
         return rw
 
@@ -145,15 +148,19 @@ class BaseContentRewriter(object):
 
             if rwinfo.charset:
                 try:
-                    head_insert_str = webencodings.encode(head_insert_orig, rwinfo.charset)
+                    head_insert_str = webencodings.encode(
+                        head_insert_orig, rwinfo.charset
+                    )
                 except Exception:
                     pass
 
             # no charset detected, encode banner as ascii html entities
             if not head_insert_str:
-                head_insert_str = head_insert_orig.encode('ascii', 'xmlcharrefreplace')
+                head_insert_str = head_insert_orig.encode(
+                    CharSets.ascii, 'xmlcharrefreplace'
+                )
 
-            head_insert_str = head_insert_str.decode('iso-8859-1')
+            head_insert_str = head_insert_str.decode(CharSets.iso)
 
         return head_insert_str
 
@@ -170,9 +177,15 @@ class BaseContentRewriter(object):
         header_rw_class = self.get_rewriter('header', rwinfo)
         return header_rw_class(rwinfo)()
 
-    def __call__(self, record, url_rewriter, cookie_rewriter,
-                 head_insert_func=None,
-                 cdx=None, environ=None):
+    def __call__(
+        self,
+        record,
+        url_rewriter,
+        cookie_rewriter,
+        head_insert_func=None,
+        cdx=None,
+        environ=None,
+    ):
 
         environ = environ or {}
         rwinfo = RewriteInfo(record, self, url_rewriter, cookie_rewriter)
@@ -186,7 +199,9 @@ class BaseContentRewriter(object):
             rwinfo.text_type = rule.get('mixin_type', 'json')
 
         if rwinfo.should_rw_content():
-            content_rewriter = self.create_rewriter(rwinfo.text_type, rule, rwinfo, cdx, head_insert_func)
+            content_rewriter = self.create_rewriter(
+                rwinfo.text_type, rule, rwinfo, cdx, head_insert_func
+            )
 
         gen = None
 
@@ -211,8 +226,7 @@ class BaseContentRewriter(object):
             # if not rewriting content, still need to dechunk
             # to conform to WSGI spec
             if rwinfo.is_chunked:
-                stream = ChunkedDataReader(rwinfo.record.raw_stream,
-                                           decomp_type=None)
+                stream = ChunkedDataReader(rwinfo.record.raw_stream, decomp_type=None)
             else:
                 stream = rwinfo.record.raw_stream
 
@@ -297,10 +311,13 @@ class StreamingRewriter(object):
             # for html rewriting:
             # if charset is utf-8, use that, otherwise default to encode to ascii-compatible encoding
             # encoding only used for url rewriting, encoding back to bytes after rewriting
-            if rwinfo.charset == 'utf-8' and rwinfo.text_type == 'html':
-                charset = 'utf-8'
+            if (
+                rwinfo.charset == CharSets.utf
+                and rwinfo.text_type == ContentRewriteTypes.html
+            ):
+                charset = CharSets.utf
             else:
-                charset = 'iso-8859-1'
+                charset = CharSets.iso
 
             if buff:
                 yield buff.encode(charset)
@@ -318,8 +335,8 @@ class StreamingRewriter(object):
                 try:
                     buff = decoder.decode(buff)
                 except UnicodeDecodeError:
-                    if charset == 'utf-8':
-                        rwinfo.charset = 'iso-8859-1'
+                    if charset == CharSets.utf:
+                        rwinfo.charset = CharSets.iso
                         charset = rwinfo.charset
                         decoder = codecs.getincrementaldecoder(charset)()
                         buff = decoder.decode(buff)
@@ -345,12 +362,11 @@ class StreamingRewriter(object):
 class RewriteInfo(object):
     TAG_REGEX = re.compile(b'^(\xef\xbb\xbf)?\s*\<')
     TAG_REGEX2 = re.compile(b'^.*<\w+[\s>]')
-    JSON_REGEX = re.compile(b'^\s*[{[][{"]')  # if it starts with this then highly likely not HTML
+    JSON_REGEX = re.compile(
+        b'^\s*[{[][{"]'
+    )  # if it starts with this then highly likely not HTML
 
-    JSONP_CONTAINS = ['callback=jQuery',
-                      'callback=jsonp',
-                      '.json?'
-                     ]
+    JSONP_CONTAINS = ['callback=jQuery', 'callback=jsonp', '.json?']
 
     def __init__(self, record, content_rewriter, url_rewriter, cookie_rewriter=None):
         self.record = record
@@ -374,7 +390,9 @@ class RewriteInfo(object):
         self.cookie_rewriter = cookie_rewriter
 
         if self.record:
-            self.text_type, self.charset = self._fill_text_type_and_charset(content_rewriter)
+            self.text_type, self.charset = self._fill_text_type_and_charset(
+                content_rewriter
+            )
 
     def _fill_text_type_and_charset(self, content_rewriter):
         content_type = self.record.http_headers.get_header('Content-Type', '')
@@ -388,25 +406,29 @@ class RewriteInfo(object):
         text_type = self._resolve_text_type(orig_text_type)
         url = self.url_rewriter.wburl.url
 
-        if text_type in ('guess-text', 'guess-bin', 'guess-html'):
+        if text_type in ContentRewriteTypes.guess_text_type:
             text_type = None
 
-        if text_type == 'js':
+        if text_type == ContentRewriteTypes.js:
             # determine if url contains strings that indicate jsonp
             if any(jsonp_string in url for jsonp_string in self.JSONP_CONTAINS):
-                text_type = 'json'
+                text_type = ContentRewriteTypes.json
 
-        if (text_type and orig_text_type != text_type) or text_type == 'html':
+        if (
+            text_type and orig_text_type != text_type
+        ) or text_type == ContentRewriteTypes.html:
             if url.endswith('.json'):
                 buff = self.read_and_keep(56)
                 if self.JSON_REGEX.match(buff) is not None:
-                    return 'json', charset
+                    return ContentRewriteTypes.json, charset
             # check if default content_type that needs to be set
             new_mime = content_rewriter.default_content_types.get(text_type)
 
             if new_mime and new_mime != mime:
                 new_content_type = content_type.replace(mime, new_mime)
-                self.record.http_headers.replace_header('Content-Type', new_content_type)
+                self.record.http_headers.replace_header(
+                    'Content-Type', new_content_type
+                )
 
             # set charset
             if len(parts) == 2:
@@ -419,22 +441,22 @@ class RewriteInfo(object):
     def _resolve_text_type(self, text_type):
         mod = self.url_rewriter.wburl.mod
 
-        if mod == 'sw_' or mod == 'wkr_':
+        if mod in RewriteMods.js_worker_mods:
             return None
 
-        if text_type == 'css' and mod == 'js_':
-            text_type = 'css'
+        if text_type == ContentRewriteTypes.css and mod == RewriteMods.javascript:
+            text_type = ContentRewriteTypes.css
 
-        is_js_or_css = mod in ('js_', 'cs_')
+        is_js_or_css = mod in RewriteMods.css_and_js
 
         # if html or no-content type, allow resolving on js, css,
         # or other templates
-        if text_type in ('guess-text', 'guess-html'):
-            if not is_js_or_css and mod not in ('fr_', 'if_', 'mp_', 'bn_', ''):
+        if text_type in ContentRewriteTypes.guess_text:
+            if not is_js_or_css and mod not in RewriteMods.known_text_types:
                 return None
 
         # if application/octet-stream binary, only resolve if in js/css content
-        elif text_type in ('guess-bin', 'html'):
+        elif text_type in ContentRewriteTypes.guess_bin_or_html:
             if not is_js_or_css:
                 return text_type
 
@@ -445,20 +467,20 @@ class RewriteInfo(object):
 
         # check if doesn't start with a tag, then likely not html
         if self.TAG_REGEX.match(buff):
-            return 'html'
+            return ContentRewriteTypes.html
         # perform additional check to see if it has any html tags
-        elif text_type == 'guess-html' and not is_js_or_css:
+        elif text_type == ContentRewriteTypes.guess_html and not is_js_or_css:
             if self.TAG_REGEX2.match(buff):
-                return 'html'
+                return ContentRewriteTypes.html
 
         if not is_js_or_css:
             return text_type
-        elif mod == 'js_':
-            return 'js'
+        elif mod == RewriteMods.javascript:
+            return ContentRewriteTypes.js
         else:
-            return 'css'
+            return ContentRewriteTypes.css
 
-        #text_type = 'js' if mod == 'js_' else 'css'
+        # text_type = 'js' if mod == 'js_' else 'css'
 
     @property
     def content_stream(self):
@@ -477,22 +499,21 @@ class RewriteInfo(object):
         if not self.text_type:
             return False
 
-        if self.url_rewriter.wburl.mod == 'id_':
+        if self.url_rewriter.wburl.mod == RewriteMods.identity:
             return False
 
         if self.url_rewriter.rewrite_opts.get('is_ajax'):
-            if self.text_type in ('html', 'js'):
+            if self.text_type in ContentRewriteTypes.html_or_js:
                 return False
 
-        elif self.text_type == 'css' or self.text_type == 'xml':
-            if self.url_rewriter.wburl.mod == 'bn_':
+        elif self.text_type in ContentRewriteTypes.css_or_xml:
+            if self.url_rewriter.wburl.mod == RewriteMods.binary:
                 return False
 
         return True
 
     def is_url_rw(self):
-        if self.url_rewriter.wburl.mod in ('id_', 'bn_', 'sw_', 'wkr_'):
+        if self.url_rewriter.wburl.mod in RewriteMods.url_rw_excluded_mods:
             return False
 
         return True
-
