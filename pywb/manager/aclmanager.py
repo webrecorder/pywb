@@ -149,7 +149,7 @@ class ACLManager(CollectionsManager):
 
     def validate_access(self, access):
         """Returns true if the supplied access value is valid
-        otherwise the terminates the process
+        otherwise terminates the process
 
         :param str access: The access value to be validated
         :return: True if valid
@@ -174,7 +174,7 @@ class ACLManager(CollectionsManager):
 
         :param str url: The URL for the rule
         :param str access: The access value for the rule
-        :param bool exact_match: Is the rule an absolute value
+        :param bool exact_match: Is the rule to be added an exact match
         :rtype: None
         """
         if not self.validate_access(access):
