@@ -434,6 +434,7 @@ Create manage file based web archive collections
     from pywb.manager.aclmanager import ACLManager
     def do_acl(r):
         acl = ACLManager(r)
+        acl.process(r)
 
     acl_help = 'Configure Access Control Lists (ACL) for a collection'
     acl = subparsers.add_parser('acl', help=acl_help)

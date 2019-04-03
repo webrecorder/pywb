@@ -22,6 +22,9 @@ class ACLManager(CollectionsManager):
     DEFAULT_FILE = 'access-rules.aclj'
 
     def __init__(self, r):
+        """
+        :param r: Parsed result from ArgumentParser
+        """
         self.rules = []
 
         coll_name = r.coll_name
@@ -31,6 +34,13 @@ class ACLManager(CollectionsManager):
         self.target = r.coll_name
 
         super(ACLManager, self).__init__(coll_name, must_exist=False)
+
+    def process(self, r):
+        """
+        Process acl command
+        :param r: Parsed result from ArgumentParser
+        :return:
+        """
 
         # if target exists as a file, use that
         if os.path.isfile(self.target):
