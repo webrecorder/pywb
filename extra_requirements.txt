@@ -4,3 +4,4 @@ boto3
 uwsgi
 git+https://github.com/esnme/ultrajson.git
 pysocks
+lxml
