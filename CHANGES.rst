@@ -1,3 +1,9 @@
+pywb 2.2.20190410 changelist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Improved rewriting of JSONP, support matching JSONP with ``//`` comments (fixes #459)
+
+
 pywb 2.2.20190311 changelist
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
