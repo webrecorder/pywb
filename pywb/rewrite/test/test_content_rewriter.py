@@ -459,7 +459,23 @@ class TestContentRewriter(object):
 
     def test_rewrite_js_as_json_generic_jsonp(self):
         headers = {'Content-Type': 'application/json'}
-        content = '/**/ jsonpCallbackABCDEF({"foo": "bar"});'
+        content = '/*abc*/ jsonpCallbackABCDEF({"foo": "bar"});'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_',
+                                                  url='http://example.com/path/file?callback=jsonpCallback12345')
+
+        # content-type unchanged
+        assert ('Content-Type', 'application/json') in headers.headers
+
+        exp = 'jsonpCallback12345({"foo": "bar"});'
+        assert b''.join(gen).decode('utf-8') == exp
+
+    def test_rewrite_js_as_json_generic_jsonp_multiline_comment(self):
+        headers = {'Content-Type': 'application/json'}
+        content = """\
+// A comment
+// Another?
+jsonpCallbackABCDEF({"foo": "bar"});"""
 
         headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_',
                                                   url='http://example.com/path/file?callback=jsonpCallback12345')
