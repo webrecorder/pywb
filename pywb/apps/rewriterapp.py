@@ -147,6 +147,17 @@ class RewriterApp(object):
         return is_timegate
 
     def _get_prefer_mod(self, wb_url, environ, content_rw, is_proxy):
+        """Returns the default rewrite modifier and rewrite modifier based on the
+        value of the Prefer HTTP header if it is present
+
+        :param WbUrl wb_url: The WbUrl for the URL being rewritten
+        :param dict environ: The WSGI environment dictionary for the request
+        :param content_rw: The content rewriter instance
+        :param bool is_proxy: Is the rewrite operating in proxy mode
+        :return: A tuple containing the default rewrite modifier and rewrite modifier based
+        on the  value of the Prefer HTTP header if it is present
+        :rtype: tuple[str|None, str|None]
+        """
         if not self.enable_prefer:
             return None, None
 
@@ -516,6 +527,21 @@ class RewriterApp(object):
     def _add_memento_links(self, url, full_prefix, memento_dt, memento_ts,
                            status_headers, is_timegate, is_proxy, coll=None,
                            pref_applied=None, mod=None, is_memento=True):
+        """
+
+        :param str url: The URI-R being rewritten
+        :param str full_prefix: The replay prefix
+        :param str|None memento_dt: The memento datetime for the URI-R being rewritten
+        :param str memento_ts: The memento timestamp
+        :param warcio.StatusAndHeaders status_headers:
+        :param bool is_timegate: Are we returning a response for a timegate
+        :param bool is_proxy: Are we operating in proxy mode
+        :param str|None coll: The collection the URI-R is from
+        :param str|None pref_applied:
+        :param str|None mod: The rewrite modifier
+        :param bool is_memento:
+        :rtype: None
+        """
 
         replay_mod = mod or self.replay_mod
 

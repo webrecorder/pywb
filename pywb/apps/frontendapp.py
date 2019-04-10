@@ -1,12 +1,10 @@
 from gevent.monkey import patch_all; patch_all()
 
-#from bottle import run, Bottle, request, response, debug
 from werkzeug.routing import Map, Rule
 from werkzeug.exceptions import HTTPException, NotFound
 from werkzeug.wsgi import pop_path_info
 from six.moves.urllib.parse import urljoin
 from six import iteritems
-from warcio.statusandheaders import StatusAndHeaders
 from warcio.utils import to_native_str
 from warcio.timeutils import iso_date_to_timestamp
 from wsgiprox.wsgiprox import WSGIProxMiddleware
@@ -17,14 +15,14 @@ from pywb.recorder.recorderapp import RecorderApp
 from pywb.utils.loaders import load_yaml_config
 from pywb.utils.geventserver import GeventServer
 from pywb.utils.io import StreamIter
-from pywb.utils.wbexception import NotFoundException, WbException, AppPageNotFound
+from pywb.utils.wbexception import WbException, AppPageNotFound
 
 from pywb.warcserver.warcserver import WarcServer
 
 from pywb.rewrite.templateview import BaseInsertView
 
 from pywb.apps.static_handler import StaticHandler
-from pywb.apps.rewriterapp import RewriterApp, UpstreamException
+from pywb.apps.rewriterapp import RewriterApp
 from pywb.apps.wbrequestresponse import WbResponse
 
 import os
@@ -71,6 +69,8 @@ class FrontEndApp(object):
         self.handler = self.handle_request
         self.warcserver = WarcServer(config_file=config_file,
                                      custom_config=custom_config)
+        self.recorder = None
+        self.recorder_path = None
 
         config = self.warcserver.config
 
@@ -151,7 +151,11 @@ class FrontEndApp(object):
         return base_paths
 
     def init_recorder(self, recorder_config):
-        """Initialize the recording functionality of pywb. If recording_config is None this function is a no op"""
+        """Initialize the recording functionality of pywb. If recording_config is None this function is a no op
+
+        :param str|dict|None recorder_config: The configuration for the recorder app
+        :rtype: None
+        """
         if not recorder_config:
             self.recorder = None
             self.recorder_path = None
@@ -204,6 +208,12 @@ class FrontEndApp(object):
         indexer.start()
 
     def is_proxy_enabled(self, environ):
+        """Returns T/F indicating if proxy mode is enabled
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :return: T/F indicating if proxy mode is enabled
+        :rtype: bool
+        """
         return self.proxy_prefix is not None and 'wsgiprox.proxy_host' in environ
 
     def serve_home(self, environ):
@@ -485,6 +495,13 @@ class FrontEndApp(object):
         return WbResponse.redir_response(full_url, '307 Redirect')
 
     def __call__(self, environ, start_response):
+        """Handles a request
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :param start_response:
+        :return: The WbResponse for the request
+        :rtype: WbResponse
+        """
         return self.handler(environ, start_response)
 
     def handle_request(self, environ, start_response):

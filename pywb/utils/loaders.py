@@ -35,6 +35,11 @@ except ImportError:  # pragma: no cover
 
 # ============================================================================
 def init_yaml_env_vars():
+    """Initializes the yaml parser to be able to set
+    the value of fields from environment variables
+
+    :rtype: None
+    """
     env_rx = re.compile(r'\$\{[^}]+\}')
 
     yaml.add_implicit_resolver('!envvar', env_rx)
@@ -421,9 +426,18 @@ class S3Loader(BaseLoader):
 
 # =================================================================
 class WebHDFSLoader(HttpLoader):
+    """Loader class specifically for loading webhdfs content"""
+
     HTTP_URL = 'http://{host}/webhdfs/v1{path}?'
 
     def load(self, url, offset, length):
+        """Loads the supplied web hdfs content
+
+        :param str url: The URL to the web hdfs content to be loaded
+        :param int|float|double offset: The offset of the content to be loaded
+        :param int|float|double length: The length of the content to be loaded
+        :return: The raw response content
+        """
         parts = urlsplit(url)
 
         http_url = self.HTTP_URL.format(host=parts.netloc,

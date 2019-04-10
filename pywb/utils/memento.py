@@ -66,6 +66,16 @@ class MementoUtils(object):
 
     @classmethod
     def make_timemap_memento_link(cls, cdx, datetime=None, rel='memento', end=',\n', memento_format=None):
+        """Creates a memento link string for a timemap
+
+        :param dict cdx: The cdx object
+        :param str|None datetime: The datetime
+        :param str rel: The rel type
+        :param str end: Optional string appended to the end of the created link string
+        :param str|None memento_format: Optional string used to format the URL
+        :return: A memento link string
+        :rtype: str
+        """
         url = cdx.get('url')
         if not url:
             url = 'file://{0}:{1}:{2}'.format(cdx.get('filename'), cdx.get('offset'), cdx.get('length'))
@@ -113,6 +123,16 @@ class MementoUtils(object):
 
     @classmethod
     def make_memento_link(cls, url, type, dt, coll=None, memento_format=None):
+        """Creates a memento link string
+
+        :param str url: A URL
+        :param str type: The rel type
+        :param str dt: The datetime of the URL
+        :param str|None coll: Optional name of a collection
+        :param str|None memento_format: Optional string used to format the supplied URL
+        :return: A memento link string
+        :rtype: str
+        """
         if memento_format:
             memento_format = memento_format.format(url=url,
                                                    timestamp=http_date_to_timestamp(dt))
