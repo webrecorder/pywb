@@ -1,20 +1,19 @@
+import six
 from warcio.recordloader import ArchiveLoadFailed
 from warcio.timeutils import iso_date_to_timestamp
 
+from pywb.utils.io import no_except_close
+from pywb.utils.wbexception import NotFoundException
 from pywb.warcserver.resource.blockrecordloader import BlockArcWarcRecordLoader
 
-from pywb.utils.wbexception import NotFoundException
 
-import six
-
-
-#=================================================================
+# =================================================================
 class ResolvingLoader(object):
     MISSING_REVISIT_MSG = 'Original for revisit record could not be loaded'
 
-    def __init__(self, path_resolvers, record_loader=BlockArcWarcRecordLoader(), no_record_parse=False):
+    def __init__(self, path_resolvers, record_loader=None, no_record_parse=False):
         self.path_resolvers = path_resolvers
-        self.record_loader = record_loader
+        self.record_loader = record_loader if record_loader is not None else BlockArcWarcRecordLoader()
         self.no_record_parse = no_record_parse
 
     def __call__(self, cdx, failed_files, cdx_loader, *args, **kwargs):
@@ -29,7 +28,7 @@ class ResolvingLoader(object):
         elif headers_record != payload_record:
             # close remainder of stream as this record only used for
             # (already parsed) headers
-            headers_record.raw_stream.close()
+            no_except_close(headers_record.raw_stream)
 
             # special case: check if headers record is actually empty
             # (eg empty revisit), then use headers from revisit
@@ -37,6 +36,10 @@ class ResolvingLoader(object):
                 headers_record = payload_record
 
         if not headers_record or not payload_record:
+            if headers_record:
+                no_except_close(headers_record.raw_stream)
+            if payload_record:
+                no_except_close(payload_record.raw_stream)
             raise ArchiveLoadFailed('Could not load ' + str(cdx))
 
         # ensure status line is valid from here
@@ -57,12 +60,13 @@ class ResolvingLoader(object):
         from a different url to find the original record.
         """
         has_curr = (cdx['filename'] != '-')
-        #has_orig = (cdx.get('orig.filename', '-') != '-')
+        # has_orig = (cdx.get('orig.filename', '-') != '-')
         orig_f = cdx.get('orig.filename')
         has_orig = orig_f and orig_f != '-'
 
         # load headers record from cdx['filename'] unless it is '-' (rare)
         headers_record = None
+        payload_record = None
         if has_curr:
             headers_record = self._resolve_path_load(cdx, False, failed_files)
 
@@ -84,7 +88,6 @@ class ResolvingLoader(object):
             payload_record = self._resolve_path_load(cdx, True, failed_files)
 
         return headers_record, payload_record
-
 
     def _resolve_path_load(self, cdx, is_original, failed_files):
         """
@@ -127,8 +130,8 @@ class ResolvingLoader(object):
                 any_found = True
                 try:
                     return (self.record_loader.
-                             load(path, offset, length,
-                               no_record_parse=self.no_record_parse))
+                            load(path, offset, length,
+                                 no_record_parse=self.no_record_parse))
 
                 except Exception as ue:
                     last_exc = ue
@@ -140,12 +143,12 @@ class ResolvingLoader(object):
             failed_files.append(filename)
 
         if last_exc:
-            #msg = str(last_exc.__class__.__name__)
+            # msg = str(last_exc.__class__.__name__)
             msg = str(last_exc)
         else:
             msg = 'Archive File Not Found'
 
-        #raise ArchiveLoadFailed(msg, filename), None, last_traceback
+        # raise ArchiveLoadFailed(msg, filename), None, last_traceback
         six.reraise(ArchiveLoadFailed, ArchiveLoadFailed(filename + ': ' + msg), last_traceback)
 
     def _load_different_url_payload(self, cdx, headers_record,
