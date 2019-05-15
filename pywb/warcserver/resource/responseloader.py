@@ -525,7 +525,7 @@ class VideoLoader(BaseLoader):
             self.ydl = None
             return
 
-        self.ydl = YoutubeDL(dict(simulate=True,
+        self.ydl = YoutubeDL(dict(simulate=True, quiet=True,
                                   youtube_include_dash_manifest=False))
 
         self.ydl.add_default_info_extractors()
