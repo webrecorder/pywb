@@ -131,49 +131,49 @@ r"""
 #=================================================================
 
 >>> _test_js_obj_proxy('var foo = this;   location = bar')
-'var foo = (this && this._WB_wombat_obj_proxy || this);   location = (self.__WB_check_loc && self.__WB_check_loc(location) || {}).href = bar'
+'var foo = _____WB$wombat$check$this$function_____(this);   location = ((self.__WB_check_loc && self.__WB_check_loc(location)) || {}).href = bar'
 
 >>> _test_js_obj_proxy('var that =    this\n   location = bar')
-'var that =    (this && this._WB_wombat_obj_proxy || this)\n   location = (self.__WB_check_loc && self.__WB_check_loc(location) || {}).href = bar'
+'var that =    _____WB$wombat$check$this$function_____(this)\n   location = ((self.__WB_check_loc && self.__WB_check_loc(location)) || {}).href = bar'
 
 >>> _test_js_obj_proxy('location = "xyz"')
-'location = (self.__WB_check_loc && self.__WB_check_loc(location) || {}).href = "xyz"'
+'location = ((self.__WB_check_loc && self.__WB_check_loc(location)) || {}).href = "xyz"'
 
 >>> _test_js_obj_proxy('var foo = this.location')
-'var foo = (this && this._WB_wombat_obj_proxy || this).location'
+'var foo = _____WB$wombat$check$this$function_____(this).location'
 
 >>> _test_js_obj_proxy('A = B\nthis.location = "foo"')
-'A = B\n;(this && this._WB_wombat_obj_proxy || this).location = "foo"'
+'A = B\n;_____WB$wombat$check$this$function_____(this).location = "foo"'
 
 >>> _test_js_obj_proxy('var foo = this.location2')
 'var foo = this.location2'
 
 >>> _test_js_obj_proxy('func(Function("return this"));')
-'func(Function("return (this && this._WB_wombat_obj_proxy || this)"));'
+'func(Function("return _____WB$wombat$check$this$function_____(this)"));'
 
->>> _test_js_obj_proxy('A.call(function() { return   this });')
-'A.call(function() { return   (this && this._WB_wombat_obj_proxy || this) });'
+>>> _test_js_obj_proxy('A.call(function() { return  this });')
+'A.call(function() { return  _____WB$wombat$check$this$function_____(this) });'
 
 >>> _test_js_obj_proxy('this.document.location = foo')
-'(this && this._WB_wombat_obj_proxy || this).document.location = foo'
+'_____WB$wombat$check$this$function_____(this).document.location = foo'
 
 >>> _test_js_obj_proxy('if (that != this) { ... }')
-'if (that != (this && this._WB_wombat_obj_proxy || this)) { ... }'
+'if (that != _____WB$wombat$check$this$function_____(this)) { ... }'
 
 >>> _test_js_obj_proxy('function(){...} (this)')
-'function(){...} ((this && this._WB_wombat_obj_proxy || this))'
+'function(){...} (_____WB$wombat$check$this$function_____(this))'
 
 >>> _test_js_obj_proxy('function(){...} )   (this); foo(this)')
-'function(){...} )   ((this && this._WB_wombat_obj_proxy || this)); foo(this)'
+'function(){...} )   (_____WB$wombat$check$this$function_____(this)); foo(this)'
 
 >>> _test_js_obj_proxy('var foo = that || this  ;')
-'var foo = that || (this && this._WB_wombat_obj_proxy || this)  ;'
+'var foo = that || _____WB$wombat$check$this$function_____(this)  ;'
 
 >>> _test_js_obj_proxy('a||this||that')
-'a||(this && this._WB_wombat_obj_proxy || this)||that'
+'a||_____WB$wombat$check$this$function_____(this)||that'
 
 >>> _test_js_obj_proxy('a||this)')
-'a||(this && this._WB_wombat_obj_proxy || this))'
+'a||_____WB$wombat$check$this$function_____(this))'
 
 # not rewritten
 >>> _test_js_obj_proxy('var window = this$')
@@ -207,7 +207,7 @@ r"""
 'this. alocation = http://example.com/'
 
 >>> _test_js_obj_proxy(r'this. location = http://example.com/')
-'this. location = (self.__WB_check_loc && self.__WB_check_loc(location) || {}).href = http://example.com/'
+'this. location = ((self.__WB_check_loc && self.__WB_check_loc(location)) || {}).href = http://example.com/'
 
 
 
