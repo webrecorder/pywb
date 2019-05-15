@@ -23,7 +23,7 @@ class UrlRewriter(object):
     REL_PATH = '/'
 
     def __init__(self, wburl, prefix='', full_prefix=None, rel_prefix=None,
-                 root_path=None, cookie_scope=None, rewrite_opts=None):
+                 root_path=None, cookie_scope=None, rewrite_opts=None, pywb_static_prefix=None):
         self.wburl = wburl if isinstance(wburl, WbUrl) else WbUrl(wburl)
         self.prefix = prefix
         self.full_prefix = full_prefix or prefix
@@ -36,9 +36,21 @@ class UrlRewriter(object):
         self.prefix_abs = self.prefix and self.prefix.startswith(self.PROTOCOLS)
         self.cookie_scope = cookie_scope
         self.rewrite_opts = rewrite_opts or {}
+        self._pywb_static_prefix = pywb_static_prefix
 
         if self.rewrite_opts.get('punycode_links'):
             self.wburl._do_percent_encode = False
+
+    @property
+    def pywb_static_prefix(self):
+        """Returns the static path URL
+        :rtype: str
+        """
+        if self._pywb_static_prefix is None:
+            return ''
+        if self._pywb_static_prefix.startswith(self.PROTOCOLS):
+            return self._pywb_static_prefix
+        return self.urljoin(self.full_prefix, self._pywb_static_prefix)
 
     def rewrite(self, url, mod=None, force_abs=False):
         # if special protocol, no rewriting at all

@@ -58,7 +58,7 @@ class HTMLRewriterMixin(StreamingRewriter):
             'embed':   {'src': 'oe_'},
             'head':    {'': defmod},  # for head rewriting
             'iframe':  {'src': 'if_'},
-            'image':   {'src': 'im_', 'xlink:href': 'im_'},
+            'image':   {'src': 'im_', 'xlink:href': 'im_', 'href': 'im_'},
             'img':     {'src': 'im_',
                         'srcset': 'im_'},
             'ins':     {'cite': defmod},
@@ -74,7 +74,7 @@ class HTMLRewriterMixin(StreamingRewriter):
             'q':       {'cite': defmod},
             'ref':     {'href': 'oe_'},
             'script':  {'src': 'js_', 'xlink:href': 'js_'},  # covers both HTML and SVG script tags
-            'source':  {'src': 'oe_'},
+            'source':  {'src': 'oe_', 'srcset': 'oe_'},
             'video':   {'src': 'oe_',
                         'poster': 'im_'},
         }

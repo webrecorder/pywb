@@ -1,0 +1,3 @@
+[submodule "wombat"]
+	path = wombat
+	url = https://github.com/webrecorder/wombat
