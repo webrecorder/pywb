@@ -39,11 +39,7 @@ logger = logging.getLogger('warcserver')
 #=============================================================================
 class BaseLoader(object):
     def __call__(self, cdx, params):
-        entry = None
-        try:
-            entry = self.load_resource(cdx, params)
-        except Exception:
-            traceback.print_exc()
+        entry = self.load_resource(cdx, params)
 
         if not entry:
             return None, None
