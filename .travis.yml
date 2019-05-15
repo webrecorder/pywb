@@ -7,28 +7,13 @@ python:
   - "3.7"
 
 dist: xenial
-
-addons:
-  chrome: stable
-  sauce_connect: true
-
-env:
-  - WR_TEST=no
-  - WR_TEST=yes
-
-services: xvfb
-
-cache:
-  directories:
-    - node_modules
-
 sudo: required
+
+before_install:
+  - ./.travis/beforeInstall.sh
 
 install:
   - ./.travis/install.sh
-
-before_install:
-  - 'if [ "$WR_TEST" = "yes" ]; then sudo sysctl kernel.unprivileged_userns_clone=1; fi'
 
 script:
   - ./.travis/test.sh
@@ -36,15 +21,41 @@ script:
 after_success:
   - codecov
 
-matrix:
+env:
+  - WR_TEST=no WOMBAT_TEST=no
+
+jobs:
   allow_failures:
-    - env: WR_TEST=yes
-
-  exclude:
-    - env: WR_TEST=yes
-      python: "2.7"
-    - env: WR_TEST=yes
-      python: "3.5"
-    - env: WR_TEST=yes
+    - env:
+       - WR_TEST=yes WOMBAT_TEST=no
+  include:
+    - stage: test
+      name: "Replay Tests"
       python: "3.7"
+      env:
+       - WR_TEST=yes WOMBAT_TEST=no
+      addons:
+        apt:
+          update: true
+          sources:
+            - sourceline: "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main"
+              key_url: https://dl-ssl.google.com/linux/linux_signing_key.pub
+          packages:
+            - google-chrome-unstable  # this is canary or dev
+      services: xvfb
 
+    - stage: test
+      name: "Wombat Tests"
+      language: node_js
+      node_js: 12.0.0
+      env:
+       - WR_TEST=no WOMBAT_TEST=yes
+      addons:
+        apt:
+          update: true
+          sources:
+            - sourceline: "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main"
+              key_url: https://dl-ssl.google.com/linux/linux_signing_key.pub
+          packages:
+            - google-chrome-unstable  # this is canary or dev
+      services: xvfb

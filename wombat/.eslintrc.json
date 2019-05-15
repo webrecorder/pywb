@@ -1,0 +1,22 @@
+{
+   "extends": ["plugin:prettier/recommended"],
+   "env": {
+      "browser": true,
+      "node": true
+   },
+   "rules": {
+      "camelcase": "off",
+      "no-fallthrough": "off"
+   },
+   "globals": {
+      "chai": true,
+      "mocha": true,
+      "WB_wombat_location": true,
+      "expect": true,
+      "_": true
+   },
+   "parserOptions": {
+      "ecmaVersion": 9,
+      "sourceType": "module"
+   }
+}
