@@ -29,6 +29,7 @@ import json
 import glob
 import datetime
 import logging
+import traceback
 
 from requests.models import PreparedRequest
 
@@ -38,7 +39,12 @@ logger = logging.getLogger('warcserver')
 #=============================================================================
 class BaseLoader(object):
     def __call__(self, cdx, params):
-        entry = self.load_resource(cdx, params)
+        entry = None
+        try:
+            entry = self.load_resource(cdx, params)
+        except Exception:
+            traceback.print_exc()
+
         if not entry:
             return None, None
 
@@ -501,7 +507,6 @@ class LiveWebLoader(BaseLoader):
 
         except Exception as e:
             if logger.isEnabledFor(logging.DEBUG):
-                import traceback
                 traceback.print_exc()
                 logger.debug('FAILED: ' + method + ' ' + load_url + ': ' + str(e))
 
@@ -527,7 +532,7 @@ class VideoLoader(BaseLoader):
             self.ydl = None
             return
 
-        self.ydl = YoutubeDL(dict(simulate=True,
+        self.ydl = YoutubeDL(dict(simulate=True, quiet=True,
                                   youtube_include_dash_manifest=False))
 
         self.ydl.add_default_info_extractors()
