@@ -1,12 +1,35 @@
 import zlib
 from contextlib import closing, contextmanager
-
-from warcio.utils import BUFF_SIZE
-from warcio.limitreader import LimitReader
 from tempfile import SpooledTemporaryFile
 
+from warcio.limitreader import LimitReader
+from warcio.utils import BUFF_SIZE
 
-#=============================================================================
+
+def no_except_close(closable):
+    """Attempts to call the close method of the
+    supplied object.
+
+    :param closable: The object to be closed
+    :rtype: None
+    """
+    if not closable:
+        return
+
+    try:
+        closable.close()
+    except Exception:
+        pass
+
+    try:
+        release_conn = getattr(closable, 'release_conn', None)
+        if release_conn is not None:
+            release_conn()
+    except Exception:
+        pass
+
+
+# =============================================================================
 def StreamIter(stream, header1=None, header2=None, size=BUFF_SIZE, closer=closing):
     with closer(stream):
         if header1:
@@ -22,19 +45,16 @@ def StreamIter(stream, header1=None, header2=None, size=BUFF_SIZE, closer=closin
             yield buff
 
 
-#=============================================================================
+# =============================================================================
 @contextmanager
 def call_release_conn(stream):
     try:
         yield stream
     finally:
-        if hasattr(stream, 'release_conn'):
-            stream.release_conn()
-        else:
-            stream.close()
+        no_except_close(stream)
 
 
-#=============================================================================
+# =============================================================================
 def chunk_encode_iter(orig_iter):
     for chunk in orig_iter:
         if not len(chunk):
@@ -47,7 +67,7 @@ def chunk_encode_iter(orig_iter):
     yield b'0\r\n\r\n'
 
 
-#=============================================================================
+# =============================================================================
 def buffer_iter(status_headers, iterator, buff_size=BUFF_SIZE * 4):
     out = SpooledTemporaryFile(buff_size)
     size = 0
@@ -65,7 +85,7 @@ def buffer_iter(status_headers, iterator, buff_size=BUFF_SIZE * 4):
     return StreamIter(out)
 
 
-#=============================================================================
+# =============================================================================
 def compress_gzip_iter(orig_iter):
     compressobj = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS + 16)
     for chunk in orig_iter:
@@ -101,4 +121,3 @@ class OffsetLimitReader(LimitReader):
     def readline(self, length=None):
         self._skip()
         return super(OffsetLimitReader, self).readline(length)
-

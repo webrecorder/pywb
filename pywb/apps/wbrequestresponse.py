@@ -1,5 +1,7 @@
 from warcio.statusandheaders import StatusAndHeaders
 
+from pywb.utils.io import no_except_close
+
 try:
     import ujson as json
 except ImportError:  # pragma: no cover
@@ -151,8 +153,7 @@ class WbResponse(object):
                        self.status_headers.headers)
         request_method = env['REQUEST_METHOD']
         if request_method == 'HEAD' or request_method == 'OPTIONS' or self.status_headers.statusline.startswith('304'):
-            if hasattr(self.body, 'close'):
-                self.body.close()
+            no_except_close(self.body)
             return []
 
         return self.body

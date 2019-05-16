@@ -11,22 +11,22 @@ import requests
 import yaml
 
 import six
-from six.moves.urllib.parse import urljoin, unquote_plus, urlsplit, urlencode
+from six.moves.urllib.parse import unquote_plus, urlsplit
 
 import time
 import pkgutil
-import base64
-import cgi
 
 from io import open, BytesIO
 from warcio.limitreader import LimitReader
+from pywb.utils.io import no_except_close
 
 try:
     import boto3
     from botocore import UNSIGNED
     from botocore.client import Config
+
     s3_avail = True
-except ImportError:  #pragma: no cover
+except ImportError:  # pragma: no cover
     s3_avail = False
 
 
@@ -39,12 +39,12 @@ def load_py_name(string):
     return getattr(mod, string[1])
 
 
-#=================================================================
+# =================================================================
 def is_http(filename):
     return filename.startswith(('http://', 'https://'))
 
 
-#=================================================================
+# =================================================================
 def to_file_url(filename):
     """ Convert a filename to a file:// url
     """
@@ -52,7 +52,7 @@ def to_file_url(filename):
     return url
 
 
-#=================================================================
+# =================================================================
 def from_file_url(url):
     """ Convert from file:// url to file path
     """
@@ -62,7 +62,7 @@ def from_file_url(url):
     return url
 
 
-#=================================================================
+# =================================================================
 def load(filename):
     return BlockLoader().load(filename)
 
@@ -75,8 +75,7 @@ def load_yaml_config(config_file):
         configdata = load(config_file)
         config = yaml.load(configdata)
     finally:
-        if configdata:
-            configdata.close()
+        no_except_close(configdata)
 
     return config
 
@@ -84,7 +83,6 @@ def load_yaml_config(config_file):
 # =============================================================================
 def load_overlay_config(main_env_var, main_default_file='',
                         overlay_env_var='', overlay_file=''):
-
     configfile = os.environ.get(main_env_var, main_default_file)
     config = None
 
@@ -104,7 +102,7 @@ def load_overlay_config(main_env_var, main_default_file='',
     return config
 
 
-#=================================================================
+# =================================================================
 def extract_client_cookie(env, cookie_name):
     cookie_header = env.get('HTTP_COOKIE')
     if not cookie_header:
@@ -129,7 +127,7 @@ def extract_client_cookie(env, cookie_name):
     return value
 
 
-#=================================================================
+# =================================================================
 def read_last_line(fh, offset=256):
     """ Read last line from a seekable file. Start reading
     from buff before end of file, and double backwards seek
@@ -150,7 +148,7 @@ def read_last_line(fh, offset=256):
     return fh.readlines()[-1]
 
 
-#=================================================================
+# =================================================================
 class BaseLoader(object):
     def __init__(self, **kwargs):
         pass
@@ -159,7 +157,7 @@ class BaseLoader(object):
         raise NotImplemented()
 
 
-#=================================================================
+# =================================================================
 class BlockLoader(BaseLoader):
     """
     a loader which can stream blocks of content
@@ -171,6 +169,7 @@ class BlockLoader(BaseLoader):
     profile_loader = None
 
     def __init__(self, **kwargs):
+        super(BlockLoader, self).__init__()
         self.cached = {}
         self.kwargs = kwargs
 
@@ -241,7 +240,7 @@ class BlockLoader(BaseLoader):
         return range_header
 
 
-#=================================================================
+# =================================================================
 class PackageLoader(BaseLoader):
     def load(self, url, offset=0, length=-1):
         if url.startswith('pkg://'):
@@ -263,11 +262,11 @@ class PackageLoader(BaseLoader):
         buff.name = url
         return buff
 
-        #afile = pkg_resources.resource_stream(pkg_split[0],
+        # afile = pkg_resources.resource_stream(pkg_split[0],
         #                                      pkg_split[1])
 
 
-#=================================================================
+# =================================================================
 class LocalFileLoader(PackageLoader):
     def load(self, url, offset=0, length=-1):
         """
@@ -283,11 +282,13 @@ class LocalFileLoader(PackageLoader):
             file_only = True
             url = filename
 
+        afile = None
         try:
             # first, try as file
             afile = open(url, 'rb')
 
         except IOError:
+            no_except_close(afile)
             if file_only:
                 raise
 
@@ -302,9 +303,10 @@ class LocalFileLoader(PackageLoader):
             return afile
 
 
-#=================================================================
+# =================================================================
 class HttpLoader(BaseLoader):
     def __init__(self, **kwargs):
+        super(HttpLoader, self).__init__()
         self.cookie_maker = kwargs.get('cookie_maker')
         if not self.cookie_maker:
             self.cookie_maker = kwargs.get('cookie')
@@ -333,16 +335,17 @@ class HttpLoader(BaseLoader):
         return r.raw
 
 
-#=================================================================
+# =================================================================
 class S3Loader(BaseLoader):
     def __init__(self, **kwargs):
+        super(S3Loader, self).__init__()
         self.client = None
         self.aws_access_key_id = kwargs.get('aws_access_key_id')
         self.aws_secret_access_key = kwargs.get('aws_secret_access_key')
 
     def load(self, url, offset, length):
-        if not s3_avail:  #pragma: no cover
-           raise IOError('To load from s3 paths, ' +
+        if not s3_avail:  # pragma: no cover
+            raise IOError('To load from s3 paths, ' +
                           'you must install boto3: pip install boto3')
 
         aws_access_key_id = self.aws_access_key_id
@@ -372,8 +375,8 @@ class S3Loader(BaseLoader):
                     config = None
 
                 client = boto3.client('s3', aws_access_key_id=aws_access_key_id,
-                                            aws_secret_access_key=aws_secret_access_key,
-                                            config=config)
+                                      aws_secret_access_key=aws_secret_access_key,
+                                      config=config)
             else:
                 client = self.client
 
@@ -398,15 +401,16 @@ class S3Loader(BaseLoader):
         return obj['Body']
 
 
-#=================================================================
+# =================================================================
 # Signed Cookie-Maker
-#=================================================================
+# =================================================================
 
 class HMACCookieMaker(object):
     """
     Utility class to produce signed HMAC digest cookies
     to be used with each http request
     """
+
     def __init__(self, key, name, duration=10):
         self.key = key
         self.name = name
@@ -435,4 +439,3 @@ class HMACCookieMaker(object):
 
 # ============================================================================
 BlockLoader.init_default_loaders()
-
