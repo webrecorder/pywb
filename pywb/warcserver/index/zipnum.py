@@ -1,24 +1,20 @@
+import datetime
+import itertools
+import json
+import logging
+import os
 from io import BytesIO
 
-import os
-import collections
-import itertools
-import logging
-import datetime
-import json
 import six
-
-from six.moves import map
-
 from warcio.bufferedreaders import gzip_decompressor
 
-#from pywb.warcserver.index.cdxsource import CDXSource
-from pywb.warcserver.index.indexsource import BaseIndexSource
-from pywb.warcserver.index.cdxobject import IDXObject, CDXException, CDXObject
-from pywb.warcserver.index.query import CDXQuery
-
-from pywb.utils.loaders import BlockLoader, read_last_line
 from pywb.utils.binsearch import iter_range, linearsearch, search
+from pywb.utils.io import no_except_close
+from pywb.utils.loaders import BlockLoader, read_last_line
+from pywb.warcserver.index.cdxobject import CDXException, CDXObject, IDXObject
+# from pywb.warcserver.index.cdxsource import CDXSource
+from pywb.warcserver.index.indexsource import BaseIndexSource
+from pywb.warcserver.index.query import CDXQuery
 
 
 # ============================================================================
@@ -211,7 +207,7 @@ class ZipNumIndexSource(BaseIndexSource):
             if end_line == last_line and query.key >= last_line:
                 first_line = last_line
             else:
-                reader.close()
+                no_except_close(reader)
                 if query.page_count:
                     yield self._page_info(0, pagesize, 0)
                 return
@@ -240,13 +236,13 @@ class ZipNumIndexSource(BaseIndexSource):
                     blocks = -1
 
             yield self._page_info(total_pages, pagesize, blocks + 1)
-            reader.close()
+            no_except_close(reader)
             return
 
         curr_page = query.page
         if curr_page >= total_pages or curr_page < 0:
             msg = 'Page {0} invalid: First Page is 0, Last Page is {1}'
-            reader.close()
+            no_except_close(reader)
             raise CDXException(msg.format(curr_page, total_pages - 1))
 
         startline = curr_page * pagesize
@@ -259,12 +255,14 @@ class ZipNumIndexSource(BaseIndexSource):
         else:
             startline -= 1
 
-        idxiter = itertools.islice(first_iter, startline, endline)
-        for idx in idxiter:
-            yield idx
-
-        reader.close()
-
+        try:
+            idxiter = itertools.islice(first_iter, startline, endline)
+            for idx in idxiter:
+                yield idx
+        except Exception:
+            pass
+        finally:
+            no_except_close(reader)
 
     def search_by_line_num(self, reader, line):  # pragma: no cover
         def line_cmp(line1, line2):
@@ -349,7 +347,7 @@ class ZipNumIndexSource(BaseIndexSource):
                 for r in ranges:
                     yield decompress_block(r)
             finally:
-                reader.close()
+                no_except_close(reader)
 
         # iterate over all blocks
         iter_ = itertools.chain.from_iterable(iter_blocks(reader))
