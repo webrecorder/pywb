@@ -1,22 +1,18 @@
-from pywb.utils.binsearch import iter_range
-from pywb.utils.canonicalize import canonicalize
-from pywb.utils.wbexception import NotFoundException
-
-from warcio.timeutils import timestamp_to_http_date, http_date_to_timestamp
-from warcio.timeutils import timestamp_now, pad_timestamp, PAD_14_DOWN
-
-from pywb.warcserver.http import DefaultAdapters
-from pywb.warcserver.index.cdxobject import CDXObject
-
-from pywb.utils.format import ParamFormatter, res_template
-from pywb.utils.memento import MementoUtils
+import logging
+import re
 
 import redis
-
 import requests
+from warcio.timeutils import PAD_14_DOWN, http_date_to_timestamp, pad_timestamp, timestamp_now, timestamp_to_http_date
 
-import re
-import logging
+from pywb.utils.binsearch import iter_range
+from pywb.utils.canonicalize import canonicalize
+from pywb.utils.format import res_template
+from pywb.utils.io import no_except_close
+from pywb.utils.memento import MementoUtils
+from pywb.utils.wbexception import NotFoundException
+from pywb.warcserver.http import DefaultAdapters
+from pywb.warcserver.index.cdxobject import CDXObject
 
 
 #=============================================================================
@@ -432,15 +428,16 @@ class MementoIndexSource(BaseIndexSource):
     def handle_timemap(self, params):
         url = res_template(self.timemap_url, params)
         headers = self._get_headers(params)
+        res = None
         try:
             res = self.sesh.get(url,
                                 headers=headers,
                                 timeout=params.get('_timeout'))
 
             res.raise_for_status()
-            assert(res.text)
 
         except Exception as e:
+            no_except_close(res)
             self.logger.debug('FAILED: ' + str(e))
             raise NotFoundException(url)
 
@@ -550,14 +547,17 @@ class WBMementoIndexSource(MementoIndexSource):
         url = params['url']
         load_url = self.timegate_url.format(url=url, timestamp=timestamp)
 
+        res = None
         try:
             headers = self._get_headers(params)
             res = self.sesh.head(load_url, headers=headers)
         except Exception as e:
+            no_except_close(res)
             raise NotFoundException(url)
 
         if res and res.headers.get('Memento-Datetime'):
             if res.status_code >= 400:
+                no_except_close(res)
                 raise NotFoundException(url)
 
             if res.status_code >= 300:

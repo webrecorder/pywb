@@ -1,19 +1,15 @@
-from io import BytesIO
-
+import codecs
+import json
+import re
+import tempfile
 from contextlib import closing
 
+import webencodings
 from warcio.bufferedreaders import BufferedReader, ChunkedDataReader
 from warcio.utils import to_native_str
 
-import re
-import webencodings
-import tempfile
-import json
-import codecs
-
-from pywb.utils.io import StreamIter, BUFF_SIZE
-
-from pywb.utils.loaders import load_yaml_config, load_py_name
+from pywb.utils.io import BUFF_SIZE, StreamIter, no_except_close
+from pywb.utils.loaders import load_py_name, load_yaml_config
 
 WORKER_MODS = {"wkr_", "sw_"}  # type: Set[str]
 
@@ -344,7 +340,7 @@ class StreamingRewriter(object):
                 yield buff.encode(charset)
 
         finally:
-            stream.close()
+            no_except_close(stream)
 
 
 # ============================================================================

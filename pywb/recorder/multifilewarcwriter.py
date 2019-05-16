@@ -2,15 +2,14 @@ import base64
 import datetime
 import os
 import shutil
-
 import traceback
 
 import portalocker
-
 from warcio.timeutils import timestamp20_now
 from warcio.warcwriter import BaseWARCWriter
 
 from pywb.utils.format import res_template
+from pywb.utils.io import no_except_close
 
 
 # ============================================================================
@@ -85,7 +84,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
         try:
             os.makedirs(path)
-        except:
+        except Exception:
             pass
 
         fh = open(filename, 'a+b')
@@ -99,11 +98,12 @@ class MultiFileWARCWriter(BaseWARCWriter):
         try:
             if os.name != 'nt':
                 portalocker.lock(fh, portalocker.LOCK_UN)
-            fh.close()
             return True
         except Exception as e:
             print(e)
             return False
+        finally:
+            no_except_close(fh)
 
     def get_dir_key(self, params):
         return res_template(self.key_template, params)
@@ -249,7 +249,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
         for dir_key, out, filename in self.iter_open_files():
             try:
                 mtime = os.path.getmtime(filename)
-            except:
+            except Exception:
                 self.close_key(dir_key)
                 return
 
