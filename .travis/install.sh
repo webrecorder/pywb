@@ -17,7 +17,7 @@ if [[ ${WOMBAT_TEST} = "no" ]]; then
     fi
 else
     cd wombat
-    ./boostrap.sh
+    ./bootstrap.sh
     cd ..
 fi
 

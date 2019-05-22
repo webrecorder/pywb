@@ -1,3 +1,15 @@
+pywb 2.3.x changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Replay / Fidelity Improvements (#451):
+    - Pywb's client-side rewriting library Wombat has been rewritten in order to facilitate
+      easier development and maintenance and improved replay fidelity.
+    - Introduced a new server-side rewriter, JSWorkerRewriter, that handles rewriting JS workers and service-workers
+
+* Misc Changes:
+    - Improved handling of open http connections and file handles (#463)
+
+
 pywb 2.2.20190410 changelist
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

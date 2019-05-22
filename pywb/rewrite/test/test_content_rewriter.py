@@ -808,3 +808,23 @@ http://example.com/video_4.m3u8
         assert headers.headers == [('Content-Type', 'text/html')]
         result = b''.join(gen).decode('utf-8')
         assert result == content
+
+    def test_worker_rewrite(self):
+        headers = {'Content-Type': 'application/javascript'}
+        content = 'onmessage = () => {}'
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701wkr_',
+                                                  url='http://example.com/path/worker.js')
+
+        assert headers.headers == [('Content-Type', 'application/javascript')]
+        assert b''.join(gen).decode() == "(function() { self.importScripts('wombatWorkers.js'); new WBWombat({'prefix': 'http://localhost:8080/prefix/', 'prefixMod': 'http://localhost:8080/prefix/wkrf_/', 'originalURL': 'http://example.com/path/worker.js'}); })();onmessage = () => {}"
+
+    def test_service_worker_rewrite(self):
+        headers = {'Content-Type': 'application/javascript'}
+        content = 'onmessage = () => {}'
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701sw_',
+                                                  url='http://example.com/path/worker.js')
+
+        assert headers.headers == [('Content-Type', 'application/javascript'), ('Service-Worker-Allowed',
+                                                                                'http://localhost:8080/prefix/201701mp_/http://example.com/')]
+        assert b''.join(
+            gen).decode() == "(function() { self.importScripts('wombatWorkers.js'); new WBWombat({'prefix': 'http://localhost:8080/prefix/', 'prefixMod': 'http://localhost:8080/prefix/wkrf_/', 'originalURL': 'http://example.com/path/worker.js'}); })();onmessage = () => {}"

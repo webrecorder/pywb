@@ -10,20 +10,27 @@ class TestHelper {
    * @return {Promise<TestHelper>}
    */
   static async init(t) {
-    const { chromeProcess, killChrome } = await initChrome();
+    const {
+      chromeProcess,
+      closeBrowser,
+      browserWSEndpoint
+    } = await initChrome();
     const server = await initServer();
-    const { webSocketDebuggerUrl } = await CRIExtra.Version();
-    const client = await CRIExtra({ target: webSocketDebuggerUrl });
+    const client = await CRIExtra({ target: browserWSEndpoint });
     const browser = await Browser.create(client, {
       ignoreHTTPSErrors: true,
       process: chromeProcess,
       additionalDomains: testDomains,
-      async closeCallback() {
-        killChrome();
-      }
+      closeCallback: closeBrowser
     });
     await browser.waitForTarget(t => t.type() === 'page');
-    const th = new TestHelper({ server, client, browser, t, killChrome });
+    const th = new TestHelper({
+      server,
+      client,
+      browser,
+      t,
+      killChrome: closeBrowser
+    });
     await th.setup();
     return th;
   }
