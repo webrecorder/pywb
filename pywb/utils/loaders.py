@@ -73,7 +73,7 @@ def load_yaml_config(config_file):
     configdata = None
     try:
         configdata = load(config_file)
-        config = yaml.load(configdata)
+        config = yaml.load(configdata, Loader=yaml.Loader)
     finally:
         no_except_close(configdata)
 
