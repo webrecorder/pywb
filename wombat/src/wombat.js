@@ -2397,7 +2397,7 @@ Wombat.prototype.rewriteWorker = function(workerUrl) {
       this.wb_abs_prefix +
       "', 'prefixMod': '" +
       this.wb_abs_prefix +
-      "wkr_/', 'originalURL': '" +
+      "wkrf_/', 'originalURL': '" +
       originalURL +
       "'}); })();";
 
