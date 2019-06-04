@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Wombat sandbox direct</title>
+    <script>
+      window.wombatSandbox = {
+        window,
+        document,
+        originalLocation: location.href
+      };
+      window.wbinfo = {};
+      window.wbinfo.enable_auto_fetch = false;
+      window.wbinfo.top_url = location.href.replace('mp_', '');
+      window.wbinfo.url = 'https://tests.wombat.io/';
+      window.wbinfo.timestamp = '20180803160549';
+      window.wbinfo.request_ts = '20180803160549';
+      window.wbinfo.prefix = decodeURI(
+        `${window.location.protocol}//localhost:${window.location.port}/live/`
+      );
+      window.wbinfo.mod = 'mp_';
+      window.wbinfo.is_framed = true;
+      window.wbinfo.is_live = false;
+      window.wbinfo.coll = '';
+      window.wbinfo.proxy_magic = '';
+      window.wbinfo.static_prefix =
+        'https://content.webrecorder.io/static/bundle/';
+      window.wbinfo.wombat_ts = '20180803160549';
+      window.wbinfo.wombat_sec = '1533312349';
+      window.wbinfo.wombat_scheme = 'https';
+      window.wbinfo.wombat_host = 'tests.wombat.io';
+      window.wbinfo.wombat_opts = {};
+      window.wbinfo.state = '';
+      window.wbinfo.metadata = {};
+    </script>
+  </head>
+  <body>
+    <script src="/wombatDirect.js"></script>
+  </body>
+</html>

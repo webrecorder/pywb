@@ -1064,3 +1064,98 @@ exports.CSS = {
     }
   }
 };
+
+exports.NativeFnTest = {
+  testFN() {
+    const funkyFunction = function() {};
+    funkyFunction.toString = function() {
+      throw new Error('blah');
+    };
+    return {
+      native: wombat.isNativeFunction(blur),
+      notNative: wombat.isNativeFunction(() => {}),
+      funkyFn: wombat.isNativeFunction(funkyFunction),
+      null: wombat.isNativeFunction(null),
+      undefined: wombat.isNativeFunction(undefined),
+      obj: wombat.isNativeFunction({})
+    };
+  },
+  expectedValue: {
+    native: true,
+    notNative: false,
+    funkyFn: false,
+    null: false,
+    undefined: false,
+    obj: false
+  }
+};
+
+exports.SaveSrcSetDataSrcSet = {
+  values: [
+    { name: 'IMG', tagName: 'IMG', expected: true },
+    { name: 'VIDEO', tagName: 'VIDEO', expected: true },
+    { name: 'AUDIO', tagName: 'AUDIO', expected: true },
+    {
+      name: 'SOURCE with no parent',
+      tagName: 'SOURCE',
+      expected: false
+    },
+    {
+      name: 'SOURCE with PICTURE parent',
+      tagName: 'SOURCE',
+      parentElement: 'PICTURE',
+      expected: true
+    },
+    {
+      name: 'SOURCE with VIDEO parent',
+      tagName: 'SOURCE',
+      parentElement: 'VIDEO',
+      expected: true
+    },
+    {
+      name: 'SOURCE with AUDIO parent',
+      tagName: 'SOURCE',
+      parentElement: 'AUDIO',
+      expected: true
+    },
+    {
+      name: 'IFRAME',
+      tagName: 'IFRAME',
+      expected: false
+    },
+    {
+      name: 'SOURCE with DIV parent',
+      tagName: 'SOURCE',
+      parentElement: 'DIV',
+      expected: false
+    }
+  ],
+  testFnSS(tagName, parentElementTagName) {
+    const testValue = { tagName };
+    if (parentElementTagName) {
+      testValue.parentElement = {
+        tagName: parentElementTagName
+      };
+    }
+    return wombat.isSavedSrcSrcset(testValue);
+  },
+  testFnDSS(tagName, parentElementTagName) {
+    const testValue = { tagName };
+    if (parentElementTagName) {
+      testValue.parentElement = {
+        tagName: parentElementTagName
+      };
+    }
+    return {
+      without: wombat.isSavedDataSrcSrcset(testValue),
+      with: wombat.isSavedSrcSrcset(
+        Object.assign(
+          {
+            dataset: { srcset: true }
+          },
+          testValue
+        )
+      )
+    };
+  }
+};

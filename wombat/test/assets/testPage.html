@@ -126,7 +126,6 @@
     <script>
       const defaultText = ' not sent';
       const domStructure = {
-        sandbox: document.getElementById('wombatSandbox'),
         load: {
           url: document.createTextNode(defaultText),
           title: document.createTextNode(defaultText),
@@ -187,7 +186,11 @@
       document.getElementById('title-title').appendChild(domStructure.titleMsg);
       document.getElementById('hash-hash').appendChild(domStructure.hashchange);
       document.getElementById('unknown-msg').appendChild(domStructure.unknown);
-      window.overwatch = new TestOverwatch(domStructure);
+      window.overwatch = new TestOverwatch({
+        domStructure,
+        sandbox: document.getElementById('wombatSandbox'),
+        direct: false
+      });
     </script>
   </body>
 </html>

@@ -1,4 +1,8 @@
-import { addToStringTagToClass, ensureNumber } from './wombatUtils';
+import {
+  addToStringTagToClass,
+  ensureNumber,
+  ThrowExceptions
+} from './wombatUtils';
 
 /**
  * A re-implementation of the Storage interface.
@@ -13,6 +17,12 @@ import { addToStringTagToClass, ensureNumber } from './wombatUtils';
  * @see https://html.spec.whatwg.org/multipage/webstorage.html#the-storage-interface
  */
 export default function Storage(wombat, proxying) {
+  if (ThrowExceptions.yes) {
+    // there is no constructor exposed for this interface however there is an
+    // interface object exposed, thus we must throw an TypeError if userland
+    // attempts to create us
+    throw new TypeError('Illegal constructor');
+  }
   // hide our values from enumeration, spreed, et al
   Object.defineProperties(this, {
     data: {
@@ -111,9 +121,14 @@ Storage.prototype.fireEvent = function fireEvent(key, oldValue, newValue) {
     oldValue: oldValue,
     url: this.wombat.$wbwindow.WB_wombat_location.href
   });
-
+  // storage is a read only property of StorageEvent
+  // that must be on the fired instance of the event
+  Object.defineProperty(sevent, 'storageArea', {
+    value: this,
+    writable: false,
+    configurable: false
+  });
   sevent._storageArea = this;
-
   this.wombat.storage_listeners.map(sevent);
 };
 

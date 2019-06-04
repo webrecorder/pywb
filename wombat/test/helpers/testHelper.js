@@ -1,29 +1,22 @@
 const initChrome = require('./initChrome');
 const initServer = require('./initServer');
-const { CRIExtra, Browser, Events } = require('chrome-remote-interface-extra');
-
-const testDomains = { workers: true };
+const { Browser } = require('chrome-remote-interface-extra');
 
 class TestHelper {
   /**
    * @param {*} t
+   * @param {boolean} [direct = false]
    * @return {Promise<TestHelper>}
    */
-  static async init(t) {
-    const { chromeProcess, killChrome } = await initChrome();
+  static async init(t, direct = false) {
+    const browser = await initChrome();
     const server = await initServer();
-    const { webSocketDebuggerUrl } = await CRIExtra.Version();
-    const client = await CRIExtra({ target: webSocketDebuggerUrl });
-    const browser = await Browser.create(client, {
-      ignoreHTTPSErrors: true,
-      process: chromeProcess,
-      additionalDomains: testDomains,
-      async closeCallback() {
-        killChrome();
-      }
+    const th = new TestHelper({
+      server,
+      browser,
+      t,
+      direct
     });
-    await browser.waitForTarget(t => t.type() === 'page');
-    const th = new TestHelper({ server, client, browser, t, killChrome });
     await th.setup();
     return th;
   }
@@ -31,16 +24,11 @@ class TestHelper {
   /**
    * @param {TestHelperInit} init
    */
-  constructor({ server, client, browser, t, killChrome }) {
+  constructor({ server, browser, t, direct }) {
     /**
      * @type {fastify.FastifyInstance}
      */
     this._server = server;
-
-    /**
-     * @type {CRIConnection}
-     */
-    this._client = client;
 
     /**
      * @type {Browser}
@@ -50,13 +38,14 @@ class TestHelper {
     /** @type {*} */
     this._t = t;
 
-    this._killChrome = killChrome;
-
     /** @type {Page} */
     this._testPage = null;
 
     /** @type {Frame} */
     this._sandbox = null;
+
+    /** @type {boolean} */
+    this._direct = direct;
   }
 
   /**
@@ -98,7 +87,10 @@ class TestHelper {
   }
 
   async cleanup() {
-    await this._testPage.goto(this._server.testPage, {
+    const testPageURL = this._direct
+      ? this._server.testPageDirect
+      : this._server.testPage;
+    await this._testPage.goto(testPageURL, {
       waitUntil: 'networkidle2'
     });
     this._sandbox = this._testPage.frames()[1];
@@ -110,7 +102,8 @@ class TestHelper {
   }
 
   async ensureSandbox() {
-    if (!this._sandbox.url().endsWith('https://tests.wombat.io/')) {
+    const url = `https://tests.${this._direct ? 'direct.' : ''}wombat.io/`;
+    if (!this._sandbox.url().endsWith(url)) {
       await this.fullRefresh();
     } else {
       await this.maybeInitWombat();
@@ -146,9 +139,8 @@ module.exports = TestHelper;
 
 /**
  * @typedef {Object} TestHelperInit
- * @property {Browser} browser
- * @property {CRIConnection} client
  * @property {fastify.FastifyInstance} server
  * @property {*} t
- * @property {function(): void} killChrome
+ * @property {Browser} browser
+ * @property {boolean} direct
  */
