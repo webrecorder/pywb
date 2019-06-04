@@ -1410,11 +1410,6 @@ Wombat.prototype.ensureServerSideInjectsExistOnWindow = function(win) {
       );
     };
   }
-  if (typeof !win.__WB_pmw !== 'function') {
-    win.__WB_pmw = function(obj) {
-      return obj;
-    };
-  }
 };
 
 /**
@@ -4360,7 +4355,7 @@ Wombat.prototype.initNewWindowWombat = function(win, src) {
   if (
     !src ||
     src === '' ||
-    src === 'about:blank' ||
+    this.startsWith(src, 'about:') ||
     src.indexOf('javascript:') >= 0
   ) {
     // win._WBWombat = wombat_internal(win);
@@ -4682,20 +4677,19 @@ Wombat.prototype.initPostMessageOverride = function($wbwindow) {
     var from;
     var src_id;
     var this_obj = wombat.proxyToObj(this);
-
     if (this_obj.__WB_source && this_obj.__WB_source.WB_wombat_location) {
       var source = this_obj.__WB_source;
 
       from = source.WB_wombat_location.origin;
-
       if (!this_obj.__WB_win_id) {
         this_obj.__WB_win_id = {};
         this_obj.__WB_counter = 0;
       }
 
       if (!source.__WB_id) {
+        var id = this_obj.__WB_counter;
+        source.__WB_id = id + source.WB_wombat_location.href;
         this_obj.__WB_counter += 1;
-        source.__WB_id = this_obj.__WB_counter + source.WB_wombat_location.href;
       }
       this_obj.__WB_win_id[source.__WB_id] = source;
 
@@ -4736,7 +4730,7 @@ Wombat.prototype.initPostMessageOverride = function($wbwindow) {
       targetOrigin = this_obj.location.origin;
     }
 
-    // console.log("Sending " + from + " -> " + to + " (" + targetOrigin + ") " + message);
+    // console.log(`Sending ${from} -> ${to_origin} (${targetOrigin}) ${message}`);
 
     return orig.call(this_obj, new_message, targetOrigin, transfer);
   };
@@ -4759,7 +4753,7 @@ Wombat.prototype.initPostMessageOverride = function($wbwindow) {
     useCapture
   ) {
     var obj = wombat.proxyToObj(this);
-    var rwListener = listener;
+    var rwListener;
     if (type === 'message') {
       rwListener = wombat.message_listeners.add_or_get(listener, function() {
         return wrapEventListener(listener, obj, wombat);
@@ -4768,6 +4762,8 @@ Wombat.prototype.initPostMessageOverride = function($wbwindow) {
       wombat.storage_listeners.add_or_get(listener, function() {
         return wrapSameOriginEventListener(listener, obj);
       });
+    } else {
+      rwListener = listener;
     }
     if (rwListener) {
       return _oAddEventListener.call(obj, type, rwListener, useCapture);
@@ -4782,12 +4778,14 @@ Wombat.prototype.initPostMessageOverride = function($wbwindow) {
     useCapture
   ) {
     var obj = wombat.proxyToObj(this);
-    var rwListener = listener;
+    var rwListener;
 
     if (type === 'message') {
       rwListener = wombat.message_listeners.remove(listener);
     } else if (type === 'storage') {
       wombat.storage_listeners.remove(listener);
+    } else {
+      rwListener = listener;
     }
 
     if (rwListener) {
