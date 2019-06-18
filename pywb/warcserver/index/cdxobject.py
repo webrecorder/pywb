@@ -149,7 +149,7 @@ class CDXObject(OrderedDict):
                 cdxformat = i
 
         if not cdxformat:
-            msg = 'unknown {0}-field cdx format'.format(len(fields))
+            msg = 'unknown {0}-field cdx format: {1}'.format(len(fields), fields)
             raise CDXException(msg)
 
         for header, field in zip(cdxformat, fields):
