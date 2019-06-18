@@ -229,8 +229,11 @@ class MethodQueryCanonicalizer(object):
             mime = ''
 
         if mime.startswith('application/x-www-form-urlencoded'):
-            query = to_native_str(query)
-            query = unquote_plus(query)
+            try:
+                query = to_native_str(query)
+                query = unquote_plus(query)
+            except UnicodeDecodeError:
+                query = to_native_str(query, 'iso-8859-1')
 
         elif mime.startswith('multipart/'):
             env = {'REQUEST_METHOD': 'POST',
