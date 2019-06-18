@@ -135,6 +135,13 @@ class TestPostQueryExtract(object):
 
         assert mq.append_query('http://example.com/') == 'http://example.com/?foo=bar&dir=/baz'
 
+    def test_post_extract_malformed_form_data(self):
+        data = b"\x816l`L\xa04P\x0e\xe0r\x02\xb5\x89\x19\x00fP\xdb\x0e\xb0\x02,"
+        mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
+                                len(data), BytesIO(data))
+
+        assert mq.append_query('http://example.com/') == 'http://example.com/?\x816l`L\xa04P\x0eàr\x02µ\x89\x19\x00fPÛ\x0e°\x02,'
+
     def test_options(self):
         mq = MethodQueryCanonicalizer('OPTIONS', '', 0, BytesIO())
         assert mq.append_query('http://example.com/') == 'http://example.com/?__pywb_method=options'
