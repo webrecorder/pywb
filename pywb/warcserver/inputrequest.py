@@ -234,6 +234,7 @@ class MethodQueryCanonicalizer(object):
                 query = unquote_plus(query)
             except UnicodeDecodeError:
                 query = to_native_str(query, 'iso-8859-1')
+                query = unquote_plus(query, 'iso-8859-1')
 
         elif mime.startswith('multipart/'):
             env = {'REQUEST_METHOD': 'POST',
