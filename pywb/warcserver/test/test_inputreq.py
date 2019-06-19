@@ -6,7 +6,7 @@ from six.moves.urllib.parse import parse_qsl
 from io import BytesIO
 from pyamf import AMF3
 from pyamf.remoting import Request, Envelope, encode
-
+from warcio.utils import to_native_str
 
 #=============================================================================
 class InputReqApp(object):
@@ -140,7 +140,7 @@ class TestPostQueryExtract(object):
         mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
                                 len(data), BytesIO(data))
 
-        assert mq.append_query('http://example.com/') == 'http://example.com/?\x816l`L\xa04P\x0eàr\x02µ\x89\x19\x00fPÛ\x0e°\x02,'
+        assert mq.append_query('http://example.com/') == 'http://example.com/?' + to_native_str(data, 'iso-8859-1')
 
     def test_options(self):
         mq = MethodQueryCanonicalizer('OPTIONS', '', 0, BytesIO())
