@@ -6,7 +6,7 @@ from six.moves.urllib.parse import parse_qsl
 from io import BytesIO
 from pyamf import AMF3
 from pyamf.remoting import Request, Envelope, encode
-from warcio.utils import to_native_str
+
 
 #=============================================================================
 class InputReqApp(object):
@@ -83,6 +83,7 @@ class TestPostQueryExtract(object):
     @classmethod
     def setup_class(cls):
         cls.post_data = b'foo=bar&dir=%2Fbaz'
+        cls.binary_post_data = b'\x816l`L\xa04P\x0e\xe0r\x02\xb5\x89\x19\x00fP\xdb\x0e\xb0\x02,'
 
     def test_post_extract_1(self):
         mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
@@ -136,11 +137,11 @@ class TestPostQueryExtract(object):
         assert mq.append_query('http://example.com/') == 'http://example.com/?foo=bar&dir=/baz'
 
     def test_post_extract_malformed_form_data(self):
-        data = b"\x816l`L\xa04P\x0e\xe0r\x02\xb5\x89\x19\x00fP\xdb\x0e\xb0\x02,"
         mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
-                                len(data), BytesIO(data))
+                                len(self.binary_post_data), BytesIO(self.binary_post_data))
 
-        assert mq.append_query('http://example.com/') == 'http://example.com/?' + to_native_str(data, 'iso-8859-1')
+        #base64 encoded data
+        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_post_data=gTZsYEygNFAO4HICtYkZAGZQ2w6wAiw='
 
     def test_options(self):
         mq = MethodQueryCanonicalizer('OPTIONS', '', 0, BytesIO())
