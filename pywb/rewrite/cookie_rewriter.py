@@ -2,6 +2,9 @@ from six.moves.http_cookies import SimpleCookie, CookieError
 import six
 import re
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 #================================================================
 class WbUrlBaseCookieRewriter(object):
@@ -17,9 +20,8 @@ class WbUrlBaseCookieRewriter(object):
         cookie_str = self.REMOVE_EXPIRES.sub('', cookie_str)
         try:
             cookie = SimpleCookie(cookie_str)
-        except CookieError:
-            import traceback
-            traceback.print_exc()
+        except CookieError as e:
+            logger.info(e, exc_info=True)
             return results
 
         for name, morsel in six.iteritems(cookie):
