@@ -228,9 +228,18 @@ class MethodQueryCanonicalizer(object):
         if not mime:
             mime = ''
 
-        if mime.startswith('application/x-www-form-urlencoded'):
+        def handle_binary(query):
+            query = base64.b64encode(query)
             query = to_native_str(query)
-            query = unquote_plus(query)
+            query = '__wb_post_data=' + query
+            return query
+
+        if mime.startswith('application/x-www-form-urlencoded'):
+            try:
+                query = to_native_str(query.decode('utf-8'))
+                query = unquote_plus(query)
+            except UnicodeDecodeError:
+                query = handle_binary(query)
 
         elif mime.startswith('multipart/'):
             env = {'REQUEST_METHOD': 'POST',
@@ -256,9 +265,7 @@ class MethodQueryCanonicalizer(object):
             query = self.amf_parse(query, environ)
 
         else:
-            query = base64.b64encode(query)
-            query = to_native_str(query)
-            query = '__wb_post_data=' + query
+            query = handle_binary(query)
 
         self.query = query
 
