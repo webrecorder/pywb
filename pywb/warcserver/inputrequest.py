@@ -236,7 +236,7 @@ class MethodQueryCanonicalizer(object):
 
         if mime.startswith('application/x-www-form-urlencoded'):
             try:
-                query = to_native_str(query.decode())
+                query = to_native_str(query.decode('utf-8'))
                 query = unquote_plus(query)
             except UnicodeDecodeError:
                 query = handle_binary(query)
