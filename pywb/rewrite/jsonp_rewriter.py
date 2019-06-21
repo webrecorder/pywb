@@ -19,6 +19,12 @@ class JSONPRewriter(StreamingRewriter):
         m_callback = self.CALLBACK.search(self.url_rewriter.wburl.url)
         if not m_callback:
             return string
+        if m_callback.group(1) == '?':
+            # this is a very sharp edge case e.g. callback=?
+            # since we only have this string[m_json.end(1):]
+            # would cut off the name of the CB if any is included
+            # so we just pass the string through
+            return string
 
         string = m_callback.group(1) + string[m_json.end(1):]
         return string
