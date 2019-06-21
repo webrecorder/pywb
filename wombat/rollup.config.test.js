@@ -38,5 +38,26 @@ export default [
       exports: 'none'
     },
     plugins: [noStrict]
+  },
+  {
+    input: 'src/wbWombat.js',
+    output: {
+      name: 'wombat',
+      file: path.join(baseTestOutput, 'wombatDirect.js'),
+      sourcemap: false,
+      format: 'es'
+    },
+    plugins: [
+      noStrict,
+      {
+        renderChunk(code) {
+          return code.replace(
+            /(this\._wb_wombat\.actual\s=\strue;)/gi,
+            `this._wb_wombat.actual = true;
+    this.wombat = wombat;`
+          );
+        }
+      }
+    ]
   }
 ];

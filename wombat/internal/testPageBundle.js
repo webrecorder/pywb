@@ -1,63 +1,70 @@
 import get from 'lodash-es/get';
 
 /**
- * @type {TestOverwatch}
+ * @typedef {Object} TestOverwatchInit
+ * @property {HTMLIFrameElement} sandbox
+ * @property {Object} [domStructure]
+ * @property {boolean} [direct]
  */
+
 window.TestOverwatch = class TestOverwatch {
   /**
-   * @param {Object} domStructure
+   * @param {TestOverwatchInit} init
    */
-  constructor(domStructure) {
+  constructor({ sandbox, domStructure, direct }) {
     /**
      * @type {{document: Document, window: Window}}
      */
     this.ownContextWinDoc = { window, document };
     this.wbMessages = { load: false };
     this.domStructure = domStructure;
+    this.direct = direct;
 
     /**
      * @type {HTMLIFrameElement}
      */
-    this.sandbox = domStructure.sandbox;
-    window.addEventListener(
-      'message',
-      event => {
-        if (event.data) {
-          const { data } = event;
-          switch (data.wb_type) {
-            case 'load':
-              this.wbMessages.load =
-                this.wbMessages.load || data.readyState === 'complete';
-              this.domStructure.load.url.data = data.url;
-              this.domStructure.load.title.data = data.title;
-              this.domStructure.load.readyState.data = data.readyState;
-              break;
-            case 'replace-url':
-              this.wbMessages['replace-url'] = data;
-              this.domStructure.replaceURL.url.data = data.url;
-              this.domStructure.replaceURL.title.data = data.title;
-              break;
-            case 'title':
-              this.wbMessages.title = data.title;
-              this.domStructure.titleMsg.data = data.title;
-              break;
-            case 'hashchange':
-              this.domStructure.hashchange.data = data.title;
-              this.wbMessages.hashchange = data.hash;
-              break;
-            case 'cookie':
-              this.domStructure.cookie.domain = data.domain;
-              this.domStructure.cookie.cookie = data.cookie;
-              this.wbMessages.cookie = data;
-              break;
-            default:
-              this.domStructure.unknown.data = JSON.stringify(data);
-              break;
+    this.sandbox = sandbox;
+    if (!this.direct) {
+      window.addEventListener(
+        'message',
+        event => {
+          if (event.data) {
+            const { data } = event;
+            switch (data.wb_type) {
+              case 'load':
+                this.wbMessages.load =
+                  this.wbMessages.load || data.readyState === 'complete';
+                this.domStructure.load.url.data = data.url;
+                this.domStructure.load.title.data = data.title;
+                this.domStructure.load.readyState.data = data.readyState;
+                break;
+              case 'replace-url':
+                this.wbMessages['replace-url'] = data;
+                this.domStructure.replaceURL.url.data = data.url;
+                this.domStructure.replaceURL.title.data = data.title;
+                break;
+              case 'title':
+                this.wbMessages.title = data.title;
+                this.domStructure.titleMsg.data = data.title;
+                break;
+              case 'hashchange':
+                this.domStructure.hashchange.data = data.title;
+                this.wbMessages.hashchange = data.hash;
+                break;
+              case 'cookie':
+                this.domStructure.cookie.domain = data.domain;
+                this.domStructure.cookie.cookie = data.cookie;
+                this.wbMessages.cookie = data;
+                break;
+              default:
+                this.domStructure.unknown.data = JSON.stringify(data);
+                break;
+            }
           }
-        }
-      },
-      false
-    );
+        },
+        false
+      );
+    }
   }
 
   /**
@@ -67,7 +74,9 @@ window.TestOverwatch = class TestOverwatch {
    * environment purity.
    */
   initSandbox() {
-    this.domStructure.reset();
+    if (this.domStructure) {
+      this.domStructure.reset();
+    }
     this.wbMessages = { load: false };
     this.sandbox.contentWindow._WBWombatInit(this.sandbox.contentWindow.wbinfo);
     this.sandbox.contentWindow.WombatTestUtil = {

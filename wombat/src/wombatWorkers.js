@@ -24,6 +24,7 @@ WBWombat.prototype.noRewrite = function(url) {
     !url ||
     url.indexOf('blob:') === 0 ||
     url.indexOf('javascript:') === 0 ||
+    url.indexOf('data:') === 0 ||
     url.indexOf(this.info.prefix) === 0
   );
 };

@@ -8,7 +8,11 @@ const gracefullShutdownTimeout = 50000;
 const shutdownOnSignals = ['SIGINT', 'SIGTERM', 'SIGHUP'];
 const assetsPath = path.join(__dirname, '..', 'assets');
 const httpsSandboxPath = path.join(assetsPath, 'sandbox.html');
+const sandboxDirectPath = path.join(assetsPath, 'sandboxDirect.html');
 const theyFoundItPath = path.join(assetsPath, 'it.html');
+
+const testPageURL = `http://localhost:${port}/testPage.html`;
+const testPageDirectURL = `http://localhost:${port}/testPageDirect.html`;
 
 function promiseResolveReject() {
   const prr = { promise: null, resolve: null, reject: null };
@@ -86,6 +90,15 @@ async function initServer() {
       }
     )
     .get(
+      '/live/20180803160549mp_/https://tests.direct.wombat.io/',
+      (request, reply) => {
+        reply
+          .type('text/html')
+          .status(200)
+          .send(fs.createReadStream(sandboxDirectPath));
+      }
+    )
+    .get(
       '/live/20180803160549mp_/https://tests.wombat.io/test',
       async (request, reply) => {
         reply.type('application/json; charset=utf-8').status(200);
@@ -103,7 +116,8 @@ async function initServer() {
       fastify.reset();
       return fastify.close();
     })
-    .decorate('testPage', `http://localhost:${port}/testPage.html`)
+    .decorate('testPage', testPageURL)
+    .decorate('testPageDirect', testPageDirectURL)
     .decorate('waitForRequest', route => {
       let prr = requestSubscribers.get(route);
       if (prr) return prr.promise;

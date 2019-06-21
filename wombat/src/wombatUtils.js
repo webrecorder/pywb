@@ -54,3 +54,11 @@ export function autobind(clazz) {
     }
   }
 }
+
+/**
+ * Because we overriding specific interfaces (e.g. Storage) that do not expose
+ * an constructor only an interface object with our own we must have a way
+ * to indicate to our overrides when it is proper to throw exceptions
+ * @type {{yes: boolean}}
+ */
+export var ThrowExceptions = { yes: false };

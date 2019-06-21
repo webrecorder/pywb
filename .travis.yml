@@ -47,7 +47,7 @@ jobs:
     - stage: test
       name: "Wombat Tests"
       language: node_js
-      node_js: 12.0.0
+      node_js: 12.4.0
       env:
        - WR_TEST=no WOMBAT_TEST=yes
       addons:

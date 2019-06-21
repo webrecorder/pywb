@@ -65,7 +65,7 @@ class JSWombatProxyRules(RxRules):
         local_init_func = '\nvar {0} = function(name) {{\
 return (self._wb_wombat && self._wb_wombat.local_init && \
 self._wb_wombat.local_init(name)) || self[name]; }};\n\
-if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ return obj; }} }}\n\
+if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; return this; }} }}\n\
 {{\n'
         local_check_this_fn = 'var {0} = function (thisObj) {{ \
 if (thisObj && thisObj._WB_wombat_obj_proxy) return thisObj._WB_wombat_obj_proxy; return thisObj; }};'
@@ -102,6 +102,8 @@ if (thisObj && thisObj._WB_wombat_obj_proxy) return thisObj._WB_wombat_obj_proxy
         prop_str = '|'.join(self.local_objs)
 
         rules = [
+            (r'\beval\s*\(', self.add_prefix('WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).'), 0),
+            (r'\beval\b', self.add_prefix('WB_wombat_'), 0),
             (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
             (r'(?<![$.])\s*location\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
             (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(this_rw), 0),
