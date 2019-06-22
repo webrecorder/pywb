@@ -906,8 +906,16 @@ Wombat.prototype.extractOriginalURL = function(rewrittenUrl) {
     return url;
   }
 
-  // if no coll, start from beginning, otherwise could be part of coll..
-  var start = this.wb_rel_prefix ? 1 : 0;
+  var start;
+
+  if (this.startsWith(url, this.wb_abs_prefix)) {
+    start = this.wb_abs_prefix.length;
+  } else if (this.wb_rel_prefix && this.startsWith(url, this.wb_rel_prefix)) {
+    start = this.wb_rel_prefix.length;
+  } else {
+    // if no coll, start from beginning, otherwise could be part of coll..
+    start = this.wb_rel_prefix ? 1 : 0;
+  }
 
   var index = url.indexOf('/http', start);
   if (index < 0) {
@@ -4774,13 +4782,12 @@ Wombat.prototype.initHashChange = function() {
   var wombat = this;
 
   var receive_hash_change = function receive_hash_change(event) {
-    var source = wombat.proxyToObj(event.source);
 
-    if (!event.data || source !== wombat.$wbwindow.__WB_top_frame) {
+    if (!event.data || !event.data.from_top) {
       return;
     }
 
-    var message = event.data;
+    var message = event.data.message;
 
     if (!message.wb_type) return;
 
