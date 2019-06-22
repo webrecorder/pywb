@@ -4782,7 +4782,6 @@ Wombat.prototype.initHashChange = function() {
   var wombat = this;
 
   var receive_hash_change = function receive_hash_change(event) {
-    var source = wombat.proxyToObj(event.source);
 
     if (!event.data || !event.data.from_top) {
       return;
