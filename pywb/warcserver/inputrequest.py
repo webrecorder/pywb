@@ -267,6 +267,9 @@ class MethodQueryCanonicalizer(object):
         else:
             query = handle_binary(query)
 
+        # cap extended query string at 32K
+        query = query[:2**15]
+
         self.query = query
 
     def amf_parse(self, string, environ):
