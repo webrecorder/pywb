@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-import AutoFetchWorkerProxyMode from './autoFetchWorkerProxyMode';
+import AutoFetcherProxyMode from './autoFetcherProxyMode';
 
 /**
  * Wombat lite for proxy-mode
@@ -12,9 +12,6 @@ export default function WombatLite($wbwindow, wbinfo) {
   this.$wbwindow = $wbwindow;
   this.wb_info.top_host = this.wb_info.top_host || '*';
   this.wb_info.wombat_opts = this.wb_info.wombat_opts || {};
-  this.wbAutoFetchWorkerPrefix =
-    (this.wb_info.auto_fetch_worker_prefix || this.wb_info.static_prefix) +
-    'autoFetchWorkerProxyMode.js';
   this.WBAutoFetchWorker = null;
 }
 
@@ -157,7 +154,6 @@ WombatLite.prototype.initDisableNotifications = function() {
       callback
     ) {
       if (callback) {
-        // eslint-disable-next-line standard/no-callback-literal
         callback('denied');
       }
 
@@ -201,9 +197,14 @@ WombatLite.prototype.initAutoFetchWorker = function() {
   if (!this.$wbwindow.Worker) {
     return;
   }
-  var isTop = this.$wbwindow.self === this.$wbwindow.top;
+  var config = {
+    isTop: this.$wbwindow.self === this.$wbwindow.top,
+    workerURL:
+      (this.wb_info.auto_fetch_worker_prefix || this.wb_info.static_prefix) +
+      'autoFetchWorker.js'
+  };
   if (this.$wbwindow.$WBAutoFetchWorker$ == null) {
-    this.WBAutoFetchWorker = new AutoFetchWorkerProxyMode(this, isTop);
+    this.WBAutoFetchWorker = new AutoFetcherProxyMode(this, config);
     // expose the WBAutoFetchWorker
     Object.defineProperty(this.$wbwindow, '$WBAutoFetchWorker$', {
       enumerable: false,
@@ -212,7 +213,7 @@ WombatLite.prototype.initAutoFetchWorker = function() {
   } else {
     this.WBAutoFetchWorker = this.$wbwindow.$WBAutoFetchWorker$;
   }
-  if (isTop) {
+  if (config.isTop) {
     var wombatLite = this;
     this.$wbwindow.addEventListener(
       'message',

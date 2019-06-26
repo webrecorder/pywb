@@ -2,7 +2,7 @@ import * as path from 'path';
 import minify from 'rollup-plugin-babel-minify';
 
 const license = `/*
-Copyright(c) 2013-2018 Rhizome and Ilya Kreymer. Released under the GNU General Public License.
+Copyright(c) 2013-2018 Rhizome and Contributors. Released under the GNU General Public License.
 
 This file is part of pywb, https://github.com/webrecorder/pywb
 
@@ -70,6 +70,26 @@ export default [
     output: {
       name: 'wombatWorkers',
       file: path.join(basePywbOutput, 'wombatWorkers.js'),
+      format: 'es',
+      sourcemap: false,
+      exports: 'none'
+    }
+  },
+  {
+    input: 'src/autoFetchWorker.js',
+    plugins: [
+      {
+        renderChunk(code) {
+          if (!code.startsWith("'use strict';")) {
+            return "'use strict';\n" + code;
+          }
+          return code;
+        }
+      }
+    ],
+    output: {
+      name: 'autoFetchWorker',
+      file: path.join(basePywbOutput, 'autoFetchWorker.js'),
       format: 'es',
       sourcemap: false,
       exports: 'none'

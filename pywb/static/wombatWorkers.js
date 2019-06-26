@@ -1,5 +1,5 @@
 /*
-Copyright(c) 2013-2018 Rhizome and Ilya Kreymer. Released under the GNU General Public License.
+Copyright(c) 2013-2018 Rhizome and Contributors. Released under the GNU General Public License.
 
 This file is part of pywb, https://github.com/webrecorder/pywb
 

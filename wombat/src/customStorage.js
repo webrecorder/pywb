@@ -1,8 +1,4 @@
-import {
-  addToStringTagToClass,
-  ensureNumber,
-  ThrowExceptions
-} from './wombatUtils';
+import { addToStringTagToClass, ensureNumber, ThrowExceptions } from './wombatUtils';
 
 /**
  * A re-implementation of the Storage interface.
