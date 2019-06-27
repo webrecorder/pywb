@@ -53,7 +53,7 @@ The default directory structure for a web archive is as follows::
         |
         +-- <coll name>
             |
-            +-- archives
+            +-- archive
             |     |
             |     +-- (WARC or ARC files here)
             |
