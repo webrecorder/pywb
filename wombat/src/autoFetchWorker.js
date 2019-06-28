@@ -1,296 +1,371 @@
-/* eslint-disable camelcase */
+'use strict';
+// thanks wombat
+var STYLE_REGEX = /(url\s*\(\s*[\\"']*)([^)'"]+)([\\"']*\s*\))/gi;
+var IMPORT_REGEX = /(@import\s*[\\"']*)([^)'";]+)([\\"']*\s*;?)/gi;
+var srcsetSplit = /\s*(\S*\s+[\d.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))/;
+var MaxRunningFetches = 15;
+var DataURLPrefix = 'data:';
+var seen = {};
+// array of URLs to be fetched
+var queue = [];
+var runningFetches = 0;
+// a URL to resolve relative URLs found in the cssText of CSSMedia rules.
+var currentResolver = null;
 
-import { autobind } from './wombatUtils';
+var config = {
+  havePromise: typeof self.Promise !== 'undefined',
+  haveFetch: typeof self.fetch !== 'undefined',
+  proxyMode: false,
+  mod: null,
+  prefix: null,
+  prefixMod: null,
+  relative: null,
+  rwRe: null
+};
 
-/**
- * @param {Wombat} wombat
- */
-export default function AutoFetchWorker(wombat) {
-  if (!(this instanceof AutoFetchWorker)) {
-    return new AutoFetchWorker(wombat);
-  }
-  // specifically target the elements we desire
-  this.elemSelector =
-    'img[srcset], img[data-srcset], img[data-src], video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], ' +
-    'picture > source[srcset], picture > source[data-srcset], picture > source[data-src], ' +
-    'video > source[srcset], video > source[data-srcset], video > source[data-src], ' +
-    'audio > source[srcset], audio > source[data-srcset], audio > source[data-src]';
-
-  this.isTop = wombat.$wbwindow === wombat.$wbwindow.__WB_replay_top;
-
-  /** @type {Wombat} */
-  this.wombat = wombat;
-  /** @type {Window} */
-  this.$wbwindow = wombat.$wbwindow;
-
-  /** @type {?Worker|Object} */
-  this.worker = null;
-  autobind(this);
-  this._initWorker();
+if (!config.havePromise) {
+  // not kewl we must polyfill Promise
+  self.Promise = function(executor) {
+    executor(noop, noop);
+  };
+  self.Promise.prototype.then = function(cb) {
+    if (cb) cb();
+    return this;
+  };
+  self.Promise.prototype.catch = function() {
+    return this;
+  };
+  self.Promise.all = function(values) {
+    return new Promise(noop);
+  };
 }
 
-/**
- * Initializes the backing worker IFF the execution context we are in is
- * the replay tops otherwise creates a dummy worker that simply bounces the
- * message that would have been sent to the backing worker to replay top.
- *
- * If creation of the worker fails, likely due to the execution context we
- * are currently in having an null origin, we fallback to dummy worker creation.
- * @private
- */
-AutoFetchWorker.prototype._initWorker = function() {
-  var wombat = this.wombat;
-  if (this.isTop) {
-    // we are top and can will own this worker
-    // setup URL for the kewl case
-    // Normal replay and preservation mode pworker setup, its all one origin so YAY!
-    var workerURL =
-      (wombat.wb_info.auto_fetch_worker_prefix ||
-        wombat.wb_info.static_prefix) +
-      'autoFetchWorker.js?init=' +
-      encodeURIComponent(
-        JSON.stringify({
-          mod: wombat.wb_info.mod,
-          prefix: wombat.wb_abs_prefix,
-          rwRe: wombat.wb_unrewrite_rx
-        })
-      );
-    try {
-      this.worker = new Worker(workerURL);
-      return;
-    } catch (e) {
-      // it is likely we are in some kind of horrid iframe setup
-      // and the execution context we are currently in has a null origin
-      console.error(
-        'Failed to create auto fetch worker\n',
-        e,
-        '\nFalling back to non top behavior'
-      );
-    }
-  }
-
-  // add only the portions of the worker interface we use since we are not top
-  // and if in proxy mode start check polling
-  this.worker = {
-    postMessage: function(msg) {
-      if (!msg.wb_type) {
-        msg = { wb_type: 'aaworker', msg: msg };
-      }
-      wombat.$wbwindow.__WB_replay_top.__orig_postMessage(msg, '*');
-    },
-    terminate: function() {}
-  };
-};
-
-/**
- * Extracts the media rules from the supplied CSSStyleSheet object if any
- * are present and returns an array of the media cssText
- * @param {CSSStyleSheet} sheet
- * @return {Array<string>}
- */
-AutoFetchWorker.prototype.extractMediaRulesFromSheet = function(sheet) {
-  var rules;
-  var media = [];
-  try {
-    rules = sheet.cssRules || sheet.rules;
-  } catch (e) {
-    return media;
-  }
-
-  // loop through each rule of the stylesheet
-  for (var i = 0; i < rules.length; ++i) {
-    var rule = rules[i];
-    if (rule.type === CSSRule.MEDIA_RULE) {
-      // we are a media rule so get its text
-      media.push(rule.cssText);
-    }
-  }
-  return media;
-};
-
-/**
- * Extracts the media rules from the supplied CSSStyleSheet object if any
- * are present after a tick of the event loop sending the results of the
- * extraction to the backing worker
- * @param {CSSStyleSheet|StyleSheet} sheet
- */
-AutoFetchWorker.prototype.deferredSheetExtraction = function(sheet) {
-  var afw = this;
-  // defer things until next time the Promise.resolve Qs are cleared
-  Promise.resolve().then(function() {
-    // loop through each rule of the stylesheet
-    var media = afw.extractMediaRulesFromSheet(sheet);
-    if (media.length > 0) {
-      // we have some media rules to preserve
-      afw.preserveMedia(media);
-    }
-  });
-};
-
-/**
- * Terminates the backing worker. This is a no op when we are not
- * operating in the execution context of replay top
- */
-AutoFetchWorker.prototype.terminate = function() {
-  // terminate the worker, a no op when not replay top
-  this.worker.terminate();
-};
-
-/**
- * Sends a message to backing worker. If deferred is true
- * the message is sent after one tick of the event loop
- * @param {Object} msg
- * @param {boolean} [deferred]
- */
-AutoFetchWorker.prototype.postMessage = function(msg, deferred) {
-  if (deferred) {
-    var afWorker = this;
-    Promise.resolve().then(function() {
-      afWorker.worker.postMessage(msg);
+if (!config.haveFetch) {
+  // not kewl we must polyfill fetch.
+  self.fetch = function(url) {
+    return new Promise(function(resolve) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', url, true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (!config.havePromise) {
+            fetchDoneOrErrored();
+          }
+          resolve();
+        }
+      };
+      xhr.send();
     });
+  };
+}
+
+if (location.search.indexOf('init') !== -1) {
+  (function() {
+    var init;
+    if (typeof self.URL === 'function') {
+      var loc = new self.URL(location.href);
+      init = JSON.parse(loc.searchParams.get('init'));
+    } else {
+      var search = decodeURIComponent(location.search.split('?')[1]).split('&');
+      init = JSON.parse(search[0].substr(search[0].indexOf('=') + 1));
+      init.prefix = decodeURIComponent(init.prefix);
+      init.baseURI = decodeURIComponent(init.prefix);
+    }
+    config.prefix = init.prefix;
+    config.mod = init.mod;
+    config.prefixMod = init.prefix + init.mod;
+    config.rwRe = new RegExp(init.rwRe, 'g');
+    config.relative = init.prefix.split(location.origin)[1];
+    config.schemeless = '/' + config.relative;
+  })();
+} else {
+  config.proxyMode = true;
+}
+
+self.onmessage = function(event) {
+  var data = event.data;
+  switch (data.type) {
+    case 'values':
+      autoFetch(data);
+      break;
+    case 'fetch-all':
+      justFetch(data);
+      break;
+  }
+};
+
+function noop() {}
+
+function fetchDoneOrErrored() {
+  runningFetches -= 1;
+  fetchFromQ();
+}
+
+function fetchURL(urlToBeFetched) {
+  runningFetches += 1;
+  fetch(urlToBeFetched)
+    .then(fetchDoneOrErrored)
+    .catch(fetchDoneOrErrored);
+}
+
+function queueOrFetch(urlToBeFetched) {
+  if (
+    !urlToBeFetched ||
+    urlToBeFetched.indexOf(DataURLPrefix) === 0 ||
+    seen[urlToBeFetched] != null
+  ) {
     return;
   }
-  this.worker.postMessage(msg);
-};
-
-/**
- * Sends the supplied srcset value to the backing worker for preservation
- * @param {string|Array<string>} srcset
- * @param {string} [mod]
- */
-AutoFetchWorker.prototype.preserveSrcset = function(srcset, mod) {
-  // send values from rewriteSrcset to the worker
-  this.postMessage(
-    {
-      type: 'values',
-      srcset: { values: srcset, mod: mod, presplit: true }
-    },
-    true
-  );
-};
-
-/**
- * Send the value of the supplied elements data-srcset attribute to the
- * backing worker for preservation
- * @param {Node} elem
- */
-AutoFetchWorker.prototype.preserveDataSrcset = function(elem) {
-  // send values from rewriteAttr srcset to the worker deferred
-  // to ensure the page viewer sees the images first
-  this.postMessage(
-    {
-      type: 'values',
-      srcset: {
-        value: elem.dataset.srcset,
-        mod: this.rwMod(elem),
-        presplit: false
-      }
-    },
-    true
-  );
-};
-
-/**
- * Sends the supplied array of cssText from media rules to the backing worker
- * @param {Array<string>} media
- */
-AutoFetchWorker.prototype.preserveMedia = function(media) {
-  // send CSSMediaRule values to the worker
-  this.postMessage({ type: 'values', media: media }, true);
-};
-
-/**
- * Extracts the value of the srcset property if it exists from the supplied
- * element
- * @param {Element} elem
- * @return {?string}
- */
-AutoFetchWorker.prototype.getSrcset = function(elem) {
-  if (this.wombat.wb_getAttribute) {
-    return this.wombat.wb_getAttribute.call(elem, 'srcset');
+  seen[urlToBeFetched] = true;
+  if (runningFetches >= MaxRunningFetches) {
+    queue.push(urlToBeFetched);
+    return;
   }
-  return elem.getAttribute('srcset');
-};
+  fetchURL(urlToBeFetched);
+}
 
-/**
- * Returns the correct rewrite modifier for the supplied element
- * @param {Element} elem
- * @return {string}
- */
-AutoFetchWorker.prototype.rwMod = function(elem) {
-  switch (elem.tagName) {
-    case 'SOURCE':
-      if (elem.parentElement && elem.parentElement.tagName === 'PICTURE') {
-        return 'im_';
-      }
-      return 'oe_';
-    case 'IMG':
-      return 'im_';
+function fetchFromQ() {
+  while (queue.length && runningFetches < MaxRunningFetches) {
+    fetchURL(queue.shift());
   }
-  return 'oe_';
-};
+}
 
-/**
- * Extracts the media rules from stylesheets and the (data-)srcset URLs from
- * image elements the current context's document contains
- */
-AutoFetchWorker.prototype.extractFromLocalDoc = function() {
-  // get the values to be preserved from the documents stylesheets
-  // and all img, video, audio elements with (data-)?srcset or data-src
-  var afw = this;
-  Promise.resolve().then(function() {
-    var msg = {
-      type: 'values',
-      context: { docBaseURI: document.baseURI }
-    };
-    var media = [];
-    var i = 0;
-    var sheets = document.styleSheets;
-    for (; i < sheets.length; ++i) {
-      media = media.concat(afw.extractMediaRulesFromSheet(sheets[i]));
+function maybeResolveURL(url, base) {
+  // given a url and base url returns a resolved full URL or
+  // null if resolution was unsuccessful
+  try {
+    var _url = new URL(url, base);
+    return _url.href;
+  } catch (e) {
+    return null;
+  }
+}
+
+function safeResolve(url, resolver) {
+  // Guard against the exception thrown by the URL constructor if the URL or resolver is bad
+  // if resolver is undefined/null then this function passes url through
+  var resolvedURL = url;
+  if (resolver) {
+    try {
+      var _url = new URL(url, resolver);
+      return _url.href;
+    } catch (e) {
+      resolvedURL = url;
     }
-    var elems = document.querySelectorAll(afw.elemSelector);
-    var srcset = { values: [], presplit: false };
-    var src = { values: [] };
-    var elem, srcv, mod;
-    for (i = 0; i < elems.length; ++i) {
-      elem = elems[i];
-      // we want the original src value in order to resolve URLs in the worker when needed
-      srcv = elem.src ? elem.src : null;
-      // a from value of 1 indicates images and a 2 indicates audio/video
-      mod = afw.rwMod(elem);
-      if (elem.srcset) {
-        srcset.values.push({
-          srcset: afw.getSrcset(elem),
-          mod: mod,
-          tagSrc: srcv
-        });
+  }
+  return resolvedURL;
+}
+
+function maybeFixUpRelSchemelessPrefix(url) {
+  // attempt to ensure rewritten relative or schemeless URLs become full URLS!
+  // otherwise returns null if this did not happen
+  if (url.indexOf(config.relative) === 0) {
+    return url.replace(config.relative, config.prefix);
+  }
+  if (url.indexOf(config.schemeless) === 0) {
+    return url.replace(config.schemeless, config.prefix);
+  }
+  return null;
+}
+
+function maybeFixUpURL(url, resolveOpts) {
+  // attempt to fix up the url and do our best to ensure we can get dat 200 OK!
+  if (config.rwRe.test(url)) {
+    return url;
+  }
+  var mod = resolveOpts.mod || 'mp_';
+  // first check for / (relative) or // (schemeless) rewritten urls
+  var maybeFixed = maybeFixUpRelSchemelessPrefix(url);
+  if (maybeFixed != null) {
+    return maybeFixed;
+  }
+  // resolve URL against tag src
+  if (resolveOpts.tagSrc != null) {
+    maybeFixed = maybeResolveURL(url, resolveOpts.tagSrc);
+    if (maybeFixed != null) {
+      return config.prefix + mod + '/' + maybeFixed;
+    }
+  }
+  // finally last attempt resolve the originating documents base URI
+  if (resolveOpts.docBaseURI) {
+    maybeFixed = maybeResolveURL(url, resolveOpts.docBaseURI);
+    if (maybeFixed != null) {
+      return config.prefix + mod + '/' + maybeFixed;
+    }
+  }
+  // not much to do now.....
+  return config.prefixMod + '/' + url;
+}
+
+function urlExtractor(match, n1, n2, n3, offset, string) {
+  // Same function as style_replacer in wombat.rewrite_style, n2 is our URL
+  queueOrFetch(n2);
+  return n1 + n2 + n3;
+}
+
+function urlExtractorProxyMode(match, n1, n2, n3, offset, string) {
+  // Same function as style_replacer in wombat.rewrite_style, n2 is our URL
+  // this.currentResolver is set to the URL which the browser would normally
+  // resolve relative urls with (URL of the stylesheet) in an exceptionless manner
+  // (resolvedURL will be undefined if an error occurred)
+  queueOrFetch(safeResolve(n2, currentResolver));
+  return n1 + n2 + n3;
+}
+
+function handleMedia(mediaRules) {
+  // this is a broken down rewrite_style
+  if (mediaRules == null || mediaRules.length === 0) return;
+  for (var i = 0; i < mediaRules.length; i++) {
+    mediaRules[i]
+      .replace(STYLE_REGEX, urlExtractor)
+      .replace(IMPORT_REGEX, urlExtractor);
+  }
+}
+
+function handleMediaProxyMode(mediaRules) {
+  // this is a broken down rewrite_style
+  if (mediaRules == null || mediaRules.length === 0) return;
+  for (var i = 0; i < mediaRules.length; i++) {
+    // set currentResolver to the value of this stylesheets URL, done to ensure we do not have to
+    // create functions on each loop iteration because we potentially create a new `URL` object
+    // twice per iteration
+    currentResolver = mediaRules[i].resolve;
+    mediaRules[i].cssText
+      .replace(STYLE_REGEX, urlExtractorProxyMode)
+      .replace(IMPORT_REGEX, urlExtractorProxyMode);
+  }
+}
+
+function handleSrc(srcValues, context) {
+  var resolveOpts = { docBaseURI: context.docBaseURI };
+  if (srcValues.value) {
+    resolveOpts.mod = srcValues.mod;
+    return queueOrFetch(maybeFixUpURL(srcValues.value.trim(), resolveOpts));
+  }
+  var len = srcValues.values.length;
+  for (var i = 0; i < len; i++) {
+    var value = srcValues.values[i];
+    resolveOpts.mod = value.mod;
+    queueOrFetch(maybeFixUpURL(value.src, resolveOpts));
+  }
+}
+
+function handleSrcProxyMode(srcValues) {
+  // preservation worker in proxy mode sends us the value of the srcset attribute of an element
+  // and a URL to correctly resolve relative URLS. Thus we must recreate rewrite_srcset logic here
+  if (srcValues == null || srcValues.length === 0) return;
+  var srcVal;
+  for (var i = 0; i < srcValues.length; i++) {
+    srcVal = srcValues[i];
+    queueOrFetch(safeResolve(srcVal.src, srcVal.resolve));
+  }
+}
+
+function extractSrcSetNotPreSplit(ssV, resolveOpts) {
+  if (!ssV) return;
+  // was from extract from local doc so we need to duplicate  work
+  var srcsetValues = ssV.split(srcsetSplit);
+  for (var i = 0; i < srcsetValues.length; i++) {
+    // grab the URL not width/height key
+    if (srcsetValues[i]) {
+      var value = srcsetValues[i].trim().split(' ')[0];
+      var maybeResolvedURL = maybeFixUpURL(value.trim(), resolveOpts);
+      queueOrFetch(maybeResolvedURL);
+    }
+  }
+}
+
+function extractSrcset(srcsets) {
+  // was rewrite_srcset and only need to q
+  for (var i = 0; i < srcsets.length; i++) {
+    // grab the URL not width/height key
+    var url = srcsets[i].split(' ')[0];
+    queueOrFetch(url);
+  }
+}
+
+function handleSrcset(srcset, context) {
+  if (srcset == null) return;
+  var resolveOpts = {
+    docBaseURI: context.docBaseURI,
+    mode: null,
+    tagSrc: null
+  };
+  if (srcset.value) {
+    // we have a single value, this srcset came from either
+    // preserveDataSrcset (not presplit) preserveSrcset (presplit)
+    resolveOpts.mod = srcset.mod;
+    if (!srcset.presplit) {
+      // extract URLs from the srcset string
+      return extractSrcSetNotPreSplit(srcset.value, resolveOpts);
+    }
+    // we have an array of srcset URL strings
+    return extractSrcset(srcset.value);
+  }
+  // we have an array of values, these srcsets came from extractFromLocalDoc
+  var len = srcset.values.length;
+  for (var i = 0; i < len; i++) {
+    var ssv = srcset.values[i];
+    resolveOpts.mod = ssv.mod;
+    resolveOpts.tagSrc = ssv.tagSrc;
+    extractSrcSetNotPreSplit(ssv.srcset, resolveOpts);
+  }
+}
+
+function handleSrcsetProxyMode(srcsets) {
+  // preservation worker in proxy mode sends us the value of the srcset attribute of an element
+  // and a URL to correctly resolve relative URLS. Thus we must recreate rewrite_srcset logic here
+  if (srcsets == null) return;
+  var length = srcsets.length;
+  var extractedSrcSet, srcsetValue, ssSplit, j;
+  for (var i = 0; i < length; i++) {
+    extractedSrcSet = srcsets[i];
+    ssSplit = extractedSrcSet.srcset.split(srcsetSplit);
+    for (j = 0; j < ssSplit.length; j++) {
+      if (ssSplit[j]) {
+        srcsetValue = ssSplit[j].trim();
+        if (srcsetValue) {
+          queueOrFetch(
+            safeResolve(srcsetValue.split(' ')[0], extractedSrcSet.resolve)
+          );
+        }
       }
-      if (elem.dataset.srcset) {
-        srcset.values.push({
-          srcset: elem.dataset.srcset,
-          mod: mod,
-          tagSrc: srcv
-        });
-      }
-      if (elem.dataset.src) {
-        src.values.push({ src: elem.dataset.src, mod: mod });
-      }
-      if (elem.tagName === 'SOURCE' && srcv) {
-        src.values.push({ src: srcv, mod: mod });
-      }
     }
-    if (media.length) {
-      msg.media = media;
+  }
+}
+
+function autoFetch(data) {
+  // we got a message and now we autofetch!
+  // these calls turn into no ops if they have no work
+  if (data.media) {
+    if (config.proxyMode) {
+      handleMediaProxyMode(data.media);
+    } else {
+      handleMedia(data.media);
     }
-    if (srcset.values.length) {
-      msg.srcset = srcset;
+  }
+
+  if (data.src) {
+    if (config.proxyMode) {
+      handleSrcProxyMode(data.src);
+    } else {
+      handleSrc(data.src, data.context || { docBaseURI: null });
     }
-    if (src.values.length) {
-      msg.src = src;
+  }
+
+  if (data.srcset) {
+    if (config.proxyMode) {
+      handleSrcsetProxyMode(data.srcset);
+    } else {
+      handleSrcset(data.srcset, data.context || { docBaseURI: null });
     }
-    if (msg.media || msg.srcset || msg.src) {
-      afw.postMessage(msg);
-    }
-  });
-};
+  }
+}
+
+function justFetch(data) {
+  // we got a message containing only urls to be fetched
+  if (data == null || data.values == null) return;
+  for (var i = 0; i < data.values.length; ++i) {
+    queueOrFetch(data.values[i]);
+  }
+}

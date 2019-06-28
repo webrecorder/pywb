@@ -2,7 +2,7 @@
 import FuncMap from './funcMap';
 import Storage from './customStorage';
 import WombatLocation from './wombatLocation';
-import AutoFetchWorker from './autoFetchWorker';
+import AutoFetcher from './autoFetcher';
 import { wrapEventListener, wrapSameOriginEventListener } from './listeners';
 import {
   addToStringTagToClass,
@@ -58,7 +58,7 @@ function Wombat($wbwindow, wbinfo) {
   /** @type {function(): string} */
   this.wb_funToString = Function.prototype.toString;
 
-  /** @type {AutoFetchWorker} */
+  /** @type {AutoFetcher} */
   this.WBAutoFetchWorker = null;
 
   /** @type {boolean} */
@@ -1983,12 +1983,12 @@ Wombat.prototype.rewriteSrcset = function(value, elem) {
 
   var split = value.split(this.srcsetRe);
   var values = [];
-
+  var mod = this.rwModForElement(elem, 'srcset');
   for (var i = 0; i < split.length; i++) {
     // Filter removes non-truthy values like null, undefined, and ""
     if (split[i]) {
       var trimmed = split[i].trim();
-      if (trimmed) values.push(this.rewriteUrl(trimmed));
+      if (trimmed) values.push(this.rewriteUrl(trimmed, true, mod));
     }
   }
 
@@ -3141,6 +3141,7 @@ Wombat.prototype.overrideFuncArgProxyToObj = function(
   if (!cls || !cls.prototype) return;
   var argIndex = argumentIdx || 0;
   var orig = cls.prototype[method];
+  if (!orig) return;
   var wombat = this;
   cls.prototype[method] = function deproxyFnArg() {
     var args = new Array(arguments.length);
@@ -4782,7 +4783,6 @@ Wombat.prototype.initHashChange = function() {
   var wombat = this;
 
   var receive_hash_change = function receive_hash_change(event) {
-
     if (!event.data || !event.data.from_top) {
       return;
     }
@@ -5219,7 +5219,6 @@ Wombat.prototype.initDisableNotificationsGeoLocation = function() {
       callback
     ) {
       if (callback) {
-        // eslint-disable-next-line standard/no-callback-literal
         callback('denied');
       }
 
@@ -5448,7 +5447,21 @@ Wombat.prototype.initDocumentObjProxy = function($document) {
  */
 Wombat.prototype.initAutoFetchWorker = function() {
   if (!this.wbUseAFWorker) return;
-  this.WBAutoFetchWorker = new AutoFetchWorker(this);
+  var af = new AutoFetcher(this, {
+    isTop: this.$wbwindow === this.$wbwindow.__WB_replay_top,
+    workerURL:
+      (this.wb_info.auto_fetch_worker_prefix || this.wb_info.static_prefix) +
+      'autoFetchWorker.js?init=' +
+      encodeURIComponent(
+        JSON.stringify({
+          mod: this.wb_info.mod,
+          prefix: this.wb_abs_prefix,
+          rwRe: this.wb_unrewrite_rx.source
+        })
+      )
+  });
+  this.WBAutoFetchWorker = af;
+  this.$wbwindow.$WBAutoFetchWorker$ = af;
   var wombat = this;
   this.utilFns.wbSheetMediaQChecker = function checkStyle() {
     // used only for link[rel='stylesheet'] so we remove our listener

@@ -3,65 +3,54 @@ import { autobind } from './wombatUtils';
 /**
  * Create a new instance of AutoFetchWorkerProxyMode
  * @param {Wombat} wombat
- * @param {boolean} isTop
+ * @param {{isTop: boolean, workerURL: string}} config
  */
-export default function AutoFetchWorkerProxyMode(wombat, isTop) {
-  if (!(this instanceof AutoFetchWorkerProxyMode)) {
-    return new AutoFetchWorkerProxyMode(wombat, isTop);
+export default function AutoFetcherProxyMode(wombat, config) {
+  if (!(this instanceof AutoFetcherProxyMode)) {
+    return new AutoFetcherProxyMode(wombat, config);
   }
-  /**
-   * @type {Wombat}
-   */
+  /** @type {Wombat} */
   this.wombat = wombat;
 
-  /**
-   * @type {boolean}
-   */
-  this.isTop = isTop;
-
-  /**
-   * @type {?MutationObserver}
-   */
+  /** @type {?MutationObserver} */
   this.mutationObz = null;
+  /** @type {?HTMLStyleElement} */
+  this.styleTag = null;
   // specifically target the elements we desire
+  /** @type {string} */
   this.elemSelector =
     'img[srcset], img[data-srcset], img[data-src], video[srcset], video[data-srcset], video[data-src], audio[srcset], audio[data-srcset], audio[data-src], ' +
     'picture > source[srcset], picture > source[data-srcset], picture > source[data-src], ' +
     'video > source[srcset], video > source[data-srcset], video > source[data-src], ' +
     'audio > source[srcset], audio > source[data-srcset], audio > source[data-src]';
-  this.mutationOpts = {
-    characterData: false,
-    characterDataOldValue: false,
-    attributes: true,
-    attributeOldValue: true,
-    subtree: true,
-    childList: true,
-    attributeFilter: ['src', 'srcset']
-  };
   autobind(this);
-  this._init(true);
+  this._init(config, true);
 }
 
 /**
  * Initialize the auto fetch worker
+ * @param {{isTop: boolean, workerURL: string}} config
+ * @param {boolean} [first]
  * @private
  */
-AutoFetchWorkerProxyMode.prototype._init = function(first) {
+AutoFetcherProxyMode.prototype._init = function(config, first) {
   var afwpm = this;
+  var wombat = this.wombat;
   if (document.readyState === 'complete') {
     this.styleTag = document.createElement('style');
     this.styleTag.id = '$wrStyleParser$';
     document.head.appendChild(this.styleTag);
-    if (this.isTop) {
+    if (config.isTop) {
       // Cannot directly load our worker from the proxy origin into the current origin
       // however we fetch it from proxy origin and can blob it into the current origin :)
-      fetch(this.wombat.wbAutoFetchWorkerPrefix).then(function(res) {
+      fetch(config.workerURL).then(function(res) {
         res
           .text()
           .then(function(text) {
             var blob = new Blob([text], { type: 'text/javascript' });
-            afwpm.worker = new afwpm.wombat.$wbwindow.Worker(
-              URL.createObjectURL(blob)
+            afwpm.worker = new wombat.$wbwindow.Worker(
+              URL.createObjectURL(blob),
+              { type: 'classic', credentials: 'include' }
             );
             afwpm.startChecking();
           })
@@ -79,7 +68,7 @@ AutoFetchWorkerProxyMode.prototype._init = function(first) {
           if (!msg.wb_type) {
             msg = { wb_type: 'aaworker', msg: msg };
           }
-          afwpm.wombat.$wbwindow.top.postMessage(msg, '*');
+          wombat.$wbwindow.top.postMessage(msg, '*');
         },
         terminate: function() {}
       };
@@ -90,7 +79,7 @@ AutoFetchWorkerProxyMode.prototype._init = function(first) {
   if (!first) return;
   var i = setInterval(function() {
     if (document.readyState === 'complete') {
-      afwpm._init();
+      afwpm._init(config);
       clearInterval(i);
     }
   }, 1000);
@@ -99,16 +88,24 @@ AutoFetchWorkerProxyMode.prototype._init = function(first) {
 /**
  * Initializes the mutation observer
  */
-AutoFetchWorkerProxyMode.prototype.startChecking = function() {
+AutoFetcherProxyMode.prototype.startChecking = function() {
   this.extractFromLocalDoc();
   this.mutationObz = new MutationObserver(this.mutationCB);
-  this.mutationObz.observe(document, this.mutationOpts);
+  this.mutationObz.observe(document.documentElement, {
+    characterData: false,
+    characterDataOldValue: false,
+    attributes: true,
+    attributeOldValue: true,
+    subtree: true,
+    childList: true,
+    attributeFilter: ['src', 'srcset']
+  });
 };
 
 /**
  * Terminate the worker, a no op when not replay top
  */
-AutoFetchWorkerProxyMode.prototype.terminate = function() {
+AutoFetcherProxyMode.prototype.terminate = function() {
   this.worker.terminate();
 };
 
@@ -116,7 +113,7 @@ AutoFetchWorkerProxyMode.prototype.terminate = function() {
  * Sends the supplied array of URLs to the backing worker
  * @param {Array<string>} urls
  */
-AutoFetchWorkerProxyMode.prototype.justFetch = function(urls) {
+AutoFetcherProxyMode.prototype.justFetch = function(urls) {
   this.worker.postMessage({ type: 'fetch-all', values: urls });
 };
 
@@ -124,7 +121,7 @@ AutoFetchWorkerProxyMode.prototype.justFetch = function(urls) {
  * Sends the supplied msg to the backing worker
  * @param {Object} msg
  */
-AutoFetchWorkerProxyMode.prototype.postMessage = function(msg) {
+AutoFetcherProxyMode.prototype.postMessage = function(msg) {
   this.worker.postMessage(msg);
 };
 
@@ -136,7 +133,7 @@ AutoFetchWorkerProxyMode.prototype.postMessage = function(msg) {
  * @param {boolean} [text]
  * @return {void}
  */
-AutoFetchWorkerProxyMode.prototype.handleMutatedStyleElem = function(
+AutoFetcherProxyMode.prototype.handleMutatedStyleElem = function(
   elem,
   accum,
   text
@@ -166,7 +163,7 @@ AutoFetchWorkerProxyMode.prototype.handleMutatedStyleElem = function(
  * @param {*} elem
  * @param {Object} accum
  */
-AutoFetchWorkerProxyMode.prototype.handleMutatedElem = function(elem, accum) {
+AutoFetcherProxyMode.prototype.handleMutatedElem = function(elem, accum) {
   var baseURI = document.baseURI;
   if (elem.nodeType === Node.TEXT_NODE) {
     return this.handleMutatedStyleElem(elem, accum, true);
@@ -189,10 +186,7 @@ AutoFetchWorkerProxyMode.prototype.handleMutatedElem = function(elem, accum) {
  * @param {Array<MutationRecord>} mutationList
  * @param {MutationObserver} observer
  */
-AutoFetchWorkerProxyMode.prototype.mutationCB = function(
-  mutationList,
-  observer
-) {
+AutoFetcherProxyMode.prototype.mutationCB = function(mutationList, observer) {
   var accum = { type: 'values', srcset: [], src: [], media: [], deferred: [] };
   for (var i = 0; i < mutationList.length; i++) {
     var mutation = mutationList[i];
@@ -212,7 +206,6 @@ AutoFetchWorkerProxyMode.prototype.mutationCB = function(
     Promise.all(deferred).then(this.handleDeferredSheetResults);
   }
   if (accum.srcset.length || accum.src.length || accum.media.length) {
-    console.log('msg', Date.now(), accum);
     this.postMessage(accum);
   }
 };
@@ -222,7 +215,7 @@ AutoFetchWorkerProxyMode.prototype.mutationCB = function(
  * @param {StyleSheet} sheet
  * @return {boolean}
  */
-AutoFetchWorkerProxyMode.prototype.shouldSkipSheet = function(sheet) {
+AutoFetcherProxyMode.prototype.shouldSkipSheet = function(sheet) {
   // we skip extracting rules from sheets if they are from our parsing style or come from pywb
   if (sheet.id === '$wrStyleParser$') return true;
   return !!(
@@ -236,7 +229,7 @@ AutoFetchWorkerProxyMode.prototype.shouldSkipSheet = function(sheet) {
  * @param {?string} srcV
  * @return {null|string}
  */
-AutoFetchWorkerProxyMode.prototype.validateSrcV = function(srcV) {
+AutoFetcherProxyMode.prototype.validateSrcV = function(srcV) {
   if (!srcV || srcV.indexOf('data:') === 0 || srcV.indexOf('blob:') === 0) {
     return null;
   }
@@ -250,7 +243,7 @@ AutoFetchWorkerProxyMode.prototype.validateSrcV = function(srcV) {
  * @param {string} cssURL
  * @return {Promise<Array>}
  */
-AutoFetchWorkerProxyMode.prototype.fetchCSSAndExtract = function(cssURL) {
+AutoFetcherProxyMode.prototype.fetchCSSAndExtract = function(cssURL) {
   var url =
     location.protocol +
     '//' +
@@ -276,10 +269,7 @@ AutoFetchWorkerProxyMode.prototype.fetchCSSAndExtract = function(cssURL) {
  * @param {string} baseURI
  * @return {Array<Object>}
  */
-AutoFetchWorkerProxyMode.prototype.extractMediaRules = function(
-  sheet,
-  baseURI
-) {
+AutoFetcherProxyMode.prototype.extractMediaRules = function(sheet, baseURI) {
   // We are in proxy mode and must include a URL to resolve relative URLs in media rules
   var results = [];
   if (!sheet) return results;
@@ -306,7 +296,7 @@ AutoFetchWorkerProxyMode.prototype.extractMediaRules = function(
  * @param {Element} elem
  * @return {string}
  */
-AutoFetchWorkerProxyMode.prototype.rwMod = function(elem) {
+AutoFetcherProxyMode.prototype.rwMod = function(elem) {
   switch (elem.tagName) {
     case 'SOURCE':
       if (elem.parentElement && elem.parentElement.tagName === 'PICTURE') {
@@ -326,7 +316,7 @@ AutoFetchWorkerProxyMode.prototype.rwMod = function(elem) {
  * @param {string} baseURI
  * @param {?Object} acum
  */
-AutoFetchWorkerProxyMode.prototype.handleDomElement = function(
+AutoFetcherProxyMode.prototype.handleDomElement = function(
   elem,
   baseURI,
   acum
@@ -368,7 +358,7 @@ AutoFetchWorkerProxyMode.prototype.handleDomElement = function(
  * @param {string} baseURI
  * @param {Object} [acum]
  */
-AutoFetchWorkerProxyMode.prototype.extractSrcSrcsetFrom = function(
+AutoFetcherProxyMode.prototype.extractSrcSrcsetFrom = function(
   fromElem,
   baseURI,
   acum
@@ -391,9 +381,7 @@ AutoFetchWorkerProxyMode.prototype.extractSrcSrcsetFrom = function(
  * Sends the extracted media values to the backing worker
  * @param {Array<Array<string>>} results
  */
-AutoFetchWorkerProxyMode.prototype.handleDeferredSheetResults = function(
-  results
-) {
+AutoFetcherProxyMode.prototype.handleDeferredSheetResults = function(results) {
   if (results.length === 0) return;
   var len = results.length;
   var media = [];
@@ -411,7 +399,7 @@ AutoFetchWorkerProxyMode.prototype.handleDeferredSheetResults = function(
  * contexts document object
  * @param {?Document} [doc]
  */
-AutoFetchWorkerProxyMode.prototype.checkStyleSheets = function(doc) {
+AutoFetcherProxyMode.prototype.checkStyleSheets = function(doc) {
   var media = [];
   var deferredMediaExtraction = [];
   var styleSheets = (doc || document).styleSheets;
@@ -457,7 +445,7 @@ AutoFetchWorkerProxyMode.prototype.checkStyleSheets = function(doc) {
 /**
  * Performs extraction from the current contexts document
  */
-AutoFetchWorkerProxyMode.prototype.extractFromLocalDoc = function() {
+AutoFetcherProxyMode.prototype.extractFromLocalDoc = function() {
   // check for data-[src,srcset] and auto-fetched elems with srcset first
   this.extractSrcSrcsetFrom(
     this.wombat.$wbwindow.document,

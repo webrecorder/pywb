@@ -4,25 +4,26 @@
   "main": "index.js",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/fs-extra": "^7.0.0",
+    "@types/fs-extra": "^8.0.0",
     "ava": "^2.1.0",
     "chokidar": "^3.0.1",
     "chrome-remote-interface-extra": "^1.1.1",
-    "eslint": "^5.16.0",
-    "eslint-config-prettier": "^5.0.0",
+    "eslint": "^6.0.1",
+    "eslint-config-prettier": "^6.0.0",
     "eslint-plugin-prettier": "^3.1.0",
-    "fastify": "^2.5.0",
+    "fastify": "^2.6.0",
     "fastify-favicon": "^2.0.0",
     "fastify-graceful-shutdown": "^2.0.1",
     "fastify-static": "^2.5.0",
     "fs-extra": "^8.0.1",
+    "just-launch-chrome": "^1.0.0",
     "lodash-es": "^4.17.11",
     "prettier": "^1.18.2",
-    "rollup": "^1.15.6",
+    "rollup": "^1.16.2",
     "rollup-plugin-babel-minify": "^8.0.0",
     "rollup-plugin-cleanup": "^3.1.1",
-    "rollup-plugin-commonjs": "^10.0.0",
-    "rollup-plugin-node-resolve": "^5.0.3",
+    "rollup-plugin-commonjs": "^10.0.1",
+    "rollup-plugin-node-resolve": "^5.1.0",
     "rollup-plugin-uglify": "^6.0.2",
     "rollup-plugin-uglify-es": "^0.0.1",
     "tls-keygen": "^3.7.0"
@@ -58,9 +59,7 @@
     ]
   },
   "resolutions": {
-    "*/**/graceful-fs": "~4.1.15"
-  },
-  "dependencies": {
-    "just-launch-chrome": "^1.0.0"
+    "*/**/graceful-fs": "~4.1.15",
+    "*/**/fs-extra": "~8.0.1"
   }
 }

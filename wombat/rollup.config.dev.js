@@ -8,6 +8,14 @@ const noStrict = {
   }
 };
 
+const watchOptions = {
+  exclude: 'node_modules/**',
+  chokidar: {
+    alwaysStat: true,
+    usePolling: true
+  }
+};
+
 const wombat = {
   input: 'src/wbWombat.js',
   output: {
@@ -16,13 +24,7 @@ const wombat = {
     sourcemap: false,
     format: 'iife'
   },
-  watch: {
-    exclude: 'node_modules/**',
-    chokidar: {
-      alwaysStat: true,
-      usePolling: true
-    }
-  },
+  watch: watchOptions,
   plugins: [noStrict]
 };
 
@@ -34,13 +36,7 @@ const wombatProxyMode = {
     sourcemap: false,
     format: 'iife'
   },
-  watch: {
-    exclude: 'node_modules/**',
-    chokidar: {
-      alwaysStat: true,
-      usePolling: true
-    }
-  },
+  watch: watchOptions,
   plugins: [noStrict]
 };
 
@@ -53,24 +49,42 @@ const wombatWorker = {
     sourcemap: false,
     exports: 'none'
   },
-  watch: {
-    exclude: 'node_modules/**',
-    chokidar: {
-      alwaysStat: true,
-      usePolling: true
-    }
-  },
+  watch: watchOptions,
   plugins: [noStrict]
+};
+
+const wombatAutoFetchWorker = {
+  input: 'src/autoFetchWorker.js',
+  output: {
+    name: 'autoFetchWorker',
+    file: path.join(basePywbOutput, 'autoFetchWorker.js'),
+    format: 'es',
+    sourcemap: false,
+    exports: 'none'
+  },
+  watch: watchOptions,
+  plugins: [
+    {
+      renderChunk(code) {
+        if (!code.startsWith("'use strict';")) {
+          return "'use strict';\n" + code;
+        }
+        return code;
+      }
+    }
+  ]
 };
 
 let config;
 
 if (process.env.ALL) {
-  config = [wombat, wombatProxyMode, wombatWorker];
+  config = [wombat, wombatProxyMode, wombatWorker, wombatAutoFetchWorker];
 } else if (process.env.PROXY) {
   config = wombatProxyMode;
 } else if (process.env.WORKER) {
   config = wombatProxyMode;
+} else if (process.env.AUTO_WORKER) {
+  config = wombatAutoFetchWorker;
 } else {
   config = wombat;
 }
