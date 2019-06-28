@@ -5800,7 +5800,6 @@ Wombat.prototype.wombatInit = function() {
   this.overrideFuncArgProxyToObj(this.$wbwindow.Node, 'contains');
   this.overrideFuncArgProxyToObj(this.$wbwindow.Document, 'createTreeWalker');
   this.overrideFuncArgProxyToObj(this.$wbwindow.Document, 'evaluate', 1);
-  this.overrideFuncArgProxyToObj(this.$wbwindow.Document, 'createTouch', 1);
   this.overrideFuncArgProxyToObj(
     this.$wbwindow.XSLTProcessor,
     'transformToFragment',
