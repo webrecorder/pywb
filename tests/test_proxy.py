@@ -363,7 +363,7 @@ class TestProxyAutoFetchWorkerEndPoints(BaseTestProxy):
 
     def test_proxy_worker_options_request(self, scheme):
         expected_origin = '{0}://example.com'.format(scheme)
-        res = requests.options('{0}://pywb.proxy/static/autoFetchWorkerProxyMode.js'.format(scheme),
+        res = requests.options('{0}://pywb.proxy/static/autoFetchWorker.js'.format(scheme),
                                headers=dict(Origin=expected_origin),
                                proxies=self.proxies, verify=self.root_ca_file)
 
@@ -372,7 +372,7 @@ class TestProxyAutoFetchWorkerEndPoints(BaseTestProxy):
 
     def test_proxy_worker_fetch(self, scheme):
         origin = '{0}://example.com'.format(scheme)
-        url = '{0}://pywb.proxy/static/autoFetchWorkerProxyMode.js'.format(scheme)
+        url = '{0}://pywb.proxy/static/autoFetchWorker.js'.format(scheme)
         res = requests.get(url,
                            headers=dict(Origin=origin),
                            proxies=self.proxies, verify=self.root_ca_file)
@@ -380,11 +380,11 @@ class TestProxyAutoFetchWorkerEndPoints(BaseTestProxy):
         assert res.ok
         assert res.headers.get('Content-Type') == 'application/javascript'
         assert res.headers.get('Access-Control-Allow-Origin') == origin
-        assert 'AutoFetcher.prototype.safeResolve' in res.text
+        assert 'function handleSrcsetProxyMode' in res.text
 
         res = requests.get(url, proxies=self.proxies, verify=self.root_ca_file)
 
         assert res.ok
         assert res.headers.get('Content-Type') == 'application/javascript'
         assert res.headers.get('Access-Control-Allow-Origin') == '*'
-        assert 'AutoFetcher.prototype.safeResolve' in res.text
+        assert 'function handleSrcsetProxyMode' in res.text
