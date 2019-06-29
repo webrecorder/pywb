@@ -102,15 +102,23 @@ if (thisObj && thisObj._WB_wombat_obj_proxy) return thisObj._WB_wombat_obj_proxy
         prop_str = '|'.join(self.local_objs)
 
         rules = [
+            # rewriting 'eval(....)' - invocation
             (r'\beval\s*\(', self.add_prefix('WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).'), 0),
+            # rewriting 'x = eval' - no invocation
             (r'\beval\b', self.add_prefix('WB_wombat_'), 0),
             (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
             (r'(?<![$.])\s*location\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
+            # rewriting 'return this'
             (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(this_rw), 0),
+            # rewriting 'this.' special properties access on new line, with ; prepended
             (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + this_rw), 0),
+            # rewriting 'this.' special properties access, not on new line (no ;)
             (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(this_rw), 0),
-            (r'(?<=[=])\s*this\b\s*(?![.$])', self.replace_str(this_rw), 0),
+            # rewrite '= this' or ', this'
+            (r'(?<=[=,])\s*this\b\s*(?![.$])', self.replace_str(this_rw), 0),
+            # rewrite ')(this)'
             ('\}(?:\s*\))?\s*\(this\)', self.replace_str(this_rw), 0),
+            # rewrite this in && or || expr?
             (r'(?<=[^|&][|&]{2})\s*this\b\s*(?![|&.$]([^|&]|$))', self.replace_str(this_rw), 0),
         ]
 
