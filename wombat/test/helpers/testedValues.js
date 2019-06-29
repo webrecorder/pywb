@@ -580,8 +580,7 @@ exports.TestFunctionChanges = [
       'open',
       'createElementNS',
       'evaluate',
-      'createTreeWalker',
-      'createTouch'
+      'createTreeWalker'
     ]
   },
   {

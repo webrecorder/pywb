@@ -175,6 +175,9 @@ r"""
 >>> _test_js_obj_proxy('a||this)')
 'a||_____WB$wombat$check$this$function_____(this))'
 
+>>> _test_js_obj_proxy(r'(a,b,Q.contains(i[t], this))')
+'(a,b,Q.contains(i[t], _____WB$wombat$check$this$function_____(this)))'
+
 # not rewritten
 >>> _test_js_obj_proxy('var window = this$')
 'var window = this$'
