@@ -7,6 +7,8 @@ pywb includes a sophisticated server and client-side rewriting systems, includin
 configuration for domain and content-specific rewriting rules, fuzzy index matching for replay,
 and a thorough client-side JS rewriting system.
 
+With pywb 2.3.0, the client-side rewriting system exists in a separate module at `https://github.com/webrecorder/wombat``
+
 
 URL Rewriting
 -------------

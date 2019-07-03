@@ -1,3 +1,25 @@
+pywb 2.3.x changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Wombat Improvements and spin-of:
+    - Client-side rewriting and auto-fetch systems moved to https://github.com/webrecorder/wombat
+    - Module-based setup and full testing for wombat
+    - Continuous auto-fetch up to 20 requests (#484)
+
+* Replay / Fidelity Improvements (#451):
+    - Introduced a new server-side rewriter, JSWorkerRewriter, that handles rewriting JS workers and service-workers
+    - Improvements to JSOP Rewriter to handle empty query (#475)
+    - Improvements to postMessage rewriting, override `eval(` while preserving scope (#475)
+    - Fixes to ``this`` proxy rewrite to include ``, this``
+
+* Misc Changes:
+    - Improved handling of open http connections and file handles (#463)
+    - Fixes for latest urllib3, not verifying SSL certs (#467), (#469)
+    - Better logging for invalid cdxlines and cookies (#477), (#478)
+    - Fix warning in yaml.load (#472)
+    - Index invalid form-data as binary (#471)
+
+
 pywb 2.2.20190410 changelist
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

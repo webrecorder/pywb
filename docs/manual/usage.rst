@@ -20,7 +20,7 @@ and introduces many new features, including:
 
 * Flexible rewriting system with pluggable rewriters for different content-types.
 
-* Significantly improved client-side rewriting to handle most modern web sites.
+* Significantly improved :ref:`wombat` to handle most modern web sites.
 
 * Improved 'calendar' query UI, grouping results by year and month, and updated replay banner.
 
