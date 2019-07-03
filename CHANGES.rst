@@ -1,7 +1,7 @@
 pywb 2.3.x changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* Wombat Improvements and spin-of:
+* Wombat Improvements and modularization:
     - Client-side rewriting and auto-fetch systems moved to https://github.com/webrecorder/wombat
     - Module-based setup and full testing for wombat
     - Continuous auto-fetch up to 20 requests (#484)
