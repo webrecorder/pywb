@@ -13,6 +13,7 @@ pywb 2.3.x changelist
     - Fixes to ``this`` proxy rewrite to include ``, this``
 
 * Misc Changes:
+    - Versioning: switched back to semver to more easily keep track of versions (#486)
     - Improved handling of open http connections and file handles (#463)
     - Fixes for latest urllib3, not verifying SSL certs (#467), (#469)
     - Better logging for invalid cdxlines and cookies (#477), (#478)
