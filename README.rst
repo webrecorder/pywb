@@ -1,4 +1,4 @@
-Webrecorder pywb 2.2
+Webrecorder pywb 2.3
 ====================
 
 .. image:: https://travis-ci.org/webrecorder/pywb.svg?branch=master
@@ -23,7 +23,7 @@ that is used by other web archives, including the traditional "Wayback Machine" 
 New Features
 ^^^^^^^^^^^^
 
-The 2.0 release included a major overhaul of pywb and introduces many new features, including the following:
+The 2.x release included a major overhaul of pywb and introduces many new features, including the following:
 
 * Dynamic multi-collection configuration system with no-restart updates.
 
@@ -37,7 +37,7 @@ The 2.0 release included a major overhaul of pywb and introduces many new featur
 
 * Flexible rewriting system with pluggable rewriters for different content-types.
 
-* Significantly improved client-side rewriting to handle most modern web sites.
+* Standalone, modular `client-side rewriting system (wombat.js) <https://github.com/webrecorder/wombat>`_ to handle most modern web sites.
 
 * Improved 'calendar' query UI, grouping results by year and month, and updated replay banner.
 
