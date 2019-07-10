@@ -382,6 +382,8 @@ The detected urls are loaded in the background using a web worker while the user
 
 To enable this functionality, add ``--enable-auto-fetch`` to the command-line or ``enable_auto_fetch: true`` to the root of the ``config.yaml``
 
+The auto-fetch system is provided as part of the :ref:`wombat`
+
 
 Auto-Indexing Mode
 ------------------
@@ -406,6 +408,23 @@ by running ``wb-manager reindex <coll>``
 The auto-indexing mode can also be enabled via command-line by running ``wayback -a`` or ``wayback -a --auto-interval 30`` to also set the interval.
 
 (If running pywb with uWSGI in multi-process mode, the auto-indexing is only run in a single worker to avoid race conditions and duplicate indexing)
+
+
+.. _wombat:
+
+Client-Side Rewriting System (wombat.js)
+----------------------------------------
+
+In addition to server-side rewriting, pywb includes a Javascript client-rewriting system.
+
+This system intercepts network traffic and emulates the correct JS environment expected by a replayed page.
+
+The auto-fetch system is also implemented as part of wombat.
+
+Wombat was integrated into pywb upto 2.2.x. Starting with 2.3, wombat has been spun off into its own
+standalone JS module.
+
+For more information on wombat.js and client-side rewriting, see the `wombat README <https://github.com/webrecorder/wombat/blob/master/README.md>`_
 
 
 .. _https-proxy:
