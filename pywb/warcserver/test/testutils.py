@@ -171,6 +171,7 @@ class HttpBinLiveTests(object):
         cls.httpbin_server = GeventServer(httpbin_app)
 
         httpbin_local = 'http://localhost:' + str(cls.httpbin_server.port) + '/'
+        cls.httpbin_local = httpbin_local
 
         def get_load_url(self, params):
             params['url'] = params['url'].replace('http://test.httpbin.org/', httpbin_local)
@@ -180,6 +181,10 @@ class HttpBinLiveTests(object):
 
         cls.indexmock = patch('pywb.warcserver.index.indexsource.LiveIndexSource.get_load_url', get_load_url)
         cls.indexmock.start()
+
+    @classmethod
+    def get_httpbin_url(cls, url):
+        return url.replace(cls.httpbin_local, 'http://httpbin.org/')
 
     @classmethod
     def teardown_class(cls):
