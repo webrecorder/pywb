@@ -1,4 +1,11 @@
-pywb 2.3.x changelist
+pywb 2.3.1 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Fix regression in wombat, new window.parent override from (webrecorder/wombat#2) was throwing exception if top-frame was cross-origin (webrecorder/wombat#3)
+* Update to latest wombat, v3.0.0
+
+
+pywb 2.3.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
 * Wombat Improvements and modularization:
