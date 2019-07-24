@@ -278,6 +278,10 @@ rules:
     # soundcloud
     #=================================================================
 
+    - url_prefix: 'com,sndcdn,cf-media)/'
+
+      fuzzy_lookup: '()'
+
     - url_prefix: 'com,soundcloud,api)/i1/tracks/'
 
       rewrite:
@@ -285,6 +289,15 @@ rules:
         js_regexs:
             - match: '"hls'
               replace: '"__hls'
+
+
+    - url_prefix: 'com,soundcloud,api-v2)/'
+
+      rewrite:
+        live_only: true
+        js_regexs:
+            - match: 'hls'
+              replace: 'mp3'
 
 
     # vimeo rules

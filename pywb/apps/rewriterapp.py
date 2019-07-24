@@ -221,7 +221,8 @@ class RewriterApp(object):
         host_prefix = self.get_host_prefix(environ)
         rel_prefix = self.get_rel_prefix(environ)
         full_prefix = host_prefix + rel_prefix
-        pywb_static_prefix = environ.get('pywb.host_prefix', '') + environ.get('pywb.app_prefix', '') + environ.get(
+        environ['pywb.host_prefix'] = host_prefix
+        pywb_static_prefix = host_prefix + environ.get('pywb.app_prefix', '') + environ.get(
             'pywb.static_prefix', '/static/')
         is_proxy = ('wsgiprox.proxy_host' in environ)
 
@@ -253,8 +254,6 @@ class RewriterApp(object):
         self.unrewrite_referrer(environ, full_prefix)
 
         urlkey = canonicalize(wb_url.url)
-
-        environ['pywb.host_prefix'] = host_prefix
 
         if self.use_js_obj_proxy:
             content_rw = self.js_proxy_rw
