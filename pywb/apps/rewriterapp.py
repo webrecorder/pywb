@@ -269,7 +269,7 @@ class RewriterApp(object):
         setcookie_headers = None
         if self.cookie_tracker:
             cookie_key = self.get_cookie_key(kwargs)
-            res = self.cookie_tracker.get_cookie_headers(wb_url.url, urlrewriter, cookie_key)
+            res = self.cookie_tracker.get_cookie_headers(wb_url.url, urlrewriter, cookie_key, environ.get('HTTP_COOKIE', ''))
             inputreq.extra_cookie, setcookie_headers = res
 
         r = self._do_req(inputreq, wb_url, kwargs, skip_record)
@@ -366,7 +366,7 @@ class RewriterApp(object):
                                                    config=self.config))
 
         cookie_rewriter = None
-        if self.cookie_tracker:
+        if self.cookie_tracker and wb_url.mod != 'sw_' and wb_url.mod != 'wkrf_':
             cookie_rewriter = self.cookie_tracker.get_rewriter(urlrewriter,
                                                                cookie_key)
 
