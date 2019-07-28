@@ -116,7 +116,7 @@ class DomainCacheCookieRewriter(WbUrlBaseCookieRewriter):
         # if domain set, no choice but to expand cookie path to root
         domain = morsel.pop('domain', '')
 
-        if domain:
+        if domain and self.cookie_key:
             #if morsel.get('max-age'):
             #    morsel['max-age'] = int(morsel['max-age'])
 
