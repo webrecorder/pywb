@@ -275,8 +275,12 @@ class RewriterApp(object):
         setcookie_headers = None
         if self.cookie_tracker:
             cookie_key = self.get_cookie_key(kwargs)
-            res = self.cookie_tracker.get_cookie_headers(wb_url.url, urlrewriter, cookie_key, environ.get('HTTP_COOKIE', ''))
-            inputreq.extra_cookie, setcookie_headers = res
+            if cookie_key:
+                res = self.cookie_tracker.get_cookie_headers(wb_url.url,
+                                                             urlrewriter,
+                                                             cookie_key,
+                                                             environ.get('HTTP_COOKIE', ''))
+                inputreq.extra_cookie, setcookie_headers = res
 
         r = self._do_req(inputreq, wb_url, kwargs, skip_record)
 
@@ -372,7 +376,7 @@ class RewriterApp(object):
                                                    config=self.config))
 
         cookie_rewriter = None
-        if self.cookie_tracker:
+        if self.cookie_tracker and cookie_key:
             # skip add cookie if service worker is not 200 -- sw will not be loaded by browser
             # so don't update any cookies for it
             if wb_url.mod == 'sw_' and record.http_headers.get_statuscode() != '200':
@@ -648,10 +652,12 @@ class RewriterApp(object):
         return base_url
 
     def get_cookie_key(self, kwargs):
-        # TODO: support per user sessions?
-        # currently this is per-collection!
-        # to support multiple users recording, would need per user cookie
-        return 'cookie:' + kwargs['coll']
+        # note: currently this is per-collection, so enabled only for live or recording
+        # to support multiple users recording/live, would need per user cookie
+        if kwargs.get('index') == '$live' or kwargs.get('type') == 'record':
+            return 'cookie:' + kwargs['coll']
+        else:
+            return None
 
     def _add_custom_params(self, cdx, headers, kwargs, record):
         pass
