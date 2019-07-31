@@ -19,7 +19,8 @@ class CookieTracker(object):
     def get_rewriter(self, url_rewriter, cookie_key):
         return DomainCacheCookieRewriter(url_rewriter, self, cookie_key)
 
-    def get_cookie_headers(self, url, url_rewriter, cookie_key):
+    def get_cookie_headers(self, url, url_rewriter, cookie_key, existing_cookie):
+        existing_cookie = existing_cookie or ''
         subds = self.get_subdomains(url)
         host_cookie_rewriter = HostScopeNoFilterCookieRewriter(url_rewriter)
 
@@ -46,7 +47,14 @@ class CookieTracker(object):
                     n = n.decode('utf-8')
                     v = v.decode('utf-8')
 
-                full = n + '=' + v
+                n += '='
+
+                # if cookie already in existing cookie, don't add duplicate
+                # also, don't add to set-cookie again (to avoid exceeding cookie size)
+                if n in existing_cookie:
+                    continue
+
+                full = n + v
                 cookies.append(full.split(';')[0])
 
                 full += '; Max-Age=' + str(self.expire_time)
@@ -108,7 +116,7 @@ class DomainCacheCookieRewriter(WbUrlBaseCookieRewriter):
         # if domain set, no choice but to expand cookie path to root
         domain = morsel.pop('domain', '')
 
-        if domain:
+        if domain and self.cookie_key:
             #if morsel.get('max-age'):
             #    morsel['max-age'] = int(morsel['max-age'])
 

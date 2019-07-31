@@ -1,6 +1,8 @@
 from io import BytesIO
 
 import requests
+from fakeredis import FakeStrictRedis
+
 from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
 from warcio.bufferedreaders import BufferedReader
 from warcio.recordloader import ArcWarcRecordLoader
@@ -13,6 +15,7 @@ from pywb.rewrite.rewriteinputreq import RewriteInputRequest
 from pywb.rewrite.templateview import BaseInsertView, HeadInsertView, JinjaEnv, TopFrameView
 from pywb.rewrite.url_rewriter import IdentityUrlRewriter, UrlRewriter
 from pywb.rewrite.wburl import WbUrl
+from pywb.rewrite.cookies import CookieTracker
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.io import BUFF_SIZE, OffsetLimitReader, no_except_close
 from pywb.utils.memento import MementoUtils
@@ -81,7 +84,7 @@ class RewriterApp(object):
 
         self.use_js_obj_proxy = config.get('use_js_obj_proxy', True)
 
-        self.cookie_tracker = None
+        self.cookie_tracker = self._init_cookie_tracker()
 
         self.enable_memento = self.config.get('enable_memento')
 
@@ -93,6 +96,9 @@ class RewriterApp(object):
 
         # deprecated: Use X-Forwarded-Proto header instead!
         self.force_scheme = config.get('force_scheme')
+
+    def _init_cookie_tracker(self):
+        return CookieTracker(FakeStrictRedis())
 
     def add_csp_header(self, wb_url, status_headers):
         if self.csp_header and wb_url.mod == self.replay_mod:
@@ -267,10 +273,15 @@ class RewriterApp(object):
         range_start, range_end, skip_record = self._check_range(inputreq, wb_url)
 
         setcookie_headers = None
+        cookie_key = None
         if self.cookie_tracker:
             cookie_key = self.get_cookie_key(kwargs)
-            res = self.cookie_tracker.get_cookie_headers(wb_url.url, urlrewriter, cookie_key)
-            inputreq.extra_cookie, setcookie_headers = res
+            if cookie_key:
+                res = self.cookie_tracker.get_cookie_headers(wb_url.url,
+                                                             urlrewriter,
+                                                             cookie_key,
+                                                             environ.get('HTTP_COOKIE', ''))
+                inputreq.extra_cookie, setcookie_headers = res
 
         r = self._do_req(inputreq, wb_url, kwargs, skip_record)
 
@@ -366,7 +377,12 @@ class RewriterApp(object):
                                                    config=self.config))
 
         cookie_rewriter = None
-        if self.cookie_tracker:
+        if self.cookie_tracker and cookie_key:
+            # skip add cookie if service worker is not 200 -- sw will not be loaded by browser
+            # so don't update any cookies for it
+            if wb_url.mod == 'sw_' and record.http_headers.get_statuscode() != '200':
+                cookie_key = None
+
             cookie_rewriter = self.cookie_tracker.get_rewriter(urlrewriter,
                                                                cookie_key)
 
@@ -637,7 +653,12 @@ class RewriterApp(object):
         return base_url
 
     def get_cookie_key(self, kwargs):
-        raise NotImplemented()
+        # note: currently this is per-collection, so enabled only for live or recording
+        # to support multiple users recording/live, would need per user cookie
+        if kwargs.get('index') == '$live' or kwargs.get('type') == 'record':
+            return 'cookie:' + kwargs['coll']
+        else:
+            return None
 
     def _add_custom_params(self, cdx, headers, kwargs, record):
         pass

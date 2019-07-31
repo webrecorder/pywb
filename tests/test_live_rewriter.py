@@ -28,16 +28,32 @@ def header_test_server(environ, start_response):
 
 
 # ============================================================================
+def cookie_test_server(environ, start_response):
+    body = 'cookie value: ' + environ.get('HTTP_COOKIE', '')
+    body = body.encode('utf-8')
+    headers = [('Content-Length', str(len(body))),
+               ('Content-Type', 'text/plain')]
+
+    if b'testcookie' not in body:
+        headers.append(('Set-Cookie', 'testcookie=cookie-val; Path=/; Domain=.example.com'))
+
+    start_response('200 OK', headers=headers)
+    return [body]
+
+
+# ============================================================================
 class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
     @classmethod
     def setup_class(cls):
         cls.lint_app = False
         super(TestLiveRewriter, cls).setup_class('config_test.yaml')
-        cls.test_serv = GeventServer(header_test_server)
+        cls.header_test_serv = GeventServer(header_test_server)
+        cls.cookie_test_serv = GeventServer(cookie_test_server)
 
     @classmethod
     def teardown_class(cls):
-        cls.test_serv.stop()
+        cls.header_test_serv.stop()
+        cls.cookie_test_serv.stop()
         super(TestLiveRewriter, cls).teardown_class()
 
     def test_live_live_1(self, fmod_sl):
@@ -94,8 +110,26 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
         if six.PY3:
             value = value.decode('latin-1')
 
-        resp = self.get('/live/{0}http://localhost:%s/unicode' % self.test_serv.port, fmod_sl)
+        resp = self.get('/live/{0}http://localhost:%s/unicode' % self.header_test_serv.port, fmod_sl)
         assert resp.headers['x-utf-8'] == value
+
+    def test_domain_cookie(self, fmod_sl):
+        resp = self.get('/live/{0}http://localhost:%s/' % self.cookie_test_serv.port, fmod_sl,
+                        headers={'Host': 'example.com'})
+
+        assert resp.headers['Set-Cookie'] == 'testcookie=cookie-val; Path=/live/{0}http://localhost:{1}/'.format(fmod_sl, self.cookie_test_serv.port)
+        assert resp.text == 'cookie value: '
+
+        resp = self.get('/live/{0}http://localhost:%s/' % self.cookie_test_serv.port, fmod_sl,
+                        headers={'Host': 'example.com'})
+
+        assert resp.text == 'cookie value: testcookie=cookie-val'
+
+        resp = self.get('/live/{0}http://localhost:%s/' % self.cookie_test_serv.port, fmod_sl,
+                        headers={'Host': 'sub.example.com'})
+
+        assert 'Set-Cookie' not in resp.headers
+        assert resp.text == 'cookie value: testcookie=cookie-val'
 
     def test_live_live_frame(self):
         resp = self.testapp.get('/live/http://example.com/')
