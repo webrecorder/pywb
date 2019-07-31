@@ -273,6 +273,7 @@ class RewriterApp(object):
         range_start, range_end, skip_record = self._check_range(inputreq, wb_url)
 
         setcookie_headers = None
+        cookie_key = None
         if self.cookie_tracker:
             cookie_key = self.get_cookie_key(kwargs)
             if cookie_key:

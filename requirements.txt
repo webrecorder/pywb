@@ -14,3 +14,4 @@ webassets==0.12.1
 portalocker
 wsgiprox>=1.5.1
 fakeredis<1.0
+tldextract
