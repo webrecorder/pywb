@@ -6,6 +6,7 @@ from pywb.warcserver.test.testutils import HttpBinLiveTests
 
 from pywb.utils.geventserver import GeventServer
 import pytest
+import os
 import sys
 import six
 
@@ -149,6 +150,7 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
         resp = resp.follow(status=400)
         assert resp.status_int == 400
 
+    @pytest.mark.skipif(os.environ.get('CI') is not None, reason='Skip Test on CI')
     def test_live_video_info(self):
         pytest.importorskip('youtube_dl')
         resp = self.testapp.get('/live/vi_/https://www.youtube.com/watch?v=DjFZyFWSt1M')
