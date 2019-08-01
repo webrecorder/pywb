@@ -1,6 +1,5 @@
 six
 warcio>=1.7.1
-chardet
 requests
 redis<3.0
 jinja2
