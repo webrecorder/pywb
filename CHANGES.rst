@@ -1,3 +1,22 @@
+pywb 2.3.2 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Eval rewriting fix: don't rewrite ``$eval``, only ``eval`` identifier (#493)
+
+* Cookie rewriting improvements: (#491)
+    - Enable domain cookie cache for live index and recording modes using fakeredis, previously only available in Webrecorder
+    - Don't add duplicate cookies to Set-Cookie or Cookie headers
+    - Don't include cached Set-Cookie headers to serviceworkers for non-200 responses.
+    - Add cookies for ``sw_/`` and ``wkrf_`` modifiers
+    - Testing: add initial testing for domain cookie rewriting
+
+* Misc fixes: (#490)
+    - Ensure SCRIPT_NAME never empty (#490)
+    - Static Paths: load ``/index.html`` for paths ending in ``/``, ensure static_prefix always inited correctly
+    - Docker: switch to designated $VOLUME_DIR before initializing
+    - Rules: update rules for soundcloud
+
+
 pywb 2.3.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
