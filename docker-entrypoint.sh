@@ -29,6 +29,7 @@ if [ "$MY_GID" != "$VOLUME_GID" ] || [ "$MY_UID" != "$VOLUME_UID" ]; then
 else
     # initialize a collection if defined and not present
     if [ -n "$INIT_COLLECTION" ] && [ ! -d $VOLUME_DIR/collections/$INIT_COLLECTION ]; then
+        cd $VOLUME_DIR
         wb-manager init $INIT_COLLECTION
     fi
 

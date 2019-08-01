@@ -282,12 +282,12 @@ class TestContentRewriter(object):
         headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
 
         mods = set()
-        assert len(headers.headers) == 6
+        assert len(headers.headers) == 8
         for name, value in headers.headers:
             assert name == 'Set-Cookie'
             mods.add(re.search('Path=/prefix/201701([^/]+)', value).group(1))
 
-        assert mods == {'mp_', 'cs_', 'js_', 'im_', 'oe_', 'if_'}
+        assert mods == {'mp_', 'cs_', 'js_', 'im_', 'oe_', 'if_', 'sw_', 'wkrf_'}
         assert is_rw == False
 
     def test_rewrite_http_cookie_no_all_mods_no_slash(self):

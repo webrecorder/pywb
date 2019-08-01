@@ -20,6 +20,9 @@ class StaticHandler(object):
     def __call__(self, environ, url_str):
         url = url_str.split('?')[0]
 
+        if url.endswith('/'):
+            url += 'index.html'
+
         full_path = environ.get('pywb.static_dir')
         if full_path:
             full_path = os.path.join(full_path, url)

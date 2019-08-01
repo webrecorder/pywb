@@ -11,6 +11,7 @@ from fakeredis import FakeStrictRedis
 from mock import patch
 import pytest
 
+import os
 import json
 
 from warcio.recordloader import ArcWarcRecordLoader
@@ -384,6 +385,7 @@ foo=bar&test=abc"""
         assert resp.headers['Warcserver-Source-Coll'] == 'url-agnost'
         assert resp.headers['Memento-Datetime'] == 'Mon, 29 Jul 2013 19:51:51 GMT'
 
+    @pytest.mark.skipif(os.environ.get('CI') is not None, reason='Skip Test on CI')
     def test_live_video_loader(self):
         pytest.importorskip('youtube_dl')
         params = {'url': 'http://www.youtube.com/v/BfBgWtAIbRc',
@@ -402,6 +404,7 @@ foo=bar&test=abc"""
         assert b'WARC-Type: metadata' in resp.body
         assert b'Content-Type: application/vnd.youtube-dl_formats+json' in resp.body
 
+    @pytest.mark.skipif(os.environ.get('CI') is not None, reason='Skip Test on CI')
     def test_live_video_loader_post(self):
         pytest.importorskip('youtube_dl')
         req_data = """\

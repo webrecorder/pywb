@@ -103,9 +103,9 @@ if (thisObj && thisObj._WB_wombat_obj_proxy) return thisObj._WB_wombat_obj_proxy
 
         rules = [
             # rewriting 'eval(....)' - invocation
-            (r'\beval\s*\(', self.add_prefix('WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).'), 0),
+            (r'(?<![$])\beval\s*\(', self.add_prefix('WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).'), 0),
             # rewriting 'x = eval' - no invocation
-            (r'\beval\b', self.add_prefix('WB_wombat_'), 0),
+            (r'(?<![$])\beval\b', self.add_prefix('WB_wombat_'), 0),
             (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
             (r'(?<![$.])\s*location\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
             # rewriting 'return this'

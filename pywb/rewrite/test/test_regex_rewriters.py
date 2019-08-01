@@ -212,7 +212,23 @@ r"""
 >>> _test_js_obj_proxy(r'this. location = http://example.com/')
 'this. location = ((self.__WB_check_loc && self.__WB_check_loc(location)) || {}).href = http://example.com/'
 
+>>> _test_js_obj_proxy('eval(a)')
+'WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval(a)'
 
+>>> _test_js_obj_proxy('this.$eval(a)')
+'this.$eval(a)'
+
+>>> _test_js_obj_proxy('x = this.$eval; x(a);')
+'x = this.$eval; x(a);'
+
+>>> _test_js_obj_proxy('x = eval; x(a);')
+'x = WB_wombat_eval; x(a);'
+
+>>> _test_js_obj_proxy('$eval = eval; $eval(a);')
+'$eval = WB_wombat_eval; $eval(a);'
+
+>>> _test_js_obj_proxy('window.eval(a);')
+'window.WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval(a);'
 
 #=================================================================
 # XML Rewriting
