@@ -1,3 +1,9 @@
+pywb 2.3.3 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Proxy Mode: Ensure head insert added even if no ``<head>`` tag, insert after first tag that is not ``<html>`` or ``<head>`` (#496)
+
+
 pywb 2.3.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

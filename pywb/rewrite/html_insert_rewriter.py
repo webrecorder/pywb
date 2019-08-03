@@ -4,10 +4,10 @@ from pywb.rewrite.content_rewriter import StreamingRewriter
 
 # ============================================================================
 class HTMLInsertOnlyRewriter(StreamingRewriter):
-    """ Insert custom string into HTML <head> tag
+    """ Insert custom string into HTML into the head, before any tag not <head> or <html>
         no other rewriting performed
     """
-    HEAD_REGEX = re.compile('<\s*head\\b[^>]*[>]+', re.I)
+    NOT_HEAD_REGEX = re.compile(r'(<\s*\b)(?!(html|head))', re.I)
 
     def __init__(self, url_rewriter, **kwargs):
         super(HTMLInsertOnlyRewriter, self).__init__(url_rewriter, False)
@@ -19,16 +19,16 @@ class HTMLInsertOnlyRewriter(StreamingRewriter):
         if self.done:
             return string
 
-        # only try to find <head> in first buffer
-        self.done = True
-        m = self.HEAD_REGEX.search(string)
+        m = self.NOT_HEAD_REGEX.search(string)
         if m:
-            inx = m.end()
+            inx = m.start()
             buff = string[:inx]
             buff += self.head_insert
             buff += string[inx:]
+            self.done = True
             return buff
         else:
             return string
 
-
+    def final_read(self):
+        return '' if self.done else self.head_insert
