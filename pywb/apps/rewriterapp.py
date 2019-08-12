@@ -3,7 +3,7 @@ from io import BytesIO
 import requests
 from fakeredis import FakeStrictRedis
 
-from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit
+from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit, unquote
 from warcio.bufferedreaders import BufferedReader
 from warcio.recordloader import ArcWarcRecordLoader
 from warcio.timeutils import http_date_to_timestamp, timestamp_to_http_date
@@ -222,6 +222,13 @@ class RewriterApp(object):
         if proto:
             environ['wsgi.url_scheme'] = proto
 
+        history_page = environ.pop('HTTP_X_WOMBAT_HISTORY_PAGE', '')
+        if history_page:
+            wb_url.url = history_page
+            is_ajax = True
+        else:
+            is_ajax = self.is_ajax(environ)
+
         is_timegate = self._check_accept_dt(wb_url, environ)
 
         host_prefix = self.get_host_prefix(environ)
@@ -358,8 +365,6 @@ class RewriterApp(object):
         if self._add_range(record, wb_url, range_start, range_end):
             wb_url.mod = 'id_'
 
-        is_ajax = self.is_ajax(environ)
-
         if is_ajax:
             head_insert_func = None
             urlrewriter.rewrite_opts['is_ajax'] = True
@@ -391,6 +396,17 @@ class RewriterApp(object):
         result = content_rw(record, urlrewriter, cookie_rewriter, head_insert_func, cdx, environ)
 
         status_headers, gen, is_rw = result
+
+        if history_page:
+            title = DefaultRewriter._extract_title(gen)
+            if not title:
+                title = unquote(environ.get('HTTP_X_WOMBAT_HISTORY_TITLE', ''))
+
+            if not title:
+                title = history_page
+
+            self._add_history_page(cdx, kwargs, title)
+            return WbResponse.json_response({'title': title})
 
         if setcookie_headers:
             status_headers.headers.extend(setcookie_headers)
@@ -659,6 +675,9 @@ class RewriterApp(object):
             return 'cookie:' + kwargs['coll']
         else:
             return None
+
+    def _add_history_page(self, cdx, kwargs, doc_title):
+        pass
 
     def _add_custom_params(self, cdx, headers, kwargs, record):
         pass
