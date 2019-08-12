@@ -18,6 +18,21 @@ WORKER_MODS = {"wkr_", "sw_"}  # type: Set[str]
 class BaseContentRewriter(object):
     CHARSET_REGEX = re.compile(b'<meta[^>]*?[\s;"\']charset\s*=[\s"\']*([^\s"\'/>]*)')
 
+    TITLE = re.compile(r'<\s*title\s*>(.*)<\s*\/\s*title\s*>', re.M | re.I | re.S)
+
+    @classmethod
+    def _extract_title(cls, gen):
+        title_res = list(gen)
+        if not title_res or not title_res[0]:
+            return
+
+        m = cls.TITLE.search(title_res[0].decode('utf-8'))
+        if not m:
+            return
+
+        title_res = m.group(1)
+        return title_res.strip()
+
     def __init__(self, rules_file, replay_mod=''):
         self.rules = []
         self.all_rewriters = []

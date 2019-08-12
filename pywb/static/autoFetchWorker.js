@@ -101,27 +101,36 @@ function fetchDoneOrErrored() {
   fetchFromQ();
 }
 
-function fetchURL(urlToBeFetched) {
+function fetchURL(toBeFetched) {
   runningFetches += 1;
-  fetch(urlToBeFetched)
+
+  var url;
+  var options;
+
+  if (typeof toBeFetched === 'object') {
+    url = toBeFetched.url;
+    options = toBeFetched.options;
+  } else {
+    url = toBeFetched;
+  }
+
+  fetch(url, options)
     .then(fetchDoneOrErrored)
     .catch(fetchDoneOrErrored);
 }
 
-function queueOrFetch(urlToBeFetched) {
-  if (
-    !urlToBeFetched ||
-    urlToBeFetched.indexOf(DataURLPrefix) === 0 ||
-    seen[urlToBeFetched] != null
-  ) {
+function queueOrFetch(toBeFetched) {
+  var url = typeof toBeFetched === 'object' ? toBeFetched.url : toBeFetched;
+
+  if (!url || url.indexOf(DataURLPrefix) === 0 || seen[url] != null) {
     return;
   }
-  seen[urlToBeFetched] = true;
+  seen[url] = true;
   if (runningFetches >= MaxRunningFetches) {
-    queue.push(urlToBeFetched);
+    queue.push(toBeFetched);
     return;
   }
-  fetchURL(urlToBeFetched);
+  fetchURL(toBeFetched);
 }
 
 function fetchFromQ() {
