@@ -107,7 +107,7 @@ function fetchURL(toBeFetched) {
   var url;
   var options;
 
-  if (typeof(toBeFetched) === "object") {
+  if (typeof toBeFetched === 'object') {
     url = toBeFetched.url;
     options = toBeFetched.options;
   } else {
@@ -120,15 +120,9 @@ function fetchURL(toBeFetched) {
 }
 
 function queueOrFetch(toBeFetched) {
-  var url = typeof(toBeFetched) === "object" ?
-            toBeFetched.url :
-            toBeFetched;
+  var url = typeof toBeFetched === 'object' ? toBeFetched.url : toBeFetched;
 
-  if (
-    !url ||
-    url.indexOf(DataURLPrefix) === 0 ||
-    seen[url] != null
-  ) {
+  if (!url || url.indexOf(DataURLPrefix) === 0 || seen[url] != null) {
     return;
   }
   seen[url] = true;
