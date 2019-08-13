@@ -13,16 +13,22 @@ import six
 
 # ============================================================================
 def header_test_server(environ, start_response):
-    body = b'body'
-    value = u'⛄'
-    value = value.encode('utf-8')
-    if six.PY3:
-        value = value.decode('latin-1')
-
     headers = []
     if environ['PATH_INFO'] == '/unicode':
+        body = b'body'
+        value = u'⛄'
+        value = value.encode('utf-8')
+        if six.PY3:
+            value = value.decode('latin-1')
+
         headers = [('Content-Length', str(len(body))),
                    ('x-utf-8', value)]
+
+    elif environ['PATH_INFO'] == '/html-title':
+        body = b'<html><title>Test&#39;Title</title></html>'
+
+        headers = [('Content-Length', str(len(body))),
+                   ('Content-Type', 'text/html')]
 
     start_response('200 OK', headers=headers)
     return [body]
@@ -131,6 +137,19 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
 
         assert 'Set-Cookie' not in resp.headers
         assert resp.text == 'cookie value: testcookie=cookie-val'
+
+    def test_fetch_page_with_html_title(self, fmod_sl):
+        resp = self.get('/live/{0}http://localhost:%s/html-title' % self.header_test_serv.port, fmod_sl,
+                        headers={'X-Wombat-History-Page': 'http://localhost:{0}/html-title'.format(self.header_test_serv.port),
+                                })
+        assert resp.json == {'title': "Test'Title"}
+
+    def test_fetch_page_with_title(self, fmod_sl):
+        resp = self.get('/live/{0}http://httpbin.org/html', fmod_sl,
+                        headers={'X-Wombat-History-Page': 'http://httpbin.org/html',
+                                 'X-Wombat-History-Title': 'Test%20Title',
+                                })
+        assert resp.json == {'title': 'Test Title'}
 
     def test_live_live_frame(self):
         resp = self.testapp.get('/live/http://example.com/')
