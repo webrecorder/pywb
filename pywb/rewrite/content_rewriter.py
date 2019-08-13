@@ -4,8 +4,6 @@ import re
 import tempfile
 from contextlib import closing
 
-import six.moves.html_parser as html
-
 import webencodings
 from warcio.bufferedreaders import BufferedReader, ChunkedDataReader
 from warcio.utils import to_native_str
@@ -22,6 +20,13 @@ class BaseContentRewriter(object):
 
     TITLE = re.compile(r'<\s*title\s*>(.*)<\s*\/\s*title\s*>', re.M | re.I | re.S)
 
+    # set via html_rewriter since it overrides the default one
+    html_unescape = None
+
+    @classmethod
+    def set_unescape(cls, unescape):
+        cls.html_unescape = unescape
+
     @classmethod
     def _extract_title(cls, gen):
         title_res = list(gen)
@@ -35,12 +40,9 @@ class BaseContentRewriter(object):
         title_res = m.group(1)
         title_res = title_res.strip()
         try:
-            title_res = html.unescape(title_res)
-        except:
-            try:
-                title_res = html.HTMLParser().unescape(title_res)
-            except:
-                pass
+            title_res = cls.html_unescape(title_res)
+        except Exception as e:
+            pass
 
         return title_res
 

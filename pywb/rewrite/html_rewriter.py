@@ -11,7 +11,7 @@ from six.moves.urllib.parse import urljoin, urlsplit, urlunsplit
 from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.regex_rewriters import JSRewriter, CSSRewriter
 
-from pywb.rewrite.content_rewriter import StreamingRewriter
+from pywb.rewrite.content_rewriter import StreamingRewriter, BaseContentRewriter
 
 from six import text_type
 
@@ -20,8 +20,15 @@ import six.moves.html_parser
 try:
     orig_unescape = six.moves.html_parser.unescape
     six.moves.html_parser.unescape = lambda x: x
+    BaseContentRewriter.set_unescape(orig_unescape)
 except:
     orig_unescape = None
+
+    @staticmethod
+    def __unescape(x):
+        return HTMLParser().unescape(x)
+
+    BaseContentRewriter.set_unescape(__unescape)
 
 
 try:
