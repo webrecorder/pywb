@@ -4,6 +4,8 @@ import re
 import tempfile
 from contextlib import closing
 
+import six.moves.html_parser as html
+
 import webencodings
 from warcio.bufferedreaders import BufferedReader, ChunkedDataReader
 from warcio.utils import to_native_str
@@ -31,7 +33,16 @@ class BaseContentRewriter(object):
             return
 
         title_res = m.group(1)
-        return title_res.strip()
+        title_res = title_res.strip()
+        try:
+            title_res = html.unescape(title_res)
+        except:
+            try:
+                title_res = html.HTMLParser().unescape(title_res)
+            except:
+                pass
+
+        return title_res
 
     def __init__(self, rules_file, replay_mod=''):
         self.rules = []
