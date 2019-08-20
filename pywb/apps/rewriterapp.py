@@ -383,9 +383,9 @@ class RewriterApp(object):
 
         cookie_rewriter = None
         if self.cookie_tracker and cookie_key:
-            # skip add cookie if service worker is not 200 -- sw will not be loaded by browser
-            # so don't update any cookies for it
-            if wb_url.mod == 'sw_' and record.http_headers.get_statuscode() != '200':
+            # skip add cookie if service worker is not 200
+            # it seems cookie headers from service workers are not applied, so don't update in cache
+            if wb_url.mod == 'sw_':
                 cookie_key = None
 
             cookie_rewriter = self.cookie_tracker.get_rewriter(urlrewriter,
