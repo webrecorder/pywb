@@ -3,8 +3,10 @@ pywb 2.3.4 changelist
 
 * Improvements to auto-fetch to support page fetch (webrecroder/wombat#5, #497)
   - Support fetching page with ``X-Wombat-History-Page`` and title ``X-Wombat-History-Title`` headers present.
-  - Attempt to extract title and pass along with cdx to ``_add_history_page()`` callback in RewriterApp, to indicate a url is a page.
+  - Attempt to extract title and pass along with cdx to ``_add_history_page()`` callback in RewriterApp, to indicate a url is a page. (#498)
   - General auto-fetch fixes: queue messages if worker not yet inited (in proxy mode), only parse <link> stylesheet hrefs as sheets.
+
+* Cookie Rewriting Fix: don't update cookie cache on service worker (``sw_`` modifier) responses (#499)
 
 
 pywb 2.3.3 changelist
