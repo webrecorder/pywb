@@ -88,10 +88,6 @@ class HTMLRewriterMixin(StreamingRewriter):
 
         return rewrite_tags
 
-    # tags allowed in the <head> of an html document
-    HEAD_TAGS = ['html', 'head', 'base', 'link', 'meta',
-                 'title', 'style', 'script', 'object', 'bgsound']
-
     BEFORE_HEAD_TAGS = ['html', 'head']
 
     DATA_RW_PROTOCOLS = ('http://', 'https://', '//')
@@ -173,6 +169,16 @@ class HTMLRewriterMixin(StreamingRewriter):
                                     re.IGNORECASE | re.MULTILINE)
 
     ADD_WINDOW = re.compile('(?<![.])(WB_wombat_)')
+
+    SRCSET_REGEX = re.compile('\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))')
+
+    def _rewrite_srcset(self, value, mod=''):
+        if not value:
+            return ''
+
+        values = (url.strip() for url in re.split(self.SRCSET_REGEX, value) if url)
+        values = [self._rewrite_url(v.strip()) for v in values]
+        return ', '.join(values)
 
     def _rewrite_meta_refresh(self, meta_refresh):
         if not meta_refresh:
@@ -272,7 +278,7 @@ class HTMLRewriterMixin(StreamingRewriter):
         return rewritten_value
 
     def try_unescape(self, value):
-        if not value.startswith('http'):
+        if '&#' not in value:
             return value
 
         try:
@@ -285,21 +291,17 @@ class HTMLRewriterMixin(StreamingRewriter):
 
         return new_value
 
-    SRCSET_REGEX = re.compile('\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))')
-
-    def _rewrite_srcset(self, value, mod=''):
-        if not value:
-            return ''
-
-        values = (url.strip() for url in re.split(self.SRCSET_REGEX, value) if url)
-        values = [self._rewrite_url(v.strip()) for v in values]
-        return ', '.join(values)
-
     def _rewrite_css(self, css_content):
-        if css_content:
-            return self.css_rewriter.rewrite_complete(css_content)
-        else:
+        if not css_content:
             return ''
+
+        unesc_css = self.try_unescape(css_content)
+        rw_css = self.css_rewriter.rewrite_complete(unesc_css)
+
+        if unesc_css == rw_css:
+            return css_content
+        else:
+            return rw_css
 
     def _rewrite_script(self, script_content, inline_attr=False):
         if not script_content:

@@ -7,6 +7,7 @@ pywb 2.3.4 changelist
   - General auto-fetch fixes: queue messages if worker not yet inited (in proxy mode), only parse <link> stylesheet hrefs as sheets.
 
 * Cookie Rewriting Fix: don't update cookie cache on service worker (``sw_`` modifier) responses (#499)
+* Rewriting: HTML Unescape Fix: Attempt to HTML-entity-decode urls and innline styles that contain ``&#`` to get correct rewriting of encoded urls (#500)
 
 
 pywb 2.3.3 changelist
