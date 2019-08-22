@@ -3,7 +3,7 @@ warcio>=1.7.1
 requests
 redis<3.0
 jinja2
-surt>=0.3.0
+surt>=0.3.1
 brotlipy
 pyyaml
 werkzeug
