@@ -79,7 +79,7 @@ org,gnu)/software/wget/warc/wget.log 20140216012908 metadata://gnu.org/software/
 >>> print_cdx_index('example-wpull.warc.gz')
  CDX N b a m s k r M S V g
 com,example)/ 20150330235046 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1150 2031 example-wpull.warc.gz
-urn:X-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - - 557 3181 example-wpull.warc.gz
+urn:x-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - - 557 3181 example-wpull.warc.gz
 
 # bad arcs -- test error edge cases
 >>> print_cdx_index('bad.arc', include_all=True)
@@ -151,19 +151,19 @@ StatusAndHeadersParserException: Expected Status Line starting with ['HTTP/1.0',
 # test sort, multiple inputs
 >>> cli_lines(['--sort', '-',  TEST_WARC_DIR])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
-urn:X-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - - 557 3181 example-wpull.warc.gz
+urn:x-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - - 557 3181 example-wpull.warc.gz
 Total: 212
 
 # test sort, multiple inputs, recursive, from base test dir
 >>> cli_lines(['--sort', '-r', '-',  get_test_dir()])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 warcs/example-url-agnostic-revisit.warc.gz
-urn:X-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - - 557 3181 warcs/example-wpull.warc.gz
+urn:x-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - - 557 3181 warcs/example-wpull.warc.gz
 Total: 212
 
 # test sort, 9-field, multiple inputs, all records + post query
 >>> cli_lines(['--sort', '-a', '-p', '-9', TEST_WARC_DIR])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - 355 example-url-agnostic-revisit.warc.gz
-urn:X-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - 3181 example-wpull.warc.gz
+urn:x-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - 3181 example-wpull.warc.gz
 Total: 407
 
 # test writing to stdout
@@ -187,7 +187,7 @@ Total: 4
 # test custom root dir for cdx filenames, dir input
 >>> cli_lines(['--sort', '--dir-root', get_test_dir() + 'other/', TEST_WARC_DIR])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 ../warcs/example-url-agnostic-revisit.warc.gz
-urn:X-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - - 557 3181 ../warcs/example-wpull.warc.gz
+urn:x-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - - 557 3181 ../warcs/example-wpull.warc.gz
 Total: 212
 
 # test writing to temp dir, also use unicode filename

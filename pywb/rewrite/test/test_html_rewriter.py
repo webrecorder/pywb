@@ -107,9 +107,11 @@ r"""
 #<a href="/web/20131226101010/http://испытание.испытание/">испытание</a>
 
 # entity unescaping
-#>>> parse('<a href="http&#x3a;&#x2f;&#x2f;www&#x2e;example&#x2e;com&#x2f;path&#x2f;file.html">')
-<a href="/web/20131226101010/http://www.example.com/path/file.html">
+>>> parse('<a href="http&#x3a;&#x2f;&#x2f;www&#x2e;example&#x2e;com&#x2f;path&#x2f;file.html">')
+<a href="/web/20131226101010/http&#x3a;&#x2f;&#x2f;www&#x2e;example&#x2e;com&#x2f;path&#x2f;file.html">
 
+>>> parse('<a href="&#x2f;&#x2f;www&#x2e;example&#x2e;com&#x2f;path&#x2f;file.html">')
+<a href="/web/20131226101010/&#x2f;&#x2f;www&#x2e;example&#x2e;com&#x2f;path&#x2f;file.html">
 
 # Meta tag
 >>> parse('<META http-equiv="refresh" content="10; URL=/abc/def.html">')
@@ -252,6 +254,9 @@ r"""
 
 >>> parse('<i style=\'background-image: url(&quot;http://foo.example.com/&quot;)\'></i>')
 <i style="background-image: url(&quot;/web/20131226101010/http://foo.example.com/&quot;)"></i>
+
+>>> parse('<i style=\'background-image: url(&#x27;http://foo.example.com/&#x27;)\'></i>')
+<i style="background-image: url('/web/20131226101010/http://foo.example.com/')"></i>
 
 >>> parse("<i style='background-image: url(&apos;http://foo.example.com/&apos;)'></i>")
 <i style="background-image: url(&apos;/web/20131226101010/http://foo.example.com/&apos;)"></i>
