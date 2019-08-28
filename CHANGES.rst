@@ -1,3 +1,12 @@
+pywb 2.3.5 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* General auto-fetch fixes
+  - Fixed issue that caused HTTP 404 errors to happen when parsing <link> stylesheet hrefs as sheets (webrecorder/wombat #11)
+  - Ensured that requests made are cached by the browser (webrecorder/wombat #13 & #15)
+  - Ensured that the request made by the backing web worker when in proxy mode are not blocked by CORS (webrecorder/wombat #13 & #15)
+
+
 pywb 2.3.4 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

@@ -20,7 +20,11 @@ var config = {
   prefix: null,
   prefixMod: null,
   relative: null,
-  rwRe: null
+  rwRe: null,
+  defaultFetchOptions: {
+    cache: 'force-cache',
+    mode: null
+  }
 };
 
 if (!config.havePromise) {
@@ -80,6 +84,7 @@ if (location.search.indexOf('init') !== -1) {
   })();
 } else {
   config.proxyMode = true;
+  config.defaultFetchOptions.mode = 'no-cors';
 }
 
 self.onmessage = function(event) {
@@ -101,11 +106,21 @@ function fetchDoneOrErrored() {
   fetchFromQ();
 }
 
+/**
+ * Fetches the supplied URL and increments the {@link runningFetches} variable
+ * to represent an inflight request.
+ * If the url to be fetched is an object then its a fetch-as-page and the
+ * fetch is configured using its supplied options and url properties.
+ *
+ * Otherwise, the fetch is made using cache mode force-cache and if we
+ * are operating in proxy mode the fetch mode no-cors is used.
+ * @param {string|Object} toBeFetched - The URL to be fetched
+ */
 function fetchURL(toBeFetched) {
   runningFetches += 1;
 
   var url;
-  var options;
+  var options = config.defaultFetchOptions;
 
   if (typeof toBeFetched === 'object') {
     url = toBeFetched.url;
@@ -121,7 +136,6 @@ function fetchURL(toBeFetched) {
 
 function queueOrFetch(toBeFetched) {
   var url = typeof toBeFetched === 'object' ? toBeFetched.url : toBeFetched;
-
   if (!url || url.indexOf(DataURLPrefix) === 0 || seen[url] != null) {
     return;
   }
@@ -246,7 +260,7 @@ function handleMediaProxyMode(mediaRules) {
 }
 
 function handleSrc(srcValues, context) {
-  var resolveOpts = { docBaseURI: context.docBaseURI };
+  var resolveOpts = { docBaseURI: context.docBaseURI, mod: null };
   if (srcValues.value) {
     resolveOpts.mod = srcValues.mod;
     return queueOrFetch(maybeFixUpURL(srcValues.value.trim(), resolveOpts));
@@ -297,7 +311,7 @@ function handleSrcset(srcset, context) {
   if (srcset == null) return;
   var resolveOpts = {
     docBaseURI: context.docBaseURI,
-    mode: null,
+    mod: null,
     tagSrc: null
   };
   if (srcset.value) {
