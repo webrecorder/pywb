@@ -483,23 +483,24 @@ class LiveWebLoader(BaseLoader):
         adapter = DefaultAdapters.live_adapter if is_live else DefaultAdapters.remote_adapter
         max_retries = adapter.max_retries
 
+        # get either the poolmanager or proxy manager to handle this connection
         if self.socks_proxy and not os.environ.get('SOCKS_DISABLE'):
-            conn = adapter.proxy_manager_for(self.socks_proxy)
+            manager = adapter.proxy_manager_for(self.socks_proxy)
         else:
-            conn = adapter.poolmanager
+            manager = adapter.poolmanager
 
         upstream_res = None
         try:
-            upstream_res = conn.urlopen(method=method,
-                                        url=load_url,
-                                        body=data,
-                                        headers=req_headers,
-                                        redirect=False,
-                                        assert_same_host=False,
-                                        preload_content=False,
-                                        decode_content=False,
-                                        retries=max_retries,
-                                        timeout=params.get('_timeout'))
+            upstream_res = manager.urlopen(method=method,
+                                           url=load_url,
+                                           body=data,
+                                           headers=req_headers,
+                                           redirect=False,
+                                           assert_same_host=False,
+                                           preload_content=False,
+                                           decode_content=False,
+                                           retries=max_retries,
+                                           timeout=params.get('_timeout'))
 
             return upstream_res
 
