@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import os
 import uuid
 from io import BytesIO
 
@@ -23,7 +24,7 @@ from pywb.utils.format import ParamFormatter
 from pywb.utils.io import StreamIter, call_release_conn, compress_gzip_iter, no_except_close
 from pywb.utils.memento import MementoUtils
 from pywb.utils.wbexception import LiveResourceException
-from pywb.warcserver.http import DefaultAdapters, SOCKS_PROXIES
+from pywb.warcserver.http import DefaultAdapters
 from pywb.warcserver.resource.pathresolvers import DefaultResolverMixin
 from pywb.warcserver.resource.resolvingloader import ResolvingLoader
 
@@ -256,6 +257,13 @@ class LiveWebLoader(BaseLoader):
     def __init__(self, forward_proxy_prefix=None, adapter=None):
         self.forward_proxy_prefix = forward_proxy_prefix
 
+        socks_host = os.environ.get('SOCKS_HOST')
+        socks_port = os.environ.get('SOCKS_PORT', 9050)
+        if socks_host and socks_port:
+            self.socks_proxy = 'socks5h://{0}:{1}'.format(socks_host, socks_port)
+        else:
+            self.socks_proxy = None
+
     def load_resource(self, cdx, params):
         load_url = cdx.get('load_url')
         if not load_url:
@@ -475,8 +483,8 @@ class LiveWebLoader(BaseLoader):
         adapter = DefaultAdapters.live_adapter if is_live else DefaultAdapters.remote_adapter
         max_retries = adapter.max_retries
 
-        if SOCKS_PROXIES:
-            conn = adapter.get_connection(load_url, SOCKS_PROXIES)
+        if self.socks_proxy and not os.environ.get('SOCKS_DISABLE'):
+            conn = adapter.proxy_manager_for(self.socks_proxy)
         else:
             conn = adapter.poolmanager
 
