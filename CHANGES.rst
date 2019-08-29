@@ -1,10 +1,14 @@
 pywb 2.3.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* General auto-fetch fixes
+* General auto-fetch fixes (#503)
   - Fixed issue that caused HTTP 404 errors to happen when parsing <link> stylesheet hrefs as sheets (webrecorder/wombat #11)
   - Ensured that requests made are cached by the browser (webrecorder/wombat #13 & #15)
   - Ensured that the request made by the backing web worker when in proxy mode are not blocked by CORS (webrecorder/wombat #13 & #15)
+
+* SOCKS proxy fixes (#504)
+  - simplify SOCKS config (avoiding global socket monkey patch), default to no cert verify to match non-proxy behavior
+  - SOCKS proxy can be disabled dynamically by setting SOCKS_DISABLE
 
 
 pywb 2.3.4 changelist
