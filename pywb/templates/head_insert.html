@@ -3,7 +3,7 @@
 {% set urlsplit = cdx.url | urlsplit %}
   wbinfo = {};
   wbinfo.top_url = "{{ top_url }}";
-{% if is_framed == 'true' %}
+{% if is_framed %}
   // Fast Top-Frame Redirect
   if (window == window.top && wbinfo.top_url) {
     var loc = window.location.href.replace(window.location.hash, "");

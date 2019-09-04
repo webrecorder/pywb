@@ -256,7 +256,7 @@ r"""
 <i style="background-image: url(&quot;/web/20131226101010oe_/http://foo.example.com/&quot;)"></i>
 
 >>> parse('<i style=\'background-image: url(&#x27;http://foo.example.com/&#x27;)\'></i>')
-<i style="background-image: url('/web/20131226101010/http://foo.example.com/')"></i>
+<i style="background-image: url('/web/20131226101010oe_/http://foo.example.com/')"></i>
 
 >>> parse("<i style='background-image: url(&apos;http://foo.example.com/&apos;)'></i>")
 <i style="background-image: url(&apos;/web/20131226101010oe_/http://foo.example.com/&apos;)"></i>

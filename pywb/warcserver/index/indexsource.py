@@ -1,21 +1,12 @@
-import logging
-import re
-
-import redis
-import requests
+from six.moves.urllib.parse import quote_plus
 from warcio.timeutils import PAD_14_DOWN, http_date_to_timestamp, pad_timestamp, timestamp_now, timestamp_to_http_date
 
 from pywb.utils.binsearch import iter_range
 from pywb.utils.canonicalize import canonicalize
-from pywb.utils.wbexception import NotFoundException, BadRequestException
-
-from warcio.timeutils import timestamp_to_http_date, http_date_to_timestamp
-from warcio.timeutils import timestamp_now, pad_timestamp, PAD_14_DOWN
-
 from pywb.utils.format import res_template
 from pywb.utils.io import no_except_close
 from pywb.utils.memento import MementoUtils
-from pywb.utils.wbexception import NotFoundException
+from pywb.utils.wbexception import BadRequestException, NotFoundException
 from pywb.warcserver.http import DefaultAdapters
 from pywb.warcserver.index.cdxobject import CDXObject
 from pywb.warcserver.index.cdxops import cdx_sort_closest

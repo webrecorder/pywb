@@ -249,14 +249,12 @@ RenderCalendar.prototype.makeCDXRequest = function() {
     var queryWorker = new window.Worker(this.staticPrefix + '/queryWorker.js');
     var cdxRecordMsg = 'cdxRecord';
     var done = 'finished';
-
     var months = this.text.months;
 
     queryWorker.onmessage = function(msg) {
       var data = msg.data;
       var terminate = false;
       if (data.type === cdxRecordMsg) {
-
         data.timeInfo.month = months[data.timeInfo.month];
 
         // render the results sent to us from the worker
@@ -586,9 +584,14 @@ RenderCalendar.prototype.renderDateCalPart = function(
  * Updates the advanced view with the supplied cdx information
  * @param {Object} cdxObj - CDX object for this capture
  */
-RenderCalendar.prototype.renderAdvancedSearchPart = function (cdxObj) {
+RenderCalendar.prototype.renderAdvancedSearchPart = function(cdxObj) {
   // display the URL of the result
-  var displayedInfo = [{ tag: 'small', innerText: this.text.dateTime + this.ts_to_date(cdxObj.timestamp) }];
+  var displayedInfo = [
+    {
+      tag: 'small',
+      innerText: this.text.dateTime + this.tsToDate(cdxObj.timestamp)
+    }
+  ];
   // display additional information about the result under the URL
   if (cdxObj.mime) {
     displayedInfo.push({
@@ -1024,7 +1027,7 @@ RenderCalendar.prototype.dateOrdinal = function(d) {
  * @param {boolean} [is_gmt] - Should the timestamp be converted to a gmt string
  * @returns {string}
  */
-RenderCalendar.prototype.tsToDate = function ts_to_date(ts, is_gmt) {
+RenderCalendar.prototype.tsToDate = function(ts, is_gmt) {
   if (ts.length < 14) return ts;
   var datestr =
     ts.substring(0, 4) +
