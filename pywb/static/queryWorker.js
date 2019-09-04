@@ -18,7 +18,7 @@ var decoder = new TextDecoder('utf-8');
  */
 var bufferedPreviousChunk = null;
 
-self.onmessage = function (event) {
+self.onmessage = function(event) {
   var data = event.data;
   if (data.type === 'query') {
     fetch(data.queryURL)
@@ -42,7 +42,8 @@ function defaultErrorCatcher(error) {
  */
 function consumeResponseBodyAsStream(response) {
   var reader = response.body.getReader();
-  reader.read()
+  reader
+    .read()
     .then(function consumeStream(result) {
       if (result.done) {
         if (bufferedPreviousChunk) {
@@ -58,7 +59,10 @@ function consumeResponseBodyAsStream(response) {
         return;
       }
       transformChunk(result.value);
-      reader.read().then(consumeStream).catch(defaultErrorCatcher);
+      reader
+        .read()
+        .then(consumeStream)
+        .catch(defaultErrorCatcher);
     })
     .catch(defaultErrorCatcher);
 }
@@ -154,8 +158,11 @@ function handleCDXRecord(binaryCDXRecord) {
       year: ts.substring(0, 4),
       month: ts.substring(4, 6),
       day: day.charAt(0) === '0' ? day.charAt(1) : day,
-      time: ts.substring(8, 10) + colon +
-        ts.substring(10, 12) + colon +
+      time:
+        ts.substring(8, 10) +
+        colon +
+        ts.substring(10, 12) +
+        colon +
         ts.substring(12, 14)
     },
     wasError: false,
@@ -163,9 +170,3 @@ function handleCDXRecord(binaryCDXRecord) {
     recordCountFormatted: recordCount.toLocaleString()
   });
 }
-
-
-
-
-
-
