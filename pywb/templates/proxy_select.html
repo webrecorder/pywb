@@ -1,5 +1,8 @@
-<html>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Pywb Proxy Collection Selector{% endblock %}
+
+{% block body %}
 <h2>Pywb Proxy Collection Selector</h2>
     {% if coll %}
         <p>
@@ -21,5 +24,4 @@
     </ul>
 
     <p>(Once selected, you will not be prompted again, however you can return to this page to switch collections.)</p>
-</body>
-</html>
+{% endblock %}
