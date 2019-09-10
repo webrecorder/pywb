@@ -1,7 +1,7 @@
 from gevent.monkey import patch_all; patch_all()
 
 from werkzeug.routing import Map, Rule
-from werkzeug.exceptions import HTTPException, NotFound
+from werkzeug.exceptions import HTTPException
 from werkzeug.wsgi import pop_path_info
 from six.moves.urllib.parse import urljoin
 from six import iteritems
@@ -43,6 +43,8 @@ class FrontEndApp(object):
       - WSGIProxMiddleware (Optional): If proxy mode is enabled, performs pywb's HTTP(s) proxy functionality
       - AutoIndexer (Optional): If auto-indexing is enabled for the collections it is started here
       - RecorderApp (Optional): Recording functionality, available when recording mode is enabled
+
+    The RewriterApp is configurable and can be set via the class var `REWRITER_APP_CLS`, defaults to RewriterApp
     """
 
     REPLAY_API = 'http://localhost:%s/{coll}/resource/postreq'
@@ -62,8 +64,8 @@ class FrontEndApp(object):
 
     def __init__(self, config_file=None, custom_config=None):
         """
-        :param str config_file: Path to the config file
-        :param dict custom_config: Dictionary containing additional configuration information
+        :param str|None config_file: Path to the config file
+        :param dict|None custom_config: Dictionary containing additional configuration information
         """
         config_file = config_file or './config.yaml'
         self.handler = self.handle_request
@@ -71,6 +73,7 @@ class FrontEndApp(object):
                                      custom_config=custom_config)
         self.recorder = None
         self.recorder_path = None
+        self.proxy_default_timestamp = None
 
         config = self.warcserver.config
 
@@ -108,7 +111,8 @@ class FrontEndApp(object):
 
     def _init_routes(self):
         """Initialize the routes and based on the configuration file makes available
-        specific routes (proxy mode, record)"""
+        specific routes (proxy mode, record)
+        """
         self.url_map = Map()
         self.url_map.add(Rule('/static/_/<coll>/<path:filepath>', endpoint=self.serve_static))
         self.url_map.add(Rule('/static/<path:filepath>', endpoint=self.serve_static))
@@ -120,18 +124,42 @@ class FrontEndApp(object):
             coll_prefix = '/<coll>'
             self.url_map.add(Rule('/', endpoint=self.serve_home))
 
-        self.url_map.add(Rule(coll_prefix + self.cdx_api_endpoint, endpoint=self.serve_cdx))
-        self.url_map.add(Rule(coll_prefix + '/', endpoint=self.serve_coll_page))
-        self.url_map.add(Rule(coll_prefix + '/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
-
-        if self.recorder_path:
-            self.url_map.add(Rule(coll_prefix + self.RECORD_ROUTE + '/<path:url>', endpoint=self.serve_record))
+        self._init_coll_routes(coll_prefix)
 
         if self.proxy_prefix is not None:
             # Add the proxy-fetch endpoint to enable PreservationWorker to make CORS fetches worry free in proxy mode
             self.url_map.add(Rule('/proxy-fetch/<path:url>', endpoint=self.proxy_fetch,
                                   methods=['GET', 'HEAD', 'OPTIONS']))
-        self.url_map.add(Rule(coll_prefix + '/<path:url>', endpoint=self.serve_content))
+
+    def _init_coll_routes(self, coll_prefix):
+        """Initialize and register the routes for specified collection path
+
+        :param str coll_prefix: The collection path
+        :rtype: None
+        """
+        routes = self._make_coll_routes(coll_prefix)
+        for route in routes:
+            self.url_map.add(route)
+
+    def _make_coll_routes(self, coll_prefix):
+        """Creates a list of standard collection routes for the
+        specified collection path
+
+        :param str coll_prefix: The collection path
+        :return: A list of route rules for the supplied collection
+        :rtype: list[Rule]
+        """
+        routes = [
+            Rule(coll_prefix + self.cdx_api_endpoint, endpoint=self.serve_cdx),
+            Rule(coll_prefix + '/', endpoint=self.serve_coll_page),
+            Rule(coll_prefix + '/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content),
+            Rule(coll_prefix + '/<path:url>', endpoint=self.serve_content)
+        ]
+
+        if self.recorder_path:
+            routes.append(Rule(coll_prefix + self.RECORD_ROUTE + '/<path:url>', endpoint=self.serve_record))
+
+        return routes
 
     def get_upstream_paths(self, port):
         """Retrieve a dictionary containing the full URLs of the upstream apps
@@ -141,9 +169,9 @@ class FrontEndApp(object):
         :rtype: dict[str, str]
         """
         base_paths = {
-                'replay': self.REPLAY_API % port,
-                'cdx-server': self.CDX_API % port,
-               }
+            'replay': self.REPLAY_API % port,
+            'cdx-server': self.CDX_API % port,
+        }
 
         if self.recorder_path:
             base_paths['record'] = self.recorder_path
@@ -177,7 +205,6 @@ class FrontEndApp(object):
 
         self.recorder = RecorderApp(self.RECORD_SERVER % str(self.warcserver_server.port), warc_writer,
                                     accept_colls=recorder_config.get('source_filter'))
-
 
         recorder_server = GeventServer(self.recorder, port=0)
 
@@ -260,7 +287,7 @@ class FrontEndApp(object):
             if proxy_enabled:
                 response.add_access_control_headers(env=environ)
             return response
-        except:
+        except Exception:
             self.raise_not_found(environ, 'static_file_not_found', filepath)
 
     def get_metadata(self, coll):
@@ -270,7 +297,7 @@ class FrontEndApp(object):
         :return: The collections metadata if it exists
         :rtype: dict
         """
-        #if coll == self.all_coll:
+        # if coll == self.all_coll:
         #    coll = '*'
 
         metadata = {'coll': coll,
@@ -321,7 +348,7 @@ class FrontEndApp(object):
         """
         base_url = self.rewriterapp.paths['cdx-server']
 
-        #if coll == self.all_coll:
+        # if coll == self.all_coll:
         #    coll = '*'
 
         cdx_url = base_url.format(coll=coll)
@@ -433,7 +460,7 @@ class FrontEndApp(object):
         """
         result = {'fixed': self.warcserver.list_fixed_routes(),
                   'dynamic': self.warcserver.list_dynamic_routes()
-                 }
+                  }
 
         return WbResponse.json_response(result)
 
@@ -444,7 +471,7 @@ class FrontEndApp(object):
         :return: True if the collection is valid, false otherwise
         :rtype: bool
         """
-        #if coll == self.all_coll:
+        # if coll == self.all_coll:
         #    return True
 
         return (coll in self.warcserver.list_fixed_routes() or
@@ -478,8 +505,6 @@ class FrontEndApp(object):
         inx = referer[1:].find('http')
         if not inx:
             inx = referer[1:].find('///')
-            if inx > 0:
-                inx + 1
 
         if inx < 0:
             return
@@ -607,7 +632,7 @@ class FrontEndApp(object):
             if not self.ALL_DIGITS.match(self.proxy_default_timestamp):
                 try:
                     self.proxy_default_timestamp = iso_date_to_timestamp(self.proxy_default_timestamp)
-                except:
+                except Exception:
                     raise Exception('Invalid Proxy Timestamp: Must Be All-Digit Timestamp or ISO Date Format')
 
         self.proxy_coll = proxy_coll
@@ -691,7 +716,7 @@ class MetadataCache(object):
         try:
             mtime = os.path.getmtime(path)
             obj = self.cache.get(path)
-        except:
+        except Exception:
             return {}
 
         if not obj:
@@ -733,5 +758,3 @@ class MetadataCache(object):
 if __name__ == "__main__":
     app_server = FrontEndApp.create_app(port=8080)
     app_server.join()
-
-

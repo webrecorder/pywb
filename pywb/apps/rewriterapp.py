@@ -2,53 +2,45 @@ from io import BytesIO
 
 import requests
 from fakeredis import FakeStrictRedis
-
-from six.moves.urllib.parse import urlencode, urlsplit, urlunsplit, unquote
+from six.moves.urllib.parse import unquote, urlencode, urlsplit, urlunsplit
 from warcio.bufferedreaders import BufferedReader
 from warcio.recordloader import ArcWarcRecordLoader
 from warcio.timeutils import http_date_to_timestamp, timestamp_to_http_date
-from werkzeug.http import HTTP_STATUS_CODES
 
 from pywb.apps.wbrequestresponse import WbResponse
+from pywb.rewrite.cookies import CookieTracker
 from pywb.rewrite.default_rewriter import DefaultRewriter, RewriterWithJSProxy
 from pywb.rewrite.rewriteinputreq import RewriteInputRequest
 from pywb.rewrite.templateview import BaseInsertView, HeadInsertView, JinjaEnv, TopFrameView
 from pywb.rewrite.url_rewriter import IdentityUrlRewriter, UrlRewriter
 from pywb.rewrite.wburl import WbUrl
-from pywb.rewrite.url_rewriter import UrlRewriter, IdentityUrlRewriter
-
-from pywb.rewrite.cookies import CookieTracker
-from pywb.utils.wbexception import WbException, NotFoundException, UpstreamException
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.io import BUFF_SIZE, OffsetLimitReader, no_except_close
 from pywb.utils.memento import MementoUtils
-from pywb.utils.wbexception import WbException
+from pywb.utils.wbexception import NotFoundException, UpstreamException
 from pywb.warcserver.index.cdxobject import CDXObject
 
 
 # ============================================================================
-class UpstreamException(WbException):
-    def __init__(self, status_code, url, details):
-        super(UpstreamException, self).__init__(url=url, msg=details)
-        self._status_code = status_code
-
-    @property
-    def status_code(self):
-        return self._status_code
-
-
-# ============================================================================
-# class Rewriter(RewriteDASHMixin, RewriteAMFMixin, RewriteContent):
-#    pass
-
-
-# ============================================================================
 class RewriterApp(object):
+    """Primary application for rewriting the content served by pywb (if it is to be rewritten).
+
+    This class is also responsible rendering the archives templates
+    """
     VIDEO_INFO_CONTENT_TYPE = 'application/vnd.youtube-dl_formats+json'
 
     DEFAULT_CSP = "default-src 'unsafe-eval' 'unsafe-inline' 'self' data: blob: mediastream: ws: wss: ; form-action 'self'"
 
     def __init__(self, framed_replay=False, jinja_env=None, config=None, paths=None):
+        """Initialize a new instance of RewriterApp
+
+        :param bool framed_replay: Is rewriting happening in framed replay mode
+        :param JinjaEnv|None jinja_env: Optional JinjaEnv instance to be used for
+            rendering static files
+        :param dict|None config: Optional config dictionary
+        :param dict|None paths: Optional dictionary containing a mapping
+            of path names to URLs
+        """
         self.loader = ArcWarcRecordLoader()
 
         self.config = config or {}
@@ -108,25 +100,65 @@ class RewriterApp(object):
         # deprecated: Use X-Forwarded-Proto header instead!
         self.force_scheme = config.get('force_scheme')
 
-    def _init_cookie_tracker(self):
-        return CookieTracker(FakeStrictRedis())
+    def _init_cookie_tracker(self, redis=None):
+        """Initialize the CookieTracker
+
+        :param redis: Optional redis instance to be used
+        Defaults to FakeStrictRedis
+        :return: The initialized cookie tracker
+        :rtype: CookieTracker
+        """
+        if redis is None:
+            redis = FakeStrictRedis()
+        return CookieTracker(redis)
 
     def add_csp_header(self, wb_url, status_headers):
+        """Adds Content-Security-Policy headers to the supplied
+        StatusAndHeaders instance if the wb_url's mod is equal
+        to the replay mod
+
+        :param WbUrl wb_url: The WbUrl for the URL being operated on
+        :param warcio.StatusAndHeaders status_headers: The status and
+        headers instance for the reply to the URL
+        """
         if self.csp_header and wb_url.mod == self.replay_mod:
             status_headers.headers.append(self.csp_header)
 
     def _html_templ(self, name):
+        """Returns the html file name for the supplied
+        html template name.
+
+        :param str name: The name of the html template
+        :return: The file name for the template
+        :rtype: str|None
+        """
         value = self.config.get(name)
         if not value:
             value = name.replace('_html', '.html')
         return value
 
     def is_framed_replay(self, wb_url):
+        """Returns T/F indicating if the rewriter app is configured to
+        be operating in framed replay mode and the supplied WbUrl
+        is also operating in framed replay mode
+
+        :param WbUrl wb_url: The WbUrl instance to check
+        :return: T/F if in framed replay mode
+        :rtype: bool
+        """
         return (self.framed_replay and
                 wb_url.mod == self.frame_mod and
                 wb_url.is_replay())
 
     def _check_accept_dt(self, wb_url, environ):
+        """Returns T/F indicating if the supplied WbUrl instance
+        is for a timegate request
+
+        :param WbUrl wb_url: The URL to be checked
+        :param dict environ: The wsgi environment object for the request
+        :return: T/F indicating if the WbUrl is for timegate request
+        :rtype: bool
+        """
         is_timegate = False
         if wb_url.is_latest_replay():
             accept_dt = environ.get('HTTP_ACCEPT_DATETIME')
@@ -177,6 +209,15 @@ class RewriterApp(object):
         return mod, prefer
 
     def _check_range(self, inputreq, wb_url):
+        """Checks the input request if it is a range request returning
+        the start and end of the range as well as T/F if the request should
+        be skipped as a tuple.
+
+        :param RewriteInputRequest inputreq: The input request to check range
+        :param WbUrl wb_url: The WbUrl associated with the request
+        :return: A tuple with the start, end, and T/F should skip request
+        :rtype: tuple[int|None, int|None, bool]
+        """
         skip_record = False
         range_start = None
         range_end = None
@@ -527,7 +568,7 @@ class RewriterApp(object):
     def _add_memento_links(self, url, full_prefix, memento_dt, memento_ts,
                            status_headers, is_timegate, is_proxy, coll=None,
                            pref_applied=None, mod=None, is_memento=True):
-        """
+        """Adds the memento link headers to supplied StatusAndHeaders instance
 
         :param str url: The URI-R being rewritten
         :param str full_prefix: The replay prefix
@@ -601,8 +642,7 @@ class RewriterApp(object):
         return timegate_url, timemap_url
 
     def get_top_url(self, full_prefix, wb_url, cdx, kwargs):
-        top_url = full_prefix
-        top_url += wb_url.to_str(mod='')
+        top_url = full_prefix + wb_url.to_str(mod='')
         return top_url
 
     def handle_error(self, environ, wbe):
@@ -640,10 +680,7 @@ class RewriterApp(object):
         else:
             closest = wb_url.timestamp
 
-        params = {}
-        params['url'] = wb_url.url
-        params['closest'] = closest
-        params['matchType'] = 'exact'
+        params = {'url': wb_url.url, 'closest': closest, 'matchType': 'exact'}
 
         if wb_url.mod == 'vi_':
             params['content_type'] = self.VIDEO_INFO_CONTENT_TYPE
@@ -658,11 +695,20 @@ class RewriterApp(object):
         return r
 
     def do_query(self, wb_url, kwargs):
-        params = {}
-        params['url'] = wb_url.url
-        params['output'] = kwargs.get('output', 'json')
-        params['from'] = wb_url.timestamp
-        params['to'] = wb_url.end_timestamp
+        """Performs the timemap query request for the supplied WbUrl
+        returning the response
+
+        :param WbUrl wb_url: The WbUrl to be queried
+        :param dict kwargs: Optional keyword arguments
+        :return: The queries response
+        :rtype: requests.Response
+        """
+        params = {
+            'url': wb_url.url,
+            'output': kwargs.get('output', 'json'),
+            'from': wb_url.timestamp,
+            'to': wb_url.end_timestamp
+        }
         if 'memento_format' in kwargs:
             params['memento_format'] = kwargs['memento_format']
 
@@ -763,8 +809,8 @@ class RewriterApp(object):
         return False
 
     def get_base_url(self, wb_url, kwargs):
-        type = kwargs.get('type')
-        return self.paths[type].format(**kwargs)
+        type_ = kwargs.get('type')
+        return self.paths[type_].format(**kwargs)
 
     def get_upstream_url(self, wb_url, kwargs, params):
         base_url = self.get_base_url(wb_url, kwargs)

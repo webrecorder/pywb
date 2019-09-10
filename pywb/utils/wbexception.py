@@ -1,14 +1,14 @@
 from werkzeug.http import HTTP_STATUS_CODES
 
 
-#=================================================================
+# =================================================================
 class WbException(Exception):
     """Base class for exceptions raised by Pywb"""
 
     def __init__(self, msg=None, url=None):
         """Initialize a new WbException
 
-        :param str|None msg: The message for the error response
+        :param str|dict|None msg: The message for the error response
         :param str|None url: The URL that caused the error
         :rtype: None
         """
@@ -34,14 +34,10 @@ class WbException(Exception):
         return str(self.status_code) + ' ' + HTTP_STATUS_CODES.get(self.status_code, 'Unknown Error')
 
     def __repr__(self):
-        return "{0}('{1}',)".format(self.__class__.__name__,  self.msg)
-
-# Default Error Code
-#    def status(self):
-#        return '500 Internal Server Error'
+        return "{0}('{1}',)".format(self.__class__.__name__, self.msg)
 
 
-#=================================================================
+# =================================================================
 class AccessException(WbException):
     """An Exception used to indicate an access control violation"""
 
@@ -55,7 +51,7 @@ class AccessException(WbException):
         return 451
 
 
-#=================================================================
+# =================================================================
 class BadRequestException(WbException):
     """An Exception used to indicate that request was bad"""
 
@@ -69,7 +65,7 @@ class BadRequestException(WbException):
         return 400
 
 
-#=================================================================
+# =================================================================
 class NotFoundException(WbException):
     """An Exception used to indicate that a resource was not found"""
 
@@ -83,7 +79,7 @@ class NotFoundException(WbException):
         return 404
 
 
-#=================================================================
+# =================================================================
 class LiveResourceException(WbException):
     """An Exception used to indicate that an error was encountered during the
     retrial of a live web resource"""
@@ -107,7 +103,7 @@ class UpstreamException(WbException):
 
         :param int status_code: The status code for the error response
         :param str url: The URL that caused the error
-        :param str details: The details of the error encountered
+        :param str|dict details: The details of the error encountered
         :rtype: None
         """
         super(UpstreamException, self).__init__(url=url, msg=details)
@@ -135,4 +131,3 @@ class AppPageNotFound(WbException):
         :rtype: int
         """
         return 404
-
