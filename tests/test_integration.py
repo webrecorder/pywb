@@ -389,7 +389,7 @@ class TestWbIntegration(BaseConfigTest):
         resp = self.post_json('/pywb/20140610001255{0}/http://httpbin.org/post?foo=bar', fmod, {'data': '^'}, status=404)
         assert resp.status_int == 404
 
-    def test_post_referer_redirect(self):
+    def test_post_referer_redirect(self, fmod):
         # allowing 307 redirects
         resp = self.post('/post', fmod,
                          {'foo': 'bar', 'test': 'abc'},
@@ -397,6 +397,13 @@ class TestWbIntegration(BaseConfigTest):
 
         assert resp.status_int == 307
         assert resp.headers['Location'].endswith('/pywb/2014{0}/http://httpbin.org/post'.format(fmod))
+
+    def test_get_referer_redirect(self, fmod):
+        resp = self.get('/get', fmod,
+                         headers=[('Referer', 'http://localhost:80/pywb/2014{0}/http://httpbin.org/foo'.format(fmod))])
+
+        assert resp.status_int == 307
+        assert resp.headers['Location'].endswith('/pywb/2014{0}/http://httpbin.org/get'.format(fmod))
 
     def _test_excluded_content(self):
         fmod_slash = fmod + '/' if fmod else ''

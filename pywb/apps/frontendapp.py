@@ -1,7 +1,6 @@
 from gevent.monkey import patch_all; patch_all()
 
-from werkzeug.routing import Map, Rule
-from werkzeug.exceptions import HTTPException
+from werkzeug.routing import Map, Rule, RequestRedirect
 from werkzeug.wsgi import pop_path_info
 from six.moves.urllib.parse import urljoin
 from six import iteritems
@@ -418,12 +417,8 @@ class FrontEndApp(object):
             metadata['output'] = timemap_output
             # ensure that the timemap path information is not included
             wb_url_str = wb_url_str.replace('timemap/{0}/'.format(timemap_output), '')
-        try:
-            response = self.rewriterapp.render_content(wb_url_str, metadata, environ)
-        except WbException as wbe:
-            response = self.rewriterapp.handle_error(environ, wbe)
-            raise HTTPException(response=response)
-        return response
+
+        return self.rewriterapp.render_content(wb_url_str, metadata, environ)
 
     def setup_paths(self, environ, coll, record=False):
         """Populates the WSGI environment dictionary with the path information necessary to perform a response for
@@ -553,12 +548,14 @@ class FrontEndApp(object):
 
             response = endpoint(environ, **args)
 
-        except HTTPException as hte:
+        except RequestRedirect as rr:
+            # if werkzeug throws this, likely a missing slash redirect
+            # also check referrer here to avoid another redirect later
             redir = self._check_refer_redirect(environ)
             if redir:
                 return redir(environ, start_response)
 
-            response = hte
+            response = WbResponse.redir_response(rr.new_url, '307 Redirect')
 
         except WbException as wbe:
             if wbe.status_code == 404:
