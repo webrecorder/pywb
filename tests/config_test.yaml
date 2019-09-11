@@ -39,3 +39,5 @@ archive_paths:
 
 enable_memento: true
 
+# enable new transclusion system
+transclusions_version: 2
