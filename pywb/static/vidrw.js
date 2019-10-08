@@ -594,6 +594,9 @@ __wbvidrw = (function() {
 
             if (i < 0) {
                 url = info.url;
+                if (!url) {
+                    continue;
+                }
                 format = get_format_ext(info);
             } else {
                 if (!info.formats[i]._wb_canPlay) {

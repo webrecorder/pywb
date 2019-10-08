@@ -25,8 +25,8 @@ class RxRules(object):
         return lambda _, _2: string
 
     @staticmethod
-    def archival_rewrite():
-        return lambda string, rewriter: rewriter.rewrite(string)
+    def archival_rewrite(mod=None):
+        return lambda string, rewriter: rewriter.rewrite(string, mod)
 
     @staticmethod
     def add_prefix(prefix):
@@ -327,13 +327,12 @@ class JSReplaceFuzzy(object):
 class CSSRules(RxRules):
     CSS_URL_REGEX = "url\\s*\\(\\s*(?:[\\\\\"']|(?:&.{1,4};))*\\s*([^)'\"]+)\\s*(?:[\\\\\"']|(?:&.{1,4};))*\\s*\\)"
 
-    CSS_IMPORT_NO_URL_REGEX = ("@import\\s+(?!url)\\(?\\s*['\"]?" +
-                               "(?!url[\\s\\(])([\w.:/\\\\-]+)")
+    CSS_IMPORT_REGEX = ("@import\\s+(?:url\\s*)?\\(?\\s*['\"]?([\w.:/\\\\-]+)")
 
     def __init__(self):
         rules = [
-            (self.CSS_URL_REGEX, self.archival_rewrite(), 1),
-            (self.CSS_IMPORT_NO_URL_REGEX, self.archival_rewrite(), 1),
+            (self.CSS_URL_REGEX, self.archival_rewrite('oe_'), 1),
+            (self.CSS_IMPORT_REGEX, self.archival_rewrite('cs_'), 1),
         ]
 
         super(CSSRules, self).__init__(rules)

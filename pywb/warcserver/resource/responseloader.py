@@ -204,8 +204,10 @@ class WARCPathLoader(DefaultResolverMixin, BaseLoader):
         http_headers_buff = None
         if payload.rec_type in ('response', 'revisit'):
             status = cdx.get('status')
-            # status may not be set for 'revisit'
-            if not status or status.startswith('3'):
+
+            # if status is not set and not, 2xx, 4xx, 5xx
+            # go through self-redirect check just in case
+            if not status or not status.startswith(('2', '4', '5')):
                 http_headers = self.headers_parser.parse(payload.raw_stream)
 
                 try:

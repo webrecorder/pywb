@@ -1,0 +1,6 @@
+org,iana)/about - {"access": "block"}
+org,iana)/_css/2013.1/fonts/opensans-semibold.ttf - {"access": "allow"}
+org,iana)/_css - {"access": "exclude"}
+org,iana)/### - {"access": "allow"}
+org,iana)/ - {"access": "exclude"}
+org,example)/?example=1 - {"access": "block"}

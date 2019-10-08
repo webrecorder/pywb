@@ -1,12 +1,9 @@
 from gevent.monkey import patch_all; patch_all()
 
-#from bottle import run, Bottle, request, response, debug
-from werkzeug.routing import Map, Rule
-from werkzeug.exceptions import HTTPException, NotFound
+from werkzeug.routing import Map, Rule, RequestRedirect
 from werkzeug.wsgi import pop_path_info
 from six.moves.urllib.parse import urljoin
 from six import iteritems
-from warcio.statusandheaders import StatusAndHeaders
 from warcio.utils import to_native_str
 from warcio.timeutils import iso_date_to_timestamp
 from wsgiprox.wsgiprox import WSGIProxMiddleware
@@ -17,13 +14,14 @@ from pywb.recorder.recorderapp import RecorderApp
 from pywb.utils.loaders import load_yaml_config
 from pywb.utils.geventserver import GeventServer
 from pywb.utils.io import StreamIter
+from pywb.utils.wbexception import WbException, AppPageNotFound
 
 from pywb.warcserver.warcserver import WarcServer
 
 from pywb.rewrite.templateview import BaseInsertView
 
 from pywb.apps.static_handler import StaticHandler
-from pywb.apps.rewriterapp import RewriterApp, UpstreamException
+from pywb.apps.rewriterapp import RewriterApp
 from pywb.apps.wbrequestresponse import WbResponse
 
 import os
@@ -44,6 +42,8 @@ class FrontEndApp(object):
       - WSGIProxMiddleware (Optional): If proxy mode is enabled, performs pywb's HTTP(s) proxy functionality
       - AutoIndexer (Optional): If auto-indexing is enabled for the collections it is started here
       - RecorderApp (Optional): Recording functionality, available when recording mode is enabled
+
+    The RewriterApp is configurable and can be set via the class var `REWRITER_APP_CLS`, defaults to RewriterApp
     """
 
     REPLAY_API = 'http://localhost:%s/{coll}/resource/postreq'
@@ -57,16 +57,22 @@ class FrontEndApp(object):
 
     PROXY_CA_PATH = os.path.join('proxy-certs', 'pywb-ca.pem')
 
+    REWRITER_APP_CLS = RewriterApp
+
     ALL_DIGITS = re.compile(r'^\d+$')
 
-    def __init__(self, config_file='./config.yaml', custom_config=None):
+    def __init__(self, config_file=None, custom_config=None):
         """
-        :param str config_file: Path to the config file
-        :param dict custom_config: Dictionary containing additional configuration information
+        :param str|None config_file: Path to the config file
+        :param dict|None custom_config: Dictionary containing additional configuration information
         """
+        config_file = config_file or './config.yaml'
         self.handler = self.handle_request
         self.warcserver = WarcServer(config_file=config_file,
                                      custom_config=custom_config)
+        self.recorder = None
+        self.recorder_path = None
+        self.proxy_default_timestamp = None
 
         config = self.warcserver.config
 
@@ -87,14 +93,12 @@ class FrontEndApp(object):
 
         self.cdx_api_endpoint = config.get('cdx_api_endpoint', '/cdx')
 
-        self._init_routes()
-
         upstream_paths = self.get_upstream_paths(self.warcserver_server.port)
 
         framed_replay = config.get('framed_replay', True)
-        self.rewriterapp = RewriterApp(framed_replay,
-                                       config=config,
-                                       paths=upstream_paths)
+        self.rewriterapp = self.REWRITER_APP_CLS(framed_replay,
+                                                 config=config,
+                                                 paths=upstream_paths)
 
         self.templates_dir = config.get('templates_dir', 'templates')
         self.static_dir = config.get('static_dir', 'static')
@@ -102,9 +106,12 @@ class FrontEndApp(object):
         metadata_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'metadata.yaml')
         self.metadata_cache = MetadataCache(metadata_templ)
 
+        self._init_routes()
+
     def _init_routes(self):
         """Initialize the routes and based on the configuration file makes available
-        specific routes (proxy mode, record)"""
+        specific routes (proxy mode, record)
+        """
         self.url_map = Map()
         self.url_map.add(Rule('/static/_/<coll>/<path:filepath>', endpoint=self.serve_static))
         self.url_map.add(Rule('/static/<path:filepath>', endpoint=self.serve_static))
@@ -116,18 +123,42 @@ class FrontEndApp(object):
             coll_prefix = '/<coll>'
             self.url_map.add(Rule('/', endpoint=self.serve_home))
 
-        self.url_map.add(Rule(coll_prefix + self.cdx_api_endpoint, endpoint=self.serve_cdx))
-        self.url_map.add(Rule(coll_prefix + '/', endpoint=self.serve_coll_page))
-        self.url_map.add(Rule(coll_prefix + '/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content))
-
-        if self.recorder_path:
-            self.url_map.add(Rule(coll_prefix + self.RECORD_ROUTE + '/<path:url>', endpoint=self.serve_record))
+        self._init_coll_routes(coll_prefix)
 
         if self.proxy_prefix is not None:
             # Add the proxy-fetch endpoint to enable PreservationWorker to make CORS fetches worry free in proxy mode
             self.url_map.add(Rule('/proxy-fetch/<path:url>', endpoint=self.proxy_fetch,
                                   methods=['GET', 'HEAD', 'OPTIONS']))
-        self.url_map.add(Rule(coll_prefix + '/<path:url>', endpoint=self.serve_content))
+
+    def _init_coll_routes(self, coll_prefix):
+        """Initialize and register the routes for specified collection path
+
+        :param str coll_prefix: The collection path
+        :rtype: None
+        """
+        routes = self._make_coll_routes(coll_prefix)
+        for route in routes:
+            self.url_map.add(route)
+
+    def _make_coll_routes(self, coll_prefix):
+        """Creates a list of standard collection routes for the
+        specified collection path
+
+        :param str coll_prefix: The collection path
+        :return: A list of route rules for the supplied collection
+        :rtype: list[Rule]
+        """
+        routes = [
+            Rule(coll_prefix + self.cdx_api_endpoint, endpoint=self.serve_cdx),
+            Rule(coll_prefix + '/', endpoint=self.serve_coll_page),
+            Rule(coll_prefix + '/timemap/<timemap_output>/<path:url>', endpoint=self.serve_content),
+            Rule(coll_prefix + '/<path:url>', endpoint=self.serve_content)
+        ]
+
+        if self.recorder_path:
+            routes.append(Rule(coll_prefix + self.RECORD_ROUTE + '/<path:url>', endpoint=self.serve_record))
+
+        return routes
 
     def get_upstream_paths(self, port):
         """Retrieve a dictionary containing the full URLs of the upstream apps
@@ -137,9 +168,9 @@ class FrontEndApp(object):
         :rtype: dict[str, str]
         """
         base_paths = {
-                'replay': self.REPLAY_API % port,
-                'cdx-server': self.CDX_API % port,
-               }
+            'replay': self.REPLAY_API % port,
+            'cdx-server': self.CDX_API % port,
+        }
 
         if self.recorder_path:
             base_paths['record'] = self.recorder_path
@@ -147,7 +178,11 @@ class FrontEndApp(object):
         return base_paths
 
     def init_recorder(self, recorder_config):
-        """Initialize the recording functionality of pywb. If recording_config is None this function is a no op"""
+        """Initialize the recording functionality of pywb. If recording_config is None this function is a no op
+
+        :param str|dict|None recorder_config: The configuration for the recorder app
+        :rtype: None
+        """
         if not recorder_config:
             self.recorder = None
             self.recorder_path = None
@@ -169,7 +204,6 @@ class FrontEndApp(object):
 
         self.recorder = RecorderApp(self.RECORD_SERVER % str(self.warcserver_server.port), warc_writer,
                                     accept_colls=recorder_config.get('source_filter'))
-
 
         recorder_server = GeventServer(self.recorder, port=0)
 
@@ -200,6 +234,12 @@ class FrontEndApp(object):
         indexer.start()
 
     def is_proxy_enabled(self, environ):
+        """Returns T/F indicating if proxy mode is enabled
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :return: T/F indicating if proxy mode is enabled
+        :rtype: bool
+        """
         return self.proxy_prefix is not None and 'wsgiprox.proxy_host' in environ
 
     def serve_home(self, environ):
@@ -246,8 +286,8 @@ class FrontEndApp(object):
             if proxy_enabled:
                 response.add_access_control_headers(env=environ)
             return response
-        except:
-            self.raise_not_found(environ, 'Static File Not Found: {0}'.format(filepath))
+        except Exception:
+            self.raise_not_found(environ, 'static_file_not_found', filepath)
 
     def get_metadata(self, coll):
         """Retrieve the metadata associated with a collection
@@ -256,7 +296,7 @@ class FrontEndApp(object):
         :return: The collections metadata if it exists
         :rtype: dict
         """
-        #if coll == self.all_coll:
+        # if coll == self.all_coll:
         #    coll = '*'
 
         metadata = {'coll': coll,
@@ -278,7 +318,7 @@ class FrontEndApp(object):
         :rtype: WbResponse
         """
         if not self.is_valid_coll(coll):
-            self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
+            self.raise_not_found(environ, 'coll_not_found', coll)
 
         self.setup_paths(environ, coll)
 
@@ -307,7 +347,7 @@ class FrontEndApp(object):
         """
         base_url = self.rewriterapp.paths['cdx-server']
 
-        #if coll == self.all_coll:
+        # if coll == self.all_coll:
         #    coll = '*'
 
         cdx_url = base_url.format(coll=coll)
@@ -354,7 +394,7 @@ class FrontEndApp(object):
         :rtype: WbResponse
         """
         if not self.is_valid_coll(coll):
-            self.raise_not_found(environ, 'No handler for "/{0}"'.format(coll))
+            self.raise_not_found(environ, 'coll_not_found', coll)
 
         self.setup_paths(environ, coll, record)
 
@@ -377,12 +417,8 @@ class FrontEndApp(object):
             metadata['output'] = timemap_output
             # ensure that the timemap path information is not included
             wb_url_str = wb_url_str.replace('timemap/{0}/'.format(timemap_output), '')
-        try:
-            response = self.rewriterapp.render_content(wb_url_str, metadata, environ)
-        except UpstreamException as ue:
-            response = self.rewriterapp.handle_error(environ, ue)
-            raise HTTPException(response=response)
-        return response
+
+        return self.rewriterapp.render_content(wb_url_str, metadata, environ)
 
     def setup_paths(self, environ, coll, record=False):
         """Populates the WSGI environment dictionary with the path information necessary to perform a response for
@@ -419,7 +455,7 @@ class FrontEndApp(object):
         """
         result = {'fixed': self.warcserver.list_fixed_routes(),
                   'dynamic': self.warcserver.list_dynamic_routes()
-                 }
+                  }
 
         return WbResponse.json_response(result)
 
@@ -430,20 +466,21 @@ class FrontEndApp(object):
         :return: True if the collection is valid, false otherwise
         :rtype: bool
         """
-        #if coll == self.all_coll:
+        # if coll == self.all_coll:
         #    return True
 
         return (coll in self.warcserver.list_fixed_routes() or
                 coll in self.warcserver.list_dynamic_routes())
 
-    def raise_not_found(self, environ, msg):
+    def raise_not_found(self, environ, err_type, url):
         """Utility function for raising a werkzeug.exceptions.NotFound execption with the supplied WSGI environment
         and message.
 
         :param dict environ: The WSGI environment dictionary for the request
-        :param str msg: The error message
+        :param str err_type: The identifier for type of error that occured
+        :param str url: The url of the archived page that was requested
         """
-        raise NotFound(response=self.rewriterapp._error_response(environ, msg))
+        raise AppPageNotFound(err_type, url)
 
     def _check_refer_redirect(self, environ):
         """Returns a WbResponse for a HTTP 307 redirection if the HTTP referer header is the same as the HTTP host header
@@ -463,8 +500,6 @@ class FrontEndApp(object):
         inx = referer[1:].find('http')
         if not inx:
             inx = referer[1:].find('///')
-            if inx > 0:
-                inx + 1
 
         if inx < 0:
             return
@@ -480,6 +515,13 @@ class FrontEndApp(object):
         return WbResponse.redir_response(full_url, '307 Redirect')
 
     def __call__(self, environ, start_response):
+        """Handles a request
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :param start_response:
+        :return: The WbResponse for the request
+        :rtype: WbResponse
+        """
         return self.handler(environ, start_response)
 
     def handle_request(self, environ, start_response):
@@ -496,22 +538,40 @@ class FrontEndApp(object):
             # store original script_name (original prefix) before modifications are made
             environ['pywb.app_prefix'] = environ.get('SCRIPT_NAME', '')
 
-            response = endpoint(environ, **args)
-            return response(environ, start_response)
+            # store original script_name (original prefix) before modifications are made
+            environ['ORIG_SCRIPT_NAME'] = environ.get('SCRIPT_NAME')
 
-        except HTTPException as e:
+            lang = args.pop('lang', '')
+            if lang:
+                pop_path_info(environ)
+                environ['pywb_lang'] = lang
+
+            response = endpoint(environ, **args)
+
+        except RequestRedirect as rr:
+            # if werkzeug throws this, likely a missing slash redirect
+            # also check referrer here to avoid another redirect later
             redir = self._check_refer_redirect(environ)
             if redir:
                 return redir(environ, start_response)
 
-            return e(environ, start_response)
+            response = WbResponse.redir_response(rr.new_url, '307 Redirect')
+
+        except WbException as wbe:
+            if wbe.status_code == 404:
+                redir = self._check_refer_redirect(environ)
+                if redir:
+                    return redir(environ, start_response)
+
+            response = self.rewriterapp.handle_error(environ, wbe)
 
         except Exception as e:
             if self.debug:
                 traceback.print_exc()
 
-            response = self.rewriterapp._error_response(environ, 'Internal Error: ' + str(e), '500 Server Error')
-            return response(environ, start_response)
+            response = self.rewriterapp._error_response(environ, WbException('Internal Error: ' + str(e)))
+
+        return response(environ, start_response)
 
     @classmethod
     def create_app(cls, port):
@@ -569,7 +629,7 @@ class FrontEndApp(object):
             if not self.ALL_DIGITS.match(self.proxy_default_timestamp):
                 try:
                     self.proxy_default_timestamp = iso_date_to_timestamp(self.proxy_default_timestamp)
-                except:
+                except Exception:
                     raise Exception('Invalid Proxy Timestamp: Must Be All-Digit Timestamp or ISO Date Format')
 
         self.proxy_coll = proxy_coll
@@ -653,7 +713,7 @@ class MetadataCache(object):
         try:
             mtime = os.path.getmtime(path)
             obj = self.cache.get(path)
-        except:
+        except Exception:
             return {}
 
         if not obj:
@@ -695,5 +755,3 @@ class MetadataCache(object):
 if __name__ == "__main__":
     app_server = FrontEndApp.create_app(port=8080)
     app_server.join()
-
-

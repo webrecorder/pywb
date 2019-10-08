@@ -7,6 +7,10 @@ VARY = 'Vary'
 LINK_FORMAT = 'application/link-format'
 
 class MementoMixin(object):
+    def _timemap_get(self, url, fmod=True, **kwargs):
+        app = self.testapp if fmod else self.testapp_non_frame
+        return app.get(url, extra_environ={'REQUEST_URI': url}, **kwargs)
+
     def get_links(self, resp):
         return list(map(lambda x: x.strip(), re.split(', (?![0-9])', resp.headers[LINK])))
 

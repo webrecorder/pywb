@@ -19,6 +19,7 @@ from pywb import DEFAULT_CONFIG
 
 from six.moves import input
 
+
 #=============================================================================
 # to allow testing by mocking get_input
 
@@ -65,6 +66,8 @@ directory structure expected by pywb
         self.indexes_dir = self._get_dir('index_paths')
         self.static_dir = self._get_dir('static_path')
         self.templates_dir = self._get_dir('templates_dir')
+
+        self.acl_dir = self._get_dir('acl_paths')
 
     def list_colls(self):
         print('Collections:')
@@ -426,6 +429,17 @@ Create manage file based web archive collections
     migrate.add_argument('path', default='./', nargs='?')
     migrate.add_argument('-f', '--force', action='store_true')
     migrate.set_defaults(func=do_migrate)
+
+    # ACL
+    from pywb.manager.aclmanager import ACLManager
+    def do_acl(r):
+        acl = ACLManager(r)
+        acl.process(r)
+
+    acl_help = 'Configure Access Control Lists (ACL) for a collection'
+    acl = subparsers.add_parser('acl', help=acl_help)
+    ACLManager.init_parser(acl)
+    acl.set_defaults(func=do_acl)
 
     # Parse
     r = parser.parse_args(args=args)

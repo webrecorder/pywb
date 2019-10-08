@@ -12,6 +12,9 @@ class EchoParamsSource(BaseIndexSource):
         if params.get('matchType', 'exact') == 'exact':
             return iter([])
 
+        assert params.get('is_fuzzy') == '1'
+        assert params.get('limit') == '100'
+
         cdx = {'urlkey': canonicalize(params.get('cdx_url')),
                'mime': params.get('mime'),
                'filter': params.get('filter'),

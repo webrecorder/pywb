@@ -341,14 +341,14 @@ class TestManagedColls(CollsDirMixin, BaseConfigTest):
 
         with open(filename, 'r+b') as fh:
             buf = fh.read()
-            buf = buf.replace(b'</html>', b'Custom Test Homepage</html>')
+            buf = buf.replace(b'Pywb Wayback Machine', b'Custom Test Homepage')
             fh.seek(0)
             fh.write(buf)
 
         resp = self.testapp.get('/')
         resp.charset = 'utf-8'
         assert resp.content_type == 'text/html'
-        assert 'Custom Test Homepage</html>' in resp.text, resp.text
+        assert 'Custom Test Homepage' in resp.text, resp.text
 
     @patch('pywb.manager.manager.get_input', lambda x: 'y')
     def test_add_template_input_yes(self):

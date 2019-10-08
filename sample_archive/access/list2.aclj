@@ -1,0 +1,3 @@
+org,httpbin)/ - {"access": "allow"}
+com,example)/ - {"access": "allow"}
+bo,example)/ - {"access": "exclude"}

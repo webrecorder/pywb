@@ -1,3 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Download HTTPS Certificate For PyWb Web Archive Replay{% endblock %}
+
+{% block body %}
+
 <h2>HTTPS Certificate For PyWb Web Archive Replay</h2>
 {% if not available %}
 <p>Sorry, HTTPS support is not configured for this proxy. However, the proxy should work in HTTP mode.</p>
@@ -11,3 +17,4 @@
 <p>Download for Windows platforms (except if using Firefox. For Firefox, use the above download, even on Windows):</p>
 <p><b><a href="{{ p12_path }}">Download Certificate (Window Only)</a></b></p>
 {% endif %}
+{% endblock %}

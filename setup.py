@@ -18,12 +18,14 @@ def get_ldecription():
 
 class PyTest(TestCommand):
     user_options = []
+
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_suite = ' '
 
     def run_tests(self):
-        from gevent.monkey import patch_all; patch_all()
+        from gevent.monkey import patch_all
+        patch_all()
 
         import pytest
         import os
@@ -36,7 +38,6 @@ class PyTest(TestCommand):
         sys.exit(errcode)
 
 
-
 def get_git_short_hash():
     import subprocess
     try:
@@ -45,17 +46,17 @@ def get_git_short_hash():
             hash_id = hash_id.decode('utf-8')
 
         return hash_id
-    except:
+    except Exception:
         return ''
+
 
 def generate_git_hash_py(pkg, filename='git_hash.py'):
     try:
         git_hash = get_git_short_hash()
         with open(os.path.join(pkg, filename), 'wt') as fh:
             fh.write('git_hash = "{0}"\n'.format(git_hash))
-    except:
+    except Exception:
         pass
-
 
 
 def load_requirements(filename):
@@ -66,6 +67,7 @@ def load_requirements(filename):
     else:
         requirements.append("pyAMF")
     return requirements
+
 
 def get_package_data():
     pkgs = ['static/*.*',
@@ -79,9 +81,7 @@ def get_package_data():
     return pkgs
 
 
-
 generate_git_hash_py('pywb')
-
 
 setup(
     name='pywb',
@@ -96,7 +96,7 @@ setup(
     zip_safe=True,
     package_data={
         'pywb': get_package_data(),
-        },
+    },
     data_files=[
         ('sample_archive/cdx', glob.glob('sample_archive/cdx/*')),
         ('sample_archive/cdxj', glob.glob('sample_archive/cdxj/*')),
@@ -104,8 +104,8 @@ setup(
         ('sample_archive/zipcdx', glob.glob('sample_archive/zipcdx/*')),
         ('sample_archive/warcs', glob.glob('sample_archive/warcs/*')),
         ('sample_archive/text_content',
-            glob.glob('sample_archive/text_content/*')),
-        ],
+         glob.glob('sample_archive/text_content/*')),
+    ],
     install_requires=load_requirements('requirements.txt'),
     tests_require=[
         'pytest',
@@ -116,8 +116,9 @@ setup(
         'urllib3',
         'werkzeug',
         'httpbin==0.5.0',
-        'ujson'
-       ],
+        'ujson',
+        'lxml'
+    ],
     cmdclass={'test': PyTest},
     test_suite='',
     entry_points="""

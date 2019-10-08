@@ -11,9 +11,6 @@ class TestMemento(MementoMixin, BaseConfigTest):
     def setup_class(cls):
         super(TestMemento, cls).setup_class('config_test.yaml')
 
-    def _timemap_get(self, url, **kwargs):
-        return self.testapp.get(url, extra_environ={'REQUEST_URI': url}, **kwargs)
-
     def _assert_memento(self, resp, url, ts, fmod, dt=''):
         dt = dt or timestamp_to_http_date(ts)
 
@@ -33,7 +30,7 @@ class TestMemento(MementoMixin, BaseConfigTest):
         assert resp.headers['Content-Location'] in memento_link
 
         # timegate link
-        assert self.make_timegate_link(url, fmod) in links
+        assert self.make_timegate_link(url, '') in links
 
         # timemap link
         assert self.make_timemap_link(url) in links
@@ -60,7 +57,7 @@ class TestMemento(MementoMixin, BaseConfigTest):
         assert self.make_memento_link(url, '20140127171238', dt, 'mp_', include_coll=False) in links
 
         #timegate link
-        assert self.make_timegate_link(url, 'mp_') in links
+        assert self.make_timegate_link(url, '') in links
 
         # Body
         assert '"20140127171238"' in resp.text
@@ -119,12 +116,12 @@ class TestMemento(MementoMixin, BaseConfigTest):
 
         self._assert_memento(resp, 'http://www.iana.org/domains/example', '20140128051539', fmod)
 
-    def test_timemap(self):
+    def test_timemap(self, fmod):
         """
         Test application/link-format timemap
         """
 
-        resp = self._timemap_get('/pywb/timemap/link/http://example.com?example=1')
+        resp = self._timemap_get('/pywb/timemap/link/http://example.com?example=1', fmod)
         assert resp.status_int == 200
         assert resp.content_type == LINK_FORMAT
 
@@ -132,19 +129,20 @@ class TestMemento(MementoMixin, BaseConfigTest):
 
         exp = """\
 <http://localhost:80/pywb/timemap/link/http://example.com?example=1>; rel="self"; type="application/link-format"; from="Fri, 03 Jan 2014 03:03:21 GMT",
-<http://localhost:80/pywb/mp_/http://example.com?example=1>; rel="timegate",
+<http://localhost:80/pywb/http://example.com?example=1>; rel="timegate",
 <http://example.com?example=1>; rel="original",
-<http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT"; collection="pywb",
-<http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"; collection="pywb"
-"""
+<http://localhost:80/pywb/20140103030321{0}/http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT"; collection="pywb",
+<http://localhost:80/pywb/20140103030341{0}/http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"; collection="pywb"
+""".format(fmod)
+
         assert exp == resp.text
 
-    def test_timemap_cdxj(self):
+    def test_timemap_cdxj(self, fmod):
         """
         Test test/x-cdxj timemap
         """
 
-        resp = self._timemap_get('/pywb/timemap/cdxj/http://example.com?example=1')
+        resp = self._timemap_get('/pywb/timemap/cdxj/http://example.com?example=1', fmod)
         assert resp.status_int == 200
         assert resp.content_type == 'text/x-cdxj'
 
@@ -156,12 +154,12 @@ com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "
 """
         assert exp == resp.text
 
-    def test_timemap_2(self):
+    def test_timemap_2(self, fmod):
         """
         Test application/link-format timemap total count
         """
 
-        resp = self._timemap_get('/pywb/timemap/link/http://example.com')
+        resp = self._timemap_get('/pywb/timemap/link/http://example.com', fmod)
         assert resp.status_int == 200
         assert resp.content_type == LINK_FORMAT
 
@@ -184,5 +182,116 @@ com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "
         headers = {ACCEPT_DATETIME: 'Sun'}
         resp = self.testapp.get('/pywb/http://www.iana.org/_css/2013.1/screen.css', headers=headers, status=400)
         assert resp.status_int == 400
+
+
+# ============================================================================
+class TestMementoRedirectClassic(MementoMixin, BaseConfigTest):
+    @classmethod
+    def setup_class(cls):
+        super(TestMementoRedirectClassic, cls).setup_class('config_test_redirect_classic.yaml')
+
+    def test_memento_top_frame_timegate(self, fmod):
+        resp = self.testapp.get('/pywb/http://www.iana.org/')
+        assert resp.status_code == 307
+        assert resp.headers['Location'].endswith('/20140127171238/http://www.iana.org/')
+        assert resp.headers['Link'] != ''
+
+        # Memento Headers
+        assert VARY in resp.headers
+        assert MEMENTO_DATETIME not in resp.headers
+
+        # memento link
+        dt = 'Mon, 27 Jan 2014 17:12:38 GMT'
+        url = 'http://www.iana.org/'
+
+        links = self.get_links(resp)
+
+        assert self.make_memento_link(url, '20140127171238', dt, 'mp_', include_coll=False) in links
+
+        #timegate link
+        assert self.make_timegate_link(url, '') in links
+
+
+        resp = resp.follow()
+
+        # Body
+        assert '"20140127171238"' in resp.text
+        assert '"http://www.iana.org/"' in resp.text, resp.text
+
+    def test_memento_top_frame_timegate_accept_dt(self, fmod):
+        headers = {'Accept-Datetime':  'Sun, 26 Jan 2014 20:06:24 GMT'}
+        resp = self.testapp.get('/pywb/http://www.iana.org/', headers=headers)
+        assert resp.status_code == 307
+        assert resp.headers['Location'].endswith('/20140126200624/http://www.iana.org/')
+        assert resp.headers['Link'] != ''
+
+        # Memento Headers
+        assert VARY in resp.headers
+        assert MEMENTO_DATETIME not in resp.headers
+
+        # memento link
+        dt = 'Sun, 26 Jan 2014 20:06:24 GMT'
+        url = 'http://www.iana.org/'
+
+        links = self.get_links(resp)
+
+        assert self.make_memento_link(url, '20140126200624', dt, 'mp_', include_coll=False) in links
+
+        #timegate link
+        assert self.make_timegate_link(url, '') in links
+
+
+        resp = resp.follow()
+
+        # Body
+        assert '"20140126200624"' in resp.text
+        assert '"http://www.iana.org/"' in resp.text, resp.text
+
+    def test_timemap(self, fmod):
+        """
+        Test application/link-format timemap
+        """
+
+        resp = self._timemap_get('/pywb/timemap/link/http://example.com?example=1', fmod)
+        assert resp.status_int == 200
+        assert resp.content_type == LINK_FORMAT
+
+        resp.charset = 'utf-8'
+
+        exp = """\
+<http://localhost:80/pywb/timemap/link/http://example.com?example=1>; rel="self"; type="application/link-format"; from="Fri, 03 Jan 2014 03:03:21 GMT",
+<http://localhost:80/pywb/http://example.com?example=1>; rel="timegate",
+<http://example.com?example=1>; rel="original",
+<http://localhost:80/pywb/20140103030321{0}/http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:21 GMT"; collection="pywb",
+<http://localhost:80/pywb/20140103030341{0}/http://example.com?example=1>; rel="memento"; datetime="Fri, 03 Jan 2014 03:03:41 GMT"; collection="pywb"
+""".format(fmod)
+
+        assert exp == resp.text
+
+    def test_memento_not_time_gate(self, fmod):
+        headers = {'Accept-Datetime':  'Sun, 26 Jan 2014 20:06:24 GMT'}
+        resp = self.testapp.get('/pywb/2/http://www.iana.org/', headers=headers)
+        assert resp.status_code == 200
+
+        assert VARY not in resp.headers
+        assert MEMENTO_DATETIME in resp.headers
+
+    def test_timegate_error_not_found(self):
+        resp = self.testapp.get('/pywb/http://example.com/x-not-found', status=404)
+        assert resp.status_code == 404
+
+        # No Memento Headers
+        assert VARY not in resp.headers
+        assert MEMENTO_DATETIME not in resp.headers
+        assert 'Link' not in resp.headers
+
+    def test_timemap_error_not_found(self):
+        resp = self.testapp.get('/pywb/timemap/link/http://example.com/x-not-found', status=404)
+        assert resp.status_code == 404
+
+        # No Memento Headers
+        assert VARY not in resp.headers
+        assert MEMENTO_DATETIME not in resp.headers
+        assert 'Link' not in resp.headers
 
 

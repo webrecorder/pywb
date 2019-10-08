@@ -23,6 +23,9 @@ org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db tex
 >>> print_binsearch_results('org,iana)/time-zones', iter_exact)
 org,iana)/time-zones 20140126200737 http://www.iana.org/time-zones text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
 
+>>> print_binsearch_results_range('org,iana)/time-zones', 'org,iana)/time-zones!', iter_range)
+org,iana)/time-zones 20140126200737 http://www.iana.org/time-zones text/html 200 4Z27MYWOSXY2XDRAJRW7WRMT56LXDD4R - - 2449 569675 iana.warc.gz
+
 # Exact search -- no matches
 >>> print_binsearch_results('org,iaana)/', iter_exact)
 >>> print_binsearch_results('org,ibna)/', iter_exact)
@@ -74,6 +77,7 @@ org,iana)/time-zones 20140126200737 http://www.iana.org/time-zones text/html 200
 #=================================================================
 import os
 from pywb.utils.binsearch import iter_prefix, iter_exact, iter_range
+from pywb.utils.merge import merge
 
 from pywb import get_test_dir
 
@@ -89,6 +93,22 @@ def print_binsearch_results_range(key, end_key, iter_func, prev_size=0):
     with open(test_cdx_dir + 'iana.cdx', 'rb') as cdx:
         for line in iter_func(cdx, key.encode('utf-8'), end_key.encode('utf-8'), prev_size=prev_size):
             print(line.decode('utf-8'))
+
+
+
+def test_rev_merge():
+    with open(test_cdx_dir + 'iana.cdx', 'rb') as cdx:
+        lines1 = cdx.readlines()
+
+    with open(test_cdx_dir + 'dupes.cdx', 'rb') as cdx:
+        lines2 = cdx.readlines()
+
+
+    # check reverse merge: verify merging of lists, than reversing
+    # eqauls merging with reverse=True of reversed lists
+    assert (list(reversed(list(merge(lines1, lines2)))) ==
+            list(merge(reversed(lines1), reversed(lines2), reverse=True)))
+
 
 
 if __name__ == "__main__":

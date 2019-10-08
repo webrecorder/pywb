@@ -1,8 +1,4 @@
-import logging
-import re
-
-import redis
-import requests
+from six.moves.urllib.parse import quote_plus
 from warcio.timeutils import PAD_14_DOWN, http_date_to_timestamp, pad_timestamp, timestamp_now, timestamp_to_http_date
 
 from pywb.utils.binsearch import iter_range
@@ -10,9 +6,22 @@ from pywb.utils.canonicalize import canonicalize
 from pywb.utils.format import res_template
 from pywb.utils.io import no_except_close
 from pywb.utils.memento import MementoUtils
-from pywb.utils.wbexception import NotFoundException
+from pywb.utils.wbexception import BadRequestException, NotFoundException
 from pywb.warcserver.http import DefaultAdapters
 from pywb.warcserver.index.cdxobject import CDXObject
+from pywb.warcserver.index.cdxops import cdx_sort_closest
+
+try:
+    from lxml import etree
+except:
+    import xml.etree.ElementTree as etree
+
+import redis
+
+import requests
+
+import re
+import logging
 
 
 #=============================================================================
@@ -43,24 +52,30 @@ class BaseIndexSource(object):
 class FileIndexSource(BaseIndexSource):
     CDX_EXT = ('.cdx', '.cdxj')
 
-    def __init__(self, filename):
+    def __init__(self, filename, config=None):
         self.filename_template = filename
+
+    def _do_open(self, filename):
+        try:
+            return open(filename, 'rb')
+        except IOError:
+            raise NotFoundException(filename)
 
     def load_index(self, params):
         filename = res_template(self.filename_template, params)
 
-        try:
-            fh = open(filename, 'rb')
-        except IOError:
-            raise NotFoundException(filename)
+        fh = self._do_open(filename)
 
-        def do_load(fh):
+        def do_iter():
             with fh:
-                gen = iter_range(fh, params['key'], params['end_key'])
-                for line in gen:
-                    yield CDXObject(line)
+                for obj in self._do_iter(fh, params):
+                    yield obj
 
-        return do_load(fh)
+        return do_iter()
+
+    def _do_iter(self, fh, params):
+        for line in iter_range(fh, params['key'], params['end_key']):
+            yield CDXObject(line)
 
     def __repr__(self):
         return '{0}(file://{1})'.format(self.__class__.__name__,
@@ -190,7 +205,152 @@ class RemoteIndexSource(BaseIndexSource):
         return cls(config['api_url'], config['replay_url'])
 
 
-#=============================================================================
+# =============================================================================
+class XmlQueryIndexSource(BaseIndexSource):
+    """An index source class for XML files"""
+
+    EXACT_QUERY = 'type:urlquery url:'  # type: str
+    PREFIX_QUERY = 'type:prefixquery url:'  # type: str
+
+    def __init__(self, query_api_url):
+        """Initialize the XmlQueryIndexSource instance
+
+        :param str query_api_url: The query api URL
+        """
+        self.query_api_url = query_api_url  # type: str
+        self.session = requests.session()  # type: requests.Session
+
+    def load_index(self, params):
+        """Loads the xml query index based on the supplied params
+
+        :param dict[str, str] params: The query params
+        :return: A list or generator of cdx objects
+        :raises NotFoundException: If the query url is not found
+        or the results of the query returns no cdx entries
+        :raises BadRequestException: If the match type is not exact or prefix
+        """
+        closest = params.get('closest')
+
+        url = params.get('url', '')
+
+        matchType = params.get('matchType', 'exact')
+
+        if matchType == 'exact':
+            query = self.EXACT_QUERY
+        elif matchType == 'prefix':
+            query = self.PREFIX_QUERY
+        else:
+            raise BadRequestException('matchType={0} is not supported'.format(matchType=matchType))
+
+        try:
+            # OpenSearch API requires double-escaping
+            # TODO: add option to not double escape if needed
+            query_url = self.query_api_url + '?q=' + quote_plus(query + quote_plus(url))
+            self.logger.debug("Running query: %s" % query_url)
+            response = self.session.get(query_url)
+            response.raise_for_status()
+
+            results = etree.fromstring(response.content)
+
+            items = results.find('results')
+
+        except Exception:
+            if self.logger.getEffectiveLevel() == logging.DEBUG:
+                import traceback
+                traceback.print_exc()
+
+            raise NotFoundException('url {0} not found'.format(url))
+
+        if not items:
+            raise NotFoundException('url {0} not found'.format(url))
+
+        items = items.findall('result')
+
+        if matchType == 'exact':
+            cdx_iter = [self.convert_to_cdx(item) for item in items]
+            if closest:
+                cdx_iter = cdx_sort_closest(closest, cdx_iter, limit=10000)
+
+        else:
+            cdx_iter = self.prefix_query_iter(items)
+
+        return cdx_iter
+
+    def prefix_query_iter(self, items):
+        """Returns an iterator yielding the results of performing a prefix query
+
+        :param items: The xml entry elements representing an query
+        :return: An iterator yielding the results of the query
+        """
+        for item in items:
+            url = self.gettext(item, 'originalurl')
+            if not url:
+                continue
+
+            cdx_iter = self.load_index({'url': url})
+            for cdx in cdx_iter:
+                yield cdx
+
+    def convert_to_cdx(self, item):
+        """Converts the etree element to an CDX object
+
+        :param item: The etree element to be converted
+        :return: The CDXObject representing the supplied etree element object
+        :rtype: CDXObject
+        """
+        cdx = CDXObject()
+        cdx['urlkey'] = self.gettext(item, 'urlkey')
+        cdx['timestamp'] = self.gettext(item, 'capturedate')[:14]
+        cdx['url'] = self.gettext(item, 'url')
+        cdx['mime'] = self.gettext(item, 'mimetype')
+        cdx['status'] = self.gettext(item, 'httpresponsecode')
+        cdx['digest'] = self.gettext(item, 'digest')
+        cdx['offset'] = self.gettext(item, 'compressedoffset')
+        cdx['filename'] = self.gettext(item, 'file')
+        return cdx
+
+    def gettext(self, item, name):
+        """Returns the value of the supplied name
+
+        :param item: The etree element to be converted
+        :param name: The name of the field to get its value for
+        :return: The value of the field
+        :rtype: str
+        """
+        elem = item.find(name)
+        if elem is not None:
+            return elem.text
+        else:
+            return ''
+
+    @classmethod
+    def init_from_string(cls, value):
+        """Creates and initializes a new instance of XmlQueryIndexSource
+        IFF the supplied value starts with xmlquery+
+
+        :param str value: The string by which to initialize the XmlQueryIndexSource
+        :return: The initialized XmlQueryIndexSource or None
+        :rtype: XmlQueryIndexSource|None
+        """
+        if value.startswith('xmlquery+'):
+            return cls(value[9:])
+
+    @classmethod
+    def init_from_config(cls, config):
+        """Creates and initializes a new instance of XmlQueryIndexSource
+        IFF the supplied dictionary contains the type key equal to xmlquery
+
+        :param dict[str, str] config:
+        :return: The initialized XmlQueryIndexSource or None
+        :rtype: XmlQueryIndexSource|None
+        """
+        if config['type'] != 'xmlquery':
+            return
+
+        return cls(config['api_url'])
+
+
+# =============================================================================
 class LiveIndexSource(BaseIndexSource):
     def __init__(self):
         self._init_sesh(DefaultAdapters.live_adapter)
@@ -435,6 +595,7 @@ class MementoIndexSource(BaseIndexSource):
                                 timeout=params.get('_timeout'))
 
             res.raise_for_status()
+            assert(res.text)
 
         except Exception as e:
             no_except_close(res)

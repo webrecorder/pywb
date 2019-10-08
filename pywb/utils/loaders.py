@@ -11,10 +11,13 @@ import requests
 import yaml
 
 import six
-from six.moves.urllib.parse import unquote_plus, urlsplit
+from six.moves.urllib.parse import unquote_plus, urlsplit, urlencode
 
 import time
 import pkgutil
+import base64
+import cgi
+import re
 
 from io import open, BytesIO
 from warcio.limitreader import LimitReader
@@ -30,7 +33,26 @@ except ImportError:  # pragma: no cover
     s3_avail = False
 
 
-# =================================================================
+# ============================================================================
+def init_yaml_env_vars():
+    """Initializes the yaml parser to be able to set
+    the value of fields from environment variables
+
+    :rtype: None
+    """
+    env_rx = re.compile(r'\$\{[^}]+\}')
+
+    yaml.add_implicit_resolver('!envvar', env_rx)
+
+    def envvar_constructor(loader, node):
+        value = loader.construct_scalar(node)
+        value = os.path.expandvars(value)
+        return value
+
+    yaml.add_constructor('!envvar', envvar_constructor)
+
+
+# ============================================================================
 def load_py_name(string):
     import importlib
 
@@ -225,6 +247,7 @@ class BlockLoader(BaseLoader):
         BlockLoader.loaders['s3'] = S3Loader
         BlockLoader.loaders['file'] = LocalFileLoader
         BlockLoader.loaders['pkg'] = PackageLoader
+        BlockLoader.loaders['webhdfs'] = WebHDFSLoader
 
     @staticmethod
     def set_profile_loader(src):
@@ -402,6 +425,43 @@ class S3Loader(BaseLoader):
 
 
 # =================================================================
+class WebHDFSLoader(HttpLoader):
+    """Loader class specifically for loading webhdfs content"""
+
+    HTTP_URL = 'http://{host}/webhdfs/v1{path}?'
+
+    def load(self, url, offset, length):
+        """Loads the supplied web hdfs content
+
+        :param str url: The URL to the web hdfs content to be loaded
+        :param int|float|double offset: The offset of the content to be loaded
+        :param int|float|double length: The length of the content to be loaded
+        :return: The raw response content
+        """
+        parts = urlsplit(url)
+
+        http_url = self.HTTP_URL.format(host=parts.netloc,
+                                        path=parts.path)
+
+        params = {'op': 'OPEN',
+                  'offset': str(offset)
+                 }
+
+        if length > 0:
+            params['length'] = str(length)
+
+        if os.environ.get('WEBHDFS_USER'):
+            params['user.name'] = os.environ.get('WEBHDFS_USER')
+
+        if os.environ.get('WEBHDFS_TOKEN'):
+            params['delegation'] = os.environ.get('WEBHDFS_TOKEN')
+
+        http_url += urlencode(params)
+
+        return super(WebHDFSLoader, self).load(http_url, 0, -1)
+
+
+# =================================================================
 # Signed Cookie-Maker
 # =================================================================
 
@@ -439,3 +499,5 @@ class HMACCookieMaker(object):
 
 # ============================================================================
 BlockLoader.init_default_loaders()
+
+init_yaml_env_vars()

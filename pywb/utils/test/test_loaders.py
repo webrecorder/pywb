@@ -80,10 +80,16 @@ import six
 from six import StringIO
 from io import BytesIO
 import requests
+import yaml
+from yaml import Loader
 
 from pywb.utils.loaders import BlockLoader, HMACCookieMaker, to_file_url
 from pywb.utils.loaders import extract_client_cookie
 from pywb.utils.loaders import read_last_line
+
+from pywb.utils.canonicalize import canonicalize
+
+from mock import patch
 
 from warcio.bufferedreaders import DecompressingBufferedReader
 
@@ -117,6 +123,37 @@ def test_s3_read_2():
     reader = DecompressingBufferedReader(BytesIO(buff))
     assert reader.readline() == b'<!DOCTYPE html>\n'
 
+def mock_load(expected):
+    def mock(self, url, offset, length):
+        assert canonicalize(url) == canonicalize(expected)
+        assert offset == 0
+        assert length == -1
+        return None
+
+    return mock
+
+def test_mock_webhdfs_load_1():
+    expected = 'http://remote-host:1234/webhdfs/v1/some/file.warc.gz?op=OPEN&offset=10&length=50'
+    with patch('pywb.utils.loaders.HttpLoader.load', mock_load(expected)):
+        res = BlockLoader().load('webhdfs://remote-host:1234/some/file.warc.gz', 10, 50)
+
+def test_mock_webhdfs_load_2():
+    expected = 'http://remote-host/webhdfs/v1/some/file.warc.gz?op=OPEN&offset=10'
+    with patch('pywb.utils.loaders.HttpLoader.load', mock_load(expected)):
+        res = BlockLoader().load('webhdfs://remote-host/some/file.warc.gz', 10, -1)
+
+def test_mock_webhdfs_load_3_username():
+    os.environ['WEBHDFS_USER'] = 'someuser'
+    expected = 'http://remote-host/webhdfs/v1/some/file.warc.gz?op=OPEN&offset=10&user.name=someuser'
+    with patch('pywb.utils.loaders.HttpLoader.load', mock_load(expected)):
+        res = BlockLoader().load('webhdfs://remote-host/some/file.warc.gz', 10, -1)
+
+def test_mock_webhdfs_load_4_token():
+    os.environ['WEBHDFS_USER'] = ''
+    os.environ['WEBHDFS_TOKEN'] = 'ATOKEN'
+    expected = 'http://remote-host/webhdfs/v1/some/file.warc.gz?op=OPEN&offset=10&delegation=ATOKEN'
+    with patch('pywb.utils.loaders.HttpLoader.load', mock_load(expected)):
+        res = BlockLoader().load('webhdfs://remote-host/some/file.warc.gz', 10, -1)
 
 
 # Error
@@ -132,6 +169,28 @@ def test_err_unknown_loader():
         BlockLoader().load('foo://example.com', 10).read()
 #IOError: No Loader for type: foo
 
+
+
+def test_yaml_resolve_env():
+    os.environ['PYWB_PATH'] = './test'
+    os.environ['PYWB_FOO'] = 'bar'
+
+    config = """\
+collection:
+    coll:
+        index: ${PYWB_PATH}/index
+        archive: ${PYWB_PATH}/archive/${PYWB_FOO}
+        other: ${PYWB_NOT}/archive/${PYWB_FOO}
+"""
+
+    config_data = yaml.load(config, Loader=Loader)
+
+    assert config_data['collection']['coll']['index'] == './test/index'
+    assert config_data['collection']['coll']['archive'] == './test/archive/bar'
+    assert config_data['collection']['coll']['other'] == '${PYWB_NOT}/archive/bar'
+
+    del os.environ['PYWB_PATH']
+    del os.environ['PYWB_FOO']
 
 def print_str(string):
     return string.decode('utf-8') if six.PY3 else string

@@ -1,28 +1,51 @@
-<html>
-<head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8;charset=utf-8">
-    <title>Pywb Query Results</title>
-    <!-- jquery and bootstrap dependencies query view -->
-    <link rel="stylesheet" href="{{ static_prefix }}/css/query.css">
-    <link rel="stylesheet" href="{{ static_prefix }}/css/bootstrap.min.css">
-    <link rel="stylesheet" href="{{ static_prefix }}/css/font-awesome.min.css">
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}
+{{ _('Search Results') }}
+{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ static_prefix }}/css/query.css">
+<script src="{{ static_prefix }}/query.js"></script>
+{% endblock %}
+
+
+{% block body %}
 <div class="container-fluid">
     <div class="row justify-content-center">
-        <h4 class="display-4 p-0">Pywb Query Results</h4>
+        <h4 class="display-4 p-0">{{ _('Search Results') }}</h4>
     </div>
 </div>
 <div class="container">
     <div class="row justify-content-center mt-1" id="display-query-type-info"></div>
 </div>
 <div class="container mt-3 q-display" id="captures"></div>
-<script src="{{ static_prefix }}/js/jquery-latest.min.js"></script>
-<script src="{{ static_prefix }}/js/bootstrap.min.js"></script>
-<script src="{{ static_prefix }}/query.js"></script>
 <script>
-  var renderCal = new RenderCalendar({ prefix: "{{ prefix }}", staticPrefix: "{{ static_prefix }}" });
+  var text = {
+      months: {
+       '01': "{{ _('January') }}",
+       '02': "{{ _('February') }}",
+       '03': "{{ _('March') }}",
+       '04': "{{ _('April') }}",
+       '05': "{{ _('May') }}",
+       '06': "{{ _('June') }}",
+       '07': "{{ _('July') }}",
+       '08': "{{ _('August') }}",
+       '09': "{{ _('September') }}",
+       '10': "{{ _('October') }}",
+       '11': "{{ _('November') }}",
+       '12': "{{ _('December') }}",
+      },
+      version: "{{ _('capture') }}",
+      versions: "{{ _('captures') }}",
+      result: "{{ _('result') }}",
+      results: "{{ _('results') }}",
+      viewAllCaptures: "{{ _('View All Captures') }}",
+      dateTime: "{{ _('Date Time: ') }}",
+    };
+
+  var renderCal = new RenderCalendar({ prefix: "{{ prefix }}", staticPrefix: "{{ static_prefix }}", text: text });
   renderCal.init();
 </script>
-</body>
-</html>
+{% endblock %}

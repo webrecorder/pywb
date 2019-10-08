@@ -1,0 +1,27 @@
+debug: true
+
+collections:
+    pywb:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        acl_paths: ./sample_archive/access/pywb.aclj
+
+        default_access: block
+
+    pywb-acl-list:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        acl_paths:
+            - ./sample_archive/access/pywb.aclj
+            - ./sample_archive/access/list2.aclj
+
+        default_access: block
+
+    pywb-acl-dir:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        acl_paths: ./sample_archive/access/
+
+        default_access: block
+
+

@@ -1,8 +1,6 @@
 build/
 dist/
 karma-tests/
-sample_archive/
-tests/
 tests_disabled/
 venv/
 collections/

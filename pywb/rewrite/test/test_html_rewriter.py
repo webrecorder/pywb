@@ -244,29 +244,29 @@ r"""
 <div style="background: url('abc.html')" onblah on-click="location = 'redirect.html'"></div>
 
 >>> parse('<div style="background: url(\'/other_path/abc.html\')" onblah onclick="window.location = \'redirect.html\'"></div>')
-<div style="background: url('/web/20131226101010/http://example.com/other_path/abc.html')" onblah onclick="window.WB_wombat_location = 'redirect.html'"></div>
+<div style="background: url('/web/20131226101010oe_/http://example.com/other_path/abc.html')" onblah onclick="window.WB_wombat_location = 'redirect.html'"></div>
 
 >>> parse('<i style="background-image: url(http://foo-.bar_.example.com/)"></i>')
-<i style="background-image: url(/web/20131226101010/http://foo-.bar_.example.com/)"></i>
+<i style="background-image: url(/web/20131226101010oe_/http://foo-.bar_.example.com/)"></i>
 
 >>> parse('<i style=\'background-image: url("http://foo.example.com/")\'></i>')
-<i style="background-image: url(&quot;/web/20131226101010/http://foo.example.com/&quot;)"></i>
+<i style="background-image: url(&quot;/web/20131226101010oe_/http://foo.example.com/&quot;)"></i>
 
 >>> parse('<i style=\'background-image: url(&quot;http://foo.example.com/&quot;)\'></i>')
-<i style="background-image: url(&quot;/web/20131226101010/http://foo.example.com/&quot;)"></i>
+<i style="background-image: url(&quot;/web/20131226101010oe_/http://foo.example.com/&quot;)"></i>
 
 >>> parse('<i style=\'background-image: url(&#x27;http://foo.example.com/&#x27;)\'></i>')
-<i style="background-image: url('/web/20131226101010/http://foo.example.com/')"></i>
+<i style="background-image: url('/web/20131226101010oe_/http://foo.example.com/')"></i>
 
 >>> parse("<i style='background-image: url(&apos;http://foo.example.com/&apos;)'></i>")
-<i style="background-image: url(&apos;/web/20131226101010/http://foo.example.com/&apos;)"></i>
+<i style="background-image: url(&apos;/web/20131226101010oe_/http://foo.example.com/&apos;)"></i>
 
 #>>> parse('<i style=\'background-image: url(&quot;http://исп/&quot;)\'></i>')
 <i style="background-image: url(&quot;/web/20131226101010/http://%D0%B8%D1%81%D0%BF/&quot;)"></i>
 
 # Style
 >>> parse('<style>@import "/styles.css" .a { font-face: url(\'../myfont.ttf\') }</style>')
-<style>@import "/web/20131226101010/http://example.com/styles.css" .a { font-face: url('/web/20131226101010/http://example.com/some/myfont.ttf') }</style>
+<style>@import "/web/20131226101010cs_/http://example.com/styles.css" .a { font-face: url('/web/20131226101010oe_/http://example.com/some/myfont.ttf') }</style>
 
 # Unterminated style tag, handle and auto-terminate
 >>> parse('<style>@import url(styles.css)')
