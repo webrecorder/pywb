@@ -285,6 +285,7 @@ class TestManagedColls(CollsDirMixin, BaseConfigTest):
             fh.write(b'<div>Custom Banner Here!</div>')
             fh.write(b'\n{{ metadata | tojson }}')
 
+    def test_add_custom_banner_replay(self, fmod):
         resp = self.get('/test/20140103030321/http://example.com/?example=1', fmod)
         assert '<div>Custom Banner Here!</div>' in resp.text
 
@@ -314,10 +315,10 @@ class TestManagedColls(CollsDirMixin, BaseConfigTest):
         assert 'overriden search page: ' in resp.text
         assert '"some":"value"' in resp.text
 
-    def test_framed_replay_metadata(self):
-        """ Test adding metadata in framed-replay template
+    def test_replay_banner_metadata(self, fmod):
+        """ Test adding metadata in replay banner (both framed and non-frame)
         """
-        resp = self.testapp.get('/test/20140103030321/http://example.com/?example=1')
+        resp = self.get('/test/20140103030321{0}/http://example.com/?example=1', fmod)
         assert '<div>Custom Banner Here!</div>' in resp.text
         assert '"some":"value"' in resp.text
 

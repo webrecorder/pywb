@@ -194,6 +194,11 @@ class FuzzyMatcher(object):
         check_query = False
         url_no_query, ext = self.get_ext(url)
 
+        # don't fuzzy match to 204
+        if cdx['status'] == '204':
+            if '__pywb_method=options' in cdx['urlkey']:
+                return False
+
         # check ext
         if ext and ext not in self.default_filters['not_exts']:
             check_query = True

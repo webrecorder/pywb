@@ -10,8 +10,6 @@ collections:
     pywb:
         index: ./sample_archive/cdx/
         archive_paths: ./sample_archive/warcs/
-        metadata:
-          custom: data
 
     # live collection
     live: $live
