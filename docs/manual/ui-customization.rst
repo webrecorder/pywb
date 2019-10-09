@@ -93,11 +93,11 @@ For example, if metadata file contains:
 
 Accessing ``{{ metadata.somedata }}`` will resolveto ``value``
 
-The metadata can also be added via commandline: ``wb-manager metadata myCollection --set somedata=value]
+The metadata can also be added via commandline: ``wb-manager metadata myCollection --set somedata=value]``
 
 
 
-The default collection UI template (search.html) currently lists all of the availablemetadata fields.
+The default collection UI template (search.html) currently lists all of the available metadata fields.
 
 
 Custom Outer Replay Frame
