@@ -835,7 +835,7 @@ class RewriterApp(object):
         pass
 
     def get_top_frame_params(self, wb_url, kwargs):
-        return None
+        return {'metadata': kwargs.get('metadata')}
 
     def handle_custom_response(self, environ, wb_url, full_prefix, host_prefix, kwargs):
         if kwargs.get('output'):

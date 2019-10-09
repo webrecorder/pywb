@@ -14,6 +14,18 @@ Subpackages
     pywb.utils
     pywb.warcserver
 
+Submodules
+----------
+
+pywb\.version module
+--------------------
+
+.. automodule:: pywb.version
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 Module contents
 ---------------
 

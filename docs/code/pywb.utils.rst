@@ -60,6 +60,14 @@ pywb\.utils\.memento module
     :undoc-members:
     :show-inheritance:
 
+pywb\.utils\.merge module
+-------------------------
+
+.. automodule:: pywb.utils.merge
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pywb\.utils\.wbexception module
 -------------------------------
 
