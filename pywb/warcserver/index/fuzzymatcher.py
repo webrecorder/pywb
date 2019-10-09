@@ -195,7 +195,7 @@ class FuzzyMatcher(object):
         url_no_query, ext = self.get_ext(url)
 
         # don't fuzzy match to 204
-        if cdx['status'] == '204':
+        if cdx.get('status') == '204':
             if '__pywb_method=options' in cdx['urlkey']:
                 return False
 
