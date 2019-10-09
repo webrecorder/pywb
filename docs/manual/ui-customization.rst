@@ -91,7 +91,7 @@ For example, if metadata file contains:
 
     somedata: value
 
-Accessing ``{{ metadata.somedata }}`` will resolveto ``value``
+Accessing ``{{ metadata.somedata }}`` will resolve to ``value``
 
 The metadata can also be added via commandline: ``wb-manager metadata myCollection --set somedata=value]``
 
