@@ -293,7 +293,7 @@ class FrontEndApp(object):
         """Retrieve the collection config, including metadata, associated with a collection
 
         :param str coll: The name of the collection to receive config info for
-        :return: The collections config. The 'metadata' dict contains optional user metadata
+        :return: The collections config
         :rtype: dict
         """
         coll_config = {'coll': coll,
