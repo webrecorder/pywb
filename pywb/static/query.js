@@ -212,7 +212,12 @@ RenderCalendar.prototype.makeCDXQueryURL = function() {
   if (this.queryInfo.rawSearch) {
     queryURL = this.cdxURL + this.queryInfo.rawSearch + '&output=json';
   } else {
-    queryURL = this.cdxURL + '?output=json&url=' + this.queryInfo.url;
+    queryURL =
+      this.cdxURL +
+      '?output=json&url=' +
+      // ensure that any query params in the search URL are not considered
+      // apart of the full query URL
+      encodeURIComponent(this.queryInfo.url);
   }
   var querySearchParams = this.queryInfo.searchParams;
   if (querySearchParams.present && querySearchParams.includeInURL) {
