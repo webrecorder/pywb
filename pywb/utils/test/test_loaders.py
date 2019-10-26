@@ -23,11 +23,11 @@ IOError: [Errno 2] No such file or directory: '_x_no_such_file_'
 'Example Domain'
 
 # range request
->>> print_str(BlockLoader().load('http://example.com', 1262).read())
+>>> print_str(BlockLoader().load('http://example.com', 1248).read())
 '</html>\n'
 
 # custom profile
->>> print_str(BlockLoader().load('local+http://example.com', 1262).read())
+>>> print_str(BlockLoader().load('local+http://example.com', 1248).read())
 '</html>\n'
 
 # unknown loader error

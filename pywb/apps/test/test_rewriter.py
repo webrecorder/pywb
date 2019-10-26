@@ -26,7 +26,7 @@ class TestRewriterApp(FakeRedisTests, BaseTestClass):
         resp = self.testapp.get('/live/mp_/http://example.com/')
         resp.charset = 'utf-8'
 
-        assert '"http://localhost:80/live/mp_/http://www.iana.org/domains/example"' in resp.text
+        assert '"http://localhost:80/live/mp_/https://www.iana.org/domains/example"' in resp.text
 
         assert '"http://example.com/"'
 
