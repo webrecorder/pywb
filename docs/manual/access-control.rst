@@ -29,13 +29,6 @@ Given these rules, a user would:
 * but would receive an 'access blocked' error message when viewing ``http://httpbin.org/`` (block)
 * would receive a 404 not found error when viewing ``http://httpbin.org/anything`` (exclude)
 
-Default .aclj files
-^^^^^^^^^^^^^^^^^^^
-
-A default set of access control files is provided in the ``./aclj directory``
-
-These are in use with the default ``config.yaml``
-
 
 Access Types: allow, block, exclude
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -51,46 +44,72 @@ with exclude, no trace of the resource is presented to the user.
 
 The use of ``allow`` is useful to provide access to more specific resources within a broader block/exclude rule.
 
-
-Managing Access Lists
+Access Error Messages
 ^^^^^^^^^^^^^^^^^^^^^
 
-The .aclj files need not ever be edited manually by the user.
+The special error code 451 is used to indicate that a resource has been blocked (access setting ``block``)
+
+The [error.html](https://github.com/webrecorder/pywb/blob/master/pywb/templates/error.html) template contains a special message for this access and can be customized further.
+
+By design, resources that are ``exclude``-ed simply appear as 404 not found and no special error is provided.
+
+
+Managing Access Lists via Command-Line
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The .aclj files need not ever be added or edited manually.
 
 The pywb ``wb-manager`` utility has been extended to provide tools for adding, removing and checking access control rules.
 
+The access rules are written to ``<collection>/acl/access-rules.acl`` for a given collection ``<collection>`` for automatic collections.
+
 For example, to add the first line to an ACL file ``access.aclj``, one could run::
 
-  wb-manager acl add ./access.aclj http://httpbin.org/anything/something exclude
+  wb-manager acl add <collection> http://httpbin.org/anything/something exclude
 
 
 The URL supplied can be a URL or a SURT prefix. If a SURT is supplied, it is used as is::
 
-  wb-manager acl add ./access.aclj com, allow
+  wb-manager acl add <collection> com, allow
 
+
+By default, access control rules apply to a prefix of a given URL or SURT.
+
+To have the rule apply only to the exact match, use::
+
+  wb-manager acl add <collection> http://httpbin.org/anything/something allow --exact-match
+
+Rules added with and without the ``--exact-match`` flag are considered distinct rules, and can be added
+and removed separately.
+
+With the above rules, ``http://httpbin.org/anything/something`` would be allowed, but
+``http://httpbin.org/anything/something/subpath`` would be excluded for any ``subpath``.
 
 To remove a rule, one can run::
 
-  wb-manager acl remove ./access.aclj http://httpbin.org/anything/something
-
+  wb-manager acl remove <collection> http://httpbin.org/anything/something
 
 To import rules in bulk, such as from an OpenWayback-style excludes.txt and mark them as ``exclude``::
 
-  wb-manager acl importtxt ./accessl.aclj ./excludes.txt exclude
+  wb-manager acl importtxt <collection> ./excludes.txt exclude
 
 
 See ``wb-manager acl -h`` for a list of additional commands such as for validating rules files and running a match against
 an existing rule set.
 
-Configuring Access Controls
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For manually configured collections, access controls can be specified explicitly using the ``acl_paths`` key:
+
+Access Controls for Custom Collections
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For manually configured collections, there are additional options for configuring access controls.
+The access control files can be specified explicitly using the ``acl_paths`` key and allow specifying multiple ACL files,
+and allowing sharing access control files between different collections.
 
 Single ACLJ::
 
   collections:
-       ukwa:
+       test:
             acl_paths: ./path/to/file.aclj
             default_access: block
 
@@ -99,7 +118,7 @@ Single ACLJ::
 Multiple ACLJ::
 
   collections:
-       ukwa:
+       test:
             acl_paths:
                  - ./path/to/allows.aclj
                  - ./path/to/blocks.aclj
@@ -115,23 +134,15 @@ When finding the best rule from multiple ``.aclj`` files, each file is binary se
 set merge-sorted to find the best match (very similar to the CDXJ index lookup).
 
 Note: It might make sense to separate ``allows.aclj`` and ``blocks.aclj`` into individual files for organizational reasons,
-but there is no difference for the system and no specific need to keep different rule types separate.
+but there is no specific need to keep more than one access control files.
 
 Default Access
 ^^^^^^^^^^^^^^
 
-An additional ``default_access`` setting can be added to specify the default rule if no other rules match.
-If omitted, this setting is ``default_access: allow``.
+An additional ``default_access`` setting can be added to specify the default rule if no other rules match for custom collections.
+If omitted, this setting is ``default_access: allow``, which is usually the desired default.
 
 Setting ``default_access: block`` and providing a list of ``allow`` rules provides a flexible way to allow access
 to only a limited set of resources, and block access to anything out of scope by default.
 
-Access Error Messages
-^^^^^^^^^^^^^^^^^^^^^
-
-The special error code 451 is used to indicate that a resource has been blocked (access setting ``block``)
-
-The [error.html](https://github.com/webrecorder/pywb/blob/master/pywb/templates/error.html) template contains a special message for this access and can be customized further.
-
-By design, resources that are ``exclude``-ed simply appear as 404 not found and no special error is provided.
 
