@@ -4,6 +4,14 @@ pywb\.manager package
 Submodules
 ----------
 
+pywb\.manager\.aclmanager module
+--------------------------------
+
+.. automodule:: pywb.manager.aclmanager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pywb\.manager\.autoindex module
 -------------------------------
 

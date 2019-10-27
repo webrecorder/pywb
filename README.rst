@@ -1,4 +1,4 @@
-Webrecorder pywb 2.3
+Webrecorder pywb 2.4
 ====================
 
 .. image:: https://travis-ci.org/webrecorder/pywb.svg?branch=master
@@ -41,6 +41,8 @@ The 2.x release included a major overhaul of pywb and introduces many new featur
 
 * Improved 'calendar' query UI, grouping results by year and month, and updated replay banner.
 
+* New with 2.4: An extensinble access control system.
+
 
 Please see the `full documentation <https://pywb.readthedocs.org>`_ for more detailed info on all these features.
 
@@ -66,12 +68,6 @@ Contributions & Bug Reports
 ---------------------------
 
 Users are encouraged to fork and contribute to this project to keep improving web archiving tools.
-
-A few key features are high on list of priorities, but have not yet been implemented, including:
-
-* Url Exclusion System
-
-* UI Improvements
 
 If you are interested in contributing, especially to any of these areas, please let us know!
 

@@ -105,6 +105,11 @@ When resolving a ``example.warc.gz``, pywb will then check (in order):
  * Then, ``http://remote-backup.example.com/collections/<coll name>/example.warc.gz`` (if first lookup unsuccessful)
 
 
+UI Customizations
+-----------------
+
+See :ref:`ui-customization` for more details on how to customize the UI.
+
 
 Special and Custom Collections
 ------------------------------

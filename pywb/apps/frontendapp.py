@@ -289,25 +289,22 @@ class FrontEndApp(object):
         except Exception:
             self.raise_not_found(environ, 'static_file_not_found', filepath)
 
-    def get_metadata(self, coll):
-        """Retrieve the metadata associated with a collection
+    def get_coll_config(self, coll):
+        """Retrieve the collection config, including metadata, associated with a collection
 
-        :param str coll: The name of the collection to receive metadata for
-        :return: The collections metadata if it exists
+        :param str coll: The name of the collection to receive config info for
+        :return: The collections config
         :rtype: dict
         """
-        # if coll == self.all_coll:
-        #    coll = '*'
-
-        metadata = {'coll': coll,
-                    'type': 'replay'}
+        coll_config = {'coll': coll,
+                       'type': 'replay'}
 
         if coll in self.warcserver.list_fixed_routes():
-            metadata.update(self.warcserver.get_coll_config(coll))
+            coll_config.update(self.warcserver.get_coll_config(coll))
         else:
-            metadata.update(self.metadata_cache.load(coll))
+            coll_config['metadata'] = self.metadata_cache.load(coll) or {}
 
-        return metadata
+        return coll_config
 
     def serve_coll_page(self, environ, coll='$root'):
         """Render and serve a collections search page (search.html).
@@ -322,7 +319,8 @@ class FrontEndApp(object):
 
         self.setup_paths(environ, coll)
 
-        metadata = self.get_metadata(coll)
+        coll_config = self.get_coll_config(coll)
+        metadata = coll_config.get('metadata')
 
         view = BaseInsertView(self.rewriterapp.jinja_env, 'search.html')
 
@@ -332,8 +330,9 @@ class FrontEndApp(object):
 
         content = view.render_to_string(environ,
                                         wb_prefix=wb_prefix,
-                                        metadata=metadata,
-                                        coll=coll)
+                                        coll=coll,
+                                        coll_config=coll_config,
+                                        metadata=metadata)
 
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
 
@@ -409,16 +408,16 @@ class FrontEndApp(object):
             if environ.get('QUERY_STRING'):
                 wb_url_str += '?' + environ.get('QUERY_STRING')
 
-        metadata = self.get_metadata(coll)
+        coll_config = self.get_coll_config(coll)
         if record:
-            metadata['type'] = 'record'
+            coll_config['type'] = 'record'
 
         if timemap_output:
-            metadata['output'] = timemap_output
+            coll_config['output'] = timemap_output
             # ensure that the timemap path information is not included
             wb_url_str = wb_url_str.replace('timemap/{0}/'.format(timemap_output), '')
 
-        return self.rewriterapp.render_content(wb_url_str, metadata, environ)
+        return self.rewriterapp.render_content(wb_url_str, coll_config, environ)
 
     def setup_paths(self, environ, coll, record=False):
         """Populates the WSGI environment dictionary with the path information necessary to perform a response for

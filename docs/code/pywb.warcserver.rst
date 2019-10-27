@@ -12,6 +12,22 @@ Subpackages
 Submodules
 ----------
 
+pywb\.warcserver\.access\_checker module
+----------------------------------------
+
+.. automodule:: pywb.warcserver.access_checker
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pywb\.warcserver\.amf module
+----------------------------
+
+.. automodule:: pywb.warcserver.amf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pywb\.warcserver\.basewarcserver module
 ---------------------------------------
 

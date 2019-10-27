@@ -100,6 +100,14 @@ pywb\.rewrite\.rewrite\_hls module
     :undoc-members:
     :show-inheritance:
 
+pywb\.rewrite\.rewrite\_js\_workers module
+------------------------------------------
+
+.. automodule:: pywb.rewrite.rewrite_js_workers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pywb\.rewrite\.rewriteinputreq module
 -------------------------------------
 

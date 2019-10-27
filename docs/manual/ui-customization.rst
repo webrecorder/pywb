@@ -1,34 +1,26 @@
-.. _configuring-pywb-ui:
+.. _ui-customizations:
 
 UI Customizations
 -----------------
 
 pywb supports UI customizations, either for an entire archive,
-or per-collection.
-
-Static Files
-^^^^^^^^^^^^
-
-The replay server will automatically support static files placed under the following directories:
-
-* Files under the root ``static`` directory can be accessed via ``http://my-archive.example.com/static/<filename>``
-
-* Files under the per-collection ``./collections/<coll name>/static`` directory can be accessed via ``http://my-archive.example.com/static/_/<coll name>/<filename>``
+or per-collection. Jinja2 templates are used for rendering all views,
+and static files can also be added as needed.
 
 Templates
 ^^^^^^^^^
 
-pywb users Jinja2 templates to render HTML to render the HTML for all aspects of the application.
+Default templates, listed below, are found in the ``./pywb/templates/`` directory.
 
-A version placed in the ``templates`` directory, either in the root or per collection, will override that template.
+Custom template files placed in the ``templates`` directory, either in the root or per collection, will override that template.
 
-To copy the default pywb template to the template directory run:
+To copy the default pywb template to the template directory using the cli tools, run:
 
 ``wb-manager template --add search_html``
 
-The following templates are available:
+The following page-level templates are available, corresponding to home page, collection page or search results:
 
- * ``home.html`` -- Home Page Template, used for ``http://my-archive.example.com/``
+ * ``index.html`` -- Home Page Template, used for ``http://my-archive.example.com/``
 
  * ``search.html`` -- Collection Template, used for each collection page ``http://my-archive.example.com/<coll name>/``
 
@@ -50,8 +42,8 @@ Replay and Banner templates:
  * ``banner.html`` -- The banner used for frameless replay. Can be set to blank to disable the banner.
 
 
-For those looking to customize the default template(s) when deploying pywb, the following templates located in the
-pywb/templates directory.
+To customize the default pywb UI across multiple pages, the following generic templates
+can also be overriden:
 
 * ``base.html`` -- The base template used for non-replay related pages.
 
@@ -73,6 +65,40 @@ The ``base.html`` template also provides five blocks that can be supplied by tem
 * ``body`` -- Block for adding the primary content to template
 
 * ``footer`` -- Block for adding content to the ``<body>`` after the ``body`` block, includes the ``footer.html`` template
+
+Static Files
+^^^^^^^^^^^^
+
+The pywb server will automatically support static files placed under the following directories:
+
+* Files under the root ``static`` directory can be accessed via ``http://my-archive.example.com/static/<filename>``
+
+* Files under the per-collection ``./collections/<coll name>/static`` directory can be accessed via ``http://my-archive.example.com/static/_/<coll name>/<filename>``
+
+
+Custom Metadata
+^^^^^^^^^^^^^^^
+
+It is possible to also add custom metadata that will be available in the Jinja2 template.
+
+For dynamic collections, any fields placed under ``<coll_name>/metadata.yaml`` filed can be accessed
+
+via the ``{{ metadata }}`` variable.
+
+For example, if metadata file contains:
+
+.. ex-block:: yaml
+
+    somedata: value
+
+Accessing ``{{ metadata.somedata }}`` will resolve to ``value``
+
+The metadata can also be added via commandline: ``wb-manager metadata myCollection --set somedata=value]``
+
+
+
+The default collection UI template (search.html) currently lists all of the available metadata fields.
+
 
 Custom Outer Replay Frame
 ^^^^^^^^^^^^^^^^^^^^^^^^^
