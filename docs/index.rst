@@ -16,6 +16,7 @@ A subset of features provides the basic functionality of a "Wayback Machine".
 
    manual/usage
    manual/configuring
+   manual/access-control
    manual/ui-customization
    manual/architecture
    manual/apis
