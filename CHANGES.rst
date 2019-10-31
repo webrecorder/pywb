@@ -1,3 +1,10 @@
+pywb 2.4.0 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Access Control System
+
+
+
 pywb 2.3.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
