@@ -110,8 +110,8 @@ When resolving a ``example.warc.gz``, pywb will then check (in order):
  * Then, ``http://remote-backup.example.com/collections/<coll name>/example.warc.gz`` (if first lookup unsuccessful)
 
 
-Access Control Directory
-^^^^^^^^^^^^^^^^^^^^^^^^
+Access Controls
+^^^^^^^^^^^^^^^
 
 With pywb 2.4, pywb includes an extensible :ref:`access-control` system.
 By default, the access control files are stored in ``acl`` directory of each collection.
