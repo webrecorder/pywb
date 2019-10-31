@@ -60,6 +60,11 @@ The default directory structure for a web archive is as follows::
             +-- indexes
             |     |
             |     +-- (CDXJ index files here)
+            |
+            |
+            +-- acl
+            |     |
+            |     +-- (.aclj access control files)
             | 
             +-- templates
             |     |
@@ -105,10 +110,18 @@ When resolving a ``example.warc.gz``, pywb will then check (in order):
  * Then, ``http://remote-backup.example.com/collections/<coll name>/example.warc.gz`` (if first lookup unsuccessful)
 
 
-UI Customizations
------------------
+Access Controls
+^^^^^^^^^^^^^^^
 
-See :ref:`ui-customization` for more details on how to customize the UI.
+With pywb 2.4, pywb includes an extensible :ref:`access-control` system.
+By default, the access control files are stored in ``acl`` directory of each collection.
+
+
+UI Customizations
+^^^^^^^^^^^^^^^^^
+
+The  ``templates`` directory supports custom Jinja templates to allow customizing the UI.
+See :ref:`ui-customizations` for more details on available options.
 
 
 Special and Custom Collections

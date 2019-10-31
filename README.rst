@@ -39,9 +39,11 @@ The 2.x release included a major overhaul of pywb and introduces many new featur
 
 * Standalone, modular `client-side rewriting system (wombat.js) <https://github.com/webrecorder/wombat>`_ to handle most modern web sites.
 
-* Improved 'calendar' query UI, grouping results by year and month, and updated replay banner.
+* Improved 'calendar' query UI with incremental loading, grouping results by year and month, and updated replay banner.
 
-* New with 2.4: An extensinble access control system.
+* New in 2.4: Extensible UI customizations system for modifying all aspects of the UI.
+
+* New in 2.4: Robust access control system for blocking or excluding URLs, by prefix or by exact match.
 
 
 Please see the `full documentation <https://pywb.readthedocs.org>`_ for more detailed info on all these features.

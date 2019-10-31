@@ -22,7 +22,11 @@ and introduces many new features, including:
 
 * Significantly improved :ref:`wombat` to handle most modern web sites.
 
-* Improved 'calendar' query UI, grouping results by year and month, and updated replay banner.
+* Improved 'calendar' query UI with incremental loading, grouping results by year and month, and updated replay banner.
+
+* New in 2.4: Extensible :ref:`ui-customizations` for modifying all aspects of the UI.
+
+* New in 2.4: Robust :ref:`access-control` system for blocking or excluding URLs, by prefix or by exact match.
 
 
 Getting Started
