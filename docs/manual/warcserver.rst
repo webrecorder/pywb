@@ -320,12 +320,12 @@ which does not use a YAML config
 
 .. code-block:: python
 
-  server = BaseWarcServer()
+  app = BaseWarcServer()
 
   # /live endpoint
   live_agg = SimpleAggregator({'live': LiveIndexSource()})
 
-  server.add_route('/live', DefaultResourceHandler(live_agg))
+  app.add_route('/live', DefaultResourceHandler(live_agg))
 
 
   # /memento endpoint
