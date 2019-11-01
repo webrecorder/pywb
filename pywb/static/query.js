@@ -291,7 +291,9 @@ RenderCalendar.prototype.makeCDXRequest = function() {
         var spinner = document.getElementById(
           renderCal.domStructureIds.updatesSpinner
         );
-        if (spinner) spinner.remove();
+        if (spinner && spinner.parentNode) {
+          spinner.parentNode.removeChild(spinner);
+        }
       }
     };
     queryWorker.postMessage({
@@ -330,7 +332,9 @@ RenderCalendar.prototype.makeCDXRequest = function() {
       var spinner = document.getElementById(
         renderCal.domStructureIds.updatesSpinner
       );
-      if (spinner) spinner.remove();
+      if (spinner && spinner.parentNode) {
+        spinner.parentNode.removeChild(spinner);
+      }
     }
   });
 };
@@ -545,24 +549,32 @@ RenderCalendar.prototype.renderDateCalPart = function(
   if (memoizedYMDT[timeInfo.year] == null) {
     // we have not seen this year month day before
     // create the year month day structure (occurs once per result year)
-    memoizedYMDT[timeInfo.year] = {
-      [timeInfo.month]: {
-        [timeInfo.day]: {
-          [timeInfo.time]: 1
-        }
-      }
-    };
+
+    var timeVal = {};
+    timeVal[timeInfo.time] = 1;
+
+    var dayVal = {};
+    dayVal[timeInfo.day] = timeVal;
+
+    var monthVal = {};
+    monthVal[timeInfo.month] = dayVal;
+
+    memoizedYMDT[timeInfo.year] = monthVal;
+
     this.addRegYearListItem(timeInfo, active);
     this.addRegYearMonthListItem(timeInfo, active);
     return this.addRegYearMonthDayListItem(cdxObj, timeInfo, 1, active);
   } else if (memoizedYMDT[timeInfo.year][timeInfo.month] == null) {
     // we have seen the year before but not the month and day
     // create the month day structure (occurs for every new month encountered for an existing year)
-    memoizedYMDT[timeInfo.year][timeInfo.month] = {
-      [timeInfo.day]: {
-        [timeInfo.time]: 1
-      }
-    };
+    var timeVal = {};
+    timeVal[timeInfo.time] = 1;
+
+    var dayVal = {};
+    dayVal[timeInfo.day] = timeVal;
+
+    memoizedYMDT[timeInfo.year][timeInfo.month] = dayVal;
+
     this.addRegYearMonthListItem(timeInfo, active);
     return this.addRegYearMonthDayListItem(cdxObj, timeInfo, 1, active);
   }
@@ -571,9 +583,10 @@ RenderCalendar.prototype.renderDateCalPart = function(
   var month = memoizedYMDT[timeInfo.year][timeInfo.month];
   if (month[timeInfo.day] == null) {
     // never seen this day (case 1)
-    month[timeInfo.day] = {
-      [timeInfo.time]: count
-    };
+    var timeVal = {};
+    timeVal[timeInfo.time] = count;
+
+    month[timeInfo.day] = timeVal;
   } else if (month[timeInfo.day][timeInfo.time] == null) {
     // we have seen this day before but not at this time (case 2)
     month[timeInfo.day][timeInfo.time] = count;
