@@ -391,7 +391,7 @@ RenderCalendar.prototype.createContainers = function() {
         // years column and initial display structure
         {
           tag: 'div',
-          className: 'col-2 pr-1 pl-1 h-100',
+          className: 'col-12 col-sm-2 pr-1 pl-1 h-100',
           child: {
             tag: 'div',
             className: 'list-group h-100 auto-overflow',
@@ -405,7 +405,7 @@ RenderCalendar.prototype.createContainers = function() {
         // months initial structure
         {
           tag: 'div',
-          className: 'col-2 pr-1 pl-1 h-100',
+          className: 'col-12 mt-2 col-sm-2 mt-sm-0 pr-1 pl-1 h-100',
           child: {
             tag: 'div',
             className: 'tab-content h-100',
@@ -418,7 +418,7 @@ RenderCalendar.prototype.createContainers = function() {
         // days initial structure
         {
           tag: 'div',
-          className: 'col-8 pl-1 h-100',
+          className: 'col-12 mt-3 mb-3 pr-1 mt-sm-0 mb-sm-0 pr-sm-0 col-sm-8 pl-1 h-100',
           child: {
             tag: 'div',
             className: 'tab-content h-100',
