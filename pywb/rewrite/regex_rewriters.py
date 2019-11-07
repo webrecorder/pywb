@@ -67,14 +67,12 @@ return (self._wb_wombat && self._wb_wombat.local_init && \
 self._wb_wombat.local_init(name)) || self[name]; }};\n\
 if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; return this; }} }}\n\
 {{\n'
-        local_check_this_fn = 'var {0} = function (thisObj) {{ \
-if (thisObj && thisObj._WB_wombat_obj_proxy) return thisObj._WB_wombat_obj_proxy; return thisObj; }};'
 
         local_init_func_name = '_____WB$wombat$assign$function_____'
 
-        local_var_line = 'let {0} = {1}("{0}");'
+        local_init_func = local_init_func.format(local_init_func_name)
 
-        local_check_this_func_name = '_____WB$wombat$check$this$function_____'
+        local_var_line = 'let {0} = {1}("{0}");'
 
         # we must use a function to perform the this check because most minfiers reduce the number of statements
         # by turning everything into one or more expressions. Our previous rewrite was an logical expression,
@@ -124,8 +122,7 @@ if (thisObj && thisObj._WB_wombat_obj_proxy) return thisObj._WB_wombat_obj_proxy
 
         super(JSWombatProxyRules, self).__init__(rules)
 
-        self.first_buff = local_check_this_fn.format(local_check_this_func_name) + local_init_func.format(
-            local_init_func_name) + local_declares + '\n\n'
+        self.first_buff = local_init_func + local_declares + '\n\n'
 
         self.last_buff = '\n\n}'
 
