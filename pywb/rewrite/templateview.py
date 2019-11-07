@@ -3,10 +3,12 @@ from warcio.timeutils import timestamp_now
 
 from pywb.utils.loaders import load
 
-from six.moves.urllib.parse import urlsplit
+from six.moves.urllib.parse import urlsplit, quote
 
-from jinja2 import Environment, TemplateNotFound
+from jinja2 import Environment, TemplateNotFound, contextfunction
 from jinja2 import FileSystemLoader, PackageLoader, ChoiceLoader
+
+from babel.support import Translations
 
 from webassets.ext.jinja2 import AssetsExtension
 from webassets.loaders import YAMLLoader
@@ -114,6 +116,90 @@ class JinjaEnv(object):
             loaders.append(PackageLoader(package))
 
         return loaders
+
+    def init_loc(self, locales_root_dir, locales, loc_map):
+        locales = locales or []
+
+        if locales_root_dir:
+            for loc in locales:
+                loc_map[loc] = Translations.load(locales_root_dir, [loc, 'en'])
+                #jinja_env.jinja_env.install_gettext_translations(translations)
+
+        def get_translate(context):
+            loc = context.get('env', {}).get('pywb_lang')
+            return loc_map.get(loc)
+
+        def override_func(jinja_env, name):
+            @contextfunction
+            def get_override(context, text):
+                translate = get_translate(context)
+                if not translate:
+                    return text
+
+                func = getattr(translate, name)
+                return func(text)
+
+            jinja_env.globals[name] = get_override
+
+        # standard gettext() translation function
+        override_func(self.jinja_env, 'gettext')
+
+        # single/plural form translation function
+        override_func(self.jinja_env, 'ngettext')
+
+        # Special _Q() function to return %-encoded text, necessary for use
+        # with text in banner
+        @contextfunction
+        def quote_gettext(context, text):
+            translate = get_translate(context)
+            if not translate:
+                return text
+
+            text = translate.gettext(text)
+            return quote(text, safe='/: ')
+
+        self.jinja_env.globals['locales'] = list(loc_map.keys())
+        self.jinja_env.globals['_Q'] = quote_gettext
+
+        @contextfunction
+        def switch_locale(context, locale):
+            environ = context.get('env')
+            curr_loc = environ.get('pywb_lang', '')
+
+            request_uri = environ.get('REQUEST_URI', environ.get('PATH_INFO'))
+
+            if curr_loc:
+                return request_uri.replace(curr_loc, locale, 1)
+
+            app_prefix = environ.get('pywb.app_prefix', '')
+
+            if app_prefix and request_uri.startswith(app_prefix):
+                request_uri = request_uri.replace(app_prefix, '')
+
+            return app_prefix + '/' + locale + request_uri
+
+        @contextfunction
+        def get_locale_prefixes(context):
+            environ = context.get('env')
+            locale_prefixes = {}
+
+            orig_prefix = environ.get('pywb.app_prefix', '')
+            coll = environ.get('SCRIPT_NAME', '')
+
+            if orig_prefix:
+                coll = coll[len(orig_prefix):]
+
+            curr_loc = environ.get('pywb_lang', '')
+            if curr_loc:
+                coll = coll[len(curr_loc) + 1:]
+
+            for locale in loc_map.keys():
+                locale_prefixes[locale] = orig_prefix + '/' + locale + coll + '/'
+
+            return locale_prefixes
+
+        self.jinja_env.globals['switch_locale'] = switch_locale
+        self.jinja_env.globals['get_locale_prefixes'] = get_locale_prefixes
 
     def template_filter(self, param=None):
         """Returns a decorator that adds the wrapped function to dictionary of template filters.
