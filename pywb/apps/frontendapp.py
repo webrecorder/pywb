@@ -92,6 +92,7 @@ class FrontEndApp(object):
         self.static_handler = StaticHandler(static_path)
 
         self.cdx_api_endpoint = config.get('cdx_api_endpoint', '/cdx')
+        self.query_limit = config.get('query_limit')
 
         upstream_paths = self.get_upstream_paths(self.warcserver_server.port)
 
@@ -354,6 +355,10 @@ class FrontEndApp(object):
         if environ.get('QUERY_STRING'):
             cdx_url += '&' if '?' in cdx_url else '?'
             cdx_url += environ.get('QUERY_STRING')
+
+        if self.query_limit:
+            cdx_url += '&' if '?' in cdx_url else '?'
+            cdx_url += 'limit=' + str(self.query_limit)
 
         try:
             res = requests.get(cdx_url, stream=True)

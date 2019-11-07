@@ -74,4 +74,8 @@ class TestRedirectClassic(BaseConfigTest):
         resp = self.get('/live/{0}http://example.com/?test=test', fmod_slash)
         assert resp.status_int == 200
 
+    def test_replay_limit_cdx(self):
+        resp = self.testapp.get('/pywb/cdx?url=http://www.iana.org/*&output=json')
+        assert resp.content_type == 'text/x-ndjson'
+        assert len(resp.text.rstrip().split('\n')) == 10
 
