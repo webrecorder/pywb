@@ -713,6 +713,9 @@ class RewriterApp(object):
         if 'memento_format' in kwargs:
             params['memento_format'] = kwargs['memento_format']
 
+        if 'limit' in kwargs:
+            params['limit'] = kwargs['limit']
+
         upstream_url = self.get_upstream_url(wb_url, kwargs, params)
         upstream_url = upstream_url.replace('/resource/postreq', '/index')
 

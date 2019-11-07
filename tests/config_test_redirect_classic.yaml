@@ -17,3 +17,5 @@ enable_memento: true
 enable_prefer: true
 
 debug: true
+
+query_limit: 10
