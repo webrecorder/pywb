@@ -35,7 +35,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
     this.last_state = {};
     this.state = null;
     this.title = '';
-    this.loadingId = 'bannerLoading';
+    this.bannerUrlSet = false;
     this.onMessage = this.onMessage.bind(this);
   }
 
@@ -64,7 +64,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
    * @returns {boolean}
    */
   DefaultBanner.prototype.stillIndicatesLoading = function() {
-    return document.getElementById(this.loadingId) != null;
+    return !this.bannerUrlSet;
   };
 
   /**
@@ -130,6 +130,21 @@ This file is part of pywb, https://github.com/webrecorder/pywb
   // Functions internal to the default banner
 
   /**
+   * @desc Navigate to different language, if available
+   */
+
+  DefaultBanner.prototype.changeLanguage = function(lang, evt) {
+    evt.preventDefault();
+    var path = window.location.href;
+    if (path.indexOf(window.banner_info.prefix) == 0) {
+      path = path.substring(window.banner_info.prefix.length);
+      if (window.banner_info.locale_prefixes && window.banner_info.locale_prefixes[lang]) {
+        window.location.pathname = window.banner_info.locale_prefixes[lang] + path;
+      }
+    }
+  }
+
+  /**
    * @desc Creates the underlying HTML elements comprising the banner
    * @param {string} bid - The id for the banner
    */
@@ -137,11 +152,64 @@ This file is part of pywb, https://github.com/webrecorder/pywb
     this.banner = document.createElement('wb_div', true);
     this.banner.setAttribute('id', bid);
     this.banner.setAttribute('lang', 'en');
-    this.captureInfo = document.createElement('span');
-    this.captureInfo.innerHTML =
-      '<span id="' + this.loadingId + '">Loading...</span>';
-    this.captureInfo.id = '_wb_capture_info';
+
+    if (window.banner_info.logoImg) {
+      var logo = document.createElement("a");
+      logo.setAttribute("href", "/" + (window.banner_info.locale ? window.banner_info.locale + "/" : ""));
+      logo.setAttribute("class", "_wb_linked_logo");
+
+      var logoContents = "";
+      logoContents += "<img src='" + window.banner_info.logoImg + "' alt='" + window.banner_info.logoAlt + "'>";
+      logoContents += "<img src='" + window.banner_info.logoImg + "' class='mobile' alt='" + window.banner_info.logoAlt + "'>";
+
+      logo.innerHTML = logoContents;
+      this.banner.appendChild(logo);
+    }
+
+    this.captureInfo = document.createElement("span");
+    this.captureInfo.setAttribute("id", "_wb_capture_info");
+    this.captureInfo.innerHTML = window.banner_info.loadingLabel;
     this.banner.appendChild(this.captureInfo);
+
+    var ancillaryLinks = document.createElement("div");
+    ancillaryLinks.setAttribute("id", "_wb_ancillary_links");
+
+    var calendarImg = window.banner_info.calendarImg || window.banner_info.staticPrefix + "/calendar.svg";
+
+    var calendarLink = document.createElement("a");
+    calendarLink.setAttribute("id", "calendarLink");
+    calendarLink.setAttribute("href", "#");
+    calendarLink.innerHTML = "<img src='" + calendarImg + "' alt='" + window.banner_info.calendarAlt + "'><span class='no-mobile'>&nbsp;" +window.banner_info.calendarLabel + "</span>";
+    ancillaryLinks.appendChild(calendarLink);
+    this.calendarLink = calendarLink;
+
+    if (typeof window.banner_info.locales !== "undefined" && window.banner_info.locales.length) {
+      var locales = window.banner_info.locales;
+      var languages = document.createElement("div");
+
+      var label = document.createElement("span");
+      label.setAttribute("class", "no-mobile");
+      label.appendChild(document.createTextNode(window.banner_info.choiceLabel + " "));
+      languages.appendChild(label);
+
+      for(var i = 0; i < locales.length; i++) {
+        var locale = locales[i];
+        var langLink = document.createElement("a");
+        langLink.setAttribute("href", "#");
+        langLink.addEventListener("click", this.changeLanguage.bind(this, locale));
+        langLink.appendChild(document.createTextNode(locale));
+
+        languages.appendChild(langLink);
+        if (i !== locales.length - 1) {
+            languages.appendChild(document.createTextNode(" / "));
+        }
+      }
+
+      ancillaryLinks.appendChild(languages);
+    }
+
+    this.banner.appendChild(ancillaryLinks);
+
     document.body.insertBefore(this.banner, document.body.firstChild);
   };
 
@@ -181,7 +249,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
     if (is_gmt) {
       return date.toGMTString();
     } else {
-      return date.toLocaleString();
+      return date.toLocaleString(window.banner_info.locale);
     }
   };
 
@@ -196,11 +264,15 @@ This file is part of pywb, https://github.com/webrecorder/pywb
     var capture_str;
     var title_str;
 
-    if (!ts) {
+    if (!url) {
+      this.captureInfo.innerHTML = window.banner_info.loadingLabel;
+      this.bannerUrlSet = false;
       return;
     }
 
-    var date_str = this.ts_to_date(ts, true);
+    if (!ts) {
+      return;
+    }
 
     if (title) {
       capture_str = title;
@@ -209,20 +281,27 @@ This file is part of pywb, https://github.com/webrecorder/pywb
     }
 
     title_str = capture_str;
-    capture_str = "<b id='title_or_url'>" + capture_str + '</b>';
+
+    capture_str = "<b id='title_or_url' title='" + capture_str + "'>" + capture_str + "</b>";
+
+    capture_str += "<span class='_wb_capture_date'>";
 
     if (is_live) {
-      title_str = ' pywb Live: ' + title_str;
-      capture_str += '<i>Live on&nbsp;</i>';
-    } else {
-      title_str += 'pywb Archived: ' + title_str;
-      capture_str += '<i>Archived on&nbsp;</i>';
+      title_str = window.banner_info.liveMsg + " " + title_str;
+      capture_str += "<b>" + window.banner_info.liveMsg + "&nbsp;</b>";
     }
 
-    title_str += ' (' + date_str + ')';
-    capture_str += date_str;
+    capture_str += this.ts_to_date(ts, window.banner_info.is_gmt);
+    capture_str += "</span>";
+
+    this.calendarLink.setAttribute("href", window.banner_info.prefix + "*/" + url);
+    this.calendarLink.style.display = is_live ? "none" : "";
+
     this.captureInfo.innerHTML = capture_str;
+
     window.document.title = title_str;
+
+    this.bannerUrlSet = true;
   };
 
   // all banners will expose themselves by adding themselves as WBBanner on window

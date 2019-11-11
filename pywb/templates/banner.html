@@ -2,4 +2,26 @@
 <!-- default banner, create through js -->
 <script src='{{ static_prefix }}/default_banner.js'> </script>
 <link rel='stylesheet' href='{{ static_prefix }}/default_banner.css'/>
+
+<script>
+window.banner_info = {
+    is_gmt: true,
+
+    liveMsg: decodeURIComponent("{{ _Q('Live on') }}"),
+
+    calendarAlt: decodeURIComponent("{{ _Q('Calendar icon') }}"),
+    calendarLabel: decodeURIComponent("{{ _Q('View All Captures') }}"),
+    choiceLabel: decodeURIComponent("{{ _Q('Language:') }}"),
+    loadingLabel: decodeURIComponent("{{ _Q('Loading...') }}"),
+    logoAlt: decodeURIComponent("{{ _Q('Logo') }}"),
+
+    locale: "{{ env.pywb_lang | default('en') }}",
+    curr_locale: "{{ env.pywb_lang }}",
+    locales: {{ locales }},
+    locale_prefixes: {{ get_locale_prefixes() | tojson }},
+    prefix: "{{ wb_prefix }}",
+    staticPrefix: "{{ static_prefix }}"
+};
+</script>
+
 {% endif %}

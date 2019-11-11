@@ -1,6 +1,6 @@
 from gevent.monkey import patch_all; patch_all()
 
-from werkzeug.routing import Map, Rule, RequestRedirect
+from werkzeug.routing import Map, Rule, RequestRedirect, Submount
 from werkzeug.wsgi import pop_path_info
 from six.moves.urllib.parse import urljoin
 from six import iteritems
@@ -138,6 +138,17 @@ class FrontEndApp(object):
         :rtype: None
         """
         routes = self._make_coll_routes(coll_prefix)
+
+        # init loc routes, if any
+        loc_keys = list(self.rewriterapp.loc_map.keys())
+        if loc_keys:
+            routes.append(Rule('/', endpoint=self.serve_home))
+
+            submount_route = ', '.join(loc_keys)
+            submount_route = '/<any({0}):lang>'.format(submount_route)
+
+            self.url_map.add(Submount(submount_route, routes))
+
         for route in routes:
             self.url_map.add(route)
 

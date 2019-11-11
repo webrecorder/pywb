@@ -1,0 +1,14 @@
+debug: true
+
+collections:
+    pywb:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+
+# i18n
+locales_root_dir: ./tests/i18n-data/
+locales:
+  - en
+  - 'l337'
+
+
