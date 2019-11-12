@@ -10,7 +10,6 @@ from io import BytesIO
 
 import base64
 import cgi
-import sys
 
 
 #=============================================================================
