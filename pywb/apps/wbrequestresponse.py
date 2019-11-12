@@ -186,14 +186,14 @@ class WbResponse(object):
                 allowed_methods = allowed_methods + ', ' + r_method
             acr_headers = env.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS')
             if acr_headers is not None:
-                self.status_headers.add_header('Access-Control-Allow-Headers', acr_headers)
+                self.status_headers.replace_header('Access-Control-Allow-Headers', acr_headers)
             allowed_origin = env.get('HTTP_ORIGIN', env.get('HTTP_REFERER', allowed_origin))
         if allowed_origin is None:
             allowed_origin = '*'
         self.status_headers.replace_header('Access-Control-Allow-Origin',  allowed_origin)
-        self.status_headers.add_header('Access-Control-Allow-Methods', allowed_methods)
-        self.status_headers.add_header('Access-Control-Allow-Credentials', 'true')
-        self.status_headers.add_header('Access-Control-Max-Age', '1800')
+        self.status_headers.replace_header('Access-Control-Allow-Methods', allowed_methods)
+        self.status_headers.replace_header('Access-Control-Allow-Credentials', 'true')
+        self.status_headers.replace_header('Access-Control-Max-Age', '1800')
         return self
 
     def __repr__(self):
