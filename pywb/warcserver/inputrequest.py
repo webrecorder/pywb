@@ -10,6 +10,7 @@ from io import BytesIO
 
 import base64
 import cgi
+import sys
 
 
 #=============================================================================
@@ -181,6 +182,8 @@ class POSTInputRequest(DirectWSGIInputRequest):
 
 # ============================================================================
 class MethodQueryCanonicalizer(object):
+    MAX_POST_SIZE = 16384
+
     def __init__(self, method, mime, length, stream,
                        buffered_stream=None,
                        environ=None):
@@ -210,7 +213,9 @@ class MethodQueryCanonicalizer(object):
         if length <= 0:
             return
 
-        query = b''
+        # max POST query allowed, for size considerations, only read upto this size
+        length = min(length, self.MAX_POST_SIZE)
+        query = []
 
         while length > 0:
             buff = stream.read(length)
@@ -219,7 +224,9 @@ class MethodQueryCanonicalizer(object):
             if not buff:
                 break
 
-            query += buff
+            query.append(buff)
+
+        query = b''.join(query)
 
         if buffered_stream:
             buffered_stream.write(query)
@@ -236,7 +243,8 @@ class MethodQueryCanonicalizer(object):
 
         if mime.startswith('application/x-www-form-urlencoded'):
             try:
-                query = to_native_str(query.decode('utf-8'))
+                if PY3:
+                    query = query.decode('utf-8')
                 query = unquote_plus(query)
             except UnicodeDecodeError:
                 query = handle_binary(query)
