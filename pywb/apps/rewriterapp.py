@@ -326,6 +326,10 @@ class RewriterApp(object):
             'pywb.static_prefix', '/static/')
         is_proxy = ('wsgiprox.proxy_host' in environ)
 
+        # if OPTIONS in proxy mode, just generate the proxy responss
+        if is_proxy and self.is_preflight(environ):
+            return WbResponse.options_response(environ)
+
         environ['pywb.host_prefix'] = host_prefix
 
         if self.use_js_obj_proxy:
@@ -550,6 +554,9 @@ class RewriterApp(object):
             self.add_csp_header(wb_url, status_headers)
 
         response = WbResponse(status_headers, gen)
+
+        if is_proxy and environ.get('HTTP_ORIGIN'):
+            response.add_access_control_headers(environ)
 
         return response
 
@@ -816,6 +823,19 @@ class RewriterApp(object):
             return True
 
         return False
+
+    def is_preflight(self, environ):
+        if environ.get('REQUEST_METHOD') != 'OPTIONS':
+            return False
+
+        if not environ.get('HTTP_ORIGIN'):
+            return False
+
+        if not environ.get('HTTP_ACCESS_CONTROL_REQUEST_METHOD') and not environ.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS'):
+            return False
+
+        return True
+
 
     def get_base_url(self, wb_url, kwargs):
         type_ = kwargs.get('type')

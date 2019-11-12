@@ -83,6 +83,20 @@ class TestProxy(BaseTestProxy):
         assert res.headers['Memento-Datetime'] == 'Mon, 27 Jan 2014 17:12:51 GMT'
         assert 'Content-Location' not in res.headers
 
+    def test_proxy_replay_cors(self, scheme):
+        res = requests.get('{0}://example.com/'.format(scheme),
+                           proxies=self.proxies,
+                           verify=self.root_ca_file,
+                           headers={'Origin': '{0}://api.example.com/'.format(scheme)})
+
+        assert 'Example Domain' in res.text
+
+        assert res.headers['Access-Control-Allow-Methods'] == 'GET, POST, PUT, OPTIONS, DELETE, PATCH, HEAD, TRACE, CONNECT'
+        assert res.headers['Access-Control-Allow-Credentials'] == 'true'
+        assert res.headers['Access-Control-Allow-Origin'] == '{0}://api.example.com/'.format(scheme)
+
+        assert 'Content-Location' not in res.headers
+
     def test_proxy_replay_change_dt(self, scheme):
         headers = {'Accept-Datetime':  'Mon, 26 Dec 2011 17:12:51 GMT'}
         res = requests.get('{0}://example.com/'.format(scheme),
