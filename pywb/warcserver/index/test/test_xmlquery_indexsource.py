@@ -9,9 +9,14 @@ from mock import patch
 import pytest
 
 
+query_url = None
+
+
 # ============================================================================
 def mock_get(self, url):
     string = ''
+    global query_url
+    query_url = url
     if quote_plus(XmlQueryIndexSource.EXACT_QUERY) in url:
         if quote_plus(quote_plus('http://example.com/some/path')) in url:
             string = URL_RESPONSE_2
@@ -65,12 +70,14 @@ class TestXmlQueryIndexSource(BaseTestClass):
 
     @patch('pywb.warcserver.index.indexsource.requests.sessions.Session.get', mock_get)
     def test_exact_query(self):
-        res, errs = self.do_query({'url': 'http://example.com/'})
+        res, errs = self.do_query({'url': 'http://example.com/', 'limit': 100})
+
         expected = """\
 com,example)/ 20180112200243 example.warc.gz
 com,example)/ 20180216200300 example.warc.gz"""
         assert(key_ts_res(res) == expected)
         assert(errs == {})
+        assert query_url == 'http://localhost:8080/path?q=limit%3A+100+type%3Aurlquery+url%3Ahttp%253A%252F%252Fexample.com%252F'
 
 
     @patch('pywb.warcserver.index.indexsource.requests.sessions.Session.get', mock_get)
@@ -81,6 +88,8 @@ com,example)/some/path 20180112200243 example.warc.gz
 com,example)/some/path 20180216200300 example.warc.gz"""
         assert(key_ts_res(res) == expected)
         assert(errs == {})
+
+        assert query_url == 'http://localhost:8080/path?q=type%3Aurlquery+url%3Ahttp%253A%252F%252Fexample.com%252Fsome%252Fpath'
 
 
     @patch('pywb.warcserver.index.indexsource.requests.sessions.Session.get', mock_get)
