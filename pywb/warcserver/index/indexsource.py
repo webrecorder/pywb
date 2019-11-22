@@ -243,6 +243,10 @@ class XmlQueryIndexSource(BaseIndexSource):
             raise BadRequestException('matchType={0} is not supported'.format(matchType=matchType))
 
         try:
+            limit = params.get('limit')
+            if limit:
+                query = 'limit: {0} '.format(limit) + query
+
             # OpenSearch API requires double-escaping
             # TODO: add option to not double escape if needed
             query_url = self.query_api_url + '?q=' + quote_plus(query + quote_plus(url))
