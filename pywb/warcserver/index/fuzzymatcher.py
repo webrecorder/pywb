@@ -84,7 +84,7 @@ class FuzzyMatcher(object):
                 m = rule.regex.search(urlkey)
                 groups = m and m.groups()
 
-            if not groups:
+            if groups is None:
                 continue
 
             matched_rule = rule
@@ -99,7 +99,7 @@ class FuzzyMatcher(object):
 
         # support matching w/o query if no additional filters
         # don't include trailing '?' if no filters and replace_after '?'
-        no_filters = (filters == {'urlkey:'}) and (matched_rule.replace_after == '?')
+        no_filters = (not filters or filters == {'urlkey:'}) and (matched_rule.replace_after == '?')
 
         inx = url.find(matched_rule.replace_after)
         if inx > 0:
