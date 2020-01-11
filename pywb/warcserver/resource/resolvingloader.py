@@ -11,6 +11,8 @@ from pywb.warcserver.resource.blockrecordloader import BlockArcWarcRecordLoader
 class ResolvingLoader(object):
     MISSING_REVISIT_MSG = 'Original for revisit record could not be loaded'
 
+    EMPTY_DIGEST = '3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ'
+
     def __init__(self, path_resolvers, record_loader=None, no_record_parse=False):
         self.path_resolvers = path_resolvers
         self.record_loader = record_loader if record_loader is not None else BlockArcWarcRecordLoader()
@@ -163,6 +165,13 @@ class ResolvingLoader(object):
         Raise exception if no matches found.
         """
 
+        digest = cdx.get('digest', '-')
+
+        # if the digest is the empty record digest, don't attempt to look up the payload record!
+        # the payload is simply empty, so use empty payload of existing record
+        if digest == self.EMPTY_DIGEST:
+            return headers_record
+
         ref_target_uri = (headers_record.rec_headers.
                           get_header('WARC-Refers-To-Target-URI'))
 
@@ -179,8 +188,6 @@ class ResolvingLoader(object):
             ref_target_date = cdx['timestamp']
         else:
             ref_target_date = iso_date_to_timestamp(ref_target_date)
-
-        digest = cdx.get('digest', '-')
 
         try:
             orig_cdx_lines = self.load_cdx_for_dupe(ref_target_uri,

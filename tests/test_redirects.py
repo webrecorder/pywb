@@ -57,7 +57,7 @@ class TestRedirects(CollsDirMixin, BaseConfigTest):
         self.writer.write_record(rec)
         return rec
 
-    def create_revisit_record(self, original, url, redirect_url, timestamp):
+    def create_revisit_record(self, url, timestamp, redirect_url, original_dt):
         warc_headers = {}
         warc_headers['WARC-Date'] = timestamp_to_iso_date(timestamp)
 
@@ -67,9 +67,9 @@ class TestRedirects(CollsDirMixin, BaseConfigTest):
         http_headers = StatusAndHeaders('302 Temp Redirect', headers_list, protocol='HTTP/1.0')
 
         rec = self.writer.create_revisit_record(url,
-                                                digest=original.rec_headers['WARC-Payload-Digest'],
+                                                digest='3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ',
                                                 refers_to_uri=url,
-                                                refers_to_date=original.rec_headers['WARC-Date'],
+                                                refers_to_date=original_dt,
                                                 warc_headers_dict=warc_headers,
                                                 http_headers=http_headers)
 
@@ -80,9 +80,12 @@ class TestRedirects(CollsDirMixin, BaseConfigTest):
         with open(filename, 'wb') as fh:
             self.writer = WARCWriter(fh, gzip=True)
 
-            redirect = self.create_redirect_record('http://example.com/', 'https://example.com/', '201806026101112')
-            redirect = self.create_redirect_record('https://example.com/', 'https://www.example.com/', '201806026101112')
-            response = self.create_response_record('https://www.example.com/', '201806026101112', 'Some Text')
+            redirect = self.create_redirect_record('http://example.com/', 'https://example.com/', '20180626101112')
+            redirect = self.create_redirect_record('https://example.com/', 'https://www.example.com/', '20180626101112')
+            response = self.create_response_record('https://www.example.com/', '20180626101112', 'Some Text')
+
+            revisit = self.create_revisit_record('https://example.com/path', '20190626101112', 'https://example.com/abc', response.rec_headers['WARC-Date'])
+            revisit = self.create_revisit_record('https://www.example.com/', '20190626101112', 'https://www.example.com/', response.rec_headers['WARC-Date'])
 
         wb_manager(['init', 'redir'])
 
@@ -91,7 +94,7 @@ class TestRedirects(CollsDirMixin, BaseConfigTest):
         assert os.path.isfile(os.path.join(self.root_dir, self.COLLS_DIR, 'redir', 'indexes', 'index.cdxj'))
 
     def test_self_redir_1(self, fmod):
-        res = self.get('/redir/201806026101112{0}/https://example.com/', fmod)
+        res = self.get('/redir/20180626101112{0}/https://example.com/', fmod, status=200)
 
         assert res.status_code == 200
 
@@ -102,16 +105,16 @@ class TestRedirects(CollsDirMixin, BaseConfigTest):
         with open(filename, 'wb') as fh:
             self.writer = WARCWriter(fh, gzip=True)
 
-            response = self.create_response_record('https://www.example.com/sub/path/', '201806026101112', 'Sub Path Data')
+            response = self.create_response_record('https://www.example.com/sub/path/', '20180626101112', 'Sub Path Data')
 
-            response = self.create_response_record('https://www.example.com/sub/path/?foo=bar', '201806026101112', 'Sub Path Data Q')
+            response = self.create_response_record('https://www.example.com/sub/path/?foo=bar', '20180626101112', 'Sub Path Data Q')
 
         wb_manager(['add', 'redir', filename])
 
     def test_redir_slash(self, fmod):
-        res = self.get('/redir/201806026101112{0}/https://example.com/sub/path', fmod, status=307)
+        res = self.get('/redir/20180626101112{0}/https://example.com/sub/path', fmod, status=307)
 
-        assert res.headers['Location'].endswith('/redir/201806026101112{0}/https://example.com/sub/path/'.format(fmod))
+        assert res.headers['Location'].endswith('/redir/20180626101112{0}/https://example.com/sub/path/'.format(fmod))
         res = res.follow()
 
         assert res.status_code == 200
@@ -119,14 +122,22 @@ class TestRedirects(CollsDirMixin, BaseConfigTest):
         assert res.text == 'Sub Path Data'
 
     def test_redir_slash_with_query(self, fmod):
-        res = self.get('/redir/201806026101112{0}/https://example.com/sub/path?foo=bar', fmod, status=307)
+        res = self.get('/redir/20180626101112{0}/https://example.com/sub/path?foo=bar', fmod, status=307)
 
-        assert res.headers['Location'].endswith('/redir/201806026101112{0}/https://example.com/sub/path/?foo=bar'.format(fmod))
+        assert res.headers['Location'].endswith('/redir/20180626101112{0}/https://example.com/sub/path/?foo=bar'.format(fmod))
         res = res.follow()
 
         assert res.status_code == 200
 
         assert res.text == 'Sub Path Data Q'
 
+    def test_revisit_redirect_302(self, fmod):
+        res = self.get('/redir/20170626101112{0}/https://example.com/path', fmod, status=302)
+        assert res.headers['Location'].endswith('/redir/20170626101112{0}/https://example.com/abc'.format(fmod))
+        assert res.text == ''
+
+    def test_revisit_redirect_skip_self_redir(self, fmod):
+        res = self.get('/redir/20190626101112{0}/http://www.example.com/', fmod, status=200)
+        assert res.text == 'Some Text'
 
 
