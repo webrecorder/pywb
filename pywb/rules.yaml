@@ -166,7 +166,7 @@ rules:
             - match: 'Bootloader\.configurePage.*?;'
               replace: '/* {0} */'
 
-            - match: 'dash_manifest:"(.*",dash_prefetched_representation_ids:.*?])'
+            - match: 'dash_manifest"?:"(.*","?dash_prefetched_representation_ids"?:.*?])'
               group: 1
               function: 'pywb.rewrite.rewrite_dash:rewrite_fb_dash'
 

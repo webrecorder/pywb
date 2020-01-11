@@ -93,7 +93,7 @@ setup(
     long_description=get_ldecription(),
     license='GPL',
     packages=find_packages(exclude=['tests_disabled']),
-    zip_safe=True,
+    zip_safe=False,
     package_data={
         'pywb': get_package_data(),
     },

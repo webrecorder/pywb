@@ -718,6 +718,25 @@ http://example.com/video_4.m3u8
         assert 'dash_prefetched_representation_ids:["1", "7"]' in result
         assert rep_ids not in result
 
+    def test_dash_fb_in_js_2(self):
+        headers = {'Content-Type': 'text/javascript'}
+        with open(os.path.join(get_test_dir(), 'text_content', 'sample_dash.mpd'), 'rt') as fh:
+            content = 'dash_manifest:"' + fh.read().encode('unicode-escape').decode('utf-8')
+
+        rep_ids = r'\n","dash_prefetched_representation_ids":["4","5"]'
+        content += rep_ids
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_',
+                                                  url='http://facebook.com/example/dash/manifest.mpd')
+
+        assert headers.headers == [('Content-Type', 'text/javascript')]
+
+        result = b''.join(gen).decode('utf-8')
+
+        # 4, 5 representations removed, replaced with default 1, 7
+        assert '"dash_prefetched_representation_ids":["1", "7"]' in result
+        assert rep_ids not in result
+
     def test_dash_custom_max_resolution(self):
         headers = {'Content-Type': 'application/dash+xml'}
         with open(os.path.join(get_test_dir(), 'text_content', 'sample_dash.mpd'), 'rt') as fh:

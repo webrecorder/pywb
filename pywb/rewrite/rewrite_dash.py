@@ -59,21 +59,30 @@ class RewriteDASH(BufferedRewriter):
 
 # ============================================================================
 def rewrite_fb_dash(string, *args):
-    DASH_SPLIT = r'\n",dash_prefetched_representation_ids:'
-    inx = string.find(DASH_SPLIT)
+    DASH_SPLITS = [r'\n",dash_prefetched_representation_ids:', r'\n","dash_prefetched_representation_ids":']
+
+    inx = -1
+    split = None
+    for split in DASH_SPLITS:
+        inx = string.find(split)
+        if inx >= 0:
+            break
+
     if inx < 0:
-        return string
+        return
 
     string = string[:inx]
 
     buff = string.encode('utf-8').decode('unicode-escape')
+    buff = buff.replace('\\/', '/')
     buff = buff.encode('utf-8')
     io = BytesIO(buff)
     io, best_ids = RewriteDASH().rewrite_dash(io, None)
-    string = json.dumps(io.read().decode('utf-8'))
+    buff = io.read().decode('utf-8')
+    string = json.dumps(buff)
     string = string[1:-1].replace('<', r'\x3C')
 
-    string += DASH_SPLIT
+    string += split
     string += json.dumps(best_ids)
     return string
 
