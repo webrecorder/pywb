@@ -11,19 +11,7 @@
     color: white !important;
     z-index: 2147483643 !important;
     line-height: normal !important;
-}
 
-#title_or_url
-{
-    display: block !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-}
-
-#_wb_frame_top_banner
-{
     position: absolute !important;
     border: 0px;
     height: 44px !important;
@@ -43,6 +31,17 @@
     -moz-box-align: center;
     -ms-flex-align: center;
 }
+
+#title_or_url
+{
+    display: block !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+
 
 #_wb_frame_top_banner ._wb_linked_logo
 {
@@ -110,11 +109,14 @@
 {
     font-size: 12px;
     color: #FFF;
-    margin-right: 15px;
     text-align: right;
-    flex-shrink: 1 0;
-    -webkit-flex-shrink: 1 0;
-    -moz-flex-shrink: 1 0;
+    margin: 0px 15px 0px 0px;
+    padding: inherit;
+    background-color: inherit;
+    width: initial;
+    flex-shrink: 1;
+    -webkit-flex-shrink: 1;
+    -moz-flex-shrink: 1;
     -ms-flex: 0 0 115px;
 }
 #_wb_frame_top_banner #_wb_ancillary_links a:link,

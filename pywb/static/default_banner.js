@@ -45,16 +45,15 @@ This file is part of pywb, https://github.com/webrecorder/pywb
    * @desc Initialize (display) the banner
    */
   DefaultBanner.prototype.init = function() {
+    this.createBanner('_wb_frame_top_banner');
+
     if (window.wbinfo) {
-      this.createBanner('_wb_plain_banner');
       this.set_banner(
         window.wbinfo.url,
         window.wbinfo.timestamp,
         window.wbinfo.is_live,
         window.wbinfo.is_framed ? '' : document.title
       );
-    } else {
-      this.createBanner('_wb_frame_top_banner');
     }
   };
 
@@ -306,4 +305,16 @@ This file is part of pywb, https://github.com/webrecorder/pywb
 
   // all banners will expose themselves by adding themselves as WBBanner on window
   window.WBBanner = new DefaultBanner();
+
+  // if in replay frame, init immediately
+  if (window.wbinfo) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", function() {
+        window.WBBanner.init();
+      });
+    } else {
+      window.WBBanner.init();
+    }
+  }
+
 })();
