@@ -8,8 +8,6 @@ collections:
         index_paths: ./sample_archive/cdx/
         archive_paths: ./sample_archive/warcs/
 
-    ia: cdx+http://web.archive.org/cdx /web
-
 # Settings for each collection
 use_js_obj_proxy: true
 
