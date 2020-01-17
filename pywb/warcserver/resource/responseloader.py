@@ -139,18 +139,19 @@ class BaseLoader(object):
         request_url = request_url.split('://', 1)[-1].rstrip('/')
 
         self_redir = False
+        orig_key = params.get('sr-urlkey') or cdx['urlkey']
 
         if request_url == location_url:
             self_redir = True
-        elif params.get('sr-urlkey'):
-            # if new location canonicalized matches old key, also self-redirect
-            if canonicalize(location_url) == params.get('sr-urlkey'):
-                self_redir = True
+
+        # if new location canonicalized matches old key, also self-redirect
+        elif canonicalize(location_url) == orig_key:
+            self_redir = True
 
         if self_redir:
             msg = 'Self Redirect {0} -> {1}'
             msg = msg.format(request_url, location_url)
-            params['sr-urlkey'] = cdx['urlkey']
+            params['sr-urlkey'] = orig_key
             raise LiveResourceException(msg)
 
     @staticmethod
@@ -267,6 +268,9 @@ class LiveWebLoader(BaseLoader):
             self.socks_proxy = None
 
     def load_resource(self, cdx, params):
+        if cdx.get('filename') and cdx.get('offset') is not None:
+            return None
+
         load_url = cdx.get('load_url')
         if not load_url:
             return None

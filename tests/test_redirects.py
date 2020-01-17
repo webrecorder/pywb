@@ -15,7 +15,7 @@ class TestRedirects(CollsDirMixin, BaseConfigTest):
     def setup_class(cls):
         super(TestRedirects, cls).setup_class('config_test.yaml')
 
-    def create_redirect_record(self, url, redirect_url, timestamp):
+    def create_redirect_record(self, url, redirect_url, timestamp, status='301'):
         warc_headers = {}
         warc_headers['WARC-Date'] = timestamp_to_iso_date(timestamp)
 
@@ -26,7 +26,7 @@ class TestRedirects(CollsDirMixin, BaseConfigTest):
                         ('Location', redirect_url)
                        ]
 
-        http_headers = StatusAndHeaders('301 Permanent Redirect', headers_list, protocol='HTTP/1.0')
+        http_headers = StatusAndHeaders(status + ' Redirect', headers_list, protocol='HTTP/1.0')
 
         rec = self.writer.create_warc_record(url, 'response',
                                              payload=BytesIO(payload),
@@ -140,4 +140,26 @@ class TestRedirects(CollsDirMixin, BaseConfigTest):
         res = self.get('/redir/20190626101112{0}/http://www.example.com/', fmod, status=200)
         assert res.text == 'Some Text'
 
+    def test_init_2(self):
+        filename = os.path.join(self.root_dir, 'redir2.warc.gz')
+        with open(filename, 'wb') as fh:
+            self.writer = WARCWriter(fh, gzip=True)
+
+            redirect = self.create_redirect_record('http://www.example.com/path', 'https://www.example.com/path/', '20191003115920')
+            redirect = self.create_redirect_record('https://www.example.com/path/', 'https://www2.example.com/path', '20191003115927', status='302')
+            response = self.create_response_record('https://www2.example.com/path', '20191024125646', 'Some Text')
+            revisit = self.create_revisit_record('https://www2.example.com/path', '20191024125648', 'https://www2.example.com/path', response.rec_headers['WARC-Date'])
+
+        wb_manager(['init', 'redir2'])
+
+        wb_manager(['add', 'redir2', filename])
+
+        assert os.path.isfile(os.path.join(self.root_dir, self.COLLS_DIR, 'redir2', 'indexes', 'index.cdxj'))
+
+    def test_revisit_redirect_skip_self_redir_2(self, fmod):
+        res = self.get('/redir2/20191024125648{0}/http://www2.example.com/path', fmod, status=200)
+        assert res.text == 'Some Text'
+
+        res = self.get('/redir2/20191024125648{0}/https://www.example.com/path', fmod, status=200)
+        assert res.text == 'Some Text'
 
