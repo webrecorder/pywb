@@ -306,8 +306,8 @@ This file is part of pywb, https://github.com/webrecorder/pywb
   // all banners will expose themselves by adding themselves as WBBanner on window
   window.WBBanner = new DefaultBanner();
 
-  // if not in top-frame (replay frame/non-framed/proxy), init immeidately
-  if (window.wbinfo && !window.wbinfo.is_frame) {
+  // if wbinfo.url is set and not-framed, init banner in content frame
+  if (window.wbinfo && window.wbinfo.url && !window.wbinfo.is_framed) {
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", function() {
         window.WBBanner.init();
