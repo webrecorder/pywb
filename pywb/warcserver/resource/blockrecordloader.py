@@ -2,7 +2,7 @@ from warcio.bufferedreaders import DecompressingBufferedReader
 from warcio.recordloader import ArcWarcRecordLoader
 
 from pywb.utils.loaders import BlockLoader
-from pywb.utils.io import BUFF_SIZE
+from pywb.utils.io import BUFF_SIZE, no_except_close
 
 
 #=================================================================
@@ -32,4 +32,8 @@ class BlockArcWarcRecordLoader(ArcWarcRecordLoader):
                                              decomp_type=decomp_type,
                                              block_size=self.block_size)
 
-        return self.parse_record_stream(stream, no_record_parse=no_record_parse)
+        res = self.parse_record_stream(stream, no_record_parse=no_record_parse)
+
+        no_except_close(stream)
+
+        return res
