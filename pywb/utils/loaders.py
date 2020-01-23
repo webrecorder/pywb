@@ -21,7 +21,7 @@ import re
 
 from io import open, BytesIO
 from warcio.limitreader import LimitReader
-from pywb.utils.io import no_except_close
+from pywb.utils.io import no_except_close, StreamClosingReader
 
 try:
     import boto3
@@ -355,7 +355,7 @@ class HttpLoader(BaseLoader):
 
         r = self.session.get(url, headers=headers, stream=True)
         r.raise_for_status()
-        return r.raw
+        return StreamClosingReader(r.raw)
 
 
 # =================================================================

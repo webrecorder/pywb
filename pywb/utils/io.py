@@ -121,3 +121,18 @@ class OffsetLimitReader(LimitReader):
     def readline(self, length=None):
         self._skip()
         return super(OffsetLimitReader, self).readline(length)
+
+
+# ============================================================================
+class StreamClosingReader(object):
+    def __init__(self, stream):
+        self.stream = stream
+
+    def read(self, length=None):
+        return self.stream.read(length)
+
+    def readline(self, length=None):
+        return self.stream.readline(length)
+
+    def close(self):
+        no_except_close(self.stream)
