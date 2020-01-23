@@ -6,25 +6,22 @@ from warcio.limitreader import LimitReader
 from warcio.utils import BUFF_SIZE
 
 
+# =============================================================================
 def no_except_close(closable):
     """Attempts to call the close method of the
-    supplied object.
+    supplied object catching all exceptions.
+    Also tries to call release_conn() in case a requests raw stream
 
     :param closable: The object to be closed
     :rtype: None
     """
-    if not closable:
-        return
-
     try:
         closable.close()
     except Exception:
         pass
 
     try:
-        release_conn = getattr(closable, 'release_conn', None)
-        if release_conn is not None:
-            release_conn()
+        closable.release_conn()
     except Exception:
         pass
 
