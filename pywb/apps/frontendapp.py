@@ -82,6 +82,7 @@ class FrontEndApp(object):
 
         self.proxy_prefix = None  # the URL prefix to be used for the collection with proxy mode (e.g. /coll/id_/)
         self.proxy_coll = None  # the name of the collection that has proxy mode enabled
+        self.proxy_record = False # indicate if proxy recording
         self.init_proxy(config)
 
         self.init_recorder(config.get('recorder'))
@@ -627,17 +628,21 @@ class FrontEndApp(object):
             if proxy_coll in self.warcserver.list_fixed_routes():
                 raise Exception('Can not record into fixed collection')
 
-            proxy_coll += self.RECORD_ROUTE
+            proxy_route = proxy_coll + self.RECORD_ROUTE
             if not config.get('recorder'):
                 config['recorder'] = 'live'
 
+            self.proxy_record = True
+
         else:
             logging.info('Proxy enabled for collection "{0}"'.format(proxy_coll))
+            self.proxy_record = False
+            proxy_route = proxy_coll
 
         if proxy_config.get('enable_content_rewrite', True):
-            self.proxy_prefix = '/{0}/bn_/'.format(proxy_coll)
+            self.proxy_prefix = '/{0}/bn_/'.format(proxy_route)
         else:
-            self.proxy_prefix = '/{0}/id_/'.format(proxy_coll)
+            self.proxy_prefix = '/{0}/id_/'.format(proxy_route)
 
         self.proxy_default_timestamp = proxy_config.get('default_timestamp')
         if self.proxy_default_timestamp:
@@ -686,14 +691,14 @@ class FrontEndApp(object):
             return WbResponse.options_response(env)
 
         # ensure full URL
-        request_url = env['REQUEST_URI']
-        # replace with /id_ so we do not get rewritten
-        url = request_url.replace('/proxy-fetch', '/id_')
-        # update WSGI environment object
-        env['REQUEST_URI'] = self.proxy_coll + url
-        env['PATH_INFO'] = env['PATH_INFO'].replace('/proxy-fetch', self.proxy_coll + '/id_')
+        url = env['REQUEST_URI'].split('/proxy-fetch/', 1)[-1]
+
+        env['REQUEST_URI'] = self.proxy_prefix + url
+        env['PATH_INFO'] = self.proxy_prefix + env['PATH_INFO'].split('/proxy-fetch/', 1)[-1]
+
         # make request using normal serve_content
-        response = self.serve_content(env, self.proxy_coll, url)
+        response = self.serve_content(env, self.proxy_coll, url, record=self.proxy_record)
+
         # for WR
         if isinstance(response, WbResponse):
             response.add_access_control_headers(env=env)

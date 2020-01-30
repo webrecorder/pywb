@@ -23,7 +23,7 @@ var config = {
   rwRe: null,
   defaultFetchOptions: {
     cache: 'force-cache',
-    mode: null
+    mode: 'cors'
   }
 };
 
@@ -53,7 +53,7 @@ if (!config.haveFetch) {
       xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
           if (!config.havePromise) {
-            fetchDoneOrErrored();
+            fetchDone();
           }
           resolve();
         }
@@ -101,9 +101,14 @@ self.onmessage = function(event) {
 
 function noop() {}
 
-function fetchDoneOrErrored() {
+function fetchDone() {
   runningFetches -= 1;
   fetchFromQ();
+}
+
+function fetchErrored(err) {
+  console.warn("Fetch Failed: " + err);
+  fetchDone();
 }
 
 /**
@@ -130,8 +135,8 @@ function fetchURL(toBeFetched) {
   }
 
   fetch(url, options)
-    .then(fetchDoneOrErrored)
-    .catch(fetchDoneOrErrored);
+    .then(fetchDone)
+    .catch(fetchErrored);
 }
 
 function queueOrFetch(toBeFetched) {
