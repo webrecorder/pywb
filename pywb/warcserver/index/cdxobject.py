@@ -181,10 +181,13 @@ class CDXObject(OrderedDict):
         :param fields: list of field names to output.
         """
         if fields is None:
-            return str(self) + '\n'
+            if self.cdxline:
+                return to_native_str(self.cdxline, 'utf-8')
+
+            fields = self.CDX_FORMATS[1]
 
         try:
-            result = ' '.join(str(self[x]) for x in fields) + '\n'
+            result = ' '.join(str(self.get(x, '-')) if x != 'length' else '0' for x in fields) + '\n'
         except KeyError as ke:
             msg = 'Invalid field "{0}" found in fields= argument'
             msg = msg.format(str(ke))

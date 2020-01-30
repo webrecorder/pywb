@@ -46,6 +46,19 @@ class TestCDXApp(BaseTestClass):
         assert len(lines) == 3, resp.text
         assert len(list(map(json.loads, lines))) == 3
 
+    def test_exact_url_plain_text(self):
+        """
+        basic exact match, no filters, etc.
+        """
+        resp = self.query('http://www.iana.org/', output='text')
+
+        assert resp.status_code == 200
+        assert resp.content_type == 'text/plain'
+        assert '{' not in resp.text
+
+        lines = resp.text.splitlines()
+        assert len(lines) == 3, resp.text
+
     def test_prefix_match(self):
         """
         prefix match test

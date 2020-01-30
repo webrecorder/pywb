@@ -37,7 +37,7 @@ class PrefixResolver(object):
         if hasattr(cdx, '_formatter') and cdx._formatter:
             full_path = cdx._formatter.format(full_path)
 
-        path = full_path + filename
+        path = os.path.join(full_path, filename)
         if '*' not in path:
             return path
 
