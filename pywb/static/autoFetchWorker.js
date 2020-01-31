@@ -78,7 +78,7 @@ if (location.search.indexOf('init') !== -1) {
     config.prefix = init.prefix;
     config.mod = init.mod;
     config.prefixMod = init.prefix + init.mod;
-    config.rwRe = new RegExp(init.rwRe, 'g');
+    config.rwRe = new RegExp(init.rwRe);
     config.relative = init.prefix.split(location.origin)[1];
     config.schemeless = '/' + config.relative;
   })();

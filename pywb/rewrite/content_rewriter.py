@@ -488,7 +488,7 @@ class RewriteInfo(object):
         else:
             return text_type
 
-        buff = self.read_and_keep(128)
+        buff = self.read_and_keep(1024)
 
         # check if doesn't start with a tag, then likely not html
         if self.TAG_REGEX.match(buff):
