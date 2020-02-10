@@ -142,6 +142,18 @@ class WbResponse(object):
         response.add_access_control_headers(env=env)
         return response
 
+    def try_fix_errors(self):
+        """Utility method to try remove faulty headers from response.
+
+        :return:
+        :rtype: None
+        """
+        for header in self.status_headers.headers:
+            try:
+                header[1].encode('latin1')
+            except UnicodeError:
+                self.status_headers.remove_header(header[0])
+
     def __call__(self, env, start_response):
         """Callable definition to allow WbResponse control over how the response is sent
 
@@ -149,8 +161,14 @@ class WbResponse(object):
         :param function start_response: The WSGI start_response function
         :return: The response body
         """
-        start_response(self.status_headers.statusline,
-                       self.status_headers.headers)
+        try:
+            start_response(self.status_headers.statusline,
+                           self.status_headers.headers)
+        except UnicodeError:
+            self.try_fix_errors()
+            start_response(self.status_headers.statusline,
+                           self.status_headers.headers)
+
         request_method = env['REQUEST_METHOD']
         if request_method == 'HEAD' or request_method == 'OPTIONS' or self.status_headers.statusline.startswith('304'):
             no_except_close(self.body)
