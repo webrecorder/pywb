@@ -113,7 +113,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
             # rewriting 'this.' special properties access, not on new line (no ;)
             (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(this_rw), 0),
             # rewrite '= this' or ', this'
-            (r'(?<=[=,])\s*this\b\s*(?![.$])', self.replace_str(this_rw), 0),
+            (r'(?<=[=,])\s*this\b\s*(?![:.$])', self.replace_str(this_rw), 0),
             # rewrite ')(this)'
             ('\}(?:\s*\))?\s*\(this\)', self.replace_str(this_rw), 0),
             # rewrite this in && or || expr?

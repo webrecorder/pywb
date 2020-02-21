@@ -197,6 +197,9 @@ r"""
 >>> _test_js_obj_proxy('return this.foo')
 'return this.foo'
 
+>>> _test_js_obj_proxy('{foo: bar, this: other}')
+'{foo: bar, this: other}'
+
 >>> _test_js_obj_proxy(r'this.$location = http://example.com/')
 'this.$location = http://example.com/'
 
