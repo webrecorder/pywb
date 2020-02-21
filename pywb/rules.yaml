@@ -344,7 +344,7 @@ rules:
           - videoFileId
           - signature
 
-    - url_prefix: 'net,akamaized,gcs-vimeo)/'
+    - url_prefix: ['net,akamaized,gcs-vimeo)/', 'net,akamaized,vod)/']
 
       fuzzy_lookup:
         match: '([/\d]+\.mp4)$'

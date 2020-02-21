@@ -430,12 +430,16 @@ class TestProxyIncludeAutoFetchWorkerNotWombat(BaseTestProxy):
 
 
 # ============================================================================
-class TestProxyAutoFetchWorkerEndPoints(BaseTestProxy):
+class TestProxyAutoFetchWorkerEndPoints(CollsDirMixin, BaseTestProxy):
     @classmethod
     def setup_class(cls):
         super(TestProxyAutoFetchWorkerEndPoints, cls).setup_class(
-            proxy_opts={'enable_wombat': True}, config_opts={'enable_auto_fetch': True}
+            coll='test2',
+            config_file='config_test_record.yaml',
+            proxy_opts={'enable_wombat': True}, config_opts={'enable_auto_fetch': True},
+            recording=True
         )
+        manager(['init', 'test2'])
 
     def test_proxy_fetch_options_request(self, scheme):
         expected_origin = '{0}://example.com'.format(scheme)
