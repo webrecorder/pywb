@@ -54,6 +54,8 @@ class WarcServer(BaseWarcServer):
         if custom_config:
             if 'collections' in custom_config and 'collections' in config:
                 custom_config['collections'].update(config['collections'])
+            if 'proxy' in custom_config and 'proxy' in config:
+                custom_config['proxy'].update(config['proxy'])
             config.update(custom_config)
 
         super(WarcServer, self).__init__(debug=config.get('debug', False))
