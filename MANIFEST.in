@@ -1,0 +1,26 @@
+include LICENSE
+include *.rst
+include *requirements.txt
+include *.yaml
+include *.yml
+include .gitmodules
+include .dockerignore
+include Dockerfile
+include Vagrantfile
+include uwsgi.ini
+include run-tests.py
+include *.sh
+recursive-include static *.js
+recursive-include pywb *.ini
+recursive-include pywb *.md
+recursive-include pywb *.py
+recursive-include pywb *.yaml
+recursive-include sample_archive *.aclj
+recursive-include tests *.po
+recursive-include tests *.yaml
+recursive-include tests_disabled *.py
+recursive-include tests_disabled *.yaml
+recursive-include docs *.bat
+recursive-include docs *.py
+recursive-include docs *.rst
+recursive-include docs Makefile
