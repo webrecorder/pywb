@@ -181,10 +181,10 @@ the following modifiers:
 +---------------+-----------------------------+------------------------------------+
 
 
-``fl``
+``fields``
 ^^^^^^
 
-The ``fl`` param can be used to specify which fields to include in the
+The ``fields`` param can be used to specify which fields to include in the
 output. The standard available fields are usually: ``urlkey``,
 ``timestamp``, ``url``, ``mime``, ``status``, ``digest``, ``length``,
 ``offset``, ``filename``
@@ -193,7 +193,7 @@ If a minimal cdx index is used, the ``mime`` and ``status`` fields may
 not be available. Additional fields may be introduced in the future,
 especially in the CDX JSON format.
 
-Fields can be comma delimited, for example ``fl=urlkey,timestamp`` will
+Fields can be comma delimited, for example ``fields=urlkey,timestamp`` will
 only include the ``urlkey``, ``timestamp`` and ``filename`` in the
 output.
 
