@@ -2,6 +2,7 @@
 set -e
 
 pip install --upgrade pip setuptools
+pip install 'Markupsafe<2.0.0'
 python setup.py -q install
 pip install -r extra_requirements.txt
 pip install coverage pytest-cov coveralls
