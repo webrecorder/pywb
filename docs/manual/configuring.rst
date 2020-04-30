@@ -388,7 +388,7 @@ The timestamp can also be optionally specified by running: ``wayback --proxy my-
 
   proxy:
     coll: my-coll
-    default-timestamp: 20181226010203
+    default_timestamp: "20181226010203"
 
 The ISO date format, eg. ``2018-12-26T01:02:03`` is also accepted.
 
