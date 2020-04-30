@@ -60,7 +60,9 @@ class BaseLoader(object):
                 out_headers['Link'] = other_headers.get('Link')
                 out_headers['Memento-Datetime'] = other_headers.get('Memento-Datetime')
                 if not compress:
-                    out_headers['Content-Length'] = other_headers.get('Content-Length')
+                    known_length = other_headers.get('Content-Length')
+                    if known_length:
+                        out_headers['Content-Length'] = known_length
 
             return out_headers, StreamIter(stream, closer=call_release_conn)
 
@@ -75,12 +77,13 @@ class BaseLoader(object):
 
         warc_headers_buff = warc_headers.to_bytes()
 
-        if not compress:
-            lenset = self._set_content_len(warc_headers.get_header('Content-Length'),
-                                         out_headers,
-                                         len(warc_headers_buff))
-        else:
-            lenset = False
+        # don't set length, just stream as is in case it is wrong
+        #if not compress:
+        #    lenset = self._set_content_len(warc_headers.get_header('Content-Length'),
+        #                                 out_headers,
+        #                                 len(warc_headers_buff))
+        #else:
+        #    lenset = False
 
         streamiter = StreamIter(stream,
                                 header1=warc_headers_buff,
@@ -210,6 +213,10 @@ class WARCPathLoader(DefaultResolverMixin, BaseLoader):
             # go through self-redirect check just in case
             if not status or not status.startswith(('2', '4', '5')):
                 http_headers = self.headers_parser.parse(payload.raw_stream)
+                try:
+                    orig_size = payload.raw_stream.tell()
+                except:
+                    orig_size = 0
 
                 try:
                     self.raise_on_self_redirect(params, cdx,
@@ -221,6 +228,14 @@ class WARCPathLoader(DefaultResolverMixin, BaseLoader):
                     raise
 
                 http_headers_buff = http_headers.to_bytes()
+
+                # if new http_headers_buff is different length,
+                # attempt to adjust content-lenghth on the WARC record
+                if orig_size and len(http_headers_buff) != orig_size:
+                    orig_cl = payload.rec_headers.get_header('Content-Length')
+                    if orig_cl:
+                        new_cl = int(orig_cl) + (len(http_headers_buff) - orig_size)
+                        payload.rec_headers.replace_header('Content-Length', str(new_cl))
 
         warc_headers = payload.rec_headers
 

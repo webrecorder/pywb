@@ -38,7 +38,7 @@ class DefaultHeaderRewriter(object):
         'content-security-policy-report-only': 'prefix',
         'content-type': 'keep',
 
-        'date': 'keep',
+        'date': 'prefix',
 
         'etag': 'prefix',
         'expires': 'prefix',

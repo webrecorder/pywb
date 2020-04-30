@@ -1,0 +1,16 @@
+WARC/1.0
+WARC-Type: response
+WARC-Record-ID: <urn:uuid:125f3091-65f6-4d0e-96dd-dbff7c551275>
+WARC-Date: 2014-01-27T17:12:38Z
+Content-Length: 107
+Content-Type: application/http; msgtype=response
+WARC-Payload-Digest: sha1:3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ
+WARC-Target-URI: http://iana.org/bads
+WARC-Warcinfo-ID: <urn:uuid:f087c2a7-14b3-43b7-9c47-79f29f4b39e7>
+
+HTTP/1.0 302 
+Location: http://www.iana.org/badst
+Server: BigIP
+Connection: close
+Content-Length: 0
+
