@@ -288,6 +288,11 @@ class TestWbIntegration(BaseConfigTest):
         assert '"20140127171251"' in resp.text
         assert '/pywb/{0}http://www.iana.org/domains/example'.format(fmod_slash) in resp.text, resp.text
 
+    def test_replay_content_bad_status_text(self, fmod):
+        # test larger file, rewritten file (svg!)
+        resp = self.get('/pywb/20140127171238{0}/https://iana.org/bads', fmod)
+        assert resp.headers['Content-Length'] == str(len(resp.text))
+
     def test_replay_non_latest_content_location_ts(self, fmod):
         fmod_slash = fmod + '/' if fmod else ''
         resp = self.get('/pywb/{0}http://example.com/', fmod_slash)
