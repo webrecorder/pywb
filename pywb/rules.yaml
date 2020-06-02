@@ -456,9 +456,10 @@ rules:
             - match: 'yt\.setConfig.*PLAYER_CONFIG.*args":\s*{'
               replace: '{0} "dash": "0", dashmpd: "", '
 
-            - match: '"player":.*"args":{'
+            - match: '(?:"player":|ytplayer\.config).*"args":\s*{'
               replace: '{0}"dash":"0","dashmpd":"",'
 
+ 
     # testing rules -- not for valid domain
     #=================================================================
     # this rule block is a non-existent prefix merely for testing
