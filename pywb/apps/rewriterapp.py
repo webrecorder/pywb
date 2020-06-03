@@ -822,6 +822,12 @@ class RewriterApp(object):
         if value and value.lower() == 'xmlhttprequest':
             return True
 
+        # if Chrome Sec-Fetch-Mode is set and is not 'navigate', then this is likely
+        # a fetch / ajax request
+        sec_fetch_mode = environ.get('HTTP_SEC_FETCH_MODE')
+        if sec_fetch_mode and sec_fetch_mode != 'navigate':
+            return True
+
         return False
 
     def is_preflight(self, environ):

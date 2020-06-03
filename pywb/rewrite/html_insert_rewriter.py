@@ -9,13 +9,22 @@ class HTMLInsertOnlyRewriter(StreamingRewriter):
     """
     NOT_HEAD_REGEX = re.compile(r'(<\s*\b)(?!(html|head))', re.I)
 
+    XML_HEADER = re.compile(r'<\?xml.*\?>')
+
     def __init__(self, url_rewriter, **kwargs):
         super(HTMLInsertOnlyRewriter, self).__init__(url_rewriter, False)
         self.head_insert = kwargs['head_insert']
 
         self.done = False
+        self.first = True
 
     def rewrite(self, string):
+        if self.first:
+            if self.url_rewriter.rewrite_opts.get('is_ajax') and self.XML_HEADER.search(string):
+                self.done = True
+
+            self.first = False
+
         if self.done:
             return string
 
