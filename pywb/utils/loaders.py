@@ -7,6 +7,7 @@ local and remote access
 
 import os
 import hmac
+import hashlib
 import requests
 import yaml
 
@@ -485,7 +486,7 @@ class HMACCookieMaker(object):
         else:
             msg = expire
 
-        hmacdigest = hmac.new(self.key.encode('utf-8'), msg.encode('utf-8'))
+        hmacdigest = hmac.new(self.key.encode('utf-8'), msg.encode('utf-8'), digestmod=hashlib.md5)
         hexdigest = hmacdigest.hexdigest()
 
         if extra_id:
