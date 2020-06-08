@@ -38,6 +38,18 @@ after_success:
   - codecov
 
 matrix:
+  include:
+   - name: "py37 windows"
+        os: windows
+        language: shell
+        before_install:
+          - choco install python --version 3.7.7
+          - python --version
+          - python -m pip install --upgrade pip
+          - pip3 install --upgrade pytest
+          - pip3 install codecov
+        env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+
   allow_failures:
     - env: WR_TEST=yes
     - python: "2.7"
