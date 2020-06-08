@@ -345,6 +345,7 @@ class RewriterApp(object):
                                                       content_rw, is_proxy)
 
         response = None
+        keep_frame_response = False
 
         # prefer overrides custom response?
         if pref_mod is not None:
@@ -360,13 +361,22 @@ class RewriterApp(object):
             else:
                 wb_url.mod = pref_mod
         else:
-            # don't return top-frame response for timegate with exact redirects
-            kwargs['is_timegate_redir'] = is_timegate and redirect_to_exact
-            response = self.handle_custom_response(environ, wb_url,
-                                                   full_prefix, host_prefix,
-                                                   kwargs)
+            if kwargs.get('output'):
+                response = self.handle_timemap(wb_url, kwargs, full_prefix)
 
-        if response:
+            elif wb_url.is_query():
+                response = self.handle_query(environ, wb_url, kwargs, full_prefix)
+
+            else:
+                # don't return top-frame response for timegate with exact redirects
+                if not (is_timegate and redirect_to_exact):
+                    keep_frame_response = is_timegate and not redirect_to_exact and not is_proxy
+                    response = self.handle_custom_response(environ, wb_url,
+                                                           full_prefix, host_prefix,
+                                                           kwargs)
+
+
+        if response and not keep_frame_response:
             return self.format_response(response, wb_url, full_prefix, is_timegate, is_proxy)
 
         if is_proxy:
@@ -442,6 +452,11 @@ class RewriterApp(object):
             no_except_close(r.raw)
 
             return self.send_redirect(new_path, url_parts, urlrewriter)
+
+        # return top-frame timegate response, with timestamp from cdx
+        if response and keep_frame_response:
+            no_except_close(r.raw)
+            return self.format_response(response, wb_url, full_prefix, is_timegate, is_proxy, cdx['timestamp'])
 
         stream = BufferedReader(r.raw, block_size=BUFF_SIZE)
         record = self.loader.parse_record_stream(stream,
@@ -560,7 +575,7 @@ class RewriterApp(object):
 
         return response
 
-    def format_response(self, response, wb_url, full_prefix, is_timegate, is_proxy):
+    def format_response(self, response, wb_url, full_prefix, is_timegate, is_proxy, timegate_closest_ts=None):
         memento_ts = None
         if not isinstance(response, WbResponse):
             content_type = 'text/html'
@@ -569,13 +584,13 @@ class RewriterApp(object):
             if not self.is_framed_replay(wb_url):
                 content_type += '; charset=utf-8'
             else:
-                memento_ts = wb_url.timestamp
+                memento_ts = timegate_closest_ts or wb_url.timestamp
 
             response = WbResponse.text_response(response, content_type=content_type)
 
         if self.enable_memento and response.status_headers.statusline.startswith('200'):
             self._add_memento_links(wb_url.url, full_prefix, None, memento_ts,
-                                    response.status_headers, is_timegate, is_proxy)
+                                    response.status_headers, is_timegate, is_proxy, is_memento=not is_timegate)
         return response
 
     def _add_memento_links(self, url, full_prefix, memento_dt, memento_ts,
@@ -873,13 +888,7 @@ class RewriterApp(object):
         return {'metadata': kwargs.get('metadata', {})}
 
     def handle_custom_response(self, environ, wb_url, full_prefix, host_prefix, kwargs):
-        if kwargs.get('output'):
-            return self.handle_timemap(wb_url, kwargs, full_prefix)
-
-        if wb_url.is_query():
-            return self.handle_query(environ, wb_url, kwargs, full_prefix)
-
-        if self.is_framed_replay(wb_url) and not kwargs.get('is_timegate_redir'):
+        if self.is_framed_replay(wb_url):
             extra_params = self.get_top_frame_params(wb_url, kwargs)
             return self.frame_insert_view.get_top_frame(wb_url,
                                                         full_prefix,

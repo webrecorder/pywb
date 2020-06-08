@@ -63,6 +63,28 @@ class TestMemento(MementoMixin, BaseConfigTest):
         assert '"20140127171238"' in resp.text
         assert '"http://www.iana.org/"' in resp.text, resp.text
 
+    def test_memento_top_frame_timegate(self):
+        resp = self.testapp.get('/pywb/http://www.iana.org/_css/2013.1/screen.css')
+
+        # vary header
+        assert VARY in resp.headers
+
+        # no memento header, as not really a memento (top-frame)
+        assert MEMENTO_DATETIME not in resp.headers
+
+        # Memento Headers
+        # memento link
+        dt = 'Mon, 27 Jan 2014 17:12:39 GMT'
+        url = 'http://www.iana.org/_css/2013.1/screen.css'
+
+        links = self.get_links(resp)
+
+        assert self.make_memento_link(url, '20140127171239', dt, 'mp_', include_coll=False) in links
+
+        #timegate link
+        assert self.make_timegate_link(url, '') in links
+
+
     def test_memento_content_replay_exact(self, fmod):
         resp = self.get('/pywb/20140127171238{0}/http://www.iana.org/', fmod)
 
@@ -174,6 +196,15 @@ com,example)/?example=1 20140103030341 {"url": "http://example.com?example=1", "
     def test_timemap_error_invalid_format(self):
         resp = self._timemap_get('/pywb/timemap/foo/http://example.com', status=400)
         assert resp.json == {'message': 'output=foo not supported'}
+
+    def test_timegate_error_not_found(self):
+        resp = self.testapp.get('/pywb/http://example.com/x-not-found', status=404)
+        assert resp.status_code == 404
+
+        # No Memento Headers
+        assert VARY not in resp.headers
+        assert MEMENTO_DATETIME not in resp.headers
+        assert 'Link' not in resp.headers
 
     def test_error_bad_accept_datetime(self):
         """
