@@ -5,6 +5,7 @@ python:
   - "3.5"
   - "3.6"
   - "3.7"
+  - "3.8"
 
 dist: xenial
 
@@ -39,6 +40,7 @@ after_success:
 matrix:
   allow_failures:
     - env: WR_TEST=yes
+    - python: "2.7"
 
   exclude:
     - env: WR_TEST=yes

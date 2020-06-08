@@ -2,6 +2,6 @@ certauth
 youtube-dl
 boto3
 uwsgi
-git+https://github.com/esnme/ultrajson.git
+ujson
 pysocks
 lxml
