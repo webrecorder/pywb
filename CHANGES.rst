@@ -1,8 +1,37 @@
 pywb 2.4.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* Access Control System
+This release includes significant update, specifically merging of https://github.com/ukwa/pywb branch into this release.
+A few selected improvements:
 
+* New Access Control System: https://pywb.readthedocs.io/en/latest/manual/access-control.html
+
+* Support for Localization, configuring multiple languages (not enabled by default): https://github.com/ukwa/ukwa-pywb/blob/master/docs/localization.md
+
+* Support for OpenWayback-style XML-based index source (xmlquery)
+
+* Support for loading from WebHDFS via `webhdfs://` scheme.
+
+* Initial support for a new embeds/transclusions replay system, in combination with warcit: https://github.com/webrecorder/warcit/wiki/Warcit-Video-Audio-Conversion
+
+* Proxy mode improvements: handle OPTIONS requests and CORS `#520 <https://github.com/webrecorder/pywb/pull/520>`_
+
+* Memento Prefer header: support for experimental `Prefer` header to select 'raw' or 'rewritten' memento
+
+* Other memento fixes: fix timemap including invalid mementos, correct timegate behavior on top frame `#564 <https://github.com/webrecorder/pywb/pull/564>`_
+
+* Fixes for collection metadata display: `#509 <https://github.com/webrecorder/pywb/pull/520>`_
+
+* Fix for incorrected WARC record length due to re-serialized headers: `#561 <https://github.com/webrecorder/pywb/pull/561>`_
+
+* Filter invalid WARC records `#536 <https://github.com/webrecorder/pywb/pull/536>`_
+
+* Updated fuzzy matching rules and wombat client-side rewriting.
+
+
+For the full changelist, see this PR: `#565 <https://github.com/webrecorder/pywb/pull/565>`_
+
+* Access Control System
 
 
 pywb 2.3.5 changelist
