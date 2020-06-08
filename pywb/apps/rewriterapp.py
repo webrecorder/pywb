@@ -837,10 +837,15 @@ class RewriterApp(object):
         if value and value.lower() == 'xmlhttprequest':
             return True
 
-        # if Chrome Sec-Fetch-Mode is set and is not 'navigate', then this is likely
+
+        # additional checks for proxy mode only
+        if not ('wsgiprox.proxy_host' in environ):
+            return False
+
+        # if Chrome Sec-Fetch-Mode is set and is set to 'cors', then
         # a fetch / ajax request
         sec_fetch_mode = environ.get('HTTP_SEC_FETCH_MODE')
-        if sec_fetch_mode and sec_fetch_mode != 'navigate':
+        if sec_fetch_mode and sec_fetch_mode == 'cors':
             return True
 
         return False
