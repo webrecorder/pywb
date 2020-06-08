@@ -11,9 +11,10 @@
   });
 
   function loadTransclusions() {
-    var viUrl = window.location.href.replace("mp_", "vi_");
+    //var viUrl = window.location.href.replace("mp_", "vi_");
+    var embedsUrl = wbinfo.prefix + wbinfo.timestamp + "id_/urn:embeds:" + wbinfo.url;
 
-    window.fetch(viUrl)
+    window.fetch(embedsUrl)
       .then(function(response) {
         return response.json();
       })
