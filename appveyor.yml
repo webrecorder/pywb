@@ -17,7 +17,7 @@ install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - "python -m pip install --upgrade pip"
   - "pip install -U setuptools"
-  - "pip install 'MarkupSafe<2.0.0'"
+  - "pip install MarkupSafe==1.1.1"
   - "pip install coverage pytest-cov"
   - "pip install cffi"
   - "pip install pyopenssl"
