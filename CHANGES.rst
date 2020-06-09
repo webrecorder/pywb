@@ -1,3 +1,9 @@
+pywb 2.4.1 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Minor fix: allow timegate content check in `#564 <https://github.com/webrecorder/pywb/pull/564>`_ to be ignored (for use with derived classes)
+
+
 pywb 2.4.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

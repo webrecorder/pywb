@@ -370,10 +370,11 @@ class RewriterApp(object):
             else:
                 # don't return top-frame response for timegate with exact redirects
                 if not (is_timegate and redirect_to_exact):
-                    keep_frame_response = is_timegate and not redirect_to_exact and not is_proxy
                     response = self.handle_custom_response(environ, wb_url,
                                                            full_prefix, host_prefix,
                                                            kwargs)
+
+                    keep_frame_response = not kwargs.get('no_timegate_check') and is_timegate and not redirect_to_exact and not is_proxy
 
 
         if response and not keep_frame_response:
