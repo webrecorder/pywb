@@ -49,7 +49,7 @@ Access Error Messages
 
 The special error code 451 is used to indicate that a resource has been blocked (access setting ``block``)
 
-The [error.html](https://github.com/webrecorder/pywb/blob/master/pywb/templates/error.html) template contains a special message for this access and can be customized further.
+The `error.html <https://github.com/webrecorder/pywb/blob/master/pywb/templates/error.html>`_ template contains a special message for this access and can be customized further.
 
 By design, resources that are ``exclude``-ed simply appear as 404 not found and no special error is provided.
 
