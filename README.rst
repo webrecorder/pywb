@@ -1,6 +1,10 @@
 Webrecorder pywb 2.4
 ====================
 
+.. raw:: html
+
+   <img src="static/pywb-logo.png" width="200"/>
+
 .. image:: https://travis-ci.org/webrecorder/pywb.svg?branch=master
       :target: https://travis-ci.org/webrecorder/pywb
 .. image:: https://ci.appveyor.com/api/projects/status/qxnbunw65o929599/branch/master?svg=true
