@@ -125,6 +125,9 @@ class RemoteIndexSource(BaseIndexSource):
         if 'closest' in params and self.closest_limit:
             api_url += '&limit=' + str(self.closest_limit)
 
+        if 'matchType' in params:
+            api_url += '&matchType=' + params.get('matchType')
+
         return api_url
 
     def load_index(self, params):

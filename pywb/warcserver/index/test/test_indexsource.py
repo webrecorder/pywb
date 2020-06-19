@@ -110,6 +110,17 @@ com,instagram)/amaliaulman 20141014171954 https://webenact.rhizome.org/all/20141
         assert(key_ts_res(res, 'load_url') == expected)
         assert(errs == {})
 
+    # Url Match -- Remote Loaders
+    def test_remote_loader_with_prefix(self):
+        url = 'http://instagram.com/amaliaulman?__=1234234234'
+        remote_source = self.all_sources['remote_cdx']
+        res, errs = self.query_single_source(remote_source, dict(url=url, closest='20141014162332', limit=1, allowFuzzy='0'))
+
+        expected = """\
+com,instagram)/amaliaulman 20141014162333 https://webenact.rhizome.org/all/20141014162333id_/http://instagram.com/amaliaulman"""
+
+        assert(key_ts_res(res, 'load_url') == expected)
+        assert(errs == {})
 
     # Url Match -- Remote Loaders Closest
     def test_remote_closest_loader(self, remote_source):
@@ -123,7 +134,7 @@ com,instagram)/amaliaulman 20141014162333 https://webenact.rhizome.org/all/20141
         assert(errs == {})
 
     # Url Match -- Wb Memento
-    def test_remote_closest_wb_memnto_loader(self):
+    def test_remote_closest_wb_memento_loader(self):
         replay = 'https://webenact.rhizome.org/all/{timestamp}id_/{url}'
         source = WBMementoIndexSource(replay, '', replay)
 
