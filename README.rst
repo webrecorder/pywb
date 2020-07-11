@@ -1,7 +1,7 @@
 Webrecorder pywb 2.4
 ====================
 
-.. image:: pywb/static/pywb-logo.png
+.. image:: https://raw.githubusercontent.com/webrecorder/pywb/master/pywb/static/pywb-logo.png
 
 .. image:: https://travis-ci.org/webrecorder/pywb.svg?branch=master
       :target: https://travis-ci.org/webrecorder/pywb
