@@ -7,6 +7,10 @@ pywb 2.4.2 changelist
 
 * static paths cleanup, move ``url-polyfill.min.js`` to correct dir (fixes `#571 <https://github.com/webrecorder/pywb/issues/571>`_)
 
+* minor fixes to docs
+
+* logo: resize new logo to actual size, add logo via absolute link to ensure it works on pypi also
+
 
 pywb 2.4.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~

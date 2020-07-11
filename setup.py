@@ -10,7 +10,7 @@ import sys
 from pywb import __version__
 
 
-def get_ldecription():
+def get_long_description():
     with open('README.rst', 'r') as fh:
         long_description = fh.read()
     return long_description
@@ -90,7 +90,8 @@ setup(
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
     description='Pywb Webrecorder web archive replay and capture tools',
-    long_description=get_ldecription(),
+    long_description_content_type='text/rst',
+    long_description=get_long_description(),
     license='GPL',
     packages=find_packages(exclude=['tests_disabled']),
     zip_safe=False,
