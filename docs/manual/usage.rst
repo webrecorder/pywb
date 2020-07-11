@@ -174,7 +174,7 @@ done by directly recording into your pywb collection:
 2. Run: ``wayback --record --live -a --auto-interval 10``
 3. Point your browser to ``http://localhost:8080/my-web-archive/record/<url>``
 
-For example, to record ``http://example.com/``, visit ``http://localhost:8080/my-web-archive/record/<url>``
+For example, to record ``http://example.com/``, visit ``http://localhost:8080/my-web-archive/record/http://example.com/``
 
 In this configuration, the indexing happens every 10 seconds.. After 10 seconds, the recorded url will be accessible for replay, eg:
 ``http://localhost:8080/my-web-archive/http://example.com/``
