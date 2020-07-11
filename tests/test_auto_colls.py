@@ -313,7 +313,8 @@ class TestManagedColls(CollsDirMixin, BaseConfigTest):
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'
         assert 'overriden search page: ' in resp.text
-        assert '"some":"value"' in resp.text
+        print(resp.text)
+        assert '"some":"value"' in resp.text, resp.text
 
     def test_replay_banner_metadata(self, fmod):
         """ Test adding metadata in replay banner (both framed and non-frame)
@@ -429,10 +430,10 @@ class TestManagedColls(CollsDirMixin, BaseConfigTest):
 
         os.mkdir(migrate_dir)
 
-        cdxindexer_main(['-u', migrate_dir, self._get_sample_warc('')])
+        cdxindexer_main(['-u', '-o', migrate_dir, self._get_sample_warc('')])
 
         # try one file with -9
-        cdxindexer_main(['-u', '-9', migrate_dir, self._get_sample_warc('example.warc.gz')])
+        cdxindexer_main(['-u', '-9', '-o', migrate_dir, self._get_sample_warc('example.warc.gz')])
 
         cdxs = os.listdir(migrate_dir)
         assert all(x.endswith('.cdx') for x in cdxs)

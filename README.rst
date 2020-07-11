@@ -3,7 +3,7 @@ Webrecorder pywb 2.4
 
 .. raw:: html
 
-   <img src="static/pywb-logo.png" width="200"/>
+   <img src="pywb/static/pywb-logo.png" width="200"/>
 
 .. image:: https://travis-ci.org/webrecorder/pywb.svg?branch=master
       :target: https://travis-ci.org/webrecorder/pywb

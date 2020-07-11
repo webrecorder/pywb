@@ -149,13 +149,13 @@ StatusAndHeadersParserException: Expected Status Line starting with ['HTTP/1.0',
 #=================================================================
 
 # test sort, multiple inputs
->>> cli_lines(['--sort', '-',  TEST_WARC_DIR])
+>>> cli_lines(['--sort', '-o', '-',  TEST_WARC_DIR])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 example-url-agnostic-revisit.warc.gz
 urn:x-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - - 557 3181 example-wpull.warc.gz
 Total: 213
 
 # test sort, multiple inputs, recursive, from base test dir
->>> cli_lines(['--sort', '-r', '-',  get_test_dir()])
+>>> cli_lines(['--sort', '-r', '-o', '-',  get_test_dir()])
 com,example)/ 20130729195151 http://test@example.com/ warc/revisit - B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 591 355 warcs/example-url-agnostic-revisit.warc.gz
 urn:x-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX5CDCB6MN6UN6 - - 557 3181 warcs/example-wpull.warc.gz
 Total: 213
@@ -167,7 +167,7 @@ urn:x-wpull:log 20150330235046 urn:X-wpull:log text/plain - Q32A3PBAN6S7I26HWZDX
 Total: 408
 
 # test writing to stdout
->>> cli_lines(['-', TEST_WARC_DIR + 'example.warc.gz'])
+>>> cli_lines([TEST_WARC_DIR + 'example.warc.gz'])
 com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 333 example.warc.gz
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 example.warc.gz
 Total: 4
@@ -178,7 +178,7 @@ com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 20
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 example.warc.gz
 Total: 4
 
-# test custom root dir for cdx filenames, singlw warc
+# test custom root dir for cdx filenames, single warc
 >>> cli_lines(['--dir-root', get_test_dir() + 'other/', TEST_WARC_DIR + 'example.warc.gz'])
 com,example)/?example=1 20140103030321 http://example.com?example=1 text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1043 333 ../warcs/example.warc.gz
 org,iana)/domains/example 20140128051539 http://www.iana.org/domains/example text/html 302 JZ622UA23G5ZU6Y3XAKH4LINONUEICEG - - 577 2907 ../warcs/example.warc.gz
@@ -265,7 +265,7 @@ def cli_lines_with_dir(input_):
         tmp_dir = None
         tmp_dir = tempfile.mkdtemp()
 
-        main([tmp_dir, input_])
+        main(['-o', tmp_dir, input_])
 
         filename = cdx_filename(os.path.basename(input_))
 

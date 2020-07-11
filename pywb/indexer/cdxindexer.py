@@ -451,7 +451,9 @@ instead of current working directory
                         action='store_true',
                         help=minimal_json_help)
 
-    parser.add_argument('output', nargs='?', default='-', help=output_help)
+    parser.add_argument('-o', '--output',
+                        default='-', help=output_help)
+
     parser.add_argument('inputs', nargs='+', help=input_help)
 
     cmd = parser.parse_args(args=args)
