@@ -1,3 +1,13 @@
+pywb 2.4.2 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* ensure RemoteCDXIndexSource also passes ``matchType`` to upstream
+
+* cdx-indexer: use ``-o`` flag to specify output, not first param (output to stdout by default)
+
+* static paths cleanup, move ``url-polyfill.min.js`` to correct dir (fixes `#571 <https://github.com/webrecorder/pywb/issues/571>`_)
+
+
 pywb 2.4.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
