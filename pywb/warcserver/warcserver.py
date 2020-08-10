@@ -60,6 +60,7 @@ class WarcServer(BaseWarcServer):
 
         super(WarcServer, self).__init__(debug=config.get('debug', False))
         self.config = config
+        self.dedup_index = self.config.get('dedup_index')
 
         self.root_dir = self.config.get('collections_root', '')
         self.index_paths = self.init_paths('index_paths')
@@ -113,7 +114,14 @@ class WarcServer(BaseWarcServer):
         access_checker = AccessChecker(CacheDirectoryAccessSource(self.acl_paths),
                                        self.default_access)
 
-        return DefaultResourceHandler(dir_source, self.archive_paths,
+        if self.dedup_index:
+            source = SimpleAggregator({'dedup': RedisMultiKeyIndexSource(self.dedup_index),
+                                       'dir': dir_source})
+
+        else:
+            source = dir_source
+
+        return DefaultResourceHandler(source, self.archive_paths,
                                       rules_file=self.rules_file,
                                       access_checker=access_checker)
 
@@ -243,6 +251,7 @@ def init_index_source(value, source_list=None):
                 return source
 
     else:
+        print(value)
         raise Exception('Source config must be string or dict')
 
     raise Exception('No Index Source Found for: ' + str(value))

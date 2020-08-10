@@ -167,9 +167,11 @@ class SortedCDXWriter(BaseCDXWriter):
         super(SortedCDXWriter, self).write(entry, filename)
         line = self.out.getvalue()
         if line:
-            insort(self.sortlist, line)
+            self.sortlist.append(line)
+            #insort(self.sortlist, line)
 
     def __exit__(self, *args):
+        self.sortlist.sort()
         self.actual_out.write(''.join(self.sortlist))
         return False
 

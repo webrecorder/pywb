@@ -195,6 +195,8 @@ class RecorderApp(object):
 
         req_is_wrapped = False
 
+        print('PARAMS', params)
+
         if not skipping:
             req_stream = ReqWrapper(input_buff,
                                     headers,

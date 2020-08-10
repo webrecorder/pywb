@@ -10,6 +10,8 @@ from wsgiprox.wsgiprox import WSGIProxMiddleware
 
 from pywb.recorder.multifilewarcwriter import MultiFileWARCWriter
 from pywb.recorder.recorderapp import RecorderApp
+from pywb.recorder.redisindexer import WritableRedisIndexer
+from pywb.recorder.filters import SkipDupePolicy, WriteRevisitDupePolicy, WriteDupePolicy
 
 from pywb.utils.loaders import load_yaml_config
 from pywb.utils.geventserver import GeventServer
@@ -207,8 +209,25 @@ class FrontEndApp(object):
         else:
             recorder_coll = recorder_config['source_coll']
 
-        # TODO: support dedup
         dedup_index = None
+        if self.warcserver.dedup_index:
+            policy = self.warcserver.config.get('dedup_policy')
+            if policy == 'skip':
+                dedup_policy = SkipDupePolicy()
+            elif policy == 'revisit':
+                dedup_policy = WriteRevisitDupePolicy()
+            elif policy == 'keep':
+                dedup_policy = WriteDupePolicy()
+            else:
+                dedup_policy = WriteRevisitDupePolicy()
+
+            print('Recorder Dedup: {0} policy via dedup index {1}'.format(policy, self.warcserver.dedup_index))
+
+            dedup_index = WritableRedisIndexer(
+                            redis_url=self.warcserver.dedup_index,
+                            rel_path_template=self.warcserver.archive_paths,
+                            dupe_policy=dedup_policy)
+
         warc_writer = MultiFileWARCWriter(self.warcserver.archive_paths,
                                           max_size=int(recorder_config.get('rollover_size', 1000000000)),
                                           max_idle_secs=int(recorder_config.get('rollover_idle_secs', 600)),
@@ -393,8 +412,8 @@ class FrontEndApp(object):
         :return: WbResponse containing the contents of the record/URL
         :rtype: WbResponse
         """
-        if coll in self.warcserver.list_fixed_routes():
-            return WbResponse.text_response('Error: Can Not Record Into Custom Collection "{0}"'.format(coll))
+        #if coll in self.warcserver.list_fixed_routes():
+        #    return WbResponse.text_response('Error: Can Not Record Into Custom Collection "{0}"'.format(coll))
 
         return self.serve_content(environ, coll, url, record=True)
 
@@ -625,8 +644,8 @@ class FrontEndApp(object):
 
         if proxy_config.get('recording'):
             logging.info('Proxy recording into collection "{0}"'.format(proxy_coll))
-            if proxy_coll in self.warcserver.list_fixed_routes():
-                raise Exception('Can not record into fixed collection')
+            #if proxy_coll in self.warcserver.list_fixed_routes():
+            #raise Exception('Can not record into fixed collection')
 
             proxy_route = proxy_coll + self.RECORD_ROUTE
             if not config.get('recorder'):

@@ -48,14 +48,18 @@ class WritableRedisIndexer(RedisIndexSource):
         return base_name
 
     def add_warc_file(self, full_filename, params):
+        print('PARAMS W', params)
         base_filename = self._get_rel_or_base_name(full_filename, params)
         file_key = res_template(self.file_key_template, params)
+        if not file_key:
+            return
 
         full_load_path = self.full_warc_prefix + full_filename
 
         self.redis.hset(file_key, base_filename, full_load_path)
 
     def add_urls_to_index(self, stream, params, filename, length):
+        print('PARAMS U', params)
         base_filename = self._get_rel_or_base_name(filename, params)
 
         cdxout = BytesIO()
@@ -64,6 +68,7 @@ class WritableRedisIndexer(RedisIndexSource):
                         writer_cls=params.get('writer_cls'))
 
         z_key = res_template(self.redis_key_template, params)
+        print('KEY', z_key, self.redis_key_template, params)
 
         cdx_list = cdxout.getvalue().rstrip().split(b'\n')
 
