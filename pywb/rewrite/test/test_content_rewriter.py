@@ -60,12 +60,15 @@ class TestContentRewriter(object):
 
     def rewrite_record(self, headers, content, ts, url='http://example.com/',
                        prefix='http://localhost:8080/prefix/', warc_headers=None,
-                       request_url=None, is_live=None, use_js_proxy=True, environ=None):
+                       request_url=None, is_live=None, use_js_proxy=True, environ=None, is_ajax=False):
 
         record = self._create_response_record(url, headers, content, warc_headers)
 
         wburl = WbUrl(ts + '/' + (request_url or url))
         url_rewriter = UrlRewriter(wburl, prefix)
+
+        if is_ajax:
+            url_rewriter.rewrite_opts['is_ajax'] = True
 
         cdx = CDXObject()
         cdx['url'] = url
@@ -607,7 +610,8 @@ jsonpCallbackABCDEF({"foo": "bar"});"""
             content = fh.read()
 
         headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701oe_',
-                                                  url='http://example.com/path/master.m3u8')
+                                                  url='http://example.com/path/master.m3u8',
+                                                  is_ajax=True)
 
         assert headers.headers == [('Content-Type', 'application/vnd.apple.mpegurl')]
         filtered = """\
@@ -615,6 +619,25 @@ jsonpCallbackABCDEF({"foo": "bar"});"""
 #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="WebVTT",NAME="English",DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,URI="https://example.com/subtitles/"
 #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=4495000,RESOLUTION=1920x1080,CODECS="avc1.640028, mp4a.40.2",SUBTITLES="WebVTT"
 http://example.com/video_6.m3u8
+"""
+
+        assert b''.join(gen).decode('utf-8') == filtered
+
+    def test_hls_default_max_streaming_no_ajax(self):
+        headers = {'Content-Type': 'application/vnd.apple.mpegurl'}
+        with open(os.path.join(get_test_dir(), 'text_content', 'sample_hls.m3u8'), 'rt') as fh:
+            content = fh.read()
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701oe_',
+                                                  url='http://example.com/path/master.m3u8',
+                                                  is_ajax=False)
+
+        assert headers.headers == [('Content-Type', 'application/vnd.apple.mpegurl')]
+        filtered = """\
+#EXTM3U
+#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="WebVTT",NAME="English",DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,URI="https://example.com/subtitles/"
+#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=4495000,RESOLUTION=1920x1080,CODECS="avc1.640028, mp4a.40.2",SUBTITLES="WebVTT"
+http://localhost:8080/prefix/201701oe_/http://example.com/video_6.m3u8
 """
 
         assert b''.join(gen).decode('utf-8') == filtered
@@ -629,7 +652,8 @@ http://example.com/video_6.m3u8
 
         headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701oe_',
                                                   url='http://example.com/path/master.m3u8',
-                                                  warc_headers={'WARC-JSON-Metadata': json.dumps(metadata)})
+                                                  warc_headers={'WARC-JSON-Metadata': json.dumps(metadata)},
+                                                  is_ajax=True)
 
         assert headers.headers == [('Content-Type', 'application/x-mpegURL')]
         filtered = """\
@@ -650,7 +674,8 @@ http://example.com/video_5.m3u8
 
         headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701oe_',
                                                   url='http://example.com/path/master.m3u8',
-                                                  warc_headers={'WARC-JSON-Metadata': json.dumps(metadata)})
+                                                  warc_headers={'WARC-JSON-Metadata': json.dumps(metadata)},
+                                                  is_ajax=True)
 
         assert headers.headers == [('Content-Type', 'application/x-mpegURL')]
         filtered = """\

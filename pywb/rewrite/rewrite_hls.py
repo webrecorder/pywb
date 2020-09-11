@@ -19,6 +19,8 @@ class RewriteHLS(BufferedRewriter):
         count = 0
         best_index = None
 
+        native_hls = not self.url_rewriter.rewrite_opts.get('is_ajax')
+
         best_bandwidth = 0
         best_resolution = 0
 
@@ -45,6 +47,9 @@ class RewriteHLS(BufferedRewriter):
                     best_resolution = curr_resolution
                     best_bandwidth = curr_bandwidth
                     best_index = count
+            elif native_hls:
+                if not line.startswith('#'):
+                    lines[count] = self.url_rewriter.rewrite(line)
 
             count = count + 1
 
