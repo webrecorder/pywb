@@ -110,7 +110,7 @@ class BaseCli(object):
             self.extra_config['debug'] = True
 
         if self.r.record:
-            self.extra_config['recorder'] = 'live'
+            self.extra_config['recorder'] = {'source_coll': 'live'}
 
     def run(self):
         """Start the application"""

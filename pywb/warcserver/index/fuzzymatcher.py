@@ -130,6 +130,9 @@ class FuzzyMatcher(object):
             if key not in self.FUZZY_SKIP_PARAMS:
                 fuzzy_params[key] = params[key]
 
+        if 'graphql' in url:
+            print(matched_rule, fuzzy_params)
+
         return matched_rule, fuzzy_params
 
     def make_regex(self, config):

@@ -39,6 +39,8 @@ SOURCE_LIST = [LiveIndexSource,
 class WarcServer(BaseWarcServer):
     AUTO_COLL_TEMPL = '{coll}'
 
+    DEFAULT_REDIS_DEDUP_INDEX = 'redis://localhost:6379/0/pywb:{coll}:cdxj'
+
     def __init__(self, config_file='./config.yaml', custom_config=None):
         config = load_yaml_config(DEFAULT_CONFIG)
 
@@ -56,11 +58,19 @@ class WarcServer(BaseWarcServer):
                 custom_config['collections'].update(config['collections'])
             if 'proxy' in custom_config and 'proxy' in config:
                 custom_config['proxy'].update(config['proxy'])
+            if 'recorder' in custom_config and 'recorder' in config:
+                custom_config['recorder'].update(config['recorder'])
+
             config.update(custom_config)
 
         super(WarcServer, self).__init__(debug=config.get('debug', False))
         self.config = config
-        self.dedup_index = self.config.get('dedup_index')
+
+        recorder_config = self.config.get('recorder') or {}
+        if isinstance(recorder_config, dict) and recorder_config.get('dedup_policy'):
+            self.dedup_index = self.config.get('dedup_index', WarcServer.DEFAULT_REDIS_DEDUP_INDEX)
+        else:
+            self.dedup_index = None
 
         self.root_dir = self.config.get('collections_root', '')
         self.index_paths = self.init_paths('index_paths')

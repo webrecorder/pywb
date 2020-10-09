@@ -2,8 +2,6 @@
 # ========================================
 #
 
-dedup_index: redis://localhost:6379/0/c:{coll}:cdxj
-
 collections:
     all: $all
     pywb:

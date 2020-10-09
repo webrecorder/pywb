@@ -28,6 +28,7 @@ from pywb.apps.wbrequestresponse import WbResponse
 
 import os
 import re
+import sys
 
 import traceback
 import requests
@@ -209,17 +210,25 @@ class FrontEndApp(object):
         else:
             recorder_coll = recorder_config['source_coll']
 
-        dedup_index = None
-        if self.warcserver.dedup_index:
-            policy = self.warcserver.config.get('dedup_policy')
-            if policy == 'skip':
-                dedup_policy = SkipDupePolicy()
-            elif policy == 'revisit':
-                dedup_policy = WriteRevisitDupePolicy()
-            elif policy == 'keep':
-                dedup_policy = WriteDupePolicy()
-            else:
-                dedup_policy = WriteRevisitDupePolicy()
+        self.rec_cache_mode = recorder_config.get('cache')
+
+        dedup_by_url = False
+
+        policy = recorder_config.get('dedup_policy')
+        if policy == 'skip':
+            dedup_policy = SkipDupePolicy()
+            dedup_by_url = True
+        elif policy == 'revisit':
+            dedup_policy = WriteRevisitDupePolicy()
+        elif policy == 'keep':
+            dedup_policy = WriteDupePolicy()
+        else:
+            dedup_policy = None
+
+        if dedup_policy:
+            if not self.warcserver.dedup_index:
+                print('dedup_index in the root of the config must also be specified when using dedup_policy')
+                sys.exit(2)
 
             print('Recorder Dedup: {0} policy via dedup index {1}'.format(policy, self.warcserver.dedup_index))
 
@@ -232,7 +241,8 @@ class FrontEndApp(object):
                                           max_size=int(recorder_config.get('rollover_size', 1000000000)),
                                           max_idle_secs=int(recorder_config.get('rollover_idle_secs', 600)),
                                           filename_template=recorder_config.get('filename_template'),
-                                          dedup_index=dedup_index)
+                                          dedup_index=dedup_index,
+                                          dedup_by_url=dedup_by_url)
 
         self.recorder = RecorderApp(self.RECORD_SERVER % str(self.warcserver_server.port), warc_writer,
                                     accept_colls=recorder_config.get('source_filter'))
@@ -258,7 +268,6 @@ class FrontEndApp(object):
         if not os.path.isdir(indexer.root_path):
             msg = 'No managed directory "{0}" for auto-indexing'
             logging.error(msg.format(indexer.root_path))
-            import sys
             sys.exit(2)
 
         msg = 'Auto-Indexing Enabled on "{0}", checking every {1} secs'
@@ -447,6 +456,7 @@ class FrontEndApp(object):
         coll_config = self.get_coll_config(coll)
         if record:
             coll_config['type'] = 'record'
+            coll_config['cache'] = self.rec_cache_mode
 
         if timemap_output:
             coll_config['output'] = timemap_output
