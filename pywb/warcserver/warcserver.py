@@ -176,13 +176,13 @@ class WarcServer(BaseWarcServer):
             archive_paths = coll_config.get('archive_paths')
             acl_paths = coll_config.get('acl_paths')
             default_access = coll_config.get('default_access', self.default_access)
-
+            surt_ordered = coll_config.get('surt_ordered', True)
         else:
             raise Exception('collection config must be string or dict')
 
         # INDEX CONFIG
         if index:
-            agg = init_index_agg({name: index})
+            agg = init_index_agg({name: index}, surt_ordered=surt_ordered)
         else:
             if not isinstance(coll_config, dict):
                 raise Exception('collection config missing')
@@ -196,7 +196,7 @@ class WarcServer(BaseWarcServer):
                 raise Exception('no index, index_group or sequence found')
 
             timeout = int(coll_config.get('timeout', 0))
-            agg = init_index_agg(index_group, True, timeout)
+            agg = init_index_agg(index_group, True, timeout, surt_ordered=surt_ordered)
 
         # ARCHIVE CONFIG
         if not archive_paths:
@@ -257,14 +257,14 @@ def register_source(source_cls, end=False):
 
 
 # ============================================================================
-def init_index_agg(source_configs, use_gevent=False, timeout=0, source_list=None):
+def init_index_agg(source_configs, use_gevent=False, timeout=0, source_list=None, surt_ordered=True):
     sources = {}
     for n, v in iteritems(source_configs):
         sources[n] = init_index_source(v, source_list=source_list)
 
     if use_gevent:
-        return GeventTimeoutAggregator(sources, timeout=timeout)
+        return GeventTimeoutAggregator(sources, timeout=timeout, surt_ordered=surt_ordered)
     else:
-        return SimpleAggregator(sources)
+        return SimpleAggregator(sources, surt_ordered=surt_ordered)
 
 
