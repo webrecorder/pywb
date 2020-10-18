@@ -213,6 +213,7 @@ class FrontEndApp(object):
         self.rec_cache_mode = recorder_config.get('cache')
 
         dedup_by_url = False
+        dedup_index = None
 
         policy = recorder_config.get('dedup_policy')
         if policy == 'skip':
