@@ -1,3 +1,6 @@
+.. _using-outback:
+
+
 Using OutbackCDX with pywb
 ==========================
 

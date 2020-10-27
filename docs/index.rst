@@ -20,7 +20,7 @@ A subset of features provides the basic functionality of a "Wayback Machine".
    manual/ui-customization
    manual/architecture
    manual/apis
-   manual/transition
+   manual/owb-transition
    code/pywb
 
 

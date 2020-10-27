@@ -263,6 +263,32 @@ See the `Nginx Docs <https://nginx.org/en/docs/>`_ for a lot more details on how
         }
     }
 
+
+To serve pywb from a prefix path, eg. ``/prefix/`` instead from the root, the following config can be used.
+
+The ``SCRIPT_NAME`` variable passes the prefix to the pywb application.
+
+
+.. code:: nginx
+
+    server {
+        listen 80;
+
+        location /prefix/static {
+            alias /path/to/pywb/static;
+        }
+
+        location /prefix/ {
+            uwsgi_pass localhost:8081;
+
+            include uwsgi_params;
+            uwsgi_param UWSGI_SCHEME $scheme;
+            uwsgi_param SCRIPT_NAME prefix/;
+        }
+    }
+
+
+
 Sample Apache Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

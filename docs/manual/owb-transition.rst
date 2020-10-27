@@ -13,6 +13,9 @@ with OutbackCDX and nginx, and this configuration is covered below, along with a
 
    owb-pywb-terms 
    outbackcdx
-
+   migrating-cdx
+   owb-to-pywb-config
+   owb-to-pywb-exclusions
+   owb-to-pywb-deploy
  
 
