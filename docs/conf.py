@@ -53,7 +53,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'pywb'
-copyright = 'A Webrecorder Project, Ilya Kreymer, Rhizome'
+copyright = '2014-2020, Webrecorder Software, Rhizome, and Contributors'
 author = 'Ilya Kreymer'
 
 # The version info for the project you're documenting, acts as replacement for
