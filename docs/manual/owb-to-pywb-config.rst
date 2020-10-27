@@ -155,7 +155,7 @@ pywb will load all CDX from that directory.
 Path Index Configuration
 ------------------------
 
-OpenWayback supports a path index that can be used to lookup a WARC by filename and map to an exact path.
+OpenWayback supports a 'path index' that can be used to lookup a WARC by filename and map to an exact path.
 For compatibility, pywb supports the same path index lookup, as well as loading WARC files by path or URL prefix.
 
 
@@ -181,7 +181,16 @@ can be configured in the ``archive_paths`` field of pywb collection configuratio
             index_paths: ...
             archive_paths: /archive/warc-paths.txt
 
-If all WARC files are stored in a local directory, a path index is not needed and pywb will try loading the WARC by prefix.
+
+The path index is a tab-delimited text file for mapping WARC filenames to full paths, eg:
+
+.. code::
+
+    example.warc.gz<tab>/some/path/to/example.warc.gz
+    another.warc.gz<tab>/some-other/path/another.warc.gz
+
+
+However, if all WARC files are stored in the same directory, or in a few directories, a path index is not needed and pywb will try loading the WARC by prefix.
 
 The ``archive_paths`` can accept a list of entries. For example, given the config:
 
