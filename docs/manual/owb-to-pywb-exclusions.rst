@@ -36,7 +36,23 @@ It is possible to specify multiple access control files, which will all be appli
 
 Using ``block`` instead of ``exclude`` will result in pywb returning a 451 error, indicating that URLs are in the index by blocked.
 
-For more options, see the full :ref:`access-control` documentation for how to use the system.
+
+CLI Tool
+--------
+
+After exclusions have been imported, it is recommended to use ``wb-manager acl`` command-line tool for managing exclusions:
+
+
+To add an exclusion, run: ::
+
+  wb-manager acl add /archive/exclusions.aclj http://httpbin.org/anything/something exclude
+
+To remove an exclusion, run: ::
+
+  wb-manager acl remove /archive/exclusions.aclj http://httpbin.org/anything/something
+
+
+For more options, see the full :ref:`access-control` documentation or run ``wb-manager acl --help``.
 
 
 Not Yet Supported
@@ -48,5 +64,6 @@ The following is not yet supported in the access control system:
 - Exclusions/Access Control By specific date range
 - Regex based exclusions
 - Date Range Embargo on All URLs
+- Robots.txt-based exclusins
 
 

@@ -1,5 +1,5 @@
-Deploying pywb: Path Prefix and Nginx/Apache
-============================================
+Deploying pywb: Collection Paths and with Nginx/Apache
+======================================================
 
 In pywb, the collection name is also the access point and each the collections in ``config.yaml``
 can be accessed by their name as the subpath:
@@ -13,7 +13,7 @@ can be accessed by their name as the subpath:
         another-collection:
             ...
 
-If pywb is deployedon port 8080, each collection will be available under:
+If pywb is deployed on port 8080, each collection will be available under:
 ``http://<hostname>/wayback/*/https://example.com/`` and ``http://<hostname>/another-collection/*/https://example.com/``
 
 To make a collection available under the root, simply set its name to: ``$root``
@@ -30,6 +30,11 @@ To make a collection available under the root, simply set its name to: ``$root``
 
 
 Now, the first collection from: ``http://<hostname>/*/https://example.com/``
+
+
+To deploy pywb on a subdirectory, eg. ``http://<hostname>/pywb/another-collection/*/https://example.com/``,
+
+and in general, for production use, it is recommended to deploy pywb behind an Nginx or Apache reverse proxy.
 
 
 Nginx and Apache Reverse Proxy
