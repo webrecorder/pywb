@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  # outbackcdx image
+  outbackcdx:
+    image: nlagovau/outbackcdx
+    ports:
+        - 8084:8080
+
+  # use cdx-indexer to index and ingest into outbackcdx
+  ingest:
+    image: webrecorder/pywb
+    entrypoint: ["bash", "-c"]
+    command: /tmp/run.sh
+
+    depends_on:
+        - outbackcdx
+
+    volumes:
+        - ../config.yaml:/webarchive/config.yaml
+        - ./run.sh:/tmp/run.sh
+        - ../sample_archive/:/webarchive/sample_archive/
+
+  # main pywb image
+  pywb:
+    image: webrecorder/pywb
+    volumes:
+        - ../config.yaml:/webarchive/config.yaml
+        - ../sample_archive/:/webarchive/sample_archive/
+
+    ports:
+        - 8080:8080
+
+    depends_on:
+        - ingest
+
+
+
+

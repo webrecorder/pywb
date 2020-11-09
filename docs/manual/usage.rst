@@ -230,6 +230,8 @@ To run pywb in Docker behind a local nginx (as shown below), port 8081 should al
 See :ref:`getting-started-docker` for more info on using pywb with Docker.
 
 
+.. _nginx-deploy:
+
 Sample Nginx Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -264,54 +266,54 @@ See the `Nginx Docs <https://nginx.org/en/docs/>`_ for a lot more details on how
     }
 
 
-To serve pywb from a prefix path, eg. ``/prefix/`` instead from the root, the following config can be used.
-
-The ``SCRIPT_NAME`` variable passes the prefix to the pywb application.
-
-
-.. code:: nginx
-
-    server {
-        listen 80;
-
-        location /prefix/static {
-            alias /path/to/pywb/static;
-        }
-
-        location /prefix/ {
-            uwsgi_pass localhost:8081;
-
-            include uwsgi_params;
-            uwsgi_param UWSGI_SCHEME $scheme;
-            uwsgi_param SCRIPT_NAME prefix/;
-        }
-    }
-
-
+.. _apache-deploy:
 
 Sample Apache Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following Apache configuration snippet can be used to deploy pywb *without* uwsgi. A configuration with uwsgi is also probably possible but this covers the simplest case of launching the `wayback` binary directly.
+The recommended Apache configuration is to use pywb with ``mod_proxy`` and ``mod_proxy_uwsgi``.
 
-The configuration assumes pywb is running on port 8080 on localhost, but it could be on a different machine as well.
+To enable these, ensure that your httpd.conf includes:
+
+.. code:: apache
+
+  LoadModule proxy_module modules/mod_proxy.so
+  LoadModule proxy_uwsgi_module modules/mod_proxy_uwsgi.so
+
+
+
+Then, in your config, simply include:
 
 .. code:: apache
 
     <VirtualHost *:80>
-         ServerName proxy.example.com
-         Redirect / https://proxy.example.com/
-         DocumentRoot /var/www/html/
+      ProxyPass / uwsgi://pywb:8081/
     </VirtualHost>
 
-    <VirtualHost *:443>
-         ServerName proxy.example.com
-         SSLEngine on
-         DocumentRoot /var/www/html/
-         ErrorDocument 404 /404.html
-         ProxyPreserveHost On
-         ProxyPass /.well-known/ !
-         ProxyPass / http://localhost:8080/
-         ProxyPassReverse / http://localhost:8080/
-         RequestHeader set "X-Forwarded-Proto" expr=%{REQUEST_SCHEME}
-    </VirtualHost>
+The configuration assumes uwsgi is started with ``uwsgi uwsgi.ini``
+
+
+Running on Subdirectory Path
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To run pywb on a subdirectory, rather than at the root of the web server, the recommended configuration is to adjust the ``uwsgi.ini`` to include the subdirectory:
+For example, to deploy pywb under the ``/wayback`` subdirectory, the ``uwsgi.ini`` can be configured as follows:
+
+.. code:: ini
+
+    mount = /wayback=./pywb/apps/wayback.py
+    manage-script-name = true
+
+
+.. _example-deploy:
+
+Deployment Examples
+^^^^^^^^^^^^^^^^^^^
+
+The ``sample-deploy`` directory includes working Docker Compose examples for deploying pywb with Nginx and Apache on the ``/wayback`` subdirectory.
+
+See:
+ - `Docker Compose Nginx <https://github.com/webrecorder/pywb/blob/docs/sample-deploy/docker-compose-nginx.yaml>`_ for sample Nginx config.
+ - `Docker Compose Apache <https://github.com/webrecorder/pywb/blob/docs/sample-deploy/docker-compose-apache.yaml>`_ for sample Apache config.
+ - `uwsgi_subdir.ini <https://github.com/webrecorder/pywb/blob/docs/sample-deploy/uwsgi_subdir.ini>`_ for example subdirectory uwsgi config.
+

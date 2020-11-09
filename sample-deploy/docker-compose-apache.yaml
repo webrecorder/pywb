@@ -1,0 +1,34 @@
+# This example demonstrates running pywb with apache frontend under a subpath /wayback
+
+version: '3'
+
+services:
+  # main pywb image
+  pywb:
+    image: webrecorder/pywb
+    volumes:
+        - ../config.yaml:/webarchive/config.yaml
+        - ../sample_archive/:/webarchive/sample_archive/
+        - ./uwsgi_subdir.ini:/uwsgi/uwsgi.ini
+
+        # optional volume to serve static assets from nginx
+        - pywb-static:/pywb/pywb/static
+
+  apache:
+    image: httpd
+    ports:
+        - 8080:80
+
+    volumes:
+        #- ./nginx-default.conf:/etc/nginx/conf.d/default.conf
+        - ./httpd.conf:/usr/local/apache2/conf/httpd.conf
+        - ./pywb-apache.conf:/usr/local/apache2/conf/extra/pywb-apache.conf
+
+        # optional volume to serve static assets from nginx
+        - pywb-static:/pywb/pywb/static
+
+    depends_on:
+        - pywb   
+
+volumes:
+  pywb-static:

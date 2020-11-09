@@ -56,7 +56,7 @@ A OpenWayback configuration with a local collection and local CDX, for example:
 
 .. code:: xml
 
-     <bean id="artliesCollection" class="org.archive.wayback.webapp.WaybackCollection">
+     <bean id="collection" class="org.archive.wayback.webapp.WaybackCollection">
         <property name="resourceIndex">
           <bean class="org.archive.wayback.resourceindex.cdxserver.EmbeddedCDXServerIndex">
             ...
@@ -149,6 +149,46 @@ can be replaced with:
 
 pywb will load all CDX from that directory.
 
+
+ZipNum Cluster Index
+--------------------
+
+pywb also supports using a compressed :ref:`zipnum` instead of a plain text CDX. For example, the following OpenWayback configuration:
+
+.. code:: xml
+
+    <bean id="collection" class="org.archive.wayback.webapp.WaybackCollection">
+      <property name="resourceIndex">
+        <bean class="org.archive.wayback.resourceindex.LocalResourceIndex">
+          ...
+          <property name="source">
+            <bean class="org.archive.wayback.resourceindex.ZipNumClusterSearchResultSource">
+              <property name="cluster">
+                <bean class="org.archive.format.gzip.zipnum.ZipNumCluster">
+                  <property name="summaryFile" value="/webarchive/zipnum-cdx/all.summary"></property>
+                  <property name="locFile" value="/webarchive/zipnum-cdx/all.loc"></property>
+                </bean>
+              </property>
+            ...
+        </bean>
+      </property>
+    </bean>
+
+can simply be converted to the pywb config:
+
+.. code:: yaml
+
+    collections:
+      wayback:
+        index_paths: /webarchive/zipnum-cdx
+
+        # if the index is not surt ordered
+        surt_ordered: false
+
+
+pywb will automatically determine the ``.summary`` and use the ``.loc`` files for the ZipNum Cluster if they are present in the directory.
+
+Note that if the ZipNum index is **not** SURT ordered, the ``surt_ordered: false`` flag must be added to support this format.
 
 
 
@@ -264,3 +304,5 @@ pywb supports a default collection that is enabled for proxy mode, and a default
 To support HTTPS access, pywb provides a certificate authority that can be trusted by a browser to rewrite HTTPS content.
 
 See :ref:`https-proxy` for all of the options of pywb proxy mode configuration.
+
+

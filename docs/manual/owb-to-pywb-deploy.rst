@@ -39,19 +39,22 @@ The recommended deployment for pywb is with uWSGI and behind an Nginx or Apache 
 
 This configuration allows for more robust deployment, and allowing these servers to handle static files.
 
-Running behind Nginx or Apache also allows for configuring pywb to run on a specific subpath, by setting the ``SCRIPT_NAME`` parameter.
 
-To serve pywb from ``http://<hostname>/prefix/to/pywb/``,
-
-For Nginx, set: ::
-
-  uwsgi_param SCRIPT_NAME prefix/to/pywb/;
-
-For Apache, set: ::
-
-  SetEnv SCRIPT_NAME prefix/to/pywb/
+See the :ref:`nginx-deploy` and :ref:`apache-deploy` sections for more info on deploying with Nginx and Apache.
 
 
-See the :ref:`deployment` section for more detailed examples of Nginx and Apache configurations.
+Working Docker Compose Examples
+-------------------------------
+
+The pywb `Deployment Examples <https://github.com/webrecorder/pywb/blob/docs/sample-deploy/>`_ include working examples of deploying pywb with Nginx, Apache and OutbackCDX
+in Docker using Docker Compose.
+
+The examples are availablee in the ``sample-deploy`` directory of the pywb repo. The examples include:
+
+ - ``docker-compose-outback.yaml`` -- Docker Compose config to start OutbackCDX and pywb, and ingest sample data into OutbackCDX
+ - ``docker-compose-nginx.yaml`` -- Docker Compose config to launch pywb and latest Nginx, with pywb running on subdirectory ``/wayback`` and Nginx serving static files from pywb.
+ - ``docker-compose-apache.yaml`` -- Docker Compose config to launch pywb and latest Apache, with pywb running on subdirectory ``/wayback`` and Apache serving static files from pywb.
+
+
 
 
