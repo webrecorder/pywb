@@ -302,7 +302,6 @@ def write_multi_cdx_index(output, inputs, **options):
 
                     for entry in entry_iter:
                         writer.write(entry, filename)
-
         return writer
 
 

@@ -19,6 +19,8 @@ from pywb import DEFAULT_CONFIG
 
 from six.moves import input
 
+from pywb.recorder.s3uploader import s3_upload_index
+
 
 #=============================================================================
 # to allow testing by mocking get_input
@@ -188,6 +190,8 @@ directory structure expected by pywb
 
         shutil.move(merged_file, cdx_file)
         #os.rename(merged_file, cdx_file)
+        cdx_from_collections = 'collections' + cdx_file.split('collections')[-1]
+        s3_upload_index(cdx_from_collections, 'pywbarchive')
         os.remove(temp_file)
 
     def set_metadata(self, namevalue_pairs):

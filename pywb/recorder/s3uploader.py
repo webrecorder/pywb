@@ -36,13 +36,13 @@ def s3_upload_file(filename: str, bucket: str):
 def validate_warc_filename(filename: str):
     warc_pattern = r'collections\/[\w\-]+\/archive\/[\w\-]+\.warc\.gz'
     if not re.match(warc_pattern, filename):
-        raise WARCValidationError('File is not a valid warc path')
+        raise WARCValidationError(f'File {filename} is not a valid warc path')
 
 
 def validate_index_filename(filename: str):
     index_pattern = r'collections\/[\w\-]+\/indexes\/[\w\-]+\.cdxj'
     if not re.match(index_pattern, filename):
-        raise WARCValidationError('File is not a valid index path')
+        raise WARCValidationError(f'File {filename} is not a valid index path')
 
 
 def s3_upload_warc(filename: str, bucket: str):
