@@ -7,8 +7,6 @@ import re
 
 s3log = logging.getLogger('s3log')
 
-BUCKET = os.environ.get('S3BUCKET')
-
 
 class WARCValidationError(Exception):
     pass
