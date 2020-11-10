@@ -11,6 +11,11 @@ from warcio.warcwriter import BaseWARCWriter
 from pywb.utils.format import res_template
 from pywb.utils.io import no_except_close
 
+from pywb.recorder.s3uploader import s3_upload_file
+
+
+S3BUCKET = os.environ.get('S3BUCKET')
+
 
 # ============================================================================
 class MultiFileWARCWriter(BaseWARCWriter):
@@ -208,6 +213,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
                                                    filename,
                                                    new_size - start)
 
+            s3_upload_file(filename, S3BUCKET)
             return True
 
         except Exception as e:
