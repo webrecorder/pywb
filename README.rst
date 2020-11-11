@@ -1,3 +1,8 @@
+# The Data Shed usage
+
+As normal but you need to set the AWS_PROFILE environment variable to enable S3 uploads, including for tests.
+
+
 Webrecorder pywb 2.4
 ====================
 
