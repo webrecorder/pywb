@@ -240,7 +240,6 @@ class MultiFileWARCWriter(BaseWARCWriter):
     def close(self):
         for dir_key, out, filename in self.iter_open_files():
             self._close_file(out)
-            s3_upload_warc(filename, 'pywbarchive')
 
         self.fh_cache = {}
 
