@@ -191,7 +191,7 @@ directory structure expected by pywb
         shutil.move(merged_file, cdx_file)
         #os.rename(merged_file, cdx_file)
         cdx_from_collections = 'collections' + cdx_file.split('collections')[-1]
-        s3_upload_index(cdx_from_collections, 'pywbarchive')
+        s3_upload_index(cdx_from_collections)
         os.remove(temp_file)
 
     def set_metadata(self, namevalue_pairs):

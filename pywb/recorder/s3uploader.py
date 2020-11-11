@@ -12,14 +12,23 @@ class WARCValidationError(Exception):
     pass
 
 
-def s3_upload_file(filename: str, bucket: str):
+class BucketValidationError(Exception):
+    pass
+
+
+def s3_upload_file(filename: str, bucket: str=None):
     """Upload a file to an S3 bucket
 
     :param filename: Full path to file to upload
-    :param bucket: Bucket to upload to
+    :param bucket: Bucket to upload to. If not passed, expect to
+        find this in the S3BUCKET environment variable
     :return: True if file was uploaded, else False
     """
     # Clean up bucket and filenames
+    bucket = bucket or os.environ.get('S3BUCKET')
+    if not bucket:
+        raise BucketValidationError('No S3 bucket provided')
+
     bucket = bucket.lstrip('s3://')
     obj_name = filename.lstrip('/')
 
@@ -45,11 +54,11 @@ def validate_index_filename(filename: str):
         raise WARCValidationError(f'File {filename} is not a valid index path')
 
 
-def s3_upload_warc(filename: str, bucket: str):
+def s3_upload_warc(filename: str, bucket: str=None):
     validate_warc_filename(filename)
     return s3_upload_file(filename, bucket)
 
 
-def s3_upload_index(filename: str, bucket: str):
+def s3_upload_index(filename: str, bucket: str=None):
     validate_index_filename(filename)
     return s3_upload_file(filename, bucket)

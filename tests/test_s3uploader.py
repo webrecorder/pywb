@@ -5,23 +5,54 @@ import boto3
 from pathlib import Path
 import pytest
 
-from pywb.recorder.s3uploader import s3_upload_file, validate_warc_filename, validate_index_filename, WARCValidationError
+from pywb.recorder.s3uploader import (
+    s3_upload_file, validate_warc_filename, validate_index_filename,
+    WARCValidationError, BucketValidationError)
 
 
 TEST_BUCKET = 'pywbtest'
 
 
-@pytest.mark.parametrize('filepath', ['/tmp/' + ''.join(str(uuid.uuid4()).split('-')) + '.txt'])
-def test_s3_upload_file(filepath):
+def get_test_file(prefix):
+    filepath = f'/{prefix}/{"".join(str(uuid.uuid4()).split("-"))}.txt'
     Path(filepath).touch()
+    return filepath
+
+
+def test_s3_upload_file():
+    prefix = 'tmp'
+    filepath = get_test_file(prefix)
     assert s3_upload_file(filepath, TEST_BUCKET)
 
-    res = boto3.resource('s3')
-    bucket = res.Bucket(TEST_BUCKET)
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket(TEST_BUCKET)
     filename = filepath.lstrip('/')
-    assert filename in list(map(lambda x: x.key, bucket.objects.filter(Prefix='tmp')))
+    assert filename in list(map(lambda x: x.key, bucket.objects.filter(Prefix=prefix)))
 
-    res.Object(TEST_BUCKET, filename).delete()
+    s3.Object(TEST_BUCKET, filename).delete()
+
+
+def test_s3_upload_file_with_env_var():
+    prefix = 'tmp'
+    filepath = get_test_file(prefix)
+
+    os.environ['S3BUCKET'] = TEST_BUCKET
+    assert s3_upload_file(filepath)
+
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket(TEST_BUCKET)
+    filename = filepath.lstrip('/')
+    assert filename in list(map(lambda x: x.key, bucket.objects.filter(Prefix=prefix)))
+
+    s3.Object(TEST_BUCKET, filename).delete()
+    os.environ.pop('S3BUCKET')
+
+
+def test_s3_upload_file_with_no_bucket():
+    filepath = get_test_file('tmp')
+    with pytest.raises(BucketValidationError):
+        s3_upload_file(filepath)
+
 
 
 @pytest.mark.parametrize('filepath,exc', [

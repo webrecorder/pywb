@@ -209,7 +209,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
                 self.dedup_index.add_urls_to_index(out, params,
                                                    filename,
                                                    new_size - start)
-            s3_upload_warc(filename, 'pywbarchive')
+            s3_upload_warc(filename)
             return True
 
         except Exception as e:
