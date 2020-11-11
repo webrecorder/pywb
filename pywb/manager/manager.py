@@ -131,6 +131,8 @@ directory structure expected by pywb
         cdx_file = os.path.join(self.indexes_dir, self.DEF_INDEX_FILE)
         logging.info('Indexing ' + self.archive_dir + ' to ' + cdx_file)
         self._cdx_index(cdx_file, [self.archive_dir])
+        cdx_from_collections = 'collections' + out.split('collections')[-1]
+        s3_upload_index(cdx_from_collections)
 
     def _cdx_index(self, out, input_, rel_root=None):
         from pywb.indexer.cdxindexer import write_multi_cdx_index

@@ -34,7 +34,7 @@ def s3_upload_file(filename: str, bucket: str=None):
 
     s3client = boto3.client('s3')
     try:
-        s3log.info(f'Uploading {filename} to {bucket}')
+        print(f'Uploading {filename} to {bucket}')
         response = s3client.upload_file(filename, bucket, obj_name)
     except ClientError as e:
         logging.error(e)
