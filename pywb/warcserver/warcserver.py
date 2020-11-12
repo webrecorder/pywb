@@ -11,6 +11,7 @@ from pywb.warcserver.index.indexsource import FileIndexSource, RemoteIndexSource
 from pywb.warcserver.index.indexsource import MementoIndexSource, RedisIndexSource
 from pywb.warcserver.index.indexsource import LiveIndexSource, WBMementoIndexSource
 from pywb.warcserver.index.indexsource import XmlQueryIndexSource
+from pywb.warcserver.index.indexsource import S3IndexSource
 
 from pywb.warcserver.index.zipnum import ZipNumIndexSource
 
@@ -32,6 +33,7 @@ SOURCE_LIST = [LiveIndexSource,
                FileIndexSource,
                RemoteIndexSource,
                ZipNumIndexSource,
+               S3IndexSource,
               ]
 
 
@@ -187,6 +189,7 @@ class WarcServer(BaseWarcServer):
             archive_paths = None
             acl_paths = None
             default_access = self.default_access
+            
         elif isinstance(coll_config, dict):
             index = coll_config.get('index')
             if not index:

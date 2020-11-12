@@ -16,7 +16,7 @@ class BucketValidationError(Exception):
     pass
 
 
-def s3_upload_file(filename: str, bucket: str=None):
+def s3_upload_file(filename: str, bucket: str=None, object_name=None):
     """Upload a file to an S3 bucket
 
     :param filename: Full path to file to upload
@@ -30,11 +30,11 @@ def s3_upload_file(filename: str, bucket: str=None):
         raise BucketValidationError('No S3 bucket provided')
 
     bucket = bucket.lstrip('s3://')
-    obj_name = filename.lstrip('/')
+    obj_name = object_name or filename.lstrip('/')
 
     s3client = boto3.client('s3')
     try:
-        print(f'Uploading {filename} to {bucket}')
+        s3log.info(f'Uploading {filename} to {bucket}')
         response = s3client.upload_file(filename, bucket, obj_name)
     except ClientError as e:
         logging.error(e)

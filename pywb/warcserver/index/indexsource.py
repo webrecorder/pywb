@@ -22,6 +22,8 @@ import requests
 
 import re
 import logging
+import boto3
+from io import BytesIO
 
 
 #=============================================================================
@@ -749,3 +751,59 @@ class WBMementoIndexSource(MementoIndexSource):
     @classmethod
     def _init_id(cls):
         return 'wb-memento'
+
+
+class S3IndexSource(BaseIndexSource):
+    CDX_EXT = ('.cdx', '.cdxj')
+    S3_SCHEME = 's3://'
+
+    def __init__(self, url, config=None):
+        self.url_template = url
+        self.s3 = boto3.resource('s3')
+        parts = url.lstrip(self.S3_SCHEME).split('/')
+        bucket_name = parts[0]
+        prefix = '/'.join(parts[1:])
+        self.object = self.s3.Object(bucket_name, prefix)
+
+    def load_index(self, params):
+        url = res_template(self.url_template, params)
+        index_content = self.object.get()['Body'].read()
+        fh = BytesIO(index_content)
+
+        def do_iter():
+            with fh:
+                for obj in self._do_iter(fh, params):
+                    yield obj
+
+        return do_iter()
+
+    def _do_iter(self, fh, params):
+        for line in iter_range(fh, params['key'], params['end_key']):
+            yield CDXObject(line)
+
+    def __str__(self):
+        return 's3'
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}(s3://{self.url_template})'
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.url_template == other.url_template
+
+    @classmethod
+    def init_from_string(cls, value):
+        if value.startswith(cls.S3_SCHEME):
+            return cls(value)
+
+        if not value.endswith(cls.CDX_EXT):
+            return None
+
+    @classmethod
+    def init_from_config(cls, config):
+        if config['type'] != 's3':
+            return
+
+        return cls.init_from_string(config['s3_url'])
