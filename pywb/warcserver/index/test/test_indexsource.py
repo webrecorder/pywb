@@ -1,5 +1,5 @@
 from pywb.warcserver.index.indexsource import FileIndexSource, RemoteIndexSource, MementoIndexSource, RedisIndexSource
-from pywb.warcserver.index.indexsource import LiveIndexSource, WBMementoIndexSource
+from pywb.warcserver.index.indexsource import LiveIndexSource, WBMementoIndexSource, S3IndexSource
 
 from pywb.warcserver.index.aggregator import SimpleAggregator
 
@@ -7,8 +7,13 @@ from warcio.timeutils import timestamp_now
 
 from pywb.warcserver.test.testutils import key_ts_res, TEST_CDX_PATH, FakeRedisTests, BaseTestClass
 
+from pywb.recorder.s3uploader import s3_upload_file
+
 import pytest
 import os
+import pathlib
+
+import boto3
 
 
 local_sources = ['file', 'redis']
@@ -31,7 +36,7 @@ class TestIndexSources(FakeRedisTests, BaseTestClass):
 
             'memento': MementoIndexSource('https://webenact.rhizome.org/all/{url}',
                                'https://webenact.rhizome.org/all/timemap/link/{url}',
-                               'https://webenact.rhizome.org/all/{timestamp}id_/{url}')
+                               'https://webenact.rhizome.org/all/{timestamp}id_/{url}'),
         }
 
     @pytest.fixture(params=local_sources)
@@ -208,3 +213,24 @@ com,instagram)/amaliaulman 20141014162333 https://webenact.rhizome.org/all/20141
 
         assert(all([x.startswith(prefix) for x in filenames]))
 
+
+    def test_s3_index(self):
+        test_bucket = os.environ.get('AWS_S3_BUCKET')
+        path = str(pathlib.Path(__file__).parent.absolute())
+        idx_path = path + '/data/index.cdxj'
+        obj_name = 'index.cdxj'
+
+        s3_upload_file(idx_path, test_bucket, obj_name)
+        idx = S3IndexSource(f's3://{test_bucket}/{obj_name}')
+
+        url = 'https://www.thedatashed.co.uk'
+        res, errs = self.query_single_source(idx, dict(url=url, limit=3))
+
+        expected = """\
+uk,co,thedatashed)/ 20201111163836 rec-20201111163836162255-e568593d94c8.warc.gz"""
+        assert(key_ts_res(res) == expected)
+        assert(errs == {})
+        
+        s3 = boto3.resource('s3')
+        bucket = s3.Bucket(test_bucket)
+        s3.Object(test_bucket, obj_name).delete()
