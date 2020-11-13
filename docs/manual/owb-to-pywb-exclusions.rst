@@ -34,7 +34,7 @@ Then, in the pywb config, specify:
 
 It is possible to specify multiple access control files, which will all be applied.
 
-Using ``block`` instead of ``exclude`` will result in pywb returning a 451 error, indicating that URLs are in the index by blocked.
+Using ``block`` instead of ``exclude`` will result in pywb returning a 451 error, indicating that URLs are in the index but blocked.
 
 
 CLI Tool
@@ -64,6 +64,5 @@ The following is not yet supported in the access control system:
 - Exclusions/Access Control By specific date range
 - Regex based exclusions
 - Date Range Embargo on All URLs
-- Robots.txt-based exclusins
-
+- Robots.txt-based exclusions
 

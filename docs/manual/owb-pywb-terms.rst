@@ -15,7 +15,7 @@ Some differences are:
 Pywb Collection Basics
 ----------------------
 
-A pywb collection must consistent of a minimum of three parts: the collection name, the ``index_paths`` (where to read the index), and the ``archive_paths`` (where to read the WARC files).
+A pywb collection must consist of a minimum of three parts: the collection name, the ``index_paths`` (where to read the index), and the ``archive_paths`` (where to read the WARC files).
 
 The collection is accessed by name, so there is no distinct access point.
 
@@ -37,7 +37,6 @@ and need not be specified in the ``config.yaml``. This structure is designed for
 See the :ref:`dir_structure` for the default pywb directory structure.
 
 However, for importing existing collections from OpenWayback, it is probably easier to specify the existing paths as shown above.
-
 
 
 

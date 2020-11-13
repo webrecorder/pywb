@@ -1,7 +1,7 @@
-Deploying pywb: Collection Paths and with Nginx/Apache
+Deploying pywb: Collection Paths and routing with Nginx/Apache
 ======================================================
 
-In pywb, the collection name is also the access point and each the collections in ``config.yaml``
+In pywb, the collection name is also the access point, and each of the collections in ``config.yaml``
 can be accessed by their name as the subpath:
 
 .. code:: yaml
@@ -29,7 +29,7 @@ To make a collection available under the root, simply set its name to: ``$root``
             ...
 
 
-Now, the first collection from: ``http://<hostname>/*/https://example.com/``
+Now, the first collection is available at: ``http://<hostname>/*/https://example.com/``.
 
 
 To deploy pywb on a subdirectory, eg. ``http://<hostname>/pywb/another-collection/*/https://example.com/``,
@@ -54,12 +54,11 @@ Working Docker Compose Examples
 The pywb `Deployment Examples <https://github.com/webrecorder/pywb/blob/docs/sample-deploy/>`_ include working examples of deploying pywb with Nginx, Apache and OutbackCDX
 in Docker using Docker Compose.
 
-The examples are availablee in the ``sample-deploy`` directory of the pywb repo. The examples include:
+The examples are available in the ``sample-deploy`` directory of the pywb repo. The examples include:
 
  - ``docker-compose-outback.yaml`` -- Docker Compose config to start OutbackCDX and pywb, and ingest sample data into OutbackCDX
  - ``docker-compose-nginx.yaml`` -- Docker Compose config to launch pywb and latest Nginx, with pywb running on subdirectory ``/wayback`` and Nginx serving static files from pywb.
  - ``docker-compose-apache.yaml`` -- Docker Compose config to launch pywb and latest Apache, with pywb running on subdirectory ``/wayback`` and Apache serving static files from pywb.
-
 
 
 

@@ -1,7 +1,7 @@
-Converting OpenWayback Config to pywb config
+Converting OpenWayback Config to pywb Config
 ============================================
 
-OpenWayback includes many different type of configurations.
+OpenWayback includes many different types of configurations.
 
 For most use cases, using OutbackCDX with pywb is the recommended approach, as explained in :ref:`using-outback`.
 
@@ -52,7 +52,7 @@ at: ``http://myarchive.example.com/RemoteIndex``
 Local Collection / Access Point
 -------------------------------
 
-A OpenWayback configuration with a local collection and local CDX, for example:
+An OpenWayback configuration with a local collection and local CDX, for example:
 
 .. code:: xml
 
@@ -82,7 +82,7 @@ A OpenWayback configuration with a local collection and local CDX, for example:
       </bean>
 
 
-This configuration can be configured in pywb using the ``index_paths`` key.
+can be configured in pywb using the ``index_paths`` key.
 
 Note that the CDX files should all be in the same format. See :ref:`migrating-cdx` for more info on converting
 CDX to pywb native CDXJ format.
@@ -99,7 +99,7 @@ CDX to pywb native CDXJ format.
 It's also possible to combine directories, individual CDX files, and even a remote index from OutbackCDX in a single collection
 (as long as all CDX are in the same format).
 
-pywb will query all the sources simulanteously to find the best match.
+pywb will query all the sources simultaneously to find the best match.
 
 .. code:: yaml
 
@@ -107,7 +107,7 @@ pywb will query all the sources simulanteously to find the best match.
         wayback:
             index_group:
                 cdx1: /wayback/cdx1/
-                cdx2: /wayback/cdx2/
+                cdx2: /wayback/cdx2/mycdx.cdx
                 remote: cdx+https://myarchive.example.com/outbackcdx
 
             archive_paths: ...
@@ -195,7 +195,7 @@ Note that if the ZipNum index is **not** SURT ordered, the ``surt_ordered: false
 Path Index Configuration
 ------------------------
 
-OpenWayback supports a 'path index' that can be used to lookup a WARC by filename and map to an exact path.
+OpenWayback supports a 'path index' that can be used to look up a WARC by filename and map to an exact path.
 For compatibility, pywb supports the same path index lookup, as well as loading WARC files by path or URL prefix.
 
 
@@ -222,12 +222,13 @@ can be configured in the ``archive_paths`` field of pywb collection configuratio
             archive_paths: /archive/warc-paths.txt
 
 
-The path index is a tab-delimited text file for mapping WARC filenames to full paths, eg:
+The path index is a tab-delimited text file for mapping WARC filenames to full file paths or URLs, eg:
 
 .. code::
 
     example.warc.gz<tab>/some/path/to/example.warc.gz
     another.warc.gz<tab>/some-other/path/another.warc.gz
+    remote.warc.gz<tab>http://warcstore.example.com/serve/remote.warc.gz
 
 
 However, if all WARC files are stored in the same directory, or in a few directories, a path index is not needed and pywb will try loading the WARC by prefix.
@@ -294,7 +295,7 @@ that should be served in proxy mode:
 There are some differences between OpenWayback and pywb proxy mode support.
 
 In OpenWayback, proxy mode is configured using separate access points for different collections on different ports.
-OpenWayback only supports HTTP proxy and attempts to rewrite HTTPs URLs to HTTP.
+OpenWayback only supports HTTP proxy and attempts to rewrite HTTPS URLs to HTTP.
 
 In pywb, proxy mode is enabled on the same port as regular access, and pywb supports HTTP and HTTPS proxy.
 pywb does not attempt to rewrite HTTPS to HTTP, as most browsers disallow HTTP access as insecure for many sites.
@@ -304,5 +305,4 @@ pywb supports a default collection that is enabled for proxy mode, and a default
 To support HTTPS access, pywb provides a certificate authority that can be trusted by a browser to rewrite HTTPS content.
 
 See :ref:`https-proxy` for all of the options of pywb proxy mode configuration.
-
 
