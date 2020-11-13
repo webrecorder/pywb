@@ -15,7 +15,7 @@ To set up OutbackCDX, please follow the instructions on the `OutbackCDX README <
 
 Since pywb also uses the default port 8080, be sure to use a different port for OutbackCDX, eg. ``java -jar outbackcdx*.jar -p 8084``.
 
-OutbackCDX can generally ingest existing CDX used in OpenWayback simply by POSTing to OutbackCDX at a new collection endpoint.
+OutbackCDX can generally ingest existing CDX used in OpenWayback simply by POSTing to OutbackCDX at a new index endpoint.
 
 For example, assuming OutbackCDX is running on port 8084, to add CDX for ``index1.cdx``, ``index2.cdx``, run:
 
@@ -24,7 +24,7 @@ For example, assuming OutbackCDX is running on port 8084, to add CDX for ``index
     curl -X POST --data-binary @index1.cdx http://localhost:8084/mycoll
     curl -X POST --data-binary @index2.cdx http://localhost:8084/mycoll
 
-The contents of the index are added to the ``mycoll`` index, which can correspond to the web archive collection ``mycoll``.
+The contents of each CDX file are added to the ``mycoll`` OutbackCDX index, which can correspond to the web archive collection ``mycoll``.
 The index is created automatically if it does not exist.
 
 See the `OutbackCDX Docs <https://github.com/nla/outbackcdx#loading-records>`_ for more info on ingesting CDX.
