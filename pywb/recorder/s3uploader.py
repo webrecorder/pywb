@@ -43,7 +43,7 @@ def s3_upload_file(filename: str, bucket: str=None, object_name=None):
 
 
 def validate_warc_filename(filename: str):
-    warc_pattern = r'collections\/[\w\-]+\/archive\/[\w\-]+\.warc\.gz'
+    warc_pattern = r'collections\/[\w\-]+\/archive\/[\w\-.]+\.warc\.gz'
     if not re.match(warc_pattern, filename):
         raise WARCValidationError(f'File {filename} is not a valid warc path')
 
