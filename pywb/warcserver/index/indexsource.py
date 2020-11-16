@@ -753,6 +753,7 @@ class WBMementoIndexSource(MementoIndexSource):
         return 'wb-memento'
 
 
+#=============================================================================
 class S3IndexSource(BaseIndexSource):
     CDX_EXT = ('.cdx', '.cdxj')
     S3_SCHEME = 's3://'

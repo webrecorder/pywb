@@ -1,7 +1,6 @@
 from gevent.pool import Pool
 import gevent
 
-import json
 import time
 import os
 
@@ -14,7 +13,11 @@ from itertools import chain
 from pywb.utils.wbexception import NotFoundException, WbException
 from pywb.utils.format import ParamFormatter, res_template
 
-from pywb.warcserver.index.indexsource import FileIndexSource, RedisIndexSource
+from pywb.warcserver.index.indexsource import (
+    FileIndexSource,
+    RedisIndexSource,
+    S3IndexSource,
+)
 from pywb.warcserver.index.cdxops import process_cdx
 from pywb.warcserver.index.query import CDXQuery
 from pywb.warcserver.index.zipnum import ZipNumIndexSource
@@ -372,8 +375,26 @@ class CacheDirectoryMixin(object):
 
 
 #=============================================================================
+# TODO: this should be a separate class. However, use of this class is
+# hard-coded (see: pywb/warcserver/warcserver.py:122.)
 class CacheDirectoryIndexSource(CacheDirectoryMixin, DirectoryIndexSource):
     pass
+    def __init__(self, *args, **kwargs):
+        super(CacheDirectoryIndexSource, self).__init__(*args, **kwargs)
+        self.bucket = os.environ["AWS_S3_BUCKET"]
+
+    def _load_all(self, params):
+        collection = params["param.coll"]
+        sources = [
+            (
+                collection,
+                S3IndexSource(f"s3://{self.bucket}/collections/{collection}/indexes/index.cdxj"),
+            )
+        ]
+        return [
+            self.load_child_source(name, source, params)
+            for name, source in sources
+        ]
 
 
 #=============================================================================

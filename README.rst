@@ -1,6 +1,39 @@
-# The Data Shed usage
+The Data Shed usage
+====================
 
-As normal but you need to set the AWS_PROFILE environment variable to enable S3 uploads, including for tests.
+Support for record and replay to and from S3 has been added.
+
+When recording, simply use wayback in record mode as normal but also set the AWS_S3_BUCKET and AWS_PROFILE environment variables.
+
+When replaying, AWS_S3_BUCKET, AWS_PROFILE environment variables must be set. config.yaml can contain something like the following for explicit index and archive locations on S3:
+
+.. code-block:: yaml
+
+    collections:
+        all: $all
+        mycollection:
+            index_paths: s3://bucketname/collections/mycollection/indexes/index.cdxj
+            archive_paths: s3://bucketname/collections/mycollection/archive/
+
+Alternatively, if the collection is a standard pywb structure as described `here <https://pywb.readthedocs.io/en/latest/manual/configuring.html#directory-structure>`_ then config.yaml can make use of :code:`collections_root` to simplify further:
+
+.. code-block:: yaml
+
+    collection_root: s3://bucketname/collections
+
+pywb also supports environment variable resolution in yaml config files so the following config.yaml:
+
+.. code-block:: yaml
+
+    collections_root: ${PYWB_COLLECTIONS_ROOT}
+
+will serve collections found in the root using this command:
+
+.. code-block:: yaml
+
+    PYWB_COLLECTIONS_ROOT=s3://bucketname/collections AWS_S3_BUCKET=bucketname AWS_PROFILE=who-sandbox wayback
+
+The drawback of this method is that collections can't be browsed or searched at :code:`http://localhost:8080` but will be served at :code:`http://localhost:8080/mycollection/https://www.thedatashed.co.uk/`, so you have to know what url and collection you want to load beforehand.
 
 
 Webrecorder pywb 2.4

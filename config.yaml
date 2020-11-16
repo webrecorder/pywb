@@ -16,4 +16,3 @@ enable_memento: true
 
 # Replay content in an iframe
 framed_replay: true
-

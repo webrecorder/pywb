@@ -506,7 +506,11 @@ class FrontEndApp(object):
         return WbResponse.json_response(result)
 
     def is_valid_coll(self, coll):
-        """Determines if the collection name for a request is valid (exists)
+        """Determines if the collection name for a request is valid
+
+        Previously, the collection would have to "exist" (i.e. be
+        known.) However, as *any* collection can potentially be valid,
+        the collection-name need only be a valid ASCII string.
 
         :param str coll: The name of the collection to check
         :return: True if the collection is valid, false otherwise
@@ -515,8 +519,11 @@ class FrontEndApp(object):
         # if coll == self.all_coll:
         #    return True
 
-        return (coll in self.warcserver.list_fixed_routes() or
-                coll in self.warcserver.list_dynamic_routes())
+        return (
+            coll in self.warcserver.list_fixed_routes() or
+            coll in self.warcserver.list_dynamic_routes() or
+            (coll.isascii() and not coll.startswith('$'))
+        )
 
     def raise_not_found(self, environ, err_type, url):
         """Utility function for raising a werkzeug.exceptions.NotFound execption with the supplied WSGI environment
