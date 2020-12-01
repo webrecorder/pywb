@@ -10,6 +10,8 @@ from wsgiprox.wsgiprox import WSGIProxMiddleware
 
 from pywb.recorder.multifilewarcwriter import MultiFileWARCWriter
 from pywb.recorder.recorderapp import RecorderApp
+from pywb.recorder.filters import SkipDupePolicy, WriteDupePolicy, WriteRevisitDupePolicy
+from pywb.recorder.redisindexer import WritableRedisIndexer
 
 from pywb.utils.loaders import load_yaml_config
 from pywb.utils.geventserver import GeventServer
@@ -207,8 +209,33 @@ class FrontEndApp(object):
         else:
             recorder_coll = recorder_config['source_coll']
 
-        # TODO: support dedup
-        dedup_index = None
+        if 'dedup_index' in recorder_config:
+            dedup_config = recorder_config['dedup_index']
+        else:
+            dedup_config = None
+
+        if dedup_config:
+            type = dedup_config.get('type')
+            if type != 'redis':
+                msg = 'Invalid option for dedup_index: type: {0}'
+                raise Exception(msg.format(type))
+
+            dupe_policy = dedup_config.get('dupe_policy')
+            if dupe_policy == 'duplicate':
+                dupe_policy = WriteDupePolicy()
+            elif dupe_policy == 'revisit':
+                dupe_policy = WriteRevisitDupePolicy()
+            elif dupe_policy == 'skip':
+                dupe_policy = SkipDupePolicy()
+            else:
+                msg = 'Invalid option for dedup_index: dupe_policy: {0}'
+                raise Exception(msg.format(dupe_policy))
+
+            dedup_index = WritableRedisIndexer(redis_url=dedup_config.get('redis_url'),
+                                               dupe_policy=dupe_policy)
+        else:
+            dedup_index = None
+
         warc_writer = MultiFileWARCWriter(self.warcserver.archive_paths,
                                           max_size=int(recorder_config.get('rollover_size', 1000000000)),
                                           max_idle_secs=int(recorder_config.get('rollover_idle_secs', 600)),
