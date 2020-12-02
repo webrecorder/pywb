@@ -2,6 +2,9 @@ from pywb.utils.loaders import load_yaml_config, load_overlay_config
 
 from pywb.warcserver.basewarcserver import BaseWarcServer
 
+from pywb.warcserver.http import PywbHttpAdapter, DefaultAdapters
+from urllib3.util.retry import Retry
+
 from pywb.warcserver.index.aggregator import CacheDirectoryIndexSource, RedisMultiKeyIndexSource
 from pywb.warcserver.index.aggregator import GeventTimeoutAggregator, SimpleAggregator
 
@@ -69,6 +72,15 @@ class WarcServer(BaseWarcServer):
         self.default_access = self.config.get('default_access')
 
         self.rules_file = self.config.get('rules_file', '')
+
+        if 'certificates' in self.config:
+            certs_config = self.config['certificates']
+            DefaultAdapters.live_adapter = PywbHttpAdapter(max_retries=Retry(3),
+                                                           cert_reqs=certs_config.get('cert_reqs', 'CERT_NONE'),
+                                                           ca_cert_dir=certs_config.get('ca_cert_dir'))
+            DefaultAdapters.remote_adapter = PywbHttpAdapter(max_retries=Retry(3),
+                                                             cert_reqs=certs_config.get('cert_reqs', 'CERT_NONE'),
+                                                             ca_cert_dir=certs_config.get('ca_cert_dir'))
 
         self.auto_handler = None
 
