@@ -265,7 +265,6 @@ The full set of configurable options (with their default settings) is as follows
      filename_template: my-warc-{timestamp}-{hostname}-{random}.warc.gz
      source_filter: live
 
-
 The required ``source_coll`` setting specifies the source collection from which to load content that will be recorded.
 Most likely this will be the :ref:`live-web` collection, which should also be defined. 
 However, it could be any other collection, allowing for "extraction" from other collections or remote web archives.
@@ -293,6 +292,20 @@ If running with auto indexing, the WARC will also get automatically indexed and 
 
 As a shortcut, ``recorder: live`` can also be used to specify only the ``source_coll`` option.
 
+Optionally, a ``dedup_index`` key can be placed under the ``recorder`` key to enable deduplication of responses via an index::
+
+  recorder:
+     ...
+     dedup_index:
+        type: redis
+        dupe_policy: revisit
+        redis_url: 'redis://localhost/2/{coll}:cdxj'
+
+For ``type`` currently only ``redis`` is supported.
+
+The ``dupe_policy`` key specifies what will hapen when a duplicate response is found. Can be ``duplicate``, to write duplicate responses, ``revisit``, to write a revisit record or ``skip`` to ignore duplicates and don't write anything to the WARC.
+
+The ``redis_url`` key specifies which redis database to use and the template for the sorted-set key to use.
 
 .. _auto-fetch:
 
