@@ -259,13 +259,17 @@ class MethodQueryCanonicalizer(object):
             if PY3:
                 args['encoding'] = 'utf-8'
 
-            data = cgi.FieldStorage(**args)
+            try:
+                data = cgi.FieldStorage(**args)
+            except ValueError:
+                # Content-Type multipart/form-data may lack "boundary" info
+                query = handle_binary(query)
+            else:
+                values = []
+                for item in data.list:
+                    values.append((item.name, item.value))
 
-            values = []
-            for item in data.list:
-                values.append((item.name, item.value))
-
-            query = urlencode(values, True)
+                query = urlencode(values, True)
 
         elif mime.startswith('application/x-amf'):
             query = self.amf_parse(query, environ)
