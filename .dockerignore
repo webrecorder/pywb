@@ -4,6 +4,8 @@ karma-tests/
 tests_disabled/
 venv/
 collections/
+wombat/
+docs/
 
 .cache/
 .eggs/

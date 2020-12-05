@@ -1,3 +1,13 @@
+pywb 2.5.0 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* New OpenWayback->pywb Transition Guide: ``https://pywb.readthedocs.io/en/latest/manual/owb-transition.html``
+
+* Sample deployments with Docker Compose for running with Apache, Nginx and OutbackCDX in ``sample-deploy`` directory.
+
+* Update to latest gevent to fix issues with latest python `#583 <https://github.com/webrecorder/pywb/pull/583>`_
+
+
 pywb 2.4.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

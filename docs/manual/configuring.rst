@@ -34,6 +34,8 @@ To disable framed replay add:
 Note: pywb also supports HTTP/S **proxy mode** which requires additional setup. See :ref:`https-proxy` for more details.
 
 
+.. _dir_structure:
+
 Directory Structure
 -------------------
 
