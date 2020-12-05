@@ -1,27 +1,27 @@
 #=================================================================
 """
 # Merge Sort Multipe CDX Sources
-#>>> cdx_ops_test(url = 'http://iana.org/', sources = {'dupes': test_cdx_dir + 'dupes.cdx', 'iana': test_cdx_dir + 'iana.cdx'})
+>>> cdx_ops_test(url = 'http://iana.org/', sources = {'dupes': test_cdx_dir + 'dupes.cdx', 'iana': test_cdx_dir + 'iana.cdx'})
 org,iana)/ 20140126200624 http://www.iana.org/ text/html 200 OSSAPWJ23L56IYVRW3GFEAR4MCJMGPTB - - 2258 334 iana.warc.gz
 org,iana)/ 20140127171238 http://iana.org unk 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 343 1858 dupes.warc.gz
 org,iana)/ 20140127171238 http://www.iana.org/ warc/revisit - OSSAPWJ23L56IYVRW3GFEAR4MCJMGPTB - - 536 2678 dupes.warc.gz
 
 
 # Limit CDX Stream
-#>>> cdx_ops_test('http://iana.org/_css/2013.1/fonts/opensans-bold.ttf', limit = 3)
+>>> cdx_ops_test('http://iana.org/_css/2013.1/fonts/opensans-bold.ttf', limit = 3)
 org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200625 http://www.iana.org/_css/2013.1/fonts/OpenSans-Bold.ttf application/octet-stream 200 YFUR5ALIWJMWV6FAAFRLVRQNXZQF5HRW - - 117166 198285 iana.warc.gz
 org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200654 http://www.iana.org/_css/2013.1/fonts/OpenSans-Bold.ttf warc/revisit - YFUR5ALIWJMWV6FAAFRLVRQNXZQF5HRW - - 548 482544 iana.warc.gz
 org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126200706 http://www.iana.org/_css/2013.1/fonts/OpenSans-Bold.ttf warc/revisit - YFUR5ALIWJMWV6FAAFRLVRQNXZQF5HRW - - 552 495230 iana.warc.gz
 
 
 # Reverse CDX Stream
-#>>> cdx_ops_test('http://iana.org/_css/2013.1/fonts/opensans-bold.ttf', reverse = True, resolveRevisits = True, limit = 3)
+>>> cdx_ops_test('http://iana.org/_css/2013.1/fonts/opensans-bold.ttf', reverse = True, resolveRevisits = True, limit = 3)
 org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126201308 https://www.iana.org/_css/2013.1/fonts/OpenSans-Bold.ttf application/octet-stream 200 YFUR5ALIWJMWV6FAAFRLVRQNXZQF5HRW - - 551 783712 iana.warc.gz 117166 198285 iana.warc.gz
 org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126201249 http://www.iana.org/_css/2013.1/fonts/OpenSans-Bold.ttf application/octet-stream 200 YFUR5ALIWJMWV6FAAFRLVRQNXZQF5HRW - - 552 771773 iana.warc.gz 117166 198285 iana.warc.gz
 org,iana)/_css/2013.1/fonts/opensans-bold.ttf 20140126201240 http://www.iana.org/_css/2013.1/fonts/OpenSans-Bold.ttf application/octet-stream 200 YFUR5ALIWJMWV6FAAFRLVRQNXZQF5HRW - - 551 757988 iana.warc.gz 117166 198285 iana.warc.gz
 
 
-#>>> cdx_ops_test('http://iana.org/_js/2013.1/jquery.js', reverse = True, resolveRevisits = True, limit = 1)
+>>> cdx_ops_test('http://iana.org/_js/2013.1/jquery.js', reverse = True, resolveRevisits = True, limit = 1)
 org,iana)/_js/2013.1/jquery.js 20140126201307 https://www.iana.org/_js/2013.1/jquery.js application/x-javascript 200 AAW2RS7JB7HTF666XNZDQYJFA6PDQBPO - - 543 778507 iana.warc.gz 33449 7311 iana.warc.gz
 
 # From & To
@@ -231,7 +231,6 @@ def cdx_ops_test(*args, **kwargs):
     if fields:
         fields = fields.split(',')
 
-    print(len(results))
     for x in results:
         if not isinstance(x, str) and kwargs.get('output') == 'json':
             l = x.to_json()
