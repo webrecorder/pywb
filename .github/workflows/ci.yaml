@@ -19,16 +19,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Set tox env name
-        run: echo ::set-env name=toxpy::py$(echo "${matrix.python-version//\./}")
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install tox
+          pip install tox tox-gh-actions
 
       - name: Test with tox
-        run: tox -e $toxpy
+        run: tox
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
