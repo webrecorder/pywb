@@ -143,6 +143,13 @@ class TestPostQueryExtract(object):
         #base64 encoded data
         assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_post_data=gTZsYEygNFAO4HICtYkZAGZQ2w6wAiw='
 
+    def test_post_extract_no_boundary_in_multipart_form_mimetype(self):
+        mq = MethodQueryCanonicalizer('POST', 'multipart/form-data',
+                                len(self.post_data), BytesIO(self.post_data))
+
+        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6'
+
+
     def test_options(self):
         mq = MethodQueryCanonicalizer('OPTIONS', '', 0, BytesIO())
         assert mq.append_query('http://example.com/') == 'http://example.com/?__pywb_method=options'
