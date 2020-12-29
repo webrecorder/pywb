@@ -164,7 +164,7 @@ class WbResponse(object):
         try:
             start_response(self.status_headers.statusline,
                            self.status_headers.headers)
-        except UnicodeError:
+        except (UnicodeError, TypeError):
             self.try_fix_errors()
             start_response(self.status_headers.statusline,
                            self.status_headers.headers)
