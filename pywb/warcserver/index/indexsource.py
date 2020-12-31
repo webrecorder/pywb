@@ -132,13 +132,14 @@ class RemoteIndexSource(BaseIndexSource):
         if 'matchType' in params:
             api_url += '&matchType=' + params.get('matchType')
 
+        self.logger.info(api_url)
         return api_url
 
     def add_url_post_param(self, params):
         # extract POST data value from urlkey and compose url_post parameter
         key_str = params['key'].decode('utf-8')
         match_post = re.match(self.POSTDATA_MATCH_RX, key_str)
-        params['url_post'] = params['url']
+        params['url_post'] = quote(params['url'])
 
         if match_post and match_post.groupdict() is not None:
             url_query = parse_qs(urlparse(params['url']).query)
