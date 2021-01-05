@@ -159,7 +159,7 @@
     overflow: scroll;
 }
 
-.mobile {
+._wb_mobile {
     display: none;
 }
 
@@ -170,11 +170,11 @@
         height: 26px;
         margin-left: 10px;
     }
-    #_wb_frame_top_banner ._wb_linked_logo img:not(.mobile)
+    #_wb_frame_top_banner ._wb_linked_logo img:not(._wb_mobile)
     {
         display: none;
     }
-    #_wb_frame_top_banner .mobile
+    #_wb_frame_top_banner ._wb_mobile
     {
         display: block;
     }
@@ -184,7 +184,7 @@
         margin: 0 5px;
     }
 
-    #_wb_frame_top_banner .no-mobile
+    #_wb_frame_top_banner ._wb_no-mobile
     {
         display: none;
     }
