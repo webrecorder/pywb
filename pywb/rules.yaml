@@ -410,6 +410,10 @@ rules:
         - action_load_comments
         - filter
 
+    - url_prefix: ['com,youtube)/youtubei', 'com,youtube-nocookie)/youtubei']
+
+      fuzzy_lookup:
+        match: '()'
 
     - url_prefix: 'com,googlevideo,'
 
@@ -458,6 +462,9 @@ rules:
 
             - match: '(?:"player":|ytplayer\.config).*"args":\s*{'
               replace: '{0}"dash":"0","dashmpd":"",'
+
+            - match: '"0"==\w+\.dash\&\&'
+              replace: '1&&'
 
  
     # testing rules -- not for valid domain
