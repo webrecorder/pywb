@@ -460,6 +460,9 @@ rules:
             - match: 'yt\.setConfig.*PLAYER_CONFIG.*args":\s*{'
               replace: '{0} "dash": "0", dashmpd: "", '
 
+            - match: 'yt\.setConfig.*PLAYER_VARS.*?{'
+              replace: '{0}"dash":"0","dashmpd":"",'
+
             - match: '(?:"player":|ytplayer\.config).*"args":\s*{'
               replace: '{0}"dash":"0","dashmpd":"",'
 
