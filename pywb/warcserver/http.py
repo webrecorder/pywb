@@ -17,8 +17,10 @@ class PywbHttpAdapter(HTTPAdapter):
     until a better solution is found
     """
 
-    # todo: allow configuring this later?
-    cert_reqs = 'CERT_NONE'
+    def __init__(self, cert_reqs='CERT_NONE', ca_cert_dir=None, **init_kwargs):
+        self.cert_reqs = cert_reqs
+        self.ca_cert_dir = ca_cert_dir
+        return super(PywbHttpAdapter, self).__init__(**init_kwargs)
 
     def init_poolmanager(
         self, connections, maxsize, block=DEFAULT_POOLBLOCK, **pool_kwargs
@@ -32,11 +34,13 @@ class PywbHttpAdapter(HTTPAdapter):
             block=block,
             strict=True,
             cert_reqs=self.cert_reqs,
+            ca_cert_dir=self.ca_cert_dir,
             **pool_kwargs
         )
 
     def proxy_manager_for(self, proxy, **proxy_kwargs):
         proxy_kwargs['cert_reqs'] = self.cert_reqs
+        proxy_kwargs['ca_cert_dir'] = self.ca_cert_dir
         return super(PywbHttpAdapter, self).proxy_manager_for(proxy, **proxy_kwargs)
 
 

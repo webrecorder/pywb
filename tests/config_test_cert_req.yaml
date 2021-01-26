@@ -1,0 +1,7 @@
+debug: true
+
+collections:
+    live: $live
+
+certificates:
+    cert_reqs: 'CERT_REQUIRED'
