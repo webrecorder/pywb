@@ -27,7 +27,6 @@ except ImportError:  # pragma: no cover
 
 
 from argparse import ArgumentParser, RawTextHelpFormatter
-from bisect import insort
 
 from six import StringIO
 
@@ -167,9 +166,10 @@ class SortedCDXWriter(BaseCDXWriter):
         super(SortedCDXWriter, self).write(entry, filename)
         line = self.out.getvalue()
         if line:
-            insort(self.sortlist, line)
+            self.sortlist.append(line)
 
     def __exit__(self, *args):
+        self.sortlist.sort()
         self.actual_out.write(''.join(self.sortlist))
         return False
 
