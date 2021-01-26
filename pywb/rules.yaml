@@ -344,7 +344,7 @@ rules:
           - videoFileId
           - signature
 
-    - url_prefix: ['net,akamaized,gcs-vimeo)/', 'net,akamaized,vod)/']
+    - url_prefix: ['net,akamaized,gcs-vimeo)/', 'net,akamaized,vod)/', 'net,akamaized,vod-progressive)/']
 
       fuzzy_lookup:
         match: '([/\d]+\.mp4)$'
@@ -410,6 +410,10 @@ rules:
         - action_load_comments
         - filter
 
+    - url_prefix: ['com,youtube)/youtubei', 'com,youtube-nocookie)/youtubei']
+
+      fuzzy_lookup:
+        match: '()'
 
     - url_prefix: 'com,googlevideo,'
 
@@ -456,8 +460,14 @@ rules:
             - match: 'yt\.setConfig.*PLAYER_CONFIG.*args":\s*{'
               replace: '{0} "dash": "0", dashmpd: "", '
 
+            - match: 'yt\.setConfig.*PLAYER_VARS.*?{'
+              replace: '{0}"dash":"0","dashmpd":"",'
+
             - match: '(?:"player":|ytplayer\.config).*"args":\s*{'
               replace: '{0}"dash":"0","dashmpd":"",'
+
+            - match: '"0"==\w+\.dash\&\&'
+              replace: '1&&'
 
  
     # testing rules -- not for valid domain
