@@ -30,6 +30,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
         self.dir_template = dir_template
         self.key_template = kwargs.get('key_template', self.dir_template)
         self.dedup_index = kwargs.get('dedup_index')
+        self.dedup_by_url = kwargs.get('dedup_by_url')
         self.filename_template = filename_template
         self.max_size = max_size
         if max_idle_secs > 0:
@@ -48,7 +49,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
 
         try:
             url = record.rec_headers.get_header('WARC-Target-URI')
-            digest = record.rec_headers.get_header('WARC-Payload-Digest')
+            digest = record.rec_headers.get_header('WARC-Payload-Digest') if not self.dedup_by_url else None
             iso_dt = record.rec_headers.get_header('WARC-Date')
             result = self.dedup_index.lookup_revisit(params, digest, url, iso_dt)
         except Exception as e:

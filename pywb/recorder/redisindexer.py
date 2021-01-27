@@ -48,9 +48,11 @@ class WritableRedisIndexer(RedisIndexSource):
         return base_name
 
     def add_warc_file(self, full_filename, params):
-        base_filename = self._get_rel_or_base_name(full_filename, params)
         file_key = res_template(self.file_key_template, params)
+        if not file_key:
+            return
 
+        base_filename = self._get_rel_or_base_name(full_filename, params)
         full_load_path = self.full_warc_prefix + full_filename
 
         self.redis.hset(file_key, base_filename, full_load_path)

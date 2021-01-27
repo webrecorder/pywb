@@ -294,20 +294,39 @@ If running with auto indexing, the WARC will also get automatically indexed and 
 
 As a shortcut, ``recorder: live`` can also be used to specify only the ``source_coll`` option.
 
-Optionally, a ``dedup_index`` key can be placed under the ``recorder`` key to enable deduplication of responses via an index::
+
+Dedup Options for Recording
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, recording mode will record every URL.
+
+Starting with pywb 2.5.0, it is possible to configure pywb to either write revisit records or skip duplicate URLs altogether.
+
+using the ``dedup_policy`` key.
+
+- To skip duplicate URLs, set ``dedup_policy: skip``. With this setting, only one instance of any URL will be recorded.
+
+- To write revist records, set ``dedup_policy: revisit``. With this setting, WARC ``revisit`` records will be written when a duplicate URL is detected
+and has the same digest as a previous response.
+
+Using deduplication requires a Redis instance, which will keep track of the index for deduplication in a sorted-set key.
+The default Redis key used is ``redis://localhost:6379/0/pywb:{coll}:cdxj`` where ``{coll}}`` is replaced with current collection id.
+
+The field can be customized using the ``dedup_index_url`` field in the recorder config.
+
+Another option, pywb can add an aggressive Cache-Control header to force the browser to cache all responses on a page.
+This feature is still experimental, but can be enabled via ``cache: always`` settting.
+
+
+For example, the following will enable ``revisit`` records to be written using the given Redis URL, and also enable aggressive cacheing when recording::
 
   recorder:
      ...
-     dedup_index:
-        type: redis
-        dupe_policy: revisit
-        redis_url: 'redis://localhost/2/{coll}:cdxj'
+     cache: always
+     dedup_policy: revisit
+     dedup_index_url: 'redis://localhost:6379/0/pywb:{coll}:cdxj'   # default when omitted
 
-For ``type`` currently only ``redis`` is supported.
 
-The ``dupe_policy`` key specifies what will hapen when a duplicate response is found. Can be ``duplicate``, to write duplicate responses, ``revisit``, to write a revisit record or ``skip`` to ignore duplicates and don't write anything to the WARC.
-
-The ``redis_url`` key specifies which redis database to use and the template for the sorted-set key to use.
 
 .. _auto-fetch:
 
