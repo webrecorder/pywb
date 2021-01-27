@@ -62,8 +62,14 @@ class WarcServer(BaseWarcServer):
             if 'proxy' in custom_config and 'proxy' in config:
                 custom_config['proxy'].update(config['proxy'])
             if 'recorder' in custom_config and 'recorder' in config:
+                if isinstance(custom_config['recorder'], str):
+                    custom_config['recorder'] = {'source_coll': custom_config['recorder']}
+
                 if isinstance(config['recorder'], str):
                     config['recorder'] = {'source_coll': config['recorder']}
+
+                config['recorder'].update(custom_config['recorder'])
+                custom_config['recorder'] = config['recorder']
 
             config.update(custom_config)
 
