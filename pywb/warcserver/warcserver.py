@@ -42,6 +42,8 @@ SOURCE_LIST = [LiveIndexSource,
 class WarcServer(BaseWarcServer):
     AUTO_COLL_TEMPL = '{coll}'
 
+    DEFAULT_DEDUP_URL = 'redis://localhost:6379/0/pywb:{coll}:cdxj'
+
     def __init__(self, config_file='./config.yaml', custom_config=None):
         config = load_yaml_config(DEFAULT_CONFIG)
 
@@ -59,10 +61,22 @@ class WarcServer(BaseWarcServer):
                 custom_config['collections'].update(config['collections'])
             if 'proxy' in custom_config and 'proxy' in config:
                 custom_config['proxy'].update(config['proxy'])
+            if 'recorder' in custom_config and 'recorder' in config:
+                if isinstance(config['recorder'], str):
+                    config['recorder'] = {'source_coll': config['recorder']}
+
             config.update(custom_config)
 
         super(WarcServer, self).__init__(debug=config.get('debug', False))
         self.config = config
+
+        recorder_config = self.config.get('recorder') or {}
+        if isinstance(recorder_config, dict) and recorder_config.get('dedup_policy'):
+            self.dedup_index_url = self.config.get('dedup_index_url', WarcServer.DEFAULT_DEDUP_URL)
+            if self.dedup_index_url and not self.dedup_index_url.startswith('redis://'):
+                raise Exception("The dedup_index_url must start with \"redis://\". Only Redis-based dedup index is supported at this time.")
+        else:
+            self.dedup_index_url = None
 
         self.root_dir = self.config.get('collections_root', '')
         self.index_paths = self.init_paths('index_paths')
@@ -125,7 +139,14 @@ class WarcServer(BaseWarcServer):
         access_checker = AccessChecker(CacheDirectoryAccessSource(self.acl_paths),
                                        self.default_access)
 
-        return DefaultResourceHandler(dir_source, self.archive_paths,
+        if self.dedup_index_url:
+            source = SimpleAggregator({'dedup': RedisMultiKeyIndexSource(self.dedup_index_url),
+                                       'dir': dir_source})
+
+        else:
+            source = dir_source
+
+        return DefaultResourceHandler(source, self.archive_paths,
                                       rules_file=self.rules_file,
                                       access_checker=access_checker)
 

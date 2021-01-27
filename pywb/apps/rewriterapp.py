@@ -574,6 +574,9 @@ class RewriterApp(object):
         if is_proxy and environ.get('HTTP_ORIGIN'):
             response.add_access_control_headers(environ)
 
+        if r.status_code == 200 and kwargs.get('cache') == 'always' and environ.get('HTTP_REFERER'):
+            response.status_headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+
         return response
 
     def format_response(self, response, wb_url, full_prefix, is_timegate, is_proxy, timegate_closest_ts=None):

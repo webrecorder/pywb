@@ -209,38 +209,40 @@ class FrontEndApp(object):
         else:
             recorder_coll = recorder_config['source_coll']
 
-        if 'dedup_index' in recorder_config:
-            dedup_config = recorder_config['dedup_index']
-        else:
-            dedup_config = None
+        # cache mode
+        self.rec_cache_mode = recorder_config.get('cache', 'default')
 
-        if dedup_config:
-            type = dedup_config.get('type')
-            if type != 'redis':
-                msg = 'Invalid option for dedup_index: type: {0}'
-                raise Exception(msg.format(type))
+        dedup_policy = recorder_config.get('dedup_policy')
+        dedup_by_url = False
 
-            dupe_policy = dedup_config.get('dupe_policy')
-            if dupe_policy == 'duplicate':
-                dupe_policy = WriteDupePolicy()
-            elif dupe_policy == 'revisit':
-                dupe_policy = WriteRevisitDupePolicy()
-            elif dupe_policy == 'skip':
-                dupe_policy = SkipDupePolicy()
-            else:
-                msg = 'Invalid option for dedup_index: dupe_policy: {0}'
-                raise Exception(msg.format(dupe_policy))
+        if dedup_policy == 'none':
+            dedup_policy = ''
 
-            dedup_index = WritableRedisIndexer(redis_url=dedup_config.get('redis_url'),
-                                               dupe_policy=dupe_policy)
+        if dedup_policy == 'keep':
+            dedup_policy = WriteDupePolicy()
+        elif dedup_policy == 'revisit':
+            dedup_policy = WriteRevisitDupePolicy()
+        elif dedup_policy == 'skip':
+            dedup_policy = SkipDupePolicy()
+            dedup_by_url = True
+        elif dedup_policy:
+            msg = 'Invalid option for dedup_policy: {0}'
+            raise Exception(msg.format(dedup_policy))
+
+        if dedup_policy:
+            dedup_index = WritableRedisIndexer(redis_url=self.warcserver.dedup_index_url,
+                                               dupe_policy=dedup_policy,
+                                               rel_path_template=self.warcserver.root_dir + '/{coll}/archive')
         else:
             dedup_index = None
+
 
         warc_writer = MultiFileWARCWriter(self.warcserver.archive_paths,
                                           max_size=int(recorder_config.get('rollover_size', 1000000000)),
                                           max_idle_secs=int(recorder_config.get('rollover_idle_secs', 600)),
                                           filename_template=recorder_config.get('filename_template'),
-                                          dedup_index=dedup_index)
+                                          dedup_index=dedup_index,
+                                          dedup_by_url=dedup_by_url)
 
         self.recorder = RecorderApp(self.RECORD_SERVER % str(self.warcserver_server.port), warc_writer,
                                     accept_colls=recorder_config.get('source_filter'))
@@ -455,6 +457,7 @@ class FrontEndApp(object):
         coll_config = self.get_coll_config(coll)
         if record:
             coll_config['type'] = 'record'
+            coll_config['cache'] = self.rec_cache_mode
 
         if timemap_output:
             coll_config['output'] = timemap_output
