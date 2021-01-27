@@ -1,0 +1,12 @@
+debug: true
+
+collections_root: _test_colls
+
+recorder:
+  source_coll: live
+  dedup_policy: skip 
+
+collections:
+  'live': '$live'
+
+
