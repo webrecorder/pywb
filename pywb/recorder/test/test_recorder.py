@@ -607,7 +607,8 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
         writer.close()
         assert len(writer.fh_cache) == 0
 
-    @pytest.mark.skipif(os.environ.get('CI') is not None, reason='Skip Test on CI')
+    #@pytest.mark.skipif(os.environ.get('CI') is not None, reason='Skip Test on CI')
+    @pytest.mark.skip
     def test_record_video_metadata(self):
         pytest.importorskip('youtube_dl')
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')

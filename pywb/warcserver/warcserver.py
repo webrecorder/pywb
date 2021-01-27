@@ -62,7 +62,8 @@ class WarcServer(BaseWarcServer):
             if 'proxy' in custom_config and 'proxy' in config:
                 custom_config['proxy'].update(config['proxy'])
             if 'recorder' in custom_config and 'recorder' in config:
-                custom_config['recorder'].update(config['recorder'])
+                if isinstance(config['recorder'], str):
+                    config['recorder'] = {'source_coll': config['recorder']}
 
             config.update(custom_config)
 
@@ -139,7 +140,6 @@ class WarcServer(BaseWarcServer):
                                        self.default_access)
 
         if self.dedup_index_url:
-            print('redis', self.dedup_index_url)
             source = SimpleAggregator({'dedup': RedisMultiKeyIndexSource(self.dedup_index_url),
                                        'dir': dir_source})
 
