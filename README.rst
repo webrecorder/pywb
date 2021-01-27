@@ -1,10 +1,10 @@
-Webrecorder pywb 2.4
+Webrecorder pywb 2.5
 ====================
 
 .. image:: https://raw.githubusercontent.com/webrecorder/pywb/master/pywb/static/pywb-logo.png
 
-.. image:: https://travis-ci.org/webrecorder/pywb.svg?branch=master
-      :target: https://travis-ci.org/webrecorder/pywb
+.. image:: https://github.com/webrecorder/pywb/workflows/CI/badge.svg
+      :target: https://github.com/webrecorder/pywb/actions
 .. image:: https://ci.appveyor.com/api/projects/status/qxnbunw65o929599/branch/master?svg=true
       :target: https://ci.appveyor.com/project/webrecorder/pywb/branch/master
 .. image:: https://codecov.io/gh/webrecorder/pywb/branch/master/graph/badge.svg
