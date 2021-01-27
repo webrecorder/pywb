@@ -1,6 +1,22 @@
 pywb 2.5.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* Dedup Mode: Support for Redis-based dedup index to skip or write revisit records for duplicates, replay from Redis-based index `#597 <https://github.com/webrecorder/pywb/pull/597>`_, `#611 <https://github.com/webrecorder/pywb/pull/611>`_
+
+* Rewriting: Updated Rules for youtube and vimeo replay `#610 <https://github.com/webrecorder/pywb/pull/610>`_
+
+* CDX Indexing: More efficint cdx sorting  `#609 <https://github.com/webrecorder/pywb/pull/609>`_
+
+* Set default CDX closest lookup limit to 100 instead of 10 `#606 <https://github.com/webrecorder/pywb/pull/606>`_
+
+* UI: Try to avoid css class conflicts in injected banner `#604 <https://github.com/webrecorder/pywb/pull/604>`_
+
+* Catch invalid headers in uWSGI `#603 <https://github.com/webrecorder/pywb/pull/603>`_
+
+* Config option to support certificate validation when capturing `#596 <https://github.com/webrecorder/pywb/pull/596>`_
+
+* Fix indexing POST requests with multipart/form-data without boundary `#599 <https://github.com/webrecorder/pywb/pull/599>`_
+
 * New OpenWayback->pywb Transition Guide: ``https://pywb.readthedocs.io/en/latest/manual/owb-transition.html``
 
 * Sample deployments with Docker Compose for running with Apache, Nginx and OutbackCDX in ``sample-deploy`` directory.
