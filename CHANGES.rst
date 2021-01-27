@@ -1,6 +1,8 @@
 pywb 2.5.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* Update to latest wombat.js (3.0.3)
+
 * Dedup Mode: Support for Redis-based dedup index to skip or write revisit records for duplicates, replay from Redis-based index `#597 <https://github.com/webrecorder/pywb/pull/597>`_, `#611 <https://github.com/webrecorder/pywb/pull/611>`_
 
 * Rewriting: Updated Rules for youtube and vimeo replay `#610 <https://github.com/webrecorder/pywb/pull/610>`_
@@ -17,7 +19,7 @@ pywb 2.5.0 changelist
 
 * Fix indexing POST requests with multipart/form-data without boundary `#599 <https://github.com/webrecorder/pywb/pull/599>`_
 
-* New OpenWayback->pywb Transition Guide: ``https://pywb.readthedocs.io/en/latest/manual/owb-transition.html``
+* New OpenWayback->pywb Transition Guide: `https://pywb.readthedocs.io/en/latest/manual/owb-transition.html <https://pywb.readthedocs.io/en/latest/manual/owb-transition.html>`_
 
 * Sample deployments with Docker Compose for running with Apache, Nginx and OutbackCDX in ``sample-deploy`` directory.
 
