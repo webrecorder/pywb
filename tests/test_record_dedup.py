@@ -17,15 +17,8 @@ import pytest
 class TestRecordDedup(HttpBinLiveTests, CollsDirMixin, BaseConfigTest, FakeRedisTests, BaseTestClass):
     @classmethod
     def setup_class(cls):
-        #FakeRedisTests.setup_class()
         super(TestRecordDedup, cls).setup_class('config_test_record_dedup.yaml', custom_config={'recorder': 'live'})
         cls.redis = FakeStrictRedis.from_url("redis://localhost/0")
-        #cls.redis = FakeRedisTests.redis
-
-    @classmethod
-    def teardown_class(cls):
-        pass
-        #FakeRedisTests.teardown_class()
 
     def test_init_coll(self):
         manager(['init', 'test-dedup'])

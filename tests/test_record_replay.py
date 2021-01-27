@@ -188,7 +188,7 @@ class TestRecordFilter(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
                             'name': 'live'
                         }]}},
                         'recorder': {'source_coll': 'fallback',
-                                     'source_filter': 'example',
+                                     'source_filter': 'live',
                                      }
                      }
         super(TestRecordFilter, cls).setup_class('config_test_record.yaml', custom_config=rec_custom)

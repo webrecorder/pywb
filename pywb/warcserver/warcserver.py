@@ -68,7 +68,8 @@ class WarcServer(BaseWarcServer):
                 if isinstance(config['recorder'], str):
                     config['recorder'] = {'source_coll': config['recorder']}
 
-                custom_config['recorder'].update(config['recorder'])
+                config['recorder'].update(custom_config['recorder'])
+                custom_config['recorder'] = config['recorder']
 
             config.update(custom_config)
 
