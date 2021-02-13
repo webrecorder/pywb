@@ -78,7 +78,7 @@ class WarcServer(BaseWarcServer):
 
         recorder_config = self.config.get('recorder') or {}
         if isinstance(recorder_config, dict) and recorder_config.get('dedup_policy'):
-            self.dedup_index_url = self.config.get('dedup_index_url', WarcServer.DEFAULT_DEDUP_URL)
+            self.dedup_index_url = recorder_config.get('dedup_index_url', WarcServer.DEFAULT_DEDUP_URL)
             if self.dedup_index_url and not self.dedup_index_url.startswith('redis://'):
                 raise Exception("The dedup_index_url must start with \"redis://\". Only Redis-based dedup index is supported at this time.")
         else:
