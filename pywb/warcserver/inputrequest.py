@@ -10,6 +10,7 @@ from io import BytesIO
 
 import base64
 import cgi
+import json
 
 
 #=============================================================================
@@ -196,9 +197,9 @@ class MethodQueryCanonicalizer(object):
         self.query = b''
 
         method = method.upper()
+        self.method = method
 
         if method in ('OPTIONS', 'HEAD'):
-            self.query = '__pywb_method=' + method.lower()
             return
 
         if method != 'POST':
@@ -274,12 +275,18 @@ class MethodQueryCanonicalizer(object):
         elif mime.startswith('application/x-amf'):
             query = self.amf_parse(query, environ)
 
+        elif mime.startswith('application/json'):
+            query = self.json_parse(query, True)
+
+        elif mime.startswith('text/plain'):
+            query = self.json_parse(query, False)
+
         else:
             query = handle_binary(query)
 
         self.query = query
 
-    def amf_parse(self, string, environ):
+    def amf_parse(self, string, warn_on_error):
         try:
             res = decode(BytesIO(string))
             return urlencode({"request": Amf.get_representation(res)})
@@ -290,15 +297,32 @@ class MethodQueryCanonicalizer(object):
             print(e)
             return None
 
+    def json_parse(self, string, warn_on_error):
+        data = {}
+
+        def _parser(dict_var):
+            for n, v in dict_var.items():
+                if isinstance(v, dict):
+                    _parser(v)
+                else:
+                    data[n] = v
+
+        try:
+            _parser(json.loads(string))
+        except Exception as e:
+            if warn_on_error:
+                print(e)
+
+        return urlencode(data)
+
     def append_query(self, url):
         if not self.query:
             return url
 
         if '?' not in url:
-            url += '?'
+            append_str = '?'
         else:
-            url += '&'
+            append_str = '&'
 
-        url += self.query
-        return url
-
+        append_str += "__wb_method=" + self.method + '&' + self.query
+        return url + append_str
