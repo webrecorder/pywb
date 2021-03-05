@@ -80,6 +80,8 @@ class IndexHandler(object):
 
         output = params.get('output', self.DEF_OUTPUT)
         fields = params.get('fields')
+        if not fields:
+            fields = params.get('fl')
 
         if fields and isinstance(fields, str):
             fields = fields.split(',')
