@@ -404,10 +404,12 @@ class FrontEndApp(object):
         try:
             res = requests.get(cdx_url, stream=True)
 
+            status_line = '{} {}'.format(res.status_code, res.reason)
             content_type = res.headers.get('Content-Type')
 
             return WbResponse.bin_stream(StreamIter(res.raw),
-                                         content_type=content_type)
+                                         content_type=content_type,
+                                         status=status_line)
 
         except Exception as e:
             return WbResponse.text_response('Error: ' + str(e), status='400 Bad Request')
