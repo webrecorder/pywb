@@ -78,6 +78,11 @@ class AccessChecker(object):
 
     EXACT_SUFFIX = '###'  # type: str
     EXACT_SUFFIX_B = b'###'  # type: bytes
+    # rules in the ACL file are followed by a white space (U+0020):
+    # for searching we need a match suffix which sorts/compares after
+    # (resp. before because we use the rev_cmp function). Simply add
+    # another '#' (U+0023 > U+0020)
+    EXACT_SUFFIX_SEARCH_B = b'####'  # type: bytes
 
     def __init__(self, access_source, default_access='allow'):
         """Initialize a new AccessChecker
@@ -148,7 +153,7 @@ class AccessChecker(object):
         params = {'url': url,
                   'urlkey': urlkey,
                   'nosource': 'true',
-                  'exact_match_suffix': self.EXACT_SUFFIX_B
+                  'exact_match_suffix': self.EXACT_SUFFIX_SEARCH_B
                  }
 
         acl_iter, errs = self.aggregator(params)
