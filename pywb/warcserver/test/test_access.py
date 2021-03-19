@@ -53,6 +53,10 @@ class TestAccess(TempDirTests, BaseTestClass):
         assert edx['urlkey'] == 'com,example)/foo'
         assert edx['access'] == 'exclude'
 
+        edx = access.find_access_rule('https://example.net/abc/path')
+        assert edx['urlkey'] == 'net,example)/abc/path'
+        assert edx['access'] == 'block'
+
         edx = access.find_access_rule('https://example.net/abc/path/other')
         assert edx['urlkey'] == 'net,example)/abc/path'
         assert edx['access'] == 'block'
@@ -114,7 +118,7 @@ class TestAccess(TempDirTests, BaseTestClass):
         assert edx['urlkey'] == 'net,example)/abc/path'
         assert edx['access'] == 'block'
 
-        # exact-only matchc
+        # exact-only match
         edx = access.find_access_rule('https://www.iana.org/')
         assert edx['urlkey'] == 'org,iana)/###'
         assert edx['access'] == 'allow'
@@ -127,4 +131,12 @@ class TestAccess(TempDirTests, BaseTestClass):
         assert edx['urlkey'] == 'org,iana)/'
         assert edx['access'] == 'exclude'
 
+        # exact-only match, first line in *.aclj file
+        edx = access.find_access_rule('https://www.iana.org/exact/match/first/line/aclj/')
+        assert edx['urlkey'] == 'org,iana)/exact/match/first/line/aclj###'
+        assert edx['access'] == 'allow'
 
+        # exact-only match, single rule in *.aclj file
+        edx = access.find_access_rule('https://www.lonesome-rule.org/')
+        assert edx['urlkey'] == 'org,lonesome-rule)/###'
+        assert edx['access'] == 'allow'
