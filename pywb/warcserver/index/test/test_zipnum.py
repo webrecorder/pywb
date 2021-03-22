@@ -227,6 +227,14 @@ def test_blocks_zero_pages():
     res = zip_ops_test_data(url='http://aaa.zz/', matchType='domain', showNumPages=True)
     assert(res == {"blocks": 0, "pages": 0, "pageSize": 10})
 
+def test_blocks_ignore_filter_params():
+    res = zip_ops_test_data(url='*.iana.org', pageSize='4', showNumPages=True, filter='=status:200')
+    assert(res == {"blocks": 38, "pages": 10, "pageSize": 4})
+
+def test_blocks_ignore_timestamp_params():
+    res = zip_ops_test_data(url='*.iana.org', pageSize='4', showNumPages=True, closest='20140126000000')
+    assert(res == {"blocks": 38, "pages": 10, "pageSize": 4})
+
 
 # Errors
 
