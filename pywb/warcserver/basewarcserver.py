@@ -141,6 +141,9 @@ class BaseWarcServer(object):
             out_headers['ResErrors'] = res[0]
             message = message.encode('utf-8')
 
-        message = str(status) + ' ' + message
+        if isinstance(status, str):
+            message = status
+        else:
+            message = str(status) + ' ' + message
         start_response(message, list(out_headers.items()))
         return res
