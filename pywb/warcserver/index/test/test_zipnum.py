@@ -125,6 +125,7 @@ Exception: No Locations Found for: foo2
 from pywb import get_test_dir
 from pywb.warcserver.index.test.test_cdxops import cdx_ops_test, cdx_ops_test_data
 from pywb.warcserver.warcserver import init_index_agg
+from pywb.warcserver.index.cdxobject import CDXException
 
 import shutil
 import tempfile
@@ -234,6 +235,11 @@ def test_err_file_not_found():
     with pytest.raises(IOError):
         zip_test_err(url='http://iana.org/x', matchType='exact')  # doctest: +IGNORE_EXCEPTION_DETAIL
 
+def test_invalid_int_param():
+    with pytest.raises(CDXException):
+        zip_ops_test_data(url='http://iana.org/domains/example', matchType='exact', pageSize='not-an-integer')
+    with pytest.raises(CDXException):
+        zip_ops_test_data(url='http://iana.org/domains/example', matchType='exact', page='not-an-integer')
 
 
 
