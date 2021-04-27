@@ -466,7 +466,7 @@ rules:
             - match: '(?:"player":|ytplayer\.config).*"args":\s*{'
               replace: '{0}"dash":"0","dashmpd":"",'
 
-            - match: '"0"==\w+\.dash\&\&'
+            - match: '"0"\s*?==\s*?\w+\.dash\&\&'
               replace: '1&&'
 
  
