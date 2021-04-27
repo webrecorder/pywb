@@ -92,7 +92,11 @@ class IndexHandler(object):
             errs = dict(last_exc=BadRequestException('output={0} not supported'.format(output)))
             return None, None, errs
 
-        cdx_iter, errs = self._load_index_source(params)
+        cdx_iter = None
+        try:
+            cdx_iter, errs = self._load_index_source(params)
+        except BadRequestException as e:
+            errs = dict(last_exc=e)
         if not cdx_iter:
             return None, None, errs
 

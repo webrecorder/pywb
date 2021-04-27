@@ -296,4 +296,12 @@ class TestCDXApp(BaseTestClass):
         assert resp.status_code == 400
         assert resp.json == {'message': 'output=foo not supported'}
 
+    def test_error_unknown_match_type(self):
+        """test unknown/unsupported matchType"""
+        resp = self.query('http://www.iana.org/_css/2013.1/print.css',
+                          is_error=True,
+                          fields='urlkey,timestamp,status',
+                          matchType='foo')
+        assert resp.status_code == 400
+        assert resp.json == {'message': 'Invalid match_type: foo'}
 
