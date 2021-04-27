@@ -71,13 +71,16 @@ class TestXmlQueryIndexSource(BaseTestClass):
     @patch('pywb.warcserver.index.indexsource.requests.sessions.Session.get', mock_get)
     def test_exact_query(self):
         res, errs = self.do_query({'url': 'http://example.com/', 'limit': 100})
+        reslist = list(res)
 
         expected = """\
 com,example)/ 20180112200243 example.warc.gz
 com,example)/ 20180216200300 example.warc.gz"""
-        assert(key_ts_res(res) == expected)
+        assert(key_ts_res(reslist) == expected)
         assert(errs == {})
         assert query_url == 'http://localhost:8080/path?q=limit%3A+100+type%3Aurlquery+url%3Ahttp%253A%252F%252Fexample.com%252F'
+        assert reslist[0]['length'] == '123'
+        assert 'length' not in reslist[1]
 
 
     @patch('pywb.warcserver.index.indexsource.requests.sessions.Session.get', mock_get)
@@ -119,6 +122,7 @@ URL_RESPONSE_1 = """
    <results>
        <result>
          <compressedoffset>10</compressedoffset>
+         <compressedendoffset>123</compressedendoffset>
          <mimetype>text/html</mimetype>
          <file>example.warc.gz</file>
          <redirecturl>-</redirecturl>
