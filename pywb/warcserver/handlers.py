@@ -4,6 +4,7 @@ from pywb.utils.memento import MementoUtils
 
 from warcio.recordloader import ArchiveLoadFailed
 
+from pywb.warcserver.index.cdxobject import CDXException
 from pywb.warcserver.index.fuzzymatcher import FuzzyMatcher
 from pywb.warcserver.resource.responseloader import  WARCPathLoader, LiveWebLoader, VideoLoader
 
@@ -98,13 +99,27 @@ class IndexHandler(object):
         content_type, res = handler(cdx_iter, fields, params)
         out_headers = {'Content-Type': content_type}
 
-        def check_str(lines):
+        first_line = None
+        try:
+            # raise exceptions early so that they can be handled properly
+            first_line = next(res)
+        except StopIteration:
+            pass
+        except CDXException as e:
+            errs = dict(last_exc=e)
+            return None, None, errs
+
+        def check_str(first_line, lines):
+            if first_line is not None:
+                if isinstance(first_line, six.text_type):
+                    first_line = first_line.encode('utf-8')
+                yield first_line
             for line in lines:
                 if isinstance(line, six.text_type):
                     line = line.encode('utf-8')
                 yield line
 
-        return out_headers, check_str(res), errs
+        return out_headers, check_str(first_line, res), errs
 
 
 #=============================================================================

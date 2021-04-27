@@ -46,5 +46,13 @@ class TestZipnumAutoDir(CollsDirMixin, BaseConfigTest):
         assert lines[2] == {"urlkey": "org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126200654", "part": "zipnum", "offset": 1692, "length": 235, "lineno": 7}
         assert lines[3] == {"urlkey": "org,iana)/_css/2013.1/fonts/opensans-regular.ttf 20140126200816", "part": "zipnum", "offset": 1927, "length": 231, "lineno": 8}
 
+    def test_paged_index_query_out_of_range(self):
+        res = self.testapp.get(
+            '/testzip/cdx?url=http://iana.org/domains/&matchType=domain&output=json&showPagedIndex=true&pageSize=4&page=10',
+            expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json == {"message": "Page 10 invalid: First Page is 0, Last Page is 9"}
+
 
 
