@@ -273,10 +273,17 @@ class MethodQueryCanonicalizer(object):
             query = self.amf_parse(query, environ)
 
         elif mime.startswith('application/json'):
-            query = self.json_parse(query, True)
+            try:
+                query = self.json_parse(query)
+            except Exception as e:
+                print(e)
+                query = ''
 
         elif mime.startswith('text/plain'):
-            query = self.json_parse(query, False)
+            try:
+                query = self.json_parse(query)
+            except Exception as e:
+                query = handle_binary(query)
 
         else:
             query = handle_binary(query)
@@ -294,22 +301,28 @@ class MethodQueryCanonicalizer(object):
             print(e)
             return None
 
-    def json_parse(self, string, warn_on_error):
+    def json_parse(self, string):
         data = {}
+        dupes = {}
+
+        def get_key(n):
+            if n not in data:
+                return n
+
+            if n not in dupes:
+                dupes[n] = 1
+
+            dupes[n] += 1
+            return n + "." + str(dupes[n]) + "_";
 
         def _parser(dict_var):
             for n, v in dict_var.items():
                 if isinstance(v, dict):
                     _parser(v)
                 else:
-                    data[n] = v
+                    data[get_key(n)] = str(v)
 
-        try:
-            _parser(json.loads(string))
-        except Exception as e:
-            if warn_on_error:
-                print(e)
-
+        _parser(json.loads(string))
         return urlencode(data)
 
     def append_query(self, url):
