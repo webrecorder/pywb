@@ -86,7 +86,7 @@ class IndexHandler(object):
         if fields and isinstance(fields, str):
             fields = fields.split(',')
 
-        handler = self.OUTPUTS.get(output, fields)
+        handler = self.OUTPUTS.get(output)
         if not handler:
             errs = dict(last_exc=BadRequestException('output={0} not supported'.format(output)))
             return None, None, errs
