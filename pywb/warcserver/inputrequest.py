@@ -78,7 +78,7 @@ class DirectWSGIInputRequest(object):
 
         method = self.get_req_method()
 
-        if method not in ('OPTIONS', 'POST'):
+        if method == 'GET' or method == 'HEAD':
             return url
 
         mime = self._get_content_type()
@@ -199,10 +199,7 @@ class MethodQueryCanonicalizer(object):
         method = method.upper()
         self.method = method
 
-        if method in ('OPTIONS', 'HEAD'):
-            return
-
-        if method != 'POST':
+        if method != 'POST' and method != 'PUT':
             return
 
         try:
@@ -316,7 +313,7 @@ class MethodQueryCanonicalizer(object):
         return urlencode(data)
 
     def append_query(self, url):
-        if not self.query:
+        if self.method == 'GET':
             return url
 
         if '?' not in url:
@@ -324,5 +321,8 @@ class MethodQueryCanonicalizer(object):
         else:
             append_str = '&'
 
-        append_str += "__wb_method=" + self.method + '&' + self.query
+        append_str += "__wb_method=" + self.method
+        if self.query:
+            append_str += '&' + self.query
+
         return url + append_str
