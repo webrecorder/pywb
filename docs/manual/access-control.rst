@@ -9,7 +9,7 @@ block or exclude access to individual urls by longest-prefix match.
 Access Control Files (.aclj)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Access controls are set in one or more access control json files (.aclj), sorted in reverse alphabetical order.
+Access controls are set in one or more access control JSON files (.aclj), sorted in reverse alphabetical order.
 To determine the best match, a binary search is used (similar to CDXJ) lookup and then the best match is found forward.
 
 An .aclj file may look as follows::
@@ -61,7 +61,7 @@ The .aclj files need not ever be added or edited manually.
 
 The pywb ``wb-manager`` utility has been extended to provide tools for adding, removing and checking access control rules.
 
-The access rules are written to ``<collection>/acl/access-rules.acl`` for a given collection ``<collection>`` for automatic collections.
+The access rules are written to ``<collection>/acl/access-rules.aclj`` for a given collection ``<collection>`` for automatic collections.
 
 For example, to add the first line to an ACL file ``access.aclj``, one could run::
 

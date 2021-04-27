@@ -134,7 +134,7 @@ class AccessChecker(object):
         else:
             raise Exception('Invalid Access Source: ' + filename)
 
-    def find_access_rule(self, url, ts=None, urlkey=None):
+    def find_access_rule(self, url, ts=None, urlkey=None, collection=None):
         """Attempts to find the access control rule for the
         supplied URL otherwise returns the default rule
 
@@ -150,6 +150,8 @@ class AccessChecker(object):
                   'nosource': 'true',
                   'exact_match_suffix': self.EXACT_SUFFIX_B
                  }
+        if collection:
+            params['param.coll'] = collection
 
         acl_iter, errs = self.aggregator(params)
         if errs:
@@ -214,7 +216,8 @@ class AccessChecker(object):
             if url == last_url:
                 rule = last_rule
             else:
-                rule = self.find_access_rule(url, cdx.get('timestamp'), cdx.get('urlkey'))
+                rule = self.find_access_rule(url, cdx.get('timestamp'), cdx.get('urlkey'),
+                                             cdx.get('source-coll'))
 
             access = rule.get('access', 'exclude')
             if access == 'exclude':

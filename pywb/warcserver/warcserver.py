@@ -142,7 +142,9 @@ class WarcServer(BaseWarcServer):
                                                base_dir=self.index_paths,
                                                config=self.config)
 
-        access_checker = AccessChecker(CacheDirectoryAccessSource(self.acl_paths),
+        access_checker = AccessChecker(CacheDirectoryAccessSource(base_prefix=self.root_dir,
+                                                                  base_dir=self.acl_paths,
+                                                                  config=self.config),
                                        self.default_access)
 
         if self.dedup_index_url:
