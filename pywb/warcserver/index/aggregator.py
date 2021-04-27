@@ -37,7 +37,9 @@ class BaseAggregator(object):
 
         cdx_iter, errs = self.load_index(query.params)
 
-        cdx_iter = process_cdx(cdx_iter, query)
+        if not query.page_count:
+            cdx_iter = process_cdx(cdx_iter, query)
+
         return cdx_iter, dict(errs)
 
     def load_child_source(self, name, source, params):
