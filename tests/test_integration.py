@@ -389,9 +389,15 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.status_int == 200
         assert '"data": "^"' in resp.text
 
+    def test_post_match_as_json(self, fmod):
+        # json also matches same query
+        resp = self.post_json('/pywb/20140610001255{0}/http://httpbin.org/post?foo=bar', fmod, {'data': '^'})
+        assert resp.status_int == 200
+        assert '"data": "^"' in resp.text
+
     def test_post_invalid(self, fmod):
-        # not json
-        resp = self.post_json('/pywb/20140610001255{0}/http://httpbin.org/post?foo=bar', fmod, {'data': '^'}, status=404)
+        # wrong param
+        resp = self.post('/pywb/20140610001255{0}/http://httpbin.org/post?foo=bar', fmod, {'data': '^^'}, status=404)
         assert resp.status_int == 404
 
     def test_post_referer_redirect(self, fmod):

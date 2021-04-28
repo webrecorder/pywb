@@ -75,6 +75,9 @@ class ArchiveIndexEntryMixin(object):
             self['urlkey'] = canonicalize(new_url, surt_ordered)
             other['urlkey'] = self['urlkey']
 
+            self['method'] = post_query.method
+            self['requestBody'] = post_query.query
+
         referer = other.record.http_headers.get_header('referer')
         if referer:
             self['_referer'] = referer

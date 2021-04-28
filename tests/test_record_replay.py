@@ -111,7 +111,7 @@ class TestRecordReplay(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
         assert cdxj_lines[2]['url'] == 'http://httpbin.org/get?C=D'
         assert cdxj_lines[3]['url'] == 'http://httpbin.org/get?C=D2'
 
-        assert cdxj_lines[0]['urlkey'] == 'org,httpbin)/get?__pywb_method=head&a=b'
+        assert cdxj_lines[0]['urlkey'] == 'org,httpbin)/get?__wb_method=head&a=b'
         assert cdxj_lines[1]['urlkey'] == 'org,httpbin)/get?a=b'
         assert cdxj_lines[2]['urlkey'] == 'org,httpbin)/get?c=d'
         assert cdxj_lines[3]['urlkey'] == 'org,httpbin)/get?c=d2'

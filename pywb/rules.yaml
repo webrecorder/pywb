@@ -410,10 +410,15 @@ rules:
         - action_load_comments
         - filter
 
-    - url_prefix: ['com,youtube)/youtubei', 'com,youtube-nocookie)/youtubei']
+    - url_prefix: ['com,youtube)/embed', 'com,youtube-nocookie)/embed']
 
       fuzzy_lookup:
         match: '()'
+
+    - url_prefix: ['com,youtube)/youtubei/v1', 'com,youtube-nocookie)/youtubei/v1']
+
+      fuzzy_lookup:
+        - videoid
 
     - url_prefix: 'com,googlevideo,'
 
