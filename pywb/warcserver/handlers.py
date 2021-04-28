@@ -4,6 +4,7 @@ from pywb.utils.memento import MementoUtils
 
 from warcio.recordloader import ArchiveLoadFailed
 
+from pywb.warcserver.index.cdxobject import CDXException
 from pywb.warcserver.index.fuzzymatcher import FuzzyMatcher
 from pywb.warcserver.resource.responseloader import  WARCPathLoader, LiveWebLoader, VideoLoader
 
@@ -80,29 +81,49 @@ class IndexHandler(object):
 
         output = params.get('output', self.DEF_OUTPUT)
         fields = params.get('fields')
+        if not fields:
+            fields = params.get('fl')
 
         if fields and isinstance(fields, str):
             fields = fields.split(',')
 
-        handler = self.OUTPUTS.get(output, fields)
+        handler = self.OUTPUTS.get(output)
         if not handler:
             errs = dict(last_exc=BadRequestException('output={0} not supported'.format(output)))
             return None, None, errs
 
-        cdx_iter, errs = self._load_index_source(params)
+        cdx_iter = None
+        try:
+            cdx_iter, errs = self._load_index_source(params)
+        except BadRequestException as e:
+            errs = dict(last_exc=e)
         if not cdx_iter:
             return None, None, errs
 
         content_type, res = handler(cdx_iter, fields, params)
         out_headers = {'Content-Type': content_type}
 
-        def check_str(lines):
+        first_line = None
+        try:
+            # raise exceptions early so that they can be handled properly
+            first_line = next(res)
+        except StopIteration:
+            pass
+        except CDXException as e:
+            errs = dict(last_exc=e)
+            return None, None, errs
+
+        def check_str(first_line, lines):
+            if first_line is not None:
+                if isinstance(first_line, six.text_type):
+                    first_line = first_line.encode('utf-8')
+                yield first_line
             for line in lines:
                 if isinstance(line, six.text_type):
                     line = line.encode('utf-8')
                 yield line
 
-        return out_headers, check_str(res), errs
+        return out_headers, check_str(first_line, res), errs
 
 
 #=============================================================================

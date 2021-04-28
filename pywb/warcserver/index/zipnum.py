@@ -182,7 +182,11 @@ class ZipNumIndexSource(BaseIndexSource):
         if not pagesize:
             pagesize = self.max_blocks
         else:
-            pagesize = int(pagesize)
+            try:
+                pagesize = int(pagesize)
+            except ValueError:
+                msg = 'Invalid value for pageSize= param: {}'
+                raise CDXException(msg.format(pagesize))
 
         last_line = None
 

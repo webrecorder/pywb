@@ -119,7 +119,11 @@ class CDXQuery(object):
 
     @property
     def page(self):
-        return int(self.params.get('page', 0))
+        try:
+            return int(self.params.get('page', 0))
+        except ValueError:
+            msg = 'Invalid value for page= param: {}'
+            raise CDXException(msg.format(self.params.get('page')))
 
     @property
     def page_size(self):

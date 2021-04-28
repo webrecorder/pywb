@@ -125,6 +125,7 @@ Exception: No Locations Found for: foo2
 from pywb import get_test_dir
 from pywb.warcserver.index.test.test_cdxops import cdx_ops_test, cdx_ops_test_data
 from pywb.warcserver.warcserver import init_index_agg
+from pywb.warcserver.index.cdxobject import CDXException
 
 import shutil
 import tempfile
@@ -227,6 +228,14 @@ def test_blocks_zero_pages():
     res = zip_ops_test_data(url='http://aaa.zz/', matchType='domain', showNumPages=True)
     assert(res == {"blocks": 0, "pages": 0, "pageSize": 10})
 
+def test_blocks_ignore_filter_params():
+    res = zip_ops_test_data(url='*.iana.org', pageSize='4', showNumPages=True, filter='=status:200')
+    assert(res == {"blocks": 38, "pages": 10, "pageSize": 4})
+
+def test_blocks_ignore_timestamp_params():
+    res = zip_ops_test_data(url='*.iana.org', pageSize='4', showNumPages=True, closest='20140126000000')
+    assert(res == {"blocks": 38, "pages": 10, "pageSize": 4})
+
 
 # Errors
 
@@ -234,6 +243,11 @@ def test_err_file_not_found():
     with pytest.raises(IOError):
         zip_test_err(url='http://iana.org/x', matchType='exact')  # doctest: +IGNORE_EXCEPTION_DETAIL
 
+def test_invalid_int_param():
+    with pytest.raises(CDXException):
+        zip_ops_test_data(url='http://iana.org/domains/example', matchType='exact', pageSize='not-an-integer')
+    with pytest.raises(CDXException):
+        zip_ops_test_data(url='http://iana.org/domains/example', matchType='exact', page='not-an-integer')
 
 
 

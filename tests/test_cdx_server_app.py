@@ -287,5 +287,21 @@ class TestCDXApp(BaseTestClass):
         for i in range(len(cdxes) - 1):
             assert cdxes[i]['timestamp'] >= cdxes[i + 1]['timestamp']
 
+    def test_error_unknown_output_format(self):
+        """test unknown output format in combination with a list of output fields"""
+        resp = self.query('http://www.iana.org/_css/2013.1/print.css',
+                          is_error=True,
+                          fields='urlkey,timestamp,status',
+                          output='foo')
+        assert resp.status_code == 400
+        assert resp.json == {'message': 'output=foo not supported'}
 
+    def test_error_unknown_match_type(self):
+        """test unknown/unsupported matchType"""
+        resp = self.query('http://www.iana.org/_css/2013.1/print.css',
+                          is_error=True,
+                          fields='urlkey,timestamp,status',
+                          matchType='foo')
+        assert resp.status_code == 400
+        assert resp.json == {'message': 'Invalid match_type: foo'}
 

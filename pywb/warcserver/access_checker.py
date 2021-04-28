@@ -78,6 +78,11 @@ class AccessChecker(object):
 
     EXACT_SUFFIX = '###'  # type: str
     EXACT_SUFFIX_B = b'###'  # type: bytes
+    # rules in the ACL file are followed by a white space (U+0020):
+    # for searching we need a match suffix which sorts/compares after
+    # (resp. before because we use the rev_cmp function). Simply add
+    # another '#' (U+0023 > U+0020)
+    EXACT_SUFFIX_SEARCH_B = b'####'  # type: bytes
 
     def __init__(self, access_source, default_access='allow'):
         """Initialize a new AccessChecker
@@ -134,7 +139,7 @@ class AccessChecker(object):
         else:
             raise Exception('Invalid Access Source: ' + filename)
 
-    def find_access_rule(self, url, ts=None, urlkey=None):
+    def find_access_rule(self, url, ts=None, urlkey=None, collection=None):
         """Attempts to find the access control rule for the
         supplied URL otherwise returns the default rule
 
@@ -148,8 +153,10 @@ class AccessChecker(object):
         params = {'url': url,
                   'urlkey': urlkey,
                   'nosource': 'true',
-                  'exact_match_suffix': self.EXACT_SUFFIX_B
+                  'exact_match_suffix': self.EXACT_SUFFIX_SEARCH_B
                  }
+        if collection:
+            params['param.coll'] = collection
 
         acl_iter, errs = self.aggregator(params)
         if errs:
@@ -214,7 +221,8 @@ class AccessChecker(object):
             if url == last_url:
                 rule = last_rule
             else:
-                rule = self.find_access_rule(url, cdx.get('timestamp'), cdx.get('urlkey'))
+                rule = self.find_access_rule(url, cdx.get('timestamp'), cdx.get('urlkey'),
+                                             cdx.get('source-coll'))
 
             access = rule.get('access', 'exclude')
             if access == 'exclude':

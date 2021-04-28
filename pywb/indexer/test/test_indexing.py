@@ -101,9 +101,9 @@ org,httpbin)/post?foo=bar 20140610001255 http://httpbin.org/post?foo=bar applica
 # post append
 >>> print_cdx_index('post-test.warc.gz', append_post=True)
  CDX N b a m s k r M S V g
-org,httpbin)/post?foo=bar&test=abc 20140610000859 http://httpbin.org/post application/json 200 M532K5WS4GY2H4OVZO6HRPOP47A7KDWU - - 720 0 post-test.warc.gz
-org,httpbin)/post?a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/json 200 M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2 - - 723 1196 post-test.warc.gz
-org,httpbin)/post?data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/json 200 B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ - - 723 2395 post-test.warc.gz
+org,httpbin)/post?__wb_method=post&foo=bar&test=abc 20140610000859 http://httpbin.org/post application/json 200 M532K5WS4GY2H4OVZO6HRPOP47A7KDWU - - 720 0 post-test.warc.gz
+org,httpbin)/post?__wb_method=post&a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/json 200 M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2 - - 723 1196 post-test.warc.gz
+org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/json 200 B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ - - 723 2395 post-test.warc.gz
 
 # no post append, requests included
 >>> print_cdx_index('post-test.warc.gz', include_all=True)
@@ -118,12 +118,12 @@ org,httpbin)/post?foo=bar 20140610001255 http://httpbin.org/post?foo=bar applica
 # post append + requests included
 >>> print_cdx_index('post-test.warc.gz', include_all=True, append_post=True)
  CDX N b a m s k r M S V g
-org,httpbin)/post?foo=bar&test=abc 20140610000859 http://httpbin.org/post application/json 200 M532K5WS4GY2H4OVZO6HRPOP47A7KDWU - - 720 0 post-test.warc.gz
-org,httpbin)/post?foo=bar&test=abc 20140610000859 http://httpbin.org/post application/x-www-form-urlencoded - - - - 476 720 post-test.warc.gz
-org,httpbin)/post?a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/json 200 M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2 - - 723 1196 post-test.warc.gz
-org,httpbin)/post?a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/x-www-form-urlencoded - - - - 476 1919 post-test.warc.gz
-org,httpbin)/post?data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/json 200 B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ - - 723 2395 post-test.warc.gz
-org,httpbin)/post?data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/x-www-form-urlencoded - - - - 475 3118 post-test.warc.gz
+org,httpbin)/post?__wb_method=post&foo=bar&test=abc 20140610000859 http://httpbin.org/post application/json 200 M532K5WS4GY2H4OVZO6HRPOP47A7KDWU - - 720 0 post-test.warc.gz
+org,httpbin)/post?__wb_method=post&foo=bar&test=abc 20140610000859 http://httpbin.org/post application/x-www-form-urlencoded - - - - 476 720 post-test.warc.gz
+org,httpbin)/post?__wb_method=post&a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/json 200 M7YCTM7HS3YKYQTAWQVMQSQZBNEOXGU2 - - 723 1196 post-test.warc.gz
+org,httpbin)/post?__wb_method=post&a=1&b=[]&c=3 20140610001151 http://httpbin.org/post application/x-www-form-urlencoded - - - - 476 1919 post-test.warc.gz
+org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/json 200 B6E5P6JUZI6UPDTNO4L2BCHMGLTNCUAJ - - 723 2395 post-test.warc.gz
+org,httpbin)/post?__wb_method=post&data=^&foo=bar 20140610001255 http://httpbin.org/post?foo=bar application/x-www-form-urlencoded - - - - 475 3118 post-test.warc.gz
 
 # post append + minimal = error
 >>> print_cdx_index('example.arc.gz', append_post=True, minimal=True)
@@ -509,8 +509,8 @@ Content-Disposition: form-data; name="q"\r\n\
     print(buff.getvalue())
     assert buff.getvalue() == b"""\
  CDX N b a m s k r M S V g
-com,example)/ajax/bz?foo=bar&q=[{"websessionid":"pb2tr7:vx83uz:fdi8ta","user":"0"}] 20201119195434 https://example.com/ajax/bz?foo=bar unk text/html; 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 420 0 test.warc.gz
-com,example)/ajax/bz?foo=bar&q=[{"websessionid":"pb2tr7:vx83uz:fdi8ta","user":"0"}] 20201119195434 https://example.com/ajax/bz?foo=bar multipart/form-data - - - - 701 428 test.warc.gz
+com,example)/ajax/bz?__wb_method=post&foo=bar&q=[{"websessionid":"pb2tr7:vx83uz:fdi8ta","user":"0"}] 20201119195434 https://example.com/ajax/bz?foo=bar unk text/html; 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 420 0 test.warc.gz
+com,example)/ajax/bz?__wb_method=post&foo=bar&q=[{"websessionid":"pb2tr7:vx83uz:fdi8ta","user":"0"}] 20201119195434 https://example.com/ajax/bz?foo=bar multipart/form-data - - - - 701 428 test.warc.gz
 """
 
 
@@ -556,8 +556,8 @@ Content-Type: multipart/form-data\r\n\
     write_cdx_index(buff, test_record, 'test.warc.gz', **options)
     assert buff.getvalue() == b"""\
  CDX N b a m s k r M S V g
-com,connatix,capi)/core/story?__wb_post_data=eyj0zxh0ijogimrlzmf1bhqifq==&v=77797 20201119140252 https://capi.connatix.com/core/story?v=77797 unk multipart/form-data SIGZ3RJW5J7DUKEZ4R7RSYUZNGLETIS5 - - 453 0 test.warc.gz
-com,connatix,capi)/core/story?__wb_post_data=eyj0zxh0ijogimrlzmf1bhqifq==&v=77797 20201119140252 https://capi.connatix.com/core/story?v=77797 multipart/form-data - - - - 500 461 test.warc.gz
+com,connatix,capi)/core/story?__wb_method=post&__wb_post_data=eyj0zxh0ijogimrlzmf1bhqifq==&v=77797 20201119140252 https://capi.connatix.com/core/story?v=77797 unk multipart/form-data SIGZ3RJW5J7DUKEZ4R7RSYUZNGLETIS5 - - 453 0 test.warc.gz
+com,connatix,capi)/core/story?__wb_method=post&__wb_post_data=eyj0zxh0ijogimrlzmf1bhqifq==&v=77797 20201119140252 https://capi.connatix.com/core/story?v=77797 multipart/form-data - - - - 500 461 test.warc.gz
 """
 
 

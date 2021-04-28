@@ -314,6 +314,11 @@ class XmlQueryIndexSource(BaseIndexSource):
         cdx['digest'] = self.gettext(item, 'digest')
         cdx['offset'] = self.gettext(item, 'compressedoffset')
         cdx['filename'] = self.gettext(item, 'file')
+
+        length = self.gettext(item, 'compressedendoffset')
+        if length:
+            cdx['length'] = length
+
         return cdx
 
     def gettext(self, item, name):

@@ -10,6 +10,7 @@ from io import BytesIO
 
 import base64
 import cgi
+import json
 
 
 #=============================================================================
@@ -77,7 +78,7 @@ class DirectWSGIInputRequest(object):
 
         method = self.get_req_method()
 
-        if method not in ('OPTIONS', 'POST'):
+        if method == 'GET' or method == 'HEAD':
             return url
 
         mime = self._get_content_type()
@@ -181,7 +182,8 @@ class POSTInputRequest(DirectWSGIInputRequest):
 
 # ============================================================================
 class MethodQueryCanonicalizer(object):
-    MAX_POST_SIZE = 16384
+    #MAX_POST_SIZE = 16384
+    MAX_QUERY_LENGTH = 4096
 
     def __init__(self, method, mime, length, stream,
                        buffered_stream=None,
@@ -196,12 +198,9 @@ class MethodQueryCanonicalizer(object):
         self.query = b''
 
         method = method.upper()
+        self.method = method
 
-        if method in ('OPTIONS', 'HEAD'):
-            self.query = '__pywb_method=' + method.lower()
-            return
-
-        if method != 'POST':
+        if method != 'POST' and method != 'PUT':
             return
 
         try:
@@ -212,8 +211,8 @@ class MethodQueryCanonicalizer(object):
         if length <= 0:
             return
 
-        # max POST query allowed, for size considerations, only read upto this size
-        length = min(length, self.MAX_POST_SIZE)
+        # always read entire POST request, but limit query string later
+        #length = min(length, self.MAX_POST_SIZE)
         query = []
 
         while length > 0:
@@ -274,12 +273,26 @@ class MethodQueryCanonicalizer(object):
         elif mime.startswith('application/x-amf'):
             query = self.amf_parse(query, environ)
 
+        elif mime.startswith('application/json'):
+            try:
+                query = self.json_parse(query)
+            except Exception as e:
+                print(e)
+                query = ''
+
+        elif mime.startswith('text/plain'):
+            try:
+                query = self.json_parse(query)
+            except Exception as e:
+                query = handle_binary(query)
+
         else:
             query = handle_binary(query)
 
-        self.query = query
+        if query:
+            self.query = query[:self.MAX_QUERY_LENGTH]
 
-    def amf_parse(self, string, environ):
+    def amf_parse(self, string, warn_on_error):
         try:
             res = decode(BytesIO(string))
             return urlencode({"request": Amf.get_representation(res)})
@@ -290,15 +303,41 @@ class MethodQueryCanonicalizer(object):
             print(e)
             return None
 
+    def json_parse(self, string):
+        data = {}
+        dupes = {}
+
+        def get_key(n):
+            if n not in data:
+                return n
+
+            if n not in dupes:
+                dupes[n] = 1
+
+            dupes[n] += 1
+            return n + "." + str(dupes[n]) + "_";
+
+        def _parser(dict_var):
+            for n, v in dict_var.items():
+                if isinstance(v, dict):
+                    _parser(v)
+                else:
+                    data[get_key(n)] = str(v)
+
+        _parser(json.loads(string))
+        return urlencode(data)
+
     def append_query(self, url):
-        if not self.query:
+        if self.method == 'GET':
             return url
 
         if '?' not in url:
-            url += '?'
+            append_str = '?'
         else:
-            url += '&'
+            append_str = '&'
 
-        url += self.query
-        return url
+        append_str += "__wb_method=" + self.method
+        if self.query:
+            append_str += '&' + self.query
 
+        return url + append_str
