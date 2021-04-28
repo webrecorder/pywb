@@ -2,6 +2,7 @@ from warcio.timeutils import iso_date_to_timestamp
 
 from io import BytesIO
 import os
+import tempfile
 
 from pywb.utils.canonicalize import calc_search_range
 from pywb.utils.format import res_template
@@ -101,3 +102,29 @@ class WritableRedisIndexer(RedisIndexSource):
                 return res
 
         return None
+
+
+# ============================================================================
+class RedisPendingCounterTempBuffer(tempfile.SpooledTemporaryFile):
+    def __init__(self, max_size, redis_url, params, name, timeout=30):
+        redis_url = res_template(redis_url, params)
+        super(RedisPendingCounterTempBuffer, self).__init__(max_size=max_size)
+        self.redis, self.key = RedisIndexSource.parse_redis_url(redis_url)
+        self.timeout = timeout
+
+        self.redis.incrby(self.key, 1)
+        self.redis.expire(self.key, self.timeout)
+
+    def write(self, buf):
+        super(RedisPendingCounterTempBuffer, self).write(buf)
+        self.redis.expire(self.key, self.timeout)
+
+    def close(self):
+        try:
+            super(RedisPendingCounterTempBuffer, self).close()
+        except:
+            traceback.print_exc()
+
+        self.redis.incrby(self.key, -1)
+        self.redis.expire(self.key, self.timeout)
+
