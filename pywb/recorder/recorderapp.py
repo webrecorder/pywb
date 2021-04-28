@@ -24,8 +24,7 @@ class RecorderApp(object):
 
         self.rec_source_name = kwargs.get('name', 'recorder')
 
-        self.create_buff_func = kwargs.get('create_buff_func',
-                                           self.default_create_buffer)
+        self.create_buff_func = kwargs.get('create_buff_func') or self.default_create_buffer
 
         self.write_queue = gevent.queue.Queue()
         gevent.spawn(self._write_loop)
