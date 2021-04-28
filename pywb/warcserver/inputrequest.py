@@ -182,7 +182,8 @@ class POSTInputRequest(DirectWSGIInputRequest):
 
 # ============================================================================
 class MethodQueryCanonicalizer(object):
-    MAX_POST_SIZE = 16384
+    #MAX_POST_SIZE = 16384
+    MAX_QUERY_LENGTH = 4096
 
     def __init__(self, method, mime, length, stream,
                        buffered_stream=None,
@@ -210,8 +211,8 @@ class MethodQueryCanonicalizer(object):
         if length <= 0:
             return
 
-        # max POST query allowed, for size considerations, only read upto this size
-        length = min(length, self.MAX_POST_SIZE)
+        # always read entire POST request, but limit query string later
+        #length = min(length, self.MAX_POST_SIZE)
         query = []
 
         while length > 0:
@@ -288,7 +289,8 @@ class MethodQueryCanonicalizer(object):
         else:
             query = handle_binary(query)
 
-        self.query = query
+        if query:
+            self.query = query[:self.MAX_QUERY_LENGTH]
 
     def amf_parse(self, string, warn_on_error):
         try:
