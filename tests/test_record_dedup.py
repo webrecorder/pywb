@@ -50,3 +50,7 @@ class TestRecordDedup(HttpBinLiveTests, CollsDirMixin, BaseConfigTest, FakeRedis
 
         # ensure only one response/request pair written
         assert records == ['response', 'request']
+
+    def test_redis_pending_count(self):
+        res = self.redis.get("pywb:test-dedup:pending")
+        assert res == b'0'

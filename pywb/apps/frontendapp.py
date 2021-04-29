@@ -11,7 +11,7 @@ from wsgiprox.wsgiprox import WSGIProxMiddleware
 from pywb.recorder.multifilewarcwriter import MultiFileWARCWriter
 from pywb.recorder.recorderapp import RecorderApp
 from pywb.recorder.filters import SkipDupePolicy, WriteDupePolicy, WriteRevisitDupePolicy
-from pywb.recorder.redisindexer import WritableRedisIndexer
+from pywb.recorder.redisindexer import WritableRedisIndexer, RedisPendingCounterTempBuffer
 
 from pywb.utils.loaders import load_yaml_config
 from pywb.utils.geventserver import GeventServer
@@ -244,8 +244,16 @@ class FrontEndApp(object):
                                           dedup_index=dedup_index,
                                           dedup_by_url=dedup_by_url)
 
+        if dedup_policy:
+            pending_counter = self.warcserver.dedup_index_url.replace(':cdxj', ':pending')
+            pending_timeout = recorder_config.get('pending_timeout', 30)
+            create_buff_func = lambda params, name: RedisPendingCounterTempBuffer(512 * 1024, pending_counter, params, name, pending_timeout)
+        else:
+            create_buff_func = None
+
         self.recorder = RecorderApp(self.RECORD_SERVER % str(self.warcserver_server.port), warc_writer,
-                                    accept_colls=recorder_config.get('source_filter'))
+                                    accept_colls=recorder_config.get('source_filter'),
+                                    create_buff_func=create_buff_func)
 
         recorder_server = GeventServer(self.recorder, port=0)
 
