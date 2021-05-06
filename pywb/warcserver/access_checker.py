@@ -6,6 +6,9 @@ from pywb.warcserver.index.cdxobject import CDXObject
 from pywb.utils.binsearch import search
 from pywb.utils.merge import merge
 
+from warcio.timeutils import timestamp_to_datetime
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 import os
 
 
@@ -84,11 +87,12 @@ class AccessChecker(object):
     # another '#' (U+0023 > U+0020)
     EXACT_SUFFIX_SEARCH_B = b'####'  # type: bytes
 
-    def __init__(self, access_source, default_access='allow'):
+    def __init__(self, access_source, default_access='allow', embargo=None):
         """Initialize a new AccessChecker
 
         :param str|list[str]|AccessRulesAggregator access_source: An access source
         :param str default_access: The default access action (allow)
+        :param dict embargo: A dict specifying optional embargo setting
         """
         if isinstance(access_source, str):
             self.aggregator = self.create_access_aggregator([access_source])
@@ -102,6 +106,72 @@ class AccessChecker(object):
         self.default_rule['timestamp'] = '-'
         self.default_rule['access'] = default_access
         self.default_rule['default'] = 'true'
+
+        self.embargo = self.parse_embargo(embargo)
+
+    def parse_embargo(self, embargo):
+        if not embargo:
+            return None
+
+        value = embargo.get('before')
+        if value:
+            embargo['before'] = timestamp_to_datetime(str(value))
+
+        value = embargo.get('after')
+        if value:
+            embargo['after'] = timestamp_to_datetime(str(value))
+
+        value = embargo.get('older')
+        if value:
+            delta = relativedelta(
+                years=value.get('years', 0),
+                months=value.get('months', 0),
+                weeks=value.get('weeks', 0),
+                days=value.get('days', 0))
+
+            embargo['older'] = delta
+
+        value = embargo.get('newer')
+        if value:
+            delta = relativedelta(
+                years=value.get('years', 0),
+                months=value.get('months', 0),
+                weeks=value.get('weeks', 0),
+                days=value.get('days', 0))
+
+            embargo['newer'] = delta
+
+        return embargo
+
+    def check_embargo(self, url, ts):
+        if not self.embargo:
+            return None
+
+        dt = timestamp_to_datetime(ts)
+        access = self.embargo.get('access', 'exclude')
+
+        # embargo before
+        before = self.embargo.get('before')
+        if before:
+            print(dt, before)
+            return access if dt < before else None
+
+        # embargo after
+        after = self.embargo.get('after')
+        if after:
+            return access if dt > after else None
+
+        # embargo if newser than
+        newer = self.embargo.get('newer')
+        if newer:
+            actual = datetime.utcnow() - newer
+            return access if actual < dt else None
+
+        # embargo if older than
+        older = self.embargo.get('older')
+        if older:
+            actual = datetime.utcnow() - older
+            return access if actual > dt else None
 
     def create_access_aggregator(self, source_files):
         """Creates a new AccessRulesAggregator using the supplied list
@@ -209,24 +279,35 @@ class AccessChecker(object):
         """
         last_rule = None
         last_url = None
+        rule = None
 
         for cdx in cdx_iter:
             url = cdx.get('url')
+            timestamp = cdx.get('timestamp')
+
             # if no url, possible idx or other object, don't apply any checks and pass through
             if not url:
                 yield cdx
                 continue
 
-            # TODO: optimization until date range support is included
-            if url == last_url:
-                rule = last_rule
-            else:
-                rule = self.find_access_rule(url, cdx.get('timestamp'), cdx.get('urlkey'),
-                                             cdx.get('source-coll'))
+            # first, check embargo and use that setting if any
+            access = self.check_embargo(url, timestamp)
+            if not access and self.aggregator:
+                # TODO: optimization until date range support is included
+                if url == last_url:
+                    rule = last_rule
+                else:
+                    rule = self.find_access_rule(url, timestamp,
+                                                 cdx.get('urlkey'),
+                                                 cdx.get('source-coll'))
 
-            access = rule.get('access', 'exclude')
+                access = rule.get('access', 'exclude')
+
             if access == 'exclude':
                 continue
+
+            if not access:
+                access = self.default_rule['access']
 
             cdx['access'] = access
             yield cdx
