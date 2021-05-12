@@ -248,7 +248,7 @@ class XmlQueryIndexSource(BaseIndexSource):
         try:
             limit = params.get('limit')
             if limit:
-                query = 'limit: {0} '.format(limit) + query
+                query = 'limit:{0} '.format(limit) + query
 
             # OpenSearch API requires double-escaping
             # TODO: add option to not double escape if needed
