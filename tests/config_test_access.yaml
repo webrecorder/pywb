@@ -52,5 +52,16 @@ collections:
                 years: 1
                 months: 6
 
+    pywb-embargo-acl:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        embargo:
+            older:
+                years: 1
+
+        acl_paths:
+            - ./sample_archive/access/pywb.aclj
+
+
 
 

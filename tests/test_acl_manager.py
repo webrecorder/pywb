@@ -42,6 +42,16 @@ com,example, - {"access": "exclude", "url": "com,example,"}
 com,example)/ - {"access": "allow", "url": "http://example.com/"}
 """
 
+    def test_acl_add_with_user(self):
+        wb_manager(['acl', 'add', self.acl_filename, 'http://example.com/', 'block', '-u', 'public'])
+
+        with open(self.acl_filename, 'rt') as fh:
+            assert fh.read() == """\
+com,example, - {"access": "exclude", "url": "com,example,"}
+com,example)/ - {"access": "block", "url": "http://example.com/", "user": "public"}
+com,example)/ - {"access": "allow", "url": "http://example.com/"}
+"""
+
     def test_acl_list(self, capsys):
         wb_manager(['acl', 'list', self.acl_filename])
 
@@ -51,6 +61,7 @@ com,example)/ - {"access": "allow", "url": "http://example.com/"}
 Rules for %s from %s:
 
 com,example, - {"access": "exclude", "url": "com,example,"}
+com,example)/ - {"access": "block", "url": "http://example.com/", "user": "public"}
 com,example)/ - {"access": "allow", "url": "http://example.com/"}
 
 """ % (self.acl_filename, self.acl_filename)
@@ -73,13 +84,60 @@ Matched rule:
 
 """
 
+    def test_acl_match_user(self, capsys):
+        wb_manager(['acl', 'match', self.acl_filename, 'http://example.com/foo', '-u', 'public'])
+
+        out, err = capsys.readouterr()
+
+        assert out == """\
+Matched rule:
+
+    com,example)/ - {"access": "block", "url": "http://example.com/", "user": "public"}
+
+"""
+
+    def test_acl_match_unknown_user(self, capsys):
+        wb_manager(['acl', 'match', self.acl_filename, 'http://example.com/foo', '-u', 'data'])
+
+        out, err = capsys.readouterr()
+
+        assert out == """\
+Matched rule:
+
+    com,example)/ - {"access": "allow", "url": "http://example.com/"}
+
+"""
+
+    def test_acl_match_default_user(self, capsys):
+        wb_manager(['acl', 'match', self.acl_filename, 'http://example.com/foo'])
+
+        out, err = capsys.readouterr()
+
+        assert out == """\
+Matched rule:
+
+    com,example)/ - {"access": "allow", "url": "http://example.com/"}
+
+"""
+
     def test_remove_acl(self):
         wb_manager(['acl', 'remove', self.acl_filename, 'com,example,'])
 
         with open(self.acl_filename, 'rt') as fh:
             assert fh.read() == """\
+com,example)/ - {"access": "block", "url": "http://example.com/", "user": "public"}
 com,example)/ - {"access": "allow", "url": "http://example.com/"}
 """
+
+    def test_remove_acl_user(self):
+        wb_manager(['acl', 'remove', self.acl_filename, 'com,example)/', '-u', 'public'])
+
+        with open(self.acl_filename, 'rt') as fh:
+            assert fh.read() == """\
+com,example)/ - {"access": "allow", "url": "http://example.com/"}
+"""
+
+
 
     def test_acl_add_exact(self):
         wb_manager(['acl', 'add', '--exact-match', self.acl_filename, 'example.com', 'block'])

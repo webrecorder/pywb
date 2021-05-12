@@ -40,6 +40,13 @@ class TestACLApp(BaseConfigTest):
 
         assert 'Access Blocked' in resp.text
 
+    def test_allow_via_acl_header(self):
+        resp = self.query('http://www.iana.org/about/')
+
+        assert len(resp.text.splitlines()) == 1
+
+        resp = self.testapp.get('/pywb/mp_/http://www.iana.org/about/', headers={"X-Pywb-Acl-User": "staff"}, status=200)
+
     def test_allowed_more_specific(self):
         resp = self.query('http://www.iana.org/_css/2013.1/fonts/opensans-semibold.ttf')
 

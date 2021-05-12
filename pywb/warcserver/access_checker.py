@@ -209,13 +209,15 @@ class AccessChecker(object):
         else:
             raise Exception('Invalid Access Source: ' + filename)
 
-    def find_access_rule(self, url, ts=None, urlkey=None, collection=None):
+    def find_access_rule(self, url, ts=None, urlkey=None, collection=None, acl_user=None):
         """Attempts to find the access control rule for the
         supplied URL otherwise returns the default rule
 
         :param str url: The URL for the rule to be found
         :param str|None ts: A timestamp (not used)
         :param str|None urlkey: The access control url key
+        :param str|None collection: The collection, if any
+        :param str|None acl_user: The access control user, if any
         :return: The access control rule for the supplied URL
         if one exists otherwise the default rule
         :rtype: CDXObject
@@ -237,6 +239,9 @@ class AccessChecker(object):
 
         tld = key.split(b',')[0]
 
+        last_obj = None
+        last_key = None
+
         for acl in acl_iter:
 
             # skip empty/invalid lines
@@ -244,41 +249,56 @@ class AccessChecker(object):
                 continue
 
             acl_key = acl.split(b' ')[0]
+            acl_obj = None
+
+            if acl_key != last_key and last_obj:
+                return last_obj
 
             if key_exact == acl_key:
-                return CDXObject(acl)
+                acl_obj = CDXObject(acl)
 
             if key.startswith(acl_key):
-                return CDXObject(acl)
+                acl_obj = CDXObject(acl)
+
+            if acl_obj:
+                user = acl_obj.get('user')
+                if user == acl_user:
+                    return acl_obj
+                elif not user:
+                    last_key = acl_key
+                    last_obj = acl_obj
 
             # if acl key already less than first tld,
             # no match can be found
             if acl_key < tld:
                 break
 
-        return self.default_rule
+        return last_obj if last_obj else self.default_rule
 
-    def __call__(self, res):
+    def __call__(self, res, acl_user):
         """Wraps the cdx iter in the supplied tuple returning a
         the wrapped cdx iter and the other members of the supplied
         tuple in same order
 
         :param tuple res: The result tuple
+        :param str acl_user: The user associated with this request (optional)
         :return: An tuple
         """
         cdx_iter, errs = res
-        return self.wrap_iter(cdx_iter), errs
+        return self.wrap_iter(cdx_iter, acl_user), errs
 
-    def wrap_iter(self, cdx_iter):
+    def wrap_iter(self, cdx_iter, acl_user):
         """Wraps the supplied cdx iter and yields cdx objects
         that contain the access control results for the cdx object
         being yielded
 
         :param cdx_iter: The cdx object iterator to be wrapped
+        :param str acl_user: The user associated with this request (optional)
         :return: The wrapped cdx object iterator
         """
         last_rule = None
         last_url = None
+        last_user = None
         rule = None
 
         for cdx in cdx_iter:
@@ -290,18 +310,24 @@ class AccessChecker(object):
                 yield cdx
                 continue
 
-            # first, check embargo and use that setting if any
-            access = self.check_embargo(url, timestamp)
-            if not access and self.aggregator:
+            access = None
+            if self.aggregator:
                 # TODO: optimization until date range support is included
-                if url == last_url:
+                if url == last_url and acl_user == last_user:
                     rule = last_rule
                 else:
                     rule = self.find_access_rule(url, timestamp,
                                                  cdx.get('urlkey'),
-                                                 cdx.get('source-coll'))
+                                                 cdx.get('source-coll'),
+                                                 acl_user)
 
                 access = rule.get('access', 'exclude')
+
+            print('ACCESS', access, rule)
+            if access != 'allow_ignore_embargo' and access != 'exclude':
+                embargo_access = self.check_embargo(url, timestamp)
+                if embargo_access and embargo_access != 'allow':
+                    access = embargo_access
 
             if access == 'exclude':
                 continue
@@ -309,8 +335,12 @@ class AccessChecker(object):
             if not access:
                 access = self.default_rule['access']
 
+            if access == 'allow_ignore_embargo':
+                access = 'allow'
+
             cdx['access'] = access
             yield cdx
 
             last_rule = rule
             last_url = url
+            last_user = acl_user

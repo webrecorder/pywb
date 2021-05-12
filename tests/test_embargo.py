@@ -35,6 +35,22 @@ class TestEmbargoApp(BaseConfigTest):
         resp = self.testapp.get('/pywb-embargo-newer/20140127mp_/http://example.com/', status=200)
         assert resp.headers['Content-Location'] == 'http://localhost:80/pywb-embargo-newer/20140127171251mp_/http://example.com'
 
+    def test_embargo_ignore_acl(self):
+        # embargoed
+        resp = self.testapp.get('/pywb-embargo-acl/20140126201054mp_/http://example.com/', status=404)
+
+        # ignore embargo
+        resp = self.testapp.get('/pywb-embargo-acl/20140126201054mp_/http://example.com/?example=2', status=200)
+
+
+    def test_embargo_ignore_acl_with_header_only(self):
+        # ignore embargo with custom header only
+        headers = {"X-Pywb-ACL-User": "staff2"}
+        resp = self.testapp.get('/pywb-embargo-acl/20140126201054mp_/http://example.com/?example=1', status=200, headers=headers)
+
+        resp = self.testapp.get('/pywb-embargo-acl/20140126201054mp_/http://example.com/?example=1', status=404)
+
+
 
 
 
