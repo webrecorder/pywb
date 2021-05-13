@@ -78,7 +78,7 @@ com,example)/ 20180112200243 example.warc.gz
 com,example)/ 20180216200300 example.warc.gz"""
         assert(key_ts_res(reslist) == expected)
         assert(errs == {})
-        assert query_url == 'http://localhost:8080/path?q=limit%3A+100+type%3Aurlquery+url%3Ahttp%253A%252F%252Fexample.com%252F'
+        assert query_url == 'http://localhost:8080/path?q=limit%3A100+type%3Aurlquery+url%3Ahttp%253A%252F%252Fexample.com%252F'
         assert reslist[0]['length'] == '123'
         assert 'length' not in reslist[1]
 
