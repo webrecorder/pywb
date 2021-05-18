@@ -209,6 +209,10 @@ class FuzzyMatcher(object):
             if mime and mime in self.default_filters['mimes']:
                 check_query = True
 
+            # also check query if has method (non-GET request) or requestBody is set
+            elif cdx.get('requestBody') or cdx.get('method'):
+                check_query = True
+
         # if check_query, ensure matched url starts with original prefix, only differs by query
         if check_query:
             if cdx['url'] == url_no_query or cdx['url'].startswith(url_no_query + '?'):
