@@ -33,6 +33,7 @@ class BaseAggregator(object):
         if content_type:
             params['filter'] = '=mime:' + content_type
 
+        params.update({'surt_ordered': self.surt_ordered})  
         query = CDXQuery(params)
 
         cdx_iter, errs = self.load_index(query.params)
@@ -117,10 +118,11 @@ class BaseAggregator(object):
 
 #=============================================================================
 class BaseSourceListAggregator(BaseAggregator):
-    def __init__(self, sources, **kwargs):
+    def __init__(self, sources, surt_ordered, **kwargs):
         self.sources = sources
         self.sources_key = kwargs.get('sources_key', 'sources')
         self.invert_sources = kwargs.get('invert_sources', False)
+        self.surt_ordered = surt_ordered
 
     def get_all_sources(self, params):
         return self.sources

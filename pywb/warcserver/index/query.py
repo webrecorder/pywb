@@ -10,6 +10,8 @@ class CDXQuery(object):
         self.params = params
         alt_url = self.params.get('alt_url')
         url = alt_url or self.url
+        surt_ordered = self.params.get('surt_ordered')
+
         if not self.params.get('matchType'):
             if url.startswith('*.'):
                 url = self.params['url'] = url[2:]
@@ -23,7 +25,7 @@ class CDXQuery(object):
         if alt_url:
             self.params['alt_url'] = url
 
-        start, end = calc_search_range(url=url,
+        start, end = calc_search_range(url=url, surt_ordered=surt_ordered,
                                        match_type=self.params['matchType'],
                                        url_canon=self.params.get('_url_canon'))
 
