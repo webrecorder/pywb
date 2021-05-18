@@ -146,7 +146,9 @@ For example, this header may be set based on IP range, or based on password auth
 
 Further examples of how to set this header will be provided in the deployments section.
 
-**Note: DON'T use custom user-based rules without configuring proper authentication on the Apache or Nginx frontend to set or remove this header, otherwise the ``X-Pywb-ACL-User`` can easily be faked**
+**Note: Do not use the user-based rules without configuring proper authentication on an Apache or Nginx frontend to set or remove this header, otherwise the 'X-Pywb-ACL-User' can easily be faked.**
+
+See the :ref:`config-acl-header` section in Usage for examples on how to configure this header.
 
 
 Access Error Messages
