@@ -323,7 +323,6 @@ class AccessChecker(object):
 
                 access = rule.get('access', 'exclude')
 
-            print('ACCESS', access, rule)
             if access != 'allow_ignore_embargo' and access != 'exclude':
                 embargo_access = self.check_embargo(url, timestamp)
                 if embargo_access and embargo_access != 'allow':
