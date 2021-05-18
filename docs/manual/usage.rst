@@ -300,9 +300,9 @@ Configuring Access Control Header
 
 The :ref:`access-control` system allows users to be granted different access settings based on the value of an ACL header, ``X-pywb-ACL-user``.
 
-The header can be set by Nginx or Apache to grant custom access priviliges based on the IP address, auth settings, or a combination of rules.
+The header can be set via Nginx or Apache to grant custom access priviliges based on IP address, password, or other combination of rules.
 
-For example, to set the value of the header to ``staff`` if the IP of the request is from designated local IP ranges (127.0.0.1, 192.168.1.0/24), the following can be added to the configs.
+For example, to set the value of the header to ``staff`` if the IP of the request is from designated local IP ranges (127.0.0.1, 192.168.1.0/24), the following settings can be added to the configs:
 
 For Nginx::
 

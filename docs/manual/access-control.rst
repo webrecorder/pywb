@@ -75,6 +75,9 @@ The following blocks access to all URLs older than 1 year, 2 months, 3 weeks and
 Any combination of years, months, weeks and days can be used (as long as at least one is provided) for the ``newer`` or ``older`` embargo settings.
 
 
+Access Control Settings
+=======================
+
 Access Control Files (.aclj)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
