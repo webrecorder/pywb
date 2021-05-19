@@ -210,6 +210,7 @@ class WarcServer(BaseWarcServer):
             archive_paths = None
             acl_paths = None
             default_access = self.default_access
+            embargo = None
         elif isinstance(coll_config, dict):
             index = coll_config.get('index')
             if not index:
@@ -217,6 +218,7 @@ class WarcServer(BaseWarcServer):
             archive_paths = coll_config.get('archive_paths')
             acl_paths = coll_config.get('acl_paths')
             default_access = coll_config.get('default_access', self.default_access)
+            embargo = coll_config.get('embargo')
 
         else:
             raise Exception('collection config must be string or dict')
@@ -245,8 +247,8 @@ class WarcServer(BaseWarcServer):
 
         # ACCESS CONFIG
         access_checker = None
-        if acl_paths:
-            access_checker = AccessChecker(acl_paths, default_access)
+        if acl_paths or embargo:
+            access_checker = AccessChecker(acl_paths, default_access, embargo)
 
         return DefaultResourceHandler(agg, archive_paths,
                                       rules_file=self.rules_file,

@@ -26,6 +26,7 @@ class RewriteInputRequest(DirectWSGIInputRequest):
         self.url = url
         self.rewriter = rewriter
         self.extra_cookie = None
+        self.warcserver_headers = {}
 
         is_proxy = ('wsgiprox.proxy_host' in env)
 
@@ -80,6 +81,11 @@ class RewriteInputRequest(DirectWSGIInputRequest):
                 continue
 
             elif name in ('HTTP_IF_MODIFIED_SINCE', 'HTTP_IF_UNMODIFIED_SINCE'):
+                continue
+
+            elif name == 'HTTP_X_PYWB_ACL_USER':
+                name = name[5:].title().replace('_', '-')
+                self.warcserver_headers[name] = value
                 continue
 
             elif name == 'HTTP_X_FORWARDED_PROTO':

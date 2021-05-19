@@ -12,7 +12,7 @@ from pywb.warcserver.index.cdxobject import CDXObject
 class ACLManager(CollectionsManager):
     SURT_RX = re.compile('([^:.]+[,)])+')
 
-    VALID_ACCESS = ('allow', 'block', 'exclude')
+    VALID_ACCESS = ('allow', 'block', 'exclude', 'allow_ignore_embargo')
 
     DEFAULT_FILE = 'access-rules.aclj'
 
@@ -167,9 +167,9 @@ class ACLManager(CollectionsManager):
         :param argparse.Namespace r: The argparse namespace representing the rule to be added
         :rtype: None
         """
-        return self._add_rule(r.url, r.access, r.exact_match)
+        return self._add_rule(r.url, r.access, r.exact_match, r.user)
 
-    def _add_rule(self, url, access, exact_match=False):
+    def _add_rule(self, url, access, exact_match=False, user=None):
         """Adds an rule to the acl file
 
         :param str url: The URL for the rule
@@ -185,12 +185,14 @@ class ACLManager(CollectionsManager):
         acl['timestamp'] = '-'
         acl['access'] = access
         acl['url'] = url
+        if user:
+            acl['user'] = user
 
         i = 0
         replace = False
 
         for rule in self.rules:
-            if acl['urlkey'] == rule['urlkey'] and acl['timestamp'] == rule['timestamp']:
+            if acl['urlkey'] == rule['urlkey'] and acl['timestamp'] == rule['timestamp'] and acl.get('user') == rule.get('user'):
                 replace = True
                 break
 
@@ -255,7 +257,7 @@ class ACLManager(CollectionsManager):
         i = 0
         urlkey = self.to_key(r.url, r.exact_match)
         for rule in self.rules:
-            if urlkey == rule['urlkey']:
+            if urlkey == rule['urlkey'] and r.user == rule.get('user'):
                 acl = self.rules.pop(i)
                 print('Removed Rule:')
                 self.print_rule(acl)
@@ -285,7 +287,7 @@ class ACLManager(CollectionsManager):
         :rtype: None
         """
         access_checker = AccessChecker(self.acl_file, '<default>')
-        rule = access_checker.find_access_rule(r.url)
+        rule = access_checker.find_access_rule(r.url, acl_user=r.user)
 
         print('Matched rule:')
         print('')
@@ -344,15 +346,18 @@ class ACLManager(CollectionsManager):
                 else:
                     op.add_argument(arg)
 
+            if kwargs.get('user_opt'):
+                op.add_argument('-u', '--user')
+
             if kwargs.get('exact_opt'):
                 op.add_argument('-e', '--exact-match', action='store_true', default=False)
 
             op.set_defaults(acl_func=kwargs['func'])
 
-        command('add', 'coll_name', 'url', 'access', func=cls.add_rule, exact_opt=True)
-        command('remove', 'coll_name', 'url', func=cls.remove_rule, exact_opt=True)
+        command('add', 'coll_name', 'url', 'access', func=cls.add_rule, exact_opt=True, user_opt=True)
+        command('remove', 'coll_name', 'url', func=cls.remove_rule, exact_opt=True, user_opt=True)
         command('list', 'coll_name', func=cls.list_rules)
         command('validate', 'coll_name', func=cls.validate_save)
-        command('match', 'coll_name', 'url', 'default_access', func=cls.find_match)
+        command('match', 'coll_name', 'url', 'default_access', func=cls.find_match, user_opt=True)
         command('importtxt', 'coll_name', 'filename', 'access', func=cls.add_excludes)
 

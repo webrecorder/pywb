@@ -24,4 +24,44 @@ collections:
 
         default_access: block
 
+    pywb-embargo-before:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        embargo:
+            before: '2014012700'
+
+    pywb-embargo-after:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        embargo:
+            after: '2014012700'
+
+    pywb-embargo-older:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        embargo:
+            older:
+                years: 1
+                months: 6
+
+    pywb-embargo-newer:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        embargo:
+            newer:
+                years: 1
+                months: 6
+
+    pywb-embargo-acl:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        embargo:
+            older:
+                years: 1
+
+        acl_paths:
+            - ./sample_archive/access/pywb.aclj
+
+
+
 

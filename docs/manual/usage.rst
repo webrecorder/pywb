@@ -293,6 +293,50 @@ Then, in your config, simply include:
 The configuration assumes uwsgi is started with ``uwsgi uwsgi.ini``
 
 
+.. _config-acl-header:
+
+Configuring Access Control Header
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :ref:`access-control` system allows users to be granted different access settings based on the value of an ACL header, ``X-pywb-ACL-user``.
+
+The header can be set via Nginx or Apache to grant custom access priviliges based on IP address, password, or other combination of rules.
+
+For example, to set the value of the header to ``staff`` if the IP of the request is from designated local IP ranges (127.0.0.1, 192.168.1.0/24), the following settings can be added to the configs:
+
+For Nginx::
+
+  geo $acl_user {
+    # ensure user is set to empty by default
+    default           "";
+
+    # optional: add IP ranges to allow privileged access
+    127.0.0.1         "staff";
+    192.168.0.0/24    "staff";
+  }
+
+  ...
+  location /wayback/ {
+    ...
+    uwsgi_param HTTP_X_PYWB_ACL_USER $acl_user;
+  }
+
+
+For Apache::
+
+    <If "-R '192.168.1.0/24' || -R '127.0.0.1'">
+      RequestHeader set X-Pywb-ACL-User staff
+    </If>
+    # ensure header is cleared if no match
+    <Else>
+      RequestHeader set X-Pywb-ACL-User ""
+    </Else>
+
+}
+
+
+
+
 Running on Subdirectory Path
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

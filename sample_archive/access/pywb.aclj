@@ -1,7 +1,12 @@
 org,iana)/exact/match/first/line/aclj### - {"access": "allow", "url": "https://www.iana.org/exact/match/first/line/aclj/"}
 org,iana)/about - {"access": "block"}
+org,iana)/about - {"access": "allow", "user": "staff"}
 org,iana)/_css/2013.1/fonts/opensans-semibold.ttf - {"access": "allow"}
 org,iana)/_css - {"access": "exclude"}
 org,iana)/### - {"access": "allow"}
 org,iana)/ - {"access": "exclude"}
 org,example)/?example=1 - {"access": "block"}
+com,example)/?example=2 - {"access": "allow_ignore_embargo"}
+com,example)/?example=1 - {"access": "allow_ignore_embargo", "user": "staff2"}
+com,example)/?example=1 - {"access": "allow", "user": "staff"}
+com,example)/ - {"access": "allow"}
