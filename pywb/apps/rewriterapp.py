@@ -704,6 +704,8 @@ class RewriterApp(object):
         headers = {'Content-Length': str(len(req_data)),
                    'Content-Type': 'application/request'}
 
+        headers.update(inputreq.warcserver_headers)
+
         if skip_record:
             headers['Recorder-Skip'] = '1'
 

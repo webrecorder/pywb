@@ -182,7 +182,7 @@ the following modifiers:
 
 
 ``fields``
-^^^^^^
+^^^^^^^^^^
 
 The ``fields`` param can be used to specify which fields to include in the
 output. The standard available fields are usually: ``urlkey``,

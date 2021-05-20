@@ -66,8 +66,10 @@ class IndexHandler(object):
 
         cdx_iter = self.fuzzy(self.index_source, params)
 
+        acl_user = params['_input_req'].env.get("HTTP_X_PYWB_ACL_USER")
+
         if self.access_checker:
-            cdx_iter = self.access_checker(cdx_iter)
+            cdx_iter = self.access_checker(cdx_iter, acl_user)
 
         return cdx_iter
 

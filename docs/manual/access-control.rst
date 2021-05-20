@@ -1,15 +1,87 @@
 .. _access-control:
 
-Access Control System
----------------------
+Embargo and Access Control
+--------------------------
 
-The access controls system allows for a flexible configuration of rules to allow,
-block or exclude access to individual urls by longest-prefix match.
+The embargo system allows for date-based rules to block access to captures based on their capture dates.
+
+The access controls system provides additional URL-based rules to allow, block or exclude access to specific URL prefixes or exact URLs.
+
+The embargo and access control rules are configured per collection.
+
+Embargo Settings
+================
+
+The embargo system allows restricting access to all URLs within a collection based on the timestamp of each URL.
+Access to these resources is 'embargoed' until the date range is adjusted or the time interval passes.
+
+The embargo can be used to disallow access to captures based on following criteria:
+- Captures before an exact date
+- Captures after an exact date
+- Captures newer than a time interval
+- Captures older than a time interval
+
+Embargo Before/After Exact Date
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To block access to all captures before or after a specific date, use the ``before`` or ``after`` embargo blocks
+with a specific timestamp.
+
+For example, the following blocks access to all URLs captured before 2020-12-26 in the collection ``embargo-before``::
+
+  embargo-before:
+      index_paths: ...
+      archive_paths: ...
+      embargo:
+          before: '20201226'
+
+
+The following blocks access to all URLs captured on or after 2020-12-26 in collection ``embargo-after``::
+
+  embargo-after:
+      index_paths: ...
+      archive_paths: ...
+      embargo:
+          after: '20201226'
+
+Embargo By Time Interval
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The embargo can also be set for a relative time interval, consisting of years, months, weeks and/or days.
+
+
+For example, the following blocks access to all URLs newer than 1 year::
+
+  embargo-newer:
+      ...
+      embargo:
+          newer:
+            years: 1
+
+
+
+The following blocks access to all URLs older than 1 year, 2 months, 3 weeks and 4 days::
+
+  embargo-older:
+      ...
+      embargo:
+          older:
+            years: 1
+            months: 2
+            weeks: 3
+            days: 4
+
+
+Any combination of years, months, weeks and days can be used (as long as at least one is provided) for the ``newer`` or ``older`` embargo settings.
+
+
+Access Control Settings
+=======================
 
 Access Control Files (.aclj)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Access controls are set in one or more access control JSON files (.aclj), sorted in reverse alphabetical order.
+URL-based access controls are set in one or more access control JSON files (.aclj), sorted in reverse alphabetical order.
 To determine the best match, a binary search is used (similar to CDXJ) lookup and then the best match is found forward.
 
 An .aclj file may look as follows::
@@ -22,6 +94,8 @@ An .aclj file may look as follows::
 
 Each JSON entry contains an ``access`` field and the original ``url`` field that was used to convert to the SURT (if any).
 
+The JSON entry may also contain a ``user`` field, as explained below.
+
 The prefix consists of a SURT key and a ``-`` (currently reserved for a timestamp/date range field to be added later)
 
 Given these rules, a user would:
@@ -30,19 +104,55 @@ Given these rules, a user would:
 * would receive a 404 not found error when viewing ``http://httpbin.org/anything`` (exclude)
 
 
-Access Types: allow, block, exclude
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Access Types: allow, block, exclude, allow_ignore_embargo
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The available access types are as follows:
 
 - ``exclude`` - when matched, results are excluded from the index, as if they do not exist. User will receive a 404.
 - ``block`` - when matched, results are not excluded from the index, marked with ``access: block``, but access to the actual is blocked. User will see a 451
-- ``allow`` - full access to the index and the resource.
+- ``allow`` - full access to the index and the resource, but may be overriden by embargo
+- ``allow_ignore_embargo`` - full access to the index and resource, overriding any embargo settings
 
 The difference between ``exclude`` and ``block`` is that when blocked, the user can be notified that access is blocked, while
 with exclude, no trace of the resource is presented to the user.
 
-The use of ``allow`` is useful to provide access to more specific resources within a broader block/exclude rule.
+The use of ``allow`` is useful to provide access to more specific resources within a broader block/exclude rule, while ``allow_ignore_embargo``
+can be used to override any embargo settings.
+
+If both are present, the embargo restrictions are checked first and take precedence, unless the ``allow_ignore_embargo`` option is used
+to override the embargo.
+
+
+User-Based Access Controls
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The access control rules can further be customized be specifying different permissions for different 'users'. Since pywb does not have a user system,
+a special header, ``X-Pywb-ACL-User`` can be used to indicate a specific user.
+
+This setting is designed to allow a more priveleged user to access additional setting or override an embargo.
+
+For example, the following access control settings restricts access to ``https://example.com/restricted/`` by default, but allows access for the ``staff`` user::
+
+  com,example)/restricted - {"access": "allow", "user": "staff"}
+  com,example)/restricted - {"access": "block"}
+
+
+Combined with the embargo settings, this can also be used to override the embargo for internal organizational users, while keeping the embargo for general access::
+
+  com,example)/restricted - {"access": "allow_ignore_embargo", "user": "staff"}
+  com,example)/restricted - {"access": "allow"}
+
+To make this work, pywb must be running behind an Apache or Nginx system that is configured to set ``X-Pywb-ACL-User: staff`` based on certain settings.
+
+For example, this header may be set based on IP range, or based on password authentication.
+
+Further examples of how to set this header will be provided in the deployments section.
+
+**Note: Do not use the user-based rules without configuring proper authentication on an Apache or Nginx frontend to set or remove this header, otherwise the 'X-Pywb-ACL-User' can easily be faked.**
+
+See the :ref:`config-acl-header` section in Usage for examples on how to configure this header.
+
 
 Access Error Messages
 ^^^^^^^^^^^^^^^^^^^^^
@@ -71,6 +181,11 @@ For example, to add the first line to an ACL file ``access.aclj``, one could run
 The URL supplied can be a URL or a SURT prefix. If a SURT is supplied, it is used as is::
 
   wb-manager acl add <collection> com, allow
+
+
+A specific user for user-based rules can also be specified, for example to add ``allow_ignore_embargo`` for user ``staff`` only, run::
+
+  wb-manager acl add <collection> http://httpbin.org/anything/something allow_ignore_embargo staff
 
 
 By default, access control rules apply to a prefix of a given URL or SURT.
@@ -135,6 +250,20 @@ set merge-sorted to find the best match (very similar to the CDXJ index lookup).
 
 Note: It might make sense to separate ``allows.aclj`` and ``blocks.aclj`` into individual files for organizational reasons,
 but there is no specific need to keep more than one access control files.
+
+Finally, ACLJ and embargo settings combined for the same collection might look as follows::
+
+  collections:
+       test:
+            ...
+            embargo:
+                newer:
+                    days: 366
+
+            acl_paths:
+                 - ./path/to/allows.aclj
+                 - ./path/to/blocks.aclj
+
 
 Default Access
 ^^^^^^^^^^^^^^
