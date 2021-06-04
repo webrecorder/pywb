@@ -13,7 +13,7 @@ window.wb_prefix = "{{ wb_prefix }}";
 <div class="container-fluid">
     <div class="row justify-content-center">
         <h4 class="display-4">
-            Collection {{ coll }} Search Page
+            {% trans %}Collection {{ coll }} Search Page{% endtrans %}
         </h4>
     </div>
 </div>
@@ -27,9 +27,9 @@ window.wb_prefix = "{{ wb_prefix }}";
                 </label>
                 <input aria-label="url" aria-required="true" class="form-control form-control-lg" id="search-url"
                        name="search" placeholder="Enter a URL to search for"
-                       title="Enter a URL to search for" type="search" required/>
+                       title="{{ _('Enter a URL to search for') }}" type="search" required/>
                 <div class="invalid-feedback">
-                    Please enter a URL
+                    {{ _('Please enter a URL') }}
                 </div>
             </div>
         </div>
@@ -37,7 +37,7 @@ window.wb_prefix = "{{ wb_prefix }}";
             <div class="col-5">
                 <div class="custom-control custom-checkbox custom-control">
                     <input type="checkbox" class="custom-control-input" id="open-results-new-window">
-                    <label class="custom-control-label" for="open-results-new-window">Open results in new window</label>
+                    <label class="custom-control-label" for="open-results-new-window">{{ _('Open results in new window') }}</label>
                 </div>
             </div>
             <div class="col-7">
@@ -47,7 +47,7 @@ window.wb_prefix = "{{ wb_prefix }}";
                 <button class="btn btn-outline-info float-right mr-3" type="button" role="button"
                         data-toggle="collapse" data-target="#advancedOptions"
                         aria-expanded="false" aria-controls="advancedOptions" aria-label="Advanced Search Options">
-                    Advanced Search Options
+                    {{ _('Advanced Search Options') }}
                 </button>
             </div>
         </div>
@@ -151,7 +151,7 @@ window.wb_prefix = "{{ wb_prefix }}";
 </div>
 {% if metadata %}
     <div class="container mt-4 justify-content-center">
-        <p class="lead">Collection Metadata</p>
+        <p class="lead">{{ _('Collection Metadata') }}</p>
         <div class="row">
             <div class="col-4 pr-1">
                 <div class="list-group" id="collection-metadata" role="tablist">
