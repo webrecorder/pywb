@@ -7,7 +7,7 @@ pywb supports configuring different language locales and loading different langu
 
 pywb can extract all text from templates and generate CSV files for translation and convert them back into a binary format used for localization/internationalization.
 
-(pywb uses the `Babel library<http://babel.pocoo.org/en/latest/>`_  which extends the `standard Python i18n system <https://docs.python.org/3/library/gettext.html>`_
+(pywb uses the `Babel library <http://babel.pocoo.org/en/latest/>`_  which extends the `standard Python i18n system <https://docs.python.org/3/library/gettext.html>`_
 
 Locales to use are configured in the ``config.yaml``.
 
@@ -100,8 +100,8 @@ for each locale listed. To include English as an option, it should also be added
 will configure pywb to show a language switch option on all pages.
 
 
-Paths for Localized Text
-------------------------
+Localized Collection Paths
+==========================
 
 When localization is enabled, pywb supports the locale prefix for accessing each collection with a localized language:
 If pywb has a collection ``my-web-archive``, then:
