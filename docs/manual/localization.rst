@@ -106,10 +106,10 @@ Localized Collection Paths
 When localization is enabled, pywb supports the locale prefix for accessing each collection with a localized language:
 If pywb has a collection ``my-web-archive``, then:
 
-``/my-web-archive/`` - loads UI with default language (set via ``default_locale``)
-``/en/my-web-archive/`` - loads UI with ``en`` locale
-``/es/my-web-archive/`` - loads UI with ``es`` locale
-``/pt/my-web-archive/`` - loads UI with ``pt`` locale
+* ``/my-web-archive/`` - loads UI with default language (set via ``default_locale``)
+* ``/en/my-web-archive/`` - loads UI with ``en`` locale
+* ``/es/my-web-archive/`` - loads UI with ``es`` locale
+* ``/pt/my-web-archive/`` - loads UI with ``pt`` locale
 
 The language switch options work by changing the locale prefix for the same page.
 
