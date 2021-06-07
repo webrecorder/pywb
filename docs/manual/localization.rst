@@ -7,7 +7,7 @@ pywb supports configuring different language locales and loading different langu
 
 pywb can extract all text from templates and generate CSV files for translation and convert them back into a binary format used for localization/internationalization.
 
-(pywb uses the `Babel library <http://babel.pocoo.org/en/latest/>`_  which extends the `standard Python i18n system <https://docs.python.org/3/library/gettext.html>`_
+(pywb uses the `Babel library <http://babel.pocoo.org/en/latest/>`_  which extends the `standard Python i18n system <https://docs.python.org/3/library/gettext.html>`_)
 
 Locales to use are configured in the ``config.yaml``.
 
@@ -83,7 +83,9 @@ pywb can be configured with a default, single-language locale, by setting the ``
      - es
 
 
-With this configuration, pywb will automatically use the ``es`` locale for all text strings.
+With this configuration, pywb will automatically use the ``es`` locale for all text strings in pywb pages.
+
+pywb will also set the ``<html lang="es">`` so that the browser will recognize the correct locale.
 
 
 Mutli-language Translations
