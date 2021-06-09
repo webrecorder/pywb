@@ -127,3 +127,21 @@ To remove data for a locale permanently, you can run: ``wb-manager i18n remove <
 To remove all localization data, you can manually delete the ``i18n`` directory.
 
 
+UI Templates: Adding Localizable Text
+=====================================
+
+Text that can be translated, localizable text, can be marked as such directly in the UI templates:
+
+1. By wrapping the text in ``{% trans %}``/``{% endtrans %}`` tags. For example::
+
+   {% trans %}Collection {{ coll }} Search Page{% endtrans %}
+
+2. Short-hand by calling a special ``_()`` function, which can be used in attributes or more dynamically. For example::
+
+   ... title="{{ _('Enter a URL to search for') }}">
+
+
+These methods can be used in all UI templates and are supported by the Jinja2 templating system.
+
+See :ref:`ui-customizations` for a list of all available UI templates.
+
