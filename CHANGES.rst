@@ -7,6 +7,17 @@ Documentation Updates:
 
 * `New ACL header configuration <https://pywb.readthedocs.io/en/latest/manual/usage.html#config-acl-header>`_
 
+* `Locaalization / Multi-lingual Support Guide <https://pywb.readthedocs.io/en/latest/manual/localization.html>`_
+
+
+Localization Improvements: (`#647 <https://github.com/webrecorder/pywb/pull/647>`_)
+
+* Support for extracting, updating, listing and removing localizable commands via ``wb-manager i18n`` command.
+
+* UI: Add language switch header to all UI templates.
+
+* Mark localizable strings in translatable in existing templates.
+
 
 Access Control Improvements:
 

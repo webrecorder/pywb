@@ -72,7 +72,8 @@ class RewriterApp(object):
 
         self.jinja_env.init_loc(self.config.get('locales_root_dir'),
                                 self.config.get('locales'),
-                                self.loc_map)
+                                self.loc_map,
+                                self.config.get('default_locale'))
 
         self.redirect_to_exact = config.get('redirect_to_exact')
 

@@ -98,6 +98,8 @@ class JinjaEnv(object):
             assets_env.resolver = PkgResResolver()
             jinja_env.assets_environment = assets_env
 
+        self.default_locale = ''
+
     def _make_loaders(self, paths, packages):
         """Initialize the template loaders based on the supplied paths and packages.
 
@@ -117,16 +119,19 @@ class JinjaEnv(object):
 
         return loaders
 
-    def init_loc(self, locales_root_dir, locales, loc_map):
+    def init_loc(self, locales_root_dir, locales, loc_map, default_locale):
         locales = locales or []
+        locales_root_dir = locales_root_dir or os.path.join('i18n', 'translations')
+        default_locale = default_locale or 'en'
+        self.default_locale = default_locale
 
         if locales_root_dir:
             for loc in locales:
-                loc_map[loc] = Translations.load(locales_root_dir, [loc, 'en'])
+                loc_map[loc] = Translations.load(locales_root_dir, [loc, default_locale])
                 #jinja_env.jinja_env.install_gettext_translations(translations)
 
         def get_translate(context):
-            loc = context.get('env', {}).get('pywb_lang')
+            loc = context.get('env', {}).get('pywb_lang', default_locale)
             return loc_map.get(loc)
 
         def override_func(jinja_env, name):
@@ -160,6 +165,7 @@ class JinjaEnv(object):
 
         self.jinja_env.globals['locales'] = list(loc_map.keys())
         self.jinja_env.globals['_Q'] = quote_gettext
+        self.jinja_env.globals['default_locale'] = default_locale
 
         @contextfunction
         def switch_locale(context, locale):

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}URL Not Found{% endblock %}
+{% block title %}{{ _('URL Not Found') }}{% endblock %}
 
 {% block body %}
 <div class="container">
@@ -13,7 +13,7 @@
     {% if wbrequest and wbrequest.env.pywb_proxy_magic and url %}
         <p>
             <a href="//select.{{ wbrequest and wbrequest.env.pywb_proxy_magic }}/{{ url }}">
-                Try Different Collection
+                {{ _('Try Different Collection') }}
             </a>
         </p>
     {% endif %}

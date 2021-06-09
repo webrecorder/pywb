@@ -18,6 +18,7 @@ A subset of features provides the basic functionality of a "Wayback Machine".
    manual/configuring
    manual/access-control
    manual/ui-customization
+   manual/localization
    manual/architecture
    manual/apis
    manual/owb-transition

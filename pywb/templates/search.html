@@ -13,7 +13,7 @@ window.wb_prefix = "{{ wb_prefix }}";
 <div class="container-fluid">
     <div class="row justify-content-center">
         <h4 class="display-4">
-            Collection {{ coll }} Search Page
+            {% trans %}Collection {{ coll }} Search Page{% endtrans %}
         </h4>
     </div>
 </div>
@@ -27,9 +27,9 @@ window.wb_prefix = "{{ wb_prefix }}";
                 </label>
                 <input aria-label="url" aria-required="true" class="form-control form-control-lg" id="search-url"
                        name="search" placeholder="Enter a URL to search for"
-                       title="Enter a URL to search for" type="search" required/>
+                       title="{{ _('Enter a URL to search for') }}" type="search" required/>
                 <div class="invalid-feedback">
-                    Please enter a URL
+                    {% trans %}'Please enter a URL{% endtrans %}
                 </div>
             </div>
         </div>
@@ -37,7 +37,7 @@ window.wb_prefix = "{{ wb_prefix }}";
             <div class="col-5">
                 <div class="custom-control custom-checkbox custom-control">
                     <input type="checkbox" class="custom-control-input" id="open-results-new-window">
-                    <label class="custom-control-label" for="open-results-new-window">Open results in new window</label>
+                    <label class="custom-control-label" for="open-results-new-window">{{ _('Open results in new window') }}</label>
                 </div>
             </div>
             <div class="col-7">
@@ -47,51 +47,51 @@ window.wb_prefix = "{{ wb_prefix }}";
                 <button class="btn btn-outline-info float-right mr-3" type="button" role="button"
                         data-toggle="collapse" data-target="#advancedOptions"
                         aria-expanded="false" aria-controls="advancedOptions" aria-label="Advanced Search Options">
-                    Advanced Search Options
+                    {{ _('Advanced Search Options') }}
                 </button>
             </div>
         </div>
         <div class="collapse mt-3" id="advancedOptions">
             <div class="form-group form-row">
                 <label for="match-type-select" class="col-sm-2 col-form-label" aria-label="Match Type">
-                    Match Type:
+                    {{ _('Match Type:') }}
                 </label>
                 <select id="match-type-select" class="form-control form-control col-sm-6">
                     <option value=""></option>
-                    <option value="prefix">Prefix</option>
-                    <option value="host">Host</option>
-                    <option value="domain">Domain</option>
+                    <option value="prefix">{% trans %}Prefix{% endtrans %}</option>
+                    <option value="host">{% trans %}Host{% endtrans %}</option>
+                    <option value="domain">{% trans %}Domain{% endtrans %}</option>
                 </select>
             </div>
             <p style="cursor: help;">
                <span data-toggle="tooltip" data-placement="right"
                      title="Restricts the results to the given date/time range (inclusive)">
-                   Date/Time Range
+                   {{ _('Date/Time Range') }}
                 </span>
             </p>
             <div class="form-row">
                 <div class="col-6">
-                    <label class="sr-only" for="dt-from" aria-label="Date/Time Range From">From:</label>
+                    <label class="sr-only" for="dt-from" aria-label="Date/Time Range From">{% trans %}From:{% endtrans %}</label>
                     <div class="input-group">
                         <div class="input-group-prepend">
-                            <div class="input-group-text">From:</div>
+                            <div class="input-group-text">{% trans %}From:{% endtrans %}</div>
                         </div>
                         <input id="dt-from" type="number" name="date-range-from" class="form-control"
                                pattern="^\d{4,14}$">
                         <div class="invalid-feedback" id="dt-from-bad">
-                            Please enter a valid <b>From</b> timestamp. Timestamps may be 4 <= ts <=14 digits
+                            {% trans %}Please enter a valid <b>From</b> timestamp. Timestamps may be 4 <= ts <=14 digits{% endtrans %}
                         </div>
                     </div>
                 </div>
                 <div class="col-6">
-                    <label class="sr-only" for="dt-to" aria-label="Date/Time Range To">To:</label>
+                    <label class="sr-only" for="dt-to" aria-label="Date/Time Range To">{% trans %}To:{% endtrans %}</label>
                     <div class="input-group">
                         <div class="input-group-prepend">
-                            <div class="input-group-text">To:</div>
+                            <div class="input-group-text">{% trans %}To:{% endtrans %}</div>
                         </div>
                         <input id="dt-to" type="number" name="date-range-to" class="form-control" pattern="^\d{4,14}$">
                         <div class="invalid-feedback" id="dt-to-bad">
-                            Please enter a valid <b>To</b> timestamp. Timestamps may be 4 <= ts <=14 digits
+                            {% trans %}Please enter a valid <b>To</b> timestamp. Timestamps may be 4 <= ts <=14 digits{% endtrans %}
                         </div>
                     </div>
                 </div>
@@ -99,41 +99,41 @@ window.wb_prefix = "{{ wb_prefix }}";
             <div class="form-group mt-3">
                 <div class="form-row">
                     <div class="col-6">
-                        <p>Filtering</p>
+                        <p>{% trans %}Filtering{% endtrans %}</p>
                     </div>
                     <div class="col-6">
                         <button id="clear-filters" class="btn btn-outline-warning float-right" type="button">
-                            Clear Filters
+                            {% trans %}Clear Filters{% endtrans %}
                         </button>
                         <button id="add-filter" class="btn btn-outline-secondary float-right mr-2" type="button">
-                            Add Filter
+                            {% trans %}Add Filter{% endtrans %}
                         </button>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="col-6">
                         <div class="row pb-1">
-                            <label for="filter-by" class="col-form-label col-3">By:</label>
+                            <label for="filter-by" class="col-form-label col-3">{% trans %}By:{% endtrans %}</label>
                             <select id="filter-by" class="form-control col-7">
                                 <option value="" selected></option>
-                                <option value="mime">Mime Type</option>
-                                <option value="status">Status</option>
-                                <option value="url">URL</option>
+                                <option value="mime">{% trans %}Mime Type{% endtrans %}</option>
+                                <option value="status">{% trans %}Status{% endtrans %}</option>
+                                <option value="url">{% trans %}URL{% endtrans %}</option>
                             </select>
                         </div>
                         <div class="row pb-1">
-                            <label for="filter-modifier" class="col-form-label col-3">How:</label>
+                            <label for="filter-modifier" class="col-form-label col-3">{% trans %}How:{% endtrans %}</label>
                             <select id="filter-modifier" class="form-control col-7">
-                                <option value="=">Contains</option>
-                                <option value="==">Matches Exactly</option>
-                                <option value="=~">Matches Regex</option>
-                                <option value="=!">Does Not Contains</option>
-                                <option value="=!=">Is Not</option>
-                                <option value="=!~">Does Not Begins With</option>
+                                <option value="=">{% trans %}Contains{% endtrans %}</option>
+                                <option value="==">{% trans %}Matches Exactly{% endtrans %}</option>
+                                <option value="=~">{% trans %}Matches Regex{% endtrans %}</option>
+                                <option value="=!">{% trans %}Does Not Contain{% endtrans %}</option>
+                                <option value="=!=">{% trans %}Is Not{% endtrans %}</option>
+                                <option value="=!~">{% trans %}Does Not Begins With{% endtrans %}</option>
                             </select>
                         </div>
                         <div class="row">
-                            <label for="filter-expression" class="col-form-label col-3">Expr:</label>
+                            <label for="filter-expression" class="col-form-label col-3">{% trans %}Expr:{% endtrans %}</label>
                             <input type="text" id="filter-expression" class="form-control col-7"
                                    placeholder="Enter an expression to filter by"
                             >
@@ -141,7 +141,7 @@ window.wb_prefix = "{{ wb_prefix }}";
                     </div>
                     <div class="col-6">
                         <ul id="filter-list" class="filter-list">
-                            <li id="filtering-nothing">No Filter</li>
+                            <li id="filtering-nothing">{% trans %}No Filter{% endtrans %}</li>
                         </ul>
                     </div>
                 </div>
@@ -151,7 +151,7 @@ window.wb_prefix = "{{ wb_prefix }}";
 </div>
 {% if metadata %}
     <div class="container mt-4 justify-content-center">
-        <p class="lead">Collection Metadata</p>
+        <p class="lead">{{ _('Collection Metadata') }}</p>
         <div class="row">
             <div class="col-4 pr-1">
                 <div class="list-group" id="collection-metadata" role="tablist">
