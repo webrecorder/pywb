@@ -441,6 +441,17 @@ Create manage file based web archive collections
     ACLManager.init_parser(acl)
     acl.set_defaults(func=do_acl)
 
+    # LOC
+    from pywb.manager.locmanager import LocManager
+    def do_loc(r):
+        loc = LocManager()
+        loc.process(r)
+
+    loc_help = 'Generate strings for i18n/localization'
+    loc = subparsers.add_parser('i18n', help=loc_help)
+    LocManager.init_parser(loc)
+    loc.set_defaults(func=do_loc)
+
     # Parse
     r = parser.parse_args(args=args)
     r.func(r)

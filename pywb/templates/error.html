@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Pywb Error{% endblock %}
+{% block title %}{{ _('Pywb Error') }}{% endblock %}
 {% block body %}
 <div class="container text-danger">
     <div class="row justify-content-center">
@@ -8,22 +8,22 @@
     <div class="row">
         <div class="col-12 text-center">
         {% if err_status == 451 %}
-            <p class="lead">Access Blocked to {{ err_msg }}</p>
+            <p class="lead">{% trans %}Access Blocked to {{ err_msg }}{% endtrans %}</p>
 
         {% elif err_status == 404 and err_details == 'coll_not_found' %}
-            <p>Collection not found: <b>{{ err_msg }}</b></p>
+            <p>{% trans %}Collection not found: <b>{{ err_msg }}{% endtrans %}</b></p>
 
-            <p><a href="/">See list of valid collections</a></p>
+            <p><a href="/">{{ _('See list of valid collections') }}</a></p>
 
         {% elif err_status == 404 and err_details == 'static_file_not_found' %}
-            <p>Static file not found: <b>{{ err_msg }}</b></p>
+            <p>{% trans %}Static file not found: <b>{{ err_msg }}{% endtrans %}</b></p>
 
         {% else %}
 
             <p class="lead">{{ err_msg }}</p>
 
             {% if err_details %}
-                <p class="lead">Error Details:</p>
+                <p class="lead">{% trans %}Error Details:{% endtrans %}</p>
                 <pre>{{ err_details }}</pre>
             {% endif %}
         {% endif %}

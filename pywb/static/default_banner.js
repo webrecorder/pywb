@@ -182,7 +182,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
     ancillaryLinks.appendChild(calendarLink);
     this.calendarLink = calendarLink;
 
-    if (typeof window.banner_info.locales !== "undefined" && window.banner_info.locales.length) {
+    if (typeof window.banner_info.locales !== "undefined" && window.banner_info.locales.length > 1) {
       var locales = window.banner_info.locales;
       var languages = document.createElement("div");
 

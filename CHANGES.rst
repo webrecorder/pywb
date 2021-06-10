@@ -1,3 +1,66 @@
+pywb 2.6.0b0 changelist
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Documentation Updates:
+
+* `Embargo + ACL system updates <https://pywb.readthedocs.io/en/latest/manual/access-control.html>`_
+
+* `New ACL header configuration <https://pywb.readthedocs.io/en/latest/manual/usage.html#config-acl-header>`_
+
+* `Locaalization / Multi-lingual Support Guide <https://pywb.readthedocs.io/en/latest/manual/localization.html>`_
+
+
+Localization Improvements: (`#647 <https://github.com/webrecorder/pywb/pull/647>`_)
+
+* Support for extracting, updating, listing and removing localizable commands via ``wb-manager i18n`` command.
+
+* UI: Add language switch header to all UI templates.
+
+* Mark localizable strings in translatable in existing templates.
+
+
+Access Control Improvements:
+
+* Support for Embargo System for date-based embargo, overridable via ACL ``allow_ignore_embargo`` `#642 <https://github.com/webrecorder/pywb/pull/642>`_
+
+* Support for custom ACL 'user' specified via ``X-pywb-ACL-User`` header passed from frontend proxies.
+
+* Fixes for exact rule matching `#629 <https://github.com/webrecorder/pywb/pull/629>`_
+
+* Fixes for ACL for auto-collections `#620 <https://github.com/webrecorder/pywb/pull/620>`_
+
+
+Rewriting Improvements:
+
+* Updated YT rewriting rules `#635 <https://github.com/webrecorder/pywb/pull/635>`_
+
+* POST-to-get rewriting consistent with cdxj-indexer, wabac.js/replayweb.page `#636 <https://github.com/webrecorder/pywb/pull/636>`_
+
+* Improved fuzzy matching to ensure non-POST requests handled via fuzzy matching.
+
+* Live web: never truncate when reading POST request to avoid hung requests! (Apply limit only on indexing
+
+
+CDX Server / API Compatibility Fixes:
+
+* XmlQuery: set WARC record length field, if available `#633 <https://github.com/webrecorder/pywb/pull/633>`_
+
+* ZipNum: Don't count pages with filter `#631 <https://github.com/webrecorder/pywb/pull/631>`_
+
+* Better handle of CDX Server HTTP status `#624 <https://github.com/webrecorder/pywb/pull/624>`_
+
+* Better handling of errors from CDX Server API with 400 `#623 <https://github.com/webrecorder/pywb/pull/623>`_, `#625 <https://github.com/webrecorder/pywb/pull/625>`_, `#626 <https://github.com/webrecorder/pywb/pull/626>`_,  `#630 <https://github.com/webrecorder/pywb/pull/630>`_
+
+* Backwards compatibility of ``fl`` param  `#621 <https://github.com/webrecorder/pywb/pull/621>`_
+
+
+Recording Redis Dedup mode:
+
+* Fix dedup index config loading `#617 <https://github.com/webrecorder/pywb/pull/617>`_
+
+* Add recording size counter to track any in-flight requests `#637 <https://github.com/webrecorder/pywb/pull/637>`_
+
+
 pywb 2.5.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
