@@ -13,7 +13,7 @@
         {% elif err_status == 404 and err_details == 'coll_not_found' %}
             <p>{% trans %}Collection not found: <b>{{ err_msg }}{% endtrans %}</b></p>
 
-            <p><a href="/">{{ _('See list of valid collections') }}</a></p>
+            <p><a href="/{{ env.pywb_lang | default('') }}">{{ _('See list of valid collections') }}</a></p>
 
         {% elif err_status == 404 and err_details == 'static_file_not_found' %}
             <p>{% trans %}Static file not found: <b>{{ err_msg }}{% endtrans %}</b></p>
