@@ -187,7 +187,7 @@ The URL supplied can be a URL or a SURT prefix. If a SURT is supplied, it is use
 
 A specific user for user-based rules can also be specified, for example to add ``allow_ignore_embargo`` for user ``staff`` only, run::
 
-  wb-manager acl add <collection> http://httpbin.org/anything/something allow_ignore_embargo staff
+  wb-manager acl add <collection> http://httpbin.org/anything/something allow_ignore_embargo -u staff
 
 
 By default, access control rules apply to a prefix of a given URL or SURT.
