@@ -1,3 +1,17 @@
+pywb 2.6.0b1 changelist
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Additional documentation / localization fixes `#650 <https://github.com/webrecorder/pywb/pull/650>`_
+
+* Ensure home page and error page keeps locale, language switching is working.
+
+* Add autoescaping to Jinja2 to avoid XSS issues (suggested by @sebastian-nagel)
+
+* Add support for 'pywb[i18n]' extra to install localization dependencies
+
+Documentation typo fixes (by @ldko, `#649 <https://github.com/webrecorder/pywb/pull/649>`_)
+
+
 pywb 2.6.0b0 changelist
 ~~~~~~~~~~~~~~~~~~~~~~~
 

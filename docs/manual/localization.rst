@@ -9,9 +9,14 @@ pywb can extract all text from templates and generate CSV files for translation 
 
 (pywb uses the `Babel library <http://babel.pocoo.org/en/latest/>`_  which extends the `standard Python i18n system <https://docs.python.org/3/library/gettext.html>`_)
 
+To ensure all localization related dependencies are installed, first run::
+
+  pip install pywb[i18n]
+
 Locales to use are configured in the ``config.yaml``.
 
 The command-line ``wb-manager`` utility provides a way to manage locales for translation, including generating extracted text, and to update translated text.
+
 
 Adding a Locale and Extracting Text
 ===================================

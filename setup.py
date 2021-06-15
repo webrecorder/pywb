@@ -107,6 +107,9 @@ setup(
          glob.glob('sample_archive/text_content/*')),
     ],
     install_requires=load_requirements('requirements.txt'),
+    extras_require={
+        "i18n":  ["translate_toolkit"],
+    },
     tests_require=[
         'pytest',
         'WebTest',

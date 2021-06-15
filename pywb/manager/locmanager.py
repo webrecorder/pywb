@@ -41,6 +41,8 @@ class LocManager:
                 csv = os.path.join(base, 'messages.csv')
                 po2csv([po, csv])
 
+        self.compile_catalog()
+
     def update_loc(self, locale, no_csv):
         for loc in locale:
             if not no_csv:
