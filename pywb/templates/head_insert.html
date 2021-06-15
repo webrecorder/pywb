@@ -1,3 +1,5 @@
+{% autoescape false %}
+
 <!-- WB Insert -->
 <script>
 {% set urlsplit = cdx.url | urlsplit %}
@@ -60,6 +62,8 @@
 {% endif %}
 
 {{ banner_html }}
+
+{% endautoescape %}
 
 <!-- End WB Insert -->
 

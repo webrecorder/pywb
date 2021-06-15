@@ -16,6 +16,7 @@ The embargo system allows restricting access to all URLs within a collection bas
 Access to these resources is 'embargoed' until the date range is adjusted or the time interval passes.
 
 The embargo can be used to disallow access to captures based on following criteria:
+
 - Captures before an exact date
 - Captures after an exact date
 - Captures newer than a time interval
@@ -82,7 +83,7 @@ Access Control Files (.aclj)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 URL-based access controls are set in one or more access control JSON files (.aclj), sorted in reverse alphabetical order.
-To determine the best match, a binary search is used (similar to CDXJ) lookup and then the best match is found forward.
+To determine the best match, a binary search is used (similar to CDXJ lookup) and then the best match is found forward.
 
 An .aclj file may look as follows::
 
@@ -96,9 +97,10 @@ Each JSON entry contains an ``access`` field and the original ``url`` field that
 
 The JSON entry may also contain a ``user`` field, as explained below.
 
-The prefix consists of a SURT key and a ``-`` (currently reserved for a timestamp/date range field to be added later)
+The prefix consists of a SURT key and a ``-`` (currently reserved for a timestamp/date range field to be added later).
 
 Given these rules, a user would:
+
 * be allowed to visit ``http://httpbin.org/anything/something`` (allow)
 * but would receive an 'access blocked' error message when viewing ``http://httpbin.org/`` (block)
 * would receive a 404 not found error when viewing ``http://httpbin.org/anything`` (exclude)
@@ -110,7 +112,7 @@ Access Types: allow, block, exclude, allow_ignore_embargo
 The available access types are as follows:
 
 - ``exclude`` - when matched, results are excluded from the index, as if they do not exist. User will receive a 404.
-- ``block`` - when matched, results are not excluded from the index, marked with ``access: block``, but access to the actual is blocked. User will see a 451
+- ``block`` - when matched, results are not excluded from the index, but access to the actual content is blocked. User will see a 451.
 - ``allow`` - full access to the index and the resource, but may be overriden by embargo
 - ``allow_ignore_embargo`` - full access to the index and resource, overriding any embargo settings
 
@@ -130,9 +132,9 @@ User-Based Access Controls
 The access control rules can further be customized be specifying different permissions for different 'users'. Since pywb does not have a user system,
 a special header, ``X-Pywb-ACL-User`` can be used to indicate a specific user.
 
-This setting is designed to allow a more priveleged user to access additional setting or override an embargo.
+This setting is designed to allow a more privileged user to access additional content or override an embargo.
 
-For example, the following access control settings restricts access to ``https://example.com/restricted/`` by default, but allows access for the ``staff`` user::
+For example, the following access control settings restrict access to ``https://example.com/restricted/`` by default, but allow access for the ``staff`` user::
 
   com,example)/restricted - {"access": "allow", "user": "staff"}
   com,example)/restricted - {"access": "block"}
@@ -157,7 +159,7 @@ See the :ref:`config-acl-header` section in Usage for examples on how to configu
 Access Error Messages
 ^^^^^^^^^^^^^^^^^^^^^
 
-The special error code 451 is used to indicate that a resource has been blocked (access setting ``block``)
+The special error code 451 is used to indicate that a resource has been blocked (access setting ``block``).
 
 The `error.html <https://github.com/webrecorder/pywb/blob/master/pywb/templates/error.html>`_ template contains a special message for this access and can be customized further.
 
@@ -185,7 +187,7 @@ The URL supplied can be a URL or a SURT prefix. If a SURT is supplied, it is use
 
 A specific user for user-based rules can also be specified, for example to add ``allow_ignore_embargo`` for user ``staff`` only, run::
 
-  wb-manager acl add <collection> http://httpbin.org/anything/something allow_ignore_embargo staff
+  wb-manager acl add <collection> http://httpbin.org/anything/something allow_ignore_embargo -u staff
 
 
 By default, access control rules apply to a prefix of a given URL or SURT.
@@ -219,7 +221,7 @@ Access Controls for Custom Collections
 
 For manually configured collections, there are additional options for configuring access controls.
 The access control files can be specified explicitly using the ``acl_paths`` key and allow specifying multiple ACL files,
-and allowing sharing access control files between different collections.
+and allow sharing access control files between different collections.
 
 Single ACLJ::
 
@@ -249,7 +251,7 @@ When finding the best rule from multiple ``.aclj`` files, each file is binary se
 set merge-sorted to find the best match (very similar to the CDXJ index lookup).
 
 Note: It might make sense to separate ``allows.aclj`` and ``blocks.aclj`` into individual files for organizational reasons,
-but there is no specific need to keep more than one access control files.
+but there is no specific need to keep more than one access control file.
 
 Finally, ACLJ and embargo settings combined for the same collection might look as follows::
 

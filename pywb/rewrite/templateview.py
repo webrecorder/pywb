@@ -5,7 +5,7 @@ from pywb.utils.loaders import load
 
 from six.moves.urllib.parse import urlsplit, quote
 
-from jinja2 import Environment, TemplateNotFound, contextfunction
+from jinja2 import Environment, TemplateNotFound, contextfunction, select_autoescape
 from jinja2 import FileSystemLoader, PackageLoader, ChoiceLoader
 
 from babel.support import Translations
@@ -77,10 +77,12 @@ class JinjaEnv(object):
 
         if overlay:
             jinja_env = overlay.jinja_env.overlay(loader=loader,
+                                                  autoescape=select_autoescape(),
                                                   trim_blocks=True,
                                                   extensions=extensions)
         else:
             jinja_env = RelEnvironment(loader=loader,
+                                       autoescape=select_autoescape(),
                                        trim_blocks=True,
                                        extensions=extensions)
 

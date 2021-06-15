@@ -313,15 +313,16 @@ class TestManagedColls(CollsDirMixin, BaseConfigTest):
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'
         assert 'overriden search page: ' in resp.text
-        print(resp.text)
-        assert '"some":"value"' in resp.text, resp.text
+        #assert '"some":"value"' in resp.text, resp.text
+        assert '{&#34;some&#34;:&#34;value&#34;}' in resp.text, resp.text
 
     def test_replay_banner_metadata(self, fmod):
         """ Test adding metadata in replay banner (both framed and non-frame)
         """
         resp = self.get('/test/20140103030321{0}/http://example.com/?example=1', fmod)
         assert '<div>Custom Banner Here!</div>' in resp.text
-        assert '"some":"value"' in resp.text
+        #assert '"some":"value"' in resp.text
+        assert '{&#34;some&#34;:&#34;value&#34;}' in resp.text, resp.text
 
     def test_more_custom_templates_replay(self, fmod):
         resp = self.get('/test/20140103030321{0}/http://example.com/?example=1', fmod)

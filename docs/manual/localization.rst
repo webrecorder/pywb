@@ -9,9 +9,14 @@ pywb can extract all text from templates and generate CSV files for translation 
 
 (pywb uses the `Babel library <http://babel.pocoo.org/en/latest/>`_  which extends the `standard Python i18n system <https://docs.python.org/3/library/gettext.html>`_)
 
+To ensure all localization related dependencies are installed, first run::
+
+  pip install pywb[i18n]
+
 Locales to use are configured in the ``config.yaml``.
 
-The command-line ``wb-manager`` utility provides a way to manages locales for translation, including generatin extracted text, update translated text.
+The command-line ``wb-manager`` utility provides a way to manage locales for translation, including generating extracted text, and to update translated text.
+
 
 Adding a Locale and Extracting Text
 ===================================
@@ -24,7 +29,7 @@ The ``<loc>`` can be one or more supported two-letter locales or CLDR language c
 
 Localization data is placed in the ``i18n`` directory, and translatable strings can be found in ``i18n/translations/<locale>/LC_MESSAGES/messages.csv``
 
-Each CSV file looks as follows, listing source string and an empty string for the translated version::
+Each CSV file looks as follows, listing each source string and an empty string for the translated version::
 
   "location","source","target"
   "pywb/templates/banner.html:6","Live on",""
@@ -37,7 +42,7 @@ Each CSV file looks as follows, listing source string and an empty string for th
 
 This CSV can then be passed to translators to translate the text.
 
-(The extraction parameters arae configured to load data from ``pywb/templates/*.html`` in ``babel.ini``)
+(The extraction parameters are configured to load data from ``pywb/templates/*.html`` in ``babel.ini``)
 
 
 For example, the following will generate translation strings for ``es`` and ``pt`` locales::
@@ -48,9 +53,9 @@ For example, the following will generate translation strings for ``es`` and ``pt
 The translatable text can then be found in ``i18n/translations/es/LC_MESSAGES/messages.csv`` and ``i18n/translations/pt/LC_MESSAGES/messages.csv``.
 
 
-The CSV files should be updated with a translation for each string in the target column.
+The CSV files should be updated with a translation for each string in the ``target`` column.
 
-The extract commannd add any new strings without overwriting existing translations, so it is safe to run multiple times.
+The extract command adds any new strings without overwriting existing translations, so after running the update command to compile translated strings (described below), it is safe to run the extract command again.
 
 
 Updating Locale Catalog
@@ -66,7 +71,7 @@ This will parse the CSVs and compile the translated string tables for use with p
 Specifying locales in pywb
 ==========================
 
-To enable the locales in pywb, add one or more locales can be added to the ``locales`` key in ``config.yaml``, ex::
+To enable the locales in pywb, one or more locales can be added to the ``locales`` key in ``config.yaml``, ex::
 
   locales:
      - en
@@ -120,7 +125,7 @@ Listing and Removing Locales
 
 To list the locales that have previously been added, you can also run ``wb-manager i18n list``.
 
-To disable a locale from being used in pywb, simply remove it from the ``locales`` key in ``config.yaml``
+To disable a locale from being used in pywb, simply remove it from the ``locales`` key in ``config.yaml``.
 
 To remove data for a locale permanently, you can run: ``wb-manager i18n remove <loc>``. This will remove the locale directory on disk.
 

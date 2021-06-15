@@ -14,7 +14,11 @@ html, body
 </style>
 <script src='{{ static_prefix }}/wb_frame.js'> </script>
 
+{% autoescape false %}
+
 {{ banner_html }}
+
+{% endautoescape %}
 
 </head>
 <body style="margin: 0px; padding: 0px;">
