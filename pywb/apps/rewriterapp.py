@@ -685,7 +685,7 @@ class RewriterApp(object):
             return self._error_response(environ, wbe)
 
     def _not_found_response(self, environ, url):
-        resp = self.not_found_view.render_to_string(environ, url=url)
+        resp = self.not_found_view.render_to_string(environ, url=url, err_msg="Not Found")
 
         return WbResponse.text_response(resp, status='404 Not Found', content_type='text/html')
 

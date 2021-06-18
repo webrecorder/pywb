@@ -5,4 +5,5 @@ uwsgi
 ujson
 pysocks
 lxml
+babel
 translate_toolkit
