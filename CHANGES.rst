@@ -1,3 +1,11 @@
+pywb 2.6.0b2 changelist
+~~~~~~~~~~~~~~~~~~~~~~~
+
+* Update documentation for CDX Server API (by @sebastian-nagel) `#651 <https://github.com/webrecorder/pywb/pull/651>`_
+
+* Ensure banner template is not autoescaped
+
+
 pywb 2.6.0b1 changelist
 ~~~~~~~~~~~~~~~~~~~~~~~
 
