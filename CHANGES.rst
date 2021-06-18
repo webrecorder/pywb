@@ -3,7 +3,7 @@ pywb 2.6.0b2 changelist
 
 * Update documentation for CDX Server API (by @sebastian-nagel) `#651 <https://github.com/webrecorder/pywb/pull/651>`_
 
-Localization fixes:
+Localization fixes: `#653 <https://github.com/webrecorder/pywb/pull/653>`_
 
 * Ensure banner template is not autoescaped
 
