@@ -126,7 +126,7 @@ class JinjaEnv(object):
         default_locale = default_locale or 'en'
         self.default_locale = default_locale
 
-        if locales_root_dir:
+        if locales:
             try:
                 from babel.support import Translations
                 for loc in locales:

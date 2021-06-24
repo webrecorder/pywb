@@ -8,7 +8,7 @@ import re
 import six
 
 from distutils.util import strtobool
-from pkg_resources import resource_string
+from pkg_resources import resource_string, get_distribution
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 
@@ -28,8 +28,12 @@ def get_input(msg):  # pragma: no cover
     return input(msg)
 
 #=============================================================================
+def get_version():
+    """Get version of the pywb"""
+    return "wb-manager " + get_distribution("pywb").version
 
 
+#=============================================================================
 class CollectionsManager(object):
     """ This utility is designed to
 simplify the creation and management of web archive collections
@@ -334,6 +338,8 @@ Create manage file based web archive collections
     parser = ArgumentParser(description=description,
                             # epilog=epilog,
                             formatter_class=RawTextHelpFormatter)
+
+    parser.add_argument("-V", "--version", action="version", version=get_version())
 
     subparsers = parser.add_subparsers(dest='type')
     subparsers.required = True

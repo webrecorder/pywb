@@ -1,3 +1,11 @@
+pywb 2.6.0b3 changelist
+~~~~~~~~~~~~~~~~~~~~~~~
+
+* Display 'ignoring locales' warning only if locales specified (don't specify any by default)
+
+* Add -V flag to wb-manager and pywb/wayback commands to display current version and exit
+
+
 pywb 2.6.0b2 changelist
 ~~~~~~~~~~~~~~~~~~~~~~~
 
