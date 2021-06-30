@@ -17,3 +17,12 @@ enable_memento: true
 # Replay content in an iframe
 framed_replay: true
 
+
+# uncomment and change to set default locale
+# default_locale: en
+
+# uncomment to set available locales
+# locales:
+#  - en
+#  - es
+

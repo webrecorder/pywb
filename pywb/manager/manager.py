@@ -8,7 +8,7 @@ import re
 import six
 
 from distutils.util import strtobool
-from pkg_resources import resource_string
+from pkg_resources import resource_string, get_distribution
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 
@@ -28,8 +28,12 @@ def get_input(msg):  # pragma: no cover
     return input(msg)
 
 #=============================================================================
+def get_version():
+    """Get version of the pywb"""
+    return "wb-manager " + get_distribution("pywb").version
 
 
+#=============================================================================
 class CollectionsManager(object):
     """ This utility is designed to
 simplify the creation and management of web archive collections
@@ -335,6 +339,8 @@ Create manage file based web archive collections
                             # epilog=epilog,
                             formatter_class=RawTextHelpFormatter)
 
+    parser.add_argument("-V", "--version", action="version", version=get_version())
+
     subparsers = parser.add_subparsers(dest='type')
     subparsers.required = True
 
@@ -442,14 +448,25 @@ Create manage file based web archive collections
     acl.set_defaults(func=do_acl)
 
     # LOC
-    from pywb.manager.locmanager import LocManager
+    loc_avail = False
+    try:
+        from pywb.manager.locmanager import LocManager
+        loc_avail = True
+    except:
+        pass
+
     def do_loc(r):
+        if not loc_avail:
+            print("You must install i18n extensions with 'pip install pywb[i18n]' to use localization features")
+            return
+
         loc = LocManager()
         loc.process(r)
 
     loc_help = 'Generate strings for i18n/localization'
     loc = subparsers.add_parser('i18n', help=loc_help)
-    LocManager.init_parser(loc)
+    if loc_avail:
+        LocManager.init_parser(loc)
     loc.set_defaults(func=do_loc)
 
     # Parse

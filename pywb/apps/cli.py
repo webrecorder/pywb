@@ -2,6 +2,13 @@ from gevent.monkey import patch_all; patch_all()
 from argparse import ArgumentParser
 
 import logging
+import pkg_resources
+
+
+#=============================================================================
+def get_version():
+    """Get version of the pywb"""
+    return "pywb " + pkg_resources.get_distribution("pywb").version
 
 
 #=============================================================================
@@ -40,6 +47,8 @@ class BaseCli(object):
         :param str desc: The description for the application to be started
         """
         parser = ArgumentParser(description=desc)
+        parser.add_argument("-V", "--version", action="version", version=get_version())
+
         parser.add_argument('-p', '--port', type=int, default=default_port,
                             help='Port to listen on (default %s)' % default_port)
         parser.add_argument('-b', '--bind', default='0.0.0.0',

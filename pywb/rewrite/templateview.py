@@ -8,8 +8,6 @@ from six.moves.urllib.parse import urlsplit, quote
 from jinja2 import Environment, TemplateNotFound, contextfunction, select_autoescape
 from jinja2 import FileSystemLoader, PackageLoader, ChoiceLoader
 
-from babel.support import Translations
-
 from webassets.ext.jinja2 import AssetsExtension
 from webassets.loaders import YAMLLoader
 from webassets.env import Resolver
@@ -17,6 +15,7 @@ from webassets.env import Resolver
 from pkg_resources import resource_filename
 
 import os
+import logging
 
 try:
     import ujson as json
@@ -127,10 +126,13 @@ class JinjaEnv(object):
         default_locale = default_locale or 'en'
         self.default_locale = default_locale
 
-        if locales_root_dir:
-            for loc in locales:
-                loc_map[loc] = Translations.load(locales_root_dir, [loc, default_locale])
-                #jinja_env.jinja_env.install_gettext_translations(translations)
+        if locales:
+            try:
+                from babel.support import Translations
+                for loc in locales:
+                    loc_map[loc] = Translations.load(locales_root_dir, [loc, default_locale])
+            except:
+                logging.warn("Ignoring Locales. You must install i18n extensions with 'pip install pywb[i18n]' to use localization features")
 
         def get_translate(context):
             loc = context.get('env', {}).get('pywb_lang', default_locale)

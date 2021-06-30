@@ -1,5 +1,5 @@
 <header>
-   {% if locales|length > 1 %}
+   {% if not err_msg and locales|length > 1 %}
     <div class="language-select">
         {{ _('Language:') }}
         <ul role="listbox" aria-activedescendant="{{ env.pywb_lang | default(default_locale) }}" aria-labelledby="{{ _('Language select') }}">

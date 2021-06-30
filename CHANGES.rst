@@ -1,3 +1,25 @@
+pywb 2.6.0b3 changelist
+~~~~~~~~~~~~~~~~~~~~~~~
+
+* Display 'ignoring locales' warning only if locales specified (don't specify any by default)
+
+* Add -V flag to wb-manager and pywb/wayback commands to display current version and exit
+
+
+pywb 2.6.0b2 changelist
+~~~~~~~~~~~~~~~~~~~~~~~
+
+* Update documentation for CDX Server API (by @sebastian-nagel) `#651 <https://github.com/webrecorder/pywb/pull/651>`_
+
+Localization fixes: `#653 <https://github.com/webrecorder/pywb/pull/653>`_
+
+* Ensure banner template is not autoescaped
+
+* Don't show locale switch on not found pages (redundant with banner)
+
+* Ensure wb-manager works when optional i18n dependencies are not installed
+
+
 pywb 2.6.0b1 changelist
 ~~~~~~~~~~~~~~~~~~~~~~~
 

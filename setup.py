@@ -108,7 +108,10 @@ setup(
     ],
     install_requires=load_requirements('requirements.txt'),
     extras_require={
-        "i18n":  ["translate_toolkit"],
+        "i18n":  [
+            "babel",
+            "translate_toolkit"
+        ],
     },
     tests_require=[
         'pytest',

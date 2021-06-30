@@ -19,7 +19,7 @@ For example, the following query might return the first 10 results from host ``h
   http://localhost:8080/coll/cdx?url=http://example.com/*&page=1&filter=mime:text/html&limit=10
 
 
-By default, the api endpoint is available at ``/<coll>/cdx`` for every collection.
+By default, the api endpoint is available at ``/<coll>/cdx`` for a collection named ``<coll>``.
 
 The setting can be changed by setting ``cdx_api_endpoint`` in ``config.yaml``.
 
@@ -36,9 +36,10 @@ API Reference
 ^^^^^^^
 
 | The only required parameter to the cdx server api is the url, ex:
-| ``http://localhost:8080/coll-cdx?url=example.com``
+| ``http://localhost:8080/coll/cdx?url=example.com``
 
-will return a list of captures for ‘example.com’
+will return a list of captures for ‘example.com’ in the collection
+``coll`` (see above regarding per-collection api endpoints).
 
 
 ``from, to``
@@ -50,7 +51,7 @@ given date/time range (inclusive).
 Timestamps may be <=14 digits and will be padded to either lower or
 upper bound.
 
-| For example, ``...coll-cdx?url=example.com&from=2014&to=2014`` will
+| For example, ``...?url=example.com&from=2014&to=2014`` will
   return results of ``example.com`` that
 | have a timestamp between ``20140101000000`` and ``20141231235959``
 
@@ -75,11 +76,11 @@ The cdx server supports the following ``matchType``
 As a shortcut, instead of specifying a separate ``matchType`` parameter,
 wildcards may be used in the url:
 
--  ``...coll-cdx?url=http://example.com/path/*`` is equivalent to
-   ``...coll-cdx?url=http://example.com/path/&matchType=prefix``
+-  ``...?url=http://example.com/path/*`` is equivalent to
+   ``...?url=http://example.com/path/&matchType=prefix``
 
--  ``...coll-cdx?url=*.example.com`` is equivalent to
-   ``...coll-cdx?url=example.com&matchType=domain``
+-  ``...?url=*.example.com`` is equivalent to
+   ``...?url=example.com&matchType=domain``
 
 *Note: if you are using legacy cdx index files which are not
 SURT-ordered, the ``domain`` option will not be available. if this is
@@ -141,10 +142,10 @@ The ``filter`` param can be specified multiple times to filter by
 specific fields in the cdx index. Field names correspond to the fields
 returned in the JSON output. Filters can be specified as follows:
 
--  ``...coll-cdx?url=example.com/*&filter==mime:text/html&filter=!=status:200``
+-  ``...?url=example.com/*&filter==mime:text/html&filter=!=status:200``
    Return captures from example.com/\* where mime is text/html and http
    status is not 200.
--  ``...coll-cdx?url=example.com&matchType=domain&filter=~url:.*\.php$``
+-  ``...?url=example.com&matchType=domain&filter=~url:.*\.php$``
    Return captures from the domain example.com which URL ends in
    ``.php``.
 
