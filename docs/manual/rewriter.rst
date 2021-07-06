@@ -118,6 +118,7 @@ JS Rewriting
 The JS rewriter is applied to inline ``<script>`` blocks, or inline attribute js, and any files determine to be javascript (based on content type and ``js_`` modifier).
 
 The default JS rewriter does not rewrite any links. Instead, JS rewriter performs limited regular expression on the following:
+
 * ``postMessage`` calls
 * certain ``this`` property accessors
 * specific ``location =`` assignment
