@@ -92,7 +92,7 @@ Configuring Rewriters
 ---------------------
 
 pywb provides customizable rewriting based on content-type, the available types are configured
-in the :py:mod:`pywb.rewriter.default_rewriter`, which specifies rewriter classes per known type,
+in the :py:mod:`pywb.rewrite.default_rewriter`, which specifies rewriter classes per known type,
 and mapping of content-types to rewriters.
 
 
@@ -118,6 +118,7 @@ JS Rewriting
 The JS rewriter is applied to inline ``<script>`` blocks, or inline attribute js, and any files determine to be javascript (based on content type and ``js_`` modifier).
 
 The default JS rewriter does not rewrite any links. Instead, JS rewriter performs limited regular expression on the following:
+
 * ``postMessage`` calls
 * certain ``this`` property accessors
 * specific ``location =`` assignment
@@ -126,7 +127,7 @@ Then, the entire script block is wrapped in a special code block to be executed 
 
 The server-side rewriting is to aid the client-side execution of wrapped code.
 
-For more information, see :py:mod:`pywb.rewriter.regex_rewriters.JSWombatProxyRewriterMixin`
+For more information, see :py:mod:`pywb.rewrite.regex_rewriters.JSWombatProxyRewriterMixin`
 
 
 JSONP Rewriting
@@ -140,7 +141,7 @@ For example, a requested url might be ``/my-coll/http://example.com?callback=jQu
 
 To ensure the JSONP callback works as expected, the content is rewritten to ``jQuery123(...)`` -> ``jQuery456(...)``
 
-For more information, see :py:mod:`pywb.rewriter.jsonp_rewriter`
+For more information, see :py:mod:`pywb.rewrite.jsonp_rewriter`
 
 
 DASH and HLS Rewriting
@@ -148,5 +149,5 @@ DASH and HLS Rewriting
 
 To support recording and replaying, adaptive streaming formants (DASH and HLS), pywb can perform special rewriting on the manifests for these formats to remoe all but one possible resolution/format. As a result, the non-deterministic format selection is reduced to a single consistent format.
 
-For more information, see :py:mod:`pywb.rewriter.rewrite_hls` and :py:mod:`pywb.rewriter.rewrite_dash` and the tests in ``pywb/rewrite/test/test_content_rewriter.py``
+For more information, see :py:mod:`pywb.rewrite.rewrite_hls` and :py:mod:`pywb.rewrite.rewrite_dash` and the tests in ``pywb/rewrite/test/test_content_rewriter.py``
 
