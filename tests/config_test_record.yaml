@@ -2,7 +2,9 @@ debug: true
 
 collections_root: _test_colls
 
-recorder: live
+recorder:
+  source_coll: live
+  enable_put_custom_record: true
 
 collections:
     'live': '$live'
