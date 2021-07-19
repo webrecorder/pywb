@@ -196,6 +196,11 @@ rules:
 
     - url_prefix: 'com,instagram)/'
 
+      rewrite:
+        js_regexs:
+            - match: '"is_dash_eligible":true'
+              replace: '"is_dash_eligible":false'
+
       fuzzy_lookup: '()'
 
 

@@ -136,6 +136,18 @@ class TestRecordReplay(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
         assert to_path('collection="test2"') in link_lines[3]
         #assert to_path('collection="test"') in link_lines[4]
 
+    def test_put_custom_record(self):
+        payload = b'<html><body>This is custom data added directly. <a href="/test">Link</a></body></html>'
+        res = self.testapp.put('/test2/record?url=https://example.com/custom/record', params=payload, content_type="text/html")
+
+    def test_replay_custom_record(self, fmod):
+        self.ensure_empty()
+
+        fmod_slash = fmod + '/' if fmod else ''
+        res = self.get('/test2/{0}https://example.com/custom/record', fmod_slash)
+        assert res.content_type == 'text/html'
+        assert 'This is custom data added directly. <a href="/test2/' in res.text
+
 
 # ============================================================================
 class TestRecordCustomConfig(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
