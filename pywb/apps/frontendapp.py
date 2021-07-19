@@ -2,10 +2,10 @@ from gevent.monkey import patch_all; patch_all()
 
 from werkzeug.routing import Map, Rule, RequestRedirect, Submount
 from werkzeug.wsgi import pop_path_info
-from six.moves.urllib.parse import urljoin
+from six.moves.urllib.parse import urljoin, parse_qsl
 from six import iteritems
 from warcio.utils import to_native_str
-from warcio.timeutils import iso_date_to_timestamp
+from warcio.timeutils import iso_date_to_timestamp, timestamp_to_iso_date
 from wsgiprox.wsgiprox import WSGIProxMiddleware
 
 from pywb.recorder.multifilewarcwriter import MultiFileWARCWriter
@@ -74,6 +74,7 @@ class FrontEndApp(object):
                                      custom_config=custom_config)
         self.recorder = None
         self.recorder_path = None
+        self.put_custom_record_path = None
         self.proxy_default_timestamp = None
 
         config = self.warcserver.config
@@ -173,6 +174,10 @@ class FrontEndApp(object):
         if self.recorder_path:
             routes.append(Rule(coll_prefix + self.RECORD_ROUTE + '/<path:url>', endpoint=self.serve_record))
 
+            # enable PUT of custom data as 'resource' records
+            if self.put_custom_record_path:
+                routes.append(Rule(coll_prefix + self.RECORD_ROUTE, endpoint=self.put_custom_record, methods=["PUT"]))
+
         return routes
 
     def get_upstream_paths(self, port):
@@ -258,6 +263,10 @@ class FrontEndApp(object):
         recorder_server = GeventServer(self.recorder, port=0)
 
         self.recorder_path = self.RECORD_API % (recorder_server.port, recorder_coll)
+
+        # enable PUT of custom data as 'resource' records
+        if recorder_config.get('enable_put_custom_record'):
+            self.put_custom_record_path = self.recorder_path + '&put_record={rec_type}&url={url}'
 
     def init_autoindex(self, auto_interval):
         """Initialize and start the auto-indexing of the collections. If auto_interval is None this is a no op.
@@ -475,6 +484,47 @@ class FrontEndApp(object):
             wb_url_str = wb_url_str.replace('timemap/{0}/'.format(timemap_output), '')
 
         return self.rewriterapp.render_content(wb_url_str, coll_config, environ)
+
+    def put_custom_record(self, environ, coll="$root"):
+        """ When recording, PUT a custom WARC record to the specified collection
+        (Available only when recording)
+
+        :param dict environ: The WSGI environment dictionary for the request
+        :param str coll: The name of the collection the record is to be served from
+        """
+        chunks = []
+        while True:
+            buff = environ["wsgi.input"].read()
+            if not buff:
+                break
+
+            chunks.append(buff)
+
+        data = b"".join(chunks)
+
+        params = dict(parse_qsl(environ.get("QUERY_STRING")))
+
+        rec_type = "resource"
+
+        headers = {"Content-Type": environ.get("CONTENT_TYPE", "text/plain")}
+
+        target_uri = params.get("url")
+
+        if not target_uri:
+            return WbResponse.json_response({"error": "no url"}, status="400 Bad Request")
+
+        timestamp = params.get("timestamp")
+        if timestamp:
+            headers["WARC-Date"] = timestamp_to_iso_date(timestamp)
+
+        put_url = self.put_custom_record_path.format(
+            url=target_uri, coll=coll, rec_type=rec_type
+        )
+        res = requests.put(put_url, headers=headers, data=data)
+
+        res = res.json()
+
+        return WbResponse.json_response(res)
 
     def setup_paths(self, environ, coll, record=False):
         """Populates the WSGI environment dictionary with the path information necessary to perform a response for

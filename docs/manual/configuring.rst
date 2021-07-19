@@ -266,6 +266,7 @@ The full set of configurable options (with their default settings) is as follows
      rollover_idle_secs: 600
      filename_template: my-warc-{timestamp}-{hostname}-{random}.warc.gz
      source_filter: live
+     enable_put_custom_record: false
 
 The required ``source_coll`` setting specifies the source collection from which to load content that will be recorded.
 Most likely this will be the :ref:`live-web` collection, which should also be defined. 
@@ -340,6 +341,23 @@ When any dedup_policy, pywb can also access the dedup Redis index, along with an
 
 This feature is still experimental but should generally work. Additional options for working with the Redis Dedup index will be added in the futuer.
 
+
+.. _put-custom-record:
+
+Adding Custom Resource Records
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+pywb now also supports adding custom data to a WARC ``resource`` record. This can be used to add custom resources, such as screenshots, logs, error messages,
+etc.. that are not normally captured as part of recording, but still useful to store in WARCs.
+
+To add a custom resources, simply call ``PUT /<coll>/record`` with the data to be added as the request body and the type of the data specified as the content-type. The ``url`` can be specified as a query param.
+
+For example, adding a custom record ``file:///my-custom-resource`` containing ``Some Custom Data`` can be done using ``curl`` as follows::
+
+  curl -XPUT "localhost:8080/my-web-archive/record?url=file:///my-custom-resource" --data "Some Custom Data"
+
+
+This feature is only available if ``enable_put_custom_record: true`` is set in the recorder config.
 
 
 .. _auto-fetch:
