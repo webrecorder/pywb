@@ -101,9 +101,13 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
 
         rules = [
             # rewriting 'eval(....)' - invocation
-            (r'(?<![$])\beval\s*\(', self.add_prefix('WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).'), 0),
+            (r'(?<![$.])\beval\s*\(', self.add_prefix('WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).'), 0),
             # rewriting 'x = eval' - no invocation
-            (r'(?<![$])\beval\b', self.add_prefix('WB_wombat_'), 0),
+            (r'(?<![$.])\beval\b(?!\s*:)', self.add_prefix('WB_wombat_'), 0),
+            # rewriting 'window.eval(....)' - invocation
+            (r'(?<=\bwindow\.)eval\s*\(', self.add_prefix('WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).'), 0),
+            # rewriting 'x = window.eval' - no invocation
+            (r'(?<=\bwindow\.)eval\b', self.add_prefix('WB_wombat_'), 0),
             (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
             (r'(?<![$.])\s*location\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
             # rewriting 'return this'

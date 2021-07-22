@@ -233,6 +233,18 @@ r"""
 >>> _test_js_obj_proxy('window.eval(a);')
 'window.WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval(a);'
 
+>>> _test_js_obj_proxy('x = window.eval; x(a);')
+'x = window.WB_wombat_eval; x(a);'
+
+>>> _test_js_obj_proxy('obj = { eval : 1 }')
+'obj = { eval : 1 }'
+
+>>> _test_js_obj_proxy('x = obj.eval')
+'x = obj.eval'
+
+>>> _test_js_obj_proxy('x = obj.eval(a)')
+'x = obj.eval(a)'
+
 #=================================================================
 # XML Rewriting
 #=================================================================
