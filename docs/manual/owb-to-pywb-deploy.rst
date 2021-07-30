@@ -51,7 +51,7 @@ See the :ref:`nginx-deploy` and :ref:`apache-deploy` sections for more info on d
 Working Docker Compose Examples
 -------------------------------
 
-The pywb `Deployment Examples <https://github.com/webrecorder/pywb/blob/docs/sample-deploy/>`_ include working examples of deploying pywb with Nginx, Apache and OutbackCDX
+The pywb `Deployment Examples <https://github.com/webrecorder/pywb/blob/main/sample-deploy/>`_ include working examples of deploying pywb with Nginx, Apache and OutbackCDX
 in Docker using Docker Compose, widely available container orchestration tools.
 
 See `Installing Docker <https://docs.docker.com/get-docker/>`_ and `Installing Docker Compose <https://docs.docker.com/compose/install/>`_ for instructions on how to install these tools.
