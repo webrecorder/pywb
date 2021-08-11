@@ -225,13 +225,32 @@ r"""
 'x = this.$eval; x(a);'
 
 >>> _test_js_obj_proxy('x = eval; x(a);')
-'x = WB_wombat_eval; x(a);'
+'x = self.eval; x(a);'
 
 >>> _test_js_obj_proxy('$eval = eval; $eval(a);')
-'$eval = WB_wombat_eval; $eval(a);'
+'$eval = self.eval; $eval(a);'
+
+>>> _test_js_obj_proxy('foo(a, eval(data));')
+'foo(a, WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval(data));'
+
+>>> _test_js_obj_proxy('function eval() {}')
+'function eval() {}'
 
 >>> _test_js_obj_proxy('window.eval(a);')
-'window.WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval(a);'
+'window.eval(a);'
+
+>>> _test_js_obj_proxy('x = window.eval; x(a);')
+'x = window.eval; x(a);'
+
+>>> _test_js_obj_proxy('obj = { eval : 1 }')
+'obj = { eval : 1 }'
+
+>>> _test_js_obj_proxy('x = obj.eval')
+'x = obj.eval'
+
+>>> _test_js_obj_proxy('x = obj.eval(a)')
+'x = obj.eval(a)'
+
 
 #=================================================================
 # XML Rewriting
