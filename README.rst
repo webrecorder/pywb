@@ -1,4 +1,4 @@
-Webrecorder pywb 2.5
+Webrecorder pywb 2.6
 ====================
 
 .. image:: https://raw.githubusercontent.com/webrecorder/pywb/master/pywb/static/pywb-logo.png
@@ -43,9 +43,13 @@ The 2.x release included a major overhaul of pywb and introduces many new featur
 
 * Improved 'calendar' query UI with incremental loading, grouping results by year and month, and updated replay banner.
 
-* New in 2.4: Extensible UI customizations system for modifying all aspects of the UI.
+* Extensible UI customizations system for modifying all aspects of the UI.
 
-* New in 2.4: Robust access control system for blocking or excluding URLs, by prefix or by exact match.
+* Robust access control system for blocking or excluding URLs, by prefix or by exact match.
+
+* New in 2.6: Access Control embargo and http-header control access settings.
+
+* New in 2.6: Support for localization and multi-language deployment.
 
 
 Please see the `full documentation <https://pywb.readthedocs.org>`_ for more detailed info on all these features.
@@ -66,6 +70,22 @@ To run and install locally you can:
 
 
 Consult the local or `online docs <https://pywb.readthedocs.org>`_ for latest usage and configuration details.
+
+
+Documentation
+-------------
+
+The pywb documentation is extensive. Some links to a few key guides:
+
+* `Getting Started Guide <https://pywb.readthedocs.io/en/latest/manual/usage.html#getting-started>`_
+
+* `Embargo and Access Control Guide <https://pywb.readthedocs.io/en/latest/manual/access-control.html>`_
+
+* `Localization and Multi-Language Guide <https://pywb.readthedocs.io/en/latest/manual/localization.html>`_
+
+* `Deployment Guide <https://pywb.readthedocs.io/en/latest/manual/usage.html#deployment>`_
+
+* `OpenWayback Transition Guide <https://pywb.readthedocs.io/en/latest/manual/owb-transition.html>`_
 
 
 Contributions & Bug Reports
