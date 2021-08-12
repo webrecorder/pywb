@@ -13,8 +13,8 @@ class RxRules(object):
         return string.replace("https", "http")
 
     @staticmethod
-    def replace_str(replacer):
-        return lambda x, _: x.replace('this', replacer)
+    def replace_str(replacer, match='this'):
+        return lambda x, _: x.replace(match, replacer)
 
     @staticmethod
     def format(template):
@@ -100,10 +100,10 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
         prop_str = '|'.join(self.local_objs)
 
         rules = [
-            # rewriting 'eval(....)' - invocation
-            (r'(?<![$])\beval\s*\(', self.add_prefix('WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).'), 0),
+            # rewriting 'eval(...)' - invocation
+            (r'(?<!function\s)(?:^|[^,$])eval\s*\(', self.replace_str('WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval', 'eval'), 0),
             # rewriting 'x = eval' - no invocation
-            (r'(?<![$])\beval\b', self.add_prefix('WB_wombat_'), 0),
+            (r'(?<=[=,])\s*\beval\b\s*(?![(:.$])', self.replace_str('self.eval', 'eval'), 0),
             (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
             (r'(?<![$.])\s*location\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
             # rewriting 'return this'
@@ -122,9 +122,9 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
 
         super(JSWombatProxyRules, self).__init__(rules)
 
-        self.first_buff = local_init_func + local_declares + '\n\n'
+        self.first_buff = local_init_func + local_declares + '\n\n{'
 
-        self.last_buff = '\n\n}'
+        self.last_buff = '\n\n}}'
 
 
 # =================================================================
