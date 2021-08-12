@@ -107,7 +107,7 @@ function fetchDone() {
 }
 
 function fetchErrored(err) {
-  console.warn("Fetch Failed: " + err);
+  console.warn('Fetch Failed: ' + err);
   fetchDone();
 }
 

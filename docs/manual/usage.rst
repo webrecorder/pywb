@@ -357,7 +357,7 @@ Deployment Examples
 The ``sample-deploy`` directory includes working Docker Compose examples for deploying pywb with Nginx and Apache on the ``/wayback`` subdirectory.
 
 See:
- - `Docker Compose Nginx <https://github.com/webrecorder/pywb/blob/docs/sample-deploy/docker-compose-nginx.yaml>`_ for sample Nginx config.
- - `Docker Compose Apache <https://github.com/webrecorder/pywb/blob/docs/sample-deploy/docker-compose-apache.yaml>`_ for sample Apache config.
- - `uwsgi_subdir.ini <https://github.com/webrecorder/pywb/blob/docs/sample-deploy/uwsgi_subdir.ini>`_ for example subdirectory uwsgi config.
+ - `Docker Compose Nginx <https://github.com/webrecorder/pywb/blob/main/sample-deploy/docker-compose-nginx.yaml>`_ for sample Nginx config.
+ - `Docker Compose Apache <https://github.com/webrecorder/pywb/blob/main/sample-deploy/docker-compose-apache.yaml>`_ for sample Apache config.
+ - `uwsgi_subdir.ini <https://github.com/webrecorder/pywb/blob/main/sample-deploy/uwsgi_subdir.ini>`_ for example subdirectory uwsgi config.
 

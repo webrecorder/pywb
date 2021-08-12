@@ -1,3 +1,13 @@
+pywb 2.6.0 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Improvements for eval() rewriting + extra unnamed scope to avoid variable collision `#668 <https://github.com/webrecorder/pywb/pull/668>`_
+
+* fix for documentation links `#666 <https://github.com/webrecorder/pywb/pull/666>`_
+
+* Update to latest wombat.js (3.3.0)
+
+
 pywb 2.6.0b4 changelist
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -10,6 +20,7 @@ pywb 2.6.0b4 changelist
 * Doc fixes for incorrect param name `#651 <https://github.com/webrecorder/pywb/pull/651>`_
 
 * Update to latest wombat.js (3.2.2)
+
 
 pywb 2.6.0b3 changelist
 ~~~~~~~~~~~~~~~~~~~~~~~
