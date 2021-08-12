@@ -218,6 +218,9 @@ r"""
 >>> _test_js_obj_proxy('eval(a)')
 'WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval(a)'
 
+>>> _test_js_obj_proxy(',eval(a)')
+',eval(a)'
+
 >>> _test_js_obj_proxy('this.$eval(a)')
 'this.$eval(a)'
 

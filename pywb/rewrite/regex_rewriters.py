@@ -101,7 +101,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
 
         rules = [
             # rewriting 'eval(...)' - invocation
-            (r'(?<!function)(?:^|\s)eval\s*\(', self.replace_str('WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval', 'eval'), 0),
+            (r'(?<!function\s)(?:^|[^,$])eval\s*\(', self.replace_str('WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval', 'eval'), 0),
             # rewriting 'x = eval' - no invocation
             (r'(?<=[=,])\s*\beval\b\s*(?![(:.$])', self.replace_str('self.eval', 'eval'), 0),
             (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
@@ -122,9 +122,9 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
 
         super(JSWombatProxyRules, self).__init__(rules)
 
-        self.first_buff = local_init_func + local_declares + '\n\n'
+        self.first_buff = local_init_func + local_declares + '\n\n{'
 
-        self.last_buff = '\n\n}'
+        self.last_buff = '\n\n}}'
 
 
 # =================================================================
