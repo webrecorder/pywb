@@ -14,7 +14,6 @@
 {% else %}
 
 <script src="{{ static_prefix }}/vue/vueui.js"></script>
-<script src="{{ static_prefix }}/js/cdxquery.js"></script>
 
 {% endif %}
 
@@ -53,7 +52,7 @@
   renderCal.init();
 
 {% else %}
-  var loader = new CDXLoader("{{ static_prefix }}", "{{ url }}", "{{ prefix }}");
+  VueUI.main("{{ static_prefix }}", "{{ url }}", "{{ prefix }}");
 
 {% endif %}
 

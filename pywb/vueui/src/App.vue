@@ -65,7 +65,7 @@ export default {
     this.init();
   },
   methods: {
-    gotoPeriod: function(newPeriod, initiator) {
+    gotoPeriod: function(newPeriod/*, initiator*/) {
       if (this.timelineHighlight) {
         setTimeout((() => {
           this.timelineHighlight=false;

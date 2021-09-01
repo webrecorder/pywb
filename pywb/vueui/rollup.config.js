@@ -8,7 +8,7 @@ export default [
     output: {
       file: "../static/vue/vueui.js",
       sourcemap: "inline",
-      name: "PywbVue",
+      name: "VueUI",
       format: "iife",
     },
     plugins: [

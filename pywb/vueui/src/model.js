@@ -222,11 +222,12 @@ PywbPeriod.prototype.getChildrenRange = function() {
   case PywbPeriod.Type.year:
     // month is simple: 1 to 12
     return [1,12];
-  case PywbPeriod.Type.month:
+  case PywbPeriod.Type.month: {
     // days in month: 1 to last day in month
     const y = this.parent.id; const m = this.id;
     const lastDateInMonth = (new Date((new Date(y, m, 1)).getTime() - 1000)).getDate(); // 1 sec earlier
     return [1, lastDateInMonth];
+  }
   case PywbPeriod.Type.day:
     // hours: 0 to 23
     // return [1,4];
@@ -341,7 +342,7 @@ PywbPeriod.prototype.getReadableId = function(hasDayCardinalSuffix) {
     return this.id;
   case PywbPeriod.Type.month:
     return PywbMonthLabels[this.id];
-  case PywbPeriod.Type.day:
+  case PywbPeriod.Type.day: {
     let suffix = "";
     if (hasDayCardinalSuffix) {
       const singleDigit = this.id % 10;
@@ -350,6 +351,7 @@ PywbPeriod.prototype.getReadableId = function(hasDayCardinalSuffix) {
       suffix = (isTens || !suffixes[singleDigit]) ? "th" : suffixes[singleDigit];
     }
     return this.id + suffix;
+  }
   case PywbPeriod.Type.hour:
     return ({1:"12 am", 2: "3 am", 3: "6 am", 4: "9 am", 5: "noon", 6: "3 pm", 7: "6 pm", 8: "9 pm"})[this.id];
     //return ({1:'midnight', 2: '6 am', 3: 'noon', 4: '6 pm'})[this.id];
