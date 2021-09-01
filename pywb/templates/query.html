@@ -6,22 +6,24 @@
 
 {% block head %}
 {{ super() }}
+
+{% if table_ui %}
 <link rel="stylesheet" href="{{ static_prefix }}/css/query.css">
 <script src="{{ static_prefix }}/js/url-polyfill.min.js"></script>
 <script src="{{ static_prefix }}/query.js"></script>
+{% else %}
+
+<script src="{{ static_prefix }}/vue/vueui.js"></script>
+<script src="{{ static_prefix }}/js/cdxquery.js"></script>
+
+{% endif %}
+
+
 {% endblock %}
 
 
 {% block body %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <h4 class="display-4 text-center text-sm-left p-0">{{ _('Search Results') }}</h4>
-    </div>
-</div>
-<div class="container">
-    <div class="row justify-content-center text-center text-sm-left mt-1" id="display-query-type-info"></div>
-</div>
-<div class="container mt-3 q-display" id="captures"></div>
+
 <script>
   var text = {
       months: {
@@ -46,7 +48,20 @@
       dateTime: "{{ _('Date Time: ') }}",
     };
 
+{% if table_ui %}
   var renderCal = new RenderCalendar({ prefix: "{{ prefix }}", staticPrefix: "{{ static_prefix }}", text: text });
   renderCal.init();
+
+{% else %}
+  var loader = new CDXLoader("{{ static_prefix }}", "{{ url }}", "{{ prefix }}");
+  loader.init();
+
+{% endif %}
+
 </script>
+
+{% if not table_ui %}
+<div id="app" style="width: 100%; height: 100%"></div>
+{% endif %}
+
 {% endblock %}

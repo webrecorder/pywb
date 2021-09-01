@@ -21,9 +21,28 @@ window.banner_info = {
 };
 </script>
 
+<link rel='stylesheet' href='{{ static_prefix }}/default_banner.css'/>
+
+{% if is_framed or old_banner %}
 <!-- default banner, create through js -->
 <script src='{{ static_prefix }}/default_banner.js'> </script>
-<link rel='stylesheet' href='{{ static_prefix }}/default_banner.css'/>
+
+{% else %}
+
+<script src="{{ static_prefix }}/vue/vueui.js"></script>
+<script src="{{ static_prefix }}/js/cdxquery.js"></script>
+<script>
+  var loader = new CDXLoader("{{ static_prefix }}", "{{ url }}", "{{ wb_prefix }}", "{{ timestamp }}");
+  loader.init();
+</script>
+
+{% if not old_banner %}
+<div id="app" style="width: 100%; height: 200px"></div>
+{% endif %}
+
+
+{% endif %}
+
 
 {% endautoescape %}
 {% endif %}
