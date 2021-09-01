@@ -5,6 +5,7 @@ class CDXLoader {
   constructor(staticPrefix, url, prefix, timestamp) {
     this.opts = {};
     this.prefix = prefix;
+    this.staticPrefix = staticPrefix;
 
     this.isReplay = (timestamp !== undefined);
 
@@ -12,19 +13,19 @@ class CDXLoader {
       window.WBBanner = new VueBannerWrapper(this);
     }
 
-    this.queryWorker = new Worker(staticPrefix + '/queryWorker.js');
+    let queryURL;
 
     // query form *?=url...
     if (window.location.href.indexOf("*?") > 0) {
-      this.queryURL = window.location.href.replace("*?", "cdx?") + "&output=json";
-      url = new URL(this.queryURL).searchParams.get("url");
+      queryURL = window.location.href.replace("*?", "cdx?") + "&output=json";
+      url = new URL(queryURL).searchParams.get("url");
 
     // otherwise, traditional calendar form /*/<url>
     } else if (url) {
       const params = new URLSearchParams();
       params.set("url", url);
       params.set("output", "json");
-      this.queryURL = prefix + "cdx?" + params.toString();
+      queryURL = prefix + "cdx?" + params.toString();
 
     // otherwise, an error since no URL
     } else {
@@ -36,32 +37,60 @@ class CDXLoader {
     // TODO: make configurable
     this.opts.logoImg = staticPrefix + "/pywb-logo-sm.png";
 
-    const cdxList = [];
-
-    this.queryWorker.addEventListener("message", (event) => {
-      const data = event.data;
-      switch (data.type) {
-        case "cdxRecord":
-          cdxList.push(data.record);
-          break;
-
-        case "finished":
-          PywbVue.init(cdxList, this.opts, (snapshot) => this.loadSnapshot(snapshot));
-          break;
-      }
+    this.loadCDX(queryURL).then((cdxList) => {
+      PywbVue.init(cdxList, this.opts, (snapshot) => this.loadSnapshot(snapshot));
     });
   }
 
-  init() {
-    this.queryWorker.postMessage({
-      type: 'query',
-      queryURL: this.queryURL
+  async updateSnapshot(url, timestamp) {
+    const params = new URLSearchParams();
+    params.set("url", url);
+    params.set("output", "json");
+    const queryURL = this.prefix + "cdx?" + params.toString();
+
+    const cdxList = await this.loadCDX(queryURL);
+
+    PywbVue.update(cdxList, {url, timestamp});
+  }
+
+  async loadCDX(queryURL) {
+    const queryWorker = new Worker(this.staticPrefix + '/queryWorker.js');
+
+    const p = new Promise((resolve) => {
+      const cdxList = [];
+
+      queryWorker.addEventListener("message", (event) => {
+        const data = event.data;
+        switch (data.type) {
+          case "cdxRecord":
+            cdxList.push(data.record);
+            break;
+
+          case "finished":
+            resolve(cdxList);
+            break;
+        }
+      });
     });
+
+    queryWorker.postMessage({
+      type: 'query',
+      queryURL
+    });
+
+    const results = await p;
+
+    queryWorker.terminate();
+    //delete queryWorker;
+
+    return results;
   }
 
   loadSnapshot(snapshot) {
-    if (!isReplay) {
+    if (!this.isReplay) {
       window.location.href = this.prefix + snapshot.id + "/" + snapshot.url;
+    } else if (cframe) {
+      cframe.load_url(snapshot.url, snapshot.id + "");
     }
   }
 }
@@ -70,9 +99,10 @@ class CDXLoader {
 // ===========================================================================
 class VueBannerWrapper
 {
-  constructor() {
+  constructor(loader) {
     this.loading = true;
     this.lastUrl = null;
+    this.loader = loader;
   }
 
   init() {}
@@ -86,6 +116,13 @@ class VueBannerWrapper
   }
 
   onMessage(event) {
-    console.log(event);
+    const type = event.data.wb_type;
+
+    if (type === 'load' || type === 'replace-url') {
+      if (event.data.url !== this.lastUrl) {
+        this.loader.updateSnapshot(event.data.url, event.data.ts);
+        this.lastUrl = event.data.url;
+      }
+    }
   }
 }

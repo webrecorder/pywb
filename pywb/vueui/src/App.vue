@@ -87,15 +87,18 @@ export default {
       if (!this.config.title) {
         this.config.title = this.config.initialView.url;
       }
-      if (this.config.initialView.timestamp === "undefined") {
+      if (this.config.initialView.timestamp === undefined) {
         this.showFullView = true;
       } else {
         this.showFullView = false;
-
-        // convert to snapshot objec to support proper rendering of time/date
-        const snapshot = new PywbSnapshot(this.config.initialView, 0);
-        this.gotoSnapshot(snapshot);
+        this.setSnapshot(this.config.initialView);
       }
+    },
+    setSnapshot(view) {
+      // convert to snapshot objec to support proper rendering of time/date
+      const snapshot = new PywbSnapshot(view, 0);
+      this.config.title = view.url;
+      this.gotoSnapshot(snapshot);
     }
   }
 };
