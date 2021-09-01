@@ -21,9 +21,11 @@ This file is part of pywb, https://github.com/webrecorder/pywb
 // Creates the default pywb banner.
 
 (function() {
-  if (window.top !== window) {
-    return;
-  }
+  try {
+    if (window.parent !== window && window.parent.wbinfo) {
+      return;
+    }
+  } catch (e) { }
 
   /**
    * The default banner class

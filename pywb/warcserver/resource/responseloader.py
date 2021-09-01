@@ -285,8 +285,8 @@ class LiveWebLoader(BaseLoader):
             self.socks_proxy = None
 
     def load_resource(self, cdx, params):
-        if cdx.get('filename') and cdx.get('offset') is not None:
-            return None
+        #if cdx.get('filename') and cdx.get('offset') is not None:
+        #    return None
 
         load_url = cdx.get('load_url')
         if not load_url:

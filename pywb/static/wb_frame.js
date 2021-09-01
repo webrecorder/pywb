@@ -231,7 +231,13 @@ ContentFrame.prototype.initBannerUpdateCheck = function(newUrl, newTs) {
  * operating in live mode
  */
 ContentFrame.prototype.load_url = function(newUrl, newTs) {
-  this.iframe.src = this.make_url(newUrl, newTs, true);
+  var newUrl = this.make_url(newUrl, newTs, true);
+  if (this.iframe.src === newUrl) {
+    return;
+  }
+
+  this.iframe.src = newUrl;
+
   if (this.wbBanner) {
     this.initBannerUpdateCheck(newUrl, newTs);
   }
