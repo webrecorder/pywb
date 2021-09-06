@@ -139,6 +139,13 @@ export default {
 
   .short-nav .logo {
     flex-shrink: initial;
+    /* for any content/image inside the logo container */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .short-nav .logo img {
+    flex-shrink: 1;
   }
 
   .short-nav .url-and-timeline {
