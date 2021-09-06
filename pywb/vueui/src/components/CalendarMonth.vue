@@ -4,7 +4,7 @@
         display: inline-block;
         padding: 5px;
         margin: 0;
-        height: 240px;
+        height: 260px;
         width: 220px;
         text-align: center;
         vertical-align: top;
