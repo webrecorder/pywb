@@ -125,6 +125,7 @@ export default {
   }
   .short-nav {
     width: 100%;
+    max-width: 1200px; /* limit width */
     position: relative;
   }
   .short-nav .first-line {
