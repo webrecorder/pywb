@@ -110,6 +110,11 @@ export default {
     height: 150px;
     width: 100%;
   }
+  .full-view {
+    position: absolute;
+    top: 150px;
+    left: 0;
+  }
   .iframe iframe {
     width: 100%;
     height: 80vh;

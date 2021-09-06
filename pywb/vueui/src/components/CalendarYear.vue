@@ -1,8 +1,6 @@
 <style>
     .full-view {
         position: absolute;
-        top: 130px;
-        left: 0;
         height: 80vh;
         width: 100%;
         background-color: white;
