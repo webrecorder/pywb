@@ -77,6 +77,9 @@
     .calendar-month .day:hover {
         cursor: zoom-in;
     }
+    .calendar-month .day.empty:hover {
+        cursor: not-allowed;
+    }
 </style>
 
 <template>
@@ -128,6 +131,9 @@ export default {
   },
   methods: {
     gotoDay(day) {
+      if (!day || !day.snapshotCount) {
+        return;
+      }
       // upon doing to day, tell timeline to highlight itself
       this.$root.timelineHighlight = true;
       this.$emit("goto-period", day);
