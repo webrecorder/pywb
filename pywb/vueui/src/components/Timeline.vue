@@ -7,20 +7,23 @@
                      :key="subPeriod.id"
                      class="period"
                      :class="{empty: !subPeriod.snapshotCount, highlight: highlightPeriod === subPeriod, 'last-level': isLastZoomLevel}"
-                     v-on:click="changePeriod(subPeriod)">
+                     v-on:click="changePeriod(subPeriod, $event)">
                     <div class="histo">
-                        <div class="count" v-if="!subPeriod.snapshot && !isLastZoomLevel"><span class="count-inner">{{subPeriod.snapshotCount}}</span></div>
                         <div class="line"
                              v-for="histoPeriod in subPeriod.children"
                              :key="histoPeriod.id"
                              :style="{height: getHistoLineHeight(histoPeriod.snapshotCount)}"
-                             v-on:click="changePeriodFromHistogram(histoPeriod)"
+                             :class="{'has-single-snap': !!histoPeriod.snapshotPeriod}"
+                             v-on:click="changePeriod(histoPeriod, $event)"
                         >
-                            <div class="snap-info" v-if="isLastZoomLevel">{{histoPeriod.snapshot.getTimeDateFormatted()}}</div>
+                            <div class="snap-info" v-if="histoPeriod.snapshot">View capture from {{histoPeriod.snapshot.getTimeDateFormatted()}}</div>
                         </div>
                     </div>
                     <div class="inner">
-                        <div class="label">{{subPeriod.getReadableId()}}</div>
+                        <div class="label">
+                          {{subPeriod.getReadableId()}}
+                          <div class="count" v-if="subPeriod.snapshotCount">({{subPeriod.snapshotCount}})</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -103,22 +106,32 @@ export default{
       return (percent ? (5 + Math.ceil(percent*.95)) : 0) + "%";
       // return percent + '%';
     },
-    changePeriod(period) {
+    changePeriod(period, $event) {
+      // if not empty
       if (period.snapshotCount) {
-        if (this.isLastZoomLevel) {
+        let periodToChangeTo = null;
+        // if contains a single snapshot only, navigate to snapshot (load snapshot in FRAME, do not ZOOM IN)
+        if (period.snapshot) {
+          // if period is at level "snapshot" (no more children), send period, else send the child period, a reference to which is stored (by data/model layer) in the current period; App event needs a period to be passed (cannot pass in snapshot object itself)
           if (period.type === PywbPeriod.Type.snapshot) {
-            this.$emit("goto-period", period);
+            periodToChangeTo = period;
+          } else if (period.snapshotPeriod) {
+            periodToChangeTo = period.snapshotPeriod;
           }
         } else {
-          this.$emit("goto-period", period);
+        // if contains mulitple snapshots, just ZOOM to period clicked itself
+          if (period.type <= PywbPeriod.Type.day) {
+            periodToChangeTo = period;
+          }
+        }
+
+        // if we selected a period to go to, emit event
+        if (periodToChangeTo) {
+          this.$emit("goto-period", periodToChangeTo);
         }
       }
-    },
-    // special "change period" from histogram lines
-    changePeriodFromHistogram(period) {
-      if (this.isLastZoomLevel && period.type === PywbPeriod.Type.snapshot) {
-        this.$emit("goto-period", period);
-      }
+      $event.stopPropagation();
+      return false;
     },
     onPeriodChanged(newPeriod, oldPeriod) {
       this.addEmptySubPeriods();
@@ -249,32 +262,6 @@ export default{
         background-color: cyan;
     }
 
-    .timeline .period .label {
-        font-weight: bold;
-        font-size: 14px;
-        font-family: Baskerville, sans-serif;
-    }
-    .timeline .period .count {
-        position: absolute;
-        top: 0;
-        left: 0;
-        display: none;
-        width: 100%;
-        height: 100%;
-        padding: 10px 0 0 0;
-        text-align: center;
-        font-size: 25px;
-    }
-    .timeline .period .count .count-inner {
-        display: inline;
-        width: auto;
-        background-color: rgba(255,255,255,.85);
-        padding: 1px;
-        border-radius: 5px;
-    }
-    .timeline .period:hover .count {
-        display: block;
-    }
     .timeline .period .inner {
         display: block;
         position: absolute;
@@ -284,9 +271,25 @@ export default{
         height: 16px;
         background-color: white;
         border-top: 1px solid gray;
+        white-space: nowrap;
     }
-    .timeline .period.last-level .inner {
-        text-align: left;
+    .timeline .period .label {
+      width: 100%;
+      font-weight: bold;
+      font-size: 14px;
+      font-family: Baskerville, sans-serif;
+      transition: background-color 500ms ease-in;
+    }
+    .timeline .period:hover .label {
+      position: absolute;
+      z-index: 20;
+      background-color: lightgrey;
+    }
+    .timeline .period .count {
+      display: none;
+    }
+    .timeline .period:hover .count {
+      display: inline;
     }
 
     .timeline .period .histo {
@@ -302,6 +305,7 @@ export default{
     }
 
     .timeline .period .histo .line {
+        position: relative;
         flex-grow: 1;
         display: inline-block;
         background-color: #a6cdf5;
@@ -319,17 +323,15 @@ export default{
         flex-grow: unset;
         width: 5px;
         margin-left: 2px;
-
-        position: relative;
     }
 
         /* update line color on hover*/
-        .timeline .period.last-level .histo .line:hover {
+        .timeline .period .histo .line:hover {
             background-color: #f5a6eb;
         }
 
-        /*Last level period histogram line has extra info*/
-        .timeline .period.last-level  .histo .line .snap-info {
+        /* Period that contains ONE snapshot only will show snapshot info*/
+        .timeline .period  .histo .line .snap-info {
             position: absolute;
             z-index: 10;
             top: 30%;
@@ -341,7 +343,7 @@ export default{
             white-space: nowrap; /*no wrapping allowed*/
         }
             /*show on hover*/
-            .timeline .period.last-level .histo .line:hover .snap-info {
+            .timeline .period .histo .line.has-single-snap:hover .snap-info {
                 display: block;
             }
 

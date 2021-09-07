@@ -4,25 +4,29 @@ export function PywbData(rawSnaps) {
   const allTimePeriod = new PywbPeriod({type: PywbPeriod.Type.all, id: "all"});
   const snapshots = [];
   let lastSingle = null;
+  let lastYear, lastMonth, lastDay, lastHour;
   rawSnaps.forEach((rawSnap, i) => {
     const snap = new PywbSnapshot(rawSnap, i);
     let year, month, day, hour, single;
     if (!(year = allTimePeriod.getChildById(snap.year))) {
-      year = new PywbPeriod({type: PywbPeriod.Type.year, id: snap.year});
+      if (lastYear) lastYear.checkIfSingleSnapshotOnly();
+      lastYear = year = new PywbPeriod({type: PywbPeriod.Type.year, id: snap.year});
       allTimePeriod.addChild(year);
     }
     if (!(month = year.getChildById(snap.month))) {
-      month = new PywbPeriod({type: PywbPeriod.Type.month, id: snap.month});
+      if (lastMonth) lastMonth.checkIfSingleSnapshotOnly();
+      lastMonth = month = new PywbPeriod({type: PywbPeriod.Type.month, id: snap.month});
       year.addChild(month);
     }
     if (!(day = month.getChildById(snap.day))) {
-      day = new PywbPeriod({type: PywbPeriod.Type.day, id: snap.day});
+      if (lastDay) lastDay.checkIfSingleSnapshotOnly();
+      lastDay = day = new PywbPeriod({type: PywbPeriod.Type.day, id: snap.day});
       month.addChild(day);
     }
     const hourValue = Math.ceil((snap.hour + .0001) / (24/8)); // divide day in 4 six-hour periods (aka quarters)
-    //const hourValue = snap.hour;
     if (!(hour = day.getChildById(hourValue))) {
-      hour = new PywbPeriod({type: PywbPeriod.Type.hour, id: hourValue});
+      if (lastHour) lastHour.checkIfSingleSnapshotOnly();
+      lastHour = hour = new PywbPeriod({type: PywbPeriod.Type.hour, id: hourValue});
       day.addChild(hour);
     }
     if (!(single = hour.getChildById(snap.id))) {
@@ -313,6 +317,21 @@ PywbPeriod.prototype.getParents = function(skipAllTime=false) {
 };
 
 PywbPeriod.prototype.snapshot = null;
+PywbPeriod.prototype.snapshotPeriod = null;
+
+PywbPeriod.prototype.checkIfSingleSnapshotOnly = function() {
+  if (this.snapshotCount === 1) {
+    let snapshotPeriod = this;
+    let failSafe = PywbPeriod.Type.snapshot;
+    while(!snapshotPeriod.snapshot) {
+      if (--failSafe <=0) break;
+      snapshotPeriod = snapshotPeriod.children[0];
+    }
+    this.snapshot = snapshotPeriod.snapshot;
+    this.snapshotPeriod = snapshotPeriod;
+  }
+};
+
 PywbPeriod.prototype.setSnapshot = function(snap) {
   this.snapshot = snap;
   this.snapshotCount++;
