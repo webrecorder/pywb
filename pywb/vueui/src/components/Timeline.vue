@@ -1,6 +1,6 @@
 <template>
     <div class="timeline">
-        <div class="arrow previous" :class="{disabled: isScrollZero && !previousPeriod}" @click="scrollPrev" @dblclick.stop.prevent>&#x25C0;</div>
+        <div v-html="arrowPrev" class="arrow previous" :class="{disabled: isScrollZero && !previousPeriod}" @click="scrollPrev" @dblclick.stop.prevent></div>
         <div class="scroll" ref="periodScroll" :class="{highlight: highlight}">
             <div class="periods" ref="periods">
                 <div v-for="subPeriod in period.children"
@@ -25,7 +25,7 @@
                 </div>
             </div>
         </div>
-        <div class="arrow next" :class="{disabled: isScrollMax && !nextPeriod}" @click="scrollNext" @dblclick.stop.prevent>&#x25B6;</div>
+        <div v-html="arrowNext" class="arrow next" :class="{disabled: isScrollMax && !nextPeriod}" @click="scrollNext" @dblclick.stop.prevent></div>
     </div>
 </template>
 
@@ -41,6 +41,8 @@ export default{
       nextPeriod: null,
       isScrollZero: true,
       isScrollMax: true,
+      arrowPrev: "&#x25C0;",
+      arrowNext: "&#x25B6;",
     };
   },
   created: function() {
