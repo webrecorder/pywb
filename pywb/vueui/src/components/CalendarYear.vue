@@ -22,7 +22,7 @@
 
 <template>
     <div class="full-view">
-        <h2>{{year.snapshotCount}} captures in {{year.id}}</h2>
+        <h2>{{year.id}} ({{year.snapshotCount}} captures)</h2>
         <div class="months">
             <CalendarMonth
                     v-for="month in year.children"
