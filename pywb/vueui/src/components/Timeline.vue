@@ -1,5 +1,19 @@
 <template>
     <div class="timeline">
+        <div class="period-tooltip" v-show="periodToShowInTooltip" :style="{left: periodToShowInTooltipPos.x+'px', top: periodToShowInTooltipPos.y+'px'}">
+            <template v-if="periodToShowInTooltip">
+              <div v-if="periodToShowInTooltip.snapshot">View capture from
+                {{ periodToShowInTooltip.snapshot.getTimeDateFormatted() }}
+              </div>
+              <div v-else-if="periodToShowInTooltip.snapshotPeriod">View capture from
+                {{ periodToShowInTooltip.snapshotPeriod.snapshot.getTimeDateFormatted() }}
+              </div>
+              <div v-else-if="periodToShowInTooltip.snapshotCount">
+                {{ periodToShowInTooltip.snapshotCount }} captures from
+                {{ periodToShowInTooltip.getFullReadableId() }}
+              </div>
+            </template>
+        </div>
         <div v-html="'&#x25C0;'" class="arrow previous" :class="{disabled: isScrollZero && !previousPeriod}" @click="scrollPrev" @dblclick.stop.prevent></div>
         <div class="scroll" ref="periodScroll" :class="{highlight: highlight}">
             <div class="periods" ref="periods">
@@ -7,16 +21,20 @@
                      :key="subPeriod.id"
                      class="period"
                      :class="{empty: !subPeriod.snapshotCount, highlight: highlightPeriod === subPeriod, 'last-level': isLastZoomLevel}"
-                     v-on:click="changePeriod(subPeriod, $event)">
+                     @click="changePeriod(subPeriod, $event)"
+                     @mouseover="setPeriodToShowInTooltip(subPeriod, $event)"
+                     @mouseout="setPeriodToShowInTooltip(null, $event)"
+                >
                     <div class="histo">
                         <div class="line"
                              v-for="histoPeriod in subPeriod.children"
                              :key="histoPeriod.id"
                              :style="{height: getHistoLineHeight(histoPeriod.snapshotCount)}"
                              :class="{'has-single-snap': !!histoPeriod.snapshotPeriod}"
-                             v-on:click="changePeriod(histoPeriod, $event)"
+                             @click="changePeriod(histoPeriod, $event)"
+                             @mouseover="setPeriodToShowInTooltip(histoPeriod, $event)"
+                             @mouseout="setPeriodToShowInTooltip(null, $event)"
                         >
-                            <div class="snap-info" v-if="histoPeriod.snapshot">View capture from {{histoPeriod.snapshot.getTimeDateFormatted()}}</div>
                         </div>
                     </div>
                     <div class="inner">
@@ -43,7 +61,9 @@ export default{
       previousPeriod: null,
       nextPeriod: null,
       isScrollZero: true,
-      isScrollMax: true
+      isScrollMax: true,
+      periodToShowInTooltip: null,
+      periodToShowInTooltipPos: {x:0,y:0}
     };
   },
   created: function() {
@@ -153,6 +173,33 @@ export default{
         this.restoreScroll();
         this.updateScrollArrows();
       }).bind(this), 1);
+    },
+    setPeriodToShowInTooltip(period, event) {
+      if (!period || !period.snapshotCount) {
+        this.periodToShowInTooltip = null;
+        return;
+      }
+      this.periodToShowInTooltip = period;
+
+      this.$nextTick(function() {
+        const tooltipContentsEl = document.querySelector('.period-tooltip div');
+        if (!tooltipContentsEl) {
+          return;
+        }
+
+        const periodTooltipStyle = window.getComputedStyle(tooltipContentsEl);
+        const tooltipWidth = parseInt(periodTooltipStyle.width);
+        const tooltipHeight = parseInt(periodTooltipStyle.height);
+        const spacing = 10;
+        if (window.innerWidth < event.x + (spacing*2) + tooltipWidth) {
+          this.periodToShowInTooltipPos.x = event.x - (tooltipWidth + spacing);
+        } else {
+          this.periodToShowInTooltipPos.x = event.x + spacing;
+        }
+        this.periodToShowInTooltipPos.y = event.y - (spacing + tooltipHeight);
+      });
+      event.stopPropagation();
+      return false;
     }
   }
 };
@@ -331,19 +378,18 @@ export default{
         }
 
         /* Period that contains ONE snapshot only will show snapshot info*/
-        .timeline .period  .histo .line .snap-info {
-            position: absolute;
-            z-index: 10;
-            top: 30%;
-            left: 120%;
-            display: none;
+        .timeline .period-tooltip {
+            position: fixed;
+            z-index: 100;
+            /*left or right set programmatically*/
+            display: block;
             background-color: white;
             border: 1px solid gray;
             padding: 2px;
             white-space: nowrap; /*no wrapping allowed*/
         }
             /*show on hover*/
-            .timeline .period .histo .line.has-single-snap:hover .snap-info {
+            .timeline .period-tooltip.show {
                 display: block;
             }
 
