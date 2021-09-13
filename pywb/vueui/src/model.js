@@ -348,7 +348,43 @@ PywbPeriod.prototype.setSnapshot = function(snap) {
     parent = parent.parent;
   }
 };
+/**
+ * Return the "full" id, which includes all parents ID and self ID, delimited by a hyphen "-"
+ * @returns {string}
+ */
+PywbPeriod.prototype.getFullId = function() {
+  const ids = this.getParents(true).map(p => p.id);
+  ids.push(this.id);
+  return ids.join("-");
+};
 
+/**
+ * Find a period by its full ID (of all ancestors and self, delimited by a hyphen). Start by locating the great-grand-parent (aka timeline), then looping on all IDs and finding the period in loop
+ * @param {string} fullId
+ * @returns {boolean}
+ */
+PywbPeriod.prototype.findByFullId = function(fullId) {
+  let parent = this;
+  if (this.type !== PywbPeriod.Type.all) {
+    parent = this.getParents()[0];
+  }
+  const ids = fullId.split('-');
+
+  let found = false;
+  for(let i=0; i<ids.length; i++) {
+    parent = parent.getChildById(ids[i]);
+    if (parent) {
+      // if last chunk of ID in loop, the period is found
+      if (i === ids.length - 1) {
+        found = parent;
+      }
+    } else {
+      // if no parent is found with ID chunk, abort "mission"
+      break;
+    }
+  }
+  return found;
+};
 PywbPeriod.prototype.getFullReadableId = function(hasDayCardinalSuffix) {
   // remove "all-time" from parents (getParents(true) when printing readable id (of all parents and currrent
   return this.getParents(true).map(p => p.getReadableId(hasDayCardinalSuffix)).join(" ") + " " + this.getReadableId(hasDayCardinalSuffix);

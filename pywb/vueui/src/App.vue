@@ -80,6 +80,11 @@ export default {
       if (newPeriod.snapshot) {
         this.gotoSnapshot(newPeriod.snapshot);
       } else {
+        // save current period (aka zoom)
+        // use sessionStorage (not localStorage), as we want this to be a very temporary memory for current page tab/window and no longer; NOTE: it serves when navigating from an "*" query to a specific capture and subsequent reloads
+        if (window.sessionStorage) {
+          window.sessionStorage.setItem('zoom__'+this.config.url, newPeriod.getFullId());
+        }
         this.currentPeriod = newPeriod;
       }
     },
@@ -99,6 +104,15 @@ export default {
       } else {
         this.showFullView = false;
         this.setSnapshot(this.config.initialView);
+      }
+      if (window.sessionStorage) {
+        const currentPeriodId = window.sessionStorage.getItem('zoom__'+this.config.url);
+        if (currentPeriodId) {
+          const newCurrentPeriodFromStorage = this.currentPeriod.findByFullId(currentPeriodId);
+          if (newCurrentPeriodFromStorage) {
+            this.currentPeriod = newCurrentPeriodFromStorage;
+          }
+        }
       }
     },
     setSnapshot(view) {
