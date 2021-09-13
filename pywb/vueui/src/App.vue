@@ -1,20 +1,23 @@
 <template>
   <div class="app" data-app="webrecorder-replay-app">
-    <div class="short-nav">
-      <div class="first-line">
+    <div class="banner">
+      <div class="row">
         <div class="logo"><img :src="config.logoImg" /></div>
-        <div class="url-and-timeline">
-          <div class="url">
-            <strong>{{config.title}}</strong> ({{snapshots.length}} captures: {{snapshots[0].getDateFormatted()}} - {{snapshots[snapshots.length-1].getDateFormatted()}})<br/>
-            <TimelineSummary
+        <div class="timeline-wrap">
+          <div class="row">
+            <TimelineBreadcrumbs
                     v-if="currentPeriod"
                     :period="currentPeriod"
                     @goto-period="gotoPeriod"
-            ></TimelineSummary>
-            <span class="full-view-toggle" :class="{expanded: showFullView}" @click="showFullView = !showFullView">
-              <template v-if="!showFullView"><span class="detail">show year calendar</span></template><template v-else><span class="detail">hide year calendar</span></template>
-              <img src="/static/calendar-icon.png" />
-            </span>
+                    class="breadcrumbs"
+            ></TimelineBreadcrumbs>
+
+            <div class="toggles">
+              <span class="toggle" :class="{expanded: showFullView}" @click="showFullView = !showFullView">
+                <template v-if="!showFullView"><span class="detail">show year calendar</span></template><template v-else><span class="detail">hide year calendar</span></template>
+                <img src="/static/calendar-icon.png" />
+              </span>
+            </div>
           </div>
           <Timeline
                   v-if="currentPeriod"
@@ -24,11 +27,14 @@
           ></Timeline>
         </div>
       </div>
-      <div class="second-line" v-if="currentSnapshot && !showFullView">
-        <h2>Showing Capture from {{currentSnapshot.getTimeDateFormatted()}}</h2>
+    </div>
+    <div class="snapshot-title">
+      <div>{{ config.url }}</div>
+      <div v-if="currentSnapshot && !showFullView">
+        <span v-if="config.title">{{ config.title }}</span>
+        {{currentSnapshot.getTimeDateFormatted()}}
       </div>
     </div>
-
     <CalendarYear v-if="showFullView"
                    :period="currentPeriod"
                    @goto-period="gotoPeriod">
@@ -38,7 +44,7 @@
 
 <script>
 import Timeline from "./components/Timeline.vue";
-import TimelineSummary from "./components/Summary.vue";
+import TimelineBreadcrumbs from "./components/TimelineBreadcrumbs.vue";
 import CalendarYear from "./components/CalendarYear.vue";
 
 import { PywbSnapshot } from "./model.js";
@@ -60,7 +66,7 @@ export default {
       timelineHighlight: false
     };
   },
-  components: {Timeline, TimelineSummary, CalendarYear},
+  components: {Timeline, TimelineBreadcrumbs, CalendarYear},
   mounted: function() {
     this.init();
   },
@@ -84,8 +90,9 @@ export default {
       this.showFullView = false;
     },
     init() {
-      if (!this.config.title) {
-        this.config.title = this.config.initialView.url;
+      this.config.url = this.config.initialView.url;
+      if (this.config.initialView.title) {
+        this.config.title = this.config.initialView.title;
       }
       if (this.config.initialView.timestamp === undefined) {
         this.showFullView = true;
@@ -97,7 +104,8 @@ export default {
     setSnapshot(view) {
       // convert to snapshot objec to support proper rendering of time/date
       const snapshot = new PywbSnapshot(view, 0);
-      this.config.title = view.url;
+      this.config.url = view.url;
+      this.config.title = view.title;
       this.gotoSnapshot(snapshot);
     }
   }
@@ -111,7 +119,7 @@ export default {
     width: 100%;
   }
   .full-view {
-    position: absolute;
+    position: fixed;
     top: 150px;
     left: 0;
   }
@@ -123,66 +131,70 @@ export default {
     margin-right: 30px;
     width: 180px;
   }
-  .short-nav {
+  .banner {
     width: 100%;
     max-width: 1200px; /* limit width */
     position: relative;
   }
-  .short-nav .first-line {
-    display: flex;
-    justify-content: flex-start;
-  }
-  .short-nav .second-line {
+  .banner .row {
     display: flex;
     justify-content: flex-start;
   }
 
-  .short-nav .logo {
+  .banner .logo {
     flex-shrink: initial;
     /* for any content/image inside the logo container */
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  .short-nav .logo img {
+  .banner .logo img {
     flex-shrink: 1;
   }
 
-  .short-nav .url-and-timeline {
+  .banner .timeline-wrap {
     flex-grow: 2;
     overflow-x: hidden;
-  }
-
-  .short-nav .url {
     text-align: left;
     margin: 0 25px;
     position: relative;
   }
 
-  .full-view-toggle {
-    position: absolute;
-    top: 0;
-    right: 0;
+  .timeline-wrap .row .breadcrumbs {
+    display: inline-block;
+    flex-grow: 1;
+  }
+  .timeline-wrap .row .toggles {
+    display: inline-block;
+    flex-shrink: 1;
+  }
+
+  .toggles .toggle {
     border-radius: 5px;
     padding: 4px;
     cursor: zoom-in;
   }
-  .full-view-toggle img {
+  .toggles .toggle img {
     width: 17px;
     display: inline-block;
     margin-top: 2px;
   }
-  .full-view-toggle:hover {
+  .toggles .toggle:hover {
     background-color: #eeeeee;
   }
-  .full-view-toggle .detail {
+  .toggles .toggle .detail {
     display: none;
   }
-  .full-view-toggle:hover .detail {
+  .toggles .toggle:hover .detail {
     display: inline;
   }
-  .full-view-toggle.expanded {
+  .toggles .toggle.expanded {
     background-color: #eeeeee;
     cursor: zoom-out;
+  }
+  .snapshot-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
   }
 </style>

@@ -1,5 +1,5 @@
 <template>
-    <div class="summary">
+    <div class="breadcrumbs">
         <template v-if="parents.length">
             <span class="item">
                 <span class="goto" @click="changePeriod(parents[0])">{{parents[0].getReadableId(true)}}</span>
@@ -39,37 +39,33 @@ export default {
 </script>
 
 <style>
-    .summary {
-        display: inline-block;
-    }
-
-    .summary .item {
+    .breadcrumbs .item {
         position: relative;
         display: inline;
         margin: 0 2px 0 0;
         font-size: inherit;
     }
-    .summary .count {
+    .breadcrumbs .count {
         vertical-align: middle;
         font-size: inherit;
     }
-    .summary .count .verbose {
+    .breadcrumbs .count .verbose {
         display: none;
     }
-    .summary .count:hover .verbose {
+    .breadcrumbs .count:hover .verbose {
         display: inline;
     }
 
-    .summary .item .goto {
+    .breadcrumbs .item .goto {
         margin: 1px;
         cursor: pointer;
         color: darkslateblue;
         text-decoration: underline;
      }
-    .summary .item .goto:hover {
+    .breadcrumbs .item .goto:hover {
         background-color: #a6cdf5;
     }
-    .summary .item.snapshot {
+    .breadcrumbs .item.snapshot {
         display: block;
     }
 

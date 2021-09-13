@@ -1,6 +1,6 @@
 <style>
     .full-view {
-        position: absolute;
+        position: fixed;
         z-index: 10;
         height: 80vh;
         width: 100%;
