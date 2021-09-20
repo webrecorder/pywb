@@ -1,16 +1,17 @@
 <template>
     <div class="timeline">
-        <div class="period-tooltip" v-show="periodToShowInTooltip" :style="{left: periodToShowInTooltipPos.x+'px', top: periodToShowInTooltipPos.y+'px'}">
-            <template v-if="periodToShowInTooltip">
-              <div v-if="periodToShowInTooltip.snapshot">View capture from
-                {{ periodToShowInTooltip.snapshot.getTimeDateFormatted() }}
+        <div class="period-tooltip" v-show="tooltipPeriod" :style="{left: tooltipPeriodPos.x+'px', top: tooltipPeriodPos.y+'px'}">
+            <template v-if="tooltipPeriod">
+              <div v-if="tooltipPeriod.snapshot">View capture on
+                {{ tooltipPeriod.snapshot.getTimeDateFormatted() }}
               </div>
-              <div v-else-if="periodToShowInTooltip.snapshotPeriod">View capture from
-                {{ periodToShowInTooltip.snapshotPeriod.snapshot.getTimeDateFormatted() }}
+              <div v-else-if="tooltipPeriod.snapshotPeriod">View capture on
+                {{ tooltipPeriod.snapshotPeriod.snapshot.getTimeDateFormatted() }}
               </div>
-              <div v-else-if="periodToShowInTooltip.snapshotCount">
-                {{ periodToShowInTooltip.snapshotCount }} captures from
-                {{ periodToShowInTooltip.getFullReadableId() }}
+              <div v-else-if="tooltipPeriod.snapshotCount">
+                {{ tooltipPeriod.snapshotCount }} captures
+                <span v-if="isTooltipPeriodDayOrHour">on</span><span v-else>in</span>
+                {{ tooltipPeriod.getFullReadableId() }}
               </div>
             </template>
         </div>
@@ -22,8 +23,8 @@
                      class="period"
                      :class="{empty: !subPeriod.snapshotCount, highlight: highlightPeriod === subPeriod, 'last-level': isLastZoomLevel}"
                      @click="changePeriod(subPeriod, $event)"
-                     @mouseover="setPeriodToShowInTooltip(subPeriod, $event)"
-                     @mouseout="setPeriodToShowInTooltip(null, $event)"
+                     @mouseover="setTooltipPeriod(subPeriod, $event)"
+                     @mouseout="setTooltipPeriod(null, $event)"
                 >
                     <div class="histo">
                         <div class="line"
@@ -32,15 +33,14 @@
                              :style="{height: getHistoLineHeight(histoPeriod.snapshotCount)}"
                              :class="{'has-single-snap': !!histoPeriod.snapshotPeriod}"
                              @click="changePeriod(histoPeriod, $event)"
-                             @mouseover="setPeriodToShowInTooltip(histoPeriod, $event)"
-                             @mouseout="setPeriodToShowInTooltip(null, $event)"
+                             @mouseover="setTooltipPeriod(histoPeriod, $event)"
+                             @mouseout="setTooltipPeriod(null, $event)"
                         >
                         </div>
                     </div>
                     <div class="inner">
                         <div class="label">
                           {{subPeriod.getReadableId()}}
-                          <div class="count" v-if="subPeriod.snapshotCount">({{subPeriod.snapshotCount}})</div>
                         </div>
                     </div>
                 </div>
@@ -62,8 +62,8 @@ export default{
       nextPeriod: null,
       isScrollZero: true,
       isScrollMax: true,
-      periodToShowInTooltip: null,
-      periodToShowInTooltipPos: {x:0,y:0}
+      tooltipPeriod: null,
+      tooltipPeriodPos: {x:0,y:0}
     };
   },
   created: function() {
@@ -82,6 +82,9 @@ export default{
     // this determins which the last zoom level is before we go straight to showing snapshot
     isLastZoomLevel() {
       return this.period.type === PywbPeriod.Type.day;
+    },
+    isTooltipPeriodDayOrHour() {
+      return this.tooltipPeriod.type >= PywbPeriod.Type.day;
     }
   },
   updated() {
@@ -174,12 +177,12 @@ export default{
         this.updateScrollArrows();
       }).bind(this), 1);
     },
-    setPeriodToShowInTooltip(period, event) {
+    setTooltipPeriod(period, event) {
       if (!period || !period.snapshotCount) {
-        this.periodToShowInTooltip = null;
+        this.tooltipPeriod = null;
         return;
       }
-      this.periodToShowInTooltip = period;
+      this.tooltipPeriod = period;
 
       this.$nextTick(function() {
         const tooltipContentsEl = document.querySelector('.period-tooltip div');
@@ -192,11 +195,11 @@ export default{
         const tooltipHeight = parseInt(periodTooltipStyle.height);
         const spacing = 10;
         if (window.innerWidth < event.x + (spacing*2) + tooltipWidth) {
-          this.periodToShowInTooltipPos.x = event.x - (tooltipWidth + spacing);
+          this.tooltipPeriodPos.x = event.x - (tooltipWidth + spacing);
         } else {
-          this.periodToShowInTooltipPos.x = event.x + spacing;
+          this.tooltipPeriodPos.x = event.x + spacing;
         }
-        this.periodToShowInTooltipPos.y = event.y - (spacing + tooltipHeight);
+        this.tooltipPeriodPos.y = event.y - (spacing + tooltipHeight);
       });
       event.stopPropagation();
       return false;
@@ -330,12 +333,6 @@ export default{
       position: absolute;
       z-index: 20;
       background-color: lightgrey;
-    }
-    .timeline .period .count {
-      display: none;
-    }
-    .timeline .period:hover .count {
-      display: inline;
     }
 
     .timeline .period .histo {

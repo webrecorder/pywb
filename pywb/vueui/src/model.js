@@ -88,7 +88,7 @@ export class PywbSnapshot {
   }
 
   getTimeDateFormatted() {
-    return `${this.year}-${PywbMonthLabels[this.month]}-${this.day} ${this.getTimeFormatted()}`;
+    return `${PywbMonthLabels[this.month]} ${this.day}, ${this.year} at ${this.getTimeFormatted()}`;
   }
 
   getDateFormatted() {
@@ -389,7 +389,21 @@ PywbPeriod.prototype.findByFullId = function(fullId) {
 };
 PywbPeriod.prototype.getFullReadableId = function(hasDayCardinalSuffix) {
   // remove "all-time" from parents (getParents(true) when printing readable id (of all parents and currrent
-  return this.getParents(true).map(p => p.getReadableId(hasDayCardinalSuffix)).join(" ") + " " + this.getReadableId(hasDayCardinalSuffix);
+  switch (this.type) {
+    case PywbPeriod.Type.all:
+      return "";
+    case PywbPeriod.Type.year:
+      return this.id;
+    case PywbPeriod.Type.month:
+      return this.getReadableId(hasDayCardinalSuffix) + ' ' + this.parent.id;
+    case PywbPeriod.Type.day: {
+      return this.parent.getReadableId(hasDayCardinalSuffix) + ' ' + this.getReadableId(hasDayCardinalSuffix) + ', ' + this.parent.parent.id;
+    }
+    case PywbPeriod.Type.hour:
+      return this.parent.parent.getReadableId(hasDayCardinalSuffix) + ' ' + this.parent.getReadableId(hasDayCardinalSuffix) + ', ' + this.parent.parent.parent.id + ' at ' + this.getReadableId(hasDayCardinalSuffix);
+    case PywbPeriod.Type.snapshot:
+      return this.parent.parent.getReadableId(hasDayCardinalSuffix) + ' ' + this.parent.getReadableId(hasDayCardinalSuffix) + ', ' + this.parent.parent.parent.id + ' at ' + this.snapshot.getTimeFormatted();
+  }
 };
 PywbPeriod.prototype.getReadableId = function(hasDayCardinalSuffix) {
   switch (this.type) {
