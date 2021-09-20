@@ -83,7 +83,7 @@ export default {
         // save current period (aka zoom)
         // use sessionStorage (not localStorage), as we want this to be a very temporary memory for current page tab/window and no longer; NOTE: it serves when navigating from an "*" query to a specific capture and subsequent reloads
         if (window.sessionStorage) {
-          window.sessionStorage.setItem('zoom__'+this.config.url, newPeriod.getFullId());
+          window.sessionStorage.setItem('zoom__'+this.config.url, newPeriod.fullId);
         }
         this.currentPeriod = newPeriod;
       }
