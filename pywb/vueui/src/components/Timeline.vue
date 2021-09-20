@@ -54,7 +54,7 @@
 import { PywbPeriod } from "../model.js";
 
 export default{
-  props: ["period", "highlight"],
+  props: ["period", "currentSnapshot", "highlight"],
   data: function() {
     return {
       highlightPeriod: null,

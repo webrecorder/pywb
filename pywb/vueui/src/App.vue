@@ -23,6 +23,7 @@
                   v-if="currentPeriod"
                   :period="currentPeriod"
                   :highlight="timelineHighlight"
+                  :current-snapshot="currentSnapshot"
                   @goto-period="gotoPeriod"
           ></Timeline>
         </div>
