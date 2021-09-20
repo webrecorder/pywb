@@ -1,10 +1,10 @@
 <template>
   <div class="app" data-app="webrecorder-replay-app">
     <div class="banner">
-      <div class="row">
+      <div class="line">
         <div class="logo"><img :src="config.logoImg" /></div>
         <div class="timeline-wrap">
-          <div class="row">
+          <div class="line">
             <TimelineBreadcrumbs
                     v-if="currentPeriod"
                     :period="currentPeriod"
@@ -150,7 +150,7 @@ export default {
     max-width: 1200px; /* limit width */
     position: relative;
   }
-  .banner .row {
+  .banner .line {
     display: flex;
     justify-content: flex-start;
   }
@@ -174,11 +174,11 @@ export default {
     position: relative;
   }
 
-  .timeline-wrap .row .breadcrumbs {
+  .timeline-wrap .line .breadcrumbs {
     display: inline-block;
     flex-grow: 1;
   }
-  .timeline-wrap .row .toggles {
+  .timeline-wrap .line .toggles {
     display: inline-block;
     flex-shrink: 1;
   }
