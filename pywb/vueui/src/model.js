@@ -104,6 +104,7 @@ export class PywbSnapshot {
 export function PywbPeriod(init) {
   this.type = init.type;
   this.id = init.id;
+  this.fullId = ''; // full-id property that include string id of parents and self with a delimitor
 
   this.childrenIds = {}; // allow for query by ID
   this.children = []; // allow for sequentiality / order
@@ -215,6 +216,7 @@ PywbPeriod.prototype.addChild = function(period) {
   period.parent = this;
   this.childrenIds[period.id] = this.children.length;
   this.children.push(period);
+  period.initFullId();
   return true;
 };
 
@@ -352,10 +354,10 @@ PywbPeriod.prototype.setSnapshot = function(snap) {
  * Return the "full" id, which includes all parents ID and self ID, delimited by a hyphen "-"
  * @returns {string}
  */
-PywbPeriod.prototype.getFullId = function() {
+PywbPeriod.prototype.initFullId = function() {
   const ids = this.getParents(true).map(p => p.id);
   ids.push(this.id);
-  return ids.join("-");
+  this.fullId = ids.join("-");
 };
 
 /**
