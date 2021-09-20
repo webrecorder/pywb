@@ -128,6 +128,7 @@ export default {
 
 <style>
   .app {
+    font-family: Calibri, Arial, sans-serif;
     border-bottom: 1px solid lightcoral;
     height: 150px;
     width: 100%;

@@ -324,7 +324,6 @@ export default{
       width: 100%;
       font-weight: bold;
       font-size: 14px;
-      font-family: Baskerville, sans-serif;
       transition: background-color 500ms ease-in;
     }
     .timeline .period:hover .label {
