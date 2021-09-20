@@ -71,6 +71,12 @@ export default {
   mounted: function() {
     this.init();
   },
+  computed: {
+    sessionStorageUrlKey() {
+      // remove http(s), www and trailing slash
+      return 'zoom__' + this.config.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+    }
+  },
   methods: {
     gotoPeriod: function(newPeriod/*, initiator*/) {
       if (this.timelineHighlight) {
@@ -84,7 +90,9 @@ export default {
         // save current period (aka zoom)
         // use sessionStorage (not localStorage), as we want this to be a very temporary memory for current page tab/window and no longer; NOTE: it serves when navigating from an "*" query to a specific capture and subsequent reloads
         if (window.sessionStorage) {
-          window.sessionStorage.setItem('zoom__'+this.config.url, newPeriod.fullId);
+          console.log(this.sessionStorageUrlKey);
+          window.sessionStorage.setItem(this.sessionStorageUrlKey, newPeriod.fullId);
+          console.log(this.sessionStorageUrlKey);
         }
         this.currentPeriod = newPeriod;
       }
@@ -107,7 +115,7 @@ export default {
         this.setSnapshot(this.config.initialView);
       }
       if (window.sessionStorage) {
-        const currentPeriodId = window.sessionStorage.getItem('zoom__'+this.config.url);
+        const currentPeriodId = window.sessionStorage.getItem(this.sessionStorageUrlKey);
         if (currentPeriodId) {
           const newCurrentPeriodFromStorage = this.currentPeriod.findByFullId(currentPeriodId);
           if (newCurrentPeriodFromStorage) {
