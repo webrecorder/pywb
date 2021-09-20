@@ -211,7 +211,7 @@ export default{
         position: relative;
         display: flex;
         width: auto;
-        height: 80px;
+        height: 60px;
         margin: 5px;
         justify-content: left;
     }
@@ -224,7 +224,7 @@ export default{
         display: inline-block;
         width: 20px;
         font-size: 20px; /* font-size = width of arrow, as it UTF char */
-        line-height: 80px;
+        line-height: 60px;
         vertical-align: top;
         cursor: pointer;
     }
@@ -315,7 +315,7 @@ export default{
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 16px;
+        height: 20px;
         background-color: white;
         border-top: 1px solid gray;
         white-space: nowrap;
@@ -344,7 +344,7 @@ export default{
         top: 1px;
         left: 0;
         width: 100%;
-        height: 60px;
+        height: 39px;
         align-items: flex-end;
         justify-content: space-between;
         text-align: left;
