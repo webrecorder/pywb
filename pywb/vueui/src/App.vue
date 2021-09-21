@@ -28,6 +28,7 @@
                   :period="currentPeriod"
                   :highlight="timelineHighlight"
                   :current-snapshot="currentSnapshot"
+                  :max-zoom-level="maxTimelineZoomLevel"
                   @goto-period="gotoPeriod"
           ></Timeline>
         </div>
@@ -52,7 +53,7 @@ import Timeline from "./components/Timeline.vue";
 import TimelineBreadcrumbs from "./components/TimelineBreadcrumbs.vue";
 import CalendarYear from "./components/CalendarYear.vue";
 
-import { PywbSnapshot } from "./model.js";
+import { PywbSnapshot, PywbPeriod } from "./model.js";
 
 export default {
   name: "PywbReplayApp",
@@ -65,6 +66,7 @@ export default {
       msgs: [],
       showFullView: false,
       showTimelineView: true,
+      maxTimelineZoomLevel: PywbPeriod.Type.day,
       config: {
         title: "",
         initialView: {}
@@ -83,13 +85,14 @@ export default {
     }
   },
   methods: {
-    gotoPeriod: function(newPeriod/*, initiator*/) {
+    gotoPeriod: function(newPeriod, onlyZoomToPeriod) {
       if (this.timelineHighlight) {
         setTimeout((() => {
           this.timelineHighlight=false;
         }).bind(this), 3000);
       }
-      if (newPeriod.snapshot) {
+      // only go to snapshot if caller did not request to zoom only
+      if (newPeriod.snapshot && !onlyZoomToPeriod) {
         this.gotoSnapshot(newPeriod.snapshot);
       } else {
         // save current period (aka zoom)
@@ -97,7 +100,12 @@ export default {
         if (window.sessionStorage) {
           window.sessionStorage.setItem(this.sessionStorageUrlKey, newPeriod.fullId);
         }
-        this.currentPeriod = newPeriod;
+        // If
+        if (newPeriod.type > this.maxTimelineZoomLevel) {
+          this.currentPeriod = newPeriod.getDay();
+        } else {
+          this.currentPeriod = newPeriod;
+        }
       }
     },
     gotoSnapshot(snapshot) {

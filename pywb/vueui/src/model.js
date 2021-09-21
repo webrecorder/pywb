@@ -435,3 +435,15 @@ PywbPeriod.prototype.getReadableId = function(hasDayCardinalSuffix) {
     return this.snapshot.getTimeFormatted();
   }
 };
+
+PywbPeriod.prototype.getYear = function() { this.get(PywbPeriod.Type.year); };
+PywbPeriod.prototype.getMonth = function() { this.get(PywbPeriod.Type.month); };
+PywbPeriod.prototype.getDay = function() { this.get(PywbPeriod.Type.day); };
+PywbPeriod.prototype.getHour = function() { this.get(PywbPeriod.Type.hour); };
+PywbPeriod.prototype.get = function(type) {
+  if (this.type === type) {
+    return this;
+  } else if (this.type > type) {
+    return this.getParents()[type];
+  }
+};

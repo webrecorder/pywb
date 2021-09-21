@@ -21,24 +21,26 @@
                 <div v-for="subPeriod in period.children"
                      :key="subPeriod.id"
                      class="period"
-                     :class="{empty: !subPeriod.snapshotCount, highlight: highlightPeriod === subPeriod, 'last-level': isLastZoomLevel}"
-                     @click="changePeriod(subPeriod, $event)"
-                     @mouseover="setTooltipPeriod(subPeriod, $event)"
-                     @mouseout="setTooltipPeriod(null, $event)"
+                     :class="{empty: !subPeriod.snapshotCount, highlight: highlightPeriod === subPeriod, 'last-level': !canZoom}"
                 >
                     <div class="histo">
                         <div class="line"
                              v-for="histoPeriod in subPeriod.children"
                              :key="histoPeriod.id"
                              :style="{height: getHistoLineHeight(histoPeriod.snapshotCount)}"
-                             :class="{'has-single-snap': !!histoPeriod.snapshotPeriod}"
+                             :class="{'has-single-snapshot': histoPeriod.snapshotCount === 1}"
                              @click="changePeriod(histoPeriod, $event)"
                              @mouseover="setTooltipPeriod(histoPeriod, $event)"
                              @mouseout="setTooltipPeriod(null, $event)"
                         >
                         </div>
                     </div>
-                    <div class="inner">
+                    <div class="inner"
+                         :class="{'has-single-snapshot': subPeriod.snapshotCount === 1}"
+                         @click="changePeriod(subPeriod, $event)"
+                         @mouseover="setTooltipPeriod(subPeriod, $event)"
+                         @mouseout="setTooltipPeriod(null, $event)"
+                    >
                         <div class="label">
                           {{subPeriod.getReadableId()}}
                         </div>
@@ -59,6 +61,7 @@ export default{
     currentSnapshot: { required: false, default: null},
     highlight: { required: false, default: false},
     stayWithinPeriod: { required: false, default: false},
+    maxZoomLevel: { required: false, default: PywbPeriod.Type.snapshot}
   },
   data: function() {
     return {
@@ -85,8 +88,8 @@ export default{
   },
   computed: {
     // this determins which the last zoom level is before we go straight to showing snapshot
-    isLastZoomLevel() {
-      return this.period.type === PywbPeriod.Type.day;
+    canZoom() {
+      return this.period.type < this.maxZoomLevel;
     },
     isTooltipPeriodDayOrHour() {
       return this.tooltipPeriod.type >= PywbPeriod.Type.day;
@@ -111,7 +114,7 @@ export default{
     scrollNext: function () {
       if (this.isScrollMax) {
         if (this.nextPeriod) {
-          this.$emit("goto-period", this.nextPeriod);
+          this.$emit("goto-period", this.nextPeriod, true /* onlyZoomToPeriod */);
         }
       } else {
         this.$refs.periodScroll.scrollLeft += 30;
@@ -120,7 +123,7 @@ export default{
     scrollPrev: function () {
       if (this.isScrollZero) {
         if (this.previousPeriod) {
-          this.$emit("goto-period", this.previousPeriod);
+          this.$emit("goto-period", this.previousPeriod, true /* onlyZoomToPeriod */);
         }
       } else {
         this.$refs.periodScroll.scrollLeft -= 30;
@@ -149,7 +152,7 @@ export default{
         } else {
         // if contains mulitple snapshots,
           // zoom if ZOOM level is day or less, OR if period contain TOO MANY (>10)
-          if (period.type <= PywbPeriod.Type.day) {
+          if (this.canZoom) {
             periodToChangeTo = period;
           }
         }
@@ -166,10 +169,10 @@ export default{
       this.addEmptySubPeriods();
       const previousPeriod = this.period.getPrevious();
       const nextPeriod = this.period.getNext();
-      if (this.stayWithinPeriod && this.stayWithinPeriod.contains(previousPeriod)) {
+      if (!this.stayWithinPeriod || this.stayWithinPeriod.contains(previousPeriod)) {
         this.previousPeriod = previousPeriod;
       }
-      if (this.stayWithinPeriod && this.stayWithinPeriod.contains(nextPeriod)) {
+      if (!this.stayWithinPeriod || this.stayWithinPeriod.contains(nextPeriod)) {
         this.nextPeriod = nextPeriod;
       }
 
@@ -300,9 +303,7 @@ export default{
         white-space: normal;
         vertical-align: top;
         text-align: center;
-        /*background-color: #eee;*/
-        /*border-right: 1px solid white; !* all other periods have right border, except first period*!*/
-        cursor: pointer;
+        background-color: transparent;
 
         transition: background-color 500ms ease-in-out;
     }
@@ -335,7 +336,15 @@ export default{
         background-color: white;
         border-top: 1px solid gray;
         white-space: nowrap;
+        cursor: zoom-in;
     }
+    .timeline .period .inner.has-single-snapshot {
+      cursor: pointer;
+    }
+    .timeline .period.last-level .inner, .timeline .period.empty .inner {
+      cursor: default;
+    }
+
     .timeline .period .label {
       width: 100%;
       font-weight: bold;
@@ -367,6 +376,10 @@ export default{
         background-color: #a6cdf5;
         margin: 0;
         padding: 0;
+        cursor: zoom-in;
+    }
+    .timeline .period .histo .line.has-single-snapshot {
+      cursor: pointer;
     }
 
     /* Last level period histogram spaces things evenly */
