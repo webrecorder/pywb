@@ -5,12 +5,14 @@
         <div class="logo"><img :src="config.logoImg" /></div>
         <div class="timeline-wrap">
           <div class="line">
-            <TimelineBreadcrumbs
-                    v-if="currentPeriod && showTimelineView"
-                    :period="currentPeriod"
-                    @goto-period="gotoPeriod"
-                    class="breadcrumbs"
-            ></TimelineBreadcrumbs>
+            <div class="breadcrumbs-wrap">
+              <TimelineBreadcrumbs
+                  v-if="currentPeriod && showTimelineView"
+                  :period="currentPeriod"
+                  @goto-period="gotoPeriod"
+              ></TimelineBreadcrumbs>
+              <span v-if="!showTimelineView" v-html="'&nbsp;'"></span><!-- for spacing -->
+            </div>
 
             <div class="toggles">
               <span class="toggle" :class="{expanded: showFullView}" @click="showFullView = !showFullView" :title="(showTimelineView ? 'show':'hide') + ' calendar'">
@@ -187,7 +189,7 @@ export default {
     position: relative;
   }
 
-  .timeline-wrap .line .breadcrumbs {
+  .timeline-wrap .line .breadcrumbs-wrap {
     display: inline-block;
     flex-grow: 1;
   }

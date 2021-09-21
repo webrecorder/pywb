@@ -217,6 +217,8 @@ export default{
         height: 60px;
         margin: 5px;
         justify-content: left;
+        border: 1px solid black;
+        border-radius: 5px;
     }
 
     .timeline .id {
