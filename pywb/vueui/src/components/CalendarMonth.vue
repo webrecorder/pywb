@@ -84,7 +84,7 @@
 
 <template>
     <div class="calendar-month" :class="{current: isCurrent}">
-        <h3>{{month.getReadableId()}} ({{month.snapshotCount}})</h3>
+        <h3>{{month.getReadableId()}} <span v-if="month.snapshotCount">({{ month.snapshotCount }})</span></h3>
         <div v-if="month.snapshotCount">
             <span v-for="(day) in ['S', 'M', 'T', 'W', 'H', 'F', 'S']" class="day" :style="dayStyle">{{day}}</span><br/>
             <span v-for="(day,i) in days"><br v-if="i && i % 7===0"/><span class="day" :class="{empty: !day || !day.snapshotCount}" :style="dayStyle"  @click="gotoDay(day, $event)"><template v-if="day"><span class="size" v-if="day.snapshotCount" :style="getDayCountCircleStyle(day.snapshotCount)"> </span><span class="day-id">{{day.id}}</span><span v-if="day.snapshotCount" class="count">{{day.snapshotCount}} capture<span v-if="day.snapshotCount!==1">s</span></span></template><template v-else v-html="'&nbsp;'"></template></span></span>
@@ -95,7 +95,7 @@
 
 <script>
 export default {
-  props: ["month", "year", "isCurrent"],
+  props: ["month", "year", "isCurrent", "hasCurrentSnapshot"],
   data: function() {
     return {
       maxInDay: 0,
