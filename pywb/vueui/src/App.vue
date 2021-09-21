@@ -93,7 +93,7 @@ export default {
       }
       // only go to snapshot if caller did not request to zoom only
       if (newPeriod.snapshot && !onlyZoomToPeriod) {
-        this.gotoSnapshot(newPeriod.snapshot);
+        this.gotoSnapshot(newPeriod.snapshot, newPeriod);
       } else {
         // save current period (aka zoom)
         // use sessionStorage (not localStorage), as we want this to be a very temporary memory for current page tab/window and no longer; NOTE: it serves when navigating from an "*" query to a specific capture and subsequent reloads
@@ -102,14 +102,23 @@ export default {
         }
         // If
         if (newPeriod.type > this.maxTimelineZoomLevel) {
-          this.currentPeriod = newPeriod.getDay();
+          this.currentPeriod = newPeriod.get(this.maxTimelineZoomLevel);
         } else {
           this.currentPeriod = newPeriod;
         }
       }
     },
-    gotoSnapshot(snapshot) {
+    gotoSnapshot(snapshot, fromPeriod) {
       this.currentSnapshot = snapshot;
+
+      // if the current period is not matching the current snapshot, updated it!
+      if (fromPeriod && !this.currentPeriod.contains(fromPeriod)) {
+        const fromPeriodAtMaxZoomLevel = fromPeriod.get(this.maxTimelineZoomLevel);
+        if (fromPeriodAtMaxZoomLevel !== this.currentPeriod) {
+          this.currentPeriod = fromPeriodAtMaxZoomLevel;
+        }
+      }
+
       // COMMUNICATE TO ContentFrame
       this.$emit("show-snapshot", snapshot);
       this.showFullView = false;

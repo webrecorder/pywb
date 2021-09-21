@@ -31,6 +31,7 @@
                     :month="month"
                     :year="year"
                     :is-current="month === currentMonth"
+                    :has-current-snapshot="month === currentMonth"
                     @goto-period="$emit('goto-period', $event)"
                     @show-day-timeline="setCurrentTimeline"
             ></CalendarMonth>
@@ -52,7 +53,7 @@ import { PywbPeriod } from "../model.js";
 
 export default {
   components: {CalendarMonth, TimelineLinear, Tooltip},
-  props: ["period"],
+  props: ["period", "currentSnapshot"],
   data: function() {
     return {
       firstZoomLevel: PywbPeriod.Type.day,
