@@ -318,6 +318,10 @@ PywbPeriod.prototype.getParents = function(skipAllTime=false) {
   return parents;
 };
 
+PywbPeriod.prototype.contains = function(period) {
+  return !!period.getParents().find(this);
+};
+
 PywbPeriod.prototype.snapshot = null;
 PywbPeriod.prototype.snapshotPeriod = null;
 

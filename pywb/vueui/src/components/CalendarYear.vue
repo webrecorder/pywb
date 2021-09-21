@@ -31,20 +31,35 @@
                     :year="year"
                     :is-current="month === currentMonth"
                     @goto-period="$emit('goto-period', $event)"
+                    @show-day-timeline="setCurrentTimeline"
             ></CalendarMonth>
         </div>
+        <Tooltip :position="currentTimelinePos" v-if="currentTimeline">
+          <Timeline
+              :period="currentTimelinePeriod"
+              :stay-within-period="currentTimeline"
+              @goto-period="gotoPeriod"
+          ></Timeline>
+        </Tooltip>
     </div>
 </template>
 
 <script>
 import CalendarMonth from "./CalendarMonth.vue";
+import Timeline from "./Timeline.vue";
+import Tooltip from "./Tooltip.vue";
 import { PywbPeriod } from "../model.js";
 
 export default {
-  components: {CalendarMonth},
+  components: {CalendarMonth, Timeline, Tooltip},
   props: ["period"],
   data: function() {
-    return {};
+    return {
+      firstZoomLevel: PywbPeriod.Type.day,
+      currentTimeline: null,
+      currentTimelinePeriod: null,
+      currentTimelinePos: '0,0'
+    };
   },
   computed: {
     year() {
@@ -70,6 +85,22 @@ export default {
       }
       return month;
     }
+  },
+  methods: {
+    setCurrentTimeline(day, event) {
+      this.currentTimeline = day;
+      this.currentTimelinePeriod = day;
+      this.currentTimelinePos = `${event.x},${event.y}`;
+    },
+    gotoPeriod(period) {
+      console.log('calendar year gotoperiod', period.id);
+      if (period.snapshot || period.snapshotPeriod) {
+        this.$emit('goto-period', period);
+      } else {
+        this.currentTimelinePeriod = period;
+      }
+    },
+
   }
 };
 </script>

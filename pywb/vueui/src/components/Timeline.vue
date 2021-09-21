@@ -54,7 +54,12 @@
 import { PywbPeriod } from "../model.js";
 
 export default{
-  props: ["period", "currentSnapshot", "highlight"],
+  props: {
+    period: { required: true },
+    currentSnapshot: { required: false, default: null},
+    highlight: { required: false, default: false},
+    stayWithinPeriod: { required: false, default: false},
+  },
   data: function() {
     return {
       highlightPeriod: null,
@@ -142,7 +147,8 @@ export default{
             periodToChangeTo = period.snapshotPeriod;
           }
         } else {
-        // if contains mulitple snapshots, just ZOOM to period clicked itself
+        // if contains mulitple snapshots,
+          // zoom if ZOOM level is day or less, OR if period contain TOO MANY (>10)
           if (period.type <= PywbPeriod.Type.day) {
             periodToChangeTo = period;
           }
@@ -158,11 +164,17 @@ export default{
     },
     onPeriodChanged(newPeriod, oldPeriod) {
       this.addEmptySubPeriods();
-      this.previousPeriod = this.period.getPrevious();
-      this.nextPeriod = this.period.getNext();
+      const previousPeriod = this.period.getPrevious();
+      const nextPeriod = this.period.getNext();
+      if (this.stayWithinPeriod && this.stayWithinPeriod.contains(previousPeriod)) {
+        this.previousPeriod = previousPeriod;
+      }
+      if (this.stayWithinPeriod && this.stayWithinPeriod.contains(nextPeriod)) {
+        this.nextPeriod = nextPeriod;
+      }
 
       // detect if going up level of period (new period type should be in old period parents)
-      if (oldPeriod.type - newPeriod.type > 0) {
+      if (oldPeriod && oldPeriod.type - newPeriod.type > 0) {
         let highlightPeriod = oldPeriod;
         for (let i=oldPeriod.type - newPeriod.type; i > 1; i--) {
           highlightPeriod = highlightPeriod.parent;
@@ -236,9 +248,10 @@ export default{
     .timeline .arrow.next {
     }
     .timeline .arrow.disabled, .timeline .arrow.disabled:hover {
-        color: lightgray;
+        /*color: lightgray;*/
         background-color: transparent;
-        cursor: not-allowed;
+        /*cursor: not-allowed;*/
+        visibility: hidden;
     }
     .timeline .arrow:hover {
         background-color: antiquewhite;
