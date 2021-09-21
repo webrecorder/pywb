@@ -2,11 +2,16 @@
     <div class="breadcrumbs">
         <template v-if="parents.length">
             <span class="item">
-                <span class="goto" @click="changePeriod(parents[0])">{{parents[0].getReadableId(true)}}</span>
+                <span class="goto" @click="changePeriod(parents[0])" :title="getPeriodZoomOutText(parents[0])">
+                  <img src="/static/zoom-out-icon-333316.png" /> {{parents[0].getReadableId(true)}}
+                </span>
             </span>
             &gt;
             <span v-for="(parent,i) in parents" :key="parent.id" class="item" v-if="i > 0">
-                <span class="goto" @click="changePeriod(parent)">{{parent.getReadableId(true)}}</span>
+                <span class="goto" @click="changePeriod(parent)" :title="getPeriodZoomOutText(parent)">
+                  {{parent.getReadableId(true)}}
+                </span>
+                &gt;
             </span>
         </template>
         <span class="item">
@@ -29,6 +34,9 @@ export default {
     }
   },
   methods: {
+    getPeriodZoomOutText(period) {
+      return 'Zoom out to '+period.getReadableId(true)+ ' ('+period.snapshotCount+' captures)';
+    },
     changePeriod(period) {
       if (period.snapshotCount) {
         this.$emit("goto-period", period);
@@ -52,22 +60,22 @@ export default {
         vertical-align: middle;
         font-size: inherit;
     }
-    .breadcrumbs .count .verbose {
-        display: none;
-    }
-    .breadcrumbs .count:hover .verbose {
-        display: inline;
-    }
 
     .breadcrumbs .item .goto {
+        display: inline-block;
         margin: 1px;
-        cursor: pointer;
-        color: darkslateblue;
-        text-decoration: underline;
+        padding: 1px;
+        cursor: zoom-out;
+        border-radius: 5px;
+        background-color: #eeeeee;
      }
     .breadcrumbs .item .goto:hover {
         background-color: #a6cdf5;
     }
+    .breadcrumbs .item .goto img {
+      height: 15px;
+    }
+
     .breadcrumbs .item.snapshot {
         display: block;
     }
