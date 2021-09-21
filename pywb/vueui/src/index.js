@@ -136,7 +136,7 @@ class VueBannerWrapper
 {
   constructor(loader) {
     this.loading = true;
-    this.lastUrl = null;
+    this.lastSurt = null;
     this.loader = loader;
   }
 
@@ -154,10 +154,37 @@ class VueBannerWrapper
     const type = event.data.wb_type;
 
     if (type === "load" || type === "replace-url") {
-      if (event.data.url !== this.lastUrl) {
+      const surt = this.getSurt(event.data.url);
+
+      if (surt !== this.lastSurt) {
         this.loader.updateSnapshot(event.data.url, event.data.ts);
-        this.lastUrl = event.data.url;
+        this.lastSurt = surt;
       }
+    }
+  }
+
+  getSurt(url) {
+    try {
+      if (!url.startsWith("https:") && !url.startsWith("http:")) {
+        return url;
+      }
+      url = url.replace(/^(https?:\/\/)www\d*\./, "$1");
+      const urlObj = new URL(url.toLowerCase());
+
+      const hostParts = urlObj.hostname.split(".").reverse();
+      let surt = hostParts.join(",");
+      if (urlObj.port) {
+        surt += ":" + urlObj.port;
+      }
+      surt += ")";
+      surt += urlObj.pathname;
+      if (urlObj.search) {
+        urlObj.searchParams.sort();
+        surt += urlObj.search;
+      }
+      return surt;
+    } catch (e) {
+      return url;
     }
   }
 }
