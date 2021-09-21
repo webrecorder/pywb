@@ -35,23 +35,22 @@
             ></CalendarMonth>
         </div>
         <Tooltip :position="currentTimelinePos" v-if="currentTimeline">
-          <Timeline
+          <TimelineLinear
               :period="currentTimelinePeriod"
-              :stay-within-period="currentTimeline"
               @goto-period="gotoPeriod"
-          ></Timeline>
+          ></TimelineLinear>
         </Tooltip>
     </div>
 </template>
 
 <script>
 import CalendarMonth from "./CalendarMonth.vue";
-import Timeline from "./Timeline.vue";
+import TimelineLinear from "./TimelineLinear.vue";
 import Tooltip from "./Tooltip.vue";
 import { PywbPeriod } from "../model.js";
 
 export default {
-  components: {CalendarMonth, Timeline, Tooltip},
+  components: {CalendarMonth, TimelineLinear, Tooltip},
   props: ["period"],
   data: function() {
     return {
@@ -93,7 +92,6 @@ export default {
       this.currentTimelinePos = `${event.x},${event.y}`;
     },
     gotoPeriod(period) {
-      console.log('calendar year gotoperiod', period.id);
       if (period.snapshot || period.snapshotPeriod) {
         this.$emit('goto-period', period);
       } else {

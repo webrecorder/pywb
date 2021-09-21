@@ -1,5 +1,5 @@
 <template>
-  <div class="tooltip" :style="{left: x+'px', top: y+'px'}">
+  <div class="pywb-tooltip" :style="{left: x+'px', top: y+'px'}">
     <slot></slot>
   </div>
 </template>
@@ -38,7 +38,7 @@ export default {
 </script>
 
 <style scoped>
-.tooltip {
+.pywb-tooltip {
   position: fixed;
   top: 0;
   left: 0;

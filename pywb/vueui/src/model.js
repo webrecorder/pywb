@@ -354,6 +354,27 @@ PywbPeriod.prototype.setSnapshot = function(snap) {
     parent = parent.parent;
   }
 };
+
+
+PywbPeriod.prototype.getSnapshotPeriodsFlat = function(flatArray=false) {
+  if (!flatArray) {
+    flatArray = [];
+  }
+  if (!this.snapshotCount) {
+    return flatArray;
+  }
+
+  if (this.snapshotCount === 1) {
+    flatArray.push(this.snapshotPeriod || this);
+    return flatArray;
+  }
+
+  this.children.forEach(child => {
+    child.getSnapshotPeriodsFlat(flatArray);
+  });
+  return flatArray;
+};
+
 /**
  * Return the "full" id, which includes all parents ID and self ID, delimited by a hyphen "-"
  * @returns {string}
