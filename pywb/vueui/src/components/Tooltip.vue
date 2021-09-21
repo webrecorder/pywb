@@ -1,5 +1,5 @@
 <template>
-  <div class="pywb-tooltip" :style="{left: x+'px', top: y+'px'}">
+  <div class="pywb-tooltip">
     <slot></slot>
   </div>
 </template>
@@ -9,29 +9,37 @@ let elStyle = null;
 export default {
   name: "Tooltip",
   props: ['position'],
-  data() {
-    return {
-      x: 0,
-      y: 0
-    }
-  },
   mounted() {
     this.$watch('position', this.updatePosition);
     this.updatePosition();
   },
   methods: {
     updatePosition() {
+      this.$el.style.top = 0;
+      this.$el.style.left = 0;
+      this.$el.style.maxHeight = 'auto';
+
       const style = window.getComputedStyle(this.$el);
       const width = parseInt(style.width);
       const height = parseInt(style.height);
       const spacing = 10;
       const [initX, initY] = this.position.split(',').map(s => parseInt(s));
       if (window.innerWidth < initX + (spacing*2) + width) {
-        this.x = initX - (width + spacing);
+        this.$el.style.left = (initX - (width + spacing)) + 'px';
       } else {
-        this.x = initX + spacing;
+        this.$el.style.left = (initX + spacing) + 'px';
       }
-      this.y = initY - (spacing + height);
+      if ((window.innerHeight < initY + (spacing*2) + height) && (initY - (spacing*2) - height < 0) ) {
+        if (initY > window.innerHeight / 2) {
+          this.$el.style.top = (window.innerHeight - (height + (spacing*2))) + 'px';
+        } else {
+          this.$el.style.top = (spacing*2) + 'px';
+        }
+      } else if (window.innerHeight < initY + (spacing*2) + height) {
+        this.$el.style.top = (initY - (spacing + height)) + 'px';
+      } else {
+        this.$el.style.top = initY + 'px';
+      }
     }
   }
 }
