@@ -34,7 +34,7 @@
                     @show-day-timeline="setCurrentTimeline"
             ></CalendarMonth>
         </div>
-        <Tooltip :position="currentTimelinePos" v-if="currentTimeline">
+        <Tooltip :position="currentTimelinePos" v-if="currentTimelinePeriod" ref="timelineLinearTooltip">
           <TimelineLinear
               :period="currentTimelinePeriod"
               @goto-period="gotoPeriod"
@@ -55,10 +55,12 @@ export default {
   data: function() {
     return {
       firstZoomLevel: PywbPeriod.Type.day,
-      currentTimeline: null,
       currentTimelinePeriod: null,
       currentTimelinePos: '0,0'
     };
+  },
+  mounted() {
+    document.querySelector('body').addEventListener('click', this.resetCurrentTimeline);
   },
   computed: {
     year() {
@@ -86,10 +88,30 @@ export default {
     }
   },
   methods: {
+    resetCurrentTimeline(event) {
+      if (event && this.$refs.timelineLinearTooltip) {
+        let el = event.target;
+        let clickWithinTooltip = false;
+        while(el.parentElement) {
+          if (el === this.$refs.timelineLinearTooltip.$el) {
+            clickWithinTooltip = true;
+            break;
+          }
+          el = el.parentElement;
+        }
+        if (!clickWithinTooltip) {
+          this.currentTimelinePeriod = null;
+        }
+      }
+    },
     setCurrentTimeline(day, event) {
-      this.currentTimeline = day;
       this.currentTimelinePeriod = day;
+      if (!day) {
+        return;
+      }
       this.currentTimelinePos = `${event.x},${event.y}`;
+      event.stopPropagation();
+      event.preventDefault();
     },
     gotoPeriod(period) {
       if (period.snapshot || period.snapshotPeriod) {
