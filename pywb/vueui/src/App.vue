@@ -100,7 +100,7 @@ export default {
         if (window.sessionStorage) {
           window.sessionStorage.setItem(this.sessionStorageUrlKey, newPeriod.fullId);
         }
-        // If
+        // If new period goes beyond allowed max level
         if (newPeriod.type > this.maxTimelineZoomLevel) {
           this.currentPeriod = newPeriod.get(this.maxTimelineZoomLevel);
         } else {
