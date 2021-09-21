@@ -5,8 +5,10 @@
     <div>{{ period.snapshotCount }} capture<span v-if="period.snapshotCount > 1">s</span></div>
   </div>
 
-  <div v-for="period in snapshotPeriods">
-    <span class="link" @click="gotoPeriod(period)">{{period.snapshot.getTimeFormatted()}}</span>
+  <div class="list">
+    <div v-for="period in snapshotPeriods">
+      <span class="link" @click="gotoPeriod(period)">{{period.snapshot.getTimeFormatted()}}</span>
+    </div>
   </div>
 </div>
 </template>
@@ -30,14 +32,16 @@ export default {
 
 <style scoped>
 .timeline-linear {
-  max-height: 80vh;
-  min-height: 50px;
   width: auto;
-  overflow: scroll;
   padding: 5px;
   background-color: white;
   border: 1px solid gray;
   border-radius: 5px;
+}
+.timeline-linear .list {
+  max-height: 80vh;
+  min-height: 50px;
+  overflow: scroll;
 }
 .timeline-linear .title {
   border-bottom: 1px solid black;

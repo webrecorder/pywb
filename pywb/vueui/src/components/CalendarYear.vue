@@ -3,6 +3,7 @@
         position: fixed;
         z-index: 10;
         height: 80vh;
+        overflow: scroll;
         width: 100%;
         background-color: white;
     }
