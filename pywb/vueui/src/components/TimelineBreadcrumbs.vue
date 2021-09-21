@@ -39,6 +39,9 @@ export default {
 </script>
 
 <style>
+    .breadcrumbs {
+      text-align: center;
+    }
     .breadcrumbs .item {
         position: relative;
         display: inline;
