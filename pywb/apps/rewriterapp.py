@@ -520,6 +520,7 @@ class RewriterApp(object):
                                                    coll=kwargs.get('coll', ''),
                                                    replay_mod=self.replay_mod,
                                                    metadata=kwargs.get('metadata', {}),
+                                                   ui=kwargs.get('ui', {}),
                                                    config=self.config))
 
         cookie_rewriter = None
@@ -897,7 +898,9 @@ class RewriterApp(object):
         pass
 
     def get_top_frame_params(self, wb_url, kwargs):
-        return {'metadata': kwargs.get('metadata', {})}
+        return {'metadata': kwargs.get('metadata', {}),
+                'ui': kwargs.get('ui', {})
+               }
 
     def handle_custom_response(self, environ, wb_url, full_prefix, host_prefix, kwargs):
         if self.is_framed_replay(wb_url):
