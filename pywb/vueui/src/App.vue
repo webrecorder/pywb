@@ -6,21 +6,23 @@
         <div class="timeline-wrap">
           <div class="line">
             <TimelineBreadcrumbs
-                    v-if="currentPeriod"
+                    v-if="currentPeriod && showTimelineView"
                     :period="currentPeriod"
                     @goto-period="gotoPeriod"
                     class="breadcrumbs"
             ></TimelineBreadcrumbs>
 
             <div class="toggles">
-              <span class="toggle" :class="{expanded: showFullView}" @click="showFullView = !showFullView">
-                <template v-if="!showFullView"><span class="detail">show year calendar</span></template><template v-else><span class="detail">hide year calendar</span></template>
+              <span class="toggle" :class="{expanded: showFullView}" @click="showFullView = !showFullView" :title="(showTimelineView ? 'show':'hide') + ' calendar'">
                 <img src="/static/calendar-icon.png" />
+              </span>
+              <span class="toggle" :class="{expanded: showTimelineView}" @click="showTimelineView = !showTimelineView" :title="(showTimelineView ? 'show':'hide') + ' timeline'">
+                <img src="/static/timeline-icon.png" />
               </span>
             </div>
           </div>
           <Timeline
-                  v-if="currentPeriod"
+                  v-if="currentPeriod && showTimelineView"
                   :period="currentPeriod"
                   :highlight="timelineHighlight"
                   :current-snapshot="currentSnapshot"
@@ -60,6 +62,7 @@ export default {
       currentSnapshot: null,
       msgs: [],
       showFullView: false,
+      showTimelineView: true,
       config: {
         title: "",
         initialView: {}
@@ -108,8 +111,10 @@ export default {
       }
       if (this.config.initialView.timestamp === undefined) {
         this.showFullView = true;
+        this.showTimelineView = true;
       } else {
         this.showFullView = false;
+        this.showFullView = true;
         this.setSnapshot(this.config.initialView);
       }
       if (window.sessionStorage) {
@@ -191,24 +196,20 @@ export default {
     flex-shrink: 1;
   }
 
-  .toggles .toggle {
+  .toggles > .toggle {
+    display: inline-block;
     border-radius: 5px;
-    padding: 4px;
+    padding: 0 4px;
+    height: 100%;
     cursor: zoom-in;
   }
-  .toggles .toggle img {
-    width: 17px;
+  .toggles > .toggle > img {
+    height: 18px;
     display: inline-block;
     margin-top: 2px;
   }
   .toggles .toggle:hover {
     background-color: #eeeeee;
-  }
-  .toggles .toggle .detail {
-    display: none;
-  }
-  .toggles .toggle:hover .detail {
-    display: inline;
   }
   .toggles .toggle.expanded {
     background-color: #eeeeee;
