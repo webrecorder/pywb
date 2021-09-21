@@ -65,9 +65,10 @@ export default {
     document.querySelector('body').addEventListener('click', this.resetCurrentTimeline);
   },
   computed: {
-    year() {
+    year() { // the year that the timeline period is in
       let year = null;
       if (this.period.type === PywbPeriod.Type.all) {
+        // if timeline is showing all year => pick the LAST YEAR
         year = this.period.children[this.period.children.length-1];
       } else if (this.period.type === PywbPeriod.Type.year) {
         year = this.period;
@@ -79,7 +80,7 @@ export default {
       }
       return year;
     },
-    currentMonth() {
+    currentMonth() { // the month that the timeline period is in
       let month = null;
       if (this.period.type === PywbPeriod.Type.month) {
         month = this.period;
