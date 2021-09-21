@@ -18,17 +18,20 @@ window.banner_info = {
     locale_prefixes: {{ get_locale_prefixes() | tojson }},
     prefix: "{{ wb_prefix }}",
     staticPrefix: "{{ static_prefix }}"
+
+    logo: "{{ ui['logo'] }}"
 };
 </script>
 
-<link rel='stylesheet' href='{{ static_prefix }}/default_banner.css'/>
 
 {% if is_framed or old_banner %}
 <!-- default banner, create through js -->
+<link rel='stylesheet' href='{{ static_prefix }}/default_banner.css'/>
 <script src='{{ static_prefix }}/default_banner.js'> </script>
 
 {% else %}
 
+<link rel='stylesheet' href='{{ static_prefix }}/vue_banner.css'/>
 <script src="{{ static_prefix }}/vue/vueui.js"></script>
 <script>
   VueUI.main("{{ static_prefix }}", "{{ url }}", "{{ wb_prefix }}", "{{ timestamp }}");

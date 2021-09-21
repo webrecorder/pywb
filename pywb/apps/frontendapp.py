@@ -363,6 +363,9 @@ class FrontEndApp(object):
         else:
             coll_config['metadata'] = self.metadata_cache.load(coll) or {}
 
+        if 'ui' in self.warcserver.config:
+            coll_config['ui'] = self.warcserver.config['ui']
+
         return coll_config
 
     def serve_coll_page(self, environ, coll='$root'):
