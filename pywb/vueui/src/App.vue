@@ -42,7 +42,8 @@
       </div>
     </div>
     <CalendarYear v-if="showFullView"
-                   :period="currentPeriod"
+                  :period="currentPeriod"
+                  :current-snapshot="currentSnapshot"
                    @goto-period="gotoPeriod">
     </CalendarYear>
   </div>
