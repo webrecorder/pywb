@@ -90,7 +90,7 @@ def rewrite_tw_dash(string, *args):
     try:
         best_variant = None
         best_bitrate = 0
-        max_resolution, max_bandwidth = RewriteDASH()._get_adaptive_metadata(None)
+        max_bitrate = 5000000
 
         data = json.loads(string)
         for variant in data["variants"]:
@@ -98,7 +98,7 @@ def rewrite_tw_dash(string, *args):
                 continue
 
             bitrate = variant.get("bitrate")
-            if bitrate and bitrate > best_bitrate and bitrate <= max_bandwidth:
+            if bitrate and bitrate > best_bitrate and bitrate <= max_bitrate:
                 best_variant = variant
                 best_bitrate = bitrate
 
