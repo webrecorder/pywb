@@ -331,10 +331,14 @@ PywbPeriod.prototype.contains = function(periodOrSnapshot) {
     return true; // all-time contains everything
   }
   if (periodOrSnapshot instanceof PywbPeriod) {
-    return periodOrSnapshot.getParents(true).slice(0,this.type).join(PywbPeriodIdDelimiter) === this.fullId;
+    return periodOrSnapshot.getParents(true).slice(0,this.type).map(p => p.id).join(PywbPeriodIdDelimiter) === this.fullId;
   }
   if (periodOrSnapshot instanceof PywbSnapshot) {
-    return periodOrSnapshot.getParentIds(true).slice(0,this.type).join(PywbPeriodIdDelimiter) === this.fullId;
+    if (this.type === PywbPeriod.Type.snapshot) {
+      return periodOrSnapshot.getFullId() === this.fullId;
+    } else {
+      return periodOrSnapshot.getParentIds(true).slice(0,this.type).join(PywbPeriodIdDelimiter) === this.fullId;
+    }
   }
   return false;
 };
