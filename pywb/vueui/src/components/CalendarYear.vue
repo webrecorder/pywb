@@ -30,8 +30,8 @@
                     :key="month.id"
                     :month="month"
                     :year="year"
+                    :current-snapshot="containsCurrentSnapshot ? currentSnapshot : null"
                     :is-current="month === currentMonth"
-                    :has-current-snapshot="month === currentMonth"
                     @goto-period="$emit('goto-period', $event)"
                     @show-day-timeline="setCurrentTimeline"
             ></CalendarMonth>
@@ -39,6 +39,7 @@
         <Tooltip :position="currentTimelinePos" v-if="currentTimelinePeriod" ref="timelineLinearTooltip">
           <TimelineLinear
               :period="currentTimelinePeriod"
+              :current-snapshot="containsCurrentSnapshot ? currentSnapshot : null"
               @goto-period="gotoPeriod"
           ></TimelineLinear>
         </Tooltip>
@@ -67,9 +68,14 @@ export default {
   computed: {
     year() { // the year that the timeline period is in
       let year = null;
+      // if timeline is showing all year
       if (this.period.type === PywbPeriod.Type.all) {
-        // if timeline is showing all year => pick the LAST YEAR
-        year = this.period.children[this.period.children.length-1];
+        // if no current snapshot => pick the LAST YEAR
+        if (!this.currentSnapshot) {
+          year = this.period.children[this.period.children.length-1];
+        } else {
+          year = this.period.findByFullId(String(this.currentSnapshot.year));
+        }
       } else if (this.period.type === PywbPeriod.Type.year) {
         year = this.period;
       } else {
@@ -88,6 +94,10 @@ export default {
         month = this.period.getParents().filter(p => p.type === PywbPeriod.Type.month)[0];
       }
       return month;
+    },
+    containsCurrentSnapshot() {
+      return this.currentSnapshot &&
+          this.year.contains(this.currentSnapshot);
     }
   },
   methods: {

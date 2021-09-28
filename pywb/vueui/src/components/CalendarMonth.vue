@@ -17,6 +17,9 @@
         background-color: #fff7ce;
         border-radius: 5px;
     }
+    .calendar-month.contains-current-snapshot {
+        border: solid 1px red;
+    }
     .calendar-month > h3 {
         margin: 0;
         font-size: 16px;
@@ -59,6 +62,10 @@
         background-color: rgba(166, 205, 245, .85);
         z-index: 10;
     }
+    .calendar-month .day.contains-current-snapshot .size {
+      background-color: rgba(255, 100, 100, .85);
+    }
+
     .calendar-month .day .day-id {
         position: absolute;
         top: 0;
@@ -83,19 +90,21 @@
 </style>
 
 <template>
-    <div class="calendar-month" :class="{current: isCurrent}">
+    <div class="calendar-month" :class="{current: isCurrent, 'contains-current-snapshot': containsCurrentSnapshot}">
         <h3>{{month.getReadableId()}} <span v-if="month.snapshotCount">({{ month.snapshotCount }})</span></h3>
         <div v-if="month.snapshotCount">
             <span v-for="(day) in ['S', 'M', 'T', 'W', 'H', 'F', 'S']" class="day" :style="dayStyle">{{day}}</span><br/>
-            <span v-for="(day,i) in days"><br v-if="i && i % 7===0"/><span class="day" :class="{empty: !day || !day.snapshotCount}" :style="dayStyle"  @click="gotoDay(day, $event)"><template v-if="day"><span class="size" v-if="day.snapshotCount" :style="getDayCountCircleStyle(day.snapshotCount)"> </span><span class="day-id">{{day.id}}</span><span v-if="day.snapshotCount" class="count">{{day.snapshotCount}} capture<span v-if="day.snapshotCount!==1">s</span></span></template><template v-else v-html="'&nbsp;'"></template></span></span>
+            <span v-for="(day,i) in days"><br v-if="i && i % 7===0"/><span class="day" :class="{empty: !day || !day.snapshotCount, 'contains-current-snapshot':dayContainsCurrentSnapshot(day)}" :style="dayStyle"  @click="gotoDay(day, $event)"><template v-if="day"><span class="size" v-if="day.snapshotCount" :style="getDayCountCircleStyle(day.snapshotCount)"> </span><span class="day-id">{{day.id}}</span><span v-if="day.snapshotCount" class="count">{{day.snapshotCount}} capture<span v-if="day.snapshotCount!==1">s</span></span></template><template v-else v-html="'&nbsp;'"></template></span></span>
         </div>
         <div v-else class="empty">no captures</div>
     </div>
 </template>
 
 <script>
+import {PywbPeriod} from "../model";
+
 export default {
-  props: ["month", "year", "isCurrent", "hasCurrentSnapshot"],
+  props: ["month", "year", "isCurrent", "yearContainsCurrentSnapshot", "currentSnapshot"],
   data: function() {
     return {
       maxInDay: 0,
@@ -127,6 +136,10 @@ export default {
         days.push(null);
       }
       return days;
+    },
+    containsCurrentSnapshot() {
+      return this.currentSnapshot &&
+          this.month.contains(this.currentSnapshot);
     }
   },
   methods: {
@@ -150,6 +163,9 @@ export default {
       // background-color: hsl(${scaledColorHue}, 100%, 50%, .2)
 
       return `width: ${scaledSize}px; height: ${scaledSize}px; top: ${margin}px; left: ${margin}px; border-radius: ${scaledSize/2}px;`;
+    },
+    dayContainsCurrentSnapshot(day) {
+      return !!day && day.snapshotCount > 0 && this.containsCurrentSnapshot && day.contains(this.currentSnapshot);
     }
   }
 };

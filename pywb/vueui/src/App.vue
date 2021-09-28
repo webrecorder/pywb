@@ -38,7 +38,7 @@
       <div>{{ config.url }}</div>
       <div v-if="currentSnapshot && !showFullView">
         <span v-if="config.title">{{ config.title }}</span>
-        {{currentSnapshot.getTimeDateFormatted()}}
+        Current capture: {{currentSnapshot.getTimeDateFormatted()}}
       </div>
     </div>
     <CalendarYear v-if="showFullView"

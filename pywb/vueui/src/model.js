@@ -1,5 +1,5 @@
 const PywbMonthLabels = {1:"Jan", 2:"Feb",3:"Mar",4:"Apr",5:"May",6:"Jun",7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov",12:"Dec"};
-
+const PywbPeriodIdDelimiter = '-';
 export function PywbData(rawSnaps) {
   const allTimePeriod = new PywbPeriod({type: PywbPeriod.Type.all, id: "all"});
   const snapshots = [];
@@ -97,6 +97,14 @@ export class PywbSnapshot {
 
   getTimeFormatted() {
     return (this.hour < 13 ? this.hour : (this.hour % 12)) + ":" + ((this.minute < 10 ? "0":"")+this.minute) + ":" + ((this.second < 10 ? "0":"")+this.second) + " " + (this.hour < 12 ? "am":"pm");
+  }
+
+  getParentIds() {
+    return [this.year, this.month, this.day, Math.ceil((this.hour + .0001) / (24/8))];
+  }
+
+  getFullId() {
+    return [this.year, this.month, this.day, Math.ceil((this.hour + .0001) / (24/8)), this.id].join(PywbPeriodIdDelimiter);
   }
 }
 
@@ -318,8 +326,17 @@ PywbPeriod.prototype.getParents = function(skipAllTime=false) {
   return parents;
 };
 
-PywbPeriod.prototype.contains = function(period) {
-  return !!period.getParents().find(p => p === this);
+PywbPeriod.prototype.contains = function(periodOrSnapshot) {
+  if (this.type === 0) {
+    return true; // all-time contains everything
+  }
+  if (periodOrSnapshot instanceof PywbPeriod) {
+    return periodOrSnapshot.getParents(true).slice(0,this.type).join(PywbPeriodIdDelimiter) === this.fullId;
+  }
+  if (periodOrSnapshot instanceof PywbSnapshot) {
+    return periodOrSnapshot.getParentIds(true).slice(0,this.type).join(PywbPeriodIdDelimiter) === this.fullId;
+  }
+  return false;
 };
 
 PywbPeriod.prototype.snapshot = null;
@@ -376,13 +393,13 @@ PywbPeriod.prototype.getSnapshotPeriodsFlat = function(flatArray=false) {
 };
 
 /**
- * Return the "full" id, which includes all parents ID and self ID, delimited by a hyphen "-"
+ * Return the "full" id, which includes all parents ID and self ID, delimited by a ${PywbPeriodIdDelimiter}
  * @returns {string}
  */
 PywbPeriod.prototype.initFullId = function() {
   const ids = this.getParents(true).map(p => p.id);
   ids.push(this.id);
-  this.fullId = ids.join("-");
+  this.fullId = ids.join(PywbPeriodIdDelimiter);
 };
 
 /**
@@ -395,7 +412,7 @@ PywbPeriod.prototype.findByFullId = function(fullId) {
   if (this.type !== PywbPeriod.Type.all) {
     parent = this.getParents()[0];
   }
-  const ids = fullId.split('-');
+  const ids = fullId.split(PywbPeriodIdDelimiter);
 
   let found = false;
   for(let i=0; i<ids.length; i++) {

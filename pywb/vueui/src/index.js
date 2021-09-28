@@ -64,6 +64,17 @@ class CDXLoader {
 
     app.$mount("#app");
 
+    // TODO (Ilya): make this work with in-page snapshot/capture/replay updates!
+    // app.$on("show-snapshot", snapshot => {
+    //   const replayUrl = app.config.url;
+    //   const url = location.href.replace('/'+replayUrl, '').replace(/\d+$/, '') + snapshot.id + '/' + replayUrl;
+    //   window.history.pushState({url: replayUrl, timestamp: snapshot.id}, document.title, url);
+    //   if (!window.onpopstate) {
+    //     window.onpopstate = (ev) => {
+    //       updateSnapshot(ev.state.url, ev.state.timestamp);
+    //     };
+    //   }
+    // });
     if (loadCallback) {
       app.$on("show-snapshot", loadCallback);
     }

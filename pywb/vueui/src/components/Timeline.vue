@@ -21,14 +21,14 @@
                 <div v-for="subPeriod in period.children"
                      :key="subPeriod.id"
                      class="period"
-                     :class="{empty: !subPeriod.snapshotCount, highlight: highlightPeriod === subPeriod, 'last-level': !canZoom}"
+                     :class="{empty: !subPeriod.snapshotCount, highlight: highlightPeriod === subPeriod, 'last-level': !canZoom, 'contains-current-snapshot': containsCurrentSnapshot(subPeriod) }"
                 >
                     <div class="histo">
                         <div class="line"
                              v-for="histoPeriod in subPeriod.children"
                              :key="histoPeriod.id"
                              :style="{height: getHistoLineHeight(histoPeriod.snapshotCount)}"
-                             :class="{'has-single-snapshot': histoPeriod.snapshotCount === 1}"
+                             :class="{'has-single-snapshot': histoPeriod.snapshotCount === 1, 'contains-current-snapshot': containsCurrentSnapshot(histoPeriod)}"
                              @click="changePeriod(histoPeriod, $event)"
                              @mouseover="setTooltipPeriod(histoPeriod, $event)"
                              @mouseout="setTooltipPeriod(null, $event)"
@@ -93,12 +93,18 @@ export default{
     },
     isTooltipPeriodDayOrHour() {
       return this.tooltipPeriod.type >= PywbPeriod.Type.day;
+    },
+    iContainCurrentSnapshot() {
+      return this.currentSnapshot && this.period.contains(this.currentSnapshot);
     }
   },
   updated() {
     // do something on update
   },
   methods: {
+    containsCurrentSnapshot(period) {
+      return this.iContainCurrentSnapshot && period.contains(this.currentSnapshot);
+    },
     addEmptySubPeriods() {
       this.period.fillEmptyChildPeriods(true);
     },
@@ -315,6 +321,9 @@ export default{
     .timeline .period:hover {
         background-color: #eeeeee;
     }
+    .timeline .period.contains-current-snapshot, .timeline .period.contains-current-snapshot:hover {
+        background-color: #f7def4;
+    }
 
     /* empty period */
     .timeline .period.empty {
@@ -397,6 +406,10 @@ export default{
         /* update line color on hover*/
         .timeline .period .histo .line:hover {
             background-color: #f5a6eb;
+        }
+
+        .timeline .period .histo .line.contains-current-snapshot {
+            background-color: red;
         }
 
         /* Period that contains ONE snapshot only will show snapshot info*/

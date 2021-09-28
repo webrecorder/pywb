@@ -7,7 +7,8 @@
 
   <div class="list">
     <div v-for="period in snapshotPeriods">
-      <span class="link" @click="gotoPeriod(period)">{{period.snapshot.getTimeFormatted()}}</span>
+      <span class="link" @click="gotoPeriod(period)" >{{period.snapshot.getTimeFormatted()}}</span>
+      <span v-if="currentSnapshot.id === period.snapshot.id" class="current">current</span>
     </div>
   </div>
 </div>
@@ -16,10 +17,14 @@
 <script>
 export default {
   name: "TimelineLinear",
-  props: ['period'],
+  props: ['period', 'currentSnapshot'],
   computed: {
     snapshotPeriods() {
       return this.period.getSnapshotPeriodsFlat();
+    },
+    containsCurrentSnapshot() {
+      return this.currentSnapshot &&
+          this.period.contains(this.currentSnapshot);
     }
   },
   methods: {
@@ -55,5 +60,10 @@ export default {
 .timeline-linear .link:hover {
   color: lightseagreen;
   cursor: pointer;
+}
+.timeline-linear .current {
+  background-color: deeppink;
+  color: white;
+  border-radius: 5px;
 }
 </style>
