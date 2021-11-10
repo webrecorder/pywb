@@ -110,6 +110,5 @@ def rewrite_tw_dash(string, *args):
     except Exception as e:
         print(e)
 
-    print("******* RW", string)
     return string
 
