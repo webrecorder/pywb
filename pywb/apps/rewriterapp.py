@@ -97,6 +97,8 @@ class RewriterApp(object):
 
         self.enable_memento = self.config.get('enable_memento')
 
+        self.static_prefix = self.config.get('static_prefix', 'static')
+
         csp_header = self.config.get('csp-header', self.DEFAULT_CSP)
         if csp_header:
             self.csp_header = ('Content-Security-Policy', csp_header)
@@ -323,8 +325,9 @@ class RewriterApp(object):
         rel_prefix = self.get_rel_prefix(environ)
         full_prefix = host_prefix + rel_prefix
         environ['pywb.host_prefix'] = host_prefix
-        pywb_static_prefix = host_prefix + environ.get('pywb.app_prefix', '') + environ.get(
-            'pywb.static_prefix', '/static/')
+        pywb_static_prefix = host_prefix + environ.get('pywb.app_prefix', '') + '/' + self.static_prefix
+        environ['pywb.static_prefix'] = pywb_static_prefix
+        pywb_static_prefix += '/'
         is_proxy = ('wsgiprox.proxy_host' in environ)
 
         # if OPTIONS in proxy mode, just generate the proxy responss
