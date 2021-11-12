@@ -86,3 +86,29 @@ def rewrite_fb_dash(string, *args):
     string += json.dumps(best_ids)
     return string
 
+def rewrite_tw_dash(string, *args):
+    try:
+        best_variant = None
+        best_bitrate = 0
+        max_bitrate = 5000000
+
+        data = json.loads(string)
+        for variant in data["variants"]:
+            if variant["content_type"] != "video/mp4":
+                continue
+
+            bitrate = variant.get("bitrate")
+            if bitrate and bitrate > best_bitrate and bitrate <= max_bitrate:
+                best_variant = variant
+                best_bitrate = bitrate
+
+        if best_variant:
+            data["variants"] = [best_variant]
+
+        string = json.dumps(data)
+
+    except Exception as e:
+        print(e)
+
+    return string
+

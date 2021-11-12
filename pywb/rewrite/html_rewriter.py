@@ -416,12 +416,6 @@ class HTMLRewriterMixin(StreamingRewriter):
                     rw_mod = handler.get(attr_name)
                     attr_value = self._rewrite_url(attr_value, rw_mod)
 
-            # special case: data- attrs, conditional rewrite
-            elif attr_name and attr_value and attr_name.startswith('data-'):
-                if attr_value.startswith(self.DATA_RW_PROTOCOLS):
-                    rw_mod = 'oe_'
-                    attr_value = self._rewrite_url(attr_value, rw_mod)
-
             # special case: base tag
             elif (tag == 'base') and (attr_name == 'href') and attr_value:
                 rw_mod = handler.get(attr_name)
@@ -469,7 +463,7 @@ class HTMLRewriterMixin(StreamingRewriter):
             rw_mod = self.PRELOAD_TYPES.get(preload, rw_mod)
 
         # for html imports with an optional as (google exclusive)
-        elif rel == 'import':
+        elif rel == 'import' or rel == 'alternate':
             rw_mod = 'mp_'
 
         elif rel == 'stylesheet':
