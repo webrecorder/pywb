@@ -1,3 +1,13 @@
+pywb 2.6.1 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Disable rewriting ``data-`` attributes, better fidelity without rewriting, fixes `#676 <https://github.com/webrecorder/pywb/pull/676>`_
+
+* Fix regression in autoescaping URL in frame_insert.html
+
+* Feature: ability to set path used to serve static assets (default ``static``) via ``static_prefix`` config option.
+
+
 pywb 2.6.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
