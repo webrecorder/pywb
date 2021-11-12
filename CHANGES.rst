@@ -9,6 +9,8 @@ pywb 2.6.1 changelist
 
 * Feature: ability to set path used to serve static assets (default ``static``) via ``static_prefix`` config option.
 
+* Update wombat.js 3.3.4 (includes various rewriting fixes)
+
 
 pywb 2.6.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
