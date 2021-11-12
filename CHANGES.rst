@@ -1,6 +1,8 @@
 pywb 2.6.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
+* Domain-Specific Rewriting Rules: Rewrite twitter video to capture full videos.
+
 * Disable rewriting ``data-`` attributes, better fidelity without rewriting, fixes `#676 <https://github.com/webrecorder/pywb/pull/676>`_
 
 * Fix regression in autoescaping URL in frame_insert.html
