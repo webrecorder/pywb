@@ -334,8 +334,6 @@ class RewriterApp(object):
         if is_proxy and self.is_preflight(environ):
             return WbResponse.options_response(environ)
 
-        environ['pywb.host_prefix'] = host_prefix
-
         if self.use_js_obj_proxy:
             content_rw = self.js_proxy_rw
         else:
