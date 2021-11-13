@@ -1,3 +1,9 @@
+pywb 2.6.2 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+Fix regression caused by 2.6.1, with static files not being loaded correctly. `#678 <https://github.com/webrecorder/pywb/pull/678>`_
+
+
 pywb 2.6.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
