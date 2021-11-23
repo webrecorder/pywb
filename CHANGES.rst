@@ -1,3 +1,23 @@
+pywb 2.6.2 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+Fix regression caused by 2.6.1, with static files not being loaded correctly. `#678 <https://github.com/webrecorder/pywb/pull/678>`_
+
+
+pywb 2.6.1 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Domain-Specific Rewriting Rules: Rewrite twitter video to capture full videos.
+
+* Disable rewriting ``data-`` attributes, better fidelity without rewriting, fixes `#676 <https://github.com/webrecorder/pywb/pull/676>`_
+
+* Fix regression in autoescaping URL in frame_insert.html
+
+* Feature: ability to set path used to serve static assets (default ``static``) via ``static_prefix`` config option.
+
+* Update wombat.js 3.3.4 (includes various rewriting fixes)
+
+
 pywb 2.6.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

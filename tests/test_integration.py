@@ -17,6 +17,7 @@ class TestWbIntegration(BaseConfigTest):
     def test_pywb_root(self):
         resp = self.testapp.get('/pywb/')
         self._assert_basic_html(resp)
+        assert '<link rel="stylesheet" href="/static/css/base.css"' in resp.text
         assert 'Search' in resp.text
 
     def test_pywb_root_head(self):

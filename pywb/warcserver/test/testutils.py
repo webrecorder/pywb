@@ -111,7 +111,7 @@ class MementoOverrideTests(object):
         # Load expected link headers
         MementoOverrideTests.link_header_data = None
         with open(to_path(get_test_dir() + '/text_content/link_headers.yaml')) as fh:
-            MementoOverrideTests.link_header_data = yaml.load(fh)
+            MementoOverrideTests.link_header_data = yaml.load(fh, Loader=yaml.Loader)
 
         MementoOverrideTests.orig_get_timegate_links = MementoIndexSource.get_timegate_links
 

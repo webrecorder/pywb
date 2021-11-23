@@ -22,7 +22,7 @@ framed_replay: true
 # default_locale: en
 
 # uncomment to set available locales
-# locales:
-#  - en
-#  - es
+locales:
+  - en
+  - fr
 

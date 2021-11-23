@@ -67,6 +67,16 @@ rules:
     - url_prefix: 'com,twitter)/i/videos/tweet'
 
       fuzzy_lookup: '()'
+
+    - url_prefix: ['com,twitter,api)/2/', 'com,twitter)/i/api/2/', 'com,twitter)/i/api/graphql/']
+
+      rewrite:
+        js_regexs:
+            - match: 'video_info":(.*?}]})'
+              group: 1
+              function: 'pywb.rewrite.rewrite_dash:rewrite_tw_dash'
+
+ 
      
 
     # facebook rules
