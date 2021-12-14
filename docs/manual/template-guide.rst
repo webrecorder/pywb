@@ -1,16 +1,19 @@
 .. _template-guide:
 
-Template Reference
-------------------
+Template Guide
+==============
 
-The following provides a quick reference of all of the templates available in pywb.
+Introduction
+------------
+
+This guide provides a reference of all of the templates available in pywb and how they could be modified.
 
 These templates are found in the ``pywb/templates`` directory and can be overridden as needed, one HTML page at a time.
 
 Template variables are listed as ``{{ variable }}`` to indicate the syntax used for rendering the value of the variable in Jinja2.
 
-Preparing a Template For Modification
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Copying a Template For Modification
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To modify a template, it is often useful to start with the default template. To do so, simply copy a default template
 to a local ``templates`` directory.
@@ -86,6 +89,7 @@ This template renders the home page for pywb, and by default renders a list of a
 Template variables:
 
 * ``{{ routes }}`` - a list of available collection routes.
+
 * ``{{ all_metadata }}`` - a dictionary of all metadata for all collections, keyed by collection id. See :ref:`custom-metadata` for more info on the custom metadata.
 
 
@@ -113,7 +117,7 @@ Template variables:
 .. _custom-metadata:
 
 Custom Metadata
-===============
+"""""""""""""""
 
 If custom collection metadata is provided, this page will automatically show this metadata as well.
 
@@ -237,7 +241,7 @@ Template variables:
 .. _custom-top-frame:
 
 Customizing the Top Frame Template
-==================================
+""""""""""""""""""""""""""""""""""
 
 The top-frame used for framed replay can be replaced or augmented
 by modifying the ``frame_insert.html``.

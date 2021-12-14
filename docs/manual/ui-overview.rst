@@ -12,6 +12,6 @@ pywb includes an extensive template system.
 .. toctree::
 
    ui-customization
-   template-guide
    new-vue-ui
+   template-guide
  
