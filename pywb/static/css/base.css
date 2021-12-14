@@ -1,0 +1,41 @@
+header {
+    display: flex;
+    display: -webkit-box;
+    display: -moz-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+
+    justify-content: space-between;
+    -webkit-box-pack: justify;
+    -moz-box-pack: justify;
+    -ms-flex-pack: justify;
+}
+
+header .language-select {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+header .language-select ul {
+    display: inline-block;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+header .language-select ul li {
+    display: inline-block;
+}
+header .language-select ul li:not(:last-child):after {
+    content: ' / ';
+}
+
+header .language-select a:link,
+header .language-select a:visited,
+header .language-select a:active {
+    text-decoration: none;
+}
+
+header .language-select a:hover {
+    text-decoration: underline;
+}
+

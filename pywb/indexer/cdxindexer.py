@@ -331,13 +331,13 @@ are supported.
 Some examples:
 
 * Create "example.cdx" index from example.warc.gz
-{0} ./cdx/example.cdx ./warcs/example.warc.gz
+{0} --output ./cdx/example.cdx ./warcs/example.warc.gz
 
 * Create "combined.cdx", a combined, sorted index of all warcs in ./warcs/
-{0} --sort combined.cdx ./warcs/
+{0} --sort --output combined.cdx ./warcs/
 
 * Create a sorted cdx per file in ./cdx/ for each archive file in ./warcs/
-{0} --sort ./cdx/ ./warcs/
+{0} --sort --output ./cdx/ ./warcs/
 """.format(os.path.basename(sys.argv[0]))
 
     sort_help = """
