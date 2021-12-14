@@ -1,141 +1,114 @@
 .. _ui-customizations:
 
-UI Customizations
------------------
+UI Overview and Customization
+=============================
 
-pywb supports UI customizations, either for an entire archive,
-or per-collection. Jinja2 templates are used for rendering all views,
-and static files can also be added as needed.
-
-Templates
-^^^^^^^^^
-
-Default templates, listed below, are found in the ``./pywb/templates/`` directory.
-
-Custom template files placed in the ``templates`` directory, either in the root or per collection, will override that template.
-
-To copy the default pywb template to the template directory using the cli tools, run:
-
-``wb-manager template --add search_html``
-
-The following page-level templates are available, corresponding to home page, collection page or search results:
-
- * ``index.html`` -- Home Page Template, used for ``http://my-archive.example.com/``
-
- * ``search.html`` -- Collection Template, used for each collection page ``http://my-archive.example.com/<coll name>/``
-
- * ``query.html`` -- Capture Query Page for a given url, used for ``http://my-archive.example.com/<coll name/*/<url>``
-
-Error Pages:
-
- * ``not_found.html`` -- Page to show when a url is not found in the archive
-
- * ``error.html`` -- Generic Error Page for any error (except not found)
-
-Replay and Banner templates:
-
- * ``frame_insert.html`` -- Top-frame for framed replay mode (not used with frameless mode)
-
- * ``head_insert.html`` -- Rewriting code injected into ``<head>`` of each replayed page.
-   This template includes the banner template and itself should generally not need to be modified.
-
- * ``banner.html`` -- The banner used for frameless replay. Can be set to blank to disable the banner.
+pywb includes a number of options for styling the UI, including completely replacing the UI with a custom version.
 
 
-To customize the default pywb UI across multiple pages, the following generic templates
-can also be overriden:
+Customizing UI Templates
+------------------------
 
-* ``base.html`` -- The base template used for non-replay related pages.
+pywb renders HTML using the Jinja2 templating engine, loading default templates from the ``pywb/templates`` directory.
 
-* ``head.html`` -- Template containing content to be added to the ``<head>`` of the ``base`` template
+If running from a custom directory, templates can be placed in the ``templates`` directory and will override the defaults.
 
-* ``header.html`` -- Template to be added as the first content of the ``<body>`` tag of the ``base`` template
-
-* ``footer.html`` -- Template for adding content as the "footer" of the ``<body>`` tag of the ``base`` template
+See :ref:`template-guide` for more details on customizing the templates.
 
 
-The ``base.html`` template also provides five blocks that can be supplied by templates that extend it.
+New Vue-based UI (Alpha)
+------------------------
 
-* ``title`` -- Block for supplying the title for the page
+With pywb 2.7.0, pywb includes a brand new UI which includes a visual calendar mode and a histogram-based banner.
 
-* ``head`` -- Block for adding content to the ``<head>``, includes ``head.html`` template
+See :ref:`new-vue-ui` for more information on how to enable this UI.
 
-* ``header`` -- Block for adding content to the ``<body>`` before the ``body`` block, includes the ``header.html`` template
 
-* ``body`` -- Block for adding the primary content to template
+Changing the Default Styles
+---------------------------
 
-* ``footer`` -- Block for adding content to the ``<body>`` after the ``body`` block, includes the ``footer.html`` template
+When using the default UI, pywb styles can be configured in ``pywb/static/default_banner.css``
+
+The stylesheet contained under ``#_wb_frame_top_banner`` affect the rendering of the default banner in framed mode.
+
+
+Configuring a Logo
+------------------
+
+An optional logo can be configured at the top-left of the default banner.
+
+To enable the logo set the ``ui.logo`` property in ``config.yaml`` to point to the URL of the logo.
+
+The URL can be any image URL, including a URL served from static directory.
+
+For example, to add the default pywb logo to the banner, use the following to the config:
+
+.. code:: yaml
+
+    ui:
+        logo: /static/pywb-logo-sm.png
+
 
 Static Files
-^^^^^^^^^^^^
+------------
 
-The pywb server will automatically support static files placed under the following directories:
+pywb will automatically support static files placed under the following directories:
 
-* Files under the root ``static`` directory can be accessed via ``http://my-archive.example.com/static/<filename>``
-
-* Files under the per-collection ``./collections/<coll name>/static`` directory can be accessed via ``http://my-archive.example.com/static/_/<coll name>/<filename>``
+* Files under the root ``static`` directory: ``static/my-file.js`` can be accessed via ``http://localhost:8080/static/my-file.js``
 
 
-Custom Metadata
-^^^^^^^^^^^^^^^
-
-It is possible to also add custom metadata that will be available in the Jinja2 template.
-
-For dynamic collections, any fields placed under ``<coll_name>/metadata.yaml`` filed can be accessed
-
-via the ``{{ metadata }}`` variable.
-
-For example, if metadata file contains:
-
-.. ex-block:: yaml
-
-    somedata: value
-
-Accessing ``{{ metadata.somedata }}`` will resolve to ``value``
-
-The metadata can also be added via commandline: ``wb-manager metadata myCollection --set somedata=value]``
+* Files under the per-collection directory: ``./collections/my-coll/static/my-file.js`` can be accessed via ``http://localhost:8080/pywb/static/_/my-coll/my-file.js``
 
 
+It is possible to change these settings via ``config.yaml``:
 
-The default collection UI template (search.html) currently lists all of the available metadata fields.
+* ``static_prefix`` - sets the URL path used in pywb to serve static content (default ``static``)
 
+* ``static_dir`` - sets the directory name used to read static files (default ``static``)
 
-Custom Outer Replay Frame
-^^^^^^^^^^^^^^^^^^^^^^^^^
+While pywb can serve static files, it is recommended to use an existing web server to serve static files, especially if already using it in production.
 
-The top-frame used for framed replay can be replaced or augmented
-by modifying the ``frame_insert.html``.
-
-To start with modifying the default outer page, you can add it to the current
-templates directory by running ``wb-manager template --add frame_insert_html``
-
-To initialize the replay, the outer page should include ``wb_frame.js``,
-create an ``<iframe>`` element and pass the id (or element itself) to the ``ContentFrame`` constructor:
-
-.. code-block:: html
-
-  <script src='{{ host_prefix }}/{{ static_path }}/wb_frame.js'> </script>
-  <script>
-  var cframe = new ContentFrame({"url": "{{ url }}" + window.location.hash,
-                                 "prefix": "{{ wb_prefix }}",
-                                 "request_ts": "{{ wb_url.timestamp }}",
-                                 "iframe": "#replay_iframe"});
-  </script>
+For example, this can be done via nginx with:
 
 
-The outer frame can receive notifications of changes to the replay via ``postMessage``
+.. code:: text
 
-For example, to detect when the content frame changed and log the new url and timestamp,
-use the following script to the outer frame html:
-
-.. code-block:: javascript
-
-  window.addEventListener("message", function(event) {
-    if (event.data.wb_type == "load" || event.data.wb_type == "replace-url") {
-      console.log("New Url: " + event.data.url);
-      console.log("New Timestamp: " + event.data.ts);
+    location /wayback/static {
+        alias /pywb/pywb/static;
     }
-  });
 
-The ``load`` message is sent when a new page is first loaded, while ``replace-url`` is used
-for url changes caused by content frame History navigation.
+
+Loading Custom Metadata
+-----------------------
+
+pywb includes a default mechanism for loading externally defined metadata, loaded from a per-collection ``metadata.yaml`` YAML file at runtime.
+
+See :ref:`custom-metadata` for more details.
+
+Additionally, the banner template has access to the contents of the ``config.yaml`` via the ``{{ config }}`` template variable,
+allowing for passing in arbitrary config information.
+
+For more dynamic loading of data, the banner and all of the templates can load additional data via JS ``fetch()`` calls.
+
+
+Embedding pywb in frames
+------------------------
+
+It should be possible to embed pywb replay itself as an iframe as needed.
+
+For customizing the top-level page and banner, see :ref:`custom-top-frame`.
+
+However, there may be other reasons to embed pywb in an iframe.
+
+This can be doen simply by including something like:
+
+.. code:: html
+
+   <html>
+     <head>
+       <body>
+         <div>Embedding pywb replay</div>
+         <iframe style="width: 100%; height: 100%" src="http://localhost:8080/pywb/20130729195151/http://test@example.com/"></iframe>
+      </body>
+   </html>
+
