@@ -1,5 +1,5 @@
 <template>
-  <div class="app" data-app="webrecorder-replay-app">
+  <div class="app" :class="{expanded: showTimelineView}" data-app="webrecorder-replay-app">
     <div class="banner">
       <div class="line">
         <div class="logo"><img :src="config.logoImg" /></div>
@@ -162,12 +162,14 @@ export default {
   .app {
     font-family: Calibri, Arial, sans-serif;
     border-bottom: 1px solid lightcoral;
-    height: 150px;
     width: 100%;
   }
+  .app.expanded {
+    height: 150px;
+  }
   .full-view {
-    position: fixed;
-    top: 150px;
+    /*position: fixed;*/
+    /*top: 150px;*/
     left: 0;
   }
   .iframe iframe {

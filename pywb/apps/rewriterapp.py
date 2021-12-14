@@ -791,7 +791,8 @@ class RewriterApp(object):
         prefix = self.get_full_prefix(environ)
 
         params = dict(url=wb_url.url,
-                      prefix=prefix)
+                      prefix=prefix,
+                      ui=kwargs.get('ui', {}))
 
         return self.query_view.render_to_string(environ, **params)
 

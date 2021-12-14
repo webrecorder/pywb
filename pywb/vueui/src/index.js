@@ -20,7 +20,7 @@ class CDXLoader {
     this.isReplay = (timestamp !== undefined);
 
     if (this.isReplay) {
-      window.WBBanner = new VueBannerWrapper(this);
+      window.WBBanner = new VueBannerWrapper(this, url);
     }
 
     let queryURL;
@@ -145,9 +145,9 @@ class CDXLoader {
 // ===========================================================================
 class VueBannerWrapper
 {
-  constructor(loader) {
+  constructor(loader, url) {
     this.loading = true;
-    this.lastSurt = null;
+    this.lastSurt = this.getSurt(url);
     this.loader = loader;
   }
 

@@ -1,6 +1,10 @@
 # pywb config file
 # ========================================
 #
+debug: true
+ui:
+  vue_calendar_ui: true
+  vue_timeline_banner: true
 
 collections:
     all: $all
