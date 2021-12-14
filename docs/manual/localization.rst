@@ -1,4 +1,4 @@
-.. _localizaation:
+.. _localization:
 
 Localization / Multi-lingual Support
 ------------------------------------
