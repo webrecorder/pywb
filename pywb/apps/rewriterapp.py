@@ -321,13 +321,11 @@ class RewriterApp(object):
 
         is_timegate = self._check_accept_dt(wb_url, environ)
 
-        host_prefix = self.get_host_prefix(environ)
+        host_prefix = environ['pywb.host_prefix']
         rel_prefix = self.get_rel_prefix(environ)
         full_prefix = host_prefix + rel_prefix
-        environ['pywb.host_prefix'] = host_prefix
-        pywb_static_prefix = host_prefix + environ.get('pywb.app_prefix', '') + '/' + self.static_prefix
-        environ['pywb.static_prefix'] = pywb_static_prefix
-        pywb_static_prefix += '/'
+
+        pywb_static_prefix = environ['pywb.static_prefix'] + '/'
         is_proxy = ('wsgiprox.proxy_host' in environ)
 
         # if OPTIONS in proxy mode, just generate the proxy responss

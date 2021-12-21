@@ -108,6 +108,8 @@ class FrontEndApp(object):
         self.templates_dir = config.get('templates_dir', 'templates')
         self.static_dir = config.get('static_dir', 'static')
 
+        self.static_prefix = config.get('static_prefix', 'static')
+
         metadata_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'metadata.yaml')
         self.metadata_cache = MetadataCache(metadata_templ)
 
@@ -642,7 +644,9 @@ class FrontEndApp(object):
         try:
             endpoint, args = urls.match()
             # store original script_name (original prefix) before modifications are made
+            environ['pywb.host_prefix'] = self.rewriterapp.get_host_prefix(environ)
             environ['pywb.app_prefix'] = environ.get('SCRIPT_NAME', '')
+            environ['pywb.static_prefix'] = environ['pywb.host_prefix'] + environ['pywb.app_prefix'] + '/' + self.static_prefix
 
             # store original script_name (original prefix) before modifications are made
             environ['ORIG_SCRIPT_NAME'] = environ.get('SCRIPT_NAME')
