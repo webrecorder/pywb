@@ -49,7 +49,7 @@ Base Templates (and supporting templates)
 File: ``base.html``
 
 This template includes the HTML added to all other pages, replay and non-replay. Shared JS and CSS includes can be added here.
-For themeing all pywb UI, it may be useful to modify this template.
+For theming all pywb UI, it may be useful to modify this template.
 
 To customize the default pywb UI across multiple pages, the following additional templates
 can also be overriden:
@@ -101,7 +101,7 @@ Collection Page Template
 
 File: ``search.html``
 
-The 'collection page' template is the page rendered when no URL is specified, eg. ``http://localhost:8080/my-collection/``.
+The 'collection page' template is the page rendered when no URL is specified, e.g. ``http://localhost:8080/my-collection/``.
 
 The default template renders a search page that can be used to start searching for URLs.
 
@@ -123,19 +123,19 @@ If custom collection metadata is provided, this page will automatically show thi
 
 It is possible to also add custom metadata per-collection that will be available to the collection.
 
-For dynamic collections, any fields placed under ``<coll_name>/metadata.yaml`` filed can be accessed
+For dynamic collections, any fields placed in ``<coll_name>/metadata.yaml`` files can be accessed
 
 via the ``{{ metadata }}`` variable.
 
-For example, if metadata file contains:
+For example, if the metadata file contains:
 
 .. code:: yaml
 
     somedata: value
 
-Accessing ``{{ metadata.somedata }}`` will resolve to ``value``
+Accessing ``{{ metadata.somedata }}`` will resolve to ``value``.
 
-The metadata can also be added via commandline: ``wb-manager metadata myCollection --set somedata=value]``
+The metadata can also be added via commandline: ``wb-manager metadata myCollection --set somedata=value``.
 
 
 URL Query/Calendar Page Template
@@ -151,13 +151,13 @@ The default template supports the standard pywb table view, as well as a conditi
 
 Template variables:
 
-* ``{{ url }}`` - the URL being queried, eg. ``https://example.com/``
+* ``{{ url }}`` - the URL being queried, e.g. ``https://example.com/``
 
-* ``{{ prefix }}`` - the collection prefix that will be used for replay, eg. ``http://localhost:8080/my-collection/``
+* ``{{ prefix }}`` - the collection prefix that will be used for replay, e.g. ``http://localhost:8080/my-collection/``
 
 * ``{{ ui }}`` - an optional ``ui`` dictionary from ``config.yaml``, if any
 
-* ``{{ static_prefix }}`` - the prefix from which static files will be accessed from, eg. ``http://localhost:8080/static/``
+* ``{{ static_prefix }}`` - the prefix from which static files will be accessed from, e.g. ``http://localhost:8080/static/``
 
 
 Replay and Banner Templates
@@ -180,11 +180,11 @@ Template variables:
 
 * ``{{ url }}`` - the URL being replayed.
 
-* ``{{ timestamp }}`` - the timestamp being replayed, eg. ``20211226`` in ``http://localhost:8080/pywb/20211226/mp_/https://example.com/``
+* ``{{ timestamp }}`` - the timestamp being replayed, e.g. ``20211226`` in ``http://localhost:8080/pywb/20211226/mp_/https://example.com/``
 
 * ``{{ is_framed }}`` - true/false if currently in framed mode.
 
-* ``{{ wb_prefix }}`` - the collection prefix, eg. ``http://localhost:8080/pywb/``
+* ``{{ wb_prefix }}`` - the collection prefix, e.g. ``http://localhost:8080/pywb/``
 
 * ``{{ config }}`` - provides the contents of the ``config.yaml`` as a dictionary.
 
@@ -234,7 +234,7 @@ Template variables:
 
 * ``{{ is_framed }}`` - true/false if currently in framed mode.
 
-* ``{{ wb_prefix }}`` - the collection prefix, eg. ``http://localhost:8080/pywb/``
+* ``{{ wb_prefix }}`` - the collection prefix, e.g. ``http://localhost:8080/pywb/``
 
 
 
@@ -266,7 +266,7 @@ create an ``<iframe>`` element and pass the id (or element itself) to the ``Cont
 The outer frame can receive notifications of changes to the replay via ``postMessage``
 
 For example, to detect when the content frame changed and log the new url and timestamp,
-use the following script to the outer frame html:
+use the following script in the outer frame html:
 
 .. code-block:: javascript
 
@@ -346,9 +346,9 @@ This block is provided to the ``search.html``, ``query.html`` and ``banner.html`
 Localization Globals
 ^^^^^^^^^^^^^^^^^^^^
 
-The Localization system (see: :ref:`localization`) adds several additional template globals, to faciliate listing available locales and getting URLs to switch locales, including:
+The Localization system (see: :ref:`localization`) adds several additional template globals, to facilitate listing available locales and getting URLs to switch locales, including:
 
-* ``{{ _Q() }}`` - a function used to mark certain text for localization, eg. ``{{ _Q('localize this text') }}``
+* ``{{ _Q() }}`` - a function used to mark certain text for localization, e.g. ``{{ _Q('localize this text') }}``
 
 * ``{{ env.pywb_lang }}`` - indicates current locale language code used for localization.
 

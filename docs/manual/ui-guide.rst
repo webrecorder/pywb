@@ -13,7 +13,7 @@ Changing the Default Styles
 
 When using the default UI, pywb styles can be configured in ``pywb/static/default_banner.css``
 
-The stylesheet contained under ``#_wb_frame_top_banner`` affect the rendering of the default banner in framed mode.
+The style definition for ``#_wb_frame_top_banner`` affects the rendering of the default banner in framed mode.
 
 
 Configuring a Logo
@@ -23,9 +23,9 @@ An optional logo can be configured at the top-left of the default banner.
 
 To enable the logo set the ``ui.logo`` property in ``config.yaml`` to point to the URL of the logo.
 
-The URL can be any image URL, including a URL served from static directory.
+The URL can be any image URL, including a URL served from the static directory.
 
-For example, to add the default pywb logo to the banner, use the following to the config:
+For example, to add the default pywb logo to the banner, use the following in the config:
 
 .. code:: yaml
 
@@ -59,7 +59,7 @@ pywb will automatically support static files placed under the following director
 * Files under the root ``static`` directory: ``static/my-file.js`` can be accessed via ``http://localhost:8080/static/my-file.js``
 
 
-* Files under the per-collection directory: ``./collections/my-coll/static/my-file.js`` can be accessed via ``http://localhost:8080/pywb/static/_/my-coll/my-file.js``
+* Files under the per-collection directory: ``./collections/my-coll/static/my-file.js`` can be accessed via ``http://localhost:8080/static/_/my-coll/my-file.js``
 
 
 It is possible to change these settings via ``config.yaml``:
@@ -102,7 +102,7 @@ For customizing the top-level page and banner, see :ref:`custom-top-frame`.
 
 However, there may be other reasons to embed pywb in an iframe.
 
-This can be doen simply by including something like:
+This can be done simply by including something like:
 
 .. code:: html
 
