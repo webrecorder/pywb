@@ -4,7 +4,7 @@
 New Vue-based UI (Alpha)
 ========================
 
-With 2.7.0, pywb introduces a new `Vue UI <https://vuejs.org/>`_ based system, which can be enabled to provide a more feature-representation of a web archive.
+With 2.7.0, pywb introduces a new `Vue UI <https://vuejs.org/>`_ based system, which can be enabled to provide a more feature-rich representation of a web archive.
 
 The UI consists of two parts, which can be enabled using the ``ui`` block in ``config.yaml``
 
@@ -58,13 +58,13 @@ Custom Logo
 
 When using the custom banner, it is possible to configure a logo by setting ``ui.logo`` to a static file.
 
-If ommitted, the standard pywb logo will be used by default.
+If omitted, the standard pywb logo will be used by default.
 
 
 Updating the Vue UI
 -------------------
 
-The UI is contained with the ``pywb/vueui`` directory.
+The UI is contained within the ``pywb/vueui`` directory.
 
 The Vue component sources can be found in ``pywb/vueui/src``.
 
