@@ -552,8 +552,6 @@ class FrontEndApp(object):
         # jinja2 template paths always use '/' as separator
         environ['pywb.templates_dir'] = '/'.join(paths)
 
-        self.rewriterapp.prepare_env(environ)
-
     def serve_listing(self, environ):
         """Serves the response for WARCServer fixed and dynamic listing (paths)
 
@@ -643,6 +641,8 @@ class FrontEndApp(object):
         urls = self.url_map.bind_to_environ(environ)
         try:
             endpoint, args = urls.match()
+
+            self.rewriterapp.prepare_env(environ)
 
             # store original script_name (original prefix) before modifications are made
             environ['ORIG_SCRIPT_NAME'] = environ.get('SCRIPT_NAME')
