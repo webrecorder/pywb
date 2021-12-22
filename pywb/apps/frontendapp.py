@@ -383,6 +383,7 @@ class FrontEndApp(object):
 
         coll_config = self.get_coll_config(coll)
         metadata = coll_config.get('metadata')
+        ui = coll_config.get('ui', {})
 
         view = BaseInsertView(self.rewriterapp.jinja_env, 'search.html')
 
@@ -394,7 +395,8 @@ class FrontEndApp(object):
                                         wb_prefix=wb_prefix,
                                         coll=coll,
                                         coll_config=coll_config,
-                                        metadata=metadata)
+                                        metadata=metadata,
+                                        ui=ui)
 
         return WbResponse.text_response(content, content_type='text/html; charset="utf-8"')
 
