@@ -108,8 +108,6 @@ class FrontEndApp(object):
         self.templates_dir = config.get('templates_dir', 'templates')
         self.static_dir = config.get('static_dir', 'static')
 
-        self.static_prefix = config.get('static_prefix', 'static')
-
         metadata_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'metadata.yaml')
         self.metadata_cache = MetadataCache(metadata_templ)
 
@@ -554,6 +552,8 @@ class FrontEndApp(object):
         # jinja2 template paths always use '/' as separator
         environ['pywb.templates_dir'] = '/'.join(paths)
 
+        self.rewriterapp.prepare_env(environ)
+
     def serve_listing(self, environ):
         """Serves the response for WARCServer fixed and dynamic listing (paths)
 
@@ -643,10 +643,6 @@ class FrontEndApp(object):
         urls = self.url_map.bind_to_environ(environ)
         try:
             endpoint, args = urls.match()
-            # store original script_name (original prefix) before modifications are made
-            environ['pywb.host_prefix'] = self.rewriterapp.get_host_prefix(environ)
-            environ['pywb.app_prefix'] = environ.get('SCRIPT_NAME', '')
-            environ['pywb.static_prefix'] = environ['pywb.host_prefix'] + environ['pywb.app_prefix'] + '/' + self.static_prefix
 
             # store original script_name (original prefix) before modifications are made
             environ['ORIG_SCRIPT_NAME'] = environ.get('SCRIPT_NAME')

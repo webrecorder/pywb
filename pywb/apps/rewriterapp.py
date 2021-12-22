@@ -303,14 +303,23 @@ class RewriterApp(object):
 
         return resp
 
-    def render_content(self, wb_url, kwargs, environ):
-        wb_url = wb_url.replace('#', '%23')
-        wb_url = WbUrl(wb_url)
+    def prepare_env(self, environ):
+        """ setup environ path prefixes and scheme """
+        if 'pywb.host_prefix' in environ:
+            return
 
         proto = environ.get('HTTP_X_FORWARDED_PROTO', self.force_scheme)
 
         if proto:
             environ['wsgi.url_scheme'] = proto
+
+        environ['pywb.host_prefix'] = self.get_host_prefix(environ)
+        environ['pywb.app_prefix'] = environ.get('SCRIPT_NAME', '')
+        environ['pywb.static_prefix'] = environ['pywb.host_prefix'] + environ['pywb.app_prefix'] + '/' + self.static_prefix
+
+    def render_content(self, wb_url, kwargs, environ):
+        wb_url = wb_url.replace('#', '%23')
+        wb_url = WbUrl(wb_url)
 
         history_page = environ.pop('HTTP_X_WOMBAT_HISTORY_PAGE', '')
         if history_page:
@@ -320,6 +329,8 @@ class RewriterApp(object):
             is_ajax = self.is_ajax(environ)
 
         is_timegate = self._check_accept_dt(wb_url, environ)
+
+        self.prepare_env(environ)
 
         host_prefix = environ['pywb.host_prefix']
         rel_prefix = self.get_rel_prefix(environ)
