@@ -5,7 +5,7 @@ on:
 
 jobs:
   push_to_registries:
-    name: Build x86 and ARM Images and push to Dockerhub
+    name: Build pywb Docker image for release and push to Dockerhub
     runs-on: ubuntu-latest
     steps:
       - 
