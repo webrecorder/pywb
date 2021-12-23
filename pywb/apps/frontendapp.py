@@ -641,8 +641,8 @@ class FrontEndApp(object):
         urls = self.url_map.bind_to_environ(environ)
         try:
             endpoint, args = urls.match()
-            # store original script_name (original prefix) before modifications are made
-            environ['pywb.app_prefix'] = environ.get('SCRIPT_NAME', '')
+
+            self.rewriterapp.prepare_env(environ)
 
             # store original script_name (original prefix) before modifications are made
             environ['ORIG_SCRIPT_NAME'] = environ.get('SCRIPT_NAME')
