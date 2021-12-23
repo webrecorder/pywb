@@ -1,7 +1,7 @@
 pywb 2.6.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* Fix false-positive rewriting of ``localion`` through additional check if local var is used, fixes `#684 <https://github.com/webrecorder/pywb/pull/684>`_
+* Fix false-positive rewriting of ``location`` through additional check if local var is used, fixes `#684 <https://github.com/webrecorder/pywb/pull/684>`_
 
 * Fix missing localization of placeholder, fixes `#685 <https://github.com/webrecorder/pywb/pull/685>`_
 
@@ -11,7 +11,7 @@ pywb 2.6.3 changelist
 
 * Update wombat.js to 3.3.6
 
-* Add automatic Docker push on version tag
+* Add automatic Docker push on new GitHub release
 
 
 pywb 2.6.2 changelist
