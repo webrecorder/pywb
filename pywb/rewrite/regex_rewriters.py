@@ -82,7 +82,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
         # By using a function the expression injected is an call expression that plays nice in those cases
         this_rw = '_____WB$wombat$check$this$function_____(this)'
 
-        check_loc = '((self.__WB_check_loc && self.__WB_check_loc(location)) || {}).href = '
+        check_loc = '((self.__WB_check_loc && self.__WB_check_loc(location, arguments)) || {}).href = '
 
         self.local_objs = [
             'window',
@@ -96,6 +96,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
         ]
 
         local_declares = '\n'.join([local_var_line.format(obj, local_init_func_name) for obj in self.local_objs])
+        local_declares += "\nlet arguments;"
 
         prop_str = '|'.join(self.local_objs)
 

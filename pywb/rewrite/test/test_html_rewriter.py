@@ -394,7 +394,7 @@ r"""
 
 # parse attr with js proxy, rewrite location assignment
 >>> parse('<html><a href="javascript:location=\'foo.html\'"></a></html>', js_proxy=True)
-<html><a href="javascript:{ location=((self.__WB_check_loc && self.__WB_check_loc(location)) || {}).href = 'foo.html' }"></a></html>
+<html><a href="javascript:{ location=((self.__WB_check_loc && self.__WB_check_loc(location, arguments)) || {}).href = 'foo.html' }"></a></html>
 
 # parse attr with js proxy, assigning to location.href, no location assignment rewrite needed
 >>> parse('<html><a href="javascript:location.href=\'foo.html\'"></a></html>', js_proxy=True)
