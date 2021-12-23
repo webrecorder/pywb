@@ -131,13 +131,13 @@ r"""
 #=================================================================
 
 >>> _test_js_obj_proxy('var foo = this;   location = bar')
-'var foo = _____WB$wombat$check$this$function_____(this);   location = ((self.__WB_check_loc && self.__WB_check_loc(location)) || {}).href = bar'
+'var foo = _____WB$wombat$check$this$function_____(this);   location = ((self.__WB_check_loc && self.__WB_check_loc(location, arguments)) || {}).href = bar'
 
 >>> _test_js_obj_proxy('var that =    this\n   location = bar')
-'var that =    _____WB$wombat$check$this$function_____(this)\n   location = ((self.__WB_check_loc && self.__WB_check_loc(location)) || {}).href = bar'
+'var that =    _____WB$wombat$check$this$function_____(this)\n   location = ((self.__WB_check_loc && self.__WB_check_loc(location, arguments)) || {}).href = bar'
 
 >>> _test_js_obj_proxy('location = "xyz"')
-'location = ((self.__WB_check_loc && self.__WB_check_loc(location)) || {}).href = "xyz"'
+'location = ((self.__WB_check_loc && self.__WB_check_loc(location, arguments)) || {}).href = "xyz"'
 
 >>> _test_js_obj_proxy('var foo = this.location')
 'var foo = _____WB$wombat$check$this$function_____(this).location'
@@ -213,7 +213,7 @@ r"""
 'this. alocation = http://example.com/'
 
 >>> _test_js_obj_proxy(r'this. location = http://example.com/')
-'this. location = ((self.__WB_check_loc && self.__WB_check_loc(location)) || {}).href = http://example.com/'
+'this. location = ((self.__WB_check_loc && self.__WB_check_loc(location, arguments)) || {}).href = http://example.com/'
 
 >>> _test_js_obj_proxy('eval(a)')
 'WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval(a)'

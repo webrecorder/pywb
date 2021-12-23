@@ -12,12 +12,25 @@ class TestWbIntegration(BaseConfigTest):
     def test_home(self):
         resp = self.testapp.get('/')
         self._assert_basic_html(resp)
+        assert '<link rel="stylesheet" href="http://localhost:80/static/css/base.css"' in resp.text
+        assert '/pywb' in resp.text
+
+    def test_home_custom_prefix(self):
+        resp = self.testapp.get('/', extra_environ={'SCRIPT_NAME': '/wayback'})
+        self._assert_basic_html(resp)
+        assert '<link rel="stylesheet" href="http://localhost:80/wayback/static/css/base.css"' in resp.text
         assert '/pywb' in resp.text
 
     def test_pywb_root(self):
         resp = self.testapp.get('/pywb/')
         self._assert_basic_html(resp)
-        assert '<link rel="stylesheet" href="/static/css/base.css"' in resp.text
+        assert '<link rel="stylesheet" href="http://localhost:80/static/css/base.css"' in resp.text
+        assert 'Search' in resp.text
+
+    def test_pywb_root_custom_prefix(self):
+        resp = self.testapp.get('/pywb/', extra_environ={'SCRIPT_NAME': '/wayback'})
+        self._assert_basic_html(resp)
+        assert '<link rel="stylesheet" href="http://localhost:80/wayback/static/css/base.css"' in resp.text
         assert 'Search' in resp.text
 
     def test_pywb_root_head(self):
