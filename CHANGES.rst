@@ -1,3 +1,19 @@
+pywb 2.6.3 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Fix false-positive rewriting of ``location`` through additional check if local var is used, fixes `#684 <https://github.com/webrecorder/pywb/pull/684>`_
+
+* Fix missing localization of placeholder, fixes `#685 <https://github.com/webrecorder/pywb/pull/685>`_
+
+* Fix regression caused by 2.6.2, ensure pywb.app_prefix, pywb.host_prefix and pywb.static_prefix paths set correctly for all pages `#688 <https://github.com/webrecorder/pywb/pull/688>`_, fixes `#686 <https://github.com/webrecorder/pywb/pull/686>`_
+
+* Documentation: Fixes to ``cdx-indexer`` helped (from @ldko) `#683 <https://github.com/webrecorder/pywb/pull/683>`_
+
+* Update wombat.js to 3.3.6
+
+* Add automatic Docker push on new GitHub release
+
+
 pywb 2.6.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

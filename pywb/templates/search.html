@@ -26,7 +26,7 @@ window.wb_prefix = "{{ wb_prefix }}";
                     {% trans %}Search the {{ coll_title }} collection by url:{% endtrans %}
                 </label>
                 <input aria-label="url" aria-required="true" class="form-control form-control-lg" id="search-url"
-                       name="search" placeholder="Enter a URL to search for"
+                       name="search" placeholder="{{ _('Enter a URL to search for') }}"
                        title="{{ _('Enter a URL to search for') }}" type="search" required/>
                 <div class="invalid-feedback">
                     {% trans %}'Please enter a URL{% endtrans %}
