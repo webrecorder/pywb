@@ -1,3 +1,9 @@
+pywb 2.6.4 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* wombat.js: actually update to 3.3.6, update built wombat.js
+
+
 pywb 2.6.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
