@@ -164,8 +164,9 @@ This file is part of pywb, https://github.com/webrecorder/pywb
       logo.setAttribute("class", "_wb_linked_logo");
 
       var logoContents = "";
-      logoContents += "<img src='" + window.banner_info.logoImg + "' alt='" + window.banner_info.logoAlt + "'>";
-      logoContents += "<img src='" + window.banner_info.logoImg + "' class='_wb_mobile' alt='" + window.banner_info.logoAlt + "'>";
+      var logoUrl = window.banner_info.staticPrefix + "/" + window.banner_info.logoImg;
+      logoContents += "<img src='" + logoUrl + "' alt='" + window.banner_info.logoAlt + "'>";
+      logoContents += "<img src='" + logoUrl + "' class='_wb_mobile' alt='" + window.banner_info.logoAlt + "'>";
 
       logo.innerHTML = logoContents;
       this.banner.appendChild(logo);

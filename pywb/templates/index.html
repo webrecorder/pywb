@@ -10,7 +10,7 @@
             {% for route in routes %}
                 <li>
                     <a href="{{ env['pywb.app_prefix'] + ('/' + env.pywb_lang if env.pywb_lang else '') + '/' + route }}">{{ '/' + route }}</a>
-                    {% if all_metadata and all_metadata[route] %}
+                    {% if all_metadata and all_metadata[route] and all_metadata[route].title %}
                         ({{ all_metadata[route].title }})
                     {% endif %}
                 </li>

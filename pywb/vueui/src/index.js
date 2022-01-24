@@ -6,16 +6,17 @@ import Vue from "vue/dist/vue.esm.browser";
 
 
 // ===========================================================================
-export function main(staticPrefix, url, prefix, timestamp) {
-  new CDXLoader(staticPrefix, url, prefix, timestamp);
+export function main(staticPrefix, url, prefix, timestamp, logoUrl) {
+  new CDXLoader(staticPrefix, url, prefix, timestamp, logoUrl);
 }
 
 // ===========================================================================
 class CDXLoader {
-  constructor(staticPrefix, url, prefix, timestamp) {
+  constructor(staticPrefix, url, prefix, timestamp, logoUrl) {
     this.opts = {};
     this.prefix = prefix;
     this.staticPrefix = staticPrefix;
+    this.logoUrl = logoUrl;
 
     this.isReplay = (timestamp !== undefined);
 
@@ -44,8 +45,7 @@ class CDXLoader {
 
     this.opts.initialView = {url, timestamp};
 
-    // TODO: make configurable
-    this.opts.logoImg = staticPrefix + "/pywb-logo-sm.png";
+    this.opts.logoImg = this.staticPrefix + "/" + (this.logoUrl ? this.logoUrl : "pywb-logo-sm.png");
 
     this.loadCDX(queryURL).then((cdxList) => {
       this.app = this.initApp(cdxList, this.opts, (snapshot) => this.loadSnapshot(snapshot));
@@ -60,7 +60,7 @@ class CDXLoader {
     app.$set(app, "snapshots", pywbData.snapshots);
     app.$set(app, "currentPeriod", pywbData.timeline);
 
-    app.$set(app, "config", {...app.config, ...config});
+    app.$set(app, "config", {...app.config, ...config, prefix: this.prefix});
 
     app.$mount("#app");
 

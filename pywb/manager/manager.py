@@ -237,9 +237,12 @@ directory structure expected by pywb
             v = defaults[n]
             print('- {0}: (pywb/{1})'.format(n, v))
 
-    def _confirm_overwrite(self, full_path, msg):
+    def _confirm_overwrite(self, full_path, msg, ignore=False):
         if not os.path.isfile(full_path):
             return True
+
+        if ignore:
+            return False
 
         res = get_input(msg)
         try:
@@ -247,7 +250,7 @@ directory structure expected by pywb
         except ValueError:
             res = False
 
-        if not res:
+        if not res and not ignore:
             raise IOError('Skipping, {0} already exists'.format(full_path))
 
     def _get_template_path(self, template_name, verb):
@@ -268,7 +271,7 @@ directory structure expected by pywb
 
         return full_path, filename
 
-    def add_template(self, template_name, force=False):
+    def add_template(self, template_name, force=False, ignore=False):
         full_path, filename = self._get_template_path(template_name, 'add')
 
         msg = ('Template file "{0}" ({1}) already exists. ' +
@@ -276,7 +279,11 @@ directory structure expected by pywb
         msg = msg.format(full_path, template_name)
 
         if not force:
-            self._confirm_overwrite(full_path, msg)
+            res = self._confirm_overwrite(full_path, msg, ignore)
+            if ignore and not res:
+                return
+
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
 
         data = resource_string('pywb', filename)
         with open(full_path, 'w+b') as fh:
@@ -285,6 +292,9 @@ directory structure expected by pywb
         full_path = os.path.abspath(full_path)
         msg = 'Copied default template "{0}" to "{1}"'
         print(msg.format(filename, full_path))
+
+        if template_name != "base_html":
+            self.add_template("base_html", force=False, ignore=True)
 
     def remove_template(self, template_name, force=False):
         full_path, filename = self._get_template_path(template_name, 'remove')
