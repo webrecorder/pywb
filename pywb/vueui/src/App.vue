@@ -2,7 +2,7 @@
   <div class="app" :class="{expanded: showTimelineView}" data-app="webrecorder-replay-app">
     <div class="banner">
       <div class="line">
-        <div class="logo"><img :src="config.logoImg" /></div>
+        <div class="logo"><a href="/"><img :src="config.logoImg" style="max-width: 80px" /></a></div>
         <div class="timeline-wrap">
           <div class="line">
             <div class="breadcrumbs-wrap">
@@ -35,13 +35,15 @@
       </div>
     </div>
     <div class="snapshot-title">
-      <div>{{ config.url }}</div>
+      <form @submit="gotoUrl">
+        <input id="theurl" type="text" :value="config.url"></input>
+      </form>
       <div v-if="currentSnapshot && !showFullView">
         <span v-if="config.title">{{ config.title }}</span>
         Current capture: {{currentSnapshot.getTimeDateFormatted()}}
       </div>
     </div>
-    <CalendarYear v-if="showFullView"
+    <CalendarYear v-if="showFullView && currentPeriod && currentPeriod.children.length"
                   :period="currentPeriod"
                   :current-snapshot="currentSnapshot"
                    @goto-period="gotoPeriod">
@@ -124,6 +126,13 @@ export default {
       this.$emit("show-snapshot", snapshot);
       this.showFullView = false;
     },
+    gotoUrl(event) {
+      event.preventDefault();
+      const newUrl = document.querySelector("#theurl").value;
+      if (newUrl !== this.url) {
+        window.location.href = this.config.prefix + "*/" + newUrl;
+      }
+    },
     init() {
       this.config.url = this.config.initialView.url;
       if (this.config.initialView.title) {
@@ -134,8 +143,10 @@ export default {
         this.showTimelineView = true;
       } else {
         this.showFullView = false;
-        this.showFullView = true;
-        this.setSnapshot(this.config.initialView);
+        this.showTimelineView = true;
+        if (this.currentPeriod.children.length) {
+          this.setSnapshot(this.config.initialView);
+        }
       }
       if (window.sessionStorage) {
         const currentPeriodId = window.sessionStorage.getItem(this.sessionStorageUrlKey);
@@ -241,5 +252,8 @@ export default {
     text-align: center;
     font-weight: bold;
     font-size: 16px;
+  }
+  #theurl {
+    width: 400px;
   }
 </style>

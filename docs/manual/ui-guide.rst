@@ -25,12 +25,13 @@ To enable the logo set the ``ui.logo`` property in ``config.yaml`` to point to t
 
 The URL can be any image URL, including a URL served from the static directory.
 
-For example, to add the default pywb logo to the banner, use the following in the config:
+For example, to add the default pywb logo to the banner, use the following in the config, which will
+load the logo from ``./static/pywb-logo-sm.png``
 
 .. code:: yaml
 
     ui:
-        logo: /static/pywb-logo-sm.png
+        logo: pywb-logo-sm.png
 
 
 New Vue-based UI (Alpha)
@@ -66,7 +67,7 @@ It is possible to change these settings via ``config.yaml``:
 
 * ``static_prefix`` - sets the URL path used in pywb to serve static content (default ``static``)
 
-* ``static_dir`` - sets the directory name used to read static files (default ``static``)
+* ``static_dir`` - sets the directory name used to read static files on disk (default ``static``)
 
 While pywb can serve static files, it is recommended to use an existing web server to serve static files, especially if already using it in production.
 
