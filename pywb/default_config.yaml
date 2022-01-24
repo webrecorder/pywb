@@ -15,6 +15,11 @@ banner_html: banner.html
 head_insert_html: head_insert.html
 frame_insert_html: frame_insert.html
 
+base_html: base.html
+header_html: header.html
+footer_html: footer.html
+head_html: head.html
+
 query_html: query.html
 search_html: search.html
 not_found_html: not_found.html
@@ -39,6 +44,12 @@ html_templates:
     - not_found_html
 
     - home_html
+
+    - base_html
+    - header_html
+    - head_html
+    - footer_html
+
     - error_html
     - proxy_cert_download_html
     - proxy_select_html

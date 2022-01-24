@@ -60,6 +60,15 @@ When using the custom banner, it is possible to configure a logo by setting ``ui
 
 If omitted, the standard pywb logo will be used by default.
 
+If set, the logo should point to a file in the static directory (default is ``static`` but can be changed via the ``static_dir`` config option).
+
+For example, to use the file ``./static/my-logo.png`` as the logo, set:
+
+.. code:: yaml
+
+  ui:
+    logo: my-logo.png
+
 
 Updating the Vue UI
 -------------------

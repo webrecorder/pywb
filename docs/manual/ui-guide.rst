@@ -66,7 +66,7 @@ It is possible to change these settings via ``config.yaml``:
 
 * ``static_prefix`` - sets the URL path used in pywb to serve static content (default ``static``)
 
-* ``static_dir`` - sets the directory name used to read static files (default ``static``)
+* ``static_dir`` - sets the directory name used to read static files on disk (default ``static``)
 
 While pywb can serve static files, it is recommended to use an existing web server to serve static files, especially if already using it in production.
 

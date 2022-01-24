@@ -61,6 +61,9 @@ can also be overriden:
 * ``footer.html`` -- Template for adding content as the "footer" of the ``<body>`` tag of the ``base`` template
 
 
+Note: The default pywb ``head.html`` and ``footer.html`` are currently blank. They can be populated to customize the rendering, add analytics, etc... as needed.
+
+
 The ``base.html`` template also provides five blocks that can be supplied by templates that extend it.
 
 * ``title`` -- Block for supplying the title for the page
@@ -157,7 +160,7 @@ Template variables:
 
 * ``{{ ui }}`` - an optional ``ui`` dictionary from ``config.yaml``, if any
 
-* ``{{ static_prefix }}`` - the prefix from which static files will be accessed from, e.g. ``http://localhost:8080/static/``
+* ``{{ static_prefix }}`` - the prefix from which static files will be accessed from, e.g. ``http://localhost:8080/static/``.
 
 
 Replay and Banner Templates
@@ -185,6 +188,8 @@ Template variables:
 * ``{{ is_framed }}`` - true/false if currently in framed mode.
 
 * ``{{ wb_prefix }}`` - the collection prefix, e.g. ``http://localhost:8080/pywb/``
+
+* ``{{ host_prefix }}`` - the pywb server origin, e.g. ``http://localhost:8080``
 
 * ``{{ config }}`` - provides the contents of the ``config.yaml`` as a dictionary.
 
@@ -232,9 +237,9 @@ Template variables:
 
 * ``{{ wb_url }}`` - A complete ``WbUrl`` object, which contains the ``url``, ``timestamp`` and ``mod`` properties, representing the replay url.
 
-* ``{{ is_framed }}`` - true/false if currently in framed mode.
-
 * ``{{ wb_prefix }}`` - the collection prefix, e.g. ``http://localhost:8080/pywb/``
+
+* ``{{ is_proxy }}`` - set to true if page is being loaded via an HTTP/S proxy (checks if WSGI env has ``wsgiprox.proxy_host`` set)
 
 
 
@@ -332,7 +337,7 @@ The following template variables are available to all templates.
 
 * ``{{ env.pywb_proxy_magic }}`` - if set, indicates pywb is accessed via proxy. See :ref:`https-proxy`
 
-* ``{{ static_prefix }}`` - path to use for loading static files.
+* ``{{ static_prefix }}`` - URL path to use for loading static files.
 
 
 UI Configuration

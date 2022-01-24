@@ -2,7 +2,7 @@
   <div class="app" :class="{expanded: showTimelineView}" data-app="webrecorder-replay-app">
     <div class="banner">
       <div class="line">
-        <div class="logo"><img :src="config.logoImg" /></div>
+        <div class="logo"><a href="/"><img :src="config.logoImg" /></a></div>
         <div class="timeline-wrap">
           <div class="line">
             <div class="breadcrumbs-wrap">
