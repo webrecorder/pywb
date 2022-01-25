@@ -45,7 +45,7 @@ class CDXLoader {
 
     this.opts.initialView = {url, timestamp};
 
-    this.opts.logoImg = this.staticPrefix + (this.logoUrl ? this.logoUrl : "/pywb-logo-sm.png");
+    this.opts.logoImg = this.staticPrefix + "/" + (this.logoUrl ? this.logoUrl : "pywb-logo-sm.png");
 
     this.loadCDX(queryURL).then((cdxList) => {
       this.app = this.initApp(cdxList, this.opts, (snapshot) => this.loadSnapshot(snapshot));
@@ -60,7 +60,7 @@ class CDXLoader {
     app.$set(app, "snapshots", pywbData.snapshots);
     app.$set(app, "currentPeriod", pywbData.timeline);
 
-    app.$set(app, "config", {...app.config, ...config});
+    app.$set(app, "config", {...app.config, ...config, prefix: this.prefix});
 
     app.$mount("#app");
 
