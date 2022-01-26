@@ -230,7 +230,7 @@ class WARCPathLoader(DefaultResolverMixin, BaseLoader):
                 http_headers_buff = http_headers.to_bytes()
 
                 # if new http_headers_buff is different length,
-                # attempt to adjust content-lenghth on the WARC record
+                # attempt to adjust content-length on the WARC record
                 if orig_size and len(http_headers_buff) != orig_size:
                     orig_cl = payload.rec_headers.get_header('Content-Length')
                     if orig_cl:

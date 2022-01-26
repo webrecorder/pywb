@@ -379,13 +379,11 @@ class RewriterApp(object):
                 response = self.handle_query(environ, wb_url, kwargs, full_prefix)
 
             else:
-                # don't return top-frame response for timegate with exact redirects
-                if not (is_timegate and redirect_to_exact):
-                    response = self.handle_custom_response(environ, wb_url,
-                                                           full_prefix, host_prefix,
-                                                           kwargs)
+                response = self.handle_custom_response(environ, wb_url,
+                                                       full_prefix, host_prefix,
+                                                       kwargs)
 
-                    keep_frame_response = not kwargs.get('no_timegate_check') and is_timegate and not redirect_to_exact and not is_proxy
+                keep_frame_response = (not kwargs.get('no_timegate_check') and is_timegate and not is_proxy) or redirect_to_exact
 
 
         if response and not keep_frame_response:
@@ -465,8 +463,12 @@ class RewriterApp(object):
 
             return self.send_redirect(new_path, url_parts, urlrewriter)
 
+
+        # only redirect to exact if not live, otherwise set to false
+        redirect_to_exact = redirect_to_exact and not cdx.get('is_live')
+
         # return top-frame timegate response, with timestamp from cdx
-        if response and keep_frame_response:
+        if response and keep_frame_response and (not redirect_to_exact or not is_timegate):
             no_except_close(r.raw)
             return self.format_response(response, wb_url, full_prefix, is_timegate, is_proxy, cdx['timestamp'])
 
@@ -487,8 +489,8 @@ class RewriterApp(object):
         if target_uri != wb_url.url and cdx.get('is_fuzzy') == '1':
             set_content_loc = True
 
-        # if redirect to exact timestamp, bit only if not live
-        if redirect_to_exact and not cdx.get('is_live'):
+        # if redirect to exact timestamp (only set if not live)
+        if redirect_to_exact:
             if set_content_loc or is_timegate or wb_url.timestamp != cdx.get('timestamp'):
                 new_url = urlrewriter.get_new_url(url=target_uri,
                                                   timestamp=cdx['timestamp'],

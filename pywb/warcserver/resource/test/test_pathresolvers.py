@@ -161,7 +161,7 @@ class TestPathIndex(object):
         res = DefaultResolverMixin.make_best_resolver(a_file)
         assert isinstance(res, PathIndexResolver)
 
-        # a dir -- asume prefix
+        # a dir -- assume prefix
         res = DefaultResolverMixin.make_best_resolver(a_dir)
         assert isinstance(res, PrefixResolver)
 

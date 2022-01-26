@@ -113,8 +113,8 @@ The available access types are as follows:
 
 - ``exclude`` - when matched, results are excluded from the index, as if they do not exist. User will receive a 404.
 - ``block`` - when matched, results are not excluded from the index, but access to the actual content is blocked. User will see a 451.
-- ``allow`` - full access to the index and the resource, but may be overriden by embargo
-- ``allow_ignore_embargo`` - full access to the index and resource, overriding any embargo settings
+- ``allow`` - full access to the index and the resource, but may be overriden by embargo.
+- ``allow_ignore_embargo`` - full access to the index and resource, overriding any embargo settings.
 
 The difference between ``exclude`` and ``block`` is that when blocked, the user can be notified that access is blocked, while
 with exclude, no trace of the resource is presented to the user.

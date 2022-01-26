@@ -105,7 +105,7 @@ def test_rev_merge():
 
 
     # check reverse merge: verify merging of lists, than reversing
-    # eqauls merging with reverse=True of reversed lists
+    # equals merging with reverse=True of reversed lists
     assert (list(reversed(list(merge(lines1, lines2)))) ==
             list(merge(reversed(lines1), reversed(lines2), reverse=True)))
 
