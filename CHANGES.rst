@@ -3,6 +3,12 @@ pywb 2.6.4 changelist
 
 * wombat.js: actually update to 3.3.6, update built wombat.js
 
+* Fix live mode when ``redirect_to_exact`` is enabled `#692 <https://github.com/webrecorder/pywb/pull/692>`_
+
+* Rules: additional fuzzy ignore of facebook query param: `#691 <https://github.com/webrecorder/pywb/pull/691>`_
+
+* Docs: typo fixes: `#669 <https://github.com/webrecorder/pywb/pull/669>`_, `#670 <https://github.com/webrecorder/pywb/pull/670>`_
+
 
 pywb 2.6.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
