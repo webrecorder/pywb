@@ -26,12 +26,12 @@ class TestIndexSources(FakeRedisTests, BaseTestClass):
         cls.all_sources = {
             'file': FileIndexSource(TEST_CDX_PATH + 'iana.cdxj'),
             'redis': RedisIndexSource('redis://localhost:6379/2/test:rediscdx'),
-            'remote_cdx': RemoteIndexSource('https://webenact.rhizome.org/all/cdx?url={url}',
-                              'https://webenact.rhizome.org/all/{timestamp}id_/{url}'),
+            'remote_cdx': RemoteIndexSource('https://webenact.rhizome.org/excellences-and-perfections/cdx?url={url}',
+                              'https://webenact.rhizome.org/excellences-and-perfections/{timestamp}id_/{url}'),
 
-            'memento': MementoIndexSource('https://webenact.rhizome.org/all/{url}',
-                               'https://webenact.rhizome.org/all/timemap/link/{url}',
-                               'https://webenact.rhizome.org/all/{timestamp}id_/{url}')
+            'memento': MementoIndexSource('https://webenact.rhizome.org/excellences-and-perfections/{url}',
+                               'https://webenact.rhizome.org/excellences-and-perfections/timemap/link/{url}',
+                               'https://webenact.rhizome.org/excellences-and-perfections/{timestamp}id_/{url}')
         }
 
     @pytest.fixture(params=local_sources)
@@ -99,14 +99,10 @@ org,iana)/domains/root/servers 20140126201227 iana.warc.gz"""
         res, errs = self.query_single_source(remote_source, dict(url=url))
 
         expected = """\
-com,instagram)/amaliaulman 20141014150552 https://webenact.rhizome.org/all/20141014150552id_/http://instagram.com/amaliaulman
-com,instagram)/amaliaulman 20141014152101 https://webenact.rhizome.org/all/20141014152101id_/http://instagram.com/amaliaulman
-com,instagram)/amaliaulman 20141014155217 https://webenact.rhizome.org/all/20141014155217id_/http://instagram.com/amaliaulman
-com,instagram)/amaliaulman 20141014160238 https://webenact.rhizome.org/all/20141014160238id_/http://instagram.com/amaliaulman
-com,instagram)/amaliaulman 20141014162333 https://webenact.rhizome.org/all/20141014162333id_/http://instagram.com/amaliaulman
-com,instagram)/amaliaulman 20141014163116 https://webenact.rhizome.org/all/20141014163116id_/http://instagram.com/amaliaulman
-com,instagram)/amaliaulman 20141014171636 https://webenact.rhizome.org/all/20141014171636id_/http://instagram.com/amaliaulman
-com,instagram)/amaliaulman 20141014171954 https://webenact.rhizome.org/all/20141014171954id_/http://instagram.com/amaliaulman"""
+com,instagram)/amaliaulman 20141014150552 https://webenact.rhizome.org/excellences-and-perfections/20141014150552id_/http://instagram.com/amaliaulman
+com,instagram)/amaliaulman 20141014155217 https://webenact.rhizome.org/excellences-and-perfections/20141014155217id_/http://instagram.com/amaliaulman
+com,instagram)/amaliaulman 20141014162333 https://webenact.rhizome.org/excellences-and-perfections/20141014162333id_/http://instagram.com/amaliaulman
+com,instagram)/amaliaulman 20141014171636 https://webenact.rhizome.org/excellences-and-perfections/20141014171636id_/http://instagram.com/amaliaulman"""
         assert(key_ts_res(res, 'load_url') == expected)
         assert(errs == {})
 
@@ -117,7 +113,7 @@ com,instagram)/amaliaulman 20141014171954 https://webenact.rhizome.org/all/20141
         res, errs = self.query_single_source(remote_source, dict(url=url, closest='20141014162332', limit=1, allowFuzzy='0'))
 
         expected = """\
-com,instagram)/amaliaulman 20141014162333 https://webenact.rhizome.org/all/20141014162333id_/http://instagram.com/amaliaulman"""
+com,instagram)/amaliaulman 20141014162333 https://webenact.rhizome.org/excellences-and-perfections/20141014162333id_/http://instagram.com/amaliaulman"""
 
         assert(key_ts_res(res, 'load_url') == expected)
         assert(errs == {})
@@ -128,21 +124,21 @@ com,instagram)/amaliaulman 20141014162333 https://webenact.rhizome.org/all/20141
         res, errs = self.query_single_source(remote_source, dict(url=url, closest='20141014162332', limit=1))
 
         expected = """\
-com,instagram)/amaliaulman 20141014162333 https://webenact.rhizome.org/all/20141014162333id_/http://instagram.com/amaliaulman"""
+com,instagram)/amaliaulman 20141014162333 https://webenact.rhizome.org/excellences-and-perfections/20141014162333id_/http://instagram.com/amaliaulman"""
 
         assert(key_ts_res(res, 'load_url') == expected)
         assert(errs == {})
 
     # Url Match -- Wb Memento
     def test_remote_closest_wb_memento_loader(self):
-        replay = 'https://webenact.rhizome.org/all/{timestamp}id_/{url}'
+        replay = 'https://webenact.rhizome.org/excellences-and-perfections/{timestamp}id_/{url}'
         source = WBMementoIndexSource(replay, '', replay)
 
         url = 'http://instagram.com/amaliaulman'
         res, errs = self.query_single_source(source, dict(url=url, closest='20141014162332', limit=1))
 
         expected = """\
-com,instagram)/amaliaulman 20141014162333 https://webenact.rhizome.org/all/20141014162333id_/http://instagram.com/amaliaulman"""
+com,instagram)/amaliaulman 20141014162333 https://webenact.rhizome.org/excellences-and-perfections/20141014162333id_/http://instagram.com/amaliaulman"""
 
         assert(key_ts_res(res, 'load_url') == expected)
         assert(errs == {})
