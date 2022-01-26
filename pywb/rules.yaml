@@ -50,6 +50,13 @@ default_filters:
         - match: '[?&](\w*(bust|ts)\w*=1[\d]{12,15})(?=&|$)'
           replace: ''
 
+        # remove facbook link ID when pywb urls are shared on facebook
+        - match: '[?&](fbclid)=(.*)+(?=&|$)'
+          replace: ''
+
+
+
+
 rules:
 
     # twitter rules
