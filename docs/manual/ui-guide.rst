@@ -25,12 +25,13 @@ To enable the logo set the ``ui.logo`` property in ``config.yaml`` to point to t
 
 The URL can be any image URL, including a URL served from the static directory.
 
-For example, to add the default pywb logo to the banner, use the following in the config:
+For example, to add the default pywb logo to the banner, use the following in the config, which will
+load the logo from ``./static/pywb-logo-sm.png``
 
 .. code:: yaml
 
     ui:
-        logo: /static/pywb-logo-sm.png
+        logo: pywb-logo-sm.png
 
 
 New Vue-based UI (Alpha)
