@@ -8,24 +8,37 @@ export function PywbData(rawSnaps) {
   rawSnaps.forEach((rawSnap, i) => {
     const snap = new PywbSnapshot(rawSnap, i);
     let year, month, day, hour, single;
+
+    // Year Period
+    //  if year did not exist in "all time", create it
     if (!(year = allTimePeriod.getChildById(snap.year))) {
-      if (lastYear) lastYear.checkIfSingleSnapshotOnly();
+      if (lastYear) lastYear.checkIfSingleSnapshotOnly(); // check last year for containing single snapshot
       lastYear = year = new PywbPeriod({type: PywbPeriod.Type.year, id: snap.year});
       allTimePeriod.addChild(year);
     }
+
+    // Month Period
+    //  if month did not exist in "year" period, create it
     if (!(month = year.getChildById(snap.month))) {
-      if (lastMonth) lastMonth.checkIfSingleSnapshotOnly();
+      if (lastMonth) lastMonth.checkIfSingleSnapshotOnly();// check last month for containing single snapshot
       lastMonth = month = new PywbPeriod({type: PywbPeriod.Type.month, id: snap.month});
       year.addChild(month);
     }
+
+    // Day Period
+    //  if day did not exist in "month" period, create it
     if (!(day = month.getChildById(snap.day))) {
-      if (lastDay) lastDay.checkIfSingleSnapshotOnly();
+      if (lastDay) lastDay.checkIfSingleSnapshotOnly(); // check last day for containing single snapshot
       lastDay = day = new PywbPeriod({type: PywbPeriod.Type.day, id: snap.day});
       month.addChild(day);
     }
+
+    // Hour Period
     const hourValue = Math.ceil((snap.hour + .0001) / (24/8)); // divide day in 4 six-hour periods (aka quarters)
+
+    //  if hour did not exist in "day" period, create it
     if (!(hour = day.getChildById(hourValue))) {
-      if (lastHour) lastHour.checkIfSingleSnapshotOnly();
+      if (lastHour) lastHour.checkIfSingleSnapshotOnly(); // check last hour for containing single snapshot
       lastHour = hour = new PywbPeriod({type: PywbPeriod.Type.hour, id: hourValue});
       day.addChild(hour);
     }
@@ -33,14 +46,29 @@ export function PywbData(rawSnaps) {
       single = new PywbPeriod({type: PywbPeriod.Type.snapshot, id: snap.id});
       hour.addChild(single);
     }
-    single.setSnapshot(snap);
-    if (lastSingle) {
-      lastSingle.setNextSnapshotPeriod(single);
-      single.setPreviousSnapshotPeriod(lastSingle);
-    }
-    lastSingle = single;
 
-    snapshots.push(snap);
+    // De-duplicate single snapshots (sometimes there are multiple snapshots
+    //   of the same timestamp with different HTTP status; ignore all
+    //   duplicates and take the first entry regardless of status)
+    if (!lastSingle || lastSingle.id !== single.id) {
+      single.setSnapshot(snap);
+      if (lastSingle) {
+        lastSingle.setNextSnapshotPeriod(single);
+        single.setPreviousSnapshotPeriod(lastSingle);
+      }
+      lastSingle = single;
+
+      snapshots.push(snap);
+    }
+
+    // At end of snapshot loop, check period of each type: year/month/day/hour
+    //  as all snapshots are now added to the period hierarchy
+    if (i === rawSnaps.length - 1) { // is last snapshot
+      year.checkIfSingleSnapshotOnly();
+      month.checkIfSingleSnapshotOnly();
+      day.checkIfSingleSnapshotOnly();
+      hour.checkIfSingleSnapshotOnly();
+    }
   });
 
   this.timeline = allTimePeriod;
@@ -112,7 +140,7 @@ export class PywbSnapshot {
 export function PywbPeriod(init) {
   this.type = init.type;
   this.id = init.id;
-  this.fullId = ''; // full-id property that include string id of parents and self with a delimitor
+  this.fullId = Math.floor(1000*1000+Math.random()*9*1000*1000).toString(16); // full-id property that include string id of parents and self with a delimitor
 
   this.childrenIds = {}; // allow for query by ID
   this.children = []; // allow for sequentiality / order

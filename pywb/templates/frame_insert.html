@@ -21,6 +21,13 @@ html, body
 </head>
 <body style="margin: 0px; padding: 0px;">
 
+{% if ui.vue_timeline_banner %}
+<div id="app" style="width: 100%; height: 200px"></div>
+<script>
+    VueUI.main("{{ static_prefix }}", "{{ url }}", "{{ wb_prefix }}", "{{ timestamp }}", "{{ ui.logo }}");
+</script>
+{% endif %}
+
 <div id="wb_iframe_div">
 <iframe id="replay_iframe" frameborder="0" seamless="seamless" scrolling="yes" class="wb_iframe" allow="autoplay; fullscreen"></iframe>
 </div>

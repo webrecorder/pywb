@@ -13,6 +13,7 @@
 <script src="{{ static_prefix }}/query.js"></script>
 {% else %}
 
+<script src="{{ static_prefix }}/loading-spinner/loading-spinner.js"></script>
 <script src="{{ static_prefix }}/vue/vueui.js"></script>
 
 {% endif %}
@@ -35,6 +36,10 @@
 <div class="container mt-3 q-display" id="captures"></div>
 {% endif %}
 
+
+{% if ui.vue_calendar_ui %}
+<div id="app" style="width: 100%; height: 100%"></div>
+{% endif %}
 
 <script>
   var text = {
@@ -80,9 +85,5 @@
 {% endif %}
 
 </script>
-
-{% if ui.vue_calendar_ui %}
-<div id="app" style="width: 100%; height: 100%"></div>
-{% endif %}
 
 {% endblock %}

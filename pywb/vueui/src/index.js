@@ -7,12 +7,14 @@ import Vue from "vue/dist/vue.esm.browser";
 
 // ===========================================================================
 export function main(staticPrefix, url, prefix, timestamp, logoUrl) {
-  new CDXLoader(staticPrefix, url, prefix, timestamp, logoUrl);
+  const loadingSpinner = new LoadingSpinner(); // bootstrap loading-spinner EARLY ON
+  new CDXLoader(staticPrefix, url, prefix, timestamp, logoUrl, loadingSpinner);
 }
 
 // ===========================================================================
 class CDXLoader {
-  constructor(staticPrefix, url, prefix, timestamp, logoUrl) {
+  constructor(staticPrefix, url, prefix, timestamp, logoUrl, loadingSpinner) {
+    this.loadingSpinner = loadingSpinner;
     this.opts = {};
     this.prefix = prefix;
     this.staticPrefix = staticPrefix;
@@ -43,22 +45,16 @@ class CDXLoader {
       throw new Error("No query URL specified");
     }
 
-    this.opts.initialView = {url, timestamp};
+    const logoImg = this.staticPrefix + "/" + (this.logoUrl ? this.logoUrl : "pywb-logo-sm.png");
 
-    this.opts.logoImg = this.staticPrefix + "/" + (this.logoUrl ? this.logoUrl : "pywb-logo-sm.png");
-
+    this.app = this.initApp({logoImg, url});
     this.loadCDX(queryURL).then((cdxList) => {
-      this.app = this.initApp(cdxList, this.opts, (snapshot) => this.loadSnapshot(snapshot));
+      this.setAppData(cdxList, timestamp ? {url, timestamp}:null);
     });
   }
 
-  initApp(data, config = {}, loadCallback = null) {
+  initApp(config = {}) {
     const app = new Vue(appData);
-
-    const pywbData = new PywbData(data);
-
-    app.$set(app, "snapshots", pywbData.snapshots);
-    app.$set(app, "currentPeriod", pywbData.timeline);
 
     app.$set(app, "config", {...app.config, ...config, prefix: this.prefix});
 
@@ -75,9 +71,9 @@ class CDXLoader {
     //     };
     //   }
     // });
-    if (loadCallback) {
-      app.$on("show-snapshot", loadCallback);
-    }
+
+    app.$on("show-snapshot", this.loadSnapshot.bind(this));
+    app.$on("data-set-and-render-completed", () => this.loadingSpinner.setOff()); // only turn off loading-spinner AFTER app has told us it is DONE DONE
 
     return app;
   }
@@ -90,16 +86,19 @@ class CDXLoader {
 
     const cdxList = await this.loadCDX(queryURL);
 
-    const pywbData = new PywbData(cdxList);
+    this.setAppData(cdxList, {url, timestamp});
+  }
 
-    const app = this.app;
-    app.$set(app, "snapshots", pywbData.snapshots);
-    app.$set(app, "currentPeriod", pywbData.timeline);
+  setAppData(cdxList, snapshot=null) {
+    this.app.setData(new PywbData(cdxList));
 
-    app.setSnapshot({url, timestamp});
+    if (snapshot) {
+      this.app.setSnapshot(snapshot);
+    }
   }
 
   async loadCDX(queryURL) {
+    this.loadingSpinner.setOn(); // start loading-spinner when CDX loading begins
     const queryWorker = new Worker(this.staticPrefix + "/queryWorker.js");
 
     const p = new Promise((resolve) => {
