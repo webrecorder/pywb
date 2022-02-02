@@ -19,14 +19,14 @@
         <div class="scroll" ref="periodScroll" :class="{highlight: highlight}">
             <div class="periods" ref="periods">
                 <div v-for="subPeriod in period.children"
-                     :key="subPeriod.id"
+                     :key="subPeriod.fullId"
                      class="period"
                      :class="{empty: !subPeriod.snapshotCount, highlight: highlightPeriod === subPeriod, 'last-level': !canZoom, 'contains-current-snapshot': containsCurrentSnapshot(subPeriod) }"
                 >
                     <div class="histo">
                         <div class="line"
                              v-for="histoPeriod in subPeriod.children"
-                             :key="histoPeriod.id"
+                             :key="histoPeriod.fullId"
                              :style="{height: getHistoLineHeight(histoPeriod.snapshotCount)}"
                              :class="{'has-single-snapshot': histoPeriod.snapshotCount === 1, 'contains-current-snapshot': containsCurrentSnapshot(histoPeriod)}"
                              @click="changePeriod(histoPeriod, $event)"

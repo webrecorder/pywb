@@ -13,6 +13,7 @@ collections:
         archive_paths: ./sample_archive/warcs/
 
     ukwa: cdx+https://www.webarchive.org.uk/wayback/archive/cdx
+    is: cdx+http://beta.vefsafn.is/is/cdx
 
 # Settings for each collection
 use_js_obj_proxy: true

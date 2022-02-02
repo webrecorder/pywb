@@ -67,7 +67,7 @@ export default {
       currentPeriod: null,
       currentSnapshot: null,
       msgs: [],
-      showFullView: false,
+      showFullView: true,
       showTimelineView: true,
       maxTimelineZoomLevel: PywbPeriod.Type.day,
       config: {
@@ -79,7 +79,6 @@ export default {
   },
   components: {Timeline, TimelineBreadcrumbs, CalendarYear},
   mounted: function() {
-    this.init();
   },
   computed: {
     sessionStorageUrlKey() {
@@ -133,21 +132,13 @@ export default {
         window.location.href = this.config.prefix + "*/" + newUrl;
       }
     },
-    init() {
-      this.config.url = this.config.initialView.url;
-      if (this.config.initialView.title) {
-        this.config.title = this.config.initialView.title;
-      }
-      if (this.config.initialView.timestamp === undefined) {
-        this.showFullView = true;
-        this.showTimelineView = true;
-      } else {
-        this.showFullView = false;
-        this.showTimelineView = true;
-        if (this.currentPeriod.children.length) {
-          this.setSnapshot(this.config.initialView);
-        }
-      }
+    setData(/** @type {PywbData} data */ data) {
+
+      // data-set will usually happen at App INIT (from parent caller)
+      this.$set(this, "snapshots", data.snapshots);
+      this.$set(this, "currentPeriod", data.timeline);
+
+      // get last-saved current period from previous page/app refresh (if there was such)
       if (window.sessionStorage) {
         const currentPeriodId = window.sessionStorage.getItem(this.sessionStorageUrlKey);
         if (currentPeriodId) {
@@ -157,12 +148,23 @@ export default {
           }
         }
       }
+
+      // signal app is DONE setting and rendering data; ON NEXT TICK
+      this.$nextTick(function isDone() {
+        this.$emit('data-set-and-render-completed');
+      }.bind(this));
     },
     setSnapshot(view) {
-      // convert to snapshot objec to support proper rendering of time/date
+      // turn off calendar (aka full) view
+      this.showFullView = false;
+
+      // convert to snapshot object to support proper rendering of time/date
       const snapshot = new PywbSnapshot(view, 0);
+
+      // set config current URL and title
       this.config.url = view.url;
       this.config.title = view.title;
+
       this.gotoSnapshot(snapshot);
     }
   }

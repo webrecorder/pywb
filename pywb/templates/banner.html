@@ -31,16 +31,11 @@ window.banner_info = {
 
 {% else %}
 
+{% if ui.vue_timeline_banner %}
+<script src="{{ static_prefix }}/loading-spinner/loading-spinner.js"></script>
 <link rel='stylesheet' href='{{ static_prefix }}/vue_banner.css'/>
 <script src="{{ static_prefix }}/vue/vueui.js"></script>
-<script>
-  VueUI.main("{{ static_prefix }}", "{{ url }}", "{{ wb_prefix }}", "{{ timestamp }}", "{{ ui.logo }}");
-</script>
-
-{% if ui.vue_timeline_banner %}
-<div id="app" style="width: 100%; height: 200px"></div>
 {% endif %}
-
 
 {% endif %}
 
