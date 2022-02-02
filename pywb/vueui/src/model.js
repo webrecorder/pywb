@@ -46,14 +46,20 @@ export function PywbData(rawSnaps) {
       single = new PywbPeriod({type: PywbPeriod.Type.snapshot, id: snap.id});
       hour.addChild(single);
     }
-    single.setSnapshot(snap);
-    if (lastSingle) {
-      lastSingle.setNextSnapshotPeriod(single);
-      single.setPreviousSnapshotPeriod(lastSingle);
-    }
-    lastSingle = single;
 
-    snapshots.push(snap);
+    // De-duplicate single snapshots (sometimes there are multiple snapshots
+    //   of the same timestamp with different HTTP status; ignore all
+    //   duplicates and take the first entry regardless of status)
+    if (!lastSingle || lastSingle.id !== single.id) {
+      single.setSnapshot(snap);
+      if (lastSingle) {
+        lastSingle.setNextSnapshotPeriod(single);
+        single.setPreviousSnapshotPeriod(lastSingle);
+      }
+      lastSingle = single;
+
+      snapshots.push(snap);
+    }
 
     // At end of snapshot loop, check period of each type: year/month/day/hour
     //  as all snapshots are now added to the period hierarchy
