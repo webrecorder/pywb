@@ -8,24 +8,37 @@ export function PywbData(rawSnaps) {
   rawSnaps.forEach((rawSnap, i) => {
     const snap = new PywbSnapshot(rawSnap, i);
     let year, month, day, hour, single;
+
+    // Year Period
+    //  if year did not exist in "all time", create it
     if (!(year = allTimePeriod.getChildById(snap.year))) {
-      if (lastYear) lastYear.checkIfSingleSnapshotOnly();
+      if (lastYear) lastYear.checkIfSingleSnapshotOnly(); // check last year for containing single snapshot
       lastYear = year = new PywbPeriod({type: PywbPeriod.Type.year, id: snap.year});
       allTimePeriod.addChild(year);
     }
+
+    // Month Period
+    //  if month did not exist in "year" period, create it
     if (!(month = year.getChildById(snap.month))) {
-      if (lastMonth) lastMonth.checkIfSingleSnapshotOnly();
+      if (lastMonth) lastMonth.checkIfSingleSnapshotOnly();// check last month for containing single snapshot
       lastMonth = month = new PywbPeriod({type: PywbPeriod.Type.month, id: snap.month});
       year.addChild(month);
     }
+
+    // Day Period
+    //  if day did not exist in "month" period, create it
     if (!(day = month.getChildById(snap.day))) {
-      if (lastDay) lastDay.checkIfSingleSnapshotOnly();
+      if (lastDay) lastDay.checkIfSingleSnapshotOnly(); // check last day for containing single snapshot
       lastDay = day = new PywbPeriod({type: PywbPeriod.Type.day, id: snap.day});
       month.addChild(day);
     }
+
+    // Hour Period
     const hourValue = Math.ceil((snap.hour + .0001) / (24/8)); // divide day in 4 six-hour periods (aka quarters)
+
+    //  if hour did not exist in "day" period, create it
     if (!(hour = day.getChildById(hourValue))) {
-      if (lastHour) lastHour.checkIfSingleSnapshotOnly();
+      if (lastHour) lastHour.checkIfSingleSnapshotOnly(); // check last hour for containing single snapshot
       lastHour = hour = new PywbPeriod({type: PywbPeriod.Type.hour, id: hourValue});
       day.addChild(hour);
     }
@@ -41,6 +54,15 @@ export function PywbData(rawSnaps) {
     lastSingle = single;
 
     snapshots.push(snap);
+
+    // At end of snapshot loop, check period of each type: year/month/day/hour
+    //  as all snapshots are now added to the period hierarchy
+    if (i === rawSnaps.length - 1) { // is last snapshot
+      year.checkIfSingleSnapshotOnly();
+      month.checkIfSingleSnapshotOnly();
+      day.checkIfSingleSnapshotOnly();
+      hour.checkIfSingleSnapshotOnly();
+    }
   });
 
   this.timeline = allTimePeriod;
