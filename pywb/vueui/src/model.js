@@ -140,7 +140,7 @@ export class PywbSnapshot {
 export function PywbPeriod(init) {
   this.type = init.type;
   this.id = init.id;
-  this.fullId = ''; // full-id property that include string id of parents and self with a delimitor
+  this.fullId = Math.floor(1000*1000+Math.random()*9*1000*1000).toString(16); // full-id property that include string id of parents and self with a delimitor
 
   this.childrenIds = {}; // allow for query by ID
   this.children = []; // allow for sequentiality / order
