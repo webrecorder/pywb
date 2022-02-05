@@ -36,6 +36,10 @@
 {% endif %}
 
 
+{% if ui.vue_calendar_ui %}
+<div id="app" style="width: 100%; height: 100%"></div>
+{% endif %}
+
 <script>
   var text = {
       months: {
@@ -71,9 +75,5 @@
 {% endif %}
 
 </script>
-
-{% if ui.vue_calendar_ui %}
-<div id="app" style="width: 100%; height: 100%"></div>
-{% endif %}
 
 {% endblock %}
