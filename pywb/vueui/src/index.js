@@ -1,6 +1,7 @@
 import appData from "./App.vue";
 
 import { PywbData } from "./model.js";
+import { CDXQueryWorkerSimulator } from "./cdx-simulator/cdx-simulator";
 
 import Vue from "vue/dist/vue.esm.browser";
 
@@ -100,6 +101,8 @@ class CDXLoader {
   }
 
   async loadCDX(queryURL) {
+    // Use this to test CDX Loader
+    // const queryWorker = new CDXQueryWorkerSimulator(this.staticPrefix + "/queryWorker.js");
     const queryWorker = new Worker(this.staticPrefix + "/queryWorker.js");
 
     const p = new Promise((resolve) => {
