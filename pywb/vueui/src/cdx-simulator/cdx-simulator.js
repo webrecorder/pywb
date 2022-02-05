@@ -23,14 +23,7 @@ class CDXRecordFactory {
     // exaggerate max count per day, any day can hold up to 10th of the month's captures
     const maxPerDay = avgPerMonth/10;
 
-    let avgTimePerRecord = opts.fetchTime/total; // e.g. 1000 ms / 10,000
-    let waitAtEveryNRecords = 1;
-    if (avgTimePerRecord < 1) { // < 1ms per records
-      waitAtEveryNRecords = Math.ceil(1/avgTimePerRecord); // invert
-      avgTimePerRecord = 1;
-    } else { // >= 1ms per record
-      avgTimePerRecord = Math.round(avgTimePerRecord);
-    }
+    let startTime = Math.floor(new Date().getTime());
     let recordI = 0;
 
     for(let y=years[0]; y<=years[1]; y++) {
@@ -42,22 +35,24 @@ class CDXRecordFactory {
 
           const times = {}; // make sure we save to hash to de-dupe
           for(let i=0; i<timesCount; i++) {
-            if (recordI++ % waitAtEveryNRecords === 0) { // wait
-              const p = new Promise((resolve) => {
-                setTimeout(() => {
-                  resolve(true);
-                }, avgTimePerRecord);
-              });
-              await p;
-            }
-            const newTime = Math.floor(Math.random()*3600*24);
+            const newTime = [Math.floor(Math.random()*24), Math.floor(Math.random()*60), Math.floor(Math.random()*60)].join('');
             times[newTime] = 1;
           }
           Object.keys(times).sort().forEach(time => {
-            records.push({url, timestamp: dayTimestampPrefix+('000000'+time).substr(-6)});
+            records.push({url, timestamp: dayTimestampPrefix+time});
           });
         }
       }
+    }
+    let endTime = Math.floor(new Date().getTime());
+
+    if (opts.fetchTime && opts.fetchTime > endTime - startTime) { // wait till we reac fetchTime
+      const p = new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(true);
+        }, (opts.fetchTime - (endTime - startTime)));
+      });
+      await p;
     }
     return records;
   }
