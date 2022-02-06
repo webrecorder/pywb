@@ -107,6 +107,7 @@ class FrontEndApp(object):
 
         self.templates_dir = config.get('templates_dir', 'templates')
         self.static_dir = config.get('static_dir', 'static')
+        self.static_prefix = config.get('static_prefix', 'static')
 
         metadata_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'metadata.yaml')
         self.metadata_cache = MetadataCache(metadata_templ)
@@ -118,8 +119,8 @@ class FrontEndApp(object):
         specific routes (proxy mode, record)
         """
         self.url_map = Map()
-        self.url_map.add(Rule('/static/_/<coll>/<path:filepath>', endpoint=self.serve_static))
-        self.url_map.add(Rule('/static/<path:filepath>', endpoint=self.serve_static))
+        self.url_map.add(Rule('/{0}/_/<coll>/<path:filepath>'.format(self.static_prefix), endpoint=self.serve_static))
+        self.url_map.add(Rule('/{0}/<path:filepath>'.format(self.static_prefix), endpoint=self.serve_static))
         self.url_map.add(Rule('/collinfo.json', endpoint=self.serve_listing))
 
         if self.is_valid_coll('$root'):
