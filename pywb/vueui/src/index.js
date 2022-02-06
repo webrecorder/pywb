@@ -43,22 +43,16 @@ class CDXLoader {
       throw new Error("No query URL specified");
     }
 
-    this.opts.initialView = {url, timestamp};
+    const logoImg = this.staticPrefix + "/" + (this.logoUrl ? this.logoUrl : "pywb-logo-sm.png");
 
-    this.opts.logoImg = this.staticPrefix + "/" + (this.logoUrl ? this.logoUrl : "pywb-logo-sm.png");
-
+    this.app = this.initApp({logoImg, url});
     this.loadCDX(queryURL).then((cdxList) => {
-      this.app = this.initApp(cdxList, this.opts, (snapshot) => this.loadSnapshot(snapshot));
+      this.setAppData(cdxList, timestamp ? {url, timestamp}:null);
     });
   }
 
-  initApp(data, config = {}, loadCallback = null) {
+  initApp(config = {}) {
     const app = new Vue(appData);
-
-    const pywbData = new PywbData(data);
-
-    app.$set(app, "snapshots", pywbData.snapshots);
-    app.$set(app, "currentPeriod", pywbData.timeline);
 
     app.$set(app, "config", {...app.config, ...config, prefix: this.prefix});
 
@@ -75,9 +69,8 @@ class CDXLoader {
     //     };
     //   }
     // });
-    if (loadCallback) {
-      app.$on("show-snapshot", loadCallback);
-    }
+
+    app.$on("show-snapshot", this.loadSnapshot.bind(this));
 
     return app;
   }
@@ -90,13 +83,15 @@ class CDXLoader {
 
     const cdxList = await this.loadCDX(queryURL);
 
-    const pywbData = new PywbData(cdxList);
+    this.setAppData(cdxList, {url, timestamp});
+  }
 
-    const app = this.app;
-    app.$set(app, "snapshots", pywbData.snapshots);
-    app.$set(app, "currentPeriod", pywbData.timeline);
+  setAppData(cdxList, snapshot=null) {
+    this.app.setData(new PywbData(cdxList));
 
-    app.setSnapshot({url, timestamp});
+    if (snapshot) {
+      this.app.setSnapshot(snapshot);
+    }
   }
 
   async loadCDX(queryURL) {
