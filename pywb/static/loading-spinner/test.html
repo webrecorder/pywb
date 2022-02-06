@@ -1,0 +1,12 @@
+<html>
+<head>
+<script src="loading-spinner.js"></script>
+</head>
+<body>
+<button onclick="loadingSpinner.setOn()">load...</button>
+<script>
+    const loadingSpinner = new LoadingSpinner();
+    loadingSpinner.el.addEventListener('click', e => loadingSpinner.setOff());
+</script>
+</body>
+</html>
