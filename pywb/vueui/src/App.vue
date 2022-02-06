@@ -1,6 +1,5 @@
 <template>
   <div class="app" :class="{expanded: showTimelineView}" data-app="webrecorder-replay-app">
-    <LoadingSpinner :text="'Loading...'" :is-loading="isLoading"/>
     <div class="banner">
       <div class="line">
         <div class="logo"><a href="/"><img :src="config.logoImg" style="max-width: 80px" /></a></div>
@@ -58,7 +57,6 @@ import TimelineBreadcrumbs from "./components/TimelineBreadcrumbs.vue";
 import CalendarYear from "./components/CalendarYear.vue";
 
 import { PywbSnapshot, PywbPeriod } from "./model.js";
-import LoadingSpinner from "./components/LoadingSpinner.vue";
 
 export default {
   name: "PywbReplayApp",
@@ -76,11 +74,10 @@ export default {
         title: "",
         initialView: {}
       },
-      isLoading: true, // initially data is loading
       timelineHighlight: false
     };
   },
-  components: {LoadingSpinner, Timeline, TimelineBreadcrumbs, CalendarYear},
+  components: {Timeline, TimelineBreadcrumbs, CalendarYear},
   mounted: function() {
   },
   computed: {
@@ -136,8 +133,6 @@ export default {
       }
     },
     setData(/** @type {PywbData} data */ data) {
-      // mark app as DONE loading (i.e. NOT loading)
-      this.isLoading = false;
 
       // data-set will usually happen at App INIT (from parent caller)
       this.$set(this, "snapshots", data.snapshots);
@@ -153,6 +148,11 @@ export default {
           }
         }
       }
+
+      // signal app is DONE setting and rendering data; ON NEXT TICK
+      this.$nextTick(function isDone() {
+        this.$emit('data-set-and-render-completed');
+      }.bind(this));
     },
     setSnapshot(view) {
       // turn off calendar (aka full) view

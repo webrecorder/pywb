@@ -7,12 +7,14 @@ import Vue from "vue/dist/vue.esm.browser";
 
 // ===========================================================================
 export function main(staticPrefix, url, prefix, timestamp, logoUrl) {
-  new CDXLoader(staticPrefix, url, prefix, timestamp, logoUrl);
+  const loadingSpinner = new LoadingSpinner(); // bootstrap loading-spinner EARLY ON
+  new CDXLoader(staticPrefix, url, prefix, timestamp, logoUrl, loadingSpinner);
 }
 
 // ===========================================================================
 class CDXLoader {
-  constructor(staticPrefix, url, prefix, timestamp, logoUrl) {
+  constructor(staticPrefix, url, prefix, timestamp, logoUrl, loadingSpinner) {
+    this.loadingSpinner = loadingSpinner;
     this.opts = {};
     this.prefix = prefix;
     this.staticPrefix = staticPrefix;
@@ -71,6 +73,7 @@ class CDXLoader {
     // });
 
     app.$on("show-snapshot", this.loadSnapshot.bind(this));
+    app.$on("data-set-and-render-completed", () => this.loadingSpinner.setOff()); // only turn off loading-spinner AFTER app has told us it is DONE DONE
 
     return app;
   }
@@ -95,6 +98,7 @@ class CDXLoader {
   }
 
   async loadCDX(queryURL) {
+    this.loadingSpinner.setOn(); // start loading-spinner when CDX loading begins
     const queryWorker = new Worker(this.staticPrefix + "/queryWorker.js");
 
     const p = new Promise((resolve) => {
