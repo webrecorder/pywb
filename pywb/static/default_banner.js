@@ -160,7 +160,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
 
     if (window.banner_info.logoImg) {
       var logo = document.createElement("a");
-      logo.setAttribute("href", "/" + (window.banner_info.locale ? window.banner_info.locale + "/" : ""));
+      logo.setAttribute("href", "/" + (window.banner_info.curr_locale ? window.banner_info.curr_locale + "/" : ""));
       logo.setAttribute("class", "_wb_linked_logo");
 
       var logoContents = "";
