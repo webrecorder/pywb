@@ -490,16 +490,19 @@ PywbPeriod.prototype.getReadableId = function(hasDayCardinalSuffix) {
     return PywbI18N.instance.getMonth(this.id, 'short');
   case PywbPeriod.Type.day: {
     let suffix = "";
-    if (hasDayCardinalSuffix) {
-      const singleDigit = this.id % 10;
-      const isTens = Math.floor(this.id / 10) === 1;
-      const suffixes = {1:"st", 2:"nd",3:"rd"};
-      suffix = (isTens || !suffixes[singleDigit]) ? "th" : suffixes[singleDigit];
-    }
+    // DISABLING cardinal suffix for now, as it is complicated to replicate in multiple locales with 1 simple function
+    // TODO: add cardinal suffix handling later IF REQUESTED!
+    // if (hasDayCardinalSuffix) {
+    //   const singleDigit = this.id % 10;
+    //   const isTens = Math.floor(this.id / 10) === 1;
+    //   const suffixes = {1:"st", 2:"nd",3:"rd"};
+    //   suffix = (isTens || !suffixes[singleDigit]) ? "th" : suffixes[singleDigit];
+    // }
     return this.id + suffix;
   }
-  case PywbPeriod.Type.hour:
-    return ({1:"12 am", 2: "3 am", 3: "6 am", 4: "9 am", 5: "noon", 6: "3 pm", 7: "6 pm", 8: "9 pm"})[this.id];
+    case PywbPeriod.Type.hour:
+    // REMOVING 12-hour 'am-pm' time format as it is US-EN specific; replace with 24-hour time (TODO: add locale-sensitive time-format IF REQUESTED)
+    return ({1:"0:00", 2: "3:00", 3: "6:00", 4: "9:00", 5: "12:00", 6: "15:00", 7: "18:00", 8: "21:00"})[this.id];
     //return ({1:'midnight', 2: '6 am', 3: 'noon', 4: '6 pm'})[this.id];
     //return (this.id < 13 ? this.id : this.id % 12) + ' ' + (this.id < 12 ? 'am':'pm');
   case PywbPeriod.Type.snapshot:
