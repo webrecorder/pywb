@@ -15,7 +15,7 @@
         </template>
         <span class="item">
             <span class="current">{{period.getReadableId(true)}}</span>
-            <span class="count">({{ $root._(`{count} capture${period.snapshotCount !== 1 ? 's':''}`, {count: period.snapshotCount}) }})</span>
+            <span class="count">({{ $root._(period.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: period.snapshotCount}) }})</span>
         </span>
     </div>
 </template>

@@ -2,7 +2,7 @@
 <div class="timeline-linear">
   <div class="title">
     <div>{{ period.getFullReadableId() }}</div>
-    <div>{{ $root._(`{count} capture${period.snapshotCount !== 1 ? 's':''}`, {count: period.snapshotCount}) }}</div>
+    <div>{{ $root._(period.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: period.snapshotCount}) }}</div>
   </div>
 
   <div class="list">
