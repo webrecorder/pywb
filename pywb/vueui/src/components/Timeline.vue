@@ -10,7 +10,7 @@
               </div>
               <div v-else-if="tooltipPeriod.snapshotCount">
                 {{ $root._(
-                  `{capture_text}  {${isTooltipPeriodDayOrHour ? 'date':'month'}\}`,
+                  isTooltipPeriodDayOrHour ? '{capture_text} on {date}':'{capture_text} in {month}',
                   { capture_text: $root._(`{count} capture${tooltipPeriod.snapshotCount !== 1 ?'s':''}`, {count: tooltipPeriod.snapshotCount}), [isTooltipPeriodDayOrHour ? 'date':'month']: tooltipPeriod.getFullReadableId() } )
                 }}
               </div>
