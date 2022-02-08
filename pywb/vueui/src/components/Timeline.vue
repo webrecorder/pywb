@@ -10,7 +10,7 @@
               </div>
               <div v-else-if="tooltipPeriod.snapshotCount">
                 {{ $root._(
-                  isTooltipPeriodDayOrHour ? '{capture_text} on {date}':'{capture_text} in {month}',
+                  isTooltipPeriodDayOrHour ? '{capture_text} on {date}':'{capture_text} in {month}', // TODO: split translation into "in {year}" and "in {month}"
                   { capture_text: $root._(tooltipPeriod.snapshotCount !== 1 ? '{count} captures' : '{count} capture', {count: tooltipPeriod.snapshotCount}), [isTooltipPeriodDayOrHour ? 'date':'month']: tooltipPeriod.getFullReadableId() } )
                 }}
               </div>
