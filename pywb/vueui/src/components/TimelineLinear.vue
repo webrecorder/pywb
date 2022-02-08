@@ -8,7 +8,7 @@
   <div class="list">
     <div v-for="period in snapshotPeriods">
       <span class="link" @click="gotoPeriod(period)" >{{period.snapshot.getTimeFormatted()}}</span>
-      <span v-if="isCurrentSnapshot(period)" class="current">current</span>
+      <span v-if="isCurrentSnapshot(period)" class="current">{{$root._('current')}}</span>
     </div>
   </div>
 </div>
