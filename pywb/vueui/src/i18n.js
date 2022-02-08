@@ -27,7 +27,7 @@ export class PywbI18N {
   getText(id, embeddedVariableStrings=null) {
     const translated = decodeURIComponent(this.config[id] || id);
     if (embeddedVariableStrings && id.indexOf('{') >= 0 && id.indexOf('}') >= 0 ) {
-      return translated.replace(/{(\w+)}/, (match, stringId) => embeddedVariableStrings[stringId]);
+      return translated.replace(/{(\w+)}/g, (match, stringId) => embeddedVariableStrings[stringId]);
     }
     return translated
   }
