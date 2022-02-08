@@ -1,4 +1,5 @@
-const PywbMonthLabels = {1:"Jan", 2:"Feb",3:"Mar",4:"Apr",5:"May",6:"Jun",7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov",12:"Dec"};
+import { PywbI18N } from './i18n.js';
+
 const PywbPeriodIdDelimiter = '-';
 export function PywbData(rawSnaps) {
   const allTimePeriod = new PywbPeriod({type: PywbPeriod.Type.all, id: "all"});
@@ -116,11 +117,11 @@ export class PywbSnapshot {
   }
 
   getTimeDateFormatted() {
-    return `${PywbMonthLabels[this.month]} ${this.day}, ${this.year} at ${this.getTimeFormatted()}`;
+    return `${PywbI18N.instance.getMonth(this.month, 'short')} ${this.day}, ${this.year} at ${this.getTimeFormatted()}`;
   }
 
   getDateFormatted() {
-    return `${this.year}-${PywbMonthLabels[this.month]}-${this.day}`;
+    return `${this.year}-${PywbI18N.instance.getMonth(this.month, 'short')}-${this.day}`;
   }
 
   getTimeFormatted() {
@@ -486,7 +487,7 @@ PywbPeriod.prototype.getReadableId = function(hasDayCardinalSuffix) {
   case PywbPeriod.Type.year:
     return this.id;
   case PywbPeriod.Type.month:
-    return PywbMonthLabels[this.id];
+    return PywbI18N.instance.getMonth(this.id, 'short');
   case PywbPeriod.Type.day: {
     let suffix = "";
     if (hasDayCardinalSuffix) {

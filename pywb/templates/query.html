@@ -18,6 +18,38 @@
 
 {% endif %}
 
+<script>
+    var i18nStrings = {
+        jan_long: "{{ _Q('January') }}",
+        feb_long: "{{ _Q('February') }}",
+        mar_long: "{{ _Q('March') }}",
+        apr_long: "{{ _Q('April') }}",
+        may_long: "{{ _Q('May') }}",
+        jun_long: "{{ _Q('June') }}",
+        jul_long: "{{ _Q('July') }}",
+        aug_long: "{{ _Q('August') }}",
+        sep_long: "{{ _Q('September') }}",
+        oct_long: "{{ _Q('October') }}",
+        nov_long: "{{ _Q('November') }}",
+        dec_long: "{{ _Q('December') }}",
+        jan_short: "{{ _Q('Jan') }}",
+        feb_short: "{{ _Q('Feb') }}",
+        mar_short: "{{ _Q('Mar') }}",
+        apr_short: "{{ _Q('Apr') }}",
+        may_short: "{{ _Q('May') }}",
+        jun_short: "{{ _Q('Jun') }}",
+        jul_short: "{{ _Q('Jul') }}",
+        aug_short: "{{ _Q('Aug') }}",
+        sep_short: "{{ _Q('Sep') }}",
+        oct_short: "{{ _Q('Oct') }}",
+        nov_short: "{{ _Q('Nov') }}",
+        dec_short: "{{ _Q('Dec') }}",
+        "Loading...": "{{ _Q('Loading...') }}",
+        "Current Capture": "{{ _Q('Current Capture') }}",
+        "capture": "{{ _Q('capture') }}",
+        "captures": "{{ _Q('captures') }}",
+    };
+</script>
 
 {% endblock %}
 
@@ -71,7 +103,7 @@
   renderCal.init();
 
 {% else %}
-  VueUI.main("{{ static_prefix }}", "{{ url }}", "{{ prefix }}", undefined, "{{ ui.logo }}");
+  VueUI.main("{{ static_prefix }}", "{{ url }}", "{{ prefix }}", undefined, "{{ ui.logo }}", i18nStrings);
 
 {% endif %}
 
