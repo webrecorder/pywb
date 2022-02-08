@@ -2,7 +2,7 @@
 <div class="timeline-linear">
   <div class="title">
     <div>{{ period.getFullReadableId() }}</div>
-    <div>{{ period.snapshotCount }} capture<span v-if="period.snapshotCount > 1">s</span></div>
+    <div>{{ $root._(`{count} capture${period.snapshotCount !== 1 ? 's':''}`, {count: period.snapshotCount}) }}</div>
   </div>
 
   <div class="list">
