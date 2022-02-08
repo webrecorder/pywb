@@ -11,7 +11,6 @@
                 <span class="goto" @click="changePeriod(parent)" :title="getPeriodZoomOutText(parent)">
                   {{parent.getReadableId(true)}}
                 </span>
-                &gt;
             </span>
         </template>
         <span class="item">
