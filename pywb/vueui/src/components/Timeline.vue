@@ -9,9 +9,10 @@
                 {{ $root._('View capture on {date}', {date: tooltipPeriod.snapshotPeriod.snapshot.getTimeDateFormatted()}) }}
               </div>
               <div v-else-if="tooltipPeriod.snapshotCount">
-                {{ tooltipPeriod.snapshotCount }} captures
-                <span v-if="isTooltipPeriodDayOrHour">on</span><span v-else>in</span>
-                {{ tooltipPeriod.getFullReadableId() }}
+                {{ $root._(
+                  `{count} capture${tooltipPeriod.snapshotCount > 1 && 's'} ${isTooltipPeriodDayOrHour ? 'on':'in'} {${isTooltipPeriodDayOrHour ? 'date':'month'}\}`,
+                  { count: tooltipPeriod.snapshotCount, date: tooltipPeriod.getFullReadableId(), month: tooltipPeriod.getFullReadableId()}
+                )}}
               </div>
             </template>
         </div>
