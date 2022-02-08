@@ -24,6 +24,15 @@ export class PywbI18N {
   getMonth(id, type='long') {
     return decodeURIComponent(this.config[PywbI18N.monthIdPrefix[id]+'_'+type]);
   }
+  // can get long (default) or short day string or intial
+  // PywbI18N expects to receive day's initials like:
+  // config.mon_short, config.tue_long, ...., config.<mmm>_short, config.<mmm>_long
+  getWeekDay(id, type='long') {
+    return decodeURIComponent(this.config[id+'_'+type])
+  }
+  getWeekDays(type='long') {
+    return ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(d => this.getWeekDay(d, type));
+  }
   getText(id, embeddedVariableStrings=null) {
     const translated = decodeURIComponent(this.config[id] || id);
     if (embeddedVariableStrings && id.indexOf('{') >= 0 && id.indexOf('}') >= 0 ) {
