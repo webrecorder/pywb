@@ -15,10 +15,10 @@
             </div>
 
             <div class="toggles">
-              <span class="toggle" :class="{expanded: showFullView}" @click="showFullView = !showFullView" :title="(showTimelineView ? 'show':'hide') + ' calendar'">
+              <span class="toggle" :class="{expanded: showFullView}" @click="showFullView = !showFullView" :title="(showTimelineView ? _('show calendar'):_('hide calendar'))">
                 <img src="/static/calendar-icon.png" />
               </span>
-              <span class="toggle" :class="{expanded: showTimelineView}" @click="showTimelineView = !showTimelineView" :title="(showTimelineView ? 'show':'hide') + ' timeline'">
+              <span class="toggle" :class="{expanded: showTimelineView}" @click="showTimelineView = !showTimelineView" :title="(showTimelineView ? _('show timeline'):_('hide timeline'))">
                 <img src="/static/timeline-icon.png" />
               </span>
             </div>
