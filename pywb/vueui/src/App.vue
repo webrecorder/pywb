@@ -88,8 +88,8 @@ export default {
     }
   },
   methods: {
-    _(id) {
-      return PywbI18N.instance.getText(id);
+    _(id, embeddedVariableStrings=null) {
+      return PywbI18N.instance.getText(id, embeddedVariableStrings);
     },
     gotoPeriod: function(newPeriod, onlyZoomToPeriod) {
       if (this.timelineHighlight) {

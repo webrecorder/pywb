@@ -24,7 +24,14 @@ export class PywbI18N {
   getMonth(id, type='long') {
     return decodeURIComponent(this.config[PywbI18N.monthIdPrefix[id]+'_'+type]);
   }
-  getText(id) {
-    return decodeURIComponent(this.config[id] || id);
+  getText(id, embeddedVariableStrings=null) {
+    const translated = decodeURIComponent(this.config[id] || id);
+    if (embeddedVariableStrings && id.indexOf('{') >= 0 && id.indexOf('}') >= 0 ) {
+      return translated.replace(/{(\w+)}/, (match, stringId) => embeddedVariableStrings[stringId]);
+    }
+    return translated
+  }
+  _(id, embeddedVariableStrings=null) {
+    return this.getText(id, embeddedVariableStrings);
   }
 }
