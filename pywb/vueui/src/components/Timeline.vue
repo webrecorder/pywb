@@ -2,11 +2,11 @@
     <div class="timeline">
         <div class="period-tooltip" v-show="tooltipPeriod" :style="{left: tooltipPeriodPos.x+'px', top: tooltipPeriodPos.y+'px'}">
             <template v-if="tooltipPeriod">
-              <div v-if="tooltipPeriod.snapshot">View capture on
-                {{ tooltipPeriod.snapshot.getTimeDateFormatted() }}
+              <div v-if="tooltipPeriod.snapshot">
+                {{ $root._('View capture on {date}', {date: tooltipPeriod.snapshot.getTimeDateFormatted()}) }}
               </div>
-              <div v-else-if="tooltipPeriod.snapshotPeriod">View capture on
-                {{ tooltipPeriod.snapshotPeriod.snapshot.getTimeDateFormatted() }}
+              <div v-else-if="tooltipPeriod.snapshotPeriod">
+                {{ $root._('View capture on {date}', {date: tooltipPeriod.snapshotPeriod.snapshot.getTimeDateFormatted()}) }}
               </div>
               <div v-else-if="tooltipPeriod.snapshotCount">
                 {{ tooltipPeriod.snapshotCount }} captures
