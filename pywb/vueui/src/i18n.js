@@ -1,8 +1,13 @@
 export class PywbI18N {
-  static init = config => {
+  static #locale = ''; // private (can only be set here)
+  static getLocale() { // get via public static method
+    return PywbI18N.#locale;
+  }
+  static init = (locale, config) => {
     if (PywbI18N.instance) {
       throw new Error('cannot instantiate PywbI18N twice');
     }
+    PywbI18N.#locale = locale;
     PywbI18N.instance = new PywbI18N(config);
   }
 

@@ -7,8 +7,8 @@ import Vue from "vue/dist/vue.esm.browser";
 
 
 // ===========================================================================
-export function main(staticPrefix, url, prefix, timestamp, logoUrl, i18nStrings) {
-  PywbI18N.init(i18nStrings);
+export function main(staticPrefix, url, prefix, timestamp, logoUrl, locale, i18nStrings) {
+  PywbI18N.init(locale, i18nStrings);
   const loadingSpinner = new LoadingSpinner({text: PywbI18N.instance?.getText('Loading...')}); // bootstrap loading-spinner EARLY ON
   new CDXLoader(staticPrefix, url, prefix, timestamp, logoUrl, loadingSpinner);
 }

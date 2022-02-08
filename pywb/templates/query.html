@@ -128,7 +128,7 @@
   renderCal.init();
 
 {% else %}
-  VueUI.main("{{ static_prefix }}", "{{ url }}", "{{ prefix }}", undefined, "{{ ui.logo }}", i18nStrings);
+  VueUI.main("{{ static_prefix }}", "{{ url }}", "{{ prefix }}", undefined, "{{ ui.logo }}", "{{ env.pywb_lang | default('en') }}", i18nStrings);
 
 {% endif %}
 
