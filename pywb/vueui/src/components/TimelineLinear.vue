@@ -2,13 +2,13 @@
 <div class="timeline-linear">
   <div class="title">
     <div>{{ period.getFullReadableId() }}</div>
-    <div>{{ period.snapshotCount }} capture<span v-if="period.snapshotCount > 1">s</span></div>
+    <div>{{ $root._(period.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: period.snapshotCount}) }}</div>
   </div>
 
   <div class="list">
     <div v-for="period in snapshotPeriods">
       <span class="link" @click="gotoPeriod(period)" >{{period.snapshot.getTimeFormatted()}}</span>
-      <span v-if="isCurrentSnapshot(period)" class="current">current</span>
+      <span v-if="isCurrentSnapshot(period)" class="current">{{$root._('current')}}</span>
     </div>
   </div>
 </div>
