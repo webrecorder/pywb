@@ -15,10 +15,10 @@
             </div>
 
             <div class="toggles">
-              <span class="toggle" :class="{expanded: showFullView}" @click="showFullView = !showFullView" :title="(showTimelineView ? 'show':'hide') + ' calendar'">
+              <span class="toggle" :class="{expanded: showFullView}" @click="showFullView = !showFullView" :title="(showTimelineView ? _('show calendar'):_('hide calendar'))">
                 <img src="/static/calendar-icon.png" />
               </span>
-              <span class="toggle" :class="{expanded: showTimelineView}" @click="showTimelineView = !showTimelineView" :title="(showTimelineView ? 'show':'hide') + ' timeline'">
+              <span class="toggle" :class="{expanded: showTimelineView}" @click="showTimelineView = !showTimelineView" :title="(showTimelineView ? _('show timeline'):_('hide timeline'))">
                 <img src="/static/timeline-icon.png" />
               </span>
             </div>
@@ -40,7 +40,7 @@
       </form>
       <div v-if="currentSnapshot && !showFullView">
         <span v-if="config.title">{{ config.title }}</span>
-        Current capture: {{currentSnapshot.getTimeDateFormatted()}}
+        {{_('Current Capture')}}: {{currentSnapshot.getTimeDateFormatted()}}
       </div>
     </div>
     <CalendarYear v-if="showFullView && currentPeriod && currentPeriod.children.length"
@@ -57,6 +57,7 @@ import TimelineBreadcrumbs from "./components/TimelineBreadcrumbs.vue";
 import CalendarYear from "./components/CalendarYear.vue";
 
 import { PywbSnapshot, PywbPeriod } from "./model.js";
+import {PywbI18N} from "./i18n";
 
 export default {
   name: "PywbReplayApp",
@@ -74,7 +75,7 @@ export default {
         title: "",
         initialView: {}
       },
-      timelineHighlight: false
+      timelineHighlight: false,
     };
   },
   components: {Timeline, TimelineBreadcrumbs, CalendarYear},
@@ -87,6 +88,9 @@ export default {
     }
   },
   methods: {
+    _(id, embeddedVariableStrings=null) {
+      return PywbI18N.instance.getText(id, embeddedVariableStrings);
+    },
     gotoPeriod: function(newPeriod, onlyZoomToPeriod) {
       if (this.timelineHighlight) {
         setTimeout((() => {

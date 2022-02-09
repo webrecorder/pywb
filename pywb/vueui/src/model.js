@@ -1,4 +1,5 @@
-const PywbMonthLabels = {1:"Jan", 2:"Feb",3:"Mar",4:"Apr",5:"May",6:"Jun",7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov",12:"Dec"};
+import { PywbI18N } from './i18n.js';
+
 const PywbPeriodIdDelimiter = '-';
 export function PywbData(rawSnaps) {
   const allTimePeriod = new PywbPeriod({type: PywbPeriod.Type.all, id: "all"});
@@ -116,15 +117,15 @@ export class PywbSnapshot {
   }
 
   getTimeDateFormatted() {
-    return `${PywbMonthLabels[this.month]} ${this.day}, ${this.year} at ${this.getTimeFormatted()}`;
+    return new Date(this.year, this.month-1, this.day, this.hour, this.minute, this.second).toLocaleString(PywbI18N.getLocale()).toLowerCase();
   }
 
   getDateFormatted() {
-    return `${this.year}-${PywbMonthLabels[this.month]}-${this.day}`;
+    return new Date(this.year, this.month-1, this.day).toLocaleDateString(PywbI18N.getLocale()).toLowerCase();
   }
 
   getTimeFormatted() {
-    return (this.hour < 13 ? this.hour : (this.hour % 12)) + ":" + ((this.minute < 10 ? "0":"")+this.minute) + ":" + ((this.second < 10 ? "0":"")+this.second) + " " + (this.hour < 12 ? "am":"pm");
+    return new Date(2000, 0, 1, this.hour, this.minute, this.second).toLocaleTimeString(PywbI18N.getLocale()).toLowerCase();
   }
 
   getParentIds() {
@@ -461,7 +462,7 @@ PywbPeriod.prototype.findByFullId = function(fullId) {
   }
   return found;
 };
-PywbPeriod.prototype.getFullReadableId = function(hasDayCardinalSuffix) {
+PywbPeriod.prototype.getFullReadableId = function() {
   // remove "all-time" from parents (getParents(true) when printing readable id (of all parents and currrent
   switch (this.type) {
     case PywbPeriod.Type.all:
@@ -469,36 +470,47 @@ PywbPeriod.prototype.getFullReadableId = function(hasDayCardinalSuffix) {
     case PywbPeriod.Type.year:
       return this.id;
     case PywbPeriod.Type.month:
-      return this.getReadableId(hasDayCardinalSuffix) + ' ' + this.parent.id;
+      return this.getReadableId() + ' ' + this.parent.id;
     case PywbPeriod.Type.day: {
-      return this.parent.getReadableId(hasDayCardinalSuffix) + ' ' + this.getReadableId(hasDayCardinalSuffix) + ', ' + this.parent.parent.id;
+      return new Date(this.parent.parent.id, this.parent.id, this.getReadableId()).toLocaleDateString(PywbI18N.getLocale());
     }
     case PywbPeriod.Type.hour:
-      return this.parent.parent.getReadableId(hasDayCardinalSuffix) + ' ' + this.parent.getReadableId(hasDayCardinalSuffix) + ', ' + this.parent.parent.parent.id + ' at ' + this.getReadableId(hasDayCardinalSuffix);
+      const hourRange = this.getReadableId({hourRange: true});
+      return this.parent.getFullReadableId() + ' ' + PywbI18N.instance._('from {hour1} to {hour2}', {
+        hour1: hourRange[0],
+        hour2: hourRange[1]
+      });
     case PywbPeriod.Type.snapshot:
-      return this.parent.parent.getReadableId(hasDayCardinalSuffix) + ' ' + this.parent.getReadableId(hasDayCardinalSuffix) + ', ' + this.parent.parent.parent.id + ' at ' + this.snapshot.getTimeFormatted();
+      return this.snapshot.getTimeDateFormatted();
   }
 };
-PywbPeriod.prototype.getReadableId = function(hasDayCardinalSuffix) {
+PywbPeriod.prototype.getReadableId = function(opts={hourRange:null}) {
   switch (this.type) {
   case PywbPeriod.Type.all:
-    return "All-time";
+    return PywbI18N.instance._("All-time");
   case PywbPeriod.Type.year:
     return this.id;
   case PywbPeriod.Type.month:
-    return PywbMonthLabels[this.id];
+    return PywbI18N.instance.getMonth(this.id, 'short');
   case PywbPeriod.Type.day: {
     let suffix = "";
-    if (hasDayCardinalSuffix) {
-      const singleDigit = this.id % 10;
-      const isTens = Math.floor(this.id / 10) === 1;
-      const suffixes = {1:"st", 2:"nd",3:"rd"};
-      suffix = (isTens || !suffixes[singleDigit]) ? "th" : suffixes[singleDigit];
-    }
+    // DISABLING cardinal suffix for now, as it is complicated to replicate in multiple locales with 1 simple function
+    // TODO: add cardinal suffix handling later IF REQUESTED!
+    // if (cardinalSuffix) {
+    //   const singleDigit = this.id % 10;
+    //   const isTens = Math.floor(this.id / 10) === 1;
+    //   const suffixes = {1:"st", 2:"nd",3:"rd"};
+    //   suffix = (isTens || !suffixes[singleDigit]) ? "th" : suffixes[singleDigit];
+    // }
     return this.id + suffix;
   }
-  case PywbPeriod.Type.hour:
-    return ({1:"12 am", 2: "3 am", 3: "6 am", 4: "9 am", 5: "noon", 6: "3 pm", 7: "6 pm", 8: "9 pm"})[this.id];
+    case PywbPeriod.Type.hour:
+    // use browser's locale setting to get time string and remove seconds, and lower-case it (in case AM-PM)
+    const hours = [0, 3, 6, 9, 12, 15, 18, 21].map(hour => new Date(2000, 0, 1, hour, 0, 0).toLocaleTimeString(PywbI18N.getLocale()).replace(/^(\d{1,2}:\d\d):\d\d/, (m, m1)=> m1).toLowerCase());
+    if (opts.hourRange) {
+      return [hours[this.id-1], hours[this.id % hours.length]];
+    }
+    return hours[this.id-1];
     //return ({1:'midnight', 2: '6 am', 3: 'noon', 4: '6 pm'})[this.id];
     //return (this.id < 13 ? this.id : this.id % 12) + ' ' + (this.id < 12 ? 'am':'pm');
   case PywbPeriod.Type.snapshot:

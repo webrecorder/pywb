@@ -1,13 +1,15 @@
 import appData from "./App.vue";
 
 import { PywbData } from "./model.js";
+import { PywbI18N } from "./i18n.js";
 
 import Vue from "vue/dist/vue.esm.browser";
 
 
 // ===========================================================================
-export function main(staticPrefix, url, prefix, timestamp, logoUrl) {
-  const loadingSpinner = new LoadingSpinner(); // bootstrap loading-spinner EARLY ON
+export function main(staticPrefix, url, prefix, timestamp, logoUrl, locale, i18nStrings) {
+  PywbI18N.init(locale, i18nStrings);
+  const loadingSpinner = new LoadingSpinner({text: PywbI18N.instance?.getText('Loading...')}); // bootstrap loading-spinner EARLY ON
   new CDXLoader(staticPrefix, url, prefix, timestamp, logoUrl, loadingSpinner);
 }
 
