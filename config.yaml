@@ -33,5 +33,4 @@ redirect_to_exact: true
 # uncomment to set available locales
 locales:
   - en
-  - fr
-
+  - ru

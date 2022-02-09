@@ -2,7 +2,7 @@
   <div class="app" :class="{expanded: showTimelineView}" data-app="webrecorder-replay-app">
     <div class="banner">
       <div class="line">
-        <div class="logo"><a href="/"><img :src="config.logoImg" style="max-width: 80px" /></a></div>
+        <div class="logo"><a href="/"><img :src="config.logoImg"/></a></div>
         <div class="timeline-wrap">
           <div class="line">
             <div class="breadcrumbs-wrap">
@@ -21,6 +21,12 @@
               <span class="toggle" :class="{expanded: showTimelineView}" @click="showTimelineView = !showTimelineView" :title="(showTimelineView ? _('show timeline'):_('hide timeline'))">
                 <img src="/static/timeline-icon.png" />
               </span>
+              <ul class="lang-select" role="listbox" :aria-activedescendant="config.locale"
+                :aria-labelledby="_('Language select')">
+                <li v-for="(locPath, key) in config.allLocales" role="option" :id="key">
+                  <a :href="locPath + (currentSnapshot ? currentSnapshot.id : '*') + '/' + config.url">{{ key }}</a>
+                </li>
+              </ul>
             </div>
           </div>
           <Timeline
@@ -76,6 +82,7 @@ export default {
         initialView: {}
       },
       timelineHighlight: false,
+      locales: [],
     };
   },
   components: {Timeline, TimelineBreadcrumbs, CalendarYear},
@@ -262,4 +269,33 @@ export default {
   #theurl {
     width: 400px;
   }
+
+  ul.lang-select {
+      display: inline-block;
+      list-style-type: none;
+      margin: 0;
+      padding: 0 24px 0 8px;
+  }
+
+  ul.lang-select li {
+    display: inline-block;
+    padding-left: 6px;
+    font-weight: bold;
+    font-size: smaller;
+  }
+
+  ul.lang-select li:not(:last-child):after {
+    content: ' / ';
+  }
+
+  ul.lang-select a:link,
+  ul.lang-select a:visited,
+  ul.lang-select a:active {
+    text-decoration: none;
+  }
+
+  ul.lang-select a:hover {
+    text-decoration: underline;
+  }
+
 </style>

@@ -56,7 +56,7 @@ export default {
         font-size: inherit;
     }
     .breadcrumbs .count {
-        vertical-align: middle;
+        /*vertical-align: middle;*/
         font-size: inherit;
     }
 
