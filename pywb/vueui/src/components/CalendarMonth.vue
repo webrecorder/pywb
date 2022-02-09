@@ -8,6 +8,7 @@
         width: 220px;
         text-align: center;
         vertical-align: top;
+        box-sizing: content-box;
     }
     .calendar-month:hover {
         background-color: #eeeeee;
@@ -96,7 +97,7 @@
             <span v-for="(dayInitial) in dayInitials" class="day" :style="dayStyle">{{dayInitial}}</span><br/>
             <span v-for="(day,i) in days"><br v-if="i && i % 7===0"/><span class="day" :class="{empty: !day || !day.snapshotCount, 'contains-current-snapshot':dayContainsCurrentSnapshot(day)}" :style="dayStyle"  @click="gotoDay(day, $event)"><template v-if="day"><span class="size" v-if="day.snapshotCount" :style="getDayCountCircleStyle(day.snapshotCount)"> </span><span class="day-id">{{day.id}}</span><span v-if="day.snapshotCount" class="count">{{ $root._(day.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: day.snapshotCount}) }}</span></template><template v-else v-html="'&nbsp;'"></template></span></span>
         </div>
-        <div v-else class="empty">no captures</div>
+        <div v-else class="empty">{{ _('no captures') }}</div>
     </div>
 </template>
 
@@ -146,6 +147,9 @@ export default {
     }
   },
   methods: {
+    _(id, embeddedVariableStrings=null) {
+      return PywbI18N.instance.getText(id, embeddedVariableStrings);
+    },
     getLongMonthName(id) {
       return PywbI18N.instance.getMonth(id);
     },

@@ -2,7 +2,7 @@ from io import BytesIO
 
 import requests
 from fakeredis import FakeStrictRedis
-from six.moves.urllib.parse import unquote, urlencode, urlsplit, urlunsplit
+from six.moves.urllib.parse import unquote, urlencode, urlsplit, urlunsplit, parse_qsl
 from warcio.bufferedreaders import BufferedReader
 from warcio.recordloader import ArcWarcRecordLoader
 from warcio.timeutils import http_date_to_timestamp, timestamp_to_http_date
@@ -802,9 +802,17 @@ class RewriterApp(object):
     def handle_query(self, environ, wb_url, kwargs, full_prefix):
         prefix = self.get_full_prefix(environ)
 
+        res = dict(parse_qsl(environ.get("QUERY_STRING")))
+        is_advanced = res.get("matchType", "exact") != "exact" or res.get("url", "").endswith("*")
+
+        # vue ui not supported for advanced search for now
+        ui = kwargs.get("ui", {})
+        if is_advanced:
+            ui["vue_calendar_ui"] = False
+
         params = dict(url=wb_url.url,
                       prefix=prefix,
-                      ui=kwargs.get('ui', {}))
+                      ui=ui)
 
         return self.query_view.render_to_string(environ, **params)
 

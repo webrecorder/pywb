@@ -1,5 +1,9 @@
+const smallSize = "75px";
+
+
 class LoadingSpinner {
   static #instanceCount = 0;
+
   constructor(config={}) {
     this.config = {initialState:true, animationDuration:500, text:'Loading...', ...config};
 
@@ -75,7 +79,7 @@ class LoadingSpinner {
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: ${this.config.isSmall ? smallSize : "100vh"};
     z-index: 900;
 
     display: flex;
@@ -98,8 +102,8 @@ class LoadingSpinner {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 200px;
-    height: 200px;
+    width: ${this.config.isSmall ? smallSize : "200px"};
+    height: ${this.config.isSmall ? smallSize : "200px"};
 }`,`
 [data-loading-spinner^=circle] {
     position: absolute;

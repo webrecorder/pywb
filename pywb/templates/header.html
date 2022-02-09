@@ -1,6 +1,6 @@
 {# place content to be added at the very beginning of the <body> tag in this file below #}
 <header>
-   {% if not err_msg and locales|length > 1 %}
+   {% if not err_msg and locales|length > 1 and (not ui or not ui.vue_calendar_ui) %}
     <div class="language-select">
         {{ _('Language:') }}
         <ul role="listbox" aria-activedescendant="{{ env.pywb_lang | default(default_locale) }}" aria-labelledby="{{ _('Language select') }}">
