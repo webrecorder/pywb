@@ -832,7 +832,7 @@ class RewriterApp(object):
 
     def get_rel_prefix(self, environ):
         # return request.script_name
-        return environ.get('SCRIPT_NAME') + '/'
+        return environ.get('SCRIPT_NAME', '') + '/'
 
     def get_full_prefix(self, environ):
         return self.get_host_prefix(environ) + self.get_rel_prefix(environ)
