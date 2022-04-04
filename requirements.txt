@@ -6,7 +6,7 @@ jinja2<3.0.0
 surt>=0.3.1
 brotlipy
 pyyaml
-werkzeug
+werkzeug==1.0.1
 webencodings
 gevent==20.9.0
 webassets==0.12.1
