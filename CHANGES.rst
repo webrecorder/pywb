@@ -1,3 +1,9 @@
+pywb 2.6.5 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* fix build: add 'markupsafe<2.1.0' to requirements
+
+
 pywb 2.6.4 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
