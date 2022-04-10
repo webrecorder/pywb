@@ -118,7 +118,7 @@ def test_s3_read_2():
     res = BlockLoader().load('s3://commoncrawl/crawl-data/CC-MAIN-2015-11/index.html')
 
     buff = res.read()
-    assert len(buff) == 2082
+    assert len(buff) == 2330
 
     reader = DecompressingBufferedReader(BytesIO(buff))
     assert reader.readline() == b'<!DOCTYPE html>\n'
