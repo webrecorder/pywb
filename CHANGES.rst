@@ -1,3 +1,9 @@
+pywb 2.6.6 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* fix build: add 'werkzeug==1.0.1' to requirements
+* fix tests: disable broken s3 tests (for now)
+
 pywb 2.6.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
