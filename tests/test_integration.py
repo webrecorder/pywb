@@ -269,17 +269,41 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.content_length != 0
         assert resp.content_type == 'application/x-javascript'
 
-        # test with Chrome user agent
-        resp = self.get('/pywb/20140126200625{0}/http://www.iana.org/_js/2013.1/jquery.js', fmod,
-                        headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'})
-        assert 'let window = _____WB$wombat$assign$function_____(' in resp.text
+        user_agents = [
+            # chrome
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.3071.115 Safari/537.36'
+            # firefox
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:98.0) Gecko/20100101 Firefox/98.0'
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:98.0) Gecko/20100101 Firefox/100.0',
+            # safari
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15'
+            # other
+            'some-custom-browser'
+        ]
 
-    def test_replay_js_ie11_no_obj_proxy(self, fmod):
-        # IE11 user-agent, no proxy
-        resp = self.get('/pywb/20140126200625{0}/http://www.iana.org/_js/2013.1/jquery.js', fmod,
-                        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko'})
+        # test with each user-agent
+        for ua in user_agents:
+            resp = self.get('/pywb/20140126200625{0}/http://www.iana.org/_js/2013.1/jquery.js', fmod,
+                            headers={'User-Agent': ua})
 
-        assert 'let window = _____WB$wombat$assign$function_____(' not in resp.text
+            assert 'let window = _____WB$wombat$assign$function_____(' in resp.text
+
+    def test_replay_js_no_obj_proxy(self, fmod):
+        user_agents = [
+            # IE11 user-agent, no proxy
+            "Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko"
+            # old chrome
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/19.0.3071.115 Safari/537.36'
+            # old firefox
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:98.0) Gecko/20100101 Firefox/12.0'
+        ]
+
+        for ua in user_agents:
+            resp = self.get('/pywb/20140126200625{0}/http://www.iana.org/_js/2013.1/jquery.js', fmod,
+                            headers={'User-Agent': ua})
+
+            assert 'let window = _____WB$wombat$assign$function_____(' not in resp.text
 
     def test_replay_non_exact(self, fmod):
         # non-exact mode, don't redirect to exact capture
