@@ -146,7 +146,7 @@ class RewriterWithJSProxy(DefaultRewriter):
             'safari': 10,
             'opera': 36,
             'edge': 12,
-            'msie': 1000,
+            'ie': 1000,
         }
 
         min_vers = supported.get(ua.get("family", "").lower())
