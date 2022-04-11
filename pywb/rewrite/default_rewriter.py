@@ -20,7 +20,7 @@ from pywb.rewrite.rewrite_js_workers import JSWorkerRewriter
 from pywb import DEFAULT_RULES_FILE
 
 import copy
-from werkzeug.useragents import UserAgent
+from ua_parser import user_agent_parser
 
 
 # ============================================================================
@@ -34,7 +34,7 @@ class DefaultRewriter(BaseContentRewriter):
 
         'css': CSSRewriter,
 
-        'js': JSLocationOnlyRewriter,
+        'js': JSWombatProxyRewriter,
         'js-proxy': JSNoneRewriter,
         'js-worker': JSWorkerRewriter,
 
@@ -119,33 +119,44 @@ class RewriterWithJSProxy(DefaultRewriter):
         super(RewriterWithJSProxy, self).__init__(*args, **kwargs)
 
     def get_rewriter(self, rw_type, rwinfo=None):
-        if rw_type == 'js' and rwinfo:
-            # check if UA allows this
-            if self.ua_allows_obj_proxy(rwinfo.url_rewriter.rewrite_opts):
-                return JSWombatProxyRewriter
+        if rw_type != 'js' or not rwinfo:
+            return super(RewriterWithJSProxy, self).get_rewriter(rw_type, rwinfo)
 
-        # otherwise, return default rewriter
-        return super(RewriterWithJSProxy, self).get_rewriter(rw_type, rwinfo)
+        # check if should use old non-proxy rewriter
+        if self.ua_no_obj_proxy(rwinfo.url_rewriter.rewrite_opts):
+            print("loc only")
+            return JSLocationOnlyRewriter
+        else:
+        # otherwise, return default, js proxy-capable rewriter
+            return JSWombatProxyRewriter
 
-    def ua_allows_obj_proxy(self, opts):
+    def ua_no_obj_proxy(self, opts):
         ua = opts.get('ua')
         if not ua:
             ua_string = opts.get('ua_string')
             if ua_string:
-                ua = UserAgent(ua_string)
+                ua = user_agent_parser.ParseUserAgent(ua_string)
 
         if ua is None:
-            return True
+            return False
 
         supported = {
-            'chrome': '49.0',
-            'firefox': '44.0',
-            'safari': '10.0',
-            'opera': '36.0',
-            'edge': '12.0',
-            'msie': None,
+            'chrome': 49,
+            'firefox': 4,
+            'safari': 10,
+            'opera': 36,
+            'edge': 12,
+            'ie': 1000,
         }
 
-        min_vers = supported.get(ua.browser)
+        min_vers = supported.get(ua.get("family", "").lower())
+        if not min_vers:
+            return False
 
-        return (min_vers and ua.version >= min_vers)
+        try:
+            ua_version = int(ua.get("major", 0))
+        except:
+            return False
+
+        return ua_version < min_vers
+

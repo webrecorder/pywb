@@ -13,7 +13,7 @@ from pywb.utils.io import chunk_encode_iter
 
 from pywb.rewrite.wburl import WbUrl
 from pywb.rewrite.url_rewriter import UrlRewriter
-from pywb.rewrite.default_rewriter import DefaultRewriter, RewriterWithJSProxy
+from pywb.rewrite.default_rewriter import RewriterWithJSProxy
 
 from pywb import get_test_dir
 
@@ -39,8 +39,7 @@ def headers(request):
 class TestContentRewriter(object):
     @classmethod
     def setup_class(self):
-        self.content_rewriter = DefaultRewriter()
-        self.js_proxy_content_rewriter = RewriterWithJSProxy()
+        self.content_rewriter = RewriterWithJSProxy()
 
     def _create_response_record(self, url, headers, payload, warc_headers):
         writer = BufferWARCWriter()
@@ -65,7 +64,6 @@ class TestContentRewriter(object):
         record = self._create_response_record(url, headers, content, warc_headers)
 
         wburl = WbUrl(ts + '/' + (request_url or url))
-        url_rewriter = UrlRewriter(wburl, prefix)
 
         cdx = CDXObject()
         cdx['url'] = url
@@ -79,11 +77,13 @@ class TestContentRewriter(object):
             return ''
 
         if use_js_proxy:
-            rewriter = self.js_proxy_content_rewriter
+            rewrite_opts = {}
         else:
-            rewriter = self.content_rewriter
+            rewrite_opts = {'ua_string': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/10.0 Safari/537.36'}
 
-        return rewriter(record, url_rewriter, cookie_rewriter=None,
+        url_rewriter = UrlRewriter(wburl, prefix, rewrite_opts=rewrite_opts)
+
+        return self.content_rewriter(record, url_rewriter, cookie_rewriter=None,
                         head_insert_func=insert_func,
                         cdx=cdx,
                         environ=environ)

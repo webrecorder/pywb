@@ -1,3 +1,11 @@
+pywb 2.6.6 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* dependency: don't use obsolete werkzeug useragent package `#704 <https://github.com/webrecorder/pywb/pull/704>`_
+* fix user-agent detection: use ua-parser module, default to new js-proxy mode, unless older browser detected `#707 <https://github.com/webrecorder/pywb/pull/707>`_
+* fix tests: disable broken s3 tests for now
+* Dockerfile: use python 3.8 by default
+
 pywb 2.6.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
