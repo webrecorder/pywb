@@ -8,7 +8,7 @@ brotlipy
 pyyaml
 werkzeug
 webencodings
-gevent==20.9.0
+gevent==21.12.0
 webassets==0.12.1
 portalocker
 wsgiprox>=1.5.1
