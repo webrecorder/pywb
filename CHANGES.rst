@@ -3,6 +3,7 @@ pywb 2.6.7 changelist
 
 * dependency: bump gevent to latest (21.12.0)
 * rewrite: fix eval rewriting where '._eval' was accidentally being rewritten
+* post-to-get conversion: properly handle json with top-level lists, to match cdxj-indexer, print parse errors, fixes `#709 <https://github.com/webrecorder/pywb/pull/709>`_
 
 pywb 2.6.6 changelist
 ~~~~~~~~~~~~~~~~~~~~~
