@@ -11,6 +11,7 @@ from io import BytesIO
 import base64
 import cgi
 import json
+import sys
 
 
 #=============================================================================
@@ -277,6 +278,7 @@ class MethodQueryCanonicalizer(object):
             try:
                 query = self.json_parse(query)
             except Exception as e:
+                sys.stderr.write("Ignoring query, error parsing as json: " + query.decode("utf-8") + "\n")
                 query = ''
 
         elif mime.startswith('text/plain'):
@@ -316,12 +318,17 @@ class MethodQueryCanonicalizer(object):
             dupes[n] += 1
             return n + "." + str(dupes[n]) + "_";
 
-        def _parser(dict_var):
-            for n, v in dict_var.items():
-                if isinstance(v, dict):
-                    _parser(v)
-                else:
-                    data[get_key(n)] = str(v)
+        def _parser(json_obj, name=""):
+            if isinstance(json_obj, dict):
+                for n, v in json_obj.items():
+                    _parser(v, n)
+
+            elif isinstance(json_obj, list):
+                for v in json_obj:
+                    _parser(v, name)
+
+            elif name:
+                data[get_key(name)] = str(json_obj)
 
         _parser(json.loads(string))
         return urlencode(data)
