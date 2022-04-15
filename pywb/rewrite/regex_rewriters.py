@@ -84,6 +84,8 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
 
         check_loc = '((self.__WB_check_loc && self.__WB_check_loc(location, arguments)) || {}).href = '
 
+        eval_str = 'WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval'
+
         self.local_objs = [
             'window',
             'self',
@@ -102,7 +104,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
 
         rules = [
             # rewriting 'eval(...)' - invocation
-            (r'(?<!function\s)(?:^|[^,$])eval\s*\(', self.replace_str('WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval', 'eval'), 0),
+            (r'(?<!function\s)(?:^|[^,$])\beval\s*\(', self.replace_str(eval_str, 'eval'), 0),
             # rewriting 'x = eval' - no invocation
             (r'(?<=[=,])\s*\beval\b\s*(?![(:.$])', self.replace_str('self.eval', 'eval'), 0),
             (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),

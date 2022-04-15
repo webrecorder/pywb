@@ -254,6 +254,12 @@ r"""
 >>> _test_js_obj_proxy('x = obj.eval(a)')
 'x = obj.eval(a)'
 
+>>> _test_js_obj_proxy('x = obj._eval(a)')
+'x = obj._eval(a)'
+
+>>> _test_js_obj_proxy('x = obj.$eval(a)')
+'x = obj.$eval(a)'
+
 
 #=================================================================
 # XML Rewriting

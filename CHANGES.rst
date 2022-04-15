@@ -1,3 +1,9 @@
+pywb 2.6.7 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* dependency: bump gevent to latest (21.12.0)
+* rewrite: fix eval rewriting where '._eval' was accidentally being rewritten
+
 pywb 2.6.6 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
