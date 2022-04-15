@@ -277,7 +277,6 @@ class MethodQueryCanonicalizer(object):
             try:
                 query = self.json_parse(query)
             except Exception as e:
-                print(e)
                 query = ''
 
         elif mime.startswith('text/plain'):
