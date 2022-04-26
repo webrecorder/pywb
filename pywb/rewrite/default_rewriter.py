@@ -102,8 +102,8 @@ class DefaultRewriter(BaseContentRewriter):
         super(DefaultRewriter, self).__init__(rules_file, replay_mod)
         self.all_rewriters = copy.copy(self.DEFAULT_REWRITERS)
 
-        self.add_prefer_mod('raw', 'id_')
         self.add_prefer_mod('raw', 'ir_')
+        self.add_prefer_mod('raw', 'id_')
         self.add_prefer_mod('banner-only', 'bn_')
         self.add_prefer_mod('rewritten', replay_mod)
 
