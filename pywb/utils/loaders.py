@@ -185,7 +185,8 @@ class BlockLoader(BaseLoader):
     """
     a loader which can stream blocks of content
     given a uri, offset and optional length.
-    Currently supports: http/https and file/local file system
+    Currently supports: http/https, file/local file system,
+    pkg, WebHDFS, S3
     """
 
     loaders = {}
@@ -393,14 +394,15 @@ class S3Loader(BaseLoader):
 
         def s3_load(anon=False):
             if not self.client:
+                s3_client_args = {}
                 if anon:
-                    config = Config(signature_version=UNSIGNED)
-                else:
-                    config = None
+                    s3_client_args['config'] = Config(signature_version=UNSIGNED)
+                if aws_access_key_id:
+                    s3_client_args['aws_access_key_id'] = aws_access_key_id
+                    s3_client_args['aws_secret_access_key'] = aws_secret_access_key
 
-                client = boto3.client('s3', aws_access_key_id=aws_access_key_id,
-                                      aws_secret_access_key=aws_secret_access_key,
-                                      config=config)
+                client = boto3.client('s3', **s3_client_args)
+
             else:
                 client = self.client
 
