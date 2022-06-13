@@ -58,7 +58,13 @@ Please see the `full documentation <https://pywb.readthedocs.org>`_ for more det
 Installation
 ------------
 
-To run and install locally you can:
+```shell
+pip install pywb
+```
+
+Note: depending on your Python installation, you may have to use `pip3` instead of `pip`.
+
+To install, test and build docs locally you can:
 
 * Install with ``python setup.py install``
 
