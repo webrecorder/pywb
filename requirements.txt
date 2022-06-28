@@ -9,7 +9,7 @@ pyyaml
 werkzeug
 webencodings
 gevent==21.12.0
-webassets==0.12.1
+webassets==2.0
 portalocker
 wsgiprox>=1.5.1
 fakeredis<1.0
