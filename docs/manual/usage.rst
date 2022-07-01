@@ -218,13 +218,13 @@ The following will run pywb in Docker directly on port 80:
 
 .. code:: console
 
-      docker run -p 80:8080 -v /webarchive-data/:/webarchive
+      docker run -p 80:8080 -v /webarchive-data/:/webarchive webrecorder/pywb
 
 To run pywb in Docker behind a local nginx (as shown below), port 8081 should also be mapped:
 
 .. code:: console
 
-      docker run -p 8081:8081 -v /webarchive-data/:/webarchive
+      docker run -p 8081:8081 -v /webarchive-data/:/webarchive webrecorder/pywb
 
 
 See :ref:`getting-started-docker` for more info on using pywb with Docker.
