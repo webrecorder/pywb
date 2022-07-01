@@ -20,7 +20,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
 
 // Creates the default pywb banner.
 
-(function() {
+(function () {
   if (window.top !== window) {
     return;
   }
@@ -44,7 +44,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
   /**
    * @desc Initialize (display) the banner
    */
-  DefaultBanner.prototype.init = function() {
+  DefaultBanner.prototype.init = function () {
     this.createBanner('_wb_frame_top_banner');
 
     if (window.wbinfo) {
@@ -58,11 +58,46 @@ This file is part of pywb, https://github.com/webrecorder/pywb
   };
 
   /**
+   * @desc Fetches the prior and next capture timestamp from the cdx API
+   * and adds them to the banner_info as previous_ts and next_ts
+   * 
+   * @param {string} url - The URL of the replayed page
+   * @param {string} ts - The timestamp of the replayed page.
+   */
+  DefaultBanner.prototype.adjacentCrawls = function (url, timestamp) {
+    prefix = window.banner_info.prefix
+    cdxj_query = `${prefix}cdx?url=${url}&output=json`
+    var request = new XMLHttpRequest()
+    request.open('GET', cdxj_query)
+    request.onload = function () {
+      var data = this.response.trim().split(/\r?\n/)
+      var currentTimestamp = `${timestamp}`
+      data.forEach(function (crawl, index, data) {
+        crawl = JSON.parse(crawl)
+        if (crawl.timestamp == currentTimestamp) {
+          // Get Previous Capture Link
+          if (index > 0) {
+            // Assign the value into the banner_info object for access later
+            window.banner_info.previous_ts = JSON.parse(data[index - 1]).timestamp
+          }
+
+          // Get Next Capture Link
+          if (index < data.length - 1) {
+            // Assign the value into the banner_info object for access later
+            window.banner_info.next_ts = JSON.parse(data[index + 1]).timestamp
+          }
+        }
+      })
+    }
+    request.send()
+  }
+
+  /**
    * @desc Called by ContentFrame to detect if the banner is still showing
    * that the page is loading
    * @returns {boolean}
    */
-  DefaultBanner.prototype.stillIndicatesLoading = function() {
+  DefaultBanner.prototype.stillIndicatesLoading = function () {
     return !this.bannerUrlSet;
   };
 
@@ -72,7 +107,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
    * If we are in live mode this is undefined/empty string
    * @param {boolean} is_live - A bool indicating if we are operating in live mode
    */
-  DefaultBanner.prototype.updateCaptureInfo = function(url, ts, is_live) {
+  DefaultBanner.prototype.updateCaptureInfo = function (url, ts, is_live) {
     if (is_live && !ts) {
       ts = new Date().toISOString().replace(/[-T:.Z]/g, '');
     }
@@ -84,7 +119,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
    * @param {MessageEvent} event - The message event containing the message received
    * from the replayed page
    */
-  DefaultBanner.prototype.onMessage = function(event) {
+  DefaultBanner.prototype.onMessage = function (event) {
     var type = event.data.wb_type;
 
     if (type === 'load' || type === 'replace-url') {
@@ -132,7 +167,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
    * @desc Navigate to different language, if available
    */
 
-  DefaultBanner.prototype.changeLanguage = function(lang, evt) {
+  DefaultBanner.prototype.changeLanguage = function (lang, evt) {
     evt.preventDefault();
     var path = window.location.href;
     if (path.indexOf(window.banner_info.prefix) == 0) {
@@ -147,7 +182,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
    * @desc Creates the underlying HTML elements comprising the banner
    * @param {string} bid - The id for the banner
    */
-  DefaultBanner.prototype.createBanner = function(bid) {
+  DefaultBanner.prototype.createBanner = function (bid) {
     this.banner = document.createElement('wb_div', true);
     this.banner.setAttribute('id', bid);
     this.banner.setAttribute('lang', 'en');
@@ -165,10 +200,44 @@ This file is part of pywb, https://github.com/webrecorder/pywb
       this.banner.appendChild(logo);
     }
 
+    // Create the container for the crawl info and links.
+    this.captureDiv = document.createElement("div")
+    this.captureDiv.setAttribute("class", "container")
+
+    // Create the row to capture the columns
+    this.captureDivRow = document.createElement("div")
+    this.captureDivRow.setAttribute("class", "row")
+
+    // Create the previous capture column
+    this.previousCapture = document.createElement("div")
+    this.previousCapture.setAttribute("class", "col-sm text-right")
+    this.previousCaptureLink = document.createElement("a");
+    this.previousCaptureLink.setAttribute("class", "align-middle font-weight-light text-light");
+    this.previousCaptureLink.setAttribute("href", "#");
+    this.previousCapture.appendChild(this.previousCaptureLink)
+
+    // Create the next capture column
+    this.nextCapture = document.createElement("div")
+    this.nextCapture.setAttribute("class", "col-sm text-left")
+    this.nextCaptureLink = document.createElement("a");
+    this.nextCaptureLink.setAttribute("class", "align-middle font-weight-light text-light capture-link");
+    this.nextCaptureLink.setAttribute("href", "#");
+    this.nextCapture.appendChild(this.nextCaptureLink)
+
+    // Create the capture info column
+    this.captureInfoDiv = document.createElement("div")
+    this.captureInfoDiv.setAttribute("class", "col-sm text-center")
     this.captureInfo = document.createElement("span");
     this.captureInfo.setAttribute("id", "_wb_capture_info");
     this.captureInfo.innerHTML = window.banner_info.loadingLabel;
-    this.banner.appendChild(this.captureInfo);
+    this.captureInfoDiv.appendChild(this.captureInfo)
+
+    // Append the capture info columns ot the captuer info container
+    this.captureDivRow.appendChild(this.previousCapture)
+    this.captureDivRow.appendChild(this.captureInfoDiv);
+    this.captureDivRow.appendChild(this.nextCapture)
+    this.captureDiv.appendChild(this.captureDivRow)
+    this.banner.appendChild(this.captureDiv)
 
     var ancillaryLinks = document.createElement("div");
     ancillaryLinks.setAttribute("id", "_wb_ancillary_links");
@@ -178,7 +247,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
     var calendarLink = document.createElement("a");
     calendarLink.setAttribute("id", "calendarLink");
     calendarLink.setAttribute("href", "#");
-    calendarLink.innerHTML = "<img src='" + calendarImg + "' alt='" + window.banner_info.calendarAlt + "'><span class='_wb_no-mobile'>&nbsp;" +window.banner_info.calendarLabel + "</span>";
+    calendarLink.innerHTML = "<img src='" + calendarImg + "' alt='" + window.banner_info.calendarAlt + "'><span class='_wb_no-mobile'>&nbsp;" + window.banner_info.calendarLabel + "</span>";
     ancillaryLinks.appendChild(calendarLink);
     this.calendarLink = calendarLink;
 
@@ -191,7 +260,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
       label.appendChild(document.createTextNode(window.banner_info.choiceLabel + " "));
       languages.appendChild(label);
 
-      for(var i = 0; i < locales.length; i++) {
+      for (var i = 0; i < locales.length; i++) {
         var locale = locales[i];
         var langLink = document.createElement("a");
         langLink.setAttribute("href", "#");
@@ -200,7 +269,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
 
         languages.appendChild(langLink);
         if (i !== locales.length - 1) {
-            languages.appendChild(document.createTextNode(" / "));
+          languages.appendChild(document.createTextNode(" / "));
         }
       }
 
@@ -220,7 +289,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
    * @param {boolean} is_gmt - Is the returned date string to be in GMT time
    * @returns {string}
    */
-  DefaultBanner.prototype.ts_to_date = function(ts, is_gmt) {
+  DefaultBanner.prototype.ts_to_date = function (ts, is_gmt) {
     if (!ts) {
       return '';
     }
@@ -259,7 +328,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
    * @param {boolean} is_live - Are we in live mode
    * @param {?string} title - The title of the replayed page to be displayed in the banner
    */
-  DefaultBanner.prototype.set_banner = function(url, ts, is_live, title) {
+  DefaultBanner.prototype.set_banner = function (url, ts, is_live, title) {
     var capture_str;
     var title_str;
 
@@ -278,6 +347,8 @@ This file is part of pywb, https://github.com/webrecorder/pywb
     } else {
       capture_str = url;
     }
+
+    this.adjacentCrawls(url, ts)
 
     title_str = capture_str;
 
@@ -300,6 +371,16 @@ This file is part of pywb, https://github.com/webrecorder/pywb
 
     window.document.title = title_str;
 
+    if (window.banner_info.previous_ts) {
+      this.previousCaptureLink.setAttribute("href", window.banner_info.prefix + window.banner_info.previous_ts + "/" + url)
+      this.previousCaptureLink.innerHTML = "<strong><</strong> previous capture"
+    }
+
+    if (window.banner_info.next_ts) {
+      this.nextCaptureLink.setAttribute("href", window.banner_info.prefix + window.banner_info.next_ts + "/" + url)
+      this.nextCaptureLink.innerHTML = "next capture <strong>></strong>"
+    }
+
     this.bannerUrlSet = true;
   };
 
@@ -309,7 +390,7 @@ This file is part of pywb, https://github.com/webrecorder/pywb
   // if wbinfo.url is set and not-framed, init banner in content frame
   if (window.wbinfo && window.wbinfo.url && !window.wbinfo.is_framed) {
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", function() {
+      document.addEventListener("DOMContentLoaded", function () {
         window.WBBanner.init();
       });
     } else {
