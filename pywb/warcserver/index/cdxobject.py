@@ -251,7 +251,11 @@ class CDXObject(OrderedDict):
 
     @classmethod
     def json_decode(cls, string):
-        return json_decode(string, object_pairs_hook=OrderedDict)
+        cdx_block = json_decode(string, object_pairs_hook=OrderedDict)
+        # other parts of pywb expect status to be a string and not an integer
+        if cdx_block and type(cdx_block.get('status')) == int:
+            cdx_block['status'] = str(cdx_block['status'])
+        return cdx_block
 
 
 #=================================================================
