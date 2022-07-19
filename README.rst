@@ -62,7 +62,7 @@ To run and install locally you can:
 
 * Install with ``python setup.py install``
 
-* Run tests with ``python setup.py test``
+* Run tests with ``tox`` (you will need to ``pip install tox`` first)
 
 * Run Wayback with ``wayback`` (see docs for info on how to setup collections)
 
