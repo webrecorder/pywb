@@ -106,7 +106,7 @@ export default {
       }
       // only go to snapshot if caller did not request to zoom only
       if (newPeriod.snapshot && !onlyZoomToPeriod) {
-        this.gotoSnapshot(newPeriod.snapshot, newPeriod);
+        this.gotoSnapshot(newPeriod.snapshot, newPeriod, true /* reloadIFrame */);
       } else {
         // save current period (aka zoom)
         // use sessionStorage (not localStorage), as we want this to be a very temporary memory for current page tab/window and no longer; NOTE: it serves when navigating from an "*" query to a specific capture and subsequent reloads
@@ -121,10 +121,10 @@ export default {
         }
       }
     },
-    gotoSnapshot(snapshot, fromPeriod) {
+    gotoSnapshot(snapshot, fromPeriod, reloadIFrame=false) {
       this.currentSnapshot = snapshot;
 
-      // if the current period is not matching the current snapshot, updated it!
+      // if the current period doesn't match the current snapshot, update it
       if (fromPeriod && !this.currentPeriod.contains(fromPeriod)) {
         const fromPeriodAtMaxZoomLevel = fromPeriod.get(this.maxTimelineZoomLevel);
         if (fromPeriodAtMaxZoomLevel !== this.currentPeriod) {
@@ -132,8 +132,12 @@ export default {
         }
       }
 
-      // COMMUNICATE TO ContentFrame
-      this.$emit("show-snapshot", snapshot);
+      // update iframe only if the snapshot was selected from the calendar/timeline.
+      // if the change originated from a user clicking a link in the iframe, emitting
+      // snow-shapshot will only cause a flash of content
+      if (reloadIFrame !== false) {
+        this.$emit("show-snapshot", snapshot);
+      }
       this.showFullView = false;
     },
     gotoUrl(event) {
