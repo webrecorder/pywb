@@ -145,11 +145,11 @@ class CDXLoader {
     return results;
   }
 
-  loadSnapshot(snapshot) {
+  loadSnapshot(snapshot, reloadIFrame=true) {
     if (!this.isReplay) {
       window.location.href = this.prefix + snapshot.id + "/" + snapshot.url;
     } else if (window.cframe) {
-      window.cframe.load_url(snapshot.url, snapshot.id + "");
+      window.cframe.load_url(snapshot.url, snapshot.id + "", reloadIFrame);
     }
   }
 }
