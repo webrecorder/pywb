@@ -18,22 +18,16 @@ html, body
 
 {{ banner_html }}
 
-{% if ui.vue_timeline_banner %}
-
 {% include 'vue_loc.html' %}
-
-{% endif %}
 
 </head>
 <body style="margin: 0px; padding: 0px;">
 
-{% if ui.vue_timeline_banner %}
 <div id="app" style="width: 100%; height: 200px"></div>
 <script>
-    VueUI.main("{{ static_prefix }}", "{{ url }}", "{{ wb_prefix }}", "{{ timestamp }}", "{{ ui.logo }}", "{{ env.pywb_lang | default('en') }}",
+    VueUI.main("{{ static_prefix }}", "{{ url }}", "{{ wb_prefix }}", "{{ timestamp }}", "{{ ui.logo }}", "{{ ui.navbar_background_hex | default('f8f9fa') }}", "{{ ui.navbar_color_hex | default('212529') }}", "{{ ui.navbar_light_buttons }}", "{{ env.pywb_lang | default('en') }}",
       allLocales, i18nStrings);
 </script>
-{% endif %}
 
 <div id="wb_iframe_div">
 <iframe id="replay_iframe" frameborder="0" seamless="seamless" scrolling="yes" class="wb_iframe" allow="autoplay; fullscreen"></iframe>

@@ -432,7 +432,8 @@ class FrontEndApp(object):
 
             return WbResponse.bin_stream(StreamIter(res.raw),
                                          content_type=content_type,
-                                         status=status_line)
+                                         status=status_line,
+                                         headers=[("Cache-Control", "max-age=86400, must-revalidate")])
 
         except Exception as e:
             return WbResponse.text_response('Error: ' + str(e), status='400 Bad Request')

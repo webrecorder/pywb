@@ -16,7 +16,12 @@
               </div>
             </template>
         </div>
-        <div v-html="'&#x25C0;'" class="arrow previous" :class="{disabled: isScrollZero && !previousPeriod}" @click="scrollPrev" @dblclick.stop.prevent></div>
+        <div v-html="'&#x25C0;'"
+          class="arrow previous"
+          :class="{disabled: isScrollZero && !previousPeriod}"
+          @click="scrollPrev"
+          @keyup.enter="scrollPrev"
+          @dblclick.stop.prevent tabindex="0"></div>
         <div class="scroll" ref="periodScroll" :class="{highlight: highlight}">
             <div class="periods" ref="periods">
                 <div v-for="subPeriod in period.children"
@@ -31,16 +36,20 @@
                              :style="{height: getHistoLineHeight(histoPeriod.snapshotCount)}"
                              :class="{'has-single-snapshot': histoPeriod.snapshotCount === 1, 'contains-current-snapshot': containsCurrentSnapshot(histoPeriod)}"
                              @click="changePeriod(histoPeriod, $event)"
+                             @keyup.enter="changePeriod(histoPeriod, $event)"
                              @mouseover="setTooltipPeriod(histoPeriod, $event)"
                              @mouseout="setTooltipPeriod(null, $event)"
+                             tabindex="0"
                         >
                         </div>
                     </div>
                     <div class="inner"
                          :class="{'has-single-snapshot': subPeriod.snapshotCount === 1}"
                          @click="changePeriod(subPeriod, $event)"
+                         @keyup.enter="changePeriod(histoPeriod, $event)"
                          @mouseover="setTooltipPeriod(subPeriod, $event)"
                          @mouseout="setTooltipPeriod(null, $event)"
+                         tabindex="0"
                     >
                         <div class="label">
                           {{subPeriod.getReadableId()}}
@@ -49,7 +58,13 @@
                 </div>
             </div>
         </div>
-        <div v-html="'&#x25B6;'" class="arrow next" :class="{disabled: isScrollMax && !nextPeriod}" @click="scrollNext" @dblclick.stop.prevent></div>
+        <div
+          v-html="'&#x25B6;'"
+          class="arrow next"
+          :class="{disabled: isScrollMax && !nextPeriod}"
+          @click="scrollNext"
+          @keyup.enter="scrollNext"
+          @dblclick.stop.prevent tabindex="0"></div>
     </div>
 </template>
 

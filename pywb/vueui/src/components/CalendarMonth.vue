@@ -9,14 +9,13 @@
         text-align: center;
         vertical-align: top;
         box-sizing: content-box;
+        border-radius: 10px;
     }
     .calendar-month:hover {
         background-color: #eeeeee;
-        border-radius: 10px;
     }
     .calendar-month.current {
         background-color: #fff7ce;
-        border-radius: 5px;
     }
     .calendar-month.contains-current-snapshot {
         border: solid 1px red;
@@ -91,14 +90,14 @@
 </style>
 
 <template>
-    <div class="calendar-month" :class="{current: isCurrent, 'contains-current-snapshot': containsCurrentSnapshot}">
-        <h3>{{getLongMonthName(month.id)}} <span v-if="month.snapshotCount">({{ month.snapshotCount }})</span></h3>
-        <div v-if="month.snapshotCount">
-            <span v-for="(dayInitial) in dayInitials" class="day" :style="dayStyle">{{dayInitial}}</span><br/>
-            <span v-for="(day,i) in days"><br v-if="i && i % 7===0"/><span class="day" :class="{empty: !day || !day.snapshotCount, 'contains-current-snapshot':dayContainsCurrentSnapshot(day)}" :style="dayStyle"  @click="gotoDay(day, $event)"><template v-if="day"><span class="size" v-if="day.snapshotCount" :style="getDayCountCircleStyle(day.snapshotCount)"> </span><span class="day-id">{{day.id}}</span><span v-if="day.snapshotCount" class="count">{{ $root._(day.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: day.snapshotCount}) }}</span></template><template v-else v-html="'&nbsp;'"></template></span></span>
-        </div>
-        <div v-else class="empty">{{ _('no captures') }}</div>
+  <div class="calendar-month" :class="{current: isCurrent, 'contains-current-snapshot': containsCurrentSnapshot}">
+    <h3>{{getLongMonthName(month.id)}} <span v-if="month.snapshotCount">({{ month.snapshotCount }})</span></h3>
+    <div v-if="month.snapshotCount">
+      <span v-for="(dayInitial) in dayInitials" class="day" :style="dayStyle">{{dayInitial}}</span><br/>
+      <span v-for="(day,i) in days"><br v-if="i && i % 7===0"/><span class="day" :class="{empty: !day || !day.snapshotCount, 'contains-current-snapshot':dayContainsCurrentSnapshot(day)}" :style="dayStyle"  @click="gotoDay(day, $event)" @keyup.13="gotoDay(day, $event)"><template v-if="day"><span class="size" v-if="day.snapshotCount" :style="getDayCountCircleStyle(day.snapshotCount)" tabindex="0"> </span><span class="day-id">{{day.id}}</span><span v-if="day.snapshotCount" class="count">{{ $root._(day.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: day.snapshotCount}) }}</span></template><template v-else v-html="'&nbsp;'"></template></span></span>
     </div>
+    <div v-else class="empty">{{ _('no captures') }}</div>
+  </div>
 </template>
 
 <script>

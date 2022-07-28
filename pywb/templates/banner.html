@@ -22,23 +22,11 @@ window.banner_info = {
     logoImg: "{{ ui.logo }}"
 };
 </script>
-
-
-{% if is_framed or not ui.vue_timeline_banner %}
-<!-- default banner, create through js -->
-<link rel='stylesheet' href='{{ static_prefix }}/default_banner.css'/>
-<script src='{{ static_prefix }}/default_banner.js'> </script>
-
-{% else %}
-
-{% if ui.vue_timeline_banner %}
 <script src="{{ static_prefix }}/loading-spinner/loading-spinner.js"></script>
-<link rel='stylesheet' href='{{ static_prefix }}/vue_banner.css'/>
 <script src="{{ static_prefix }}/vue/vueui.js"></script>
-{% endif %}
+<link rel="stylesheet" href='{{ static_prefix }}/vue_banner.css'/>
 
-{% endif %}
-
+{% include 'bootstrap_jquery.html' ignore missing %}
 
 {% endautoescape %}
 {% endif %}

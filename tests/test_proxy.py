@@ -1,3 +1,4 @@
+
 from pywb.warcserver.test.testutils import BaseTestClass, TempDirTests, HttpBinLiveTests
 
 from .base_config_test import CollsDirMixin
@@ -116,7 +117,7 @@ class TestProxy(BaseTestProxy):
         assert 'wbinfo.enable_auto_fetch = false;' in res.text
 
         # banner
-        assert 'default_banner.js' in res.text
+        assert 'vueui.js' in res.text
 
         # no redirect check
         assert 'window == window.top' not in res.text
@@ -147,7 +148,7 @@ class TestProxyDefaultDate(BaseTestProxy):
         assert 'wbinfo.enable_auto_fetch = false;' in res.text
 
         # banner
-        assert 'default_banner.js' in res.text
+        assert 'vueui.js' in res.text
 
         # no redirect check
         assert 'window == window.top' not in res.text
@@ -307,7 +308,7 @@ class TestProxyNoBanner(BaseTestProxy):
         assert 'WB Insert' in res.text
 
         # no banner
-        assert 'default_banner.js' not in res.text
+        assert 'vueui.js' not in res.text
 
         # no wombat.js and wombatProxyMode.js
         assert 'wombat.js' not in res.text
@@ -341,7 +342,7 @@ class TestProxyNoHeadInsert(BaseTestProxy):
         assert 'WB Insert' not in res.text
 
         # no banner
-        assert 'default_banner.js' not in res.text
+        assert 'vueui.js' not in res.text
 
         # no wombat.js and wombatProxyMode.js
         assert 'wombat.js' not in res.text

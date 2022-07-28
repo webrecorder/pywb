@@ -1,11 +1,4 @@
-body {
-  display: flex;
-  flex-direction: column;
-}
-
 #wb_iframe_div, #replay_iframe {
   width: 100%;
   height: 100%;
 }
-
-

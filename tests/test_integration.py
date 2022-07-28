@@ -493,14 +493,14 @@ class TestWbIntegration(BaseConfigTest):
         assert 'The url <b>http://not-exist.example.com/path?A=B</b> could not be found in this collection.' in resp.text
 
     def test_static_content(self):
-        resp = self.testapp.get('/static/default_banner.css')
+        resp = self.testapp.get('/static/vue_banner.css')
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
         assert resp.content_length > 0
 
     def test_static_content_filewrapper(self):
         from wsgiref.util import FileWrapper
-        resp = self.testapp.get('/static/default_banner.css', extra_environ = {'wsgi.file_wrapper': FileWrapper})
+        resp = self.testapp.get('/static/vue_banner.css', extra_environ = {'wsgi.file_wrapper': FileWrapper})
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
         assert resp.content_length > 0

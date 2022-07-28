@@ -50,7 +50,7 @@ export default {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 40;
+  z-index: 100;
   background-color: white;
   border: 1px solid grey;
   border-radius: 5px;

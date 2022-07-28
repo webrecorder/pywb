@@ -7,40 +7,17 @@
 {% block head %}
 {{ super() }}
 
-{% if not ui.vue_calendar_ui %}
-<link rel="stylesheet" href="{{ static_prefix }}/css/query.css">
-<script src="{{ static_prefix }}/js/url-polyfill.min.js"></script>
-<script src="{{ static_prefix }}/query.js"></script>
-{% else %}
-
 <script src="{{ static_prefix }}/loading-spinner/loading-spinner.js"></script>
 <script src="{{ static_prefix }}/vue/vueui.js"></script>
 
 {% include 'vue_loc.html' %}
-
-{% endif %}
 
 {% endblock %}
 
 
 {% block body %}
 
-{% if not ui.vue_calendar_ui %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <h4 class="display-4 text-center text-sm-left p-0">{{ _('Search Results') }}</h4>
-    </div>
-</div>
-<div class="container">
-    <div class="row justify-content-center text-center text-sm-left mt-1" id="display-query-type-info"></div>
-</div>
-<div class="container mt-3 q-display" id="captures"></div>
-{% endif %}
-
-
-{% if ui.vue_calendar_ui %}
 <div id="app" style="width: 100%; height: 100%"></div>
-{% endif %}
 
 <script>
   var text = {
@@ -75,16 +52,8 @@
       },
     };
 
-{% if not ui.vue_calendar_ui %}
-
-  var renderCal = new RenderCalendar({ prefix: "{{ prefix }}", staticPrefix: "{{ static_prefix }}", text: text });
-  renderCal.init();
-
-{% else %}
-  VueUI.main("{{ static_prefix }}", "{{ url }}", "{{ prefix }}", undefined, "{{ ui.logo }}", "{{ env.pywb_lang | default('en') }}",
+  VueUI.main("{{ static_prefix }}", "{{ url }}", "{{ prefix }}", undefined, "{{ ui.logo }}", "{{ ui.navbar_background_hex | default('f8f9fa') }}", "{{ ui.navbar_color_hex | default('212529') }}", "{{ ui.navbar_light_buttons }}", "{{ env.pywb_lang | default('en') }}",
       allLocales, i18nStrings);
-
-{% endif %}
 
 </script>
 

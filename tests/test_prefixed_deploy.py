@@ -27,7 +27,7 @@ class TestPrefixedDeploy(BaseConfigTest):
         resp = self.get('/prefix/pywb/*/iana.org')
         self._assert_basic_html(resp)
 
-        assert '/prefix/static/query.js' in resp.text
+        assert '/prefix/static/vue/vueui.js' in resp.text
 
     def test_replay_content(self, fmod):
         resp = self.get('/prefix/pywb/20140127171238{0}/http://www.iana.org/', fmod)
@@ -35,14 +35,14 @@ class TestPrefixedDeploy(BaseConfigTest):
 
         assert '"20140127171238"' in resp.text, resp.text
         assert "'http://localhost:80/prefix/static/wombat.js'" in resp.text
-        assert "'http://localhost:80/prefix/static/default_banner.js'" in resp.text
+        assert "http://localhost:80/prefix/static/vue/vueui.js" in resp.text
         assert '"http://localhost:80/prefix/static/"' in resp.text
         assert '"http://localhost:80/prefix/pywb/"' in resp.text
         assert 'WBWombatInit' in resp.text, resp.text
         assert '"/prefix/pywb/20140127171238{0}/http://www.iana.org/time-zones"'.format(fmod) in resp.text, resp.text
 
     def test_static_content(self):
-        resp = self.get('/prefix/static/default_banner.css')
+        resp = self.get('/prefix/static/vue_banner.css')
         assert resp.status_int == 200
         assert resp.content_type == 'text/css'
         assert resp.content_length > 0

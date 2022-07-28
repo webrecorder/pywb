@@ -1,49 +1,45 @@
-<style>
-    .full-view {
-        position: fixed;
-        z-index: 10;
-        height: 80vh;
-        overflow: scroll;
-        width: 100%;
-        background-color: white;
-    }
-    .full-view .months {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        align-items: flex-start;
-    }
-
-    .full-view h2 {
-        margin: 10px 0;
-        font-size: 20px;
-        text-align: center;
-    }
-</style>
-
 <template>
-    <div class="full-view">
-        <h2>{{year.id}} ({{ $root._(year.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: year.snapshotCount}) }})</h2>
-        <div class="months">
-            <CalendarMonth
-                    v-for="month in year.children"
-                    :key="month.id"
-                    :month="month"
-                    :year="year"
-                    :current-snapshot="containsCurrentSnapshot ? currentSnapshot : null"
-                    :is-current="month === currentMonth"
-                    @goto-period="$emit('goto-period', $event)"
-                    @show-day-timeline="setCurrentTimeline"
-            ></CalendarMonth>
-        </div>
-        <Tooltip :position="currentTimelinePos" v-if="currentTimelinePeriod" ref="timelineLinearTooltip">
-          <TimelineLinear
-              :period="currentTimelinePeriod"
-              :current-snapshot="containsCurrentSnapshot ? currentSnapshot : null"
-              @goto-period="gotoPeriod"
-          ></TimelineLinear>
-        </Tooltip>
+  <div class="full-view">
+    <h2>
+      <i
+        class="fas fa-arrow-left year-arrow"
+        @click="gotoPreviousYear"
+        @keyup.enter="gotoPreviousYear"
+        v-if="previousYear"
+        tabindex="0"></i>
+      <span class="mx-1">
+      {{year.id}} ({{ $root._(year.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: year.snapshotCount}) }})
+      </span>
+      <i
+        class="fas fa-arrow-right year-arrow"
+        @click="gotoNextYear"
+        @keyup.enter="gotoNextYear"
+        v-if="nextYear"
+        tabindex="0"></i>
+    </h2>
+    <div class="months">
+      <CalendarMonth
+        v-for="month in year.children"
+        :key="month.id"
+        :month="month"
+        :year="year"
+        :current-snapshot="containsCurrentSnapshot ? currentSnapshot : null"
+        :is-current="month === currentMonth"
+        @goto-period="$emit('goto-period', $event)"
+        @show-day-timeline="setCurrentTimeline"
+      ></CalendarMonth>
     </div>
+    <Tooltip
+      :position="currentTimelinePos"
+      v-if="currentTimelinePeriod"
+      ref="timelineLinearTooltip">
+      <TimelineLinear
+        :period="currentTimelinePeriod"
+        :current-snapshot="containsCurrentSnapshot ? currentSnapshot : null"
+        @goto-period="gotoPeriod"
+      ></TimelineLinear>
+    </Tooltip>
+  </div>
 </template>
 
 <script>
@@ -86,6 +82,17 @@ export default {
       }
       return year;
     },
+    currentYearIndex() {
+      if (this.year.parent) {
+        return this.year.parent.children.findIndex(year => year.fullId === this.year.fullId);
+      }
+    },
+    previousYear() {
+      return this.year.getPrevious();
+    },
+    nextYear() {
+      return this.year.getNext();
+    },
     currentMonth() { // the month that the timeline period is in
       let month = null;
       if (this.period.type === PywbPeriod.Type.month) {
@@ -97,10 +104,16 @@ export default {
     },
     containsCurrentSnapshot() {
       return this.currentSnapshot &&
-          this.year.contains(this.currentSnapshot);
+        this.year.contains(this.currentSnapshot);
     }
   },
   methods: {
+    gotoPreviousYear() {
+      this.gotoPeriod(this.previousYear, true /* changeYearOnly */);
+    },
+    gotoNextYear() {
+      this.gotoPeriod(this.nextYear, true /* changeYearOnly */);
+    },
     resetCurrentTimeline(event) {
       if (event && this.$refs.timelineLinearTooltip) {
         let el = event.target;
@@ -122,12 +135,18 @@ export default {
       if (!day) {
         return;
       }
-      this.currentTimelinePos = `${event.x},${event.y}`;
+      if (event.code === "Enter") {
+        let middleXPos = (window.innerWidth / 2) - 60;
+        this.currentTimelinePos = `${middleXPos},200`;
+      } else {
+        this.currentTimelinePos = `${event.x},${event.y}`;
+      }
+      
       event.stopPropagation();
       event.preventDefault();
     },
-    gotoPeriod(period) {
-      if (period.snapshot || period.snapshotPeriod) {
+    gotoPeriod(period, changeYearOnly=false) {
+      if (period.snapshot || period.snapshotPeriod || changeYearOnly) {
         this.$emit('goto-period', period);
       } else {
         this.currentTimelinePeriod = period;
@@ -138,3 +157,27 @@ export default {
 };
 </script>
 
+<style scoped>
+  .full-view {
+    position: fixed;
+    z-index: 10;
+    height: 80vh;
+    overflow: scroll;
+    width: 100%;
+    background-color: white;
+  }
+  .full-view .months {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .full-view h2 {
+    margin: 10px 0;
+    font-size: 20px;
+    text-align: center;
+  }
+  .year-arrow:hover {
+    cursor: pointer;
+  }
+</style>

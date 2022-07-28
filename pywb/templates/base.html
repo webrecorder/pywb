@@ -6,13 +6,7 @@
 
         <title>{% block title %}{% endblock %}</title>
 
-        <!-- jquery and bootstrap dependencies query view -->
-        <link rel="stylesheet" href="{{ static_prefix }}/css/bootstrap.min.css"/>
-        <link rel="stylesheet" href="{{ static_prefix }}/css/font-awesome.min.css">
-        <link rel="stylesheet" href="{{ static_prefix }}/css/base.css">
-
-        <script src="{{ static_prefix }}/js/jquery-latest.min.js"></script>
-        <script src="{{ static_prefix }}/js/bootstrap.min.js"></script>
+        {% include 'bootstrap_jquery.html' ignore missing %}
 
         {% block head %}
         {% include 'head.html' ignore missing %}

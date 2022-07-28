@@ -1,59 +1,148 @@
 <template>
-  <div class="app" :class="{expanded: showTimelineView}" data-app="webrecorder-replay-app">
-    <div class="banner">
-      <div class="line">
-        <div class="logo"><a href="/"><img :src="config.logoImg"/></a></div>
-        <div class="timeline-wrap">
-          <div class="line">
-            <div class="breadcrumbs-wrap">
-              <TimelineBreadcrumbs
-                  v-if="currentPeriod && showTimelineView"
-                  :period="currentPeriod"
-                  @goto-period="gotoPeriod"
-              ></TimelineBreadcrumbs>
-              <span v-if="!showTimelineView" v-html="'&nbsp;'"></span><!-- for spacing -->
+  <div class="app" :class="{expanded: showTimelineView || showFullView }" data-app="webrecorder-replay-app">
+    <!-- Top navbar -->
+    <nav
+      class="navbar navbar-light navbar-expand-lg fixed-top top-navbar justify-content-center"
+      :style="navbarStyle">
+      <a class="navbar-brand flex-grow-1 my-1" href="/">
+        <img :src="config.logoImg" id="logo-img" alt="_('pywb logo')">
+      </a>
+      <div class="flex-grow-1 d-flex" id="searchdiv">
+        <form class="form-inline my-2 my-md-0 mx-lg-auto" @submit="gotoUrl">
+          <input id="theurl" type="text" :value="config.url" height="31"></input>
+        </form>
+      </div>
+      <button
+        class="navbar-toggler btn btn-sm"
+        id="collapse-button"
+        type="button"
+        data-toggle="collapse"
+        data-target="#navbarCollapse"
+        aria-controls="navbarCollapse"
+        aria-expanded="false"
+        aria-label="_('Toggle navigation')">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse ml-auto" id="navbarCollapse">
+        <ul class="navbar-nav ml-3" id="toggles">
+          <li class="nav-item">
+            <button
+              class="btn btn-sm"
+              :class="{active: showFullView, 'btn-outline-light': lightButtons, 'btn-outline-dark': !lightButtons}"
+              :title="_('Previous capture')"
+              v-if="previousSnapshot"
+              @click="gotoPreviousSnapshot">
+              <i class="fas fa-arrow-left" :title="_('Previous capture')"></i>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button
+              class="btn btn-sm"
+              :class="{active: showFullView, 'btn-outline-light': lightButtons, 'btn-outline-dark': !lightButtons}"
+              :title="_('Next capture')"
+              v-if="nextSnapshot"
+              @click="gotoNextSnapshot">
+              <i class="fas fa-arrow-right" :title="_('Next capture')"></i>
+            </button>
+          </li>
+          <li class="nav-item active">
+            <button
+              class="btn btn-sm"
+              :class="{active: showFullView, 'btn-outline-light': lightButtons, 'btn-outline-dark': !lightButtons}"
+              :aria-pressed="(showFullView ? true : false)"
+              @click="showFullView = !showFullView"
+              :title="(showFullView ? _('Hide calendar') : _('Show calendar'))">
+              <i class="far fa-calendar-alt" :title="_('Calendar')"></i>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button
+              class="btn btn-sm"
+              :class="{active: showTimelineView, 'btn-outline-light': lightButtons, 'btn-outline-dark': !lightButtons}"
+              :aria-pressed="showTimelineView"
+              @click="showTimelineView = !showTimelineView"
+              :title="(showTimelineView ? _('Hide timeline') : _('Show timeline'))">
+              <i class="far fa-chart-bar" :title="_('Timeline')"></i>
+            </button>
+          </li>
+          <li class="nav-item dropdown" v-if="localesAreSet">
+            <button
+              class="btn btn-sm dropdown-toggle"
+              :class="{'btn-outline-light': lightButtons, 'btn-outline-dark': !lightButtons}"
+              type="button"
+              id="locale-dropdown"
+              data-toggle="dropdown"
+              aria-haspopup="true"
+              aria-expanded="false"
+              :title="_('Select language')">
+              <i class="fas fa-globe-africa" :title="_('Language')"></i>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="locale-dropdown">
+              <a
+                class="dropdown-item"
+                v-for="(locPath, key) in config.allLocales"
+                :key="key"
+                :href="locPath + (currentSnapshot ? currentSnapshot.id : '*') + '/' + config.url">
+                {{ key }}
+              </a>
             </div>
+          </li>
+        </ul>
+      </div>
+    </nav>
 
-            <div class="toggles">
-              <span class="toggle" :class="{expanded: showFullView}" @click="showFullView = !showFullView" :title="(showTimelineView ? _('show calendar'):_('hide calendar'))">
-                <img src="/static/calendar-icon.png" />
-              </span>
-              <span class="toggle" :class="{expanded: showTimelineView}" @click="showTimelineView = !showTimelineView" :title="(showTimelineView ? _('show timeline'):_('hide timeline'))">
-                <img src="/static/timeline-icon.png" />
-              </span>
-              <ul class="lang-select" role="listbox" :aria-activedescendant="config.locale"
-                :aria-labelledby="_('Language select')">
-                <li v-for="(locPath, key) in config.allLocales" role="option" :id="key">
-                  <a :href="locPath + (currentSnapshot ? currentSnapshot.id : '*') + '/' + config.url">{{ key }}</a>
-                </li>
-              </ul>
-            </div>
+    <!-- Capture title and date -->
+    <nav
+      class="navbar navbar-light justify-content-center title-nav fixed-top"
+      id="second-navbar"
+      :style="navbarStyle">
+      <span class="hidden" v-if="!currentSnapshot">&nbsp;</span>
+      <span v-if="currentSnapshot">
+        <span class="strong mr-1">
+          {{_('Current Capture')}}: 
+          <span class="ml-1" v-if="config.title">
+            {{ config.title }}
+          </span>
+        </span>
+        <span class="mr-1" v-if="config.title">,</span>
+        {{currentSnapshot.getTimeDateFormatted()}}
+      </span>
+    </nav>
+
+    <!-- Timeline -->
+    <div class="card border-top-0 border-left-0 border-right-0 timeline-wrap">
+      <div class="card-body" v-if="currentPeriod && showTimelineView">
+        <div class="row">
+          <div class="col col-12">
+            <TimelineBreadcrumbs
+              :period="currentPeriod"
+              @goto-period="gotoPeriod"
+            ></TimelineBreadcrumbs>
           </div>
-          <Timeline
-                  v-if="currentPeriod && showTimelineView"
-                  :period="currentPeriod"
-                  :highlight="timelineHighlight"
-                  :current-snapshot="currentSnapshot"
-                  :max-zoom-level="maxTimelineZoomLevel"
-                  @goto-period="gotoPeriod"
-          ></Timeline>
+          <div class="col col-12 mt-2">
+            <Timeline
+              :period="currentPeriod"
+              :highlight="timelineHighlight"
+              :current-snapshot="currentSnapshot"
+              :max-zoom-level="maxTimelineZoomLevel"
+              @goto-period="gotoPeriod"
+            ></Timeline>
+          </div>
         </div>
+      </div>    
+    </div>
+
+    <!-- Calendar -->
+    <div class="card border-0" v-if="currentPeriod && showFullView && currentPeriod.children.length">
+      <div class="card-body">
+        <CalendarYear
+          :period="currentPeriod"
+          :current-snapshot="currentSnapshot"
+           @goto-period="gotoPeriod">
+        </CalendarYear>
       </div>
     </div>
-    <div class="snapshot-title">
-      <form @submit="gotoUrl">
-        <input id="theurl" type="text" :value="config.url"></input>
-      </form>
-      <div v-if="currentSnapshot && !showFullView">
-        <span v-if="config.title">{{ config.title }}</span>
-        {{_('Current Capture')}}: {{currentSnapshot.getTimeDateFormatted()}}
-      </div>
-    </div>
-    <CalendarYear v-if="showFullView && currentPeriod && currentPeriod.children.length"
-                  :period="currentPeriod"
-                  :current-snapshot="currentSnapshot"
-                   @goto-period="gotoPeriod">
-    </CalendarYear>
+    
   </div>
 </template>
 
@@ -73,13 +162,15 @@ export default {
       snapshots: [],
       currentPeriod: null,
       currentSnapshot: null,
+      currentSnapshotIndex: null,
       msgs: [],
       showFullView: true,
       showTimelineView: true,
       maxTimelineZoomLevel: PywbPeriod.Type.day,
       config: {
         title: "",
-        initialView: {}
+        initialView: {},
+        allLocales: {}
       },
       timelineHighlight: false,
       locales: [],
@@ -87,11 +178,47 @@ export default {
   },
   components: {Timeline, TimelineBreadcrumbs, CalendarYear},
   mounted: function() {
+    // add empty unload event listener to make this page bfcache ineligible.
+    // bfcache otherwises prevent the query template from reloading as expected
+    // when the user navigates there via browser back/forward buttons
+    addEventListener('unload', (event) => { });
   },
   computed: {
     sessionStorageUrlKey() {
       // remove http(s), www and trailing slash
       return 'zoom__' + this.config.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+    },
+    localesAreSet() {
+      return Object.entries(this.config.allLocales).length > 0;
+    },
+    navbarStyle() {
+      return {
+        '--navbar-background': `#${this.config.navbarBackground}`,
+        '--navbar-color': `#${this.config.navbarColor}`
+      }
+    },
+    lightButtons() {
+      return !!this.config.navbarLightButtons;
+    },
+    previousSnapshot() {
+      if (!this.currentSnapshotIndex) {
+        return null;
+      }
+      if (this.currentSnapshotIndex > 0) {
+        return this.snapshots[this.currentSnapshotIndex - 1];
+      }
+      return null;
+    },
+    nextSnapshot() {
+      if (this.currentSnapshotIndex == null) {
+        return null;
+      }
+      if (
+        (this.currentSnapshotIndex >= 0)
+        && (this.currentSnapshotIndex !== this.snapshots.length - 1)) {
+        return this.snapshots[this.currentSnapshotIndex + 1];
+      }
+      return null;
     }
   },
   methods: {
@@ -124,10 +251,13 @@ export default {
     gotoSnapshot(snapshot, fromPeriod, reloadIFrame=false) {
       this.currentSnapshot = snapshot;
 
+      const isCurrentSnapshot = (snapshotInArray) => snapshotInArray.id == snapshot.id && snapshotInArray.url == snapshot.url;
+      this.currentSnapshotIndex = this.snapshots.findIndex(isCurrentSnapshot);
+
       // if the current period doesn't match the current snapshot, update it
-      if (fromPeriod && !this.currentPeriod.contains(fromPeriod)) {
+      if (!this.currentPeriod || (fromPeriod && !this.currentPeriod.contains(fromPeriod))) {
         const fromPeriodAtMaxZoomLevel = fromPeriod.get(this.maxTimelineZoomLevel);
-        if (fromPeriodAtMaxZoomLevel !== this.currentPeriod) {
+        if (!this.currentPeriod || fromPeriodAtMaxZoomLevel !== this.currentPeriod) {
           this.currentPeriod = fromPeriodAtMaxZoomLevel;
         }
       }
@@ -138,7 +268,15 @@ export default {
       if (reloadIFrame !== false) {
         this.$emit("show-snapshot", snapshot);
       }
-      this.showFullView = false;
+      this.hideBannerUtilities();
+    },
+    gotoPreviousSnapshot() {
+      let periodToChangeTo = this.currentPeriod.findByFullId(this.previousSnapshot.getFullId());
+      this.gotoPeriod(periodToChangeTo, false /* onlyZoomToPeriod */);
+    },
+    gotoNextSnapshot() {
+      let periodToChangeTo = this.currentPeriod.findByFullId(this.nextSnapshot.getFullId());
+      this.gotoPeriod(periodToChangeTo, false /* onlyZoomToPeriod */);
     },
     gotoUrl(event) {
       event.preventDefault();
@@ -176,130 +314,140 @@ export default {
       // convert to snapshot object to support proper rendering of time/date
       const snapshot = new PywbSnapshot(view, 0);
 
-      // set config current URL and title
       this.config.url = view.url;
-      this.config.title = view.title;
 
-      this.gotoSnapshot(snapshot);
+      let periodToChangeTo = this.currentPeriod.findByFullId(snapshot.getFullId());
+      this.gotoPeriod(periodToChangeTo, false /* onlyZoomToPeriod */);
+    },
+    setTimelineView() {
+      this.showTimelineView = !this.showTimelineView;
+      if (this.showTimelineView === true) {
+        this.showFullView = false;
+      }
+    },
+    hideBannerUtilities() {
+      this.showFullView = false;
+      this.showTimelineView = false;
+    },
+    updateTitle(title) {
+      this.config.title = title;
     }
   }
 };
 </script>
 
 <style>
+  body {
+    padding-top: 89px !important;
+  }
   .app {
     font-family: Calibri, Arial, sans-serif;
-    border-bottom: 1px solid lightcoral;
+    /*border-bottom: 1px solid lightcoral;*/
     width: 100%;
   }
   .app.expanded {
-    height: 150px;
+    height: 130px;
   }
   .full-view {
     /*position: fixed;*/
     /*top: 150px;*/
     left: 0;
   }
+  .navbar {
+    background-color: var(--navbar-background);
+    color:  var(--navbar-color);
+  }
+  .top-navbar {
+    z-index: 90;
+    padding: 2px 16px 0 16px;
+  }
+  .top-navbar span.navbar-toggler-icon {
+    margin: .25rem !important;
+  }
+  #logo-img {
+    max-height: 40px;
+  }
+  .title-nav {
+    margin-top: 50px;
+    z-index: 80;
+  }
+  #secondNavbar {
+    height: 24px !important;
+  }
+  #navbarCollapse {
+    justify-content: right;
+  }
+  #navbarCollapse ul#toggles {
+    display: flex;
+    align-content: center;
+  }
+  #navbarCollapse:not(.show) ul#toggles li:not(:first-child) {
+    margin-left: .25rem;
+  }
+  #navbarCollapse.show {
+    padding-bottom: 1em;
+  }
+  #navbarCollapse.show ul#toggles li {
+    margin-top: 5px;
+  }
+  #navbarCollapse.show ul#toggles li {
+    margin-left: 0px;
+  }
   .iframe iframe {
     width: 100%;
     height: 80vh;
   }
-  .logo {
-    margin-right: 30px;
-    width: 180px;
+  #searchdiv {
+    height: 31px;
   }
-  .banner {
-    width: 100%;
-    max-width: 1200px; /* limit width */
-    position: relative;
+  #theurl {
+    width: 250px;
   }
-  .banner .line {
-    display: flex;
-    justify-content: flex-start;
+  @media (min-width: 576px) {
+    #theurl {
+      width: 350px;
+    }
   }
-
-  .banner .logo {
-    flex-shrink: initial;
-    /* for any content/image inside the logo container */
+  @media (min-width: 768px) {
+    #theurl {
+      width: 500px;
+    }
+  }
+  @media (min-width: 992px) {
+    #theurl {
+      width: 600px;
+    }
+  }
+  @media (min-width: 1200px) {
+    #theurl {
+      width: 900px;
+    }
+  }
+  #toggles {
+    align-items: center;
+  }
+  .breadcrumb-row {
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  .banner .logo img {
-    flex-shrink: 1;
+  div.timeline-wrap div.card {
+    margin-top: 55px;
   }
-
-  .banner .timeline-wrap {
-    flex-grow: 2;
-    overflow-x: hidden;
-    text-align: left;
-    margin: 0 25px;
-    position: relative;
+  div.timeline-wrap div.card-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-
-  .timeline-wrap .line .breadcrumbs-wrap {
-    display: inline-block;
-    flex-grow: 1;
+  div.timeline-wrap div.card-body div.row {
+    width: 100%;
+    align-items: center;
+    justify-content: center;
   }
-  .timeline-wrap .line .toggles {
-    display: inline-block;
-    flex-shrink: 1;
-  }
-
-  .toggles > .toggle {
-    display: inline-block;
-    border-radius: 5px;
-    padding: 0 4px;
-    height: 100%;
-    cursor: zoom-in;
-  }
-  .toggles > .toggle > img {
-    height: 18px;
-    display: inline-block;
-    margin-top: 2px;
-  }
-  .toggles .toggle:hover {
-    background-color: #eeeeee;
-  }
-  .toggles .toggle.expanded {
-    background-color: #eeeeee;
-    cursor: zoom-out;
-  }
-  .snapshot-title {
-    text-align: center;
+  .strong {
     font-weight: bold;
-    font-size: 16px;
   }
-  #theurl {
-    width: 400px;
+  .hidden {
+    color: var(--navbar-background);
   }
-
-  ul.lang-select {
-      display: inline-block;
-      list-style-type: none;
-      margin: 0;
-      padding: 0 24px 0 8px;
-  }
-
-  ul.lang-select li {
-    display: inline-block;
-    padding-left: 6px;
-    font-weight: bold;
-    font-size: smaller;
-  }
-
-  ul.lang-select li:not(:last-child):after {
-    content: ' / ';
-  }
-
-  ul.lang-select a:link,
-  ul.lang-select a:visited,
-  ul.lang-select a:active {
-    text-decoration: none;
-  }
-
-  ul.lang-select a:hover {
-    text-decoration: underline;
-  }
-
 </style>

@@ -2,13 +2,23 @@
     <div class="breadcrumbs">
         <template v-if="parents.length">
             <span class="item">
-                <span class="goto" @click="changePeriod(parents[0])" :title="getPeriodZoomOutText(parents[0])">
+                <span
+                    class="goto"
+                    @click="changePeriod(parents[0])"
+                    @keyup.enter="changePeriod(parents[0])"
+                    :title="getPeriodZoomOutText(parents[0])"
+                    tabindex="1">
                   <img src="/static/zoom-out-icon-333316.png" /> {{parents[0].getReadableId(true)}}
                 </span>
             </span>
             &gt;
             <span v-for="(parent,i) in parents" :key="parent.id" class="item" v-if="i > 0">
-                <span class="goto" @click="changePeriod(parent)" :title="getPeriodZoomOutText(parent)">
+                <span
+                    class="goto"
+                    @click="changePeriod(parent)"
+                    @keyup.enter="changePeriod(parent)"
+                    :title="getPeriodZoomOutText(parent)"
+                    tabindex="1">
                   {{parent.getReadableId(true)}}
                 </span>
             </span>
