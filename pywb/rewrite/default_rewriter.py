@@ -20,7 +20,7 @@ from pywb.rewrite.rewrite_js_workers import JSWorkerRewriter
 from pywb import DEFAULT_RULES_FILE
 
 import copy
-from werkzeug.useragents import UserAgent
+from werkzeug.user_agent import UserAgent
 
 
 # ============================================================================
