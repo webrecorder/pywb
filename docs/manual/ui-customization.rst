@@ -4,6 +4,6 @@ UI Customization
 .. toctree::
 
    ui-guide
-   new-vue-ui
+   vue-ui
    template-guide
  

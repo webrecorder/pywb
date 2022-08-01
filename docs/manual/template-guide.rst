@@ -148,9 +148,7 @@ File: ``query.html``
 
 This template is rendered for any URL search response pages, either a single URL or more complex queries.
 
-For example, the page ``http://localhost:8080/my-collection/*/https://example.com/`` will be rendered using this template.
-
-The default template supports the standard pywb table view, as well as a conditional new vue-based UI. (See :ref:`new-vue-ui` for more info on the new UI)
+For example, the page ``http://localhost:8080/my-collection/*/https://example.com/`` will be rendered using this template, with functionality provided by a Vue application.
 
 Template variables:
 
@@ -176,8 +174,7 @@ File: ``banner.html``
 
 This template is used to render the banner and is used both in framed replay and frameless replay.
 
-In framed replay, the template is only rendered in the top/outer frame, while in frameless replay,
-it is added to every page.
+In framed replay, the template is only rendered in the top/outer frame, while in frameless replay, it is added to every page.
 
 Template variables:
 
@@ -195,14 +192,7 @@ Template variables:
 
 * ``{{ ui }}`` - an optional ``ui`` dictionary from ``config.yaml``, if any.
 
-
-The default banner creates all UI dynamically via JS. However, a custom banner could also insert HTML to render the banner directly.
-
-By default, the banner checks the ``{{ ui.vue_timeline_banner }}`` and renders the new UI or the standard default UI.
-
-The default UI is created via the ``default_banner.js`` script.
-
-See :ref:`new-vue-ui` for more details on the new Vue UI.
+The default banner creates the UI dynamically in JavaScript using Vue.
 
 
 Head Insert Template

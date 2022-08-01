@@ -8,38 +8,12 @@ Most aspects of the pywb user-interface can be customized by changing the defaul
 This guide covers a few different options for customizing the UI.
 
 
-Changing the Default Styles
----------------------------
-
-When using the default UI, pywb styles can be configured in ``pywb/static/default_banner.css``
-
-The style definition for ``#_wb_frame_top_banner`` affects the rendering of the default banner in framed mode.
-
-
-Configuring a Logo
-------------------
-
-An optional logo can be configured at the top-left of the default banner.
-
-To enable the logo set the ``ui.logo`` property in ``config.yaml`` to point to the URL of the logo.
-
-The URL can be any image URL, including a URL served from the static directory.
-
-For example, to add the default pywb logo to the banner, use the following in the config, which will
-load the logo from ``./static/pywb-logo-sm.png``
-
-.. code:: yaml
-
-    ui:
-        logo: pywb-logo-sm.png
-
-
-New Vue-based UI (Alpha)
-------------------------
+New Vue-based UI
+----------------
 
 With pywb 2.7.0, pywb includes a brand new UI which includes a visual calendar mode and a histogram-based banner.
 
-See :ref:`new-vue-ui` for more information on how to enable this UI.
+See :ref:`vue-ui` for more information on how to enable this UI.
 
 
 Customizing UI Templates

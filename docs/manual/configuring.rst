@@ -16,8 +16,19 @@ With **framed replay**, the archived content is loaded into an iframe, and a top
 In this mode, the top frame url is for example, ``http://my-archive.example.com/<coll name>/http://example.com/`` while
 the actual content is served at ``http://my-archive.example.com/<coll name>/mp_/http://example.com/``
 
+With **frameless replay**, the archived content is loaded directly. As of pywb 2.7, frameless replay is bannerless
+unless a custom banner is added via the ``custom_banner.html`` template.
 
-With **frameless replay**, the archived content is loaded directly, and a banner UI is injected into the page.
+
+.. warning::
+    pywb 2.7 introduces a breaking change around frameless replay and banners.
+    Any custom banner intended to be used with frameless replay in pywb 2.7 and
+    higher must be specified in the ``custom_banner.html`` template. This may
+    require moving custom content from ``banner.html`` to the new
+    ``custom_banner.html``.
+
+    The default banner will no longer be served in frameless replay.
+
 
 In this mode, the content is served directly at ``http://my-archive.example.com/<coll name>/http://example.com/``
 
