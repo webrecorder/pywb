@@ -185,6 +185,10 @@ r"""
 >>> parse('<img srcset="//example.com/1x,1x 2w, //example1.com/foo 2x, http://example.com/bar,bar 4x">')
 <img srcset="/web/20131226101010///example.com/1x,1x 2w, /web/20131226101010///example1.com/foo 2x, /web/20131226101010/http://example.com/bar,bar 4x">
 
+# complex srcset attrib
+>>> parse('<img srcset="http://test.com/yaşar-kunduz.jpg 320w, http://test.com/yaşar-konçalves-273x300.jpg 273w">')
+<img srcset="/web/20131226101010/http://test.com/ya%C5%9Far-kunduz.jpg 320w, /web/20131226101010/http://test.com/ya%C5%9Far-konc%CC%A7alves-273x300.jpg 273w">
+
 # empty srcset attrib
 >>> parse('<img srcset="">')
 <img srcset="">

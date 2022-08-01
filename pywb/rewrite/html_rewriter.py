@@ -177,7 +177,7 @@ class HTMLRewriterMixin(StreamingRewriter):
             return ''
 
         values = (url.strip() for url in re.split(self.SRCSET_REGEX, value) if url)
-        values = [self._rewrite_url(v.strip()) for v in values]
+        values = [self._rewrite_url(v.split(' ')[0].strip()) + (' ' + ' '.join(v.split(' ')[1:])).rstrip() for v in values if v]
         return ', '.join(values)
 
     def _rewrite_meta_refresh(self, meta_refresh):
