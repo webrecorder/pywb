@@ -215,23 +215,25 @@ class WARCPathLoader(DefaultResolverMixin, BaseLoader):
             except:
                 orig_size = 0
 
+            http_headers = headers.http_headers or payload.http_headers
+
             # if status is not set and not, 2xx, 4xx, 5xx
             # go through self-redirect check just in case
             if not status or not status.startswith(('2', '4', '5')):
                 try:
                     self.raise_on_self_redirect(params, cdx,
-                                                headers.http_headers.get_statuscode(),
-                                                headers.http_headers.get_header('Location'))
+                                                http_headers.get_statuscode(),
+                                                http_headers.get_header('Location'))
                 except LiveResourceException:
                     no_except_close(headers.raw_stream)
                     no_except_close(payload.raw_stream)
                     raise
 
-            http_headers_buff = headers.http_headers and headers.http_headers.to_bytes()
+            http_headers_buff = http_headers and http_headers.to_bytes()
 
             # if new http_headers_buff is different length,
             # attempt to adjust content-length on the WARC record
-            if orig_size and len(http_headers_buff) != orig_size:
+            if http_headers and orig_size and len(http_headers_buff) != orig_size:
                 orig_cl = payload.rec_headers.get_header('Content-Length')
                 if orig_cl:
                     new_cl = int(orig_cl) + (len(http_headers_buff) - orig_size)
