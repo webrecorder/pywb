@@ -29,7 +29,8 @@ var elemIds = {
   match: 'match-type-select',
   url: 'search-url',
   form: 'search-form',
-  resultsNewWindow: 'open-results-new-window'
+  resultsNewWindow: 'open-results-new-window',
+  advancedOptions: 'advanced-options'
 };
 
 function makeCheckDateRangeChecker(dtInputId, dtBadNotice) {
@@ -158,6 +159,13 @@ function performQuery(url) {
   }
 }
 
+function validateFields(form) {
+  if (!didSetWasValidated) {
+    form.classList.add('was-validated');
+    didSetWasValidated = true;
+  }
+}
+
 $(document).ready(function() {
   $('[data-toggle="tooltip"]').tooltip({
     container: 'body',
@@ -180,12 +188,12 @@ $(document).ready(function() {
     event.stopPropagation();
     var url = searchURLInput.value;
     if (!url) {
-      if (!didSetWasValidated) {
-        form.classList.add('was-validated');
-        didSetWasValidated = true;
-      }
+      validateFields(form);
       return;
     }
     performQuery(url);
   });
+  document.getElementById(elemIds.advancedOptions).onclick = function() {
+    validateFields(form);
+  }
 });
