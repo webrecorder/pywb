@@ -148,6 +148,10 @@ This file is part of pywb, https://github.com/webrecorder/pywb
    * @param {string} bid - The id for the banner
    */
   DefaultBanner.prototype.createBanner = function(bid) {
+    this.header = document.createElement('header');
+    this.header.setAttribute('role', 'banner');
+    this.nav = document.createElement('nav');
+
     this.banner = document.createElement('wb_div', true);
     this.banner.setAttribute('id', bid);
     this.banner.setAttribute('lang', 'en');
@@ -208,8 +212,9 @@ This file is part of pywb, https://github.com/webrecorder/pywb
     }
 
     this.banner.appendChild(ancillaryLinks);
-
-    document.body.insertBefore(this.banner, document.body.firstChild);
+    this.nav.appendChild(this.banner);
+    this.header.appendChild(this.nav);
+    document.body.insertBefore(this.header, document.body.firstChild);
   };
 
   /**
