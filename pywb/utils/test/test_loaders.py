@@ -97,9 +97,18 @@ from pywb import get_test_dir
 
 test_cdx_dir = get_test_dir() + 'cdx/'
 
-@pytest.mark.skip("skip for now, made need different s3 source")
-def test_s3_read_1():
+def s3_authenticated_access_verification(bucket):
+    import boto3, botocore
+    s3_client = boto3.client('s3')
+    try:
+        s3_client.head_bucket(Bucket=bucket)
+    except botocore.exceptions.NoCredentialsError:
+        pytest.skip("Skipping S3Loader test for authenticated reads: no credentials configured")
+
+def test_s3_read_authenticated_1():
     pytest.importorskip('boto3')
+
+    s3_authenticated_access_verification('commoncrawl')
 
     res = BlockLoader().load('s3://commoncrawl/crawl-data/CC-MAIN-2015-11/segments/1424936462700.28/warc/CC-MAIN-20150226074102-00159-ip-10-28-5-156.ec2.internal.warc.gz',
                              offset=53235662,
@@ -112,9 +121,10 @@ def test_s3_read_1():
     assert reader.readline() == b'WARC/1.0\r\n'
     assert reader.readline() == b'WARC-Type: response\r\n'
 
-@pytest.mark.skip("skip for now, made need different s3 source")
-def test_s3_read_2():
+def test_s3_read_authenticated_2():
     pytest.importorskip('boto3')
+
+    s3_authenticated_access_verification('commoncrawl')
 
     res = BlockLoader().load('s3://commoncrawl/crawl-data/CC-MAIN-2015-11/index.html')
 
