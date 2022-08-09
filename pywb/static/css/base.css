@@ -39,3 +39,7 @@ header .language-select a:hover {
     text-decoration: underline;
 }
 
+.error pre {
+    white-space: pre-wrap;
+    text-align: left;
+}
