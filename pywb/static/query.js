@@ -780,6 +780,11 @@ RenderCalendar.prototype.addRegYearMonthDayListItem = function(
        a[href="replay url"]
        span[id=count_ts].badge.badge-info.badge-pill.float-right
    */
+    const options = {
+      dateStyle: 'long',
+      timeStyle: 'medium',
+    };
+    var dateTimeString = this.tsToDate(cdxObj.timestamp, false, options);
     this.createAndAddElementTo(ymlDL, {
       tag: 'li',
       className: 'list-group-item',
@@ -790,17 +795,7 @@ RenderCalendar.prototype.addRegYearMonthDayListItem = function(
             href: this.prefix + cdxObj.timestamp + '/' + cdxObj.url,
             target: '_blank'
           },
-          innerText:
-            timeInfo.month +
-            ' ' +
-            timeInfo.day +
-            this.dateOrdinal(timeInfo.day) +
-            ', ' +
-            timeInfo.year +
-            ' ' +
-            ' at ' +
-            timeInfo.time +
-            '  '
+          innerText: dateTimeString
         },
         {
           tag: 'span',
@@ -1016,31 +1011,13 @@ RenderCalendar.prototype.displayYearMonthDaysListId = function(year, month) {
 };
 
 /**
- * Returns a numbers ordinal string
- * @param {number} d - The number to receive the ordinal string for
- * @returns {string}
- */
-RenderCalendar.prototype.dateOrdinal = function(d) {
-  if (d > 3 && d < 21) return 'th';
-  switch (d % 10) {
-    case 1:
-      return 'st';
-    case 2:
-      return 'nd';
-    case 3:
-      return 'rd';
-    default:
-      return 'th';
-  }
-};
-
-/**
  * Converts the supplied timestamp to either a local data string or a gmt string (if is_gmt is true)
  * @param {string} ts - The timestamp to be converted to a string
  * @param {boolean} [is_gmt] - Should the timestamp be converted to a gmt string
+ * @param {Object} [options] - String formatting options
  * @returns {string}
  */
-RenderCalendar.prototype.tsToDate = function(ts, is_gmt) {
+RenderCalendar.prototype.tsToDate = function(ts, is_gmt, options) {
   if (ts.length < 14) return ts;
   var datestr =
     ts.substring(0, 4) +
@@ -1057,7 +1034,7 @@ RenderCalendar.prototype.tsToDate = function(ts, is_gmt) {
     '-00:00';
 
   var date = new Date(datestr);
-  return is_gmt ? date.toGMTString() : date.toLocaleString(document.documentElement.lang);
+  return is_gmt ? date.toUTCString() : date.toLocaleString(document.documentElement.lang, options);
 };
 
 /**
