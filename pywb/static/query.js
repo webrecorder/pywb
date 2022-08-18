@@ -371,16 +371,13 @@ RenderCalendar.prototype.createContainers = function() {
         },
         { tag: 'textNode', value: ' ' },
         {
-          tag: 'b',
-          child: {
-            tag: 'textNode',
-            value: '',
-            ref: function(refToElem) {
-              renderCal.containers.versionsTextNode = refToElem;
-            }
+          tag: 'textNode',
+          value: '',
+          ref: function(refToElem) {
+            renderCal.containers.versionsTextNode = refToElem;
           }
         },
-        { tag: 'textNode', value: ' of ' + this.queryInfo.url }
+        { tag: 'b', innerText: ' ' + this.queryInfo.url }
       ]
     });
     // create the row that will hold the results of the regular query
@@ -440,11 +437,11 @@ RenderCalendar.prototype.createContainers = function() {
   var forElems;
 
   if (this.queryInfo.searchParams.matchType) {
-    forString = ' for matching ';
+    forString = ' ' + this.text.matching + ' ';
     forElems = [
       { tag: 'b', innerText: this.queryInfo.url },
-      { tag: 'textNode', value: ' by ' },
-      { tag: 'b', innerText: this.queryInfo.searchParams.matchType }
+      { tag: 'textNode', value: ' ' + this.text.by + ' ' },
+      { tag: 'b', innerText: this.text.types[this.queryInfo.searchParams.matchType] }
     ];
   } else {
     forElems = [{ tag: 'b', innerText: this.queryInfo.url }];
@@ -463,23 +460,21 @@ RenderCalendar.prototype.createContainers = function() {
         },
         {
           tag: 'b',
-          children: [
-            {
-              tag: 'textNode',
-              value: '',
-              ref: function(refToElem) {
-                renderCal.containers.countTextNode = refToElem;
-              }
-            },
-            { tag: 'textNode', value: ' ' },
-            {
-              tag: 'textNode',
-              value: '',
-              ref: function(refToElem) {
-                renderCal.containers.versionsTextNode = refToElem;
-              }
+          child: {
+            tag: 'textNode',
+            value: '',
+            ref: function(refToElem) {
+              renderCal.containers.countTextNode = refToElem;
             }
-          ]
+          }
+        },
+        { tag: 'textNode', value: ' ' },
+        {
+          tag: 'textNode',
+          value: '',
+          ref: function(refToElem) {
+            renderCal.containers.versionsTextNode = refToElem;
+          }
         },
         { tag: 'textNode', value: forString }
       ].concat(forElems)
@@ -614,13 +609,13 @@ RenderCalendar.prototype.renderAdvancedSearchPart = function(cdxObj) {
   if (cdxObj.mime) {
     displayedInfo.push({
       tag: 'small',
-      innerText: 'Mime Type: ' + cdxObj.mime
+      innerText: this.text.mimeType + cdxObj.mime
     });
   }
   if (cdxObj.status) {
     displayedInfo.push({
       tag: 'small',
-      innerText: 'HTTP Status: ' + cdxObj.status
+      innerText: this.text.httpStatus + cdxObj.status
     });
   }
   displayedInfo.push({
@@ -1062,7 +1057,7 @@ RenderCalendar.prototype.tsToDate = function(ts, is_gmt) {
     '-00:00';
 
   var date = new Date(datestr);
-  return is_gmt ? date.toGMTString() : date.toLocaleString();
+  return is_gmt ? date.toGMTString() : date.toLocaleString(document.documentElement.lang);
 };
 
 /**

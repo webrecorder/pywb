@@ -38,12 +38,21 @@
        '11': "{{ _('November') }}",
        '12': "{{ _('December') }}",
       },
-      version: "{{ _('capture') }}",
-      versions: "{{ _('captures') }}",
+      version: "{{ _('capture of') }}",
+      versions: "{{ _('captures of') }}",
       result: "{{ _('result') }}",
       results: "{{ _('results') }}",
+      matching: "{{ _('for matching') }}",
+      by: "{{ _('by') }}",
       viewAllCaptures: "{{ _('View All Captures') }}",
       dateTime: "{{ _('Date Time: ') }}",
+      mimeType: "{{ _('Mime Type: ') }}",
+      httpStatus: "{{ _('HTTP Status: ') }}",
+      types: {
+        'prefix': "{{ _('prefix') }}",
+        'host': "{{ _('host') }}",
+        'domain': "{{ _('domain') }}",
+      },
     };
 
   var renderCal = new RenderCalendar({ prefix: "{{ prefix }}", staticPrefix: "{{ static_prefix }}", text: text });
