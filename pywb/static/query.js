@@ -371,16 +371,13 @@ RenderCalendar.prototype.createContainers = function() {
         },
         { tag: 'textNode', value: ' ' },
         {
-          tag: 'b',
-          child: {
-            tag: 'textNode',
-            value: '',
-            ref: function(refToElem) {
-              renderCal.containers.versionsTextNode = refToElem;
-            }
+          tag: 'textNode',
+          value: '',
+          ref: function(refToElem) {
+            renderCal.containers.versionsTextNode = refToElem;
           }
         },
-        { tag: 'textNode', value: ' of ' + this.queryInfo.url }
+        { tag: 'b', innerText: ' ' + this.queryInfo.url }
       ]
     });
     // create the row that will hold the results of the regular query
@@ -440,11 +437,11 @@ RenderCalendar.prototype.createContainers = function() {
   var forElems;
 
   if (this.queryInfo.searchParams.matchType) {
-    forString = ' for matching ';
+    forString = ' ' + this.text.matching + ' ';
     forElems = [
       { tag: 'b', innerText: this.queryInfo.url },
-      { tag: 'textNode', value: ' by ' },
-      { tag: 'b', innerText: this.queryInfo.searchParams.matchType }
+      { tag: 'textNode', value: ' ' + this.text.by + ' ' },
+      { tag: 'b', innerText: this.text.types[this.queryInfo.searchParams.matchType] }
     ];
   } else {
     forElems = [{ tag: 'b', innerText: this.queryInfo.url }];
@@ -463,23 +460,21 @@ RenderCalendar.prototype.createContainers = function() {
         },
         {
           tag: 'b',
-          children: [
-            {
-              tag: 'textNode',
-              value: '',
-              ref: function(refToElem) {
-                renderCal.containers.countTextNode = refToElem;
-              }
-            },
-            { tag: 'textNode', value: ' ' },
-            {
-              tag: 'textNode',
-              value: '',
-              ref: function(refToElem) {
-                renderCal.containers.versionsTextNode = refToElem;
-              }
+          child: {
+            tag: 'textNode',
+            value: '',
+            ref: function(refToElem) {
+              renderCal.containers.countTextNode = refToElem;
             }
-          ]
+          }
+        },
+        { tag: 'textNode', value: ' ' },
+        {
+          tag: 'textNode',
+          value: '',
+          ref: function(refToElem) {
+            renderCal.containers.versionsTextNode = refToElem;
+          }
         },
         { tag: 'textNode', value: forString }
       ].concat(forElems)
@@ -614,13 +609,13 @@ RenderCalendar.prototype.renderAdvancedSearchPart = function(cdxObj) {
   if (cdxObj.mime) {
     displayedInfo.push({
       tag: 'small',
-      innerText: 'Mime Type: ' + cdxObj.mime
+      innerText: this.text.mimeType + cdxObj.mime
     });
   }
   if (cdxObj.status) {
     displayedInfo.push({
       tag: 'small',
-      innerText: 'HTTP Status: ' + cdxObj.status
+      innerText: this.text.httpStatus + cdxObj.status
     });
   }
   displayedInfo.push({
@@ -785,6 +780,11 @@ RenderCalendar.prototype.addRegYearMonthDayListItem = function(
        a[href="replay url"]
        span[id=count_ts].badge.badge-info.badge-pill.float-right
    */
+    const options = {
+      dateStyle: 'long',
+      timeStyle: 'medium',
+    };
+    var dateTimeString = this.tsToDate(cdxObj.timestamp, false, options);
     this.createAndAddElementTo(ymlDL, {
       tag: 'li',
       className: 'list-group-item',
@@ -795,17 +795,7 @@ RenderCalendar.prototype.addRegYearMonthDayListItem = function(
             href: this.prefix + cdxObj.timestamp + '/' + cdxObj.url,
             target: '_blank'
           },
-          innerText:
-            timeInfo.month +
-            ' ' +
-            timeInfo.day +
-            this.dateOrdinal(timeInfo.day) +
-            ', ' +
-            timeInfo.year +
-            ' ' +
-            ' at ' +
-            timeInfo.time +
-            '  '
+          innerText: dateTimeString
         },
         {
           tag: 'span',
@@ -1021,31 +1011,13 @@ RenderCalendar.prototype.displayYearMonthDaysListId = function(year, month) {
 };
 
 /**
- * Returns a numbers ordinal string
- * @param {number} d - The number to receive the ordinal string for
- * @returns {string}
- */
-RenderCalendar.prototype.dateOrdinal = function(d) {
-  if (d > 3 && d < 21) return 'th';
-  switch (d % 10) {
-    case 1:
-      return 'st';
-    case 2:
-      return 'nd';
-    case 3:
-      return 'rd';
-    default:
-      return 'th';
-  }
-};
-
-/**
  * Converts the supplied timestamp to either a local data string or a gmt string (if is_gmt is true)
  * @param {string} ts - The timestamp to be converted to a string
  * @param {boolean} [is_gmt] - Should the timestamp be converted to a gmt string
+ * @param {Object} [options] - String formatting options
  * @returns {string}
  */
-RenderCalendar.prototype.tsToDate = function(ts, is_gmt) {
+RenderCalendar.prototype.tsToDate = function(ts, is_gmt, options) {
   if (ts.length < 14) return ts;
   var datestr =
     ts.substring(0, 4) +
@@ -1062,7 +1034,7 @@ RenderCalendar.prototype.tsToDate = function(ts, is_gmt) {
     '-00:00';
 
   var date = new Date(datestr);
-  return is_gmt ? date.toGMTString() : date.toLocaleString();
+  return is_gmt ? date.toUTCString() : date.toLocaleString(document.documentElement.lang, options);
 };
 
 /**
