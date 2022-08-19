@@ -125,18 +125,22 @@ class TestRevisits(CollsDirMixin, BaseConfigTest):
         res = self.get('/revisits/20220101{0}/http://example.com/', fmod, status=301)
         assert res.headers["Custom"] == "4"
         assert res.headers["Location"].endswith("/20220101{0}/https://example.com/redirect-4".format(fmod))
-        assert res.text == 'some\ntext'
+        assert res.content_length == 0
+        assert res.text == ''
 
-    def test_different_url_revisit_and_response(self, fmod):
+    def test_different_url_response_and_revisit(self, fmod):
+        # response
         res = self.get('/revisits/20200101{0}/http://example.com/orig-2', fmod, status=301)
         assert res.headers["Custom"] == "2"
         assert res.headers["Location"].endswith("/20200101{0}/https://example.com/redirect-2".format(fmod))
         assert res.text == 'some\ntext'
 
+        # revisit
         res = self.get('/revisits/20220101{0}/http://example.com/orig-2', fmod, status=301)
         assert res.headers["Custom"] == "3"
         assert res.headers["Location"].endswith("/20220101{0}/https://example.com/redirect-3".format(fmod))
-        assert res.text == 'some\ntext'
+        assert res.content_length == 0
+        assert res.text == ''
 
     def test_orig(self, fmod):
         res = self.get('/revisits/20200101{0}/http://example.com/orig-1', fmod, status=301)
