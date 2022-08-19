@@ -172,7 +172,7 @@ class WARCPathLoader(DefaultResolverMixin, BaseLoader):
         self.resolvers = self.make_resolvers(self.paths)
 
         self.resolve_loader = ResolvingLoader(self.resolvers,
-                                              no_record_parse=True)
+                                              no_record_parse=False)
 
         self.headers_parser = StatusAndHeadersParser([], verify=False)
 
@@ -206,18 +206,20 @@ class WARCPathLoader(DefaultResolverMixin, BaseLoader):
                                                       local_index_query))
 
         http_headers_buff = None
+
         if payload.rec_type in ('response', 'revisit'):
             status = cdx.get('status')
+
+            try:
+                orig_size = payload.raw_stream.tell()
+            except:
+                orig_size = 0
+
+            http_headers = headers.http_headers or payload.http_headers
 
             # if status is not set and not, 2xx, 4xx, 5xx
             # go through self-redirect check just in case
             if not status or not status.startswith(('2', '4', '5')):
-                http_headers = self.headers_parser.parse(payload.raw_stream)
-                try:
-                    orig_size = payload.raw_stream.tell()
-                except:
-                    orig_size = 0
-
                 try:
                     self.raise_on_self_redirect(params, cdx,
                                                 http_headers.get_statuscode(),
@@ -227,15 +229,15 @@ class WARCPathLoader(DefaultResolverMixin, BaseLoader):
                     no_except_close(payload.raw_stream)
                     raise
 
-                http_headers_buff = http_headers.to_bytes()
+            http_headers_buff = http_headers and http_headers.to_bytes()
 
-                # if new http_headers_buff is different length,
-                # attempt to adjust content-length on the WARC record
-                if orig_size and len(http_headers_buff) != orig_size:
-                    orig_cl = payload.rec_headers.get_header('Content-Length')
-                    if orig_cl:
-                        new_cl = int(orig_cl) + (len(http_headers_buff) - orig_size)
-                        payload.rec_headers.replace_header('Content-Length', str(new_cl))
+            # if new http_headers_buff is different length,
+            # attempt to adjust content-length on the WARC record
+            if http_headers and orig_size and len(http_headers_buff) != orig_size:
+                orig_cl = payload.rec_headers.get_header('Content-Length')
+                if orig_cl:
+                    new_cl = int(orig_cl) + (len(http_headers_buff) - orig_size)
+                    payload.rec_headers.replace_header('Content-Length', str(new_cl))
 
         warc_headers = payload.rec_headers
 

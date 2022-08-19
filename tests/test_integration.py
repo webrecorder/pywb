@@ -102,13 +102,15 @@ class TestWbIntegration(BaseConfigTest):
         assert not resp.headers.get('Content-Length')
 
     def test_replay_content_head_non_zero_content_length_match(self):
-        resp = self.testapp.get('/pywb/id_/http://www.iana.org/_js/2013.1/jquery.js', status=200)
+        resp = self.testapp.get('/pywb/20140126200625id_/http://www.iana.org/_js/2013.1/jquery.js', status=200)
         length = resp.content_length
+        print('length', length)
 
         # Content-Length included if non-zero
-        resp = self.testapp.head('/pywb/id_/http://www.iana.org/_js/2013.1/jquery.js', status=200)
+        resp = self.testapp.head('/pywb/20140126200625id_/http://www.iana.org/_js/2013.1/jquery.js', status=200)
 
         #assert resp.headers['Content-Length'] == length
+        print('length', resp.content_length)
         assert resp.content_length == length
 
     def test_replay_content(self, fmod):
