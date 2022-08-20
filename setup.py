@@ -113,17 +113,7 @@ setup(
             "translate_toolkit"
         ],
     },
-    tests_require=[
-        'pytest',
-        'WebTest',
-        'pytest-cov',
-        'mock',
-        'urllib3',
-        'werkzeug',
-        'httpbin==0.5.0',
-        'ujson',
-        'lxml'
-    ],
+    tests_require=load_requirements("test_requirements.txt"),
     cmdclass={'test': PyTest},
     test_suite='',
     entry_points="""
