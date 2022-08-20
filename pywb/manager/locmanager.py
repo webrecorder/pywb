@@ -2,10 +2,14 @@ import os
 import os.path
 import shutil
 
-from babel.messages.frontend import CommandLineInterface
+try:
+    from babel.messages.frontend import CommandLineInterface
 
-from translate.convert.po2csv import main as po2csv
-from translate.convert.csv2po import main as csv2po
+    from translate.convert.po2csv import main as po2csv
+    from translate.convert.csv2po import main as csv2po
+    loc_avail = True
+except:
+    loc_avail = False
 
 
 ROOT_DIR = 'i18n'

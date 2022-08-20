@@ -1,4 +1,5 @@
 from .base_config_test import BaseConfigTest
+import pytest
 
 
 # ============================================================================
@@ -6,6 +7,8 @@ class TestLocales(BaseConfigTest):
     @classmethod
     def setup_class(cls):
         super(TestLocales, cls).setup_class('config_test_loc.yaml')
+        pytest.importorskip('babel')
+        pytest.importorskip('translate_toolkit')
 
     def test_locale_en_home(self):
         res = self.testapp.get('/en/')
