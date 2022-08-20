@@ -1,11 +1,10 @@
+from .base_config_test import BaseConfigTest, CollsDirMixin, fmod
 
 from io import BytesIO
 import os
 
 from warcio import WARCWriter, StatusAndHeaders
 from pywb.manager.manager import main as wb_manager
-
-from .base_config_test import BaseConfigTest, CollsDirMixin, fmod
 
 
 # ============================================================================
