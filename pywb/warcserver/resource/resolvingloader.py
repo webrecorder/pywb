@@ -75,6 +75,14 @@ class ResolvingLoader(object):
         # two index lookups
         # Case 1: if mimetype is still warc/revisit
         if cdx.get('mime') == 'warc/revisit' and headers_record:
+            if headers_record.http_headers:
+                status = headers_record.http_headers.get_statuscode()
+                # optimization: if redirect, don't load payload record, as it'll be ignored by browser
+                # always replay zero-length payload
+                if status and status.startswith('3'):
+                    headers_record.http_headers.replace_header('Content-Length', '0')
+                    return headers_record, headers_record
+
             payload_record = self._load_different_url_payload(cdx,
                                                               headers_record,
                                                               failed_files,
