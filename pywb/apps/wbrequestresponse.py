@@ -212,6 +212,7 @@ class WbResponse(object):
         self.status_headers.replace_header('Access-Control-Allow-Methods', allowed_methods)
         self.status_headers.replace_header('Access-Control-Allow-Credentials', 'true')
         self.status_headers.replace_header('Access-Control-Max-Age', '1800')
+        self.status_headers.replace_header('Cross-Origin-Resource-Policy', 'cross-origin')
         return self
 
     def __repr__(self):
