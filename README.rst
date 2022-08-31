@@ -55,8 +55,10 @@ The 2.x release included a major overhaul of pywb and introduces many new featur
 Please see the `full documentation <https://pywb.readthedocs.org>`_ for more detailed info on all these features.
 
 
-Installation
-------------
+Installation for Deployment
+---------------------------
+
+To install pywb for usage, you can use:
 
 ```shell
 pip install pywb
@@ -64,16 +66,25 @@ pip install pywb
 
 Note: depending on your Python installation, you may have to use `pip3` instead of `pip`.
 
-To install, test and build docs locally you can:
 
-* Install with ``python setup.py install``
+Installation from local copy
+----------------------------
 
-* Run tests with ``python setup.py test``
+```shell
+git clone https://github.com/webrecorder/pywb
+```
 
-* Run Wayback with ``wayback`` (see docs for info on how to setup collections)
+To install from a locally cloned copy, install with ``pip install -e .`` or ``python setup.py install``.
 
-* Build docs locally with:  ``cd docs; make html``. (The docs will be built in ``./_build/html/index.html``)
+To run tests, we recommend installing ``pip install tox tox-current-env`` and then running ``tox --current-env`` to test in your current Python environment.
 
+To Build docs locally, run:  ``cd docs; make html``. (The docs will be built in ``./_build/html/index.html``)
+
+
+Running
+-------
+
+After installation, you can run ``pywb`` or ``wayback``.
 
 Consult the local or `online docs <https://pywb.readthedocs.org>`_ for latest usage and configuration details.
 

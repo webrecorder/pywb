@@ -448,12 +448,7 @@ Create manage file based web archive collections
     acl.set_defaults(func=do_acl)
 
     # LOC
-    loc_avail = False
-    try:
-        from pywb.manager.locmanager import LocManager
-        loc_avail = True
-    except:
-        pass
+    from pywb.manager.locmanager import LocManager, loc_avail
 
     def do_loc(r):
         if not loc_avail:
