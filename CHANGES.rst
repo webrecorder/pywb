@@ -1,3 +1,29 @@
+pywb 2.6.8 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Upgrade webassets to v2.0 by @m4rk3r in https://github.com/webrecorder/pywb/pull/730
+* Encoding image 'srcset'  value including the intrinsic width by @yasarkunduz in https://github.com/webrecorder/pywb/pull/712
+* Prevent jinja2 from escaping HTML markup in collection metadata by @tw4l in https://github.com/webrecorder/pywb/pull/747
+* Increase uwsgi_buffer_size for nginx config by @edsu in https://github.com/webrecorder/pywb/pull/716
+* Add missing translation for the filter-epression field placeholder by @krakan in https://github.com/webrecorder/pywb/pull/721
+* Activate field validation when expanding the advanced options by @krakan in https://github.com/webrecorder/pywb/pull/722
+* S3 loader to use boto3 built-in credential configuration by @sebastian-nagel in https://github.com/webrecorder/pywb/pull/723
+* describing installation using pip by @sepastian in https://github.com/webrecorder/pywb/pull/726
+* Add missing org/image to docker run commands by @heyvito in https://github.com/webrecorder/pywb/pull/733
+* Format error messages by @edsu in https://github.com/webrecorder/pywb/pull/737
+* Ensure CDX status is a string by @edsu in https://github.com/webrecorder/pywb/pull/739
+* Improve replay banner's accessibility by @lwrubel in https://github.com/webrecorder/pywb/pull/742
+* Revisit headers load fix by @ikreymer in https://github.com/webrecorder/pywb/pull/751
+* Enable translation for the remaining strings on the search results page by @krakan in https://github.com/webrecorder/pywb/pull/752
+* revisit of redirect optimization: by @ikreymer in https://github.com/webrecorder/pywb/pull/753
+* proxy: add COEP header for proxy mode to avoid errors by @ikreymer in https://github.com/webrecorder/pywb/pull/755
+* tests run improvements: update from python setup.py test -> tox  by @ikreymer in https://github.com/webrecorder/pywb/pull/754
+* rewrite: detect edge-case where html starts with bom followed  by @ikreymer in https://github.com/webrecorder/pywb/pull/758
+* tests options: add PYWB_NO_VERIFY_SSL env var for tests to avoid fail… by @ikreymer in https://github.com/webrecorder/pywb/pull/760
+* rewriting fix: twitter video in embedded tweets by @ikreymer in https://github.com/webrecorder/pywb/pull/761
+* Add ir_ modifier by @ikreymer in https://github.com/webrecorder/pywb/pull/759
+* Remove unused Appveyor badge
+
 pywb 2.6.7 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

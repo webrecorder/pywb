@@ -1,13 +1,11 @@
 Webrecorder pywb 2.6
 ====================
 
-.. image:: https://raw.githubusercontent.com/webrecorder/pywb/master/pywb/static/pywb-logo.png
+.. image:: https://raw.githubusercontent.com/webrecorder/pywb/main/pywb/static/pywb-logo.png
 
 .. image:: https://github.com/webrecorder/pywb/workflows/CI/badge.svg
       :target: https://github.com/webrecorder/pywb/actions
-.. image:: https://ci.appveyor.com/api/projects/status/qxnbunw65o929599/branch/master?svg=true
-      :target: https://ci.appveyor.com/project/webrecorder/pywb/branch/master
-.. image:: https://codecov.io/gh/webrecorder/pywb/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/webrecorder/pywb/branch/main/graph/badge.svg
       :target: https://codecov.io/gh/webrecorder/pywb
 
 Web Archiving Tools for All
