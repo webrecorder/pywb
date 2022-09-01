@@ -22,6 +22,10 @@ import requests
 
 import re
 import logging
+import os
+
+
+no_verify = os.environ.get("PYWB_NO_VERIFY_SSL")
 
 
 #=============================================================================
@@ -46,6 +50,8 @@ class BaseIndexSource(object):
         self.sesh = requests.Session()
         self.sesh.mount('http://', adapter)
         self.sesh.mount('https://', adapter)
+        if no_verify:
+            self.sesh.verify = False
 
 
 #=============================================================================
