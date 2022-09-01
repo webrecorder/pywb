@@ -90,17 +90,25 @@ def rewrite_tw_dash(string, *args):
     try:
         best_variant = None
         best_bitrate = 0
+        best_src = ""
         max_bitrate = 5000000
 
         data = json.loads(string)
         for variant in data["variants"]:
-            if variant["content_type"] != "video/mp4":
+            if (("content_type" in variant and variant["content_type"] != "video/mp4") or
+                ("type" in variant and variant["type"] != "video/mp4")):
                 continue
 
             bitrate = variant.get("bitrate")
+            src = variant.get("src")
+
             if bitrate and bitrate > best_bitrate and bitrate <= max_bitrate:
                 best_variant = variant
                 best_bitrate = bitrate
+            # just compare src strings with dimensions
+            elif src and src > best_src:
+                best_variant = variant
+                best_src = src
 
         if best_variant:
             data["variants"] = [best_variant]

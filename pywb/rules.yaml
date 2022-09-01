@@ -61,6 +61,7 @@ rules:
 
     # twitter rules
     #=================================================================
+
     - url_prefix: 'com,twitter)/i/profiles/show/'
 
       fuzzy_lookup: '/profiles/show/.*with_replies\?.*(max_id=[^&]+)'
@@ -84,6 +85,14 @@ rules:
               function: 'pywb.rewrite.rewrite_dash:rewrite_tw_dash'
 
  
+    - url_prefix: ['com,twimg,syndication,cdn)/tweet-result']
+
+      rewrite:
+        js_regexs:
+            - match: 'video":(.*?viewCount":\d+})'
+              group: 1
+              function: 'pywb.rewrite.rewrite_dash:rewrite_tw_dash'
+
      
 
     # facebook rules
