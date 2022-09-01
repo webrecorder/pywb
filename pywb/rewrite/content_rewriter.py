@@ -524,7 +524,7 @@ class RewriteInfo(object):
         if not self.text_type:
             return False
 
-        if self.url_rewriter.wburl.mod == 'id_':
+        if self.is_identity():
             return False
 
         if self.url_rewriter.rewrite_opts.get('is_ajax'):
@@ -537,9 +537,11 @@ class RewriteInfo(object):
 
         return True
 
+    def is_identity(self):
+        return self.url_rewriter.wburl.mod in ('id_', 'ir_')
+
     def is_url_rw(self):
         if self.url_rewriter.wburl.mod in ('id_', 'bn_', 'wkrf_'):
             return False
 
         return True
-
