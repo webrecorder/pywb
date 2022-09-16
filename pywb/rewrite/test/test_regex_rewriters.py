@@ -216,7 +216,12 @@ r"""
 'this. location = ((self.__WB_check_loc && self.__WB_check_loc(location, arguments)) || {}).href = http://example.com/'
 
 >>> _test_js_obj_proxy('eval(a)')
-'WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval(a)'
+'WB_wombat_runEval2((_______eval_arg, isGlobal) => { var ge = eval; return isGlobal ? ge(_______eval_arg) : eval(_______eval_arg); }).eval(this, (function() { return arguments })(),a)'
+
+>>> _test_js_obj_proxy('abc eval(a)')
+'abc WB_wombat_runEval2((_______eval_arg, isGlobal) => { var ge = eval; return isGlobal ? ge(_______eval_arg) : eval(_______eval_arg); }).eval(this, (function() { return arguments })(),a)'
+
+
 
 >>> _test_js_obj_proxy(',eval(a)')
 ',eval(a)'
@@ -234,7 +239,7 @@ r"""
 '$eval = self.eval; $eval(a);'
 
 >>> _test_js_obj_proxy('foo(a, eval(data));')
-'foo(a, WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval(data));'
+'foo(a, WB_wombat_runEval2((_______eval_arg, isGlobal) => { var ge = eval; return isGlobal ? ge(_______eval_arg) : eval(_______eval_arg); }).eval(this, (function() { return arguments })(),data));'
 
 >>> _test_js_obj_proxy('function eval() {}')
 'function eval() {}'
@@ -361,7 +366,6 @@ def _test_xml(string):
 
 def _test_css(string):
     return CSSRewriter(urlrewriter).rewrite(string)
-
 
 if __name__ == "__main__":
     import doctest
