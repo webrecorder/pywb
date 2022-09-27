@@ -371,7 +371,7 @@ class HeadInsertView(BaseInsertView):
 
             if self.banner_view:
                 banner_html = self.banner_view.render_to_string(env, cdx=cdx, **params)
-                params['banner_html'] = banner_html
+                params['custom_banner_html'] = banner_html
 
             return self.render_to_string(env, cdx=cdx, **params)
 

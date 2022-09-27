@@ -12,6 +12,7 @@ templates_dir: templates
 
 # Template HTML
 banner_html: banner.html
+custom_banner_html: custom_banner.html
 head_insert_html: head_insert.html
 frame_insert_html: frame_insert.html
 
@@ -36,6 +37,7 @@ info_json: collinfo.json
 # HTML Templates List
 html_templates:
     - banner_html
+    - custom_banner_html
     - head_insert_html
     - frame_insert_html
 

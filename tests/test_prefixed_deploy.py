@@ -35,7 +35,6 @@ class TestPrefixedDeploy(BaseConfigTest):
 
         assert '"20140127171238"' in resp.text, resp.text
         assert "'http://localhost:80/prefix/static/wombat.js'" in resp.text
-        assert "http://localhost:80/prefix/static/vue/vueui.js" in resp.text
         assert '"http://localhost:80/prefix/static/"' in resp.text
         assert '"http://localhost:80/prefix/pywb/"' in resp.text
         assert 'WBWombatInit' in resp.text, resp.text

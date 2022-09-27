@@ -62,7 +62,11 @@
 
 {% endif %}
 
-{{ banner_html }}
+{% if not is_framed %}
+
+{{ custom_banner_html }}
+
+{% endif %}
 
 {% endautoescape %}
 

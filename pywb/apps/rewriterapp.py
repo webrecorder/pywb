@@ -78,10 +78,11 @@ class RewriterApp(object):
         self.redirect_to_exact = config.get('redirect_to_exact')
 
         self.banner_view = BaseInsertView(self.jinja_env, self._html_templ('banner_html'))
+        self.custom_banner_view = BaseInsertView(self.jinja_env, self._html_templ('custom_banner_html'))
 
         self.head_insert_view = HeadInsertView(self.jinja_env,
                                                self._html_templ('head_insert_html'),
-                                               self.banner_view)
+                                               self.custom_banner_view)
 
         self.frame_insert_view = TopFrameView(self.jinja_env,
                                               self._html_templ('frame_insert_html'),
