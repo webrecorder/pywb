@@ -17,6 +17,19 @@ class RxRules(object):
         return lambda x, _: x.replace(match, replacer)
 
     @staticmethod
+    def replace_prefix_from(prefix, match):
+        def do_replace(x, _):
+            start = x.find(match)
+            if start == 0:
+                return prefix
+            if start > 0:
+                return x[:start] + prefix
+            return x
+
+        return do_replace
+
+
+    @staticmethod
     def format(template):
         return lambda string, _: template.format(string)
 
@@ -42,7 +55,7 @@ class RxRules(object):
         regex_str = '|'.join(['(' + rx + ')' for rx, op, count in rules])
 
         # ensure it's not middle of a word, wrap in non-capture group
-        regex_str = '(?<!\w)(?:' + regex_str + ')'
+        regex_str = '(?:' + regex_str + ')'
 
         return re.compile(regex_str, re.M)
 
@@ -84,7 +97,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
 
         check_loc = '((self.__WB_check_loc && self.__WB_check_loc(location, arguments)) || {}).href = '
 
-        eval_str = 'WB_wombat_runEval(function _____evalIsEvil(_______eval_arg$$) { return eval(_______eval_arg$$); }.bind(this)).eval'
+        eval_str = 'WB_wombat_runEval2((_______eval_arg, isGlobal) => { var ge = eval; return isGlobal ? ge(_______eval_arg) : eval(_______eval_arg); }).eval(this, (function() { return arguments })(),'
 
         self.local_objs = [
             'window',
@@ -104,15 +117,15 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
 
         rules = [
             # rewriting 'eval(...)' - invocation
-            (r'(?<!function\s)(?:^|[^,$])\beval\s*\(', self.replace_str(eval_str, 'eval'), 0),
+            (r'(?<!function)(?:\s|^)\beval\s*\(', self.replace_prefix_from(eval_str, 'eval'), 0),
             # rewriting 'x = eval' - no invocation
             (r'(?<=[=,])\s*\beval\b\s*(?![(:.$])', self.replace_str('self.eval', 'eval'), 0),
             (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
-            (r'(?<![$.])\s*location\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
+            (r'(?<![$.])\s*\blocation\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
             # rewriting 'return this'
             (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(this_rw), 0),
             # rewriting 'this.' special properties access on new line, with ; prepended
-            (r'(?<=[\n])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + this_rw), 0),
+            (r'\n\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + this_rw), 0),
             # rewriting 'this.' special properties access, not on new line (no ;)
             (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(this_rw), 0),
             # rewrite '= this' or ', this'
@@ -346,7 +359,7 @@ class CSSRewriter(RegexRewriter):
 class XMLRules(RxRules):
     def __init__(self):
         rules = [
-            ('([A-Za-z:]+[\s=]+)?["\'\s]*(' +
+            ('(?<![\w])([A-Za-z:]+[\s=]+)?["\'\s]*(' +
              self.HTTPX_MATCH_STR + ')',
              self.archival_rewrite(), 2),
         ]
