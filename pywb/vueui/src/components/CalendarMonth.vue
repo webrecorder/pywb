@@ -12,7 +12,7 @@
         border-radius: 10px;
     }
     .calendar-month:hover {
-        background-color: #eeeeee;
+        background-color: #F5F5F5;
     }
     .calendar-month.current {
         background-color: #fff7ce;
@@ -28,7 +28,7 @@
         position: absolute;
         top: 45%;
         width: 100%;
-        color: gray;
+        color: #454545;
     }
     .calendar-month .day {
         position: relative;
@@ -37,7 +37,7 @@
         text-align: center;
     }
     .calendar-month .day.empty {
-        color: gray;
+        color: #454545;
     }
     .calendar-month .day .count {
         display: none;

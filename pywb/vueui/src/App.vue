@@ -8,8 +8,17 @@
         <img :src="config.logoImg" id="logo-img" alt="_('pywb logo')">
       </a>
       <div class="flex-grow-1 d-flex" id="searchdiv">
-        <form class="form-inline my-2 my-md-0 mx-lg-auto" @submit="gotoUrl">
-          <input id="theurl" type="text" :value="config.url" height="31"></input>
+        <form
+          class="form-inline my-2 my-md-0 mx-lg-auto"
+          role="search"
+          @submit="gotoUrl">
+          <input
+            id="theurl"
+            type="text"
+            :value="config.url"
+            height="31"
+            aria-label="_('Search for archival capture of URL')"
+            title="_('Search for archival capture of URL')"></input>
         </form>
       </div>
       <button
