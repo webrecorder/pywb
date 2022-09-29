@@ -348,6 +348,7 @@ from pywb.rewrite.url_rewriter import UrlRewriter
 from pywb.rewrite.regex_rewriters import RegexRewriter, JSRewriter, CSSRewriter, XMLRewriter, RxRules
 from pywb.rewrite.regex_rewriters import JSWombatProxyRewriter
 
+import pytest
 
 urlrewriter = UrlRewriter('20131010/http://example.com/', '/web/', 'https://localhost/web/')
 
@@ -366,6 +367,24 @@ def _test_xml(string):
 
 def _test_css(string):
     return CSSRewriter(urlrewriter).rewrite(string)
+
+@pytest.mark.parametrize(
+    "string, expected_return",
+    [
+        # imports
+        ("import './a-module.js'\n", True),
+        # exports
+        ("export { name1 };\n", True),
+        ("export default function functionName() { /* … */ }", True),
+        ("export class ClassName { /* … */ };", True),
+        # not a module
+        ("let counter = 0;\nconsole.log(counter);", False),
+        ("", False),
+        (None, False)
+    ]
+)
+def test_is_module(string, expected_return):
+    assert JSWombatProxyRewriter.is_module(string) == expected_return
 
 if __name__ == "__main__":
     import doctest

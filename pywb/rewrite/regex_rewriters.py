@@ -280,10 +280,31 @@ class JSWombatProxyRewriter(RegexRewriter):
         self.last_buff = self.rules_factory.last_buff
         self.local_objs = self.rules_factory.local_objs
 
+    @staticmethod
+    def is_module(string):
+        """Return boolean indicating whether import or export statement is found."""
+        IMPORT_REGEX = r"^\s*?import\s*?[{\"']"
+        EXPORT_REGEX = r"^\s*?export\s*?({([\s\w,$\n]+?)}[\s;]*|default|class)\s+"
+
+        if not string:
+            return False
+
+        if "import" in string and re.search(IMPORT_REGEX, string):
+            return True
+
+        if "export" in string and re.search(EXPORT_REGEX, string):
+            return True
+
+        return False
+
     def rewrite_complete(self, string, **kwargs):
         if not kwargs.get('inline_attr'):
+            if self.is_module(string):
+                first_buff = "\nimport {} from '/static/__wb_module_decl.js';\n".format(
+                    ", ".join(obj for obj in self.local_objs)
+                )
+                return super(JSWombatProxyRewriter, self).rewrite_complete(string, first_buff=first_buff)
             return super(JSWombatProxyRewriter, self).rewrite_complete(string)
-
         # check if any of the wrapped objects are used in the script
         # if not, don't rewrite
         if not any(obj in string for obj in self.local_objs):
