@@ -276,6 +276,9 @@ class JSWombatProxyRewriter(RegexRewriter):
     def __init__(self, rewriter, extra_rules=None):
         super(JSWombatProxyRewriter, self).__init__(rewriter, extra_rules=extra_rules)
 
+        self.rewriter = rewriter
+        self.extra_rules = extra_rules
+
         self.first_buff = self.rules_factory.first_buff
         self.last_buff = self.rules_factory.last_buff
         self.local_objs = self.rules_factory.local_objs
@@ -303,7 +306,8 @@ class JSWombatProxyRewriter(RegexRewriter):
                 first_buff = "\nimport {} from '/static/__wb_module_decl.js';\n".format(
                     ", ".join(obj for obj in self.local_objs)
                 )
-                return super(JSWombatProxyRewriter, self).rewrite_complete(string, first_buff=first_buff)
+                super(JSWombatProxyRewriter, self).__init__(self.rewriter, extra_rules=self.extra_rules, first_buff=first_buff)
+                return super(JSWombatProxyRewriter, self).rewrite_complete(string)
             return super(JSWombatProxyRewriter, self).rewrite_complete(string)
         # check if any of the wrapped objects are used in the script
         # if not, don't rewrite
