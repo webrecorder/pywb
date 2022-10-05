@@ -65,6 +65,8 @@ ContentFrame.prototype.init_iframe = function() {
     return;
   }
 
+  this.iframe.setAttribute("name", "___wb_replay_top_frame");
+
   this.extract_prefix();
   if (window.WBBanner) {
     this.wbBanner = window.WBBanner;

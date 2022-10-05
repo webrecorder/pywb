@@ -433,6 +433,12 @@ class HTMLRewriterMixin(StreamingRewriter):
                     # URL not skipped, likely src='js/....', forcing abs to make sure, cause PHP MIME(JS) === HTML
                     attr_value = self._rewrite_url(attr_value, rw_mod, True)
                     self._write_attr('__wb_orig_src', ov, empty_attr=None)
+            
+            elif attr_name == 'target':
+                target = attr_value
+                if target in ('_blank', '_parent', '_top'):
+                    attr_value = '___wb_replay_top_frame'
+
             else:
                 # rewrite url using tag handler
                 rw_mod = handler.get(attr_name)

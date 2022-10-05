@@ -27,6 +27,7 @@
   wbinfo.proxy_magic = "{{ env.pywb_proxy_magic }}";
   wbinfo.static_prefix = "{{ static_prefix }}/";
   wbinfo.enable_auto_fetch = {{ config.enable_auto_fetch | tobool }};
+  wbinfo.target_frame = "___wb_replay_top_frame";
 </script>
 {% if env.pywb_proxy_magic %}
 {% set whichWombat = 'wombatProxyMode.js' %}
