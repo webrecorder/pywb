@@ -416,6 +416,9 @@ r"""
 >>> parse('<!--[if !IE]> --><html><![endif]--><a href="http://example.com/"><!--[if IE]><![endif]--><a href="http://example.com/"></html>')
 <!--[if !IE]> --><html><![endif]><a href="/web/20131226101010/http://example.com/"><!--[if IE]><![endif]--><a href="/web/20131226101010/http://example.com/"></html>
 
+# Test tag with a target
+>>> parse('<HTML><A Href=\"page.html\" target=\"_blank\">Text</a></hTmL>')
+<html><a href="page.html" target="___wb_replay_top_frame">Text</a></html>
 
 # Test blank
 >>> parse('')
