@@ -34,9 +34,10 @@ jobs:
       -
         name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
           tags: ${{ steps.meta.outputs.tags }}
 
