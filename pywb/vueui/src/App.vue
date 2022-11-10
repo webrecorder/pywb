@@ -61,7 +61,7 @@
               :aria-pressed="(showFullView ? true : false)"
               @click="showFullView = !showFullView"
               :title="(showFullView ? _('Hide calendar') : _('Show calendar'))">
-              <i class="far fa-calendar-alt" :title="_('Calendar')"></i>
+              <i class="far fa-calendar-alt"></i>
             </button>
           </li>
           <li class="nav-item">
@@ -71,7 +71,7 @@
               :aria-pressed="showTimelineView"
               @click="showTimelineView = !showTimelineView"
               :title="(showTimelineView ? _('Hide timeline') : _('Show timeline'))">
-              <i class="far fa-chart-bar" :title="_('Timeline')"></i>
+              <i class="far fa-chart-bar"></i>
             </button>
           </li>
           <li class="nav-item dropdown" v-if="localesAreSet">
@@ -142,8 +142,8 @@
     </div>
 
     <!-- Calendar -->
-    <div class="card border-0" v-if="currentPeriod && showFullView && currentPeriod.children.length">
-      <div class="card-body">
+    <div class="card" v-if="currentPeriod && showFullView && currentPeriod.children.length">
+      <div class="card-body" id="calendar-card-body">
         <CalendarYear
           :period="currentPeriod"
           :current-snapshot="currentSnapshot"
@@ -452,6 +452,9 @@ export default {
     width: 100%;
     align-items: center;
     justify-content: center;
+  }
+  #calendar-card-body {
+    padding: 0;
   }
   .strong {
     font-weight: bold;

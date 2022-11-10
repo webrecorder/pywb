@@ -278,7 +278,7 @@ PywbPeriod.prototype.getChildrenRange = function() {
   }
   return null;
 };
-PywbPeriod.prototype.fillEmptyGrancChildPeriods = function() {
+PywbPeriod.prototype.fillEmptyGrandChildPeriods = function() {
   if (this.hasFilledEmptyGrandchildPeriods) {
     return;
   }
@@ -289,18 +289,9 @@ PywbPeriod.prototype.fillEmptyGrancChildPeriods = function() {
 };
 
 PywbPeriod.prototype.fillEmptyChildPeriods = function(isFillEmptyGrandChildrenPeriods=false) {
-  if (this.snapshotCount === 0 || this.type > PywbPeriod.Type.day) {
+  if (this.type > PywbPeriod.Type.day) {
     return;
   }
-
-  if (isFillEmptyGrandChildrenPeriods) {
-    this.fillEmptyGrancChildPeriods();
-  }
-
-  if (this.hasFilledEmptyChildPeriods) {
-    return;
-  }
-  this.hasFilledEmptyChildPeriods = true;
 
   const idRange = this.getChildrenRange();
   if (!idRange) {
@@ -321,21 +312,23 @@ PywbPeriod.prototype.fillEmptyChildPeriods = function(isFillEmptyGrandChildrenPe
           // insert new after existing
           this.children.splice(i+1, 0, empty);
         }
-        // manually push children (no need to reverse link parent
-        //empty.parent = this;
+        empty.parent = this;
+        empty.initFullId();
       }
       i++;
     } else {
       const empty = new PywbPeriod({type: this.type + 1, id: newId});
-      this.children.push(empty);
-      // manually push children (no need to reverse link parent
-      //empty.parent = this;
+      let result = this.addChild(empty);
     }
   }
 
   // re-calculate indexes
   for(let i=0;i<this.children.length;i++) {
     this.childrenIds[this.children[i].id] = i;
+  }
+
+  if (isFillEmptyGrandChildrenPeriods) {
+    this.fillEmptyGrandChildPeriods();
   }
 
   return idRange;

@@ -1,7 +1,7 @@
 <template>
   <div class="timeline-linear">
     <div class="title">
-      <div>{{ period.getFullReadableId() }}</div>
+      <div>{{ displayDate }}</div>
       <div>{{ $root._(period.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: period.snapshotCount}) }}</div>
     </div>
 
@@ -21,6 +21,8 @@
 </template>
 
 <script>
+import { PywbI18N } from "../i18n";
+
 export default {
   name: "TimelineLinear",
   props: ['period', 'currentSnapshot'],
@@ -31,6 +33,11 @@ export default {
     containsCurrentSnapshot() {
       return this.currentSnapshot &&
           this.period.contains(this.currentSnapshot);
+    },
+    displayDate() {
+      // replace '-' in date string with '/' so firefox and chrome will return same result
+      let dateStringNoSlashes = this.period.fullId.replace(/-/g,'/');
+      return new Date(dateStringNoSlashes).toLocaleDateString(PywbI18N.getLocale());
     }
   },
   methods: {
@@ -59,7 +66,8 @@ export default {
 .timeline-linear .list {
   max-height: 80vh;
   min-height: 50px;
-  overflow: scroll;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .timeline-linear .title {
   border-bottom: 1px solid black;

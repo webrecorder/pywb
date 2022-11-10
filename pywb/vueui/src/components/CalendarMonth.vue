@@ -78,6 +78,9 @@
 
         color: black;
     }
+    .calendar-month .day .day-id.empty {
+      color: #454545 !important;
+    }
     .calendar-month .day:hover .size {
         border: 1px solid black;
     }
@@ -92,11 +95,8 @@
 <template>
   <div class="calendar-month" :class="{current: isCurrent, 'contains-current-snapshot': containsCurrentSnapshot}">
     <h3>{{getLongMonthName(month.id)}} <span v-if="month.snapshotCount">({{ month.snapshotCount }})</span></h3>
-    <div v-if="month.snapshotCount">
-      <span v-for="(dayInitial) in dayInitials" class="day" :style="dayStyle">{{dayInitial}}</span><br/>
-      <span v-for="(day,i) in days"><br v-if="i && i % 7===0"/><span class="day" :class="{empty: !day || !day.snapshotCount, 'contains-current-snapshot':dayContainsCurrentSnapshot(day)}" :style="dayStyle"  @click="gotoDay(day, $event)" @keyup.13="gotoDay(day, $event)"><template v-if="day"><span class="size" v-if="day.snapshotCount" :style="getDayCountCircleStyle(day.snapshotCount)" tabindex="0"> </span><span class="day-id">{{day.id}}</span><span v-if="day.snapshotCount" class="count">{{ $root._(day.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: day.snapshotCount}) }}</span></template><template v-else v-html="'&nbsp;'"></template></span></span>
-    </div>
-    <div v-else class="empty">{{ _('no captures') }}</div>
+    <span v-for="(dayInitial) in dayInitials" class="day" :style="dayStyle">{{dayInitial}}</span><br/>
+    <span v-for="(day,i) in days"><br v-if="i && i % 7===0"/><span class="day" :class="{empty: !day || !day.snapshotCount, 'contains-current-snapshot':dayContainsCurrentSnapshot(day)}" :style="dayStyle"  @click="gotoDay(day, $event)" @keyup.13="gotoDay(day, $event)"><template v-if="day"><span class="size" v-if="day.snapshotCount" :style="getDayCountCircleStyle(day.snapshotCount)" tabindex="0"> </span><span class="day-id" :class="{empty: !day.snapshotCount}">{{day.id}}</span><span v-if="day.snapshotCount" class="count">{{ $root._(day.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: day.snapshotCount}) }}</span></template><template v-else v-html="'&nbsp;'"></template></span></span>
   </div>
 </template>
 
@@ -120,7 +120,7 @@ export default {
       return `height: ${s}px; width: ${s}px; line-height: ${s}px`;
     },
     days() {
-      if (!this.month || !this.month.snapshotCount) {
+      if (!this.month) {
         return [];
       }
       const days = [];

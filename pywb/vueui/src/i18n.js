@@ -36,7 +36,7 @@ export class PywbI18N {
     return decodeURIComponent(this.config[id+'_'+type])
   }
   getWeekDays(type='long') {
-    return ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(d => this.getWeekDay(d, type));
+    return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].map(d => this.getWeekDay(d, type));
   }
   getText(id, embeddedVariableStrings=null) {
     const translated = decodeURIComponent(this.config[id] || id);
