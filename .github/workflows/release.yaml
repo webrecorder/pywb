@@ -40,5 +40,13 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64,linux/arm/v7
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: communityfirst/pywb:latest
 
+      -
+        name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: communityfirst/pywb
+          short-description: 'Core Python Web Archiving Toolkit for replay and recording of web archives'
