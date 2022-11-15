@@ -8,7 +8,7 @@ COPY requirements.txt extra_requirements.txt ./
 
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt -r extra_requirements.txt
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -y
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
 COPY . ./
 
