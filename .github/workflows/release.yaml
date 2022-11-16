@@ -46,7 +46,7 @@ jobs:
         name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: communityfirst/pywb
           short-description: 'Core Python Web Archiving Toolkit for replay and recording of web archives'
