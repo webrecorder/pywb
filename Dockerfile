@@ -8,7 +8,6 @@ COPY requirements.txt extra_requirements.txt ./
 
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt -r extra_requirements.txt
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
 COPY . ./
 
