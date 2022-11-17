@@ -206,6 +206,21 @@ pywb uses the gevent coroutine library, and the default app will support many co
 
 For larger scale production deployments, running with `uwsgi <http://uwsgi-docs.readthedocs.io/>`_ server application is recommended. The ``uwsgi.ini`` script provided can be used to launch pywb with uwsgi. uwsgi can be scaled to multiple processes to support the necessary workload, and pywb must be run with the `Gevent Loop Engine <http://uwsgi-docs.readthedocs.io/en/latest/Gevent.html>`_. Nginx or Apache can be used as an additional frontend for uwsgi.
 
+It is recommended to install uwsgi and its dependencies in a Python virtual environment (virtualenv). Consult the uwsgi documentation for `virtualenv support <https://uwsgi-docs.readthedocs.io/en/latest/Python.html#virtualenv-support>`_ for details on how to specify the virtualenv to uwsgi.
+
+Installation of uswgi in a virtualenv will avoid known issues with installing uwsgi in some Debian-based OSes with Python 3.9+. As an example, in Ubuntu 22.04 with Python 3.10, it is recommended to install uwsgi like so: ::
+
+    sudo apt install -y python3-pip \
+        python3-dev \
+        build-essential \
+        libssl-dev \
+        libffi-dev \
+        python3-setuptools \
+        python3-venv
+    python3 -m venv pywbenv
+    source pywbenv/bin/activate
+    pip install wheel uwsgi pywb
+
 Although uwsgi does not provide a way to specify command line, all command line options can alternatively be configured via ``config.yaml``. See :ref:`configuring-pywb` for more info on available configuration options.
 
 Docker Deployment
