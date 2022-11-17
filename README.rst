@@ -106,10 +106,4 @@ The pywb documentation is extensive. Some links to a few key guides:
 Contributions & Bug Reports
 ---------------------------
 
-Users are encouraged to fork and contribute to this project to keep improving web archiving tools.
-
-If you are interested in contributing, especially to any of these areas, please let us know!
-
-Otherwise, please take a look at `list of current issues <https://github.com/webrecorder/pywb/issues>`_ and feel free to open new ones about any aspect of pywb, including the new documentation.
-
-
+Users are encouraged to fork and contribute to this project to keep improving web archiving tools. Please consult the `contributing guide <CONTRIBUTING.md>`_ for information on how to contribute to pywb.
