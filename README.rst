@@ -1,4 +1,4 @@
-Webrecorder pywb 2.6
+Webrecorder pywb 2.7
 ====================
 
 .. image:: https://raw.githubusercontent.com/webrecorder/pywb/main/pywb/static/pywb-logo.png
