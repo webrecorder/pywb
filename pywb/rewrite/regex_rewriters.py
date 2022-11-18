@@ -1,6 +1,7 @@
 import re
 from pywb.rewrite.content_rewriter import StreamingRewriter
 from pywb.utils.loaders import load_py_name
+from pywb.utils.io import BUFF_SIZE
 from six.moves.urllib.parse import unquote
 
 
@@ -283,32 +284,53 @@ class JSWombatProxyRewriter(RegexRewriter):
         self.last_buff = self.rules_factory.last_buff
         self.local_objs = self.rules_factory.local_objs
 
+        self._is_module_check = None
+
+    def set_as_module(self):
+        self.first_buff = "\nimport {{ {0} }} from '/static/__wb_module_decl.js';\n".format(
+             ", ".join(obj for obj in self.local_objs)
+        )
+        self.last_buff = ""
+        self._is_module_check = True
+
+    def __call__(self, rwinfo):
+        if self._is_module_check == None:
+            buf = rwinfo.read_and_keep(BUFF_SIZE * 4)
+
+            if self.is_module(buf):
+                self.set_as_module()
+            else:
+                self._is_module_check = False
+
+        return super(JSWombatProxyRewriter, self).__call__(rwinfo)
+
     @staticmethod
     def is_module(string):
         """Return boolean indicating whether import or export statement is found."""
-        IMPORT_REGEX = r"^\s*?import\s*?[{\"']"
-        EXPORT_REGEX = r"^\s*?export\s*?({([\s\w,$\n]+?)}[\s;]*|default|class)\s+"
+        IMPORT_REGEX = re.compile(br"^\s*?import\s*?[{\"']")
+        EXPORT_REGEX = re.compile(br"^\s*?export\s*?({([\s\w,$\n]+?)}[\s;]*|default|class)\s+", re.M)
 
         if not string:
             return False
 
-        if "import" in string and re.search(IMPORT_REGEX, string):
+        if isinstance(string, str):
+            string = string.encode("utf-8")
+
+        if b"import" in string and re.search(IMPORT_REGEX, string):
             return True
 
-        if "export" in string and re.search(EXPORT_REGEX, string):
+        if b"export" in string and re.search(EXPORT_REGEX, string):
             return True
 
         return False
 
     def rewrite_complete(self, string, **kwargs):
         if not kwargs.get('inline_attr'):
-            if self.is_module(string):
-                first_buff = "\nimport {} from '/static/__wb_module_decl.js';\n".format(
-                    ", ".join(obj for obj in self.local_objs)
-                )
-                super(JSWombatProxyRewriter, self).__init__(self.rewriter, extra_rules=self.extra_rules, first_buff=first_buff)
-                return super(JSWombatProxyRewriter, self).rewrite_complete(string)
+            if kwargs.get('is_module'):
+                self.set_as_module()
+
             return super(JSWombatProxyRewriter, self).rewrite_complete(string)
+
         # check if any of the wrapped objects are used in the script
         # if not, don't rewrite
         if not any(obj in string for obj in self.local_objs):
