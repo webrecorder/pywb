@@ -1,3 +1,12 @@
+pywb 2.6.9 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* eval rewrite update + latest wombat by @ikreymer in https://github.com/webrecorder/pywb/pull/763
+* Rewrite: Support target rewriting, open new windows in top-frame instead by @tw4l in https://github.com/webrecorder/pywb/pull/767
+* Add arm64 platform support by @luandro in https://github.com/webrecorder/pywb/pull/775
+* Add uwsgi virtualenv information by @tw4l in https://github.com/webrecorder/pywb/pull/770
+* update to wombat 3.3.11 to support additional replay improvements
+
 pywb 2.6.8 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
