@@ -6,6 +6,7 @@ pywb 2.6.9 changelist
 * Add arm64 platform support by @luandro in https://github.com/webrecorder/pywb/pull/775
 * Add uwsgi virtualenv information by @tw4l in https://github.com/webrecorder/pywb/pull/770
 * update to wombat 3.3.11 to support additional replay improvements
+* automated pypi publish on release https://github.com/webrecorder/pywb/pull/776
 
 pywb 2.6.8 changelist
 ~~~~~~~~~~~~~~~~~~~~~
