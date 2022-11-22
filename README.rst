@@ -49,6 +49,8 @@ The 2.x release included a major overhaul of pywb and introduces many new featur
 
 * New in 2.6: Support for localization and multi-language deployment.
 
+* New in 2.7: New banner/calendar UI written in `Vue <https://vuejs.org/>`_, with interactive timeline and easier theming of colors and logo via ``config.yaml``.
+
 
 Please see the `full documentation <https://pywb.readthedocs.org>`_ for more detailed info on all these features.
 
