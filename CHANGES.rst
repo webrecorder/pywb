@@ -1,3 +1,12 @@
+pywb 2.7.0 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* New banner and calendar implementation in Vue.js, which supports localization/internationalization and easier local theming by @vanecat @ikreymer @tw4l with helpful feedback from @ldko
+* New interactive timeline to assist in navigating between captures
+* Add basic development Docker Compose configuration file
+* Update documentation
+* Add contributing guide
+
 pywb 2.6.9 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
