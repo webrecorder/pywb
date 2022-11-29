@@ -126,8 +126,8 @@ export default {
       const days = [];
       // Get days in month, and days in the complete weeks before first day and after last day
       const [firstDay, lastDay] = this.month.getChildrenRange();
-      const daysBeforeFirst = (new Date(this.year.id, this.month.id-1, firstDay)).getDay();
-      const daysAfterLastDay = (6 - (new Date(this.year.id, this.month.id-1, lastDay)).getDay());
+      const daysBeforeFirst = (7 + (new Date(this.year.id, this.month.id-1, firstDay)).getDay() - PywbI18N.firstDayOfWeek) % 7;
+      const daysAfterLastDay = (6 - (new Date(this.year.id, this.month.id-1, lastDay)).getDay() + PywbI18N.firstDayOfWeek) % 7;
       for(let i=0; i<daysBeforeFirst; i++) {
         days.push(null);
       }

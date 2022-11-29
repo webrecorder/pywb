@@ -3,12 +3,15 @@ export class PywbI18N {
   static getLocale() { // get via public static method
     return PywbI18N.#locale;
   }
+  static firstDayOfWeek = 1;
   static init = (locale, config) => {
     if (PywbI18N.instance) {
       throw new Error('cannot instantiate PywbI18N twice');
     }
     PywbI18N.#locale = locale;
     PywbI18N.instance = new PywbI18N(config);
+    let intlLocale = new Intl.Locale(PywbI18N.getLocale());
+    if ('weekInfo' in intlLocale) PywbI18N.firstDayOfWeek = intlLocale.weekInfo.firstDay % 7;
   }
 
   // PywbI18N expects from the i18n string source to receive months SHORT and LONG names in the config like this:
@@ -36,7 +39,8 @@ export class PywbI18N {
     return decodeURIComponent(this.config[id+'_'+type])
   }
   getWeekDays(type='long') {
-    return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].map(d => this.getWeekDay(d, type));
+    let weekDays = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    return weekDays.concat(weekDays).slice(PywbI18N.firstDayOfWeek, PywbI18N.firstDayOfWeek + 7).map(d => this.getWeekDay(d, type));
   }
   getText(id, embeddedVariableStrings=null) {
     const translated = decodeURIComponent(this.config[id] || id);
