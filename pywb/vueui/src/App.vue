@@ -192,6 +192,10 @@ export default {
     // when the user navigates there via browser back/forward buttons
     addEventListener('unload', (event) => { });
   },
+  updated: function() {
+    // set top frame title equal to value pulled from replay frame
+    document.title = this.config.title;
+  },
   computed: {
     sessionStorageUrlKey() {
       // remove http(s), www and trailing slash
