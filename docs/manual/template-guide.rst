@@ -48,8 +48,7 @@ Base Templates (and supporting templates)
 
 File: ``base.html``
 
-This template includes the HTML added to all other pages, replay and non-replay. Shared JS and CSS includes can be added here.
-For theming all pywb UI, it may be useful to modify this template.
+This template includes the HTML added to all pages other than framed replay. Shared JS and CSS includes meant for pages other than framed replay can be added here.
 
 To customize the default pywb UI across multiple pages, the following additional templates
 can also be overriden:
@@ -61,7 +60,7 @@ can also be overriden:
 * ``footer.html`` -- Template for adding content as the "footer" of the ``<body>`` tag of the ``base`` template
 
 
-Note: The default pywb ``head.html`` and ``footer.html`` are currently blank. They can be populated to customize the rendering, add analytics, etc... as needed.
+Note: The default pywb ``head.html`` and ``footer.html`` are currently blank. They can be populated to customize the rendering, add analytics, etc... as needed. Content such as styles or JS code (for example for analytics) must be added to the ``frame_insert.html`` template as well (details on that template below) to also be included in framed replay.
 
 
 The ``base.html`` template also provides five blocks that can be supplied by templates that extend it.
@@ -172,9 +171,7 @@ Banner Template
 
 File: ``banner.html``
 
-This template is used to render the banner and is used both in framed replay and frameless replay.
-
-In framed replay, the template is only rendered in the top/outer frame, while in frameless replay, it is added to every page.
+This template is used to render the banner for framed replay. It is rendered only rendered in the top/outer frame.
 
 Template variables:
 
@@ -192,7 +189,17 @@ Template variables:
 
 * ``{{ ui }}`` - an optional ``ui`` dictionary from ``config.yaml``, if any.
 
-The default banner creates the UI dynamically in JavaScript using Vue.
+The default banner creates the UI dynamically in JavaScript using Vue in the ``frame_insert.html`` template.
+
+
+Custom Banner Template
+^^^^^^^^^^^^^^^^^^^^^^
+
+File: ``custom_banner.html``
+
+This template can be used to render a custom banner for frameless replay. It is blank by default.
+
+In frameless replay, the content of this template is injected into the ``head_insert.html`` template to render the banner.
 
 
 Head Insert Template
@@ -204,7 +211,7 @@ This template represents the HTML injected into every replay page to add support
 
 This template is part of the core pywb replay, and modifying this template is not recommended. 
 
-For customizing the banner, modify the ``banner.html`` template instead.
+For customizing the banner, modify the ``banner.html`` (framed replay) or ``custom_banner.html`` (frameless replay) template instead.
 
 
 Top Frame Template
@@ -221,9 +228,13 @@ This template is responsible for creating the iframe that will render the conten
 This template only renders the banner and is designed *not* to set the encoding to allow the browser to 'detect' the encoding for the containing iframe.
 For this reason, the template should only contain ASCII text, and %-encode any non-ASCII characters.
 
+Content such as analytics code that is desired in the top frame of framed replay pages should be added to this template.
+
 Template variables:
 
 * ``{{ url }}`` - the URL being replayed.
+
+* ``{{ timestamp }}`` - the timestamp being replayed, e.g. ``20211226`` in ``http://localhost:8080/pywb/20211226/mp_/https://example.com/``
 
 * ``{{ wb_url }}`` - A complete ``WbUrl`` object, which contains the ``url``, ``timestamp`` and ``mod`` properties, representing the replay url.
 
@@ -231,6 +242,7 @@ Template variables:
 
 * ``{{ is_proxy }}`` - set to true if page is being loaded via an HTTP/S proxy (checks if WSGI env has ``wsgiprox.proxy_host`` set)
 
+* ``{{ ui }}`` - an optional ``ui`` dictionary from ``config.yaml``, if any.
 
 
 .. _custom-top-frame:
