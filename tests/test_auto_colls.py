@@ -203,7 +203,7 @@ class TestManagedColls(CollsDirMixin, BaseConfigTest):
 
         resp = self.testapp.get('/static/_/test/abc.js')
         assert resp.status_int == 200
-        assert resp.content_type == 'application/javascript'
+        assert resp.content_type in ('application/javascript', 'text/javascript')
         resp.charset = 'utf-8'
         assert '/* Some JS File */' in resp.text
 
