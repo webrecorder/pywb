@@ -405,10 +405,9 @@ class TopFrameView(BaseInsertView):
 
         embed_url = wb_url.to_str(mod=replay_mod)
 
+        timestamp = None
         if wb_url.timestamp:
             timestamp = wb_url.timestamp
-        else:
-            timestamp = timestamp_now()
 
         is_proxy = 'wsgiprox.proxy_host' in env
 

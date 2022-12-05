@@ -330,7 +330,9 @@ export default {
       this.config.url = view.url;
 
       let periodToChangeTo = this.currentPeriod.findByFullId(snapshot.getFullId());
-      this.gotoPeriod(periodToChangeTo, false /* onlyZoomToPeriod */);
+      if (periodToChangeTo) {
+        this.gotoPeriod(periodToChangeTo, false /* onlyZoomToPeriod */);
+      }
     },
     setTimelineView() {
       this.showTimelineView = !this.showTimelineView;
