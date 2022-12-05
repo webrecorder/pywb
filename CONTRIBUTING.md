@@ -52,10 +52,10 @@ Changes to the [Vue](https://vuejs.org/) frontend components require rebuilding 
 
 ```bash
 ./build-vue-ui.sh
-docker compose up -d --force-recreate
+docker compose up -d --build --force-recreate
 ```
 
-Changes that modify pywb's Python dependencies or the operating system may require rebuilding the container:
+Changes that modify pywb's Python dependencies or the operating system also require rebuilding the container:
 
 ```bash
 docker compose up -d --build --force-recreate
