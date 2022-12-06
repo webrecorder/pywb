@@ -3,8 +3,18 @@
 {% block head %}
 {{ super() }}
 <script>
-// TODO: cleanup
-window.wb_prefix = "{{ wb_prefix }}";
+  var filterMods = {
+    '=': "{{ _('Contains') }}",
+    '==': "{{ _('Matches Exactly') }}",
+    '=~': "{{ _('Matches Regex') }}",
+    '=!': "{{ _('Does Not Contain') }}",
+    '=!=': "{{ _('Is Not') }}",
+    '=!~': "{{ _('Does Not Begin With') }}"
+  };
+  var noFilter = "{{ _('No Filter') }}";
+
+  // TODO: cleanup
+  window.wb_prefix = "{{ wb_prefix }}";
 </script>
 <script src="{{ static_prefix }}/search.js"></script>
 {% endblock %}
@@ -24,14 +34,14 @@ window.wb_prefix = "{{ wb_prefix }}";
                 <label for="search-url" class="lead" aria-label="Search For Col">
                     {% set coll_title = metadata.title if metadata and metadata.title else coll %}
                     {% autoescape false %}
-                    {% trans %}Search the {{ coll_title }} collection by url: {% endtrans %}
+                    {% trans %}Search the {{ coll_title }} collection by url:{% endtrans %}
                     {% endautoescape %}
                 </label>
                 <input aria-label="url" aria-required="true" class="form-control form-control-lg" id="search-url"
                        name="search" placeholder="{{ _('Enter a URL to search for') }}"
                        title="{{ _('Enter a URL to search for') }}" type="search" required/>
                 <div class="invalid-feedback">
-                    {% trans %}'Please enter a URL{% endtrans %}
+                    {% trans %}Please enter a URL{% endtrans %}
                 </div>
             </div>
         </div>
@@ -131,7 +141,7 @@ window.wb_prefix = "{{ wb_prefix }}";
                                 <option value="=~">{% trans %}Matches Regex{% endtrans %}</option>
                                 <option value="=!">{% trans %}Does Not Contain{% endtrans %}</option>
                                 <option value="=!=">{% trans %}Is Not{% endtrans %}</option>
-                                <option value="=!~">{% trans %}Does Not Begins With{% endtrans %}</option>
+                                <option value="=!~">{% trans %}Does Not Begin With{% endtrans %}</option>
                             </select>
                         </div>
                         <div class="row">
