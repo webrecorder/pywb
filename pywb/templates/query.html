@@ -71,6 +71,16 @@
       },
     };
 
+  var filterMods = {
+    '=': "{{ _('Contains') }}",
+    '==': "{{ _('Matches Exactly') }}",
+    '=~': "{{ _('Matches Regex') }}",
+    '=!': "{{ _('Does Not Contain') }}",
+    '=!=': "{{ _('Is Not') }}",
+    '=!~': "{{ _('Does Not Begin With') }}"
+  };
+  var filteringBy = "{{ _('Filtering by') }}";
+  var forString = " {{ _('for') }} ";
   var renderCal = new RenderCalendar({ prefix: "{{ prefix }}", staticPrefix: "{{ static_prefix }}", text: text });
   renderCal.init();
 </script>

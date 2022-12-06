@@ -1,14 +1,6 @@
 var dtRE = /^\d{4,14}$/;
 var didSetWasValidated = false;
 var showBadDateTimeClass = 'show-optional-bad-input';
-var filterMods = {
-  '=': 'Contains',
-  '==': 'Matches Exactly',
-  '=~': 'Matches Regex',
-  '=!': 'Does Not Contains',
-  '=!=': 'Is Not',
-  '=!~': 'Does Not Begins With'
-};
 
 var elemIds = {
   filtering: {
@@ -65,7 +57,7 @@ function makeCheckDateRangeChecker(dtInputId, dtBadNotice) {
 
 function createAndAddNoFilter(filterList) {
   var nothing = document.createElement('li');
-  nothing.innerText = 'No Filter';
+  nothing.innerText = noFilter;
   nothing.id = elemIds.filtering.nothing;
   filterList.appendChild(nothing);
 }
@@ -89,13 +81,13 @@ function addFilter(event) {
   }
   var li = document.createElement('li');
   li.innerText =
-    'By ' +
     by[0].toUpperCase() +
     by.substr(1) +
     ' ' +
     filterMods[modifier] +
-    ' ' +
-    expr;
+    ' "' +
+    expr +
+    '"';
   li.dataset.filter = filterExpr;
   var nukeButton = document.createElement('button');
   nukeButton.type = 'button';
