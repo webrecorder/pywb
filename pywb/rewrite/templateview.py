@@ -405,7 +405,7 @@ class TopFrameView(BaseInsertView):
 
         embed_url = wb_url.to_str(mod=replay_mod)
 
-        timestamp = None
+        timestamp = ''
         if wb_url.timestamp:
             timestamp = wb_url.timestamp
 

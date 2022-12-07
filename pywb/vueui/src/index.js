@@ -62,7 +62,7 @@ class CDXLoader {
 
     this.app = this.initApp({logoImg, navbarBackground, navbarColor, navbarLightButtons, url, allLocales});
     this.loadCDX(queryURL).then((cdxList) => {
-      this.setAppData(cdxList, url, isQueryURL, timestamp == "None" ? null : timestamp);
+      this.setAppData(cdxList, url, isQueryURL, timestamp);
     });
   }
 
@@ -108,7 +108,7 @@ class CDXLoader {
     this.setAppData(cdxList, url, isQueryURL, timestamp);
   }
 
-  setAppData(cdxList, url, isQueryURL, timestamp=null) {
+  setAppData(cdxList, url, isQueryURL, timestamp="") {
     this.app.setData(new PywbData(cdxList));
 
     // if this is a capture but we don't have a timestamp (e.g. if redirect_to_exact is false)
