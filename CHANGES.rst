@@ -1,3 +1,13 @@
+pywb 2.7.1 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Add locale-dependent handling of first day of week by @krakan in https://github.com/webrecorder/pywb/pull/781
+* Make filter expressions translatable by @krakan in https://github.com/webrecorder/pywb/pull/783
+* Add title to top frame in framed replay
+* Add missing tooltip translation strings
+* Fix calendar and timeline rendering for replay URLs without a timestamp
+* Update template documentation
+
 pywb 2.7.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
