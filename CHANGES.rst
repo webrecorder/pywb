@@ -1,3 +1,8 @@
+pywb 2.7.2 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Fix regression introduced by improper wombat update in 2.7.1
+
 pywb 2.7.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
