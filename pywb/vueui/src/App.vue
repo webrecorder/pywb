@@ -294,8 +294,9 @@ export default {
     gotoUrl(event) {
       event.preventDefault();
       const newUrl = document.querySelector("#theurl").value;
-      if (newUrl !== this.url) {
-        window.location.href = this.config.prefix + "*/" + newUrl;
+      if (newUrl !== this.config.url) {
+        const ts = this.config.timestamp === undefined ? "*" : this.config.timestamp;
+        window.location.href = this.config.prefix + ts + (ts ? "/" : "") + newUrl;
       }
     },
     setData(/** @type {PywbData} data */ data) {
@@ -321,6 +322,10 @@ export default {
       }.bind(this));
     },
     setSnapshot(view) {
+      if (!this.currentPeriod) {
+        return false;
+      }
+
       // turn off calendar (aka full) view
       this.showFullView = false;
 
@@ -332,7 +337,9 @@ export default {
       let periodToChangeTo = this.currentPeriod.findByFullId(snapshot.getFullId());
       if (periodToChangeTo) {
         this.gotoPeriod(periodToChangeTo, false /* onlyZoomToPeriod */);
+        return true;
       }
+      return false;
     },
     setTimelineView() {
       this.showTimelineView = !this.showTimelineView;

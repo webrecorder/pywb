@@ -408,6 +408,8 @@ class TopFrameView(BaseInsertView):
         timestamp = ''
         if wb_url.timestamp:
             timestamp = wb_url.timestamp
+        #else:
+        #    timestamp = timestamp_now()
 
         is_proxy = 'wsgiprox.proxy_host' in env
 
