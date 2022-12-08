@@ -1,14 +1,6 @@
 var dtRE = /^\d{4,14}$/;
 var didSetWasValidated = false;
 var showBadDateTimeClass = 'show-optional-bad-input';
-var filterMods = {
-  '=': 'Contains',
-  '==': 'Matches Exactly',
-  '=~': 'Matches Regex',
-  '=!': 'Does Not Contains',
-  '=!=': 'Is Not',
-  '=!~': 'Does Not Begins With'
-};
 
 var elemIds = {
   filtering: {
@@ -65,7 +57,7 @@ function makeCheckDateRangeChecker(dtInputId, dtBadNotice) {
 
 function createAndAddNoFilter(filterList) {
   var nothing = document.createElement('li');
-  nothing.innerText = 'No Filter';
+  nothing.innerText = noFilter;
   nothing.id = elemIds.filtering.nothing;
   filterList.appendChild(nothing);
 }
@@ -78,19 +70,24 @@ function addFilter(event) {
   if (!expr) return;
   var filterExpr = 'filter' + modifier + by + ':' + expr;
   var filterList = document.getElementById(elemIds.filtering.list);
+  var previousFilters = filterList.children;
+  for (var i = 0; i < previousFilters.length; ++i) {
+    var filterData = previousFilters[i].dataset;
+    if (filterData && filterData.filter && filterData.filter == filterExpr) return;
+  }
   var filterNothing = document.getElementById(elemIds.filtering.nothing);
   if (filterNothing) {
     filterList.removeChild(filterNothing);
   }
   var li = document.createElement('li');
   li.innerText =
-    'By ' +
     by[0].toUpperCase() +
     by.substr(1) +
     ' ' +
     filterMods[modifier] +
-    ' ' +
-    expr;
+    ' "' +
+    expr +
+    '"';
   li.dataset.filter = filterExpr;
   var nukeButton = document.createElement('button');
   nukeButton.type = 'button';
@@ -110,6 +107,7 @@ function addFilter(event) {
   };
   li.appendChild(nukeButton);
   filterList.appendChild(li);
+  return true;
 }
 
 function clearFilters(event) {
@@ -166,6 +164,17 @@ function validateFields(form) {
   }
 }
 
+function submitForm(event, form, searchURLInput) {
+  event.preventDefault();
+  event.stopPropagation();
+  var url = searchURLInput.value;
+  if (!url) {
+    validateFields(form);
+    return;
+  }
+  performQuery(url);
+}
+
 $(document).ready(function() {
   $('[data-toggle="tooltip"]').tooltip({
     container: 'body',
@@ -184,16 +193,18 @@ $(document).ready(function() {
   var searchURLInput = document.getElementById(elemIds.url);
   var form = document.getElementById(elemIds.form);
   form.addEventListener('submit', function(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    var url = searchURLInput.value;
-    if (!url) {
-      validateFields(form);
-      return;
-    }
-    performQuery(url);
+    submitForm(event, form, searchURLInput);
   });
   document.getElementById(elemIds.advancedOptions).onclick = function() {
     validateFields(form);
   }
+  var filteringExpression = document.getElementById(elemIds.filtering.expression);
+  filteringExpression.addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      if (! addFilter()) {
+        submitForm(event, form, searchURLInput);
+      }
+    }
+  });
 });

@@ -39,6 +39,7 @@ class CDXLoader {
     }
 
     let queryURL;
+    let isQueryURL = window.location.href.indexOf("*") > -1 ? true : false;
 
     // query form *?=url...
     if (window.location.href.indexOf("*?") > 0) {
@@ -61,7 +62,7 @@ class CDXLoader {
 
     this.app = this.initApp({logoImg, navbarBackground, navbarColor, navbarLightButtons, url, allLocales});
     this.loadCDX(queryURL).then((cdxList) => {
-      this.setAppData(cdxList, timestamp ? {url, timestamp}:null);
+      this.setAppData(cdxList, url, isQueryURL, timestamp);
     });
   }
 
@@ -100,18 +101,26 @@ class CDXLoader {
     params.set("url", url);
     params.set("output", "json");
     const queryURL = this.prefix + "cdx?" + params.toString();
+    let isQueryURL = window.location.href.indexOf("*") > -1 ? true : false;
 
     const cdxList = await this.loadCDX(queryURL);
 
-    this.setAppData(cdxList, {url, timestamp});
+    this.setAppData(cdxList, url, isQueryURL, timestamp);
   }
 
-  setAppData(cdxList, snapshot=null) {
+  setAppData(cdxList, url, isQueryURL, timestamp="") {
     this.app.setData(new PywbData(cdxList));
 
-    if (snapshot) {
+    // if this is a capture but we don't have a timestamp (e.g. if redirect_to_exact is false)
+    // set the timestamp to the latest capture
+    if ((!timestamp) && (!isQueryURL)) {
+      const lastSnapshot = cdxList[cdxList.length - 1];
+      timestamp = lastSnapshot.timestamp;
+    }
+
+    if (timestamp) {
       this.app.hideBannerUtilities();
-      this.app.setSnapshot(snapshot);
+      this.app.setSnapshot({url, timestamp});
     }
   }
 

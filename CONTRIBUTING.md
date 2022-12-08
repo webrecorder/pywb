@@ -51,13 +51,11 @@ The first time you run this command, it make take some time to build.
 Changes to the [Vue](https://vuejs.org/) frontend components require rebuilding the Vue bundle (`pywb/static/vue/vueui.js`) to take effect. After making changes to one or more Vue components, you can rebuild the static bundle and view the changes in your development environment like so:
 
 ```bash
-cd pywb/vueui
-yarn run build
-cd ../..
-docker compose up -d --force-recreate
+./build-vue-ui.sh
+docker compose up -d --build --force-recreate
 ```
 
-Changes that modify pywb's Python dependencies or the operating system may require rebuilding the container:
+Changes that modify pywb's Python dependencies or the operating system also require rebuilding the container:
 
 ```bash
 docker compose up -d --build --force-recreate
