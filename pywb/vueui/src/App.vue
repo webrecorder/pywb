@@ -69,7 +69,7 @@
               class="btn btn-sm"
               :class="{active: showTimelineView, 'btn-outline-light': lightButtons, 'btn-outline-dark': !lightButtons}"
               :aria-pressed="showTimelineView"
-              @click="showTimelineView = !showTimelineView"
+              @click="toggleTimelineView"
               :title="(showTimelineView ? _('Hide timeline') : _('Show timeline'))">
               <i class="far fa-chart-bar"></i>
             </button>
@@ -142,7 +142,7 @@
     </div>
 
     <!-- Calendar -->
-    <div class="card" v-if="currentPeriod && showFullView && currentPeriod.children.length">
+    <div class="card" id="calendar-card" v-if="currentPeriod && showFullView && currentPeriod.children.length">
       <div class="card-body" id="calendar-card-body">
         <CalendarYear
           :period="currentPeriod"
@@ -173,8 +173,8 @@ export default {
       currentSnapshot: null,
       currentSnapshotIndex: null,
       msgs: [],
-      showFullView: true,
-      showTimelineView: true,
+      showFullView: false,
+      showTimelineView: false,
       maxTimelineZoomLevel: PywbPeriod.Type.day,
       config: {
         title: "",
@@ -281,7 +281,7 @@ export default {
       if (reloadIFrame !== false) {
         this.$emit("show-snapshot", snapshot);
       }
-      this.hideBannerUtilities();
+      this.initBannerState(true);
     },
     gotoPreviousSnapshot() {
       let periodToChangeTo = this.currentPeriod.findByFullId(this.previousSnapshot.getFullId());
@@ -298,6 +298,10 @@ export default {
         const ts = this.config.timestamp === undefined ? "*" : this.config.timestamp;
         window.location.href = this.config.prefix + ts + (ts ? "/" : "") + newUrl;
       }
+    },
+    toggleTimelineView() {
+      this.showTimelineView = !this.showTimelineView;
+      window.localStorage.setItem("showTimelineView", this.showTimelineView ? "1" : "0");
     },
     setData(/** @type {PywbData} data */ data) {
 
@@ -341,15 +345,15 @@ export default {
       }
       return false;
     },
-    setTimelineView() {
-      this.showTimelineView = !this.showTimelineView;
-      if (this.showTimelineView === true) {
+    initBannerState(isReplay) {
+      // if not replay, always show both
+      if (!isReplay) {
+        this.showFullView = true;
+        this.showTimelineView = true;
+      } else {
         this.showFullView = false;
+        this.showTimelineView = window.localStorage.getItem("showTimelineView") === "1";
       }
-    },
-    hideBannerUtilities() {
-      this.showFullView = false;
-      this.showTimelineView = false;
     },
     updateTitle(title) {
       this.config.title = title;
@@ -368,7 +372,10 @@ export default {
     width: 100%;
   }
   .app.expanded {
-    height: 130px;
+    /*height: 130px;*/
+    max-height: calc(100vh - 90px);
+    display: flex;
+    flex-direction: column;
   }
   .full-view {
     /*position: fixed;*/
@@ -456,6 +463,10 @@ export default {
   div.timeline-wrap div.card {
     margin-top: 55px;
   }
+  #calendar-card {
+    overflow-y: auto;
+    max-height: 100%;
+  }
   div.timeline-wrap div.card-body {
     display: flex;
     align-items: center;
@@ -466,6 +477,7 @@ export default {
     align-items: center;
     justify-content: center;
   }
+
   #calendar-card-body {
     padding: 0;
   }

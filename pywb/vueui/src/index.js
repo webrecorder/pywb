@@ -98,7 +98,6 @@ class CDXLoader {
 
   async updateTimestamp(url, timestamp) {
     this.timestamp = timestamp;
-    this.app.hideBannerUtilities();
 
     if (this.cdxLoading) {
       return;
@@ -107,8 +106,10 @@ class CDXLoader {
     this.app.setSnapshot({url, timestamp});
   }
 
-  setAppData(cdxList, url, timestamp="") {
+  setAppData(cdxList, url, timestamp) {
     this.app.setData(new PywbData(cdxList));
+
+    this.app.initBannerState(this.isReplay);
 
     // if set on initial load, may not have timestamp yet
     // will be updated later

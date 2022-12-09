@@ -25,7 +25,7 @@ enable_memento: true
 # Replay content in an iframe
 framed_replay: true
 
-redirect_to_exact: false
+redirect_to_exact: true
 
 # Uncomment and change to set default locale
 # default_locale: en
