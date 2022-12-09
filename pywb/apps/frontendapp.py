@@ -414,6 +414,14 @@ class FrontEndApp(object):
         # if coll == self.all_coll:
         #    coll = '*'
 
+        config = self.warcserver.get_coll_config(coll)
+        is_live = config.get("index") == "$live"
+
+        if is_live:
+            cache_control = "no-store, no-cache"
+        else:
+            cache_control = "max-age=86400, must-revalidate"
+
         cdx_url = base_url.format(coll=coll)
 
         if environ.get('QUERY_STRING'):
@@ -433,7 +441,7 @@ class FrontEndApp(object):
             return WbResponse.bin_stream(StreamIter(res.raw),
                                          content_type=content_type,
                                          status=status_line,
-                                         headers=[("Cache-Control", "max-age=86400, must-revalidate")])
+                                         headers=[("Cache-Control", cache_control)])
 
         except Exception as e:
             return WbResponse.text_response('Error: ' + str(e), status='400 Bad Request')

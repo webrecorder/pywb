@@ -1,3 +1,15 @@
+pywb 2.7.2 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+* Fix regression introduced by improper wombat update in 2.7.1
+* Fix `redirect_to_exact: false` functionality: if not set, UI will stay on current timestamp, but will display info on actual capture.
+* Location bar nav now keeps current timestamp instead of defaulting to calendar view.
+* 'Live' mode fixes, no longer cache live cdx entry, don't add timestamp when navigating in live mode without timestamp
+* Calendar dropdown on replay now scrollable.
+* Timeline toggle on replay is 'sticky', will stay on if toggled on replay.
+* Capture text: use '|' as in 'Current Capture: [title] | [capture date]'
+* Document title: Add 'Archived Page: ' prefix to avoid confusion with live pages.
+
 pywb 2.7.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 

@@ -23,7 +23,8 @@ class CDXLoader {
     this.logoUrl = logoUrl;
     this.navbarBackground = navbarBackground;
     this.navbarColor = navbarColor;
-    this.navbarLightButtons = navbarLightButtons
+    this.navbarLightButtons = navbarLightButtons;
+    this.timestamp = timestamp;
 
     this.isReplay = (timestamp !== undefined);
 
@@ -35,11 +36,10 @@ class CDXLoader {
     }, 500);
 
     if (this.isReplay) {
-      window.WBBanner = new VueBannerWrapper(this, url);
+      window.WBBanner = new VueBannerWrapper(this, url, timestamp);
     }
 
     let queryURL;
-    let isQueryURL = window.location.href.indexOf("*") > -1 ? true : false;
 
     // query form *?=url...
     if (window.location.href.indexOf("*?") > 0) {
@@ -60,9 +60,10 @@ class CDXLoader {
 
     const logoImg = this.staticPrefix + "/" + (this.logoUrl ? this.logoUrl : "pywb-logo-sm.png");
 
-    this.app = this.initApp({logoImg, navbarBackground, navbarColor, navbarLightButtons, url, allLocales});
+    this.app = this.initApp({logoImg, navbarBackground, navbarColor, navbarLightButtons, url, allLocales, timestamp});
+
     this.loadCDX(queryURL).then((cdxList) => {
-      this.setAppData(cdxList, url, isQueryURL, timestamp);
+      this.setAppData(cdxList, url, this.timestamp);
     });
   }
 
@@ -73,19 +74,7 @@ class CDXLoader {
 
     app.$mount("#app");
 
-    // TODO (Ilya): make this work with in-page snapshot/capture/replay updates!
-    // app.$on("show-snapshot", snapshot => {
-    //   const replayUrl = app.config.url;
-    //   const url = location.href.replace('/'+replayUrl, '').replace(/\d+$/, '') + snapshot.id + '/' + replayUrl;
-    //   window.history.pushState({url: replayUrl, timestamp: snapshot.id}, document.title, url);
-    //   if (!window.onpopstate) {
-    //     window.onpopstate = (ev) => {
-    //       updateSnapshot(ev.state.url, ev.state.timestamp);
-    //     };
-    //   }
-    // });
-
-    app.$on("show-snapshot", this.loadSnapshot.bind(this));
+    app.$on("show-snapshot", (snapshot) => this.loadSnapshot(snapshot));
     app.$on("data-set-and-render-completed", () => {
       if (this.loadingSpinner) {
         this.loadingSpinner.setOff(); // only turn off loading-spinner AFTER app has told us it is DONE DONE
@@ -101,31 +90,37 @@ class CDXLoader {
     params.set("url", url);
     params.set("output", "json");
     const queryURL = this.prefix + "cdx?" + params.toString();
-    let isQueryURL = window.location.href.indexOf("*") > -1 ? true : false;
 
     const cdxList = await this.loadCDX(queryURL);
 
-    this.setAppData(cdxList, url, isQueryURL, timestamp);
+    this.setAppData(cdxList, url, timestamp);
   }
 
-  setAppData(cdxList, url, isQueryURL, timestamp="") {
-    this.app.setData(new PywbData(cdxList));
+  async updateTimestamp(url, timestamp) {
+    this.timestamp = timestamp;
 
-    // if this is a capture but we don't have a timestamp (e.g. if redirect_to_exact is false)
-    // set the timestamp to the latest capture
-    if ((!timestamp) && (!isQueryURL)) {
-      const lastSnapshot = cdxList[cdxList.length - 1];
-      timestamp = lastSnapshot.timestamp;
+    if (this.cdxLoading) {
+      return;
     }
 
+    this.app.setSnapshot({url, timestamp});
+  }
+
+  setAppData(cdxList, url, timestamp) {
+    this.app.setData(new PywbData(cdxList));
+
+    this.app.initBannerState(this.isReplay);
+
+    // if set on initial load, may not have timestamp yet
+    // will be updated later
     if (timestamp) {
-      this.app.hideBannerUtilities();
-      this.app.setSnapshot({url, timestamp});
+      this.updateTimestamp(url, timestamp);
     }
   }
 
   async loadCDX(queryURL) {
     //  this.loadingSpinner.setOn(); // start loading-spinner when CDX loading begins
+    this.cdxLoading = true;
     const queryWorker = new Worker(this.staticPrefix + "/queryWorker.js");
 
     const p = new Promise((resolve) => {
@@ -139,6 +134,7 @@ class CDXLoader {
           break;
 
         case "finished":
+          this.cdxLoading = false;
           resolve(cdxList);
           break;
         }
@@ -162,7 +158,10 @@ class CDXLoader {
     if (!this.isReplay) {
       window.location.href = this.prefix + snapshot.id + "/" + snapshot.url;
     } else if (window.cframe) {
-      window.cframe.load_url(snapshot.url, snapshot.id + "", reloadIFrame);
+      const ts = snapshot.id + "";
+      if (ts !== this.timestamp) {
+        window.cframe.load_url(snapshot.url, ts, reloadIFrame);
+      }
     }
   }
 }
@@ -171,9 +170,10 @@ class CDXLoader {
 // ===========================================================================
 class VueBannerWrapper
 {
-  constructor(loader, url) {
+  constructor(loader, url, ts) {
     this.loading = true;
     this.lastSurt = this.getSurt(url);
+    this.lastTs = ts;
     this.loader = loader;
   }
 
@@ -200,6 +200,9 @@ class VueBannerWrapper
       if (surt !== this.lastSurt) {
         this.loader.updateSnapshot(event.data.url, event.data.ts);
         this.lastSurt = surt;
+      } else if (event.data.ts !== this.lastTs) {
+        this.loader.updateTimestamp(event.data.url, event.data.ts);
+        this.lastTs = event.data.ts;
       }
     }
   }

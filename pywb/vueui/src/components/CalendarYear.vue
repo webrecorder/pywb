@@ -163,7 +163,7 @@ export default {
     flex: 1;
     flex-wrap: wrap;
     z-index: 10;
-    overflow-y: scroll;
+    overflow-y: auto;
     width: 100%;
     background-color: white;
     padding-bottom: 1em;
