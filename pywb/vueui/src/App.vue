@@ -113,7 +113,7 @@
             {{ config.title }}
           </span>
         </span>
-        <span class="mr-1" v-if="config.title">,</span>
+        <span class="mr-1" v-if="config.title">|</span>
         {{currentSnapshot.getTimeDateFormatted()}}
       </span>
     </nav>
