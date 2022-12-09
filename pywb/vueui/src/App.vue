@@ -194,7 +194,7 @@ export default {
   },
   updated: function() {
     // set top frame title equal to value pulled from replay frame
-    document.title = this.config.title;
+    document.title = this._("Archived Page: ") + this.config.title;
   },
   computed: {
     sessionStorageUrlKey() {
