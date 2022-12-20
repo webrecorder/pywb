@@ -4,9 +4,12 @@
     <nav
       class="navbar navbar-light navbar-expand-lg fixed-top top-navbar justify-content-center"
       :style="navbarStyle">
-      <a class="navbar-brand flex-grow-1 my-1" href="/">
+      <a class="navbar-brand flex-grow-1 my-1" :href="config.logoHomeUrl" v-if="config.logoHomeUrl">
         <img :src="config.logoImg" id="logo-img" alt="_('pywb logo')">
       </a>
+      <div class="navbar-brand flex-grow-1 my-1" v-else>
+        <img :src="config.logoImg" id="logo-img" alt="_('pywb logo')">
+      </div>
       <div class="flex-grow-1 d-flex" id="searchdiv">
         <form
           class="form-inline my-2 my-md-0 mx-lg-auto"
