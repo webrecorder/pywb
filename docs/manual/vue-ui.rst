@@ -53,6 +53,21 @@ For example, to use the file ``./static/my-logo.png`` as the logo, set:
     logo: my-logo.png
 
 
+Logo URL
+^^^^^^^^
+
+It is possible to configure the logo to link to any URL by setting ``ui.logo_home_url`` in ``config.yml`` to the URL of your choice.
+
+If omitted, the logo will not link to any page.
+
+For example, to have the logo redirect to ``https://example.com/web-archive-landing-page``, set:
+
+.. code:: yaml
+
+  ui:
+    logo_home_url: https://example.com/web-archive-landing-page
+
+
 Banner Colors
 ^^^^^^^^^^^^^
 
