@@ -1,5 +1,8 @@
 <template>
   <div class="app" :class="{expanded: showTimelineView || showFullView }" data-app="webrecorder-replay-app">
+    <!-- Per-session terms of use pop-up -->
+    <TermsOfUsePopup />
+
     <!-- Top navbar -->
     <nav
       class="navbar navbar-light navbar-expand-lg fixed-top top-navbar justify-content-center"
@@ -159,6 +162,7 @@
 import Timeline from "./components/Timeline.vue";
 import TimelineBreadcrumbs from "./components/TimelineBreadcrumbs.vue";
 import CalendarYear from "./components/CalendarYear.vue";
+import TermsOfUsePopup from "./components/TermsOfUsePopup.vue";
 
 import { PywbSnapshot, PywbPeriod } from "./model.js";
 import {PywbI18N} from "./i18n";
@@ -185,7 +189,7 @@ export default {
       locales: [],
     };
   },
-  components: {Timeline, TimelineBreadcrumbs, CalendarYear},
+  components: {Timeline, TimelineBreadcrumbs, CalendarYear, TermsOfUsePopup},
   mounted: function() {
     // add empty unload event listener to make this page bfcache ineligible.
     // bfcache otherwises prevent the query template from reloading as expected
