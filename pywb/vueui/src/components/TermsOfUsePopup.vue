@@ -3,10 +3,10 @@
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Terms of Use</h5>
+          <h5 class="modal-title">{{ $root._('Terms of Use') }}</h5>
         </div>
         <div class="modal-body">
-          <p>Terms of use go here.</p>
+          <p>{{ $root._('Terms of Use Body Text') }}</p>
         </div>
         <div class="modal-footer">
           <button
@@ -14,7 +14,7 @@
             class="btn btn-primary"
             @click="closePopup"
             @keyup.enter="closePopup"
-            >Agree</button>
+            >{{ $root._('Agree and Proceed') }}</button>
         </div>
       </div>
     </div>
