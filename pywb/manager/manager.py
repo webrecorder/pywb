@@ -115,7 +115,7 @@ directory structure expected by pywb
                    'To create a new collection, run\n\n{1} init {0}')
             raise IOError(msg.format(self.coll_name, sys.argv[0]))
 
-    def add_warcs(self, warcs):
+    def add_warcs(self, warcs, method='copy'):
         if not os.path.isdir(self.archive_dir):
             raise IOError('Directory {0} does not exist'.
                           format(self.archive_dir))
@@ -123,9 +123,21 @@ directory structure expected by pywb
         full_paths = []
         for filename in warcs:
             filename = os.path.abspath(filename)
-            shutil.copy2(filename, self.archive_dir)
+            logging.info('%s %s to %s',
+                         method.title(),
+                         filename,
+                         self.archive_dir)
+            if method == 'hardlink':
+                os.link(filename, os.path.join(self.archive_dir,
+                                               os.path.basename(filename)))
+            elif method == 'symlink':
+                os.symlink(filename, os.path.join(self.archive_dir,
+                                                  os.path.basename(filename)))
+            elif method == 'copy':
+                shutil.copy2(filename, self.archive_dir)
+            else:
+                raise NotImplementedError('unknown method name: %s' % method)
             full_paths.append(os.path.join(self.archive_dir, filename))
-            logging.info('Copied ' + filename + ' to ' + self.archive_dir)
 
         self._index_merge_warcs(full_paths, self.DEF_INDEX_FILE)
 
@@ -376,12 +388,21 @@ Create manage file based web archive collections
     # Add Warcs
     def do_add(r):
         m = CollectionsManager(r.coll_name)
-        m.add_warcs(r.files)
+        m.add_warcs(r.files, r.method)
 
     addwarc_help = 'Copy ARCS/WARCS to collection directory and reindex'
     addwarc = subparsers.add_parser('add', help=addwarc_help)
     addwarc.add_argument('coll_name')
     addwarc.add_argument('files', nargs='+')
+    addwarc.add_argument('--method', '-m', default='copy',
+                         help='import method (default: %(default)s)',
+                         choices=('copy', 'symlink', 'hardlink'))
+    addwarc.add_argument('--symlink', '-s', action='store_const',
+                         dest='method', const='symlink',
+                         help='symlink files into storage instead of copying')
+    addwarc.add_argument('--hardlink', '-l', action='store_const',
+                         dest='method', const='hardlink',
+                         help='hardlink files into storage instead of copying')
     addwarc.set_defaults(func=do_add)
 
     # Reindex All
