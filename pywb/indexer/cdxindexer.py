@@ -1,5 +1,9 @@
+import logging
 import os
 import sys
+import traceback
+
+import warcio
 
 # Use ujson if available
 try:
@@ -298,8 +302,11 @@ def write_multi_cdx_index(output, inputs, **options):
                 with open(fullpath, 'rb') as infile:
                     entry_iter = record_iter(infile)
 
-                    for entry in entry_iter:
-                        writer.write(entry, filename)
+                    try:
+                        for entry in entry_iter:
+                            writer.write(entry, filename)
+                    except warcio.exceptions.ArchiveLoadFailed:
+                        logging.error('Error while indexing file %s, %s',filename,traceback.format_exc())
 
         return writer
 
