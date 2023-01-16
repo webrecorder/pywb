@@ -956,11 +956,11 @@ RenderCalendar.prototype.niceDateRange = function() {
   var from = this.queryInfo.searchParams.from;
   var to = this.queryInfo.searchParams.to;
   if (from && to) {
-    return 'From ' + from + ' to ' + to;
+    return [text.from, from, text.until, to].join(' ');
   } else if (from) {
-    return 'From ' + from + ' until ' + 'present';
+    return [text.from, from, text.until, text.present].join(' ');
   }
-  return 'From earliest until ' + to;
+  return [text.from, text.earliest, text.until, to].join(' ');
 };
 
 /**
