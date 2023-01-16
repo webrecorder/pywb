@@ -1,0 +1,216 @@
+<div class="modal fade" id="searchInstructions" tabindex="-1" role="dialog" aria-labelledby="searchInstructionsTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title text-muted" id="searchInstructionsTitle">{{ _("Search instructions") }}</h6>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <h5>{{ _("URL") }}</h5>
+                <table class="table table-hover table-condensed">
+                    <tr>
+                        <td>
+                            <p>
+                                {%trans%}A URL consists of several parts:{%endtrans%}
+                                {%trans%}<code>protocol</code>://<code>host</code>:<code>port</code>/<code>path</code>?<code>query</code>{%endtrans%}
+                            </p>
+
+                            <p>
+                                {%trans%}The <code>protocol://</code> prefix is ignored when searching as it's not part of the searchable data.{%endtrans%}
+                            </p>
+                            <p>
+                                {%trans%}A leading <kbd>www.</kbd> in the <code>host</code> will also be ignored for the same reason.{%endtrans%}
+                            </p>
+
+                            <p>
+                                {%trans%}The <code>host</code> contains one or more parts separated by periods (<kbd>.</kbd>).{%endtrans%}
+                                {%trans%}The part before the first period is called the <code>hostname</code>.{%endtrans%}
+                                {%trans%}The part after the last period is the <code>top level domain</code>.{%endtrans%}
+                                {%trans%}Every part added to the left of the top level domain <code>sub-domain</code>.{%endtrans%}
+                                {%trans%}I.e. <code>x.y.z</code> is a <code>sub-domain</code> of <code>y.z</code>{%endtrans%}
+                                {%trans%}which in turn is a <code>sub-domain</code> of the <code>top level domain</code> <code>z</code>{%endtrans%}
+                            </p>
+
+                            <p>
+                                {%trans%}See <em>Match Type</em> below for interpretations of the search string.{%endtrans%}
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h5>{{ _("Results Display") }}</h5>
+                <table class="table table-hover table-condensed">
+                    <tr>
+                        <td>
+                            <p>
+                                {%trans%}For the <em>Default</em> search mode, the results are shown in a calendar view unless a filter is also added.{%endtrans%}
+                                {%trans%}For all other cases the results will be displayed in a list.{%endtrans%}
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h5>{{ _("Search Options") }}</h5>
+                <h6>{{ _("Match Type") }}</h6>
+                <p> {{ _("There are four different search modes:") }}</p>
+
+                <table class="table table-hover table-condensed">
+                    <tr>
+                        <td><em>{{ _("Default") }}</em></td>
+                        <td>
+                            <p>
+                                {%trans%}In the default mode the exact URL (minus the ignored prefixes mentioned above) is searched for.{%endtrans%}
+                                {%trans%}If one leading or trailing wildcard asterisk (<kbd>*</kbd>) is added, see <em>Prefix</em> and <em>Domain</em> below.{%endtrans%}
+                            </p>
+                            <p class="text-muted">
+                                {%trans%}Any other asterisks will be considered literal parts of the search string.{%endtrans%}
+                                {%trans%}Hence, adding both a leading and a trailing wildcard asterisk is not possible.{%endtrans%}
+                            </p>
+
+                            {%trans%}Example:{%endtrans%}
+                            <p class="ml-5 text-lowercase">
+                                <em>{{ _("URL") }}: <strong>https://http.cat/206</strong></em> &amp; <em>{{ _("Match Type") }}: <strong>{{ _("Default") }}</strong></em>
+                                <span class="float-right">
+                                    <button onclick="fillForm('search-url=https://http.cat/206&match-type-select=');" class="btn btn-outline-info" role="button" aria-label="{{ _('Fill') }}">{{ _('Fill') }}</button>
+                                    <button onclick="fillForm('search-url=https://http.cat/206&match-type-select=', true);" class="btn btn-outline-primary" role="button" aria-label="{{ _('Search') }}">{{ _('Search') }}</button>
+                                </span>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><em>{{ _("Prefix") }}</em></td>
+                        <td>
+                            <p>
+                                {%trans%}This will return all URL:s that begin with the given string.{%endtrans%}
+                                {%trans%}It returns the same results as <em>Default</em> with a trailing wildcard asterisk.{%endtrans%}
+                            </p>
+
+                            {%trans%}Examples:{%endtrans%}
+                            <p class="ml-5 text-lowercase">
+                                <em>{{ _("URL") }}: <strong>https://http.cat/2</strong></em> &amp; <em>{{ _("Match Type") }}: <strong>{{ _("Prefix") }}</strong></em>
+                                <span class="float-right">
+                                    <button onclick="fillForm('search-url=https://http.cat/2&match-type-select=prefix');" class="btn btn-outline-info" role="button" aria-label="{{ _('Fill') }}">{{ _('Fill') }}</button>
+                                    <button onclick="fillForm('search-url=https://http.cat/2&match-type-select=prefix', true);" class="btn btn-outline-primary" role="button" aria-label="{{ _('Search') }}">{{ _('Search') }}</button>
+                                </span>
+                            </p>
+                            <p class="ml-5 text-lowercase">
+                                <em>{{ _("URL") }}: <strong>https://http.cat/2*</strong></em> &amp; <em>{{ _("Match Type") }}: <strong>{{ _("Default") }}</strong></em>
+                                <span class="float-right">
+                                    <button onclick="fillForm('search-url=https://http.cat/2*&match-type-select=');" class="btn btn-outline-info" role="button" aria-label="{{ _('Fill') }}">{{ _('Fill') }}</button>
+                                    <button onclick="fillForm('search-url=https://http.cat/2*&match-type-select=', true);" class="btn btn-outline-primary" role="button" aria-label="{{ _('Search') }}">{{ _('Search') }}</button>
+                                </span>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><em>{{ _("Host") }}</em></td>
+                        <td>
+                            <p>
+                                {%trans%}This will ignore any path and query parts of the URL and return all URL:s with the specified <code>host</code> part.{%endtrans%}
+                            </p>
+
+                            {%trans%}Example:{%endtrans%}
+                            <p class="ml-5 text-lowercase">
+                                <em>{{ _("URL") }}: <strong>https://http.cat/</strong></em> &amp; <em>{{ _("Match Type") }}: <strong>{{ _("Host") }}</strong></em>
+                                <span class="float-right">
+                                    <button onclick="fillForm('search-url=https://http.cat/&match-type-select=host');" class="btn btn-outline-info" role="button" aria-label="{{ _('Fill') }}">{{ _('Fill') }}</button>
+                                    <button onclick="fillForm('search-url=https://http.cat/&match-type-select=host', true);" class="btn btn-outline-primary" role="button" aria-label="{{ _('Search') }}">{{ _('Search') }}</button>
+                                </span>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><em>{{ _("Domain") }}</em></td>
+                        <td>
+                            <p>
+                                {%trans%}This is similar to the previous but doesn't require the whole <code>host</code>.{%endtrans%}
+                                {%trans%}It returns the same results as <em>Default</em> with a leading wildcard asterisk and a period (i.e. <kbd>*.</kbd>).{%endtrans%}
+                                {%trans%}The leading wildcard matches zero or more <code>sub-domains</code> as well as zero or one <code>hostname</code>.{%endtrans%}
+                            </p>
+
+                            {%trans%}Examples:{%endtrans%}
+                            <p class="ml-5 text-lowercase">
+                                <em>{{ _("URL") }}: <strong>cat/</strong></em> &amp; <em>{{ _("Match Type") }}: <strong>{{ _("Domain") }}</strong></em>
+                                <span class="float-right">
+                                    <button onclick="fillForm('search-url=cat/&match-type-select=domain');" class="btn btn-outline-info" role="button" aria-label="{{ _('Fill') }}">{{ _('Fill') }}</button>
+                                    <button onclick="fillForm('search-url=cat/&match-type-select=domain', true);" class="btn btn-outline-primary" role="button" aria-label="{{ _('Search') }}">{{ _('Search') }}</button>
+                                </span>
+                            </p>
+                            <p class="ml-5 text-lowercase">
+                                <em>{{ _("URL") }}: <strong>*.cat/</strong></em> &amp; <em>{{ _("Match Type") }}: <strong>{{ _("Default") }}</strong></em>
+                                <span class="float-right">
+                                    <button onclick="fillForm('search-url=*.cat/&match-type-select=');" class="btn btn-outline-info" role="button" aria-label="{{ _('Fill') }}">{{ _('Fill') }}</button>
+                                    <button onclick="fillForm('search-url=*.cat/&match-type-select=', true);" class="btn btn-outline-primary" role="button" aria-label="{{ _('Search') }}">{{ _('Search') }}</button>
+                                </span>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h6>{{ _("Date/Time Range") }}</h6>
+                <table class="table table-hover table-condensed">
+                    <tr>
+                        <td>
+                            <p>
+                                {%trans%}One may specify a start and/or an end timestamp to further restrict the search - both are inclusive.{%endtrans%}
+                                {%trans%}The timestamps consist of a date and an optional time of day.{%endtrans%}
+                                {%trans%}The layout of these input fields are subject to which browser is used.{%endtrans%}
+                            </p>
+
+                            {%trans%}Example:{%endtrans%}
+                            <p class="ml-5 text-lowercase">
+                                <em>{{ _("URL") }}: <strong>https://http.cat/2</strong></em> &amp; <em>{{ _("Match Type") }}: <strong>{{ _("Prefix") }}</strong></em> &amp; <em>{{ _("From") }}: <strong>2022-02-02 09:00</strong></em>
+                                <span class="float-right">
+                                    <button onclick="fillForm('search-url=https://http.cat/2&match-type-select=prefix&dt-from=2022-02-02&ts-from=09:00');" class="btn btn-outline-info" role="button" aria-label="{{ _('Fill') }}">{{ _('Fill') }}</button>
+                                    <button onclick="fillForm('search-url=https://http.cat/2&match-type-select=prefix&dt-from=2022-02-02&ts-from=09:00', true);" class="btn btn-outline-primary" role="button" aria-label="{{ _('Search') }}">{{ _('Search') }}</button>
+                                </span>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h6>{{ _("Filtering") }}</h6>
+                <table class="table table-hover table-condensed">
+                    <tr>
+                        <td>
+                            <p>
+                                {%trans%}Finally one may add extra filters for Mime Type, Status and URL.{%endtrans%}
+                                {%trans%}For each filter one needs to specify one of the three attributes, one of a set of relations and a string.{%endtrans%}
+                                {%trans%}If more than one filter is added, they will all be applied to the list of results.{%endtrans%}
+                            </p>
+                            <p class="text-muted">{%trans%}Remember to actually add the filter before submitting the search.{%endtrans%}</p>
+
+                            {%trans%}Example:{%endtrans%}
+                            <p class="ml-5 text-lowercase">
+                                <em>{{ _("URL") }}: <strong>https://http.cat/2/</strong></em> &amp; <em>{{ _("Match Type") }}: <strong>{{ _("Prefix") }}</strong></em> &amp; <em>{{ _("Filtering") }}: <strong>{{ _("HTTP Status") }} {{ _("Is Not") }} "301"</strong></em>
+                                <span class="float-right">
+                                    <button onclick="fillForm('search-url=https://http.cat/2&match-type-select=prefix&filter-by=status&filter-modifier==!=&filter-expression=301');" class="btn btn-outline-info" role="button" aria-label="{{ _('Fill') }}">{{ _('Fill') }}</button>
+                                    <button onclick="fillForm('search-url=https://http.cat/2&match-type-select=prefix&filter-by=status&filter-modifier==!=&filter-expression=301', true);" class="btn btn-outline-primary" role="button" aria-label="{{ _('Search') }}">{{ _('Search') }}</button>
+                                </span>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+  function fillForm(query, search = false) {
+    $('#searchInstructions').modal('hide');
+    $('#advancedOptions').collapse('show');
+    for (const item of query.split('&')) {
+      var pair = item.split('=');
+      var field = document.getElementById(pair[0]);
+      if (field) field.value = pair.slice(1).join('=');
+      if (pair[0] == "filter-expression") addFilter(event);
+    }
+    if (search) $('#search-button').click();
+  }
+</script>
