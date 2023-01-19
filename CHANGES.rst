@@ -1,3 +1,13 @@
+pywb 2.7.3 changelist
+~~~~~~~~~~~~~~~~~~~~~
+
+(In progress)
+
+* Catch warcio exceptions when indexing CDX by @oskarhek
+oskarhek 
+* Add ui.logo_home_url as config.yaml option
+* wb-manager: Show error when adding duplicate warc files by @kuechensofa
+
 pywb 2.7.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
