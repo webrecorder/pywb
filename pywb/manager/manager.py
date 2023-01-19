@@ -121,13 +121,23 @@ directory structure expected by pywb
                           format(self.archive_dir))
 
         full_paths = []
+        duplicate_warcs = []
         for filename in warcs:
             filename = os.path.abspath(filename)
+
+            # don't overwrite existing warcs with duplicate names
+            if os.path.exists(os.path.join(self.archive_dir, os.path.basename(filename))):
+                duplicate_warcs.append(filename)
+                continue
+
             shutil.copy2(filename, self.archive_dir)
             full_paths.append(os.path.join(self.archive_dir, filename))
             logging.info('Copied ' + filename + ' to ' + self.archive_dir)
 
         self._index_merge_warcs(full_paths, self.DEF_INDEX_FILE)
+
+        if duplicate_warcs:
+            logging.warning(f'Warcs {", ".join(duplicate_warcs)} weren\'t added because of duplicate names.')
 
     def reindex(self):
         cdx_file = os.path.join(self.indexes_dir, self.DEF_INDEX_FILE)
