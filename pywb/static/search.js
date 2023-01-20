@@ -14,8 +14,10 @@ var elemIds = {
   },
   dateTime: {
     from: 'dt-from',
+    fromTime: 'ts-from',
     fromBad: 'dt-from-bad',
     to: 'dt-to',
+    toTime: 'ts-to',
     toBad: 'dt-to-bad'
   },
   match: 'match-type-select',
@@ -138,11 +140,13 @@ function performQuery(url) {
   }
   var fromT = document.getElementById(elemIds.dateTime.from).value;
   if (fromT) {
-    query.push('from=' + fromT.trim());
+    fromT += document.getElementById(elemIds.dateTime.fromTime).value;
+    query.push('from=' + fromT.replace(/[^0-9]/g, ''));
   }
   var toT = document.getElementById(elemIds.dateTime.to).value;
   if (toT) {
-    query.push('to=' + toT.trim());
+    toT += document.getElementById(elemIds.dateTime.toTime).value;
+    query.push('to=' + toT.replace(/[^0-9]/g, ''));
   }
   var builtQuery = query.join('&');
   if (document.getElementById(elemIds.resultsNewWindow).checked) {
@@ -195,9 +199,6 @@ $(document).ready(function() {
   form.addEventListener('submit', function(event) {
     submitForm(event, form, searchURLInput);
   });
-  document.getElementById(elemIds.advancedOptions).onclick = function() {
-    validateFields(form);
-  }
   var filteringExpression = document.getElementById(elemIds.filtering.expression);
   filteringExpression.addEventListener("keypress", function(event) {
     if (event.key === "Enter") {
