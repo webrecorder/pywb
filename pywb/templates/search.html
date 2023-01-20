@@ -44,7 +44,7 @@
             <div class="col-12">
                 <input aria-label="{{ _('URL') }}" aria-required="true" class="form-control form-control-lg" id="search-url"
                        name="search" placeholder="{{ _('Enter a URL to search for') }}"
-                       title="{{ _('Enter a URL to search for') }}" type="search" required/>
+                       title="{{ _('Enter a URL to search for') }}" type="search" required autofocus />
                 <div class="invalid-feedback">
                     {% trans %}Please enter a URL{% endtrans %}
                 </div>
@@ -65,6 +65,9 @@
                         data-toggle="collapse" data-target="#advancedOptions" id="advanced-options"
                         aria-expanded="false" aria-controls="advancedOptions" aria-label="{{ _('Search Options') }}">
                     {{ _('Search Options') }}
+                </button>
+                <button id="clear-options" class="btn btn-outline-warning float-right mr-3" type="button" role="button" aria-label="{{ _('Reset Options') }}">
+                    {{ _('Reset Options') }}
                 </button>
             </div>
         </div>

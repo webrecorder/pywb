@@ -24,8 +24,22 @@ var elemIds = {
   url: 'search-url',
   form: 'search-form',
   resultsNewWindow: 'open-results-new-window',
-  advancedOptions: 'advanced-options'
+  advancedOptions: 'advanced-options',
+  clearOptions: 'clear-options',
 };
+
+function clearOptions(event) {
+  for (const field of [
+    elemIds.match,
+    elemIds.dateTime.from,
+    elemIds.dateTime.fromTime,
+    elemIds.dateTime.to,
+    elemIds.dateTime.toTime,
+  ]) {
+    document.getElementById(field).value = '';
+  }
+  clearFilters(event);
+}
 
 function makeCheckDateRangeChecker(dtInputId, dtBadNotice) {
   var dtInput = document.getElementById(dtInputId);
@@ -192,6 +206,7 @@ $(document).ready(function() {
     elemIds.dateTime.to,
     document.getElementById(elemIds.dateTime.toBad)
   );
+  document.getElementById(elemIds.clearOptions).onclick = clearOptions;
   document.getElementById(elemIds.filtering.add).onclick = addFilter;
   document.getElementById(elemIds.filtering.clear).onclick = clearFilters;
   var searchURLInput = document.getElementById(elemIds.url);
