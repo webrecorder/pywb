@@ -25,11 +25,12 @@ var elemIds = {
   form: 'search-form',
   resultsNewWindow: 'open-results-new-window',
   advancedOptions: 'advanced-options',
-  clearOptions: 'clear-options',
+  resetSearchForm: 'reset-search-form',
 };
 
-function clearOptions(event) {
+function resetSearchForm(event) {
   for (const field of [
+    elemIds.url,
     elemIds.match,
     elemIds.dateTime.from,
     elemIds.dateTime.fromTime,
@@ -206,7 +207,7 @@ $(document).ready(function() {
     elemIds.dateTime.to,
     document.getElementById(elemIds.dateTime.toBad)
   );
-  document.getElementById(elemIds.clearOptions).onclick = clearOptions;
+  document.getElementById(elemIds.resetSearchForm).onclick = resetSearchForm;
   document.getElementById(elemIds.filtering.add).onclick = addFilter;
   document.getElementById(elemIds.filtering.clear).onclick = clearFilters;
   var searchURLInput = document.getElementById(elemIds.url);
