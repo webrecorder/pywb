@@ -31,15 +31,20 @@
     <form class="needs-validation" id="search-form" novalidate>
         <div class="form-row">
             <div class="col-12">
-                <label for="search-url" class="lead" aria-label="Search For Col">
+                <label for="search-url" class="lead" aria-label="{{ _('Search Collection') }}">
                     {% set coll_title = metadata.title if metadata and metadata.title else coll %}
                     {% autoescape false %}
                     {% trans %}Search the {{ coll_title }} collection by url:{% endtrans %}
                     {% endautoescape %}
                 </label>
-                <input aria-label="url" aria-required="true" class="form-control form-control-lg" id="search-url"
+                <a tabindex="0" class="btn btn-sm float-right btn-light" role="button" data-toggle="modal" data-target="#searchInstructions">{{ _('Help') }}</a>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-12">
+                <input aria-label="{{ _('URL') }}" aria-required="true" class="form-control form-control-lg" id="search-url"
                        name="search" placeholder="{{ _('Enter a URL to search for') }}"
-                       title="{{ _('Enter a URL to search for') }}" type="search" required/>
+                       title="{{ _('Enter a URL to search for') }}" type="search" required autofocus />
                 <div class="invalid-feedback">
                     {% trans %}Please enter a URL{% endtrans %}
                 </div>
@@ -53,23 +58,26 @@
                 </div>
             </div>
             <div class="col-7">
-                <button type="submit" class="btn btn-outline-primary float-right" role="button" aria-label="Search">
+                <button type="submit" id="search-button" class="btn btn-outline-primary float-right" role="button" aria-label="{{ _('Search') }}">
                     {% trans %}Search{% endtrans %}
                 </button>
                 <button class="btn btn-outline-info float-right mr-3" type="button" role="button"
                         data-toggle="collapse" data-target="#advancedOptions" id="advanced-options"
-                        aria-expanded="false" aria-controls="advancedOptions" aria-label="Advanced Search Options">
-                    {{ _('Advanced Search Options') }}
+                        aria-expanded="false" aria-controls="advancedOptions" aria-label="{{ _('Search Options') }}">
+                    {{ _('Search Options') }}
+                </button>
+                <button id="clear-options" class="btn btn-outline-warning float-right mr-3" type="button" role="button" aria-label="{{ _('Reset Options') }}">
+                    {{ _('Reset Options') }}
                 </button>
             </div>
         </div>
         <div class="collapse mt-3" id="advancedOptions">
             <div class="form-group form-row">
-                <label for="match-type-select" class="col-sm-2 col-form-label" aria-label="Match Type">
+                <label for="match-type-select" class="col-sm-2 col-form-label" aria-label="{{ _('Match Type') }}">
                     {{ _('Match Type:') }}
                 </label>
                 <select id="match-type-select" class="form-control form-control col-sm-6">
-                    <option value=""></option>
+                    <option value="">{% trans %}Default{% endtrans %}</option>
                     <option value="prefix">{% trans %}Prefix{% endtrans %}</option>
                     <option value="host">{% trans %}Host{% endtrans %}</option>
                     <option value="domain">{% trans %}Domain{% endtrans %}</option>
@@ -77,49 +85,36 @@
             </div>
             <p style="cursor: help;">
                <span data-toggle="tooltip" data-placement="right"
-                     title="Restricts the results to the given date/time range (inclusive)">
+                     title="{{ _('Restricts the results to the given date/time range (inclusive)') }}">
                    {{ _('Date/Time Range') }}
                 </span>
             </p>
             <div class="form-row">
                 <div class="col-6">
-                    <label class="sr-only" for="dt-from" aria-label="Date/Time Range From">{% trans %}From:{% endtrans %}</label>
+                    <label class="sr-only" for="dt-from" aria-label="{{ _('Date/Time Range From') }}">{% trans %}From:{% endtrans %}</label>
                     <div class="input-group">
                         <div class="input-group-prepend">
                             <div class="input-group-text">{% trans %}From:{% endtrans %}</div>
                         </div>
-                        <input id="dt-from" type="number" name="date-range-from" class="form-control"
-                               pattern="^\d{4,14}$">
-                        <div class="invalid-feedback" id="dt-from-bad">
-                            {% trans %}Please enter a valid <b>From</b> timestamp. Timestamps may be 4 <= ts <=14 digits{% endtrans %}
-                        </div>
+                        <input id="dt-from" type="date" placeholder="yyyy-mm-dd" name="date-range-from" class="form-control">
+                        <input id="ts-from" type="time" placeholder="hh:mm:ss" name="date-range-from-ts" class="form-control">
                     </div>
                 </div>
                 <div class="col-6">
-                    <label class="sr-only" for="dt-to" aria-label="Date/Time Range To">{% trans %}To:{% endtrans %}</label>
+                    <label class="sr-only" for="dt-to" aria-label="{{ _('Date/Time Range To') }}">{% trans %}To:{% endtrans %}</label>
                     <div class="input-group">
                         <div class="input-group-prepend">
                             <div class="input-group-text">{% trans %}To:{% endtrans %}</div>
                         </div>
-                        <input id="dt-to" type="number" name="date-range-to" class="form-control" pattern="^\d{4,14}$">
-                        <div class="invalid-feedback" id="dt-to-bad">
-                            {% trans %}Please enter a valid <b>To</b> timestamp. Timestamps may be 4 <= ts <=14 digits{% endtrans %}
-                        </div>
+                        <input id="dt-to" type="date" placeholder="yyyy-mm-dd" name="date-range-to" class="form-control">
+                        <input id="ts-to" type="time" placeholder="hh:mm:ss" name="date-range-to-ts" class="form-control">
                     </div>
                 </div>
             </div>
             <div class="form-group mt-3">
                 <div class="form-row">
-                    <div class="col-6">
+                    <div class="col-12">
                         <p>{% trans %}Filtering{% endtrans %}</p>
-                    </div>
-                    <div class="col-6">
-                        <button id="clear-filters" class="btn btn-outline-warning float-right" type="button">
-                            {% trans %}Clear Filters{% endtrans %}
-                        </button>
-                        <button id="add-filter" class="btn btn-outline-secondary float-right mr-2" type="button">
-                            {% trans %}Add Filter{% endtrans %}
-                        </button>
                     </div>
                 </div>
                 <div class="form-row">
@@ -127,7 +122,6 @@
                         <div class="row pb-1">
                             <label for="filter-by" class="col-form-label col-3">{% trans %}By:{% endtrans %}</label>
                             <select id="filter-by" class="form-control col-7">
-                                <option value="" selected></option>
                                 <option value="mime">{% trans %}Mime Type{% endtrans %}</option>
                                 <option value="status">{% trans %}Status{% endtrans %}</option>
                                 <option value="url">{% trans %}URL{% endtrans %}</option>
@@ -144,17 +138,24 @@
                                 <option value="=!~">{% trans %}Does Not Begin With{% endtrans %}</option>
                             </select>
                         </div>
-                        <div class="row">
+                        <div class="row pb-1">
                             <label for="filter-expression" class="col-form-label col-3">{% trans %}Expr:{% endtrans %}</label>
                             <input type="text" id="filter-expression" class="form-control col-7"
                                    placeholder="{% trans %}Enter an expression to filter by{% endtrans %}"
                             >
                         </div>
+                            <button id="add-filter" class="btn btn-outline-secondary mt-2" type="button">
+                                {% trans %}Add Filter{% endtrans %}
+                            </button>
+
                     </div>
                     <div class="col-6">
                         <ul id="filter-list" class="filter-list">
                             <li id="filtering-nothing">{% trans %}No Filter{% endtrans %}</li>
                         </ul>
+                        <button id="clear-filters" class="btn btn-outline-warning float-right mr-2" type="button">
+                            {% trans %}Clear Filters{% endtrans %}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -192,4 +193,5 @@
         </div>
     </div>
 {% endif %}
+{% include "instructions.html" %}
 {% endblock %}

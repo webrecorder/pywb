@@ -14,16 +14,32 @@ var elemIds = {
   },
   dateTime: {
     from: 'dt-from',
+    fromTime: 'ts-from',
     fromBad: 'dt-from-bad',
     to: 'dt-to',
+    toTime: 'ts-to',
     toBad: 'dt-to-bad'
   },
   match: 'match-type-select',
   url: 'search-url',
   form: 'search-form',
   resultsNewWindow: 'open-results-new-window',
-  advancedOptions: 'advanced-options'
+  advancedOptions: 'advanced-options',
+  clearOptions: 'clear-options',
 };
+
+function clearOptions(event) {
+  for (const field of [
+    elemIds.match,
+    elemIds.dateTime.from,
+    elemIds.dateTime.fromTime,
+    elemIds.dateTime.to,
+    elemIds.dateTime.toTime,
+  ]) {
+    document.getElementById(field).value = '';
+  }
+  clearFilters(event);
+}
 
 function makeCheckDateRangeChecker(dtInputId, dtBadNotice) {
   var dtInput = document.getElementById(dtInputId);
@@ -138,11 +154,13 @@ function performQuery(url) {
   }
   var fromT = document.getElementById(elemIds.dateTime.from).value;
   if (fromT) {
-    query.push('from=' + fromT.trim());
+    fromT += document.getElementById(elemIds.dateTime.fromTime).value;
+    query.push('from=' + fromT.replace(/[^0-9]/g, ''));
   }
   var toT = document.getElementById(elemIds.dateTime.to).value;
   if (toT) {
-    query.push('to=' + toT.trim());
+    toT += document.getElementById(elemIds.dateTime.toTime).value;
+    query.push('to=' + toT.replace(/[^0-9]/g, ''));
   }
   var builtQuery = query.join('&');
   if (document.getElementById(elemIds.resultsNewWindow).checked) {
@@ -188,6 +206,7 @@ $(document).ready(function() {
     elemIds.dateTime.to,
     document.getElementById(elemIds.dateTime.toBad)
   );
+  document.getElementById(elemIds.clearOptions).onclick = clearOptions;
   document.getElementById(elemIds.filtering.add).onclick = addFilter;
   document.getElementById(elemIds.filtering.clear).onclick = clearFilters;
   var searchURLInput = document.getElementById(elemIds.url);
@@ -195,9 +214,6 @@ $(document).ready(function() {
   form.addEventListener('submit', function(event) {
     submitForm(event, form, searchURLInput);
   });
-  document.getElementById(elemIds.advancedOptions).onclick = function() {
-    validateFields(form);
-  }
   var filteringExpression = document.getElementById(elemIds.filtering.expression);
   filteringExpression.addEventListener("keypress", function(event) {
     if (event.key === "Enter") {
