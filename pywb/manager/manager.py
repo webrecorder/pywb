@@ -186,8 +186,13 @@ directory structure expected by pywb
             warc_filename = os.path.basename(wacz)
             warc_filename, _ = os.path.splitext(warc_filename)
             warc_filename = f'{warc_filename}-{idx}{warc_ext}'
-            warc_filename_mapping[os.path.basename(extracted_warc_file)] = warc_filename
             warc_destination_path = os.path.join(self.archive_dir, warc_filename)
+
+            if os.path.exists(warc_destination_path):
+                logging.warning(f'Warc {warc_filename} wasn\'t added because of duplicate name.')
+                continue
+
+            warc_filename_mapping[os.path.basename(extracted_warc_file)] = warc_filename
             shutil.copy2(os.path.join(temp_dir, extracted_warc_file), warc_destination_path)
             full_paths.append(warc_destination_path)
 
