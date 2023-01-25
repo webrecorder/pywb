@@ -58,16 +58,16 @@
                 </div>
             </div>
             <div class="col-7">
-                <button type="submit" id="search-button" class="btn btn-outline-primary float-right" role="button" aria-label="{{ _('Search') }}">
+                <button type="submit" id="search-button" class="btn btn-primary float-right" role="button" aria-label="{{ _('Search') }}">
                     {% trans %}Search{% endtrans %}
                 </button>
-                <button class="btn btn-outline-info float-right mr-3" type="button" role="button"
+                <button class="btn btn-outline-secondary float-right mr-3" type="button" role="button"
                         data-toggle="collapse" data-target="#advancedOptions" id="advanced-options"
                         aria-expanded="false" aria-controls="advancedOptions" aria-label="{{ _('Search Options') }}">
                     {{ _('Search Options') }}
                 </button>
-                <button id="clear-options" class="btn btn-outline-warning float-right mr-3" type="button" role="button" aria-label="{{ _('Reset Options') }}">
-                    {{ _('Reset Options') }}
+                <button id="reset-search-form" class="btn btn-outline-danger float-right mr-3" type="button" role="button" aria-label="{{ _('Reset Options') }}">
+                    {{ _('Reset') }}
                 </button>
             </div>
         </div>
@@ -153,7 +153,7 @@
                         <ul id="filter-list" class="filter-list">
                             <li id="filtering-nothing">{% trans %}No Filter{% endtrans %}</li>
                         </ul>
-                        <button id="clear-filters" class="btn btn-outline-warning float-right mr-2" type="button">
+                        <button id="clear-filters" class="btn btn-outline-danger float-right mr-2" type="button">
                             {% trans %}Clear Filters{% endtrans %}
                         </button>
                     </div>
