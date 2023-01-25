@@ -138,6 +138,7 @@ directory structure expected by pywb
                 invalid_archives.append(archive)
 
         self._index_merge_warcs(warc_paths, self.DEF_INDEX_FILE)
+        logging.warning(f'Invalid archives weren\'t added: {", ".join(invalid_archives)}')
 
     def _add_warc(self, warc):
         filename = os.path.abspath(warc)
