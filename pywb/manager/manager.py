@@ -164,7 +164,8 @@ directory structure expected by pywb
             archive_members = wacz_zip_file.namelist()
             warc_files = [file for file in archive_members if warc_regex.match(file)]
             if not warc_files:
-                raise IOError('WACZ does not contain any warc files.')
+                logging.warning(f'WACZ {wacz} does not contain any warc files.')
+                return
 
             # extract warc files
             for warc_file in warc_files:
@@ -172,7 +173,8 @@ directory structure expected by pywb
 
             cdx_files = [file for file in archive_members if cdx_regex.match(file)]
             if not cdx_files:
-                raise IOError('WACZ does not contain any indices.')
+                logging.warning(f'WACZ {wacz} does not contain any indices.')
+                return
 
             for cdx_file in cdx_files:
                 wacz_zip_file.extract(cdx_file, temp_dir)
