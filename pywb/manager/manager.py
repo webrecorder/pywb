@@ -5,6 +5,7 @@ import logging
 import heapq
 import yaml
 import re
+import gzip
 import six
 
 from distutils.util import strtobool
@@ -221,13 +222,18 @@ directory structure expected by pywb
             shutil.copy2(collection_index_path, collection_index_temp_path)
 
         with open(collection_index_temp_path, 'a') as collection_index_temp_file:
-            with open(wacz_index_path, 'rb') as wacz_index_file:
-                collection_index_temp_file.write('\n')
-                for line in wacz_index_file.readlines():
-                    cdx_object = CDXObject(cdxline=line)
-                    if cdx_object['filename'] in filename_mapping:
-                        cdx_object['filename'] = filename_mapping[cdx_object['filename']]
-                    collection_index_temp_file.write(cdx_object.to_cdxj())
+            if wacz_index_path.endswith('.gz'):
+                wacz_index_file = gzip.open(wacz_index_path, 'rb')
+            else:
+                wacz_index_file = open(wacz_index_path, 'rb')
+            collection_index_temp_file.write('\n')
+            for line in wacz_index_file.readlines():
+                cdx_object = CDXObject(cdxline=line)
+                if cdx_object['filename'] in filename_mapping:
+                    cdx_object['filename'] = filename_mapping[cdx_object['filename']]
+                collection_index_temp_file.write(cdx_object.to_cdxj())
+
+            wacz_index_file.close()
 
         # copy temporary index back to original location and delete temporary directory
         shutil.move(collection_index_temp_path, collection_index_path)
