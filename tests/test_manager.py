@@ -23,8 +23,7 @@ class TestManager:
         manager = self.get_test_collections_manager(tmp_path)
         manager._add_wacz(INVALID_WACZ_PATH)
         assert 'invalid_example_1-0.warc' not in os.listdir(manager.archive_dir)
-        assert 'WACZ /home/user/git/pywb/sample_archive/waczs/invalid_example_1.wacz does not contain any warc files.'\
-               in caplog.messages
+        assert 'sample_archive/waczs/invalid_example_1.wacz does not contain any warc files.' in caplog.text
 
         index_path = os.path.join(manager.indexes_dir, manager.DEF_INDEX_FILE)
         if os.path.exists(index_path):
