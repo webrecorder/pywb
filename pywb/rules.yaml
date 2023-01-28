@@ -196,6 +196,9 @@ rules:
               group: 1
               function: 'pywb.rewrite.rewrite_dash:rewrite_fb_dash'
 
+            - match: '"debugNoBatching\s?":(?:false|0)'
+              replace: '"debugNoBatching":true'
+
         parse_comments: true
 
     - url_prefix: 'com,facebook'
@@ -226,6 +229,9 @@ rules:
         js_regexs:
             - match: '"is_dash_eligible":true'
               replace: '"is_dash_eligible":false'
+
+            - match: '"debugNoBatching\s?":(?:false|0)'
+              replace: '"debugNoBatching":true'
 
       fuzzy_lookup: '()'
 
