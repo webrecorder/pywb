@@ -7,6 +7,8 @@ pywb 2.7.3 changelist
 * Add ui.logo_home_url as config.yaml option
 * wb-manager: Show error when adding duplicate warc files by @kuechensofa
 * Improve search template and add help text by @krakan
+* Use default_locale when lang not set in the request by @krakan (#805)
+
 
 pywb 2.7.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
