@@ -108,6 +108,7 @@ class FrontEndApp(object):
         self.templates_dir = config.get('templates_dir', 'templates')
         self.static_dir = config.get('static_dir', 'static')
         self.static_prefix = config.get('static_prefix', 'static')
+        self.default_locale = config.get('default_locale', '')
 
         metadata_templ = os.path.join(self.warcserver.root_dir, '{coll}', 'metadata.yaml')
         self.metadata_cache = MetadataCache(metadata_templ)
@@ -662,7 +663,7 @@ class FrontEndApp(object):
             # store original script_name (original prefix) before modifications are made
             environ['ORIG_SCRIPT_NAME'] = environ.get('SCRIPT_NAME')
 
-            lang = args.pop('lang', '')
+            lang = args.pop('lang', self.default_locale)
             if lang:
                 pop_path_info(environ)
                 environ['pywb_lang'] = lang
