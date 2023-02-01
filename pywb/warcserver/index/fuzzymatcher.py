@@ -15,7 +15,7 @@ from collections import namedtuple
 # ============================================================================
 FuzzyRule = namedtuple('FuzzyRule',
                        'url_prefix, regex, replace_after, filter_str, ' +
-                       'match_type, find_all')
+                       'match_type, re_type')
 
 
 # ============================================================================
@@ -23,6 +23,7 @@ class FuzzyMatcher(object):
     DEFAULT_FILTER = ['urlkey:{0}']
     DEFAULT_MATCH_TYPE = 'prefix'
     DEFAULT_REPLACE_AFTER = '?'
+    DEFAULT_RE_TYPE = 'search'
 
     FUZZY_SKIP_PARAMS = ('alt_url', 'reverse', 'closest', 'end_key',
                          'url', 'matchType', 'filter')
@@ -58,16 +59,16 @@ class FuzzyMatcher(object):
             replace_after = self.DEFAULT_REPLACE_AFTER
             filter_str = self.DEFAULT_FILTER
             match_type = self.DEFAULT_MATCH_TYPE
-            find_all = False
+            re_type = self.DEFAULT_RE_TYPE
 
         else:
             regex = self.make_regex(config.get('match'))
             replace_after = config.get('replace', self.DEFAULT_REPLACE_AFTER)
             filter_str = config.get('filter', self.DEFAULT_FILTER)
             match_type = config.get('type', self.DEFAULT_MATCH_TYPE)
-            find_all = config.get('find_all', False)
+            re_type = config.get('re_type', self.DEFAULT_RE_TYPE)
 
-        return FuzzyRule(url_prefix, regex, replace_after, filter_str, match_type, find_all)
+        return FuzzyRule(url_prefix, regex, replace_after, filter_str, match_type, re_type)
 
     def get_fuzzy_match(self, urlkey, url, params):
         filters = set()
@@ -78,9 +79,12 @@ class FuzzyMatcher(object):
                 continue
 
             groups = None
-            if rule.find_all:
+            if rule.re_type == 'findall':
                 groups = rule.regex.findall(urlkey)
-            else:
+            if rule.re_type == 'sub':
+                matched_rule = rule
+                break
+            elif rule.re_type == 'search':
                 m = rule.regex.search(urlkey)
                 groups = m and m.groups()
 
@@ -102,7 +106,7 @@ class FuzzyMatcher(object):
         no_filters = (not filters or filters == {'urlkey:'}) and (matched_rule.replace_after == '?')
 
         inx = url.find(matched_rule.replace_after)
-        if inx > 0:
+        if inx > 0 and matched_rule.re_type != 'sub':
             length = inx + len(matched_rule.replace_after)
             # don't include trailing '?' for default filter
             if no_filters:
@@ -111,12 +115,16 @@ class FuzzyMatcher(object):
                 if url[length - 1] == '/':
                     length -= 1
             url = url[:length]
-        elif not no_filters:
+        elif not no_filters and matched_rule.re_type != 'sub':
             url += matched_rule.replace_after[0]
 
         if matched_rule.match_type == 'domain':
             host = urlsplit(url).netloc
             url = host.split('.', 1)[1]
+
+        if matched_rule.re_type == 'sub':
+            filters = {'urlkey:'}
+            url = re.sub(rule.regex, rule.replace_after, url)            
 
         fuzzy_params = {'url': url,
                         'matchType': matched_rule.match_type,

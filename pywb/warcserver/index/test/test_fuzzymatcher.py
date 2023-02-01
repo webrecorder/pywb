@@ -234,3 +234,10 @@ class TestFuzzy(object):
         params = self.get_params(url, actual_url, mime='application/x-shockwave-flash')
         cdx_iter, errs = self.fuzzy(self.source, params)
         assert list(cdx_iter) == []
+
+    def test_fuzzy_sub_replacement(self):
+        url = 'https://example.com/matched'
+        actual_url = 'https://example.com/replaced'
+        params = self.get_params(url, actual_url)
+        cdx_iter, errs = self.fuzzy(self.source, params)
+        assert list(cdx_iter) == self.get_expected(actual_url)
