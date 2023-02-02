@@ -7,14 +7,14 @@ import Vue from "vue/dist/vue.esm.browser";
 
 
 // ===========================================================================
-export function main(staticPrefix, url, prefix, timestamp, logoUrl, logoHomeUrl, navbarBackground, navbarColor, navbarLightButtons, locale, allLocales, i18nStrings) {
+export function main(staticPrefix, url, prefix, timestamp, logoUrl, navbarBackground, navbarColor, navbarLightButtons, locale, allLocales, i18nStrings, logoHomeUrl) {
   PywbI18N.init(locale, i18nStrings);
-  new CDXLoader(staticPrefix, url, prefix, timestamp, logoUrl, logoHomeUrl, navbarBackground, navbarColor, navbarLightButtons, allLocales);
+  new CDXLoader(staticPrefix, url, prefix, timestamp, logoUrl, navbarBackground, navbarColor, navbarLightButtons, allLocales, logoHomeUrl);
 }
 
 // ===========================================================================
 class CDXLoader {
-  constructor(staticPrefix, url, prefix, timestamp, logoUrl, logoHomeUrl, navbarBackground, navbarColor, navbarLightButtons, allLocales) {
+  constructor(staticPrefix, url, prefix, timestamp, logoUrl, navbarBackground, navbarColor, navbarLightButtons, allLocales, logoHomeUrl) {
     this.loadingSpinner = null;
     this.loaded = false;
     this.opts = {};
