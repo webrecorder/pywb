@@ -1,14 +1,16 @@
 pywb 2.7.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-(In progress)
-
-* Catch warcio exceptions when indexing CDX by @oskarhek
-* Add ui.logo_home_url as config.yaml option
-* wb-manager: Show error when adding duplicate warc files by @kuechensofa
-* Improve search template and add help text by @krakan
-* Use default_locale when lang not set in the request by @krakan (#805)
-
+* issue_792 catch warcio exception by @oskarhek in https://github.com/webrecorder/pywb/pull/793
+* Add ui.logo_home_url as config.yaml option by @tw4l in https://github.com/webrecorder/pywb/pull/791
+* [#795] Show error when adding duplicate warc file by @kuechensofa in https://github.com/webrecorder/pywb/pull/797
+* Make search page more intuitive by @krakan in https://github.com/webrecorder/pywb/pull/794
+* Modify search template buttons by @tw4l in https://github.com/webrecorder/pywb/pull/801
+* [#804] Use default_locale when lang not set in the request by @krakan in https://github.com/webrecorder/pywb/pull/805
+* feat: regex substitution on surt rules match by @mijho in https://github.com/webrecorder/pywb/pull/780
+* Bump minimatch from 3.0.4 to 3.1.2 in /pywb/vueui by @dependabot in https://github.com/webrecorder/pywb/pull/777
+* Bump decode-uri-component from 0.2.0 to 0.2.2 in /pywb/vueui by @dependabot in https://github.com/webrecorder/pywb/pull/786
+* rules: add 'debugNoBatch' rewrite for fb and insta by @ikreymer in https://github.com/webrecorder/pywb/pull/806
 
 pywb 2.7.2 changelist
 ~~~~~~~~~~~~~~~~~~~~~
