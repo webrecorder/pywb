@@ -134,6 +134,7 @@ class HTMLRewriterMixin(StreamingRewriter):
         super(HTMLRewriterMixin, self).__init__(url_rewriter, False)
         self.charset = charset
         self._wb_parse_context = None
+        self._wb_parse_module = False
 
         if js_rewriter:
             self.js_rewriter = js_rewriter
@@ -308,7 +309,8 @@ class HTMLRewriterMixin(StreamingRewriter):
             return ''
 
         content = self.js_rewriter.rewrite_complete(script_content,
-                                                    inline_attr=inline_attr)
+                                                    inline_attr=inline_attr,
+                                                    is_module=self._wb_parse_module)
         if inline_attr:
             content = self.ADD_WINDOW.sub('window.\\1', content)
 
@@ -433,7 +435,7 @@ class HTMLRewriterMixin(StreamingRewriter):
                     # URL not skipped, likely src='js/....', forcing abs to make sure, cause PHP MIME(JS) === HTML
                     attr_value = self._rewrite_url(attr_value, rw_mod, True)
                     self._write_attr('__wb_orig_src', ov, empty_attr=None)
-            
+
             elif attr_name == 'target':
                 target = attr_value
                 if target in ('_blank', '_parent', '_top'):
@@ -484,24 +486,30 @@ class HTMLRewriterMixin(StreamingRewriter):
                 self._wb_parse_context = 'style'
 
             elif tag == 'script':
-                if self._allow_js_type(tag_attrs):
+                result = self._allow_js_type(tag_attrs)
+                if result:
                     self._wb_parse_context = 'script'
+                self._wb_parse_module = (result == 'script-module')
+
 
     def _allow_js_type(self, tag_attrs):
         type_value = self.get_attr(tag_attrs, 'type')
 
         if not type_value:
-            return True
+            return 'script'
 
         type_value = type_value.lower()
 
         if 'javascript' in type_value:
-            return True
+            return 'script'
 
         if 'ecmascript' in type_value:
-            return True
+            return 'script'
 
-        return False
+        if type_value == 'module':
+            return 'script-module'
+
+        return None
 
     def _rewrite_head(self, start_end):
         # special case: head tag
