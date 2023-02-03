@@ -384,7 +384,7 @@ url timestamp { ... }
 
     output_help = """
 Output file or directory.
-- If directory, each input file is written to a seperate output file
+- If directory, each input file is written to a separate output file
   with a .cdx extension
 - If output is '-', output is written to stdout
 """

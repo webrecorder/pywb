@@ -1181,7 +1181,7 @@ pywb 0.9.6 changelist
 pywb 0.9.5 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* s3 loading: support ``s3://`` scheme in block loader, allowing for loading index and archive files from s3. ``boto`` library must be installed seperately
+* s3 loading: support ``s3://`` scheme in block loader, allowing for loading index and archive files from s3. ``boto`` library must be installed separately
   via ``pip install boto``. Attempt default boto auth path, and if that fails, attempt anonymous s3 connection.
   
 * Wombat/Client-Side Rewrite Customizations: New ``rewrite_opts.client`` settings from ``config.yaml`` are passed directly to wombat as json. 
@@ -1277,7 +1277,7 @@ pywb 0.9.1 changelist
 
 * cdx server query: add support for ``url=*.host`` and ``url=host/*`` as shortcuts for ``matchType=domain`` and ``matchType=prefix``
 
-* zipnum cdx cluster: support loading index shared from prefix path instead of seperate location file.
+* zipnum cdx cluster: support loading index shared from prefix path instead of separate location file.
 
   The ``shard_index_loc`` config property may contain match and replace properties.
   Regex replacement is then used to obtain path prefix from the shard prefix path.
@@ -1643,7 +1643,7 @@ pywb 0.4.7 changelist
 
 * Rewrite: Parsing of html as raw bytes instead of decode/encode, detection still needed for non-ascii compatible encoding.
 
-* Indexing: Refactoring of cdx-indexer using a seperate 'archive record iterator' and pluggable cdx writer classes. Groundwork for creating custom indexers.
+* Indexing: Refactoring of cdx-indexer using a separate 'archive record iterator' and pluggable cdx writer classes. Groundwork for creating custom indexers.
 
 * Indexing: Support for 9 field cdx formats with -9 flag.
 
