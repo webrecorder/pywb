@@ -72,7 +72,7 @@ def linearsearch(iter_, key, prev_size=0, compare_func=cmp):
     Perform a linear search over iterator until
     current_line >= key
 
-    optionally also tracking up to N previous lines, which are
+    optionally also tracking upto N previous lines, which are
     returned before the first matched line.
 
     if end of stream is reached before a match is found,
