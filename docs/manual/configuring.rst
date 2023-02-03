@@ -427,7 +427,7 @@ This system intercepts network traffic and emulates the correct JS environment e
 
 The auto-fetch system is also implemented as part of wombat.
 
-Wombat was integrated into pywb upto 2.2.x. Starting with 2.3, wombat has been spun off into its own
+Wombat was integrated into pywb up to 2.2.x. Starting with 2.3, wombat has been spun off into its own
 standalone JS module.
 
 For more information on wombat.js and client-side rewriting, see the `wombat README <https://github.com/webrecorder/wombat/blob/master/README.md>`_

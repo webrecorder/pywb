@@ -400,7 +400,7 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.status_int == 200
         assert resp.headers['Content-Location'].endswith('/pywb/20140126200928{0}/http://www.iana.org/domains/root/db'.format(fmod))
 
-    def test_not_existant_warc_other_capture(self, fmod):
+    def test_not_existent_warc_other_capture(self, fmod):
         resp = self.get('/pywb/20140703030321{0}/http://example.com/?example=2', fmod)
         assert resp.status_int == 200
         assert resp.headers['Content-Location'].endswith('/pywb/20140603030341{0}/http://example.com?example=2'.format(fmod))
@@ -410,7 +410,7 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.status_int == 200
         assert resp.headers['Content-Location'].endswith('/pywb/20140603030341{0}/http://example.com?example=2'.format(fmod))
 
-    def test_not_existant_warc_no_other(self, fmod):
+    def test_not_existent_warc_no_other(self, fmod):
         resp = self.get('/pywb/20140703030321{0}/http://example.com/?example=3', fmod, status=503)
         assert resp.status_int == 503
 

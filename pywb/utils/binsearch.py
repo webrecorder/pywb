@@ -72,7 +72,7 @@ def linearsearch(iter_, key, prev_size=0, compare_func=cmp):
     Perform a linear search over iterator until
     current_line >= key
 
-    optionally also tracking upto N previous lines, which are
+    optionally also tracking up to N previous lines, which are
     returned before the first matched line.
 
     if end of stream is reached before a match is found,
@@ -150,7 +150,7 @@ def iter_exact(reader, key, token=b' '):
     """
     Create an iterator which iterates over lines where the first field matches
     the 'key', equivalent to token + sep prefix.
-    Default field termin_ator/seperator is ' '
+    Default field termin_ator/separator is ' '
     """
 
     return iter_prefix(reader, key + token)

@@ -102,11 +102,11 @@ class ACLManager(CollectionsManager):
 
         except IOError as io:
             if must_exist:
-                print('Error Occured: ' + str(io))
+                print('Error Occurred: ' + str(io))
             return False
 
         except Exception as e:
-            print('Error Occured: ' + str(e))
+            print('Error Occurred: ' + str(e))
             return False
 
     def save_acl(self, r=None):
