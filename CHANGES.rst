@@ -11,6 +11,7 @@ pywb 2.7.3 changelist
 * Bump minimatch from 3.0.4 to 3.1.2 in /pywb/vueui by @dependabot in https://github.com/webrecorder/pywb/pull/777
 * Bump decode-uri-component from 0.2.0 to 0.2.2 in /pywb/vueui by @dependabot in https://github.com/webrecorder/pywb/pull/786
 * rules: add 'debugNoBatch' rewrite for fb and insta by @ikreymer in https://github.com/webrecorder/pywb/pull/806
+* Vue main order by @tw4l in https://github.com/webrecorder/pywb/pull/809
 * wombat: bump to 3.4.4 https://github.com/webrecorder/pywb/pull/808
 
 pywb 2.7.2 changelist
