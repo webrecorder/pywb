@@ -434,7 +434,11 @@ class FrontEndApp(object):
             cdx_url += 'limit=' + str(self.query_limit)
 
         try:
-            res = requests.get(cdx_url, stream=True)
+            headers = {}
+            for key in environ.keys():
+                if key.startswith("HTTP_X_"):
+                    headers[key[5:].replace("_", "-")] = environ[key]
+            res = requests.get(cdx_url, stream=True, headers=headers)
 
             status_line = '{} {}'.format(res.status_code, res.reason)
             content_type = res.headers.get('Content-Type')
