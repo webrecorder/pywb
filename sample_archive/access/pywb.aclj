@@ -5,6 +5,8 @@ org,iana)/_css/2013.1/fonts/opensans-semibold.ttf - {"access": "allow"}
 org,iana)/_css - {"access": "exclude"}
 org,iana)/### - {"access": "allow"}
 org,iana)/ - {"access": "exclude"}
+com,example)/?example=3 - {"access": "block", "user": "staff"}
+com,example)/?example=3 - {"access": "exclude", "user": "staff2"}
 org,example)/?example=1 - {"access": "block"}
 com,example)/?example=2 - {"access": "allow_ignore_embargo"}
 com,example)/?example=1 - {"access": "allow_ignore_embargo", "user": "staff2"}
