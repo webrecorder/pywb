@@ -32,7 +32,7 @@ export class PywbI18N {
   getMonth(id, type='long') {
     return decodeURIComponent(this.config[PywbI18N.monthIdPrefix[id]+'_'+type]);
   }
-  // can get long (default) or short day string or intial
+  // can get long (default) or short day string or initial
   // PywbI18N expects to receive day's initials like:
   // config.mon_short, config.tue_long, ...., config.<mmm>_short, config.<mmm>_long
   getWeekDay(id, type='long') {

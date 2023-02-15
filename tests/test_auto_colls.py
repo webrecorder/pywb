@@ -537,7 +537,7 @@ class TestManagedColls(CollsDirMixin, BaseConfigTest):
             main(['template', 'foo', '--remove', 'query_html'])
 
     def test_err_no_such_coll(self):
-        """ Test error adding warc to non-existant collection
+        """ Test error adding warc to non-existent collection
         """
         warc1 = self._get_sample_warc('example.warc.gz')
 

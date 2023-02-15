@@ -150,7 +150,7 @@ def iter_exact(reader, key, token=b' '):
     """
     Create an iterator which iterates over lines where the first field matches
     the 'key', equivalent to token + sep prefix.
-    Default field termin_ator/seperator is ' '
+    Default field termin_ator/separator is ' '
     """
 
     return iter_prefix(reader, key + token)

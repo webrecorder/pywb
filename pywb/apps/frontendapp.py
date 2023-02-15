@@ -599,7 +599,7 @@ class FrontEndApp(object):
         and message.
 
         :param dict environ: The WSGI environment dictionary for the request
-        :param str err_type: The identifier for type of error that occured
+        :param str err_type: The identifier for type of error that occurred
         :param str url: The url of the archived page that was requested
         """
         raise AppPageNotFound(err_type, url)

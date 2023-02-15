@@ -268,7 +268,7 @@ class HTMLRewriterMixin(StreamingRewriter):
         unesc_value = self.try_unescape(value)
         rewritten_value = self.url_rewriter.rewrite(unesc_value, mod, force_abs)
 
-        # if no rewriting has occured, ensure we return original, not reencoded value
+        # if no rewriting has occurred, ensure we return original, not reencoded value
         if rewritten_value == value:
             return orig_value
 
@@ -668,7 +668,7 @@ class HTMLRewriter(HTMLRewriterMixin, HTMLParser):
         if self.parse_comments:
             #data = self._rewrite_script(data)
 
-            # Rewrite with seperate HTMLRewriter
+            # Rewrite with separate HTMLRewriter
             comment_rewriter = HTMLRewriter(self.url_rewriter,
                                             defmod=self.defmod)
 
