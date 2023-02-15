@@ -46,8 +46,12 @@ class TestEmbargoApp(BaseConfigTest):
     def test_embargo_ignore_acl_with_header_only(self):
         # ignore embargo with custom header only
         headers = {"X-Pywb-ACL-User": "staff2"}
-        resp = self.testapp.get('/pywb-embargo-acl/20140126201054mp_/http://example.com/?example=1', status=200, headers=headers)
 
+        resp = self.testapp.get('/pywb-embargo-acl/cdx?url=http://example.com/?example=1', headers=headers)
+        assert len(resp.text.splitlines()) > 0
+        resp = self.testapp.get('/pywb-embargo-acl/20140126201054mp_/http://example.com/?example=1', status=200, headers=headers)
+        resp = self.testapp.get('/pywb-embargo-acl/cdx?url=http://example.com/?example=1')
+        assert len(resp.text.splitlines()) == 0
         resp = self.testapp.get('/pywb-embargo-acl/20140126201054mp_/http://example.com/?example=1', status=404)
 
 

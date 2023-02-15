@@ -41,11 +41,22 @@ class TestACLApp(BaseConfigTest):
         assert 'Access Blocked' in resp.text
 
     def test_allow_via_acl_header(self):
-        resp = self.query('http://www.iana.org/about/')
-
+        resp = self.testapp.get('/pywb/cdx?url=http://www.iana.org/about/', headers={"X-Pywb-Acl-User": "staff"})
         assert len(resp.text.splitlines()) == 1
 
         resp = self.testapp.get('/pywb/mp_/http://www.iana.org/about/', headers={"X-Pywb-Acl-User": "staff"}, status=200)
+
+    def test_block_via_acl_header(self):
+        resp = self.testapp.get('/pywb/cdx?url=http://example.com/?example=3', headers={"X-Pywb-Acl-User": "staff"})
+        assert len(resp.text.splitlines()) > 0
+
+        resp = self.testapp.get('/pywb/mp_/http://example.com/?example=3', headers={"X-Pywb-Acl-User": "staff"}, status=451)
+
+    def test_exclude_via_acl_header(self):
+        resp = self.testapp.get('/pywb/cdx?url=http://example.com/?example=3', headers={"X-Pywb-Acl-User": "staff2"})
+        assert len(resp.text.splitlines()) == 0
+
+        resp = self.testapp.get('/pywb/mp_/http://example.com/?example=3', headers={"X-Pywb-Acl-User": "staff2"}, status=404)
 
     def test_allowed_more_specific(self):
         resp = self.query('http://www.iana.org/_css/2013.1/fonts/opensans-semibold.ttf')
