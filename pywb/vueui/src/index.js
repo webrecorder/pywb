@@ -7,42 +7,44 @@ import Vue from "vue/dist/vue.esm.browser";
 
 
 // ===========================================================================
-export function main(staticPrefix, url, prefix, timestamp, logoUrl, navbarBackground, navbarColor, navbarLightButtons, locale, allLocales, i18nStrings, logoHomeUrl, disablePrinting) {
+export function main(config, locale, i18nStrings) {
   PywbI18N.init(locale, i18nStrings);
-  new CDXLoader(staticPrefix, url, prefix, timestamp, logoUrl, navbarBackground, navbarColor, navbarLightButtons, allLocales, logoHomeUrl, disablePrinting);
+  new CDXLoader(config);
 }
 
 // ===========================================================================
 class CDXLoader {
-  constructor(staticPrefix, url, prefix, timestamp, logoUrl, navbarBackground, navbarColor, navbarLightButtons, allLocales, logoHomeUrl, disablePrinting) {
+  constructor(config) {
     this.loadingSpinner = null;
     this.loaded = false;
     this.opts = {};
-    this.prefix = prefix;
-    this.staticPrefix = staticPrefix;
-    this.logoUrl = logoUrl;
-    this.logoHomeUrl = logoHomeUrl;
-    this.navbarBackground = navbarBackground;
-    this.navbarColor = navbarColor;
-    this.navbarLightButtons = navbarLightButtons;
-    this.disablePrinting = disablePrinting;
+    this.url = config.url;
+    this.prefix = config.prefix;
+    this.staticPrefix = config.staticPrefix;
+    this.logoUrl = config.logoUrl;
+    this.logoHomeUrl = config.logoHomeUrl;
+    this.navbarBackground = config.navbarBackground;
+    this.navbarColor = config.navbarColor;
+    this.navbarLightButtons = config.navbarLightButtons;
+    this.disablePrinting = config.disablePrinting;
 
-    this.timestamp = timestamp;
+    this.timestamp = config.timestamp;
 
-    this.isReplay = (timestamp !== undefined);
+    this.isReplay = (config.timestamp !== undefined);
 
     setTimeout(() => {
       if (!this.loaded) {
-        this.loadingSpinner = new LoadingSpinner({text: PywbI18N.instance?.getText('Loading...'), isSmall: !!timestamp}); // bootstrap loading-spinner EARLY ON
+        this.loadingSpinner = new LoadingSpinner({text: PywbI18N.instance?.getText('Loading...'), isSmall: !!this.timestamp}); // bootstrap loading-spinner EARLY ON
         this.loadingSpinner.setOn();
       }
     }, 500);
 
     if (this.isReplay) {
-      window.WBBanner = new VueBannerWrapper(this, url, timestamp);
+      window.WBBanner = new VueBannerWrapper(this, this.url, this.timestamp);
     }
 
     let queryURL;
+    let url;
 
     // query form *?=url...
     if (window.location.href.indexOf("*?") > 0) {
@@ -50,23 +52,24 @@ class CDXLoader {
       url = new URL(queryURL).searchParams.get("url");
 
     // otherwise, traditional calendar form /*/<url>
-    } else if (url) {
+    } else if (this.url) {
+      url = this.url
       const params = new URLSearchParams();
       params.set("url", url);
       params.set("output", "json");
-      queryURL = prefix + "cdx?" + params.toString();
+      queryURL = this.prefix + "cdx?" + params.toString();
 
     // otherwise, an error since no URL
     } else {
       throw new Error("No query URL specified");
     }
 
-    const logoImg = this.staticPrefix + "/" + (this.logoUrl ? this.logoUrl : "pywb-logo-sm.png");
+    config.logoImg = this.staticPrefix + "/" + (!!this.logoUrl ? this.logoUrl : "pywb-logo-sm.png");
 
-    this.app = this.initApp({logoImg, logoHomeUrl, navbarBackground, navbarColor, navbarLightButtons, url, allLocales, timestamp, disablePrinting});
+    this.app = this.initApp(config);
 
     this.loadCDX(queryURL).then((cdxList) => {
-      this.setAppData(cdxList, url, this.timestamp);
+      this.setAppData(cdxList, url, config.timestamp);
     });
   }
 
