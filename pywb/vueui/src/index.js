@@ -7,14 +7,14 @@ import Vue from "vue/dist/vue.esm.browser";
 
 
 // ===========================================================================
-export function main(staticPrefix, url, prefix, timestamp, logoUrl, navbarBackground, navbarColor, navbarLightButtons, locale, allLocales, i18nStrings, logoHomeUrl) {
+export function main(staticPrefix, url, prefix, timestamp, logoUrl, navbarBackground, navbarColor, navbarLightButtons, locale, allLocales, i18nStrings, logoHomeUrl, disablePrinting) {
   PywbI18N.init(locale, i18nStrings);
-  new CDXLoader(staticPrefix, url, prefix, timestamp, logoUrl, navbarBackground, navbarColor, navbarLightButtons, allLocales, logoHomeUrl);
+  new CDXLoader(staticPrefix, url, prefix, timestamp, logoUrl, navbarBackground, navbarColor, navbarLightButtons, allLocales, logoHomeUrl, disablePrinting);
 }
 
 // ===========================================================================
 class CDXLoader {
-  constructor(staticPrefix, url, prefix, timestamp, logoUrl, navbarBackground, navbarColor, navbarLightButtons, allLocales, logoHomeUrl) {
+  constructor(staticPrefix, url, prefix, timestamp, logoUrl, navbarBackground, navbarColor, navbarLightButtons, allLocales, logoHomeUrl, disablePrinting) {
     this.loadingSpinner = null;
     this.loaded = false;
     this.opts = {};
@@ -25,6 +25,8 @@ class CDXLoader {
     this.navbarBackground = navbarBackground;
     this.navbarColor = navbarColor;
     this.navbarLightButtons = navbarLightButtons;
+    this.disablePrinting = disablePrinting;
+
     this.timestamp = timestamp;
 
     this.isReplay = (timestamp !== undefined);
@@ -61,7 +63,7 @@ class CDXLoader {
 
     const logoImg = this.staticPrefix + "/" + (this.logoUrl ? this.logoUrl : "pywb-logo-sm.png");
 
-    this.app = this.initApp({logoImg, logoHomeUrl, navbarBackground, navbarColor, navbarLightButtons, url, allLocales, timestamp});
+    this.app = this.initApp({logoImg, logoHomeUrl, navbarBackground, navbarColor, navbarLightButtons, url, allLocales, timestamp, disablePrinting});
 
     this.loadCDX(queryURL).then((cdxList) => {
       this.setAppData(cdxList, url, this.timestamp);

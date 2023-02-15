@@ -68,6 +68,21 @@ For example, to have the logo redirect to ``https://example.com/web-archive-land
     logo_home_url: https://example.com/web-archive-landing-page
 
 
+Printing
+^^^^^^^^
+
+As of pywb 2.8, the replay header includes a print button that prints the contents of the replay iframe.
+
+This button can be disabled by setting ``ui.disable_printing`` in ``config.yaml`` to any value.
+
+For example:
+
+.. code:: yaml
+
+  ui:
+    disable_printing: true
+
+
 Banner Colors
 ^^^^^^^^^^^^^
 

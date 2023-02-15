@@ -10,6 +10,7 @@ debug: true
   # navbar_background_hex: 0c49b0
   # navbar_color_hex: fff
   # navbar_light_buttons: true
+  # disable_printing: true
 
 collections:
     all: $all
