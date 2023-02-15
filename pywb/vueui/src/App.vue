@@ -77,6 +77,17 @@
               <i class="far fa-chart-bar"></i>
             </button>
           </li>
+          <li class="nav-item">
+            <button
+              class="btn btn-sm"
+              :class="{'btn-outline-light': lightButtons, 'btn-outline-dark': !lightButtons}"
+              :aria-pressed="printReplayFrame"
+              @click="printReplayFrame"
+              v-if="hasReplayFrame()"
+              :title="_('Print')">
+              <i class="fas fa-print"></i>
+            </button>
+          </li>
           <li class="nav-item dropdown" v-if="localesAreSet">
             <button
               class="btn btn-sm dropdown-toggle"
@@ -305,6 +316,14 @@ export default {
     toggleTimelineView() {
       this.showTimelineView = !this.showTimelineView;
       window.localStorage.setItem("showTimelineView", this.showTimelineView ? "1" : "0");
+    },
+    hasReplayFrame() {
+      return !! window.frames.replay_iframe;
+    },
+    printReplayFrame() {
+      window.frames.replay_iframe.contentWindow.focus();
+      window.frames.replay_iframe.contentWindow.print();
+      return false;
     },
     setData(/** @type {PywbData} data */ data) {
 
