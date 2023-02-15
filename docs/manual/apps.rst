@@ -45,7 +45,7 @@ The tool can be used while ``wayback`` is running, and pywb will detect many cha
 It can be used to:
 
 * Create a new collection --  ``wb-manager init <coll>``
-* Add WARCs to collection -- ``wb-manager add <coll> <warc>``
+* Add WARCs or WACZs to collection -- ``wb-manager add <coll> <warc/wacz>``
 * Add override templates
 * Add and remove metadata to a collections ``metadata.yaml``
 * List all collections
