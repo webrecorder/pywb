@@ -95,8 +95,8 @@ add the WARC to a new collection and start pywb:
 
       docker pull webrecorder/pywb
       docker run -e INIT_COLLECTION=my-web-archive -v /pywb-data:/webarchive \
-         -v /path/to:/source webrecorder/pywb wb-manager add default /path/to/my_warc.warc.gz
-      docker run -p 8080:8080 -v /pywb-data/:/webarchive wayback
+         -v /path/to:/source webrecorder/pywb wb-manager add my-web-archive /source/my_warc.warc.gz
+      docker run -p 8080:8080 -v /pywb-data/:/webarchive webrecorder/pywb wayback
 
 This example is equivalent to the non-Docker example above.
 
