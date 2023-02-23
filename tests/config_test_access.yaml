@@ -6,7 +6,8 @@ collections:
         archive_paths: ./sample_archive/warcs/
         acl_paths: ./sample_archive/access/pywb.aclj
 
-        default_access: block
+        default_access:
+            default: block
 
     pywb-acl-list:
         index_paths: ./sample_archive/cdx/
@@ -62,6 +63,12 @@ collections:
         acl_paths:
             - ./sample_archive/access/pywb.aclj
 
+    pywb-acl-user-default:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        acl_paths: ./sample_archive/access/user-default.aclj
 
+        default_access:
+            staff2: block
 
 

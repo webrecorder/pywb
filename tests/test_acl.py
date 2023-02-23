@@ -96,5 +96,13 @@ class TestACLApp(BaseConfigTest):
 
         assert '"http://httpbin.org/anything/resource.json"' in resp.text
 
+    def test_user_default(self):
+        headers = {"X-Pywb-ACL-User": "staff"}
+        self.testapp.get('/pywb-acl-user-default/mp_/http://www.iana.org/', headers=headers, status=200)
+        self.testapp.get('/pywb-acl-user-default/mp_/http://www.example.com/', headers=headers, status=451)
+
+        headers = {"X-Pywb-ACL-User": "staff2"}
+        self.testapp.get('/pywb-acl-user-default/mp_/http://www.iana.org/', headers=headers, status=451)
+        self.testapp.get('/pywb-acl-user-default/mp_/http://www.example.com/', headers=headers, status=200)
 
 

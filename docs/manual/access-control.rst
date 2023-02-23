@@ -151,6 +151,26 @@ For example, this header may be set based on IP range, or based on password auth
 
 Further examples of how to set this header will be provided in the deployments section.
 
+One may also specify default access for different users by adding sub keys to the ``default_access`` setting::
+
+  collections:
+       test:
+           ...
+           default_access:
+               default: block
+               admin: allow
+
+Note that the ``default`` entry will be applied both if the user name is empty and if it actually is ``default``.
+If the ``default`` entry is missing, it will be assumed to be ``allow``::
+
+  collections:
+       test:
+           ...
+           default_access:
+               guest: block
+
+This works whether the ``default_access`` is specified at the top level or for a specific collection.
+
 **Note: Do not use the user-based rules without configuring proper authentication on an Apache or Nginx frontend to set or remove this header, otherwise the 'X-Pywb-ACL-User' can easily be faked.**
 
 See the :ref:`config-acl-header` section in Usage for examples on how to configure this header.
