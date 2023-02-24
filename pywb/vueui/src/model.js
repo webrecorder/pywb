@@ -141,7 +141,7 @@ export class PywbSnapshot {
 export function PywbPeriod(init) {
   this.type = init.type;
   this.id = init.id;
-  this.fullId = Math.floor(1000*1000+Math.random()*9*1000*1000).toString(16); // full-id property that include string id of parents and self with a delimitor
+  this.fullId = Math.floor(1000*1000+Math.random()*9*1000*1000).toString(16); // full-id property that include string id of parents and self with a delimiter
 
   this.childrenIds = {}; // allow for query by ID
   this.children = []; // allow for sequentiality / order
@@ -456,7 +456,7 @@ PywbPeriod.prototype.findByFullId = function(fullId) {
   return found;
 };
 PywbPeriod.prototype.getFullReadableId = function() {
-  // remove "all-time" from parents (getParents(true) when printing readable id (of all parents and currrent
+  // remove "all-time" from parents (getParents(true) when printing readable id (of all parents and current
   switch (this.type) {
     case PywbPeriod.Type.all:
       return "";
@@ -492,7 +492,7 @@ PywbPeriod.prototype.getReadableId = function(opts={hourRange:null}) {
     // if (cardinalSuffix) {
     //   const singleDigit = this.id % 10;
     //   const isTens = Math.floor(this.id / 10) === 1;
-    //   const suffixes = {1:"st", 2:"nd",3:"rd"};
+    //   const suffixes = {1:"st", 2:"and",3:"rd"};
     //   suffix = (isTens || !suffixes[singleDigit]) ? "th" : suffixes[singleDigit];
     // }
     return this.id + suffix;

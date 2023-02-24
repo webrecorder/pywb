@@ -25,12 +25,12 @@ class TestRecordDedup(HttpBinLiveTests, CollsDirMixin, BaseConfigTest, FakeRedis
         assert os.path.isdir(os.path.join(self.root_dir, '_test_colls', 'test-dedup', 'archive'))
 
     def test_record_1(self):
-        res = self.testapp.get('/test-dedup/record/mp_/http://httpbin.org/get?A=B', headers={"Referer": "http://httpbin.org/"})
+        res = self.testapp.get('/test-dedup/record/mp_/http://httpbin.org/get?A=B', headers={"Referrer": "http://httpbin.org/"})
         assert '"A": "B"' in res.text
 
         time.sleep(1.2)
 
-        res = self.testapp.get('/test-dedup/record/mp_/http://httpbin.org/get?A=B', headers={"Referer": "http://httpbin.org/"})
+        res = self.testapp.get('/test-dedup/record/mp_/http://httpbin.org/get?A=B', headers={"Referrer": "http://httpbin.org/"})
         assert '"A": "B"' in res.text
 
     def test_single_redis_entry(self):

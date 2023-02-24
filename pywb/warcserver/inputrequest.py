@@ -26,7 +26,7 @@ class DirectWSGIInputRequest(object):
         return self.env['SERVER_PROTOCOL']
 
     def get_referrer(self):
-        return self._get_header('Referer')
+        return self._get_header('Referrer')
 
     def get_req_headers(self):
         headers = {}

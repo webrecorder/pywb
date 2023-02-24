@@ -113,7 +113,7 @@ class TestManagedColls(CollsDirMixin, BaseConfigTest):
 
         main(['add', 'test', warc1, warc2])
 
-        # Spurrious file in collections
+        # Spurious file in collections
         with open(os.path.join(self.root_dir, COLLECTIONS, 'blah'), 'w+b') as fh:
             fh.write(b'foo\n')
 
@@ -303,7 +303,7 @@ class TestManagedColls(CollsDirMixin, BaseConfigTest):
         main(['metadata', 'test', '--set', 'some=value'])
 
         with open(custom_search, 'w+b') as fh:
-            fh.write(b'overriden search page: ')
+            fh.write(b'overridden search page: ')
             fh.write(b'{{ metadata | tojson }}\n')
 
         # force clear of jinja env cache to reload
@@ -313,7 +313,7 @@ class TestManagedColls(CollsDirMixin, BaseConfigTest):
         resp.charset = 'utf-8'
         assert resp.status_int == 200
         assert resp.content_type == 'text/html'
-        assert 'overriden search page: ' in resp.text
+        assert 'overridden search page: ' in resp.text
         #assert '"some":"value"' in resp.text, resp.text
         assert '{&#34;some&#34;:&#34;value&#34;}' in resp.text, resp.text
 

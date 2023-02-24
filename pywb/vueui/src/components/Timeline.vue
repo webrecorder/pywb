@@ -103,7 +103,7 @@ export default{
     this.updateScrollArrows();
   },
   computed: {
-    // this determins which the last zoom level is before we go straight to showing snapshot
+    // this determines which the last zoom level is before we go straight to showing snapshot
     canZoom() {
       return this.period.type < this.maxZoomLevel;
     },
@@ -172,7 +172,7 @@ export default{
             periodToChangeTo = period.snapshotPeriod;
           }
         } else {
-        // if contains mulitple snapshots,
+        // if contains multiple snapshots,
           // zoom if ZOOM level is day or less, OR if period contain TOO MANY (>10)
           if (this.canZoom) {
             periodToChangeTo = period;

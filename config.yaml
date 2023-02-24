@@ -20,7 +20,7 @@ collections:
 # Settings for each collection
 use_js_obj_proxy: true
 
-# Eanable Memento support
+# Enable Memento support
 enable_memento: true
 
 # Replay content in an iframe

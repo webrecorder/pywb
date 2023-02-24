@@ -482,7 +482,7 @@ pywb 2.2.x changelist
     - Fixed regression in FrontendApp when handling TimeMap requests (#423)
 
 * Recording:
-    - Remove Transer-Encoding from internal response (#437)
+    - Remove Transfer-Encoding from internal response (#437)
     - If brotli decoding package can't be loaded, remove ``br`` from ``Accept-Encoding`` header (#444)
 
 * Replay / Fidelity Improvements:
@@ -585,7 +585,7 @@ pywb 2.0.4 changelist
 
 * Server-Side Rewriting:
    - Flash: Improved Rewriting for AMF, supporting py2 and py3 (#321)
-   - Improved ``Origin`` header detection: Detect from ``Referer`` header if available (#329)
+   - Improved ``Origin`` header detection: Detect from ``Referrer`` header if available (#329)
    - Expand JSONP matching if url contains 'callback=jsonp' (#336)
    - Ensure entity-escaped urls are rewritten, with escaping preserved (#337)
 
@@ -609,10 +609,10 @@ pywb 2.0.4 changelist
 pywb 2.0.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* Miscelaneous fixes:
+* Miscellaneous fixes:
    - Fixes for Memento Aggregation when no timeout specified (#310)
    - Fix HEAD request for replay (#309)
-   - Redis Index: always decode to native string format (decode_respones=True)
+   - Redis Index: always decode to native string format (decode_response=True)
    - Test fixes: Support latest fakeredis, more consistent tests (#313)
    - Support forcing scheme via ``force_scheme: https`` config option (#314)
    - Fix typo in rewrite_amf.py (#308)
@@ -689,12 +689,12 @@ pywb 0.33.0 changelist
    - proxy: disable most client side rewriting when in proxy mode, keep non-rewriting overrides (random, Date)
    - host relative extract: ``extract_orig()`` returns host-relative if url starts with ``/``
    - add geolocation and notifications overrides to (auto-disable)
-   - proxy: use current protocl for video info query.
+   - proxy: use current protocol for video info query.
    - fix history check bug: support changing history to exact current origin.
    - add ``window.fetch()`` override
    - add ``srcset`` attribute rewriting
    - ajax: don't add ``X-Pywb-Requested-With`` header to ``data:`` urls
-   - general JS fixes, add undefined checks before acccessing ``_wb_js``, top frame, and content frame.
+   - general JS fixes, add undefined checks before accessing ``_wb_js``, top frame, and content frame.
   
 * Server-Side Rewriting Improvements:
    - www canonicalization: improve regex to include urls containing ``\r``
@@ -868,7 +868,7 @@ pywb 0.11.2 changelist
 pywb 0.11.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
-* WombatLocation: overriden properties (href, host, etc...) are enumerable to match Location to support cloning methods.
+* WombatLocation: overridden properties (href, host, etc...) are enumerable to match Location to support cloning methods.
 
 * WombatLocation: reload() override now works.
    
@@ -885,9 +885,9 @@ pywb 0.11.0 changelist
 * New client-side test system for Wombat.js in place using Karma and SauceLabs with initial set of tests and travis integration.
 
 * Wombat Improvements:
-   - Better Safari/IE support: accessors overriden only when actually supported in browser, override gracefully skipped otherwise
+   - Better Safari/IE support: accessors overridden only when actually supported in browser, override gracefully skipped otherwise
    - Use ``getOwnPropertyDescriptor()`` to get properties in addition to ``__lookupGetter__``, ``__lookupSetter__``
-   - ``baseURI`` overriden on correct prototype
+   - ``baseURI`` overridden on correct prototype
    - ``CSSStyleSheet.href`` override
    - ``HTMLAnchorElement.toString()`` override
    - Avoid making ``<base>.href`` read-only
@@ -901,7 +901,7 @@ pywb 0.11.0 changelist
   
 * Encoding: Use webencoding lib to better encode head-insert to match page encoding
 
-* Live Proxy: Support for explicit recording mode, decoupled from using http/https proxy. Enabled when ``LiveRewriter.is_recording()`` is true. By default, http/s proxies imply recording but can be overriden in derived class.
+* Live Proxy: Support for explicit recording mode, decoupled from using http/https proxy. Enabled when ``LiveRewriter.is_recording()`` is true. By default, http/s proxies imply recording but can be overridden in derived class.
 
 * Rewriting: Convert relative urls for ``rel=canonical`` to absolute urls, even if not rewriting to ensure correct url.
 
@@ -932,7 +932,7 @@ pywb 0.10.10 changelist
 
 * WARC indexing: ignore empty records when indexing and continue, rather than stopping at first empty record.
 
-* tests: refactor integration tests to run signficantly faster.
+* tests: refactor integration tests to run significantly faster.
 
 * cdx-indexer
 
@@ -1034,7 +1034,7 @@ pywb 0.10.5 changelist
     
     - Improved ``postMessage`` emulation: Ensure the original ``origin`` of the caller is saved, by wrapping ``X.postMessage`` in a special ``X.__WB_pmw(window).postMessage()`` call which will save origin of current window in X. Store origin and destination hosts.
     
-    - Improved ``message`` listener emulation: Add filtering to skip messages that were not inteded for destination host.
+    - Improved ``message`` listener emulation: Add filtering to skip messages that were not intended for destination host.
     
     - Restored wombat if wiped by ``document.write`` / ``document.open`` (happens on FF).
     
@@ -1069,7 +1069,7 @@ pywb 0.10.2 changelist
 
     - Cookies: more comprehensive client-side cookie overriding, including Path, Domain, and expires removal.
 
-    - ``WB_wombat_location`` overriden on Object prototype, defaults to ``location`` if ``_WB_wombat_location``, the actual,     property is not set.
+    - ``WB_wombat_location`` overridden on Object prototype, defaults to ``location`` if ``_WB_wombat_location``, the actual,     property is not set.
 
     - ``WB_wombat_location.href`` proxies to actual location, responsive to ``pushState`` / ``replaceState`` location changes.
     - ``.href`` and ``.src`` attributes correctly return original url in JavaScript.
@@ -1104,9 +1104,9 @@ pywb 0.10.1 changelist
 pywb 0.10.0 changelist
 ~~~~~~~~~~~~~~~~~~~~~~
 
-* Per-collection cacheing settings: ``rewrite_opts.http_cache`` can be set to:
+* Per-collection caching settings: ``rewrite_opts.http_cache`` can be set to:
 
-    - ``pass`` - keep cacheing headers as-is (applies to ``Cache-Control``, ``Expires``, ``Etag`` and ``Last-Modified``)
+    - ``pass`` - keep caching headers as-is (applies to ``Cache-Control``, ``Expires``, ``Etag`` and ``Last-Modified``)
     - ``0`` - add ``Cache-Control: no-cache; no-store``
     - ``N`` - add ``Cache-Control: max-age=N`` and corresponding ``Expires`` header
     - None (default) -- Rewrite cache headers, effectively removing them (current behavior)
@@ -1203,7 +1203,7 @@ pywb 0.9.5 changelist
   
   
 * Revamp template setup: All templates now use shared env, which is created on first use or can be explicitly set (if embedding)
-  via ``J2TemplateView.init_shared_env()`` call. Support for specifiying a base env, as well as custom template lookup paths also provided
+  via ``J2TemplateView.init_shared_env()`` call. Support for specifying a base env, as well as custom template lookup paths also provided
   
 * Template lookup paths can also be set via config options ``templates_dirs``. The default list is: ``templates``, ``.``, ``/`` in that order.
 
@@ -1352,7 +1352,7 @@ pywb 0.8.2 changelist
 pywb 0.8.1 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* wb.js top frame notification: use ``window.__orig_parent`` when referencing actual parent as ``window.parent`` now overriden.
+* wb.js top frame notification: use ``window.__orig_parent`` when referencing actual parent as ``window.parent`` now overridden.
 
 * live proxy security: enable ssl verification for live proxy by default, for use with python 2.7.9 ssl improvements. Was disabled
   due to incomplete ssl support in previous versions of python. Can be disabled via ``verify_ssl: False`` per collection.
@@ -1469,7 +1469,7 @@ pywb 0.7.1 changelist
 
   See: `Video Replay and Recording <https://github.com/ikreymer/pywb/wiki/Video-Replay-and-Recording>`_ for more detailed info.
 
-* Support for replaying HTTP/1.1 range requests for any archived resorce (optional range cache be disabled via `enable_ranges: false`)
+* Support for replaying HTTP/1.1 range requests for any archived resource (optional range cache be disabled via `enable_ranges: false`)
 
 * Support for on-the-fly video replacement of Flash with HTML5 using new video rewrite system ``vidrw.js``.
 
@@ -1540,7 +1540,7 @@ pywb 0.6.4 changelist
 pywb 0.6.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 
-* Minor fixes for extensability and support https://webrecorder.io, easier to override any request (handle_request), handle_replay or handle_query via WBHandler
+* Minor fixes for extensibility and support https://webrecorder.io, easier to override any request (handle_request), handle_replay or handle_query via WBHandler
 
 
 pywb 0.6.2 changelist
@@ -1590,7 +1590,7 @@ pywb 0.5.3 changelist
 ~~~~~~~~~~~~~~~~~~~~~
 * better framed replay for non-html content -- include live rewrite timestamp via temp 'pywb.timestamp' cookie, updating banner of iframe load. All timestamp formatting moved to client-side for better customization.
 
-* refactoring of replay/live handlers for better extensability.
+* refactoring of replay/live handlers for better extensibility.
 
 * banner-only rewrite mode (via 'bn_' modifier) to support only banner insertion with no rewriting, server-side or client-side.
 

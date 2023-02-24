@@ -209,8 +209,8 @@ r"""
 >>> _test_js_obj_proxy(r'this. _location = http://example.com/')
 'this. _location = http://example.com/'
 
->>> _test_js_obj_proxy(r'this. alocation = http://example.com/')
-'this. alocation = http://example.com/'
+>>> _test_js_obj_proxy(r'this. allocation = http://example.com/')
+'this. allocation = http://example.com/'
 
 >>> _test_js_obj_proxy(r'this. location = http://example.com/')
 'this. location = ((self.__WB_check_loc && self.__WB_check_loc(location, arguments)) || {}).href = http://example.com/'

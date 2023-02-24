@@ -10,7 +10,7 @@ except ImportError:  # pragma: no cover
 
 # =================================================================
 class WbResponse(object):
-    """Represnts a pywb wsgi response object.
+    """Represents a pywb wsgi response object.
 
     Holds a status_headers object and a response iter, to be
     returned to wsgi container."""
@@ -205,7 +205,7 @@ class WbResponse(object):
             acr_headers = env.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS')
             if acr_headers is not None:
                 self.status_headers.replace_header('Access-Control-Allow-Headers', acr_headers)
-            allowed_origin = env.get('HTTP_ORIGIN', env.get('HTTP_REFERER', allowed_origin))
+            allowed_origin = env.get('HTTP_ORIGIN', env.get('HTTP_REFERRER', allowed_origin))
         if allowed_origin is None:
             allowed_origin = '*'
         self.status_headers.replace_header('Access-Control-Allow-Origin',  allowed_origin)

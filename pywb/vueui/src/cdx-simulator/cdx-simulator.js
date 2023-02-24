@@ -30,7 +30,7 @@ class CDXRecordFactory {
       for(let m=1; m<=12; m++) {
         for(let d=1; d<=getMonthDays(y, m-1); d++) {
           const dayTimestampPrefix = y + ('0'+m).substr(-2) + ('0'+d).substr(-2);
-          // minumum to maximum count (random value)
+          // minimum to maximum count (random value)
           const timesCount = Math.floor(Math.random() * maxPerDay);
 
           const times = {}; // make sure we save to hash to de-dupe

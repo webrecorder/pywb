@@ -1,6 +1,6 @@
 #=================================================================
 """
-# Merge Sort Multipe CDX Sources
+# Merge Sort Multiple CDX Sources
 >>> cdx_ops_test(url = 'http://iana.org/', sources = {'dupes': test_cdx_dir + 'dupes.cdx', 'iana': test_cdx_dir + 'iana.cdx'})
 org,iana)/ 20140126200624 http://www.iana.org/ text/html 200 OSSAPWJ23L56IYVRW3GFEAR4MCJMGPTB - - 2258 334 iana.warc.gz
 org,iana)/ 20140127171238 http://iana.org unk 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ - - 343 1858 dupes.warc.gz
@@ -255,7 +255,7 @@ def test_cdxj_resolve_revisit():
 
 def test_cdxj_resolve_revisit_2():
     # Resolve Revisit -- cdxj minimal -- output also json
-    results = cdx_ops_test_data(url = 'http://example.com/?example=1', sources={'nd-file': get_test_dir() + 'cdxj/example-no-digest.cdxj'}, resolveRevisits=True)
+    results = cdx_ops_test_data(url = 'http://example.com/?example=1', sources={'and-file': get_test_dir() + 'cdxj/example-no-digest.cdxj'}, resolveRevisits=True)
     assert(len(results) == 2)
     assert(dict(results[0]) == {"urlkey": "com,example)/?example=1", "timestamp": "20140103030321", "url": "http://example.com?example=1", "length": "1043", "filename": "example.warc.gz", "offset": "333", "orig.length": "-", "orig.offset": "-", "orig.filename": "-"})
 

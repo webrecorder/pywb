@@ -589,7 +589,7 @@ class RewriterApp(object):
         if is_proxy and environ.get('HTTP_ORIGIN'):
             response.add_access_control_headers(environ)
 
-        if r.status_code == 200 and kwargs.get('cache') == 'always' and environ.get('HTTP_REFERER'):
+        if r.status_code == 200 and kwargs.get('cache') == 'always' and environ.get('HTTP_REFERRER'):
             response.status_headers['Cache-Control'] = 'public, max-age=31536000, immutable'
 
         return response
@@ -849,14 +849,14 @@ class RewriterApp(object):
         return self.get_host_prefix(environ) + self.get_rel_prefix(environ)
 
     def unrewrite_referrer(self, environ, full_prefix):
-        referrer = environ.get('HTTP_REFERER')
+        referrer = environ.get('HTTP_REFERRER')
         if not referrer:
             return False
 
         if referrer.startswith(full_prefix):
             referrer = referrer[len(full_prefix):]
             if referrer:
-                environ['HTTP_REFERER'] = WbUrl(referrer).url
+                environ['HTTP_REFERRER'] = WbUrl(referrer).url
                 return True
 
         return False

@@ -93,7 +93,7 @@ With this configuration, pywb will automatically use the ``es`` locale for all t
 pywb will also set the ``<html lang="es">`` so that the browser will recognize the correct locale.
 
 
-Mutli-language Translations
+Multi-language Translations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If more than one locale is specified, pywb will automatically show a language switching UI at the top of collection and search pages, with an option

@@ -87,13 +87,13 @@ def test_wbresponse_text_stream():
 def test_wbresponse_options_response():
     res = WbResponse.options_response(dict(HTTP_ORIGIN='http://example.com'))
     assert ('Access-Control-Allow-Origin', 'http://example.com') in res.status_headers.headers
-    res = WbResponse.options_response(dict(HTTP_REFERER='http://example.com'))
+    res = WbResponse.options_response(dict(HTTP_REFERRER='http://example.com'))
     assert ('Access-Control-Allow-Origin', 'http://example.com') in res.status_headers.headers
     res = WbResponse.options_response(dict())
     assert ('Access-Control-Allow-Origin', '*') in res.status_headers.headers
     res = WbResponse.options_response(dict(HTTP_ORIGIN=None))
     assert ('Access-Control-Allow-Origin', '*') in res.status_headers.headers
-    res = WbResponse.options_response(dict(HTTP_REFERER=None))
+    res = WbResponse.options_response(dict(HTTP_REFERRER=None))
     assert ('Access-Control-Allow-Origin', '*') in res.status_headers.headers
 
 

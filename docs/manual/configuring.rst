@@ -334,7 +334,7 @@ Another option, pywb can add an aggressive Cache-Control header to force the bro
 This feature is still experimental, but can be enabled via ``cache: always`` setting.
 
 
-For example, the following will enable ``revisit`` records to be written using the given Redis URL, and also enable aggressive cacheing when recording::
+For example, the following will enable ``revisit`` records to be written using the given Redis URL, and also enable aggressive caching when recording::
 
   recorder:
      ...
@@ -471,7 +471,7 @@ The ISO date format, eg. ``2018-12-26T01:02:03`` is also accepted.
 
 If the timestamp is omitted, proxy mode replay defaults to the latest capture.
 
-The timestamp can also be dynamically overriden per-request using the :ref:`memento-proxy`.
+The timestamp can also be dynamically overridden per-request using the :ref:`memento-proxy`.
 
 
 Proxy Mode Rewriting

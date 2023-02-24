@@ -332,7 +332,7 @@ class LiveWebLoader(BaseLoader):
 
             referrer = cdx.get('set_referrer')
             if referrer:
-                req_headers['Referer'] = referrer
+                req_headers['Referrer'] = referrer
 
         upstream_res = self._do_request_with_redir_check(method, load_url,
                                                          data, req_headers,

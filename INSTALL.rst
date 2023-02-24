@@ -176,7 +176,7 @@ The ``cdx-indexer`` also creates files in the `SURT <http://crawler.archive.org/
 However, if you need to use existing/legacy .cdx files (and you are unable to convert them as explained above), 
 you may need to set a special config option.
 
-If you are using .cdx files where the key is *not* in SURT format (that is, the CDX line may start with ``example.com`` instaed of ``com,example)/``),
+If you are using .cdx files where the key is *not* in SURT format (that is, the CDX line may start with ``example.com`` instead of ``com,example)/``),
 simply add the following to the main ``config.yaml``
 ::
 

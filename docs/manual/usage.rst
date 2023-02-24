@@ -100,7 +100,7 @@ add the WARC to a new collection and start pywb:
 
 This example is equivalent to the non-Docker example above.
 
-Setting ``INIT_COLLECTION=my-web-archive`` results in automatic collection initializiation via ``wb-manager init my-web-archive``.
+Setting ``INIT_COLLECTION=my-web-archive`` results in automatic collection initialization via ``wb-manager init my-web-archive``.
 
 The ``wayback`` command is launched on port 8080 and mapped to the same on the local host.
 
@@ -315,7 +315,7 @@ Configuring Access Control Header
 
 The :ref:`access-control` system allows users to be granted different access settings based on the value of an ACL header, ``X-pywb-ACL-user``.
 
-The header can be set via Nginx or Apache to grant custom access priviliges based on IP address, password, or other combination of rules.
+The header can be set via Nginx or Apache to grant custom access privileges based on IP address, password, or other combination of rules.
 
 For example, to set the value of the header to ``staff`` if the IP of the request is from designated local IP ranges (127.0.0.1, 192.168.1.0/24), the following settings can be added to the configs:
 

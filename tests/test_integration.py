@@ -379,7 +379,7 @@ class TestWbIntegration(BaseConfigTest):
         # webtest uses Host: localhost:80 by default
         target = 'http://localhost:80/pywb/2014{0}/http://iana.org/_css/2013.1/screen.css'.format(fmod)
 
-        resp = self.get('/_css/2013.1/screen.css', fmod, headers=[('Referer', 'http://localhost:80/pywb/2014{0}/http://iana.org/'.format(fmod))])
+        resp = self.get('/_css/2013.1/screen.css', fmod, headers=[('Referrer', 'http://localhost:80/pywb/2014{0}/http://iana.org/'.format(fmod))])
         assert resp.status_int == 307
         assert resp.headers['Location'] == target, resp.headers['Location']
 
@@ -461,18 +461,18 @@ class TestWbIntegration(BaseConfigTest):
         resp = self.post('/pywb/20140610001255{0}/http://httpbin.org/post?foo=bar', fmod, {'data': '^^'}, status=404)
         assert resp.status_int == 404
 
-    def test_post_referer_redirect(self, fmod):
+    def test_post_referrer_redirect(self, fmod):
         # allowing 307 redirects
         resp = self.post('/post', fmod,
                          {'foo': 'bar', 'test': 'abc'},
-                         headers=[('Referer', 'http://localhost:80/pywb/2014{0}/http://httpbin.org/foo'.format(fmod))])
+                         headers=[('Referrer', 'http://localhost:80/pywb/2014{0}/http://httpbin.org/foo'.format(fmod))])
 
         assert resp.status_int == 307
         assert resp.headers['Location'].endswith('/pywb/2014{0}/http://httpbin.org/post'.format(fmod))
 
-    def test_get_referer_redirect(self, fmod):
+    def test_get_referrer_redirect(self, fmod):
         resp = self.get('/get', fmod,
-                         headers=[('Referer', 'http://localhost:80/pywb/2014{0}/http://httpbin.org/foo'.format(fmod))])
+                         headers=[('Referrer', 'http://localhost:80/pywb/2014{0}/http://httpbin.org/foo'.format(fmod))])
 
         assert resp.status_int == 307
         assert resp.headers['Location'].endswith('/pywb/2014{0}/http://httpbin.org/get'.format(fmod))

@@ -599,7 +599,7 @@ class FrontEndApp(object):
                 coll in self.warcserver.list_dynamic_routes())
 
     def raise_not_found(self, environ, err_type, url):
-        """Utility function for raising a werkzeug.exceptions.NotFound execption with the supplied WSGI environment
+        """Utility function for raising a werkzeug.exceptions.NotFound exception with the supplied WSGI environment
         and message.
 
         :param dict environ: The WSGI environment dictionary for the request
@@ -609,29 +609,29 @@ class FrontEndApp(object):
         raise AppPageNotFound(err_type, url)
 
     def _check_refer_redirect(self, environ):
-        """Returns a WbResponse for a HTTP 307 redirection if the HTTP referer header is the same as the HTTP host header
+        """Returns a WbResponse for a HTTP 307 redirection if the HTTP referrer header is the same as the HTTP host header
 
         :param dict environ: The WSGI environment dictionary for the request
         :return: WbResponse HTTP 307 redirection
         :rtype: WbResponse
         """
-        referer = environ.get('HTTP_REFERER')
-        if not referer:
+        referrer = environ.get('HTTP_REFERRER')
+        if not referrer:
             return
 
         host = environ.get('HTTP_HOST')
-        if host not in referer:
+        if host not in referrer:
             return
 
-        inx = referer[1:].find('http')
+        inx = referrer[1:].find('http')
         if not inx:
-            inx = referer[1:].find('///')
+            inx = referrer[1:].find('///')
 
         if inx < 0:
             return
 
-        url = referer[inx + 1:]
-        host = referer[:inx + 1]
+        url = referrer[inx + 1:]
+        host = referrer[:inx + 1]
 
         orig_url = environ['PATH_INFO']
         if environ.get('QUERY_STRING'):

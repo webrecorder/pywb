@@ -51,7 +51,7 @@ File: ``base.html``
 This template includes the HTML added to all pages other than framed replay. Shared JS and CSS includes meant for pages other than framed replay can be added here.
 
 To customize the default pywb UI across multiple pages, the following additional templates
-can also be overriden:
+can also be overridden:
 
 * ``head.html`` -- Template containing content to be added to the ``<head>`` of the ``base`` template
 

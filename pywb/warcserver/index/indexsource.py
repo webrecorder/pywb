@@ -706,7 +706,7 @@ class WBMementoIndexSource(MementoIndexSource):
         headers = super(WBMementoIndexSource, self)._get_headers(params)
         ref_url = self._get_referrer(params)
         if ref_url:
-            headers['Referer'] = ref_url
+            headers['Referrer'] = ref_url
         return headers
 
     def _extract_location(self, url, location):
@@ -752,8 +752,8 @@ class WBMementoIndexSource(MementoIndexSource):
         cdx['url'] = url
         cdx['load_url'] = load_url
 
-        if 'Referer' in headers:
-            cdx['set_referrer'] = headers['Referer']
+        if 'Referrer' in headers:
+            cdx['set_referrer'] = headers['Referrer']
 
         return iter([cdx])
 

@@ -61,7 +61,7 @@ com,example)/ 20140216050221 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ
 >>> print_cdx_index('example-wget-1-14.warc.gz')
  CDX N b a m s k r M S V g
 com,example)/ 20140216012908 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1151 792 example-wget-1-14.warc.gz
-org,gnu)/software/wget/warc/manifest.txt 20140216012908 metadata://gnu.org/software/wget/warc/MANIFEST.txt text/plain - SWUF4CK2XMZSOKSA7SDT7M7NUGWH2TRE - - 315 1943 example-wget-1-14.warc.gz
+org,gnu)/software/wget/warc/manifest.txt 20140216012908 metadata://gnu.org/software/wget/warc/MANIFEST.txt text/plain - SWUF4CK2XMZSOKSA7SDT7M7NUGWH2TREE - - 315 1943 example-wget-1-14.warc.gz
 org,gnu)/software/wget/warc/wget_arguments.txt 20140216012908 metadata://gnu.org/software/wget/warc/wget_arguments.txt text/plain - UCXDCGORD6K4RJT5NUQGKE2PKEG4ZZD6 - - 340 2258 example-wget-1-14.warc.gz
 org,gnu)/software/wget/warc/wget.log 20140216012908 metadata://gnu.org/software/wget/warc/wget.log text/plain - 2ULE2LD5UOWDXGACCT624TU5BVKACRQ4 - - 599 2598 example-wget-1-14.warc.gz
 
@@ -71,7 +71,7 @@ org,gnu)/software/wget/warc/wget.log 20140216012908 metadata://gnu.org/software/
  CDX N b a m s k r M S V g
 com,example)/ 20140216012908 http://example.com/ - - - - - 394 398 example-wget-1-14.warc.gz
 com,example)/ 20140216012908 http://example.com/ text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1151 792 example-wget-1-14.warc.gz
-org,gnu)/software/wget/warc/manifest.txt 20140216012908 metadata://gnu.org/software/wget/warc/MANIFEST.txt text/plain - SWUF4CK2XMZSOKSA7SDT7M7NUGWH2TRE - - 315 1943 example-wget-1-14.warc.gz
+org,gnu)/software/wget/warc/manifest.txt 20140216012908 metadata://gnu.org/software/wget/warc/MANIFEST.txt text/plain - SWUF4CK2XMZSOKSA7SDT7M7NUGWH2TREE - - 315 1943 example-wget-1-14.warc.gz
 org,gnu)/software/wget/warc/wget_arguments.txt 20140216012908 metadata://gnu.org/software/wget/warc/wget_arguments.txt text/plain - UCXDCGORD6K4RJT5NUQGKE2PKEG4ZZD6 - - 340 2258 example-wget-1-14.warc.gz
 org,gnu)/software/wget/warc/wget.log 20140216012908 metadata://gnu.org/software/wget/warc/wget.log text/plain - 2ULE2LD5UOWDXGACCT624TU5BVKACRQ4 - - 599 2598 example-wget-1-14.warc.gz
 
