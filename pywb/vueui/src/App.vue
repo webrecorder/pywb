@@ -83,7 +83,7 @@
               :class="{'btn-outline-light': lightButtons, 'btn-outline-dark': !lightButtons}"
               :aria-pressed="printReplayFrame"
               @click="printReplayFrame"
-              v-if="hasReplayFrame()"
+              v-if="printingEnabled && hasReplayFrame()"
               :title="_('Print')">
               <i class="fas fa-print"></i>
             </button>
@@ -226,6 +226,9 @@ export default {
     },
     lightButtons() {
       return !!this.config.navbarLightButtons;
+    },
+    printingEnabled() {
+      return !this.config.disablePrinting;
     },
     previousSnapshot() {
       if (!this.currentSnapshotIndex) {
