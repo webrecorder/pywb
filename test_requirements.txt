@@ -3,7 +3,7 @@ WebTest
 pytest-cov
 mock
 urllib3
-httpbin
 flask
 ujson
 lxml
+httpbin @ git+https://github.com/aaronhmiller/httpbin.git
