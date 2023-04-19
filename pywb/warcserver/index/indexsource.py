@@ -37,10 +37,10 @@ class BaseIndexSource(object):
     def load_index(self, params):  #pragma: no cover
         raise NotImplemented()
 
-    def _get_Referer(self, params):
+    def _get_referer(self, params):
         input_req = params.get('_input_req')
         if input_req:
-            return input_req.get_Referer()
+            return input_req.get_referer()
         else:
             return None
 
@@ -692,8 +692,8 @@ class WBMementoIndexSource(MementoIndexSource):
         super(WBMementoIndexSource, self).__init__(timegate_url, timemap_url, replay_url)
         self.prefix = replay_url.split('{', 1)[0]
 
-    def _get_Referer(self, params):
-        ref_url = super(WBMementoIndexSource, self)._get_Referer(params)
+    def _get_referer(self, params):
+        ref_url = super(WBMementoIndexSource, self)._get_referer(params)
         if ref_url:
             timestamp = params.get('closest', '20')
             timestamp = pad_timestamp(timestamp, PAD_14_DOWN)
@@ -704,9 +704,9 @@ class WBMementoIndexSource(MementoIndexSource):
 
     def _get_headers(self, params):
         headers = super(WBMementoIndexSource, self)._get_headers(params)
-        ref_url = self._get_Referer(params)
+        ref_url = self._get_referer(params)
         if ref_url:
-            headers['Referer'] = ref_url
+            headers['referer'] = ref_url
         return headers
 
     def _extract_location(self, url, location):
@@ -752,8 +752,8 @@ class WBMementoIndexSource(MementoIndexSource):
         cdx['url'] = url
         cdx['load_url'] = load_url
 
-        if 'Referer' in headers:
-            cdx['set_Referer'] = headers['Referer']
+        if 'referer' in headers:
+            cdx['set_referer'] = headers['referer']
 
         return iter([cdx])
 

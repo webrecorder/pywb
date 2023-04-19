@@ -78,9 +78,9 @@ class ArchiveIndexEntryMixin(object):
             self['method'] = post_query.method
             self['requestBody'] = post_query.query
 
-        Referer = other.record.http_headers.get_header('Referer')
-        if Referer:
-            self['_Referer'] = Referer
+        referer = other.record.http_headers.get_header('referer')
+        if referer:
+            self['_referer'] = referer
 
         return True
 

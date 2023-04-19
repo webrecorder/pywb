@@ -609,29 +609,29 @@ class FrontEndApp(object):
         raise AppPageNotFound(err_type, url)
 
     def _check_refer_redirect(self, environ):
-        """Returns a WbResponse for a HTTP 307 redirection if the HTTP Referer header is the same as the HTTP host header
+        """Returns a WbResponse for a HTTP 307 redirection if the HTTP referer header is the same as the HTTP host header
 
         :param dict environ: The WSGI environment dictionary for the request
         :return: WbResponse HTTP 307 redirection
         :rtype: WbResponse
         """
-        Referer = environ.get('HTTP_Referer')
-        if not Referer:
+        referer = environ.get('HTTP_referer')
+        if not referer:
             return
 
         host = environ.get('HTTP_HOST')
-        if host not in Referer:
+        if host not in referer:
             return
 
-        inx = Referer[1:].find('http')
+        inx = referer[1:].find('http')
         if not inx:
-            inx = Referer[1:].find('///')
+            inx = referer[1:].find('///')
 
         if inx < 0:
             return
 
-        url = Referer[inx + 1:]
-        host = Referer[:inx + 1]
+        url = referer[inx + 1:]
+        host = referer[:inx + 1]
 
         orig_url = environ['PATH_INFO']
         if environ.get('QUERY_STRING'):
@@ -676,7 +676,7 @@ class FrontEndApp(object):
 
         except RequestRedirect as rr:
             # if werkzeug throws this, likely a missing slash redirect
-            # also check Referer here to avoid another redirect later
+            # also check referer here to avoid another redirect later
             redir = self._check_refer_redirect(environ)
             if redir:
                 return redir(environ, start_response)

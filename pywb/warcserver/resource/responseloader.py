@@ -330,9 +330,9 @@ class LiveWebLoader(BaseLoader):
             #req_headers.pop('Host', '')
             req_headers['Host'] = urlsplit(p.url).netloc
 
-            Referer = cdx.get('set_Referer')
-            if Referer:
-                req_headers['Referer'] = Referer
+            referer = cdx.get('set_referer')
+            if referer:
+                req_headers['referer'] = referer
 
         upstream_res = self._do_request_with_redir_check(method, load_url,
                                                          data, req_headers,

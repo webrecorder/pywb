@@ -132,8 +132,8 @@ r"""
 >>> parse('<meta property="og:image" content="example.jpg">')
 <meta property="og:image" content="example.jpg">
 
->>> parse('<meta name="Referer" content="origin">')
-<meta name="Referer" content="no-Referer-when-downgrade">
+>>> parse('<meta name="referer" content="origin">')
+<meta name="referer" content="no-referer-when-downgrade">
 
 >>> parse('<meta http-equiv="Content-Security-Policy" content="default-src http://example.com" />')
 <meta http-equiv="Content-Security-Policy" _content="default-src http://example.com"/>
