@@ -107,8 +107,8 @@ class TestProxyLiveRewriter:
         self.app = app
         self.testapp = testapp
 
-    def test_echo_proxy_referrer(self):
-        headers = [('User-Agent', 'python'), ('Referrer', 'http://localhost:80/rewrite/other.example.com')]
+    def test_echo_proxy_Referer(self):
+        headers = [('User-Agent', 'python'), ('Referer', 'http://localhost:80/rewrite/other.example.com')]
         resp = self.testapp.get('/rewrite/http://example.com/', headers=headers)
 
         # ensure just one request
@@ -119,7 +119,7 @@ class TestProxyLiveRewriter:
         assert resp.headers['x-archive-orig-x-proxy'] == 'test'
 
         assert resp.text.startswith('GET http://example.com/ HTTP/1.1')
-        assert 'referrer: http://other.example.com' in resp.text.lower()
+        assert 'Referer: http://other.example.com' in resp.text.lower()
 
         assert len(self.cache) == 0
 
@@ -204,8 +204,8 @@ class TestProxyLiveRewriter:
         assert len(self.cache) == 1
         assert RewriteHandler.create_cache_key('v:', 'https://www.youtube.com/watch?v=DjFZyFWSt1M') in self.cache
 
-    def test_echo_proxy_video_with_referrer(self):
-        headers = [('Range', 'bytes=1000-2000'), ('Referrer', 'http://localhost:80/rewrite/https://example.com/')]
+    def test_echo_proxy_video_with_Referer(self):
+        headers = [('Range', 'bytes=1000-2000'), ('Referer', 'http://localhost:80/rewrite/https://example.com/')]
         resp = self.testapp.get('/rewrite/http://www.youtube.com/watch?v=DjFZyFWSt1M', headers=headers)
 
         # not from proxy
@@ -228,7 +228,7 @@ class TestProxyLiveRewriter:
 
 
     def test_echo_proxy_error(self):
-        headers = [('Range', 'bytes=1000-2000'), ('Referrer', 'http://localhost:80/rewrite/https://example.com/')]
+        headers = [('Range', 'bytes=1000-2000'), ('Referer', 'http://localhost:80/rewrite/https://example.com/')]
 
         proxyserv.force_err = True
         resp = self.testapp.get('/rewrite/http://www.youtube.com/watch?v=DjFZyFWSt1M', headers=headers)

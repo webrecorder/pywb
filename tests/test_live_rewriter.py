@@ -64,7 +64,7 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
         super(TestLiveRewriter, cls).teardown_class()
 
     def test_live_live_1(self, fmod_sl):
-        headers = [('User-Agent', 'python'), ('Referrer', 'http://localhost:80/live/other.example.com')]
+        headers = [('User-Agent', 'python'), ('Referer', 'http://localhost:80/live/other.example.com')]
         resp = self.get('/live/{0}http://example.com/', fmod_sl, headers=headers)
         assert resp.status_int == 200
 
@@ -180,17 +180,17 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
         resp = self.get('/live/{0}http://httpbin.org/deflate', fmod_sl)
         assert b'"deflated": true' in resp.body
 
-    def test_live_origin_and_referrer(self, fmod_sl):
-        headers = {'Referrer': 'http://localhost:80/live/{0}http://example.com/test'.format(fmod_sl),
+    def test_live_origin_and_Referer(self, fmod_sl):
+        headers = {'Referer': 'http://localhost:80/live/{0}http://example.com/test'.format(fmod_sl),
                    'Origin': 'http://localhost:80'
                   }
 
         resp = self.get('/live/{0}http://httpbin.org/get?test=headers', fmod_sl, headers=headers)
 
-        assert resp.json['headers']['Referrer'] == 'http://example.com/test'
+        assert resp.json['headers']['Referer'] == 'http://example.com/test'
         assert resp.json['headers']['Origin'] == 'http://example.com'
 
-    def test_live_origin_no_referrer(self, fmod_sl):
+    def test_live_origin_no_Referer(self, fmod_sl):
         headers = {'Origin': 'http://localhost:80'}
 
         resp = self.get('/live/{0}http://httpbin.org/get?test=headers', fmod_sl, headers=headers)

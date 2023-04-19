@@ -408,7 +408,7 @@ class RewriterApp(object):
         if not url_parts.path:
             return self.send_redirect('/', url_parts, urlrewriter)
 
-        self.unrewrite_referrer(environ, full_prefix)
+        self.unrewrite_Referer(environ, full_prefix)
 
         urlkey = canonicalize(wb_url.url)
 
@@ -589,7 +589,7 @@ class RewriterApp(object):
         if is_proxy and environ.get('HTTP_ORIGIN'):
             response.add_access_control_headers(environ)
 
-        if r.status_code == 200 and kwargs.get('cache') == 'always' and environ.get('HTTP_REFERRER'):
+        if r.status_code == 200 and kwargs.get('cache') == 'always' and environ.get('HTTP_Referer'):
             response.status_headers['Cache-Control'] = 'public, max-age=31536000, immutable'
 
         return response
@@ -848,15 +848,15 @@ class RewriterApp(object):
     def get_full_prefix(self, environ):
         return self.get_host_prefix(environ) + self.get_rel_prefix(environ)
 
-    def unrewrite_referrer(self, environ, full_prefix):
-        referrer = environ.get('HTTP_REFERRER')
-        if not referrer:
+    def unrewrite_Referer(self, environ, full_prefix):
+        Referer = environ.get('HTTP_Referer')
+        if not Referer:
             return False
 
-        if referrer.startswith(full_prefix):
-            referrer = referrer[len(full_prefix):]
-            if referrer:
-                environ['HTTP_REFERRER'] = WbUrl(referrer).url
+        if Referer.startswith(full_prefix):
+            Referer = Referer[len(full_prefix):]
+            if Referer:
+                environ['HTTP_Referer'] = WbUrl(Referer).url
                 return True
 
         return False

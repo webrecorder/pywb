@@ -585,7 +585,7 @@ pywb 2.0.4 changelist
 
 * Server-Side Rewriting:
    - Flash: Improved Rewriting for AMF, supporting py2 and py3 (#321)
-   - Improved ``Origin`` header detection: Detect from ``Referrer`` header if available (#329)
+   - Improved ``Origin`` header detection: Detect from ``Referer`` header if available (#329)
    - Expand JSONP matching if url contains 'callback=jsonp' (#336)
    - Ensure entity-escaped urls are rewritten, with escaping preserved (#337)
 
@@ -1571,7 +1571,7 @@ pywb 0.6.0 changelist
 * Revamped HTTP/S system: proxy collection and capture time switching via cookie!
 
 * removed *hostnames* setting in config.yaml. pywb no longer needs to know the host(s) it is running on,
-  can infer the correct path from referrer on a fallback handling.
+  can infer the correct path from Referer on a fallback handling.
 
 * remove PAC config, just using direct proxy (HTTP and HTTPS) for simplicity.
 

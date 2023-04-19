@@ -58,9 +58,9 @@ class RewriteInputRequest(DirectWSGIInputRequest):
 
             elif name == 'HTTP_ORIGIN':
                 name = 'Origin'
-                referrer = self.env.get('HTTP_REFERRER')
-                if referrer:
-                    splits = urlsplit(referrer)
+                Referer = self.env.get('HTTP_Referer')
+                if Referer:
+                    splits = urlsplit(Referer)
                 else:
                     splits = self.splits
 

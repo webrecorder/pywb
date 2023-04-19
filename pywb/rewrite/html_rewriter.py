@@ -404,8 +404,8 @@ class HTMLRewriterMixin(StreamingRewriter):
                     attr_value = self._rewrite_meta_refresh(attr_value)
                 elif self.has_attr(tag_attrs, ('http-equiv', 'content-security-policy')):
                     attr_name = '_' + attr_name
-                elif self.has_attr(tag_attrs, ('name', 'referrer')):
-                    attr_value = 'no-referrer-when-downgrade'
+                elif self.has_attr(tag_attrs, ('name', 'Referer')):
+                    attr_value = 'no-Referer-when-downgrade'
                 elif attr_value.startswith(self.DATA_RW_PROTOCOLS):
                     rw_mod = handler.get(attr_name)
                     attr_value = self._rewrite_url(attr_value, rw_mod)
