@@ -549,17 +549,18 @@ using the special download paths. Recommended set up for using the proxy is as f
 
 2. Configure the browser proxy settings host port, for example ``localhost`` and ``8080`` (if running locally)
 
-3. Download the CA:
+3. Locate the CA:
 
-   * For most browsers, use the PEM format: ``http://wsgiprox/download/pem``
+   * The auto-generated pywb CA, created at ``./proxy-certs/pywb-ca.pem``.
+   
+   * Alternatively, download and save the wsgiprox certificate, which is compatiable. For most browsers, use the PEM format: ``http://wsgiprox/download/pem``, For windows, use the PKCS12 format: ``http://wsgiprox/download/p12``
 
-   * For windows, use the PKCS12 format: ``http://wsgiprox/download/p12``
+4. If you're not installing the CA system-wide, import the CA file in your browser's settings. On Chromium the menu is in ``chrome://settings/certificates``. On Firefox, ``Security > Certificates`` You may need to agree to "Trust this CA".
 
-4. You may need to agree to "Trust this CA" to identify websites.
+For more information on custom certificate authority (CA) installation, the `mitmproxy certificate page <https://docs.mitmproxy.org/stable/concepts-certificates/#installing-the-mitmproxy-ca-certificate-manually>`_ provides a good overview for installing a custom CA on different platforms.
 
-The auto-generated pywb CA, created at ``./proxy-certs/pywb-ca.pem`` may also be added to a keystore directly.
-
-The location of the CA file and the CA name displayed can be changed by setting the  ``ca_file_cache`` and ``ca_name`` proxy options, respectively.
+HTTPS Proxy and pywb Certificate Authority Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following are all the available proxy options -- only ``coll`` is required::
 
@@ -571,6 +572,8 @@ The following are all the available proxy options -- only ``coll`` is required::
     enable_banner: true
     enable_content_rewrite: true
     default_timestamp: ''
+    
+The location of the CA file and the CA name displayed can be changed by setting the  ``ca_file_cache`` and ``ca_name`` proxy options, respectively.
 
 The HTTP/S functionality is provided by the separate :mod:`wsgiprox` utility which provides HTTP/S proxy routing
 to any WSGI application.
@@ -580,8 +583,6 @@ Using `wsgiprox <https://github.com/webrecorder/wsgiprox>`_, pywb sets ``FrontEn
 Extensions to pywb can override ``proxy_route_request()`` to provide custom handling, such as setting the collection dynamically or based on external data sources.
 
 See the `wsgiprox README <https://github.com/webrecorder/wsgiprox/blob/master/README.rst>`_ for additional details on setting a proxy resolver.
-
-For more information on custom certificate authority (CA) installation, the `mitmproxy certificate page <http://docs.mitmproxy.org/en/stable/certinstall.html>`_ provides a good overview for installing a custom CA on different platforms.
 
 
 Compatibility: Redirects, Memento, Flash video overrides
