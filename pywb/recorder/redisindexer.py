@@ -108,7 +108,7 @@ class WritableRedisIndexer(RedisIndexSource):
 class RedisPendingCounterTempBuffer(tempfile.SpooledTemporaryFile):
     def __init__(self, max_size, redis_url, params, name, timeout=30):
         redis_url = res_template(redis_url, params)
-        super(RedisPendingCounterTempBuffer, self).__init__(max_size=max_size)
+        super(RedisPendingCounterTempBuffer, self).__init__(max_size=max_size, dir="./")
         self.redis, self.key = RedisIndexSource.parse_redis_url(redis_url)
         self.map_key = self.key + ':h'
         self.timeout = timeout
@@ -118,8 +118,6 @@ class RedisPendingCounterTempBuffer(tempfile.SpooledTemporaryFile):
 
         self.url = params.get('url')
         self.redis.hincrby(self.map_key, self.url, 1)
-
-        print(params)
 
     def write(self, buf):
         super(RedisPendingCounterTempBuffer, self).write(buf)
@@ -133,5 +131,6 @@ class RedisPendingCounterTempBuffer(tempfile.SpooledTemporaryFile):
 
         self.redis.incrby(self.key, -1)
         self.redis.expire(self.key, self.timeout)
-        self.redis.hincrby(self.map_key, self.url, -1)
+        if not self.redis.hincrby(self.map_key, self.url, -1):
+            self.redis.hdel(self.map_key, self.url)
 
