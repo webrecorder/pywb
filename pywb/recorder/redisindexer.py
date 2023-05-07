@@ -117,7 +117,7 @@ class RedisPendingCounterTempBuffer(tempfile.SpooledTemporaryFile):
         self.redis.expire(self.key, self.timeout)
 
         self.url = params.get('url')
-        self.redis.hincrby(self.map_key, url, 1)
+        self.redis.hincrby(self.map_key, self.url, 1)
 
         print(params)
 
@@ -133,5 +133,5 @@ class RedisPendingCounterTempBuffer(tempfile.SpooledTemporaryFile):
 
         self.redis.incrby(self.key, -1)
         self.redis.expire(self.key, self.timeout)
-        self.redis.hincrby(self.map_key, url, -1)
+        self.redis.hincrby(self.map_key, self.url, -1)
 
