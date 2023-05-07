@@ -29,7 +29,7 @@ class TestReplayRange(BaseConfigTest):
         assert resp.headers['Content-Range'] == 'bytes 0-200/1270', resp.headers['Content-Range']
         assert resp.content_length == 201, resp.content_length
 
-        assert self.recorder_skip == None
+        assert self.recorder_skip == '1'
 
         assert 'wombat.js' not in resp.text
 
