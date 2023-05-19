@@ -248,8 +248,8 @@ class RewriterApp(object):
         range_start = start
         range_end = end
 
-        # if start with 0, load from upstream, but add range after
-        if start == 0:
+        # if start with 0 and no end, load from upstream
+        if start == 0 and not end:
             del inputreq.env['HTTP_RANGE']
         else:
             skip_record = True
