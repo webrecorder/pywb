@@ -36,7 +36,7 @@ def header_test_server(environ, start_response):
 
 # ============================================================================
 def cookie_test_server(environ, start_response):
-    body = 'cookie value: ' + environ.get('HTTP_COOKIE', '')
+    body = 'cookie value:' + environ.get('HTTP_COOKIE', '')
     body = body.encode('utf-8')
     headers = [('Content-Length', str(len(body))),
                ('Content-Type', 'text/plain')]
@@ -76,14 +76,14 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
         resp = self.post('/live/{0}httpbin.org/post', fmod_sl, {'foo': 'bar', 'test': 'abc'})
         assert resp.status_int == 200
         resp.charset = 'utf-8'
-        assert '"foo": "bar"' in resp.text
-        assert '"test": "abc"' in resp.text
+        assert '"foo":"bar"' in resp.text
+        assert '"test":"abc"' in resp.text
         assert resp.status_int == 200
 
     def test_live_anchor_encode(self, fmod_sl):
         resp = self.get('/live/{0}httpbin.org/get?val=abc%23%23xyz', fmod_sl)
         assert 'get?val=abc%23%23xyz"' in resp.text
-        assert '"val": "abc##xyz"' in resp.text
+        assert '"val":"abc##xyz"' in resp.text
         #assert '"http://httpbin.org/anything/abc##xyz"' in resp.text
         assert resp.status_int == 200
 
@@ -125,18 +125,18 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
                         headers={'Host': 'example.com'})
 
         assert resp.headers['Set-Cookie'] == 'testcookie=cookie-val; Path=/live/{0}http://localhost:{1}/'.format(fmod_sl, self.cookie_test_serv.port)
-        assert resp.text == 'cookie value: '
+        assert resp.text == 'cookie value:'
 
         resp = self.get('/live/{0}http://localhost:%s/' % self.cookie_test_serv.port, fmod_sl,
                         headers={'Host': 'example.com'})
 
-        assert resp.text == 'cookie value: testcookie=cookie-val'
+        assert resp.text == 'cookie value:testcookie=cookie-val'
 
         resp = self.get('/live/{0}http://localhost:%s/' % self.cookie_test_serv.port, fmod_sl,
                         headers={'Host': 'sub.example.com'})
 
         assert 'Set-Cookie' not in resp.headers
-        assert resp.text == 'cookie value: testcookie=cookie-val'
+        assert resp.text == 'cookie value:testcookie=cookie-val'
 
     def test_fetch_page_with_html_title(self, fmod_sl):
         resp = self.get('/live/{0}http://localhost:%s/html-title' % self.header_test_serv.port, fmod_sl,
@@ -178,7 +178,7 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
 
     def test_deflate(self, fmod_sl):
         resp = self.get('/live/{0}http://httpbin.org/deflate', fmod_sl)
-        assert b'"deflated": true' in resp.body
+        assert b'"deflated":true' in resp.body
 
     def test_live_origin_and_referrer(self, fmod_sl):
         headers = {'Referer': 'http://localhost:80/live/{0}http://example.com/test'.format(fmod_sl),

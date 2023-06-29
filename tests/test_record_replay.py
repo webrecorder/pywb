@@ -35,7 +35,7 @@ class TestRecordReplay(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
 
     def test_record_1(self):
         res = self.testapp.get('/test/record/mp_/http://httpbin.org/get?A=B')
-        assert '"A": "B"' in res.text
+        assert '"A":"B"' in res.text
 
     def test_record_head(self):
         res = self.testapp.head('/test/record/mp_/http://httpbin.org/get?A=B')
@@ -47,7 +47,7 @@ class TestRecordReplay(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
 
         fmod_slash = fmod + '/' if fmod else ''
         res = self.get('/test/{0}http://httpbin.org/get?A=B', fmod_slash)
-        assert '"A": "B"' in res.text
+        assert '"A":"B"' in res.text
 
     def test_replay_head(self, fmod):
         fmod_slash = fmod + '/' if fmod else ''
@@ -58,25 +58,25 @@ class TestRecordReplay(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
 
     def test_record_2(self):
         res = self.testapp.get('/test2/record/mp_/http://httpbin.org/get?C=D')
-        assert '"C": "D"' in res.text
+        assert '"C":"D"' in res.text
 
     def test_replay_2(self, fmod):
         self.ensure_empty()
 
         fmod_slash = fmod + '/' if fmod else ''
         res = self.get('/test2/{0}http://httpbin.org/get?C=D', fmod_slash)
-        assert '"C": "D"' in res.text
+        assert '"C":"D"' in res.text
 
     def test_record_again_1(self):
         res = self.testapp.get('/test/record/mp_/http://httpbin.org/get?C=D2')
-        assert '"C": "D2"' in res.text
+        assert '"C":"D2"' in res.text
 
     def test_replay_again_1(self, fmod):
         self.ensure_empty()
 
         fmod_slash = fmod + '/' if fmod else ''
         res = self.get('/test/{0}http://httpbin.org/get?C=D2', fmod_slash)
-        assert '"C": "D2"' in res.text
+        assert '"C":"D2"' in res.text
 
         assert len(os.listdir(os.path.join(self.root_dir, '_test_colls', 'test', 'archive'))) == 1
 
@@ -94,10 +94,10 @@ class TestRecordReplay(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
         fmod_slash = fmod + '/' if fmod else ''
 
         res = self.get('/all/{0}http://httpbin.org/get?C=D', fmod_slash)
-        assert '"C": "D"' in res.text
+        assert '"C":"D"' in res.text
 
         res = self.get('/all/mp_/http://httpbin.org/get?A=B', fmod_slash)
-        assert '"A": "B"' in res.text
+        assert '"A":"B"' in res.text
 
     def test_cdx_all_coll(self):
         res = self.testapp.get('/all/cdx?url=http://httpbin.org/get*&output=json')
@@ -163,7 +163,7 @@ class TestRecordCustomConfig(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
         assert os.path.isdir(dir_name)
 
         res = self.testapp.get('/test-new/record/mp_/http://httpbin.org/get?A=B')
-        assert '"A": "B"' in res.text
+        assert '"A":"B"' in res.text
 
         names = os.listdir(dir_name)
         assert len(names) == 1
@@ -176,7 +176,7 @@ class TestRecordCustomConfig(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
     def test_no_brotli(self):
         res = self.testapp.get('/test-new/record/mp_/http://httpbin.org/get?C=D',
                                headers={'Accept-Encoding': 'gzip, deflate, br'})
-        assert '"C": "D"' in res.text
+        assert '"C":"D"' in res.text
 
         with open(self.warc_name, 'rb') as fh:
             for record in ArchiveIterator(fh):
