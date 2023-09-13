@@ -60,9 +60,7 @@ Installation for Deployment
 
 To install pywb for usage, you can use:
 
-```shell
-pip install pywb
-```
+``pip install pywb``
 
 Note: depending on your Python installation, you may have to use `pip3` instead of `pip`.
 
@@ -70,9 +68,7 @@ Note: depending on your Python installation, you may have to use `pip3` instead 
 Installation from local copy
 ----------------------------
 
-```shell
-git clone https://github.com/webrecorder/pywb
-```
+``git clone https://github.com/webrecorder/pywb``
 
 To install from a locally cloned copy, install with ``pip install -e .`` or ``python setup.py install``.
 
