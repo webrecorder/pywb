@@ -6,4 +6,4 @@ urllib3
 flask
 ujson
 lxml
-httpbin @ git+https://github.com/aaronhmiller/httpbin.git
+httpbin

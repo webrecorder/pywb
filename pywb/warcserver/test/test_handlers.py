@@ -162,7 +162,7 @@ class TestBaseWarcServer(HttpBinLiveTests, MementoOverrideTests, FakeRedisTests,
         assert resp.headers['Memento-Datetime'] != ''
 
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        assert b'"foo":"bar"' in resp.body
 
         assert 'ResErrors' not in resp.headers
 
@@ -178,7 +178,7 @@ class TestBaseWarcServer(HttpBinLiveTests, MementoOverrideTests, FakeRedisTests,
         assert resp.headers['Memento-Datetime'] != ''
 
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        assert b'"foo":"bar"' in resp.body
 
         assert 'ResErrors' not in resp.headers
 
@@ -288,7 +288,7 @@ Host: httpbin.org
         assert resp.headers['Memento-Datetime'] != ''
 
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        assert b'"foo":"bar"' in resp.body
 
         #assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('https://webenact.rhizome.org/vvork/http://httpbin.org/get?foo=bar',)"}
         assert "NotFoundException('https://webenact.rhizome.org/vvork/" in json.loads(resp.headers['ResErrors'])['rhiz']
