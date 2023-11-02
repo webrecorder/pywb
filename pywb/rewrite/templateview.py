@@ -178,7 +178,7 @@ class JinjaEnv(object):
 
             request_uri = environ.get('REQUEST_URI', environ.get('PATH_INFO'))
 
-            if curr_loc:
+            if curr_loc and request_uri.startswith('/' + curr_loc + '/'):
                 return request_uri.replace(curr_loc, locale, 1)
 
             app_prefix = environ.get('pywb.app_prefix', '')
