@@ -667,10 +667,14 @@ class FrontEndApp(object):
             # store original script_name (original prefix) before modifications are made
             environ['ORIG_SCRIPT_NAME'] = environ.get('SCRIPT_NAME')
 
-            lang = args.pop('lang', self.default_locale)
+            lang = args.pop('lang', '')
             if lang:
                 pop_path_info(environ)
+
+            if lang:
                 environ['pywb_lang'] = lang
+            elif self.default_locale:
+                environ['pywb_lang'] = self.default_locale
 
             response = endpoint(environ, **args)
 
