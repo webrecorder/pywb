@@ -1,0 +1,2 @@
+com,example)/ - {"access": "block", "user": "staff"}
+com,example)/ - {"access": "allow", "user": "staff2"}

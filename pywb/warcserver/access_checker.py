@@ -107,6 +107,10 @@ class AccessChecker(object):
         self.default_rule['access'] = default_access
         self.default_rule['default'] = 'true'
 
+        if isinstance(self.default_rule['access'], dict):
+            if 'default' not in self.default_rule['access']:
+                self.default_rule['access']['default'] = 'allow'
+
         self.embargo = self.parse_embargo(embargo)
 
     def parse_embargo(self, embargo):
@@ -273,7 +277,17 @@ class AccessChecker(object):
             if acl_key < tld:
                 break
 
-        return last_obj if last_obj else self.default_rule
+
+        if last_obj:
+            return last_obj
+
+        if isinstance(self.default_rule['access'], dict):
+            default_rule = dict(self.default_rule)
+            user = acl_user if acl_user in default_rule['access'] else 'default'
+            default_rule['access'] = default_rule['access'][user]
+            return default_rule
+
+        return self.default_rule
 
     def __call__(self, res, acl_user):
         """Wraps the cdx iter in the supplied tuple returning a
@@ -333,6 +347,9 @@ class AccessChecker(object):
 
             if not access:
                 access = self.default_rule['access']
+
+            if isinstance(access, dict):
+                access = self.default_rule['access']['default']
 
             if access == 'allow_ignore_embargo':
                 access = 'allow'
