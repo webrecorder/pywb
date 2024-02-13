@@ -96,5 +96,9 @@ class TestACLApp(BaseConfigTest):
 
         assert '"http://httpbin.org/anything/resource.json"' in resp.text
 
+    def test_allow_all_acl_user_specific(self):
+        resp = self.testapp.get('/pywb-wildcard-surt/mp_/http://example.com/', status=451)
 
+        assert 'Access Blocked' in resp.text
 
+        resp = self.testapp.get('/pywb-wildcard-surt/mp_/http://example.com/', headers={"X-Pywb-Acl-User": "staff"}, status=200)
