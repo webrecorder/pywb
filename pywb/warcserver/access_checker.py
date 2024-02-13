@@ -260,6 +260,10 @@ class AccessChecker(object):
             if key.startswith(acl_key):
                 acl_obj = CDXObject(acl)
 
+            # Check for "*," in ACL, which matches any URL
+            if acl_key == b"*,":
+                acl_obj = CDXObject(acl)
+
             if acl_obj:
                 user = acl_obj.get('user')
                 if user == acl_user:
