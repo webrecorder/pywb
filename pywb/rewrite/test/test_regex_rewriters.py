@@ -143,7 +143,7 @@ r"""
 'var foo = _____WB$wombat$check$this$function_____(this).location'
 
 >>> _test_js_obj_proxy('A = B\nthis.location = "foo"')
-'A = B\n;_____WB$wombat$check$this$function_____(this).location = "foo"'
+'A = B\n_____WB$wombat$check$this$function_____(this).location = "foo"'
 
 >>> _test_js_obj_proxy('var foo = this.location2')
 'var foo = this.location2'
