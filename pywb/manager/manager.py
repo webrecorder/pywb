@@ -12,7 +12,7 @@ from distutils.util import strtobool
 from pkg_resources import resource_string, get_distribution
 
 from argparse import ArgumentParser, RawTextHelpFormatter
-from tempfile import mkdtemp
+from tempfile import mkdtemp, TemporaryDirectory
 from zipfile import ZipFile
 
 from pywb.utils.loaders import load_yaml_config
@@ -213,35 +213,35 @@ directory structure expected by pywb
         # delete temporary files
         shutil.rmtree(temp_dir)
 
-    @staticmethod
-    def _add_wacz_index(collection_index_path, wacz_index_path, filename_mapping):
+    def _add_wacz_index(self, collection_index_path, wacz_index_path, filename_mapping):
         from pywb.warcserver.index.cdxobject import CDXObject
 
-        # copy collection index to temporary directory
-        tempdir = mkdtemp()
-        collection_index_name = os.path.basename(collection_index_path)
-        collection_index_temp_path = os.path.join(tempdir, collection_index_name)
+        # rewrite wacz index to temporary index file
+        tempdir = TemporaryDirectory()
+        wacz_index_name = os.path.basename(wacz_index_path)
+        rewritten_index_path = os.path.join(tempdir.name, wacz_index_name)
 
-        if os.path.exists(collection_index_path):
-            shutil.copy2(collection_index_path, collection_index_temp_path)
-
-        with open(collection_index_temp_path, 'a') as collection_index_temp_file:
+        with open(rewritten_index_path, 'w') as rewritten_index:
             if wacz_index_path.endswith('.gz'):
-                wacz_index_file = gzip.open(wacz_index_path, 'rb')
+                wacz_index = gzip.open(wacz_index_path, 'rb')
             else:
-                wacz_index_file = open(wacz_index_path, 'rb')
-            collection_index_temp_file.write('\n')
-            for line in wacz_index_file.readlines():
+                wacz_index = open(wacz_index_path, 'rb')
+
+            for line in wacz_index:
                 cdx_object = CDXObject(cdxline=line)
                 if cdx_object['filename'] in filename_mapping:
                     cdx_object['filename'] = filename_mapping[cdx_object['filename']]
-                collection_index_temp_file.write(cdx_object.to_cdxj())
+                rewritten_index.write(cdx_object.to_cdxj())
 
-            wacz_index_file.close()
+        if not os.path.isfile(collection_index_path):
+            shutil.move(rewritten_index_path, collection_index_path)
+            return
 
-        # copy temporary index back to original location and delete temporary directory
-        shutil.move(collection_index_temp_path, collection_index_path)
-        shutil.rmtree(tempdir)
+        temp_coll_index_path = collection_index_path + '.tmp.' + timestamp20_now()
+        self._merge_indices(collection_index_path, rewritten_index_path, temp_coll_index_path)
+        shutil.move(temp_coll_index_path, collection_index_path)
+
+        tempdir.cleanup()
 
     def reindex(self):
         cdx_file = os.path.join(self.indexes_dir, self.DEF_INDEX_FILE)
@@ -294,19 +294,23 @@ directory structure expected by pywb
 
         merged_file = temp_file + '.merged'
 
-        last_line = None
-
-        with open(cdx_file, 'rb') as orig_index:
-            with open(temp_file, 'rb') as new_index:
-                with open(merged_file, 'w+b') as merged:
-                    for line in heapq.merge(orig_index, new_index):
-                        if last_line != line:
-                            merged.write(line)
-                            last_line = line
+        self._merge_indices(cdx_file, temp_file, merged_file)
 
         shutil.move(merged_file, cdx_file)
         #os.rename(merged_file, cdx_file)
         os.remove(temp_file)
+
+    @staticmethod
+    def _merge_indices(index1, index2, dest):
+        last_line = None
+
+        with open(index1, 'rb') as index1_f:
+            with open(index2, 'rb') as index2_f:
+                with open(dest, 'wb') as dest_f:
+                    for line in heapq.merge(index1_f, index2_f):
+                        if last_line != line:
+                            dest_f.write(line)
+                            last_line = line
 
     def set_metadata(self, namevalue_pairs):
         metadata_yaml = os.path.join(self.curr_coll_dir, 'metadata.yaml')

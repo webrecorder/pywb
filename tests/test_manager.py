@@ -75,9 +75,14 @@ class TestManager:
                                 {'example.warc.gz': 'rewritten.warc.gz'})
         with open(os.path.join(manager.indexes_dir, manager.DEF_INDEX_FILE), 'r') as f:
             index_content = f.read()
+            index_content = index_content.strip()
 
         assert 'example.warc.gz' not in index_content
         assert 'rewritten.warc.gz' in index_content
+
+        # check that collection index is sorted
+        index_lines = index_content.split('\n')
+        assert sorted(index_lines) == index_lines
 
     def test_merge_wacz_index_gzip(self, tmp_path):
         manager = self.get_test_collections_manager(tmp_path)
