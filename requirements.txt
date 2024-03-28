@@ -2,11 +2,11 @@ six
 warcio>=1.7.1
 requests
 redis<3.0
-jinja2
+jinja2>=3.1.2
 surt>=0.3.1
 brotlipy
 pyyaml
-werkzeug
+werkzeug>=2.3.7
 webencodings
 gevent
 webassets==2.0
