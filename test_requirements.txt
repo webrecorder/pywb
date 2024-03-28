@@ -1,5 +1,5 @@
 pytest
-WebTest==3.0.0
+WebTest
 pytest-cov
 mock
 urllib3
