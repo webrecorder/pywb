@@ -44,7 +44,6 @@ class TestInputReq(object):
         self.testapp = webtest.TestApp(self.app)
 
     def test_get_direct(self):
-        assert self.app
         res = self.testapp.get('/test/http://example.com/', headers={'Foo': 'Bar'})
         assert res.text == '\
 GET /test/http://example.com/ HTTP/1.0\r\n\
