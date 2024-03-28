@@ -44,7 +44,6 @@ class TestInputReq(object):
         self.testapp = webtest.TestApp(self.app)
 
     def test_get_direct(self):
-        assert self.testapp
         res = self.testapp.get('/test/http://example.com/', headers={'Foo': 'Bar'})
         assert res.text == '\
 GET /test/http://example.com/ HTTP/1.0\r\n\
@@ -54,7 +53,6 @@ Foo: Bar\r\n\
 '
 
     def test_post_direct(self):
-        assert self.testapp
         res = self.testapp.post('/test/http://example.com/', headers={'Foo': 'Bar'}, params='ABC')
         lines = res.text.split('\r\n')
         assert lines[0] == 'POST /test/http://example.com/ HTTP/1.0'
@@ -71,7 +69,6 @@ GET /example.html HTTP/1.0\r\n\
 Foo: Bar\r\n\
 \r\n\
 '
-        assert self.testapp
         res = self.testapp.post('/test-postreq?url=http://example.com/', params=postdata)
 
         assert res.text == '\
