@@ -41,7 +41,9 @@ class InputReqApp(object):
 class TestInputReq(object):
     def setup(self):
         self.app = InputReqApp()
+        assert self.app
         self.testapp = webtest.TestApp(self.app)
+        assert self.testapp
 
     def test_get_direct(self):
         res = self.testapp.get('/test/http://example.com/', headers={'Foo': 'Bar'})
