@@ -670,6 +670,8 @@ class FrontEndApp(object):
             lang = args.pop('lang', '')
             if lang:
                 shift_path_info(environ)
+
+            if lang:
                 environ['pywb_lang'] = lang
             elif self.default_locale:
                 environ['pywb_lang'] = self.default_locale
