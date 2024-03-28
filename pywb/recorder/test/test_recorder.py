@@ -150,7 +150,7 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        assert b'"foo":"bar"' in resp.body
 
         self._test_all_warcs('/warcs/', 1)
 
@@ -160,7 +160,7 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        assert b'"foo":"bar"' in resp.body
 
         self._test_all_warcs('/warcs/', 2)
 
@@ -262,7 +262,7 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        assert b'"foo":"bar"' in resp.body
 
         self._test_all_warcs('/warcs/', 2)
 
@@ -279,7 +279,7 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/user-agent',
                             '&param.recorder.user=USER&param.recorder.coll=COLL')
 
-        assert '"user-agent": "{0}"'.format(UA) in resp.text
+        assert '"user-agent":"{0}"'.format(UA) in resp.text
         #assert b'HTTP/1.1 200 OK' in resp.body
         #assert b'"foo": "bar"' in resp.body
 
@@ -312,12 +312,12 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
         resp = self._test_warc_write(recorder_app, 'httpbin.org',
                             '/get?foo=bar', '&param.recorder.user=USER2&param.recorder.coll=COLL2')
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        assert b'"foo":"bar"' in resp.body
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org',
                             '/get?foo=bar', '&param.recorder.user=USER2&param.recorder.coll=COLL3')
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        assert b'"foo":"bar"' in resp.body
 
         self._test_all_warcs('/warcs2', 2)
 
@@ -334,7 +334,7 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/user-agent',
                                     '&param.recorder.user=USER&param.recorder.coll=COLL')
 
-        assert '"user-agent": "{0}"'.format(UA) in resp.text
+        assert '"user-agent":"{0}"'.format(UA) in resp.text
         #assert b'HTTP/1.1 200 OK' in resp.body
         #assert b'"foo": "bar"' in resp.body
 
@@ -387,7 +387,7 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/user-agent',
                             '&param.recorder.user=USER&param.recorder.coll=COLL')
 
-        assert '"user-agent": "{0}"'.format(UA) in resp.text
+        assert '"user-agent":"{0}"'.format(UA) in resp.text
         #assert b'HTTP/1.1 200 OK' in resp.body
         #assert b'"foo": "bar"' in resp.body
         self._test_all_warcs('/warcs/USER/COLL/', 2)
@@ -409,7 +409,7 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
         resp = self._test_warc_write(recorder_app, 'httpbin.org',
                             '/get?foo=bar', '&param.recorder.user=USER&param.recorder.coll=COLL')
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        assert b'"foo":"bar"' in resp.body
 
         self._test_all_warcs('/warcs/USER/COLL/', 3)
 
@@ -432,7 +432,7 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        assert b'"foo":"bar"' in resp.body
 
         assert os.path.isfile(path)
         assert len(writer.fh_cache) == 1
@@ -455,7 +455,7 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
                             '/get?foo=bar', '&param.recorder.coll=FOO')
 
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        assert b'"foo":"bar"' in resp.body
 
 
         # Second Record
@@ -463,7 +463,7 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
                             '/get?boo=far', '&param.recorder.coll=FOO')
 
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"boo": "far"' in resp.body
+        assert b'"boo":"far"' in resp.body
 
         self._test_all_warcs('/warcs/FOO/', 1)
 
@@ -523,14 +523,14 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
                             '/get?foo=bar', '&param.recorder.coll=GOO')
 
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo": "bar"' in resp.body
+        assert b'"foo":"bar"' in resp.body
 
         # Second Record
         resp = self._test_warc_write(recorder_app, 'httpbin.org',
                             '/get?boo=far', '&param.recorder.coll=GOO')
 
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"boo": "far"' in resp.body
+        assert b'"boo":"far"' in resp.body
 
         self._test_all_warcs('/warcs/GOO/', 1)
 
@@ -542,7 +542,7 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
                             '/get?goo=bar', '&param.recorder.coll=GOO')
 
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"goo": "bar"' in resp.body
+        assert b'"goo":"bar"' in resp.body
 
         self._test_all_warcs('/warcs/GOO/', 2)
 

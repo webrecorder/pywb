@@ -26,12 +26,12 @@ class TestRecordDedup(HttpBinLiveTests, CollsDirMixin, BaseConfigTest, FakeRedis
 
     def test_record_1(self):
         res = self.testapp.get('/test-dedup/record/mp_/http://httpbin.org/get?A=B', headers={"Referer": "http://httpbin.org/"})
-        assert '"A": "B"' in res.text
+        assert '"A":"B"' in res.text
 
         time.sleep(1.2)
 
         res = self.testapp.get('/test-dedup/record/mp_/http://httpbin.org/get?A=B', headers={"Referer": "http://httpbin.org/"})
-        assert '"A": "B"' in res.text
+        assert '"A":"B"' in res.text
 
     def test_single_redis_entry(self):
         res = self.redis.zrange("pywb:test-dedup:cdxj", 0, -1)
