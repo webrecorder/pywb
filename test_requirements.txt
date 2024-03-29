@@ -3,7 +3,6 @@ WebTest
 pytest-cov
 mock
 urllib3
-flask==2.3.3
 ujson
 lxml
 httpbin==0.10.2
