@@ -39,7 +39,7 @@ class InputReqApp(object):
 
 #=============================================================================
 class TestInputReq(object):
-    def setup(self):
+    def setup_method(self):
         self.app = InputReqApp()
         self.testapp = webtest.TestApp(self.app)
 
