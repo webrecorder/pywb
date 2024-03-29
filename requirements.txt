@@ -1,7 +1,7 @@
 six
 warcio>=1.7.1
 requests
-redis<3.0
+redis
 jinja2==3.1.2
 surt>=0.3.1
 brotlipy
