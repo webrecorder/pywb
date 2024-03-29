@@ -5,4 +5,4 @@ mock
 urllib3
 ujson
 lxml
-httpbin==0.10.2
+httpbin>=0.10.2
