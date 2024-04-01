@@ -76,14 +76,14 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
         resp = self.post('/live/{0}httpbin.org/post', fmod_sl, {'foo': 'bar', 'test': 'abc'})
         assert resp.status_int == 200
         resp.charset = 'utf-8'
-        assert '"foo" :"bar"' in resp.text
-        assert '"test" :"abc"' in resp.text
+        assert '"foo": "bar"' in resp.text
+        assert '"test": "abc"' in resp.text
         assert resp.status_int == 200
 
     def test_live_anchor_encode(self, fmod_sl):
         resp = self.get('/live/{0}httpbin.org/get?val=abc%23%23xyz', fmod_sl)
         assert 'get?val=abc%23%23xyz"' in resp.text
-        assert '"val" :"abc##xyz"' in resp.text
+        assert '"val": "abc##xyz"' in resp.text
         #assert '"http://httpbin.org/anything/abc##xyz"' in resp.text
         assert resp.status_int == 200
 
@@ -181,7 +181,7 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
 
     def test_deflate(self, fmod_sl):
         resp = self.get('/live/{0}http://httpbin.org/deflate', fmod_sl)
-        assert b'"deflated" :true' in resp.body
+        assert b'"deflated": true' in resp.body
 
     def test_live_origin_and_referrer(self, fmod_sl):
         headers = {'Referer': 'http://localhost:80/live/{0}http://example.com/test'.format(fmod_sl),

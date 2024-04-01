@@ -262,7 +262,7 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
 
         resp = self._test_warc_write(recorder_app, 'httpbin.org', '/get?foo=bar')
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"foo":"bar"' in resp.body
+        assert b'"foo": "bar"' in resp.body
 
         self._test_all_warcs('/warcs/', 2)
 
@@ -542,7 +542,7 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
                             '/get?goo=bar', '&param.recorder.coll=GOO')
 
         assert b'HTTP/1.1 200 OK' in resp.body
-        assert b'"goo":"bar"' in resp.body
+        assert b'"goo": "bar"' in resp.body
 
         self._test_all_warcs('/warcs/GOO/', 2)
 
