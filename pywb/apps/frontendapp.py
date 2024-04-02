@@ -1,7 +1,7 @@
 from gevent.monkey import patch_all; patch_all()
 
 from werkzeug.routing import Map, Rule, RequestRedirect, Submount
-from werkzeug.wsgi import pop_path_info
+from wsgiref.util import shift_path_info
 from six.moves.urllib.parse import urljoin, parse_qsl
 from six import iteritems
 from warcio.utils import to_native_str
@@ -558,9 +558,9 @@ class FrontEndApp(object):
             return
 
         if coll != '$root':
-            pop_path_info(environ)
+            shift_path_info(environ)
             if record:
-                pop_path_info(environ)
+                shift_path_info(environ)
 
         paths = [self.warcserver.root_dir]
 
@@ -669,7 +669,7 @@ class FrontEndApp(object):
 
             lang = args.pop('lang', '')
             if lang:
-                pop_path_info(environ)
+                shift_path_info(environ)
 
             if lang:
                 environ['pywb_lang'] = lang

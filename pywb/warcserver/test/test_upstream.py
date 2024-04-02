@@ -18,7 +18,7 @@ from .testutils import LiveServerTests, HttpBinLiveTests, BaseTestClass
 
 
 class TestUpstream(LiveServerTests, HttpBinLiveTests, BaseTestClass):
-    def setup(self):
+    def setup_method(self):
         app = BaseWarcServer()
 
         base_url = 'http://localhost:{0}'.format(self.server.port)

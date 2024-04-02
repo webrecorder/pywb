@@ -56,6 +56,6 @@ class TestForceHttpsRoot(BaseConfigTest):
         resp = self.get('/20140128051539{0}/http://www.iana.org/domains/example', fmod,
                         headers={'X-Forwarded-Proto': 'https'})
 
-        assert resp.headers['Location'] == 'https://localhost:80/20140128051539{0}/http://www.iana.org/domains/reserved'.format(fmod)
+        assert resp.headers['Location'] == 'https://localhost:80/20140128051539{0}/http://www.iana.org/help/example-domains'.format(fmod)
 
 
