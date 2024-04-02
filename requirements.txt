@@ -16,5 +16,5 @@ wsgiprox>=1.5.1
 fakeredis<1.0
 tldextract
 python-dateutil
-markupsafe
+markupsafe>=2.1.1
 ua_parser
