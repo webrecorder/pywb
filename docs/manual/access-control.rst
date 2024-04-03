@@ -105,6 +105,12 @@ Given these rules, a user would:
 * but would receive an 'access blocked' error message when viewing ``http://httpbin.org/`` (block)
 * would receive a 404 not found error when viewing ``http://httpbin.org/anything`` (exclude)
 
+To match any possible URL in an .aclj file, set ``*,`` as the leading SURT, for example::
+
+  *, - {"access": "allow"}
+
+Lines starting with ``*,`` should generally be at the end of the file, respecting the reverse alphabetical order.
+
 
 Access Types: allow, block, exclude, allow_ignore_embargo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -148,6 +154,10 @@ Combined with the embargo settings, this can also be used to override the embarg
 To make this work, pywb must be running behind an Apache or Nginx system that is configured to set ``X-Pywb-ACL-User: staff`` based on certain settings.
 
 For example, this header may be set based on IP range, or based on password authentication.
+
+To allow a user access to all URLs, overriding more specific rules and the ``default_access`` configuration setting, use the ``*,`` SURT::
+
+  *, - {"access": "allow", "user": "staff"}
 
 Further examples of how to set this header will be provided in the deployments section.
 

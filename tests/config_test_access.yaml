@@ -62,6 +62,13 @@ collections:
         acl_paths:
             - ./sample_archive/access/pywb.aclj
 
+    pywb-wildcard-surt:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        default_access: block
+        acl_paths:
+            - ./sample_archive/access/allow_all.aclj
+
 
 
 
