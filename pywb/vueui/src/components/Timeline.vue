@@ -39,7 +39,7 @@
                              @keyup.enter="changePeriod(histoPeriod, $event)"
                              @mouseover="setTooltipPeriod(histoPeriod, $event)"
                              @mouseout="setTooltipPeriod(null, $event)"
-                             tabindex="0"
+                             :tabindex="histoPeriod.snapshotCount > 0 ? 0 : -1"
                         >
                         </div>
                     </div>
@@ -49,7 +49,6 @@
                          @keyup.enter="changePeriod(histoPeriod, $event)"
                          @mouseover="setTooltipPeriod(subPeriod, $event)"
                          @mouseout="setTooltipPeriod(null, $event)"
-                         tabindex="0"
                     >
                         <div class="label">
                           {{subPeriod.getReadableId()}}
