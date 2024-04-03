@@ -109,6 +109,8 @@ To match any possible URL in an .aclj file, set ``*,`` as the leading SURT, for 
 
   *, - {"access": "allow"}
 
+Lines starting with ``*,`` should generally be at the end of the file, respecting the reverse alphabetical order.
+
 
 Access Types: allow, block, exclude, allow_ignore_embargo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
