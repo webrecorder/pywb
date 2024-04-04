@@ -8,7 +8,7 @@
                     @keyup.enter="changePeriod(parents[0])"
                     :title="getPeriodZoomOutText(parents[0])"
                     tabindex="1">
-                  <img src="/static/zoom-out-icon-333316.png" /> {{parents[0].getReadableId(true)}}
+                  <i class="fa fa-search-minus"></i> {{parents[0].getReadableId(true)}}
                 </span>
             </span>
             &gt;
