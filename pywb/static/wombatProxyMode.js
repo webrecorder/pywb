@@ -1,6 +1,6 @@
 /*
 Wombat.js client-side rewriting engine for web archive replay
-Copyright (C) 2014-2023 Webrecorder Software, Rhizome, and Contributors. Released under the GNU Affero General Public License.
+Copyright (C) 2014-2024 Webrecorder Software, Rhizome, and Contributors. Released under the GNU Affero General Public License.
 
 This file is part of wombat.js, see https://github.com/webrecorder/wombat.js for the full source
 Wombat.js is part of the Webrecorder project (https://github.com/webrecorder)
