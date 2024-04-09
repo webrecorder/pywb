@@ -124,9 +124,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
             (r'(?<![$.])\s*\blocation\b\s*[=]\s*(?![=])', self.add_suffix(check_loc), 0),
             # rewriting 'return this'
             (r'\breturn\s+this\b\s*(?![.$])', self.replace_str(this_rw), 0),
-            # rewriting 'this.' special properties access on new line, with ; prepended
-            (r'\n\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(';' + this_rw), 0),
-            # rewriting 'this.' special properties access, not on new line (no ;)
+            # rewriting 'this.' special properties access
             (r'(?<![$.])\s*this\b(?=(?:\.(?:{0})\b))'.format(prop_str), self.replace_str(this_rw), 0),
             # rewrite '= this' or ', this'
             (r'(?<=[=,])\s*this\b\s*(?![:.$])', self.replace_str(this_rw), 0),
