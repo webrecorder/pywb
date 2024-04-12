@@ -154,14 +154,14 @@ To enable auto-indexing, run with ``wayback -a`` or ``wayback -a --auto-interval
 Creating a Web Archive
 ----------------------
 
-Using Webrecorder
-^^^^^^^^^^^^^^^^^
+Using ArchiveWeb.page
+^^^^^^^^^^^^^^^^^^^^^
 
-If you do not have a web archive to test, one easy way to create one is to use `Webrecorder <https://webrecorder.io>`_
+If you do not have a web archive to test, one easy way to create one is to use the `ArchiveWeb.page <https://archiveweb.page>`_ browser extension for Chrome and other Chromium-based browsers such as Brave Browser.
 
-After recording, you can click **Stop** and then click `Download Collection` to receive a WARC (`.warc.gz`) file.
+Follow the instructions in `How To Create Web Archives with ArchiveWeb.page <https://archiveweb.page/en/usage/>`_After recording, you can click **Stop** and then `download your collection <https://archiveweb.page/en/download/>`_ to receive a WARC (`.warc.gz`) file. If you choose to download your collection in the WACZ format, the WARC files can be found inside the zipped WACZ in the ``archive/`` directory.
 
-You can then use this with work with pywb.
+You can then use your WARCs to work with pywb.
 
 
 Using pywb Recorder
@@ -178,6 +178,14 @@ For example, to record ``http://example.com/``, visit ``http://localhost:8080/my
 
 In this configuration, the indexing happens every 10 seconds.. After 10 seconds, the recorded url will be accessible for replay, eg:
 ``http://localhost:8080/my-web-archive/http://example.com/``
+
+
+Using Browsertrix
+^^^^^^^^^^^^^^^^^
+
+For a more automated browser-based web archiving experience, `Browsertrix <https://docs.browsertrix.cloud/>`_ provides a web interface for configuring, scheduling, running, reviewing, and curating crawls of web content. Crawl activity is shown in a live screencast of the browsers used for crawling and all web archives created in Browsertrix can be easily downloaded from the application.
+
+`Browsertrix Crawler <https://crawler.docs.browsertrix.com/>`_, which provides the underlying crawling functionality of Browsertrix, can also be run standalone in a Docker container on your local computer.
 
 
 HTTP/S Proxy Mode Access
