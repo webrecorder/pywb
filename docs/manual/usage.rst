@@ -183,7 +183,7 @@ In this configuration, the indexing happens every 10 seconds.. After 10 seconds,
 Using Browsertrix
 ^^^^^^^^^^^^^^^^^
 
-For a more automated browser-based web archiving experience, `Browsertrix <https://docs.browsertrix.cloud/>`_ provides a web interface for configuring, scheduling, running, reviewing, and curating crawls of web content. Crawl activity is shown in a live screencast of the browsers used for crawling and all web archives created in Browsertrix can be easily downloaded from the application.
+For a more automated browser-based web archiving experience, `Browsertrix <https://browsertrix.com/>`_ provides a web interface for configuring, scheduling, running, reviewing, and curating crawls of web content. Crawl activity is shown in a live screencast of the browsers used for crawling and all web archives created in Browsertrix can be easily downloaded from the application in the WACZ format.
 
 `Browsertrix Crawler <https://crawler.docs.browsertrix.com/>`_, which provides the underlying crawling functionality of Browsertrix, can also be run standalone in a Docker container on your local computer.
 
