@@ -159,7 +159,7 @@ Using ArchiveWeb.page
 
 If you do not have a web archive to test, one easy way to create one is to use the `ArchiveWeb.page <https://archiveweb.page>`_ browser extension for Chrome and other Chromium-based browsers such as Brave Browser.
 
-Follow the instructions in `How To Create Web Archives with ArchiveWeb.page <https://archiveweb.page/en/usage/>`_After recording, you can click **Stop** and then `download your collection <https://archiveweb.page/en/download/>`_ to receive a WARC (`.warc.gz`) file. If you choose to download your collection in the WACZ format, the WARC files can be found inside the zipped WACZ in the ``archive/`` directory.
+Follow the instructions in `How To Create Web Archives with ArchiveWeb.page <https://archiveweb.page/en/usage/>`_. After recording, press **Stop** and then `download your collection <https://archiveweb.page/en/download/>`_ to receive a WARC (`.warc.gz`) file. If you choose to download your collection in the WACZ format, the WARC files can be found inside the zipped WACZ in the ``archive/`` directory.
 
 You can then use your WARCs to work with pywb.
 
