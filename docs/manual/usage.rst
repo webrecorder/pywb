@@ -157,7 +157,7 @@ Creating a Web Archive
 Using ArchiveWeb.page
 ^^^^^^^^^^^^^^^^^^^^^
 
-If you do not have a web archive to test, one easy way to create one is to use the `ArchiveWeb.page <https://archiveweb.page>`_ browser extension for Chrome and other Chromium-based browsers such as Brave Browser.
+If you do not have a web archive to test, one easy way to create one is to use the `ArchiveWeb.page <https://archiveweb.page>`_ browser extension for Chrome and other Chromium-based browsers such as Brave Browser. ArchiveWeb.page records pages visited during an archiving session in the browser, and provides means of both replaying and downloading the archived items created.
 
 Follow the instructions in `How To Create Web Archives with ArchiveWeb.page <https://archiveweb.page/en/usage/>`_. After recording, press **Stop** and then `download your collection <https://archiveweb.page/en/download/>`_ to receive a WARC (`.warc.gz`) file. If you choose to download your collection in the WACZ format, the WARC files can be found inside the zipped WACZ in the ``archive/`` directory.
 
@@ -167,7 +167,7 @@ You can then use your WARCs to work with pywb.
 Using pywb Recorder
 ^^^^^^^^^^^^^^^^^^^
 
-The core recording functionality in Webrecorder is also part of :mod:`pywb`. If you want to create a WARC locally, this can be
+Recording functionality is also part of :mod:`pywb`. If you want to create a WARC locally, this can be
 done by directly recording into your pywb collection:
 
 1. Create a collection: ``wb-manager init my-web-archive`` (if you haven't already created a web archive collection)
