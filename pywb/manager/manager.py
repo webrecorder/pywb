@@ -228,6 +228,8 @@ directory structure expected by pywb
                 wacz_index = open(wacz_index_path, 'rb')
 
             for line in wacz_index:
+                if not line:
+                    continue
                 cdx_object = CDXObject(cdxline=line)
                 if cdx_object['filename'] in filename_mapping:
                     cdx_object['filename'] = filename_mapping[cdx_object['filename']]
