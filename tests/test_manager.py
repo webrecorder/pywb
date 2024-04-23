@@ -91,6 +91,7 @@ class TestManager:
                                 {'example-collection.warc': 'rewritten.warc'})
         with open(os.path.join(manager.indexes_dir, manager.DEF_INDEX_FILE), 'r') as f:
             index_content = f.read()
+            index_content = index_content.strip()
 
         assert 'example-collection.warc' not in index_content
         assert 'rewritten.warc' in index_content
