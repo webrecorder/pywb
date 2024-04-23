@@ -46,7 +46,7 @@ It can be used to:
 
 * Create a new collection --  ``wb-manager init <coll>``
 * Add WARCs to collection -- ``wb-manager add <coll> <warc>``
-* Unpack WACZs to add their WARCs and indices to collection -- ``wb-manager add --uncompress-wacz <coll> <wacz>``
+* Unpack WACZs to add their WARCs and indices to collection -- ``wb-manager add --unpack-wacz <coll> <wacz>``
 * Add override templates
 * Add and remove metadata to a collections ``metadata.yaml``
 * List all collections

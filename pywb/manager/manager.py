@@ -121,7 +121,7 @@ directory structure expected by pywb
                    'To create a new collection, run\n\n{1} init {0}')
             raise IOError(msg.format(self.coll_name, sys.argv[0]))
 
-    def add_archives(self, archives, uncompress_wacz=False):
+    def add_archives(self, archives, unpack_wacz=False):
         if not os.path.isdir(self.archive_dir):
             raise IOError('Directory {0} does not exist'.
                           format(self.archive_dir))
@@ -134,11 +134,11 @@ directory structure expected by pywb
                 if full_path:
                     warc_paths.append(full_path)
             elif self.WACZ_RX.match(archive):
-                if uncompress_wacz:
-                    self._add_wacz_uncompressed(archive)
+                if unpack_wacz:
+                    self._add_wacz_unpacked(archive)
                 else:
                     raise NotImplementedError('Adding waczs without unpacking is not yet implemented. Use '
-                                              '\'--uncompress-wacz\' flag to add the wacz\'s content.')
+                                              '\'--unpack-wacz\' flag to add the wacz\'s content.')
             else:
                 invalid_archives.append(archive)
 
@@ -160,7 +160,7 @@ directory structure expected by pywb
         logging.info('Copied ' + filename + ' to ' + self.archive_dir)
         return full_path
 
-    def _add_wacz_uncompressed(self, wacz):
+    def _add_wacz_unpacked(self, wacz):
         wacz = os.path.abspath(wacz)
         temp_dir = mkdtemp()
         warc_regex = re.compile(r'.+\.warc(\.gz)?$')
@@ -494,11 +494,17 @@ Create manage file based web archive collections
     # Add Warcs or Waczs
     def do_add(r):
         m = CollectionsManager(r.coll_name)
-        m.add_archives(r.files, r.uncompress_wacz)
+        m.add_archives(r.files, r.unpack_wacz)
 
-    add_archives_help = 'Copy ARCS/WARCS/WACZ to collection directory and reindex'
+    add_archives_help = 'Copy ARCs/WARCs to collection directory and reindex'
+    add_unpack_wacz_help = 'Copy WARCs and indices from WACZ to collection directory'
     add_archives = subparsers.add_parser('add', help=add_archives_help)
-    add_archives.add_argument('--uncompress-wacz', dest='uncompress_wacz', action='store_true')
+    add_archives.add_argument(
+        '--unpack-wacz',
+        dest='unpack_wacz',
+        action='store_true',
+        help=add_unpack_wacz_help
+    )
     add_archives.add_argument('coll_name')
     add_archives.add_argument('files', nargs='+')
     add_archives.set_defaults(func=do_add)
