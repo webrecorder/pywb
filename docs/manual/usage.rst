@@ -114,6 +114,8 @@ Using Existing Web Archive Collections
 Existing archives of WARCs/ARCs files can be used with pywb with minimal amount of setup. By using ``wb-manager add``,
 WARC/ARC files will automatically be placed in the collection archive directory and indexed.
 
+In pywb 2.8.0 and later, preliminary support for WACZ files is also added with ``wb-manager add --unpack-wacz``. This will unpack the provided WACZ file, adding its WARCs and indices to the collection.
+
 By default ``wb-manager``, places new collections in ``collections/<coll name>`` subdirectory in the current working directory. To specify a different root directory, the ``wb-manager -d <dir>``. Other options can be set in the config file.
 
 If you have a large number of existing CDX index files, pywb will be able to read them as well after running through a simple conversion process.
