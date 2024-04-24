@@ -147,7 +147,7 @@ directory structure expected by pywb
         if invalid_archives:
             logging.warning(f'Invalid archives weren\'t added: {", ".join(invalid_archives)}')
 
-    def _rename_warc(self, source_dir, warc_basename):
+    def _rename_warc(self, warc_basename):
         dupe_idx = 1
         while True:
             new_basename = f'{warc_basename}-{dupe_idx}'
@@ -163,7 +163,7 @@ directory structure expected by pywb
 
         # don't overwrite existing warcs with duplicate names
         if os.path.exists(os.path.join(self.archive_dir, warc_basename)):
-            warc_basename = self._rename_warc(source_dir, warc_basename)
+            warc_basename = self._rename_warc(warc_basename)
             logging.info(f'Warc {os.path.basename(warc)} already exists - renamed to {warc_basename}.')
 
         warc_dest = os.path.join(self.archive_dir, warc_basename)
@@ -209,8 +209,9 @@ directory structure expected by pywb
             warc_destination_path = os.path.join(self.archive_dir, warc_filename)
 
             if os.path.exists(warc_destination_path):
-                logging.warning(f'Warc {warc_filename} wasn\'t added because of duplicate name.')
-                continue
+                warc_filename = self._rename_warc(warc_filename)
+                logging.info(f'Warc {warc_destination_path} already exists - renamed to {warc_filename}.')
+                warc_destination_path = os.path.join(self.archive_dir, warc_filename)
 
             warc_filename_mapping[os.path.basename(extracted_warc_file)] = warc_filename
             shutil.copy2(os.path.join(temp_dir, extracted_warc_file), warc_destination_path)
