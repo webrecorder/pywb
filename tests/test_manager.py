@@ -65,6 +65,21 @@ class TestManager:
             assert archive in os.listdir(manager.archive_dir)
             assert archive in index_text
 
+    def test_add_valid_archives_dupe_name(self, tmp_path):
+        manager = self.get_test_collections_manager(tmp_path)
+        warc_filename = 'sample_archive/warcs/example.warc.gz'
+        manager.add_archives(warc_filename)
+        manager.add_archives(warc_filename)
+
+        with open(os.path.join(manager.indexes_dir, manager.DEF_INDEX_FILE), 'r') as f:
+            index_text = f.read()
+
+        expected_archives = ('example.warc.gz', 'example-1.warc.gz')
+
+        for archive in expected_archives:
+            assert archive in os.listdir(manager.archive_dir)
+            assert archive in index_text
+
     def test_add_valid_archives_dont_unpack_wacz(self, tmp_path):
         manager = self.get_test_collections_manager(tmp_path)
         archives = ['sample_archive/warcs/example.arc', 'sample_archive/warcs/example.arc.gz',

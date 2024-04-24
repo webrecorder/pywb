@@ -7,6 +7,7 @@ import yaml
 import re
 import gzip
 import six
+import pathlib
 
 from distutils.util import strtobool
 from pkg_resources import resource_string, get_distribution
@@ -149,8 +150,11 @@ directory structure expected by pywb
 
     def _rename_warc(self, warc_basename):
         dupe_idx = 1
+        ext = ''.join(pathlib.Path(warc_basename).suffixes)
+        pre_ext_name = warc_basename.split(ext)[0]
+
         while True:
-            new_basename = f'{warc_basename}-{dupe_idx}'
+            new_basename = f'{pre_ext_name}-{dupe_idx}{ext}'
             if not os.path.exists(os.path.join(self.archive_dir, new_basename)):
                 break
             dupe_idx += 1
