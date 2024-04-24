@@ -68,8 +68,7 @@ class TestManager:
     def test_add_valid_archives_dupe_name(self, tmp_path):
         manager = self.get_test_collections_manager(tmp_path)
         warc_filename = 'sample_archive/warcs/example.warc.gz'
-        manager.add_archives(warc_filename)
-        manager.add_archives(warc_filename)
+        manager.add_archives([warc_filename, warc_filename])
 
         with open(os.path.join(manager.indexes_dir, manager.DEF_INDEX_FILE), 'r') as f:
             index_text = f.read()
