@@ -20,6 +20,20 @@ class TestManager:
         with open(os.path.join(manager.indexes_dir, manager.DEF_INDEX_FILE), 'r') as f:
             assert '"filename": "valid_example_1-0.warc"' in f.read()
 
+    def test_add_valid_wacz_unpacked_dupe_name(self, tmp_path):
+        """Test if warc that already exists is renamed with -index suffix"""
+        manager = self.get_test_collections_manager(tmp_path)
+        manager._add_wacz_unpacked(VALID_WACZ_PATH)
+        # Add it again to see if there are name conflicts
+        manager._add_wacz_unpacked(VALID_WACZ_PATH)
+        assert 'valid_example_1-0.warc' in os.listdir(manager.archive_dir)
+        assert 'valid_example_1-0-1.warc' in os.listdir(manager.archive_dir)
+        assert manager.DEF_INDEX_FILE in os.listdir(manager.indexes_dir)
+        with open(os.path.join(manager.indexes_dir, manager.DEF_INDEX_FILE), 'r') as f:
+            data = f.read()
+            assert '"filename": "valid_example_1-0.warc"' in data
+            assert '"filename": "valid_example_1-0-1.warc"' in data
+
     def test_add_invalid_wacz_unpacked(self, tmp_path, caplog):
         """Test if adding an invalid wacz file to a collection fails"""
         manager = self.get_test_collections_manager(tmp_path)
@@ -48,6 +62,20 @@ class TestManager:
             if archive.endswith('wacz'):
                 archive = 'valid_example_1-0.warc'
 
+            assert archive in os.listdir(manager.archive_dir)
+            assert archive in index_text
+
+    def test_add_valid_archives_dupe_name(self, tmp_path):
+        manager = self.get_test_collections_manager(tmp_path)
+        warc_filename = 'sample_archive/warcs/example.warc.gz'
+        manager.add_archives([warc_filename, warc_filename])
+
+        with open(os.path.join(manager.indexes_dir, manager.DEF_INDEX_FILE), 'r') as f:
+            index_text = f.read()
+
+        expected_archives = ('example.warc.gz', 'example-1.warc.gz')
+
+        for archive in expected_archives:
             assert archive in os.listdir(manager.archive_dir)
             assert archive in index_text
 

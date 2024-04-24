@@ -7,6 +7,7 @@ import yaml
 import re
 import gzip
 import six
+import pathlib
 
 from distutils.util import strtobool
 from pkg_resources import resource_string, get_distribution
@@ -147,18 +148,32 @@ directory structure expected by pywb
         if invalid_archives:
             logging.warning(f'Invalid archives weren\'t added: {", ".join(invalid_archives)}')
 
+    def _rename_warc(self, warc_basename):
+        dupe_idx = 1
+        ext = ''.join(pathlib.Path(warc_basename).suffixes)
+        pre_ext_name = warc_basename.split(ext)[0]
+
+        while True:
+            new_basename = f'{pre_ext_name}-{dupe_idx}{ext}'
+            if not os.path.exists(os.path.join(self.archive_dir, new_basename)):
+                break
+            dupe_idx += 1
+
+        return new_basename
+
     def _add_warc(self, warc):
-        filename = os.path.abspath(warc)
+        warc_source = os.path.abspath(warc)
+        source_dir, warc_basename = os.path.split(warc_source)
 
         # don't overwrite existing warcs with duplicate names
-        if os.path.exists(os.path.join(self.archive_dir, os.path.basename(filename))):
-            logging.warning(f'Warc {filename} wasn\'t added because of duplicate name.')
-            return None
+        if os.path.exists(os.path.join(self.archive_dir, warc_basename)):
+            warc_basename = self._rename_warc(warc_basename)
+            logging.info(f'Warc {os.path.basename(warc)} already exists - renamed to {warc_basename}.')
 
-        shutil.copy2(filename, self.archive_dir)
-        full_path = os.path.join(self.archive_dir, filename)
-        logging.info('Copied ' + filename + ' to ' + self.archive_dir)
-        return full_path
+        warc_dest = os.path.join(self.archive_dir, warc_basename)
+        shutil.copy2(warc_source, warc_dest)
+        logging.info(f'Copied {warc} to {self.archive_dir} as {warc_basename}')
+        return warc_dest
 
     def _add_wacz_unpacked(self, wacz):
         wacz = os.path.abspath(wacz)
@@ -198,8 +213,9 @@ directory structure expected by pywb
             warc_destination_path = os.path.join(self.archive_dir, warc_filename)
 
             if os.path.exists(warc_destination_path):
-                logging.warning(f'Warc {warc_filename} wasn\'t added because of duplicate name.')
-                continue
+                warc_filename = self._rename_warc(warc_filename)
+                logging.info(f'Warc {warc_destination_path} already exists - renamed to {warc_filename}.')
+                warc_destination_path = os.path.join(self.archive_dir, warc_filename)
 
             warc_filename_mapping[os.path.basename(extracted_warc_file)] = warc_filename
             shutil.copy2(os.path.join(temp_dir, extracted_warc_file), warc_destination_path)
