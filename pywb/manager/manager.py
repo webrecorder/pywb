@@ -497,7 +497,7 @@ Create manage file based web archive collections
         m.add_archives(r.files, r.unpack_wacz)
 
     add_archives_help = 'Copy ARCs/WARCs to collection directory and reindex'
-    add_unpack_wacz_help = 'Copy WARCs and indices from WACZ to collection directory'
+    add_unpack_wacz_help = 'Copy WARCs from WACZ to collection directory and reindex'
     add_archives = subparsers.add_parser('add', help=add_archives_help)
     add_archives.add_argument(
         '--unpack-wacz',
