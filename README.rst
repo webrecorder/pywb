@@ -1,4 +1,4 @@
-Webrecorder pywb 2.8
+Webrecorder pywb 2.8.1
 ====================
 
 .. image:: https://raw.githubusercontent.com/webrecorder/pywb/main/pywb/static/pywb-logo.png
@@ -13,7 +13,7 @@ Web Archiving Tools for All
 
 `View the full pywb documentation <https://pywb.readthedocs.org>`_
 
-**pywb** is a Python (2 and 3) web archiving toolkit for replaying web archives large and small as accurately as possible.
+**pywb** is a Python 3 web archiving toolkit for replaying web archives large and small as accurately as possible.
 The toolkit now also includes new features for creating high-fidelity web archives.
 
 This toolset forms the foundation of Webrecorder project, but also provides a generic web archiving toolkit
