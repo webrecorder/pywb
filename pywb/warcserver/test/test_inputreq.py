@@ -82,44 +82,49 @@ Foo: Bar\r\n\
 class TestPostQueryExtract(object):
     @classmethod
     def setup_class(cls):
-        cls.post_data = b'foo=bar&dir=%2Fbaz'
+        cls.post_data = b'foo=bar&dir=%2Fbaz&do=true&re=false&re=null'
         cls.binary_post_data = b'\x816l`L\xa04P\x0e\xe0r\x02\xb5\x89\x19\x00fP\xdb\x0e\xb0\x02,'
 
     def test_post_extract_1(self):
         mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
                                 len(self.post_data), BytesIO(self.post_data))
 
-        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=POST&foo=bar&dir=/baz'
+        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=POST&foo=bar&dir=/baz&do=true&re=false&re=null'
 
-        assert mq.append_query('http://example.com/?123=ABC') == 'http://example.com/?123=ABC&__wb_method=POST&foo=bar&dir=/baz'
+        assert mq.append_query('http://example.com/?123=ABC') == 'http://example.com/?123=ABC&__wb_method=POST&foo=bar&dir=/baz&do=true&re=false&re=null'
 
     def test_post_extract_json(self):
-        post_data = b'{"a": "b", "c": {"a": 2}, "d": "e"}'
+        post_data = b'{"a": "b", "c": {"a": 2}, "d": "e", "f": true, "g": [false, null]}'
         mq = MethodQueryCanonicalizer('POST', 'application/json',
                                 len(post_data), BytesIO(post_data))
 
-        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=POST&a=b&a.2_=2&d=e'
+        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=POST&a=b&a.2_=2&d=e&f=true&g=false&g.2_=null'
 
+        post_data = b'{"type": "event", "id": 44.0, "float": 35.7, "values": [true, false, null], "source": {"type": "component", "id": "a+b&c= d", "values": [3, 4]}}'
+        mq = MethodQueryCanonicalizer('POST', 'application/json',
+                                len(post_data), BytesIO(post_data))
+
+        assert mq.append_query('http://example.com/events') == 'http://example.com/events?__wb_method=POST&type=event&id=44&float=35.7&values=true&values.2_=false&values.3_=null&type.2_=component&id.2_=a%2Bb%26c%3D+d&values.4_=3&values.5_=4'
 
     def test_put_extract_method(self):
         mq = MethodQueryCanonicalizer('PUT', 'application/x-www-form-urlencoded',
                                 len(self.post_data), BytesIO(self.post_data))
 
-        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=PUT&foo=bar&dir=/baz'
+        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=PUT&foo=bar&dir=/baz&do=true&re=false&re=null'
 
     def test_post_extract_non_form_data_1(self):
         mq = MethodQueryCanonicalizer('POST', 'application/octet-stream',
                                 len(self.post_data), BytesIO(self.post_data))
 
         #base64 encoded data
-        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=POST&__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6'
+        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=POST&__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6JmRvPXRydWUmcmU9ZmFsc2UmcmU9bnVsbA=='
 
     def test_post_extract_non_form_data_2(self):
         mq = MethodQueryCanonicalizer('POST', 'text/plain',
                                 len(self.post_data), BytesIO(self.post_data))
 
         #base64 encoded data
-        assert mq.append_query('http://example.com/pathbar?id=123') == 'http://example.com/pathbar?id=123&__wb_method=POST&__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6'
+        assert mq.append_query('http://example.com/pathbar?id=123') == 'http://example.com/pathbar?id=123&__wb_method=POST&__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6JmRvPXRydWUmcmU9ZmFsc2UmcmU9bnVsbA=='
 
     def test_post_extract_length_invalid_ignore(self):
         mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
@@ -136,13 +141,13 @@ class TestPostQueryExtract(object):
         mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
                                 len(self.post_data) - 4, BytesIO(self.post_data))
 
-        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=POST&foo=bar&dir=%2'
+        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=POST&foo=bar&dir=/baz&do=true&re=false&re='
 
     def test_post_extract_length_too_long(self):
         mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
                                 len(self.post_data) + 4, BytesIO(self.post_data))
 
-        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=POST&foo=bar&dir=/baz'
+        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=POST&foo=bar&dir=/baz&do=true&re=false&re=null'
 
     def test_post_extract_malformed_form_data(self):
         mq = MethodQueryCanonicalizer('POST', 'application/x-www-form-urlencoded',
@@ -155,7 +160,7 @@ class TestPostQueryExtract(object):
         mq = MethodQueryCanonicalizer('POST', 'multipart/form-data',
                                 len(self.post_data), BytesIO(self.post_data))
 
-        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=POST&__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6'
+        assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=POST&__wb_post_data=Zm9vPWJhciZkaXI9JTJGYmF6JmRvPXRydWUmcmU9ZmFsc2UmcmU9bnVsbA=='
 
 
     def test_options(self):
