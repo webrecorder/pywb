@@ -1,6 +1,6 @@
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.timeutils import datetime_to_http_date
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from six.moves.urllib.parse import urlsplit
 
 
@@ -166,7 +166,7 @@ class DefaultHeaderRewriter(object):
         if age <= 0:
             new_headers.append(('Cache-Control', 'no-cache; no-store'))
         else:
-            dt = datetime.utcnow()
+            dt = datetime.now(timezone.utc)
             dt = dt + timedelta(seconds=age)
             new_headers.append(('Cache-Control', 'max-age=' + str(age)))
             new_headers.append(('Expires', datetime_to_http_date(dt)))
