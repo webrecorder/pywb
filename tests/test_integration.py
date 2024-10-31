@@ -525,7 +525,7 @@ class TestWbIntegration(BaseConfigTest):
         resp = self.testapp.get('/static%2F..%2F..%2F..%2F..%2Fosfile.txt', status = 404)
         assert resp.status_int == 404
 
-        assert 'Static file not found: <b>..%2F..%2F..%2F..%2Fosfile.txt</b>' in resp.text
+        assert 'Static file not found: <b>../../../../osfile.txt' in resp.text
 
     def test_cdx_server_filters(self):
         resp = self.testapp.get('/pywb/cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mime:warc/revisit&filter=filename:dupes.warc.gz')
