@@ -516,6 +516,17 @@ class TestWbIntegration(BaseConfigTest):
 
         assert 'Static file not found: <b>notfound.css</b>' in resp.text
 
+    def test_path_traversal_not_found(self):
+        resp = self.testapp.get('/static/../../../../osfile.txt', status = 404)
+        assert resp.status_int == 404
+
+        assert 'Static file not found: <b>../../../../osfile.txt</b>' in resp.text
+
+        resp = self.testapp.get('/static%2F..%2F..%2F..%2F..%2Fosfile.txt', status = 404)
+        assert resp.status_int == 404
+
+        assert 'Static file not found: <b>..%2F..%2F..%2F..%2Fosfile.txt</b>' in resp.text
+
     def test_cdx_server_filters(self):
         resp = self.testapp.get('/pywb/cdx?url=http://www.iana.org/_css/2013.1/screen.css&filter=mime:warc/revisit&filter=filename:dupes.warc.gz')
         assert resp.content_type == 'text/x-cdxj'
