@@ -1,10 +1,17 @@
 import mimetypes
 import os
+from pathlib import Path
+
+from pathvalidate import sanitize_filepath
 
 from pywb.utils.loaders import LocalFileLoader
 
 from pywb.apps.wbrequestresponse import WbResponse
 from pywb.utils.wbexception import NotFoundException
+
+
+class PathValidationError(Exception):
+    """Path validation exception"""
 
 
 #=================================================================
@@ -23,14 +30,28 @@ class StaticHandler(object):
         if url.endswith('/'):
             url += 'index.html'
 
-        full_path = environ.get('pywb.static_dir')
-        if full_path:
-            full_path = os.path.join(full_path, url)
+        url = sanitize_filepath(url)
+
+        canonical_static_path = environ.get('pywb.static_dir')
+        if not canonical_static_path:
+            canonical_static_path = self.static_path
+
+        full_static_path = os.path.abspath(canonical_static_path)
+        full_path = None
+
+        if environ.get('pywb.static_dir'):
+            full_path = os.path.join(full_static_path, url)
             if not os.path.isfile(full_path):
                 full_path = None
 
         if not full_path:
             full_path = os.path.join(self.static_path, url)
+
+        try:
+            validate_requested_file_path(full_static_path, full_path)
+        except PathValidationError:
+            raise NotFoundException('Static File Not Found: ' +
+                                    url_str)
 
         try:
             data = self.block_loader.load(full_path)
@@ -64,5 +85,14 @@ class StaticHandler(object):
         except IOError:
             raise NotFoundException('Static File Not Found: ' +
                                     url_str)
+
+    def validate_requested_file_path(self, static_dir, requested_path):
+        """Validate that requested file path is within static dir"""
+        static_dir = Path(static_dir)
+        requested_path = Path(requested_path)
+
+        if static_dir.resolve() not in requested_path.resolve().parents:
+            raise PathValidationError('Requested path forbidden')
+
 
 
