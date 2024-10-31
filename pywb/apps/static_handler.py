@@ -30,7 +30,7 @@ class StaticHandler(object):
         if url.endswith('/'):
             url += 'index.html'
 
-        url = sanitize_filepath(url)
+        # url = sanitize_filepath(url)
 
         canonical_static_path = environ.get('pywb.static_dir')
         if not canonical_static_path:
