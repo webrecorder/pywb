@@ -30,7 +30,7 @@ class StaticHandler(object):
         if url.endswith('/'):
             url += 'index.html'
 
-        url = sanitize_filepath(url)
+        # url = sanitize_filepath(url)
 
         static_path_to_validate = None
         full_path = None
