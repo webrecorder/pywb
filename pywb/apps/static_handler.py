@@ -30,25 +30,25 @@ class StaticHandler(object):
         if url.endswith('/'):
             url += 'index.html'
 
-        # url = sanitize_filepath(url)
+        url = sanitize_filepath(url)
 
-        canonical_static_path = environ.get('pywb.static_dir')
-        if not canonical_static_path:
-            canonical_static_path = self.static_path
-
-        full_static_path = os.path.abspath(canonical_static_path)
+        static_path_to_validate = None
         full_path = None
 
-        if environ.get('pywb.static_dir'):
-            full_path = os.path.join(full_static_path, url)
+        full_path = environ.get('pywb.static_dir')
+        if full_path:
+            static_path_to_validate = full_path
+            full_path = os.path.join(full_path, url)
             if not os.path.isfile(full_path):
+                static_path_to_validate = None
                 full_path = None
 
         if not full_path:
+            static_path_to_validate = self.static_path
             full_path = os.path.join(self.static_path, url)
 
         try:
-            validate_requested_file_path(full_static_path, full_path)
+            validate_requested_file_path(static_path_to_validate, full_path)
         except PathValidationError:
             raise NotFoundException('Static File Not Found: ' +
                                     url_str)
