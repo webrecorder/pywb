@@ -44,7 +44,8 @@ class StaticHandler(object):
         try:
             validate_requested_file_path(static_path_to_validate, url)
         except ValueError:
-            raise NotFoundException(f'Static File {url_str} (simplified: {url}) not found in {static_path_to_validate}')
+            raise NotFoundException('Static File Not Found: ' +
+                                    url_str)
 
         try:
             data = self.block_loader.load(full_path)
@@ -85,7 +86,8 @@ class StaticHandler(object):
         Returns relative path starting from static_dir or raises ValueError if
         requested path is not in the static directory.
         """
-        return Path(static_dir).joinpath(requested_path).resolve().relative_to(static_dir.resolve())
+        static_dir = Path(static_dir)
+        return static_dir.joinpath(requested_path).resolve().relative_to(static_dir.resolve())
 
 
 
