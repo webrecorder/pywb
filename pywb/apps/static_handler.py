@@ -32,13 +32,13 @@ class StaticHandler(object):
 
         full_path = environ.get('pywb.static_dir')
         if full_path:
-            static_path_to_validate = full_path
+            static_path_to_validate = os.path.abspath(full_path)
             full_path = os.path.join(full_path, url)
             if not os.path.isfile(full_path):
                 full_path = None
 
         if not full_path:
-            static_path_to_validate = self.static_path
+            static_path_to_validate = os.path.abspath(self.static_path)
             full_path = os.path.join(self.static_path, url)
 
         try:
