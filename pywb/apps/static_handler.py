@@ -42,7 +42,7 @@ class StaticHandler(object):
             full_path = os.path.join(self.static_path, url)
 
         try:
-            validate_requested_file_path(static_path_to_validate, full_path)
+            validate_requested_file_path(static_path_to_validate, url)
         except ValueError:
             raise NotFoundException('Static File Not Found: ' +
                                     url_str)
