@@ -32,20 +32,20 @@ class StaticHandler(object):
 
         full_path = environ.get('pywb.static_dir')
         if full_path:
-            static_path_to_validate = os.path.abspath(full_path)
+            static_path_to_validate = full_path
             full_path = os.path.join(full_path, url)
             if not os.path.isfile(full_path):
                 full_path = None
 
         if not full_path:
-            static_path_to_validate = os.path.abspath(self.static_path)
+            static_path_to_validate = self.static_path
             full_path = os.path.join(self.static_path, url)
 
-        # try:
-        #     validate_requested_file_path(static_path_to_validate, url)
-        # except ValueError:
-        #     raise NotFoundException('Static File Not Found: ' +
-        #                             url_str)
+        try:
+            validate_requested_file_path(static_path_to_validate, url)
+        except ValueError:
+            raise NotFoundException('Static File Not Found: ' +
+                                    url_str)
 
         try:
             data = self.block_loader.load(full_path)
@@ -84,7 +84,7 @@ class StaticHandler(object):
         """Validate that requested relative file path is within static dir.
 
         Returns relative path starting from static_dir or raises ValueError if
-        requested path is not in the static directory.
+        path traversal outside the static directory is being attempted.
         """
         static_dir = Path(static_dir)
         return static_dir.joinpath(requested_path).resolve().relative_to(static_dir.resolve())
