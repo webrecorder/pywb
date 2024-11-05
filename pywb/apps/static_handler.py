@@ -10,10 +10,6 @@ from pywb.apps.wbrequestresponse import WbResponse
 from pywb.utils.wbexception import NotFoundException
 
 
-class PathValidationError(Exception):
-    """Path validation exception"""
-
-
 #=================================================================
 # Static Content Handler
 #=================================================================
@@ -33,14 +29,12 @@ class StaticHandler(object):
         # url = sanitize_filepath(url)
 
         static_path_to_validate = None
-        full_path = None
 
         full_path = environ.get('pywb.static_dir')
         if full_path:
             static_path_to_validate = full_path
             full_path = os.path.join(full_path, url)
             if not os.path.isfile(full_path):
-                static_path_to_validate = None
                 full_path = None
 
         if not full_path:
@@ -49,7 +43,7 @@ class StaticHandler(object):
 
         try:
             validate_requested_file_path(static_path_to_validate, full_path)
-        except PathValidationError:
+        except ValueError:
             raise NotFoundException('Static File Not Found: ' +
                                     url_str)
 
@@ -87,12 +81,12 @@ class StaticHandler(object):
                                     url_str)
 
     def validate_requested_file_path(self, static_dir, requested_path):
-        """Validate that requested file path is within static dir"""
-        static_dir = Path(static_dir)
-        requested_path = Path(requested_path)
+        """Validate that requested file path is within static dir.
 
-        if static_dir.resolve() not in requested_path.resolve().parents:
-            raise PathValidationError('Requested path forbidden')
+        Returns relative path starting from static_dir or raises ValueError if
+        requested path is not in the static directory.
+        """
+        return Path(static_dir).joinpath(requested_path).resolve().relative_to(static_dir.resolve())
 
 
 
