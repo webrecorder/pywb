@@ -62,11 +62,6 @@ def generate_git_hash_py(pkg, filename='git_hash.py'):
 def load_requirements(filename):
     with open(filename, 'rt') as fh:
         requirements = fh.read().rstrip().split('\n')
-    if sys.version_info > (3, 0):
-        requirements.append("py3AMF")
-    else:
-        requirements.append("pyAMF")
-    return requirements
 
 
 def get_package_data():
