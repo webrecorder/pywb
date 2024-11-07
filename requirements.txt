@@ -18,3 +18,4 @@ tldextract
 python-dateutil
 markupsafe>=2.1.1
 ua_parser
+py3AMF
