@@ -11,6 +11,7 @@ from io import BytesIO
 import base64
 import cgi
 import json
+import math
 import sys
 
 
@@ -328,7 +329,22 @@ class MethodQueryCanonicalizer(object):
                     _parser(v, name)
 
             elif name:
-                data[get_key(name)] = str(json_obj)
+                if isinstance(json_obj, bool) and json_obj:
+                    data[get_key(name)] = "true"
+                elif isinstance(json_obj, bool):
+                    data[get_key(name)] = "false"
+                elif json_obj is None:
+                    data[get_key(name)] = "null"
+                elif isinstance(json_obj, float):
+                    # Treat floats like JavaScript's Number.prototype.toString(),
+                    # drop decimal if float represents a whole number.
+                    fraction, _ = math.modf(json_obj)
+                    if fraction == 0.0:
+                        data[get_key(name)] = str(int(json_obj))
+                    else:
+                        data[get_key(name)] = str(json_obj)
+                else:
+                    data[get_key(name)] = str(json_obj)
 
         _parser(json.loads(string))
         return urlencode(data)
