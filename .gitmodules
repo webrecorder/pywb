@@ -1,3 +1,6 @@
 [submodule "wombat"]
 	path = wombat
 	url = https://github.com/webrecorder/wombat
+[submodule "wabac.js"]
+	path = wabac.js
+	url = https://github.com/webrecorder/wabac.js
