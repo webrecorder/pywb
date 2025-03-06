@@ -84,6 +84,8 @@ class RewriterApp(object):
                                                self._html_templ('head_insert_html'),
                                                self.custom_banner_view)
 
+        self.client_side_replay = self.config.get('client_side_replay', False)
+
         self.frame_insert_view = TopFrameView(self.jinja_env,
                                               self._html_templ('frame_insert_html'),
                                               self.banner_view)
@@ -933,6 +935,7 @@ class RewriterApp(object):
                                                         environ,
                                                         self.frame_mod,
                                                         self.replay_mod,
+                                                        self.client_side_replay,
                                                         coll='',
                                                         extra_params=extra_params)
 

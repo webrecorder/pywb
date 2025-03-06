@@ -29,6 +29,10 @@ framed_replay: true
 
 redirect_to_exact: true
 
+# Use wabac.js-style client-side replay system
+client_side_replay: false
+
+
 # Uncomment and change to set default locale
 # default_locale: en
 
