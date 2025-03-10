@@ -11,9 +11,12 @@ class WabacReplay
   }
 
   async init() {
-    const scope = '/';
+    const scope = "/";
 
-    await navigator.serviceWorker.register("/static/sw.js?" + new URLSearchParams(this.queryParams).toString(), {scope});
+    await navigator.serviceWorker.register(
+      "/static/sw.js?" + new URLSearchParams(this.queryParams).toString(),
+      { scope },
+    );
 
     let initedResolve = null;
 
@@ -36,7 +39,7 @@ class WabacReplay
       name: this.collName,
       type: "live",
       file: {"sourceUrl": `proxy:${proxyPrefix}`},
-      skipExisting: false,
+      skipExisting: true,
       extraConfig: {
         prefix: proxyPrefix,
         isLive: false,
@@ -56,9 +59,9 @@ class WabacReplay
       navigator.serviceWorker.controller.postMessage(msg);
     }
 
-    window.addEventListener('message', event => {
+    window.addEventListener("message", event => {
       let data = event.data;
-      if (data.wb_type !== 'load') return;
+      if (data.wb_type !== "load") return;
       history.replaceState({}, data.title, this.prefix + data.ts + '/' + data.url);
       window.WBBanner.onMessage(event);
     });
