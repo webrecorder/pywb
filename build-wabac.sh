@@ -1,8 +1,5 @@
 #!/bin/bash
 
-CURR_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+WABAC_SW_URL=https://cdn.jsdelivr.net/npm/@webrecorder/wabac@2.21.3/dist/sw.js
 
-cd $CURR_DIR/wabac.js
-yarn install
-yarn run build
-cp ./dist/sw.js ../pywb/static/wabacWorker.js
+wget "$WABAC_SW_URL" -O ./pywb/static/wabacWorker.js
