@@ -49,7 +49,7 @@ Note: pywb also supports HTTP/S **proxy mode** which requires additional setup. 
 Client-side replay
 ------------------
 
-In pywb 2.8.0+, client-side replay can optionally be enabled for framed replay.
+In pywb 2.9.0+, client-side replay can optionally be enabled for framed replay.
 
 To enable client-side framed replay add:
 
