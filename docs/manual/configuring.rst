@@ -55,7 +55,7 @@ To enable client-side framed replay add:
 
 ``client_side_replay: true`` to your config.yaml
 
-In this mode, pywb will use the `wabac.js <https://github.com/webrecorder/wabac.js>`_ service worker-based replay system that underlines `ReplayWeb.page <https://replayweb.page/>`_ in live proxy mode. This may result in better replay for certain JavaScript-heavy sites.
+In this mode, pywb will use the `wabac.js <https://github.com/webrecorder/wabac.js>`_ service worker-based replay system that underlies `ReplayWeb.page <https://replayweb.page/>`_ in live proxy mode. This may result in better replay for certain JavaScript-heavy sites.
 
 
 .. _dir_structure:
