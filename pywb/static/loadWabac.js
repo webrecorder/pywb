@@ -47,6 +47,7 @@ class WabacReplay
         baseUrlHashReplay: true,
         noPostToGet: false,
         archivePrefix: `/${this.collName}/`,
+        archiveMod: "ir_",
         adblockUrl: this.adblockUrl
       },
     };
