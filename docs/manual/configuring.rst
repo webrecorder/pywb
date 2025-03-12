@@ -44,6 +44,19 @@ To disable framed replay add:
 
 Note: pywb also supports HTTP/S **proxy mode** which requires additional setup. See :ref:`https-proxy` for more details.
 
+.. _client_side_replay:
+
+Client-side replay
+------------------
+
+In pywb 2.8.0+, client-side replay can optionally be enabled for framed replay.
+
+To enable client-side framed replay add:
+
+``client_side_replay: true`` to your config.yaml
+
+In this mode, pywb will use the `wabac.js <https://github.com/webrecorder/wabac.js>`_ service worker-based replay system that underlines `ReplayWeb.page <https://replayweb.page/>`_ in live proxy mode. This may result in better replay for certain JavaScript-heavy sites.
+
 
 .. _dir_structure:
 
