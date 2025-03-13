@@ -830,7 +830,7 @@ class FrontEndApp(object):
         :return: WbResponse with service worker
         :rtype: WbResponse
         """
-        response = self.serve_static(env, coll='', filepath='wabacWorker.js')
+        response = self.serve_static(env, coll='', filepath='wabacSW.js')
         response.status_headers['Service-Worker-Allowed'] = '/'
         return response
 

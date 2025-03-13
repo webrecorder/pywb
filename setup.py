@@ -5,9 +5,27 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import glob
 import os
+import pathlib
 import sys
+import urllib.request
 
 from pywb import __version__
+
+
+root_dir = pathlib.Path(__file__).parent
+
+
+WABAC_SW_URL = "https://cdn.jsdelivr.net/npm/@webrecorder/wabac@2.21.4/dist/sw.js"
+
+
+def download_wabac_sw():
+    print(f"Downloading {WABAC_SW_URL}")
+    with urllib.request.urlopen(WABAC_SW_URL) as response:  # nosec
+        with open(root_dir.joinpath("pywb", "static", "wabacSW.js"), "wb") as fh:
+            fh.write(response.read())
+
+
+download_wabac_sw()
 
 
 def get_long_description():
