@@ -16,7 +16,7 @@ html, body
 {% if client_side_replay %}
 <script src='{{ static_prefix }}/loadWabac.js'></script>
 <script>
-  new WabacReplay("{{ wb_prefix }}", "{{ url }}", "{{ timestamp }}").init();
+  new WabacReplay("{{ wb_prefix }}", "{{ url }}", "{{ timestamp }}", "{{ static_prefix }}").init();
 </script>
 {% else %}
 <script src='{{ static_prefix }}/wb_frame.js'> </script>

@@ -1,9 +1,10 @@
 class WabacReplay
 {
-  constructor(prefix, url, ts) {
+  constructor(prefix, url, ts, staticPrefix) {
     this.prefix = prefix;
     this.url = url;
     this.ts = ts;
+    this.staticPrefix = staticPrefix;
     this.collName = new URL(prefix, "http://dummy").pathname.split('/')[1];
     this.adblockUrl = undefined;
 
@@ -14,7 +15,7 @@ class WabacReplay
     const scope = "/";
 
     await navigator.serviceWorker.register(
-      "/static/sw.js?" + new URLSearchParams(this.queryParams).toString(),
+      `${this.staticPrefix}/sw.js?` + new URLSearchParams(this.queryParams).toString(),
       { scope },
     );
 

@@ -133,7 +133,7 @@ class FrontEndApp(object):
             self.url_map.add(Rule('/', endpoint=self.serve_home))
 
         if self.client_side_replay:
-            self.url_map.add(Rule('/static/sw.js', endpoint=self.serve_wabac_service_worker))
+            self.url_map.add(Rule('/{0}/sw.js'.format(self.static_prefix), endpoint=self.serve_wabac_service_worker))
 
         self._init_coll_routes(coll_prefix)
 
