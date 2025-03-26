@@ -38,4 +38,4 @@ framed_replay: false
 #   - ru
 
 # Same changes as in old pywayback repo
-autoindex: 30
+#autoindex: 30
