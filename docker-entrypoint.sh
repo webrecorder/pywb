@@ -36,4 +36,3 @@ else
     # run process directly
     exec $@
 fi
-

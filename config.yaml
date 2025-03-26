@@ -1,38 +1,41 @@
 # pywb config file
 # ========================================
-#
+#	
 debug: true
 
-# Uncomment to set banner colors and logo
-# ui:
-  # logo: path/relative/from/static/logo.png
-  # logo_home_url: https://example.com
-  # navbar_background_hex: 0c49b0
-  # navbar_color_hex: fff
-  # navbar_light_buttons: true
-  # disable_printing: true
+
+# Uncomment to set banner colors and logo	# Same changes as in old pywayback repo
+# ui:	framed_replay: false
+  # logo: path/relative/from/static/logo.png	autoindex: 30
+  # logo_home_url: https://example.com	debug: true
+  # navbar_background_hex: 0c49b0	
+  # navbar_color_hex: fff	
+  # navbar_light_buttons: true	
+  # disable_printing: true	
 
 collections:
-    all: $all
-    pywb:
-        index_paths: ./sample_archive/cdx/
-        archive_paths: ./sample_archive/warcs/
+  wayback:
+    archive_paths: /collections/wayback/archive
+    index_paths: /collections/wayback/indexes
 
-# Settings for each collection
-use_js_obj_proxy: true
+# Settings for each collection	
+# use_js_obj_proxy: true
 
-# Eanable Memento support
-enable_memento: true
+# Eanable Memento support	
+# enable_memento: true
 
-# Replay content in an iframe
-framed_replay: true
+# Replay content in an iframe	
+framed_replay: false
 
-redirect_to_exact: true
+# redirect_to_exact: true
 
-# Uncomment and change to set default locale
-# default_locale: en
+# Uncomment and change to set default locale	
+# default_locale: en	
 
-# Uncomment to set available locales
-# locales:
-#   - en
+# Uncomment to set available locales	
+# locales:	
+#   - en	
 #   - ru
+
+# Same changes as in old pywayback repo
+autoindex: 30

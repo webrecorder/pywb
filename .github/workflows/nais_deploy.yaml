@@ -1,0 +1,37 @@
+name: Build and deploy
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    types:
+      - labeled
+
+jobs:
+  build_and_deploy:
+    if: (contains(fromJSON('["annesiri", "ssb-cgn", "Glenruben", "johnnadeluy", "Carl-OW", "michaelpande"]'), github.actor))
+    name: Build, push and deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build and push image and SBOM to OCI registry
+      uses: nais/docker-build-push@v0
+      id: docker-build-push
+      with:
+        team: ssbno
+        tag: latest
+        identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
+        project_id: ${{ secrets.NAIS_MANAGEMENT_PROJECT_ID }}
+    - name: Deploy to Nais
+      uses: nais/deploy/actions/deploy@v2
+      env:
+        TEAM: ssbno
+        CLUSTER: test 
+        RESOURCE: nais.yaml
+        VAR: image=${{ steps.docker-build-push.outputs.image }}
+        TELEMETRY: ${{ steps.docker-build-push.outputs.telemetry }}
+        DEPLOY_SERVER: deploy.ssb.cloud.nais.io:443
