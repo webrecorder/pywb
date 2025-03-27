@@ -67,9 +67,12 @@ class WabacReplay
 
     window.addEventListener("message", event => {
       let data = event.data;
-      if (data.wb_type !== "load") return;
-      history.replaceState({}, data.title, this.prefix + data.ts + '/' + data.url);
-      window.WBBanner.onMessage(event);
+      if (window.WBBanner) {
+        window.WBBanner.onMessage(event);
+      }
+      if (data.wb_type === "load" || data.wb_type === "replace-url") {
+        history.replaceState({}, data.title, this.prefix + data.ts + '/' + data.url);
+      }
     });
 
     window.cframe = this;
