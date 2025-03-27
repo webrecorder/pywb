@@ -7,7 +7,7 @@ from pywb.rewrite.default_rewriter import DefaultRewriter
 from pywb.rewrite.header_rewriter import DefaultHeaderRewriter
 from pywb.rewrite.url_rewriter import UrlRewriter
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from io import BytesIO
 
@@ -163,7 +163,7 @@ def _test_cookie_headers():
 def _make_cache_headers():
     cache_headers = [('Content-Length', '123'),
                      ('Cache-Control', 'max-age=10'),
-                     ('Expires', datetime_to_http_date(datetime.now())),
+                     ('Expires', datetime_to_http_date(datetime.now(timezone.utc))),
                      ('ETag', '123456')]
     return cache_headers
 
