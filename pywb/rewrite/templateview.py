@@ -427,7 +427,9 @@ class TopFrameView(BaseInsertView):
                   'is_proxy': is_proxy,
                   'client_side_replay': client_side_replay,
                   'timestamp': timestamp,
-                  'url': wb_url.get_url()
+                  'url': wb_url.get_url(),
+
+                  'sw_prefix': env.get('pywb.app_prefix', '') + "/"
                  }
 
         if extra_params:

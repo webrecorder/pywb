@@ -936,7 +936,7 @@ class RewriterApp(object):
                                                         self.frame_mod,
                                                         self.replay_mod,
                                                         self.client_side_replay,
-                                                        coll='',
+                                                        coll=kwargs.get("coll"),
                                                         extra_params=extra_params)
 
         return None

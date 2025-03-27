@@ -1,18 +1,24 @@
 class WabacReplay
 {
-  constructor(prefix, url, ts, staticPrefix) {
+  constructor(prefix, url, ts, staticPrefix, coll, swScopePrefix) {
     this.prefix = prefix;
     this.url = url;
     this.ts = ts;
     this.staticPrefix = staticPrefix;
-    this.collName = new URL(prefix, "http://dummy").pathname.split('/')[1];
+    this.collName = coll;
+    this.isRoot = coll === "$root";
+    this.archivePrefix = this.isRoot ? "/" : `/${this.collName}/`;
+    this.swScope = swScopePrefix;
     this.adblockUrl = undefined;
 
     this.queryParams = {};
+    if (this.isRoot) {
+      this.queryParams["root"] = "$root";
+    }
   }
 
   async init() {
-    const scope = "/";
+    const scope = this.swScope;
 
     await navigator.serviceWorker.register(
       `${this.staticPrefix}/sw.js?` + new URLSearchParams(this.queryParams).toString(),
@@ -30,24 +36,22 @@ class WabacReplay
       }
     });
 
-    const baseUrl = new URL(window.location);
-    baseUrl.hash = "";
-
     const proxyPrefix = "";
 
     const msg = {
       msg_type: "addColl",
       name: this.collName,
       type: "live",
+      root: this.isRoot,
       file: {"sourceUrl": `proxy:${proxyPrefix}`},
       skipExisting: true,
       extraConfig: {
         prefix: proxyPrefix,
         isLive: false,
-        baseUrl: baseUrl.href,
-        baseUrlHashReplay: true,
+        baseUrl: this.prefix,
+        baseUrlAppendReplay: true,
         noPostToGet: false,
-        archivePrefix: `/${this.collName}/`,
+        archivePrefix: this.archivePrefix,
         archiveMod: "ir_",
         adblockUrl: this.adblockUrl
       },
@@ -80,6 +84,6 @@ class WabacReplay
   // called by the Vue banner when the timeline is clicked
   load_url(url, ts) {
     const iframe = document.querySelector('#replay_iframe');
-    iframe.src = `/w/${this.collName}/${ts}mp_/${url}`;
+    iframe.src = `${this.swScope}w${this.archivePrefix}${ts}mp_/${url}`;
   }
 }
