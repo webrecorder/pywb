@@ -373,6 +373,8 @@ For example, to deploy pywb under the ``/wayback`` subdirectory, the ``uwsgi.ini
     mount = /wayback=./pywb/apps/wayback.py
     manage-script-name = true
 
+Alternatively this can also be achieved using the `UWSGI_MOUNT` environment variable, e.g. with the value `/wayback=/pywb/pywb/apps/wayback.py`.
+This is specifically handy on the docker image.
 
 .. _example-deploy:
 
