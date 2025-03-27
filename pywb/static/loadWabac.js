@@ -11,14 +11,14 @@ class WabacReplay
     this.swScope = swScopePrefix;
     this.adblockUrl = undefined;
 
-    this.queryParams = {};
+    this.queryParams = {"replayPrefix": ""};
     if (this.isRoot) {
       this.queryParams["root"] = "$root";
     }
   }
 
   async init() {
-    const scope = this.swScope;
+    const scope = this.swScope + "/";
 
     await navigator.serviceWorker.register(
       `${this.staticPrefix}/sw.js?` + new URLSearchParams(this.queryParams).toString(),
@@ -84,6 +84,6 @@ class WabacReplay
   // called by the Vue banner when the timeline is clicked
   load_url(url, ts) {
     const iframe = document.querySelector('#replay_iframe');
-    iframe.src = `${this.swScope}w${this.archivePrefix}${ts}mp_/${url}`;
+    iframe.src = `${this.swScope}${this.archivePrefix}${ts}mp_/${url}`;
   }
 }

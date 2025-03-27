@@ -429,7 +429,7 @@ class TopFrameView(BaseInsertView):
                   'timestamp': timestamp,
                   'url': wb_url.get_url(),
 
-                  'sw_prefix': env.get('pywb.app_prefix', '') + "/"
+                  'sw_prefix': env.get('pywb.app_prefix', '')
                  }
 
         if extra_params:
