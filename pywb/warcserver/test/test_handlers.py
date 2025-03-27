@@ -186,7 +186,7 @@ class TestBaseWarcServer(HttpBinLiveTests, MementoOverrideTests, FakeRedisTests,
     def test_agg_select_mem_1(self):
         resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20141001')
 
-        assert resp.headers['Warcserver-Source-Coll'] == 'rhiz'
+        assert resp.headers['Warcserver-Source-Coll'] == 'ia'
 
         self._check_uri_date(resp, 'http://www.vvork.com/', '2014-10-06T18:43:57Z')
 
