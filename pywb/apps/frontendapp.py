@@ -81,6 +81,8 @@ class FrontEndApp(object):
 
         self.debug = config.get('debug', False)
 
+        self.client_side_replay = config.get('client_side_replay', False)
+
         self.warcserver_server = GeventServer(self.warcserver, port=0)
 
         self.proxy_prefix = None  # the URL prefix to be used for the collection with proxy mode (e.g. /coll/id_/)
@@ -129,6 +131,9 @@ class FrontEndApp(object):
         else:
             coll_prefix = '/<coll>'
             self.url_map.add(Rule('/', endpoint=self.serve_home))
+
+        if self.client_side_replay:
+            self.url_map.add(Rule('/{0}/sw.js'.format(self.static_prefix), endpoint=self.serve_wabac_service_worker))
 
         self._init_coll_routes(coll_prefix)
 
@@ -816,6 +821,17 @@ class FrontEndApp(object):
         # for WR
         if isinstance(response, WbResponse):
             response.add_access_control_headers(env=env)
+        return response
+
+    def serve_wabac_service_worker(self, env):
+        """Serve wabac.js service worker.
+
+        :param dict env: The WSGI environment dictionary
+        :return: WbResponse with service worker
+        :rtype: WbResponse
+        """
+        response = self.serve_static(env, coll='', filepath='wabacSW.js')
+        response.status_headers['Service-Worker-Allowed'] = '/'
         return response
 
 

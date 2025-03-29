@@ -27,6 +27,10 @@ enable_memento: true
 # Replay content in an iframe
 framed_replay: true
 
+# Use wabac.js-style client-side replay system for framed replay
+client_side_replay: false
+
+# Enable classic redirect behavior
 redirect_to_exact: true
 
 # Uncomment and change to set default locale
