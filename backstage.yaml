@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ssbno-pywb
+  description: |
+    Applikasjon for å serve webarkiv (gamle sider fra eks. Enonic 4.7). Skal kun vises sluttbrukere gjennom archive-renderer på ssb.no-adresse.
+  links:
+    - title: ssbno-pywayback.intern.ssb.no
+      url: https://ssbno-pywayback.intern.ssb.no
+  tags:
+    - cloud
+    - python3
+  annotations:
+    github.com/project-slug: statisticsnorway/ssbno-pywb
+spec:
+  type: website
+  system: SSBNO
+  owner: ssbno-developers
+  lifecycle: production
