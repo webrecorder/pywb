@@ -13,10 +13,10 @@ debug: true
   # navbar_light_buttons: true	
   # disable_printing: true	
 
-collections:
-  wayback:
-    archive_paths: /collections/wayback/archive
-    index_paths: /collections/wayback/indexes
+# collections:
+#   wayback:
+#     archive_paths: /collections/wayback/archive
+#     index_paths: /collections/wayback/indexes
 
 # Settings for each collection	
 # use_js_obj_proxy: true
