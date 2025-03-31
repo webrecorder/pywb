@@ -1,4 +1,4 @@
-name: Build and deploy
+name: Deploy to TEST
 on:
   push:
     branches:
@@ -12,6 +12,7 @@ jobs:
     if: (contains(fromJSON('["annesiri", "ssb-cgn", "Glenruben", "johnnadeluy", "Carl-OW", "michaelpande"]'), github.actor))
     name: Build, push and deploy
     runs-on: ubuntu-latest
+    environment: 'TEST_pywb'
     permissions:
       contents: read
       id-token: write
@@ -31,7 +32,7 @@ jobs:
       env:
         TEAM: ssbno
         CLUSTER: test 
-        RESOURCE: nais.yaml
+        RESOURCE: .nais/test.yaml
         VAR: image=${{ steps.docker-build-push.outputs.image }}
         TELEMETRY: ${{ steps.docker-build-push.outputs.telemetry }}
         DEPLOY_SERVER: deploy.ssb.cloud.nais.io:443
