@@ -26,6 +26,7 @@ ca/pywb-ca.pem
 ca/certs/
 proxy-certs/
 collections/
+ssb-archive/
 
 # Installer logs
 pip-log.txt
