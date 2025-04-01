@@ -1,0 +1,64 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: ssbno-pywayback
+  namespace: ssbno
+  labels:
+    team: ssbno-developers
+  annotations:
+    nais.io/read-only-file-system: "false"
+    nais.io/run-as-user: "1001"
+
+spec:
+  accessPolicy:
+    inbound:
+      rules:
+        - application: archive-renderer
+
+  image: '{{ image }}'
+  ingresses:
+  - https://ssbno-pywayback.intern.ssb.no
+
+  port: 8080
+  replicas:
+    disableAutoScaling: true
+    max: 1
+    min: 1
+
+  strategy:
+    type: Recreate
+
+  filesFrom:
+  - mountPath: /webarchive/collections/wayback
+    persistentVolumeClaim: pvc-for-ssbno-archive  
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 4Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+  logformat: accesslog_with_referer_useragent
+  logtransform: http_loglevel
+
+  service:
+    port: 80
+    protocol: http
+
+  # liveness:
+  #   failureThreshold: 10
+  #   initialDelay: 20
+  #   path: /healthcheck
+  #   periodSeconds: 5
+  #   port: 8080
+  #   timeout: 1
+
+  # readiness:
+  #   failureThreshold: 5
+  #   initialDelay: 5
+  #   path: /healthcheck
+  #   periodSeconds: 5
+  #   port: 8080
+  #   timeout: 1
