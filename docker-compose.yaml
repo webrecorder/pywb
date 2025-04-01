@@ -7,4 +7,4 @@ services:
         - 8080:8080
     volumes:
         - ./config.yaml:/webarchive/config.yaml
-        - ./ssb-archive/webarchive/collections/wayback:/webarchive/collections/wayback
+        - ./ssb-archive:/webarchive/collections/wayback/archive
