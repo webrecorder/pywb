@@ -1,0 +1,13 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-for-ssbno-archive
+  namespace: ssbno
+spec:
+  storageClassName: "standard"
+  accessModes:
+    - ReadWriteOnce 
+  resources:
+    requests:
+      storage: 500Gi
