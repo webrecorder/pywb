@@ -28,7 +28,7 @@ enable_memento: true
 framed_replay: true
 
 # Use wabac.js-style client-side replay system for framed replay
-client_side_replay: false
+client_side_replay: true
 
 # Enable classic redirect behavior
 redirect_to_exact: true

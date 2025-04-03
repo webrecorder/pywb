@@ -53,7 +53,8 @@ class WabacReplay
         noPostToGet: false,
         archivePrefix: this.archivePrefix,
         archiveMod: "ir_",
-        adblockUrl: this.adblockUrl
+        adblockUrl: this.adblockUrl,
+        noPostToGet: true,
       },
     };
 
