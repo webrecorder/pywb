@@ -47,18 +47,18 @@ spec:
     port: 80
     protocol: http
 
-  # liveness:
-  #   failureThreshold: 10
-  #   initialDelay: 20
-  #   path: /healthcheck
-  #   periodSeconds: 5
-  #   port: 8080
-  #   timeout: 1
+  liveness:
+    failureThreshold: 10
+    initialDelay: 20
+    path: /live
+    periodSeconds: 5
+    port: 8080
+    timeout: 1
 
-  # readiness:
-  #   failureThreshold: 5
-  #   initialDelay: 5
-  #   path: /healthcheck
-  #   periodSeconds: 5
-  #   port: 8080
-  #   timeout: 1
+  readiness:
+    failureThreshold: 5
+    initialDelay: 5
+    path: /ready
+    periodSeconds: 5
+    port: 8080
+    timeout: 1
