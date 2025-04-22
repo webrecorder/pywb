@@ -86,14 +86,16 @@ class TestMemAgg(MementoOverrideTests, BaseTestClass):
         url = 'http://vvork.com/'
         res, errs = agg(dict(url=url, closest='20141001', limit=5))
 
-        exp = [{"timestamp": "20141006184357", "load_url": "https://webarchives.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"},
+        exp = [
+               #{"timestamp": "20141006184357", "load_url": "https://webarchives.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"},
                {"timestamp": "20141018133107", "load_url": "http://web.archive.org/web/20141018133107id_/http://vvork.com/", "source": "ia"},
                {"timestamp": "20141020161243", "load_url": "http://web.archive.org/web/20141020161243id_/http://vvork.com/", "source": "ia"},
                {"timestamp": "20140806161228", "load_url": "http://web.archive.org/web/20140806161228id_/http://vvork.com/", "source": "ia"},
-               {"timestamp": "20131004231540", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"}]
+               {"timestamp": "20131004231540", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"},
+               {"timestamp": "20131004175706", "load_url": "http://wayback.archive-it.org/all/20131004175706id_/http://vvork.com/", "source": "ait"}]
 
         assert(to_json_list(res) == exp)
-        assert(errs == {})
+        assert(errs == {'rhiz': "NotFoundException('https://webarchives.rhizome.org/vvork/http://vvork.com/',)"})
 
 
     @pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
@@ -102,11 +104,13 @@ class TestMemAgg(MementoOverrideTests, BaseTestClass):
         url = 'http://vvork.com/'
         res, errs = agg(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait'))
 
-        exp = [{"timestamp": "20141006184357", "load_url": "https://webarchives.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"},
-               {"timestamp": "20131004231540", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"}]
+        exp = [
+               #{"timestamp": "20141006184357", "load_url": "https://webarchives.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"},
+               {"timestamp": "20131004231540", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"},
+               {"timestamp": "20131004175706", "load_url": "http://wayback.archive-it.org/all/20131004175706id_/http://vvork.com/", "source": "ait"}]
 
         assert(to_json_list(res) == exp)
-        assert(errs == {})
+        assert(errs == {'rhiz': "NotFoundException('https://webarchives.rhizome.org/vvork/http://vvork.com/',)"})
 
 
     @pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
