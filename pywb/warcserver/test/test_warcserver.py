@@ -67,9 +67,9 @@ class TestWarcServer(TempDirTests, BaseTestClass):
     def test_memento(self):
         sources = self._get_sources('rhiz')
         assert isinstance(sources['rhiz'], MementoIndexSource)
-        assert sources['rhiz'].timegate_url == 'http://webenact.rhizome.org/all/{url}'
-        assert sources['rhiz'].timemap_url == 'http://webenact.rhizome.org/all/timemap/link/{url}'
-        assert sources['rhiz'].replay_url == 'http://webenact.rhizome.org/all/{timestamp}id_/{url}'
+        assert sources['rhiz'].timegate_url == 'http://webarchives.rhizome.org/all/{url}'
+        assert sources['rhiz'].timemap_url == 'http://webarchives.rhizome.org/all/timemap/link/{url}'
+        assert sources['rhiz'].replay_url == 'http://webarchives.rhizome.org/all/{timestamp}id_/{url}'
 
         long_form_sources = self._get_sources('rhiz_long')
         assert sources['rhiz'] == long_form_sources['rhiz_long']
@@ -77,16 +77,16 @@ class TestWarcServer(TempDirTests, BaseTestClass):
     def test_wb_memento(self):
         sources = self._get_sources('rhiz_wb')
         assert isinstance(sources['rhiz_wb'], WBMementoIndexSource)
-        assert sources['rhiz_wb'].timegate_url == 'http://webenact.rhizome.org/all/{url}'
-        assert sources['rhiz_wb'].timemap_url == 'http://webenact.rhizome.org/all/timemap/link/{url}'
-        assert sources['rhiz_wb'].replay_url == 'http://webenact.rhizome.org/all/{timestamp}im_/{url}'
-        assert sources['rhiz_wb'].prefix == 'http://webenact.rhizome.org/all/'
+        assert sources['rhiz_wb'].timegate_url == 'http://webarchives.rhizome.org/all/{url}'
+        assert sources['rhiz_wb'].timemap_url == 'http://webarchives.rhizome.org/all/timemap/link/{url}'
+        assert sources['rhiz_wb'].replay_url == 'http://webarchives.rhizome.org/all/{timestamp}im_/{url}'
+        assert sources['rhiz_wb'].prefix == 'http://webarchives.rhizome.org/all/'
 
     def test_remote_cdx_2(self):
         sources = self._get_sources('rhiz_cdx')
         assert isinstance(sources['rhiz_cdx'], RemoteIndexSource)
-        assert sources['rhiz_cdx'].api_url == 'http://webenact.rhizome.org/all-cdx?url={url}&closest={closest}&sort=closest'
-        assert sources['rhiz_cdx'].replay_url == 'http://webenact.rhizome.org/all/{timestamp}id_/{url}'
+        assert sources['rhiz_cdx'].api_url == 'http://webarchives.rhizome.org/all-cdx?url={url}&closest={closest}&sort=closest'
+        assert sources['rhiz_cdx'].replay_url == 'http://webarchives.rhizome.org/all/{timestamp}id_/{url}'
 
     def test_live(self):
         sources = self._get_sources('live')

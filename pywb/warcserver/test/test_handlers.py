@@ -33,7 +33,7 @@ from pywb.utils.memento import MementoUtils
 sources = {
     'local': DirectoryIndexSource(TEST_CDX_PATH),
     'ia': MementoIndexSource.from_timegate_url('http://web.archive.org/web/'),
-    'rhiz': MementoIndexSource.from_timegate_url('https://webenact.rhizome.org/vvork/'),
+    'rhiz': MementoIndexSource.from_timegate_url('https://webarchives.rhizome.org/vvork/'),
     'live': LiveIndexSource(),
 }
 
@@ -247,7 +247,7 @@ class TestBaseWarcServer(HttpBinLiveTests, MementoOverrideTests, FakeRedisTests,
         assert resp.headers['Link'] == MementoUtils.make_link('http://www.iana.org/', 'original')
         assert resp.headers['Memento-Datetime'] == 'Sun, 26 Jan 2014 20:06:24 GMT'
 
-        assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('https://webenact.rhizome.org/vvork/http://iana.org/',)"}
+        assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('https://webarchives.rhizome.org/vvork/http://iana.org/',)"}
 
     @patch('pywb.warcserver.index.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_local_postreq'))
     def test_agg_select_local_postreq(self):
@@ -267,7 +267,7 @@ Host: iana.org
         assert resp.headers['Link'] == MementoUtils.make_link('http://www.iana.org/', 'original')
         assert resp.headers['Memento-Datetime'] == 'Sun, 26 Jan 2014 20:06:24 GMT'
 
-        assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('https://webenact.rhizome.org/vvork/http://iana.org/',)"}
+        assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('https://webarchives.rhizome.org/vvork/http://iana.org/',)"}
 
     @patch('pywb.warcserver.index.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_live_postreq'))
     def test_agg_live_postreq(self):
@@ -290,8 +290,8 @@ Host: httpbin.org
         assert b'HTTP/1.1 200 OK' in resp.body
         assert b'"foo": "bar"' in resp.body
 
-        #assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('https://webenact.rhizome.org/vvork/http://httpbin.org/get?foo=bar',)"}
-        assert "NotFoundException('https://webenact.rhizome.org/vvork/" in json.loads(resp.headers['ResErrors'])['rhiz']
+        #assert json.loads(resp.headers['ResErrors']) == {"rhiz": "NotFoundException('https://webarchives.rhizome.org/vvork/http://httpbin.org/get?foo=bar',)"}
+        assert "NotFoundException('https://webarchives.rhizome.org/vvork/" in json.loads(resp.headers['ResErrors'])['rhiz']
 
     def test_agg_post_resolve_postreq(self):
         req_data = """\
