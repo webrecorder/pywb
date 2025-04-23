@@ -353,10 +353,10 @@ class HttpLoader(BaseLoader):
             else:
                 headers['Cookie'] = self.cookie_maker.make()
 
-        if not self.session:
-            self.session = requests.Session()
+        #if not self.session:
+        session = requests.Session()
 
-        r = self.session.get(url, headers=headers, stream=True)
+        r = session.get(url, headers=headers, stream=True)
         r.raise_for_status()
         if self.decode_content:
             r.raw.decode_content = True
