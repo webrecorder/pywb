@@ -342,7 +342,7 @@ class HttpLoader(BaseLoader):
         Load a file-like reader over http using range requests
         and an optional cookie created via a cookie_maker
         """
-        headers = {"Accept-Encoding": "identity"}
+        headers = {}
         if offset != 0 or length != -1:
             headers['Range'] = BlockLoader._make_range_header(offset, length)
 
@@ -357,6 +357,7 @@ class HttpLoader(BaseLoader):
 
         r = self.session.get(url, headers=headers, stream=True)
         r.raise_for_status()
+        r.raw.decode_content = True
         return StreamClosingReader(r.raw)
 
 
