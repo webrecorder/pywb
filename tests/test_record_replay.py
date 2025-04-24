@@ -217,7 +217,7 @@ class TestRecordFilter(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
         assert 'Example Domain' in res.text
         assert os.listdir(dir_name) == []
 
-    @pytest.mark.skipif(sys.version_info == (3,9))
+    @pytest.mark.skipif(sys.version_info == (3,9), 'Skipping for 3.9')
     def test_record_new(self):
         dir_name = os.path.join(self.root_dir, '_test_colls', 'test-new', 'archive')
         assert os.path.isdir(dir_name)
