@@ -8,6 +8,7 @@ from warcio import ArchiveIterator
 import os
 import time
 import json
+import sys
 
 from mock import patch
 import pytest
