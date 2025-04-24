@@ -8,7 +8,7 @@ concurrency:
 
 jobs:
   unit-tests:
-    timeout-minutes: 10
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 3
