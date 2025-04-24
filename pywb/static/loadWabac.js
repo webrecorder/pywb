@@ -76,8 +76,6 @@ class WabacReplay
       }
     });
 
-    window.cframe = this;
-
     if (inited) {
       await inited;
     }
