@@ -7,7 +7,6 @@ class WabacReplay
     this.staticPrefix = staticPrefix;
     this.collName = coll;
     this.isRoot = coll === "$root";
-    this.archivePrefix = this.isRoot ? "/" : `/${this.collName}/`;
     this.swScope = swScopePrefix;
     this.adblockUrl = undefined;
 
@@ -51,7 +50,7 @@ class WabacReplay
         baseUrl: this.prefix,
         baseUrlAppendReplay: true,
         noPostToGet: false,
-        archivePrefix: this.archivePrefix,
+        archivePrefix: this.prefix,
         archiveMod: "ir_",
         adblockUrl: this.adblockUrl,
         noPostToGet: true,
@@ -86,6 +85,6 @@ class WabacReplay
   // called by the Vue banner when the timeline is clicked
   load_url(url, ts) {
     const iframe = document.querySelector('#replay_iframe');
-    iframe.src = `${this.swScope}${this.archivePrefix}${ts}mp_/${url}`;
+    iframe.src = `${this.prefix}${ts}mp_/${url}`;
   }
 }
