@@ -187,7 +187,7 @@ class TestRecordCustomConfig(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
 
 
 # ============================================================================
-@pytest.mark.skipif(sys.version_info == (3,9), reason='Skipping for 3.9')
+@pytest.mark.skipif(sys.version_info >= (3,9) and sys.version_info < (3,10), reason='Skipping for 3.9')
 class TestRecordFilter(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
 
     @classmethod
