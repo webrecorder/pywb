@@ -430,7 +430,7 @@ class LiveWebLoader(BaseLoader):
         warc_headers['WARC-Date'] = datetime_to_iso_date(dt)
 
         if not cdx.get('is_live'):
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.now(datetime.timezone.utc)
             warc_headers['WARC-Source-URI'] = cdx.get('load_url')
             warc_headers['WARC-Creation-Date'] = datetime_to_iso_date(now)
 
