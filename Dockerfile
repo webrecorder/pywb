@@ -29,6 +29,7 @@ WORKDIR /webarchive
 ENV INIT_COLLECTION 'wayback'
 
 ENV VOLUME_DIR /webarchive
+ENV UWSGI_MOUNT '/=/pywb/pywb/apps/wayback.py'
 
 #USER archivist
 COPY docker-entrypoint.sh ./

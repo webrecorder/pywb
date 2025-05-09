@@ -18,11 +18,13 @@ class TestSOCKSProxy(BaseConfigTest):
     def teardown_class(cls):
         super(TestSOCKSProxy, cls).teardown_class()
 
+    @pytest.mark.skipif(os.environ.get('CI') is not None, reason='Skip Test on CI')
     def test_socks_attempt_connect(self, fmod_sl):
         # no proxy is set, expect to fail if socks is being used
         resp = self.get('/live/{0}http://httpbin.org/get', fmod_sl, status=400)
         assert resp.status_int == 400
 
+    @pytest.mark.skipif(os.environ.get('CI') is not None, reason='Skip Test on CI')
     def test_socks_disable_enable(self, fmod_sl):
         os.environ['SOCKS_DISABLE'] = '1'
 

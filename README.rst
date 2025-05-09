@@ -1,4 +1,4 @@
-Webrecorder pywb 2.8
+Webrecorder pywb 2.9
 ====================
 
 .. image:: https://raw.githubusercontent.com/webrecorder/pywb/main/pywb/static/pywb-logo.png
@@ -50,6 +50,8 @@ The 2.x release included a major overhaul of pywb and introduces many new featur
 * New in 2.6: Support for localization and multi-language deployment.
 
 * New in 2.7: New banner/calendar UI written in `Vue <https://vuejs.org/>`_, with interactive timeline and easier theming of colors and logo via ``config.yaml``.
+
+* New in 2.9: Client-side replay is added as an option and can be enabled via ``config.yaml``
 
 
 Please see the `full documentation <https://pywb.readthedocs.org>`_ for more detailed info on all these features.
