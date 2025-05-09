@@ -7,6 +7,13 @@ from pywb.apps.wbrequestresponse import WbResponse
 from pywb.utils.wbexception import NotFoundException
 
 
+# =================================================================
+def is_subpath(parent_path, child_path):
+    parent = os.path.abspath(parent_path)
+    child = os.path.abspath(child_path)
+    return os.path.commonpath([parent, child]) == parent
+
+
 #=================================================================
 # Static Content Handler
 #=================================================================
@@ -23,14 +30,25 @@ class StaticHandler(object):
         if url.endswith('/'):
             url += 'index.html'
 
-        full_path = environ.get('pywb.static_dir')
-        if full_path:
-            full_path = os.path.join(full_path, url)
+        full_path = None
+        env_static_dir = environ.get('pywb.static_dir')
+
+        if env_static_dir:
+            full_path = os.path.join(env_static_dir, url)
+
+            # Prevent path traversal
+            if not is_subpath(env_static_dir, full_path):
+                raise NotFoundException('Requested a static file outside of static_dir')
+
             if not os.path.isfile(full_path):
                 full_path = None
 
         if not full_path:
             full_path = os.path.join(self.static_path, url)
+
+            # Prevent path traversal
+            if not is_subpath(self.static_path, full_path):
+                raise NotFoundException('Requested a static file outside of static_dir')
 
         try:
             data = self.block_loader.load(full_path)

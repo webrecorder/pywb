@@ -23,7 +23,7 @@ sources = {
     'ia': MementoIndexSource.from_timegate_url('http://web.archive.org/web/'),
     'ait': MementoIndexSource.from_timegate_url('http://wayback.archive-it.org/all/'),
     'bl': MementoIndexSource.from_timegate_url('http://www.webarchive.org.uk/wayback/archive/'),
-    'rhiz': MementoIndexSource.from_timegate_url('https://webenact.rhizome.org/vvork/', path='*')
+    'rhiz': MementoIndexSource.from_timegate_url('https://webarchives.rhizome.org/vvork/', path='*')
 }
 
 aggs = {'simple': SimpleAggregator(sources),
@@ -59,7 +59,7 @@ class TestMemAgg(MementoOverrideTests, BaseTestClass):
 
         assert(to_json_list(res) == exp)
         assert(errs == {'bl': "NotFoundException('http://www.webarchive.org.uk/wayback/archive/http://iana.org/',)",
-                        'rhiz': "NotFoundException('https://webenact.rhizome.org/vvork/http://iana.org/',)"})
+                        'rhiz': "NotFoundException('https://webarchives.rhizome.org/vvork/http://iana.org/',)"})
 
 
     @pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
@@ -77,7 +77,7 @@ class TestMemAgg(MementoOverrideTests, BaseTestClass):
               ]
 
         assert(to_json_list(res) == exp)
-        assert(errs == {'rhiz': "NotFoundException('https://webenact.rhizome.org/vvork/http://example.com/',)"})
+        assert(errs == {'rhiz': "NotFoundException('https://webarchives.rhizome.org/vvork/http://example.com/',)"})
 
 
     @pytest.mark.parametrize("agg", list(aggs.values()), ids=list(aggs.keys()))
@@ -86,11 +86,13 @@ class TestMemAgg(MementoOverrideTests, BaseTestClass):
         url = 'http://vvork.com/'
         res, errs = agg(dict(url=url, closest='20141001', limit=5))
 
-        exp = [{"timestamp": "20141006184357", "load_url": "https://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"},
+        exp = [
+               {"timestamp": "20141006184357", "load_url": "https://webarchives.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"},
                {"timestamp": "20141018133107", "load_url": "http://web.archive.org/web/20141018133107id_/http://vvork.com/", "source": "ia"},
                {"timestamp": "20141020161243", "load_url": "http://web.archive.org/web/20141020161243id_/http://vvork.com/", "source": "ia"},
                {"timestamp": "20140806161228", "load_url": "http://web.archive.org/web/20140806161228id_/http://vvork.com/", "source": "ia"},
-               {"timestamp": "20131004231540", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"}]
+               {"timestamp": "20131004231540", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"},
+              ]
 
         assert(to_json_list(res) == exp)
         assert(errs == {})
@@ -102,8 +104,10 @@ class TestMemAgg(MementoOverrideTests, BaseTestClass):
         url = 'http://vvork.com/'
         res, errs = agg(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait'))
 
-        exp = [{"timestamp": "20141006184357", "load_url": "https://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"},
-               {"timestamp": "20131004231540", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"}]
+        exp = [
+               {"timestamp": "20141006184357", "load_url": "https://webarchives.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"},
+               {"timestamp": "20131004231540", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"},
+              ]
 
         assert(to_json_list(res) == exp)
         assert(errs == {})
@@ -167,7 +171,7 @@ class TestMemAgg(MementoOverrideTests, BaseTestClass):
         headers, res, errs = handler(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait'))
 
         exp = b"""\
-com,vvork)/ 20141006184357 {"url": "http://www.vvork.com/", "mem_rel": "memento", "memento_url": "https://webenact.rhizome.org/vvork/20141006184357/http://www.vvork.com/", "load_url": "https://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"}
+com,vvork)/ 20141006184357 {"url": "http://www.vvork.com/", "mem_rel": "memento", "memento_url": "https://webarchives.rhizome.org/vvork/20141006184357/http://www.vvork.com/", "load_url": "https://webarchives.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"}
 com,vvork)/ 20131004231540 {"url": "http://vvork.com/", "mem_rel": "last memento", "memento_url": "http://wayback.archive-it.org/all/20131004231540/http://vvork.com/", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"}
 """
 
@@ -183,7 +187,7 @@ com,vvork)/ 20131004231540 {"url": "http://vvork.com/", "mem_rel": "last memento
         headers, res, errs = handler(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait', output='json'))
 
         exp = b"""\
-{"urlkey": "com,vvork)/", "timestamp": "20141006184357", "url": "http://www.vvork.com/", "mem_rel": "memento", "memento_url": "https://webenact.rhizome.org/vvork/20141006184357/http://www.vvork.com/", "load_url": "https://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"}
+{"urlkey": "com,vvork)/", "timestamp": "20141006184357", "url": "http://www.vvork.com/", "mem_rel": "memento", "memento_url": "https://webarchives.rhizome.org/vvork/20141006184357/http://www.vvork.com/", "load_url": "https://webarchives.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/", "source": "rhiz"}
 {"urlkey": "com,vvork)/", "timestamp": "20131004231540", "url": "http://vvork.com/", "mem_rel": "last memento", "memento_url": "http://wayback.archive-it.org/all/20131004231540/http://vvork.com/", "load_url": "http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/", "source": "ait"}
 """
 
@@ -198,7 +202,7 @@ com,vvork)/ 20131004231540 {"url": "http://vvork.com/", "mem_rel": "last memento
         headers, res, errs = handler(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait', output='link'))
 
         exp = b"""\
-<https://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/>; rel="memento"; datetime="Mon, 06 Oct 2014 18:43:57 GMT"; src="rhiz",
+<https://webarchives.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/>; rel="memento"; datetime="Mon, 06 Oct 2014 18:43:57 GMT"; src="rhiz",
 <http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/>; rel="memento"; datetime="Fri, 04 Oct 2013 23:15:40 GMT"; src="ait"
 """
         assert(headers['Content-Type'] == 'application/link')
@@ -223,7 +227,7 @@ com,vvork)/ 20131004231540 {"url": "http://vvork.com/", "mem_rel": "last memento
         assert(b''.join(res) == exp)
 
         exp_errs = {'bl': "NotFoundException('http://www.webarchive.org.uk/wayback/archive/http://iana.org/',)",
-                    'rhiz': "NotFoundException('https://webenact.rhizome.org/vvork/http://iana.org/',)"}
+                    'rhiz': "NotFoundException('https://webarchives.rhizome.org/vvork/http://iana.org/',)"}
 
         assert(errs == exp_errs)
 
@@ -242,7 +246,7 @@ com,vvork)/ 20131004231540 {"url": "http://vvork.com/", "mem_rel": "last memento
         exp_errs = {'ait': "NotFoundException('http://wayback.archive-it.org/all/http://foo.bar.non-existent',)",
                     'bl': "NotFoundException('http://www.webarchive.org.uk/wayback/archive/http://foo.bar.non-existent',)",
                     'ia': "NotFoundException('http://web.archive.org/web/http://foo.bar.non-existent',)",
-                    'rhiz': "NotFoundException('https://webenact.rhizome.org/vvork/http://foo.bar.non-existent',)"}
+                    'rhiz': "NotFoundException('https://webarchives.rhizome.org/vvork/http://foo.bar.non-existent',)"}
 
         assert(errs == exp_errs)
 
@@ -253,7 +257,7 @@ com,vvork)/ 20131004231540 {"url": "http://vvork.com/", "mem_rel": "last memento
         headers, res, errs = handler(dict(url=url, closest='20141001', limit=2, sources='rhiz,ait', output='text'))
 
         exp = b"""\
-com,vvork)/ 20141006184357 http://www.vvork.com/ memento https://webenact.rhizome.org/vvork/20141006184357/http://www.vvork.com/ https://webenact.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/ rhiz
+com,vvork)/ 20141006184357 http://www.vvork.com/ memento https://webarchives.rhizome.org/vvork/20141006184357/http://www.vvork.com/ https://webarchives.rhizome.org/vvork/20141006184357id_/http://www.vvork.com/ rhiz
 com,vvork)/ 20131004231540 http://vvork.com/ last memento http://wayback.archive-it.org/all/20131004231540/http://vvork.com/ http://wayback.archive-it.org/all/20131004231540id_/http://vvork.com/ ait
 """
         assert(headers['Content-Type'] == 'text/plain')

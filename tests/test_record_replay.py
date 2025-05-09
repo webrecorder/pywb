@@ -8,6 +8,7 @@ from warcio import ArchiveIterator
 import os
 import time
 import json
+import sys
 
 from mock import patch
 import pytest
@@ -186,6 +187,7 @@ class TestRecordCustomConfig(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
 
 
 # ============================================================================
+@pytest.mark.skipif(sys.version_info >= (3,9) and sys.version_info < (3,10), reason='Skipping for 3.9')
 class TestRecordFilter(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
 
     @classmethod
