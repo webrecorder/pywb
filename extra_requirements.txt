@@ -1,5 +1,4 @@
 certauth
-youtube-dl
 boto3
 uwsgi
 ujson

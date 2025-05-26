@@ -336,6 +336,7 @@ class HttpLoader(BaseLoader):
         if not self.cookie_maker:
             self.cookie_maker = kwargs.get('cookie')
         self.session = None
+        self.decode_content = kwargs.get('decode_content', False)
 
     def load(self, url, offset, length):
         """
@@ -357,6 +358,8 @@ class HttpLoader(BaseLoader):
 
         r = self.session.get(url, headers=headers, stream=True)
         r.raise_for_status()
+        if self.decode_content:
+            r.raw.decode_content = True
         return StreamClosingReader(r.raw)
 
 

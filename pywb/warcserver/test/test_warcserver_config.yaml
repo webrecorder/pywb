@@ -6,13 +6,13 @@ collections:
     live: $live
 
     # rhizome (memento)
-    rhiz: memento+http://webenact.rhizome.org/all/
+    rhiz: memento+http://webarchives.rhizome.org/all/
 
     # rhizome (cdx)
-    rhiz_cdx: cdx+http://webenact.rhizome.org/all-cdx
+    rhiz_cdx: cdx+http://webarchives.rhizome.org/all-cdx
 
     # rhizome (native wb)
-    rhiz_wb: wb-memento+http://webenact.rhizome.org/all/
+    rhiz_wb: wb-memento+http://webarchives.rhizome.org/all/
 
     # ia cdx
     ia: cdx+http://web.archive.org/cdx /web
@@ -33,14 +33,14 @@ collections:
     rhiz_long:
         index:
             type: memento
-            timegate_url: http://webenact.rhizome.org/all/{url}
-            timemap_url: http://webenact.rhizome.org/all/timemap/link/{url}
-            replay_url: http://webenact.rhizome.org/all/{timestamp}id_/{url}
+            timegate_url: http://webarchives.rhizome.org/all/{url}
+            timemap_url: http://webarchives.rhizome.org/all/timemap/link/{url}
+            replay_url: http://webarchives.rhizome.org/all/{timestamp}id_/{url}
 
     # many archives
     many:
         index_group:
-            rhiz: memento+http://webenact.rhizome.org/all/
+            rhiz: memento+http://webarchives.rhizome.org/all/
             ia:   cdx+http://web.archive.org/cdx;/web
             apt:  memento+http://arquivo.pt/wayback/
             liveweb: live
@@ -66,7 +66,7 @@ collections:
 
             - 
               index_group:
-                rhiz: cdx+http://webenact.rhizome.org/all-cdx
+                rhiz: cdx+http://webarchives.rhizome.org/all-cdx
                 apt:  memento+http://arquivo.pt/wayback/
 
             - 
