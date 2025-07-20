@@ -186,6 +186,8 @@ com,instagram)/amaliaulman 20141014162333 https://webarchives.rhizome.org/excell
         assert(errs['source'] == "NotFoundException('testdata/not-found-x',)"), errs
 
     def test_ait_filters(self):
+        pytest.skip("ait issue, may not work anymore")
+
         ait_source = RemoteIndexSource('http://wayback.archive-it.org/cdx/search/cdx?url={url}&filter=filename:ARCHIVEIT-({colls})-.*',
                                        'http://wayback.archive-it.org/all/{timestamp}id_/{url}')
 
