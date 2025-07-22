@@ -115,11 +115,11 @@ class AccessChecker(object):
 
         value = embargo.get('before')
         if value:
-            embargo['before'] = timestamp_to_datetime(str(value))
+            embargo['before'] = timestamp_to_datetime(str(value), tz_aware=True)
 
         value = embargo.get('after')
         if value:
-            embargo['after'] = timestamp_to_datetime(str(value))
+            embargo['after'] = timestamp_to_datetime(str(value), tz_aware=True)
 
         value = embargo.get('older')
         if value:
@@ -147,7 +147,7 @@ class AccessChecker(object):
         if not self.embargo:
             return None
 
-        dt = timestamp_to_datetime(ts)
+        dt = timestamp_to_datetime(ts, tz_aware=True)
         access = self.embargo.get('access', 'exclude')
 
         # embargo before
