@@ -136,7 +136,7 @@ class ZipNumIndexSource(BaseIndexSource):
         self.summary = summary
 
         # reload interval
-        self.loc_update_time = datetime.datetime.now()
+        self.loc_update_time = datetime.datetime.now(datetime.timezone.utc)
         self.reload_interval = datetime.timedelta(minutes=reload_ival)
 
         self.blk_loader = BlockLoader(cookie_maker=cookie_maker)
