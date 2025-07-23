@@ -95,7 +95,7 @@ An .aclj file may look as follows::
 
 Each JSON entry contains an ``access`` field and the original ``url`` field that was used to convert to the SURT (if any).
 
-The JSON entry may also contain a ``user`` field, as explained below.
+The JSON entry may also contain ``user``, ``before``, and ``after`` fields, as explained below.
 
 The prefix consists of a SURT key and a ``-`` (currently reserved for a timestamp/date range field to be added later).
 
@@ -164,6 +164,23 @@ Further examples of how to set this header will be provided in the deployments s
 **Note: Do not use the user-based rules without configuring proper authentication on an Apache or Nginx frontend to set or remove this header, otherwise the 'X-Pywb-ACL-User' can easily be faked.**
 
 See the :ref:`config-acl-header` section in Usage for examples on how to configure this header.
+
+
+Date-Based Access Controls
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The access control rules can further be customized be specifying different permissions based on capture timestamp, using ``before`` and ``after`` fields that operate in the same manner as their embargo counterparts for a specific URL or domain.
+
+For example, the following access control settings restrict access to ``https://example.com/restricted/`` by default, but allow access for captures prior to December 1, 2010::
+
+  com,example)/restricted - {"access": "allow", "before": "20101201"}
+  com,example)/restricted - {"access": "block"}
+
+
+Combined with the embargo settings, this can also be used to override the embargo for captures that fall within a particular time period, while keeping the embargo for general access::
+
+  com,example)/restricted - {"access": "allow_ignore_embargo", "before": "2010"}
+  com,example)/restricted - {"access": "allow"}
 
 
 Access Error Messages
