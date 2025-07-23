@@ -173,6 +173,40 @@ class AccessChecker(object):
             actual = datetime.now(timezone.utc) - older
             return access if actual > dt else None
 
+    def check_access(
+        self, ts, access, before_ts=None, after_ts=None, newer=None, older=None
+    ):
+        """Return boolean indicating if access is allowed per date fields in access rule"""
+        dt = timestamp_to_datetime(ts, tz_aware=True)
+
+        if before_ts:
+            before = timestamp_to_datetime(before_ts, tz_aware=True)
+            return access if dt < before else None
+
+        if after_ts:
+            after = timestamp_to_datetime(after_ts, tz_aware=True)
+            return access if dt > after else None
+
+        if newer:
+            newer_delta = relativedelta(
+                years=value.get('years', 0),
+                months=value.get('months', 0),
+                weeks=value.get('weeks', 0),
+                days=value.get('days', 0)
+            )
+            actual = datetime.now(timezone.utc) - newer_delta
+            return access if actual < dt else None
+
+        if older:
+            older_delta = relativedelta(
+                years=value.get('years', 0),
+                months=value.get('months', 0),
+                weeks=value.get('weeks', 0),
+                days=value.get('days', 0)
+            )
+            actual = datetime.now(timezone.utc) - older_delta
+            return access if actual > dt else None
+
     def create_access_aggregator(self, source_files):
         """Creates a new AccessRulesAggregator using the supplied list
         of access control file names
@@ -300,11 +334,6 @@ class AccessChecker(object):
         :param str acl_user: The user associated with this request (optional)
         :return: The wrapped cdx object iterator
         """
-        last_rule = None
-        last_url = None
-        last_user = None
-        rule = None
-
         for cdx in cdx_iter:
             url = cdx.get('url')
             timestamp = cdx.get('timestamp')
@@ -314,23 +343,42 @@ class AccessChecker(object):
                 yield cdx
                 continue
 
+            rule = None
             access = None
+            before = None
+            after = None
+            newer = None
+            older = None
+
             if self.aggregator:
-                # TODO: optimization until date range support is included
-                if url == last_url and acl_user == last_user:
-                    rule = last_rule
-                else:
-                    rule = self.find_access_rule(url, timestamp,
-                                                 cdx.get('urlkey'),
-                                                 cdx.get('source-coll'),
-                                                 acl_user)
+                rule = self.find_access_rule(
+                    url,
+                    timestamp,
+                    cdx.get('urlkey'),
+                    cdx.get('source-coll'),
+                    acl_user
+                )
 
                 access = rule.get('access', 'exclude')
+                
+                before = rule.get('before')
+                after = rule.get('after')
+
+                # TODO: Should we keep newer and older for access rule date ranges
+                # or does that only make sense for embargos?
+                newer = rule.get('newer')
+                older = rule.get('older')
 
             if access != 'allow_ignore_embargo' and access != 'exclude':
                 embargo_access = self.check_embargo(url, timestamp)
                 if embargo_access and embargo_access != 'allow':
                     access = embargo_access
+
+            # Allow more specific rules to override embargoes
+            if access != 'exclude':
+                date_access = self.check_access(timestamp, access, before, after, newer, older)
+                if date_access and date_access != 'allow':
+                    access = date_access
 
             if access == 'exclude':
                 continue
@@ -343,7 +391,3 @@ class AccessChecker(object):
 
             cdx['access'] = access
             yield cdx
-
-            last_rule = rule
-            last_url = url
-            last_user = acl_user
