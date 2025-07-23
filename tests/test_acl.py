@@ -102,3 +102,15 @@ class TestACLApp(BaseConfigTest):
         assert 'Access Blocked' in resp.text
 
         resp = self.testapp.get('/pywb-wildcard-surt/mp_/http://example.com/', headers={"X-Pywb-Acl-User": "staff"}, status=200)
+
+    def test_acl_before(self):
+        resp = self.testapp.get('/pywb-acl-before/20140127171238mp_/http://www.iana.org/', status=451)
+        assert 'Access Blocked' in resp.text
+
+        resp = self.testapp.get('/pywb-acl-before/20140126200624mp_/http://www.iana.org/', status=200)
+        
+    def test_acl_after(self):
+        resp = self.testapp.get('/pywb-acl-after/20140126200624mp_/http://www.iana.org/', status=451)
+        assert 'Access Blocked' in resp.text
+
+        resp = self.testapp.get('/pywb-acl-after/20140127171238mp_/http://www.iana.org/', status=200)
