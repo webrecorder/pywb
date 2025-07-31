@@ -95,7 +95,7 @@ An .aclj file may look as follows::
 
 Each JSON entry contains an ``access`` field and the original ``url`` field that was used to convert to the SURT (if any).
 
-The JSON entry may also contain ``user``, ``before``, and ``after`` fields, as explained below.
+The JSON entry may also contain ``user``, ``before``, ``after``, ``newer``, and ``older`` fields, as explained in the sections below.
 
 The prefix consists of a SURT key and a ``-`` (currently reserved for a timestamp/date range field to be added later).
 
@@ -166,10 +166,10 @@ Further examples of how to set this header will be provided in the deployments s
 See the :ref:`config-acl-header` section in Usage for examples on how to configure this header.
 
 
-Date-Based Access Controls
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Date-Based Access Controls: Before/After Exact Date
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The access control rules can further be customized be specifying different permissions based on capture timestamp, using ``before`` and ``after`` fields that operate in the same manner as their embargo counterparts for a specific URL or domain.
+It is also possible to control access based on capture timestamp, using ``before`` and ``after`` fields to specify an exact timestamp.
 
 For example, the following access control settings restrict access to ``https://example.com/restricted/`` by default, but allow access for captures prior to December 1, 2010::
 
@@ -181,6 +181,24 @@ Combined with the embargo settings, this can also be used to override the embarg
 
   com,example)/restricted - {"access": "allow_ignore_embargo", "before": "2010"}
   com,example)/restricted - {"access": "allow"}
+
+
+Date-Based Access Controls: Time Interval
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Access can also be controlled by specifying a relative time interval, similar to embargos.
+
+For example, the following access control settings restrict access to ``https://example.com/restricted/`` by default, but allow access to all captures newer than 1 year::
+
+  com,example)/restricted - {"access": "allow", "older": {"years": 1}}
+  com,example)/restricted - {"access": "block"}
+
+The following access control settings restrict access to ``https://example.com/restricted/`` by default, but allow access to all captures older than 1 year, 2 months, 3 weeks, and 4 days::
+
+  com,example)/restricted - {"access": "allow", "older": {"years": 1}, "months": 2, "weeks": 3, "days": 4}
+  com,example)/restricted - {"access": "block"}
+
+Any combination of years, months, weeks and days can be used (as long as at least one is provided) for the ``newer`` or ``older`` access control settings.
 
 
 Access Error Messages
