@@ -196,6 +196,28 @@ class AccessChecker(object):
             after = timestamp_to_datetime(after_ts, tz_aware=True)
             return access if dt > after else default_access
 
+        newer = rule.get('newer')
+        if newer:
+            delta = relativedelta(
+                years=newer.get('years', 0),
+                months=newer.get('months', 0),
+                weeks=newer.get('weeks', 0),
+                days=newer.get('days', 0)
+            )
+            actual = datetime.now(timezone.utc) - delta
+            return access if actual < dt else default_access
+
+        older = rule.get('older')
+        if older:
+            delta = relativedelta(
+                years=older.get('years', 0),
+                months=older.get('months', 0),
+                weeks=older.get('weeks', 0),
+                days=older.get('days', 0)
+            )
+            actual = datetime.now(timezone.utc) - delta
+            return access if actual > dt else default_access
+
         return access
 
     def create_access_aggregator(self, source_files):
