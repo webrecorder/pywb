@@ -195,7 +195,7 @@ For example, the following access control settings restrict access to ``https://
 
 The following access control settings restrict access to ``https://example.com/restricted/`` by default, but allow access to all captures older than 1 year, 2 months, 3 weeks, and 4 days::
 
-  com,example)/restricted - {"access": "allow", "older": {"years": 1}, "months": 2, "weeks": 3, "days": 4}
+  com,example)/restricted - {"access": "allow", "older": {"years": 1, "months": 2, "weeks": 3, "days": 4}}
   com,example)/restricted - {"access": "block"}
 
 Any combination of years, months, weeks and days can be used (as long as at least one is provided) for the ``newer`` or ``older`` access control settings.
