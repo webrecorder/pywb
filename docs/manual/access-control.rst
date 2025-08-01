@@ -190,7 +190,7 @@ Access can also be controlled by specifying a relative time interval, similar to
 
 For example, the following access control settings restrict access to ``https://example.com/restricted/`` by default, but allow access to all captures newer than 1 year::
 
-  com,example)/restricted - {"access": "allow", "older": {"years": 1}}
+  com,example)/restricted - {"access": "allow", "newer": {"years": 1}}
   com,example)/restricted - {"access": "block"}
 
 The following access control settings restrict access to ``https://example.com/restricted/`` by default, but allow access to all captures older than 1 year, 2 months, 3 weeks, and 4 days::
