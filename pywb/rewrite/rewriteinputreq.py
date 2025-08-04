@@ -97,7 +97,7 @@ class RewriteInputRequest(DirectWSGIInputRequest):
                 # if brotli not available, remove 'br' from accept-encoding to avoid
                 # capture brotli encoded content
                 # We have to remove zstd from the list of accepted encodings as warcio does not support it.
-                disallowed_encodings = ('zstd') if has_brotli else ('zstd', 'br')
+                disallowed_encodings = ('zstd',) if has_brotli else ('zstd', 'br')
                 name = 'Accept-Encoding'
                 value = ','.join([enc for enc in value.split(',') if enc.strip() not in disallowed_encodings])
 
