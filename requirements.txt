@@ -6,10 +6,10 @@ jinja2>=3.1.2
 surt>=0.3.1
 brotlipy
 pyyaml
-werkzeug==3.0.3
+werkzeug==3.0.6
 webencodings
-gevent==23.9.0
-greenlet>=2.0.2,<3.0
+gevent==24.10.1
+greenlet==3.1.1
 webassets==2.0
 portalocker
 wsgiprox>=1.5.1
