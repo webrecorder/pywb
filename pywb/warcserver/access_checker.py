@@ -7,7 +7,7 @@ from pywb.utils.binsearch import search
 from pywb.utils.merge import merge
 
 from warcio.timeutils import timestamp_to_datetime
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from dateutil.relativedelta import relativedelta
 import os
 
@@ -115,11 +115,11 @@ class AccessChecker(object):
 
         value = embargo.get('before')
         if value:
-            embargo['before'] = timestamp_to_datetime(str(value))
+            embargo['before'] = timestamp_to_datetime(str(value), tz_aware=True)
 
         value = embargo.get('after')
         if value:
-            embargo['after'] = timestamp_to_datetime(str(value))
+            embargo['after'] = timestamp_to_datetime(str(value), tz_aware=True)
 
         value = embargo.get('older')
         if value:
@@ -147,7 +147,7 @@ class AccessChecker(object):
         if not self.embargo:
             return None
 
-        dt = timestamp_to_datetime(ts)
+        dt = timestamp_to_datetime(ts, tz_aware=True)
         access = self.embargo.get('access', 'exclude')
 
         # embargo before
@@ -164,13 +164,13 @@ class AccessChecker(object):
         # embargo if newser than
         newer = self.embargo.get('newer')
         if newer:
-            actual = datetime.utcnow() - newer
+            actual = datetime.now(timezone.utc) - newer
             return access if actual < dt else None
 
         # embargo if older than
         older = self.embargo.get('older')
         if older:
-            actual = datetime.utcnow() - older
+            actual = datetime.now(timezone.utc) - older
             return access if actual > dt else None
 
     def create_access_aggregator(self, source_files):

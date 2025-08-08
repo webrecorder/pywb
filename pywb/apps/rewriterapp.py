@@ -386,7 +386,7 @@ class RewriterApp(object):
                                                        full_prefix, host_prefix,
                                                        kwargs)
 
-                keep_frame_response = (not kwargs.get('no_timegate_check') and is_timegate and not is_proxy) or redirect_to_exact
+                keep_frame_response = (not kwargs.get('no_timegate_check') and is_timegate and not is_proxy) or redirect_to_exact or self.client_side_replay
 
 
         if response and not keep_frame_response:

@@ -245,7 +245,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
         if not self.max_idle_time:
             return
 
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.timezone.utc)
 
         for dir_key, out, filename in self.iter_open_files():
             try:
@@ -254,7 +254,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
                 self.close_key(dir_key)
                 return
 
-            mtime = datetime.datetime.fromtimestamp(mtime)
+            mtime = datetime.datetime.fromtimestamp(mtime,tz=datetime.timezone.utc)
 
             if (now - mtime) > self.max_idle_time:
                 print('Closing idle ' + filename)
