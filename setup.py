@@ -126,7 +126,7 @@ setup(
             "translate_toolkit"
         ],
     },
-    python_requires='>=3.7,<3.12',
+    python_requires='>=3.7,<3.13',
     tests_require=load_requirements("test_requirements.txt"),
     cmdclass={'test': PyTest},
     test_suite='',
