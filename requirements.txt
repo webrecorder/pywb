@@ -8,8 +8,10 @@ brotlipy
 pyyaml
 werkzeug==2.2.3
 webencodings
-gevent==22.10.2
-greenlet>=2.0.2,<3.0
+gevent==22.10.2; python_version<"3.8"
+gevent==23.9.0; python_version>="3.8"
+greenlet>=2.0.2,<3.0; python_version<"3.12"
+greenlet==3.2.4; python_version>="3.12.0rc0"
 webassets==2.0
 portalocker
 wsgiprox>=1.5.1
