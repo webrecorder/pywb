@@ -274,8 +274,11 @@ class LiveWebLoader(BaseLoader):
                    'application/vnd.apple.mpegurl',
                    'application/dash+xml')
 
-    def __init__(self, forward_proxy_prefix=None, adapter=None):
+    def __init__(self, forward_proxy_prefix=None, adapter=None, use_local_file_load=False):
         self.forward_proxy_prefix = forward_proxy_prefix
+
+        # indicates if WARCs can be loaded locally, even if we get to this fallback
+        self.use_local_file_load = use_local_file_load
 
         socks_host = os.environ.get('SOCKS_HOST')
         socks_port = os.environ.get('SOCKS_PORT', 9050)
@@ -285,8 +288,11 @@ class LiveWebLoader(BaseLoader):
             self.socks_proxy = None
 
     def load_resource(self, cdx, params):
-        #if cdx.get('filename') and cdx.get('offset') is not None:
-        #    return None
+        if cdx.get('filename') and cdx.get('offset') is not None:
+            # if loading locally, skip here so can retry
+            # in case of revisit
+            if self.use_local_file_load:
+                return None
 
         load_url = cdx.get('load_url')
         if not load_url:
