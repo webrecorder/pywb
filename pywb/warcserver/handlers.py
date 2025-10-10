@@ -175,9 +175,10 @@ class ResourceHandler(IndexHandler):
 #=============================================================================
 class DefaultResourceHandler(ResourceHandler):
     def __init__(self, index_source, warc_paths='', forward_proxy_prefix='',
+                 use_local_file_load=False,
                  **kwargs):
         loaders = [WARCPathLoader(warc_paths, index_source),
-                   LiveWebLoader(forward_proxy_prefix),
+                   LiveWebLoader(forward_proxy_prefix, use_local_file_load=use_local_file_load),
                    VideoLoader()
                   ]
         super(DefaultResourceHandler, self).__init__(index_source, loaders, **kwargs)
