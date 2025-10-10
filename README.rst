@@ -60,6 +60,10 @@ Please see the `full documentation <https://pywb.readthedocs.org>`_ for more det
 Installation for Deployment
 ---------------------------
 
+On Linux-based systems, first verify that ``python3-dev`` is installed. If it is not, install it with your package manager. E.g. on a Debian-based system, use:
+
+``sudo apt install python3-dev``
+
 To install pywb for usage, you can use:
 
 ``pip install pywb``
