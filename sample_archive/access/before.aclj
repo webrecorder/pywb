@@ -1,0 +1,3 @@
+org,iana)/domains/arpa - {"access": "allow", "url": "http://www.iana.org/domains/arpa", "before": "20140127"}
+org,iana)/domains - {"access": "block", "url": "http://www.iana.org/domains"}
+org,iana)/ - {"access": "allow", "url": "http://www.iana.org/", "before": "20140126"}

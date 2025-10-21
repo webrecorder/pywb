@@ -102,3 +102,32 @@ class TestACLApp(BaseConfigTest):
         assert 'Access Blocked' in resp.text
 
         resp = self.testapp.get('/pywb-wildcard-surt/mp_/http://example.com/', headers={"X-Pywb-Acl-User": "staff"}, status=200)
+
+    def test_acl_before(self):
+        resp = self.testapp.get('/pywb-acl-before/20140127171238mp_/http://www.iana.org/', status=451)
+        assert 'Access Blocked' in resp.text
+
+        resp = self.testapp.get('/pywb-acl-before/20140126200624mp_/http://www.iana.org/', status=200)
+
+        resp = self.testapp.get('/pywb-acl-before/20140126200825mp_/http://www.iana.org/domains', status=451)
+        assert 'Access Blocked' in resp.text
+
+        resp = self.testapp.get('/pywb-acl-before/20140126201248mp_/http://www.iana.org/domains/arpa', status=200)
+
+    def test_acl_after(self):
+        resp = self.testapp.get('/pywb-acl-after/20140126200624mp_/http://www.iana.org/', status=451)
+        assert 'Access Blocked' in resp.text
+
+        resp = self.testapp.get('/pywb-acl-after/20140127171238mp_/http://www.iana.org/', status=200)
+
+    def test_acl_newer(self):
+        resp = self.testapp.get('/pywb-acl-newer/20140127171238mp_/http://www.iana.org/', status=451)
+        assert 'Access Blocked' in resp.text
+
+        resp = self.testapp.get('/pywb-acl-newer/20140126200624mp_/http://www.iana.org/', status=451)
+        assert 'Access Blocked' in resp.text
+        
+    def test_acl_older(self):
+        resp = self.testapp.get('/pywb-acl-older/20140127171238mp_/http://www.iana.org/', status=200)
+        
+        resp = self.testapp.get('/pywb-acl-older/20140126200624mp_/http://www.iana.org/', status=200)
