@@ -109,10 +109,10 @@ class TestACLApp(BaseConfigTest):
 
         resp = self.testapp.get('/pywb-acl-before/20140126200624mp_/http://www.iana.org/', status=200)
 
-        resp = self.testapp.get('/pywb-acl-before/20140126200825/http://www.iana.org/domains', status=451)
+        resp = self.testapp.get('/pywb-acl-before/20140126200825mp_/http://www.iana.org/domains', status=451)
         assert 'Access Blocked' in resp.text
 
-        resp = self.testapp.get('/pywb-acl-before/20140126201248/http://www.iana.org/domains/arpa', status=200)
+        resp = self.testapp.get('/pywb-acl-before/20140126201248mp_/http://www.iana.org/domains/arpa', status=200)
 
     def test_acl_after(self):
         resp = self.testapp.get('/pywb-acl-after/20140126200624mp_/http://www.iana.org/', status=451)
