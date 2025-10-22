@@ -32,6 +32,7 @@ class MultiFileWARCWriter(BaseWARCWriter):
         self.dedup_index = kwargs.get('dedup_index')
         self.dedup_by_url = kwargs.get('dedup_by_url')
         self.filename_template = filename_template
+        self.gzip = self.filename_template.endswith(".gz")
         self.max_size = max_size
         if max_idle_secs > 0:
             self.max_idle_time = datetime.timedelta(seconds=max_idle_secs)
