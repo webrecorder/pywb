@@ -123,7 +123,8 @@ setup(
     extras_require={
         "i18n":  [
             "babel",
-            "translate_toolkit"
+            "translate_toolkit",
+            "babel-vue-extractor"
         ],
     },
     python_requires='>=3.7,<3.13',

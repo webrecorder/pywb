@@ -7,3 +7,4 @@ pysocks
 lxml
 babel
 translate_toolkit
+babel-vue-extractor
