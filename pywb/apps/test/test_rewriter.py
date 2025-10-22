@@ -23,18 +23,18 @@ class TestRewriterApp(FakeRedisTests, BaseTestClass):
                                                   config_file=None))
 
     def test_replay(self):
-        resp = self.testapp.get('/live/mp_/http://example.com/')
+        resp = self.testapp.get('/live/mp_/https://example-com.webrecorder.net/')
         resp.charset = 'utf-8'
 
         assert '"http://localhost:80/live/mp_/https://www.iana.org/domains/example"' in resp.text
 
-        assert '"http://example.com/"'
+        assert '"https://example-com.webrecorder.net/"' in resp.text
 
     def test_top_frame(self):
-        resp = self.testapp.get('/live/http://example.com/')
+        resp = self.testapp.get('/live/https://example-com.webrecorder.net/')
         resp.charset = 'utf-8'
 
-        assert '"http://example.com/"' in resp.text
+        assert '"https://example-com.webrecorder.net/"' in resp.text
 
     #def test_cookie_track_1(self):
     #    resp = self.testapp.get('/live/mp_/https://twitter.com/')
