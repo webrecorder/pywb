@@ -31,6 +31,8 @@
 </template>
 
 <script>
+import {PywbI18N} from "../i18n";
+
 export default {
   props: {
     period: {
@@ -44,7 +46,7 @@ export default {
   },
   methods: {
     getPeriodZoomOutText(period) {
-      return 'Zoom out to '+period.getReadableId(true)+ ' ('+period.snapshotCount+' captures)';
+      return PywbI18N.instance._("Zoom out to {id} ({count} captures)", {id: period.getReadableId(true), count: period.snapshotCount});
     },
     changePeriod(period) {
       if (period.snapshotCount) {
