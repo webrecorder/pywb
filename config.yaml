@@ -41,6 +41,6 @@ redirect_to_exact: true
 #   - en
 #   - ru
 
-# Uncomment to inject extra scripts into replayed pages (put them under static/)
+# Uncomment to inject extra scripts into replayed pages (place scripts under static/ or your alternate static_dir location)
 # inject_scripts:
 #   - ruffle/ruffle.js
