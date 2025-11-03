@@ -54,6 +54,10 @@
 </script>
 {% endif %}
 
+{% for script in config.inject_scripts %}
+<script src='{{ static_prefix }}/{{ script }}'></script>
+{% endfor %}
+
 {% if config.enable_flash_video_rewrite or config.transclusions_version == 1 %}
 <script src='{{ static_prefix }}/vidrw.js'> </script>
 

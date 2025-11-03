@@ -655,3 +655,18 @@ By default, SSL-Certificates of websites are not verified. To enable verificatio
 
 ``ca_cert_dir`` can optionally point to a directory containing the CA certificates that you trust. Most linux distributions provide CA certificates via a package called ``ca-certificates``.
 If omitted, the default system CA used by Python is used.
+
+Injecting Scripts
+-----------------
+
+Extra JavaScript files can be injected into replayed pages. This can be useful for emulating removed browser features
+or applying compatibility tweaks.
+
+For example, to emulate Flash Player using `Ruffle <https://ruffle.rs/>`_, create a subdirectory named ``static/ruffle``
+and unzip the `Ruffle self-hosted package <https://ruffle.rs/downloads#website-package>`_ into it. Then add the following
+configuration::
+
+  inject_scripts:
+    - ruffle/ruffle.js
+
+Note: Paths listed under ``inject_scripts`` are relative to the ``static`` directory.

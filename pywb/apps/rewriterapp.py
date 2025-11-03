@@ -111,6 +111,8 @@ class RewriterApp(object):
         # deprecated: Use X-Forwarded-Proto header instead!
         self.force_scheme = config.get('force_scheme')
 
+        self.inject_scripts = config.get('inject_scripts', [])
+
     def _init_cookie_tracker(self, redis=None):
         """Initialize the CookieTracker
 
@@ -936,6 +938,7 @@ class RewriterApp(object):
                                                         self.frame_mod,
                                                         self.replay_mod,
                                                         self.client_side_replay,
+                                                        self.inject_scripts,
                                                         coll=kwargs.get("coll"),
                                                         extra_params=extra_params)
 

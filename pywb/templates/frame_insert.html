@@ -55,7 +55,7 @@ html, body
 
 {% if client_side_replay %}
   if (navigator.serviceWorker) {
-    window.cframe = new WabacReplay("{{ wb_prefix }}", "{{ url }}", "{{ timestamp }}", "{{ static_prefix }}", "{{ coll }}", "{{ sw_prefix }}");
+    window.cframe = new WabacReplay("{{ wb_prefix }}", "{{ url }}", "{{ timestamp }}", "{{ static_prefix }}", "{{ coll }}", "{{ sw_prefix }}", {{ inject_scripts | tojson }});
     window.cframe.init();
   }
 {% endif %}

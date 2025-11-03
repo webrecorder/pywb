@@ -389,6 +389,7 @@ class TopFrameView(BaseInsertView):
                       frame_mod,
                       replay_mod,
                       client_side_replay,
+                      inject_scripts,
                       coll='',
                       extra_params=None):
         """
@@ -429,7 +430,8 @@ class TopFrameView(BaseInsertView):
                   'timestamp': timestamp,
                   'url': wb_url.get_url(),
 
-                  'sw_prefix': env.get('pywb.app_prefix', '')
+                  'sw_prefix': env.get('pywb.app_prefix', ''),
+                  'inject_scripts': inject_scripts,
                  }
 
         if extra_params:
