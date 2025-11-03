@@ -54,7 +54,7 @@
 </script>
 {% endif %}
 
-{% for script in config.inject_scripts %}
+{% for script in inject_scripts %}
 <script src='{{ static_prefix }}/{{ script }}'></script>
 {% endfor %}
 

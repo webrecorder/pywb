@@ -111,8 +111,6 @@ class RewriterApp(object):
         # deprecated: Use X-Forwarded-Proto header instead!
         self.force_scheme = config.get('force_scheme')
 
-        self.inject_scripts = config.get('inject_scripts', [])
-
     def _init_cookie_tracker(self, redis=None):
         """Initialize the CookieTracker
 
@@ -538,7 +536,8 @@ class RewriterApp(object):
                                                    replay_mod=self.replay_mod,
                                                    metadata=kwargs.get('metadata', {}),
                                                    ui=kwargs.get('ui', {}),
-                                                   config=self.config))
+                                                   config=self.config,
+                                                   inject_scripts=self.get_inject_scripts(kwargs)))
 
         cookie_rewriter = None
         if self.cookie_tracker and cookie_key:
@@ -928,6 +927,11 @@ class RewriterApp(object):
                 'ui': kwargs.get('ui', {})
                }
 
+    def get_inject_scripts(self, kwargs):
+        coll = kwargs.get('coll')
+        coll_config = self.config.get("collections", {}).get(coll, {})
+        return coll_config.get("inject_scripts", self.config.get("inject_scripts", []))
+
     def handle_custom_response(self, environ, wb_url, full_prefix, host_prefix, kwargs):
         if self.is_framed_replay(wb_url):
             extra_params = self.get_top_frame_params(wb_url, kwargs)
@@ -938,7 +942,7 @@ class RewriterApp(object):
                                                         self.frame_mod,
                                                         self.replay_mod,
                                                         self.client_side_replay,
-                                                        self.inject_scripts,
+                                                        self.get_inject_scripts(kwargs),
                                                         coll=kwargs.get("coll"),
                                                         extra_params=extra_params)
 

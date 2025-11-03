@@ -669,4 +669,16 @@ configuration::
   inject_scripts:
     - ruffle/ruffle.js
 
-Note: Paths listed under ``inject_scripts`` are relative to the ``static_dir`` directory (default static/).
+Note: Paths listed under ``inject_scripts`` are relative to the ``static_dir`` directory (default ``static/``).
+
+Injected scripts can also be configured per collection::
+
+  inject_scripts:
+    - all.js
+    - other.js
+
+  collections:
+    mycoll:
+      inject_scripts:
+        - all.js                # static/all.js
+        - _/mycoll/tweaks.js    # collections/mycoll/static/tweaks.js
