@@ -669,4 +669,4 @@ configuration::
   inject_scripts:
     - ruffle/ruffle.js
 
-Note: Paths listed under ``inject_scripts`` are relative to the ``static`` directory.
+Note: Paths listed under ``inject_scripts`` are relative to the ``static_dir`` directory (default static/).
