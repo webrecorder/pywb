@@ -53,12 +53,14 @@ html, body
 <script>
   window.cframe = null;
 
-{% if client_side_replay %}
   if (navigator.serviceWorker) {
+{% if client_side_replay %}
     window.cframe = new WabacReplay("{{ wb_prefix }}", "{{ url }}", "{{ timestamp }}", "{{ static_prefix }}", "{{ coll }}", "{{ sw_prefix }}");
     window.cframe.init();
-  }
+{% else %}
+    navigator.serviceWorker.getRegistration("{{ sw_prefix }}").then(reg => { if (reg) reg.unregister() });
 {% endif %}
+  }
   if (!window.cframe) {
     window.cframe = new ContentFrame({"url": "{{ url }}" + window.location.hash,
                                  "prefix": "{{ wb_prefix }}",
