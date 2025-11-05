@@ -317,6 +317,13 @@ Then, in your config, simply include:
 
 The configuration assumes uwsgi is started with ``uwsgi uwsgi.ini``
 
+Note, the default httpd.conf may include the directive ``AddDefaultCharset UTF-8``.
+This may cause the � replacement character to appear for some characters when replaying archived HTML content that specifies an alternative charset in the META tags.
+To allow the charset specified by the archived content to prevail, comment out the directive:
+
+.. code:: apache
+
+    # AddDefaultCharset UTF-8
 
 .. _config-acl-header:
 
