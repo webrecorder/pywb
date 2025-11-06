@@ -315,6 +315,17 @@ class BufferedRewriter(object):
 
 # ============================================================================
 class StreamingRewriter(object):
+    # Regex to match ES6 import statements and common comment patterns
+    # Matches import statements at the start, allowing for leading whitespace/comments
+    # The regex captures:
+    # - Group 1: Leading comments and whitespace
+    # - Group 2: One or more import statements (with their trailing newlines)
+    # Note: Does not capture blank lines after the last import
+    IMPORT_REGEX = re.compile(
+        r'^((?:\s|//[^\n]*\n|/\*(?:[^*]|\*(?!/))*\*/)*)((?:import\s+[^;\n]+;?\n)+)',
+        re.MULTILINE
+    )
+
     def __init__(self, url_rewriter, align_to_line=True, first_buff=''):
         self.url_rewriter = url_rewriter
         self.align_to_line = align_to_line
@@ -327,7 +338,24 @@ class StreamingRewriter(object):
         return string
 
     def rewrite_complete(self, string, **kwargs):
-        return self.first_buff + self.rewrite(string) + self.final_read()
+        return self._insert_with_import_check(string, **kwargs)
+
+    def _insert_with_import_check(self, string, **kwargs):
+        """Insert first_buff after any leading ES6 import statements."""
+        if not self.first_buff:
+            return self.rewrite(string) + self.final_read()
+        
+        # Check if the string starts with import statements (after comments/whitespace)
+        match = self.IMPORT_REGEX.match(string)
+        if match:
+            # Insert after imports
+            leading = match.group(1)  # comments/whitespace
+            imports = match.group(2)  # import statements
+            rest = string[match.end():]
+            return leading + imports + self.first_buff + self.rewrite(rest) + self.final_read()
+        else:
+            # No imports at start, insert at beginning as before
+            return self.first_buff + self.rewrite(string) + self.final_read()
 
     def final_read(self):
         return ''
@@ -339,7 +367,9 @@ class StreamingRewriter(object):
         Align to line boundaries if needed.
         """
         try:
-            buff = self.first_buff
+            insert_buff = self.first_buff
+            first_chunk = True
+            import_check_done = False
 
             # for html rewriting:
             # if charset is utf-8, use that, otherwise default to encode to ascii-compatible encoding
@@ -349,8 +379,11 @@ class StreamingRewriter(object):
             else:
                 charset = 'iso-8859-1'
 
-            if buff:
-                yield buff.encode(charset)
+            # Check if we should look for ES6 imports
+            # Only do this for JavaScript files (not HTML, CSS, etc.)
+            should_check_imports = (insert_buff and 
+                                   rwinfo.text_type in ('js', 'js-proxy', 'js-worker') and
+                                   not rwinfo.text_type == 'html')
 
             decoder = codecs.getincrementaldecoder(charset)()
 
@@ -371,7 +404,30 @@ class StreamingRewriter(object):
                         decoder = codecs.getincrementaldecoder(charset)()
                         buff = decoder.decode(buff)
 
-                buff = self.rewrite(buff)
+                # On first chunk, check for ES6 imports if needed
+                if first_chunk and should_check_imports and not import_check_done:
+                    match = self.IMPORT_REGEX.match(buff)
+                    if match:
+                        # Insert after imports
+                        leading = match.group(1)  # comments/whitespace
+                        imports = match.group(2)  # import statements
+                        rest = buff[match.end():]
+                        buff = leading + imports + insert_buff + self.rewrite(rest)
+                        insert_buff = ''  # Don't insert again
+                    else:
+                        # No imports, insert at beginning
+                        buff = insert_buff + self.rewrite(buff)
+                        insert_buff = ''
+                    import_check_done = True
+                    first_chunk = False
+                elif first_chunk and insert_buff:
+                    # Not checking imports, insert at beginning
+                    yield insert_buff.encode(charset)
+                    insert_buff = ''
+                    first_chunk = False
+                    buff = self.rewrite(buff)
+                else:
+                    buff = self.rewrite(buff)
 
                 yield buff.encode(charset)
 
