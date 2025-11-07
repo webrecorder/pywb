@@ -929,8 +929,11 @@ class RewriterApp(object):
 
     def get_inject_scripts(self, kwargs):
         coll = kwargs.get('coll')
-        coll_config = self.config.get("collections", {}).get(coll, {})
-        return coll_config.get("inject_scripts", self.config.get("inject_scripts", []))
+        coll_config = self.config.get('collections', {}).get(coll, {})
+        # ignore special collections like live or all
+        if isinstance(coll_config, str):
+            coll_config = {}
+        return coll_config.get('inject_scripts', self.config.get('inject_scripts', []))
 
     def handle_custom_response(self, environ, wb_url, full_prefix, host_prefix, kwargs):
         if self.is_framed_replay(wb_url):
