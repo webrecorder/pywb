@@ -1,4 +1,4 @@
-from six.moves.urllib.parse import quote_plus
+from six.moves.urllib.parse import quote_plus, quote, parse_qs, urlparse
 from warcio.timeutils import PAD_14_DOWN, http_date_to_timestamp, pad_timestamp, timestamp_now, timestamp_to_http_date
 
 from pywb.utils.binsearch import iter_range
@@ -118,6 +118,8 @@ class FileIndexSource(BaseIndexSource):
 #=============================================================================
 class RemoteIndexSource(BaseIndexSource):
     CDX_MATCH_RX = re.compile('^cdxj?\+(?P<url>https?\:.*)')
+    POSTDATA_MATCH_RX = re.compile('.*?[?&](?P<post_key>__wb_post_data|__warc_post_data|__wb_json_data)'\
+                                   '=(?P<post_data>[^&]+).*$')
 
     def __init__(self, api_url, replay_url, url_field='load_url', closest_limit=100):
         self.api_url = api_url
@@ -127,14 +129,32 @@ class RemoteIndexSource(BaseIndexSource):
         self._init_sesh()
 
     def _get_api_url(self, params):
+        self.add_url_post_param(params)
         api_url = res_template(self.api_url, params)
+
         if 'closest' in params and self.closest_limit:
             api_url += '&limit=' + str(self.closest_limit)
 
         if 'matchType' in params:
             api_url += '&matchType=' + params.get('matchType')
 
+        self.logger.info(api_url)
         return api_url
+
+    def add_url_post_param(self, params):
+        # extract POST data value from urlkey and compose url_post parameter
+        key_str = params['key'].decode('utf-8')
+        match_post = re.match(self.POSTDATA_MATCH_RX, key_str)
+        params['url_post'] = quote(params['url'])
+
+        if match_post and match_post.groupdict() is not None:
+            url_query = parse_qs(urlparse(params['url']).query)
+            post_key = match_post.groupdict()['post_key']
+            post_data = match_post.groupdict()['post_data']
+            if len(url_query.keys()) == 0:
+                params['url_post'] += quote('?%s=%s' % (post_key, post_data))
+            else:
+                params['url_post'] += quote('&%s=%s' % (post_key, post_data))
 
     def load_index(self, params):
         api_url = self._get_api_url(params)
