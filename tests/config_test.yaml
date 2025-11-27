@@ -41,3 +41,6 @@ enable_memento: true
 
 # enable new transclusion system
 transclusions_version: 2
+
+inject_scripts:
+  - inject.js
