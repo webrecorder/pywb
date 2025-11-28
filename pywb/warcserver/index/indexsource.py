@@ -119,11 +119,12 @@ class FileIndexSource(BaseIndexSource):
 class RemoteIndexSource(BaseIndexSource):
     CDX_MATCH_RX = re.compile('^cdxj?\+(?P<url>https?\:.*)')
 
-    def __init__(self, api_url, replay_url, url_field='load_url', closest_limit=100):
+    def __init__(self, api_url, replay_url, url_field='load_url', closest_limit=100, use_indexer_date_filter=False):
         self.api_url = api_url
         self.replay_url = replay_url
         self.url_field = url_field
         self.closest_limit = closest_limit
+        self.use_indexer_date_filter = use_indexer_date_filter
         self._init_sesh()
 
     def _get_api_url(self, params):
@@ -133,7 +134,13 @@ class RemoteIndexSource(BaseIndexSource):
 
         if 'matchType' in params:
             api_url += '&matchType=' + params.get('matchType')
-
+            
+        if self.use_indexer_date_filter:
+            if 'from' in params:
+               api_url += '&from=' + params.get('from')
+            if 'to' in params:
+               api_url += '&to=' + params.get('to')
+                
         return api_url
 
     def load_index(self, params):
@@ -211,7 +218,9 @@ class RemoteIndexSource(BaseIndexSource):
         if config['type'] != 'cdx':
             return
 
-        return cls(config['api_url'], config['replay_url'])
+        use_indexer_date_filter = config.get('use_indexer_date_filter', False)
+        
+        return cls(config['api_url'], config['replay_url'], use_indexer_date_filter=use_indexer_date_filter)
 
 
 # =============================================================================
