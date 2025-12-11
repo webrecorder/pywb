@@ -13,7 +13,7 @@ jobs:
     if: (contains(fromJSON('["annesiri", "ssb-cgn", "Glenruben", "johnnadeluy", "Carl-OW"]'), github.actor))
     name: Build, push and deploy
     runs-on: ubuntu-latest
-    environment: "TEST_pywb"
+    environment: "test"
     permissions:
       contents: read
       id-token: write
