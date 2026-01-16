@@ -62,6 +62,34 @@ collections:
         acl_paths:
             - ./sample_archive/access/pywb.aclj
 
+    pywb-acl-before:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        default_access: block
+        acl_paths:
+            - ./sample_archive/access/before.aclj
+
+    pywb-acl-after:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        default_access: block
+        acl_paths:
+            - ./sample_archive/access/after.aclj
+
+    pywb-acl-newer:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        default_access: block
+        acl_paths:
+            - ./sample_archive/access/newer.aclj
+
+    pywb-acl-older:
+        index_paths: ./sample_archive/cdx/
+        archive_paths: ./sample_archive/warcs/
+        default_access: block
+        acl_paths:
+            - ./sample_archive/access/older.aclj
+
     pywb-wildcard-surt:
         index_paths: ./sample_archive/cdx/
         archive_paths: ./sample_archive/warcs/

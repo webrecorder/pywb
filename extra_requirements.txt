@@ -7,3 +7,4 @@ lxml
 babel
 translate_toolkit
 urllib3>=2.5.0
+babel-vue-extractor
