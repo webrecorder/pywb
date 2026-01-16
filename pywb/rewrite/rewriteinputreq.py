@@ -93,11 +93,13 @@ class RewriteInputRequest(DirectWSGIInputRequest):
                 if self.splits:
                     value = self.splits.scheme
 
-            elif not has_brotli and name == 'HTTP_ACCEPT_ENCODING' and 'br' in value:
+            elif name == 'HTTP_ACCEPT_ENCODING':
                 # if brotli not available, remove 'br' from accept-encoding to avoid
                 # capture brotli encoded content
+                # We have to remove zstd from the list of accepted encodings as warcio does not support it.
+                disallowed_encodings = ('zstd',) if has_brotli else ('zstd', 'br')
                 name = 'Accept-Encoding'
-                value = ','.join([enc for enc in value.split(',') if enc.strip() != 'br'])
+                value = ','.join([enc for enc in value.split(',') if enc.strip() not in disallowed_encodings])
 
             elif name.startswith('HTTP_'):
                 name = name[5:].title().replace('_', '-')

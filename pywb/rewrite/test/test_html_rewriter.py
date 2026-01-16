@@ -413,8 +413,10 @@ r"""
 <!--[if !IE]><html><![endif]--><a href="/web/20131226101010/http://example.com/"><!--[if IE]><![endif]--><a href="/web/20131226101010/http://example.com/"></html>
 
 # IE conditional with invalid ']-->' ending, rewritten as ']>'
+# Note: HtmlParser was changed in Python 3.9.24, 3.10.19, 3.11.14, 3.12.12, 3.13.6, 3.14.0.
+# The output of this test will differ on older Python versions.
 >>> parse('<!--[if !IE]> --><html><![endif]--><a href="http://example.com/"><!--[if IE]><![endif]--><a href="http://example.com/"></html>')
-<!--[if !IE]> --><html><![endif]><a href="/web/20131226101010/http://example.com/"><!--[if IE]><![endif]--><a href="/web/20131226101010/http://example.com/"></html>
+<!--[if !IE]> --><html><!--[endif]----><a href="/web/20131226101010/http://example.com/"><!--[if IE]><![endif]--><a href="/web/20131226101010/http://example.com/"></html>
 
 # Test tag with a target
 >>> parse('<HTML><A Href=\"page.html\" target=\"_blank\">Text</a></hTmL>')

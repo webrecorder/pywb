@@ -1,6 +1,6 @@
 class WabacReplay
 {
-  constructor(prefix, url, ts, staticPrefix, coll, swScopePrefix) {
+  constructor(prefix, url, ts, staticPrefix, coll, swScopePrefix, injectScripts) {
     this.prefix = prefix;
     this.url = url;
     this.ts = ts;
@@ -8,6 +8,7 @@ class WabacReplay
     this.collName = coll;
     this.isRoot = coll === "$root";
     this.swScope = swScopePrefix;
+    this.injectScripts = injectScripts;
     this.adblockUrl = undefined;
 
     this.queryParams = {"replayPrefix": ""};
@@ -54,6 +55,7 @@ class WabacReplay
         archiveMod: "ir_",
         adblockUrl: this.adblockUrl,
         noPostToGet: true,
+        injectScripts: this.injectScripts.map(src => "../" + src),
       },
     };
 

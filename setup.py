@@ -15,7 +15,7 @@ from pywb import __version__
 root_dir = pathlib.Path(__file__).parent
 
 
-WABAC_SW_URL = "https://cdn.jsdelivr.net/npm/@webrecorder/wabac@2.24.1/dist/sw.js"
+WABAC_SW_URL = "https://cdn.jsdelivr.net/npm/@webrecorder/wabac@2.25.0/dist/sw.js"
 
 def download_wabac_sw():
     print(f"Downloading {WABAC_SW_URL}")
@@ -123,7 +123,8 @@ setup(
     extras_require={
         "i18n":  [
             "babel",
-            "translate_toolkit"
+            "translate_toolkit",
+            "babel-vue-extractor"
         ],
     },
     python_requires='>=3.7,<3.13',
