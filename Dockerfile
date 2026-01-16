@@ -1,4 +1,4 @@
-ARG PYTHON=python:3.13.7-slim
+ARG PYTHON=python@sha256:1f741aef81d09464251f4c52c83a02f93ece0a636db125d411bd827bf381a763
 FROM $PYTHON
 
 # Update system packages
