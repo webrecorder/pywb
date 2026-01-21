@@ -40,9 +40,6 @@ spec:
       cpu: 200m
       memory: 256Mi
 
-  logformat: accesslog_with_referer_useragent
-  logtransform: http_loglevel
-
   service:
     port: 80
     protocol: http

@@ -173,6 +173,53 @@ class AccessChecker(object):
             actual = datetime.now(timezone.utc) - older
             return access if actual > dt else None
 
+    def check_date_access(
+        self, ts, access, default_access, rule
+    ):
+        """Return access based on date fields in access rule
+
+        If a date-based rule exists and condition is not met, return default rule
+        If no date-based rule exists, return access
+        """
+        if not rule:
+            return access
+
+        dt = timestamp_to_datetime(ts, tz_aware=True)
+
+        before_ts = rule.get('before')
+        if before_ts:
+            before = timestamp_to_datetime(before_ts, tz_aware=True)
+            return access if dt < before else default_access
+
+        after_ts = rule.get('after')
+        if after_ts:
+            after = timestamp_to_datetime(after_ts, tz_aware=True)
+            return access if dt > after else default_access
+
+        newer = rule.get('newer')
+        if newer:
+            delta = relativedelta(
+                years=newer.get('years', 0),
+                months=newer.get('months', 0),
+                weeks=newer.get('weeks', 0),
+                days=newer.get('days', 0)
+            )
+            actual = datetime.now(timezone.utc) - delta
+            return access if actual < dt else default_access
+
+        older = rule.get('older')
+        if older:
+            delta = relativedelta(
+                years=older.get('years', 0),
+                months=older.get('months', 0),
+                weeks=older.get('weeks', 0),
+                days=older.get('days', 0)
+            )
+            actual = datetime.now(timezone.utc) - delta
+            return access if actual > dt else default_access
+
+        return access
+
     def create_access_aggregator(self, source_files):
         """Creates a new AccessRulesAggregator using the supplied list
         of access control file names
@@ -300,10 +347,7 @@ class AccessChecker(object):
         :param str acl_user: The user associated with this request (optional)
         :return: The wrapped cdx object iterator
         """
-        last_rule = None
-        last_url = None
-        last_user = None
-        rule = None
+        default_access = self.default_rule['access']
 
         for cdx in cdx_iter:
             url = cdx.get('url')
@@ -314,18 +358,23 @@ class AccessChecker(object):
                 yield cdx
                 continue
 
+            rule = None
             access = None
+
             if self.aggregator:
-                # TODO: optimization until date range support is included
-                if url == last_url and acl_user == last_user:
-                    rule = last_rule
-                else:
-                    rule = self.find_access_rule(url, timestamp,
-                                                 cdx.get('urlkey'),
-                                                 cdx.get('source-coll'),
-                                                 acl_user)
+                rule = self.find_access_rule(
+                    url,
+                    timestamp,
+                    cdx.get('urlkey'),
+                    cdx.get('source-coll'),
+                    acl_user
+                )
 
                 access = rule.get('access', 'exclude')
+
+            access = self.check_date_access(
+                timestamp, access, default_access, rule
+            )
 
             if access != 'allow_ignore_embargo' and access != 'exclude':
                 embargo_access = self.check_embargo(url, timestamp)
@@ -336,14 +385,10 @@ class AccessChecker(object):
                 continue
 
             if not access:
-                access = self.default_rule['access']
+                access = default_access
 
             if access == 'allow_ignore_embargo':
                 access = 'allow'
 
             cdx['access'] = access
             yield cdx
-
-            last_rule = rule
-            last_url = url
-            last_user = acl_user

@@ -41,3 +41,6 @@ client_side_replay: false
 
 # Same changes as in old pywayback repo
 autoindex: 30
+# Uncomment to inject extra scripts into replayed pages (place scripts under static/ or your alternate static_dir location)
+# inject_scripts:
+#   - ruffle/ruffle.js

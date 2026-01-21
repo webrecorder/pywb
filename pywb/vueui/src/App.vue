@@ -5,10 +5,10 @@
       class="navbar navbar-light navbar-expand-lg fixed-top top-navbar justify-content-center"
       :style="navbarStyle">
       <a class="navbar-brand flex-grow-1 my-1" :href="config.logoHomeUrl" v-if="config.logoHomeUrl">
-        <img :src="config.logoImg" id="logo-img" alt="_('pywb logo')">
+        <img :src="config.logoImg" id="logo-img" :alt="_('Logo')">
       </a>
       <div class="navbar-brand flex-grow-1 my-1" v-else>
-        <img :src="config.logoImg" id="logo-img" alt="_('pywb logo')">
+        <img :src="config.logoImg" id="logo-img" :alt="_('Logo')">
       </div>
       <div class="flex-grow-1 d-flex" id="searchdiv">
         <form
@@ -20,8 +20,8 @@
             type="text"
             :value="config.url"
             height="31"
-            aria-label="_('Search for archival capture of URL')"
-            title="_('Search for archival capture of URL')"></input>
+            :aria-label="_('Search for archival capture of URL')"
+            :title="_('Search for archival capture of URL')"></input>
         </form>
       </div>
       <button
@@ -32,7 +32,7 @@
         data-target="#navbarCollapse"
         aria-controls="navbarCollapse"
         aria-expanded="false"
-        aria-label="_('Toggle navigation')">
+        :aria-label="_('Toggle navigation')">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse ml-auto" id="navbarCollapse">
@@ -98,7 +98,7 @@
               aria-haspopup="true"
               aria-expanded="false"
               :title="_('Select language')">
-              <i class="fas fa-globe-africa" :title="_('Language')"></i>
+              <i class="fas fa-globe-africa" :title="_('Language:')"></i>
             </button>
             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="locale-dropdown">
               <a
