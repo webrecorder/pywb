@@ -1,4 +1,4 @@
-setuptools 
+setuptools==81.0.0
 wheel
 six
 warcio>=1.7.5
