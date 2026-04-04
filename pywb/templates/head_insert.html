@@ -4,7 +4,7 @@
 <script>
 {% set urlsplit = cdx.url | urlsplit %}
   wbinfo = {};
-  wbinfo.top_url = "{{ top_url }}";
+  wbinfo.top_url = {{ top_url | tojson }};
 {% if is_framed %}
   // Fast Top-Frame Redirect
   if (window == window.top && wbinfo.top_url) {
@@ -16,16 +16,16 @@
     }
   }
 {% endif %}
-  wbinfo.url = "{{ cdx.url }}";
-  wbinfo.timestamp = "{{ cdx.timestamp }}";
-  wbinfo.request_ts = "{{ wb_url.timestamp }}";
-  wbinfo.prefix = decodeURI("{{ wb_prefix }}");
-  wbinfo.mod = "{{ replay_mod }}";
+  wbinfo.url = {{ cdx.url | tojson }};
+  wbinfo.timestamp = {{ cdx.timestamp | tojson }};
+  wbinfo.request_ts = {{ wb_url.timestamp | tojson }};
+  wbinfo.prefix = decodeURI({{ wb_prefix | tojson }});
+  wbinfo.mod = {{ replay_mod | tojson }};
   wbinfo.is_framed = {{ is_framed | tobool }};
   wbinfo.is_live = {{ is_live | tobool }};
-  wbinfo.coll = "{{ coll }}";
-  wbinfo.proxy_magic = "{{ env.pywb_proxy_magic }}";
-  wbinfo.static_prefix = "{{ static_prefix }}/";
+  wbinfo.coll = {{ coll | tojson }};
+  wbinfo.proxy_magic = {{ env.pywb_proxy_magic | tojson }};
+  wbinfo.static_prefix = {{ (static_prefix + "/") | tojson }};
   wbinfo.enable_auto_fetch = {{ config.enable_auto_fetch | tobool }};
   wbinfo.target_frame = "___wb_replay_top_frame";
 </script>
@@ -37,10 +37,10 @@
 {% if not wb_url.is_banner_only or (env.pywb_proxy_magic and (config.enable_auto_fetch or config.proxy.enable_wombat)) %}
 <script src='{{ static_prefix }}/{{ whichWombat }}'> </script>
 <script>
-  wbinfo.wombat_ts = "{{ wombat_ts }}";
-  wbinfo.wombat_sec = "{{ wombat_sec }}";
-  wbinfo.wombat_scheme = "{{ urlsplit.scheme }}";
-  wbinfo.wombat_host = "{{ urlsplit.netloc }}";
+  wbinfo.wombat_ts = {{ wombat_ts | tojson }};
+  wbinfo.wombat_sec = {{ wombat_sec | tojson }};
+  wbinfo.wombat_scheme = {{ urlsplit.scheme | tojson }};
+  wbinfo.wombat_host = {{ urlsplit.netloc | tojson }};
 
   wbinfo.wombat_opts = {};
 
