@@ -17,7 +17,7 @@ class PywbHttpAdapter(HTTPAdapter):
     until a better solution is found
     """
 
-    def __init__(self, cert_reqs='CERT_NONE', ca_cert_dir=None, **init_kwargs):
+    def __init__(self, cert_reqs='CERT_REQUIRED', ca_cert_dir=None, **init_kwargs):
         self.cert_reqs = cert_reqs
         self.ca_cert_dir = ca_cert_dir
         return super(PywbHttpAdapter, self).__init__(**init_kwargs)
@@ -49,6 +49,4 @@ class DefaultAdapters(object):
     live_adapter = PywbHttpAdapter(max_retries=Retry(3))
     remote_adapter = PywbHttpAdapter(max_retries=Retry(3))
 
-
-requests.packages.urllib3.disable_warnings()
 
