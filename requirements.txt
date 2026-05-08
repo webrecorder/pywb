@@ -1,7 +1,6 @@
 setuptools==81.0.0
 wheel
 six
-setuptools; python_version>="3.12"
 warcio>=1.7.5
 requests
 redis==2.10.6
