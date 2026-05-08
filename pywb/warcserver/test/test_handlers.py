@@ -8,7 +8,7 @@ from six.moves.urllib.parse import urlencode
 
 import webtest
 from fakeredis import FakeStrictRedis
-from mock import patch
+from mock import Mock, patch
 import pytest
 
 import os
@@ -42,6 +42,10 @@ ia_cdx = {
                                 'http://web.archive.org/web/{timestamp}id_/{url}')
 }
 
+IA_CDX_IANA = b'''\
+org,iana)/ 20161103124134 http://iana.org/ unk 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ 320
+org,iana)/ 20161104161551 https://www.iana.org/ warc/revisit - K3MFZ2HC5UGVYQ42CM5RARW7DWQTTEOS 498
+'''
 
 
 
@@ -212,14 +216,16 @@ class TestBaseWarcServer(HttpBinLiveTests, MementoOverrideTests, FakeRedisTests,
 
         assert 'ResErrors' not in resp.headers
 
-    def test_agg_select_mem_unrewrite_headers(self):
+    @patch.object(ia_cdx['ia-cdx'].sesh, 'get')
+    def test_agg_select_mem_unrewrite_headers(self, mock_get):
+        mock_get.return_value = Mock(content=IA_CDX_IANA)
+
         resp = self.testapp.get('/cdx_api/resource?closest=20161103124134&url=http://iana.org/')
 
         assert resp.headers['Warcserver-Source-Coll'] == 'ia-cdx'
 
         buff = BytesIO(resp.body)
         record = ArcWarcRecordLoader().parse_record_stream(buff, no_record_parse=False)
-        print(record.http_headers)
         assert record.http_headers.get_statuscode() == '200'
         #assert record.http_headers.get_header('Location') == 'https://www.iana.org/'
 

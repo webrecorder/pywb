@@ -2,13 +2,16 @@ from gevent.monkey import patch_all; patch_all()
 from argparse import ArgumentParser
 
 import logging
-import pkg_resources
+from importlib.metadata import PackageNotFoundError, version
 
 
 #=============================================================================
 def get_version():
     """Get version of the pywb"""
-    return "pywb " + pkg_resources.get_distribution("pywb").version
+    try:
+        return "pywb " + version("pywb")
+    except PackageNotFoundError:  # pragma: no cover
+        return "pywb (unknown)"
 
 
 #=============================================================================

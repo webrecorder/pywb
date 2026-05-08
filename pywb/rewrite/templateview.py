@@ -12,7 +12,7 @@ from webassets.ext.jinja2 import AssetsExtension
 from webassets.loaders import YAMLLoader
 from webassets.env import Resolver
 
-from pkg_resources import resource_filename
+from importlib.resources import files
 
 import os
 import logging
@@ -467,10 +467,9 @@ class PkgResResolver(Resolver):
     def resolve_source(self, ctx, item):
         pkg = self.get_pkg_path(item)
         if pkg:
-            filename = resource_filename(pkg[0], pkg[1])
+            filename = str(files(pkg[0]).joinpath(pkg[1].lstrip('/')))
             if filename:
                 return filename
 
         return super(PkgResResolver, self).resolve_source(ctx, item)
-
 

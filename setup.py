@@ -15,7 +15,7 @@ from pywb import __version__
 root_dir = pathlib.Path(__file__).parent
 
 
-WABAC_SW_URL = "https://cdn.jsdelivr.net/npm/@webrecorder/wabac@2.25.0/dist/sw.js"
+WABAC_SW_URL = "https://cdn.jsdelivr.net/npm/@webrecorder/wabac@2.26.0/dist/sw.js"
 
 def download_wabac_sw():
     print(f"Downloading {WABAC_SW_URL}")
@@ -127,7 +127,7 @@ setup(
             "babel-vue-extractor"
         ],
     },
-    python_requires='>=3.7,<3.13',
+    python_requires='>=3.9,<3.15',
     tests_require=load_requirements("test_requirements.txt"),
     cmdclass={'test': PyTest},
     test_suite='',
@@ -147,12 +147,12 @@ setup(
         'License :: OSI Approved :: GNU General Public License (GPL)',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14',
         'Topic :: Internet :: Proxy Servers',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Internet :: WWW/HTTP :: WSGI',
