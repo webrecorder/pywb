@@ -167,7 +167,12 @@ class HttpBinLiveTests(object):
         super(HttpBinLiveTests, cls).setup_class(*args, **kwargs)
 
         from httpbin import app as httpbin_app
-        httpbin_app.config.update(JSONIFY_PRETTYPRINT_REGULAR=True)
+
+        if hasattr(httpbin_app, 'json'): # Flask >= 2.2.0
+            httpbin_app.json.compact = False
+        else:
+            httpbin_app.config.update(JSONIFY_PRETTYPRINT_REGULAR=True)
+
         cls.httpbin_server = GeventServer(httpbin_app)
 
         httpbin_local = 'http://localhost:' + str(cls.httpbin_server.port) + '/'

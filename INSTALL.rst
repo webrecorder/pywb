@@ -10,14 +10,12 @@ remove some of these steps.*
 Requirements
 ~~~~~~~~~~~~
 
-pywb has tested in python 2.6, 2.7. It runs best in python 2.7.3+
+pywb is tested on python 3.9-3.14.
 
 pywb tool suite provides several WSGI applications, which have been
 tested under *wsgiref*, *waitress*, and uWSGI.
 
 For best results, the *uWSGI* container is recommended.
-
-Support for Python 3 is planned but not yet implemented.
 
 Sample Data
 ~~~~~~~~~~~
