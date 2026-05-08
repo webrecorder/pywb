@@ -10,8 +10,8 @@ brotlipy
 pyyaml
 werkzeug==3.1.7
 webencodings
-gevent==25.8.1
-greenlet==3.3.2
+gevent==25.9.1
+greenlet==3.2.4
 webassets==2.0
 portalocker
 wsgiprox>=1.5.1
