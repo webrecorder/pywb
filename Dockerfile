@@ -1,4 +1,4 @@
-ARG PYTHON=python@sha256:6a27522252aef8432841f224d9baaa6e9fce07b07584154fa0b9a96603af7456
+ARG PYTHON=python@sha256:c11aee3b3cae066f55d1e9318fc812673aa6557073b0db0d792b59491b262e0c
 FROM $PYTHON
 
 # Update system packages
@@ -6,10 +6,10 @@ RUN apt-get update \
   && apt-get upgrade -y \
   && apt-get dist-upgrade -y \
   && apt-get install -y \
-    libpcre2-8-0 \
-    libpcre2-dev \
-    build-essential \
-    python3-dev \
+  libpcre2-8-0 \
+  libpcre2-dev \
+  build-essential \
+  python3-dev \
   && apt-get clean
 
 # MIMIR: Create archivist user and group
