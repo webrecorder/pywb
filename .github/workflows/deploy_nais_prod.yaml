@@ -16,9 +16,9 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Build and push image and SBOM to OCI registry
-        uses: nais/docker-build-push@v0
+        uses: nais/docker-build-push@05dbb6091b30bd84279c6d64a45ef8782fd410a5 # v0
         id: docker-build-push
         with:
           team: ssbno
@@ -26,7 +26,7 @@ jobs:
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           project_id: ${{ secrets.NAIS_MANAGEMENT_PROJECT_ID }}
       - name: Deploy to Nais
-        uses: nais/deploy/actions/deploy@v2
+        uses: nais/deploy/actions/deploy@5fdd91aaf69bb0d6dd5e5118cdacb639f487b93b # v2
         env:
           TEAM: ssbno
           CLUSTER: prod
