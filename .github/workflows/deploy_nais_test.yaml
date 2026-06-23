@@ -20,12 +20,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Generate vulnerability report
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          scan-type: "fs"
+          format: "cyclonedx"
+          output: "dependency-results.sbom.json"
+          scan-ref: "."
       - name: Build and push image and SBOM to OCI registry
         uses: nais/docker-build-push@05dbb6091b30bd84279c6d64a45ef8782fd410a5 # v0
         id: docker-build-push
         with:
           team: ssbno
           tag: latest
+          byosbom: "dependency-results.sbom.json"
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           project_id: ${{ secrets.NAIS_MANAGEMENT_PROJECT_ID }}
       - name: Deploy to Nais
