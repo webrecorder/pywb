@@ -11,7 +11,7 @@ class WabacReplay
     this.injectScripts = injectScripts;
     this.adblockUrl = undefined;
 
-    this.queryParams = {"replayPrefix": ""};
+    this.queryParams = {"replayPrefix": this.prefix};
     if (this.isRoot) {
       this.queryParams["root"] = "$root";
     }
