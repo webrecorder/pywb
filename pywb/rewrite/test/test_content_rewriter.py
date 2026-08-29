@@ -838,3 +838,82 @@ http://example.com/video_4.m3u8
         assert headers.headers == [('Content-Type', 'text/html')]
         result = b''.join(gen).decode('utf-8')
         assert result == content
+
+    def test_es6_imports_insertion_after_imports(self):
+        """Test that first_buff is inserted after ES6 import statements, not before."""
+        headers = {'Content-Type': 'text/javascript'}
+        # ES6 module with imports at the beginning
+        content = """import { foo } from 'module1';
+import bar from 'module2';
+
+console.log('test');
+location = 'http://example.com/';
+"""
+        
+        rwheaders, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_')
+        
+        result = b''.join(gen).decode('utf-8')
+        
+        # Check that imports are at the very beginning
+        assert result.startswith("import { foo } from 'module1';")
+        
+        # Check that the variable declarations (from first_buff) come AFTER imports
+        import_end = result.find("import bar from 'module2';")
+        assert import_end != -1
+        
+        # Find where the injected variables start (they should be after all imports)
+        var_window_pos = result.find('let window =')
+        imports_end_pos = result.find('\n', import_end) + 1
+        
+        # The injected code should come after the imports
+        assert var_window_pos > imports_end_pos, \
+            f"Expected injected code after imports, but found at {var_window_pos} vs imports ending at {imports_end_pos}"
+        
+        # Verify location rewriting still works
+        assert 'WB_wombat_location' in result
+
+    def test_es6_imports_with_comments(self):
+        """Test that ES6 imports are detected even with leading comments."""
+        headers = {'Content-Type': 'text/javascript'}
+        # ES6 module with comments before imports
+        content = """// This is a comment
+/* Multi-line
+   comment */
+import { foo } from 'module1';
+
+console.log('test');
+"""
+        
+        rwheaders, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_')
+        
+        result = b''.join(gen).decode('utf-8')
+        
+        # Comments should be preserved at the beginning
+        assert result.startswith("// This is a comment")
+        
+        # Import should come after comments
+        assert "import { foo } from 'module1';" in result
+        
+        # The injected code should come after imports
+        import_pos = result.find("import { foo } from 'module1';")
+        var_window_pos = result.find('let window =')
+        assert var_window_pos > import_pos
+
+    def test_no_es6_imports_normal_insertion(self):
+        """Test that JS without imports still gets first_buff inserted at the beginning."""
+        headers = {'Content-Type': 'text/javascript'}
+        # Regular JS without imports
+        content = """console.log('test');
+location = 'http://example.com/';
+"""
+        
+        rwheaders, gen, is_rw = self.rewrite_record(headers, content, ts='201701js_')
+        
+        result = b''.join(gen).decode('utf-8')
+        
+        # The injected code should come at the very beginning (before console.log)
+        var_window_pos = result.find('let window =')
+        console_pos = result.find('console.log')
+        
+        assert var_window_pos < console_pos, \
+            "Expected injected code at the beginning when no imports present"
