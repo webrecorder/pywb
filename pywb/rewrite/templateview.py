@@ -17,12 +17,6 @@ from importlib.resources import files
 import os
 import logging
 
-try:
-    import ujson as json
-except ImportError:  # pragma: no cover
-    import json
-
-
 # ============================================================================
 class RelEnvironment(Environment):
     """Override join_path() to enable relative template paths."""
@@ -257,16 +251,6 @@ class JinjaEnv(object):
             """
             split = urlsplit(url)
             return split
-
-        @self.template_filter()
-        def tojson(obj):
-            """Converts the supplied object/array/any to a JSON string if it can be JSONified
-
-            :param any obj: The value to be converted to a JSON string
-            :return: The JSON string representation of the supplied value
-            :rtype: str
-            """
-            return json.dumps(obj)
 
         @self.template_filter()
         def tobool(bool_val):
