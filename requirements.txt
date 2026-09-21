@@ -22,6 +22,6 @@ pyOpenSSL<26.2
 fakeredis<1.0
 tldextract
 python-dateutil
-markupsafe>=2.1.1
+markupsafe>=3.0.3
 ua_parser
 py3AMF
