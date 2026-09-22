@@ -1,0 +1,30 @@
+name: Generate Draft Release
+
+on:
+  push:
+    branches:
+      - main
+      - "*-release"
+
+jobs:
+  package_chart:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v7
+
+      - name: Get Version
+        run: |
+          echo "$(grep '__version__ =' < pywb/version.py | tr -d ' "'\')" >> "$GITHUB_ENV"
+
+      - name: Upload Chart To GitHub
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          draft: true
+          generateReleaseNotes: true
+          name: pywb ${{ env.__version__ }}
+          skipIfReleaseExists: true
+          tag: v-${{ env.__version__ }}
+          updateOnlyUnreleased: true
