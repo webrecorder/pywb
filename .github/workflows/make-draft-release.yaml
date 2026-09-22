@@ -24,7 +24,7 @@ jobs:
           allowUpdates: true
           draft: true
           generateReleaseNotes: true
-          name: pywb v${{ env.__version__ }}
+          name: pywb ${{ env.__version__ }}
           skipIfReleaseExists: true
-          tag: v${{ env.__version__ }}
+          tag: v-${{ env.__version__ }}
           updateOnlyUnreleased: true
