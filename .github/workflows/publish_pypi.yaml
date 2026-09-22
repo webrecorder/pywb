@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9]
+        python-version: [3.12]
 
     steps:
       - name: checkout
@@ -20,13 +20,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: python -m pip install --upgrade pip wheel twine
+        run: python -m pip install --upgrade pip wheel twine setuptools
 
       - name: Build Dist
         run: python setup.py sdist bdist_wheel --universal
 
-      - name: Publish package to TestPyPI
-        uses: pypa/gh-action-pypi-publish@master
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
