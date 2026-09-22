@@ -26,5 +26,6 @@ jobs:
           generateReleaseNotes: true
           name: pywb ${{ env.__version__ }}
           skipIfReleaseExists: true
+          commit: ${{ github.ref_name }}
           tag: v-${{ env.__version__ }}
           updateOnlyUnreleased: true
