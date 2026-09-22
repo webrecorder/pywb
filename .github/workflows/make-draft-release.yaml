@@ -16,7 +16,7 @@ jobs:
 
       - name: Get Version
         run: |
-          echo "$(grep '__version__ =' < pywb/version.py | tr -d ' "')" >> "$GITHUB_ENV"
+          echo "$(grep '__version__ =' < pywb/version.py | tr -d ' "'\'" >> "$GITHUB_ENV"
 
       - name: Upload Chart To GitHub
         uses: ncipollo/release-action@v1
