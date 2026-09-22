@@ -16,9 +16,9 @@ except Exception:  # pragma: no cover
 
 #=============================================================================
 class RewriteInputRequest(DirectWSGIInputRequest):
-    RANGE_ARG_RX = re.compile('.*.googlevideo.com/videoplayback.*([&?]range=(\d+)-(\d+))')
+    RANGE_ARG_RX = re.compile(r'.*.googlevideo.com/videoplayback.*([&?]range=(\d+)-(\d+))')
 
-    RANGE_HEADER = re.compile('bytes=(\d+)-(\d+)?')
+    RANGE_HEADER = re.compile(r'bytes=(\d+)-(\d+)?')
 
     def __init__(self, env, urlkey, url, rewriter):
         super(RewriteInputRequest, self).__init__(env)

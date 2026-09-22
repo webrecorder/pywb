@@ -16,7 +16,7 @@ WORKER_MODS = {"wkr_", "sw_"}  # type: Set[str]
 
 # ============================================================================
 class BaseContentRewriter(object):
-    CHARSET_REGEX = re.compile(b'<meta[^>]*?[\s;"\']charset\s*=[\s"\']*([^\s"\'/>]*)')
+    CHARSET_REGEX = re.compile(rb"""<meta[^>]*?[\s;"']charset\s*=[\s"']*([^\s"'/>]*)""")
 
     TITLE = re.compile(r'<\s*title\s*>(.*)<\s*\/\s*title\s*>', re.M | re.I | re.S)
 
@@ -390,9 +390,9 @@ class StreamingRewriter(object):
 
 # ============================================================================
 class RewriteInfo(object):
-    TAG_REGEX = re.compile(b'^(\xef\xbb\xbf)?\s*\<')
-    TAG_REGEX2 = re.compile(b'^.*<[!]?\w+[\s>]')
-    JSON_REGEX = re.compile(b'^\s*[{[][{"]')  # if it starts with this then highly likely not HTML
+    TAG_REGEX = re.compile(rb'^(' + b'\xef\xbb\xbf' + rb')?\s*\<')
+    TAG_REGEX2 = re.compile(rb'^.*<[!]?\w+[\s>]')
+    JSON_REGEX = re.compile(rb'^\s*[{[][{"]')  # if it starts with this then highly likely not HTML
 
     JSONP_CONTAINS = ['callback=jQuery',
                       'callback=jsonp',

@@ -129,7 +129,7 @@ if (!self.__WB_pmw) {{ self.__WB_pmw = function(obj) {{ this.__WB_source = obj; 
             # rewrite '= this' or ', this'
             (r'(?<=[=,])\s*this\b\s*(?![:.$])', self.replace_str(this_rw), 0),
             # rewrite ')(this)'
-            ('\}(?:\s*\))?\s*\(this\)', self.replace_str(this_rw), 0),
+            (r'\}(?:\s*\))?\s*\(this\)', self.replace_str(this_rw), 0),
             # rewrite this in && or || expr?
             (r'(?<=[^|&][|&]{2})\s*this\b\s*(?![|&.$]([^|&]|$))', self.replace_str(this_rw), 0),
         ]
@@ -338,7 +338,7 @@ class JSReplaceFuzzy(object):
 class CSSRules(RxRules):
     CSS_URL_REGEX = "url\\s*\\(\\s*(?:[\\\\\"']|(?:&.{1,4};))*\\s*([^)'\"]+)\\s*(?:[\\\\\"']|(?:&.{1,4};))*\\s*\\)"
 
-    CSS_IMPORT_REGEX = ("@import\\s+(?:url\\s*)?\\(?\\s*['\"]?([\w.:/\\\\-]+)")
+    CSS_IMPORT_REGEX = (r"""@import\s+(?:url\s*)?\(?\s*['"]?([\w.:/\\-]+)""")
 
     def __init__(self):
         rules = [
@@ -357,7 +357,7 @@ class CSSRewriter(RegexRewriter):
 class XMLRules(RxRules):
     def __init__(self):
         rules = [
-            ('(?<![\w])([A-Za-z:]+[\s=]+)?["\'\s]*(' +
+            (r"""(?<![\w])([A-Za-z:]+[\s=]+)?["'\s]*(""" +
              self.HTTPX_MATCH_STR + ')',
              self.archival_rewrite(), 2),
         ]

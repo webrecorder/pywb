@@ -93,8 +93,8 @@ class BaseWbUrl(object):
 class WbUrl(BaseWbUrl):
     # Regexs
     # ======================
-    QUERY_REGEX = re.compile('^(?:([\w\-:]+)/)?(\d*)[*-](\d*)/?(.+)$')
-    REPLAY_REGEX = re.compile('^(\d*)([a-z]+_|[$][a-z0-9:.-]+)?/{1,3}(.+)$')
+    QUERY_REGEX = re.compile(r'^(?:([\w\-:]+)/)?(\d*)[*-](\d*)/?(.+)$')
+    REPLAY_REGEX = re.compile(r'^(\d*)([a-z]+_|[$][a-z0-9:.-]+)?/{1,3}(.+)$')
     #LATEST_REPLAY_REGEX = re.compile('^\w_)')
 
     DEFAULT_SCHEME = 'http://'
@@ -279,7 +279,7 @@ class WbUrl(BaseWbUrl):
         self.type = self.REPLAY
 
     def deprefix_url(self, prefix):
-        rex_query = '=' + re.escape(prefix) + '([0-9])*([\w]{2}_)?/?'
+        rex_query = r'=' + re.escape(prefix) + '([0-9])*([\\w]{2}_)?/?'
         self.url = re.sub(rex_query, '=', self.url)
 
         rex_query = '=(' + quote_plus(prefix) + '.*?)((?:https?%3A)?%2F%2F[^&]+)'

@@ -117,7 +117,7 @@ class FileIndexSource(BaseIndexSource):
 
 #=============================================================================
 class RemoteIndexSource(BaseIndexSource):
-    CDX_MATCH_RX = re.compile('^cdxj?\+(?P<url>https?\:.*)')
+    CDX_MATCH_RX = re.compile(r'^cdxj?\+(?P<url>https?\:.*)')
 
     def __init__(self, api_url, replay_url, url_field='load_url', closest_limit=100):
         self.api_url = api_url
@@ -685,7 +685,7 @@ class MementoIndexSource(BaseIndexSource):
 
 #=============================================================================
 class WBMementoIndexSource(MementoIndexSource):
-    WBURL_MATCH = re.compile('([0-9]{0,14})?(?:\w+_)?/{0,3}(.*)')
+    WBURL_MATCH = re.compile(r'([0-9]{0,14})?(?:\w+_)?/{0,3}(.*)')
     WAYBACK_ORIG_SUFFIX = '{timestamp}im_/{url}'
 
     def __init__(self, timegate_url, timemap_url, replay_url):
