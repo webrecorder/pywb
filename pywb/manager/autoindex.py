@@ -9,7 +9,7 @@ from pywb.manager.manager import CollectionsManager
 
 #=============================================================================
 class AutoIndexer(object):
-    EXT_RX = re.compile('.*\.w?arc(\.gz)?$')
+    EXT_RX = re.compile(r'.*\.w?arc(\.gz)?$')
     AUTO_INDEX_FILE = 'autoindex.cdxj'
 
     def __init__(self, colls_dir=None, interval=30, keep_running=True):

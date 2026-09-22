@@ -6,8 +6,8 @@ from pywb.rewrite.content_rewriter import BufferedRewriter
 
 # ============================================================================
 class RewriteHLS(BufferedRewriter):
-    EXT_INF = re.compile('#EXT-X-STREAM-INF:(?:.*[,])?BANDWIDTH=([\d]+)')
-    EXT_RESOLUTION = re.compile('RESOLUTION=([\d]+)x([\d]+)')
+    EXT_INF = re.compile(r'#EXT-X-STREAM-INF:(?:.*[,])?BANDWIDTH=([\d]+)')
+    EXT_RESOLUTION = re.compile(r'RESOLUTION=([\d]+)x([\d]+)')
 
     def rewrite_stream(self, stream, rwinfo):
         max_resolution, max_bandwidth = self._get_adaptive_metadata(rwinfo)

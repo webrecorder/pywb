@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class WbUrlBaseCookieRewriter(object):
     """ Base Cookie rewriter for wburl-based requests.
     """
-    REMOVE_EXPIRES = re.compile('[;]\s*?expires=.{4}[^,;]+', re.I)
+    REMOVE_EXPIRES = re.compile(r'[;]\s*?expires=.{4}[^,;]+', re.I)
 
     def __init__(self, url_rewriter):
         self.url_rewriter = url_rewriter

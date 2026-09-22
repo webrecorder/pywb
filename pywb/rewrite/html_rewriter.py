@@ -170,7 +170,7 @@ class HTMLRewriterMixin(StreamingRewriter):
 
     ADD_WINDOW = re.compile('(?<![.])(WB_wombat_)')
 
-    SRCSET_REGEX = re.compile('\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))')
+    SRCSET_REGEX = re.compile(r'\s*(\S*\s+[\d\.]+[wx]),|(?:\s*,(?:\s+|(?=https?:)))')
 
     def _rewrite_srcset(self, value, mod=''):
         if not value:
