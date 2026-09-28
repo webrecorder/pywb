@@ -101,7 +101,7 @@ r"""
 '"/web/20131010/\\\\/\\\\/example.com/"'
 
 # custom rules added
->>> _test_js('window.location = "http://example.com/abc.html"; some_func(); ', [('some_func\(\).*', RxRules.format('/*{0}*/'), 0)])
+>>> _test_js('window.location = "http://example.com/abc.html"; some_func(); ', [(r'some_func\(\).*', RxRules.format('/*{0}*/'), 0)])
 'window.WB_wombat_location = "/web/20131010/http://example.com/abc.html"; /*some_func(); */'
 
 # scheme-agnostic
@@ -120,10 +120,10 @@ r"""
 >>> _test_js('&quot;http:\\/\\/www.example.com\\/some\\/path\\/?query=1&quot;')
 '&quot;/web/20131010/http:\\/\\/www.example.com\\/some\\/path\\/?query=1&quot;'
 
->>> _test_js('"http:\/\/sub-site.example.com\/path-dashes\/path_other\/foo_bar.txt"')
+>>> _test_js(r'"http:\/\/sub-site.example.com\/path-dashes\/path_other\/foo_bar.txt"')
 '"/web/20131010/http:\\/\\/sub-site.example.com\\/path-dashes\\/path_other\\/foo_bar.txt"'
 
->>> _test_js('"a=b&amp;http:\/\/example.com/;c=d"')
+>>> _test_js(r'"a=b&amp;http:\/\/example.com/;c=d"')
 '"a=b&amp;/web/20131010/http:\\/\\/example.com/;c=d"'
 
 #=================================================================

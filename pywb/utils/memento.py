@@ -6,10 +6,10 @@ from warcio.timeutils import timestamp_to_http_date, http_date_to_timestamp
 from pywb.utils.wbexception import BadRequestException
 
 
-LINK_SPLIT = re.compile(',\s*(?=[<])')
-LINK_SEG_SPLIT = re.compile(';\s*')
+LINK_SPLIT = re.compile(r',\s*(?=[<])')
+LINK_SEG_SPLIT = re.compile(r';\s*')
 LINK_URL = re.compile('<(.*)>')
-LINK_PROP = re.compile('([\w]+)="([^"]+)')
+LINK_PROP = re.compile(r'([\w]+)="([^"]+)')
 
 FIND_DT = re.compile('datetime=\"([^\"]+)\"')
 
