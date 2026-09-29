@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools", "pip", "wheel", "build", "pywb"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pywb"
+description = "Pywb Webrecorder web archive replay and capture tools"
+readme = "README.rst"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+requires-python = '>=3.9,<3.15'
+keywords = ["archivism", "archiving", "archives",
+            "warc", "cdx", "cdxj",
+            "server", "wayback", "scraping", "tools"]
+dynamic = ['classifiers', 'dependencies', 'optional-dependencies', 'version']
+
+[[project.authors]]
+name = "Ilya Kreymer"
+email = "ikreymer@gmail.com"
+
+[[project.maintainers]]
+name = "Ilya Kreymer"
+email = "ikreymer@gmail.com"
+
+[project.scripts]
+pywb = 'pywb.apps.cli:wayback'
+wayback = 'pywb.apps.cli:wayback'
+cdx-server = 'pywb.apps.cli:cdx_server'
+live-rewrite-server = 'pywb.apps.cli:live_rewrite_server'
+cdx-indexer = 'pywb.indexer.cdxindexer:main'
+wb-manager = 'pywb.manager.manager:main_wrap_exc'
+warcserver = 'pywb.apps.cli:warcserver'
+
+[project.urls]
+Homepage = "https://github.com/webrecorder/pywb"
+Repository = "https://github.com/webrecorder/pywb"
+Documentation = "https://github.com/webrecorder/pywb/blob/master/README.rst"
+Source = "https://github.com/webrecorder/pywb"
+Tracker = "https://github.com/webrecorder/pywb/issues"
+Changelog = "https://github.com/webrecorder/pywb/blob/master/CHANGES.rst"
+Download = "https://pypi.org/project/pywb/"
+License = "https://github.com/webrecorder/pywb/blob/master/LICENSE"
+
+[tool.setuptools.data-files]
+'sample_archive/access' = ["sample_archive/access/*"]
+'sample_archive/cdx' = ["sample_archive/cdx/*"]
+'sample_archive/cdxj' = ["sample_archive/cdxj/*"]
+'sample_archive/non-surt-cdx' = ["sample_archive/non-surt-cdx/*"]
+'sample_archive/text_content' = ["sample_archive/text_content/*"]
+'sample_archive/waczs' = ["sample_archive/waczs/*"]
+'sample_archive/warcs' = ["sample_archive/warcs/*"]
+'sample_archive/zipcdx' = ["sample_archive/zipcdx/*"]
+'sample-deploy' = ["sample-deploy/*"]
+
+[tool.setuptools.dynamic]
+classifiers = { file = "CLASSIFIERS.txt" }
+dependencies = { file = "requirements.txt" }
+optional-dependencies = { all = { file = "extra_requirements.txt" }, testing = { file = "test_requirements.txt" } }
+version = { attr = "pywb.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pywb*", "static/*", "templates/*",
+                    "*.jpg", "*.jpeg", "*.png", "*.txt",
+                    "*.js", "*.html", "*.css",
+                    "*.conf", "*.yaml", "*.md", "*.rst"]
+exclude = ["tests_disabled"]
