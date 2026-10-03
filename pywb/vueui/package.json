@@ -13,7 +13,7 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^13.0.4",
     "eslint": "^7.32.0",
-    "eslint-plugin-vue": "^7.17.0",
+    "eslint-plugin-vue": "^9.33.0",
     "rollup": "^2.10.9",
     "rollup-plugin-css-only": "^3.1.0",
     "rollup-plugin-vue": "^5.0.0"
