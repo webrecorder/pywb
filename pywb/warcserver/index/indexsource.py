@@ -10,6 +10,7 @@ from pywb.utils.wbexception import BadRequestException, NotFoundException
 from pywb.warcserver.http import DefaultAdapters
 from pywb.warcserver.index.cdxobject import CDXObject
 from pywb.warcserver.index.cdxops import cdx_sort_closest
+from pywb.warcserver.liveurlfilter import LiveUrlFilter
 
 try:
     from lxml import etree
@@ -384,6 +385,9 @@ class LiveIndexSource(BaseIndexSource):
         cdx['url'] = params['url']
         cdx['load_url'] = self.get_load_url(params)
         cdx['is_live'] = 'true'
+
+        if not LiveUrlFilter.is_allowed(cdx['load_url'], cdx):
+            raise NotFoundException(params['url'])
 
         mime = params.get('content_type', '')
 
