@@ -28,6 +28,7 @@ from pywb.warcserver.index.aggregator import DirectoryIndexSource
 
 from pywb.warcserver.basewarcserver import BaseWarcServer
 from pywb.utils.memento import MementoUtils
+from pywb.utils.geventserver import GeventServer
 
 
 sources = {
@@ -46,6 +47,17 @@ IA_CDX_IANA = b'''\
 org,iana)/ 20161103124134 http://iana.org/ unk 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ 320
 org,iana)/ 20161104161551 https://www.iana.org/ warc/revisit - K3MFZ2HC5UGVYQ42CM5RARW7DWQTTEOS 498
 '''
+
+
+def ia_memento_app(environ, start_response):
+    # stand-in for web.archive.org serving the select_mem_2 capture
+    if environ['PATH_INFO'] != '/web/20160110134855id_/http://vvork.com/':
+        start_response('404 Not Found', [('Content-Type', 'text/plain')])
+        return [b'Not Found']
+
+    start_response('200 OK', [('Content-Type', 'text/html'),
+                              ('Memento-Datetime', 'Sun, 10 Jan 2016 13:48:55 GMT')])
+    return [b'<html><body>vvork</body></html>']
 
 
 
@@ -203,7 +215,13 @@ class TestBaseWarcServer(HttpBinLiveTests, MementoOverrideTests, FakeRedisTests,
 
     @patch('pywb.warcserver.index.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_mem_2'))
     def test_agg_select_mem_2(self):
-        resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20151231')
+        ia_server = GeventServer(ia_memento_app)
+        replay_url = 'http://localhost:{0}/web/{{timestamp}}id_/{{url}}'.format(ia_server.port)
+        try:
+            with patch.object(sources['ia'], 'replay_url', replay_url):
+                resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20151231')
+        finally:
+            ia_server.stop()
 
         assert resp.headers['Warcserver-Source-Coll'] == 'ia'
 
