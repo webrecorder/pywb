@@ -25,6 +25,7 @@ from pywb.utils.io import StreamIter, call_release_conn, compress_gzip_iter, no_
 from pywb.utils.memento import MementoUtils
 from pywb.utils.wbexception import LiveResourceException
 from pywb.warcserver.http import DefaultAdapters
+from pywb.warcserver.liveurlfilter import LiveUrlFilter
 from pywb.warcserver.resource.pathresolvers import DefaultResolverMixin
 from pywb.warcserver.resource.resolvingloader import ResolvingLoader
 
@@ -116,6 +117,10 @@ class BaseLoader(object):
             return True
 
         return False
+
+    def _check_url_allowed(self, load_url, cdx):
+        if not LiveUrlFilter.is_allowed(load_url, cdx):
+            raise LiveResourceException('Blocked by live_url_filter', url=load_url)
 
     def raise_on_self_redirect(self, params, cdx, status_code, location_url):
         """
@@ -479,6 +484,7 @@ class LiveWebLoader(BaseLoader):
     def _do_request_with_redir_check(self, method, load_url,
                                      data, req_headers, params, cdx):
 
+        self._check_url_allowed(load_url, cdx)
         upstream_res = self._do_request(method, load_url,
                                         data, req_headers, params,
                                         cdx.get('is_live'))
@@ -502,6 +508,7 @@ class LiveWebLoader(BaseLoader):
                     raise
 
                 load_url = location
+                self._check_url_allowed(load_url, cdx)
                 upstream_res = self._do_request(method, load_url, data,
                                                 req_headers, params, cdx.get('is_live'))
                 self_redir_count += 1
@@ -578,6 +585,8 @@ class VideoLoader(BaseLoader):
 
         if not self.ydl:
             return None
+
+        self._check_url_allowed(load_url, cdx)
 
         info = self.ydl.extract_info(load_url)
         info_buff = json.dumps(info)
