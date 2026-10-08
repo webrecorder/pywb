@@ -200,4 +200,11 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
 
         assert resp.json['headers']['Origin'] == 'http://httpbin.org'
 
+    def test_live_sec_fetch_dest_frame(self, fmod_sl):
+        headers = {'Sec-Fetch-Dest': 'iframe'}
+
+        resp = self.get('/live/{0}http://httpbin.org/get?test=headers', fmod_sl, headers=headers)
+
+        assert resp.json['headers']['Sec-Fetch-Dest'] == 'document'
+
 
