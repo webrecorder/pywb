@@ -217,7 +217,15 @@ pywb does not provide a filter implementation. For example, a filter could resol
               return False
       return True
 
-Note that this example does not protect against DNS rebinding, as the host is resolved again when the request is made.
+The filter is an application-level check, to be used in addition to network-level controls, not instead of them. It has some limitations:
+
+* It checks urls, not connections. A filter that resolves the host, like the example above, does not protect against DNS rebinding,
+  as the host is resolved again when the request is made. If a SOCKS proxy is used, the host is resolved by the proxy.
+* For video info requests (the ``vi_`` modifier, only when ``youtube-dl`` is installed), only the initial url is checked.
+  The requests made by ``youtube-dl`` itself, eg. following redirects, are not.
+
+For a publicly accessible deployment, it is recommended to also block requests to private network, loopback and link-local
+addresses (eg. cloud metadata endpoints) with egress firewall rules on the pywb host.
 
 
 .. _auto-all:

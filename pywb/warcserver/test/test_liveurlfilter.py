@@ -3,7 +3,7 @@ from .testutils import BaseTestClass, HttpBinLiveTests
 
 import webtest
 import pytest
-from mock import patch
+from mock import patch, MagicMock
 
 from pywb.utils.wbexception import LiveResourceException
 from pywb.warcserver.basewarcserver import BaseWarcServer
@@ -12,7 +12,7 @@ from pywb.warcserver.index.aggregator import SimpleAggregator
 from pywb.warcserver.index.cdxobject import CDXObject
 from pywb.warcserver.index.indexsource import LiveIndexSource
 from pywb.warcserver.liveurlfilter import LiveUrlFilter
-from pywb.warcserver.resource.responseloader import LiveWebLoader
+from pywb.warcserver.resource.responseloader import LiveWebLoader, VideoLoader
 from pywb.warcserver.warcserver import WarcServer
 
 
@@ -127,4 +127,39 @@ class TestLiveUrlFilter(HttpBinLiveTests, BaseTestClass):
 
             assert not mock_request.called
 
+        assert CALLS == [(cdx['load_url'], cdx)]
+
+    def _video_load(self):
+        loader = VideoLoader()
+        loader.ydl = MagicMock()
+        loader.ydl.extract_info.return_value = {'formats': []}
+
+        cdx = CDXObject()
+        cdx['url'] = 'http://blocked.example.com/'
+        cdx['load_url'] = 'http://archive.example.com/web/2020id_/http://blocked.example.com/'
+        cdx['timestamp'] = '20200101000000'
+
+        params = {'content_type': VideoLoader.CONTENT_TYPE}
+        return loader, cdx, params
+
+    def test_block_video_load(self):
+        LiveUrlFilter.init(__name__ + ':block_target')
+
+        loader, cdx, params = self._video_load()
+
+        with pytest.raises(LiveResourceException):
+            loader.load_resource(cdx, params)
+
+        assert not loader.ydl.extract_info.called
+        assert CALLS == [(cdx['load_url'], cdx)]
+
+    def test_allow_video_load(self):
+        LiveUrlFilter.init(__name__ + ':allow_all')
+
+        loader, cdx, params = self._video_load()
+
+        warc_headers, _, _ = loader.load_resource(cdx, params)
+        assert warc_headers.get_header('Content-Type') == VideoLoader.CONTENT_TYPE
+
+        loader.ydl.extract_info.assert_called_once_with(cdx['load_url'])
         assert CALLS == [(cdx['load_url'], cdx)]

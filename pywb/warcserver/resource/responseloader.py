@@ -118,6 +118,10 @@ class BaseLoader(object):
 
         return False
 
+    def _check_url_allowed(self, load_url, cdx):
+        if not LiveUrlFilter.is_allowed(load_url, cdx):
+            raise LiveResourceException('Blocked by live_url_filter', url=load_url)
+
     def raise_on_self_redirect(self, params, cdx, status_code, location_url):
         """
         Check if response is a 3xx redirect to the same url
@@ -511,10 +515,6 @@ class LiveWebLoader(BaseLoader):
 
         return upstream_res
 
-    def _check_url_allowed(self, load_url, cdx):
-        if not LiveUrlFilter.is_allowed(load_url, cdx):
-            raise LiveResourceException('Blocked by live_url_filter', url=load_url)
-
     def _do_request(self, method, load_url, data, req_headers, params, is_live):
         adapter = DefaultAdapters.live_adapter if is_live else DefaultAdapters.remote_adapter
         max_retries = adapter.max_retries
@@ -585,6 +585,8 @@ class VideoLoader(BaseLoader):
 
         if not self.ydl:
             return None
+
+        self._check_url_allowed(load_url, cdx)
 
         info = self.ydl.extract_info(load_url)
         info_buff = json.dumps(info)
