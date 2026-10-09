@@ -164,7 +164,7 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
         assert '"http://httpbin.org/html"' in resp.text, resp.text
 
     def test_live_invalid(self, fmod_sl):
-        resp = self.get('/live/{0}http://abcdef', fmod_sl, status=307)
+        resp = self.get('/live/{0}http://abcdef.invalid', fmod_sl, status=307)
         resp = resp.follow(status=400)
         assert resp.status_int == 400
 

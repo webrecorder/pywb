@@ -270,6 +270,7 @@ com,instagram)/amaliaulman 20141014162333 {0}excellences-and-perfections/2014101
         assert(key_ts_res(res) == expected)
         assert(errs['source'] == "NotFoundException('testdata/not-found-x',)"), errs
 
+    @pytest.mark.live
     def test_ait_filters(self):
         pytest.skip("ait issue, may not work anymore")
 
