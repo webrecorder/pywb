@@ -69,6 +69,41 @@ Location: /warc/20171226/http://example.com/other.html\r\n\
         assert rwinfo.text_type == None
         assert rwinfo.charset == None
 
+    def test_header_rewrite_refresh(self):
+        headers = [('Content-Length', '0'),
+                   ('Refresh', '0; url=https://example.com/other.html')]
+
+        res = """\
+HTTP/1.0 200 OK\r\n\
+Content-Length: 0\r\n\
+Refresh: 0; url=/warc/20171226/https://example.com/other.html\r\n\
+"""
+        rwinfo = self.do_rewrite('200 OK', headers)
+        http_headers = DefaultHeaderRewriter(rwinfo)()
+        assert str(http_headers) == res
+
+    def test_header_rewrite_refresh_relative_quoted(self):
+        headers = [('Refresh', "5;URL='/other.html'")]
+
+        rwinfo = self.do_rewrite('200 OK', headers)
+        http_headers = DefaultHeaderRewriter(rwinfo)()
+        assert http_headers.get_header('Refresh') == "5;URL='/warc/20171226/http://example.com/other.html'"
+
+    def test_header_rewrite_refresh_no_url(self):
+        headers = [('Refresh', '30')]
+
+        rwinfo = self.do_rewrite('200 OK', headers)
+        http_headers = DefaultHeaderRewriter(rwinfo)()
+        assert http_headers.get_header('Refresh') == '30'
+
+    def test_header_rewrite_refresh_id_mod(self):
+        headers = [('Refresh', '0; url=https://example.com/other.html')]
+
+        rwinfo = self.do_rewrite('200 OK', headers)
+        rwinfo.url_rewriter = UrlRewriter('20171226id_/http://example.com/', '/warc/')
+        http_headers = DefaultHeaderRewriter(rwinfo)()
+        assert http_headers.get_header('Refresh') == '0; url=https://example.com/other.html'
+
     def test_header_rewrite_gzipped(self):
         headers = [('Content-Length', '199999'),
                    ('Content-Type', 'text/javascript'),

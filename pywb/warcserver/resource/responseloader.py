@@ -7,7 +7,7 @@ from io import BytesIO
 
 import six
 from requests.models import PreparedRequest
-from six.moves.urllib.parse import quote, unquote, urlsplit
+from six.moves.urllib.parse import quote, unquote, urljoin, urlsplit
 from warcio.statusandheaders import StatusAndHeaders, StatusAndHeadersParser
 from warcio.timeutils import (
     datetime_to_http_date,
@@ -23,6 +23,7 @@ from pywb.utils.canonicalize import canonicalize
 from pywb.utils.format import ParamFormatter
 from pywb.utils.io import StreamIter, call_release_conn, compress_gzip_iter, no_except_close
 from pywb.utils.memento import MementoUtils
+from pywb.utils.refresh import parse_refresh
 from pywb.utils.wbexception import LiveResourceException
 from pywb.warcserver.http import DefaultAdapters
 from pywb.warcserver.liveurlfilter import LiveUrlFilter
@@ -122,16 +123,20 @@ class BaseLoader(object):
         if not LiveUrlFilter.is_allowed(load_url, cdx):
             raise LiveResourceException('Blocked by live_url_filter', url=load_url)
 
-    def raise_on_self_redirect(self, params, cdx, status_code, location_url):
+    def raise_on_self_redirect(self, params, cdx, status_code, location_url,
+                               refresh=None):
         """
-        Check if response is a 3xx redirect to the same url
+        Check if response is a 3xx redirect, or an immediate Refresh, to the same url
         If so, reject this capture to avoid causing redirect loop
         """
         if cdx.get('is_live'):
             return
 
         if not status_code.startswith('3') or status_code == '304':
-            return
+            location_url = None
+
+        if not location_url:
+            location_url = self._get_immediate_refresh_url(cdx, refresh)
 
         request_url = params['url'].lower()
         if not location_url:
@@ -161,6 +166,18 @@ class BaseLoader(object):
             msg = msg.format(request_url, location_url)
             params['sr-urlkey'] = orig_key
             raise LiveResourceException(msg)
+
+    @staticmethod
+    def _get_immediate_refresh_url(cdx, refresh):
+        """
+        Return the absolute url of a Refresh with no delay, which the browser
+        follows like a redirect, or None otherwise
+        """
+        res = parse_refresh(refresh)
+        if not res or res[0] != 0:
+            return None
+
+        return urljoin(cdx['url'], res[1])
 
     @staticmethod
     def _make_warc_id(id_=None):
@@ -222,13 +239,16 @@ class WARCPathLoader(DefaultResolverMixin, BaseLoader):
 
             http_headers = headers.http_headers or payload.http_headers
 
-            # if status is not set and not, 2xx, 4xx, 5xx
+            refresh = http_headers and http_headers.get_header('Refresh')
+
+            # if status is not set and not, 2xx, 4xx, 5xx, or a Refresh is set,
             # go through self-redirect check just in case
-            if not status or not status.startswith(('2', '4', '5')):
+            if refresh or not status or not status.startswith(('2', '4', '5')):
                 try:
                     self.raise_on_self_redirect(params, cdx,
                                                 http_headers.get_statuscode(),
-                                                http_headers.get_header('Location'))
+                                                http_headers.get_header('Location'),
+                                                refresh)
                 except LiveResourceException:
                     no_except_close(headers.raw_stream)
                     no_except_close(payload.raw_stream)

@@ -3,6 +3,8 @@ from warcio.timeutils import datetime_to_http_date
 from datetime import datetime, timedelta, timezone
 from six.moves.urllib.parse import urlsplit
 
+from pywb.utils.refresh import rewrite_refresh
+
 
 #=============================================================================
 class DefaultHeaderRewriter(object):
@@ -53,6 +55,7 @@ class DefaultHeaderRewriter(object):
         'proxy-authenticate': 'keep',
 
         'public-key-pins': 'prefix',
+        'refresh': 'refresh',
         'retry-after': 'prefix',
         'server': 'prefix',
 
@@ -114,6 +117,12 @@ class DefaultHeaderRewriter(object):
         elif rule == 'url-rewrite':
             if self.rwinfo.is_url_rw():
                 return (name, self.rwinfo.url_rewriter.rewrite(value))
+            else:
+                return (name, value)
+
+        elif rule == 'refresh':
+            if self.rwinfo.is_url_rw():
+                return (name, rewrite_refresh(value, self.rwinfo.url_rewriter.rewrite))
             else:
                 return (name, value)
 
