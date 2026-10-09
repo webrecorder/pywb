@@ -93,6 +93,15 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_live)
 
 
+@pytest.fixture(scope='session', autouse=True)
+def bundled_public_suffix_list():
+    # tldextract downloads the Public Suffix List on first use, unless already cached:
+    # use the snapshot bundled with it instead. Imported here, not at the top, so that
+    # the test modules can gevent monkey patch ssl before requests imports it
+    import tldextract
+    tldextract.tldextract.TLD_EXTRACTOR = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None)
+
+
 @pytest.fixture(autouse=True)
 def block_live_web(request):
     _State.allow = request.node.get_closest_marker('live') is not None
