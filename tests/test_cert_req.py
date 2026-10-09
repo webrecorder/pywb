@@ -20,6 +20,7 @@ def make_cert(subject, issuer_name, issuer_key, not_before, not_after, is_ca=Fal
     key = key or ec.generate_private_key(ec.SECP256R1())
     name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, subject)])
 
+    # key identifiers and key usage are required by strict verification (VERIFY_X509_STRICT)
     builder = (x509.CertificateBuilder()
                .subject_name(name)
                .issuer_name(issuer_name or name)
@@ -27,10 +28,19 @@ def make_cert(subject, issuer_name, issuer_key, not_before, not_after, is_ca=Fal
                .serial_number(x509.random_serial_number())
                .not_valid_before(not_before)
                .not_valid_after(not_after)
-               .add_extension(x509.BasicConstraints(ca=is_ca, path_length=None), critical=True))
+               .add_extension(x509.BasicConstraints(ca=is_ca, path_length=None), critical=True)
+               .add_extension(x509.SubjectKeyIdentifier.from_public_key(key.public_key()), critical=False)
+               .add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key((issuer_key or key).public_key()),
+                              critical=False)
+               .add_extension(x509.KeyUsage(digital_signature=not is_ca, key_cert_sign=is_ca, crl_sign=is_ca,
+                                            content_commitment=False, key_encipherment=False,
+                                            data_encipherment=False, key_agreement=False,
+                                            encipher_only=False, decipher_only=False), critical=True))
 
     if not is_ca:
-        builder = builder.add_extension(x509.SubjectAlternativeName([x509.DNSName(subject)]), critical=False)
+        builder = (builder
+                   .add_extension(x509.SubjectAlternativeName([x509.DNSName(subject)]), critical=False)
+                   .add_extension(x509.ExtendedKeyUsage([x509.oid.ExtendedKeyUsageOID.SERVER_AUTH]), critical=False))
 
     return builder.sign(issuer_key or key, hashes.SHA256()), key
 
