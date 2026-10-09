@@ -117,6 +117,15 @@ r"""
 >>> parse('<META http-equiv="refresh" content="10; URL=/abc/def.html">')
 <meta http-equiv="refresh" content="10; URL=/web/20131226101010/http://example.com/abc/def.html">
 
+>>> parse("<meta http-equiv=\"refresh\" content=\"0;url='http://example.com/abc/def.html'\">")
+<meta http-equiv="refresh" content="0;url='/web/20131226101010/http://example.com/abc/def.html'">
+
+>>> parse('<meta http-equiv="refresh" content="5, /abc/def.html">')
+<meta http-equiv="refresh" content="5, /web/20131226101010/http://example.com/abc/def.html">
+
+>>> parse('<meta http-equiv="refresh" content="30">')
+<meta http-equiv="refresh" content="30">
+
 >>> parse('<meta http-equiv="Content-type" content="text/html; charset=utf-8" />')
 <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
 
