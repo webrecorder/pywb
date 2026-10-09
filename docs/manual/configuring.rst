@@ -187,6 +187,47 @@ If the ``SOCKS_HOST`` and optionally ``SOCKS_PORT`` environment variables are se
 Note that, at this time, it is not possible to configure a SOCKS proxy per pywb collection -- all live web traffic will use the SOCKS proxy if enabled.
 
 
+.. _live-url-filter:
+
+Filtering Live Web Requests
+"""""""""""""""""""""""""""
+
+When pywb is publicly accessible with a live web collection (or recording from the live web), any user can make pywb request
+any url, including urls on hosts only reachable from the pywb server, eg. internal services on a private network.
+
+To restrict which urls may be requested, a custom filter function can be set with the ``live_url_filter`` option::
+
+  live_url_filter: mypackage.filters:is_url_allowed
+
+The function is called before every request to the live web, or to a remote archive (eg. a memento source), as ``is_url_allowed(url, cdx)``,
+where ``url`` is the url about to be requested and ``cdx`` is the capture being loaded: ``cdx['url']`` is the original url, and
+``cdx.get('is_live')`` is set when loading from the live web. The function must return ``True`` to allow the request.
+If it returns a false value or raises an exception, the request is not made.
+
+pywb does not provide a filter implementation. For example, a filter could resolve the host and reject private network addresses::
+
+  import ipaddress
+  import socket
+  from urllib.parse import urlsplit
+
+  def is_url_allowed(url, cdx):
+      host = urlsplit(url).hostname
+      for info in socket.getaddrinfo(host, None):
+          if not ipaddress.ip_address(info[4][0]).is_global:
+              return False
+      return True
+
+The filter is an application-level check, to be used in addition to network-level controls, not instead of them. It has some limitations:
+
+* It checks urls, not connections. A filter that resolves the host, like the example above, does not protect against DNS rebinding,
+  as the host is resolved again when the request is made. If a SOCKS proxy is used, the host is resolved by the proxy.
+* For video info requests (the ``vi_`` modifier, only when ``youtube-dl`` is installed), only the initial url is checked.
+  The requests made by ``youtube-dl`` itself, eg. following redirects, are not.
+
+For a publicly accessible deployment, it is recommended to also block requests to private network, loopback and link-local
+addresses (eg. cloud metadata endpoints) with egress firewall rules on the pywb host.
+
+
 .. _auto-all:
 
 Auto "All" Aggregate Collection

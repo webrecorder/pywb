@@ -38,13 +38,15 @@ class TestRedirects(CollsDirMixin, BaseConfigTest):
 
         return rec
 
-    def create_response_record(self, url, timestamp, text):
+    def create_response_record(self, url, timestamp, text, extra_headers=None):
         payload = text.encode('utf-8')
 
         warc_headers = {}
         warc_headers['WARC-Date'] = timestamp_to_iso_date(timestamp)
 
         headers_list = [('Content-Length', str(len(payload)))]
+        if extra_headers:
+            headers_list.extend(extra_headers)
 
         http_headers = StatusAndHeaders('200 OK', headers_list, protocol='HTTP/1.0')
 
@@ -163,3 +165,42 @@ class TestRedirects(CollsDirMixin, BaseConfigTest):
         res = self.get('/redir2/20191024125648{0}/https://www.example.com/path', fmod, status=200)
         assert res.text == 'Some Text'
 
+    def test_init_refresh(self):
+        filename = os.path.join(self.root_dir, 'refresh.warc.gz')
+        with open(filename, 'wb') as fh:
+            self.writer = WARCWriter(fh, gzip=True)
+
+            # immediate refresh to same url, eg. to upgrade to https
+            self.create_response_record('http://refresh.example.com/', '20200101000000', '',
+                                        [('Refresh', '0; url=https://refresh.example.com/')])
+            self.create_response_record('https://refresh.example.com/', '20200101000005', 'Refresh Target')
+
+            # immediate refresh to another url
+            self.create_response_record('http://refresh.example.com/start', '20200101000000', '',
+                                        [('Refresh', '0; url=https://refresh.example.com/index.php')])
+
+            # delayed refresh to same url, eg. to periodically reload the page
+            self.create_response_record('http://refresh.example.com/reload', '20200101000000', 'Reloading Page',
+                                        [('Refresh', '60; url=http://refresh.example.com/reload')])
+
+        wb_manager(['init', 'refresh'])
+
+        wb_manager(['add', 'refresh', filename])
+
+        assert os.path.isfile(os.path.join(self.root_dir, self.COLLS_DIR, 'refresh', 'indexes', 'index.cdxj'))
+
+    def test_refresh_skip_self_refresh(self, fmod):
+        res = self.get('/refresh/20200101000000{0}/http://refresh.example.com/', fmod, status=200)
+        assert res.text == 'Refresh Target'
+        assert 'Refresh' not in res.headers
+
+    def test_refresh_header_rewritten(self, fmod):
+        res = self.get('/refresh/20200101000000{0}/http://refresh.example.com/start', fmod, status=200)
+        assert res.headers['Refresh'].startswith('0; url=http')
+        assert res.headers['Refresh'].endswith('/refresh/20200101000000{0}/https://refresh.example.com/index.php'.format(fmod))
+
+    def test_refresh_delayed_self_refresh_not_skipped(self, fmod):
+        res = self.get('/refresh/20200101000000{0}/http://refresh.example.com/reload', fmod, status=200)
+        assert res.text == 'Reloading Page'
+        assert res.headers['Refresh'].startswith('60; url=http')
+        assert res.headers['Refresh'].endswith('/refresh/20200101000000{0}/http://refresh.example.com/reload'.format(fmod))

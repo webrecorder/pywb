@@ -7,11 +7,11 @@ jinja2>=3.1.2
 surt>=0.3.1
 brotlipy
 pyyaml
-werkzeug==3.1.9
+werkzeug>=2.3.5
 webencodings
 legacy-cgi; python_version>="3.13"
 gevent
-webassets==2.0
+webassets>=2.0
 portalocker
 wsgiprox>=1.5.1
 # certauth uses X509.add_extensions(), which was removed in pyOpenSSL 26.2.

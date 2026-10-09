@@ -5,6 +5,7 @@ from .base_config_test import BaseConfigTest, fmod_sl
 from pywb.warcserver.test.testutils import HttpBinLiveTests
 
 from pywb.utils.geventserver import GeventServer
+from mock import patch, Mock
 import pytest
 import os
 import sys
@@ -65,7 +66,7 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
 
     def test_live_live_1(self, fmod_sl):
         headers = [('User-Agent', 'python'), ('Referer', 'http://localhost:80/live/other.example.com')]
-        resp = self.get('/live/{0}http://example.com/', fmod_sl, headers=headers)
+        resp = self.get('/live/{0}http://httpbin.org/html', fmod_sl, headers=headers)
         assert resp.status_int == 200
 
     def test_live_live_redirect_2(self, fmod_sl):
@@ -155,15 +156,15 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
         assert resp.json == {'title': 'Test Title'}
 
     def test_live_live_frame(self):
-        resp = self.testapp.get('/live/http://example.com/')
+        resp = self.testapp.get('/live/http://httpbin.org/html')
         assert resp.status_int == 200
         resp.charset = 'utf-8'
         #assert '<iframe ' in resp.text
         assert '"http://localhost:80/live/"' in resp.text, resp.text
-        assert '"http://example.com/"' in resp.text, resp.text
+        assert '"http://httpbin.org/html"' in resp.text, resp.text
 
     def test_live_invalid(self, fmod_sl):
-        resp = self.get('/live/{0}http://abcdef', fmod_sl, status=307)
+        resp = self.get('/live/{0}http://abcdef.invalid', fmod_sl, status=307)
         resp = resp.follow(status=400)
         assert resp.status_int == 400
 
@@ -172,9 +173,8 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
         resp = resp.follow(status=400)
         assert resp.status_int == 400
 
-    @pytest.mark.skipif(os.environ.get('CI') is not None, reason='Skip Test on CI')
+    @patch('youtube_dl.YoutubeDL.extract_info', Mock(return_value={'id': 'DjFZyFWSt1M', 'formats': []}))
     def test_live_video_info(self):
-        pytest.importorskip('youtube_dl')
         resp = self.testapp.get('/live/vi_/https://www.youtube.com/watch?v=DjFZyFWSt1M')
         assert resp.status_int == 200
         assert resp.content_type == 'application/vnd.youtube-dl_formats+json', resp.content_type
@@ -199,5 +199,12 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
         resp = self.get('/live/{0}http://httpbin.org/get?test=headers', fmod_sl, headers=headers)
 
         assert resp.json['headers']['Origin'] == 'http://httpbin.org'
+
+    def test_live_sec_fetch_dest_frame(self, fmod_sl):
+        headers = {'Sec-Fetch-Dest': 'iframe'}
+
+        resp = self.get('/live/{0}http://httpbin.org/get?test=headers', fmod_sl, headers=headers)
+
+        assert resp.json['headers']['Sec-Fetch-Dest'] == 'document'
 
 

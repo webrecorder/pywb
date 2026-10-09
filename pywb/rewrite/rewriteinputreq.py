@@ -93,6 +93,14 @@ class RewriteInputRequest(DirectWSGIInputRequest):
                 if self.splits:
                     value = self.splits.scheme
 
+            elif name == 'HTTP_SEC_FETCH_DEST':
+                # pages are loaded inside the replay frame, so browsers send 'iframe' for them.
+                # Some sites refuse frames (e.g. Facebook answers with an error page),
+                # so send frame requests upstream as documents (not needed in proxy mode)
+                name = 'Sec-Fetch-Dest'
+                if self.splits and value.lower() in ('iframe', 'frame'):
+                    value = 'document'
+
             elif name == 'HTTP_ACCEPT_ENCODING':
                 # if brotli not available, remove 'br' from accept-encoding to avoid
                 # capture brotli encoded content

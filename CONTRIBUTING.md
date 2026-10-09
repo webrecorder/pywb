@@ -66,3 +66,9 @@ To stop the container:
 ```bash
 docker compose down
 ```
+
+### Running tests
+
+To run tests, we recommend installing `pip install tox tox-current-env` and then running `tox --current-env` to test in your current Python environment.
+
+Tests must not reach the live web: any resolve or connect to a host other than localhost fails the test. Use a local server (e.g. the `HttpBinLiveTests` mixin or a `GeventServer`) or a mock instead. Tests that really need the network must be marked with `@pytest.mark.live`; they are skipped unless pytest is run with `--live`.

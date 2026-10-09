@@ -185,6 +185,19 @@ class TestRecordCustomConfig(HttpBinLiveTests, CollsDirMixin, BaseConfigTest):
 
         assert record.http_headers['Accept-Encoding'] == 'gzip, deflate'
 
+    def test_sec_fetch_dest_frame(self):
+        res = self.testapp.get('/test-new/record/mp_/http://httpbin.org/get?E=F',
+                               headers={'Sec-Fetch-Dest': 'iframe'})
+        assert '"E": "F"' in res.text
+        assert res.json['headers']['Sec-Fetch-Dest'] == 'document'
+
+        with open(self.warc_name, 'rb') as fh:
+            for record in ArchiveIterator(fh):
+                last_record = record
+
+        assert last_record.rec_type == 'request'
+        assert last_record.http_headers['Sec-Fetch-Dest'] == 'document'
+
 
 # ============================================================================
 @pytest.mark.skipif(sys.version_info >= (3,9) and sys.version_info < (3,10), reason='Skipping for 3.9')

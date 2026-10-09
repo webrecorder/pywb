@@ -28,6 +28,7 @@ from pywb.warcserver.index.aggregator import DirectoryIndexSource
 
 from pywb.warcserver.basewarcserver import BaseWarcServer
 from pywb.utils.memento import MementoUtils
+from pywb.utils.geventserver import GeventServer
 
 
 sources = {
@@ -46,6 +47,52 @@ IA_CDX_IANA = b'''\
 org,iana)/ 20161103124134 http://iana.org/ unk 302 3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ 320
 org,iana)/ 20161104161551 https://www.iana.org/ warc/revisit - K3MFZ2HC5UGVYQ42CM5RARW7DWQTTEOS 498
 '''
+
+# video info returned by the mocked youtube-dl, instead of extracting it from youtube.com
+YOUTUBE_DL_INFO = {'id': 'BfBgWtAIbRc', 'title': 'Test Video',
+                   'formats': [{'format_id': '18', 'url': 'http://example.com/video.mp4'}]}
+
+
+# responses served by archive_app, a local stand-in for the remote archives
+# (web.archive.org, webarchives.rhizome.org) and live sites used by the tests
+ARCHIVE_RESPONSES = {
+    # web.archive.org, select_mem_2
+    '/web/20160110134855id_/http://vvork.com/':
+        ('200 OK', [('Memento-Datetime', 'Sun, 10 Jan 2016 13:48:55 GMT')],
+         b'<html><body>vvork</body></html>'),
+
+    # webarchives.rhizome.org, select_mem_1
+    '/vvork/20141006184357id_/http://www.vvork.com/':
+        ('200 OK', [('Memento-Datetime', 'Mon, 06 Oct 2014 18:43:57 GMT')],
+         b'<html><body>vvork</body></html>'),
+
+    # web.archive.org, IA_CDX_IANA: the 302 redirects to a later capture of the same page
+    '/web/20161103124134id_/http://iana.org/':
+        ('302 Found', [('Memento-Datetime', 'Thu, 03 Nov 2016 12:41:34 GMT'),
+                       ('Location', '{host}/web/20161104161551id_/https://www.iana.org/')],
+         b''),
+
+    '/web/20161104161551id_/https://www.iana.org/':
+        ('200 OK', [('Memento-Datetime', 'Fri, 04 Nov 2016 16:15:51 GMT')],
+         b'<html><body>iana</body></html>'),
+
+    # live http://vvork.com/, select_live
+    '/':
+        ('200 OK', [], b'<html><body>vvork live</body></html>'),
+}
+
+
+def archive_app(environ, start_response):
+    res = ARCHIVE_RESPONSES.get(environ['PATH_INFO'])
+    if not res:
+        start_response('404 Not Found', [('Content-Type', 'text/plain')])
+        return [b'Not Found']
+
+    status, headers, body = res
+    host = 'http://' + environ['HTTP_HOST']
+    headers = [(n, v.format(host=host)) for n, v in headers]
+    start_response(status, [('Content-Type', 'text/html')] + headers)
+    return [body]
 
 
 
@@ -88,6 +135,14 @@ class TestBaseWarcServer(HttpBinLiveTests, MementoOverrideTests, FakeRedisTests,
         app.add_route('/urlagnost', DefaultResourceHandler(url_agnost, 'redis://localhost/2/test:{arg}:warc'))
 
         cls.testapp = webtest.TestApp(app)
+
+        cls.archive_server = GeventServer(archive_app)
+        cls.archive_url = 'http://localhost:{0}/'.format(cls.archive_server.port)
+
+    @classmethod
+    def teardown_class(cls):
+        cls.archive_server.stop()
+        super(TestBaseWarcServer, cls).teardown_class()
 
     def _check_uri_date(self, resp, uri, dt):
         buff = BytesIO(resp.body)
@@ -188,7 +243,9 @@ class TestBaseWarcServer(HttpBinLiveTests, MementoOverrideTests, FakeRedisTests,
 
     @patch('pywb.warcserver.index.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_mem_1'))
     def test_agg_select_mem_1(self):
-        resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20141001')
+        replay_url = self.archive_url + 'vvork/{timestamp}id_/{url}'
+        with patch.object(sources['rhiz'], 'replay_url', replay_url):
+            resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20141001')
 
         assert resp.headers['Warcserver-Source-Coll'] == 'rhiz'
 
@@ -203,7 +260,9 @@ class TestBaseWarcServer(HttpBinLiveTests, MementoOverrideTests, FakeRedisTests,
 
     @patch('pywb.warcserver.index.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_mem_2'))
     def test_agg_select_mem_2(self):
-        resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20151231')
+        replay_url = self.archive_url + 'web/{timestamp}id_/{url}'
+        with patch.object(sources['ia'], 'replay_url', replay_url):
+            resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=20151231')
 
         assert resp.headers['Warcserver-Source-Coll'] == 'ia'
 
@@ -220,7 +279,9 @@ class TestBaseWarcServer(HttpBinLiveTests, MementoOverrideTests, FakeRedisTests,
     def test_agg_select_mem_unrewrite_headers(self, mock_get):
         mock_get.return_value = Mock(content=IA_CDX_IANA)
 
-        resp = self.testapp.get('/cdx_api/resource?closest=20161103124134&url=http://iana.org/')
+        replay_url = self.archive_url + 'web/{timestamp}id_/{url}'
+        with patch.object(ia_cdx['ia-cdx'], 'replay_url', replay_url):
+            resp = self.testapp.get('/cdx_api/resource?closest=20161103124134&url=http://iana.org/')
 
         assert resp.headers['Warcserver-Source-Coll'] == 'ia-cdx'
 
@@ -231,7 +292,8 @@ class TestBaseWarcServer(HttpBinLiveTests, MementoOverrideTests, FakeRedisTests,
 
     @patch('pywb.warcserver.index.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_live'))
     def test_agg_select_live(self):
-        resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=now')
+        with patch.object(sources['live'], 'get_load_url', lambda params: self.archive_url):
+            resp = self.testapp.get('/many/resource?url=http://vvork.com/&closest=now')
 
         assert resp.headers['Warcserver-Source-Coll'] == 'live'
 
@@ -391,9 +453,8 @@ foo=bar&test=abc"""
         assert resp.headers['Warcserver-Source-Coll'] == 'url-agnost'
         assert resp.headers['Memento-Datetime'] == 'Mon, 29 Jul 2013 19:51:51 GMT'
 
-    @pytest.mark.skipif(os.environ.get('CI') is not None, reason='Skip Test on CI')
+    @patch('youtube_dl.YoutubeDL.extract_info', Mock(return_value=YOUTUBE_DL_INFO))
     def test_live_video_loader(self):
-        pytest.importorskip('youtube_dl')
         params = {'url': 'http://www.youtube.com/v/BfBgWtAIbRc',
                   'content_type': 'application/vnd.youtube-dl_formats+json'
                  }
@@ -409,10 +470,10 @@ foo=bar&test=abc"""
 
         assert b'WARC-Type: metadata' in resp.body
         assert b'Content-Type: application/vnd.youtube-dl_formats+json' in resp.body
+        assert b'"id": "BfBgWtAIbRc"' in resp.body
 
-    @pytest.mark.skipif(os.environ.get('CI') is not None, reason='Skip Test on CI')
+    @patch('youtube_dl.YoutubeDL.extract_info', Mock(return_value=YOUTUBE_DL_INFO))
     def test_live_video_loader_post(self):
-        pytest.importorskip('youtube_dl')
         req_data = """\
 GET /v/BfBgWtAIbRc HTTP/1.1
 accept-encoding: gzip, deflate
@@ -435,6 +496,7 @@ host: www.youtube.com\
 
         assert b'WARC-Type: metadata' in resp.body
         assert b'Content-Type: application/vnd.youtube-dl_formats+json' in resp.body
+        assert b'"id": "BfBgWtAIbRc"' in resp.body
 
     def test_error_redis_file_not_found(self):
         f = FakeStrictRedis.from_url('redis://localhost/2')
@@ -457,16 +519,18 @@ host: www.youtube.com\
 
 
     def test_error_fallback_live_not_found(self):
-        resp = self.testapp.get('/fallback/resource?url=http://invalid.url-not-found', status=400)
+        resp = self.testapp.get('/fallback/resource?url=http://url-not-found.invalid', status=400)
 
-        assert resp.json == {'message': 'http://invalid.url-not-found/',
-                             'errors': {'LiveWebLoader': 'http://invalid.url-not-found/'}}
+        assert resp.json == {'message': 'http://url-not-found.invalid/',
+                             'errors': {'LiveWebLoader': 'http://url-not-found.invalid/'}}
 
         assert resp.text == resp.headers['ResErrors']
 
     @patch('pywb.warcserver.index.indexsource.MementoIndexSource.get_timegate_links', MementoOverrideTests.mock_link_header('select_local_revisit'))
     def test_agg_local_revisit(self):
-        resp = self.testapp.get('/many/resource?url=http://www.example.com/&closest=20140127171251&sources=local')
+        # the revisit lookup queries all sources, don't let the live source send a HEAD to example.com
+        with patch.object(sources['live'].sesh, 'head', side_effect=Exception('no live web')):
+            resp = self.testapp.get('/many/resource?url=http://www.example.com/&closest=20140127171251&sources=local')
 
         assert resp.headers['Warcserver-Source-Coll'] == 'local:dupes.cdxj'
 

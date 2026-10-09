@@ -1,4 +1,5 @@
 from .base_config_test import BaseConfigTest, fmod
+from pywb.warcserver.test.testutils import HttpBinLiveTests
 
 
 # ============================================================================
@@ -47,13 +48,13 @@ class TestForceHttpsRedirect(BaseConfigTest):
 
 
 # ============================================================================
-class TestForceHttpsRoot(BaseConfigTest):
+class TestForceHttpsRoot(HttpBinLiveTests, BaseConfigTest):
     @classmethod
     def setup_class(cls):
         super(TestForceHttpsRoot, cls).setup_class('config_test_root_coll.yaml')
 
     def test_force_https_root_replay_1(self, fmod):
-        resp = self.get('/20140128051539{0}/http://www.iana.org/domains/example', fmod,
+        resp = self.get('/20140128051539{0}/http://httpbin.org/redirect-to?url=http://www.iana.org/help/example-domains', fmod,
                         headers={'X-Forwarded-Proto': 'https'})
 
         assert resp.headers['Location'] == 'https://localhost:80/20140128051539{0}/http://www.iana.org/help/example-domains'.format(fmod)
