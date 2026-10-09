@@ -1,10 +1,11 @@
 from .base_config_test import BaseConfigTest, fmod
 
 from pywb.warcserver.index.cdxobject import CDXObject
+from pywb.warcserver.test.testutils import HttpBinLiveTests
 
 
 # ============================================================================
-class TestWbIntegration(BaseConfigTest):
+class TestWbIntegration(HttpBinLiveTests, BaseConfigTest):
     @classmethod
     def setup_class(cls):
         super(TestWbIntegration, cls).setup_class('config_test.yaml')
@@ -420,7 +421,7 @@ class TestWbIntegration(BaseConfigTest):
         assert resp.status_int == 503
 
     def test_live_frame(self):
-        resp = self.testapp.get('/live/http://example.com/?test=test')
+        resp = self.testapp.get('/live/http://httpbin.org/get?test=test')
         assert resp.status_int == 200
 
     def _test_live_redir_1(self):
@@ -435,7 +436,7 @@ class TestWbIntegration(BaseConfigTest):
 
     def test_live_fallback(self, fmod):
         fmod_slash = fmod + '/' if fmod else ''
-        resp = self.get('/pywb-fallback/{0}http://example.com/?test=test', fmod_slash)
+        resp = self.get('/pywb-fallback/{0}http://httpbin.org/get?test=test', fmod_slash)
         assert resp.status_int == 200
 
     def test_post_1(self, fmod):

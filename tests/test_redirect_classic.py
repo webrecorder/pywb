@@ -1,8 +1,9 @@
 from .base_config_test import BaseConfigTest, fmod
+from pywb.warcserver.test.testutils import HttpBinLiveTests
 
 
 # ============================================================================
-class TestRedirectClassic(BaseConfigTest):
+class TestRedirectClassic(HttpBinLiveTests, BaseConfigTest):
     @classmethod
     def setup_class(cls):
         super(TestRedirectClassic, cls).setup_class('config_test_redirect_classic.yaml')
@@ -71,11 +72,11 @@ class TestRedirectClassic(BaseConfigTest):
 
     def test_live_no_redir(self, fmod):
         fmod_slash = fmod + '/' if fmod else ''
-        resp = self.get('/live/{0}http://example.com/?test=test', fmod_slash)
+        resp = self.get('/live/{0}http://httpbin.org/get?test=test', fmod_slash)
         assert resp.status_int == 200
 
     def test_live_top_frame(self):
-        resp = self.testapp.get('/live/http://example.com/?test=test')
+        resp = self.testapp.get('/live/http://httpbin.org/get?test=test')
         assert 'top_url' not in resp.text
 
     def test_replay_limit_cdx(self):

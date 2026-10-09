@@ -7,6 +7,7 @@ from pywb.warcserver.test.testutils import FakeRedisTests, HttpBinLiveTests
 import os
 import webtest
 import pytest
+from mock import patch, Mock
 
 from fakeredis import FakeStrictRedis
 
@@ -231,24 +232,26 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
                          PerRecordWARCWriter(warc_path, header_filter=header_filter),
                             accept_colls='live')
 
-        resp = self._test_warc_write(recorder_app, 'www.google.com', '/', protocol='https')
-        print(resp.body.decode('utf-8'))
-        #assert b'HTTP/1.1 302' in resp.body
+        set_cookies = urlencode([('Set-Cookie', 'name=value; Path=/; HttpOnly'),
+                                 ('Set-Cookie', 'foo=bar; Path=/')])
+
+        resp = self._test_warc_write(recorder_app, 'httpbin.org', '/response-headers' + quote('?' + set_cookies))
+        assert b'HTTP/1.1 200' in resp.body
 
         buff = BytesIO(resp.body)
         record = ArcWarcRecordLoader().parse_record_stream(buff)
 
         non_http_only, http_only = self._get_http_only_cookies(record)
         # both httponly and other cookies
-        assert http_only != None
-        assert non_http_only != None
+        assert http_only == ('Set-Cookie', 'name=value; Path=/; HttpOnly')
+        assert non_http_only == ('Set-Cookie', 'foo=bar; Path=/')
 
         stored_req, stored_resp = self._load_resp_req(warc_path)
 
         non_http_only, http_only = self._get_http_only_cookies(stored_resp)
         # no httponly cookies
         assert http_only == None
-        assert non_http_only != None
+        assert non_http_only == ('Set-Cookie', 'foo=bar; Path=/')
 
 
         assert ('X-Other', 'foo') in stored_req.http_headers.headers
@@ -607,10 +610,8 @@ class TestRecorder(LiveServerTests, HttpBinLiveTests, FakeRedisTests, TempDirTes
         writer.close()
         assert len(writer.fh_cache) == 0
 
-    #@pytest.mark.skipif(os.environ.get('CI') is not None, reason='Skip Test on CI')
-    @pytest.mark.skip
+    @patch('youtube_dl.YoutubeDL.extract_info', Mock(return_value={'id': 'BfBgWtAIbRc', 'formats': []}))
     def test_record_video_metadata(self):
-        pytest.importorskip('youtube_dl')
         warc_path = to_path(self.root_dir + '/warcs/{user}/{coll}/')
 
         dedup_index = self._get_dedup_index()
