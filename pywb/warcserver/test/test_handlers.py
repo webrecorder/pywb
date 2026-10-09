@@ -519,10 +519,10 @@ host: www.youtube.com\
 
 
     def test_error_fallback_live_not_found(self):
-        resp = self.testapp.get('/fallback/resource?url=http://invalid.url-not-found', status=400)
+        resp = self.testapp.get('/fallback/resource?url=http://url-not-found.invalid', status=400)
 
-        assert resp.json == {'message': 'http://invalid.url-not-found/',
-                             'errors': {'LiveWebLoader': 'http://invalid.url-not-found/'}}
+        assert resp.json == {'message': 'http://url-not-found.invalid/',
+                             'errors': {'LiveWebLoader': 'http://url-not-found.invalid/'}}
 
         assert resp.text == resp.headers['ResErrors']
 
