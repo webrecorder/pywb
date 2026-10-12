@@ -8,10 +8,12 @@ wombat/
 docs/
 
 .cache/
+.claude/
 .eggs/
 .git/
 .github/
 .venv
+.tox
 .travis
 .pytest_cache
 
