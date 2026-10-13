@@ -12,7 +12,7 @@
                 </span>
             </span>
             &gt;
-            <span v-for="(parent,i) in parents" :key="parent.id" class="item" v-if="i > 0">
+            <span v-for="parent in parents.slice(1)" :key="parent.id" class="item">
                 <span
                     class="goto"
                     @click="changePeriod(parent)"
@@ -25,7 +25,7 @@
         </template>
         <span class="item">
             <span class="current">{{period.getReadableId(true)}}</span>
-            <span class="count">({{ $root._(period.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: period.snapshotCount}) }})</span>
+            <span class="count">({{ $_(period.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: period.snapshotCount}) }})</span>
         </span>
     </div>
 </template>
@@ -39,6 +39,7 @@ export default {
       required: true
     }
   },
+  emits: ["goto-period"],
   computed: {
     parents: function() {
       return this.period.getParents();

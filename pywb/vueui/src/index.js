@@ -3,11 +3,15 @@ import appData from "./App.vue";
 import { PywbData } from "./model.js";
 import { PywbI18N } from "./i18n.js";
 
-import Vue from "vue/dist/vue.esm.browser";
+import { createApp } from "vue";
+import { injectCSS } from "virtual:css-injected-by-js";
 
 
 // ===========================================================================
 export function main(config, locale, i18nStrings) {
+  // add component styles now rather than when vueui.js loads, so that they
+  // come after the page's own stylesheets (e.g. bootstrap), as with Vue 2
+  injectCSS();
   PywbI18N.init(locale, i18nStrings);
   new CDXLoader(config);
 }
@@ -74,21 +78,27 @@ class CDXLoader {
   }
 
   initApp(config = {}) {
-    const app = new Vue(appData);
-
-    app.$set(app, "config", {...app.config, ...config, prefix: this.prefix});
-
-    app.$mount("#app");
-
-    app.$on("show-snapshot", (snapshot) => this.loadSnapshot(snapshot));
-    app.$on("data-set-and-render-completed", () => {
-      if (this.loadingSpinner) {
-        this.loadingSpinner.setOff(); // only turn off loading-spinner AFTER app has told us it is DONE DONE
+    const app = createApp(appData, {
+      onShowSnapshot: (snapshot) => this.loadSnapshot(snapshot),
+      onDataSetAndRenderCompleted: () => {
+        if (this.loadingSpinner) {
+          this.loadingSpinner.setOff(); // only turn off loading-spinner AFTER app has told us it is DONE DONE
+        }
+        this.loaded = true;
       }
-      this.loaded = true;
     });
 
-    return app;
+    app.config.globalProperties.$_ = (id, embeddedVariableStrings=null) => PywbI18N.instance.getText(id, embeddedVariableStrings);
+
+    // Vue 3 mounts inside the container rather than replacing it as Vue 2
+    // did, so swap the placeholder (which may have a fixed height) for the app
+    const container = document.querySelector("#app");
+    const vm = app.mount(container);
+    container.replaceWith(vm.$el);
+
+    vm.config = {...vm.config, ...config, prefix: this.prefix};
+
+    return vm;
   }
 
   async updateSnapshot(url, timestamp) {

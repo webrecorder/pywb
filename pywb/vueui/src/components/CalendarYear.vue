@@ -8,7 +8,7 @@
         v-if="previousYear"
         tabindex="0"></i>
       <span class="mx-1">
-      {{year.id}} ({{ $root._(year.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: year.snapshotCount}) }})
+      {{year.id}} ({{ $_(year.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: year.snapshotCount}) }})
       </span>
       <i
         class="fas fa-arrow-right year-arrow"
@@ -50,6 +50,7 @@ import { PywbPeriod } from "../model.js";
 
 export default {
   components: {CalendarMonth, TimelineLinear, Tooltip},
+  emits: ["goto-period"],
   props: ["period", "currentSnapshot"],
   data: function() {
     return {

@@ -2,7 +2,7 @@
   <div class="timeline-linear">
     <div class="title">
       <div>{{ displayDate }}</div>
-      <div>{{ $root._(period.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: period.snapshotCount}) }}</div>
+      <div>{{ $_(period.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: period.snapshotCount}) }}</div>
     </div>
 
     <div class="list">
@@ -14,7 +14,7 @@
           tabindex="1">
           {{ snapshotPeriod.snapshot.getTimeFormatted() }}
         </span>
-        <span v-if="isCurrentSnapshot(period)" class="current">{{$root._('current')}}</span>
+        <span v-if="isCurrentSnapshot(period)" class="current">{{$_('current')}}</span>
       </div>
     </div>
   </div>
@@ -26,6 +26,7 @@ import { PywbI18N } from "../i18n";
 export default {
   name: "TimelineLinear",
   props: ['period', 'currentSnapshot'],
+  emits: ["goto-period"],
   computed: {
     snapshotPeriods() {
       return this.period.getSnapshotPeriodsFlat();
