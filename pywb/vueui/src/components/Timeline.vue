@@ -3,15 +3,15 @@
         <div class="period-tooltip" v-show="tooltipPeriod" :style="{left: tooltipPeriodPos.x+'px', top: tooltipPeriodPos.y+'px'}">
             <template v-if="tooltipPeriod">
               <div v-if="tooltipPeriod.snapshot">
-                {{ $root._('View capture on {date}', {date: tooltipPeriod.snapshot.getTimeDateFormatted()}) }}
+                {{ $_('View capture on {date}', {date: tooltipPeriod.snapshot.getTimeDateFormatted()}) }}
               </div>
               <div v-else-if="tooltipPeriod.snapshotPeriod">
-                {{ $root._('View capture on {date}', {date: tooltipPeriod.snapshotPeriod.snapshot.getTimeDateFormatted()}) }}
+                {{ $_('View capture on {date}', {date: tooltipPeriod.snapshotPeriod.snapshot.getTimeDateFormatted()}) }}
               </div>
               <div v-else-if="tooltipPeriod.snapshotCount">
-                {{ $root._(
+                {{ $_(
                   isTooltipPeriodDayOrHour ? '{capture_text} on {date}':'{capture_text} in {month}', // TODO: split translation into "in {year}" and "in {month}"
-                  { capture_text: $root._(tooltipPeriod.snapshotCount !== 1 ? '{count} captures' : '{count} capture', {count: tooltipPeriod.snapshotCount}), [isTooltipPeriodDayOrHour ? 'date':'month']: tooltipPeriod.getFullReadableId() } )
+                  { capture_text: $_(tooltipPeriod.snapshotCount !== 1 ? '{count} captures' : '{count} capture', {count: tooltipPeriod.snapshotCount}), [isTooltipPeriodDayOrHour ? 'date':'month']: tooltipPeriod.getFullReadableId() } )
                 }}
               </div>
             </template>
@@ -78,6 +78,7 @@ export default{
     stayWithinPeriod: { required: false, default: false},
     maxZoomLevel: { required: false, default: PywbPeriod.Type.snapshot}
   },
+  emits: ["goto-period"],
   data: function() {
     return {
       highlightPeriod: null,

@@ -5,10 +5,10 @@
       class="navbar navbar-light navbar-expand-lg fixed-top top-navbar justify-content-center"
       :style="navbarStyle">
       <a class="navbar-brand flex-grow-1 my-1" :href="config.logoHomeUrl" v-if="config.logoHomeUrl">
-        <img :src="config.logoImg" id="logo-img" :alt="_('Logo')">
+        <img :src="config.logoImg" id="logo-img" :alt="$_('Logo')">
       </a>
       <div class="navbar-brand flex-grow-1 my-1" v-else>
-        <img :src="config.logoImg" id="logo-img" :alt="_('Logo')">
+        <img :src="config.logoImg" id="logo-img" :alt="$_('Logo')">
       </div>
       <div class="flex-grow-1 d-flex" id="searchdiv">
         <form
@@ -20,8 +20,8 @@
             type="text"
             :value="config.url"
             height="31"
-            :aria-label="_('Search for archival capture of URL')"
-            :title="_('Search for archival capture of URL')"></input>
+            :aria-label="$_('Search for archival capture of URL')"
+            :title="$_('Search for archival capture of URL')">
         </form>
       </div>
       <button
@@ -32,7 +32,7 @@
         data-target="#navbarCollapse"
         aria-controls="navbarCollapse"
         aria-expanded="false"
-        :aria-label="_('Toggle navigation')">
+        :aria-label="$_('Toggle navigation')">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse ml-auto" id="navbarCollapse">
@@ -41,20 +41,20 @@
             <button
               class="btn btn-sm"
               :class="{active: showFullView, 'btn-outline-light': lightButtons, 'btn-outline-dark': !lightButtons}"
-              :title="_('Previous capture')"
+              :title="$_('Previous capture')"
               v-if="previousSnapshot"
               @click="gotoPreviousSnapshot">
-              <i class="fas fa-arrow-left" :title="_('Previous capture')"></i>
+              <i class="fas fa-arrow-left" :title="$_('Previous capture')"></i>
             </button>
           </li>
           <li class="nav-item">
             <button
               class="btn btn-sm"
               :class="{active: showFullView, 'btn-outline-light': lightButtons, 'btn-outline-dark': !lightButtons}"
-              :title="_('Next capture')"
+              :title="$_('Next capture')"
               v-if="nextSnapshot"
               @click="gotoNextSnapshot">
-              <i class="fas fa-arrow-right" :title="_('Next capture')"></i>
+              <i class="fas fa-arrow-right" :title="$_('Next capture')"></i>
             </button>
           </li>
           <li class="nav-item active">
@@ -63,7 +63,7 @@
               :class="{active: showFullView, 'btn-outline-light': lightButtons, 'btn-outline-dark': !lightButtons}"
               :aria-pressed="(showFullView ? true : false)"
               @click="showFullView = !showFullView"
-              :title="(showFullView ? _('Hide calendar') : _('Show calendar'))">
+              :title="(showFullView ? $_('Hide calendar') : $_('Show calendar'))">
               <i class="far fa-calendar-alt"></i>
             </button>
           </li>
@@ -73,7 +73,7 @@
               :class="{active: showTimelineView, 'btn-outline-light': lightButtons, 'btn-outline-dark': !lightButtons}"
               :aria-pressed="showTimelineView"
               @click="toggleTimelineView"
-              :title="(showTimelineView ? _('Hide timeline') : _('Show timeline'))">
+              :title="(showTimelineView ? $_('Hide timeline') : $_('Show timeline'))">
               <i class="far fa-chart-bar"></i>
             </button>
           </li>
@@ -84,7 +84,7 @@
               :aria-pressed="printReplayFrame"
               @click="printReplayFrame"
               v-if="printingEnabled && hasReplayFrame()"
-              :title="_('Print')">
+              :title="$_('Print')">
               <i class="fas fa-print"></i>
             </button>
           </li>
@@ -97,8 +97,8 @@
               data-toggle="dropdown"
               aria-haspopup="true"
               aria-expanded="false"
-              :title="_('Select language')">
-              <i class="fas fa-globe-africa" :title="_('Language:')"></i>
+              :title="$_('Select language')">
+              <i class="fas fa-globe-africa" :title="$_('Language:')"></i>
             </button>
             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="locale-dropdown">
               <a
@@ -122,7 +122,7 @@
       <span class="hidden" v-if="!currentSnapshot">&nbsp;</span>
       <span v-if="currentSnapshot">
         <span class="strong mr-1">
-          {{_('Current Capture')}}: 
+          {{$_('Current Capture')}}: 
           <span class="ml-1" v-if="config.title">
             {{ config.title }}
           </span>
@@ -175,7 +175,6 @@ import TimelineBreadcrumbs from "./components/TimelineBreadcrumbs.vue";
 import CalendarYear from "./components/CalendarYear.vue";
 
 import { PywbSnapshot, PywbPeriod } from "./model.js";
-import {PywbI18N} from "./i18n";
 
 export default {
   name: "PywbReplayApp",
@@ -200,6 +199,7 @@ export default {
     };
   },
   components: {Timeline, TimelineBreadcrumbs, CalendarYear},
+  emits: ["show-snapshot", "data-set-and-render-completed"],
   mounted: function() {
     // add empty unload event listener to make this page bfcache ineligible.
     // bfcache otherwises prevent the query template from reloading as expected
@@ -208,7 +208,7 @@ export default {
   },
   updated: function() {
     // set top frame title equal to value pulled from replay frame
-    document.title = this._("Archived Page: ") + this.config.title;
+    document.title = this.$_("Archived Page: ") + this.config.title;
   },
   computed: {
     sessionStorageUrlKey() {
@@ -252,9 +252,6 @@ export default {
     }
   },
   methods: {
-    _(id, embeddedVariableStrings=null) {
-      return PywbI18N.instance.getText(id, embeddedVariableStrings);
-    },
     gotoPeriod: function(newPeriod, onlyZoomToPeriod) {
       if (this.timelineHighlight) {
         setTimeout((() => {
@@ -331,8 +328,8 @@ export default {
     setData(/** @type {PywbData} data */ data) {
 
       // data-set will usually happen at App INIT (from parent caller)
-      this.$set(this, "snapshots", data.snapshots);
-      this.$set(this, "currentPeriod", data.timeline);
+      this.snapshots = data.snapshots;
+      this.currentPeriod = data.timeline;
 
       // get last-saved current period from previous page/app refresh (if there was such)
       if (window.sessionStorage) {

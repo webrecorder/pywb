@@ -78,7 +78,7 @@ class LocManager:
     def extract_text(self):
         os.makedirs(ROOT_DIR, exist_ok=True)
 
-        CommandLineInterface().run(['pybabel', 'extract', '-F', 'babel.ini', '-k', '_ _Q gettext ngettext', '-o', MESSAGES, './', '--omit-header'])
+        CommandLineInterface().run(['pybabel', 'extract', '-F', 'babel.ini', '-k', '_ _Q gettext ngettext $_', '-o', MESSAGES, './', '--omit-header'])
 
     def init_catalog(self, loc):
         CommandLineInterface().run(['pybabel', 'init', '-l', loc, '-i', MESSAGES, '-d', TRANSLATIONS])

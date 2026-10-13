@@ -96,7 +96,7 @@
   <div class="calendar-month" :class="{current: isCurrent, 'contains-current-snapshot': containsCurrentSnapshot}">
     <h3>{{getLongMonthName(month.id)}} <span v-if="month.snapshotCount">({{ month.snapshotCount }})</span></h3>
     <span v-for="(dayInitial) in dayInitials" class="day" :style="dayStyle">{{dayInitial}}</span><br/>
-    <span v-for="(day,i) in days"><br v-if="i && i % 7===0"/><span class="day" :class="{empty: !day || !day.snapshotCount, 'contains-current-snapshot':dayContainsCurrentSnapshot(day)}" :style="dayStyle"  @click="gotoDay(day, $event)" @keyup.13="gotoDay(day, $event)"><template v-if="day"><span class="size" v-if="day.snapshotCount" :style="getDayCountCircleStyle(day.snapshotCount)" tabindex="0"> </span><span class="day-id" :class="{empty: !day.snapshotCount}">{{day.id}}</span><span v-if="day.snapshotCount" class="count">{{ $root._(day.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: day.snapshotCount}) }}</span></template><template v-else v-html="'&nbsp;'"></template></span></span>
+    <span v-for="(day,i) in days"><br v-if="i && i % 7===0"/><span class="day" :class="{empty: !day || !day.snapshotCount, 'contains-current-snapshot':dayContainsCurrentSnapshot(day)}" :style="dayStyle"  @click="gotoDay(day, $event)" @keyup.enter="gotoDay(day, $event)"><template v-if="day"><span class="size" v-if="day.snapshotCount" :style="getDayCountCircleStyle(day.snapshotCount)" tabindex="0"> </span><span class="day-id" :class="{empty: !day.snapshotCount}">{{day.id}}</span><span v-if="day.snapshotCount" class="count">{{ $_(day.snapshotCount !== 1 ? '{count} captures':'{count} capture', {count: day.snapshotCount}) }}</span></template></span></span>
   </div>
 </template>
 
@@ -105,6 +105,7 @@ import {PywbI18N} from "../i18n";
 
 export default {
   props: ["month", "year", "isCurrent", "yearContainsCurrentSnapshot", "currentSnapshot"],
+  emits: ["show-day-timeline"],
   data: function() {
     return {
       maxInDay: 0,
@@ -146,9 +147,6 @@ export default {
     }
   },
   methods: {
-    _(id, embeddedVariableStrings=null) {
-      return PywbI18N.instance.getText(id, embeddedVariableStrings);
-    },
     getLongMonthName(id) {
       return PywbI18N.instance.getMonth(id);
     },
