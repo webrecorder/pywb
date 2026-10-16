@@ -125,6 +125,57 @@ def search(reader, key, prev_size=0, compare_func=cmp, block_size=8192):
 
 
 #=================================================================
+def search_offset(reader, key, compare_func=cmp, block_size=8192):
+    """
+    Return the offset of the first line >= key, or the size of the file if
+    there is none. Unlike search(), the result can be used to read the lines
+    before the match as well, with iter_prev_lines().
+    """
+    offset = binsearch_offset(reader, key, compare_func, block_size)
+
+    reader.seek(offset)
+
+    if offset > 0:
+        reader.readline()  # skip partial line
+
+    while True:
+        offset = reader.tell()
+        line = reader.readline()
+        if not line or compare_func(line.rstrip(), key) >= 0:
+            return offset
+
+
+#=================================================================
+def iter_prev_lines(reader, offset, block_size=8192):
+    """
+    Iterate backwards over the lines before 'offset', which must be the start
+    of a line (or the end of the file), nearest first.
+    Yields (offset, line) tuples, reading the file in 'block_size' blocks.
+    """
+    buff = b''
+
+    while offset > 0:
+        start = max(0, offset - block_size)
+        reader.seek(start)
+        buff = reader.read(offset - start) + buff
+        offset = start
+
+        # the last byte is the newline ending the last line
+        end = len(buff)
+        nl = buff.rfind(b'\n', 0, end - 1)
+        while nl >= 0:
+            yield offset + nl + 1, buff[nl + 1:end].rstrip()
+            end = nl + 1
+            nl = buff.rfind(b'\n', 0, end - 1)
+
+        # keep the partial line for the next block
+        buff = buff[:end]
+
+    if buff:
+        yield 0, buff.rstrip()
+
+
+#=================================================================
 def iter_range(reader, start, end, prev_size=0):
     """
     Creates an iterator which iterates over lines where
