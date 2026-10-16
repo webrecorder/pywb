@@ -69,4 +69,15 @@ Single-Shard Index
 
 A ZipNum index need not have multiple shards, and provides advantages even for smaller datasets. For example, in addition to less disk space from using compressed index, using the ZipNum index allows for the :ref:`pagination-api` to be available when using the cdx server for bulk querying.
 
+Faster Decompression
+""""""""""""""""""""
+
+Each ZipNum lookup decompresses at least two gzip blocks: the block found by the binary search, and the block before it, as the url may start there. With large blocks (for example 3000 lines of about 350 bytes, about 1 MB uncompressed), this is a large part of the cost of a lookup.
+
+If the optional `isal <https://pypi.org/project/isal/>`_ package is installed, pywb uses it instead of ``zlib`` to decompress the ZipNum blocks. It is about 2.5 times faster, and no configuration is needed::
+
+    pip install isal
+
+It is included in the pywb Docker image. Smaller blocks (fewer lines per block when creating the index) also make each lookup decompress less data, at the cost of a larger secondary index.
+
 
