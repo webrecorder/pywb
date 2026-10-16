@@ -1,7 +1,7 @@
 from six.moves.urllib.parse import quote_plus
 from warcio.timeutils import PAD_14_DOWN, http_date_to_timestamp, pad_timestamp, timestamp_now, timestamp_to_http_date
 
-from pywb.utils.binsearch import iter_range
+from pywb.utils.binsearch import INDEX_FILE_BUFFER_SIZE, iter_range
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.format import res_template
 from pywb.utils.io import no_except_close
@@ -64,7 +64,7 @@ class FileIndexSource(BaseIndexSource):
 
     def _do_open(self, filename):
         try:
-            return open(filename, 'rb')
+            return open(filename, 'rb', buffering=INDEX_FILE_BUFFER_SIZE)
         except IOError:
             raise NotFoundException(filename)
 

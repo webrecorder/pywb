@@ -8,7 +8,7 @@ from io import BytesIO
 import six
 from warcio.bufferedreaders import gzip_decompressor
 
-from pywb.utils.binsearch import iter_range, linearsearch, search
+from pywb.utils.binsearch import INDEX_FILE_BUFFER_SIZE, iter_range, linearsearch, search
 from pywb.utils.io import no_except_close
 from pywb.utils.loaders import BlockLoader, read_last_line
 from pywb.warcserver.index.cdxobject import CDXException, CDXObject, IDXObject
@@ -146,7 +146,7 @@ class ZipNumIndexSource(BaseIndexSource):
         return self._do_load_cdx(self.summary, CDXQuery(params))
 
     def _do_load_cdx(self, filename, query):
-        reader = open(filename, 'rb')
+        reader = open(filename, 'rb', buffering=INDEX_FILE_BUFFER_SIZE)
 
         idx_iter = self.compute_page_range(reader, query)
 
