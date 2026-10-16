@@ -130,9 +130,14 @@ class IndexHandler(object):
 
 #=============================================================================
 class ResourceHandler(IndexHandler):
-    def __init__(self, index_source, resource_loaders, **kwargs):
+    def __init__(self, index_source, resource_loaders, closest_limit=None, **kwargs):
         super(ResourceHandler, self).__init__(index_source, **kwargs)
         self.resource_loaders = resource_loaders
+
+        # default limit for resource lookups with closest and no explicit limit,
+        # None or 0 to disable
+        closest_limit = int(closest_limit or 0)
+        self.closest_limit = closest_limit if closest_limit > 0 else None
 
     def get_supported_modes(self):
         res = super(ResourceHandler, self).get_supported_modes()
@@ -142,6 +147,15 @@ class ResourceHandler(IndexHandler):
     def __call__(self, params):
         if params.get('mode', 'resource') != 'resource':
             return super(ResourceHandler, self).__call__(params)
+
+        # only the first closest captures are usually loaded, so avoid sorting
+        # and keeping all captures of the url (applied in CDXQuery.limit).
+        # Set (or cleared) by each handler, as the params are shared by the
+        # handlers of a HandlerSeq
+        if self.closest_limit:
+            params['_closest_limit'] = self.closest_limit
+        else:
+            params.pop('_closest_limit', None)
 
         cdx_iter, errs = self._load_index_source(params)
         if not cdx_iter:

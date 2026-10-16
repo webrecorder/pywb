@@ -136,6 +136,34 @@ When resolving a ``example.warc.gz``, pywb will then check (in order):
  * Then, ``http://remote-backup.example.com/collections/<coll name>/example.warc.gz`` (if first lookup unsuccessful)
 
 
+.. _closest-limit:
+
+Closest Capture Lookup Limit
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To replay a url, pywb looks up the captures closest to the requested timestamp, sorted by distance, and loads the first one
+that can be loaded. Usually, only the first or second capture is loaded. Some urls, eg. scripts embedded in many pages,
+may have hundreds of thousands of captures, and sorting all of them for each replay request can be slow and use a lot of memory.
+
+The ``closest_limit`` option sets how many of the closest captures are considered, if the lookup does not specify a ``limit``.
+It defaults to ``100``, and can be set at the top level, for all collections, or for each collection::
+
+  closest_limit: 100
+
+  collections:
+    my-coll:
+      index: ./path/to/indexes
+      closest_limit: 50
+
+Set it to ``0`` to disable the limit and consider all captures of the url (the previous behavior).
+
+If none of the ``closest_limit`` closest captures can be loaded (eg. their WARC files are missing, or they are all self-redirects),
+pywb returns a not found error instead of trying the further captures.
+
+The limit only applies to replay (resource) lookups with a closest timestamp. It does not apply to the :ref:`cdx-server-api`,
+or to fuzzy match lookups, which use the ``fuzzy_search_limit`` from the rules file.
+
+
 Access Controls
 ^^^^^^^^^^^^^^^
 

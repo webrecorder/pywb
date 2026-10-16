@@ -94,6 +94,8 @@ class WarcServer(BaseWarcServer):
 
         self.rules_file = self.config.get('rules_file', '')
 
+        self.closest_limit = self.config.get('closest_limit')
+
         if 'certificates' in self.config:
             certs_config = self.config['certificates']
             DefaultAdapters.live_adapter = PywbHttpAdapter(max_retries=Retry(3),
@@ -159,7 +161,8 @@ class WarcServer(BaseWarcServer):
 
         return DefaultResourceHandler(source, self.archive_paths,
                                       rules_file=self.rules_file,
-                                      access_checker=access_checker)
+                                      access_checker=access_checker,
+                                      closest_limit=self.closest_limit)
 
     def list_fixed_routes(self):
         return list(self.fixed_routes.keys())
@@ -214,6 +217,7 @@ class WarcServer(BaseWarcServer):
             acl_paths = None
             default_access = self.default_access
             embargo = None
+            closest_limit = self.closest_limit
         elif isinstance(coll_config, dict):
             index = coll_config.get('index')
             if not index:
@@ -222,6 +226,7 @@ class WarcServer(BaseWarcServer):
             acl_paths = coll_config.get('acl_paths')
             default_access = coll_config.get('default_access', self.default_access)
             embargo = coll_config.get('embargo')
+            closest_limit = coll_config.get('closest_limit', self.closest_limit)
 
         else:
             raise Exception('collection config must be string or dict')
@@ -259,7 +264,8 @@ class WarcServer(BaseWarcServer):
         return DefaultResourceHandler(agg, archive_paths,
                                       rules_file=self.rules_file,
                                       access_checker=access_checker,
-                                      use_local_file_load=use_local_file_load)
+                                      use_local_file_load=use_local_file_load,
+                                      closest_limit=closest_limit)
 
     def init_sequence(self, coll_name, seq_config):
         if not isinstance(seq_config, list):

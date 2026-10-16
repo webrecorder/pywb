@@ -91,6 +91,9 @@ the next CDXJ line is tried in succession, and so on, until one succeeds.
 
 If no record can be loaded from any of the CDXJ index results (or if there are no index results), a 404 Not Found error is returned.
 
+For resource lookups with a ``closest`` timestamp and no ``limit``, only the ``closest_limit`` (by default, 100) closest
+index results are tried, see :ref:`closest-limit`.
+
 WARC Record HTTP Response
 """""""""""""""""""""""""
 

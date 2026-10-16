@@ -8,6 +8,10 @@ static_path: static
 
 default_access: allow
 
+# default limit for replay lookups of the closest captures
+# (if no limit is given), 0 to disable
+closest_limit: 100
+
 templates_dir: templates
 
 # Template HTML
