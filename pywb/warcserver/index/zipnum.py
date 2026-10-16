@@ -6,7 +6,12 @@ import os
 from io import BytesIO
 
 import six
-from warcio.bufferedreaders import gzip_decompressor
+
+# isal decompresses about 2.5 times faster than zlib, if it is installed
+try:
+    from isal import isal_zlib as zlib
+except ImportError:  # pragma: no cover
+    import zlib
 
 from pywb.utils.binsearch import iter_range, linearsearch, search
 from pywb.utils.io import no_except_close
@@ -341,7 +346,7 @@ class ZipNumIndexSource(BaseIndexSource):
         reader = self.blk_loader.load(location, blocks.offset, blocks.length)
 
         def decompress_block(range_):
-            decomp = gzip_decompressor()
+            decomp = zlib.decompressobj(16 + zlib.MAX_WBITS)
             buff = decomp.decompress(reader.read(range_))
             for line in BytesIO(buff):
                 yield line
