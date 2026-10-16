@@ -10,10 +10,15 @@ from warcio.timeutils import PAD_14_DOWN, PAD_14_UP
 import bisect
 
 from six.moves import zip, range, map
+import logging
 import re
+from time import monotonic
 
 from heapq import merge
 from collections import deque
+
+
+logger = logging.getLogger('warcserver')
 
 
 #=================================================================
@@ -81,7 +86,10 @@ def process_cdx(cdx_iter, query):
     limit = query.limit
 
     if closest:
-        cdx_iter = cdx_sort_closest(closest, cdx_iter, limit)
+        if SlowClosestLog.enabled:
+            cdx_iter = SlowClosestLog.sort_closest(closest, cdx_iter, limit, query)
+        else:
+            cdx_iter = cdx_sort_closest(closest, cdx_iter, limit)
 
     elif reverse:
         cdx_iter = cdx_reverse(cdx_iter, limit)
@@ -90,6 +98,77 @@ def process_cdx(cdx_iter, query):
         cdx_iter = cdx_limit(cdx_iter, limit)
 
     return cdx_iter
+
+
+#=================================================================
+class SlowClosestLog(object):
+    """Optional warning for closest lookups that scan many captures or are slow.
+
+    Configured with the top-level ``slow_closest_log`` option, eg.::
+
+        slow_closest_log:
+            min_captures: 50000
+            min_seconds: 2
+
+    A closest lookup that scans at least ``min_captures`` captures, or takes at
+    least ``min_seconds`` until the closest captures are sorted, logs one
+    warning line with the url key, the ``closest`` timestamp, the number of
+    captures scanned, the ``limit`` and the elapsed time.
+    Either threshold may be omitted. Disabled by default.
+    """
+    enabled = False
+    min_captures = None
+    min_seconds = None
+
+    @classmethod
+    def init(cls, config):
+        config = config or {}
+        min_captures = config.get('min_captures')
+        min_seconds = config.get('min_seconds')
+
+        cls.min_captures = int(min_captures) if min_captures else None
+        cls.min_seconds = float(min_seconds) if min_seconds else None
+        cls.enabled = bool(cls.min_captures or cls.min_seconds)
+
+    @classmethod
+    def sort_closest(cls, closest, cdx_iter, limit, query):
+        """
+        cdx_sort_closest(), counting the captures it scans and timing it
+        until the first result.
+        """
+        scanned = 0
+
+        def count(cdx_iter):
+            nonlocal scanned
+            for cdx in cdx_iter:
+                scanned += 1
+                yield cdx
+
+        start = monotonic()
+        sorted_iter = cdx_sort_closest(closest, count(cdx_iter), limit)
+
+        # the input is consumed before the first result is returned
+        first = next(sorted_iter, None)
+        elapsed = monotonic() - start
+
+        if ((cls.min_captures and scanned >= cls.min_captures) or
+            (cls.min_seconds and elapsed >= cls.min_seconds)):
+            logger.warning('slow closest lookup: key=%s closest=%s scanned=%d limit=%s elapsed=%.3fs',
+                           _log_safe(query.key), _log_safe(closest), scanned, limit, elapsed)
+
+        if first is not None:
+            yield first
+            yield from sorted_iter
+
+
+def _log_safe(value):
+    """
+    escape newlines and other control characters, to log on a single line.
+    """
+    if isinstance(value, bytes):
+        value = value.decode('utf-8', 'replace')
+
+    return value.encode('unicode_escape').decode('ascii')
 
 
 #=================================================================

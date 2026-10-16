@@ -8,6 +8,7 @@ from urllib3.util.retry import Retry
 
 from pywb.warcserver.index.aggregator import CacheDirectoryIndexSource, RedisMultiKeyIndexSource
 from pywb.warcserver.index.aggregator import GeventTimeoutAggregator, SimpleAggregator
+from pywb.warcserver.index.cdxops import SlowClosestLog
 
 from pywb.warcserver.handlers import DefaultResourceHandler, HandlerSeq
 
@@ -104,6 +105,7 @@ class WarcServer(BaseWarcServer):
                                                              ca_cert_dir=certs_config.get('ca_cert_dir'))
 
         LiveUrlFilter.init(self.config.get('live_url_filter'))
+        SlowClosestLog.init(self.config.get('slow_closest_log'))
 
         self.auto_handler = None
 

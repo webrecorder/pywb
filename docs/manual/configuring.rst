@@ -723,3 +723,27 @@ Injected scripts can also be configured per collection::
       inject_scripts:
         - all.js                # static/all.js
         - _/mycoll/tweaks.js    # collections/mycoll/static/tweaks.js
+
+Logging Slow Closest Lookups
+----------------------------
+
+Replay looks up the captures closest to the requested timestamp. For a url with many captures, eg. a script embedded
+in many archived pages, this lookup may read and sort every capture of the url, which can take a long time and use a lot
+of CPU on each replay of a page that embeds it.
+
+To find these urls, pywb can log a warning for each closest lookup that scans many captures or is slow::
+
+  slow_closest_log:
+    min_captures: 50000
+    min_seconds: 2
+
+A lookup is logged if it scans at least ``min_captures`` captures, or if it takes at least ``min_seconds`` seconds
+to read, filter and sort the captures until the closest one is found. Either option can be omitted.
+The warning is logged on a single line with the ``warcserver`` logger, eg.::
+
+  slow closest lookup: key=com,example)/script.js closest=20200101000000 scanned=354823 limit=100000 elapsed=2.215s
+
+where ``key`` is the url key (SURT) looked up, ``closest`` the requested timestamp, ``scanned`` the number of captures
+read and ``limit`` the maximum number of captures returned. Other query parameters are not logged.
+
+This option is disabled by default. When disabled, it has no overhead.
