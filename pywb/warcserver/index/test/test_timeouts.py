@@ -1,5 +1,6 @@
 from gevent import monkey; monkey.patch_all(thread=False)
 import time
+import gevent
 from pywb.warcserver.index.indexsource import FileIndexSource
 
 from pywb.warcserver.index.aggregator import SimpleAggregator, TimeoutMixin
@@ -27,6 +28,12 @@ class TestTimeouts(object):
         cls.sources = {'slow': TimeoutFileSource(TEST_CDX_PATH + 'example2.cdxj', 0.2),
                        'slower': TimeoutFileSource(TEST_CDX_PATH + 'dupes.cdxj', 0.5)
                       }
+
+    def setup_method(self):
+        # gevent timers start from the loop's cached time, which is stale if
+        # the previous tests blocked without running the hub. Refresh it so
+        # the timeouts are not shortened.
+        gevent.get_hub().loop.update_now()
 
     def test_timeout_long_all_pass(self):
         agg = GeventTimeoutAggregator(self.sources, timeout=1.0)
