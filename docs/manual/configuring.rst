@@ -641,6 +641,8 @@ For more information on custom certificate authority (CA) installation, the `mit
 Compatibility: Redirects, Memento, Flash video overrides
 --------------------------------------------------------
 
+.. _redirect-to-exact:
+
 Exact Timestamp Redirects
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -658,6 +660,67 @@ However, if the classic redirect behavior is desired, it can be enable by adding
   redirect_to_exact: true
 
 to the config. This will force any url to be redirected to the exact url, and is consistent with previous behavior and other "wayback machine" implementations.
+
+With ``redirect_to_exact``, the index is read twice for the same url: for the redirect, and again for the redirected url.
+When running with uWSGI, the :ref:`index-cache` avoids the second read.
+
+
+.. _index-cache:
+
+Index Cache (uWSGI)
+^^^^^^^^^^^^^^^^^^^
+
+When pywb runs in `uWSGI <https://uwsgi-docs.readthedocs.io/>`_, the captures read from the index for a url can be kept for a short time
+in a `uWSGI cache <https://uwsgi-docs.readthedocs.io/en/latest/Caching.html>`_, shared by all the uWSGI workers.
+The next queries for the same url, in any worker, then don't read the index. For example:
+
+* the redirected request after an :ref:`exact timestamp redirect <redirect-to-exact>`, and the redirect requests of other users for the same url
+* the lookup of the original record of a revisit
+* the cdx and timemap queries for the url
+
+The cache is enabled when a uWSGI cache named ``pywb-index`` is configured in the uWSGI config, eg. in ``uwsgi.ini``::
+
+  cache2 = name=pywb-index,items=20000,keysize=64,blocksize=4096,blocks=32768,bitmap=1,purge_lru=1,ignore_full=1
+
+The size of the cache is set in uWSGI, as it is allocated before pywb is loaded:
+
+* ``items``: the maximum number of urls in the cache. With ``purge_lru=1``, the least recently used url is removed when it is full.
+* ``blocks`` and ``blocksize``: the memory for the captures, here 32768 blocks of 4 KB, 128 MB. Each capture takes about 400 bytes.
+  With ``bitmap=1``, an entry can use more than one block. If there are not enough free blocks, the captures are not stored until older entries expire.
+* ``keysize=64``: the keys are 64 characters (a sha256 hex digest). The default key size uses 2 KB per item.
+* ``ignore_full=1``: does not log a message each time an item is removed or can't be stored.
+
+The cache is configured in pywb with the ``index_cache`` option. These are the defaults::
+
+  index_cache:
+    # seconds a url is kept in the cache
+    ttl: 60
+
+    # urls with more captures are not cached
+    max_captures: 1000
+
+    # the name of the uWSGI cache
+    uwsgi_cache: pywb-index
+
+Use ``index_cache: false`` to disable it.
+
+Only exact url queries to local indexes (CDX(J) files, directories of them and :ref:`zipnum` indexes) are cached, not prefix or domain queries.
+Collections with other index sources, eg. live web, remote or Redis indexes, are not cached.
+
+Captures added to an index can take up to ``ttl`` seconds to be found, if the url is in the cache.
+The captures are stored with Python's ``pickle`` module, so the uWSGI cache must not be writable by anyone else, eg. through a uWSGI cache server (``cache-server``).
+
+The uWSGI stats server (eg. ``stats = 127.0.0.1:1717`` with ``uwsgitop``) shows the items, hits, misses and full counters of the cache.
+
+Custom Index Cache
+""""""""""""""""""
+
+Other stores can be used by setting ``class`` to a ``module:Class`` subclass of :class:`pywb.warcserver.index.indexcache.IndexCache`
+that implements ``get(key)`` and ``set(key, value)``. Its config is the ``index_cache`` dict::
+
+  index_cache:
+    class: mypackage.cache:MyIndexCache
+    ttl: 30
 
 
 Memento Protocol
