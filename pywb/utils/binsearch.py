@@ -13,10 +13,11 @@ if six.PY3:
         return (a > b) - (a < b)
 
 
-# Buffer size for opening the sorted files searched here (CDX, CDXJ and ZipNum
-# summary files). Each binary search step seeks and reads a single line, so
-# the whole buffer is read at each step: with the default buffer size (128 KiB
-# since Python 3.14, 8 KiB before), a lookup reads 16 times more data.
+# Buffer size for opening the sorted files searched here (CDX, CDXJ, ZipNum
+# summary and path index files). Each binary search step seeks and reads a
+# single line, so the whole buffer is read at each step: with the default
+# buffer size (128 KiB since Python 3.14, 8 KiB before), a lookup reads 16
+# times more data.
 INDEX_FILE_BUFFER_SIZE = 8192
 
 

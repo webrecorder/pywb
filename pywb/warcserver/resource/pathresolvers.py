@@ -1,7 +1,8 @@
 import redis
 
 from warcio.utils import to_native_str
-from pywb.utils.binsearch import iter_exact
+from pywb.utils.binsearch import INDEX_FILE_BUFFER_SIZE, iter_exact
+from pywb.utils.uwsgicache import get_uwsgi_cache
 
 from pywb.warcserver.index.indexsource import RedisIndexSource
 
@@ -11,6 +12,7 @@ import six
 import os
 import logging
 import glob
+import hashlib
 
 """
 The purpose of this module is to 'resolve' a warc/arc filename,
@@ -99,17 +101,50 @@ class RedisResolver(RedisIndexSource):
 
 #=================================================================
 class PathIndexResolver(object):
+    """Resolves a WARC filename with a path index: a text file sorted by
+    filename, where each line has a filename and one or more paths or urls,
+    separated by tabs. The file is read with a binary search.
+
+    If pywb runs in uWSGI and the uWSGI cache ``pywb-pathindex`` is
+    configured, the paths found are kept in it for ``CACHE_TTL`` seconds,
+    shared by all the uWSGI workers.
+    """
+    UWSGI_CACHE_NAME = 'pywb-pathindex'
+
+    CACHE_TTL = 600
+
     def __init__(self, pathindex_file):
         self.pathindex_file = pathindex_file
+        self.cache = get_uwsgi_cache(self.UWSGI_CACHE_NAME)
 
     def __call__(self, filename, cdx):
-        with open(self.pathindex_file, 'rb') as reader:
-            result = iter_exact(reader, filename.encode('utf-8'), b'\t')
+        if not self.cache:
+            return self.lookup(filename)
 
-            for pathline in result:
-                paths = pathline.split(b'\t')[1:]
-                for path in paths:
-                    yield to_native_str(path, 'utf-8')
+        # several path index files may share the cache
+        key = hashlib.sha256(repr((self.pathindex_file, filename)).encode('utf-8')).hexdigest()
+
+        value = self.cache.get(key)
+        if value is not None:
+            return to_native_str(value, 'utf-8').split('\t')
+
+        paths = self.lookup(filename)
+
+        # not found filenames aren't cached, so that new WARCs are found
+        # as soon as they are added to the path index
+        if paths:
+            self.cache.set(key, '\t'.join(paths).encode('utf-8'), self.CACHE_TTL)
+
+        return paths
+
+    def lookup(self, filename):
+        """Return the list of paths of this filename in the path index file"""
+        paths = []
+        with open(self.pathindex_file, 'rb', buffering=INDEX_FILE_BUFFER_SIZE) as reader:
+            for pathline in iter_exact(reader, filename.encode('utf-8'), b'\t'):
+                paths.extend(to_native_str(path, 'utf-8') for path in pathline.split(b'\t')[1:])
+
+        return paths
 
     def __repr__(self):  # pragma: no cover
         return "PathIndexResolver('{0}')".format(self.pathindex_file)
