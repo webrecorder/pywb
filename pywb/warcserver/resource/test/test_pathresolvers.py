@@ -4,11 +4,39 @@ from pywb.utils.loaders import to_file_url
 from pywb.warcserver.resource.pathresolvers import PrefixResolver, PathIndexResolver, RedisResolver
 from pywb.warcserver.resource.pathresolvers import DefaultResolverMixin
 from pywb.warcserver.index.cdxobject import CDXObject
+from pywb.utils.uwsgicache import get_uwsgi_cache, get_uwsgi_cache_names
 
 import os
+import shutil
+import sys
+
+import pytest
 
 from fakeredis import FakeStrictRedis
 from mock import patch
+
+
+# ============================================================================
+class FakeUwsgi(object):
+    def __init__(self, cache2):
+        self.opt = {'cache2': cache2} if cache2 is not None else {}
+        self.caches = {}
+        self.ttls = {}
+
+    def cache_get(self, key, name):
+        return self.caches.get(name, {}).get(key)
+
+    def cache_update(self, key, value, ttl, name):
+        assert isinstance(value, bytes)
+        self.caches.setdefault(name, {})[key] = value
+        self.ttls[key] = ttl
+
+
+def patch_uwsgi(uwsgi):
+    return patch.dict(sys.modules, {'uwsgi': uwsgi})
+
+
+PATHINDEX_CACHE2 = 'name=pywb-pathindex,items=1000,keysize=64,blocksize=512'
 
 
 # ============================================================================
@@ -21,6 +49,92 @@ class TestPathIndex(object):
         assert list(path_index('example.warc.gz', cdx)) == ['invalid_path', 'sample_archive/warcs/example.warc.gz']
         assert list(path_index('iana.warc.gz', cdx)) == ['sample_archive/warcs/iana.warc.gz']
         assert list(path_index('not-found.gz', cdx)) == []
+
+    def test_path_index_no_cache(self):
+        path = os.path.join(get_test_dir(), 'text_content', 'pathindex.txt')
+
+        # not running in uwsgi
+        assert PathIndexResolver(path).cache is None
+
+        # running in uwsgi, without the cache
+        with patch_uwsgi(FakeUwsgi(None)):
+            assert PathIndexResolver(path).cache is None
+
+        with patch_uwsgi(FakeUwsgi('name=pywb-index,items=1000')):
+            assert PathIndexResolver(path).cache is None
+
+    def test_path_index_uwsgi_cache(self, tmp_path):
+        path = str(tmp_path / 'pathindex.txt')
+        shutil.copy(os.path.join(get_test_dir(), 'text_content', 'pathindex.txt'), path)
+
+        uwsgi = FakeUwsgi(PATHINDEX_CACHE2)
+        with patch_uwsgi(uwsgi):
+            path_index = PathIndexResolver(path)
+
+        assert repr(path_index.cache) == "UwsgiCache('pywb-pathindex')"
+
+        cdx = CDXObject()
+        assert path_index('example.warc.gz', cdx) == ['invalid_path', 'sample_archive/warcs/example.warc.gz']
+        assert path_index('iana.warc.gz', cdx) == ['sample_archive/warcs/iana.warc.gz']
+        assert path_index('not-found.gz', cdx) == []
+
+        # not found filenames aren't cached
+        assert len(uwsgi.caches['pywb-pathindex']) == 2
+        assert set(uwsgi.ttls.values()) == {PathIndexResolver.CACHE_TTL}
+        assert all(len(key) == 64 for key in uwsgi.caches['pywb-pathindex'])
+
+        # found in the cache, without reading the path index
+        os.remove(path)
+        assert path_index('example.warc.gz', cdx) == ['invalid_path', 'sample_archive/warcs/example.warc.gz']
+        assert path_index('iana.warc.gz', cdx) == ['sample_archive/warcs/iana.warc.gz']
+
+        with pytest.raises(IOError):
+            path_index('not-found.gz', cdx)
+
+    def test_path_index_uwsgi_cache_shared(self, tmp_path):
+        path_a = tmp_path / 'pathindex-a.txt'
+        path_a.write_text('example.warc.gz\t/a/example.warc.gz\n')
+
+        path_b = tmp_path / 'pathindex-b.txt'
+        path_b.write_text('example.warc.gz\t/b/example.warc.gz\n')
+
+        uwsgi = FakeUwsgi([b'name=other', PATHINDEX_CACHE2.encode('utf-8')])
+        with patch_uwsgi(uwsgi):
+            resolver_a = PathIndexResolver(str(path_a))
+            resolver_b = PathIndexResolver(str(path_b))
+
+        cdx = CDXObject()
+        for _ in range(2):
+            assert resolver_a('example.warc.gz', cdx) == ['/a/example.warc.gz']
+            assert resolver_b('example.warc.gz', cdx) == ['/b/example.warc.gz']
+
+        assert len(uwsgi.caches['pywb-pathindex']) == 2
+
+    def test_path_index_utf8(self, tmp_path):
+        path = tmp_path / 'pathindex.txt'
+        path.write_bytes(u'exempl\u00e3o.warc.gz\t/arquivo/exempl\u00e3o.warc.gz\n'.encode('utf-8'))
+
+        uwsgi = FakeUwsgi(PATHINDEX_CACHE2)
+        with patch_uwsgi(uwsgi):
+            path_index = PathIndexResolver(str(path))
+
+        cdx = CDXObject()
+        for _ in range(2):
+            assert list(path_index(u'exempl\u00e3o.warc.gz', cdx)) == [u'/arquivo/exempl\u00e3o.warc.gz']
+
+        assert len(uwsgi.caches['pywb-pathindex']) == 1
+
+    def test_get_uwsgi_cache_names(self):
+        assert get_uwsgi_cache_names(FakeUwsgi(None)) == set()
+        assert get_uwsgi_cache_names(FakeUwsgi('name=a,items=10')) == {'a'}
+        assert get_uwsgi_cache_names(FakeUwsgi(b'items=10,name=a')) == {'a'}
+        assert get_uwsgi_cache_names(FakeUwsgi(['name=a', b'name=b,items=10', 'items=10'])) == {'a', 'b'}
+
+        assert get_uwsgi_cache('a') is None
+
+        with patch_uwsgi(FakeUwsgi('name=a')):
+            assert get_uwsgi_cache('a').name == 'a'
+            assert get_uwsgi_cache('b') is None
 
     def test_resolver_dir_wildcard(self):
         resolver = DefaultResolverMixin.make_best_resolver(os.path.join(get_test_dir(), '*', ''))

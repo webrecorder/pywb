@@ -231,6 +231,18 @@ The path index is a tab-delimited text file for mapping WARC filenames to full f
     remote.warc.gz<tab>http://warcstore.example.com/serve/remote.warc.gz
 
 
+The path index must be sorted by filename, in byte order, eg. with ``LC_ALL=C sort``, as it is read with a binary search.
+
+When pywb runs in uWSGI, the paths found in the path index can be kept for 10 minutes in a
+`uWSGI cache <https://uwsgi-docs.readthedocs.io/en/latest/Caching.html>`_ named ``pywb-pathindex``, shared by all the uWSGI workers.
+The cache is used when it is configured in the uWSGI config, eg. in ``uwsgi.ini``::
+
+  cache2 = name=pywb-pathindex,items=50000,keysize=64,blocksize=512,bitmap=1,purge_lru=1,ignore_full=1
+
+Filenames that are not found in the path index are not cached, so new WARCs are found as soon as they are added to it.
+A WARC that is moved may not be found at its new path until its entry expires.
+
+
 However, if all WARC files are stored in the same directory, or in a few directories, a path index is not needed and pywb will try loading the WARC by prefix.
 
 The ``archive_paths`` can accept a list of entries. For example, given the config:
