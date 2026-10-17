@@ -1,19 +1,28 @@
-from pywb.warcserver.index.cdxobject import CDXObject, IDXObject
+from pywb.warcserver.index.cdxobject import CDXObject, IDXObject, URLKEY
 from pywb.warcserver.index.cdxobject import TIMESTAMP, STATUSCODE, MIMETYPE, DIGEST
 from pywb.warcserver.index.cdxobject import OFFSET, LENGTH, FILENAME
 
 from pywb.warcserver.index.query import CDXQuery
 
-from warcio.timeutils import timestamp_to_sec, pad_timestamp
+from warcio.timeutils import timestamp_to_sec, sec_to_timestamp, pad_timestamp
 from warcio.timeutils import PAD_14_DOWN, PAD_14_UP
 
 import bisect
+import logging
 
 from six.moves import zip, range, map
 import re
 
 from heapq import merge
 from collections import deque
+
+
+logger = logging.getLogger('warcserver')
+
+# a closest lookup that reads at least this many captures logs a warning.
+# Usually a url with a very large number of captures, eg. a script embedded
+# in many pages, which makes each replay of these pages slow
+CLOSEST_WARN_CAPTURES = 50000
 
 
 #=================================================================
@@ -279,8 +288,10 @@ def cdx_sort_closest(closest, cdx_iter, limit=10):
     closest_cdx = []
     closest_keys = []
     closest_sec = timestamp_to_sec(closest)
+    scanned = 0
 
     for cdx in cdx_iter:
+        scanned += 1
         sec = timestamp_to_sec(cdx[TIMESTAMP])
         key = abs(closest_sec - sec)
 
@@ -298,6 +309,11 @@ def cdx_sort_closest(closest, cdx_iter, limit=10):
 
         if len(closest_cdx) > limit:
             closest_cdx.pop()
+
+    if scanned >= CLOSEST_WARN_CAPTURES:
+        # closest may be any string, log the timestamp parsed from it
+        logger.warning('Closest lookup read %d captures: key=%s closest=%s limit=%s',
+                       scanned, cdx.get(URLKEY), sec_to_timestamp(closest_sec), limit)
 
     for cdx in closest_cdx:
         yield cdx
