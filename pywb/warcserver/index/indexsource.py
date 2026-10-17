@@ -1,7 +1,8 @@
 from six.moves.urllib.parse import quote_plus
 from warcio.timeutils import PAD_14_DOWN, http_date_to_timestamp, pad_timestamp, timestamp_now, timestamp_to_http_date
+from warcio.timeutils import datetime_to_timestamp, timestamp_to_datetime, timestamp_to_sec
 
-from pywb.utils.binsearch import INDEX_FILE_BUFFER_SIZE, iter_range
+from pywb.utils.binsearch import INDEX_FILE_BUFFER_SIZE, iter_prev_lines, iter_range, search_offset
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.format import res_template
 from pywb.utils.io import no_except_close
@@ -9,7 +10,7 @@ from pywb.utils.memento import MementoUtils
 from pywb.utils.wbexception import BadRequestException, NotFoundException
 from pywb.warcserver.http import DefaultAdapters
 from pywb.warcserver.index.cdxobject import CDXObject
-from pywb.warcserver.index.cdxops import cdx_sort_closest
+from pywb.warcserver.index.cdxops import cdx_sort_closest, closest_seek_limit
 from pywb.warcserver.liveurlfilter import LiveUrlFilter
 
 try:
@@ -21,6 +22,7 @@ import redis
 
 import requests
 
+import itertools
 import re
 import logging
 import os
@@ -81,8 +83,60 @@ class FileIndexSource(BaseIndexSource):
         return do_iter()
 
     def _do_iter(self, fh, params):
-        for line in iter_range(fh, params['key'], params['end_key']):
+        limit = closest_seek_limit(params)
+        if limit:
+            lines = self._iter_closest(fh, params, limit)
+        else:
+            lines = iter_range(fh, params['key'], params['end_key'])
+
+        for line in lines:
             yield CDXObject(line)
+
+    def _iter_closest(self, fh, params, limit):
+        """
+        Iterate only over the lines of the url around 'closest': up to 'limit'
+        lines after it, and up to 'limit' lines before it plus any earlier
+        lines in the same second as the first one, as cdx_sort_closest()
+        breaks ties in favour of the earlier capture.
+
+        The lines of a url are sorted by timestamp, so the distance to
+        'closest' grows on each side. A line left out is ranked after 'limit'
+        lines of the same file, which are closer to 'closest', or as close
+        and earlier. So it is not among the 'limit' closest captures, in this
+        file or in all files, and cdx_sort_closest() returns the same
+        captures, in the same order, as when reading every line of the url
+        with iter_range().
+        """
+        key = params['key']
+
+        # same padding as cdx_sort_closest(), e.g. 2015 is the end of 2015
+        closest = datetime_to_timestamp(timestamp_to_datetime(params['closest']))
+        offset = search_offset(fh, key + b' ' + closest.encode('utf-8'))
+
+        start = offset
+        num_before = 0
+        for line_offset, line in iter_prev_lines(fh, offset):
+            if line < key:
+                break
+
+            if num_before >= limit and self._line_sec(line) != first_sec:
+                break
+
+            if num_before == limit - 1:
+                first_sec = self._line_sec(line)
+
+            start = line_offset
+            num_before += 1
+
+        fh.seek(start)
+
+        lines = (line.rstrip() for line in iter(fh.readline, b''))
+        lines = itertools.takewhile(lambda line: line < params['end_key'], lines)
+        return itertools.islice(lines, num_before + limit)
+
+    @staticmethod
+    def _line_sec(line):
+        return timestamp_to_sec(line.split(b' ', 2)[1].decode('utf-8'))
 
     def __repr__(self):
         return '{0}(file://{1})'.format(self.__class__.__name__,
