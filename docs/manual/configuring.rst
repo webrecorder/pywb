@@ -707,6 +707,9 @@ Use ``index_cache: false`` to disable it.
 Only exact url queries to local indexes (CDX(J) files, directories of them and :ref:`zipnum` indexes) are cached, not prefix or domain queries.
 Collections with other index sources, eg. live web, remote or Redis indexes, are not cached.
 
+The captures of a url are only stored if they were all read, so if there are fewer than the ``limit`` of the query.
+Replay lookups keep only the 100 closest captures (``ResourceHandler.CLOSEST_LIMIT``), so they store the urls with fewer than 100 captures.
+
 Captures added to an index can take up to ``ttl`` seconds to be found, if the url is in the cache.
 The captures are stored with Python's ``pickle`` module, so the uWSGI cache must not be writable by anyone else, eg. through a uWSGI cache server (``cache-server``).
 

@@ -7,6 +7,7 @@ import pytest
 from mock import patch
 
 from pywb.warcserver.index.aggregator import SimpleAggregator, DirectoryIndexSource
+from pywb.warcserver.index.cdxops import cdx_sort_closest
 from pywb.warcserver.index.indexcache import IndexCache, UwsgiIndexCache, init_index_cache
 from pywb.warcserver.index.indexsource import FileIndexSource, LiveIndexSource
 from pywb.warcserver.index.zipnum import ZipNumIndexSource
@@ -68,6 +69,20 @@ def fake_uwsgi():
 # ============================================================================
 def file_source(name='iana.cdxj'):
     return FileIndexSource(os.path.join(TEST_CDX_PATH, name))
+
+
+class ClosestWindowSource(FileIndexSource):
+    """Reads only the captures closest to 'closest', up to the limit of the
+    query, like an index source that seeks to 'closest'
+    """
+    def load_index(self, params):
+        cdx_iter = super(ClosestWindowSource, self).load_index(params)
+        window = params.get('limit') or params.get('_closest_limit')
+        if not params.get('closest') or not window:
+            return cdx_iter
+
+        cdx_list = cdx_sort_closest(params['closest'], cdx_iter, limit=int(window))
+        return iter(sorted(cdx_list, key=lambda cdx: cdx['timestamp']))
 
 
 def new_agg(index_cache, sources=None, name=('coll',)):
@@ -182,6 +197,44 @@ class TestIndexCache(object):
 
         # captures are only stored if fewer than the limit
         res = query(agg, 'http://www.iana.org/_js/2013.1/jquery.js', limit=str(len(QUERIES) * 10))
+        assert index_cache.sets == 1
+
+    def test_not_stored_with_closest_limit(self):
+        # replay lookups have no 'limit', but a '_closest_limit' set by the
+        # ResourceHandler, and the index source may read only that many
+        # captures around 'closest'
+        url = 'http://www.iana.org/_js/2013.1/jquery.js'
+        sources = {'iana': ClosestWindowSource(os.path.join(TEST_CDX_PATH, 'iana.cdxj'))}
+        index_cache = DictIndexCache({})
+        agg = new_agg(index_cache, sources)
+        no_cache = new_agg(None, sources)
+
+        for closest in ('20140126200625', '20140126201307', '20140126200625'):
+            res = query(agg, url, closest=closest, _closest_limit='3')
+            assert res == query(no_cache, url, closest=closest, _closest_limit='3')
+            assert [cdx[1] for cdx in res[0]][0] == closest
+            assert len(res[0]) == 3
+
+        assert index_cache.sets == 0
+
+        # with fewer captures than '_closest_limit', all captures were read
+        res = query(agg, url, closest='20140126201307', _closest_limit='17')
+        assert len(res[0]) == 16
+        assert index_cache.sets == 1
+
+        # an explicit limit takes precedence
+        index_cache = DictIndexCache({})
+        agg = new_agg(index_cache, sources)
+        res = query(agg, url, closest='20140126201307', limit='17', _closest_limit='3')
+        assert len(res[0]) == 16
+        assert index_cache.sets == 1
+
+    def test_closest_limit_without_closest(self):
+        # '_closest_limit' only applies to closest queries
+        index_cache = DictIndexCache({})
+        agg = new_agg(index_cache)
+        res = query(agg, 'http://www.iana.org/_js/2013.1/jquery.js', _closest_limit='3')
+        assert len(res[0]) == 16
         assert index_cache.sets == 1
 
     def test_not_stored_if_not_all_read(self):

@@ -42,7 +42,7 @@ class BaseAggregator(object):
         if self.index_cache:
             cdx_iter, errs = self.index_cache.load_index(self.index_cache_name,
                                                          self.load_index,
-                                                         query.params)
+                                                         query)
         else:
             cdx_iter, errs = self.load_index(query.params)
 

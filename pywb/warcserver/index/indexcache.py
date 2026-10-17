@@ -132,18 +132,21 @@ class IndexCache(object):
         data = repr((name, items)).encode('utf-8')
         return hashlib.sha256(data).hexdigest()
 
-    def load_index(self, name, load_index, params):
-        """Return the captures and errors of ``load_index(params)``, from the
-        cache if possible.
+    def load_index(self, name, load_index, query):
+        """Return the captures and errors of ``load_index(query.params)``,
+        from the cache if possible.
         """
+        params = query.params
         if not self.is_cacheable_query(params):
             return load_index(params)
 
         try:
-            # an index source may stop reading at 'limit' captures, eg. when
-            # it reads only the captures closest to 'closest'. A list with
-            # fewer captures is then complete.
-            max_captures = min(self.max_captures, int(params.get('limit', 100000)) - 1)
+            # an index source may stop reading at the limit of the query, eg.
+            # when it reads only the captures closest to 'closest'. A list
+            # with fewer captures is then complete. Replay lookups have no
+            # 'limit' param, but a lower limit for closest lookups (see
+            # CDXQuery.limit).
+            max_captures = min(self.max_captures, query.limit - 1)
         except ValueError:
             return load_index(params)
 
