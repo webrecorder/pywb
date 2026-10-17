@@ -196,10 +196,14 @@ org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db tex
 
 #=================================================================
 from pywb.warcserver.warcserver import init_index_agg
+from pywb.warcserver.index.cdxops import CLOSEST_WARN_CAPTURES
 
 import os
 import sys
 import six
+import logging
+
+from mock import patch
 
 from pywb import get_test_dir
 
@@ -261,6 +265,61 @@ def test_cdxj_resolve_revisit_2():
 
     assert(dict(results[1]) == {"urlkey": "com,example)/?example=1", "timestamp": "20140103030341", "url": "http://example.com?example=1", "length": "553", "filename": "example.warc.gz", "mime": "warc/revisit", "offset": "1864", "orig.length": "-", "orig.offset": "-", "orig.filename": "-"})
 
+
+
+FONT_URL = 'http://iana.org/_css/2013.1/fonts/opensans-bold.ttf'
+FONT_CAPTURES = 16
+
+def closest_warnings(caplog, warn_captures, **kwparams):
+    caplog.clear()
+    with patch('pywb.warcserver.index.cdxops.CLOSEST_WARN_CAPTURES', warn_captures):
+        with caplog.at_level(logging.WARNING, logger='warcserver'):
+            results = cdx_ops_test_data(FONT_URL, **kwparams)
+
+    return results, [r.getMessage() for r in caplog.records]
+
+
+def test_closest_warning(caplog):
+    # closest after all captures: all are read
+    expected = cdx_ops_test_data(FONT_URL, closest='20200101', limit=3)
+    assert len(expected) == 3
+
+    results, warnings = closest_warnings(caplog, FONT_CAPTURES, closest='20200101', limit=3)
+    assert results == expected
+    assert warnings == ['Closest lookup read 16 captures: key=org,iana)/_css/2013.1/fonts/opensans-bold.ttf closest=20200101235959 limit=3']
+
+    results, warnings = closest_warnings(caplog, FONT_CAPTURES + 1, closest='20200101', limit=3)
+    assert results == expected
+    assert warnings == []
+
+
+def test_closest_warning_default(caplog):
+    assert CLOSEST_WARN_CAPTURES == 50000
+
+    with caplog.at_level(logging.WARNING, logger='warcserver'):
+        results = cdx_ops_test_data(FONT_URL, closest='20200101', limit=100)
+
+    assert len(results) == FONT_CAPTURES
+    assert caplog.records == []
+
+
+def test_closest_warning_no_closest(caplog):
+    results, warnings = closest_warnings(caplog, 1)
+    assert len(results) == FONT_CAPTURES
+    assert warnings == []
+
+    results, warnings = closest_warnings(caplog, 1, reverse=True, limit=3)
+    assert len(results) == 3
+    assert warnings == []
+
+
+def test_closest_warning_closest_not_logged_as_is(caplog):
+    # closest is user input: the parsed timestamp is logged, on one line
+    results, warnings = closest_warnings(caplog, 1, closest='2014\nWARNING forged line', limit=1)
+    assert len(results) == 1
+    assert len(warnings) == 1
+    assert 'closest=20141231235959 ' in warnings[0]
+    assert '\n' not in warnings[0]
 
 
 if __name__ == "__main__":

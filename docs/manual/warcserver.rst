@@ -96,6 +96,11 @@ Some urls, eg. scripts embedded in many pages, may have hundreds of thousands of
 for each replay request would be slow and use a lot of memory. If none of the 100 closest index results can be loaded
 (eg. their WARC files are missing), a 404 Not Found error is returned.
 
+A closest lookup that reads 50000 or more captures from the index logs a warning with the ``warcserver`` logger,
+with the url key, to help find these urls::
+
+    Closest lookup read 354823 captures: key=com,google,apis)/js/platform.js closest=20150101000000 limit=100
+
 WARC Record HTTP Response
 """""""""""""""""""""""""
 
