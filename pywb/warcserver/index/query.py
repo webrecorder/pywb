@@ -68,7 +68,17 @@ class CDXQuery(object):
 
     @property
     def limit(self):
-        return int(self.params.get('limit', 100000))
+        if 'limit' in self.params:
+            return int(self.params['limit'])
+
+        # default limit for closest lookups, set by the ResourceHandler
+        # (see ResourceHandler.CLOSEST_LIMIT), an explicit limit always
+        # takes precedence
+        closest_limit = self.params.get('_closest_limit')
+        if closest_limit and self.closest:
+            return int(closest_limit)
+
+        return 100000
 
     @property
     def collapse_time(self):

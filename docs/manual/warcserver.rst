@@ -91,6 +91,11 @@ the next CDXJ line is tried in succession, and so on, until one succeeds.
 
 If no record can be loaded from any of the CDXJ index results (or if there are no index results), a 404 Not Found error is returned.
 
+For resource lookups with a ``closest`` timestamp and no ``limit``, only the 100 closest index results are tried.
+Some urls, eg. scripts embedded in many pages, may have hundreds of thousands of captures, and sorting all of them
+for each replay request would be slow and use a lot of memory. If none of the 100 closest index results can be loaded
+(eg. their WARC files are missing), a 404 Not Found error is returned.
+
 WARC Record HTTP Response
 """""""""""""""""""""""""
 
