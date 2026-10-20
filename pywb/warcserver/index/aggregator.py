@@ -25,6 +25,10 @@ import glob
 
 #=============================================================================
 class BaseAggregator(object):
+    # set by IndexCache.enable_for(), to cache the results of load_index()
+    index_cache = None
+    index_cache_name = ''
+
     def __call__(self, params):
         if params.get('closest') == 'now':
             params['closest'] = timestamp_now()
@@ -35,7 +39,12 @@ class BaseAggregator(object):
 
         query = CDXQuery(params)
 
-        cdx_iter, errs = self.load_index(query.params)
+        if self.index_cache:
+            cdx_iter, errs = self.index_cache.load_index(self.index_cache_name,
+                                                         self.load_index,
+                                                         query)
+        else:
+            cdx_iter, errs = self.load_index(query.params)
 
         if not query.page_count:
             cdx_iter = process_cdx(cdx_iter, query)
