@@ -232,6 +232,7 @@ Installation of uswgi in a virtualenv will avoid known issues with installing uw
     pip install wheel uwsgi pywb
 
 When running in uwsgi, pywb can cache the index lookups in a uwsgi cache shared by all processes. See :ref:`index-cache`.
+New captures of a url that is in the cache can then take up to ``ttl`` seconds (60 by default) to be found.
 
 Although uwsgi does not provide a way to specify command line, all command line options can alternatively be configured via ``config.yaml``. See :ref:`configuring-pywb` for more info on available configuration options.
 
