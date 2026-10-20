@@ -3,6 +3,7 @@ from pywb.warcserver.index.cdxobject import TIMESTAMP, STATUSCODE, MIMETYPE, DIG
 from pywb.warcserver.index.cdxobject import OFFSET, LENGTH, FILENAME
 
 from pywb.warcserver.index.query import CDXQuery
+from pywb.utils.format import to_bool
 
 from warcio.timeutils import timestamp_to_sec, sec_to_timestamp, pad_timestamp
 from warcio.timeutils import PAD_14_DOWN, PAD_14_UP
@@ -101,6 +102,47 @@ def process_cdx(cdx_iter, query):
         cdx_iter = cdx_limit(cdx_iter, limit)
 
     return cdx_iter
+
+
+#=================================================================
+def closest_seek_limit(params):
+    """
+    Return the limit if process_cdx() would only keep the 'limit' captures
+    closest to 'closest' of a single url, and nothing before the sort removes
+    or changes captures. An index source can then read only the captures
+    around 'closest' instead of every capture of the url.
+    Otherwise, return None.
+    """
+    if not params.get('closest'):
+        return None
+
+    # exact match: a single urlkey
+    if params.get('matchType') != 'exact' or params.get('end_key') != params.get('key', b'') + b'!':
+        return None
+
+    # (paged index queries are not processed at all)
+    for name in ('resolveRevisits', 'reverse', 'showNumPages', 'showPagedIndex'):
+        if to_bool(params.get(name)):
+            return None
+
+    if params.get('sort') == 'reverse':
+        return None
+
+    for name in ('filter', 'from', 'from_ts', 'to', 'collapseTime'):
+        if params.get(name):
+            return None
+
+    try:
+        # the same limit as CDXQuery.limit: replay lookups have no explicit
+        # limit, but a _closest_limit set by the ResourceHandler
+        if 'limit' in params:
+            limit = int(params['limit'])
+        else:
+            limit = int(params.get('_closest_limit') or 100000)
+    except ValueError:
+        return None
+
+    return limit if limit > 0 else None
 
 
 #=================================================================

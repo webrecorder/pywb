@@ -76,7 +76,12 @@ org,iana)/time-zones 20140126200737 http://www.iana.org/time-zones text/html 200
 
 #=================================================================
 import os
+from io import BytesIO
+
+import pytest
+
 from pywb.utils.binsearch import iter_prefix, iter_exact, iter_range
+from pywb.utils.binsearch import search_offset, iter_prev_lines
 from pywb.utils.merge import merge
 
 from pywb import get_test_dir
@@ -108,6 +113,44 @@ def test_rev_merge():
     # equals merging with reverse=True of reversed lists
     assert (list(reversed(list(merge(lines1, lines2)))) ==
             list(merge(reversed(lines1), reversed(lines2), reverse=True)))
+
+
+
+def _line_offsets(data):
+    offset = 0
+    for line in data.splitlines(True):
+        yield offset, line.rstrip()
+        offset += len(line)
+
+
+def _load_iana():
+    with open(test_cdx_dir + 'iana.cdx', 'rb') as cdx:
+        return cdx.read()
+
+
+@pytest.mark.parametrize('block_size', [16, 100, 8192])
+def test_search_offset(block_size):
+    data = _load_iana()
+    lines = list(_line_offsets(data))
+    keys = [b'', b'a)/', b'org,iana)/', b'org,iana)/about', b'org,iana)/dnssec 20140126201307',
+            b'org,iana)/dnssec 20140126201306 ', b'org,iana)/time-zones', b'z)/']
+    keys += [line for _, line in lines[::7]]
+
+    for key in keys:
+        expected = next((offset for offset, line in lines if line >= key), len(data))
+        assert search_offset(BytesIO(data), key, block_size=block_size) == expected
+
+
+@pytest.mark.parametrize('block_size', [16, 100, 8192])
+@pytest.mark.parametrize('data', [None, b'', b'abc', b'abc\n', b'\nabc\ndef', b'abc\r\ndef\r\n', b'a\n\nb\n'])
+def test_iter_prev_lines(block_size, data):
+    if data is None:
+        data = _load_iana()
+
+    lines = list(_line_offsets(data))
+    for i, (offset, _) in enumerate(lines + [(len(data), None)]):
+        expected = list(reversed(lines[:i]))
+        assert list(iter_prev_lines(BytesIO(data), offset, block_size=block_size)) == expected
 
 
 

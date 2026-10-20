@@ -517,15 +517,16 @@ def closest_warnings(caplog, warn_captures, **kwparams):
 
 
 def test_closest_warning(caplog):
-    # closest after all captures: all are read
-    expected = cdx_ops_test_data(FONT_URL, closest='20200101', limit=3)
-    assert len(expected) == 3
+    # closest after all captures, and a limit above the number of captures:
+    # all are read, also when only the captures around closest are read
+    expected = cdx_ops_test_data(FONT_URL, closest='20200101', limit=100)
+    assert len(expected) == FONT_CAPTURES
 
-    results, warnings = closest_warnings(caplog, FONT_CAPTURES, closest='20200101', limit=3)
+    results, warnings = closest_warnings(caplog, FONT_CAPTURES, closest='20200101', limit=100)
     assert results == expected
-    assert warnings == ['Closest lookup read 16 captures: key=org,iana)/_css/2013.1/fonts/opensans-bold.ttf closest=20200101235959 limit=3']
+    assert warnings == ['Closest lookup read 16 captures: key=org,iana)/_css/2013.1/fonts/opensans-bold.ttf closest=20200101235959 limit=100']
 
-    results, warnings = closest_warnings(caplog, FONT_CAPTURES + 1, closest='20200101', limit=3)
+    results, warnings = closest_warnings(caplog, FONT_CAPTURES + 1, closest='20200101', limit=100)
     assert results == expected
     assert warnings == []
 
