@@ -196,6 +196,8 @@ org,iana)/domains/root/db 20140126200928 http://www.iana.org/domains/root/db tex
 
 #=================================================================
 from pywb.warcserver.warcserver import init_index_agg
+from pywb.warcserver.index.aggregator import SimpleAggregator
+from pywb.warcserver.index.indexsource import BaseIndexSource
 from pywb.warcserver.index.cdxobject import CDXObject
 from pywb.warcserver.index.cdxops import cdx_sort_closest, process_cdx, CLOSEST_WARN_CAPTURES
 from pywb.warcserver.index.query import CDXQuery
@@ -464,6 +466,56 @@ def test_process_cdx_closest_exact_stops_early():
     res = list(process_cdx(cdx_iter, query))
     assert [cdx['timestamp'] for cdx in res] == ['20100301000000', '20100201000000']
     assert cdx_iter.count == 4
+
+
+class FixedIndexSource(BaseIndexSource):
+    def __init__(self, captures):
+        self.captures = captures
+
+    def load_index(self, params):
+        return iter(make_cdx_objects(self.captures))
+
+
+def test_aggregator_closest_exact_sources_with_other_urlkey():
+    # a source may encode the urlkey of the same url differently, eg. a remote
+    # index: the closest capture is in the source whose urlkey sorts last
+    agg = SimpleAggregator({'local': FixedIndexSource([('com,example)/', '20100101000000'),
+                                                       ('com,example)/', '20200101000000')]),
+                            'remote': FixedIndexSource([('example.com/', '20150101000000')])})
+
+    res, errs = agg(dict(url='http://example.com/', closest='20140101000000', limit=1))
+    assert [(cdx['source'], cdx['timestamp']) for cdx in list(res)] == [('remote', '20150101000000')]
+    assert errs == {}
+
+
+def test_aggregator_closest_exact_sources_with_other_urlkey_random():
+    # ascending local sources, and a remote source with another urlkey that
+    # returns its captures nearest first (sort=closest)
+    rng = random.Random(1671)
+    for _ in range(100):
+        count = rng.randint(1, 40)
+        timestamps = random_timestamps(rng, count)
+        closest = random_closest(rng, timestamps)
+        closest_sec = timestamp_to_sec(closest)
+
+        splits = sorted(rng.randint(0, count) for _ in range(2))
+        local_a = sorted(timestamps[:splits[0]])
+        local_b = sorted(timestamps[splits[0]:splits[1]])
+        remote = sorted(timestamps[splits[1]:],
+                        key=lambda ts: abs(closest_sec - timestamp_to_sec(ts)))
+
+        agg = SimpleAggregator({'a': FixedIndexSource([('com,example)/', ts) for ts in local_a]),
+                                'b': FixedIndexSource([('com,example)/', ts) for ts in local_b]),
+                                'remote': FixedIndexSource([('example.com/', ts) for ts in remote])})
+
+        def distances(cdx_list):
+            return [abs(closest_sec - timestamp_to_sec(cdx['timestamp'])) for cdx in cdx_list]
+
+        all_cdx = make_captures(timestamps)
+        for limit in random_limits(rng, count):
+            res, errs = agg(dict(url='http://example.com/', closest=closest, limit=limit))
+            expected = distances(closest_reference(closest, all_cdx, limit))
+            assert distances(res) == expected, (closest, local_a, local_b, remote, limit)
 
 
 def test_closest_prefix_query_same_as_reference():

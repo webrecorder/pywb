@@ -15,6 +15,7 @@ from pywb.utils.wbexception import NotFoundException, WbException
 from pywb.utils.format import ParamFormatter, res_template
 
 from pywb.warcserver.index.indexsource import FileIndexSource, RedisIndexSource
+from pywb.warcserver.index.cdxobject import TIMESTAMP
 from pywb.warcserver.index.cdxops import process_cdx
 from pywb.warcserver.index.query import CDXQuery
 from pywb.warcserver.index.zipnum import ZipNumIndexSource
@@ -100,6 +101,8 @@ class BaseAggregator(object):
         #optimization: if only a single entry (or empty) just load directly
         if len(iter_list) <= 1:
             cdx_iter = iter_list[0] if iter_list else iter([])
+        elif params.get('closest') and params.get('matchType', 'exact') == 'exact':
+            cdx_iter = self._merge_by_timestamp(iter_list)
         else:
             cdx_iter = self._merge(iter_list)
 
@@ -107,6 +110,12 @@ class BaseAggregator(object):
 
     def _merge(self, iter_list):
         return merge(*(iter_list))
+
+    def _merge_by_timestamp(self, iter_list):
+        # cdx_sort_closest() expects the captures of an exact query in
+        # ascending timestamp order. A source may encode the urlkey of the
+        # url differently, eg. a remote index, so don't group by urlkey first
+        return merge(*(iter_list), key=lambda cdx: (cdx[TIMESTAMP], cdx))
 
     def _on_source_error(self, name):  #pragma: no cover
         pass
