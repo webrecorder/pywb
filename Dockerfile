@@ -12,7 +12,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir -r requirements.txt \
-    pyuwsgi boto3 pysocks lxml ujson isal babel translate_toolkit babel-vue-extractor
+    pyuwsgi boto3 pysocks lxml ujson isal lmdb babel translate_toolkit babel-vue-extractor
 
 COPY . ./
 

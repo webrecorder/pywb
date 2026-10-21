@@ -110,6 +110,26 @@ class LocPrefixResolver(object):
 
 
 # ============================================================================
+class IdxFileReader(object):
+    """ Binary search over the lines of a ZipNum secondary index (.idx) file
+    """
+    def __init__(self, filename):
+        self.fh = open(filename, 'rb', buffering=INDEX_FILE_BUFFER_SIZE)
+
+    def search(self, key, prev_size=0):
+        return search(self.fh, key, prev_size=prev_size)
+
+    def iter_range(self, start, end, prev_size=0):
+        return iter_range(self.fh, start, end, prev_size=prev_size)
+
+    def read_last_line(self):
+        return read_last_line(self.fh)
+
+    def close(self):
+        self.fh.close()
+
+
+# ============================================================================
 class ZipNumIndexSource(BaseIndexSource):
     DEFAULT_RELOAD_INTERVAL = 10  # in minutes
     DEFAULT_MAX_BLOCKS = 10
@@ -146,12 +166,29 @@ class ZipNumIndexSource(BaseIndexSource):
 
         self.blk_loader = BlockLoader(cookie_maker=cookie_maker)
 
+        # optional copy of the .idx in an LMDB database, needs the lmdb package
+        self.lmdb_idx = None
+        if config and config.get('lmdb'):
+            from pywb.warcserver.index.lmdbidx import LMDBIdx
+            self.lmdb_idx = LMDBIdx(config['lmdb'], summary)
+
     def load_index(self, params):
         self.loc_resolver.load_loc()
         return self._do_load_cdx(self.summary, CDXQuery(params))
 
+    def open_idx(self, filename):
+        """ Open the secondary index (.idx) for a lookup: the LMDB database,
+        if configured and available, or else the .idx file
+        """
+        if self.lmdb_idx:
+            reader = self.lmdb_idx.open_reader()
+            if reader:
+                return reader
+
+        return IdxFileReader(filename)
+
     def _do_load_cdx(self, filename, query):
-        reader = open(filename, 'rb', buffering=INDEX_FILE_BUFFER_SIZE)
+        reader = self.open_idx(filename)
 
         idx_iter = self.compute_page_range(reader, query)
 
@@ -196,19 +233,18 @@ class ZipNumIndexSource(BaseIndexSource):
         last_line = None
 
         # Get End
-        end_iter = search(reader, query.end_key, prev_size=1)
+        end_iter = reader.search(query.end_key, prev_size=1)
 
         try:
             end_line = six.next(end_iter)
         except StopIteration:
-            last_line = read_last_line(reader)
+            last_line = reader.read_last_line()
             end_line = last_line
 
         # Get Start
-        first_iter = iter_range(reader,
-                                query.key,
-                                query.end_key,
-                                prev_size=1)
+        first_iter = reader.iter_range(query.key,
+                                       query.end_key,
+                                       prev_size=1)
 
         try:
             first_line = six.next(first_iter)
