@@ -63,7 +63,8 @@ def hello_app(environ, start_response):
 class TestCertReq(BaseConfigTest):
     @classmethod
     def setup_class(cls):
-        cls.orig_adapters = (DefaultAdapters.live_adapter, DefaultAdapters.remote_adapter)
+        cls.orig_adapters = (DefaultAdapters.live_adapter, DefaultAdapters.remote_load_adapter,
+                             DefaultAdapters.remote_adapter)
 
         # local test CA, trusted through certificates.ca_cert_dir, signing a valid and an expired cert for localhost
         cls.cert_dir = tempfile.mkdtemp()
@@ -99,7 +100,8 @@ class TestCertReq(BaseConfigTest):
             server.stop()
 
         shutil.rmtree(cls.cert_dir)
-        DefaultAdapters.live_adapter, DefaultAdapters.remote_adapter = cls.orig_adapters
+        (DefaultAdapters.live_adapter, DefaultAdapters.remote_load_adapter,
+         DefaultAdapters.remote_adapter) = cls.orig_adapters
         super(TestCertReq, cls).teardown_class()
 
     def get_url(self, name):

@@ -536,7 +536,7 @@ class LiveWebLoader(BaseLoader):
         return upstream_res
 
     def _do_request(self, method, load_url, data, req_headers, params, is_live):
-        adapter = DefaultAdapters.live_adapter if is_live else DefaultAdapters.remote_adapter
+        adapter = DefaultAdapters.live_adapter if is_live else DefaultAdapters.remote_load_adapter
         max_retries = adapter.max_retries
 
         # get either the poolmanager or proxy manager to handle this connection
