@@ -192,6 +192,8 @@ Note that if the ZipNum index is **not** SURT ordered, the ``surt_ordered: false
 
 
 
+.. _path-index:
+
 Path Index Configuration
 ------------------------
 
@@ -255,6 +257,71 @@ And the WARC file: ``example.warc.gz``, pywb will try to find the WARC in order 
   2. /archive/warcs2/example.warc.gz
   3. https://myarchive.example.com/warcs/example.warc.gz
   4. Looking up example.warc.gz in /archive/warc-paths.txt
+
+
+.. _lmdb-path-index:
+
+LMDB Path Index
+^^^^^^^^^^^^^^^
+
+Each lookup in a path index file is a binary search in the file. For large path indexes, with millions of WARC files,
+pywb can instead look up the WARC filenames in an `LMDB <http://www.lmdb.tech/doc/>`_ database, loaded from the same path index files.
+It requires the optional `lmdb <https://pypi.org/project/lmdb/>`_ package (``pip install lmdb``, or ``pip install pywb[lmdb]``).
+
+The database is configured in ``archive_paths`` as ``lmdb:///path/to/env?db=name``, the LMDB environment directory and the name of a database in it:
+
+.. code:: yaml
+
+    collections:
+        wayback:
+            index_paths: ...
+            archive_paths:
+              - lmdb:///archive/pathindex.lmdb?db=primary
+              - lmdb:///archive/pathindex.lmdb?db=mirror
+
+
+The ``lmdb-pathindex`` command loads path index files into a database, creating the environment if needed:
+
+.. code:: bash
+
+    # load or update a path index into the "primary" database
+    lmdb-pathindex load --env /archive/pathindex.lmdb --db primary /archive/warc-paths.txt
+
+    # only show what would change: added, updated, unchanged and dropped entries
+    lmdb-pathindex load --dry-run --env /archive/pathindex.lmdb --db primary /archive/warc-paths.txt
+
+    # recreate the "mirror" database from all the .txt files of a directory
+    lmdb-pathindex load --drop --pattern '.*\.txt' --env /archive/pathindex.lmdb --db mirror /archive/mirror-paths/
+
+    # the number of entries of each database
+    lmdb-pathindex stats --env /archive/pathindex.lmdb
+
+
+* The key is the WARC filename, the value its paths or URLs, tab-separated. The lines are parsed like the path index file: the paths of consecutive lines
+  of the same WARC file are joined, and are tried in order. The path index files must be sorted, like for the path index lookup; ``load`` counts the unsorted lines.
+
+* An environment can have several named databases (up to 64), eg. one per path index. Each one is an independent ``archive_paths`` entry, tried in order.
+  A missing environment or database is logged and skipped, and opened again after 60 seconds.
+
+* Loading adds the new WARC files and replaces the paths of the existing ones, keeping the other WARC files of the database.
+  ``--drop`` empties the database first. Each run is a single write transaction: pywb keeps reading the previous version of the database
+  until the load is committed, also with ``--drop``, and a failed load does not change it. The other databases of the environment are not changed.
+
+* pywb opens the environment read-only, on the first lookup of each process (eg. each uWSGI worker), as LMDB can't be used across ``fork()``.
+  It still needs write access to the ``lock.mdb`` file, where LMDB keeps track of its readers.
+
+* ``--map-size`` (default: 64 GiB) is the maximum size of the environment. It only reserves address space, the file grows with the data.
+  As LMDB keeps the previous version of the pages while they can be read, reloading a whole database can make the file grow up to about 3 times
+  the size of the data, then the free pages are reused. ``mdb_copy -c`` writes a compacted copy.
+
+On a benchmark with a path index of 14.6 million WARC files (2.3 GiB, plus a second path index of the same size as the next ``archive_paths`` entry),
+with the files in the page cache, an LMDB lookup took 4 to 10 µs (median), 40 to 85 times faster than the path index file (172 to 798 µs),
+and 8 to 21 times faster than the same paths in a Redis hash with ``RedisResolver`` (44 to 203 µs), with 1 to 16 worker processes.
+With 16 workers, LMDB made 680,000 lookups/s, Redis 72,000 and the path index file 12,000.
+Right after dropping the page cache, LMDB reads its pages from disk on the first lookups, and was slower than Redis with a single worker (99 µs against 63 µs),
+but only 0.1 GiB of it was read into the page cache, against 2.5 GiB of the path index files.
+Both path indexes took 5.2 GiB in LMDB, 15% more than the files (4.5 GiB), while Redis kept 6.1 GiB in memory.
+Loading each path index took 19 to 24 s, against 125 s for Redis.
 
 
 Proxy Mode Access

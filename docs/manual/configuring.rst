@@ -135,6 +135,9 @@ When resolving a ``example.warc.gz``, pywb will then check (in order):
  * First, ``collections/<coll name>/example.warc.gz``
  * Then, ``http://remote-backup.example.com/collections/<coll name>/example.warc.gz`` (if first lookup unsuccessful)
 
+An archive path can also be a :ref:`path index <path-index>`, which maps each WARC filename to its full path or URL:
+a tab-delimited text file, a Redis hash (``redis://``) or an :ref:`LMDB database <lmdb-path-index>` (``lmdb:///path/to/env?db=name``).
+
 
 Access Controls
 ^^^^^^^^^^^^^^^
