@@ -9,3 +9,4 @@ babel
 translate_toolkit
 babel-vue-extractor
 isal
+lmdb
