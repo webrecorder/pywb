@@ -193,36 +193,100 @@ Filtering Live Web Requests
 """""""""""""""""""""""""""
 
 When pywb is publicly accessible with a live web collection (or recording from the live web), any user can make pywb request
-any url, including urls on hosts only reachable from the pywb server, eg. internal services on a private network.
+any url, including urls on hosts only reachable from the pywb server, eg. internal services on a private network or cloud
+metadata endpoints (Server-Side Request Forgery). When recording, the response is also written to a WARC and can then be replayed.
 
-To restrict which urls may be requested, a custom filter function can be set with the ``live_url_filter`` option::
+To restrict which urls may be requested, pywb provides a built-in filter, enabled with the ``live_url_filter`` option::
+
+  live_url_filter: true
+
+or, with options::
+
+  live_url_filter:
+    # also block these domains and their subdomains
+    blocked_domains:
+      - internal.example.com
+
+    # also block these IP addresses or networks
+    blocked_networks:
+      - 198.51.100.0/24
+
+    # check the address again when connecting (default: true)
+    connect_guard: true
+
+The filter is disabled by default. When enabled, it is checked before every request to the live web, or to a remote archive
+(eg. a memento source), and blocks a url if its host:
+
+* does not resolve, or any of its addresses is not public, as reported by Python's ``ipaddress``: private networks, loopback,
+  link-local (eg. ``169.254.169.254``), carrier-grade NAT, unspecified, reserved, documentation and multicast addresses.
+  IPv6 addresses that embed an IPv4 address (IPv4-mapped, 6to4, Teredo, NAT64) are blocked if the IPv4 address is.
+* is in ``blocked_domains``, or is a subdomain of one of them.
+* has any address in ``blocked_networks``.
+
+IP literals are checked as they would be connected to, including alternative forms like ``0x7f.1`` or ``2130706433``.
+
+When loading from a remote archive, the archive host is checked as above. The original url is not requested, so its host is
+not resolved, only blocked domains and IP literals are checked. A remote archive on a private network is blocked: to use one,
+set a custom filter function instead (see below).
+
+Remote indexes (eg. ``cdx+`` or ``memento+`` index urls, set on the config) and WARC files loaded over http are not filtered.
+
+A blocked request is not made: pywb responds with an error and logs a warning::
+
+  WARNING:warcserver:live_url_filter blocked: http://127.0.0.1:8080/
+
+The blocked domains and networks can also be set with the ``PYWB_LIVE_BLOCKED_DOMAINS`` and ``PYWB_LIVE_BLOCKED_NETWORKS``
+environment variables, as comma separated lists, and the connect guard disabled with ``PYWB_LIVE_CONNECT_GUARD=false``.
+When set, the environment variables replace the config values. They are read when pywb starts.
+
+DNS Rebinding
+~~~~~~~~~~~~~
+
+Checking the url is not enough on its own: the host is resolved again when connecting, so a host name that resolves to a
+public address when checked and to an internal one when connecting (DNS rebinding) would get past the filter.
+
+With ``connect_guard`` (enabled by default), the connections to the live web and to remote archives resolve the host once,
+skip the blocked addresses and only connect to an allowed one. The host name is kept, so the ``Host`` header, TLS SNI and
+certificate checks are unchanged. If no address is allowed, the request fails and pywb logs::
+
+  WARNING:warcserver:live_url_filter blocked: connection to rebind.example.com:80, resolved to 127.0.0.1
+
+When a SOCKS proxy is used (``SOCKS_HOST``), the proxy resolves the host names: the filter only checks blocked domains and
+IP literals, and the connect guard does not apply.
+
+Custom Filter Function
+~~~~~~~~~~~~~~~~~~~~~~
+
+Instead of the built-in filter, a custom filter function can be set::
 
   live_url_filter: mypackage.filters:is_url_allowed
 
-The function is called before every request to the live web, or to a remote archive (eg. a memento source), as ``is_url_allowed(url, cdx)``,
-where ``url`` is the url about to be requested and ``cdx`` is the capture being loaded: ``cdx['url']`` is the original url, and
-``cdx.get('is_live')`` is set when loading from the live web. The function must return ``True`` to allow the request.
-If it returns a false value or raises an exception, the request is not made.
+The function is called as ``is_url_allowed(url, cdx)``, where ``url`` is the url about to be requested and ``cdx`` is the
+capture being loaded: ``cdx['url']`` is the original url, and ``cdx.get('is_live')`` is set when loading from the live web.
+The function must return ``True`` to allow the request. If it returns a false value or raises an exception, the request is not made.
 
-pywb does not provide a filter implementation. For example, a filter could resolve the host and reject private network addresses::
+The built-in filter can be extended, eg. to allow a remote archive on a private network::
 
-  import ipaddress
-  import socket
-  from urllib.parse import urlsplit
+  from pywb.warcserver.liveurlfilter import PublicUrlFilter
+
+  public_url_filter = PublicUrlFilter({'blocked_domains': ['internal.example.com']})
 
   def is_url_allowed(url, cdx):
-      host = urlsplit(url).hostname
-      for info in socket.getaddrinfo(host, None):
-          if not ipaddress.ip_address(info[4][0]).is_global:
-              return False
-      return True
+      if url.startswith('http://archive.internal.example.com/'):
+          return True
 
-The filter is an application-level check, to be used in addition to network-level controls, not instead of them. It has some limitations:
+      return public_url_filter(url, cdx)
 
-* It checks urls, not connections. A filter that resolves the host, like the example above, does not protect against DNS rebinding,
-  as the host is resolved again when the request is made. If a SOCKS proxy is used, the host is resolved by the proxy.
+The connect guard is only installed by the built-in filter.
+
+Limitations
+~~~~~~~~~~~
+
+The filter is an application-level check, to be used in addition to network-level controls, not instead of them:
+
 * For video info requests (the ``vi_`` modifier, only when ``youtube-dl`` is installed), only the initial url is checked.
   The requests made by ``youtube-dl`` itself, eg. following redirects, are not.
+* The filter adds a DNS lookup to each request to the live web.
 
 For a publicly accessible deployment, it is recommended to also block requests to private network, loopback and link-local
 addresses (eg. cloud metadata endpoints) with egress firewall rules on the pywb host.
