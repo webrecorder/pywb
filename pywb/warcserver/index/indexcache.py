@@ -61,8 +61,9 @@ class IndexCache(object):
     ``ttl`` seconds don't either.
 
     Only exact url queries to local indexes (CDX(J) files, directories of them
-    and ZipNum indexes) are cached. An entry is kept for ``ttl`` seconds, so
-    captures added to an index may not be found during that time.
+    and ZipNum indexes) are cached, and only if captures are found. An entry
+    is kept for ``ttl`` seconds, so new captures of a url that was already
+    found may not be found during that time.
 
     This is an extension point: subclasses store the entries, implementing
     :meth:`get` and :meth:`set`, and may override :meth:`can_cache`.
@@ -168,7 +169,9 @@ class IndexCache(object):
         return self._store_when_done(key, cdx_iter, max_captures), errs
 
     def _store_when_done(self, key, cdx_iter, max_captures):
-        # store the captures if they are all read, and there are not too many
+        # store the captures if they are all read, and there are not too many.
+        # A url not found is not stored, as it may soon be added to the index,
+        # eg. when it is recorded and auto-indexed.
         buff = io.BytesIO()
         buff.write(self.ENTRY_FORMAT)
         count = 0
@@ -184,7 +187,7 @@ class IndexCache(object):
 
             yield cdx
 
-        if buff is not None:
+        if buff is not None and count > 0:
             self.set(key, buff.getvalue())
 
     def load_entry(self, value):
