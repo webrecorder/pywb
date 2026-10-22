@@ -9,6 +9,8 @@ from pywb.utils.binsearch import INDEX_FILE_BUFFER_SIZE
 from pywb.warcserver.index import indexsource, zipnum
 from pywb.warcserver.index.indexsource import FileIndexSource
 from pywb.warcserver.index.zipnum import ZipNumIndexSource
+from pywb.warcserver.resource import pathresolvers
+from pywb.warcserver.resource.pathresolvers import PathIndexResolver
 
 
 # io.DEFAULT_BUFFER_SIZE since Python 3.14
@@ -90,6 +92,17 @@ def idx_path(tmp_path_factory):
     return path
 
 
+@pytest.fixture(scope='module')
+def pathindex_path(tmp_path_factory):
+    path = tmp_path_factory.mktemp('buffering') / 'pathindex.txt'
+    with open(path, 'w') as fh:
+        for i in range(NUM_LINES):
+            fh.write('example-%07d.warc.gz\t/archive/a/example-%07d.warc.gz\t'
+                     '/archive/b/example-%07d.warc.gz\n' % (i, i, i))
+
+    return path
+
+
 # ============================================================================
 def test_file_index_lookup_reads_few_buffers(cdxj_path):
     counting_open = CountingOpen()
@@ -130,3 +143,22 @@ def test_zipnum_summary_lookup_reads_few_buffers(idx_path):
             assert counting_open.bytes_read - before <= 2 * max_bytes_per_lookup(idx_path)
 
     assert len(counting_open.files) == len(sample_keys())
+
+
+def test_path_index_lookup_reads_few_buffers(pathindex_path):
+    counting_open = CountingOpen()
+    resolver = PathIndexResolver(str(pathindex_path))
+
+    with mock.patch.object(pathresolvers, 'open', counting_open, create=True):
+        for i in sample_keys():
+            filename = 'example-%07d.warc.gz' % i
+
+            before = counting_open.bytes_read
+            assert list(resolver(filename, None)) == ['/archive/a/' + filename, '/archive/b/' + filename]
+
+            assert counting_open.bytes_read - before <= max_bytes_per_lookup(pathindex_path)
+
+        assert list(resolver('example-not-found.warc.gz', None)) == []
+
+    assert len(counting_open.files) == len(sample_keys()) + 1
+    assert all(raw.closed for raw in counting_open.files)
