@@ -5,7 +5,8 @@ requests
 redis==2.10.6
 jinja2>=3.1.2
 surt>=0.3.1
-brotlipy
+# earlier versions of brotli are affected by CVE-2026-111497.
+brotlicffi>=1.2.1.0
 pyyaml
 werkzeug==3.1.7
 webencodings

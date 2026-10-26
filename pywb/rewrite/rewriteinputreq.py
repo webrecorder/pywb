@@ -7,7 +7,7 @@ import re
 
 
 try: # pragma: no cover
-    import brotli
+    import brotlicffi
     has_brotli = True
 except Exception:  # pragma: no cover
     has_brotli = False
