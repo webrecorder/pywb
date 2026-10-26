@@ -49,6 +49,20 @@ class DefaultAdapters(object):
     live_adapter = PywbHttpAdapter(max_retries=Retry(3))
     remote_adapter = PywbHttpAdapter(max_retries=Retry(3))
 
+    # Timeout, in seconds, of requests to the live web and to remote indexes
+    # when the collection doesn't set one (the '_timeout' param).
+    # It is the timeout to connect and to each read from the socket, not to
+    # load the whole response, so it can be generous: it is there to stop
+    # requests that would otherwise hang forever, eg. on a pooled connection
+    # silently dropped by the network, which only fails when the kernel gives
+    # up (~15 min on linux). The adapters retry a request that times out, so
+    # it may take up to (1 + retries) times this timeout to fail.
+    timeout = 30.0
+
+    @classmethod
+    def get_timeout(cls, params):
+        return params.get('_timeout') or cls.timeout
+
 
 requests.packages.urllib3.disable_warnings()
 

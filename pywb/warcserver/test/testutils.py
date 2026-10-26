@@ -4,6 +4,8 @@ import tempfile
 import shutil
 import yaml
 import time
+import socket
+import threading
 
 from fakeredis import FakeStrictRedis, DATABASES
 from mock import patch
@@ -199,3 +201,28 @@ class HttpBinLiveTests(object):
 
 
 
+
+# ============================================================================
+class SilentServer(object):
+    """Loopback server that accepts connections and never answers.
+
+    The connections are only queued by the kernel (listen backlog), so a
+    request to it hangs until the client times out.
+
+    To keep a test bounded if the client doesn't time out, the server is
+    closed after ``max_time`` seconds, which resets the pending connections.
+    """
+    def __init__(self, max_time=10.0):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.bind(('127.0.0.1', 0))
+        self.sock.listen(64)
+        self.port = self.sock.getsockname()[1]
+        self.url = 'http://127.0.0.1:{0}/'.format(self.port)
+
+        self.timer = threading.Timer(max_time, self.close)
+        self.timer.daemon = True
+        self.timer.start()
+
+    def close(self):
+        self.timer.cancel()
+        self.sock.close()
