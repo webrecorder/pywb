@@ -393,10 +393,9 @@ class TestContentRewriter(object):
 
         assert ('Transfer-Encoding', 'chunked') not in headers.headers
 
-    @pytest.mark.importorskip('brotli')
     def test_brotli_accepted_no_change(self):
-        import brotli
-        content = brotli.compress('ABCDEFG'.encode('utf-8'))
+        brotlicffi = pytest.importorskip('brotlicffi')
+        content = brotlicffi.compress('ABCDEFG'.encode('utf-8'))
 
         headers = {'Content-Type': 'application/octet-stream',
                    'Content-Encoding': 'br',
@@ -409,12 +408,11 @@ class TestContentRewriter(object):
         assert headers['Content-Encoding'] == 'br'
         assert headers['Content-Length'] == str(len(content))
 
-        assert brotli.decompress(b''.join(gen)).decode('utf-8') == 'ABCDEFG'
+        assert brotlicffi.decompress(b''.join(gen)).decode('utf-8') == 'ABCDEFG'
 
-    @pytest.mark.importorskip('brotli')
     def test_brotli_not_accepted_auto_decode(self):
-        import brotli
-        content = brotli.compress('ABCDEFG'.encode('utf-8'))
+        brotlicffi = pytest.importorskip('brotlicffi')
+        content = brotlicffi.compress('ABCDEFG'.encode('utf-8'))
 
         headers = {'Content-Type': 'application/octet-stream',
                    'Content-Encoding': 'br',
