@@ -1,6 +1,7 @@
 import time
 
 import pytest
+import webtest
 
 from pywb.utils.wbexception import LiveResourceException, NotFoundException
 from pywb.warcserver.http import DefaultAdapters
@@ -8,6 +9,7 @@ from pywb.warcserver.index.indexsource import LiveIndexSource, MementoIndexSourc
 from pywb.warcserver.index.indexsource import RemoteIndexSource, WBMementoIndexSource
 from pywb.warcserver.index.indexsource import XmlQueryIndexSource
 from pywb.warcserver.resource.responseloader import LiveWebLoader
+from pywb.warcserver.warcserver import WarcServer
 
 from .testutils import SilentServer
 
@@ -30,6 +32,11 @@ def server():
 @pytest.fixture
 def short_default_timeout(monkeypatch):
     monkeypatch.setattr(DefaultAdapters, 'timeout', TIMEOUT)
+
+
+@pytest.fixture
+def long_default_timeout(monkeypatch):
+    monkeypatch.setattr(DefaultAdapters, 'timeout', 60.0)
 
 
 def assert_gives_up(func, exc_type=None):
@@ -57,9 +64,8 @@ def test_live_loader_default_timeout(server, short_default_timeout, is_live):
                     LiveResourceException)
 
 
-def test_live_loader_timeout_param(server, monkeypatch):
+def test_live_loader_timeout_param(server, long_default_timeout):
     # the request must use the '_timeout' param, not the default
-    monkeypatch.setattr(DefaultAdapters, 'timeout', 60.0)
     loader = LiveWebLoader()
     params = {'_timeout': TIMEOUT}
     assert_gives_up(lambda: loader._do_request('GET', server.url, None, {}, params, True),
@@ -100,3 +106,23 @@ def test_live_index_head_default_timeout(server, short_default_timeout):
     # with a filter, the live index makes a HEAD request for the status and mime
     params = {'url': server.url, 'key': b'1,0,0,127)/', 'filter': '=status:200'}
     assert_gives_up(lambda: LiveIndexSource().load_index(params))
+
+
+# ============================================================================
+def make_warcserver(collections):
+    return webtest.TestApp(WarcServer(config_file=None,
+                                      custom_config={'collections': collections,
+                                                     'enable_auto_colls': False}))
+
+
+@pytest.mark.parametrize('index, query', [
+    ('$live', 'resource?url={url}'),
+    ('cdx+{url}cdx', 'index?url=http://example.com/'),
+])
+def test_index_entry_timeout(server, long_default_timeout, index, query):
+    # the 'timeout' of an 'index' entry must be used, not the default
+    app = make_warcserver({'coll': {'index': index.format(url=server.url),
+                                    'timeout': TIMEOUT}})
+
+    url = '/coll/' + query.format(url=server.url)
+    assert_gives_up(lambda: app.get(url, expect_errors=True))
