@@ -5,10 +5,12 @@ import webtest
 
 from pywb.utils.wbexception import LiveResourceException, NotFoundException
 from pywb.warcserver.http import DefaultAdapters
+from pywb.warcserver.index.indexsource import BaseIndexSource
 from pywb.warcserver.index.indexsource import LiveIndexSource, MementoIndexSource
 from pywb.warcserver.index.indexsource import RemoteIndexSource, WBMementoIndexSource
 from pywb.warcserver.index.indexsource import XmlQueryIndexSource
 from pywb.warcserver.resource.responseloader import LiveWebLoader
+from pywb.warcserver import warcserver
 from pywb.warcserver.warcserver import WarcServer
 
 from .testutils import SilentServer
@@ -126,3 +128,53 @@ def test_index_entry_timeout(server, long_default_timeout, index, query):
 
     url = '/coll/' + query.format(url=server.url)
     assert_gives_up(lambda: app.get(url, expect_errors=True))
+
+
+# ============================================================================
+class RecordTimeoutSource(BaseIndexSource):
+    """Records the request timeout of each lookup, by source name"""
+    timeouts = {}
+
+    def __init__(self, name):
+        self.name = name
+
+    def load_index(self, params):
+        self.timeouts.setdefault(self.name, set()).add(DefaultAdapters.get_timeout(params))
+        raise NotFoundException(params['url'])
+
+    @classmethod
+    def init_from_string(cls, value):
+        if value.startswith('record+'):
+            return cls(value[len('record+'):])
+
+    @classmethod
+    def init_from_config(cls, config):
+        return None
+
+
+@pytest.fixture
+def record_timeouts(monkeypatch):
+    monkeypatch.setattr(warcserver, 'SOURCE_LIST',
+                        [RecordTimeoutSource] + warcserver.SOURCE_LIST)
+    monkeypatch.setattr(RecordTimeoutSource, 'timeouts', {})
+    return RecordTimeoutSource.timeouts
+
+
+def test_sequence_timeouts(record_timeouts):
+    # each entry must use its own timeout, or the default,
+    # not the one set by a previous entry
+    app = make_warcserver({'seq': {'sequence': [
+        {'index_group': {'group': 'record+group'}, 'timeout': 2},
+        {'index': 'record+no_timeout'},
+        {'index': 'record+timeout', 'timeout': 3},
+        {'index': 'record+no_timeout_2'},
+    ]}})
+
+    res = app.get('/seq/resource?url=http://example.com/', expect_errors=True)
+    assert res.status_int == 404
+
+    default = DefaultAdapters.timeout
+    assert record_timeouts == {'group': {2.0},
+                               'no_timeout': {default},
+                               'timeout': {3.0},
+                               'no_timeout_2': {default}}

@@ -56,9 +56,12 @@ class IndexHandler(object):
         return dict(modes=['list_sources', 'index'])
 
     def _load_index_source(self, params):
-        # timeout of the requests to remote indexes and to the live web
+        # timeout of the requests to remote indexes and to the live web:
+        # don't keep the one set by a previous handler of a HandlerSeq
         if self.timeout:
             params['_timeout'] = self.timeout
+        else:
+            params.pop('_timeout', None)
 
         url = params.get('url')
         if not url:

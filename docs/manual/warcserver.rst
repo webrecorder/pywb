@@ -251,6 +251,7 @@ A request that times out is usually retried up to 3 times, so it can take up to 
 
 If unspecified, the default request timeout is 30 seconds. For an ``index_group``, its ``timeout``
 is also the request timeout.
+In a ``sequence``, each entry uses its own ``timeout``, or the default.
 
 Sequential Fallback Collections
 """""""""""""""""""""""""""""""
