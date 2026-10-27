@@ -2,9 +2,8 @@ from pywb.utils.loaders import load_yaml_config, load_overlay_config
 
 from pywb.warcserver.basewarcserver import BaseWarcServer
 
-from pywb.warcserver.http import PywbHttpAdapter, DefaultAdapters
+from pywb.warcserver.http import DefaultAdapters
 from pywb.warcserver.liveurlfilter import LiveUrlFilter
-from urllib3.util.retry import Retry
 
 from pywb.warcserver.index.aggregator import CacheDirectoryIndexSource, RedisMultiKeyIndexSource
 from pywb.warcserver.index.aggregator import GeventTimeoutAggregator, SimpleAggregator
@@ -97,12 +96,8 @@ class WarcServer(BaseWarcServer):
 
         if 'certificates' in self.config:
             certs_config = self.config['certificates']
-            DefaultAdapters.live_adapter = PywbHttpAdapter(max_retries=Retry(3),
-                                                           cert_reqs=certs_config.get('cert_reqs', 'CERT_NONE'),
-                                                           ca_cert_dir=certs_config.get('ca_cert_dir'))
-            DefaultAdapters.remote_adapter = PywbHttpAdapter(max_retries=Retry(3),
-                                                             cert_reqs=certs_config.get('cert_reqs', 'CERT_NONE'),
-                                                             ca_cert_dir=certs_config.get('ca_cert_dir'))
+            DefaultAdapters.init(cert_reqs=certs_config.get('cert_reqs', 'CERT_NONE'),
+                                 ca_cert_dir=certs_config.get('ca_cert_dir'))
 
         LiveUrlFilter.init(self.config.get('live_url_filter'))
 
