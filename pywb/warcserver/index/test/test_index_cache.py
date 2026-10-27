@@ -4,8 +4,10 @@ import time
 import types
 
 import pytest
+import webtest
 from mock import patch
 
+from pywb.manager.autoindex import AutoIndexer
 from pywb.warcserver.index.aggregator import SimpleAggregator, DirectoryIndexSource
 from pywb.warcserver.index.cdxops import cdx_sort_closest
 from pywb.warcserver.index.indexcache import IndexCache, UwsgiIndexCache, init_index_cache
@@ -130,8 +132,9 @@ class TestIndexCache(object):
         expected = query(no_cache, url, **params)
         assert query(agg, url, **params) == expected
 
-        # the captures may not all be read with a limit
-        if 'limit' in params:
+        # the captures may not all be read with a limit, and a url not
+        # found is not stored
+        if 'limit' in params or not expected[0]:
             assert index_cache.sets == 0
             return
 
@@ -253,15 +256,31 @@ class TestIndexCache(object):
         assert res[1]
         assert index_cache.sets == 0
 
-    def test_empty_stored(self):
+    def test_empty_not_stored(self):
         index_cache = DictIndexCache({})
         agg = new_agg(index_cache)
         assert query(agg, 'http://example.com/not-archived') == ([], {})
-        assert index_cache.sets == 1
+        assert index_cache.sets == 0
 
         with count_reads() as reads:
             assert query(agg, 'http://example.com/not-archived') == ([], {})
-            assert reads.call_count == 0
+            assert reads.call_count == 1
+
+    def test_capture_added_after_empty(self, tmpdir):
+        # a url not found, then added to the index, eg. after it is recorded
+        cdxj = tmpdir.join('index.cdxj')
+        cdxj.write('')
+
+        index_cache = DictIndexCache({})
+        agg = new_agg(index_cache, {'local': FileIndexSource(str(cdxj))})
+        assert query(agg, 'http://www.iana.org/') == ([], {})
+
+        with open(os.path.join(TEST_CDX_PATH, 'iana.cdxj')) as fh:
+            cdxj.write(''.join(line for line in fh if line.startswith('org,iana)/ ')))
+
+        res = query(agg, 'http://www.iana.org/')
+        assert len(res[0]) == 1
+        assert index_cache.sets == 1
 
     def test_prefix_not_cached(self):
         index_cache = DictIndexCache({})
@@ -290,12 +309,12 @@ class TestIndexCache(object):
     def test_names_and_sources_keys(self):
         index_cache = DictIndexCache({})
         agg_a = new_agg(index_cache, name=('A',))
-        agg_b = new_agg(index_cache, {'iana': file_source('example.cdxj')}, name=('B',))
+        agg_b = new_agg(index_cache, {'iana': file_source('dupes.cdxj')}, name=('B',))
 
         res_a = query(agg_a, 'http://www.iana.org/')
         res_b = query(agg_b, 'http://www.iana.org/')
         assert len(res_a[0]) == 1
-        assert res_b == ([], {})
+        assert len(res_b[0]) == 2
         assert len(index_cache.store) == 2
 
         # sources selection
@@ -430,3 +449,31 @@ class TestWarcServerIndexCache(object):
         server = WarcServer(custom_config=config)
         assert server.index_cache is None
         assert server.fixed_routes['iana'].index_source.index_cache is None
+
+    def test_auto_colls_autoindex(self, fake_uwsgi, tmpdir):
+        # a url looked up before it is recorded into a collection is found
+        # once the recording is auto-indexed. Without allowFuzzy=0, a url not
+        # found is looked up again with an uncached fuzzy (prefix) query.
+        fake_uwsgi()
+        coll_dir = tmpdir.mkdir('coll')
+        indexes_dir = coll_dir.mkdir('indexes')
+        archive_dir = coll_dir.mkdir('archive')
+
+        server = WarcServer(custom_config={'collections_root': str(tmpdir)})
+        assert server.auto_handler.index_source.index_cache is server.index_cache
+        app = webtest.TestApp(server)
+
+        url = '/coll/index?output=json&allowFuzzy=0&url=http://example.com/?example=1'
+        assert app.get(url).text == ''
+
+        # the recording, written to the archive dir and auto-indexed
+        with open(to_path(get_test_dir() + '/warcs/example.warc.gz'), 'rb') as fh:
+            archive_dir.join('rec.warc.gz').write_binary(fh.read())
+
+        AutoIndexer(colls_dir=str(tmpdir), interval=0).check_path()
+
+        # the list of index files is reloaded if the mtime (in seconds) of
+        # the directory changed
+        indexes_dir.setmtime(indexes_dir.mtime() + 1)
+
+        assert len(app.get(url).text.splitlines()) == 2

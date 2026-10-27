@@ -710,7 +710,11 @@ Collections with other index sources, eg. live web, remote or Redis indexes, are
 The captures of a url are only stored if they were all read, so if there are fewer than the ``limit`` of the query.
 Replay lookups keep only the 100 closest captures (``ResourceHandler.CLOSEST_LIMIT``), so they store the urls with fewer than 100 captures.
 
-Captures added to an index can take up to ``ttl`` seconds to be found, if the url is in the cache.
+Only urls with captures are stored. A url that is added to an index, eg. with a new CDX file or a recording that is auto-indexed,
+is found as soon as the index is updated. New captures of a url that is already in the cache can take up to ``ttl`` seconds to be found:
+until then, the previous captures are returned, eg. an older capture of a page that was just recorded again.
+Use a lower ``ttl``, or ``index_cache: false``, if new captures must be found at once.
+
 The captures are stored with Python's ``pickle`` module, so the uWSGI cache must not be writable by anyone else, eg. through a uWSGI cache server (``cache-server``).
 
 The uWSGI stats server (eg. ``stats = 127.0.0.1:1717`` with ``uwsgitop``) shows the items, hits, misses and full counters of the cache.
