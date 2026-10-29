@@ -13,7 +13,9 @@ query_url = None
 
 
 # ============================================================================
-def mock_get(self, url):
+def mock_get(self, url, timeout=None):
+    # the query must have a timeout
+    assert timeout
     string = ''
     global query_url
     query_url = url

@@ -556,7 +556,7 @@ class LiveWebLoader(BaseLoader):
                                            preload_content=False,
                                            decode_content=False,
                                            retries=max_retries,
-                                           timeout=params.get('_timeout'))
+                                           timeout=DefaultAdapters.get_timeout(params))
 
             return upstream_res
 

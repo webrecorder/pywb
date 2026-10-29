@@ -194,7 +194,7 @@ class RemoteIndexSource(BaseIndexSource):
     def load_index(self, params):
         api_url = self._get_api_url(params)
         try:
-            r = self.sesh.get(api_url, timeout=params.get('_timeout'))
+            r = self.sesh.get(api_url, timeout=DefaultAdapters.get_timeout(params))
             r.raise_for_status()
         except Exception as e:
             self.logger.debug('FAILED: ' + str(e))
@@ -315,7 +315,8 @@ class XmlQueryIndexSource(BaseIndexSource):
             # TODO: add option to not double escape if needed
             query_url = self.query_api_url + '?q=' + quote_plus(query + quote_plus(url))
             self.logger.debug("Running query: %s" % query_url)
-            response = self.session.get(query_url)
+            response = self.session.get(query_url,
+                                        timeout=DefaultAdapters.get_timeout(params))
             response.raise_for_status()
 
             results = etree.fromstring(response.content)
@@ -447,7 +448,8 @@ class LiveIndexSource(BaseIndexSource):
 
         if params.get('filter') and not mime:
             try:
-                res = self.sesh.head(cdx['load_url'])
+                res = self.sesh.head(cdx['load_url'],
+                                     timeout=DefaultAdapters.get_timeout(params))
                 if res.status_code != 405:
                     cdx['status'] = str(res.status_code)
 
@@ -645,7 +647,8 @@ class MementoIndexSource(BaseIndexSource):
         try:
             headers = self._get_headers(params)
             headers['Accept-Datetime'] = accept_dt
-            res = self.sesh.head(url, headers=headers)
+            res = self.sesh.head(url, headers=headers,
+                                 timeout=DefaultAdapters.get_timeout(params))
             res.raise_for_status()
         except Exception as e:
             self.logger.debug('FAILED: ' + str(e))
@@ -668,7 +671,7 @@ class MementoIndexSource(BaseIndexSource):
         try:
             res = self.sesh.get(url,
                                 headers=headers,
-                                timeout=params.get('_timeout'))
+                                timeout=DefaultAdapters.get_timeout(params))
 
             res.raise_for_status()
             assert(res.text)
@@ -787,7 +790,8 @@ class WBMementoIndexSource(MementoIndexSource):
         res = None
         try:
             headers = self._get_headers(params)
-            res = self.sesh.head(load_url, headers=headers)
+            res = self.sesh.head(load_url, headers=headers,
+                                 timeout=DefaultAdapters.get_timeout(params))
         except Exception as e:
             no_except_close(res)
             raise NotFoundException(url)

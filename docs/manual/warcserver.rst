@@ -234,6 +234,25 @@ multiple existing archives (using the Memento API and other APIs).
 An optional ``timeout`` property configures how many seconds to wait for each source before
 it is considered to have 'timed out'. (If unspecified, the default value is 5 seconds).
 
+Request Timeout
+"""""""""""""""
+
+The ``timeout`` property can also be set on a collection with a single ``index``, eg. a live web
+or a remote index collection::
+
+  collections:
+    live:
+      index: $live
+      timeout: 10
+
+It sets the timeout, in seconds, of the requests to the live web and to remote indexes:
+the time to wait to connect and for each read from the connection, not to load the whole response.
+A request that times out is usually retried up to 3 times, so it can take up to 4 times the timeout to fail.
+
+If unspecified, the default request timeout is 30 seconds. For an ``index_group``, its ``timeout``
+is also the request timeout.
+In a ``sequence``, each entry uses its own ``timeout``, or the default.
+
 Sequential Fallback Collections
 """""""""""""""""""""""""""""""
 

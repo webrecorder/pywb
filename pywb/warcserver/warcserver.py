@@ -229,6 +229,7 @@ class WarcServer(BaseWarcServer):
             acl_paths = None
             default_access = self.default_access
             embargo = None
+            timeout = 0
         elif isinstance(coll_config, dict):
             index = coll_config.get('index')
             if not index:
@@ -237,6 +238,7 @@ class WarcServer(BaseWarcServer):
             acl_paths = coll_config.get('acl_paths')
             default_access = coll_config.get('default_access', self.default_access)
             embargo = coll_config.get('embargo')
+            timeout = float(coll_config.get('timeout') or 0)
 
         else:
             raise Exception('collection config must be string or dict')
@@ -256,7 +258,6 @@ class WarcServer(BaseWarcServer):
             if not index_group:
                 raise Exception('no index, index_group or sequence found')
 
-            timeout = int(coll_config.get('timeout', 0))
             agg = init_index_agg(index_group, True, timeout)
 
         self.enable_index_cache(agg, cache_name)
@@ -276,7 +277,8 @@ class WarcServer(BaseWarcServer):
         return DefaultResourceHandler(agg, archive_paths,
                                       rules_file=self.rules_file,
                                       access_checker=access_checker,
-                                      use_local_file_load=use_local_file_load)
+                                      use_local_file_load=use_local_file_load,
+                                      timeout=timeout)
 
     def init_sequence(self, coll_name, seq_config, cache_name=None):
         if not isinstance(seq_config, list):

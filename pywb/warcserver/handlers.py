@@ -50,11 +50,19 @@ class IndexHandler(object):
         self.opts = opts or {}
         self.fuzzy = FuzzyMatcher(kwargs.get('rules_file'))
         self.access_checker = kwargs.get('access_checker')
+        self.timeout = kwargs.get('timeout')
 
     def get_supported_modes(self):
         return dict(modes=['list_sources', 'index'])
 
     def _load_index_source(self, params):
+        # timeout of the requests to remote indexes and to the live web:
+        # don't keep the one set by a previous handler of a HandlerSeq
+        if self.timeout:
+            params['_timeout'] = self.timeout
+        else:
+            params.pop('_timeout', None)
+
         url = params.get('url')
         if not url:
             errs = dict(last_exc=BadRequestException('The "url" param is required'))
