@@ -128,6 +128,9 @@ setup(
             "translate_toolkit",
             "babel-vue-extractor"
         ],
+        "lmdb": [
+            "lmdb"
+        ],
     },
     python_requires='>=3.9,<3.15',
     tests_require=load_requirements("test_requirements.txt"),
@@ -140,6 +143,7 @@ setup(
         cdx-server = pywb.apps.cli:cdx_server
         live-rewrite-server = pywb.apps.cli:live_rewrite_server
         cdx-indexer = pywb.indexer.cdxindexer:main
+        lmdb-pathindex = pywb.indexer.lmdbpathindex:main
         wb-manager = pywb.manager.manager:main_wrap_exc
         warcserver = pywb.apps.cli:warcserver
         """,
