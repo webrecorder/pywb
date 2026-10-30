@@ -80,4 +80,61 @@ If the optional `isal <https://pypi.org/project/isal/>`_ package is installed, p
 
 It is included in the pywb Docker image. Smaller blocks (fewer lines per block when creating the index) also make each lookup decompress less data, at the cost of a larger secondary index.
 
+.. _zipnum-lmdb:
+
+LMDB Secondary Index
+""""""""""""""""""""
+
+Each ZipNum lookup does a binary search over the secondary index (``.idx``) file to find the blocks to read. pywb can instead read the ``.idx`` from an `LMDB <http://www.lmdb.tech/doc/>`_ database, loaded from the ``.idx`` file. It needs the optional ``lmdb`` package::
+
+    pip install lmdb
+
+It is included in the pywb Docker image.
+
+The database is added with the ``lmdb`` option of a ``zipnum`` index, as ``lmdb:///path/to/environment?db=name``::
+
+    collections:
+      my-coll:
+        index:
+          type: zipnum
+          path: /data/indexes/my-coll.idx
+          lmdb: lmdb:///data/indexes/idx.lmdb?db=my-coll
+
+* ``path`` is still needed: the ``.loc`` file next to it locates the shards, and the ``.idx`` file is used when the database isn't available.
+* An LMDB environment (a directory with ``data.mdb`` and ``lock.mdb``) can have a named database for each ZipNum index.
+* Use an environment only for ZipNum indexes, not the one of an LMDB path index: LMDB can't open the same environment twice in a process.
+* Each concurrent lookup (eg. of each uWSGI worker or gevent greenlet) uses an LMDB reader slot, and an environment has 126 by default. A lookup that finds no free slot fails like any other lookup, so that process uses the ``.idx`` file until the retry.
+* The environment is opened read only on the first lookup of each process, eg. of each uWSGI worker. pywb needs write access to its ``lock.mdb``.
+* If the environment or the database is missing, or a lookup fails, a warning is logged and the ``.idx`` file is used. The database is tried again after 60 seconds.
+
+The ``lmdb-zipnum-idx`` command loads an ``.idx`` file into a named database, creating the environment if needed::
+
+    # load the .idx of a ZipNum index into a new database
+    lmdb-zipnum-idx load --env /data/indexes/idx.lmdb --db my-coll /data/indexes/my-coll.idx
+
+    # replace it, after the ZipNum index is rebuilt
+    lmdb-zipnum-idx load --drop --env /data/indexes/idx.lmdb --db my-coll /data/indexes/my-coll.idx
+
+    # validate the .idx and show what would change, without writing
+    lmdb-zipnum-idx load --dry-run --drop --env /data/indexes/idx.lmdb --db my-coll /data/indexes/my-coll.idx
+
+    # number of entries of each database
+    lmdb-zipnum-idx stats --env /data/indexes/idx.lmdb
+
+* The database has the offsets of the blocks in the shards, so it must be loaded from the ``.idx`` of the same shards. When the ZipNum index is rebuilt, reload it with ``--drop``: a database that has entries is only replaced as a whole.
+* Each load is a single write transaction: pywb keeps reading the previous version until it is committed, and a failed load changes nothing.
+* The ``.idx`` is validated before it is committed: each line must have the ``urlkey timestamp``, part, offset, length and line number fields separated by tabs, the line number must be the 1-based number of the line, and the lines must be sorted by their first field.
+* ``--map-size`` is the maximum size of the environment, in GiB (default: 64). Only the used pages take disk space. Repeated ``--drop`` loads can grow ``data.mdb`` up to about 3 times the size of the database, then its free pages are reused; ``mdb_copy -c`` writes a compacted copy.
+
+Each ``.idx`` line is an LMDB entry. The key is the first field of the line (``urlkey timestamp``), cut to its first 500 bytes as LMDB keys have at most 511, then a tab and the 8 byte big-endian line number, which keeps the order of the file and makes the keys of consecutive blocks with the same first field unique. The value is the rest of the line. LMDB sorts the keys bytewise, like the ``.idx`` file, so a lookup positions a cursor on the first line ``>=`` the query key and also reads the line before it, like the binary search. The pages, the blocks and the results are the same as with the ``.idx`` file.
+
+**When to use it.** In our tests, the LMDB secondary index is only beneficial for block sizes smaller than 3000 lines:
+
+* LMDB lookups are faster at any size, and barely grow with the size of the ``.idx``, while the lookups in the ``.idx`` file do. On a 10.6 GiB ``.idx``, an ``.idx`` file lookup took 95 to 388 µs (median, warm page cache, 1 to 16 worker processes), and an LMDB lookup 17 to 61 µs.
+* With 3000 lines per block, the ``.idx`` lookup is 0.1 to 0.5% of the time of a query: decompressing and parsing the blocks takes the rest, and LMDB makes no measurable difference.
+* With 500 lines per block, the ``.idx`` is 6 times bigger and its lookup is about 15 to 20% of the time of an exact url query, which LMDB makes 5 to 6 times faster.
+* The database is 1.24 to 1.28 times the size of the ``.idx`` file, and a 10 GiB ``.idx`` loads in about a minute.
+
+The benchmark and the full results are in `arquivo/pywb-arquivo#53 <https://github.com/arquivo/pywb-arquivo/pull/53>`_, for `arquivo/pwa-technologies#1675 <https://github.com/arquivo/pwa-technologies/issues/1675>`_.
+
 
