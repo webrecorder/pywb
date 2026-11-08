@@ -6,6 +6,7 @@ from pywb.warcserver.resource.pathresolvers import DefaultResolverMixin
 from pywb.warcserver.index.cdxobject import CDXObject
 
 import os
+import pytest
 
 from fakeredis import FakeStrictRedis
 from mock import patch
@@ -152,6 +153,13 @@ class TestPathIndex(object):
         res = DefaultResolverMixin.make_best_resolver(path)
         assert isinstance(res, PathIndexResolver)
         assert repr(res) == "PathIndexResolver('{0}')".format(path)
+
+    def test_make_best_resolver_lmdb_not_installed(self):
+        with patch('pywb.warcserver.resource.pathresolvers.lmdb', None):
+            with pytest.raises(ImportError) as e:
+                DefaultResolverMixin.make_best_resolver('lmdb:///data/pathindex.lmdb?db=primary')
+
+        assert 'pip install lmdb' in str(e.value)
 
     def test_resolver_dir_and_file(self):
         a_file = os.path.realpath(__file__)

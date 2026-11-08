@@ -7,6 +7,8 @@ After installing pywb tool-suite, the following command-line apps are made avail
 
 * :ref:`cli-cdx-indexer`
 
+* :ref:`cli-lmdb-pathindex`
+
 * :ref:`cli-wb-manager`
 
 * :ref:`cli-warcserver`
@@ -31,6 +33,17 @@ See ``cdx-indexer -h`` for a list of options.
 
 Note: In a future pywb release, this tool will be removed in favor of the standalone `cdxj-indexer <https://github.com/webrecorder/cdxj-indexer>`_ app, which will have
 additional indexing options.
+
+
+.. _cli-lmdb-pathindex:
+
+``lmdb-pathindex``
+------------------
+
+Loads path index files, which map WARC filenames to their paths or URLs, into an LMDB database used with ``archive_paths: lmdb:///path/to/env?db=name``.
+Requires the optional ``lmdb`` package. See :ref:`lmdb-path-index` for details.
+
+See ``lmdb-pathindex -h`` for a list of options.
 
 
 .. _cli-wb-manager:
