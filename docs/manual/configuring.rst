@@ -434,9 +434,13 @@ passed through without modification.
 
 To enable semantic AMF handling, set ``enable_amf: true`` in the root config.
 The restricted decoder does not implicitly import or load classes named by
-untrusted input. Explicitly registered application classes remain trusted and
-may execute constructors, setters, and externalizable decoders. Unknown
-externalizable objects fall back to binary handling.
+untrusted input, but it is **not guaranteed to be safe or RCE-proof**.
+Explicitly registered application classes remain trusted and may execute
+constructors, setters, and externalizable decoders. Mixing stock PyAMF decoding
+with the restricted decoder in one process is unsafe because stock decoding can
+pollute the global alias cache. Unknown externalizable objects fall back to
+binary handling. Deployments requiring strong isolation should keep AMF
+handling disabled.
 
 For offline indexing, use ``cdx-indexer --enable-amf`` to enable the same
 restricted decoder.
