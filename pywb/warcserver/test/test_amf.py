@@ -4,8 +4,9 @@ import pyamf
 import uuid
 
 from io import BytesIO
-from pyamf.remoting import Envelope, Request, encode, decode
+from pyamf.remoting import Envelope, Request, encode
 from pyamf.flex.messaging import RemotingMessage
+from pywb.utils.amf_safe import decode
 
 
 class CustomObject:

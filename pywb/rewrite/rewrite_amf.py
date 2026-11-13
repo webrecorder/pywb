@@ -8,7 +8,7 @@ from pywb.rewrite.content_rewriter import BufferedRewriter
 class RewriteAMF(BufferedRewriter):  #pragma: no cover
     def rewrite_stream(self, stream, rwinfo):
         try:
-            from pyamf import remoting
+            from pywb.utils import amf_safe
 
             iobuff = BytesIO()
             while True:
@@ -18,7 +18,7 @@ class RewriteAMF(BufferedRewriter):  #pragma: no cover
                 iobuff.write(buff)
 
             iobuff.seek(0)
-            res = remoting.decode(iobuff)
+            res = amf_safe.decode(iobuff)
 
             # TODO: revisit this
             inputdata = rwinfo.url_rewriter.rewrite_opts.get('pywb.inputdata')
@@ -36,7 +36,7 @@ class RewriteAMF(BufferedRewriter):  #pragma: no cover
 
                 res.bodies = new_list
 
-            return BytesIO(remoting.encode(res).getvalue())
+            return BytesIO(amf_safe.encode(res).getvalue())
 
         except Exception as e:
             import traceback
@@ -45,5 +45,4 @@ class RewriteAMF(BufferedRewriter):  #pragma: no cover
 
             stream.seek(0)
             return stream
-
 

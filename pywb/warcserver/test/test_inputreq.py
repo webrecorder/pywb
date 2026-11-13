@@ -1,9 +1,12 @@
 from pywb.warcserver.inputrequest import DirectWSGIInputRequest, POSTInputRequest, MethodQueryCanonicalizer
 from werkzeug.routing import Map, Rule
 
+import base64
 import webtest
 from urllib.parse import parse_qsl
 from io import BytesIO
+from unittest.mock import patch
+import pyamf
 from pyamf import AMF3
 from pyamf.remoting import Request, Envelope, encode
 
@@ -184,3 +187,41 @@ class TestPostQueryExtract(object):
 
         assert mq.amf_parse(encode(ev_1).getvalue(), None) != \
                mq.amf_parse(encode(ev_2).getvalue(), None)
+
+    def test_amf_registered_class_is_preserved(self):
+        constructions = []
+
+        class ConstructorProbe:
+            def __new__(cls):
+                constructions.append(cls)
+                return object.__new__(cls)
+
+        pyamf.register_class(ConstructorProbe, 'pywb.test.ConstructorProbe')
+        envelope = Envelope(AMF3)
+        envelope['/0'] = Request(target='t', body=[ConstructorProbe()])
+        post_data = encode(envelope).getvalue()
+        constructions.clear()
+
+        mq = MethodQueryCanonicalizer(
+            'POST', 'application/x-amf', len(post_data), BytesIO(post_data)
+        )
+        result = mq.append_query('http://example.com/')
+
+        assert constructions == [ConstructorProbe]
+        assert 'ConstructorProbe' in result
+
+    def test_amf_unknown_classes_do_not_execute(self):
+        # Complete object chain which calls os.system('sleep 5') with the stock
+        # decoder. Mocking the call keeps this regression test side-effect free.
+        post_data = base64.b64decode(
+            'AAMAAAABAAFjAAFiAAABchEKCzlweWFtZi51dGlsLnB1cmUuQnl0ZXNJT1Byb3h5GV9sZW5fY2hhbmdlZAMJX2xlbgQAEV9nZXRfbGVuCgsreG1scnBjLmNsaWVudC5fTWV0aG9kG19NZXRob2RfX3NlbmQKCyt4bWxycGMuY2xpZW50Ll9NZXRob2QbX01ldGhvZF9fc2VuZAoLS3B5YW1mLnJlbW90aW5nLmdhdGV3YXkuU2VydmljZVdyYXBwZXIPc2VydmljZQoLD3BkYi5QZGIRY3VyZnJhbWUKCzdweWFtZi5hZGFwdGVycy5fd2Vha3JlZi5Gb28TZl9nbG9iYWxzCgsBARFmX2xvY2FscwoLAQEBH2N1cmZyYW1lX2xvY2FscwoLAQENc3Rkb3V0AQEBG19NZXRob2RfX25hbWUGEWRvX2JyZWFrARtfTWV0aG9kX19uYW1lBkVfX2ltcG9ydF9fKCdvcycpLnN5c3RlbSgnc2xlZXAgNScpAQE='
+        )
+
+        with patch('os.system', return_value=0) as system:
+            mq = MethodQueryCanonicalizer(
+                'POST', 'application/x-amf', len(post_data), BytesIO(post_data)
+            )
+            result = mq.append_query('http://example.com/')
+
+        assert 'request=' in result
+        assert system.call_count == 0

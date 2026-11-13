@@ -17,10 +17,16 @@ from pywb.rewrite.default_rewriter import RewriterWithJSProxy
 
 from pywb import get_test_dir
 
+import base64
 import os
 import json
 import pytest
 import re
+from unittest.mock import patch
+
+from pyamf import AMF3
+from pyamf.remoting import Envelope, Request, encode
+from pywb.utils.amf_safe import decode
 
 
 # ============================================================================
@@ -86,6 +92,36 @@ class TestContentRewriter(object):
                         head_insert_func=insert_func,
                         cdx=cdx,
                         environ=environ)
+
+    def test_amf_response_roundtrip(self):
+        envelope = Envelope(AMF3)
+        envelope['/0'] = Request(target='t', body=[{'the': 'body'}])
+        content = encode(envelope).getvalue()
+
+        headers, gen, is_rw = self.rewrite_record(
+            {'Content-Type': 'application/x-amf'},
+            content,
+            ts='201701mp_',
+        )
+
+        decoded = decode(b''.join(gen))
+        assert decoded.bodies[0][1].body == [{'the': 'body'}]
+        assert is_rw is True
+
+    def test_amf_response_unknown_classes_do_not_execute(self):
+        content = base64.b64decode(
+            'AAMAAAABAAFjAAFiAAABchEKCzlweWFtZi51dGlsLnB1cmUuQnl0ZXNJT1Byb3h5GV9sZW5fY2hhbmdlZAMJX2xlbgQAEV9nZXRfbGVuCgsreG1scnBjLmNsaWVudC5fTWV0aG9kG19NZXRob2RfX3NlbmQKCyt4bWxycGMuY2xpZW50Ll9NZXRob2QbX01ldGhvZF9fc2VuZAoLS3B5YW1mLnJlbW90aW5nLmdhdGV3YXkuU2VydmljZVdyYXBwZXIPc2VydmljZQoLD3BkYi5QZGIRY3VyZnJhbWUKCzdweWFtZi5hZGFwdGVycy5fd2Vha3JlZi5Gb28TZl9nbG9iYWxzCgsBARFmX2xvY2FscwoLAQEBH2N1cmZyYW1lX2xvY2FscwoLAQENc3Rkb3V0AQEBG19NZXRob2RfX25hbWUGEWRvX2JyZWFrARtfTWV0aG9kX19uYW1lBkVfX2ltcG9ydF9fKCdvcycpLnN5c3RlbSgnc2xlZXAgNScpAQE='
+        )
+
+        with patch('os.system', return_value=0) as system:
+            headers, gen, is_rw = self.rewrite_record(
+                {'Content-Type': 'application/x-amf'},
+                content,
+                ts='201701mp_',
+            )
+            b''.join(gen)
+
+        assert system.call_count == 0
 
     def test_rewrite_html(self, headers):
         content = '<html><body><a href="http://example.com/"></a></body></html>'
