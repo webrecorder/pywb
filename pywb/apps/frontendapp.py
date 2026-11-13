@@ -79,6 +79,7 @@ class FrontEndApp(object):
         config = self.warcserver.config
 
         self.debug = config.get('debug', False)
+        self.enable_http_acl_user = config.get('enable_http_acl_user', False)
 
         self.client_side_replay = config.get('client_side_replay', False)
 
@@ -440,6 +441,8 @@ class FrontEndApp(object):
         try:
             headers = {}
             for key in environ.keys():
+                if key == 'HTTP_X_PYWB_ACL_USER' and not self.enable_http_acl_user:
+                    continue
                 if key.startswith("HTTP_X_"):
                     headers[key[5:].replace("_", "-")] = environ[key]
             res = requests.get(cdx_url, stream=True, headers=headers)

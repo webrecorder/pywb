@@ -308,6 +308,7 @@ class RewriterApp(object):
 
     def prepare_env(self, environ):
         """ setup environ path prefixes and scheme """
+        environ['pywb.enable_http_acl_user'] = self.config.get('enable_http_acl_user', False)
         if 'pywb.host_prefix' in environ:
             return
 

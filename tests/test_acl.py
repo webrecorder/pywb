@@ -131,3 +131,26 @@ class TestACLApp(BaseConfigTest):
         resp = self.testapp.get('/pywb-acl-older/20140127171238mp_/http://www.iana.org/', status=200)
         
         resp = self.testapp.get('/pywb-acl-older/20140126200624mp_/http://www.iana.org/', status=200)
+
+
+# ============================================================================
+class TestACLHeaderDisabledByDefault(BaseConfigTest):
+    @classmethod
+    def setup_class(cls):
+        super(TestACLHeaderDisabledByDefault, cls).setup_class(
+            'config_test_access.yaml', custom_config={'enable_http_acl_user': False}
+        )
+
+    def test_spoofed_acl_header_is_ignored(self):
+        resp = self.testapp.get(
+            '/pywb/mp_/http://www.iana.org/about/',
+            headers={'X-Pywb-Acl-User': 'staff'},
+            status=451,
+        )
+        assert 'Access Blocked' in resp.text
+
+        resp = self.testapp.get(
+            '/pywb/cdx?url=http://www.iana.org/about/',
+            headers={'X-Pywb-Acl-User': 'staff'},
+        )
+        assert len(resp.text.splitlines()) == 1

@@ -1,4 +1,5 @@
 debug: true
+enable_http_acl_user: true
 
 collections:
     pywb:
