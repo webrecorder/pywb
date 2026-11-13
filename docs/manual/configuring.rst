@@ -228,6 +228,22 @@ For a publicly accessible deployment, it is recommended to also block requests t
 addresses (eg. cloud metadata endpoints) with egress firewall rules on the pywb host.
 
 
+Live and Recording Cookie Tracking
+----------------------------------
+
+Shared server-side cookie tracking for live and recording collections is
+disabled by default to prevent one visitor's domain cookies from being sent to
+another visitor's upstream requests. Normal Set-Cookie rewriting and clients'
+own cookie jars are unaffected.
+
+The legacy shared cache can be enabled explicitly for deployments that require
+it and accept the multi-user isolation risk::
+
+  enable_cookie_tracker: true
+
+For a public multi-user deployment, do not enable this option. The cache is
+scoped by collection, not by visitor, and entries last 120 seconds.
+
 .. _auto-all:
 
 Auto "All" Aggregate Collection

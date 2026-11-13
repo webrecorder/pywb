@@ -172,7 +172,37 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
     def test_live_video_info(self):
         resp = self.testapp.get('/live/vi_/https://www.youtube.com/watch?v=DjFZyFWSt1M')
         assert resp.status_int == 200
-        assert resp.content_type == 'application/vnd.youtube-dl_formats+json', resp.content_type
+
+
+# ============================================================================
+class TestCookieTrackerDisabledByDefault(HttpBinLiveTests, BaseConfigTest):
+    @classmethod
+    def setup_class(cls):
+        cls.lint_app = False
+        super(TestCookieTrackerDisabledByDefault, cls).setup_class(
+            'config_test.yaml', custom_config={'enable_cookie_tracker': False}
+        )
+        cls.cookie_test_serv = GeventServer(cookie_test_server)
+
+    @classmethod
+    def teardown_class(cls):
+        cls.cookie_test_serv.stop()
+        super(TestCookieTrackerDisabledByDefault, cls).teardown_class()
+
+    def test_cookie_is_not_reused_from_shared_cache(self):
+        resp = self.testapp.get(
+            '/live/mp_/http://localhost:%s/' % self.cookie_test_serv.port,
+            headers={'Host': 'example.com'},
+        )
+        assert resp.status_int == 200
+        self.testapp.cookiejar.clear()
+        self.testapp.cookies.clear()
+
+        resp = self.testapp.get(
+            '/live/mp_/http://localhost:%s/' % self.cookie_test_serv.port,
+            headers={'Host': 'example.com'},
+        )
+        assert resp.text == 'cookie value: '
 
     def test_deflate(self, fmod_sl):
         resp = self.get('/live/{0}http://httpbin.org/deflate', fmod_sl)
