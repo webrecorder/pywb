@@ -96,7 +96,9 @@ class RewriterApp(object):
 
         self.use_js_obj_proxy = config.get('use_js_obj_proxy', True)
 
-        self.cookie_tracker = self._init_cookie_tracker()
+        self.cookie_tracker = self._init_cookie_tracker(
+            enabled=self.config.get('enable_cookie_tracker', False)
+        )
 
         self.enable_memento = self.config.get('enable_memento')
 
@@ -111,14 +113,17 @@ class RewriterApp(object):
         # deprecated: Use X-Forwarded-Proto header instead!
         self.force_scheme = config.get('force_scheme')
 
-    def _init_cookie_tracker(self, redis=None):
-        """Initialize the CookieTracker
+    def _init_cookie_tracker(self, redis=None, enabled=False):
+        """Initialize the CookieTracker when explicitly enabled.
 
         :param redis: Optional redis instance to be used
         Defaults to FakeStrictRedis
-        :return: The initialized cookie tracker
-        :rtype: CookieTracker
+        :param enabled: Enable shared live/recording cookie persistence
+        :return: The initialized cookie tracker or None
+        :rtype: CookieTracker|None
         """
+        if not enabled:
+            return None
         if redis is None:
             redis = FakeStrictRedis()
         return CookieTracker(redis)
