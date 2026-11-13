@@ -1,4 +1,7 @@
+import ipaddress
 import logging
+import socket
+from urllib.parse import urlsplit
 
 from pywb.utils.loaders import load_py_name
 
@@ -27,9 +30,35 @@ class LiveUrlFilter(object):
         cls.func = load_py_name(name) if name else None
 
     @classmethod
+    def is_public_url(cls, url):
+        """Return False for URLs resolving to non-public IP addresses.
+
+        This also runs in the HTTP adapter for every request and redirect. A
+        second DNS lookup by the socket remains a DNS-rebinding TOCTOU risk.
+        """
+        try:
+            host = urlsplit(url).hostname
+            if not host:
+                return False
+
+            addresses = socket.getaddrinfo(host, None)
+            if not addresses:
+                return False
+
+            for address in addresses:
+                ip = ipaddress.ip_address(address[4][0])
+                if not ip.is_global:
+                    logger.warning('live_url_filter blocked: ' + str(url))
+                    return False
+            return True
+        except (OSError, UnicodeError, ValueError):
+            logger.warning('live_url_filter blocked: ' + str(url))
+            return False
+
+    @classmethod
     def is_allowed(cls, url, cdx=None):
         if not cls.func:
-            return True
+            return cls.is_public_url(url)
 
         try:
             allowed = bool(cls.func(url, cdx))

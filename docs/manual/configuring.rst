@@ -204,23 +204,15 @@ where ``url`` is the url about to be requested and ``cdx`` is the capture being 
 ``cdx.get('is_live')`` is set when loading from the live web. The function must return ``True`` to allow the request.
 If it returns a false value or raises an exception, the request is not made.
 
-pywb does not provide a filter implementation. For example, a filter could resolve the host and reject private network addresses::
-
-  import ipaddress
-  import socket
-  from urllib.parse import urlsplit
-
-  def is_url_allowed(url, cdx):
-      host = urlsplit(url).hostname
-      for info in socket.getaddrinfo(host, None):
-          if not ipaddress.ip_address(info[4][0]).is_global:
-              return False
-      return True
+Without ``live_url_filter``, pywb resolves each destination and rejects
+non-public addresses, including loopback, private, link-local, and other
+non-global ranges. The HTTP adapter applies the same policy to every request
+and redirect. A custom filter replaces this default and may explicitly allow
+private destinations when required.
 
 The filter is an application-level check, to be used in addition to network-level controls, not instead of them. It has some limitations:
 
-* It checks urls, not connections. A filter that resolves the host, like the example above, does not protect against DNS rebinding,
-  as the host is resolved again when the request is made. If a SOCKS proxy is used, the host is resolved by the proxy.
+* Hostnames are resolved for the check and resolved again by the socket when the request is made, so DNS rebinding remains a time-of-check/time-of-use risk. If a SOCKS proxy is used, the host is resolved by the proxy.
 * For video info requests (the ``vi_`` modifier, only when ``youtube-dl`` is installed), only the initial url is checked.
   The requests made by ``youtube-dl`` itself, eg. following redirects, are not.
 

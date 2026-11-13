@@ -3,7 +3,7 @@ from gevent import monkey; monkey.patch_all(thread=False)
 import pytest
 import webtest
 
-from pywb.warcserver.test.testutils import BaseTestClass, TempDirTests
+from pywb.warcserver.test.testutils import BaseTestClass, TempDirTests, allow_all_urls
 from pywb.manager.manager import main, CollectionsManager
 
 from pywb.apps.frontendapp import FrontEndApp
@@ -30,6 +30,8 @@ class BaseConfigTest(BaseTestClass):
     @classmethod
     def get_test_app(cls, config_file, custom_config=None):
         config_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_file)
+        custom_config = custom_config or {}
+        custom_config.setdefault('live_url_filter', __name__ + ':allow_all_urls')
         app = FrontEndApp(config_file=config_file, custom_config=custom_config)
         return app, webtest.TestApp(app, lint=cls.lint_app)
 

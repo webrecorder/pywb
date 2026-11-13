@@ -1,5 +1,7 @@
 from .base_config_test import BaseConfigTest
 from pywb.warcserver.http import DefaultAdapters
+from pywb.warcserver.liveurlfilter import LiveUrlFilter
+from pywb.warcserver.test.testutils import allow_all_urls
 
 from gevent.pywsgi import WSGIServer
 
@@ -64,6 +66,7 @@ class TestCertReq(BaseConfigTest):
     @classmethod
     def setup_class(cls):
         cls.orig_adapters = (DefaultAdapters.live_adapter, DefaultAdapters.remote_adapter)
+        LiveUrlFilter.init(__name__ + ':allow_all_urls')
 
         # local test CA, trusted through certificates.ca_cert_dir, signing a valid and an expired cert for localhost
         cls.cert_dir = tempfile.mkdtemp()
@@ -100,6 +103,7 @@ class TestCertReq(BaseConfigTest):
 
         shutil.rmtree(cls.cert_dir)
         DefaultAdapters.live_adapter, DefaultAdapters.remote_adapter = cls.orig_adapters
+        LiveUrlFilter.init(None)
         super(TestCertReq, cls).teardown_class()
 
     def get_url(self, name):

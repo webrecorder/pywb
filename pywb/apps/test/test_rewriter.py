@@ -1,7 +1,8 @@
 from gevent import monkey; monkey.patch_all(thread=False)
 
 from pywb.warcserver.test.testutils import LiveServerTests, BaseTestClass
-from pywb.warcserver.test.testutils import FakeRedisTests
+from pywb.warcserver.test.testutils import FakeRedisTests, allow_all_urls
+from pywb.warcserver.liveurlfilter import LiveUrlFilter
 
 from pywb.apps.frontendapp import FrontEndApp
 from pywb.utils.geventserver import GeventServer
@@ -10,7 +11,8 @@ import os
 import webtest
 
 
-LIVE_CONFIG = {'collections': {'live': '$live'}}
+LIVE_CONFIG = {'collections': {'live': '$live'},
+               'live_url_filter': __name__ + ':allow_all_urls'}
 
 
 def example_app(environ, start_response):
@@ -23,6 +25,7 @@ class TestRewriterApp(FakeRedisTests, BaseTestClass):
     @classmethod
     def setup_class(cls):
         super(TestRewriterApp, cls).setup_class()
+        LiveUrlFilter.init(__name__ + ':allow_all_urls')
 
         #cls.app = RWApp.create_app(replay_port=cls.server.port)
         #cls.testapp = webtest.TestApp(cls.app.app)
@@ -35,6 +38,7 @@ class TestRewriterApp(FakeRedisTests, BaseTestClass):
     @classmethod
     def teardown_class(cls):
         cls.example_server.stop()
+        LiveUrlFilter.init(None)
         super(TestRewriterApp, cls).teardown_class()
 
     def test_replay(self):

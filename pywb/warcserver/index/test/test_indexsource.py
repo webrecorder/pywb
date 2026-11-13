@@ -6,7 +6,8 @@ from pywb.warcserver.index.aggregator import SimpleAggregator
 
 from warcio.timeutils import timestamp_now
 
-from pywb.warcserver.test.testutils import key_ts_res, TEST_CDX_PATH, FakeRedisTests, BaseTestClass
+from pywb.warcserver.test.testutils import key_ts_res, TEST_CDX_PATH, FakeRedisTests, BaseTestClass, allow_all_urls
+from pywb.warcserver.liveurlfilter import LiveUrlFilter
 from pywb.utils.canonicalize import canonicalize
 from pywb.utils.geventserver import GeventServer
 
@@ -97,6 +98,7 @@ class TestIndexSources(FakeRedisTests, BaseTestClass):
     @classmethod
     def setup_class(cls):
         super(TestIndexSources, cls).setup_class()
+        LiveUrlFilter.init(__name__ + ':allow_all_urls')
         cls.add_cdx_to_redis(TEST_CDX_PATH + 'iana.cdxj', 'test:rediscdx')
 
         cls.rhizome_server = GeventServer(rhizome_app)
@@ -117,6 +119,7 @@ class TestIndexSources(FakeRedisTests, BaseTestClass):
     @classmethod
     def teardown_class(cls):
         cls.rhizome_server.stop()
+        LiveUrlFilter.init(None)
         super(TestIndexSources, cls).teardown_class()
 
     @pytest.fixture(params=local_sources)

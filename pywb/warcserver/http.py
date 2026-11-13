@@ -3,6 +3,8 @@ import os
 import requests
 import http.client
 from requests.adapters import DEFAULT_POOLBLOCK, HTTPAdapter
+from pywb.warcserver.liveurlfilter import LiveUrlFilter
+from pywb.utils.wbexception import LiveResourceException
 from urllib3.poolmanager import PoolManager
 from urllib3.util.retry import Retry
 
@@ -21,6 +23,11 @@ class PywbHttpAdapter(HTTPAdapter):
         self.cert_reqs = cert_reqs
         self.ca_cert_dir = ca_cert_dir
         return super(PywbHttpAdapter, self).__init__(**init_kwargs)
+
+    def send(self, request, **kwargs):
+        if not LiveUrlFilter.is_allowed(request.url):
+            raise LiveResourceException('Blocked by live_url_filter', request.url)
+        return super(PywbHttpAdapter, self).send(request, **kwargs)
 
     def init_poolmanager(
         self, connections, maxsize, block=DEFAULT_POOLBLOCK, **pool_kwargs

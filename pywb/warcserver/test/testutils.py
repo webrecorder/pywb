@@ -10,6 +10,7 @@ from mock import patch
 
 from pywb.warcserver.basewarcserver import BaseWarcServer
 from pywb.warcserver.handlers import DefaultResourceHandler
+from pywb.warcserver.liveurlfilter import LiveUrlFilter
 
 from pywb.warcserver.index.aggregator import SimpleAggregator
 from pywb.warcserver.index.indexsource import LiveIndexSource, MementoIndexSource
@@ -161,6 +162,11 @@ class LiveServerTests(object):
 
 
 # ============================================================================
+def allow_all_urls(url, cdx=None):
+    return True
+
+
+# ============================================================================
 class HttpBinLiveTests(object):
     @classmethod
     def setup_class(cls, *args, **kwargs):
@@ -174,6 +180,7 @@ class HttpBinLiveTests(object):
             httpbin_app.config.update(JSONIFY_PRETTYPRINT_REGULAR=True)
 
         cls.httpbin_server = GeventServer(httpbin_app)
+        LiveUrlFilter.init(__name__ + ':allow_all_urls')
 
         httpbin_local = 'http://localhost:' + str(cls.httpbin_server.port) + '/'
         cls.httpbin_local = httpbin_local
@@ -195,6 +202,7 @@ class HttpBinLiveTests(object):
     def teardown_class(cls):
         cls.indexmock.stop()
         cls.httpbin_server.stop()
+        LiveUrlFilter.init(None)
         super(HttpBinLiveTests, cls).teardown_class()
 
 

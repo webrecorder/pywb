@@ -1,6 +1,7 @@
 from gevent import monkey; monkey.patch_all()
 from .testutils import BaseTestClass, HttpBinLiveTests
 
+import requests
 import webtest
 import pytest
 from mock import patch, MagicMock
@@ -14,6 +15,7 @@ from pywb.warcserver.index.indexsource import LiveIndexSource
 from pywb.warcserver.liveurlfilter import LiveUrlFilter
 from pywb.warcserver.resource.responseloader import LiveWebLoader, VideoLoader
 from pywb.warcserver.warcserver import WarcServer
+from pywb.warcserver.http import DefaultAdapters
 
 
 # ============================================================================
@@ -59,10 +61,30 @@ class TestLiveUrlFilter(HttpBinLiveTests, BaseTestClass):
 
     def test_no_filter(self):
         LiveUrlFilter.init(None)
-        assert LiveUrlFilter.is_allowed('http://example.com/') == True
+        resolved = [(2, 1, 6, '', ('93.184.215.14', 0))]
+        with patch('socket.getaddrinfo', return_value=resolved):
+            assert LiveUrlFilter.is_allowed('http://example.com/') == True
 
-        resp = self.testapp.get('/live/resource?url=http://httpbin.org/get')
-        assert resp.headers['Warcserver-Source-Coll'] == 'live'
+    def test_default_blocks_non_public_addresses(self):
+        LiveUrlFilter.init(None)
+        def resolve(host, port):
+            if host == 'localhost':
+                host = '127.0.0.1'
+            return [(2, 1, 6, '', (host.strip('[]'), 0))]
+
+        with patch('socket.getaddrinfo', side_effect=resolve):
+            for url in ('http://127.0.0.1/',
+                        'http://localhost/',
+                        'http://10.0.0.1/',
+                        'http://169.254.169.254/',
+                        'http://[::1]/'):
+                assert LiveUrlFilter.is_allowed(url) is False
+
+    def test_default_adapter_blocks_local_resource(self):
+        LiveUrlFilter.init(None)
+        request = requests.Request('GET', self.httpbin_local + 'get').prepare()
+        with pytest.raises(LiveResourceException):
+            DefaultAdapters.live_adapter.send(request)
 
     def test_config(self):
         WarcServer(config_file=None,
