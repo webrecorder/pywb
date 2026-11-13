@@ -101,6 +101,9 @@ class DefaultRewriter(BaseContentRewriter):
 
         super(DefaultRewriter, self).__init__(rules_file, replay_mod)
         self.all_rewriters = copy.copy(self.DEFAULT_REWRITERS)
+        self.rewrite_types = self.rewrite_types.copy()
+        if not config.get('enable_amf', False):
+            self.rewrite_types['application/x-amf'] = 'guess-bin'
 
         self.add_prefer_mod('raw', 'ir_')
         self.add_prefer_mod('raw', 'id_')

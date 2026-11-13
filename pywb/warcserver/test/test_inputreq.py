@@ -175,7 +175,7 @@ class TestPostQueryExtract(object):
         assert mq.append_query('http://example.com/') == 'http://example.com/?__wb_method=HEAD'
 
     def test_amf_parse(self):
-        mq = MethodQueryCanonicalizer('POST', 'application/x-amf', 0, BytesIO())
+        mq = MethodQueryCanonicalizer('POST', 'application/x-amf', 0, BytesIO(), enable_amf=True)
 
         req = Request(target='t', body="")
         ev_1 = Envelope(AMF3)
@@ -203,7 +203,8 @@ class TestPostQueryExtract(object):
         constructions.clear()
 
         mq = MethodQueryCanonicalizer(
-            'POST', 'application/x-amf', len(post_data), BytesIO(post_data)
+            'POST', 'application/x-amf', len(post_data), BytesIO(post_data),
+            enable_amf=True
         )
         result = mq.append_query('http://example.com/')
 
@@ -218,10 +219,16 @@ class TestPostQueryExtract(object):
         )
 
         with patch('os.system', return_value=0) as system:
-            mq = MethodQueryCanonicalizer(
+            default_mq = MethodQueryCanonicalizer(
                 'POST', 'application/x-amf', len(post_data), BytesIO(post_data)
             )
-            result = mq.append_query('http://example.com/')
+            default_result = default_mq.append_query('http://example.com/')
+            enabled_mq = MethodQueryCanonicalizer(
+                'POST', 'application/x-amf', len(post_data), BytesIO(post_data),
+                enable_amf=True
+            )
+            enabled_result = enabled_mq.append_query('http://example.com/')
 
-        assert 'request=' in result
+        assert '__wb_post_data=' in default_result
+        assert 'request=' in enabled_result
         assert system.call_count == 0

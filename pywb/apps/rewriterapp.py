@@ -60,7 +60,8 @@ class RewriterApp(object):
         self.default_rw = DefaultRewriter(replay_mod=self.replay_mod,
                                           config=config)
 
-        self.js_proxy_rw = RewriterWithJSProxy(replay_mod=self.replay_mod)
+        self.js_proxy_rw = RewriterWithJSProxy(replay_mod=self.replay_mod,
+                                               config=config)
 
         if not jinja_env:
             jinja_env = JinjaEnv(globals={'static_path': 'static'},
@@ -308,6 +309,7 @@ class RewriterApp(object):
 
     def prepare_env(self, environ):
         """ setup environ path prefixes and scheme """
+        environ['pywb.enable_amf'] = self.config.get('enable_amf', False)
         if 'pywb.host_prefix' in environ:
             return
 

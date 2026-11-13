@@ -429,6 +429,10 @@ instead of current working directory
                         action='store_true',
                         help=post_append_help)
 
+    parser.add_argument('--enable-amf',
+                        action='store_true',
+                        help='Enable safe AMF parsing (default: treat AMF as binary)')
+
     parser.add_argument('-r', '--recurse',
                         action='store_true',
                         help=recurse_dirs_help)
@@ -469,6 +473,7 @@ instead of current working directory
                           surt_ordered=not cmd.unsurt,
                           include_all=cmd.allrecords,
                           append_post=cmd.postappend,
+                          enable_amf=cmd.enable_amf,
                           recurse=cmd.recurse,
                           rel_root=cmd.dir_root,
                           verify_http=cmd.verify,

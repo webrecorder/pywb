@@ -425,6 +425,23 @@ For example, adding a custom record ``file:///my-custom-resource`` containing ``
 This feature is only available if ``enable_put_custom_record: true`` is set in the recorder config.
 
 
+AMF Parsing
+-----------
+
+AMF request canonicalization and response rewriting are disabled by default.
+AMF request bodies are indexed as opaque binary data and AMF responses are
+passed through without modification.
+
+To enable semantic AMF handling, set ``enable_amf: true`` in the root config.
+The restricted decoder does not implicitly import or load classes named by
+untrusted input. Explicitly registered application classes remain trusted and
+may execute constructors, setters, and externalizable decoders. Unknown
+externalizable objects fall back to binary handling.
+
+For offline indexing, use ``cdx-indexer --enable-amf`` to enable the same
+restricted decoder.
+
+
 .. _auto-fetch:
 
 Auto-Fetch Responsive Recording

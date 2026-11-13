@@ -187,7 +187,8 @@ class DefaultRecordParser(object):
                 post_query = MethodQueryCanonicalizer(method,
                                                 entry.get('_content_type'),
                                                 len_,
-                                                record.raw_stream)
+                                                record.raw_stream,
+                                                enable_amf=self.options.get('enable_amf', False))
 
                 entry['_post_query'] = post_query
 

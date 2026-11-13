@@ -93,16 +93,30 @@ class TestContentRewriter(object):
                         cdx=cdx,
                         environ=environ)
 
-    def test_amf_response_roundtrip(self):
+    def test_amf_response_is_binary_by_default(self):
         envelope = Envelope(AMF3)
         envelope['/0'] = Request(target='t', body=[{'the': 'body'}])
         content = encode(envelope).getvalue()
 
         headers, gen, is_rw = self.rewrite_record(
-            {'Content-Type': 'application/x-amf'},
-            content,
-            ts='201701mp_',
+            {'Content-Type': 'application/x-amf'}, content, ts='201701mp_'
         )
+
+        assert b''.join(gen) == content
+        assert is_rw is False
+
+    def test_amf_response_roundtrip(self):
+        envelope = Envelope(AMF3)
+        envelope['/0'] = Request(target='t', body=[{'the': 'body'}])
+        content = encode(envelope).getvalue()
+        previous = self.content_rewriter
+        self.content_rewriter = RewriterWithJSProxy(config={'enable_amf': True})
+        try:
+            headers, gen, is_rw = self.rewrite_record(
+                {'Content-Type': 'application/x-amf'}, content, ts='201701mp_'
+            )
+        finally:
+            self.content_rewriter = previous
 
         decoded = decode(b''.join(gen))
         assert decoded.bodies[0][1].body == [{'the': 'body'}]
@@ -115,11 +129,19 @@ class TestContentRewriter(object):
 
         with patch('os.system', return_value=0) as system:
             headers, gen, is_rw = self.rewrite_record(
-                {'Content-Type': 'application/x-amf'},
-                content,
-                ts='201701mp_',
+                {'Content-Type': 'application/x-amf'}, content, ts='201701mp_'
             )
             b''.join(gen)
+
+            previous = self.content_rewriter
+            self.content_rewriter = RewriterWithJSProxy(config={'enable_amf': True})
+            try:
+                headers, gen, is_rw = self.rewrite_record(
+                    {'Content-Type': 'application/x-amf'}, content, ts='201701mp_'
+                )
+                b''.join(gen)
+            finally:
+                self.content_rewriter = previous
 
         assert system.call_count == 0
 

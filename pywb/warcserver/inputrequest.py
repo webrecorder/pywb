@@ -90,7 +90,8 @@ class DirectWSGIInputRequest(object):
 
         query = MethodQueryCanonicalizer(method, mime, length, stream,
                                            buffered_stream=buffered_stream,
-                                           environ=self.env)
+                                           environ=self.env,
+                                           enable_amf=self.env.get('pywb.enable_amf', False))
 
         new_url = query.append_query(url)
         if new_url != url:
@@ -188,7 +189,8 @@ class MethodQueryCanonicalizer(object):
 
     def __init__(self, method, mime, length, stream,
                        buffered_stream=None,
-                       environ=None):
+                       environ=None,
+                       enable_amf=False):
         """
         Append the method for HEAD/OPTIONS as __pywb_method=<method>
         For POST requests, requests extract a url-encoded form from stream
@@ -269,7 +271,7 @@ class MethodQueryCanonicalizer(object):
 
                 query = urlencode(values, True)
 
-        elif mime.startswith('application/x-amf'):
+        elif enable_amf and mime.startswith('application/x-amf'):
             amf_query = self.amf_parse(query, environ)
             query = amf_query if amf_query is not None else handle_binary(query)
 
