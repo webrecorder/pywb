@@ -83,8 +83,9 @@ class RewriteInputRequest(DirectWSGIInputRequest):
                 continue
 
             elif name == 'HTTP_X_PYWB_ACL_USER':
-                name = name[5:].title().replace('_', '-')
-                self.warcserver_headers[name] = value
+                if self.env.get('pywb.enable_http_acl_user'):
+                    name = name[5:].title().replace('_', '-')
+                    self.warcserver_headers[name] = value
                 continue
 
             elif name == 'HTTP_X_FORWARDED_PROTO':

@@ -162,7 +162,8 @@ class WarcServer(BaseWarcServer):
 
         return DefaultResourceHandler(source, self.archive_paths,
                                       rules_file=self.rules_file,
-                                      access_checker=access_checker)
+                                      access_checker=access_checker,
+                                      enable_http_acl_user=self.config.get('enable_http_acl_user', False))
 
     def list_fixed_routes(self):
         return list(self.fixed_routes.keys())
@@ -274,7 +275,8 @@ class WarcServer(BaseWarcServer):
         return DefaultResourceHandler(agg, archive_paths,
                                       rules_file=self.rules_file,
                                       access_checker=access_checker,
-                                      use_local_file_load=use_local_file_load)
+                                      use_local_file_load=use_local_file_load,
+                                      enable_http_acl_user=self.config.get('enable_http_acl_user', False))
 
     def init_sequence(self, coll_name, seq_config, cache_name=None):
         if not isinstance(seq_config, list):

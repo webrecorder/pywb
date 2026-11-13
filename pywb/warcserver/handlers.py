@@ -49,6 +49,7 @@ class IndexHandler(object):
         self.opts = opts or {}
         self.fuzzy = FuzzyMatcher(kwargs.get('rules_file'))
         self.access_checker = kwargs.get('access_checker')
+        self.enable_http_acl_user = kwargs.get('enable_http_acl_user', False)
 
     def get_supported_modes(self):
         return dict(modes=['list_sources', 'index'])
@@ -65,7 +66,8 @@ class IndexHandler(object):
 
         cdx_iter = self.fuzzy(self.index_source, params)
 
-        acl_user = params['_input_req'].env.get("HTTP_X_PYWB_ACL_USER")
+        acl_user = (params['_input_req'].env.get("HTTP_X_PYWB_ACL_USER")
+                    if self.enable_http_acl_user else None)
 
         if self.access_checker:
             cdx_iter = self.access_checker(cdx_iter, acl_user)

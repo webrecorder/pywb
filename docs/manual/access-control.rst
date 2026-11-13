@@ -163,6 +163,11 @@ Further examples of how to set this header will be provided in the deployments s
 
 **Note: Do not use the user-based rules without configuring proper authentication on an Apache or Nginx frontend to set or remove this header, otherwise the 'X-Pywb-ACL-User' can easily be faked.**
 
+The header is ignored by default. To enable ACL identity delegation from a trusted
+authentication proxy, set ``enable_http_acl_user: true`` in the root config.
+Enable it only when the frontend strips or replaces the header on all untrusted
+requests.
+
 See the :ref:`config-acl-header` section in Usage for examples on how to configure this header.
 
 
