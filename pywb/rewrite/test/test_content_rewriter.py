@@ -334,6 +334,15 @@ class TestContentRewriter(object):
 
         assert is_rw == False
 
+    def test_amf_not_rewritten(self):
+        headers = {'Content-Type': 'application/x-amf'}
+        content = b'\x00\x03\x00\x00\x00\x01\x00\x0b/1/onResult'
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701mp_')
+
+        assert ('Content-Type', 'application/x-amf') in headers.headers
+        assert b''.join(gen) == content
+        assert is_rw == False
+
     def test_binary_wrong_content_type_html(self):
         headers = {'Content-Type': 'text/html; charset=utf-8'}
         content = b'\xe9\x11\x12\x13\x14'

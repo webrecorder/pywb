@@ -76,14 +76,6 @@ pywb.rewrite.regex\_rewriters module
    :undoc-members:
    :show-inheritance:
 
-pywb.rewrite.rewrite\_amf module
---------------------------------
-
-.. automodule:: pywb.rewrite.rewrite_amf
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 pywb.rewrite.rewrite\_dash module
 ---------------------------------
 
