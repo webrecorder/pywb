@@ -53,6 +53,7 @@ class WabacReplay
         noPostToGet: false,
         archivePrefix: this.prefix,
         archiveMod: "ir_",
+        proxyPassErrors: true,
         adblockUrl: this.adblockUrl,
         noPostToGet: true,
         injectScripts: this.injectScripts.map(src => "../" + src),
