@@ -13,7 +13,6 @@ from pywb.rewrite.jsonp_rewriter import JSONPRewriter
 
 from pywb.rewrite.rewrite_dash import RewriteDASH
 from pywb.rewrite.rewrite_hls import RewriteHLS
-from pywb.rewrite.rewrite_amf import RewriteAMF
 
 from pywb.rewrite.rewrite_js_workers import JSWorkerRewriter
 
@@ -45,8 +44,6 @@ class DefaultRewriter(BaseContentRewriter):
         'dash': RewriteDASH,
 
         'hls': RewriteHLS,
-
-        'amf': RewriteAMF,
     }
 
     rewrite_types = {
@@ -72,9 +69,6 @@ class DefaultRewriter(BaseContentRewriter):
 
         # DASH
         'application/dash+xml': 'dash',
-
-        # AMF
-        'application/x-amf': 'amf',
 
         # XML -- don't rewrite xml
         #'text/xml': 'xml',

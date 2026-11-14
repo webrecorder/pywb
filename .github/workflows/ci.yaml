@@ -15,7 +15,8 @@ concurrency:
 jobs:
   unit-tests:
     timeout-minutes: 20
-    runs-on: ubuntu-latest
+    # Temporarily pinned, as Python 3.9 is not available on newer runner images
+    runs-on: ubuntu-24.04
     strategy:
       max-parallel: 7
       matrix:
