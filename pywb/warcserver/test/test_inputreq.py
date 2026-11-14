@@ -4,8 +4,6 @@ from werkzeug.routing import Map, Rule
 import webtest
 from urllib.parse import parse_qsl
 from io import BytesIO
-from pyamf import AMF3
-from pyamf.remoting import Request, Envelope, encode
 
 
 #=============================================================================
@@ -174,13 +172,11 @@ class TestPostQueryExtract(object):
     def test_amf_parse(self):
         mq = MethodQueryCanonicalizer('POST', 'application/x-amf', 0, BytesIO())
 
-        req = Request(target='t', body="")
-        ev_1 = Envelope(AMF3)
-        ev_1['/0'] = req
+        # AMF3 requests to target 't' with body "" and "alt_content"
+        ev_1 = bytes.fromhex('00030000000100017400022f30000000000a00000000')
+        ev_2 = bytes.fromhex('00030000000100017400022f30000000000a0000000b1106036111'
+                             '06036c110603741106035f110603631106036f1106036e110604'
+                             '1106036511060c110604')
 
-        req = Request(target='t', body="alt_content")
-        ev_2 = Envelope(AMF3)
-        ev_2['/0'] = req
-
-        assert mq.amf_parse(encode(ev_1).getvalue(), None) != \
-               mq.amf_parse(encode(ev_2).getvalue(), None)
+        assert mq.amf_parse(ev_1, None) != \
+               mq.amf_parse(ev_2, None)

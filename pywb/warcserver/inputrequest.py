@@ -1,7 +1,7 @@
 from warcio.limitreader import LimitReader
 from warcio.statusandheaders import StatusAndHeadersParser
 from pywb.warcserver.amf import Amf
-from pyamf.remoting import decode
+from pywb.utils.amf_decoder import decode
 from warcio.utils import to_native_str
 
 from urllib.parse import urlsplit, quote, unquote_plus, urlencode
