@@ -221,6 +221,17 @@ class TestContentRewriter(object):
         assert 'let window ' in result
         assert exp in result
 
+    def test_rewrite_esm_mod_no_wrapper(self, headers):
+        # esm_ (ES module) scripts are passed through unwrapped
+        content = 'function() { location.href = "http://example.com/"; }'
+
+        headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701esm_')
+
+        assert ('Content-Type', 'text/javascript') in headers.headers
+
+        assert b''.join(gen).decode('utf-8') == content
+        assert not is_rw
+
     def test_rewrite_cs_mod(self, headers):
         content = '.foo { background: url(http://localhost:8080/prefix/201701cs_/http://example.com/) }'
 

@@ -75,6 +75,15 @@ These modifiers are useful to 'hint' for pywb that a certain resource is being t
 For example, if a resource has type ``text/html`` but is loaded in a ``<script>`` tag with the ``js_`` modifier, it will be rewritten as JS instead of as HTML.
 
 
+JS Module Modifier (``esm_``)
+""""""""""""""""""""""""""""
+
+Used for ES modules (``<script type="module">`` and ``rel="modulepreload"``). Module scripts always
+run in strict mode, where the JS rewriter's wombat-proxy wrapper is a SyntaxError, so ``esm_`` resources
+are served without the wrapper. Relative ``import()`` specifiers inherit this modifier from the parent
+module url.
+
+
 Other Modifiers
 """""""""""""""
 
