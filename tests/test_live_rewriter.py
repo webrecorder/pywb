@@ -5,10 +5,13 @@ from .base_config_test import BaseConfigTest, fmod_sl
 from pywb.warcserver.test.testutils import HttpBinLiveTests
 
 from pywb.utils.geventserver import GeventServer
+from pywb.rewrite.cookie_rewriter import VISITOR_COOKIE_NAME
+from pywb.rewrite.cookies import CookieTracker
 from mock import patch, Mock
 import pytest
 import os
 import sys
+import webtest
 
 
 # ============================================================================
@@ -203,3 +206,57 @@ class TestLiveRewriter(HttpBinLiveTests, BaseConfigTest):
         assert resp.json['headers']['Sec-Fetch-Dest'] == 'document'
 
 
+
+# ============================================================================
+class TestPerVisitorCookieTracker(BaseConfigTest):
+    @classmethod
+    def setup_class(cls):
+        cls.lint_app = False
+        super(TestPerVisitorCookieTracker, cls).setup_class('config_test.yaml')
+        cls.cookie_test_serv = GeventServer(cookie_test_server)
+
+    @classmethod
+    def teardown_class(cls):
+        cls.cookie_test_serv.stop()
+        super(TestPerVisitorCookieTracker, cls).teardown_class()
+
+    @pytest.fixture(autouse=True)
+    def example_com_subdomains(self):
+        # treat localhost and 127.0.0.1 as subdomains of example.com, so the
+        # tracker (not the client's cookie jar) carries the cookie between them
+        with patch.object(CookieTracker, 'get_subdomains', staticmethod(lambda url: ['example.com'])):
+            yield
+
+    def new_client(self):
+        return webtest.TestApp(self.app, lint=False)
+
+    def set_url(self):
+        return '/live/mp_/http://localhost:%s/' % self.cookie_test_serv.port
+
+    def other_url(self):
+        return '/live/mp_/http://127.0.0.1:%s/' % self.cookie_test_serv.port
+
+    def test_domain_cookie_per_visitor(self):
+        client_a = self.new_client()
+        client_b = self.new_client()
+
+        resp = client_a.get(self.set_url())
+        assert resp.text == 'cookie value: '
+
+        resp = client_a.get(self.other_url())
+        assert resp.text == 'cookie value: testcookie=cookie-val'
+
+        resp = client_b.get(self.other_url())
+        assert resp.text == 'cookie value: '
+
+    def test_made_up_visitor_id(self):
+        self.new_client().get(self.set_url())
+
+        cookie = VISITOR_COOKIE_NAME + '=' + 'A' * 43
+        resp = self.new_client().get(self.other_url(), headers={'Cookie': cookie})
+        assert resp.text == 'cookie value: '
+
+    def test_visitor_cookie_not_sent_upstream(self):
+        cookie = 'foo=bar; {0}={1}; baz=qux'.format(VISITOR_COOKIE_NAME, 'B' * 43)
+        resp = self.new_client().get(self.other_url(), headers={'Cookie': cookie})
+        assert resp.text == 'cookie value: foo=bar; baz=qux'

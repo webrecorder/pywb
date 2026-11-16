@@ -1,5 +1,6 @@
 from pywb.warcserver.inputrequest import DirectWSGIInputRequest
 from pywb.utils.loaders import extract_client_cookie
+from pywb.rewrite.cookie_rewriter import split_visitor_cookie
 
 from urllib.parse import urlsplit
 import re
@@ -76,6 +77,11 @@ class RewriteInputRequest(DirectWSGIInputRequest):
             elif name == 'HTTP_X_PYWB_REQUESTED_WITH':
                 continue
 
+            elif name == 'HTTP_COOKIE':
+                # pywb's own visitor cookie is never sent to the archived site
+                name = 'Cookie'
+                _, value = split_visitor_cookie(value)
+
             elif name in ('HTTP_CONNECTION', 'HTTP_PROXY_CONNECTION'):
                 continue
 
@@ -121,7 +127,8 @@ class RewriteInputRequest(DirectWSGIInputRequest):
                 headers[name] = value
 
         if self.extra_cookie:
-            headers['Cookie'] = self.extra_cookie + ';' + headers.get('Cookie', '')
+            existing = headers.get('Cookie')
+            headers['Cookie'] = self.extra_cookie + (';' + existing if existing else '')
 
         return headers
 

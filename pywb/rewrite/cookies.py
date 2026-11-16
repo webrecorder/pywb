@@ -1,4 +1,5 @@
 from pywb.rewrite.cookie_rewriter import WbUrlBaseCookieRewriter, HostScopeCookieRewriter
+from pywb.rewrite.cookie_rewriter import VISITOR_COOKIE_NAME, split_visitor_cookie
 from warcio.timeutils import datetime_to_http_date
 
 import redis
@@ -6,13 +7,50 @@ import redis
 import tldextract
 import time
 import datetime
+import re
+import secrets
 
 
 # =============================================================================
 class CookieTracker(object):
+    """ Per-visitor server-side cache of Domain= cookies for live and
+    recording collections, so they are sent upstream to all subdomains.
+    """
+    # secrets.token_urlsafe(32) produces 43 url-safe base64 chars
+    VISITOR_ID_RX = re.compile(r'^[A-Za-z0-9_-]{43}$')
+
     def __init__(self, redis, expire_time=120):
         self.redis = redis
         self.expire_time = expire_time
+
+    @classmethod
+    def get_visitor_id(cls, cookie_header):
+        """ Return the visitor id from the Cookie header, or None if it is
+        missing, malformed or duplicated.
+        """
+        values, _ = split_visitor_cookie(cookie_header)
+        if len(values) != 1:
+            return None
+
+        if not cls.VISITOR_ID_RX.match(values[0]):
+            return None
+
+        return values[0]
+
+    @staticmethod
+    def new_visitor_id():
+        """ Return a new random visitor id """
+        return secrets.token_urlsafe(32)
+
+    def get_visitor_cookie_header(self, visitor_id, path, secure):
+        """ Return the Set-Cookie header for the visitor id """
+        value = '{0}={1}; Path={2}; HttpOnly; SameSite=Lax'.format(VISITOR_COOKIE_NAME,
+                                                                  visitor_id,
+                                                                  path)
+        if secure:
+            value += '; Secure'
+
+        return ('Set-Cookie', value)
 
     def get_rewriter(self, url_rewriter, cookie_key):
         return DomainCacheCookieRewriter(url_rewriter, self, cookie_key)
