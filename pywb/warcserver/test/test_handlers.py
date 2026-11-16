@@ -27,6 +27,8 @@ from pywb.warcserver.index.aggregator import GeventTimeoutAggregator, SimpleAggr
 from pywb.warcserver.index.aggregator import DirectoryIndexSource
 
 from pywb.warcserver.basewarcserver import BaseWarcServer
+from pywb.warcserver.http import DefaultAdapters
+from pywb.warcserver.resource.responseloader import LiveWebLoader
 from pywb.utils.memento import MementoUtils
 from pywb.utils.geventserver import GeventServer
 
@@ -575,3 +577,9 @@ host: www.youtube.com\
         assert resp.text == resp.headers['ResErrors']
 
 
+# ============================================================================
+def test_live_request_default_timeout():
+    with patch.object(DefaultAdapters.live_adapter.poolmanager, 'urlopen') as urlopen:
+        LiveWebLoader()._do_request('GET', 'http://example.com/', None, {}, {}, True)
+
+    assert urlopen.call_args[1]['timeout'] == DefaultAdapters.timeout

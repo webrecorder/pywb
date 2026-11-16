@@ -49,6 +49,9 @@ class DefaultAdapters(object):
     live_adapter = PywbHttpAdapter(max_retries=Retry(3))
     remote_adapter = PywbHttpAdapter(max_retries=Retry(3))
 
+    # default timeout (seconds) to connect and between reads
+    timeout = 30
+
 
 requests.packages.urllib3.disable_warnings()
 
