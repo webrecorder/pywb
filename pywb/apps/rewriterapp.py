@@ -8,6 +8,7 @@ from warcio.recordloader import ArcWarcRecordLoader
 from warcio.timeutils import http_date_to_timestamp, timestamp_to_http_date
 
 from pywb.apps.wbrequestresponse import WbResponse
+from pywb.rewrite.cookie_rewriter import split_visitor_cookie
 from pywb.rewrite.cookies import CookieTracker
 from pywb.rewrite.default_rewriter import DefaultRewriter, RewriterWithJSProxy
 from pywb.rewrite.rewriteinputreq import RewriteInputRequest
@@ -421,14 +422,20 @@ class RewriterApp(object):
         range_start, range_end, skip_record = self._check_range(inputreq, wb_url)
 
         setcookie_headers = None
+        visitor_cookie_header = None
         cookie_key = None
-        if self.cookie_tracker:
+        # in proxy mode, the browser sees the real hostnames and applies
+        # Domain= cookies itself, so the cookie tracker is not needed
+        if self.cookie_tracker and not is_proxy:
             cookie_key = self.get_cookie_key(kwargs)
             if cookie_key:
+                cookie_key, visitor_cookie_header = self.get_visitor_cookie_key(cookie_key,
+                                                                                environ,
+                                                                                rel_prefix)
                 res = self.cookie_tracker.get_cookie_headers(wb_url.url,
                                                              urlrewriter,
                                                              cookie_key,
-                                                             environ.get('HTTP_COOKIE', ''))
+                                                             split_visitor_cookie(environ.get('HTTP_COOKIE', ''))[1])
                 inputreq.extra_cookie, setcookie_headers = res
 
         r = self._do_req(inputreq, wb_url, kwargs, skip_record)
@@ -569,6 +576,9 @@ class RewriterApp(object):
         if setcookie_headers:
             status_headers.headers.extend(setcookie_headers)
 
+        if visitor_cookie_header:
+            status_headers.headers.insert(0, visitor_cookie_header)
+
         if ' ' not in status_headers.statusline:
             status_headers.statusline += ' None'
 
@@ -592,7 +602,8 @@ class RewriterApp(object):
         if is_proxy and environ.get('HTTP_ORIGIN'):
             response.add_access_control_headers(environ)
 
-        if r.status_code == 200 and kwargs.get('cache') == 'always' and environ.get('HTTP_REFERER'):
+        if (r.status_code == 200 and kwargs.get('cache') == 'always' and environ.get('HTTP_REFERER')
+                and not status_headers.get_header('Set-Cookie')):
             response.status_headers['Cache-Control'] = 'public, max-age=31536000, immutable'
 
         return response
@@ -909,12 +920,31 @@ class RewriterApp(object):
         return base_url
 
     def get_cookie_key(self, kwargs):
-        # note: currently this is per-collection, so enabled only for live or recording
-        # to support multiple users recording/live, would need per user cookie
+        """Return the per-collection cookie tracker key for live or recording
+        collections, otherwise None.
+        """
         if kwargs.get('index') == '$live' or kwargs.get('type') == 'record':
             return 'cookie:' + kwargs['coll']
         else:
             return None
+
+    def get_visitor_cookie_key(self, cookie_key, environ, rel_prefix):
+        """Scope the cookie tracker key to the visitor.
+
+        Returns the key and a Set-Cookie header for a new visitor id,
+        or None for the header if the request already has a valid one.
+        """
+        visitor_id = self.cookie_tracker.get_visitor_id(environ.get('HTTP_COOKIE', ''))
+        set_cookie = None
+
+        if not visitor_id:
+            visitor_id = self.cookie_tracker.new_visitor_id()
+            secure = environ.get('wsgi.url_scheme') == 'https'
+            set_cookie = self.cookie_tracker.get_visitor_cookie_header(visitor_id,
+                                                                       rel_prefix,
+                                                                       secure)
+
+        return cookie_key + ':' + visitor_id, set_cookie
 
     def _add_history_page(self, cdx, kwargs, doc_title):
         pass

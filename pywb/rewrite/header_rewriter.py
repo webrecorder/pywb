@@ -3,6 +3,7 @@ from warcio.timeutils import datetime_to_http_date
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
 
+from pywb.rewrite.cookie_rewriter import is_visitor_set_cookie
 from pywb.utils.refresh import rewrite_refresh
 
 
@@ -158,6 +159,9 @@ class DefaultHeaderRewriter(object):
         elif rule == 'cookie':
             if self.rwinfo.cookie_rewriter and self.rwinfo.is_url_rw():
                 return self.rwinfo.cookie_rewriter.rewrite(value)
+            elif is_visitor_set_cookie(value):
+                # never pass through an upstream attempt to set pywb's own visitor cookie
+                return None
             else:
                 return (name, value)
 

@@ -5,6 +5,33 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+# pywb's own cookie identifying a visitor to the CookieTracker
+VISITOR_COOKIE_NAME = '__pywb_visitor'
+
+
+def split_visitor_cookie(cookie_header):
+    """ Return (visitor cookie values, remaining Cookie header) """
+    if not cookie_header or VISITOR_COOKIE_NAME not in cookie_header:
+        return [], cookie_header
+
+    values = []
+    others = []
+    for part in cookie_header.split(';'):
+        name, sep, value = part.strip().partition('=')
+        if sep and name.strip() == VISITOR_COOKIE_NAME:
+            values.append(value.strip())
+        elif part.strip():
+            others.append(part.strip())
+
+    return values, '; '.join(others)
+
+
+def is_visitor_set_cookie(set_cookie_value):
+    """ Return True if a Set-Cookie value sets the visitor cookie """
+    name = set_cookie_value.split('=', 1)[0].strip()
+    return name == VISITOR_COOKIE_NAME
+
+
 #================================================================
 class WbUrlBaseCookieRewriter(object):
     """ Base Cookie rewriter for wburl-based requests.
@@ -24,6 +51,10 @@ class WbUrlBaseCookieRewriter(object):
             return results
 
         for name, morsel in cookie.items():
+            # never let an archived site set pywb's own visitor cookie
+            if name == VISITOR_COOKIE_NAME:
+                continue
+
             morsel = self.rewrite_cookie(name, morsel)
 
             self._filter_morsel(morsel)
