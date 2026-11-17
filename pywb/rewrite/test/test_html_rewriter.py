@@ -230,6 +230,14 @@ r"""
 >>> parse('<script src="js/fun.js"></script>')
 <script __wb_orig_src="js/fun.js" src="/web/20131226101010js_/http://example.com/some/path/js/fun.js"></script>
 
+# ES module scripts use the esm_ (js-module) modifier
+>>> parse('<script type="module" src="http://example.com/mod.js"></script>')
+<script type="module" src="/web/20131226101010esm_/http://example.com/mod.js"></script>
+
+# modulepreload links also use esm_
+>>> parse('<link rel="modulepreload" href="http://example.com/mod.mjs">')
+<link rel="modulepreload" href="/web/20131226101010esm_/http://example.com/mod.mjs">
+
 # Script tag + crossorigin + integrity
 >>> parse('<script src="/js/scripts.js" crossorigin="anonymous" integrity="ABC"></script>')
 <script src="/web/20131226101010js_/http://example.com/js/scripts.js" _crossorigin="anonymous" _integrity="ABC"></script>

@@ -130,6 +130,10 @@ class BaseContentRewriter(object):
         if text_type == 'js' and not rwinfo.is_url_rw():
             text_type = 'js-proxy'
 
+        # esm_ (ES modules) must skip the wombat wrapper: strict mode
+        if text_type == 'js' and rwinfo.url_rewriter.wburl.mod == 'esm_':
+            text_type = 'js-proxy'
+
         rw_type = rule.get(text_type, text_type)
         rw_class = self.get_rewriter(rw_type, rwinfo)
 
@@ -472,7 +476,7 @@ class RewriteInfo(object):
         if text_type == 'css' and mod == 'js_':
             text_type = 'css'
 
-        is_js_or_css = mod in ('js_', 'cs_')
+        is_js_or_css = mod in ('js_', 'esm_', 'cs_')
 
         # if html or no-content type, allow resolving on js, css,
         # or other templates
@@ -500,7 +504,7 @@ class RewriteInfo(object):
 
         if not is_js_or_css:
             return text_type
-        elif mod == 'js_':
+        elif mod in ('js_', 'esm_'):
             return 'js'
         else:
             return 'css'
