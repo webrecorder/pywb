@@ -15,7 +15,7 @@ from pywb import __version__
 root_dir = pathlib.Path(__file__).parent
 
 
-WABAC_SW_VERSION = "2.27.4"
+WABAC_SW_VERSION = "2.28.0"
 WABAC_SW_URL = f"https://cdn.jsdelivr.net/npm/@webrecorder/wabac@{WABAC_SW_VERSION}/dist/sw.js"
 
 def download_wabac_sw():
