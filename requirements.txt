@@ -1,7 +1,7 @@
 setuptools; python_version>="3.12"
 warcio>=1.8.2
 requests
-redis==2.10.6
+redis>=8.0.0
 jinja2>=3.1.2
 surt>=0.3.1
 # earlier versions of brotli are affected by CVE-2026-111497.
@@ -16,7 +16,7 @@ portalocker
 wsgiprox>=1.5.1
 # certauth uses X509.add_extensions(), which was removed in pyOpenSSL 26.2.
 pyOpenSSL<26.2
-fakeredis<1.0
+fakeredis>=2.41.0
 tldextract
 python-dateutil
 markupsafe>=2.1.1
