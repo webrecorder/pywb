@@ -5,7 +5,7 @@ import shutil
 import yaml
 import time
 
-from fakeredis import FakeStrictRedis, DATABASES
+from fakeredis import FakeStrictRedis, FakeServer
 from mock import patch
 
 from pywb.warcserver.basewarcserver import BaseWarcServer
@@ -62,22 +62,22 @@ class FakeStrictRedisSharedPubSub(FakeStrictRedis):
 # ============================================================================
 class FakeRedisTests(object):
     @classmethod
-    def setup_class(cls, redis_url='redis://localhost:6379/2'):
+    def setup_class(cls, redis_url='redis://localhost/2'):
         super(FakeRedisTests, cls).setup_class()
 
         del PUBSUBS[:]
-        DATABASES.clear()
+        FakeServer._servers_map.clear()
 
         cls.redismock = patch('redis.StrictRedis', FakeStrictRedisSharedPubSub)
         cls.redismock.start()
 
-        cls.redis = FakeStrictRedis.from_url(redis_url)
+        cls.redis = FakeStrictRedisSharedPubSub.from_url(redis_url)
 
     @classmethod
     def add_cdx_to_redis(cls, filename, key):
         with open(filename, 'rb') as fh:
             for line in fh:
-                cls.redis.zadd(key, 0, line.rstrip())
+                cls.redis.zadd(key, {line.rstrip(): 0})
 
     @classmethod
     def teardown_class(cls):

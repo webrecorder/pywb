@@ -72,7 +72,7 @@ class WritableRedisIndexer(RedisIndexSource):
 
         for cdx in cdx_list:
             if cdx:
-                self.redis.zadd(z_key, 0, cdx)
+                self.redis.zadd(z_key, {cdx: 0})
 
         return cdx_list
 

@@ -105,7 +105,7 @@ class TestIndexSources(FakeRedisTests, BaseTestClass):
 
         cls.all_sources = {
             'file': FileIndexSource(TEST_CDX_PATH + 'iana.cdxj'),
-            'redis': RedisIndexSource('redis://localhost:6379/2/test:rediscdx'),
+            'redis': RedisIndexSource('redis://localhost/2/test:rediscdx'),
             'remote_cdx': RemoteIndexSource(rhizome_coll + 'cdx?url={url}',
                               rhizome_coll + '{timestamp}id_/{url}'),
 
