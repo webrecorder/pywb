@@ -416,7 +416,9 @@ class HTMLRewriterMixin(StreamingRewriter):
             elif tag == 'script' and attr_name == 'src':
                 rw_mod = handler.get(attr_name)
                 # ES modules are strict mode: the js_ wombat wrapper is a SyntaxError there
-                if rw_mod == 'js_' and self.has_attr(tag_attrs, ('type', 'module')):
+                # Rocket Loader mangles type="module" to type="<nonce>-module"
+                script_type = (self.get_attr(tag_attrs, 'type') or '').lower()
+                if rw_mod == 'js_' and (script_type == 'module' or script_type.endswith('-module')):
                     rw_mod = 'esm_'
                 ov = attr_value
                 attr_value = self._rewrite_url(attr_value, rw_mod)
