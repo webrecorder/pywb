@@ -4,7 +4,7 @@ from pywb.rewrite.html_rewriter import HTMLRewriter
 from pywb.rewrite.html_insert_rewriter import HTMLInsertOnlyRewriter
 
 from pywb.rewrite.regex_rewriters import RegexRewriter, CSSRewriter, XMLRewriter
-from pywb.rewrite.regex_rewriters import JSLocationOnlyRewriter, JSNoneRewriter, JSWombatProxyRewriter
+from pywb.rewrite.regex_rewriters import JSLocationOnlyRewriter, JSNoneRewriter, JSWombatModuleRewriter, JSWombatProxyRewriter
 
 from pywb.rewrite.header_rewriter import DefaultHeaderRewriter
 from pywb.rewrite.cookie_rewriter import HostScopeCookieRewriter
@@ -34,6 +34,7 @@ class DefaultRewriter(BaseContentRewriter):
         'css': CSSRewriter,
 
         'js': JSWombatProxyRewriter,
+        'js-module': JSWombatModuleRewriter,
         'js-proxy': JSNoneRewriter,
         'js-worker': JSWorkerRewriter,
 

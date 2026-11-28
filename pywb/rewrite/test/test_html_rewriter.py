@@ -238,6 +238,14 @@ r"""
 >>> parse('<link rel="modulepreload" href="http://example.com/mod.mjs">')
 <link rel="modulepreload" href="/web/20131226101010esm_/http://example.com/mod.mjs">
 
+# Cloudflare Rocket Loader mangles type="module" to type="<nonce>-module"
+>>> parse('<script type="f1c05bf51506f74673900207-module" src="http://example.com/mod.js"></script>')
+<script type="f1c05bf51506f74673900207-module" src="/web/20131226101010esm_/http://example.com/mod.js"></script>
+
+# other Rocket Loader-mangled types stay classic
+>>> parse('<script type="ca25460323752c42d70eba76-text/javascript" src="http://example.com/app.js"></script>')
+<script type="ca25460323752c42d70eba76-text/javascript" src="/web/20131226101010js_/http://example.com/app.js"></script>
+
 # Script tag + crossorigin + integrity
 >>> parse('<script src="/js/scripts.js" crossorigin="anonymous" integrity="ABC"></script>')
 <script src="/web/20131226101010js_/http://example.com/js/scripts.js" _crossorigin="anonymous" _integrity="ABC"></script>

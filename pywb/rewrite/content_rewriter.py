@@ -130,9 +130,10 @@ class BaseContentRewriter(object):
         if text_type == 'js' and not rwinfo.is_url_rw():
             text_type = 'js-proxy'
 
-        # esm_ (ES modules) must skip the wombat wrapper: strict mode
+        # esm_ (ES modules) are strict mode: wrap with the module-safe
+        # wombat setup instead of the classic wrapper
         if text_type == 'js' and rwinfo.url_rewriter.wburl.mod == 'esm_':
-            text_type = 'js-proxy'
+            text_type = 'js-module'
 
         rw_type = rule.get(text_type, text_type)
         rw_class = self.get_rewriter(rw_type, rwinfo)
@@ -147,7 +148,7 @@ class BaseContentRewriter(object):
     def create_rewriter(self, text_type, rule, rwinfo, cdx, head_insert_func=None):
         rw_type, rw_class = self.get_rw_class(rule, text_type, rwinfo)
 
-        if rw_type in ('js', 'js-proxy'):
+        if rw_type in ('js', 'js-module', 'js-proxy'):
             extra_rules = []
             if self.has_custom_rules(rule, cdx):
                 extra_rules = rule['js_regex_func'](rwinfo.url_rewriter)
