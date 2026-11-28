@@ -79,9 +79,12 @@ JS Module Modifier (``esm_``)
 """"""""""""""""""""""""""""
 
 Used for ES modules (``<script type="module">`` and ``rel="modulepreload"``). Module scripts always
-run in strict mode, where the JS rewriter's wombat-proxy wrapper is a SyntaxError, so ``esm_`` resources
-are served without the wrapper. Relative ``import()`` specifiers inherit this modifier from the parent
-module url.
+run in strict mode, where two parts of the classic wombat-proxy wrapper are invalid (the enclosing
+block takes ``import``/``export`` out of the top level, and ``let arguments`` is a SyntaxError), so
+``esm_`` resources get a module-safe wrapper instead: ``var`` declarations of the wombat proxies
+with a ``globalThis``-based init, no block. Absolute url strings inside the module are also
+rewritten, so urls built at runtime (dynamic ``import()`` bases) stay within the replay. Relative
+``import()`` specifiers inherit this modifier from the parent module url.
 
 
 Other Modifiers

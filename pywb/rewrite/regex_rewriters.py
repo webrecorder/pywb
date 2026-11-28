@@ -303,6 +303,127 @@ class JSWombatProxyRewriter(RegexRewriter):
 
 
 # =================================================================
+class JSWombatModuleRules(JSWombatProxyRules):
+    """Wombat-proxy setup for scripts served as ES modules (esm_ modifier).
+
+    ES modules always run in strict mode, so two parts of the classic
+    wrapper can not be used and are left out:
+
+    * the enclosing block -- a module's top-level ``import``/``export``
+      declarations must stay at the top level
+    * ``let arguments`` -- strict mode forbids declaring ``arguments``
+
+    The ``let`` declarations of the classic wrapper become ``var``
+    declarations and the init function reads ``globalThis`` instead of
+    ``self``, keeping the declarations out of each other's temporal dead
+    zone. Absolute url strings in the module are rewritten so that urls
+    the code builds at runtime (dynamic ``import()`` bases, api endpoints)
+    stay within the replay.
+    """
+
+    # `arguments` does not exist in module scope
+    CHECK_LOC = ('((self.__WB_check_loc && self.__WB_check_loc(location, '
+                 '(typeof arguments !== "undefined" ? arguments : undefined))) '
+                 '|| {}).href = ')
+
+    EVAL_STR = ('WB_wombat_runEval2((_______eval_arg, isGlobal) => { '
+                'var ge = eval; return isGlobal ? ge(_______eval_arg) : '
+                'eval(_______eval_arg); }).eval(this, '
+                '(function() { return arguments })(),')
+
+    # rewrite absolute http(s) urls that appear as string contents
+    # (backtick added to the lookbehind: minified code strings urls in
+    # template literals)
+    JS_HTTPX = r'(?:(?<=["\';`])https?:|(?<=["\';`]))\\{0,4}/\\{0,4}/[A-Za-z0-9:_@%.\\-]+/'
+
+    def __init__(self):
+        RxRules.__init__(self)
+
+        self.local_objs = [
+            'window',
+            'self',
+            'document',
+            'location',
+            'top',
+            'parent',
+            'frames',
+            'opener'
+        ]
+
+        local_init_func_name = '_____WB$wombat$assign$function_____'
+
+        init_func = (
+            '\nvar {0} = function(name) {{ '
+            'return (globalThis._wb_wombat && globalThis._wb_wombat.local_init && '
+            'globalThis._wb_wombat.local_init(name)) || globalThis[name]; }};\n'
+            'if (!globalThis.__WB_pmw) {{ globalThis.__WB_pmw = function(obj) '
+            '{{ this.__WB_source = obj; return this; }} }}\n'
+        ).format(local_init_func_name)
+
+        local_declares = '\n'.join(
+            'var {0} = {1}("{0}");'.format(obj, local_init_func_name)
+            for obj in self.local_objs
+        )
+
+        check_loc = self.CHECK_LOC
+
+        rules = [
+            # rewriting 'eval(...)' - invocation
+            (r'(?<!function)(?:\s|^)\beval\s*\(',
+             self.replace_prefix_from(self.EVAL_STR, 'eval'), 0),
+            # rewriting 'x = eval' - no invocation
+            (r'(?<=[=,])\s*\beval\b\s*(?![(:.$])',
+             self.replace_str('self.eval', 'eval'), 0),
+            (r'(?<=\.)postMessage\b\(', self.add_prefix('__WB_pmw(self).'), 0),
+            (r'(?<![$.])\s*\blocation\b\s*[=]\s*(?![=])',
+             self.add_suffix(check_loc), 0),
+        ]
+        rules.append((self.JS_HTTPX, RxRules.archival_rewrite(), 0))
+
+        self.rules = rules
+        self.regex = self.compile_rules(rules)
+
+        self.first_buff = init_func + local_declares + '\n'
+        self.last_buff = ''
+
+
+# =================================================================
+class JSWombatModuleRewriter(RegexRewriter):
+    """JS rewriter for ES modules: wombat's proxies in the module scope,
+    with absolute url strings rewritten for replay."""
+
+    rules_factory = JSWombatModuleRules()
+
+    def __init__(self, rewriter, extra_rules=None):
+        super(JSWombatModuleRewriter, self).__init__(rewriter, extra_rules=extra_rules)
+
+        self.first_buff = self.rules_factory.first_buff
+        self.last_buff = self.rules_factory.last_buff
+        self.local_objs = self.rules_factory.local_objs
+
+    def rewrite_complete(self, string, **kwargs):
+        if not kwargs.get('inline_attr'):
+            return super(JSWombatModuleRewriter, self).rewrite_complete(string)
+
+        # check if any of the wrapped objects are used in the script
+        # if not, don't rewrite
+        if not any(obj in string for obj in self.local_objs):
+            return string
+
+        if string.startswith('javascript:'):
+            string = 'javascript:' + self.first_buff + self.rewrite(string[len('javascript:'):])
+        else:
+            string = self.first_buff + self.rewrite(string)
+
+        string += self.last_buff
+
+        return string
+
+    def final_read(self):
+        return self.last_buff
+
+
+# =================================================================
 class JSNoneRewriter(RegexRewriter):
     pass
 

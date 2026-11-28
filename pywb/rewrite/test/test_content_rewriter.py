@@ -221,16 +221,41 @@ class TestContentRewriter(object):
         assert 'let window ' in result
         assert exp in result
 
-    def test_rewrite_esm_mod_no_wrapper(self, headers):
-        # esm_ (ES module) scripts are passed through unwrapped
-        content = 'function() { location.href = "http://example.com/"; }'
+    def test_rewrite_esm_mod(self, headers):
+        # esm_ (ES module) scripts get the module-safe wrapper: no block,
+        # no `let arguments`, var declarations with globalThis init, and
+        # absolute url strings rewritten
+        content = ('import{t as e}from"./chunk.js";\n'
+                   'export const base = "https://example.com/vite/";\n'
+                   'function run() { location = "http://example.com/"; }')
 
         headers, gen, is_rw = self.rewrite_record(headers, content, ts='201701esm_')
 
         assert ('Content-Type', 'text/javascript') in headers.headers
 
-        assert b''.join(gen).decode('utf-8') == content
-        assert not is_rw
+        result = b''.join(gen).decode('utf-8')
+
+        # module-safe wrapper: var declarations, globalThis init
+        assert 'var _____WB$wombat$assign$function_____' in result
+        assert 'var window = _____WB$wombat$assign$function_____("window");' in result
+        assert '(globalThis._wb_wombat' in result
+
+        # strict-mode violations of the classic wrapper are absent
+        assert 'let arguments' not in result
+        assert 'let window' not in result
+
+        # no enclosing block: imports stay top level
+        assert not result.lstrip().startswith('{')
+        assert 'import{t as e}from"./chunk.js";' in result
+        assert 'export const base' in result
+
+        # absolute url strings rewritten to the replay
+        assert '"http://localhost:8080/prefix/201701esm_/https://example.com/vite/"' in result
+
+        # location assignment routed through the proxy
+        assert '__WB_check_loc(location' in result
+
+        assert is_rw
 
     def test_rewrite_cs_mod(self, headers):
         content = '.foo { background: url(http://localhost:8080/prefix/201701cs_/http://example.com/) }'
